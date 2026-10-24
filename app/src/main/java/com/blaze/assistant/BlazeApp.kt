@@ -6,6 +6,16 @@ import com.blaze.assistant.agent.Settings
 import kotlinx.coroutines.launch
 
 class BlazeApp : Application() {
+    // v0.34.1 perf: give the offline model's memory back when Android asks (it reloads on demand).
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        @Suppress("DEPRECATION")
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND || level == android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW ||
+            level == android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
+            try { com.blaze.assistant.agent.OfflineBrain.trim() } catch (_: Throwable) { }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         com.blaze.assistant.device.CrashLog.init(this)
