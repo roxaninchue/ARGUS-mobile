@@ -106,14 +106,21 @@ object Proactive {
             if (com.blaze.assistant.phone.Skills.granted(app, arrayOf(android.Manifest.permission.READ_CALENDAR)))
                 com.blaze.assistant.phone.Skills.run(app, "calendar_events", JSONObject().put("days", 1)).take(1500) else "(no calendar access)"
         } catch (_: Exception) { "(calendar unavailable)" }
+        val signals = sweepSignals(since)
+        val device = DeviceStatus.describe(app)
+        // v0.34.1 perf: in quiet hours only urgent heads-ups are shown (say() drops the rest), so with no new notifications,
+        // no phone signals, no device warnings, no calendar events and no urgent hint there is nothing the model could raise: skip the call.
+        if (urgentHint == null && quietNow() && notes.isEmpty() && signals.isBlank() && !device.contains("\nAttention:") &&
+            (cal.trim().startsWith("No events") || cal.trim().startsWith("(")))
+            return@withLock
         val ctx = buildString {
             append("Now: ").append(SimpleDateFormat("EEEE d MMMM, HH:mm", Locale.getDefault()).format(Date())).append('\n')
-            append(DeviceStatus.describe(app)).append("\n\n")
+            append(device).append("\n\n")
             if (urgentHint != null) append("URGENT-LOOKING MESSAGE JUST ARRIVED: $urgentHint\n\n")
             append("New notifications since ${f.format(Date(since))}:\n")
             append(if (notes.isEmpty()) "(none)\n" else notes.joinToString("\n") { "- ${f.format(Date(it.time))} ${it.app} · ${it.title}: ${it.text.take(200)}" }).append("\n\n")
             append("Calendar today:\n$cal\n\n")
-            sweepSignals(since).takeIf { it.isNotBlank() }?.let { append("Phone signals:\n").append(it).append("\n\n") }
+            signals.takeIf { it.isNotBlank() }?.let { append("Phone signals:\n").append(it).append("\n\n") }
             synchronized(digest) { if (digest.isNotEmpty()) append("Saved for the next brief:\n").append(digest.joinToString("\n") { "- $it" }).append("\n\n") }
             append("Already told the user recently:\n").append(recent.value.takeLast(6).joinToString("\n") { "- ${it.text}" }.ifEmpty { "(nothing)" })
         }

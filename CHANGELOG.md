@@ -5,6 +5,14 @@ Newest first. Builds before v0.8.0 were numbered 1.0–1.17.0; `versionCode` has
 
 
 
+## v0.34.1: lighter on battery and memory (versionCode 136)
+
+Optimisation only; no feature changed or removed.
+- **Task card watcher** (ui/Overlay.kt): the loop that pops the task card over other apps now sleeps until a chat is busy instead of waking the main thread every 400 ms for the life of the process.
+- **Screen watchers** (phone/Watchers.kt): full-screen text scans after accessibility content changes are spaced at least 150 ms apart (still a trailing check, so the newest screen is always seen) instead of up to ~16 per second.
+- **Offline Brain** (agent/OfflineBrain.kt, BlazeApp.kt): the on-device model (~500 MB of RAM) is released after 5 idle minutes and when Android reports memory pressure (onTrimMemory); it reloads on the next offline reply.
+- **Proactive checks** (proactive/Proactive.kt): during quiet hours, a check with no new notifications, no phone signals, no device warnings, no calendar events and no urgent message skips the model call (quiet hours only show urgent heads-ups, so nothing could have been shown).
+
 ## v0.34.0: subtitles that work, smarter Video / Music / Gallery, Camera Night + HDR, a fuller Linux desktop (versionCode 135)
 
 - **Subtitles reach the player** (mediaapps/Subs.kt, SubsLoader.kt): Blaze Video now reads YouTube's caption tracks (manual and auto-generated), converts json3 / srv1 / WebVTT / SubRip into one clean WebVTT track and side-loads it into Media3, so the subtitle menu has real choices. A live subtitle menu while playing, and `.srt` / `.vtt` files next to a video are picked up.
