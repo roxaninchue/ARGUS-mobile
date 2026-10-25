@@ -186,14 +186,16 @@ object BgAgents {
                 if (pb.isNotBlank()) {
                     update(bg.id, persist = false) { it.copy(last = "Checking its work against the ${sp.name} playbook") }
                     val r = Agent.reviewDraft(sp, pb, bg.task, draft.text)
-                    if (!r.pass && get(bg.id)?.status == RUNNING) {
+                    // v0.45.2: a review that didn't finish is said plainly on the card, not counted as a pass.
+                    if (!r.checked) update(bg.id, persist = false) { it.copy(last = VerifyPolicy.NOT_REVIEWED) }
+                    if (r.checked && !r.pass && get(bg.id)?.status == RUNNING) {
                         update(bg.id, persist = false) { it.copy(last = "Fixing: ${r.fixes.firstOrNull().orEmpty().take(80)}") }
                         runAndWait(Playbooks.redoPrompt(r.fixes))
                     }
                 }
             }
         }
-        Dispatch.browser.release(bg.id)
+        Dispatch.browser.release(bg.id); Dispatch.phone.release(bg.id)
         bg = get(bg.id) ?: return
         jobs.remove(bg.id)
         if (bg.status == CANCELLED) { save(); pump(); return }
@@ -226,7 +228,7 @@ object BgAgents {
         val bg = get(id) ?: return "No agent $id."
         if (!bg.live) return "${bg.id} isn't running."
         update(id) { it.copy(status = CANCELLED, ended = System.currentTimeMillis(), waiting = false) }
-        Dispatch.browser.release(bg.id)
+        Dispatch.browser.release(bg.id); Dispatch.phone.release(bg.id)
         if (bg.status == RUNNING) Agent.stopAgent(bg)
         jobs.remove(id)?.cancel()
         scope.launch { pump() }

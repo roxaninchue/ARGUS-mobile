@@ -61,10 +61,25 @@ object Cloud {
         return ""
     }
 
+    /** Characters of text in the conversation (pictures not counted); stops counting once past [cap]. */
+    fun textChars(messages: JSONArray, cap: Int = Int.MAX_VALUE): Int {
+        var n = 0
+        for (i in 0 until messages.length()) {
+            when (val c = messages.optJSONObject(i)?.opt("content")) {
+                is String -> n += c.length
+                is JSONArray -> for (j in 0 until c.length()) n += c.optJSONObject(j)?.optString("text")?.length ?: 0
+            }
+            if (n > cap) return n
+        }
+        return n
+    }
+
     /** The gateway task for one request: vision > long > agent (tools) > quick (short chat) > code > chat. */
     fun task(messages: JSONArray, tools: JSONArray?, lite: Boolean = false): String = when {
         hasImage(messages) -> "vision"
-        messages.toString().length > LONG_CHARS -> "long"
+        // v0.41.0: counts message text like the gateway (router.ts textChars) instead of serialising the whole request
+        // to JSON on every call (escapes and keys made borderline requests "long", and it cost a full copy each time).
+        textChars(messages, LONG_CHARS) > LONG_CHARS -> "long"
         tools != null && tools.length() > 0 -> "agent"
         codeCue.containsMatchIn(lastUserText(messages)) -> "code"
         lite -> "quick"
@@ -83,6 +98,8 @@ object Cloud {
         val t = text.lowercase()
         if (code == 401 || code == 403) return false
         if (code == 429 && ("allowance" in t || "quota_exceeded" in t)) return false
+        // v0.42.0: the same Idempotency-Key is still being answered (gateway idem.ts): wait its Retry-After, then ask again.
+        if (code == 409 && "in_progress" in t) return true
         return code == 0 || code == 408 || code == 429 || code in 500..599 || code == 404 || gone(t)
     }
 
@@ -109,8 +126,16 @@ object Cloud {
 
     // ---------------- v0.26.2: the retry loop, empty replies included ----------------
 
-    /** One try: stream it or not, with the "answer now" nudge or not, and the routes ("provider/model") to skip. */
-    data class Attempt(val n: Int, val stream: Boolean, val nudge: Boolean, val avoid: List<String>)
+    /**
+     * One try: stream it or not, with the "answer now" nudge or not, and the routes ("provider/model") to skip.
+     * v0.42.0: [key] is the request's Idempotency-Key (gateway 0.5.0). A try after a request that may never have arrived
+     * (no answer at all: [LlmClient.LlmException.unanswered]) sends the SAME key, so if it did arrive the gateway hands
+     * back that answer instead of a second model call and a second charge; every other try gets a new key.
+     */
+    data class Attempt(val n: Int, val stream: Boolean, val nudge: Boolean, val avoid: List<String>, val key: String = "")
+
+    /** A fresh Idempotency-Key base for one request's tries (8–128 of A-Z a-z 0-9 . _ : -). */
+    fun newKey(): String = "b" + java.util.UUID.randomUUID().toString().replace("-", "")
 
     /**
      * Every request's tries (LlmClient.completeRaw). Errors as before: a request too big is trimmed once
@@ -123,23 +148,30 @@ object Cloud {
      */
     suspend fun drive(streaming: Boolean, call: suspend (Attempt) -> JSONObject, served: () -> String,
                       trim: (LlmClient.LlmException) -> Boolean = { false }, sleep: suspend (Long) -> Unit = { kotlinx.coroutines.delay(it) },
-                      onEmpty: (Int) -> Unit = {}): JSONObject {
+                      onEmpty: (Int) -> Unit = {}, keyBase: String = newKey()): JSONObject {
         val avoid = LinkedHashSet<String>()
+        var keyN = 0
+        var sameKey = false
         var stream = streaming; var nudge = false
         var errors = 0; var empties = 0; var n = 0
         var last: LlmClient.LlmException? = null
         while (errors < MAX_TRIES && empties < EmptyReply.TRIES && n < MAX_TRIES + EmptyReply.TRIES + 1) {
-            val a = Attempt(n++, stream, nudge, avoid.toList())
+            if (!sameKey) keyN++
+            sameKey = false
+            val a = Attempt(n++, stream, nudge, avoid.toList(), "$keyBase-$keyN")
             try {
                 val m = call(a)
                 if (!EmptyReply.isEmpty(m)) return m
                 empties++
                 onEmpty(empties)
-                if (empties == 1) { stream = false; nudge = true }
+                if (empties == 1) { stream = streaming; nudge = true }   // v0.45.5 (#5b): always stream, the retry too
                 else { served().takeIf { it.isNotBlank() }?.let { avoid += it }; stream = streaming; nudge = true }
             } catch (e: kotlinx.coroutines.CancellationException) { throw e
             } catch (e: LlmClient.LlmException) {
+                try { CallState.current().errors.add("try ${n}: " + e.message.orEmpty().take(200)) } catch (_: Throwable) { }
                 if (trim(e)) continue
+                // A request that may not have arrived is asked again with its own key (an answer kept by the gateway comes back).
+                if (e.unanswered || (e.code == 409 && "in_progress" in e.message.orEmpty())) sameKey = true
                 access(e.code, e.message.orEmpty())?.let { throw LlmClient.LlmException(it, e.code) }
                 if (e.code == 401 || e.code == 403) throw LlmClient.LlmException(EXPIRED, e.code)
                 if (!retryable(e.code, e.message.orEmpty())) {

@@ -13,30 +13,21 @@ android {
         applicationId = "com.blaze.assistant"
         minSdk = 26
         targetSdk = 34
-        versionCode = 136
-        versionName = "0.34.1"
+        versionCode = 170
+        versionName = "0.45.25"
         // v0.30.1 Music Store: Jamendo client_id, from the environment or -Pjamendo.clientId at build time. Never hard-coded;
         // empty = "not configured" (the user can paste one in the Music Store instead).
         buildConfigField("String", "JAMENDO_CLIENT_ID", "\"" + (System.getenv("JAMENDO_CLIENT_ID") ?: (project.findProperty("jamendo.clientId") as String?) ?: "").replace("\"", "") + "\"")
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
-    // One permanent key kept with the project, so every new APK installs over the old one
-    // and keeps your keys, settings, chats and voice model.
-    signingConfigs {
-        create("blaze") {
-            storeFile = rootProject.file("keystore/blaze.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
-    }
+    // 0.45.15 (key rotation, user-approved 22 Oct 08:32): no signing key or password lives in this repo. Gradle signs with the
+    // SDK's own debug key (fine for local runs and CI test builds); a release APK is re-signed outside the repo with the
+    // private Blaze release key and a v3 lineage from the old (burned, public) key, so existing installs still update.
     buildTypes {
-        getByName("debug") { signingConfig = signingConfigs.getByName("blaze") }
         // Release = what you install: R8-optimised, not debuggable (Compose runs far smoother).
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("blaze")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -53,7 +44,8 @@ android {
             keepDebugSymbols += listOf("**/libneedle.so", "**/libbusybox.so", "**/libproot.so", "**/libproot_loader.so", "**/libproot_loader32.so", "**/libtalloc.so", "**/libandroid-shmem.so", "**/libwgproxy.so", "**/libblazerouter.so")
         }
     }
-    lint { checkReleaseBuilds = false; abortOnError = false }
+    // v0.45.0 (#34): lint fails on NEW errors only; existing ones live in app/lint-baseline.xml (written by the first run).
+    lint { checkReleaseBuilds = false; abortOnError = true; baseline = file("lint-baseline.xml") }
     testOptions {
         unitTests.isReturnDefaultValues = true
         // Robolectric screenshot tests (ui/ShotsTest) need the app's resources (fonts) and only run with BLAZE_SHOTS=1.
@@ -61,6 +53,10 @@ android {
         unitTests.all {
             it.systemProperty("blaze.shots", System.getenv("BLAZE_SHOTS") ?: "0")
             it.systemProperty("robolectric.graphicsMode", "NATIVE")
+            // v0.45.0 (#28): Robolectric ships no Conscrypt JNI for linux-aarch64 (it only turns Conscrypt off by itself on
+            // arm Macs), so on ARM Linux boxes every Robolectric test died with UnsatisfiedLinkError. Off there; x86 CI unchanged.
+            if (System.getProperty("os.arch").orEmpty().lowercase().let { a -> a.contains("aarch64") || a.contains("arm64") })
+                it.systemProperty("robolectric.conscryptMode", "OFF")
             // The compose test rule needs ui-test-manifest, which only the debug build has.
             if (it.name.contains("Release")) it.exclude("**/ShotsTest*")
             // A failing test prints its real message and causes in the CI log (not just "SQLException at Foo.kt:143").
@@ -254,7 +250,11 @@ dependencies {
     implementation(project(":storeapi"))
     // The YouTube Store is a plug-in: compiled in only when the youtube/ folder (Gradle :youtube) exists.
     if (rootProject.findProject(":youtube") != null) implementation(project(":youtube"))
+    // v0.36.0 BlazeOS native apps: Chicory, a pure-JVM WebAssembly interpreter (no NDK, no per-CPU libraries).
+    implementation("com.dylibso.chicory:runtime:1.7.5")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")   // 0.45.20: runTest / virtual time (PermissionGateTest)
+    testImplementation("org.hamcrest:hamcrest-core:1.3")   // 0.45.18: was a root hamcrest.jar; now a normal test dependency
     testImplementation("org.json:json:20240303")   // the real org.json (android.jar only has stubs)
     testImplementation("org.xerial:sqlite-jdbc:3.46.1.3")   // v0.26.3: blaze.db tests on a JVM SQLite with FTS5 (store/JdbcSql)
     // Screenshot tests: Compose UI test on Robolectric's native graphics.

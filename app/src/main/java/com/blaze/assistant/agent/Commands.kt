@@ -33,6 +33,7 @@ object Commands {
         Command("think", "", "Turn the \u201cThinking it through\u201d line on/off"),
         Command("voice", "", "Start listening"),
         Command("orb", "", "Pin the floating orb"),
+        Command("bank", "[on|off]", "Bank mode: Blaze steps back so banking apps work"),
         Command("copy", "", "Copy this whole chat"),
         Command("views", "", "Open any view: memory, jobs, design, accounts…"),
         Command("search", "", "Search views and past conversations"),
@@ -51,6 +52,12 @@ object Commands {
         Command("browser", "", "Blaze's browser"),
         Command("logs", "[on|off|pause|status]", "Life logs: transcribe what the mic hears into memory"),
         Command("brainstorm", "", "Think out loud; get ideas, decisions and next steps when you stop"),
+        Command("home", "", "Show Home: weather, news, heads-ups"),
+        Command("doing", "", "Things Blaze is doing: routines, reminders, today's diary"),
+        Command("look", "", "Look & feel: living backgrounds, theme, accent"),
+        Command("sync", "", "Cloud sync: chats, memory, settings and designs on all your phones (end-to-end encrypted)"),
+        Command("simple", "", "Simple mode: hide technical tools (nothing is removed)"),
+        Command("advanced", "", "Advanced mode: show every tool and setting"),
         Command("help", "", "List all commands")
     )
 

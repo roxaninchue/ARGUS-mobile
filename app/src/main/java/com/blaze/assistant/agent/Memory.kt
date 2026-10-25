@@ -91,6 +91,9 @@ object Memory {
     fun forget(query: String): String {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return "Nothing matched \"$query\"."
+        // v0.45.3: "#12" is an id, not words to match: memory_delete removes lines by id (with one confirm card).
+        if (MemoryDelete.isIdQuery(q)) return "forget matches words, not ids. To remove #ids, call memory_delete with ids=[" +
+            MemoryDelete.idsOf(q).joinToString(",") + "]."
         val d = Mind.db()
         if (d != null) {
             val hit = try { d.all().filter { matches(it.text, q) || matches(it.subject + ": " + it.text, q) } } catch (_: Exception) { emptyList() }
@@ -123,8 +126,19 @@ object Memory {
      * Memory for the prompt. With one mind: the pinned core and the subject index only (everything else is looked
      * up). Without the memory store: the old list (small memories whole, big ones only what fits the request).
      */
+    /** v0.41.0 speed: inside one agent turn the Mind block is read once, not on every model call (a 6-step task read it 6 times). */
+    private val mindBlock = PromptMemo<String>(60_000)
+
+    /** Set by the agent loop for the turn it runs (0 = not in a turn: always read fresh). */
+    @Volatile var turnKey: Long = 0L
+
     fun promptBlock(query: String = ""): String {
-        if (Mind.ready) return Mind.promptBlock()
+        if (Mind.ready) {
+            val turn = turnKey
+            if (turn == 0L) return Mind.promptBlock()
+            // A new turn, another store, or a memory saved through Mind rebuilds it.
+            return mindBlock.get(Triple(turn, System.identityHashCode(Mind.db()), Mind.version)) { Mind.promptBlock() }
+        }
         val all = _facts.value
         if (all.isEmpty()) return ""
         val chosen = if (all.size <= 30) all else {

@@ -28,6 +28,10 @@ object ChatLane {
         val t = text.trim()
         if (t.isEmpty() || t.length > 300 || t.startsWith("[") || t.startsWith("/")) return false
         if (ToolRouter.guess(t).isNotEmpty()) return false
+        // v0.45.9 (ToolTruth): this lane sends no tools, so anything tool-shaped goes to the full lane.
+        if (ToolTruth.toolShaped(t) || SaveFile.wantsSave(t)) return false
+        // v0.45.9: "ok" / "yes" to a calendar or reminder offer needs the schedule tools, not the plain chat lane.
+        if (TurnContext.scheduleFollowUp(t, lastAssistant)) return false
         // v0.27.x: "how do I get / install / enable X" goes to the tool lane, so Blaze can offer to do it (AnswerStyle).
         if (AnswerStyle.offerVerb(t) != null) return false
         val small = smalltalk.containsMatchIn(t)
@@ -38,20 +42,29 @@ object ChatLane {
     }
 
     /** Short system prompt + the recent conversation as plain text turns. */
-    fun messages(full: JSONArray, userText: String, persona: String, name: String?): JSONArray {
+    fun messages(full: JSONArray, userText: String, persona: String, name: String?, context: String = ""): JSONArray {
         val now = SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date())
         val sys = buildString {
             append(persona).append(' ')
             if (name != null) append("The user's name is $name. ")
+            // v0.45.7: the reply language (Auto = match the user), same line as the full prompt.
+            append(ReplyLanguage.line(ReplyLanguage.current()).trim()).append(' ')
             append("Reply like a sharp friend texting back: short, warm, sure of yourself, the answer first, one or two sentences unless they ask for more. No filler like \"let me know if\". ")
             append("It is $now. ")
+            // v0.42.0: a 2–3 line Awareness summary (what is playing / just happened), never the full block.
+            append(Awareness.summaryBlock().trim()).append(' ')
             // v0.31.1: same formatting rule as the full prompt (tables never in code fences, HTML tags allowed).
             append(AnswerStyle.FORMAT.trimStart()).append(' ')
             append("You are Blaze: you CAN generate images, make beats and music, run Python in your own Linux terminal, browse, and use the user's phone, just not in this short reply. ")
+            append("You run on the user's phone: never give desktop or text-editor advice and never say you can't save, run, open or check something. ")
             append("You have NO tools in this reply. If answering properly needs live or current information (news, weather, prices, scores, anything about today), ")
             append("anything on the user's phone, apps, messages, files, calendar or settings, or doing or making anything (an image, a beat, a file, any action), or if they ask whether you can do something, reply with exactly $ESCAPE and nothing else. ")
-            if (Settings.followups) append("At the very end add one line exactly like <<follow-ups: first | second | third>> with three short next requests (max 6 words each) written as the user would say them. ")
+            if (Settings.followups) append(QuickReplies.RULE).append(' ')
             append(Memory.promptBlock(userText).take(1500))
+            // v0.45.9: the assistant rules and the [context] block, last (Site persona v1.0.1 `context_block`).
+            append(Duo.ASSISTANT_RULES)
+            append(GreetName.RULE)
+            if (context.isNotBlank()) { append(TurnContext.RULE); append('\n').append(context) }
         }
         val out = JSONArray().put(JSONObject().put("role", "system").put("content", sys))
         val flat = ToolCalls.flatten(full)

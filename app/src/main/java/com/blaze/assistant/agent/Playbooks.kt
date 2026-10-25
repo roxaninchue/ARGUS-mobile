@@ -204,7 +204,8 @@ object Playbooks {
 
     // ---------------- self-check review ----------------
 
-    data class Review(val pass: Boolean, val fixes: List<String>)
+    /** v0.45.2: [checked] = false when the review call timed out or failed (said plainly, never a silent pass). */
+    data class Review(val pass: Boolean, val fixes: List<String>, val checked: Boolean = true)
 
     /** One cheap review call: the Self-check list and Quality bar against the draft. */
     fun reviewMessages(name: String, playbook: String, task: String, draft: String): JSONArray {

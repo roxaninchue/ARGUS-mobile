@@ -97,7 +97,7 @@ object OfflineBrain {
 
     @Synchronized fun close() { idleClose?.cancel(); idleClose = null; try { (engine as? com.google.mediapipe.tasks.genai.llminference.LlmInference)?.close() } catch (_: Throwable) { }; engine = null }
 
-    // v0.34.1 perf: the model holds ~500 MB of RAM; release it after a few idle minutes (it reloads on the next offline reply).
+    // v0.45.23 perf: the model holds ~500 MB of RAM; release it after a few idle minutes (it reloads on the next offline reply).
     private const val IDLE_CLOSE_MS = 5 * 60_000L
     private val idleScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Default)
     @Volatile private var idleClose: kotlinx.coroutines.Job? = null

@@ -106,7 +106,7 @@ object SelfControl {
         "voice_on" -> { Settings.speakReplies = true; "Okay, I'll read answers aloud when you ask by voice." }
         "status", "setup_check" -> SelfSetup.report(ctx)
         "open" -> SelfSetup.open(ctx, args.optString("target"))
-        "speed_stats" -> SpeedLog.summary()
+        "speed_stats" -> SpeedLog.summary() + SpeedLog.firstWordLine() + SpeedLog.lastPhases().let { if (it.isBlank()) "" else "\nLast turn: $it" } + SpeedLog.screenLine()
         // v0.33.1: where the tokens go, per feature, plus the tool cache and the learned router.
         "token_ledger" -> TokenLedger.report() + "\n" + ToolCache.stats() + "\n" + LearnedRoutes.stats()
         "tool_stats" -> ToolStats.report() + (LlmClient.lastHealed.takeIf { it.isNotBlank() }?.let { "\n\nLast self-healed error: ${it.take(200)}" } ?: "")

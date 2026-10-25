@@ -41,8 +41,8 @@ object CoreSkills {
      * order; when the budget runs out, the remaining bullets are dropped (each skill keeps at least its first bullet
      * when it fits) and a pointer to use_skill is added.
      */
-    fun block(mds: Map<String, String>, budget: Int = BUDGET_CHARS): String {
-        val per = NAMES.mapNotNull { n -> mds[n]?.let { n to pinned(it) } }.filter { it.second.isNotEmpty() }
+    fun block(mds: Map<String, String>, budget: Int = BUDGET_CHARS, names: List<String> = NAMES): String {
+        val per = names.mapNotNull { n -> mds[n]?.let { n to pinned(it) } }.filter { it.second.isNotEmpty() }
         if (per.isEmpty()) return ""
         val head = "\n\nCORE SKILLS (always on, every turn; follow them — full text with use_skill <name>):\n"
         val sb = StringBuilder(head)
@@ -78,5 +78,12 @@ object CoreSkills {
         block(loader?.invoke().orEmpty()).also { if (it.isNotEmpty()) cached = it }
     } catch (_: Throwable) { "" }
 
-    fun reset() { cached = null }
+    private val byNames = java.util.concurrent.ConcurrentHashMap<List<String>, String>()
+
+    /** v0.45.0 (#13, #16): the pinned block for a subset of the core skills (PromptProfile), cached per subset. */
+    fun promptBlock(names: List<String>): String = if (names == NAMES) promptBlock() else byNames[names] ?: try {
+        block(loader?.invoke().orEmpty(), names = names).also { if (it.isNotEmpty()) byNames[names] = it }
+    } catch (_: Throwable) { "" }
+
+    fun reset() { cached = null; byNames.clear() }
 }

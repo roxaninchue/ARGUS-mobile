@@ -159,7 +159,7 @@ object LongChat {
         .put(JSONObject().put("role", "system").put("content", SUMMARISE_PROMPT))
         .put(JSONObject().put("role", "user").put("content", "CURRENT NOTE:\n" + prev.ifBlank { "(none yet)" } + "\n\nNEW TURNS:\n" + transcript(h, from, to)))
 
-    private fun clip(s: String, n: Int) = if (s.length <= n) s else s.take(n) + "…"
+    private fun clip(s: String, n: Int) = if (s.length <= n) s else s.substring(0, Scripts.safeCut(s, n)) + "…"  // v0.45.7: whole letters
 
     // ---------------- artifacts ----------------
 

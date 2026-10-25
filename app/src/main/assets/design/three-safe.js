@@ -74,6 +74,22 @@ if (T.Box3 && !T.Box3.prototype.__bzSafe) {
 }
 
 // Rendering: sanitize before each frame; a render that still throws is reported once, not 60 times a second.
+/**
+ * v0.36.1: what the Design view's "did it draw?" check reads. A WebGL canvas without preserveDrawingBuffer is cleared
+ * once the frame is shown, so sampling it later from a timer always looked blank and every 3D design fell back to
+ * the simple drawing. Now each frame records its draw calls, and the pixel sample is taken right after a render,
+ * while the frame is still in the buffer.
+ */
+function noteFrame(r) {
+  try {
+    const w = window;
+    w.__bzFrames = (w.__bzFrames || 0) + 1;
+    const calls = (r.info && r.info.render && r.info.render.calls) || 0;
+    if (calls > (w.__bzDrawCalls || 0)) w.__bzDrawCalls = calls;
+    if (w.__bzWantSample && typeof w.__bzBlank === "function") { w.__bzWantSample = false; w.__bzSampleBlank = !!w.__bzBlank(r.domElement); }
+  } catch (e) { /* never block the frame */ }
+}
+
 /** Wraps renderer.render (an own property in three.js) with the sanitizer and the once-only error report. */
 export function wrapRender(renderer) {
   const render = renderer.render;
@@ -81,7 +97,9 @@ export function wrapRender(renderer) {
   let lastErr = "";
   const safe = function (scene, camera) {
     try { if (scene) sanitizeScene(scene); } catch (e) { /* never block the frame */ }
-    try { return render.call(this, scene, camera); }
+    // v0.45.6: what the Design view's never-blank rescue needs (any three.js page, not only the starter).
+    try { const w = window; w.__bzR = this; if (scene && scene.isScene) w.__bzS = scene; if (camera && camera.isCamera) w.__bzC = camera; } catch (e) { }
+    try { const out = render.call(this, scene, camera); noteFrame(this); return out; }
     catch (e) {
       const m = String((e && e.message) || e);
       if (m !== lastErr) { lastErr = m; throw e; }
@@ -92,6 +110,7 @@ export function wrapRender(renderer) {
   return renderer;
 }
 class WebGLRenderer extends T.WebGLRenderer {
-  constructor(...args) { super(...args); wrapRender(this); }
+  constructor(...args) { super(...args); wrapRender(this); try { window.__bzR = window.__bzR || this; } catch (e) { } }
 }
+try { window.__bzTHREE = T; } catch (e) { }
 export { WebGLRenderer };
