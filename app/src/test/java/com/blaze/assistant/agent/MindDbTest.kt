@@ -20,12 +20,13 @@ class MindDbTest {
     private lateinit var db: Mind.Db
 
     @Before fun open() {
+        NativeSqlite.assume()
         db = Mind.Db(ApplicationProvider.getApplicationContext(), null)   // in-memory
         db.writableDatabase
         Mind.use(db)
     }
 
-    @After fun close() { Mind.use(null); db.close() }
+    @After fun close() { Mind.use(null); if (::db.isInitialized) db.close() }
 
     private fun chat(vararg lines: String): JSONObject {
         val h = JSONArray()
@@ -102,7 +103,7 @@ class MindDbTest {
     }
 
     @Test fun idleReviewMarksTurnsAndSaves() = runBlocking {
-        val chats = mapOf("c1" to chat("I'm Luke and I study computer science at Northrise", "Nice to meet you, Luke."))
+        val chats = mapOf("c1" to chat("I'm Sam and I study computer science at Northrise", "Nice to meet you, Sam."))
         Mind.migrate(db, listOf("c1"), { chats[it] }, emptyList())
         assertEquals(2, db.unreviewedCount())
         // A failed model call leaves the turns queued.

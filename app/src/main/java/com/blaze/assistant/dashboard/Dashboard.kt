@@ -19,14 +19,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
-import java.security.SecureRandom
 
 /**
  * Blaze's local dashboard: a tiny web server on the phone (default 127.0.0.1:8787) with a page to
@@ -40,10 +37,14 @@ object Dashboard {
     val running = MutableStateFlow(false)
     private lateinit var app: Context
 
-    val token: String get() = Settings.str("dash_token").ifBlank {
-        val t = ByteArray(9).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
-        Settings.setStr("dash_token", t); t
-    }
+    /** v0.45.0: tokens from before 0.45 were 72-bit; they are replaced by a 128-bit one once. */
+    val token: String get() = Settings.str("dash_token").takeIf { it.length >= 32 } ?: rotate()
+
+    /** v0.45.0: a new secret for the links; every old link (local and Wi-Fi) stops working. */
+    fun rotate(): String { val t = DashHttp.newToken(); Settings.setStr("dash_token", t); return t }
+
+    /** Whether the running server is bound to the Wi-Fi (0.0.0.0) rather than this phone only. */
+    @Volatile private var boundLan = false
     var lan: Boolean
         get() = Settings.bool("dash_lan", false)
         set(v) = Settings.setBool("dash_lan", v)
@@ -61,16 +62,31 @@ object Dashboard {
         if (server != null) return
         val s = try { ServerSocket(PORT, 16, if (lan) InetAddress.getByName("0.0.0.0") else InetAddress.getByName("127.0.0.1")) }
             catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("dashboard start", e); return }
-        server = s; running.value = true
+        server = s; boundLan = lan; running.value = true
         scope.launch {
             while (!s.isClosed) {
                 val c = try { s.accept() } catch (_: Exception) { break }
-                scope.launch { try { handle(c) } catch (_: Exception) { } finally { runCatching { c.close() } } }
+                scope.launch {
+                    try { handle(c) }
+                    catch (e: DashHttp.BadRequest) { runCatching { send(c.getOutputStream(), e.code, "text/plain", e.message.orEmpty()) } }
+                    catch (e: java.net.SocketTimeoutException) { }
+                    catch (e: java.io.IOException) { }
+                    catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("dashboard request", e); runCatching { send(c.getOutputStream(), 500, "text/plain", "Blaze dashboard error") } }
+                    finally { runCatching { c.close() } }
+                }
             }
         }
     }
 
-    @Synchronized fun stop() { runCatching { server?.close() }; server = null; running.value = false }
+    /**
+     * [expire]: also rotate the token. v0.45.0: a server that was shared on the Wi-Fi expires its link when it stops
+     * (or when sharing is switched), so a link seen on the network doesn't keep working the next time.
+     */
+    @Synchronized fun stop(expire: Boolean = boundLan) {
+        runCatching { server?.close() }; server = null; running.value = false
+        if (expire) rotate()
+        boundLan = false
+    }
     fun restart(ctx: Context) { stop(); start(ctx) }
 
     fun open(ctx: Context) {
@@ -79,20 +95,17 @@ object Dashboard {
     }
 
     private fun handle(c: Socket) {
-        c.soTimeout = 300_000
-        val r = BufferedReader(InputStreamReader(c.getInputStream()))
-        val first = r.readLine() ?: return
-        val (method, target) = first.split(' ').let { (it.getOrNull(0) ?: "GET") to (it.getOrNull(1) ?: "/") }
-        val headers = HashMap<String, String>()
-        while (true) { val l = r.readLine() ?: break; if (l.isEmpty()) break; l.indexOf(':').takeIf { it > 0 }?.let { headers[l.substring(0, it).lowercase()] = l.substring(it + 1).trim() } }
-        val len = headers["content-length"]?.toIntOrNull() ?: 0
-        val body = if (len > 0) CharArray(len).let { var n = 0; while (n < len) { val k = r.read(it, n, len - n); if (k < 0) break; n += k }; String(it, 0, n) } else ""
-        val path = target.substringBefore('?')
-        val q = target.substringAfter('?', "").split('&').mapNotNull { it.split('=', limit = 2).takeIf { p -> p.size == 2 } }
-            .associate { Uri.decode(it[0]) to Uri.decode(it[1]) }
+        c.soTimeout = 30_000
+        val inp = java.io.BufferedInputStream(c.getInputStream())
+        val head = DashHttp.readHead(inp) ?: return
         val out = c.getOutputStream()
-        val tok = q["t"] ?: headers["x-blaze-token"]
-        if (tok != token) return send(out, 401, "text/plain", "Blaze dashboard: open the link from Blaze (Settings → Dashboard).")
+        // v0.45.0: token first; nothing of the body is read for a caller without the link.
+        if (!DashHttp.tokenOk(head.token, token)) return send(out, 401, "text/plain", "Blaze dashboard: open the link from Blaze (Settings → Dashboard).")
+        val method = head.method; val path = head.path; val q = head.query
+        // Long agent turns (/api/send) may take minutes; the body itself must arrive promptly.
+        val body = DashHttp.readBody(inp, head)
+        c.soTimeout = 300_000
+        val remote = !(c.inetAddress?.isLoopbackAddress ?: true)
         when {
             path == "/" -> send(out, 200, "text/html; charset=utf-8", Page.html)
             path == "/api/stats" -> send(out, 200, "application/json", stats().toString())
@@ -100,11 +113,13 @@ object Dashboard {
                 ChatStore.list().take(60).forEach { put(JSONObject().put("id", it.id).put("title", it.title).put("updated", it.updated).put("preview", it.preview)) } }.toString())
             path == "/api/chat" -> {
                 val m = Agent.messagesOf(q["id"].orEmpty()) ?: emptyList()
-                send(out, 200, "application/json", JSONArray().apply { m.forEach { put(JSONObject().put("role", it.role.name).put("text", it.text).put("meta", it.meta)) } }.toString())
+                send(out, 200, "application/json", JSONArray().apply { m.forEach { put(JSONObject().put("role", it.role.name).put("text", it.text).put("meta", it.meta)
+                    .put("id", it.gid).apply { if (it.reactions.isNotEmpty()) put("reactions", com.blaze.assistant.agent.Reaction.json(it.reactions)) }) } }.toString())
             }
             path == "/api/send" && method == "POST" -> {
                 val o = try { JSONObject(body) } catch (_: Exception) { JSONObject() }
-                val (id, reply) = runBlocking { Agent.askIn(o.optString("chat").ifBlank { null }, o.optString("text")) }
+                val (id, reply) = runBlocking { Agent.askIn(o.optString("chat").ifBlank { null }, o.optString("text"),
+                    untrusted = if (remote) com.blaze.assistant.agent.ConfirmGate.DASHBOARD else null) }
                 send(out, 200, "application/json", JSONObject().put("chat", id).put("reply", reply).toString())
             }
             // v0.33.0 Desktop Bridge.
@@ -148,8 +163,7 @@ object Dashboard {
 
     private fun send(out: OutputStream, code: Int, type: String, body: String) {
         val b = body.toByteArray()
-        val status = when (code) { 200 -> "OK"; 401 -> "Unauthorized"; 404 -> "Not Found"; else -> "Error" }
-        out.write("HTTP/1.1 $code $status\r\nContent-Type: $type\r\nContent-Length: ${b.size}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".toByteArray())
+        out.write("HTTP/1.1 $code ${DashHttp.status(code)}\r\nContent-Type: $type\r\nContent-Length: ${b.size}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".toByteArray())
         out.write(b); out.flush()
     }
 }

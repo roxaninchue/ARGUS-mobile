@@ -10,7 +10,7 @@ import java.io.File
 /**
  * v0.33.2 BlazeOS pictures: icons, the wallpaper photo and Photos thumbnails, always decoded off the main thread and
  * downscaled at decode time (inSampleSize, then an exact scale to the size asked), kept in one LRU sized by the boot
- * budget ([OsBudget.imageCacheBytes], 8 MB on a Galaxy A12). Pause clears it.
+ * budget ([OsBudget.imageCacheBytes], 8 MB on a low-end phone). Pause clears it.
  */
 object OsImages {
     private var cache = newCache(8L * 1024 * 1024)

@@ -15,7 +15,10 @@ import kotlin.math.sqrt
 object AudioClip {
     /** How much clean speech the voice model actually uses (sherpa-onnx PocketTTS max_reference_audio_len default). */
     const val MAX_REFERENCE_SEC = 10f
-    /** Less speech than this and the clone sounds generic; ask for a re-record. */
+    /**
+     * Less speech than this (measured on the whole recording, see [activeSpeechSeconds]) and the clone sounds generic;
+     * ask for a re-record. A normal read of the script is 10-15 s.
+     */
     const val MIN_SPEECH_SEC = 5f
 
     fun pcm16ToFloat(pcm: ShortArray, n: Int = pcm.size): FloatArray = FloatArray(n) { pcm[it] / 32768f }
@@ -121,13 +124,41 @@ object AudioClip {
         return f.count { it >= thr } * 0.02f
     }
 
+    /**
+     * Seconds of talking in a whole raw recording, the way a person would time it: frames clearly above the room's
+     * noise floor, with the short gaps between syllables and words (up to 200 ms each side) counted as talking.
+     *
+     * v0.41.0: this replaced [speechSeconds] for the "too short" check. That one ran on the clip after it was cut to
+     * 10 s with its pauses removed, so the room's real noise floor was gone and the threshold landed on ordinary
+     * speech (up to -26 dBFS): only the loudest ~40 % of frames counted and a full 15 s read scored ~3.5-4 s, under
+     * the 5 s minimum, every time.
+     */
+    fun activeSpeechSeconds(x: FloatArray, sampleRate: Int, hangoverMs: Int = 200): Float {
+        if (x.isEmpty() || sampleRate <= 0) return 0f
+        val frame = max(1, sampleRate / 50)
+        val f = frameRms(x, frame)
+        if (f.isEmpty()) return 0f
+        val sorted = f.sorted()
+        val floor = sorted[(sorted.size * 0.1).toInt().coerceAtMost(sorted.size - 1)]
+        val loud = sorted[(sorted.size * 0.95).toInt().coerceAtMost(sorted.size - 1)]
+        // No real contrast between the loud part and the quiet part: steady noise, not someone talking.
+        if (loud < 0.003f || loud < floor * 4f) return 0f
+        val thr = max(max(floor * 2.5f, 0.002f), loud * 0.06f).coerceAtMost(max(loud * 0.5f, 0.002f))
+        val hang = max(0, hangoverMs / 20)
+        val active = BooleanArray(f.size)
+        for (i in f.indices) if (f[i] >= thr) {
+            for (k in max(0, i - hang)..min(f.size - 1, i + hang)) active[k] = true
+        }
+        return active.count { it } * 0.02f
+    }
+
     /** Share of samples at full scale: above ~1% the recording clipped (too close / too loud). */
     fun clippedShare(x: FloatArray): Float {
         if (x.isEmpty()) return 0f
         return x.count { abs(it) >= 0.985f }.toFloat() / x.size
     }
 
-    enum class Verdict { OK, NOTHING_HEARD, TOO_SHORT, TOO_QUIET, TOO_LOUD }
+    enum class Verdict { OK, NOTHING_HEARD, TOO_SHORT, TOO_QUIET, TOO_LOUD, TOO_NOISY }
 
     data class Prepared(val samples: FloatArray, val sampleRate: Int, val speechSec: Float, val verdict: Verdict) {
         val seconds get() = samples.size / sampleRate.toFloat()
@@ -143,10 +174,12 @@ object AudioClip {
         if (trimmed.isEmpty() || peak < 0.003f) return Prepared(FloatArray(0), sampleRate, 0f, Verdict.NOTHING_HEARD)
         val tight = shortenPauses(trimmed, sampleRate)
         val limited = if (tight.size > maxSec * sampleRate) tight.copyOf((maxSec * sampleRate).toInt()) else tight
-        val speech = speechSeconds(limited, sampleRate)
+        // Measured on the whole recording (DC removed), before trimming and the 10 s cut: see activeSpeechSeconds.
+        val speech = activeSpeechSeconds(x0, sampleRate)
         val verdict = when {
             clipped > 0.01f -> Verdict.TOO_LOUD
             peak < 0.05f -> Verdict.TOO_QUIET
+            speech <= 0f -> Verdict.TOO_NOISY
             speech < MIN_SPEECH_SEC -> Verdict.TOO_SHORT
             else -> Verdict.OK
         }
@@ -156,9 +189,10 @@ object AudioClip {
     fun verdictText(v: Verdict): String = when (v) {
         Verdict.OK -> "Sounds good."
         Verdict.NOTHING_HEARD -> "I couldn't hear anything. Check the mic isn't covered and try again."
-        Verdict.TOO_SHORT -> "That was a bit short. Read the whole script, about 15 seconds."
+        Verdict.TOO_SHORT -> "That was a bit short. Read the whole script out loud, about 10 to 15 seconds."
         Verdict.TOO_QUIET -> "That was very quiet. Hold the phone a little closer and try again."
         Verdict.TOO_LOUD -> "That was too loud and distorted. Hold the phone a bit further away."
+        Verdict.TOO_NOISY -> "There's a lot of background noise. Find a quieter spot and try again."
     }
 
     // ---- WAV (16-bit PCM mono) ----

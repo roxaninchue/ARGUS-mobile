@@ -31,7 +31,7 @@ object StoreSources {
 
 /** Small HTTP helpers shared by the sources. */
 object StoreHttp {
-    suspend fun get(url: String, ua: String = "Blaze/1 (Android; +https://github.com/lacksonkapapahue/Blaze-agent)"): String = withContext(Dispatchers.IO) {
+    suspend fun get(url: String, ua: String = "Blaze/1 (Android; +https://blazeinchue.pages.dev)"): String = withContext(Dispatchers.IO) {
         val c = URL(url).openConnection() as HttpURLConnection
         try {
             c.connectTimeout = 15_000; c.readTimeout = 25_000

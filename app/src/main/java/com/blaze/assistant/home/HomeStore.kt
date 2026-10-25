@@ -108,6 +108,7 @@ class HomeStore(private val sql: Sql) {
      * the card still shows cached data with a stale tag.
      */
     fun saveData(id: String, d: WidgetData, now: Long = System.currentTimeMillis()) = synchronized(lock) {
+        try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: weather feeds the [context] block
         val old = data(id)
         if (d.error.isNotBlank() && old != null && !old.empty) {
             sql.exec("UPDATE home_cache SET error=? WHERE id=?", d.error, id)

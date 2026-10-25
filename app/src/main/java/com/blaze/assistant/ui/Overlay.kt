@@ -150,6 +150,8 @@ object Overlay {
         else ctx.resources.displayMetrics.let { it.widthPixels to it.heightPixels }
 
     fun showOrb(ctx: Context): Boolean {
+        // v0.43.0: nothing floats over other apps while Bank mode is on.
+        if (com.blaze.assistant.bank.BankMode.active) return false
         if (orbView != null) return true
         val (hc, type) = host(ctx) ?: return false
         val wm = hc.getSystemService(WindowManager::class.java)
@@ -256,7 +258,7 @@ object Overlay {
         cardWatch = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard).launch {
             var wasBusy = false; var wasFg = Agent.inForeground
             while (true) {
-                // v0.34.1 perf: nothing to show while no chat is busy, so suspend until one is instead of waking every 400 ms.
+                // v0.45.23 perf: nothing to show while no chat is busy, so suspend until one is instead of waking every 400 ms.
                 if (Agent.busyChats.value.isEmpty() && !wasBusy && cardView == null) {
                     Agent.busyChats.first { it.isNotEmpty() }
                     wasFg = Agent.inForeground
@@ -343,9 +345,9 @@ object Overlay {
     }
 
     fun openApp(ctx: Context, listen: Boolean) {
-        ctx.startActivity(Intent(ctx, MainActivity::class.java)
+        ctx.startActivity(com.blaze.assistant.IntentKey.sign(ctx, Intent(ctx, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            .putExtra(MainActivity.EXTRA_LISTEN, listen))
+            .putExtra(MainActivity.EXTRA_LISTEN, listen)))
     }
 
     fun requestOverlayPermission(ctx: Context) {

@@ -1,6 +1,8 @@
 package com.blaze.assistant.agent
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -10,7 +12,8 @@ import java.net.URL
 /** Minimal OpenAI-compatible chat-completions client (works with Gemini, OpenAI, Groq, OpenRouter...). */
 object LlmClient {
 
-    class LlmException(msg: String, val code: Int = 0, val retryAfterSec: Int = 0) : Exception(msg)
+    /** [unanswered]: no answer came at all (connect / send / wait for the status failed), so the request may not have arrived. */
+    class LlmException(msg: String, val code: Int = 0, val retryAfterSec: Int = 0, val unanswered: Boolean = false) : Exception(msg)
 
     /** Every key for the user's chosen model ran out: the chat shows a provider/model switcher. */
     class UsedUp(val pid: String, val model: String, msg: String) : Exception(msg)
@@ -32,7 +35,7 @@ object LlmClient {
     enum class Lane { MAIN, STEPS, BACKGROUND }
 
     /** The service + model that answered last (shown as the route chip). */
-    @Volatile var lastRoute: String = ""
+    var lastRoute: String get() = CallState.current().route; set(v) { CallState.current().route = v }
 
     /** Rate-limit headers from the latest reply (shown in Settings → Plan & quota). */
     @Volatile var lastRateHeaders: Map<String, String> = emptyMap()
@@ -48,13 +51,16 @@ object LlmClient {
             .map { (k, v) -> k.lowercase() to (v.firstOrNull() ?: "") }.toMap()
 
     /** Rate-limit headers of the very last call (empty when it sent none), for the token meter. */
-    @Volatile var lastCallHeaders: Map<String, String> = emptyMap()
+    var lastCallHeaders: Map<String, String> get() = CallState.current().callHeaders; set(v) { CallState.current().callHeaders = v }
+
+    /** v0.44.0: the agent loop is on an action turn (ModelRoute.heavy): tool calls go to the strong lineup. */
+    var heavyTurn: Boolean get() = CallState.current().heavy; set(v) { CallState.current().heavy = v }
 
     /** True for a chat-lane turn (no tools, short prompt): Auto prefers small fast models for it. */
-    @Volatile var liteTurn = false
+    var liteTurn: Boolean get() = CallState.current().lite; set(v) { CallState.current().lite = v }
 
     /** Token usage the provider reported for the last call, if any. */
-    @Volatile var lastUsage: JSONObject? = null
+    var lastUsage: JSONObject? get() = CallState.current().usage; set(v) { CallState.current().usage = v }
 
     /** Set when the provider refused Gemini's include_thoughts option, so we stop sending it. */
     @Volatile private var thoughtsRefused = false
@@ -84,9 +90,9 @@ object LlmClient {
     @Volatile var lastHealed: String = ""
 
     /** The model the gateway says answered last ("provider · model"), for the details sheet / diagnostics only. */
-    @Volatile var lastServedBy: String = ""
+    var lastServedBy: String get() = CallState.current().servedBy; set(v) { CallState.current().servedBy = v }
     /** v0.26.2: the gateway route of the last call as "provider/model" (what blaze_avoid names); "" when unknown. */
-    @Volatile var lastServedKey: String = ""
+    var lastServedKey: String get() = CallState.current().servedKey; set(v) { CallState.current().servedKey = v }
 
     /** The last gateway failure, raw (diagnostics only; people see [Cloud.friendly]). */
     @Volatile var lastCloudError: String = ""
@@ -105,17 +111,20 @@ object LlmClient {
         if (token.isBlank()) throw LlmException(Cloud.SIGNED_OUT, 401)
         val t = Target(Providers.GATEWAY, Providers.GATEWAY_BASE, token, Cloud.MODEL)
         var msgs = messages
-        val task = Cloud.task(msgs, tools, liteTurn || (quickTurn && (tools == null || tools.length() == 0)))
+        // v0.44.0: an action turn asks for the strong (agent) lineup with the weak routes last (ModelRoute).
+        val pick = ModelRoute.task(Cloud.task(msgs, tools, liteTurn || (quickTurn && (tools == null || tools.length() == 0))),
+            heavyTurn && lane != Lane.BACKGROUND, tools != null && tools.length() > 0, Cloud.textChars(msgs, ModelRoute.AGENT_MAX_CHARS + 1))
+        val task = pick.task
         var trimmed = false
         // v0.26.2: Cloud.drive owns the tries; an empty (reasoning-only) reply is a failed try, never an answer.
         return try {
             Cloud.drive(onText != null, call = { a ->
                 call(t, if (a.nudge) EmptyReply.withNudge(msgs) else msgs, tools, if (a.stream) onText else null,
-                    if (lane == Lane.MAIN) onThink else null, false, task = task, avoid = a.avoid)
-                    .also { lastRoute = "Blaze Cloud" + (if (lastServedBy.isNotBlank()) " · $lastServedBy" else "") + if (trimmed) " · trimmed" else "" }
+                    if (lane == Lane.MAIN) onThink else null, false, task = task, avoid = ModelRoute.avoid(a.avoid, pick.strong), idemKey = a.key)
+                    .also { lastRoute = "Blaze Cloud" + (if (lastServedBy.isNotBlank()) " · $lastServedBy" else "") + ModelRoute.label(pick) + if (trimmed) " · trimmed" else "" }
             }, served = { lastServedKey },
-                trim = { e -> lastCloudError = e.message.orEmpty().take(300); if (!trimmed && tooLarge(e)) { trimmed = true; msgs = shrink(msgs); true } else false },
-                onEmpty = { n -> lastCloudError = "empty reply #$n from ${lastServedBy.ifBlank { "the gateway" }}"
+                trim = { e -> lastCloudError = e.message.orEmpty().take(300); CallState.current().errors.add(lastCloudError); if (!trimmed && tooLarge(e)) { trimmed = true; msgs = shrink(msgs); true } else false },
+                onEmpty = { n -> lastCloudError = "empty reply #$n from ${lastServedBy.ifBlank { "the gateway" }}"; CallState.current().errors.add(lastCloudError)
                     try { com.blaze.assistant.device.CrashLog.write("Blaze Cloud: $lastCloudError (reasoning only / no content)") } catch (_: Throwable) { } })
         } catch (e: LlmException) {
             if (e.code != 401 && e.code != 403) try { com.blaze.assistant.device.CrashLog.write("Blaze Cloud failed: ${lastCloudError}") } catch (_: Throwable) { }
@@ -127,7 +136,7 @@ object LlmClient {
     @Volatile var lastStepsError: String = ""
 
     /** Wall-clock time of the latest streamed chunk (text, thinking or tool call), for the hang watchdog. */
-    @Volatile var lastChunkAt: Long = 0
+    var lastChunkAt: Long get() = CallState.current().chunkAt.get(); set(v) { CallState.current().beat(v) }
 
     /** True when a provider refused the request for being too big for the model or the plan. */
     fun tooLarge(e: Exception): Boolean {
@@ -141,11 +150,16 @@ object LlmClient {
     fun shrink(messages: JSONArray, keep: Int = 10): JSONArray {
         val all = (0 until messages.length()).map { messages.getJSONObject(it) }
         val sys = all.takeWhile { it.optString("role") == "system" }
-        var tail = all.drop(sys.size).takeLast(keep)
+        val rest = all.drop(sys.size)
+        var tail = rest.takeLast(keep)
         // Never start on a tool result whose call was cut off.
         while (tail.isNotEmpty() && tail.first().optString("role") == "tool") tail = tail.drop(1)
         val out = JSONArray()
-        (sys + tail).forEach { m ->
+        // v0.45.0 context: what is cut is summed up in its place (ContextKeep), never silently dropped.
+        val cut = rest.dropLast(tail.size)
+        val note = ContextKeep.digest(cut)
+        val head = if (note.isNotEmpty()) listOf(JSONObject().put("role", "user").put("content", note)) else emptyList()
+        (sys + head + tail).forEach { m ->
             val c = JSONObject(m.toString())
             val content = c.opt("content")
             if (content is String && content.length > 6000) c.put("content", content.take(2500) + "\n…[trimmed]…\n" + content.takeLast(2500))
@@ -170,12 +184,18 @@ object LlmClient {
     }
 
     /** Milliseconds from sending the request to the first streamed token (or the whole reply) of the last call. */
-    @Volatile var lastFirstTokenMs: Long = 0
-    @Volatile private var callStart: Long = 0
-    @Volatile private var gotFirst = false
+    var lastFirstTokenMs: Long get() = CallState.current().firstTokenMs; set(v) { CallState.current().firstTokenMs = v }
     /** Wall-clock time of that first token. */
-    @Volatile var lastFirstTokenAt: Long = 0
-    private fun markFirst() { if (!gotFirst) { gotFirst = true; lastFirstTokenAt = System.currentTimeMillis(); lastFirstTokenMs = lastFirstTokenAt - callStart } }
+    var lastFirstTokenAt: Long get() = CallState.current().firstTokenAt; set(v) { CallState.current().firstTokenAt = v }
+    /** v0.45.3: ms from sending to the response headers of the last call (0 = unknown). */
+    /** v0.45.3: the longest pause between text chunks in the last streamed reply (0 = none or not streamed). */
+    var lastMaxGapMs: Long get() = CallState.current().maxGapMs; set(v) { CallState.current().maxGapMs = v }
+    var lastHeadersMs: Long get() = CallState.current().headersMs; set(v) { CallState.current().headersMs = v }
+    /** v0.45.3: ms from sending to the first visible word (reasoning doesn't count) and its wall-clock time; 0 = none yet. */
+    var lastFirstTextMs: Long get() = CallState.current().firstTextMs; set(v) { CallState.current().firstTextMs = v }
+    var lastFirstTextAt: Long get() = CallState.current().firstTextAt; set(v) { CallState.current().firstTextAt = v }
+    private fun markText() { val st = CallState.current(); if (st.firstTextAt == 0L) { st.firstTextAt = System.currentTimeMillis(); st.firstTextMs = st.firstTextAt - st.callStart } }
+    private fun markFirst() { val st = CallState.current(); if (!st.gotFirst) { st.gotFirst = true; StartTrace.first(); st.firstTokenAt = System.currentTimeMillis(); st.firstTokenMs = st.firstTokenAt - st.callStart } }
 
     private val warmed = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
@@ -185,6 +205,25 @@ object LlmClient {
      * connections are reused by HttpURLConnection's pool. At most once a minute per host.
      */
     fun prewarm() {
+        // v0.45.9: build the [context] block in the background too (cached ~60 s), so the send path never waits for it.
+        try { TurnContextSource.warm() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("prewarm context", e) }
+        // v0.45.5 (#5/5b): signed in, POST /v1/warm (gateway 0.6.9) at most every 25 s: it pre-opens TLS on the shared
+        // keep-alive pool and loads config + token into the edge isolate. Fire and forget.
+        val tok = try { Settings.gatewayToken() } catch (_: Throwable) { "" }
+        if (tok.isNotBlank()) {
+            if (!WarmGate.take()) return
+            Thread {
+                try {
+                    val c = com.blaze.assistant.connect.UrlSafety.open(WarmGate.url(Providers.GATEWAY_BASE))
+                    c.requestMethod = "POST"; c.connectTimeout = 5000; c.readTimeout = 5000; c.doOutput = true
+                    c.setRequestProperty("Authorization", "Bearer $tok"); c.setRequestProperty("Content-Type", "application/json")
+                    c.outputStream.use { it.write("{}".toByteArray()) }
+                    val code = c.responseCode
+                    (if (code in 200..299) c.inputStream else c.errorStream)?.use { it.readBytes() }
+                } catch (_: Exception) { }
+            }.start()
+            return
+        }
         val bases = try {
             listOf(Providers.GATEWAY_BASE)
         } catch (_: Exception) { emptyList() }
@@ -197,27 +236,30 @@ object LlmClient {
                 try {
                     val c = com.blaze.assistant.connect.UrlSafety.open(b)
                     c.requestMethod = "HEAD"; c.connectTimeout = 5000; c.readTimeout = 5000
-                    c.responseCode; c.inputStream.close()
+                    // v0.45.1: whatever the status, the (empty) body is closed so the connection goes back to the pool
+                    // for the real request instead of being dropped with an unread error stream.
+                    val code = c.responseCode
+                    (if (code in 200..399) c.inputStream else c.errorStream)?.use { it.readBytes() }
                 } catch (_: Exception) { }
             }.start()
         }
     }
 
     /** True for short, simple turns: ask reasoning models to think briefly so answers come fast. */
-    @Volatile var quickTurn = false
+    var quickTurn: Boolean get() = CallState.current().quick; set(v) { CallState.current().quick = v }
 
     internal suspend fun call(t: Target, messages: JSONArray, tools: JSONArray?, onText: ((String) -> Unit)?,
                               onThink: ((String) -> Unit)?, thoughts: Boolean, timeoutMs: Int = 120_000, task: String? = null,
-                              avoid: List<String> = emptyList()): JSONObject = withContext(Dispatchers.IO) {
+                              avoid: List<String> = emptyList(), idemKey: String = ""): JSONObject = withContext(Dispatchers.IO) {
         val key = t.key
         if (key.isBlank() && t.pid != Providers.keyless.id)
-            throw LlmException("No API key for ${Providers.byId(t.pid).name} yet. Open Settings and paste your key.", 401)
+            throw LlmException("No API key for ${Providers.byId(t.pid).name} yet. Switch Settings to Advanced and paste your key on the AI page.", 401)
         val base = t.base.trimEnd('/')
         if (base.isBlank()) throw LlmException("Add your service address in Settings.")
-        if (t.model.isBlank()) throw LlmException("Pick a model in Settings → Model.", 404)
+        if (t.model.isBlank()) throw LlmException("Pick a model on the AI page (Settings, Advanced).", 404)
         val owner = keyOwner(key)
         if (owner != null && owner != t.pid && t.pid != Providers.CUSTOM && t.pid != Providers.keyless.id)
-            throw LlmException("The key saved under ${Providers.byId(t.pid).name} is actually a ${Providers.byId(owner).name} key. Open Settings → AI and paste the right key for each service.", 401)
+            throw LlmException("The key saved under ${Providers.byId(t.pid).name} is actually a ${Providers.byId(owner).name} key. Switch Settings to Advanced and paste the right key for each service on the AI page.", 401)
         // v0.28.2: http:// only to this phone, the LAN or Tailscale; never keys or chats in the clear over the internet.
         com.blaze.assistant.connect.UrlSafety.problem(base)?.let { throw LlmException(it, 0) }
         val conn = com.blaze.assistant.connect.UrlSafety.open("$base/chat/completions")
@@ -229,9 +271,16 @@ object LlmClient {
         conn.setRequestProperty("Content-Type", "application/json")
         // Streaming: the read timeout is the longest wait for the next chunk, including the first.
         conn.readTimeout = if (chained && onText != null) minOf(timeoutMs, if (t.pid == "nvidia") 40_000 else 25_000) else timeoutMs
-        callStart = System.currentTimeMillis(); gotFirst = false; lastFirstTokenMs = 0; lastFirstTokenAt = 0
+        CallState.current().let { st -> st.callStart = System.currentTimeMillis(); st.gotFirst = false; st.firstTokenMs = 0; st.firstTokenAt = 0; st.headersMs = 0; st.firstTextMs = 0; st.firstTextAt = 0 }
         if (t.pid == Providers.GATEWAY) { lastServedBy = ""; lastServedKey = "" }
         authHeaders(key, t.pid).forEach { (k, v) -> conn.setRequestProperty(k, v) }
+        // v0.42.0: a retry of a request that may have arrived gets the kept answer, not a second call (gateway 0.5.0 idem.ts).
+        if (t.pid == Providers.GATEWAY && idemKey.isNotBlank()) conn.setRequestProperty("Idempotency-Key", idemKey)
+        // v0.45.0 (#17): every step of a turn names the turn and the route that served its first step (TurnModel).
+        val turnModel = if (t.pid == Providers.GATEWAY) TurnModel.current else null
+        turnModel?.headers()?.forEach { (k, v) -> conn.setRequestProperty(k, v) }
+        // v0.45.8 (Site): the reply-language picker as a header (BCP-47); none for Auto.
+        if (t.pid == Providers.GATEWAY) ReplyLanguage.header(ReplyLanguage.current())?.let { (k, v) -> conn.setRequestProperty(k, v) }
 
         val body = JSONObject().apply {
             put("model", t.model)
@@ -248,22 +297,45 @@ object LlmClient {
                 if (alts.isNotEmpty()) put("models", JSONArray(listOf(t.model) + alts))
             }
             if (t.pid == Providers.GATEWAY) Cloud.tag(this, task ?: Cloud.task(messages, tools, liteTurn))
+            // v0.45.3: a hint for short / plain turns that the first visible word matters more than long reasoning. The
+            // gateway strips every blaze_* field before a provider sees it, so this is safe today; a gateway that reads it can
+            // map it to each provider's own setting (e.g. reasoning_effort "low" for gpt-oss). Not sent on action turns.
+            if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn) put("blaze_reasoning", "low")
             // v0.26.2: routes that just came back empty or broke mid-stream; the gateway tries its next model.
             if (t.pid == Providers.GATEWAY && avoid.isNotEmpty()) put("blaze_avoid", JSONArray(avoid))
             if (tools != null && tools.length() > 0) {
-                put("tools", try { ToolCalls.adapt(tools, t.pid, t.model) } catch (_: Exception) { tools })
-                put("tool_choice", "auto")
+                // v0.45.13: never more than 128 tools (some routes 400 "'tools': maximum number of items is 128"); the turn's
+                // own and the named tool always stay (ToolTruth.cap).
+                val wire = ToolTruth.cap(messages, tools)
+                put("tools", try { ToolCalls.adapt(wire, t.pid, t.model) } catch (_: Exception) { wire })
+                val choice = if (t.pid == Providers.GATEWAY) ToolTruth.choice(messages, wire) else "auto"
+                put("tool_choice", choice)   // v0.45.9
+                // v0.45.5 (#1, gateway 0.6.9): the gateway drops the schemas on a plain turn (no app / phone / file / code
+                // intent), so "hi, introduce yourself" can't come back as a tool call (X-Blaze-Tools-Dropped: 1).
+                // v0.45.9: not when the app named the tool. Live 0.8.7 dropped the schemas (and the named tool_choice) on
+                // "remember that my NET exam is on 3 November" and "what do you remember about my exams?" 10 of 10.
+                if (t.pid == Providers.GATEWAY && choice == "auto") put("blaze_tools", "auto")
             }
+            // v0.45.5 (#10): reasoning models (gpt-oss) need room to reason and still answer; short turns get a floor of
+            // 1024 (≥ SharedPersona.MIN_MAX_TOKENS). Longer turns keep the provider's own limit (no cap, as before).
+            if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn) put("max_tokens", maxOf(1024, SharedPersona.MIN_MAX_TOKENS))
         }
         val who = Providers.byId(t.pid).name
+        // v0.45.0 (#5): Stop really ends the request: cancelling this coroutine closes the socket (cancellable), so a blocked
+        // read returns at once and nothing more streams into the chat; the call ends as a CancellationException, never retried.
+        cancellable(conn) {
         val code = try {
-            conn.outputStream.use { it.write(body.toString().toByteArray()) }
-            conn.responseCode
+            val bytes = body.toString().toByteArray()
+            StartTrace.stage("body ${bytes.size / 1024} KB")   // v0.45.9: request JSON ready (size tells the tool-schema cost)
+            // v0.45.8: "on the wire" = the connection is open and the first byte is being written.
+            conn.outputStream.use { StartTrace.wire(); it.write(bytes) }
+            conn.responseCode.also { StartTrace.headers() }
         } catch (e: java.net.SocketTimeoutException) {
-            conn.disconnect(); throw LlmException("$who · ${t.model} didn't start answering in ${conn.readTimeout / 1000}s.", 0)
+            conn.disconnect(); throw LlmException("$who · ${t.model} didn't start answering in ${conn.readTimeout / 1000}s.", 0, unanswered = true)
         } catch (e: java.io.IOException) {
-            conn.disconnect(); throw LlmException("$who: couldn't reach the service (${e.message?.take(80)}).", 0)
+            conn.disconnect(); throw LlmException("$who: couldn't reach the service (${e.message?.take(80)}).", 0, unanswered = true)
         }
+        CallState.current().let { st -> st.headersMs = System.currentTimeMillis() - st.callStart }
         if (onText == null || code !in 200..299) markFirst()
         val rh = rateHeaders(conn)
         lastCallHeaders = rh
@@ -272,10 +344,17 @@ object LlmClient {
             .filter { it.isNotBlank() }.joinToString(" · ")
         if (t.pid == Providers.GATEWAY) lastServedKey = listOfNotNull(conn.getHeaderField("X-Blaze-Provider"), conn.getHeaderField("X-Blaze-Model"))
             .filter { it.isNotBlank() }.takeIf { it.size == 2 }?.joinToString("/").orEmpty()
+        if (code in 200..299) turnModel?.served(lastServedKey)
+        // v0.45.5 (#1, #5b): request id + route / timing headers for the "What happened" sheet.
+        if (t.pid == Providers.GATEWAY) try {
+            val g = TurnTrace.pick(conn.headerFields)
+            CallState.current().let { st -> st.gw = g; g["x-request-id"]?.let { if (it !in st.requestIds) st.requestIds.add(it) }
+                if (code !in 200..299) st.errors.add("HTTP $code" + (g["x-request-id"]?.let { " ($it)" } ?: "")) }
+        } catch (_: Throwable) { }
         lastUsage = null
         if (code in 200..299 && onText != null &&
             (conn.contentType ?: "").contains("event-stream", ignoreCase = true)) {
-            try { return@withContext readStream(conn, onText, onThink) }
+            try { return@cancellable readStream(conn, onText, onThink) }
             catch (e: LlmException) { throw LlmException("${Providers.byId(t.pid).name} · ${t.model}: ${e.message}", e.code, e.retryAfterSec) }
             catch (e: java.net.SocketTimeoutException) { throw LlmException("${Providers.byId(t.pid).name} · ${t.model} stopped sending (timed out mid-reply).", 0) }
             finally { conn.disconnect() }
@@ -296,13 +375,14 @@ object LlmClient {
             } catch (_: Exception) { text }
             val retry = conn.getHeaderField("retry-after")?.trim()?.toIntOrNull() ?: 0
             if (code == 404 || msg.contains("no longer available", true) || msg.contains("not found", true))
-                throw LlmException("$who: the model “${t.model}” isn't available to your key. Open Settings → Model and pick one from the list.", 404)
+                throw LlmException("$who: the model “${t.model}” isn't available to your key. Pick another one on the AI page (Settings, Advanced).", 404)
             // Gateway 0.3.0: signed in but not approved yet / rejected. Not an expired sign-in.
             val errCode = try { JSONObject(text).optJSONObject("error")?.optString("code").orEmpty() } catch (_: Exception) { "" }
             Cloud.access(code, "$errCode $msg")?.let { throw LlmException(it, code) }
             if (code == 401 || code == 403)
-                throw LlmException("$who rejected its key ($code). Check the $who key in Settings → AI: ${msg.take(160)}", code)
-            throw LlmException("$who · ${t.model} said ($code): ${msg.take(300)}", code, retry)
+                throw LlmException("$who rejected its key ($code). Check the $who key on the AI page (Settings, Advanced): ${msg.take(160)}", code)
+            // v0.42.0: keep the gateway's error code ("in_progress" on 409 is worth waiting for, see Cloud.retryable).
+            throw LlmException("$who · ${t.model} said ($code): ${msg.take(300)}" + (if (errCode.isNotBlank() && errCode !in msg) " [$errCode]" else ""), code, retry)
         }
         // v0.28.9: an empty or broken 200 body showed the raw "End of input at character 0 of" error. Treat it as a
         // provider hiccup (503) so the normal retry / next-model path takes over.
@@ -314,16 +394,49 @@ object LlmClient {
         m.remove("reasoning_content"); m.remove("reasoning"); m.remove("reasoning_details")
         if (r.isNotBlank() && r != "null") m.put("_reasoning", r)
         m
+        }
+    }
+
+    /**
+     * v0.45.0 (#5): runs the blocking HTTP exchange [block] so that cancelling the calling coroutine (Stop, a watchdog,
+     * a lost race) disconnects [conn] at once instead of waiting for the socket. Whatever the closed socket throws is
+     * reported as the CancellationException it really is, so nothing retries it or shows it as an error.
+     */
+    internal suspend fun <T> cancellable(conn: HttpURLConnection, block: () -> T): T = cancellableOn({ try { conn.disconnect() } catch (_: Throwable) { } }, block)
+
+    /** [cancellable] with any closer (tests use a fake blocking read). */
+    internal suspend fun <T> cancellableOn(close: () -> Unit, block: () -> T): T = kotlinx.coroutines.coroutineScope {
+        val done = java.util.concurrent.atomic.AtomicBoolean(false)
+        val watcher = launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
+            try { kotlinx.coroutines.awaitCancellation() } finally { if (!done.get()) close() }
+        }
+        try { block() }
+        catch (e: Throwable) {
+            if (e is kotlin.coroutines.cancellation.CancellationException) throw e
+            if (!isActive) throw kotlin.coroutines.cancellation.CancellationException("Stopped").apply { initCause(e) }
+            throw e
+        } finally { done.set(true); watcher.cancel() }
     }
 
     /** Reads an SSE chat stream, stitching text and tool-call fragments back together. */
-    private fun readStream(conn: HttpURLConnection, onText: (String) -> Unit, onThink: ((String) -> Unit)?): JSONObject {
+    private fun readStream(conn: HttpURLConnection, onText: (String) -> Unit, onThink: ((String) -> Unit)?): JSONObject =
+        readSse(conn.inputStream, onText, onThink)
+
+    /**
+     * Reads an SSE chat stream from [input]. v0.45.3 (Halo stall): every text chunk is handed to [onText] the moment it
+     * is read. Before, a chunk that came less than 16 ms after the previous hand-off was skipped and only shown with
+     * the NEXT chunk, so the end of every burst sat invisible until the model sent more (seen as a reply that froze
+     * mid-list for seconds, then jumped). The agent's StreamGate already keeps it to one screen update per frame.
+     */
+    internal fun readSse(input: java.io.InputStream, onText: (String) -> Unit, onThink: ((String) -> Unit)?): JSONObject {
         val content = StringBuilder()
         val think = StringBuilder()
         val calls = ArrayList<JSONObject>()
         val slotOf = HashMap<Int, Int>()
-        var lastEmit = 0L
-        conn.inputStream.bufferedReader().useLines { lines ->
+        var emitted = 0
+        var lastText = 0L
+        CallState.current().maxGapMs = 0
+        input.bufferedReader().useLines { lines ->
             for (raw in lines) {
                 val line = raw.trim()
                 lastChunkAt = System.currentTimeMillis()
@@ -339,11 +452,12 @@ object LlmClient {
                 if (rp != null) { markFirst(); think.append(rp); onThink?.invoke(think.toString()) }
                 val piece = delta.optString("content", "").takeIf { delta.has("content") && !delta.isNull("content") }
                 if (!piece.isNullOrEmpty()) {
-                    markFirst()
+                    markFirst(); markText()
                     content.append(piece)
+                    onText(content.toString()); emitted = content.length
                     val now = System.currentTimeMillis()
-                    // v0.31.0: ~one snapshot per frame (the agent's StreamGate conflates further), so words appear as they arrive.
-                    if (now - lastEmit >= 16) { onText(content.toString()); lastEmit = now }
+                    if (lastText > 0) CallState.current().let { st -> if (now - lastText > st.maxGapMs) st.maxGapMs = now - lastText }
+                    lastText = now
                 }
                 val tc = delta.optJSONArray("tool_calls") ?: continue
                 markFirst()
@@ -387,7 +501,7 @@ object LlmClient {
                 }
             }
         }
-        if (content.isNotEmpty()) onText(content.toString())
+        if (content.length != emitted) onText(content.toString())
         val msg = JSONObject().put("role", "assistant").put("content", if (content.isEmpty() && calls.isNotEmpty()) JSONObject.NULL else content.toString())
         if (think.isNotEmpty()) msg.put("_reasoning", think.toString())
         if (calls.isNotEmpty()) {

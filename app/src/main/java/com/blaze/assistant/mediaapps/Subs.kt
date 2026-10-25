@@ -233,6 +233,78 @@ object Subs {
         return want.take(max)
     }
 
+    // ---------------------------------------------------------------- wave A 25: Translate to, audio names
+
+    /**
+     * Languages a YouTube caption track can be machine-translated into (&tlang=). YouTube's own list is longer;
+     * these are the ones offered in the menu. Anything else goes through Blaze's AI translation.
+     */
+    val translateTo: List<Pair<String, String>> = listOf(
+        "en" to "English", "fr" to "French", "pt" to "Portuguese", "es" to "Spanish", "sw" to "Swahili", "ny" to "Chichewa (Nyanja)",
+        "sn" to "Shona", "zu" to "Zulu", "xh" to "Xhosa", "st" to "Sesotho", "af" to "Afrikaans", "yo" to "Yoruba", "ig" to "Igbo",
+        "ha" to "Hausa", "am" to "Amharic", "so" to "Somali", "ar" to "Arabic", "hi" to "Hindi", "bn" to "Bengali", "ur" to "Urdu",
+        "ta" to "Tamil", "zh-Hans" to "Chinese (Simplified)", "zh-Hant" to "Chinese (Traditional)", "ja" to "Japanese", "ko" to "Korean",
+        "id" to "Indonesian", "ms" to "Malay", "fil" to "Filipino", "vi" to "Vietnamese", "th" to "Thai", "tr" to "Turkish",
+        "ru" to "Russian", "uk" to "Ukrainian", "pl" to "Polish", "de" to "German", "nl" to "Dutch", "it" to "Italian",
+        "sv" to "Swedish", "da" to "Danish", "fi" to "Finnish", "el" to "Greek", "cs" to "Czech", "ro" to "Romanian", "hu" to "Hungarian",
+    )
+
+    fun translateName(code: String): String = translateTo.firstOrNull { sameLang(it.first, code) && (it.first == code || '-' !in it.first) }?.second
+        ?: langName(code).ifBlank { code }
+
+    /** True when [t] is a YouTube caption track (its url can take &tlang= for a machine translation). */
+    fun canTranslate(t: StoreSubtitle): Boolean = t.url.startsWith("http") && "/api/timedtext" in t.url && "tlang=" !in t.url
+
+    /** The track YouTube translations are made from: a manual one first, else auto-generated. */
+    fun translationBase(tracks: List<StoreSubtitle>): StoreSubtitle? =
+        tracks.filter { canTranslate(it) }.let { l -> l.firstOrNull { !it.auto } ?: l.firstOrNull() }
+
+    /** [base] machine-translated into [code] by YouTube, as its own track (kept and remembered like any other). */
+    fun translated(base: StoreSubtitle, code: String): StoreSubtitle {
+        val url = base.url.replace(Regex("([?&])tlang=[^&]*"), "").trimEnd('&', '?')
+        return StoreSubtitle("yt-tr-" + code.replace(Regex("[^A-Za-z0-9-]"), "_") + "-" + base.id.removePrefix("yt-").take(20),
+            url + (if ('?' in url) "&" else "?") + "tlang=" + code, code, translateName(code) + " (translated)", auto = true)
+    }
+
+    /**
+     * The track to turn on by itself for a remembered language: one of the video's own ([pick]), else a YouTube
+     * translation into it. Null = leave subtitles off.
+     */
+    fun pickOrTranslate(tracks: List<StoreSubtitle>, pref: String): StoreSubtitle? {
+        pick(tracks, pref)?.let { return it }
+        if (pref.isBlank() || pref == "off") return null
+        val base = translationBase(tracks) ?: return null
+        return translated(base, pref)
+    }
+
+    /** Caption tracks saved with a download for offline: the remembered language (own or translated) and English, at most [max]. */
+    fun forDownload(tracks: List<StoreSubtitle>, pref: String, deviceLang: String, max: Int = 2): List<StoreSubtitle> {
+        val out = LinkedHashMap<String, StoreSubtitle>()
+        val want = pref.takeIf { it.isNotBlank() && it != "off" } ?: deviceLang
+        pickOrTranslate(tracks, want)?.let { out[it.id] = it }
+        (pick(tracks, "en") ?: tracks.firstOrNull { sameLang(it.lang, "en") })?.let { out.putIfAbsent(it.id, it) }
+        if (out.isEmpty()) translationBase(tracks)?.let { out[it.id] = it }
+        return out.values.filter { canTranslate(it) || it.url.contains("tlang=") }.take(max)
+    }
+
+    /**
+     * A readable audio track name: never "und". The language's name (plus the stream's own label when it adds
+     * something), "Original audio" for an unlabelled single track, "Audio 2" for one of several unlabelled ones.
+     */
+    fun audioName(label: String?, language: String?, index: Int, total: Int): String {
+        val code = language.orEmpty().trim()
+        val known = code.isNotBlank() && code.lowercase() !in setOf("und", "zxx", "mul", "mis", "unknown")
+        val lang = if (known) langName(code) else ""
+        val l = label.orEmpty().trim().takeIf { it.isNotBlank() && !it.equals("und", true) && !it.equals(code, true) }
+        return when {
+            lang.isNotBlank() && l != null && !l.contains(lang, true) -> "$lang \u00b7 $l"
+            l != null -> l
+            lang.isNotBlank() -> lang
+            total <= 1 -> "Original audio"
+            else -> "Audio ${index + 1}"
+        }
+    }
+
     /** One entry of the subtitle menu: a track the player already has, or one that loads when picked. */
     data class MenuItem(val id: String, val label: String, val lang: String, val loaded: Boolean, val selected: Boolean)
 

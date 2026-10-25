@@ -1,7 +1,7 @@
 package com.blaze.assistant.phone
 
 /**
- * Blaze's mascot (Luke's art, v0.24.5): a flame / teardrop with its pointed tip at the top right, a gradient from warm
+ * Blaze's mascot (Blazeinchue's art, v0.24.5): a flame / teardrop with its pointed tip at the top right, a gradient from warm
  * orange at the top to bright blue at the bottom with a cyan glow in the middle, two dark rounded-rectangle eyes and
  * a soft orange / blue glow around it.
  *
@@ -51,8 +51,6 @@ object Mascot {
     val GLOW_BLUE_AT = floatArrayOf(0f, 0.25f)
     const val GLOW_BLUE_R = 1.6f
     const val EYE = 0xFF23252D.toInt()
-    /** Edge colour while the user holds the pointer. */
-    const val PAUSED = 0xFFE8743B.toInt()
     /** The launcher icon background. */
     const val ICON_BG = 0xFF212226.toInt()
 

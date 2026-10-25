@@ -106,10 +106,14 @@ class RapidMessagesTest {
     }
 
     @Test fun routes() {
+        // v0.45.8: a typed message starts its turn at once (no burst wait); later ones join that turn at its next step.
         assertEquals(RapidMessages.Route.NOW, RapidMessages.route(busy = false, waiting = false, burst = false))
-        assertEquals(RapidMessages.Route.BURST, RapidMessages.route(busy = false, waiting = false, burst = true))
-        assertEquals(RapidMessages.Route.BURST, RapidMessages.route(busy = false, waiting = true, burst = true))
+        assertEquals(RapidMessages.Route.NOW, RapidMessages.route(busy = false, waiting = false, burst = true))
+        assertEquals(RapidMessages.Route.JOIN_BURST_NOW, RapidMessages.route(busy = false, waiting = true, burst = true))
         assertEquals(RapidMessages.Route.JOIN_BURST_NOW, RapidMessages.route(busy = false, waiting = true, burst = false))
+        // The 0.30.6 routing is kept only for the before/after bench.
+        assertEquals(RapidMessages.Route.BURST, RapidMessages.legacyRoute(busy = false, waiting = false, burst = true))
+        assertEquals(RapidMessages.Route.BURST, RapidMessages.legacyRoute(busy = false, waiting = true, burst = true))
         assertEquals(RapidMessages.Route.MID_TURN, RapidMessages.route(busy = true, waiting = false, burst = true))
         assertEquals(RapidMessages.Route.MID_TURN, RapidMessages.route(busy = true, waiting = true, burst = false))
     }

@@ -38,10 +38,14 @@ class MusicService : MediaLibraryService() {
         /** The running service (same process), for the sleep timer. */
         @Volatile var current: MusicService? = null
             private set
+        /** 0.45.20: a quiet chip when an item was skipped offline ("Not saved for offline"); "" = none. */
+        val offlineNote = MutableStateFlow("")
         /** When the sleep timer stops playback (epoch ms, 0 = off). -1 = at the end of the current song. */
         val sleepAt = MutableStateFlow(0L)
 
         fun item(t: Track): MediaItem = MediaItem.Builder().setMediaId(t.key).setUri(t.uri)
+            // Wave A 16: streams are cached under the stable Track key (the signed url expires).
+            .setCustomCacheKey(if (StreamCache.cacheableUrl(t.uri)) StreamCache.key(t.key) else null)
             .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist.ifBlank { null })
                 .setAlbumTitle(t.album.ifBlank { null })
                 .setArtworkUri(t.art.takeIf { it.isNotBlank() }?.let { if (it.startsWith("http")) Uri.parse(it) else Uri.fromFile(java.io.File(it)) })
@@ -49,6 +53,8 @@ class MusicService : MediaLibraryService() {
 
         /** v0.34.0: songs (library keys) to play as soon as the service starts (agent music_ops while it's stopped). */
         @Volatile var pendingPlay: Pair<List<String>, Boolean>? = null
+        /** v0.45.6: resume the saved queue as soon as the service starts ("play music" while it's stopped). */
+        @Volatile var pendingResume = false
 
         /** A Store result played without downloading (url from the source; expires, so never saved). */
         fun streamItem(t: Track, url: String): MediaItem = item(t.copy(uri = url))
@@ -70,6 +76,55 @@ class MusicService : MediaLibraryService() {
         .setConnectTimeoutMs(15_000).setReadTimeoutMs(20_000)
 
     fun streamUa(ua: String) { http.setUserAgent(ua) }
+
+    /** Wave A 16: the start of the next song is fetched into the disk cache, so the change is instant on a weak network. */
+    private fun prefetchNext() {
+        val n = player.nextMediaItemIndex
+        if (n == C.INDEX_UNSET) return
+        val cfg = player.getMediaItemAt(n).localConfiguration ?: return
+        val key = cfg.customCacheKey ?: return
+        StreamCache.prefetch(this, cfg.uri.toString(), key, http)
+    }
+    /** 0.45.20: local files always play offline; a stream only when its start is in the disk cache. */
+    private fun playableOffline(i: Int): Boolean {
+        val cfg = player.getMediaItemAt(i).localConfiguration ?: return false
+        val key = cfg.customCacheKey ?: return true
+        return StreamCache.hasStart(this, key)
+    }
+
+    /**
+     * 0.45.20 offline queue (spec 1, offline fallback): with no network, an item that can't play from the phone is
+     * skipped to the next one that can, in play order, with a quiet "Not saved for offline" chip. [ended] = the current
+     * item failed (ran past its cached part), so it is skipped too. Nothing left = pause, never an endless spinner.
+     */
+    private fun offlineSkip(ended: Boolean) {
+        if (NetWatch.now(this)) return
+        if (!ended && !player.playWhenReady) return       // a queue restored at start-up is left alone until Play
+        val i = player.currentMediaItemIndex
+        if (i == C.INDEX_UNSET || i >= player.mediaItemCount) return
+        if (!ended && playableOffline(i)) return
+        val order = ArrayList<Int>().apply { add(i) }
+        val tl = player.currentTimeline
+        if (!tl.isEmpty) {
+            var k = i
+            val rep = if (player.repeatMode == Player.REPEAT_MODE_ONE) Player.REPEAT_MODE_OFF else player.repeatMode
+            while (order.size < 200) {
+                k = tl.getNextWindowIndex(k, rep, player.shuffleModeEnabled)
+                if (k == C.INDEX_UNSET || k == i) break
+                order += k
+            }
+        }
+        val n = NetHonesty.offlineNext(order, i) { playableOffline(it) }
+        offlineNote.value = NetHonesty.NOT_SAVED
+        main.removeCallbacks(clearNote); main.postDelayed(clearNote, 4_000)
+        if (n >= 0) { player.seekTo(n, 0); player.prepare(); player.play() } else player.pause()
+    }
+    private val clearNote = Runnable { offlineNote.value = "" }
+    private val offlineStall = Runnable {
+        val stream = player.currentMediaItem?.mediaId?.startsWith("stream:") == true
+        if (player.playbackState == Player.STATE_BUFFERING && NetHonesty.offlineSkipNow(NetHonesty.OFFLINE_SKIP_MS, NetWatch.now(this), stream)) offlineSkip(true)
+    }
+
     private lateinit var player: ExoPlayer
     /** v0.33.2 BlazeOS: the player for the now-playing widget, BlazeOS's own volume and Pause (same process; null before onCreate). */
     val livePlayer: androidx.media3.common.Player? get() = if (::player.isInitialized) player else null
@@ -164,8 +219,9 @@ class MusicService : MediaLibraryService() {
         super.onCreate()
         MediaLib.ensure(this)
         player = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(
-                androidx.media3.datasource.DefaultDataSource.Factory(this, http)))
+            .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(StreamCache.factory(this, http))
+                .setLoadErrorHandlingPolicy(StreamCache.dropPolicy()))   // 0.45.19: drops play on from buffer + cache
+            .setLoadControl(StreamCache.loadControl(this))
             .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
@@ -173,18 +229,27 @@ class MusicService : MediaLibraryService() {
         player.addListener(object : Player.Listener {
             override fun onShuffleModeEnabledChanged(on: Boolean) { if (on) reshuffle(); session?.setCustomLayout(layout()) }
             override fun onRepeatModeChanged(mode: Int) { session?.setCustomLayout(layout()) }
-            override fun onIsPlayingChanged(playing: Boolean) { if (!playing) { saveQueue(); flushPlay() } else startPlay() }
+            override fun onIsPlayingChanged(playing: Boolean) { if (!playing) { saveQueue(); flushPlay() } else startPlay(); com.blaze.assistant.agent.AwarenessHooks.music(player) }
             override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
                 item?.mediaId?.let { id -> MediaLib.find(id)?.let { MediaLib.played(it) } }
                 startPlay()
                 djTopUp()
+                prefetchNext()
+                offlineSkip(false)
+                com.blaze.assistant.agent.AwarenessHooks.music(player, songChanged = true)
             }
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 try { eq?.release() } catch (_: Exception) { }
                 eq = null; setupEq()
             }
-            override fun onPlayerError(error: androidx.media3.common.PlaybackException) { retryStream(error) }
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                // 0.45.20: offline, a stream that ran past what's on disk moves on to the next item that plays offline.
+                if (!NetWatch.now(this@MusicService)) offlineSkip(true) else retryStream(error)
+            }
             override fun onPlaybackStateChanged(state: Int) {
+                // 0.45.20: offline and stalled on a stream = past its cached part; check again in 1.5 s, then skip.
+                main.removeCallbacks(offlineStall)
+                if (state == Player.STATE_BUFFERING && player.playWhenReady && !NetWatch.now(this@MusicService)) main.postDelayed(offlineStall, NetHonesty.OFFLINE_SKIP_MS)
                 if (state == Player.STATE_ENDED && sleepAt.value == -1L) sleepAt.value = 0
                 // Blaze DJ: the queue ran out, so it adds more and carries on.
                 if (state == Player.STATE_ENDED && sleepAt.value == 0L && MediaPrefs.bool(this@MusicService, MediaPrefs.DJ, false)) {
@@ -194,6 +259,7 @@ class MusicService : MediaLibraryService() {
                 }
             }
             override fun onPositionDiscontinuity(old: Player.PositionInfo, new: Player.PositionInfo, reason: Int) {
+                com.blaze.assistant.agent.AwarenessHooks.music(player)
                 // "End of song" sleep timer: stop when the song changes on its own.
                 if (sleepAt.value == -1L && reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) { player.pause(); sleepAt.value = 0 }
             }
@@ -213,6 +279,20 @@ class MusicService : MediaLibraryService() {
         }
         main.postDelayed(saver, 15_000)
         pendingPlay?.let { (keys, sh) -> pendingPlay = null; playKeys(keys, sh) }
+        if (pendingResume) { pendingResume = false; if (player.mediaItemCount > 0) player.play() }
+    }
+
+    /** v0.45.6: the transport for music_ops / the in-app fast path. Main thread. */
+    fun isPlayingNow(): Boolean = player.isPlaying
+    fun queueSize(): Int = player.mediaItemCount
+    fun nowTitle(): String = player.currentMediaItem?.mediaMetadata?.title?.toString().orEmpty()
+    fun transport(op: String) {
+        when (op) {
+            "play" -> { if (player.playbackState == Player.STATE_IDLE) player.prepare(); player.play() }
+            "pause" -> player.pause()
+            "next" -> if (player.hasNextMediaItem()) player.seekToNextMediaItem() else player.seekToNext()
+            "previous" -> player.seekToPrevious()
+        }
     }
 
     /** v0.34.0: plays library songs by key (mixes, smart playlists, agent). Main thread. */
@@ -229,7 +309,7 @@ class MusicService : MediaLibraryService() {
     private val retried = HashSet<String>()
 
     /**
-     * v0.30.5 (Luke: "The stream link expired or was refused"): a Store stream the server refuses (403 / 410) is asked
+     * v0.30.5 (Blazeinchue: "The stream link expired or was refused"): a Store stream the server refuses (403 / 410) is asked
      * for again once (the YouTube plug-in then tries its next client) and picks up where it stopped, instead of
      * leaving the error on screen.
      */
@@ -350,6 +430,7 @@ class MusicService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        com.blaze.assistant.agent.AwarenessHooks.musicStopped()
         saveQueue(); flushPlay()
         main.removeCallbacks(sleepTick); main.removeCallbacks(saver); main.removeCallbacks(fadeTick)
         try { eq?.release() } catch (_: Exception) { }

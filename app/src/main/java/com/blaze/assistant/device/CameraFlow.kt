@@ -10,7 +10,7 @@ package com.blaze.assistant.device
  * Why the permission step exists at all: zxing-android-embedded (the Desktop pairing QR scanner) declares
  * android.permission.CAMERA in its manifest, so it is in Blaze's merged manifest. Android then refuses
  * ACTION_IMAGE_CAPTURE with a SecurityException until the user grants CAMERA. That was the Galaxy A07 bug:
- * a fresh install had never granted it (the A12 had, via QR pairing), and the old code turned the
+ * a fresh install had never granted it (the test phone had, via QR pairing), and the old code turned the
  * SecurityException into "No camera app found."
  */
 object CameraFlow {

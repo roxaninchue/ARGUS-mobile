@@ -9,7 +9,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * v0.26.1 (Jack's A12): a diagram / chart asked for in chat is drawn inline in the reply, not as a file in the Design
+ * v0.26.1 (Jack's phone): a diagram / chart asked for in chat is drawn inline in the reply, not as a file in the Design
  * preview; and a Mermaid file opened in Design is drawn as a picture, never shown as raw source.
  */
 class VisualRouteTest {

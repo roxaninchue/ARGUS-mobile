@@ -279,7 +279,8 @@ fun GalleryScreen(onDismiss: () -> Unit) {
         }
     }
 
-    Box(Modifier.fillMaxSize().pageBackdrop(c)) {
+    // v0.45.8: follows the picked theme (draws its scene; Classic keeps the glass page).
+    ThemedScreen(Modifier.fillMaxSize(), own = { pageBackdrop(c) }) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             // ---------------- header
             if (selected.isNotEmpty()) {

@@ -1,7 +1,7 @@
 package com.blaze.assistant.agent
 
 /**
- * v0.30.6 rapid messages. Luke: "Let's make blaze like hark where I can send messages after messages with no pause and
+ * v0.30.6 rapid messages. Blazeinchue: "Let's make blaze like hark where I can send messages after messages with no pause and
  * blaze highlights the one it's responding to and such (or replies to rapid succession questions that are related with
  * one message)".
  *
@@ -135,7 +135,7 @@ object RapidMessages {
         val lines = untag(text).lines()
         val body = lines.dropWhile { it.startsWith(">") }.joinToString(" ").ifBlank { lines.joinToString(" ") { it.removePrefix(">") } }
         val one = body.replace(Regex("""\s+"""), " ").trim()
-        return if (one.length <= CHIP_CHARS) one else one.take(CHIP_CHARS - 1).trimEnd() + "\u2026"
+        return Scripts.clip(one, CHIP_CHARS)  // v0.45.7: never cuts a letter, tone mark or emoji in half
     }
 
     /**
@@ -157,7 +157,20 @@ object RapidMessages {
      * [busy] = a turn is running, [waiting] = a burst is open (messages waiting, no turn yet), [burst] = this send may wait
      * for more (typed in the chat; not voice, Magic Hand, routines or background agents).
      */
-    fun route(busy: Boolean, waiting: Boolean, burst: Boolean): Route = when {
+    fun route(busy: Boolean, waiting: Boolean, burst: Boolean): Route = if (!START_NOW) legacyRoute(busy, waiting, burst) else when {
+        // v0.45.8 (user 08:52, "seconds between Send and Blaze starting"): a typed message no longer waits GRACE_MS..BURST_MAX_MS
+        // for more. The first message goes on the wire at once; messages sent right after join the running turn at its next
+        // step (MID_TURN), or start the next turn when it ends. [burst] no longer delays anything.
+        busy -> Route.MID_TURN
+        waiting -> Route.JOIN_BURST_NOW
+        else -> Route.NOW
+    }
+
+    /** v0.45.8: typed messages start their turn at once (false = the 0.30.6 burst wait, kept for the before/after bench). */
+    @Volatile var START_NOW = true
+
+    /** The 0.30.6 routing (a typed message opened a burst and waited [burstWait] before its turn started). */
+    fun legacyRoute(busy: Boolean, waiting: Boolean, burst: Boolean): Route = when {
         busy -> Route.MID_TURN
         waiting && !burst -> Route.JOIN_BURST_NOW
         waiting || burst -> Route.BURST

@@ -57,6 +57,7 @@ class PrivateChatTest {
     }
 
     @Test fun journalAndIndexSkipPrivateChats() {
+        NativeSqlite.assume()
         val db = Mind.Db(ctx, null)
         assertEquals(0, db.journal("private-j1", hist()))
         assertEquals(0, db.count())

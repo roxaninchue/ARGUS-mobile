@@ -25,6 +25,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -47,13 +63,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 /*
- * v0.24.0 messaging-style thread. Luke: "everything looks too uniform and boxed, I want it to look like a
+ * v0.24.0 messaging-style thread. Blazeinchue: "everything looks too uniform and boxed, I want it to look like a
  * messaging platform just with our classic theme."
  *
  * Same palette, fonts and mono labels; what changes is the shape: your messages are ink bubbles on the right,
@@ -92,11 +109,13 @@ object Bubbles {
     const val GAP_MS = 10 * 60_000L
 
     /** Group positions for a thread, given each item's side and time (0 = unknown time, never splits). */
-    fun positions(sides: List<Side>, ats: List<Long>, gapMs: Long = GAP_MS): List<GroupPos> {
+    fun positions(sides: List<Side>, ats: List<Long>, gapMs: Long = GAP_MS, whos: List<String> = emptyList()): List<GroupPos> {
         val n = sides.size
         fun joins(i: Int): Boolean { // item i continues item i-1's group
             if (i <= 0 || i >= n) return false
             if (sides[i] != sides[i - 1]) return false
+            // 0.45.19: Halo's message and Blaze's never share a group (Blaze's answer under Halo's name, one action row).
+            if (whos.isNotEmpty() && whos.getOrElse(i) { "" } != whos.getOrElse(i - 1) { "" }) return false
             val a = ats.getOrElse(i - 1) { 0L }; val b = ats.getOrElse(i) { 0L }
             return a <= 0 || b <= 0 || b - a < gapMs
         }
@@ -161,7 +180,7 @@ object Bubbles {
  */
 object GlassBubble {
     /*
-     * v0.30.5: glass that fits the theme (Luke: "give chat boxes the glass look as well fitted to the theme").
+     * v0.30.5: glass that fits the theme (Blazeinchue: "give chat boxes the glass look as well fitted to the theme").
      * Dark: a translucent white-tinted glass with a faint light hairline. Light: a translucent white frost with a soft
      * darker hairline. Both are brighter at the top and keep the text halo, so particles still drift through. Your
      * bubbles carry a whisper of the accent; Blaze's are neutral. No blue outline.
@@ -207,47 +226,46 @@ fun Modifier.chatGlass(c: BlazeColors, mine: Boolean, shape: androidx.compose.ui
  * previews) are the only glass in the thread. [chatGlass] stays for those cards.
  */
 
-/** Your message: right-aligned plain text (medium weight, slightly dimmer). No box. */
+/**
+ * Your message. 0.45.20: back in a bubble ([ChatBubble], ui/ChatBubbles.kt): right side, frosted accent tint, tail on the
+ * first of a run, time inside.
+ */
 @Composable
 fun UserBubble(text: String, quoted: String = "", pos: GroupPos = GroupPos.SINGLE, modifier: Modifier = Modifier) {
     val c = LocalBlaze.current
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-        Column(Modifier.padding(start = 56.dp).widthIn(max = 320.dp).padding(vertical = 2.dp), horizontalAlignment = Alignment.End) {
-            if (quoted.isNotEmpty()) {
-                Row(Modifier.padding(bottom = 4.dp).height(IntrinsicSize.Min)) {
-                    Text(quoted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                        style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.weak))
-                    Spacer(Modifier.width(8.dp))
-                    Box(Modifier.width(2.dp).fillMaxHeight().clip(RoundedCornerShape(1.dp)).background(c.ink.copy(alpha = 0.25f)))
-                }
+    ChatBubble(Side.ME, pos, modifier.padding(vertical = 1.dp)) {
+        if (quoted.isNotEmpty()) {
+            Row(Modifier.padding(bottom = 4.dp).height(IntrinsicSize.Min)) {
+                Box(Modifier.width(2.dp).fillMaxHeight().clip(RoundedCornerShape(1.dp)).background(c.ink.copy(alpha = 0.35f)))
+                Spacer(Modifier.width(8.dp))
+                Text(quoted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                    style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = BubblePalette.meta(c, true)))
             }
-            // v0.28.1: your own message renders its markdown too (## App, 1. **Offline mode**), never raw symbols.
-            val shown = remember(text, c.ink) { Md.render(text, c.ink, c.ink.copy(alpha = 0.10f)) }
-            SelectionContainer {
-                Text(shown, textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                    style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 22.sp,
-                        color = c.ink.copy(alpha = 0.78f), shadow = GlassBubble.halo(c)))
-            }
+        }
+        // v0.28.1: your own message renders its markdown too (## App, 1. **Offline mode**), never raw symbols.
+        val ink = BubblePalette.text(c, true)
+        val shown = remember(text, ink) { Md.render(text, ink, ink.copy(alpha = 0.10f)) }
+        SelectionContainer {
+            Text(shown, style = TextStyle(fontFamily = Type.sansFor(text), fontSize = 15.sp, lineHeight = 21.sp, color = ink))
         }
     }
 }
 
-/** Blaze's message: full-width plain content on the background. No box. [fill] is kept for callers (errors). */
+/** Blaze's message. 0.45.20: a bubble on the left ([ChatBubble]); [wide] content (tables, code) may use more width. */
 @Composable
-fun BlazeBubble(pos: GroupPos = GroupPos.SINGLE, modifier: Modifier = Modifier, fill: Color? = null, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.fillMaxWidth().padding(end = 4.dp, top = 2.dp, bottom = 2.dp)) {
-        CompositionLocalProvider(LocalBubble provides null) { content() }
-    }
+fun BlazeBubble(pos: GroupPos = GroupPos.SINGLE, modifier: Modifier = Modifier, fill: Color? = null, wide: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    ChatBubble(Side.BLAZE, pos, modifier.padding(vertical = 1.dp), wide = wide) { content() }
 }
 
 /** A Blaze reply drawn in its bubble (screenshots and the thread use the same one). */
 @Composable
 fun BlazeReply(key: Long, text: String, pos: GroupPos = GroupPos.SINGLE, live: Boolean = false) {
-    BlazeBubble(pos) { AnswerBody(key, text, live = live) }
+    // Tables and code blocks get a little more room (they scroll sideways inside the bubble anyway).
+    val wide = remember(text) { text.contains("```") || Regex("(?m)^\\s*\\|.*\\|\\s*$").containsMatchIn(text) }
+    BlazeBubble(pos, wide = wide) { AnswerBody(key, text, live = live) }
 }
 
-/** An error: plain text with a small desaturated warm label; no box. */
+/** An error: in Blaze's bubble with a small desaturated warm label. */
 @Composable
 fun ErrorBubble(text: String, pos: GroupPos = GroupPos.SINGLE) {
     val c = LocalBlaze.current
@@ -255,12 +273,12 @@ fun ErrorBubble(text: String, pos: GroupPos = GroupPos.SINGLE) {
         Label("Error", color = GlassTokens.error, size = 9.sp)
         Spacer(Modifier.height(4.dp))
         SelectionContainer {
-            Text(text, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body, shadow = GlassBubble.halo(c)))
+            Text(text, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = BubblePalette.text(c, false)))
         }
     }
 }
 
-/** The quiet line under the last message of a group: time, then small text actions. */
+/** The quiet line under the last message of a group: time, then small icon actions (v0.45.2). */
 @Composable
 fun MetaLine(side: Side, time: String, actions: List<Pair<String, (() -> Unit)?>> = emptyList(), chip: String = "", chipHot: Boolean = false,
              orbSlot: ((androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null) {
@@ -271,6 +289,9 @@ fun MetaLine(side: Side, time: String, actions: List<Pair<String, (() -> Unit)?>
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp))
         actions.forEachIndexed { i, a ->
             val act = a.second
+            // v0.45.2: known actions are compact icons (40 dp target, label on long-press); others stay words.
+            val kind = MessageActionIcons.kindOf(a.first)
+            if (kind != null) { MessageActionIcon(kind, act != null) { act?.invoke() }; return@forEachIndexed }
             if (i > 0 || time.isNotBlank()) MetaDot()
             Text(a.first, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 11.sp, color = if (act != null) c.sub else c.weak),
                 modifier = Modifier.clickable(enabled = act != null) { act?.invoke() }.padding(horizontal = 6.dp, vertical = 8.dp))
@@ -293,8 +314,9 @@ private fun MetaDot() {
 @Composable
 fun SoftPill(text: String, modifier: Modifier = Modifier, lead: String = "", fill: Color? = null, ink: Color? = null, onClick: () -> Unit) {
     val c = LocalBlaze.current
-    Row(modifier.widthIn(max = 320.dp).clip(RoundedCornerShape(20.dp)).background((fill ?: c.accentSoft).let { if (it == c.bubble) GlassBubble.stripFill(c) else it })
-        .border(1.dp, if (fill == c.bubble) GlassBubble.stripEdge(c) else Color.Transparent, RoundedCornerShape(20.dp)).clickable(onClick = onClick)
+    // v0.45.7: always opaque (a see-through fill is laid on the page colour) with a visible border.
+    Row(modifier.widthIn(max = 320.dp).clip(RoundedCornerShape(20.dp)).background(if (fill == null || fill == c.bubble) ChipStyle.fill(c) else Contrast.solid(fill, c.paper))
+        .border(1.dp, ChipStyle.edge(c), RoundedCornerShape(20.dp)).clickable(onClick = onClick)
         .heightIn(min = 40.dp).padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
         if (lead.isNotBlank()) {
             Text(lead, style = TextStyle(fontFamily = Type.Mono, fontSize = 11.sp, color = ink ?: c.accent))
@@ -335,25 +357,77 @@ fun SendMark(color: Color, stop: Boolean, size: Dp = 16.dp) {
 /**
  * v0.26.2: follow-up suggestions as one horizontal, swipeable row of compact chips under the reply
  * (was a stack of full-width pills). Each chip is one line; the row scrolls sideways when they don't fit.
+ * v0.43.0: long-press a chip and drop it on another to ask for both ("… and …"); the combined chip can be tapped to send
+ * or dropped on a third. A tick on pickup and over a target, which glows. Dropped anywhere else, a chip goes back (a
+ * combined one splits into the chips it was made of). A plain tap sends one chip as before. Text rules in [ChipMerge].
  */
 @Composable
 fun FollowupRow(list: List<String>, modifier: Modifier = Modifier, onPick: (String) -> Unit) {
     val c = LocalBlaze.current
-    val chips = Bubbles.chipRow(list)
-    if (chips.isEmpty()) return
-    androidx.compose.foundation.lazy.LazyRow(modifier.fillMaxWidth().padding(top = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(end = 12.dp)) {
-        items(chips.size) { i ->
-            val s = chips[i]
-            // v0.27.0: the chips fade up one after another under a new reply.
-            Row(Modifier.appearIn(true, delayMs = 40 * i.coerceAtMost(4)).glass(RoundedCornerShape(18.dp), GlassIntensity.Low, shadow = false).clickable { onPick(s) }
-                .semantics { contentDescription = "Suggestion: $s" }
-                .heightIn(min = 36.dp).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("\u21b3", style = TextStyle(fontFamily = Type.Mono, fontSize = 11.sp, color = c.accent))
-                Spacer(Modifier.width(6.dp))
-                Text(s, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, lineHeight = 18.sp, color = c.accent))
+    val labels = Bubbles.chipRow(list)
+    if (labels.isEmpty()) return
+    val haptic = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    var chips by remember(labels) { mutableStateOf(ChipMerge.start(labels)) }
+    val boxes = remember(labels) { mutableStateMapOf<Int, ChipMerge.Box>() }
+    var dragging by remember { mutableIntStateOf(-1) }
+    var over by remember { mutableIntStateOf(-1) }
+    var dx by remember { mutableStateOf(0f) }
+    var dy by remember { mutableStateOf(0f) }
+    var start by remember { mutableStateOf<ChipMerge.Box?>(null) }
+    var eatTap by remember { mutableStateOf(false) }
+    val slop = with(androidx.compose.ui.platform.LocalDensity.current) { 6.dp.toPx() }
+    fun reset() {
+        dragging = -1; over = -1; dx = 0f; dy = 0f; start = null
+        scope.launch { kotlinx.coroutines.delay(350); eatTap = false }
+    }
+    Row(modifier.fillMaxWidth().padding(top = 4.dp).horizontalScroll(rememberScrollState(), enabled = dragging < 0)
+        .padding(end = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        chips.forEachIndexed { i, parts ->
+            key(parts.joinToString("\u0000")) {
+                val text = ChipMerge.text(parts)
+                val combined = parts.size > 1
+                val lifted = dragging == i
+                val target = over == i
+                val shape = RoundedCornerShape(18.dp)
+                Row(Modifier.appearIn(true, delayMs = 40 * i.coerceAtMost(4))
+                    .zIndex(if (lifted) 1f else 0f)
+                    .graphicsLayer {
+                        if (lifted) { translationX = dx; translationY = dy; scaleX = 1.05f; scaleY = 1.05f; alpha = 0.94f }
+                        else if (target) { scaleX = 1.06f; scaleY = 1.06f }
+                    }
+                    .onGloballyPositioned { co -> if (dragging != i) co.boundsInRoot().let { r -> boxes[i] = ChipMerge.Box(r.left, r.top, r.right, r.bottom) } }
+                    .let { if (target) it.background(c.accent.copy(alpha = 0.18f), shape).border(1.5.dp, c.accent.copy(alpha = 0.75f), shape) else it }
+                    // v0.45.7: solid fill and a 3:1 border instead of see-through glass (readable over any scene).
+                    .background(ChipStyle.fill(c), shape).border(1.dp, ChipStyle.edge(c), shape)
+                    .pointerInput(i, parts) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                dragging = i; over = -1; dx = 0f; dy = 0f; start = boxes[i]; eatTap = true
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            },
+                            onDragEnd = {
+                                val t = over
+                                chips = if (t >= 0) ChipMerge.merge(chips, i, t) else ChipMerge.split(chips, i)
+                                reset()
+                            },
+                            onDragCancel = { reset() },
+                        ) { change, d ->
+                            change.consume()
+                            dx += d.x; dy += d.y
+                            val b = start ?: return@detectDragGesturesAfterLongPress
+                            val t = ChipMerge.target(List(chips.size) { boxes[it] }, i, b.cx + dx, b.cy + dy, slop)
+                            if (t != over) { over = t; if (t >= 0) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) }
+                        }
+                    }
+                    .clickable { if (eatTap) eatTap = false else onPick(text) }
+                    .semantics { contentDescription = (if (combined) "Combined suggestion: " else "Suggestion: ") + text }
+                    .widthIn(max = 300.dp).heightIn(min = 36.dp).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (combined) "+" else "\u21b3", style = TextStyle(fontFamily = Type.Mono, fontSize = 11.sp, color = c.accent))
+                    Spacer(Modifier.width(6.dp))
+                    Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, lineHeight = 18.sp, color = c.accent))
+                }
             }
         }
     }

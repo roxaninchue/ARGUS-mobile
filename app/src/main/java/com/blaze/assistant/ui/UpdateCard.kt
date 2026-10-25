@@ -71,8 +71,26 @@ object UpdateCardText {
         is State.Installing -> Triple("Installing", "Confirm on the Android screen. Blaze restarts by itself, and your keys, settings and models stay.", 100)
         is State.UpToDate -> Triple("Up to date", "You have the newest Blaze, v${s.version}.", -1)
         is State.Ready -> Triple("Update available", "Blaze v${s.version} is ready to install.", -1)
-        is State.NeedsPermission -> Triple("One permission needed", "Turn on \"Allow from this source\" for Blaze, come back, then tap Retry.", -1)
+        is State.NeedsPermission -> Triple("One permission needed", "Android asks once before Blaze can install its own updates. Turn on \"Allow from this source\" for Blaze, come back, then tap Retry.", -1)
         is State.Done -> Triple("Updated", "Blaze v${s.version} is installed.", 100)
         is State.Failed -> Triple("The update didn't finish", s.message, -1)
+    }
+}
+
+/** v0.45.4: "Blaze X.Y.Z is available · Update · ×", shown at most once a day on app open (Updater.checkInBackground). */
+@Composable
+fun UpdateBanner() {
+    val c = LocalBlaze.current
+    val ctx = LocalContext.current
+    val b by Updater.banner.collectAsState()
+    val banner = b ?: return
+    Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).glass(GlassTokens.tileShape, GlassIntensity.Medium, shadow = false).padding(horizontal = 14.dp, vertical = 6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Label(banner.line, size = 10.sp, modifier = Modifier.weight(1f))
+            ActionText(if (banner.legacy) "Site" else "Update", color = c.accent, size = 10.sp, modifier = Modifier.clickable { Updater.updateFromBanner(ctx) }.padding(8.dp))
+            ActionText("\u00d7", color = c.sub, size = 12.sp, modifier = Modifier.clickable { Updater.dismissBanner() }.padding(8.dp))
+        }
+        if (banner.notes.isNotBlank()) Text(banner.notes, modifier = Modifier.padding(bottom = 4.dp), maxLines = 2,
+            style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, lineHeight = 15.sp, color = c.sub))
     }
 }

@@ -45,10 +45,11 @@ import kotlin.math.sin
 val LocalSpeaker = compositionLocalOf { Duo.Who.BLAZE }
 
 object DuoColors {
-    val blazeBlue = Color(0xFF4DA8FF)
-    val blazeIce = Color(0xFFBFE3FF)
-    val haloGold = Color(0xFFFFC94D)
-    val haloCream = Color(0xFFFFF0C2)
+    // v0.45.2: a picked theme tints the drop and its halo (ThemeTint, Compose state: the orb redraws when it changes).
+    val blazeBlue: Color get() = ThemeTint.current.value?.let { Color(it.droplet) } ?: Color(0xFF4DA8FF)
+    val blazeIce: Color get() = ThemeTint.current.value?.let { Color(LivingLogic.mix(it.droplet, 0xFFFFFFFF, 0.6f)) } ?: Color(0xFFBFE3FF)
+    val haloGold: Color get() = ThemeTint.current.value?.let { Color(it.halo) } ?: Color(0xFFFFC94D)
+    val haloCream: Color get() = ThemeTint.current.value?.let { Color(LivingLogic.mix(it.halo, 0xFFFFFFFF, 0.6f)) } ?: Color(0xFFFFF0C2)
     fun main(w: Duo.Who) = if (w == Duo.Who.HALO) haloGold else blazeBlue
     fun light(w: Duo.Who) = if (w == Duo.Who.HALO) haloCream else blazeIce
 }

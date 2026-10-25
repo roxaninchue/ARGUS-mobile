@@ -212,7 +212,7 @@ private fun Running(onExit: () -> Unit) {
     BackHandler { }
     val holder = rememberSaveableStateHolder()
     // Closed apps lose their saved state; open ones keep it while they are in the background.
-    LaunchedEffect(tasks.open) { OsAppStates.retain(tasks.open) { holder.removeState(it); OsWeb.release(it) } }
+    LaunchedEffect(tasks.open) { OsAppStates.retain(tasks.open) { holder.removeState(it); OsWeb.release(it); OsWasm.release(it) } }
     // Back: overlays first, then the app (its own back), then the home screen does nothing (like a phone).
     BackHandler(enabled = control || powerMenu || switcher) { OsUiState.control.value = false; OsUiState.powerMenu.value = false; OsUiState.switcher.value = false }
     val blurBehind = look.blur && (control || powerMenu || switcher)

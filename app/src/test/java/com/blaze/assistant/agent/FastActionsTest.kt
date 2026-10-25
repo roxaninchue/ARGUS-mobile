@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * v0.30.4 fast phone actions. The A12 trace ("stop GitHub opening links in the GitHub app": 18 steps, 4 min 25 s):
+ * v0.30.4 fast phone actions. The test phone trace ("stop GitHub opening links in the GitHub app": 18 steps, 4 min 25 s):
  * irrelevant skills loaded first, every old screen readout re-sent on every step, macros restarting from scratch.
  */
 class FastActionsTest {
@@ -55,8 +55,8 @@ class FastActionsTest {
         assertTrue(FastActions.screensToKeep(listOf(null, "Opened GitHub.")).isEmpty())
     }
 
-    /** Replays the shape of the A12 trace and measures what each model call carried, before and after. */
-    @Test fun a12TracePromptShrinks() {
+    /** Replays the shape of the test phone trace and measures what each model call carried, before and after. */
+    @Test fun lowEndTracePromptShrinks() {
         val h = JSONArray()
         fun user(t: String) = h.put(JSONObject().put("role", "user").put("content", t))
         fun call(n: String, a: String) = h.put(JSONObject().put("role", "assistant").put("content", JSONObject.NULL)
@@ -87,7 +87,7 @@ class FastActionsTest {
         }
         val lastBefore = h.toString().length
         val lastAfter = live.toString().length
-        println("A12 trace, ${singles.size + 2} tool results: history chars sent over the task ${before} → ${after} " +
+        println("low-end phone trace, ${singles.size + 2} tool results: history chars sent over the task ${before} → ${after} " +
             "(${100 - after * 100 / before}% less); the last call carried $lastBefore → $lastAfter chars (≈${lastBefore / 4} → ≈${lastAfter / 4} tokens)")
         assertTrue("$after vs $before", after * 10 < before * 7)
         assertTrue("$lastAfter vs $lastBefore", lastAfter * 2 < lastBefore)

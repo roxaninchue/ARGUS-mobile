@@ -3,7 +3,7 @@ package com.blaze.assistant.ui
 import java.io.File
 
 /**
- * v0.23.3: how the Design view serves designs so 3D always draws, even on the Galaxy A12 (PowerVR GE8320,
+ * v0.23.3: how the Design view serves designs so 3D always draws, even on the low-end phone (PowerVR GE8320,
  * where Chromium's GPU blocklist often turns WebGL2 off and three.js r163+ refuses to start).
  *
  *  - Designs load from a virtual https origin ([ORIGIN]) instead of file://, so the page, its importmap and
@@ -26,7 +26,7 @@ object DesignServe {
     const val ORIGIN = "https://appassets.androidplatform.net"
     const val R170 = "r170"
     const val R162 = "r162"
-    /** How long a 3D page may take to report ready before the Design view falls back (the A12 parses slowly). */
+    /** How long a 3D page may take to report ready before the Design view falls back (the test phone parses slowly). */
     const val READY_TIMEOUT_MS = 20_000L
     /** After the first error on a 3D page that isn't ready yet, wait this long before falling back. */
     const val ERROR_GRACE_MS = 2_000L
@@ -274,7 +274,8 @@ object DesignServe {
                 out = out.replaceRange(m.range, chooser)
             }
         }
-        val hook = "<script>" + HOOK_JS.replace("__BZ_IS3D__", if (is3d) "true" else "false") + "</script>" +
+        val gl = is3d || usesThree(html)
+        val hook = "<script>" + HOOK_JS.replace("__BZ_IS3D__", if (is3d) "true" else "false").replace("__BZ_GL__", if (gl) "true" else "false") + "</script>" +
             "<style>#bz-fail{display:none!important}</style>"
         val head = Regex("<head(\\s[^>]*)?>", RegexOption.IGNORE_CASE).find(out)
         val html0 = Regex("<html(\\s[^>]*)?>", RegexOption.IGNORE_CASE).find(out)
@@ -291,7 +292,7 @@ object DesignServe {
      */
     val HOOK_JS = """
 (function(){
-var B=window.BlazeDesign||null, IS3D=__BZ_IS3D__;
+var B=window.BlazeDesign||null, IS3D=__BZ_IS3D__, GL=__BZ_GL__;
 var errs=window.__bzErrors=window.__bzErrors||[];
 function say(k,a,b,c){try{if(B&&B[k]){if(c!==undefined)B[k](a,b,c);else if(b!==undefined)B[k](a,b);else B[k](a===undefined?"":String(a).slice(0,600));}}catch(e){}}
 function err(m){m=String(m||"Unknown error");if(errs.length<20)errs.push(m);say("error",m);}
@@ -305,19 +306,119 @@ var force1=/[?&]bzgl=1/.test(location.search);
 var eng=(gl2&&!force1)?"r170":(gl1?"r162":(gl2?"r170":""));
 window.__bzEngine=eng;
 say("gl",gl2?2:(gl1?1:0),gl1,eng);
-if(!IS3D)return;
+if(!IS3D&&!GL){addEventListener("load",function(){setTimeout(function(){say("loaded","page");},300);});return;}
 if(!eng){say("fail","WebGL is turned off in this phone's WebView (no WebGL 1 or 2), so three.js can't draw.");return;}
-function blank(cv){if(!cv||!cv.width||!cv.height)return false;var s=24,c=document.createElement("canvas");c.width=s;c.height=s;
+function blank(cv){if(!cv||!cv.width||!cv.height)return true;var s=24,c=document.createElement("canvas");c.width=s;c.height=s;
  var x=c.getContext("2d");x.drawImage(cv,0,0,s,s);var d=x.getImageData(0,0,s,s).data,r=d[0],g=d[1],b=d[2],n=0;
  for(var i=0;i<d.length;i+=4){if(Math.abs(d[i]-r)>10||Math.abs(d[i+1]-g)>10||Math.abs(d[i+2]-b)>10)n++;}return n<3;}
+window.__bzBlank=blank;
+/* v0.45.6: frame a box (min, max) for a perspective camera; mirrored by DesignServe.fit (DesignRenderTest). */
+function fit(mn,mx,fovDeg,aspect){var c=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2],dx=mx[0]-mn[0],dy=mx[1]-mn[1],dz=mx[2]-mn[2];
+ var rad=Math.max(1e-6,0.5*Math.sqrt(dx*dx+dy*dy+dz*dz)),vf=fovDeg*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*Math.max(aspect,1e-3)),f=Math.min(vf,hf);
+ var dist=rad/Math.sin(f/2)*1.15,dir=[1.6,1.1,1.9],n=Math.sqrt(1.6*1.6+1.1*1.1+1.9*1.9);
+ return {c:c,r:rad,dist:dist,near:dist/100,far:dist*100,p:[c[0]+dir[0]/n*dist,c[1]+dir[1]/n*dist,c[2]+dir[2]/n*dist]};}
+window.__bzFit=fit;
+/* v0.45.6: a scene that drew nothing gets a visible size, default lights, a neutral environment and background, and a camera framed on it. */
+function rescue(){var T=window.__bzTHREE,bs=window.__blazeScene||{},r=bs.renderer||window.__bzR,sc=bs.scene||window.__bzS,cam=bs.camera||window.__bzC,ctl=bs.controls||null;
+ if(!T||!r||!sc||!cam)return false;var did=[];
+ try{var cv=r.domElement;if(!cv.clientWidth||cv.clientHeight<2){cv.style.position="fixed";cv.style.left="0";cv.style.top="0";cv.style.width="100vw";cv.style.height="100vh";cv.style.display="block";did.push("size");}
+  var w=Math.max(cv.clientWidth||innerWidth||1,1),h=Math.max(cv.clientHeight||innerHeight||1,1);r.setSize(w,h,false);if(cam.isPerspectiveCamera){cam.aspect=w/h;}}catch(e){}
+ try{var lights=0;sc.traverse(function(o){if(o.isLight)lights++;});
+  if(!lights){sc.add(new T.HemisphereLight(0xffffff,0x444444,1.2));var k=new T.DirectionalLight(0xffffff,2.0);k.position.set(3,5,4);sc.add(k);sc.add(new T.AmbientLight(0xffffff,0.35));did.push("lights");}}catch(e){}
+ try{if(!sc.environment&&T.PMREMGenerator){var pm=new T.PMREMGenerator(r),es=new T.Scene();es.background=new T.Color(0x9a9a9a);sc.environment=pm.fromScene(es,0.04).texture;did.push("env");}}catch(e){}
+ try{if(!sc.background){sc.background=new T.Color(matchMedia("(prefers-color-scheme: dark)").matches?0x1d1e21:0xf3f2ef);did.push("bg");}}catch(e){}
+ try{var box=new T.Box3();sc.traverse(function(o){if((o.isMesh||o.isPoints||o.isLine)&&o.visible!==false&&!o.isGridHelper&&!(o.material&&o.material.isShadowMaterial)&&!(o.geometry&&o.geometry.type==="PlaneGeometry"&&o.receiveShadow))box.expandByObject(o);});
+  if(!box.isEmpty()&&isFinite(box.min.x)&&isFinite(box.max.x)){var F=fit([box.min.x,box.min.y,box.min.z],[box.max.x,box.max.y,box.max.z],cam.fov||45,cam.aspect||1);
+   if(cam.isPerspectiveCamera){cam.near=F.near;cam.far=F.far;}cam.position.set(F.p[0],F.p[1],F.p[2]);cam.lookAt(F.c[0],F.c[1],F.c[2]);cam.updateProjectionMatrix&&cam.updateProjectionMatrix();
+   if(ctl&&ctl.target){ctl.target.set(F.c[0],F.c[1],F.c[2]);ctl.update&&ctl.update();}did.push("fit");}}catch(e){}
+ window.__bzRescued=did.join(",");
+ try{window.__bzWantSample=true;window.__bzSampleBlank=undefined;r.render(sc,cam);}catch(e){}
+ return did.length>0;}
+window.__bzRescue=rescue;
 var t0=Date.now();
-var poll=setInterval(function(){var s=window.__blazeScene;if(!s)return;clearInterval(poll);
- var cv=s.renderer&&s.renderer.domElement;
+var poll=setInterval(function(){var s=window.__blazeScene,r=(s&&s.renderer)||window.__bzR;
+ if(!r){if(Date.now()-t0>15000){clearInterval(poll);say("fail",IS3D?"The 3D page never set up its scene ("+eng+").":"three.js never started drawing on this page ("+eng+").");}return;}
+ clearInterval(poll);
+ var cv=r.domElement;
  if(cv)cv.addEventListener("webglcontextlost",function(){err("WebGL context lost");say("fail","The 3D view lost its WebGL context ("+eng+").");});
- var tries=0;(function check(){setTimeout(function(){var bl=false;try{bl=blank(cv);}catch(e){}
-  if(!bl){window.__bzReady=true;say("ready",eng);}else if(++tries<3)check();else say("fail","The 3D engine ("+eng+") started but drew nothing.");},1200);})();},100);
+ var keep=false;try{var g=cv&&(cv.getContext("webgl2")||cv.getContext("webgl"));var at=g&&g.getContextAttributes&&g.getContextAttributes();keep=!!(at&&at.preserveDrawingBuffer);}catch(e){}
+ var tries=0,blanks=0,rescued=false;(function check(){window.__bzWantSample=true;setTimeout(function(){
+  var w=window,frames=w.__bzFrames||0,calls=w.__bzDrawCalls||0,sb=w.__bzSampleBlank,drew;
+  if(cv&&(!cv.width||!cv.height||cv.clientHeight<2))drew=false;
+  else if(sb===false)drew=true;
+  else if(sb===true)drew=false;
+  else if(frames===0&&w.__bzFrames!==undefined)drew=false;
+  else if(w.__bzFrames===undefined){var bl=true;if(keep){try{bl=blank(cv);}catch(e){}}drew=!bl;}
+  else drew=calls>0;
+  tries++;
+  if(drew){w.__bzReady=true;say("ready",eng+(rescued?"+fit":""));return;}
+  blanks++;
+  if(!rescued&&(blanks>=3||(cv&&cv.clientHeight<2))){rescued=true;blanks=0;rescue();check();return;}
+  if(tries<10&&!(rescued&&blanks>=3))check();
+  else say("fail",frames>0?"The 3D scene ("+eng+") rendered but nothing was visible, even after centring the camera and adding lights.":"The 3D engine ("+eng+") started but the scene never rendered a frame.");},1200);})();},100);
 })();
 """.trim()
+
+    // ---------------- v0.45.6: framing and the never-blank pane ----------------
+
+    /** Where a perspective camera goes to show a box: centre, bounding-sphere radius, distance, near / far, position. */
+    data class Frame(val cx: Double, val cy: Double, val cz: Double, val radius: Double, val dist: Double, val near: Double, val far: Double,
+                     val px: Double, val py: Double, val pz: Double)
+
+    /**
+     * Fits [min]..[max] in a camera with vertical field of view [fovDeg] and [aspect] (width / height): the bounding sphere fills
+     * the narrower of the two fields with 15 % margin, viewed from the starter's three-quarter direction, orbiting the centre.
+     * Mirrors fit() in [HOOK_JS] (DesignRenderTest runs both).
+     */
+    fun fit(min: DoubleArray, max: DoubleArray, fovDeg: Double, aspect: Double): Frame {
+        val c = DoubleArray(3) { (min[it] + max[it]) / 2 }
+        val dx = max[0] - min[0]; val dy = max[1] - min[1]; val dz = max[2] - min[2]
+        val rad = maxOf(1e-6, 0.5 * Math.sqrt(dx * dx + dy * dy + dz * dz))
+        val vf = Math.toRadians(fovDeg); val hf = 2 * Math.atan(Math.tan(vf / 2) * maxOf(aspect, 1e-3))
+        val f = minOf(vf, hf)
+        val dist = rad / Math.sin(f / 2) * 1.15
+        val n = Math.sqrt(1.6 * 1.6 + 1.1 * 1.1 + 1.9 * 1.9)
+        return Frame(c[0], c[1], c[2], rad, dist, dist / 100, dist * 100, c[0] + 1.6 / n * dist, c[1] + 1.1 / n * dist, c[2] + 1.9 / n * dist)
+    }
+
+    /** True when every corner of the box projects inside the camera's view (used by tests: a fitted model is fully on screen). */
+    fun inView(min: DoubleArray, max: DoubleArray, fovDeg: Double, aspect: Double, f: Frame): Boolean {
+        val fwd = doubleArrayOf(f.cx - f.px, f.cy - f.py, f.cz - f.pz).let { v -> val l = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); DoubleArray(3) { v[it] / l } }
+        val up0 = doubleArrayOf(0.0, 1.0, 0.0)
+        fun cross(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+        fun norm(v: DoubleArray) = Math.sqrt(v.sumOf { it * it }).let { l -> DoubleArray(3) { v[it] / l } }
+        val right = norm(cross(fwd, up0)); val up = cross(right, fwd)
+        val tv = Math.tan(Math.toRadians(fovDeg) / 2); val th = tv * aspect
+        for (i in 0 until 8) {
+            val p = doubleArrayOf(if (i and 1 == 0) min[0] else max[0], if (i and 2 == 0) min[1] else max[1], if (i and 4 == 0) min[2] else max[2])
+            val d = doubleArrayOf(p[0] - f.px, p[1] - f.py, p[2] - f.pz)
+            val z = d[0] * fwd[0] + d[1] * fwd[1] + d[2] * fwd[2]
+            if (z < f.near || z > f.far) return false
+            val x = (d[0] * right[0] + d[1] * right[1] + d[2] * right[2]) / z
+            val y = (d[0] * up[0] + d[1] * up[1] + d[2] * up[2]) / z
+            if (Math.abs(x) > th || Math.abs(y) > tv) return false
+        }
+        return true
+    }
+
+    /** What the Design stage shows for a page: never a blank pane. */
+    enum class Pane { EMPTY, LIVE, LIVE_WITH_ERROR, SKETCH_WITH_ERROR, SKETCH }
+
+    /**
+     * [glPage] = 3D or three.js page (it must report that it drew); [hasParts] = a parts-based 3D design (can be drawn natively);
+     * [preview] = WebGL previews allowed; [failure] = the reported failure, if any. A failed GL page always shows the error card.
+     */
+    fun pane(url: String, glPage: Boolean, hasParts: Boolean, preview: Boolean, failure: String?): Pane = when {
+        url.isBlank() -> Pane.EMPTY
+        hasParts && failure != null -> Pane.SKETCH_WITH_ERROR
+        hasParts && !preview -> Pane.SKETCH
+        !preview && glPage -> Pane.LIVE_WITH_ERROR
+        failure != null -> Pane.LIVE_WITH_ERROR
+        else -> Pane.LIVE
+    }
+
+    /** The error card's text when WebGL is missing or a load failed (shown over the page or under the simple drawing). */
+    fun failText(error: String): String = "The 3D view couldn't draw this: " + error.take(220)
 
     // ---------------- error file ----------------
 
@@ -331,7 +432,7 @@ var poll=setInterval(function(){var s=window.__blazeScene;if(!s)return;clearInte
     }
 
     // ---------------- Mermaid files (v0.26.1) ----------------
-    // Jack's A12: a .mmd file opened in Design showed its raw "flowchart TD / Sun[Sunlight] -->…" source as text on a
+    // Jack's phone: a .mmd file opened in Design showed its raw "flowchart TD / Sun[Sunlight] -->…" source as text on a
     // white page. A Mermaid file (by extension, or text that starts like Mermaid) is now drawn as a picture instead.
 
     val MERMAID_EXT = setOf("mmd", "mermaid")

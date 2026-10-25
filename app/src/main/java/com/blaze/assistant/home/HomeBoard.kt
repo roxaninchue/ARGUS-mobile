@@ -103,6 +103,7 @@ object HomeBoard {
     fun reload() {
         val s = store ?: return
         _widgets.value = s.all(); _data.value = s.allData()
+        try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: cached weather feeds the [context] block
     }
 
     fun storeOrNull(): HomeStore? = store

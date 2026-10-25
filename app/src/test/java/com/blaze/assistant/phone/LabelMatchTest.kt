@@ -7,14 +7,14 @@ import org.junit.Test
 
 /** v0.30.4 fast actions: tap targets match across skins (Samsung One UI vs Pixel), fuzzily, and safely. */
 class LabelMatchTest {
-    /** Samsung A12 (One UI 3/4) Settings, top level, as the accessibility tree lists it. */
+    /** One UI 3/4 Settings, top level, as the accessibility tree lists it. */
     private val samsungTop = listOf("Search", "Samsung account", "Connections", "Connected devices", "Modes and Routines", "Sounds and vibration",
         "Notifications", "Display", "Wallpaper", "Themes", "Home screen", "Lock screen", "Biometrics and security", "Privacy", "Location",
         "Safety and emergency", "Accounts and backup", "Google", "Advanced features", "Digital Wellbeing and parental controls",
         "Battery and device care", "Apps", "General management", "Accessibility", "Software update", "About phone")
     private val pixelTop = listOf("Network & internet", "Connected devices", "Apps", "Notifications", "Battery", "Storage", "Sound & vibration", "Display")
 
-    @Test fun theA12FailureNowMatches() {
+    @Test fun theOneUiFailureNowMatches() {
         // Macro 1 failed at its first tap: "Apps" (and the model's Pixel-style names) on Samsung.
         assertEquals("Apps", samsungTop[LabelMatch.best("Apps", samsungTop)!!])
         assertEquals("Apps", samsungTop[LabelMatch.best("Apps & notifications", samsungTop)!!])

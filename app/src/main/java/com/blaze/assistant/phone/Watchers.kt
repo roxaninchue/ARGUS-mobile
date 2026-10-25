@@ -130,7 +130,7 @@ object Watchers {
     fun onEvent(svc: BlazeAccessibilityService, pkg: String) {
         if (list.isEmpty() || scheduled || acting) return
         scheduled = true
-        // v0.34.1 perf: at most one full-tree scan per CHECK_GAP_MS (content-changed events can arrive ~10/s from any app);
+        // v0.45.23 perf: at most one full-tree scan per CHECK_GAP_MS (content-changed events can arrive ~10/s from any app);
         // still a trailing check, so the newest screen is always looked at.
         val wait = maxOf(60L, CHECK_GAP_MS - (SystemClock.uptimeMillis() - lastCheckAt))
         main.postDelayed({ scheduled = false; lastCheckAt = SystemClock.uptimeMillis(); try { check(svc, pkg) } catch (_: Exception) { } }, wait)

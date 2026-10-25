@@ -8,7 +8,7 @@ import org.junit.Test
 class StorageMathTest {
     private val G = StorageMath.GB
 
-    @Test fun theA12Numbers() {
+    @Test fun theLowEndPhoneNumbers() {
         // Samsung: 61.98 GB used of 128 GB (48%).
         val v = StorageMath.Vol("Internal storage", 128 * G, 128 * G - 61_980_000_000L)
         assertEquals(61_980_000_000L, v.used)

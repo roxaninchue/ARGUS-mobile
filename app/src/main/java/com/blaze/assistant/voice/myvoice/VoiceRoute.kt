@@ -46,7 +46,7 @@ object VoiceRoute {
         else -> 3   // measured: steps barely change speed (lm_main dominates), so Auto keeps quality
     }
 
-    /** A Galaxy A12 class phone: 4 GB RAM or less, or only little cores. Picks threads and default quality. */
+    /** A low-memory phone: 4 GB RAM or less, or only little cores. Picks threads and default quality. */
     fun lowEnd(totalRamBytes: Long, cores: Int): Boolean = totalRamBytes in 1..(4_300L * 1024 * 1024) || cores <= 4
 
     fun threads(cores: Int): Int = when {

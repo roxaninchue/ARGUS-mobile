@@ -166,15 +166,15 @@ class HomeParsersTest {
     }
 
     @Test fun githubEvents() {
-        val json = """[{"type":"PushEvent","actor":{"login":"lacksonkapapahue"},"created_at":"2026-10-15T16:30:00Z","payload":{"size":2,"commits":[{"message":"first"},{"message":"v0.28.4: blaze-docs\n\nmore"}]}},
+        val json = """[{"type":"PushEvent","actor":{"login":"octocat"},"created_at":"2026-10-15T16:30:00Z","payload":{"size":2,"commits":[{"message":"first"},{"message":"v0.28.4: blaze-docs\n\nmore"}]}},
 {"type":"PullRequestEvent","actor":{"login":"bot"},"created_at":"2026-10-15T12:00:00Z","payload":{"action":"opened","pull_request":{"number":70,"title":"Home board","html_url":"https://github.com/o/r/pull/70"}}},
 {"type":"GollumEvent","actor":{"login":"x"},"created_at":"2026-10-15T12:00:00Z","payload":{}}]"""
-        val d = GitHubFeed.parseEvents(json, "lacksonkapapahue/Blaze-agent", now)
+        val d = GitHubFeed.parseEvents(json, "octocat/Blaze-agent", now)
         assertEquals(2, d.lines.size)
-        assertEquals("v0.28.4: blaze-docs", d.lines[0].title); assertEquals("lacksonkapapahue · 30 min ago", d.lines[0].sub)
+        assertEquals("v0.28.4: blaze-docs", d.lines[0].title); assertEquals("octocat · 30 min ago", d.lines[0].sub)
         assertEquals("Opened PR #70: Home board", d.lines[1].title); assertEquals("https://github.com/o/r/pull/70", d.lines[1].url)
         try { GitHubFeed.parseEvents("""{"message":"API rate limit exceeded for 1.2.3.4."}""", "o/r", now); fail() } catch (e: SourceError) { assertTrue(e.message!!.contains("free limit")) }
-        assertEquals("lacksonkapapahue/Blaze-agent", GitHubFeed.repo("https://github.com/lacksonkapapahue/Blaze-agent.git"))
+        assertEquals("octocat/Blaze-agent", GitHubFeed.repo("https://github.com/octocat/Blaze-agent.git"))
         assertNull(GitHubFeed.repo("not a repo"))
         val n = GitHubFeed.parseNotifications("""[{"reason":"review_requested","updated_at":"2026-10-15T16:00:00Z","subject":{"title":"Fix it"},"repository":{"full_name":"o/r"}}]""", now)
         assertEquals("1 unread", n.value); assertEquals("o/r · review requested · 1 h ago", n.lines[0].sub)

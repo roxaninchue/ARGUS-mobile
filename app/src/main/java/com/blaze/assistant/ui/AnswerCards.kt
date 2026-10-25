@@ -148,17 +148,18 @@ object AnswerCards {
 fun AnswerBody(key: Long, src: String, live: Boolean = false) {
     val c = LocalBlaze.current
     val fold = Settings.foldAnswers
-    val segs = remember(src) { AnswerCards.parse(src) }
+    // v0.45.6: settled replies come from the process-wide memo (rows scrolled back into view don't parse again).
+    val segs = remember(src, live) { ParseMemo.memo(ParseMemo.segs, src, live) { AnswerCards.parse(src) } }
     val report = fold && AnswerCards.isReport(src)
     // v0.24.9 rich replies: steps, section pictures, image rows / decks and diagrams on top of the cards (pref rich_replies, default on;
     // "Visual answers" in Settings since v0.26.1, which also covers charts, choices, forms, tools and compare cards).
     val priv = com.blaze.assistant.agent.Agent.privateChat.value
     val rich = Settings.bool("rich_replies", true)
-    val blocks = remember(src, priv, rich) {
+    val blocks = remember(src, priv, rich, live) { ParseMemo.memo(ParseMemo.blocks, "$priv|$rich|" + src, live) {
         val raw = if (rich) RichReplies.expand(segs, priv) else segs.map { RichReplies.Block.Plain(it) }
         // v0.31.0: a picture beside a paragraph splits into the picture's window and the paragraph.
         raw.flatMap { b -> if (b is RichReplies.Block.ImageText) listOf(RichReplies.Block.Image(b.img), RichReplies.Block.Plain(AnswerCards.Seg.Text(b.md))) else listOf(b) }
-    }
+    } }
     // Blocks already on screen when this reply was first drawn don't play the landing again.
     val seen = remember(key) { HashSet<Int>().apply { if (!live) addAll(blocks.indices) } }
     // v0.26.1: a visual still streaming in shows a quiet placeholder only while Blaze is replying.
@@ -212,7 +213,8 @@ private const val FADE_STEP = 4
 @Composable
 private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
     val c = LocalBlaze.current
-    val shown = remember(md, c.accent, live) { Md.render(md, c.accent, c.hair.copy(alpha = 0.35f), live = live) }
+    val codeBg = c.hair.copy(alpha = 0.35f)
+    val shown = remember(md, c.accent, live) { ParseMemo.memo(ParseMemo.md, "${c.accent.value}|${codeBg.value}|" + md, live) { Md.render(md, c.accent, codeBg, live = live) } }
     // v0.29.9: a soft page-coloured halo inside a bubble, so the words stay crisp with particles drifting across the glass.
     val halo = if (LocalBubble.current != null) GlassBubble.halo(c) else null
     val tracking = tail && live
@@ -222,13 +224,10 @@ private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
         if (tracking) MotionTokens.medium<Float>() else androidx.compose.animation.core.tween<Float>(160), label = "edge")
     val text = if (edge <= 0.01f || shown.isEmpty()) shown else remember(shown, edge, c.body) {
         androidx.compose.ui.text.AnnotatedString.Builder(shown).apply {
-            val n = shown.length
-            var k = 0
-            while (k * FADE_STEP < FADE_CHARS && n - k * FADE_STEP > 0) {
-                val end = n - k * FADE_STEP; val start = (end - FADE_STEP).coerceAtLeast(0)
+            // v0.45.7: spans snap to whole letters (a Yorùbá tone mark or an emoji is never split between two alphas).
+            com.blaze.assistant.agent.Scripts.fadeSpans(shown.text, FADE_STEP, FADE_CHARS).forEachIndexed { k, (start, end) ->
                 val a = 1f - edge * 0.78f * (1f - k * FADE_STEP.toFloat() / FADE_CHARS)
                 addStyle(androidx.compose.ui.text.SpanStyle(color = c.body.copy(alpha = c.body.alpha * a)), start, end)
-                k++
             }
         }.toAnnotatedString()
     }
@@ -245,7 +244,7 @@ private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
     val mod = mod0.duoShimmer(LocalSpeaker.current, tracking) { holder[1] as? androidx.compose.ui.text.TextLayoutResult }
     SelectionContainer {
         Text(text, modifier = mod, onTextLayout = { holder[1] = it; if (tracking) aim() },
-            style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 23.sp, color = c.body, shadow = halo))
+            style = TextStyle(fontFamily = Type.sansFor(md), fontSize = 15.sp, lineHeight = 23.sp, color = c.body, shadow = halo))
     }
 }
 

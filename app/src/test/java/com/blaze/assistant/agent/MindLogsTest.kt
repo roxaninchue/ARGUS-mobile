@@ -21,13 +21,14 @@ class MindLogsTest {
     private lateinit var db: Mind.Db
 
     @Before fun open() {
+        NativeSqlite.assume()
         db = Mind.Db(ApplicationProvider.getApplicationContext(), null)
         db.writableDatabase
         Mind.use(db)
         Conversations.reset()
     }
 
-    @After fun close() { Mind.use(null); db.close() }
+    @After fun close() { Mind.use(null); if (::db.isInitialized) db.close() }
 
     @Test fun appendDedupesAndKeepsOldRowsAsChat() {
         db.journal("main", JSONArray().put(JSONObject().put("role", "user").put("content", "hello there")))

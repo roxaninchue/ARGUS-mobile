@@ -129,8 +129,9 @@ import kotlinx.coroutines.withContext
 
 /**
  * v0.30.1 Blaze Music: its own full-screen app inside Blaze (like Blaze Browser and Terminal), with the
- * Player | Library | Store pill. Playback runs in [MusicService] (keeps playing with Blaze closed); this screen is a
- * MediaController onto it. Mini-player on Library / Store opens the full now-playing (Player tab).
+ * Library | Store pill. Playback runs in [MusicService] (keeps playing with Blaze closed); this screen is a
+ * MediaController onto it. v0.34.1: Player and Library are one tab: the full now-playing opens as a sheet over the
+ * Library (tab "player" = the sheet is open) and swipes down into the mini-player; playback never stops for it.
  */
 class MusicActivity : ComponentActivity() {
     companion object {
@@ -155,9 +156,12 @@ class MusicActivity : ComponentActivity() {
             if (Build.VERSION.SDK_INT < 29 && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
                 storagePerm.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
-        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-            notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
-        setContent { BlazeTheme { MusicApp(controller.value, tab.value, { tab.value = it }, onClose = { finish() }) } }
+        // 0.45.20 (item 15): no notification prompt on opening Music (the media notification needs none); downloads ask when started.
+        StoragePermission.notifAsker = {
+            if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                runCatching { notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS) }
+        }
+        setContent { BlazeTheme { MusicApp(controller.value, tab.value, { tab.value = it }, onClose = { BackToChat.go(this) }) } }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -188,6 +192,7 @@ class NowPlaying {
     var count by mutableIntStateOf(0)
     var playing by mutableStateOf(false)
     var buffering by mutableStateOf(false)
+    var wants by mutableStateOf(false)   // 0.45.20: playWhenReady (a stall = buffering while it should play)
     var pos by mutableLongStateOf(0L)
     var dur by mutableLongStateOf(0L)
     var shuffle by mutableStateOf(false)
@@ -199,7 +204,7 @@ class NowPlaying {
 
     fun read(p: Player) {
         item = p.currentMediaItem; index = p.currentMediaItemIndex; count = p.mediaItemCount
-        playing = p.isPlaying; buffering = p.playbackState == Player.STATE_BUFFERING
+        playing = p.isPlaying; buffering = p.playbackState == Player.STATE_BUFFERING; wants = p.playWhenReady
         pos = p.currentPosition.coerceAtLeast(0); dur = p.duration.takeIf { it > 0 } ?: 0
         shuffle = p.shuffleModeEnabled
         repeat = when (p.repeatMode) { Player.REPEAT_MODE_ALL -> Repeat.ALL; Player.REPEAT_MODE_ONE -> Repeat.ONE; else -> Repeat.OFF }
@@ -230,6 +235,16 @@ class NowPlaying {
     }
 }
 
+/** 0.45.20: the player's honest network line for the item on screen ([NetHonesty.play]) and whether there's a network. */
+@Composable
+fun rememberMusicNet(np: NowPlaying): Pair<NetHonesty.Play, Boolean> {
+    val ctx = LocalContext.current
+    val online by remember { NetWatch.start(ctx) }.collectAsState()
+    val stalled = rememberStallMs(np.buffering && np.wants)
+    val stream = np.item?.mediaId?.startsWith("stream:") == true
+    return NetHonesty.play(stalled, online, stream) to online
+}
+
 /** The Track behind a queue item: the library's when we have it, else built from the item's metadata (streams). */
 fun trackOf(m: MediaItem?): Track? {
     if (m == null) return null
@@ -252,7 +267,10 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
     LaunchedEffect(ctl, np.playing) {
         while (ctl != null && np.playing) { np.pos = ctl.currentPosition.coerceAtLeast(0); np.dur = ctl.duration.coerceAtLeast(0); delay(250) }
     }
+    // v0.34.1: Back collapses the player sheet into the mini-player (it keeps playing).
     BackHandler(tab == "player") { onTab("library") }
+    // Wave A item 26: Back from the library or the store goes to the agent chat; the music keeps playing in its service.
+    BackHandler(BackToChat.step(false, tab) == BackToChat.Step.TO_CHAT) { onClose() }
 
     fun playList(list: List<Track>, start: Int, shuffle: Boolean = false) {
         val p = ctl ?: return
@@ -261,30 +279,33 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
         p.prepare(); p.play()
     }
 
-    Box(Modifier.fillMaxSize().background(c.paper)) {
+    // v0.45.8: Music shows the picked theme (its scene behind everything) and has the shared theme switcher.
+    com.blaze.assistant.ui.ThemedScreen(Modifier.fillMaxSize(), own = { background(c.paper) }) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 BackButton(onClose, desc = "Close Music")
                 Spacer(Modifier.weight(1f))
-                AppPill(listOf("player" to "Player", "library" to "Library", "store" to "Store"), tab, onPick = onTab)
+                // v0.34.1: one Library entry (the player is a sheet over it now, not a tab).
+                AppPill(listOf("library" to "Library", "store" to "Store"), if (tab == "store") "store" else "library", onPick = onTab)
                 Spacer(Modifier.weight(1f))
-                Spacer(Modifier.width(48.dp))
+                com.blaze.assistant.ui.ThemeSwitch(Modifier.width(48.dp))
             }
-            AnimatedContent(tab, Modifier.weight(1f), transitionSpec = {
+            AnimatedContent(if (tab == "store") "store" else "library", Modifier.weight(1f), transitionSpec = {
                 if (MotionTokens.enabled) fadeIn(tween(MotionTokens.MEDIUM)) togetherWith fadeOut(tween(MotionTokens.SHORT)) else fadeIn(tween(0)) togetherWith fadeOut(tween(0))
             }, label = "musicTab") { t ->
                 when (t) {
-                    "player" -> PlayerPage(ctl, np)
                     "store" -> StoreView("audio", store) { item, d, src -> playStream(ctl, item, d, src); onTab("player") }
                     else -> LibraryPage(np, ::playList)
                 }
             }
         }
-        // Mini-player: on Library and Store when something is loaded; tap for the full player.
+        // Mini-player: on Library and Store while the player sheet is collapsed; tap re-opens the full player.
         AnimatedVisibility(tab != "player" && np.item != null, Modifier.align(Alignment.BottomCenter),
             enter = MotionTokens.enterUp(), exit = MotionTokens.exitDown()) {
             MiniPlayer(ctl, np) { onTab("player") }
         }
+        // The full player: a sheet over the Library with a grab handle; swipe it down to collapse.
+        PlayerSheet(tab == "player", onCollapse = { onTab("library") }) { PlayerPage(ctl, np, ::playList) }
     }
 }
 
@@ -301,31 +322,21 @@ private fun playStream(ctl: MediaController?, item: StoreItem, d: StoreDetail, s
 
 @Composable
 private fun MiniPlayer(ctl: MediaController?, np: NowPlaying, onOpen: () -> Unit) {
-    val c = LocalBlaze.current
     val t = trackOf(np.item)
-    Column(Modifier.navigationBarsPadding().padding(10.dp).widthIn(max = 560.dp).fillMaxWidth().clip(BlazeShapes.medium)
-        .background(if (c.dark) Color(0xFF1C1C20) else Color(0xFFF1F1F3)).clickable(onClickLabel = "Open player", onClick = onOpen)) {
-        Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Art(t, Modifier.size(44.dp), target = 140)
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                MText(t?.title.orEmpty(), 13.5.sp, c.ink, FontWeight.Medium)
-                MText(np.error.ifBlank { t?.artist.orEmpty() }, 12.sp, c.sub)
-            }
-            RoundIcon(if (np.playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (np.playing) "Pause" else "Play") {
-                ctl?.let { if (it.isPlaying) it.pause() else { if (it.playbackState == Player.STATE_IDLE) it.prepare(); it.play() } }
-            }
-            RoundIcon(Icons.Rounded.SkipNext, "Next") { ctl?.seekToNext() }
-        }
-        val frac = if (np.dur > 0) (np.pos.toFloat() / np.dur).coerceIn(0f, 1f) else 0f
-        Box(Modifier.fillMaxWidth().height(2.dp).background(c.hair)) { Box(Modifier.fillMaxWidth(frac).height(2.dp).background(c.accent)) }
+    val (net, online) = rememberMusicNet(np)
+    val skipped by MusicService.offlineNote.collectAsState()
+    MiniBar(t, np.error.ifBlank { skipped }.ifBlank { NetHonesty.playText(net, online) }.ifBlank { t?.artist.orEmpty() }, np.playing, if (np.dur > 0) np.pos.toFloat() / np.dur else 0f, onOpen,
+        onPlayPause = { ctl?.let { if (it.isPlaying) it.pause() else { if (it.playbackState == Player.STATE_IDLE) it.prepare(); it.play() } } },
+        // v0.34.1 close: stops the music and empties the queue (the mini-player goes away with it).
+        onClose = { ctl?.let { it.stop(); it.clearMediaItems() } }) {
+        RoundIcon(Icons.Rounded.SkipNext, "Next") { ctl?.seekToNext() }
     }
 }
 
 // ---------------- Player (now playing) ----------------
 
 @Composable
-private fun PlayerPage(ctl: MediaController?, np: NowPlaying) {
+private fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<Track>, Int, Boolean) -> Unit) {
     val c = LocalBlaze.current
     val ctx = LocalContext.current
     val t = trackOf(np.item)
@@ -356,7 +367,7 @@ private fun PlayerPage(ctl: MediaController?, np: NowPlaying) {
         EmptyState("Nothing playing", "Pick a song in Library, or find one in the Store.")
         return
     }
-    Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(glow.copy(alpha = if (c.dark) 0.45f else 0.30f), c.paper)))
+    Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(glow.copy(alpha = if (c.dark) 0.45f else 0.30f), if (com.blaze.assistant.ui.themeOn()) Color.Transparent else c.paper)))
         .navigationBarsPadding().padding(horizontal = 22.dp)) {
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             AnimatedContent(view, label = "npView", transitionSpec = { MotionTokens.fade() togetherWith MotionTokens.fadeAway() }) { v ->
@@ -389,11 +400,19 @@ private fun PlayerPage(ctl: MediaController?, np: NowPlaying) {
                 PillButton("Skip", primary = false) { ctl?.let { it.seekToNext(); it.prepare(); it.play() } }
             }
         }
+        // 0.45.20: honest network line (weak network / retrying with Retry / offline from saved) and the offline skip chip.
+        val (net, online) = rememberMusicNet(np)
+        val skipped by MusicService.offlineNote.collectAsState()
+        if (np.error.isBlank() && (net != NetHonesty.Play.NONE || skipped.isNotBlank())) {
+            Spacer(Modifier.height(6.dp))
+            if (skipped.isNotBlank()) MText(skipped, 12.5.sp, c.sub, FontWeight.Medium)
+            else NetNote(net, online, onRetry = { ctl?.let { it.seekTo(it.currentPosition); it.prepare(); it.play() } })
+        }
         // Seek bar: drag shows the target time; the player jumps on release.
         var dragging by remember { mutableStateOf<Float?>(null) }
         val frac = dragging ?: if (np.dur > 0) (np.pos.toFloat() / np.dur).coerceIn(0f, 1f) else 0f
-        Slider(frac, { dragging = it }, onValueChangeFinished = { dragging?.let { f -> ctl?.seekTo((f * np.dur).toLong()) }; dragging = null },
-            colors = SliderDefaults.colors(thumbColor = c.ink, activeTrackColor = c.ink, inactiveTrackColor = c.hair))
+        ScrubBar(frac, { dragging = it }, { dragging?.let { f -> ctl?.seekTo((f * np.dur).toLong()) }; dragging = null },
+            active = c.ink, rest = c.hair, knob = c.ink, label = "Seek song")
         Row {
             MText(TimeText.clock(if (dragging != null) (frac * np.dur).toLong() else np.pos), 12.sp, c.sub)
             Spacer(Modifier.weight(1f))
@@ -440,6 +459,33 @@ private fun PlayerPage(ctl: MediaController?, np: NowPlaying) {
             Chip("Lyrics", Icons.Rounded.FormatQuote, view == "lyrics") { view = if (view == "lyrics") "art" else "lyrics" }
             Chip("Karaoke", Icons.Rounded.Mic, view == "karaoke") { view = if (view == "karaoke") "art" else "karaoke" }
             Chip("Queue", Icons.Rounded.KeyboardArrowDown, view == "queue") { view = if (view == "queue") "art" else "queue" }
+        }
+        // v0.34.1: the rest of the library under the controls, so the bottom is never blank and switching is one tap.
+        MoreFromLibrary(np, playList)
+    }
+}
+
+/** v0.34.1: your other songs under the player; a tap plays that song with the library as the queue. */
+@Composable
+private fun MoreFromLibrary(np: NowPlaying, playList: (List<Track>, Int, Boolean) -> Unit) {
+    val c = LocalBlaze.current
+    val songs by MediaLib.songs.collectAsState()
+    val playingKey = np.item?.mediaId
+    val others = remember(songs, playingKey) { songs.withIndex().filter { it.value.key != playingKey }.take(60) }
+    if (others.isEmpty()) return
+    Column(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+        MText("From your library", 13.sp, c.sub, FontWeight.Medium)
+        Spacer(Modifier.height(6.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(others, key = { it.value.key }) { iv ->
+                val t = iv.value
+                Column(Modifier.width(88.dp).clip(BlazeShapes.small).clickable(onClickLabel = "Play ${t.title}") { playList(songs, iv.index, false) }) {
+                    Art(t, Modifier.size(88.dp), target = 200)
+                    Spacer(Modifier.height(4.dp))
+                    MText(t.title, 12.sp, c.ink, FontWeight.Medium)
+                    MText(t.artist, 11.sp, c.sub)
+                }
+            }
         }
     }
 }
@@ -559,13 +605,50 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
     LaunchedEffect(Unit) { withContext(Dispatchers.IO) { MediaLib.refresh() } }
     val playingKey = np.item?.mediaId
     val byKey = remember(songs) { songs.associateBy { it.key } }
+    // Wave B item 20: press-and-hold multi-select (keys of the picked songs; empty = not selecting).
+    var sel by remember { mutableStateOf(LibrarySelection.NONE) }
+    var confirmMany by remember { mutableStateOf<List<Track>?>(null) }
+    val scope = rememberCoroutineScope()
+    val selecting = LibrarySelection.active(sel)
+    val found = remember(songs, q) { LibraryGroups.search(songs, q) }
+    // What Select all picks: the songs on screen in the current section.
+    val shown: List<Track> = remember(songs, liked, lists, section, q, group, openList, found) {
+        when {
+            q.isNotBlank() -> found
+            section == "songs" -> songs
+            section == "liked" -> liked.mapNotNull { byKey[it] }
+            section == "artists" || section == "albums" -> group?.let { g ->
+                (if (section == "artists") LibraryGroups.artists(songs) else LibraryGroups.albums(songs)).firstOrNull { it.first == g }?.second } ?: emptyList()
+            section == "playlists" -> lists.firstOrNull { it.id == openList }?.keys?.mapNotNull { byKey[it] }?.distinctBy { it.key } ?: emptyList()
+            else -> emptyList()
+        }
+    }
+    val shownKeys = remember(shown) { shown.map { it.key } }
+    // Songs deleted (or a section change hiding them) drop out of the selection.
+    LaunchedEffect(shownKeys) { sel = LibrarySelection.prune(sel, shownKeys) }
+    val exportTree = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
+        val picked = LibrarySelection.picked(sel, shown)
+        if (tree != null && picked.isNotEmpty()) scope.launch {
+            Toast.makeText(ctx, "Exporting ${picked.size}\u2026", Toast.LENGTH_SHORT).show()
+            val n = withContext(Dispatchers.IO) { MediaExport.exportAll(ctx, picked, tree) }
+            Toast.makeText(ctx, if (n == picked.size) "Exported $n" else "Exported $n of ${picked.size}", Toast.LENGTH_SHORT).show()
+            sel = LibrarySelection.clear()
+        }
+    }
 
     BackHandler(group != null || openList != null) { group = null; openList = null }
+    // Registered after the group handler, so Back leaves selection mode first.
+    BackHandler(LibrarySelection.backClears(sel)) { sel = LibrarySelection.clear() }
+
+    val export = rememberExportActions()
 
     @Composable
     fun SongRow(t: Track, list: List<Track>, i: Int, playlist: Playlist? = null, pIndex: Int = -1) {
         var menu by remember { mutableStateOf(false) }
-        TrackRow(t, t.key == playingKey, onClick = { playList(list, i, false) }) {
+        TrackRow(t, t.key == playingKey && !selecting,
+            onClick = { if (selecting) sel = LibrarySelection.toggle(sel, t.key) else playList(list, i, false) },
+            onLongClick = { sel = if (selecting) LibrarySelection.toggle(sel, t.key) else LibrarySelection.start(t.key) },
+            selected = if (selecting) t.key in sel else null) {
             Box {
                 RoundIcon(Icons.Rounded.MoreVert, "More", size = 40, tint = c.sub) { menu = true }
                 BlazeMenu(menu, { menu = false }, buildList {
@@ -576,24 +659,40 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         if (pIndex > 0) add("Move up" to { MediaLib.setPlaylists(PlaylistOps.move(lists, playlist.id, pIndex, pIndex - 1, System.currentTimeMillis())) })
                         if (pIndex < playlist.keys.size - 1) add("Move down" to { MediaLib.setPlaylists(PlaylistOps.move(lists, playlist.id, pIndex, pIndex + 1, System.currentTimeMillis())) })
                     }
-                    if (t.source == "download") add("Delete from phone" to { confirmDel = t })
+                    if (t.source == "download") { addAll(export.menu({ listOf(t) }, false)); add("Delete from phone" to { confirmDel = t }) }
                 })
             }
         }
     }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
-        KitSearch(q, { q = it; group = null; openList = null }, "Search your music")
+        if (selecting) SelectionBar(LibrarySelection.label(sel), LibrarySelection.allSelected(sel, shownKeys),
+            onClose = { sel = LibrarySelection.clear() }, onSelectAll = { sel = LibrarySelection.selectAll(sel, shownKeys) },
+            onShare = {
+                val i = MediaExport.shareIntent(ctx, LibrarySelection.picked(sel, shown))
+                if (i == null) Toast.makeText(ctx, "These can't be shared", Toast.LENGTH_SHORT).show() else runCatching { ctx.startActivity(i) }
+            },
+            onExport = { runCatching { exportTree.launch(null) }.onFailure { Toast.makeText(ctx, "No file picker on this phone", Toast.LENGTH_SHORT).show() } },
+            exportItems = listOf(
+                "Export to Music" to { export.run(LibrarySelection.picked(sel, shown), MediaStorePolicy.Target.DEFAULT); sel = LibrarySelection.clear() },
+                "Export to Downloads" to { export.run(LibrarySelection.picked(sel, shown), MediaStorePolicy.Target.DOWNLOADS); sel = LibrarySelection.clear() },
+                "Export to folder\u2026" to { runCatching { exportTree.launch(null) }.onFailure { Toast.makeText(ctx, "No file picker on this phone", Toast.LENGTH_SHORT).show() } },
+            ),
+            onDelete = {
+                val p = LibrarySelection.picked(sel, shown)
+                if (LibrarySelection.deletable(p).isEmpty()) Toast.makeText(ctx, "Gallery songs are deleted in Gallery", Toast.LENGTH_SHORT).show() else confirmMany = p
+            },
+            onAddToPlaylist = { addTo = LibrarySelection.picked(sel, shown).map { it.key } })
+        else KitSearch(q, { q = it; group = null; openList = null }, "Search your music")
         Spacer(Modifier.height(8.dp))
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf("foryou" to "For you", "songs" to "Songs", "liked" to "Liked", "artists" to "Artists", "albums" to "Albums", "playlists" to "Playlists").forEach { (id, label) ->
                 val on = section == id
-                Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.ink else c.faint).clickable { section = id; group = null; openList = null }
+                Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.ink else c.faint).clickable { section = id; group = null; openList = null; sel = LibrarySelection.clear() }
                     .padding(horizontal = 14.dp, vertical = 7.dp)) { MText(label, 13.sp, if (on) c.paper else c.sub, FontWeight.Medium) }
             }
         }
         Spacer(Modifier.height(6.dp))
-        val found = LibraryGroups.search(songs, q)
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 110.dp)) {
             when {
                 q.isNotBlank() -> {
@@ -708,12 +807,12 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
     }
 
     addTo?.let { keys ->
-        BlazeDialog("Add to playlist", confirm = "New playlist", onConfirm = { addTo = null; naming = null to ""; pendingAdd = keys }, dismiss = "Cancel", onDismiss = { addTo = null }) {
+        BlazeDialog("Add to playlist", confirm = "New playlist", onConfirm = { addTo = null; naming = null to ""; pendingAdd = keys; sel = LibrarySelection.clear() }, dismiss = "Cancel", onDismiss = { addTo = null }) {
             Column(Modifier.fillMaxWidth()) {
                 if (lists.isEmpty()) MText("No playlists yet.", 13.sp, DialogColors.body)
                 lists.forEach { p ->
                     Box(Modifier.fillMaxWidth().clip(BlazeShapes.small).clickable {
-                        MediaLib.setPlaylists(PlaylistOps.add(lists, p.id, keys, System.currentTimeMillis())); addTo = null
+                        MediaLib.setPlaylists(PlaylistOps.add(lists, p.id, keys, System.currentTimeMillis())); addTo = null; sel = LibrarySelection.clear()
                         Toast.makeText(ctx, "Added to ${p.name}", Toast.LENGTH_SHORT).show()
                     }.padding(horizontal = 8.dp, vertical = 12.dp)) { MText(p.name, 15.sp, DialogColors.title) }
                 }
@@ -738,6 +837,14 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
     confirmDel?.let { t ->
         BlazeDialog("Delete \u201c${t.title.take(40)}\u201d?", "It's removed from your phone and from every playlist.", confirm = "Delete", warm = true,
             onConfirm = { MediaLib.deleteDownload(ctx, t.key); confirmDel = null }, dismiss = "Cancel", onDismiss = { confirmDel = null })
+    }
+    confirmMany?.let { picked ->
+        val (title, body) = LibrarySelection.deleteText(picked, "audio")
+        BlazeDialog(title, body, confirm = "Delete", warm = true, onConfirm = {
+            val keys = LibrarySelection.deletable(picked).map { it.key }
+            confirmMany = null; sel = LibrarySelection.clear()
+            scope.launch { withContext(Dispatchers.IO) { MediaLib.deleteDownloads(ctx, keys) } }
+        }, dismiss = "Cancel", onDismiss = { confirmMany = null })
     }
 }
 

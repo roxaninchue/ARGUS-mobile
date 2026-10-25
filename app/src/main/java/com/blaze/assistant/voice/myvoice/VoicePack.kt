@@ -11,8 +11,9 @@ import java.security.MessageDigest
  * size + SHA-256 check, a tiny tar reader, and the state the setup screen shows. Tested on the JVM (VoicePackTest).
  *
  *  - Runtime: libsherpa-onnx-jni.so (sherpa-onnx 1.13.8, onnxruntime linked in) for this phone's ABI, gzipped,
- *    from this repo's `voice-runtime-1.13.8` release (copied unchanged from the official sherpa-onnx AAR, see
- *    tools/voice-runtime.sh). ~9 MB download.
+ *    from the blaze-releases package registry (generic package voice-runtime/1.13.8, copied unchanged from the
+ *    official sherpa-onnx AAR, see tools/voice-runtime.sh). ~9 MB download. Both the .gz and the unpacked .so are
+ *    SHA-256 checked.
  *  - Model: sherpa-onnx PocketTTS int8 (Kyutai Pocket TTS, zero-shot voice cloning), the official k2-fsa
  *    tar.bz2. ~98 MB download, ~198 MB unpacked.
  */
@@ -23,14 +24,18 @@ object VoicePack {
 
     val runtimes = listOf(
         Runtime("arm64-v8a",
-            "https://github.com/lacksonkapapahue/Blaze-agent/releases/download/voice-runtime-1.13.8/libsherpa-onnx-jni-1.13.8-arm64-v8a.so.gz",
+            "https://gitlab.com/api/v4/projects/87867230/packages/generic/voice-runtime/1.13.8/libsherpa-onnx-jni-1.13.8-arm64-v8a.so.gz",
             "b4a53d915c19cb6d09b1cdc9a8084be54419b647aab9097ffdfb46f30c3c4dd8", 24_169_352L),
         Runtime("armeabi-v7a",
-            "https://github.com/lacksonkapapahue/Blaze-agent/releases/download/voice-runtime-1.13.8/libsherpa-onnx-jni-1.13.8-armeabi-v7a.so.gz",
+            "https://gitlab.com/api/v4/projects/87867230/packages/generic/voice-runtime/1.13.8/libsherpa-onnx-jni-1.13.8-armeabi-v7a.so.gz",
             "2c0350f9c23dda60318c0d195fcc02d505f05cdbfba89492a4468d2c4276be28", 16_437_284L),
     )
     /** Download sizes of the gz files (for progress before the server answers). */
     val runtimeDownloadBytes = mapOf("arm64-v8a" to 8_969_255L, "armeabi-v7a" to 8_078_888L)
+    /** SHA-256 of the gz files as uploaded (checked before unpacking). */
+    val runtimeDownloadSha256 = mapOf(
+        "arm64-v8a" to "ff3d87223bbe0709247194645aa689071a120675102c8c0401aec8d057004882",
+        "armeabi-v7a" to "fdef93cbade76bca0aeaa75f4cd72179fb323c96b54d101a38e8f3af43895ea1")
 
     const val MODEL_URL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2"
     const val MODEL_SHA256 = "2f3b88823cbbb9bf0b2477ec8ae7b3fec417b3a87b6bb5f256dba66f2ad967cb"

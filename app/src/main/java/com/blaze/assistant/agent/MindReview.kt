@@ -85,13 +85,16 @@ object MindReview {
                 val queue = d.unreviewed(200)
                 if (queue.isEmpty()) return@withLock
                 val cls = MindLogs.classOf(queue.first().conv)
-                val batch = Mind.chunk(queue.takeWhile { MindLogs.classOf(it.conv) == cls })
-                if (batch.isEmpty()) return@withLock
+                val whole = Mind.chunk(queue.takeWhile { MindLogs.classOf(it.conv) == cls })
+                if (whole.isEmpty()) return@withLock
+                // v0.45.0 reactions: turns the user gave 👎 teach nothing (marked reviewed, never sent to the model).
+                val batch = whole.filterNot { try { TurnFeedback.excluded(it.conv, it.at) } catch (_: Exception) { false } }
+                if (batch.isEmpty()) { d.markReviewed(whole.map { it.id }); done += whole.size; return@repeat }
                 val raw = call(Mind.extractRequest(Mind.render(batch) + header(cls), Mind.core(Mind.all()))) ?: return@withLock
                 val items = Mind.parseExtract(raw).let { l -> if (cls == "heard") l.map { it.copy(text = Mind.clean(it.text, inferred = true)) } else l }
                 apply(items, batch.last().id)
-                d.markReviewed(batch.map { it.id })
-                done += batch.size
+                d.markReviewed(whole.map { it.id })
+                done += whole.size
             }
         }
         return done
@@ -113,7 +116,10 @@ object MindReview {
         val now = System.currentTimeMillis()
         if (now - last < THROTTLE_MS) return 0
         d.setMeta("review_at", now.toString())
-        return review()
+        val n = review()
+        // 0.45.24: then fold near-duplicate lines together (MemoryMerge.groups); never cuts a line.
+        try { lock.withLock { Mind.consolidate() } } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Throwable) { }
+        return n
     }
 }
 

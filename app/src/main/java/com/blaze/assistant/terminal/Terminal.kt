@@ -276,17 +276,21 @@ object Terminal {
         return "[ -f \"$envFile\" ] && . \"$envFile\"; cd ${q(cwd)} 2>/dev/null\n$cmd\n__rc=\$?; echo \"$MARK\$(pwd)\"; exit \$__rc"
     }
 
-    /** v0.33.5: the Linux a `linux=true` command runs in when the caller doesn't name one: the user's chosen desktop Linux (once installed), else Alpine. */
-    fun defaultDistro(): String = try { com.blaze.assistant.desktop.LinuxDesktop.shellDistro() } catch (_: Throwable) { "alpine" }
+    /**
+     * The Linux a `linux=true` command runs in when the caller doesn't name one: Alpine, or (when Alpine isn't installed)
+     * another installed Linux. Wave B-4: the old desktop Linux choice (pref linux_desktop_distro) belonged to the removed Linux desktop page
+     * and is ignored now.
+     */
+    fun defaultDistro(): String = try { TermLogic.defaultDistro(Distros.installedIds()) } catch (_: Throwable) { "alpine" }
 
     /** The package manager hint for [distro] ("apt install <package>"). */
-    fun installHint(distro: String): String = com.blaze.assistant.desktop.DesktopDistro.installHint(com.blaze.assistant.desktop.DesktopDistro.of(distro).pm)
+    fun installHint(distro: String): String = TermLogic.installHint(distro)
 
     suspend fun run(cmd: String, timeoutSec: Int = 60, linux: Boolean = false, distro: String? = null): String = withContext(Dispatchers.IO) {
         setup()
         val dist = if (linux) (distro ?: defaultDistro()) else "alpine"
         if (linux && !Distros.installed(dist)) return@withContext if (dist == "alpine") "Linux isn't installed yet. Call linux_install (one-time ~3.5 MB download), or use run_code which sets it up for you."
-            else "${TermLogic.distro(dist)?.name ?: dist} isn't installed yet. Start the Linux desktop once (Desktop page), or install it from the Terminal's + menu."
+            else "${TermLogic.distro(dist)?.name ?: dist} isn't installed yet. Install it from the Terminal's + menu."
         val full = wrap(cmd, linux)
         val p = try { if (linux) ProcessBuilder(Linux.command(full, distro = dist)).directory(home()).redirectErrorStream(true)
                 .also { it.environment().putAll(env()); it.environment().putAll(Linux.env()) }.start() else builder(full).start() } catch (e: Exception) { return@withContext "Error: ${e.message}" }
@@ -457,20 +461,25 @@ object Terminal {
     private fun linuxParam(): String {
         val d = defaultDistro()
         return if (d == "alpine") "Run inside Blaze's Alpine Linux (apk add python3/nodejs/git/openjdk17…) instead of the phone shell"
-        else "Run inside Blaze's ${TermLogic.distro(d)?.name ?: d} (the user's chosen Linux; ${installHint(d)}, e.g. python3, nodejs, git) instead of the phone shell"
+        else "Run inside Blaze's ${TermLogic.distro(d)?.name ?: d} (${installHint(d)}, e.g. python3, nodejs, git) instead of the phone shell"
     }
 
-    fun tools(ctx: Context): List<JSONObject> = buildList {
+    /** v0.45.9: [tools] without the Termux check (no Context), so the full-list tests can build it on the JVM. */
+    fun tools(ctx: Context): List<JSONObject> = shellTools() + listOfNotNull(if (termuxInstalled(ctx)) termuxTool() else null)
+
+    internal fun shellTools(): List<JSONObject> = buildList {
         add(fn("run_shell", "Run a shell command on the phone (Android sh + BusyBox: ls, cat, grep, sed, awk, wget, curl-less http via wget, tar, unzip, vi, nc, httpd, find, ps, top, df, du...). Working dir is Blaze's home (~). Set background=true for servers, downloads, scraping or anything over ~30 s: it keeps running if Blaze is closed and the user gets a notification when it finishes or fails (optionally limit it with max_minutes). Returns exit code, current folder and output. The shell remembers cd between calls; put exports in ~/.blaze_env to keep them. For writing files use file_write, not echo/heredocs.",
             JSONObject().put("command", p("string", "Shell command")).put("timeout_seconds", p("integer", "Max seconds (default 60)")).put("background", p("boolean", "Run as a background job")).put("max_minutes", p("integer", "Time budget for a background job; 0 = none"))
-            .put("linux", p("boolean", linuxParam())), listOf("command")))
+            .put("linux", p("boolean", try { linuxParam() } catch (_: Throwable) { "Run inside Blaze's Linux instead of the phone shell" })), listOf("command")))
         add(fn("linux_install", "Download and set up Alpine Linux inside Blaze (one time, ~3.5 MB, no root).", JSONObject(), emptyList()))
         add(fn("terminal_jobs", "Background shell jobs. No id: list them with a short tail of output. With id: that job's latest output (lines, default 80). Type into one with job_input, stop with terminal_stop.",
             JSONObject().put("id", p("integer", "Job number for its full output")).put("lines", p("integer", "Last N lines, default 80")), emptyList()))
         add(fn("preview_server", "Open a local server running on the phone (e.g. a dev server started as a background job) in Blaze's built-in browser and show it to the user.",
             JSONObject().put("port", p("integer", "Port, e.g. 8000")).put("path", p("string", "Optional path, e.g. /index.html")), listOf("port")))
         add(fn("terminal_stop", "Stop a background shell job.", JSONObject().put("id", p("integer", "Job number")), listOf("id")))
-        if (termuxInstalled(ctx)) add(fn("termux_run", "Run a command in the Termux app and get its output back. Only when the user wants Termux; Blaze's own Linux (run_code/run_shell) is the default. Sets itself up (permission pop-up, copies the one-line fix if Termux blocks it).",
-            JSONObject().put("command", p("string", "bash command")).put("background", p("boolean", "Run without opening a Termux window")), listOf("command")))
     }
+
+    private fun termuxTool(): JSONObject = fn("termux_run", "Run a command in the Termux app and get its output back. Only when the user wants Termux; Blaze's own Linux (run_code/run_shell) is the default. Sets itself up (permission pop-up, copies the one-line fix if Termux blocks it).",
+            JSONObject().put("command", p("string", "bash command")).put("background", p("boolean", "Run without opening a Termux window")), listOf("command"))
+
 }

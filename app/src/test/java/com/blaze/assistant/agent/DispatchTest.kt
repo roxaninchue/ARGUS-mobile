@@ -10,8 +10,8 @@ import org.junit.Test
 class DispatchTest {
     private val N = Dispatch.Kind.NETWORK; private val P = Dispatch.Kind.PHONE; private val G = Dispatch.Kind.GENERAL
 
-    @Test fun networkSpecialistsRunThreeAtOnceEvenOnTheA12() {
-        // Galaxy A12: general cap 1.
+    @Test fun networkSpecialistsRunThreeAtOnceEvenOnLowEndPhones() {
+        // low-end phone: general cap 1.
         assertTrue(Dispatch.canRun(N, listOf(N, N), 1)); assertFalse(Dispatch.canRun(N, listOf(N, N, N), 1))
         assertTrue("network work doesn't take the general slot", Dispatch.canRun(N, listOf(G), 1))
         assertTrue(Dispatch.canRun(G, listOf(N, N, N), 1)); assertFalse(Dispatch.canRun(G, listOf(G), 1))

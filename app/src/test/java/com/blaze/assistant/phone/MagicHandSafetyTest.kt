@@ -7,7 +7,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.25.0: Magic Hand can never lock the phone (A12 report): overlay flags, teach filter, escape hatches, watchdog. */
+/** v0.25.0: Magic Hand can never lock the phone (low-end phone report): overlay flags, teach filter, escape hatches, watchdog. */
 class MagicHandSafetyTest {
     private val S = MagicHandSafety
 

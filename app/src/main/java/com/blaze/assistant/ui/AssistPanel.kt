@@ -3,6 +3,7 @@ package com.blaze.assistant.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -162,7 +163,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 .clip(card).background(Glass.surface).border(1.dp, Glass.border, card)
         ) {
             // v0.33.0 Screen Doctor: "What's this?" over the app you summoned Blaze on.
-            if (previewMessages == null && !busy && com.blaze.assistant.assist.ScreenDoctor.fresh()) {
+            if (previewMessages != null && !busy && com.blaze.assistant.assist.ScreenDoctor.fresh()) {   // v0.39.0: the Duo strip has the chip now
                 Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("What's this?", modifier = Modifier.clip(RoundedCornerShape(50)).background(Glass.raised)
                         .clickable { Voice.cancelListening(); touched = true
@@ -175,6 +176,14 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
                 }
             }
+            // v0.39.0 home-button sheet: who's listening (Halo x Blaze), what Blaze sees, and one-tap chips.
+            if (previewMessages == null) AssistDuoStrip(listening = listening, busy = busy, partial = partial,
+                onChip = { prompt, withScreen ->
+                    Voice.cancelListening(); touched = true
+                    val sd = com.blaze.assistant.assist.ScreenDoctor
+                    if (withScreen && sd.fresh()) { Agent.send(sd.prompt(sd.text, sd.app, prompt), attachments = sd.attachments()) } else Agent.send(prompt)
+                },
+                onType = { Voice.cancelListening(); touched = true })
             // Header: mascot, name + status, icon buttons.
             Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 8.dp, top = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 MascotGlyph(if (compact) 34.dp else 40.dp, pulse = listening || busy, level = level)
@@ -278,6 +287,49 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 else GlassIconButton(Icons.Rounded.Send, "Send", size = 46.dp,
                     bg = if (text.isNotBlank() || pending.isNotEmpty()) Glass.blue else Glass.raised2) { submit() }
             }
+        }
+    }
+}
+
+/**
+ * v0.39.0 the home-button sheet's top strip: "Blaze & Halo" with the Duo dots and a plain status, "Sees: <app>"
+ * (from the assist structure the system hands Blaze, or Awareness), the live words while listening, and chips:
+ * What is this? / Reply for me / @halo / Type instead. Replies come back as drafts with a Send button (ConfirmCard).
+ */
+@Composable
+private fun AssistDuoStrip(listening: Boolean, busy: Boolean, partial: String, onChip: (String, Boolean) -> Unit, onType: () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val sd = com.blaze.assistant.assist.ScreenDoctor
+    val label = remember(sd.app) {
+        val pkg = sd.app
+        if (pkg.isBlank()) com.blaze.assistant.agent.Awareness.get("screen")?.title.orEmpty()
+        else try { ctx.packageManager.getApplicationLabel(ctx.packageManager.getApplicationInfo(pkg, 0)).toString() } catch (_: Exception) { pkg.substringAfterLast('.') }
+    }
+    val sees = com.blaze.assistant.agent.SimpleHome.seesLine(label)
+    Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(9.dp).clip(CircleShape).background(DuoColors.blazeBlue))
+            Spacer(Modifier.width(3.dp))
+            Box(Modifier.size(9.dp).clip(CircleShape).background(DuoColors.haloGold))
+            Spacer(Modifier.width(8.dp))
+            Text("Blaze & Halo", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Glass.text))
+            Spacer(Modifier.width(8.dp))
+            Text(when { listening -> "Listening\u2026 let go to finish"; busy -> "Working"; label.isNotBlank() -> "Done \u00b7 still in $label"; else -> "Ready" },
+                maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
+        }
+        if (sees.isNotBlank()) Text(sees, modifier = Modifier.padding(top = 4.dp), maxLines = 1, overflow = TextOverflow.Ellipsis,
+            style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.cyan))
+        if (listening && partial.isNotBlank()) Text("\u201c$partial\u201d", modifier = Modifier.padding(top = 6.dp),
+            style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = Glass.text))
+        if (!busy) Row(Modifier.fillMaxWidth().padding(top = 8.dp).horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf("What is this?" to ("Explain what's on my screen in plain words." to true),
+                "Reply for me" to ("Write a reply for me to what's on my screen. Show it as a draft; don't send until I tap Send." to true),
+                "@halo" to ("@halo what do you think about what's on my screen?" to true)).forEach { (l, v) ->
+                Text(l, modifier = Modifier.clip(RoundedCornerShape(50)).background(Glass.raised).clickable { onChip(v.first, v.second) }
+                    .padding(horizontal = 12.dp, vertical = 7.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Glass.text))
+            }
+            Text("Type instead", modifier = Modifier.clip(RoundedCornerShape(50)).clickable { onType() }.padding(horizontal = 12.dp, vertical = 7.dp),
+                style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = Glass.sub))
         }
     }
 }

@@ -10,7 +10,7 @@ package com.blaze.assistant.blazeos
 
 /**
  * One icon: a built-in BlazeOS app ("blaze:<key>") or one installed from the BlazeOS App Store ("pkg:<manifest id>").
- * [kind] is the entry type: builtin, web or linux.
+ * [kind] is the entry type: builtin, web or wasm.
  */
 data class OsApp(val id: String, val label: String, val kind: String = OsManifest.BUILTIN, val removable: Boolean = false) {
     val builtin: Boolean get() = id.startsWith(OsApps.BUILTIN)
@@ -28,7 +28,7 @@ object OsApps {
     val builtins = listOf(
         "blaze" to "Blaze", "camera" to "Camera", "photos" to "Photos", "music" to "Music", "video" to "Video",
         "browser" to "Browser", "calendar" to "Calendar", "clock" to "Clock", "weather" to "Weather", "files" to "Files",
-        "terminal" to "Terminal", "linux" to "Desktop", "store" to "App Store", "settings" to "Settings",
+        "terminal" to "Terminal", "store" to "App Store", "settings" to "Settings",
     )
     val builtinKeys: Set<String> = builtins.map { it.first }.toHashSet()
 
@@ -236,7 +236,7 @@ object OsIcons {
     val shapes = listOf(SQUIRCLE, CIRCLE, ROUNDED)
     fun normShape(s: String?): String = s?.trim()?.lowercase()?.takeIf { it in shapes } ?: SQUIRCLE
 
-    /** Largest icon bitmap kept (px): plenty for a 60 dp icon on an xhdpi A12, small enough for its RAM. */
+    /** Largest icon bitmap kept (px): plenty for a 60 dp icon on an xhdpi low-end phone, small enough for its RAM. */
     const val MAX_PX = 144
 
     /**

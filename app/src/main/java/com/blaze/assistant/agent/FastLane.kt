@@ -2,11 +2,8 @@ package com.blaze.assistant.agent
 
 import android.content.Context
 import android.content.Intent
-import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.Uri
-import android.view.KeyEvent
 import com.blaze.assistant.phone.PhoneTools
 import com.blaze.assistant.phone.Skills
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +44,13 @@ object FastLane {
     fun supported(ctx: Context) = runner(ctx).exists()
     fun ready(ctx: Context) = supported(ctx) && model(ctx).length() > 30_000_000L
     fun enabled(ctx: Context) = Settings.fastLane && ready(ctx)
+
+    /**
+     * v0.45.8: the on-device model runs only offline. Online it sat in front of EVERY short message: starting its process
+     * (up to 40 tries of 150 ms after an idle stop) and an inference (read timeout 8 s), seconds before the cloud request
+     * left. Online, the instant rules and the intent cache still answer direct commands with no model.
+     */
+    fun useModel(offline: Boolean): Boolean = offline
 
     suspend fun download(ctx: Context): kotlin.Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
@@ -167,15 +171,15 @@ object FastLane {
         // Intent cache: a command that worked before runs again with no model at all.
         IntentCache.get(text)?.let { (n, a) ->
             val r = try { execute(ctx, n, a, confirm) } catch (_: Exception) { null }
-            if (r != null && listOf("Couldn't tell", "Error", "Unknown", "No app").none { r.startsWith(it) }) return Result(r, System.currentTimeMillis() - t0, n)
+            if (r != null && FAIL_STARTS.none { r.startsWith(it) }) return Result(r, System.currentTimeMillis() - t0, n)
             IntentCache.drop(text)
         }
         // Everyday commands by plain rules: instant and offline, no model needed.
         QuickRules.parse(text)?.let { (n, a) ->
             val r = try { execute(ctx, n, a, confirm) } catch (_: Exception) { null }
-            if (r != null && listOf("Couldn't tell", "Error", "Unknown", "No app").none { r.startsWith(it) }) return Result(r, System.currentTimeMillis() - t0, n)
+            if (r != null && FAIL_STARTS.none { r.startsWith(it) }) return Result(r, System.currentTimeMillis() - t0, n)
         }
-        if (!enabled(ctx) || compound(QuickRules.polite(text))) return null
+        if (!useModel(offline) || !enabled(ctx) || compound(QuickRules.polite(text))) return null
         val out = lock.withLock {
             try {
                 if (!ensureStarted(ctx)) return null
@@ -196,7 +200,7 @@ object FastLane {
         val name = call.optString("name")
         val a = call.optJSONObject("arguments") ?: JSONObject()
         val reply = execute(ctx, name, a, confirm) ?: return null
-        if (listOf("Couldn't tell", "Error", "Unknown", "No app").any { reply.startsWith(it) }) return null
+        if (FAIL_STARTS.any { reply.startsWith(it) }) return null
         if (conf >= 0.5 && name !in setOf("send_text", "call_contact", "web_search")) IntentCache.put(text, name, a)
         return Result(reply, System.currentTimeMillis() - t0, name)
     }
@@ -212,21 +216,22 @@ object FastLane {
     /** Idle runner is shut down to give memory back. */
     fun trimIfIdle() { if (proc != null && System.currentTimeMillis() - lastUse > 5 * 60_000) stop() }
 
+    /** A fast-lane result starting with one of these is a failure: the full agent takes the request instead of a "Done". */
+    val FAIL_STARTS = listOf("Couldn't", "Could not", "Error", "Unknown", "No app", "No installed app", "Not done", "Failed", "Can't", "Cannot")
+
     private suspend fun execute(ctx: Context, name: String, a: JSONObject, confirm: suspend (String, String, String) -> Boolean): String? = when (name) {
         "open_app" -> if (a.optString("name").lowercase().removePrefix("the ").trim() in setOf("browser", "blaze browser", "web browser", "your browser", "internet"))
             { com.blaze.assistant.browser.BrowserTools.show(ctx); "Browser's open." }
             else PhoneTools.run(ctx, "open_app", JSONObject().put("app_name", a.optString("name"))).let {
             if (it.startsWith("Opened") || it.startsWith("Opening")) it else null }
         "open_settings_page" -> com.blaze.assistant.phone.AndroidControl.run(ctx, "open_settings_page", a).takeIf { it.startsWith("Opened") }
-        "set_alarm" -> { PhoneTools.run(ctx, "set_alarm", a); "Alarm set for %02d:%02d.".format(a.optInt("hour"), a.optInt("minute")) }
-        "set_timer" -> {
-            val s = a.optInt("minutes") * 60 + a.optInt("seconds")
-            if (s <= 0) null else { PhoneTools.run(ctx, "set_timer", JSONObject().put("seconds", s)); "Timer started for ${if (s >= 60) "${s / 60} min" else "$s s"}." }
-        }
+        // 0.45.15 (device /phoneqa 22:40, timer 0/5: "Timer started for 2 min." from the intent cache, no timer running):
+        // alarms and timers always go through the agent, which names the tool and reads the Clock back (ToolVerify).
+        "set_alarm", "set_timer" -> null
         "flashlight", "wifi", "bluetooth", "mobile_data", "do_not_disturb", "airplane_mode" ->
             Skills.run(ctx, "device_setting", JSONObject().put("setting", if (name == "airplane_mode") "airplane" else name)
                 .put("value", if (a.optString("state", "on") == "off") "off" else "on"))
-        "speed_stats" -> SpeedLog.summary()
+        "speed_stats" -> SpeedLog.summary() + SpeedLog.firstWordLine() + SpeedLog.lastPhases().let { if (it.isBlank()) "" else "\nLast turn: $it" } + SpeedLog.screenLine()
         "tool_stats" -> ToolStats.report()
         "list_processes" -> Processes.list(status = "live")
         "toggle_setting" -> Skills.run(ctx, "device_setting", JSONObject().put("setting", a.optString("setting"))
@@ -234,23 +239,13 @@ object FastLane {
         "set_volume" -> Skills.run(ctx, "device_setting", JSONObject().put("setting", "volume")
             .put("value", when (a.optString("level")) { "max" -> "100"; else -> a.optString("level") }))
         "battery_level" -> Skills.run(ctx, "device_setting", JSONObject().put("setting", "battery"))
-        "media_control" -> {
-            val code = when (a.optString("action")) { "pause" -> KeyEvent.KEYCODE_MEDIA_PAUSE; "next" -> KeyEvent.KEYCODE_MEDIA_NEXT
-                "previous" -> KeyEvent.KEYCODE_MEDIA_PREVIOUS; else -> KeyEvent.KEYCODE_MEDIA_PLAY }
-            val am = ctx.getSystemService(AudioManager::class.java)
-            am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, code)); am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
-            "Done: ${a.optString("action")}."
-        }
+        // 0.45.15 (review 22 Oct #7): "Done: play." / "Directions … are open." were said without checking anything. Media keys
+        // and directions go through the agent, which reads the player state / the front app back (ToolVerify).
+        "media_control" -> null
         "call_contact" -> Skills.run(ctx, "call_number", JSONObject().put("to", a.optString("name")))
         "send_text" -> Skills.run(ctx, "send_sms", JSONObject().put("to", a.optString("to")).put("message", a.optString("message")))
         "web_search" -> null   // the cloud agent searches properly (in-app or web_search)
-        "navigate_to" -> {
-            val i = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=" + Uri.encode(a.optString("place"))))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            try { ctx.startActivity(i) } catch (_: Exception) {
-                ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(a.optString("place")))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-            "Directions to ${a.optString("place")} are open."
-        }
+        "navigate_to" -> null
         "blaze_self" -> SelfSetup.open(ctx, a.optString("target"))
         "life_logs" -> com.blaze.assistant.life.LifeLogs.run(ctx, a)
         else -> null

@@ -24,7 +24,7 @@ for (const [build, dir] of [["r170", "three"], ["r162", "three-r162"]]) {
 
 const RAW = await import(pathToFileURL(path.join(tmp, "r170/three.module.min.js")));
 
-await test("raw three.js r170 throws the A12 error for a null-geometry mesh (the bug)", () => {
+await test("raw three.js r170 throws the test phone error for a null-geometry mesh (the bug)", () => {
   assert.equal(RAW.REVISION, "170");
   assert.throws(() => new RAW.Mesh(null, new RAW.MeshBasicMaterial()), /Cannot read properties of null \(reading 'morphAttributes'\)/);
 });

@@ -52,6 +52,20 @@ data class StackState(val open: Set<String> = emptySet()) {
     data class Peek(val offsetDp: Int, val scale: Float, val alpha: Float)
     companion object {
         fun peeks(count: Int): List<Peek> = (1..(count - 1).coerceIn(0, 2)).map { i -> Peek(offsetDp = 8 * i, scale = 1f - 0.05f * i, alpha = 1f - 0.3f * i) }
+
+        /** How far the UI pushes each peek down, as a multiple of [Peek.offsetDp]. */
+        const val SHIFT = 1.6f
+
+        /**
+         * v0.45.8 ghost stack: each peek only shows as the strip below the card in front of it ([visibleDp] tall). The
+         * cards are see-through glass, so a full peek drawn behind the main card used to show its edges through it.
+         */
+        data class Strip(val shiftDp: Float, val visibleDp: Float)
+
+        fun strips(count: Int): List<Strip> {
+            var prev = 0f
+            return peeks(count).map { p -> val sh = p.offsetDp * SHIFT; Strip(sh, sh - prev).also { prev = sh } }
+        }
     }
 }
 

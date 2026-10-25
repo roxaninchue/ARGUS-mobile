@@ -50,6 +50,9 @@ object SavedPages {
     fun isSavedUrl(url: String): Boolean = !url.contains("/../") && !url.contains("/./") && !url.contains('%') &&
         Regex("^file:///.*/$DIR/[a-z0-9]{4,40}\\.mht$").matches(url)
 
+    /** v0.45.0, pure: may a browser tab showing [url] read files (only Blaze's own saved-page archives). */
+    fun fileAccessFor(url: String?): Boolean = !url.isNullOrBlank() && isSavedUrl(url)
+
     fun idOfUrl(url: String): String? = if (isSavedUrl(url)) url.substringAfterLast('/').removeSuffix(".mht") else null
 
     /** "12 KB", "3.4 MB". */

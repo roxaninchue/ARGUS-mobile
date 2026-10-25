@@ -262,5 +262,5 @@ fun AboutPage() {
     Text("Your chats, memories, keys and saved logins stay on this phone (keys are synced only when you sign in to a Blaze account). Private chats are never saved.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     Spacer(Modifier.height(14.dp))
-    Label("github.com/lacksonkapapahue/Blaze-agent", color = c.sub, size = 10.sp)
+    Label("blazeinchue.pages.dev", color = c.sub, size = 10.sp)
 }

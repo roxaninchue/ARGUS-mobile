@@ -277,7 +277,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
     )
 
     /** The exact repo URLs, put on top of any repo / source-code search (the fact that was guessed wrong before). */
-    const val REPOS_LINE = "Blaze repos (exact): Android (this app) $REPO_URL · Desktop https://github.com/lacksonkapapahue/Blaze-dekstop · CLI https://github.com/lacksonkapapahue/Blaze-cli"
+    const val REPOS_LINE = "Blaze repos (exact): Android (this app) $REPO_URL · Desktop https://gitlab.com/blazeinchue/Blaze-dekstop · CLI https://gitlab.com/blazeinchue/Blaze-cli"
 
     fun formatHits(q: String, hits: List<Hit>): String =
         (if (repoRe.containsMatchIn(q.lowercase())) "$REPOS_LINE\n" else "") +

@@ -60,8 +60,8 @@ object CallControl {
         val on = if (a.has("on")) a.optBoolean("on") else true
         if (action == "start_blaze_call") {
             if (Voice.inCall) return "You're already on a call with the user."
-            ctx.startActivity(Intent(ctx, com.blaze.assistant.MainActivity::class.java).setAction(com.blaze.assistant.MainActivity.ACTION_CALL)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+            ctx.startActivity(com.blaze.assistant.IntentKey.sign(ctx, Intent(ctx, com.blaze.assistant.MainActivity::class.java).setAction(com.blaze.assistant.MainActivity.ACTION_CALL)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)))
             return "Started a voice call with the user. Say one short line to greet them."
         }
         // A call with Blaze itself.

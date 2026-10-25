@@ -1,7 +1,7 @@
 package com.blaze.assistant.agent
 
 /**
- * v0.26.1 (Jack, Galaxy A12): "draw a flowchart of how solar panels work" went through the diagrams skill, wrote a
+ * v0.26.1 (Jack): "draw a flowchart of how solar panels work" went through the diagrams skill, wrote a
  * Mermaid file and opened the Design preview, which showed the raw source and took minutes. A diagram, chart or other
  * visual asked for in chat is drawn INLINE in the reply (a ```mermaid / ```chart block, see RichReplies.PROMPT): no
  * files, no Design view or preview_server, no use_skill. The file route is only for asks to save, export, download,

@@ -2,7 +2,7 @@ package com.blaze.assistant.phone
 
 /**
  * v0.33.3, pure (AppFinderTest): finding the user's installed apps by what they ask for.
- * On a Galaxy A12, "a car rally game" got "none installed (closest is Bus Fever Party!)" although Rally Horizon was
+ * On a low-end phone, "a car rally game" got "none installed (closest is Bus Fever Party!)" although Rally Horizon was
  * installed: list_apps only kept apps whose label contained the whole filter text. Now the ask is split into words,
  * matched case-insensitively against the label's words AND the package name's parts, with partial words ("rally" →
  * "Rally Horizon", "horiz" → "Horizon"), and category words ("game", "music", "maps"…) match the app's Android

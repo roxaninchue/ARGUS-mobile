@@ -37,4 +37,43 @@ object AppMatch {
             else -> null
         }
     }
+
+    /**
+     * v0.45.6 (phone 21:30: "play music" opened BlazeFX through a fuzzy "Blaze*" match): outside apps launch only on an
+     * EXACT match: the package name itself, or the label equal to the ask (case, spaces and punctuation ignored; a trailing
+     * "app" dropped). [apps] = (label, package). Blaze's own package ([self]) is never launched this way. Returns
+     * (package, label) or null; [near] lists close labels to ask the user about instead.
+     */
+    fun exact(name: String, apps: List<Pair<String, String>>, self: String = ""): Pair<String, String>? {
+        val raw = name.trim()
+        if (raw.isEmpty()) return null
+        apps.firstOrNull { it.second.equals(raw, true) && it.second != self }?.let { return it.second to it.first }
+        val q = squash(clean(raw))
+        if (q.length < 2) return null
+        val hits = apps.filter { it.second != self && squash(it.first) == q }
+        return hits.singleOrNull()?.let { it.second to it.first }
+    }
+
+    /** Close labels for "did you mean" (never launched): the old whole-word scores 1..3. */
+    fun near(name: String, apps: List<Pair<String, String>>, self: String = "", max: Int = 4): List<String> =
+        apps.filter { it.second != self }.mapNotNull { (l, p) -> score(name, l, p)?.takeIf { it in 1..4 }?.let { it to l } }
+            .sortedBy { it.first }.map { it.second }.distinct().take(max)
+
+    private fun squash(s: String) = s.lowercase().replace(Regex("[^a-z0-9+]"), "")
+
+    /** v0.45.6: an ask that means one of Blaze's own screens ("Blaze Music", "Blaze settings"…): its view id, else null. */
+    fun blazeView(name: String): String? {
+        val q = name.lowercase().replace(Regex("[^a-z ]"), " ").replace(Regex("\\s+"), " ").trim().removeSuffix(" app").trim()
+        return when (q) {
+            "blaze music", "blaze player", "blaze music player", "music in blaze" -> "music"
+            "blaze settings", "blaze s settings" -> "settings"
+            "blaze gallery" -> "gallery"
+            "blaze terminal" -> "terminal"
+            "blaze projects" -> "projects"
+            "blaze home" -> "home"
+            "blaze design", "blaze studio" -> "design"
+            "blaze", "blaze assistant" -> "home"
+            else -> null
+        }
+    }
 }

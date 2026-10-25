@@ -1,6 +1,5 @@
 package com.blaze.assistant.phone
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -11,63 +10,54 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.LinearLayout
 import android.widget.TextView
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Blaze's visible pointer for phone control (v0.21.0).
  *
- * Before Blaze touches the screen it glides a pointer to the target, re-checks that the target is
- * still there (the orient step), shows a short ripple, then acts, so you see it coming. Touch the
- * screen or the pointer and Blaze pauses at once (manual mode): drag the pointer anywhere (dragging
- * never clicks), double-tap it to have Blaze click right there, then Blaze looks and carries on.
- * A small bar offers Resume and Stop while paused.
+ * Before Blaze touches the screen it glides a pointer to the target, re-checks that the target is still there (the
+ * orient step), shows a short ripple, then acts, so you see it coming.
  *
- * v0.24.4: always on while Blaze controls apps (every tap, long-press, swipe and type focus glides it first), a 64 dp
- * window drawn as Blaze's flame mascot (gradient, eyes, glow, white edge and soft shadow; the flame tip is the click
- * point; a pulse while moving and a squish on click) that stays on screen until the task ends, and a manual double-tap is checked first: Blaze reads what's under the tip and shows
- * "Click '…'?" for ~1.5 s (Cancel stops it), or asks when it's unclear or risky (pay / send / delete…).
+ * v0.45.14 (user, live 0.45.13 21:38: "remove that obstruction completely and cleanly"): the pointer is a picture
+ * only. Its window is FLAG_NOT_TOUCHABLE, so it never takes a touch, never covers the target and never pauses a run:
+ * Blaze's own taps, screen changes and the user's touches all pass straight through. The old paused mode (the bar
+ * over the top of the screen, drag / double-tap to click, Resume) is gone. The only way to stop a run from the screen
+ * is the small Stop chip at the bottom-left edge, which hides itself while Blaze's own gesture is in flight.
  *
- * Light on purpose (Galaxy A12): plain Views in accessibility overlay windows, no Compose, and it only
- * animates while gliding or rippling, and is a still picture otherwise.
+ * Light on purpose (low-end phone): plain Views in accessibility overlay windows, no Compose, and it only animates
+ * while gliding or rippling, and is a still picture otherwise.
  */
 object Pointer {
-    enum class Mode { AUTO, PAUSED }
-
-    /** What the user did while Blaze was paused. */
-    sealed class Event {
-        object Resume : Event()
-        object Stop : Event()
-        data class Click(val x: Float, val y: Float) : Event()
-    }
-
     const val ACCENT = 0xFF1F4BD8.toInt()
 
-    @Volatile var mode = Mode.AUTO
-        private set
     /**
-     * v0.24.4 (Luke): the pointer is always shown while Blaze drives the phone; agent taps can't hide it. The old
+     * v0.24.4 (Blazeinchue): the pointer is always shown while Blaze drives the phone; agent taps can't hide it. The old
      * `show_pointer` pref is kept (backward compatible) but no longer read for agent gestures.
      */
     const val enabled: Boolean = true
 
-    /** The pointer window = its touch target, in dp (v0.24.4: 64 dp, was 44; Luke asked for at least ~56). */
+    /** The pointer window, in dp (v0.24.4: 64 dp). */
     const val TOUCH_DP = 64
-    /** Blaze's mascot drawn inside it (v0.24.5, Luke's flame art; replaces the arrow nobody could see): tip to bottom, in dp. */
+    /** Blaze's mascot drawn inside it (v0.24.5), tip to bottom, in dp. */
     const val MASCOT_DP = 52
     /** Mascot units (body radius) in dp. */
     val UNIT_DP: Float get() = MASCOT_DP / Mascot.HEIGHT
-    /** The click point = the flame tip, from the window's top-left, in dp. */
-    // v0.32.0: the pointer is the new Blaze icon (glass drop in its gold halo); its centre is the click point.
+    // v0.32.0: the pointer is the Blaze icon (glass drop in its gold halo); its centre is the click point.
     const val TIP_Y_DP = TOUCH_DP / 2f
     val TIP_X_DP: Float get() = TOUCH_DP / 2f
+
+    /** The pointer's window: drawn only, never touchable or focusable, so every touch goes to the app under it. */
+    const val DOT_FLAGS = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+    /** The Stop chip's window: only the chip itself takes a touch; everything outside it goes to the app. */
+    const val CHIP_FLAGS = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+    /** The Stop chip sits at the bottom-left edge, this far in and up (dp), above the navigation bar. */
+    const val CHIP_EDGE_DP = 8
+    const val CHIP_UP_DP = 88
 
     /** Light "I'm moving" pulse: 1.0 → 1.07 and back every 600 ms while gliding. */
     fun pulseScale(ms: Long): Float = 1f + 0.035f * (1f - kotlin.math.cos(ms % 600 / 600f * 2f * Math.PI.toFloat()))
@@ -76,23 +66,10 @@ object Pointer {
         val k = if (t !in 0f..1f) 0f else kotlin.math.sin(t * Math.PI.toFloat())
         return (1f + 0.16f * k) to (1f - 0.18f * k)
     }
-    /** How long the "Click '…'?" bubble shows before a manual double-tap clicks. */
-    const val CONFIRM_MS = 1_500L
-
-    /** What Blaze does with a manual double-tap after reading what's under the tip. */
-    enum class ClickCheck { SHOW_THEN_CLICK, ASK }
 
     private val riskyRe = Regex("""\b(pay|payment|send|delete|remove|erase|buy|purchase|order|checkout|check out|transfer|withdraw|confirm|uninstall|post|publish|sign out|log ?out|subscribe|unsubscribe|reset|format|block|report|call)\b""", RegexOption.IGNORE_CASE)
-    /** A label that spends money, sends, deletes or can't be undone. */
+    /** A label that spends money, sends, deletes or can't be undone (the in-app browser asks before clicking one). */
     fun risky(label: String?) = !label.isNullOrBlank() && riskyRe.containsMatchIn(label)
-    /** Blank or unreadable labels, or several different targets under the tip, are ambiguous: ask. */
-    fun checkClick(label: String?, candidates: Int = 1): ClickCheck =
-        if (label.isNullOrBlank() || label.trim().length < 2 || candidates > 1 || risky(label)) ClickCheck.ASK else ClickCheck.SHOW_THEN_CLICK
-    /** The one-line bubble: Click 'Send'? (label trimmed to 32 chars, one line). */
-    fun clickLine(label: String?): String {
-        val l = label.orEmpty().replace(Regex("\\s+"), " ").trim()
-        return if (l.isEmpty()) "Click here?" else "Click \u2018" + (if (l.length > 32) l.take(31).trimEnd() + "\u2026" else l) + "\u2019?"
-    }
 
     // ---------- pure rules (PointerTest) ----------
     /** Glide time: quick for short hops, never slow (120–420 ms), by distance in dp. */
@@ -105,30 +82,35 @@ object Pointer {
     /** A target that moved more than this (dp) after the glide is aimed at again. */
     fun moved(x0: Float, y0: Float, x1: Float, y1: Float, density: Float) =
         kotlin.math.hypot(x1 - x0, y1 - y0) / density.coerceAtLeast(0.5f) > 24f
-    /** Two quick taps close together on the pointer = "click here". */
-    fun isDoubleTap(prevUpAt: Long, upAt: Long, travelPx: Float, density: Float) =
-        prevUpAt > 0 && upAt - prevUpAt in 40..350 && travelPx / density.coerceAtLeast(0.5f) < 16f
-    /** Touches during Blaze's own gestures aren't the user. */
-    fun isOwnTouch(now: Long, ownUntil: Long) = now <= ownUntil
+    /** While Blaze's own gesture is in flight (until [ownUntil]) the Stop chip is hidden, so it can't catch that touch. */
+    fun chipHidden(now: Long, ownUntil: Long) = now <= ownUntil
+
+    // ---------- stop ----------
+    @Volatile private var stopAsked = false
+    /** When the pointer was last on screen (wall clock ms); /phoneqa's overlay case checks it was shown. */
+    @Volatile var shownAt = 0L
+        private set
+
+    /** The Stop chip was tapped: the next screen action ends the task, and a glide in progress stops at once. */
+    fun stop() { stopAsked = true }
+    /** True once after Stop was tapped (the agent ends the task). */
+    fun takeStop(): Boolean = stopAsked.also { stopAsked = false }
+    val stopped: Boolean get() = stopAsked
 
     // ---------- windows ----------
     private val main by lazy { Handler(Looper.getMainLooper()) }
     private var wm: WindowManager? = null
     private var dot: Dot? = null
     private var dotLp: WindowManager.LayoutParams? = null
-    private var bar: View? = null
+    private var chip: View? = null
     private var trail: Trail? = null
     @Volatile private var ownUntil = 0L
     @Volatile private var x = 0f
     @Volatile private var y = 0f
     private var density = 2f
-    private var waiting: CompletableDeferred<Event>? = null
-    /** Called when the user takes over (pauses) or resumes, so the chat can say so. */
-    @Volatile var onChange: ((Mode) -> Unit)? = null
 
     private fun type() = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
 
-    @SuppressLint("ClickableViewAccessibility")
     private fun ensure(ctx: Context) {
         if (dot != null) return
         val w = ctx.getSystemService(WindowManager::class.java) ?: return
@@ -136,35 +118,24 @@ object Pointer {
         density = ctx.resources.displayMetrics.density
         val size = (TOUCH_DP * density).toInt()
         val v = Dot(ctx, density)
-        val lp = WindowManager.LayoutParams(size, size, type(),
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START }
-        var downX = 0f; var downY = 0f; var startX = 0; var startY = 0; var travel = 0f; var lastUp = 0L
-        v.setOnTouchListener { _, e ->
-            when (e.actionMasked) {
-                MotionEvent.ACTION_OUTSIDE -> { if (!isOwnTouch(SystemClock.uptimeMillis(), ownUntil)) pause("You touched the screen"); false }
-                MotionEvent.ACTION_DOWN -> {
-                    pause("You took the pointer")
-                    downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; travel = 0f; true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    // Dragging only moves the pointer; it never clicks.
-                    lp.x = startX + (e.rawX - downX).toInt(); lp.y = startY + (e.rawY - downY).toInt()
-                    travel = maxOf(travel, kotlin.math.hypot(e.rawX - downX, e.rawY - downY))
-                    x = lp.x + v.tipX; y = lp.y + v.tipY
-                    try { w.updateViewLayout(v, lp) } catch (_: Exception) { }
-                    true
-                }
-                MotionEvent.ACTION_UP -> {
-                    val now = SystemClock.uptimeMillis()
-                    if (mode == Mode.PAUSED && isDoubleTap(lastUp, now, travel, density)) { lastUp = 0; send(Event.Click(x, y)) } else lastUp = now
-                    true
-                }
-                else -> true
-            }
-        }
+        val lp = WindowManager.LayoutParams(size, size, type(), DOT_FLAGS, PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START }
         try { w.addView(v, lp); dot = v; dotLp = lp } catch (_: Exception) { }
+        showChip(ctx, w)
+    }
+
+    private fun showChip(ctx: Context, w: WindowManager) {
+        if (chip != null) return
+        val d = density
+        val c = TextView(ctx).apply {
+            text = "Stop"; textSize = 12f; isSingleLine = true; setTextColor(Color.WHITE)
+            setPadding((10 * d).toInt(), (5 * d).toInt(), (10 * d).toInt(), (5 * d).toInt())
+            background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = 14 * d; setColor(Color.argb(200, 29, 26, 22)) }
+            contentDescription = "Stop Blaze"
+            setOnClickListener { stop(); visibility = View.GONE }
+        }
+        val lp = WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, type(),
+            CHIP_FLAGS, PixelFormat.TRANSLUCENT).apply { gravity = Gravity.BOTTOM or Gravity.START; x = (CHIP_EDGE_DP * d).toInt(); y = (CHIP_UP_DP * d).toInt() }
+        try { w.addView(c, lp); chip = c } catch (_: Exception) { }
     }
 
     private fun place(px: Float, py: Float) {
@@ -174,23 +145,21 @@ object Pointer {
         try { wm?.updateViewLayout(v, lp) } catch (_: Exception) { }
     }
 
-    /**
-     * Glide to (tx, ty). False if the user paused Blaze before it got there (the caller must not act).
-     * No-op (true) when the pointer is switched off.
-     */
+    /** Glide to (tx, ty). False only when the user tapped Stop (the caller must not act). */
     suspend fun aim(ctx: Context, tx: Float, ty: Float): Boolean {
-        if (mode == Mode.PAUSED) return false
+        if (stopAsked) return false
         withContext(Dispatchers.Main) {
             ensure(ctx)
             dot?.visibility = View.VISIBLE
             dot?.moving(true)
         }
+        shownAt = System.currentTimeMillis()
         val fx = x.takeIf { it > 0 } ?: tx; val fy = y.takeIf { it > 0 } ?: (ty - 200 * density)
         val ms = glideMs(tx - fx, ty - fy, density)
         val start = SystemClock.uptimeMillis()
         try {
             while (true) {
-                if (mode == Mode.PAUSED) return false
+                if (stopAsked) return false
                 val t = ((SystemClock.uptimeMillis() - start).toFloat() / ms).coerceIn(0f, 1f)
                 val e = 1 - (1 - t) * (1 - t) * (1 - t)   // ease out
                 withContext(Dispatchers.Main) { place(fx + (tx - fx) * e, fy + (ty - fy) * e) }
@@ -198,30 +167,26 @@ object Pointer {
                 kotlinx.coroutines.delay(16)
             }
         } finally { main.post { dot?.moving(false) } }
-        return mode == Mode.AUTO
+        return !stopAsked
     }
 
-    /** The short "here it comes" ripple. False if the user paused during it. */
+    /** The short "here it comes" ripple. False only when the user tapped Stop during it. */
     suspend fun ripple(long: Boolean): Boolean {
-        val v = dot ?: return mode == Mode.AUTO
+        val v = dot ?: return !stopAsked
         val ms = rippleMs(long)
         withContext(Dispatchers.Main) { v.ripple(ms) }
         val end = SystemClock.uptimeMillis() + ms
-        while (SystemClock.uptimeMillis() < end) { if (mode == Mode.PAUSED) return false; kotlinx.coroutines.delay(30) }
-        return mode == Mode.AUTO
+        while (SystemClock.uptimeMillis() < end) { if (stopAsked) return false; kotlinx.coroutines.delay(30) }
+        return !stopAsked
     }
 
-    /** Blaze's own touch is about to happen: the pointer lets it through and doesn't count it as the user. */
+    /** Blaze's own touch is about to happen: the Stop chip steps aside for it (the pointer never takes touches). */
     fun ownGesture(ms: Long) {
-        ownUntil = SystemClock.uptimeMillis() + ms + 350
+        ownUntil = SystemClock.uptimeMillis() + ms + 120
         main.post {
-            val v = dot ?: return@post; val lp = dotLp ?: return@post
-            lp.flags = lp.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-            try { wm?.updateViewLayout(v, lp) } catch (_: Exception) { }
-            main.postDelayed({
-                lp.flags = lp.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
-                try { wm?.updateViewLayout(v, lp) } catch (_: Exception) { }
-            }, ms + 120)
+            val c = chip ?: return@post
+            c.visibility = View.GONE
+            main.postDelayed({ if (!chipHidden(SystemClock.uptimeMillis(), ownUntil) && !stopAsked) chip?.visibility = View.VISIBLE }, ms + 150)
         }
     }
 
@@ -242,133 +207,26 @@ object Pointer {
         }
     }
 
-    // ---------- manual mode ----------
-    fun pause(why: String) {
-        if (mode == Mode.PAUSED) return
-        mode = Mode.PAUSED
-        main.post { dot?.visibility = View.VISIBLE; dot?.paused = true; dot?.invalidate(); showBar() }
-        com.blaze.assistant.device.CrashLog.write("Pointer: paused ($why)")
-        onChange?.invoke(Mode.PAUSED)
-    }
-
-    private fun send(e: Event) {
-        when (e) {
-            is Event.Click, Event.Resume -> resumeUi()
-            Event.Stop -> { resumeUi(); main.post { dot?.visibility = View.GONE } }
-        }
-        waiting?.complete(e) ?: run { if (e is Event.Click) pendingClick = e }
-    }
-    /** A double-tap that came while no tool was waiting; the next gate picks it up. */
-    @Volatile private var pendingClick: Event.Click? = null
-
-    fun resume() = send(Event.Resume)
-    fun stop() = send(Event.Stop)
-
-    private fun resumeUi() {
-        mode = Mode.AUTO
-        main.post { dot?.paused = false; dot?.invalidate(); bar?.let { b -> try { wm?.removeView(b) } catch (_: Exception) { } }; bar = null }
-        onChange?.invoke(Mode.AUTO)
-    }
-
-    /**
-     * Called before every screen action. AUTO: null, go on. PAUSED: waits for the user (15 min at most):
-     * Resume → null; a double-tap → that click; Stop (or no answer) → Stop.
-     */
-    suspend fun gate(): Event? {
-        pendingClick?.let { pendingClick = null; return it }
-        if (mode == Mode.AUTO) return null
-        val d = CompletableDeferred<Event>()
-        waiting = d
-        val e = withTimeoutOrNull(15 * 60_000L) { d.await() } ?: Event.Stop.also { resumeUi() }
-        waiting = null
-        return if (e == Event.Resume) null else e
-    }
-
-    /** When Blaze finishes or stops, the pointer leaves the screen and manual mode ends. */
+    /** When Blaze finishes or stops, the pointer and the Stop chip leave the screen. */
     fun done() {
-        mode = Mode.AUTO; pendingClick = null; waiting?.complete(Event.Stop); waiting = null
+        stopAsked = false
         main.post {
-            bar?.let { b -> try { wm?.removeView(b) } catch (_: Exception) { } }; bar = null
+            chip?.let { c -> try { wm?.removeView(c) } catch (_: Exception) { } }; chip = null
             dot?.let { d -> try { wm?.removeView(d) } catch (_: Exception) { } }; dot = null; dotLp = null
             x = 0f; y = 0f
         }
     }
 
     /**
-     * The check after a manual double-tap: a one-line "Click '…'?" bubble where the pause bar was, with Cancel,
-     * for [ms]. True = go ahead and click; false = the user cancelled.
-     */
-    suspend fun showCheck(line: String, ms: Long = CONFIRM_MS): Boolean {
-        val v = dot ?: return true
-        val ctx = v.context
-        val w = wm ?: return true
-        val d = density
-        val result = CompletableDeferred<Boolean>()
-        var row: View? = null
-        withContext(Dispatchers.Main) {
-            val r = LinearLayout(ctx).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-                setBackgroundColor(Color.parseColor("#FFFAF2")); elevation = 6 * d
-                setPadding((10 * d).toInt(), (6 * d).toInt(), (6 * d).toInt(), (6 * d).toInt())
-                addView(TextView(ctx).apply { text = line; textSize = 13f; maxLines = 1; setTextColor(Color.parseColor("#1D1A16"))
-                    setPadding((4 * d).toInt(), 0, (10 * d).toInt(), 0) })
-                addView(TextView(ctx).apply { text = "Cancel"; textSize = 13f; setTextColor(ACCENT)
-                    setPadding((12 * d).toInt(), (8 * d).toInt(), (12 * d).toInt(), (8 * d).toInt())
-                    setOnClickListener { result.complete(false) } })
-            }
-            val maxW = minOf(ctx.resources.displayMetrics.widthPixels - (24 * d).toInt(), (420 * d).toInt())
-        val lp = WindowManager.LayoutParams(maxW, WindowManager.LayoutParams.WRAP_CONTENT, type(),
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT)
-                .apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; y = (36 * d).toInt() }
-            try { w.addView(r, lp); row = r } catch (_: Exception) { }
-        }
-        val go = withTimeoutOrNull(ms) { result.await() } ?: true
-        withContext(Dispatchers.Main) { row?.let { try { w.removeView(it) } catch (_: Exception) { } } }
-        return go
-    }
-
-    private fun showBar() {
-        if (bar != null) return
-        val v = dot ?: return
-        val ctx = v.context
-        val w = wm ?: return
-        val d = density
-        fun chip(text: String, fill: Boolean, onTap: () -> Unit) = TextView(ctx).apply {
-            this.text = text; textSize = 13f; setTextColor(if (fill) Color.WHITE else Color.parseColor("#1D1A16"))
-            // v0.30.5: "Resum / e" wrapped mid-word on a narrow bar; buttons never wrap or shrink.
-            isSingleLine = true; maxLines = 1
-            setPadding((14 * d).toInt(), (8 * d).toInt(), (14 * d).toInt(), (8 * d).toInt())
-            setBackgroundColor(if (fill) ACCENT else Color.TRANSPARENT)
-            setOnClickListener { onTap() }
-        }
-        val row = LinearLayout(ctx).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            setBackgroundColor(Color.parseColor("#FFFAF2")); elevation = 6 * d
-            setPadding((6 * d).toInt(), (4 * d).toInt(), (6 * d).toInt(), (4 * d).toInt())
-            // The hint takes what room is left and wraps on word boundaries; the buttons keep their full width.
-            addView(TextView(ctx).apply { text = "Paused \u00b7 drag, double-tap to click"; textSize = 12f; setTextColor(Color.parseColor("#6B645B"))
-                setPadding((8 * d).toInt(), 0, (8 * d).toInt(), 0); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) })
-            addView(chip("Resume", true) { resume() })
-            addView(chip("Stop", false) { stop() })
-        }
-        val lp = WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, type(),
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT)
-            .apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; y = (36 * d).toInt() }
-        try { w.addView(row, lp); bar = row } catch (_: Exception) { }
-    }
-
-    /**
      * The pointer (v0.24.5): Blaze's mascot (phone/Mascot.kt): the flame body with its orange → blue gradient and cyan
      * middle, two dark eyes, a soft orange / blue glow, a thin white edge and a soft shadow so it reads on any app.
      * The flame tip is the click point (a tiny white dot marks it). It pulses lightly while gliding, squishes on click
-     * (around the tip, so the click point never moves), and its edge turns orange while the user holds it.
+     * (around the tip, so the click point never moves).
      * Stays on screen until the task ends (Pointer.done).
      */
     private class Dot(ctx: Context, val d: Float) : View(ctx) {
         val tipX = TIP_X_DP * d; val tipY = TIP_Y_DP * d
         private val k = UNIT_DP * d
-        var paused = false
         private var rippleStart = 0L; private var rippleMs = 0L
         private var moveStart = 0L
         private val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -376,7 +234,6 @@ object Pointer {
             setShadowLayer(3.5f * d, 0f, 1.5f * d, Color.argb(120, 0, 0, 0)) }
         private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
         private val hi = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-        private val edge = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND }
         private val eye = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Mascot.EYE; style = Paint.Style.FILL }
         private val emblemScope = androidx.compose.ui.graphics.drawscope.CanvasDrawScope()
         private val tipDot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL
@@ -408,7 +265,6 @@ object Pointer {
                 androidx.compose.ui.graphics.Canvas(c), androidx.compose.ui.geometry.Size(lpx, lpy)) {
                 with(com.blaze.assistant.ui.DuoGlowAccess) { emblem(androidx.compose.ui.geometry.Offset(tipX, tipY), wPx, ((now % 100_000L) / 1000f)) }
             }
-            if (paused) { edge.color = Mascot.PAUSED; edge.strokeWidth = 2.5f * d; c.drawCircle(tipX, tipY, wPx * 0.36f, edge) }
             c.drawCircle(tipX, tipY, 1.6f * d, tipDot)
             if (t <= 1f) {
                 ring.alpha = ((1 - t) * 255).toInt()

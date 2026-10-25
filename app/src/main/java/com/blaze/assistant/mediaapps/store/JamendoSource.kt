@@ -101,7 +101,7 @@ object JamendoSource : StoreSource {
         .put("name", TOOL)
         .put("description", "Save a Jamendo API client_id for Blaze Music's Jamendo Store (checked against Jamendo before it's saved). " +
             "Get one free at $DEVPORTAL: sign in or sign up (ask the user before creating an account), My applications, create an app " +
-            "(name Blaze Music, website https://github.com/lacksonkapapahue/Blaze-agent), then copy its Client ID here.")
+            "(name Blaze Music, website https://blazeinchue.pages.dev), then copy its Client ID here.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("client_id", JSONObject().put("type", "string").put("description", "The app's Client ID (8 hex characters)")))
             .put("required", JSONArray().put("client_id"))))

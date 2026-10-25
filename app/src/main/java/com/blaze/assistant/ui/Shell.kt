@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -90,23 +91,33 @@ import kotlinx.coroutines.delay
 
 // ---------------------------------------------------------------- top bar
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShellTopBar(
     mode: String, onMode: (String) -> Unit, onLogo: () -> Unit, onSearch: () -> Unit,
     routerOk: Boolean, onRouter: () -> Unit, avatar: String, onAvatar: () -> Unit,
+    /** v0.45.2: long-press on the profile icon (light / dark). */
+    onAvatarLong: () -> Unit = {},
     mood: Mood = Mood.IDLE, viewChip: String = "", onExit: () -> Unit = {},
     /** v0.24.4: private chat on (ghost filled + "Private" pill) and the ghost button. */
     isPrivate: Boolean = false, onGhost: () -> Unit = {},
+    /** v0.39.0: false in Simple mode, where Home sits under the chat (swipe navigation) instead of being a tab. */
+    homeTab: Boolean = true,
+    /** v0.43.0: who the next message goes to ("blaze" / "halo" / "all"); the orb shows it, and tapping it opens the arc. Blank = the plain icon. */
+    talkTo: String = "",
 ) {
     val c = LocalBlaze.current
     // v0.31: the app bar is a glass strip on the dark ground.
     Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).glass(RoundedCornerShape(26.dp), GlassIntensity.Low, shadow = false)) {
         Row(Modifier.fillMaxWidth().height(52.dp).padding(start = 10.dp, end = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             // v0.24.8: the mascot in a circle (was a square pixel "B").
-            Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onLogo).semantics { contentDescription = "Blaze" }, contentAlignment = Alignment.Center) { BrandMark(mood, 34.dp) }
+            // v0.43.0: it shows who you're talking to (orb = Blaze, halo = Halo, orb in its halo = All); a tap opens the picker arc.
+            Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onLogo)
+                .semantics { contentDescription = if (talkTo.isBlank()) "Blaze" else "Talking to ${TalkArcMath.label(talkTo)}. Tap to choose who to talk to" },
+                contentAlignment = Alignment.Center) { if (talkTo.isBlank()) BrandMark(mood, 34.dp) else TalkTargetMark(talkTo, mood, 34.dp) }
             Spacer(Modifier.width(6.dp))
             // v0.29.0: the pill gets the room left over, and shrinks (then turns into icons) on narrow screens / big fonts.
-            Box(Modifier.weight(1f)) { if (isPrivate) PrivatePill(onGhost) else Pill(mode, onMode) }
+            Box(Modifier.weight(1f)) { if (isPrivate) PrivatePill(onGhost) else Pill(mode, onMode, homeTab) }
             Spacer(Modifier.width(4.dp))
             Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSearch).semantics { contentDescription = "Search" }, contentAlignment = Alignment.Center) { SearchGlyph(c.ink) }
             // v0.24.4: the router status dot is gone (no router dashboard); the ghost opens / leaves a private chat.
@@ -115,7 +126,9 @@ fun ShellTopBar(
                 GhostGlyph(if (isPrivate) c.paper else c.ink, filled = isPrivate, eyes = c.ink)
             }
             Spacer(Modifier.width(4.dp))
-            Box(Modifier.size(34.dp).glass(CircleShape, GlassIntensity.High, shadow = false).clickable(onClick = onAvatar).semantics { contentDescription = "Account menu" }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(34.dp).glass(CircleShape, GlassIntensity.High, shadow = false)
+                .combinedClickable(onClick = onAvatar, onLongClick = onAvatarLong, onLongClickLabel = if (c.dark) "Switch to light theme" else "Switch to dark theme")
+                .semantics { contentDescription = "Account menu. Long-press to switch light or dark" }, contentAlignment = Alignment.Center) {
                 Text(avatar.take(1).uppercase().ifBlank { "B" }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
             }
         }
@@ -137,13 +150,13 @@ fun ShellTopBar(
  * (each still announced by name to TalkBack). Layout rule in [PillFit] (unit tested).
  */
 @Composable
-private fun Pill(mode: String, onMode: (String) -> Unit) {
+private fun Pill(mode: String, onMode: (String) -> Unit, homeTab: Boolean = true) {
     val c = LocalBlaze.current
     androidx.compose.foundation.layout.BoxWithConstraints {
         val font = androidx.compose.ui.platform.LocalDensity.current.fontScale
         val fit = PillFit.pick(maxWidth.value, font)
         Row(Modifier.glass(RoundedCornerShape(20.dp), GlassIntensity.Low, shadow = false).padding(3.dp)) {
-            PillFit.tabs.forEach { (id, label) ->
+            PillFit.tabs.filter { homeTab || it.first != "home" }.forEach { (id, label) ->
                 val on = mode == id
                 // v0.27.0: the highlight fades across (MotionTokens).
                 val fill by androidx.compose.animation.animateColorAsState(if (on) c.ink else Color.Transparent, MotionTokens.medium(), label = "tab")
@@ -256,12 +269,21 @@ fun AvatarMenu(name: String, email: String, items: List<MenuItem>, onPick: (Stri
     }
 }
 
+/** v0.45.7: the veil's gradient: even ink at the top, fading to nothing over the bottom [FEATHER] of the chat. */
+object SheetVeil {
+    const val ALPHA = 0.10f
+    const val FEATHER = 0.30f
+    fun stops(ink: Color): Array<Pair<Float, Color>> = arrayOf(0f to ink.copy(alpha = ALPHA), (1f - FEATHER) to ink.copy(alpha = ALPHA), 1f to ink.copy(alpha = 0f))
+}
+
 /** A light ink veil over the chat while a bottom sheet is open; tap it to close the sheet. */
 @Composable
 fun BoxScope.SheetScrim(onDismiss: () -> Unit) {
     val c = LocalBlaze.current
     // v0.27.0: fades in with the sheet.
-    Box(Modifier.matchParentSize().appearIn(true).background(c.ink.copy(alpha = 0.14f)).clickable(remember { MutableInteractionSource() }, null, onClick = onDismiss))
+    // v0.45.7: feathered at the bottom (no hard grey band ending above the Halo arc / + sheet), and lighter.
+    Box(Modifier.matchParentSize().appearIn(true).background(androidx.compose.ui.graphics.Brush.verticalGradient(*SheetVeil.stops(c.ink)))
+        .clickable(remember { MutableInteractionSource() }, null, onClick = onDismiss))
 }
 
 // ---------------------------------------------------------------- /views picker
@@ -271,7 +293,9 @@ fun BoxScope.SheetScrim(onDismiss: () -> Unit) {
 fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismiss: () -> Unit, autoFocus: Boolean = true) {
     val c = LocalBlaze.current
     var q by remember { mutableStateOf("") }
-    val rows = remember(q) { Views.filter(q) }
+    // v0.39.0: Simple mode lists no technical views (their /commands and open_view still open them).
+    val simple by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
+    val rows = remember(q, simple) { Views.filter(q).filter { com.blaze.assistant.agent.SimpleMode.viewVisible(it.id, simple) } }
     val focus = remember { FocusRequester() }
     if (autoFocus) LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     // v0.24.8: a rounded sheet with a pill search field and rounded rows (no square top rule, no row numbers).
@@ -324,7 +348,9 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
     val focus = remember { FocusRequester() }
     if (autoFocus) LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     val views = remember(q) { if (q.isBlank()) Views.all.take(6) else Views.filter(q).take(8) }
-    Column(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark)) {
+    // v0.45.8: Search shows the picked theme (it covers the chat, so it draws the scene itself).
+    ThemedScreen(Modifier.fillMaxSize(), own = { background(c.paper).glassBackground(c.dark) }) {
+    Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             // v0.28.3: the shared round BackButton.
             BackButton(onDismiss)
@@ -357,6 +383,7 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
             }
             if (views.isEmpty()) Text("No view matches.", modifier = Modifier.padding(4.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         }
+    }
     }
 }
 
@@ -444,7 +471,7 @@ fun formatDuration(ms: Long): String {
  */
 @Composable
 fun WorkCard(steps: List<ChatMessage>, live: Boolean, startAt: Long, endAt: Long, status: String = "", exact: Boolean = false, now: Long? = null,
-             meter: String = "", meterHigh: Boolean = false, open0: Boolean = false) {
+             meter: String = "", meterHigh: Boolean = false, open0: Boolean = false, simple: Boolean = false) {
     val c = LocalBlaze.current
     var open by rememberSaveable(steps.firstOrNull()?.id ?: -1L) { mutableStateOf(open0) }
     var tick by remember { mutableLongStateOf(now ?: System.currentTimeMillis()) }
@@ -464,15 +491,20 @@ fun WorkCard(steps: List<ChatMessage>, live: Boolean, startAt: Long, endAt: Long
             verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(7.dp).alpha(pulse).clip(CircleShape).background(if (live) c.accent else c.weak))
             Spacer(Modifier.width(10.dp))
-            Text((if (live) "Working" else "Worked") + (if (n > 0) " · $count" else "") + time, modifier = Modifier.weight(1f), maxLines = 1,
-                style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = if (live) c.ink else c.sub))
-            if (n > 0) {
+            // v0.39.0 Simple mode: the plain step line is the title ("Sending Jack the location…"), "Done" after; "Details" opens the steps.
+            val plain = status.ifBlank { steps.lastOrNull()?.text.orEmpty() }.trimEnd('.', '\u2026')
+            val title = if (simple) (if (live) (plain.ifBlank { "Working on it" } + "\u2026") else "Done") else (if (live) "Working" else "Worked") + (if (n > 0) " · $count" else "") + time
+            Text(title, modifier = Modifier.weight(1f), maxLines = if (simple) 2 else 1,
+                style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = if (simple) 15.sp else 13.sp, color = if (live) c.ink else c.sub))
+            if (simple && n > 0) Text(if (open) "Hide" else "Details", modifier = Modifier.padding(start = 8.dp),
+                style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.sub))
+            else if (n > 0) {
                 val rot by animateFloatAsState(if (open) 90f else 0f, label = "chev")
                 Text("›", modifier = Modifier.rotate(rot), style = TextStyle(fontFamily = Type.Display, fontSize = 18.sp, color = c.sub))
             }
         }
         val line = status.ifBlank { steps.lastOrNull()?.text.orEmpty() }
-        if (live && !open && line.isNotBlank()) Box(Modifier.fillMaxWidth().padding(start = 29.dp, end = 12.dp, bottom = 10.dp)) {
+        if (live && !open && line.isNotBlank() && !simple) Box(Modifier.fillMaxWidth().padding(start = 29.dp, end = 12.dp, bottom = 10.dp)) {
             Shimmer(line)
         }
         // Token meter (v0.15.0): what the last model call sent and got back, on its own line so the title never clips.
@@ -505,6 +537,41 @@ fun WorkCard(steps: List<ChatMessage>, live: Boolean, startAt: Long, endAt: Long
     }
 }
 
+/** v0.41.0 Simple mode: the whole work view while Blaze works, one small quiet line ("Looking at your films…"). */
+@Composable
+fun SimpleWorkHint(text: String) {
+    val c = LocalBlaze.current
+    val pulse = rememberInfiniteTransition(label = "h").animateFloat(0.35f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "a").value
+    Row(Modifier.padding(start = 4.dp, end = 28.dp, top = 2.dp, bottom = 2.dp).semantics { contentDescription = text },
+        verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(5.dp).alpha(pulse).clip(CircleShape).background(c.weak))
+        Spacer(Modifier.width(8.dp))
+        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+    }
+}
+
+/**
+ * Ack-and-background (HQ 22 Oct): the small chip an acknowledged task shows in the chat while it runs in the background
+ * ("Reminder · in progress"), in place of the "Blaze is thinking" line. One line, ellipsised, fits 360 dp.
+ */
+@Composable
+fun TaskChip(text: String) {
+    val c = LocalBlaze.current
+    val pulse = rememberInfiniteTransition(label = "tc").animateFloat(0.35f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "a").value
+    Row(Modifier.padding(start = 4.dp, end = 28.dp, top = 4.dp, bottom = 2.dp)
+        .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+        .background(c.weak.copy(alpha = 0.12f))
+        .padding(horizontal = 10.dp, vertical = 4.dp)
+        .semantics { contentDescription = text },
+        verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(5.dp).alpha(pulse).clip(CircleShape).background(c.weak))
+        Spacer(Modifier.width(6.dp))
+        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+    }
+}
+
 // ---------------------------------------------------------------- composer
 
 /** What the + menu offers. [id] is handled by the screen. */
@@ -525,7 +592,6 @@ fun plusItems(work: String, approval: String, model: String, hasClipImage: Boole
     add(PlusItem("plan", if (work == "plan") "Plan mode" else "Build mode", if (work == "plan") "Read and look only · tap for Build" else "Full access · tap for Plan", on = work == "plan"))
     add(PlusItem("approval", if (approval == "autopilot") "Autopilot" else "Auto", if (approval == "autopilot") "Works on without asking · tap for Auto" else "Asks before risky steps · tap for Autopilot", on = approval == "autopilot"))
     // v0.25.0: no Model row; Blaze Cloud picks the model for every message.
-    add(PlusItem("linux", "Desktop", "A real Linux desktop on this phone"))
     add(PlusItem("views", "Views", "Memory, jobs, design, accounts…"))
     // One mind: outside projects there is one conversation. v0.24.0: "Clear screen" (/clear) empties it, nothing is forgotten.
     if (inProject) add(PlusItem("new", "New chat", "A new thread in this project"))
@@ -559,7 +625,7 @@ fun modeChip(work: String, approval: String): String {
 }
 
 /**
- * v0.24.1: Luke's reference composer. A fully rounded pill, a fill a step off the background with a thin outline,
+ * v0.24.1: Blazeinchue's reference composer. A fully rounded pill, a fill a step off the background with a thin outline,
  * + on the left, the mic on the right that turns into a round send arrow once there's text (a stop square while
  * Blaze works). The light-grey placeholder rotates through [hints] (on-device suggestions, ComposerHints) every ~3 s
  * with a gentle fade and slide; it stops while the field is focused or has text, and with reduced motion.
@@ -612,7 +678,7 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
                     cursorBrush = SolidColor(c.accent), maxLines = 6,
                     // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
                     keyboardOptions = ComposerKeys.Message,
-                    modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused; if (it.isFocused) com.blaze.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
                         .semantics { contentDescription = "Message Blaze" })
             }
             // v0.30.6 rapid messages: with text in the box, Send wins even while Blaze works (the message joins the turn); Stop otherwise.
@@ -683,13 +749,18 @@ fun ProjectsPane(projects: List<Project>, chats: List<ChatMeta>, busy: Set<Strin
                  onRenameChat: (String, String) -> Unit = { _, _ -> }, onDeleteChat: (String) -> Unit = {}) {
     val c = LocalBlaze.current
     val open = projects.firstOrNull { it.id == openId }
-    Column(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark)) {
+    // v0.45.8: no ground of its own with a theme: the chat screen's theme scene shows through (was flat dark).
+    Column(Modifier.fillMaxSize().screenGround { background(c.paper).glassBackground(c.dark) }) {
         if (open == null) {
             var name by remember { mutableStateOf("") }
             // v0.24.8: rounded everything: a filled pill field, a gradient pill button, projects as separate rounded cards.
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 18.dp)) {
-                Text("Projects", modifier = Modifier.padding(horizontal = 20.dp),
-                    style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, letterSpacing = (-0.02).em, color = c.ink))
+                Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Projects", modifier = Modifier.weight(1f),
+                        style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, letterSpacing = (-0.02).em, color = c.ink))
+                    // v0.45.8: the shared theme switcher.
+                    ThemeSwitch()
+                }
                 Spacer(Modifier.height(6.dp))
                 Text("Group chats around one goal, with instructions Blaze follows in every chat inside it.", modifier = Modifier.padding(horizontal = 20.dp),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.sub))

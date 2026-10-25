@@ -6,7 +6,7 @@ import org.json.JSONObject
 /**
  * The scoped page chat: what "Ask Blaze about this page" tells the model (pure, tested in PageAskTest).
  *
- * v0.27.1 (Joey, Samsung A12: a pasted Google Lens link got "The page text you provided does not include the HTML
+ * v0.27.1 (Joey: a pasted Google Lens link got "The page text you provided does not include the HTML
  * markup of the `<body>` element…"). The page now reaches the model as what a person sees (title, the readable text,
  * button and link labels, pictures) instead of the agent's element dump, and the rules forbid talking about markup or
  * blaming the user: thin pages, picture pages, sign-in walls and very long pages each get a plain note, and web

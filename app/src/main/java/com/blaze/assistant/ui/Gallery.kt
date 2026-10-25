@@ -93,13 +93,29 @@ private object Player {
 }
 
 /** Pictures and beats under a Blaze reply. */
+/**
+ * v0.45.0 (#2): [paths] without the files that no longer exist, checked on a background thread when the row is first
+ * drawn (shown as given until then). Replaces the File.exists per media path per message that ran at chat load.
+ */
+@Composable
+fun rememberPresent(paths: List<String>): List<String> {
+    if (paths.isEmpty()) return paths
+    val present by produceState(initialValue = paths, paths) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { paths.filter { File(it).exists() } }
+    }
+    return present
+}
+
 @Composable
 fun MediaStrip(paths: List<String>) {
     val c = LocalBlaze.current.mono
     val ctx = LocalContext.current
     val playing by Player.playing.collectAsState()
+    // v0.45.0 (#2): media files are checked here, off the main thread, when the row is drawn (no longer for every
+    // message of every chat at load). A deleted file is simply not shown, as before.
+    val present = rememberPresent(paths)
     Column(Modifier.padding(top = 8.dp)) {
-        paths.forEach { p ->
+        present.forEach { p ->
             val f = File(p)
             when (Media.kindOf(f)) {
                 "image" -> {

@@ -1,7 +1,7 @@
 package com.blaze.assistant.phone
 
 /**
- * Magic Hand safety (v0.25.0), pure part (MagicHandSafetyTest). After a Galaxy A12 got stuck in teach mode
+ * Magic Hand safety (v0.25.0), pure part (MagicHandSafetyTest). After a low-end phone got stuck in teach mode
  * (Home / Back / Recents dead, "Blaze isn't responding"), these are the rules every Magic Hand window and event
  * path follows:
  *  - window flags: only the hand and the dock take touches, and never touches outside themselves

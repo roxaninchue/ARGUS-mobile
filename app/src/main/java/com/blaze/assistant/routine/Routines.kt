@@ -49,12 +49,14 @@ object Routines {
                     o.optString("notify", "always"), o.optInt("every_minutes", 0), o.optLong("at", 0L)) }
         } catch (_: Exception) { emptyList() }
         scheduleAll()
+        try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }
     }
 
     private fun save(list: List<Routine>) {
         _all.value = list
         prefs.edit().putString("routines", JSONArray(list.map { it.toJson() }).toString()).apply()
         scheduleAll()
+        try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: the next turn's [context] block is rebuilt
     }
 
     fun get(id: Int) = _all.value.firstOrNull { it.id == id }
@@ -83,6 +85,8 @@ object Routines {
     fun retime(id: Int, h: Int, m: Int) = save(_all.value.map { if (it.id == id) it.copy(hour = h, minute = m, at = 0L) else it })
     fun setEnabled(id: Int, on: Boolean) = save(_all.value.map { if (it.id == id) it.copy(enabled = on) else it })
     fun delete(id: Int) { cancel(id); save(_all.value.filterNot { it.id == id }) }
+    /** v0.39.0 Undo: puts a deleted routine back as it was (same id when free). */
+    fun restore(r: Routine) { if (get(r.id) == null) save(_all.value + r) else save(_all.value + r.copy(id = (_all.value.maxOfOrNull { it.id } ?: 0) + 1)) }
 
     /** After a one-time routine runs it switches off. */
     fun ran(id: Int) { get(id)?.let { if ((it.days == 0 && it.everyMinutes == 0) || it.at > 0) setEnabled(id, false) else scheduleAll() } }
@@ -95,8 +99,11 @@ object Routines {
             "weekday" in t -> 31
             "weekend" in t -> 96
             "once" in t || "today" in t || "tomorrow" in t -> 0
-            else -> listOf("mon", "tue", "wed", "thu", "fri", "sat", "sun").foldIndexed(0) { i, acc, d -> if (d in t) acc or (1 shl i) else acc }
-                .let { if (it == 0) 127 else it }
+            // v0.45.9: whole words only ("sun" in "sunset" is not Sunday), and "weekly"/"every week" with no day named is
+            // TODAY's weekday, not every day (it used to fall through to 127 = daily).
+            else -> listOf("mon", "tue", "wed", "thu", "fri", "sat", "sun").foldIndexed(0) { i, acc, d ->
+                if (Regex("\\b$d(day|s|nesday|sday|rsday|rs|r|urday)?s?\\b").containsMatchIn(t)) acc or (1 shl i) else acc }
+                .let { if (it != 0) it else if ("week" in t) com.blaze.assistant.agent.ScheduleDay.bit(java.time.LocalDate.now().dayOfWeek) else 127 }
         }
     }
 
@@ -133,6 +140,15 @@ object Routines {
                 else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t, pi(r.id))
             } catch (_: SecurityException) { am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t, pi(r.id)) }
         }
+    }
+
+    /** list_routines: today's date first, then each routine with its days and its next date and time. */
+    fun listLine(l: List<Routine>, now: Long): String {
+        val df = java.text.SimpleDateFormat("EEE d MMM yyyy", java.util.Locale.ENGLISH)
+        val nf = java.text.SimpleDateFormat("EEE d MMM HH:mm", java.util.Locale.ENGLISH)
+        return "Today is ${df.format(java.util.Date(now))}. These are repeating rules, not today's list: for a day's items use the [context] schedule line.\n" +
+            l.joinToString("\n") {
+                "${it.name}: ${if (it.everyMinutes > 0) "" else it.timeLabel() + " "}${it.daysLabel()}${if (!it.enabled) " (off)" else ", next " + nf.format(java.util.Date(next(it, now)))} — ${if (it.isCommand) "$ " + it.command else it.prompt}" }
     }
 
     fun tools(): List<JSONObject> {
@@ -177,8 +193,8 @@ object Routines {
                 a.optBoolean("linux"), a.optString("notify", "always"), every)
             "Scheduled \"${r.name}\": ${if (every > 0) r.daysLabel() else "${r.timeLabel()} ${r.daysLabel()}"}, runs `${r.command.take(80)}`. [ID ${com.blaze.assistant.agent.Processes.idFor("routine", r.id.toString())}]"
         }
-        "list_routines" -> _all.value.takeIf { it.isNotEmpty() }?.joinToString("\n") {
-            "${it.name}: ${if (it.everyMinutes > 0) "" else it.timeLabel() + " "}${it.daysLabel()}${if (!it.enabled) " (off)" else ""} — ${if (it.isCommand) "$ " + it.command else it.prompt}" } ?: "No routines yet."
+        // v0.45.9: dated, so a Sunday item can't be read as today's (the phone: "today you have church" on a Wednesday).
+        "list_routines" -> _all.value.takeIf { it.isNotEmpty() }?.let { l -> listLine(l, System.currentTimeMillis()) } ?: "No routines yet."
         "delete_routine" -> _all.value.firstOrNull { it.name.equals(a.getString("name"), true) || it.name.contains(a.getString("name"), true) }
             ?.let { delete(it.id); "Deleted \"${it.name}\"." } ?: "No routine called \"${a.getString("name")}\"."
         else -> "Unknown"

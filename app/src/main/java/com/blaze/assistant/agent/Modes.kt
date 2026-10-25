@@ -18,10 +18,18 @@ import org.json.JSONObject
  *
  * Prefs (backward compatible, new keys only): work_mode, approval, autopilot_steps, autopilot_minutes.
  */
+/** v0.38.0: the approval mode a saved value means (pure, so it's testable without Settings). Autopilot unless "auto" was chosen. */
+object ApprovalDefault {
+    const val DEFAULT = "autopilot"
+    fun of(saved: String?): String = when (saved) { "auto" -> "auto"; "autopilot" -> "autopilot"; else -> DEFAULT }
+}
+
 object Modes {
     private val _work = MutableStateFlow(Settings.str("work_mode", "build").let { if (it == "plan") "plan" else "build" })
     val work: StateFlow<String> = _work
-    private val _approval = MutableStateFlow(Settings.str("approval", "auto").let { if (it == "autopilot") "autopilot" else "auto" })
+    // v0.38.0 (Blazeinchue): Autopilot is the default. Blaze is for people who shouldn't have to tap Approve on every step;
+    // only someone who picked Auto in the + menu keeps the confirm cards (their saved "auto" stays).
+    private val _approval = MutableStateFlow(ApprovalDefault.of(Settings.str("approval", "")))
     val approval: StateFlow<String> = _approval
 
     val plan get() = _work.value == "plan"
@@ -34,7 +42,7 @@ object Modes {
     fun toggleWork() = setWork(if (plan) "build" else "plan")
     fun toggleApproval() = setApproval(if (autopilot) "auto" else "autopilot")
 
-    const val AUTO_REPLY = "The user is away and can't answer. Make the decision yourself pragmatically, based on your understanding and best practice, note the assumption, and continue. If the task is already done and verified, don't start new work: finish with your summary and the assumptions you made."
+    const val AUTO_REPLY = "The user didn't answer in time. Make the decision yourself pragmatically, based on your understanding and best practice, note the assumption, and continue. If the task is already done and verified, don't start new work: finish with your summary and the assumptions you made."
     const val AUTO_PREFIX = "[Autopilot] "
 
     // ---------------- Plan ----------------
@@ -51,8 +59,8 @@ object Modes {
         "notion_search", "slack_read", "slack_channels", "spotify_now_playing",
         "file_read", "file_list", "file_search", "terminal_status", "terminal_jobs",
         "processes", "list_routines", "list_triggers", "use_skill", "find_skill", "skill_file",
-        "find_tool", "load_tools", "ask_user", "get_location",
-        "list_agents", "check_agent", "open_view", "about_blaze", "blaze_docs_search", "blaze_docs_read", "project_docs_search", "project_docs_read",
+        "find_tool", "load_tools", "ask_user", "get_location", "get_weather",
+        "list_agents", "check_agent", "open_view", "about_blaze", "blaze_now", "blaze_docs_search", "blaze_docs_read", "project_docs_search", "project_docs_read",
         // checked by action below
         "git", "clipboard", "call_control", "blaze_self", "process", "gallery",
     )
@@ -152,7 +160,7 @@ object Modes {
         append("\nMODE: ")
         if (plan || agentPlan) append("PLAN (read and look only). You can search and read the web, read files, check memory, mail, calendar, messages and the screen, and run read-only git. You cannot send, tap, type, change settings, write files or run commands: such calls are refused. Investigate, then give a clear plan: what you found, exactly what you'd do step by step, and the risks. The user switches to Build to let you do it. ")
         else append("BUILD (full access). ")
-        if (autopilot) append("AUTOPILOT: the user is away. Don't stop to ask questions or wait for approval; make reasonable decisions, note each assumption, and keep going until the task is fully done and verified. Deleting things, spending money and messaging or calling people still need the user's tap, so do everything else first. Finish with a short summary and the assumptions you made. ")
-        else append("AUTO approval: risky actions show the user a confirm card first. ")
+        if (autopilot) append("AUTOPILOT: don't wait for approval on ordinary steps, just do them, and never ask the user to approve commands. Mid-task, ask only when you truly can't decide, with the ask_user tool (if they don't answer, decide yourself, note the assumption and carry on). Keep going until the task is fully done and verified. Deleting things, spending money and messaging or calling people still need the user's tap, so do everything else first. On long tasks, finish with a short summary and any assumptions. When the answer is complete, or you ask the user something or offer options, stop there: nobody will answer for them. " + AutoContinue.PROMPT)
+        else append("AUTO approval: safe and read-only commands (and build / test commands in the workspace) run without asking; risky actions (deleting, sudo, installs from the network, writing outside the workspace, money, messages, calls) show the user a confirm card first. When a plan needs several commands, send them together in one reply so the user approves them on one card. ")
     }
 }

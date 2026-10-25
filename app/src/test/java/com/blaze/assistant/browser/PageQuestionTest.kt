@@ -8,7 +8,7 @@ import org.junit.Test
 
 /** v0.27.1: what a pasted link, an empty box or one word means in "Ask Blaze about this page". */
 class PageQuestionTest {
-    // The kind of link Joey's tester pasted on a Samsung A12 (a Google Lens results page; no q).
+    // The kind of link Joey's tester pasted (a Google Lens results page; no q).
     private val lens = "https://www.google.com/search?sca_esv=1b2c3d&lns_surface=26&biw=360&bih=640&udm=26&lns_mode=un" +
         "&source=lns.web.gisbubb&vsdim=1080,1920&gsessionid=AbCdEf123&lsessionid=XyZ987&lns_pfs=1&vsrid=CJ3a1qW3z8-ABC" +
         "&vsint=CAIqDAoCCAcSAggKGAEgATojChYNAAAAPxUAAAA_HQAAgD8lAACAPzABEMQHGPMHJQAAgD8&sei=abcDEF"

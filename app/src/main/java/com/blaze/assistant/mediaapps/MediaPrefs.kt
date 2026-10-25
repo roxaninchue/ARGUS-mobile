@@ -11,7 +11,8 @@ object MediaPrefs {
     private const val FILE = "blaze_media_v34"
     private fun p(ctx: Context) = ctx.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
-    fun bool(ctx: Context, key: String, def: Boolean) = p(ctx).getBoolean(key, def)
+    fun bool(ctx: Context, key: String, def: Boolean) = try { p(ctx).getBoolean(key, def) }
+        catch (_: ClassCastException) { com.blaze.assistant.agent.PrefCoerce.bool(p(ctx).all[key], def) }   // v0.45.5 hotfix
     fun setBool(ctx: Context, key: String, v: Boolean) = p(ctx).edit().putBoolean(key, v).apply()
     fun int(ctx: Context, key: String, def: Int) = p(ctx).getInt(key, def)
     fun setInt(ctx: Context, key: String, v: Int) = p(ctx).edit().putInt(key, v).apply()

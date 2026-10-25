@@ -329,22 +329,30 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
         val part = JSONObject().put("type", "object").put("description",
             "A 3D part: id (kebab-case), label, shape (box size=[w,h,d] | cylinder radius,height,radiusTop | cone radius,height | sphere radius | torus radius,tube | capsule radius,height | plane size=[w,d] | group), " +
                 "position=[x,y,z] (the part's centre, relative to parent; y is up), rotation=[x,y,z] degrees, color \"#hex\", material (matte|wood|metal|plastic|glass), parent (a group id), scale=[x,y,z], visible (false hides it), opacity.")
+        val pageEl = JSONObject().put("type", "object").put("description",
+            "A canvas element: id (kebab-case), label, type (text | button | rect | ellipse), x, y, w, h (page px, top-left origin), text, size (font px), " +
+                "weight (400-700), color \"#hex\" (text), fill \"#hex\" (background, #RRGGBBAA for translucent), radius, align (left|center|right), z, hidden.")
         return JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
             .put("description", "Make or change anything visual or interactive in Blaze's Design view (live preview, opens automatically): 3D scenes and models " +
                 "(a rocket, car, building, room, product, character: pass parts, Blaze renders it with three.js and orbit controls), 2D art and icons (svg), " +
                 "websites and landing pages, UI mockups and app screens, diagrams and flowcharts, charts and dashboards, posters, flyers, slides, floor plans, " +
-                "product mockups, simple games (html). create starts a new design and makes it current; update changes the CURRENT design (use it for every " +
-                "follow-on like \"show the engine\", \"make it taller\", \"add fins\", \"make it red\": 3D via set_parts/remove_parts, pages via edits or html); " +
+                "product mockups, simple games (html). Posts, stories, slides, icons and posters the user will adjust by hand: kind canvas with elements. create starts a new design and makes it current; update changes the CURRENT design (use it for every " +
+                "follow-on like \"show the engine\", \"make it taller\", \"add fins\", \"make it red\": 3D via set_parts/remove_parts, canvas via set_elements/remove_elements, pages via edits or html); " +
                 "read returns the current design's source; open shows it; undo restores the previous version; list shows saved designs. " +
                 "Never say a design was made, changed or opened unless this tool (or open_view) succeeded this turn.")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
                 .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("create", "update", "read", "open", "undo", "list"))))
-                .put("kind", JSONObject().put("type", "string").put("description", "create: 3d | page | site | ui | svg | diagram | chart | poster | slides | floorplan | mockup | game | other"))
+                .put("kind", JSONObject().put("type", "string").put("description", "create: 3d | canvas | page | site | ui | svg | diagram | chart | poster | slides | floorplan | mockup | game | other"))
                 .put("title", p("string", "create: short name, e.g. \"Tall modern rocket\""))
                 .put("parts", JSONObject().put("type", "array").put("items", part).put("description", "3d create: every part of the model (5-40 parts, real proportions, parts that should touch do)"))
                 .put("units", p("string", "3d: mm (default, small objects) | cm | m (buildings, rooms, vehicles)"))
                 .put("set_parts", JSONObject().put("type", "array").put("items", part).put("description", "3d update: parts to add or change, matched by id; only the keys you give change"))
                 .put("remove_parts", JSONObject().put("type", "array").put("items", JSONObject().put("type", "string")).put("description", "3d update: part ids to remove"))
+                .put("elements", JSONObject().put("type", "array").put("items", pageEl).put("description", "canvas create (posts, stories, slides, icons, posters, app screens the user will tweak by hand): every element, in page px"))
+                .put("set_elements", JSONObject().put("type", "array").put("items", pageEl).put("description", "canvas update: elements to add or change, matched by id; only the keys you give change"))
+                .put("remove_elements", JSONObject().put("type", "array").put("items", JSONObject().put("type", "string")).put("description", "canvas update: element ids to remove"))
+                .put("format", p("string", "canvas: post (1080x1350, default) | story (1080x1920) | slide (1920x1080) | icon (1024x1024) | screen (390x844) | poster (794x1123)"))
+                .put("background", p("string", "canvas: page colour \"#hex\""))
                 .put("html", p("string", "Pages and everything 2D: a complete self-contained HTML document (inline CSS/JS; CDN libraries are fine). update: replaces the whole page"))
                 .put("svg", p("string", "2D art, icons, simple diagrams: SVG markup (viewBox set)"))
                 .put("edits", JSONObject().put("type", "array").put("items", JSONObject().put("type", "object")
@@ -363,7 +371,13 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
         else -> "Checking designs"
     }
 
-    fun run(args: JSONObject, now: Long = System.currentTimeMillis()): Outcome =
+    fun run(args: JSONObject, now: Long = System.currentTimeMillis()): Outcome = runAndSync(args, now)
+
+    /** v0.40.0: a design that changed goes to cloud sync (when it's on; off by default). */
+    private fun runAndSync(args: JSONObject, now: Long): Outcome = runLocal(args, now).also { if (it.ok) synced() }
+    private fun synced() { com.blaze.assistant.connect.CloudSync.localChange(com.blaze.assistant.connect.SyncKinds.DESIGNS) }
+
+    private fun runLocal(args: JSONObject, now: Long): Outcome =
         withErrorNote(args, runInner(args, now)).also { o -> if (o.open != null && o.kind != null) touched.add(o.kind) }
 
     /** v0.23.3: create / update / open / read results mention ~/designs/.last_error.txt when the Design view left one. */
@@ -392,7 +406,7 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
         val before = current()?.takeIf { it.path == f.absolutePath }
         touch(f, now)
         val cur = current()?.takeIf { it.path == f.absolutePath }
-        val kind = cur?.kind ?: if (specFrom(f.readText()) != null) "3d" else "page"
+        val kind = cur?.kind ?: kindOf(f.readText())
         val title = cur?.title?.ifBlank { null } ?: f.parentFile?.name ?: "design"
         val age = before?.at?.let { now - it }?.takeIf { it > 30 * 60_000L }
         return Outcome("Opened \u201c$title\u201d (${kindLabel(kind)}) from ${f.absolutePath} in Design." +
@@ -412,8 +426,58 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
 
     private fun touch(f: File, now: Long) {
         val c = current()
-        setCurrent(if (c != null && c.path == f.absolutePath) c.copy(at = now) else Current(f.absolutePath, if (specFrom(f.readText()) != null) "3d" else "page", f.parentFile?.name ?: "design", 1, now))
+        setCurrent(if (c != null && c.path == f.absolutePath) c.copy(at = now) else Current(f.absolutePath, kindOf(f.readText()), f.parentFile?.name ?: "design", 1, now))
     }
+
+    /** v0.35.0: the kind a design file is, from its content: 3d (blaze-parts), canvas (a studio page) or page. */
+    fun kindOf(html: String): String = when {
+        specFrom(html) != null -> "3d"
+        DesignPage.fromHtml(html) != null -> CANVAS
+        else -> "page"
+    }
+
+    /** Kind of a studio page (Page mode: elements the user moves, resizes and recolours by hand). */
+    const val CANVAS = "canvas"
+
+    // ---------------- studio (v0.35.0) ----------------
+
+    /** Writes [html] as the next version of [f] (the previous one kept as .v<N>.html for undo); returns the new Current. */
+    private fun commit(f: File, old: String, html: String, now: Long): Current {
+        val cur = current()?.takeIf { it.path == f.absolutePath } ?: Current(f.absolutePath, kindOf(old), f.parentFile?.name ?: "design", 1, now)
+        val v = cur.version
+        File(f.parentFile, ".v$v.html").writeText(old)
+        File(f.parentFile, ".v${v - KEEP_VERSIONS}.html").delete()
+        f.writeText(html)
+        return cur.copy(version = v + 1, at = now).also { setCurrent(it) }
+    }
+
+    /**
+     * Saves a page the user edited by hand in the studio (move, resize, colour, text, format) as a new version of
+     * the current design, so Blaze's next edit and Undo see it. Returns the new version, or null when there's no
+     * current studio page to save to.
+     */
+    fun savePage(doc: DesignPage.Doc, now: Long = System.currentTimeMillis()): Current? = try {
+        val f = current()?.let { File(it.path) }?.takeIf { it.isFile }
+        val old = f?.readText()
+        if (f == null || old == null || DesignPage.fromHtml(old) == null) null
+        else { val html = DesignPage.render(doc); if (html == old) current() else commit(f, old, html, now).also { synced() } }
+    } catch (_: Exception) { null }
+
+    /** "New page" in the studio: a starter page in [format], made the current design. */
+    fun createPage(title: String, format: String, now: Long = System.currentTimeMillis()): Current {
+        val doc = DesignPage.starter(title, DesignPage.format(format))
+        var dir = File(root(), slug(title)); var n = 2
+        while (dir.exists() && File(dir, "index.html").isFile) dir = File(root(), slug(title) + "-" + n++)
+        dir.mkdirs()
+        val f = File(dir, "index.html"); f.writeText(DesignPage.render(doc))
+        return Current(f.absolutePath, CANVAS, title, 1, now).also { setCurrent(it); synced() }
+    }
+
+    /** The studio page in the current design, or null (none, or not a studio page). */
+    fun currentPage(): DesignPage.Doc? = try { current()?.let { File(it.path) }?.takeIf { it.isFile }?.let { DesignPage.fromHtml(it.readText()) } } catch (_: Exception) { null }
+
+    /** Undo from the studio's Undo button: the same as the tool's undo. */
+    fun undoCurrent(now: Long = System.currentTimeMillis()): Outcome = try { undo(JSONObject(), now) } catch (e: Exception) { Outcome("Error: ${e.message}") }
 
     private fun create(args: JSONObject, now: Long): Outcome {
         val title = args.optString("title").ifBlank { "Design" }
@@ -421,6 +485,13 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
         var kind = args.optString("kind").lowercase().ifBlank { if (parts != null) "3d" else if (args.optString("svg").isNotBlank()) "svg" else "page" }
         val problems = ArrayList<String>()
         val html = when {
+            // v0.35.0: a studio page (elements by id) the user can also edit by hand in Page mode.
+            args.optJSONArray("elements")?.let { it.length() > 0 } == true -> {
+                kind = CANVAS
+                val fmt = DesignPage.format(args.optString("format"))
+                DesignPage.render(DesignPage.docFrom(JSONObject().put("name", title).put("format", fmt.id)
+                    .put("background", args.optString("background")).put("elements", args.getJSONArray("elements"))))
+            }
             parts != null && parts.length() > 0 -> {
                 kind = "3d"
                 val (clean, pr) = cleanParts(parts); problems += pr
@@ -436,7 +507,8 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
         dir.mkdirs()
         val f = File(dir, "index.html"); f.writeText(html)
         setCurrent(Current(f.absolutePath, kind, title, 1, now))
-        val count = if (kind == "3d") " with ${specFrom(html)?.optJSONArray("parts")?.length() ?: 0} parts" else ""
+        val count = if (kind == "3d") " with ${specFrom(html)?.optJSONArray("parts")?.length() ?: 0} parts"
+            else if (kind == CANVAS) " with ${DesignPage.fromHtml(html)?.els?.size ?: 0} elements the user can move, resize and recolour by hand" else ""
         return Outcome("Created \u201c$title\u201d, a ${kindLabel(kind)}$count, at ${f.absolutePath} and opened it in Design" +
             (if (kind == "3d") " (the user can orbit with one finger and zoom with two)." else "." + flatNote(kind)) +
             " It's the current design: follow-on changes go through design action=update." + problems.joinToString("") { "\nNote: $it" }, f.absolutePath, kind = kind)
@@ -448,7 +520,18 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
         val spec = specFrom(old)
         val problems = ArrayList<String>()
         var summary: String
+        val page = DesignPage.fromHtml(old)
         val html: String = when {
+            page != null && (args.has("set_elements") || args.has("remove_elements") || args.has("format") || args.has("background")) -> {
+                val remove = args.optJSONArray("remove_elements")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
+                var (d, s) = DesignPage.merge(page, args.optJSONArray("set_elements"), remove)
+                if (args.optString("format").isNotBlank()) { d = DesignPage.reformat(d, DesignPage.format(args.optString("format"))); s += "; format ${d.format}" }
+                DesignPage.parseHex(args.optString("background"))?.let { d = d.copy(background = DesignPage.toHex(it)); s += "; background" }
+                if (args.optString("title").isNotBlank()) d = d.copy(name = args.optString("title"))
+                if (d == page) return Outcome("Error: that changed nothing (unknown ids? the current elements are: " + page.els.joinToString(", ") { it.id } + ").")
+                summary = s
+                DesignPage.render(d)
+            }
             spec != null && (args.has("set_parts") || args.has("remove_parts") || args.has("parts")) -> {
                 val remove = args.optJSONArray("remove_parts")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
                 val base = if (args.has("parts")) JSONObject(spec.toString()).put("parts", cleanParts(args.getJSONArray("parts")).first) else spec
@@ -469,15 +552,11 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
             args.optString("html").isNotBlank() -> { summary = "new page"; ensureDoc(current()?.title ?: "Design", args.optString("html")) }
             args.optString("svg").isNotBlank() -> { summary = "new artwork"; wrapSvg(current()?.title ?: "Design", args.optString("svg")) }
             spec != null -> return Outcome("Error: this is a 3D design; pass set_parts (add or change parts by id) and/or remove_parts.")
+            page != null -> return Outcome("Error: this is a studio page; pass set_elements (add or change elements by id), remove_elements, format or background.")
             else -> return Outcome("Error: pass edits=[{find, replace}] or a new html/svg.")
         }
-        val cur = current()?.takeIf { it.path == f.absolutePath } ?: Current(f.absolutePath, if (spec != null) "3d" else "page", f.parentFile?.name ?: "design", 1, now)
-        val v = cur.version
-        File(f.parentFile, ".v$v.html").writeText(old)
-        File(f.parentFile, ".v${v - KEEP_VERSIONS}.html").delete()
-        f.writeText(html)
-        setCurrent(cur.copy(version = v + 1, at = now))
-        return Outcome("Updated \u201c${cur.title}\u201d, a ${kindLabel(cur.kind)} ($summary), version ${v + 1}, and showed it in Design." + flatNote(cur.kind) +
+        val cur = commit(f, old, html, now)
+        return Outcome("Updated \u201c${cur.title}\u201d, a ${kindLabel(cur.kind)} ($summary), version ${cur.version}, and showed it in Design." + flatNote(cur.kind) +
             problems.joinToString("") { "\nNote: $it" }, f.absolutePath, kind = cur.kind)
     }
 

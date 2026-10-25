@@ -86,9 +86,11 @@ fun ConfirmCard() {
     val c = LocalBlaze.current
     val p by Agent.pendingConfirm.collectAsState()
     val pc = p ?: return
+    // v0.39.0: a message waiting for the user's tap reads as a draft: "Draft · not sent yet" with Not now / Send.
+    val draft = com.blaze.assistant.agent.SimpleHome.isDraft(pc.title, pc.action)
     GlassCard(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 4.dp).appearIn(true), intensity = GlassIntensity.High) {
         Column {
-            Label("Needs your OK", color = c.accent, size = 9.sp)
+            Label(if (draft) "Draft \u00b7 not sent yet" else "Needs your OK", color = c.accent, size = 9.sp)
             Spacer(Modifier.height(4.dp))
             Text(pc.title, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 22.sp, color = c.ink))
             if (pc.detail.isNotBlank()) Text(pc.detail, modifier = Modifier.padding(top = 4.dp),
@@ -97,9 +99,18 @@ fun ConfirmCard() {
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.widthIn(max = 340.dp).fillMaxWidth()) {
             Box(Modifier.weight(1f).height(46.dp).glass(RoundedCornerShape(23.dp), GlassIntensity.Low, shadow = false).clickable { Agent.answerConfirm(false) },
-                contentAlignment = Alignment.Center) { Label("Don't", color = c.ink, size = 11.sp) }
+                contentAlignment = Alignment.Center) { Label(if (draft) "Not now" else "Don't", color = c.ink, size = 11.sp) }
             Box(Modifier.weight(1f).height(46.dp).glassPrimary(BlazeShapes.pill).clickable { Agent.answerConfirm(true) },
-                contentAlignment = Alignment.Center) { ButtonText(pc.action, color = GlassTokens.onPrimary(c.dark)) }
+                contentAlignment = Alignment.Center) { ButtonText(if (draft) "Send" else pc.action, color = GlassTokens.onPrimary(c.dark)) }
+        }
+        // v0.45.3 Normal mode commands: allow this kind of command for the rest of the chat, or always (never for risky ones).
+        if (pc.grants) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp).widthIn(max = 340.dp).fillMaxWidth()) {
+            Box(Modifier.weight(1f).height(40.dp).glass(RoundedCornerShape(20.dp), GlassIntensity.Low, shadow = false)
+                .clickable { Agent.answerConfirm(true, com.blaze.assistant.agent.CommandPolicy.Grant.CHAT) }, contentAlignment = Alignment.Center) {
+                Label("Allow for this chat", color = c.ink, size = 10.sp) }
+            Box(Modifier.weight(1f).height(40.dp).glass(RoundedCornerShape(20.dp), GlassIntensity.Low, shadow = false)
+                .clickable { Agent.answerConfirm(true, com.blaze.assistant.agent.CommandPolicy.Grant.ALWAYS) }, contentAlignment = Alignment.Center) {
+                Label("Always allow this command", color = c.ink, size = 10.sp) }
         }
     }
 }

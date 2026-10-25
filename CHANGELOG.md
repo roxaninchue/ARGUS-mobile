@@ -1,17 +1,1184 @@
+## v0.45.25: Sky browser, sleeping tabs (versionCode 170)
+- New "Sky" browser look: frosted glass over a sky new-tab page (BLAZE wordmark, time and date, search with voice, your site apps and bookmarks, pick up where you left off), the page edge to edge with one floating pill (site info, address, VPN, tabs, Blaze), small chips for back / forward / reload / home and what Blaze is doing in the background (tap Watch to see that tab).
+- Tap the address for the launcher: search open tabs, history and Ask Blaze, every tool in one grid (Ask page, Pointer, Translate, Find in page, Bookmarks, History, Downloads, Saved, Passwords, Install app, My apps, Desktop site, Share, Tasks) and the VPN, location mask, tracker blocking and private browsing switches. Tap the lock for the site sheet.
+- Tabs: a frosted sheet with Open / Private / Blaze and Awake vs Sleeping; the picture grid is still in its menu. Swipe the pill sideways to switch tabs; long-press the tab count for a new tab.
+- New: Block ads & trackers (off until you turn it on), with counts per page and in total.
+- Much lighter on memory: only the tab on screen (and the one Blaze is using) keeps a page in memory; every other tab sleeps with its back/forward history on disk and wakes where it was when you open it. Restored tabs no longer each start a page at launch. Tab pictures are 160 px and kept on disk while a tab sleeps; favicons are kept small; Android's memory warnings put hidden tabs to sleep.
+- The system navigation bar is hidden in the browser (swipe up to show it); the pill stays above the gesture bar, and back (edge swipe or button) closes what's open, then goes back a page, then closes the browser.
+
+## v0.45.24: real quick replies, sync progress, status beside the drop, tidier memory (versionCode 169)
+- Quick replies under an answer are the next thing you'd tap (an answer to Blaze's question, or the next step), never a copy of what you just said; near-identical chips are dropped, and no chips is better than an echo.
+- Syncing with Blaze Cloud shows a notification with how far it is (items or size, and percent), then "Synced" for a few seconds, or a short reason when it stops. Small background rounds stay quiet.
+- What Blaze is doing now sits beside the Blaze drop on the same line, and goes away as soon as the reply starts appearing. Remove animations is respected.
+- Memory skips a line that is a near-copy of one already saved, and keeps a single line to 280 characters, cut at a word.
+- Merge memories: select lines on the Memory screen and tap Merge, or ask Blaze to merge them; a merged line keeps up to 1200 characters. Tidy up duplicates (and the background memory review) folds near-duplicates together. Lines already saved are never cut.
+
+## v0.45.23: lighter on battery, CPU and memory (versionCode 168)
+- Optimization only: no feature is removed or changed.
+- New release signing key (cert 7a4ad469…). Earlier installs can't update in place: uninstall, then install this build.
+- The floating task card no longer wakes the phone every 400 ms while no task is running; it waits until a task starts.
+- Screen watchers scan the screen at most once every 150 ms during bursts of on-screen changes, and still look at the newest screen.
+- The Offline Brain model (~500 MB of RAM) is released after 5 idle minutes, or when Android is low on memory, and reloads on the next offline reply.
+- In quiet hours, the background heads-up check skips its AI call when nothing new has arrived (no notifications, chats, phone signals, device warnings, calendar events or open follow-ups) and it is outside the morning/evening brief windows. Urgent messages still go through.
+
+## v0.45.22: private downloads, usage meters, permissions when needed, steadier playback (versionCode 167)
+- Downloads stay in Blaze's private storage; export songs and videos to Music, Movies, Downloads or any folder, one at a time or in bulk.
+- Usage meters in Account and Downloads show what's left this month; downloads run in parallel up to your plan and are checked while they download.
+- The on-phone Linux desktop is gone, and what it left behind is cleaned up once after the update. Pairing with Blaze Desktop on your computer stays.
+- Permissions are asked only when a task needs them: phone control in chat the first time, notifications when a download starts; downloads need no storage permission.
+- Playback resumes from the same spot when a stream link expires; when you're offline Blaze says so, skips what isn't saved and plays what is.
+- Video steps down to a lower quality after repeated stalls instead of freezing.
+- Store: clear error card with Retry, a note when it's slow, faster search while you type, and saved results when offline.
+
+## v0.45.21: new chat bubbles, Sending/Sent/Read, live step pills (versionCode 166)
+- Chat bubbles: yours on the right, Blaze on the left, with tails, the time inside, Today/Yesterday chips and a long-press menu; readable in every theme.
+- Your latest message shows Sending, Sent or Read; offline messages retry on their own without duplicates.
+- One small pill shows what Blaze is doing right now and disappears when the reply lands.
+- @all: Blaze answers first and Halo only adds something new; voice replies skip filler like "On it".
+
+## v0.45.20: faster Blaze Phone, finds sites by name, honest booking status (versionCode 165)
+- Blaze Phone reads pages live from the browser instead of waiting and re-reading: page reads drop from ~28 ms to ~2 ms (p50), and every action is confirmed.
+- Say "the booking site", "herokuapp login page" or "my bank" and Blaze finds the right page and sub-page; it asks when it can't tell.
+- Blaze never says booked, paid or confirmed unless it saw the confirmation; status questions say what's done so far.
+- Browser fixes: safer element ids, page-load race, leaks, raw step text hidden.
+
+## v0.45.19: Blaze Phone browser, App Store, cleaner chat (versionCode 164)
+- Blaze Phone browser: Blaze browses, signs in and fills forms on its own phone screen; take control any time, then Hand back.
+- Picture-in-picture: while Blaze works on Blaze Phone and you leave the app, the screen floats with Stop and Open Blaze.
+- App Store: free open-source apps from their official releases; checksum and signer verified, every install confirmed in Android's dialog.
+- Chat: acks are one specific line or nothing; no internal labels, model or provider names in replies; Halo's hand-off line is hidden.
+- Readable Blaze Phone tile and status pill in every theme; Back returns to chat from every screen.
+- Secure forms render reliably; phone tasks verify toggles by state; smoother audio/video start on weak networks.
+
+## v0.45.18: your plan's limits, instant replies with background tasks, safer screen actions (versionCode 163)
+
+- Settings › Account › This month: your plan, how many song and video downloads are left, how many run at once, and
+  when they reset, straight from your Blaze account. Download sheets show what's left; a gentle upgrade note appears
+  only when you're close to a limit.
+- Downloads check your plan's monthly limit before they start; a download is counted once, even if it retries.
+- Blaze answers right away with a short note, then works in the background: you can keep chatting or leave the app,
+  and you get a "Done" message (or an honest failure) when it finishes. No more "Blaze is working" notifications.
+- After reading a web page, message, email, notification or file, Blaze asks before touching the screen, and always
+  asks before a tap that sends, pays, posts, deletes, confirms or installs.
+- Android 7 and 8 phones that can't update in place get clear steps to back up and reinstall.
+- Build hygiene: test libraries come from Gradle, unused workflows removed, Go 1.26.10 for the network helpers.
+
+## v0.45.17: media player, library and search upgrades, on top of the 0.45.16 reliability work (versionCode 162)
+
+Release candidate for testing on a low-end Android 12 phone. Includes all of 0.45.16 (which was not published on its own).
+- Player: no more swipe-to-seek or its hint; a thin scrub bar replaces the big slider; Back returns to the chat.
+- Videos and Music: "For you" and "All" chips.
+- Captions: "Translate to" a language, offline captions for downloads, readable audio track names.
+- Search: results update as you type (debounced) with loading cards instead of a blank screen.
+- Streaming: a disk cache buffers ahead and prefetches the next song, so a flaky network stalls less; recently played
+  items replay offline.
+- Library: press and hold to select several songs or videos, then Select all, Add to playlist, Share, Export or Delete;
+  Back leaves selection first.
+
+## v0.45.16: fewer crashes and freezes, smoother chat on low-end phones (versionCode 161)
+
+Reliability release, no UX changes. Aimed at random crashes and stalls reported on a low-end Android 12 phone (3 GB).
+- Crash guard at startup: every one of the ~28 startup steps in BlazeApp.onCreate now runs guarded and timed
+  (StartGuard.step). A step that throws is logged and skipped instead of closing the app on every launch.
+- Safe start: when the last two launches ended within 30 s, the optional extras (proactive helpers, Jarvis, orb,
+  dashboard, desktop link, router autostart) wait for a calm start, so a crash loop recovers by itself.
+- ANR and stall log: a watchdog writes "ANR" (main thread blocked 5 s+) and "STALL" (700 ms+) with the main thread's
+  stack to the local crash log (Settings → crash report), so freezes can be traced to the line that blocked.
+- The crash log no longer writes on the main thread (it read and rewrote a file of up to 400 KB on the caller's thread);
+  lines go through one background thread, crashes still write at once.
+- Low memory: parse caches are dropped when Android reports RUNNING_LOW/CRITICAL or the app is in the background
+  (onTrimMemory/onLowMemory), so Blaze is trimmed instead of killed mid-chat. Hiding the UI alone keeps them.
+- Streaming: the reply bubble updates at most every 50 ms (was every frame), cutting re-split and re-render work while a
+  reply streams on low-end phones.
+- Updates: when an old install can't take the new build in place, the updater says the signing key changed in 0.45.15
+  and to uninstall once and reinstall from blazeinchue.pages.dev.
+- Includes everything since 0.45.15: GitLab CI security scanning (Secret Detection, SAST, Dependency Scanning).
+
+## v0.45.15: phone actions on the real route, and a new private signing key (versionCode 160)
+
+Device /phoneqa on 0.45.14 (21 Oct 22:40, Android 12) scored 10/55, while the model-side replays said 65/65. The phone
+sends its turns as Cloud runs (POST /v1/runs), and the replays used chat/completions. tools/runs_replay.py now replays
+the runs route: the 0.45.14 app reproduced 11/60.
+- Cloud runs now carry the named first-step tool (ToolTruth.choice) and the follow-up tool on tool_results. Before, every
+  run said tool_choice "auto" + blaze_tools "auto". This needs gateway 0.8.19+.
+- The app's own notes (the saved-plan "[Done before] … run_plan" hint, the orient screen) are never read as the ask, and an
+  ask a direct tool handles gets no saved tap plan. Those notes made codestral write run_plan JSON as text.
+- Tool calls codestral wrote as text blocks ("open_settings\npage: dnd\ntap\ntext: …") become real calls
+  (TextCalls.blockCalls). Syntax that can't run triggers one re-prompt and is never shown.
+- On the first step of a two-step flow only the named tool runs (no blind run_plan beside open_settings). "tomorrow" /
+  "today" events land on the day asked (ReplyFix).
+- "turn off the alarm" is no longer answered with today's agenda. "Drafted the text" needs compose_sms.
+- Review 22 Oct: FastLane no longer says "Done" for alarms, timers, media keys or directions; those go through the
+  verified agent path. A "No app" / error result is a failure. All re-prompt kinds share one budget of 2 per turn. A reply
+  the tool gatekeeper chokes on has its malformed calls dropped.
+- /phoneqa first-token time is measured per turn (it was the app's first send: 68027 / 7052 ms on every run).
+- Signing key rotation (user-approved 22 Oct 08:32): the old key (keystore/blaze.keystore, androiddebugkey/android,
+  cert e9183294…) was public and is burned. Releases are signed v2 with the old key (Android 7/8) and v3 with the private
+  release key (cert e7b0281f…, API 28+) plus a lineage old -> new that leaves the old key only "installed data". The
+  keystore and its password are out of the repo. Gradle uses the SDK debug key, releases are re-signed outside the repo,
+  and the GitHub workflow is gone. Updater pins the release key as the current signer on Android 9+ (UpdateKeys).
+- Tests: DevicePhoneQa0451Test (the device's own strings), ReplyFixTest, Review1022Test, UpdateKeysTest.
+- Needs a phone: update 0.45.14 -> 0.45.15 in place (data kept), then /phoneqa; Stop chip; an old-key-only APK must be refused.
+
+## v0.45.14: the screen-control pointer never pauses a run or blocks a tap (versionCode 159)
+
+User bug on live 0.45.13 (21 Oct 21:38, Settings > Do not disturb): the "Paused · drag, double-tap to click | Resume | Stop" bar
+covered the top of the screen and every action got force-paused, so Blaze retried or said it failed. Removed cleanly:
+- No auto-pause. Blaze's own taps and gestures, screen changes, and the user's touches never pause a run. The paused mode
+  is gone: the bar, drag and double-tap to click, Resume, the "Click '…'?" check, the paused edge, the paused turn ending,
+  and the "Paused before …" results, along with their code and strings.
+- The pointer window is FLAG_NOT_TOUCHABLE and not focusable, so it never takes or blocks a touch and never covers the
+  target for input. The only control is a small Stop chip at the bottom-left edge (FLAG_NOT_TOUCH_MODAL, only the chip
+  takes touches). It hides while Blaze's own gesture is in flight. Stop ends the task at the next screen step, and a
+  glide in progress stops at once.
+- Settings text now reads: "It never blocks your taps or Blaze's. Tap the small Stop chip at the bottom-left to stop."
+- New strict case overlay-taps: "open Do Not Disturb settings and turn it on". It passes only when DND reads on, the
+  pointer was on screen that run, and nothing in the turn says paused. It's in /phoneqa (11 cases now) and in the
+  model-side replay.
+- Tests: PointerTest (window flags, no pause/resume/gate/mode API left, Stop once) and PointerOverlayTest. Units: 1893
+  tests, 0 fail, 99 skipped. Replays on gateway 0.8.18 at par 4: phone set 65/65 (overlay-taps 5/5), 0.45.9 set 100/100.
+- Needs a phone: /phoneqa overlay-taps 5/5, and tap Stop mid-run to check the task ends.
+
+## v0.45.13: phone actions are only "done" when the phone reads them back; "remove the alarm" really turns it off; past items stay past; no memory saves on read-only questions; an honest wake-word notification (versionCode 158)
+
+Phone-control sweep 0 (user via HQ, 21 Oct 17:16). The fixes for the user's 0.45.9 screenshots from 17:11 to 17:14
+come first. Numbering: 0.45.10, 0.45.11 and 0.45.12 are already scoped (quota UI, duo, code-card Save), so this release
+is 0.45.13. Those three need numbers after 0.45.13 when they ship, because the update notice compares version names.
+
+**Round 3 (strict replays on gateway 0.8.17: phone 60/60, 0.45.9 set 100/100; units 1893 tests, 0 fail, 99 skipped)**
+- A switch tap split into two calls in one step (`tap{text:"Dark mode"}` + `tap{want:"on"}`) is merged into one tap
+  with want on the phone, so the switch is read before the tap and read back after it. No extra model step.
+- The replay fixture now returns the screen with `open_settings_page`, the same as the app (SettingsJump returns
+  "Screen now:"), so the first tap can pick the right switch without a separate read_screen round trip.
+- Needs a phone: dark mode on, Wi-Fi off/on and a split tap through /phoneqa; check the reply waits for the read-back.
+
+**Round 2 (strict replays on gateway 0.8.15)**
+- Two identical tool calls in one step (the same Settings page opened twice) no longer stop the next step from being
+  named: after `open_settings_page` the next tool is still `tap`, and after `processes` it is still `process`.
+- A tap that wasn't asked to end "on" (or wasn't read back as on) can't back "Dark mode is on" or "I turned X on". The
+  reply now says what wasn't confirmed instead. "X is on" counts as a claim when the user asked to change a setting.
+- "run ls in the terminal", "run git status", or a bare shell command like `ls` names the terminal tool (`run_shell`)
+  on the first step, so the command runs instead of being written out as text.
+
+**Fixes for the user's bugs (all seen on 0.45.9)**
+- "remove the alarm" said "Alarm removed." and posted it as a notification. Samsung Clock still showed "… (Blaze A2)"
+  at 18:15, switched ON. Cause: `process(delete)` only sent `AlarmClock.ACTION_DISMISS_ALARM`, which Samsung Clock
+  ignores for an alarm that isn't ringing. It then dropped the alarm from Blaze's list, and its result was classed as
+  verified by default. Now `ClockUi` drives the Clock app's own alarm list through phone control. It finds the row by
+  its "(Blaze A2)" label, or by its time when only one row shows that time. It tries long-press → Delete; when the
+  clock offers no Delete, it flips the row's switch off. Then it reads the list again. Only that second reading
+  decides the result: "Deleted …" / "Turned off … (still listed)" with "Checked on the phone: …", or "Not confirmed: …
+  Next step: …". The alarm leaves Blaze's list only once it's gone from the Clock app. With phone control off,
+  the result says plainly that it isn't confirmed. "Alarm removed / deleted / turned off" is now a claim that needs a
+  verified result (new `alarm_off` claim in ActionProof).
+- 0.45.9 had already dropped A2 from Blaze's list. So `processes` now also lists the system's next Clock alarm when
+  Blaze doesn't track it (`clock@18:15`), and `process` accepts `clock@HH:mm`, or an `A<n>` that is no longer tracked
+  (found by its label).
+- The chat said "reminder at 18:30" while the alarm was set for 18:15. Two causes. First, `set_alarm` only answered
+  "Alarm set."; now it answers "Alarm set for 18:15, label “…”." (no instruction text in the result, so nothing like "Say this exact time." can leak into a reply). Second, a reply about the alarm set
+  in that turn is held to that time (`TimeEcho`). In schedule answers, an alarm is called an alarm and a reminder a
+  reminder. Two items that share a first word ("… app alarm" 18:15, "… app check" 18:30) now each need their own time
+  in the reply, so naming one no longer counts as naming both.
+- At 17:11, "anything else to do today?" offered the 10:15 class. Today's `[context]` line now marks what's over:
+  `(3 items, 2 still ahead): 10:15 "CIT class" (passed); …`. An item counts as over at its end. That end is the span in
+  its title when there is one ("Church 9:00–12:30"), otherwise one hour after a reminder starts, or as soon as an alarm
+  has rung. The rule says passed items are never offered as upcoming. "Anything else / what's left / to do today /
+  anything other than those" are schedule asks now. ScheduleTruth rebuilds a reply that offers a passed item as still
+  to do, or that leaves out one still ahead, into "Today (…), still ahead: …".
+- "Memory updated" appeared on "anything else to do today?", "that was in the morning so we're good", "okay yea but
+  anything other than those that we setup together?" and "No, that's all". MemoryGate's read-only list now covers
+  "anything else / other than / left / do I have / what's next …" after "okay yea but …". A new acknowledgement rule
+  covers "we're good", "that's all", "never mind", "that was in the morning" and similar. Durable facts still save.
+- The wake-word notification said "Offline. Turn off in Blaze settings." the whole time, even online. "Offline" meant
+  that the wake word runs on the phone. Now it says what the listener is really doing: "On. Runs on this phone: no
+  audio leaves it…" / Paused / Sleeping / can't hear the mic. It is re-posted whenever that changes (`WakeNote`).
+- Version on the phone: the screenshots don't show it. The 17:11 answer came with no tool and no receipt, so the model
+  answered from the `[context]` block, which exists only in 0.45.9. That points to 0.45.9 (inferred, not read off the
+  phone). MemoryGate and ScheduleTruth were both in 0.45.9, and neither covered these cases.
+
+**Verify after act (every phone action)**
+- A result that read its own effect back ends with an `ActCheck` marker. `ToolVerify` trusts only that marker for those
+  tools. New read-backs: timer (the Clock app's ongoing timer notification), calendar event (CalendarContract.Instances
+  ±1 min), contact (ContactsContract name + number), SMS draft (the text is in the compose box and was NOT sent),
+  YouTube / YouTube Music / Spotify play (the media session is PLAYING with a matching title), Maps directions (Maps in
+  front, the place and a route on screen, for `navigate_to` and Maps direction links), a switch tapped with `want` (its
+  state read back), and set_alarm hidden behind an earlier alarm (the Clock list row is ON).
+- Opening an app or a settings page is step 1, never the goal. A "done" for a multi-step ask whose only verified
+  actions were opens gets one nudge to carry the flow on, then the honest line (`GoalCheck`). The prompt rule says the
+  same and also says: say the exact time / name / value the tool reports.
+
+**Strict case set and the self-test runner**
+- `PhoneCases`: alarm set (time + label), alarm off, calendar event, draft only (never sent), YouTube play, Wi-Fi +
+  Bluetooth + DND on, 2-minute timer, Display settings → dark mode on, add contact, Maps directions. Each case has its
+  proof tools and its own verifier.
+- Hidden `/phoneqa` command (not in /help): it runs each case 5 times as real turns on the phone, one fresh chat per run.
+  After each turn, the verifier reads the phone back on its own. Each run records the request id, route/model, tools with
+  verdicts, first-token and total time, and the accessibility screen before and after. The report goes to
+  Downloads/Blaze as JSON and Markdown. Checklist: files/qa/phone-control-0.45.x.md. Device 5/5: PENDING PHONE RUN.
+- Model side: `HaloReplayRequestTest.writePhoneReplayRequests` writes the app's requests for those cases (full tool list
+  with the phone tools, plus the verify rule). `tools/halo_replay.py` answers phone tools with fixtures shaped like the
+  app's tagged results. `rel/check_replay_phone.py` judges strictly. This is model-side evidence, not device evidence.
+
+**Fewer tools per request, named tools for phone asks (model-side replay 8/60 → 60/60)**
+- At most 128 tools per request (`ToolTruth.cap`, in LlmClient and cloud runs). With the phone tools the app registers 136,
+  and some gateway routes refused the request ("'tools': maximum number of items is 128"). The cap always keeps the named
+  tool and its follow-up, the must-have and phone-core tools, and every tool already used in the chat. It then drops the
+  least relevant ones in a fixed order: rarely used tools first, scored by the ToolRouter cues and the words of the ask.
+  The original order is kept, so prompt caching still works.
+- Phone asks name their tool on the first step (`ToolTruth.choice`): set an alarm → set_alarm; turn off / remove an alarm
+  → processes, then process; draft a text → compose_sms; timer → set_timer; add a contact → add_contact; directions →
+  open_url (a Maps directions link); play … on YouTube → search_in_app; Wi-Fi / Bluetooth / DND on → device_setting;
+  open … settings and turn … on → open_settings_page, then tap (with want); add a calendar event → add_calendar_event.
+  The 0.45.9 choices are unchanged.
+- The set_alarm result no longer carries the instruction "Say this exact time." (it leaked into replies). It reads
+  "Alarm set for 18:15, label “…”. [ID A2]".
+- `UnconfirmedEcho`: when a phone action's last result in the turn is unconfirmed and the reply doesn't say so, the
+  reply gets one honest line first ("I couldn't confirm it: … still reads ON in the Clock app.").
+- ScheduleTruth: a plain "what's on today?" names the passed items as earlier ("still ahead: 14:00 NET class. Earlier:
+  08:00 CIT class (passed)"). Only "what's left / anything else" asks may leave them out.
+
+**Tests**: new PhoneControlSweepTest and ToolCapTest; Halo0459Test / HaloReplayRequestTest updated for the passed marks,
+the cap and the named choices. Full testDebugUnitTest: 1886 tests in 274 classes, 1787 passed, 0 failed, 99 skipped
+(ShotsTest 84 needs BLAZE_SHOTS=1; the native-SQLite ARM skips: MindDb 5, MindLogs 4, MindUpgrade 4, PrivateChat 1,
+LongChatIndex 1). Model-side replay (live gateway 0.8.12, fixtures, NOT a device): 60/60 strict on the 12 phone cases after
+the round-1 fixes; the rerun after the ScheduleTruth fix was cut off by the QA account's daily allowance. Device 5/5: PENDING
+PHONE RUN (/phoneqa).
+
+## v0.45.9: every chat request carries Blaze's full tool set again, "save this file" saves to Downloads, no turn runs longer than 5 minutes, and Halo and Blaze know your day (versionCode 157)
+
+**The full tool set on every request (top priority, user 12:14)**
+- Root cause: since 0.42/0.44 each agent request carried a guessed subset of the tools (ToolRouter's groups, then
+  ToolPick's 36-tool cap). The chat lane and the @all duo chat carried none. Gateway 0.8.2 now validates every tool call
+  against the request's own `tools` and drops a call to a tool that isn't there. So a request whose words missed a group
+  ("save this file", "open example.com in the Linux browser") reached a model that had no such tool, and it said it
+  couldn't. A live probe on 0.8.2 (rel/probe_drop.out) showed the same thing. With no save tool in the request, the
+  reply was "I'm unable to save files directly. However, I can guide you on how to save the HTML file on your computer"
+  (X-Blaze-Normalized `checked`), and the other run was `retried;refused although web_search is in tools`. With
+  `save_file` in the request, the model called it in 0.5 to 0.6 s, 2 of 2.
+- Now every agent request (Blaze, @halo, Cloud runs, Autopilot) carries the whole registered list (`ToolTruth`). Each
+  name appears once, names are valid and parameters are objects, so the gateway's checks always match. Plan mode,
+  private chats and background agents keep their deliberate filters.
+- Lanes that send no tools hand anything tool-shaped to the full lane. That covers the chat lane, the @all duo chat and
+  Halo's side lane while Blaze works (there the message joins Blaze's task at its next step).
+- Each request's tool list is logged with a count and the names. It shows in What happened ("Tools sent: N: a, b, …"),
+  the speed line and logcat (`BlazeTools`). The gateway's `X-Blaze-Normalized` is read into the trace ("Normalized" row).
+- New rule in every prompt: never say "I don't have the capability" about a registered tool. A reply that does so (or
+  gives desktop or text-editor advice) gets one re-prompt to use the tool.
+- When an ask needs exactly one tool, the first request names that tool in `tool_choice` (`ToolTruth.choice`), and later
+  steps stay on "auto". This covers "save this file" after a code reply (`save_file`), "View calendar" and a yes to a
+  calendar offer (`calendar_events`), "open … in the Linux browser" (`desktop_task`), and "open Settings" / "open Design
+  view" (`open_view`). Before this fix, the 0.45.9 build's replay on gateway 0.8.7 sent the Linux browser ask to
+  `browser_open` (Blaze's built-in browser) 5 times out of 5. It refused "open Settings" 2 times out of 5 ("I don't have
+  the capability to open settings"). One "save this file" took 32 s and came back empty.
+- After a tool works, the reply says in one line what it did. A turn that saved a file always ends with the saved path:
+  when the model's last step leaves the path out, the app puts "Saved to Downloads/Blaze/<name>." first
+  (`SaveFile.withPath`). This is needed because on gateway 0.8.7 the model's step after save_file was only its follow-up
+  chips, 5 runs of 5.
+- `calendar_events` results now tell the model to list each event with its time and place. Before this, one "View
+  calendar" run of 5 answered only "Open the calendar?".
+- Reminders and memory name their tool on the first step, like save and calendar (`ToolTruth.choiceFor`). "Remind me…" /
+  "set a reminder" now goes to `create_routine`, "what reminders do I have" to `list_routines`, "remember that…" to
+  `memory_save` (only when the memory gate allows the write) and "what do you remember about…" to `memory_search`.
+  On auto, live 5-run replays got: the reminder went to `create_trigger` or no tool 3 of 5 (one said "Reminder set" with
+  nothing set), reminders listed no tool 5 of 5, and memory saved or searched nothing 10 of 10 ("Got it. I'll remember that",
+  "I don't have any memories").
+- When the app names the tool, the request no longer carries `blaze_tools: "auto"`. Gateway 0.8.7 dropped every tool
+  schema (and the named tool_choice) on the two memory turns, since its action check didn't match them. That's been reported
+  to the gateway with request ids.
+- An empty `calendar_events` result now says it is only the Android calendar and that the [context] schedule line
+  still holds the day's classes and reminders. Before this, one Wednesday run of 5 called the tool, got no events and
+  answered "Nothing scheduled today" with CIT 08:00 and NET 14:00 on the schedule line.
+
+**Save code to the phone (user 12:12)**
+- New `save_file` tool. With no arguments it saves the last code block in the chat. It can also save content and a
+  filename given by name. It picks the right extension (.html .js .py .css .json .svg .md .txt and more). The name comes
+  from the HTML `<title>` or the language, for example `solar-system-3d.html` or `blaze-python.py`. The file goes to
+  Downloads/Blaze through MediaStore (Android 10+, no permission needed). Older Android versions get the share / save
+  sheet. The tool returns the saved path and Blaze tells you it. It runs in Normal mode with no card, since it's a safe
+  write to Downloads.
+- "save this", "save the file", "download it" and similar requests go to it. New rule: Blaze runs on a phone, so it
+  never gives desktop or text-editor advice and never claims it can't save.
+
+**A hard per-turn deadline**
+- The reported 56-minute wait was a Retry the user tapped at 12:11 (HQ and Site correction). The gateway's 12:11:04 chat
+  sample took 1.2 s to first token and 2.9 s in total. That request ran on the `chat` lane, so it most likely carried no
+  tools at all, which is the tool-list bug above.
+- The code review still found a way a turn could hang. A Cloud-run step followed the run's stream in an endless
+  reconnect loop, and keep-alives counted as activity, so the 100 s silence watchdog never fired. The only turn clock
+  was Autopilot's 45 minutes, checked only between steps. Now a Cloud-run step is cut at 75 s: the run is cancelled on
+  the gateway and the step goes direct once. Every model step is capped at 150 s. A turn ends at 5 minutes, and
+  Autopilot keeps its own budget only for long work. The cap is checked during a step too (`TurnDeadline`).
+
+**An assistant, not a chat buddy (priority 1)**
+- Blaze and Halo no longer claim feelings ("I'm feeling great!") or use stock lines ("How can I assist you today?",
+  "What would you like to do next?", "How about you?"). Halo's soul lost its "feelings" line. The same assistant rules
+  (`Duo.ASSISTANT_RULES`) go into every Blaze and Halo prompt: the agent, @all, reactions and Halo's side lane. They are
+  worded to match the shared persona v1.0.1, which the app now bundles (`persona-v1.json`), so the two never disagree.
+- The bundled persona wins over an older cached copy (`SharedPersona.pick` compares versions), so a phone that cached
+  1.0.0 sends 1.0.1 right after the update. The gateway then never has to add the rules itself (no `X-Blaze-Rules: added`).
+- On a greeting, small talk or thanks, the reply is a few words, then 1 to 3 named next steps from your real day.
+
+**Real context every turn (priority 1)**
+- A short `[context]` block (600 characters at most) goes at the end of the app's second system message: the real date
+  and time, the schedule for the day you asked about (today if you named none), the Home card's weather, your next item
+  on another day, an open task, and what's new in the app on its first turns. The shared persona stays first and
+  byte-identical.
+- Schedule lines are worked out on the phone (`ScheduleDay`) from reminders, routines and calendar events, so a Sunday
+  item can't be read as Wednesday's. In the block, each day's line gives its item count and quotes each title
+  (`schedule Sun 25 Oct 2026 (1 item): 08:30 "Church 9:00–12:30"`). Unquoted, the replay read "Church 9:00–12:30" as
+  church plus a CIT class from 9:00 to 12:30, or answered "nothing scheduled". That happened in 4 of 5 Sunday runs. The "next" line now says it's another day ("next after that day (not that day): …").
+  The context rule says the schedule line already holds that day's items, including earlier ones, and that an empty
+  calendar or routine result doesn't mean the day is empty.
+- Schedule answers are checked on the phone (`ScheduleTruth`). When a "what's on" answer made with no tool says the day
+  is empty while that date's schedule line has items, leaves an item out, or names another day's item as today's, it
+  is rebuilt from the line ("Today (Sun 25 Oct): 08:30 Church 9:00–12:30."). The follow-up chips stay. An empty answer
+  is still EmptyReply's job. In the replay, codestral said "Nothing scheduled" on a Sunday with Church on it in 1 run
+  of 5, in each of the last two full replays.
+- The block is cached for 60 s and rebuilt when reminders, routines, alarms, events, weather or follow-ups change.
+- `list_routines` starts with today's date and gives each routine's next date. Routine days match whole words
+  ("sunset" is not Sunday), and "weekly" with no day named means today's weekday, not every day.
+
+**Calendar: ask, never refuse (priority 2)**
+- With calendar access off, `calendar_events` shows Android's one-tap prompt. If you don't allow it, Blaze gets
+  `CALENDAR_OFF`: it says in one line that access is off and offers to ask again. It never says it can't see calendars.
+- Calendar, meetings, class and "what's on" questions always carry the calendar and reminder tools (plurals too).
+- A short yes to a calendar or reminder offer ("@halo Yes" after "I can check your Google Calendar, want me to?") now gets
+  `calendar_events`, `list_routines` and `create_routine`, both on the main @halo turn and in Halo's side lane while
+  Blaze is busy. It no longer goes to the plain chat lane. Before, the phone answered "I currently don't have the
+  ability to access or view your calendar."
+- Suggestion chips only offer what the phone can do right now (`ChipGate`). No "View your upcoming meetings" chip with
+  calendar access off.
+
+**Memory keeps only lasting facts (priority 3)**
+- `MemoryGate`: greetings, thanks, moods ("doing good thanks!") and read-only questions ("anything on for today?",
+  "how are you feeling??") never write memory. That covers `memory_save`, `memory_update` and `remember`, plus the
+  after-turn auto-extract. So "Memory updated" shows only when something lasting was saved. A message that also tells
+  something lasting ("thanks! I'm vegetarian by the way") still saves it.
+
+**Names**
+- Greetings use only your own name (Settings › Your name) or your Blaze account's first name, or no name at all. Names
+  in Blaze's own docs are never used for you (0.45.8 said "Hey Blazeinchue" with no name set).
+
+**Faster send (latency)**
+- MCP tool lists refresh in the background. Before, the first Send after launch could wait up to 8 s per MCP server
+  before the request went out.
+- New "Before the wire" stage marks in What happened (turn, route, tools, prompt, lane, token, connect, and the
+  request body size) show where the time goes between Send and the request leaving.
+- **Measured (JVM bench, not a phone)**, `SendPathTest.contextBlockKeepsTheWireFast` (app/build/bench/start-0459.txt):
+
+  - 0.45.8 path, no context block                      working   0.00 ms   on the wire   0.99 ms (fake gateway got byte 1 at   1.40 ms)
+  - 0.45.9 warm (block from the 60 s cache)            working   0.00 ms   on the wire   1.31 ms (fake gateway got byte 1 at   1.36 ms)
+  - 0.45.9 cold (block built on Send)                  working   0.00 ms   on the wire   1.13 ms (fake gateway got byte 1 at   1.32 ms)
+  - Block build alone: p50 0.075 ms, p95 0.892 ms (200 runs, fixture: 3 routines, 1 weather line, 1 open task)
+  - Block size: 309 chars (cap 600)
+
+**Live replay (gateway 0.8.11, persona v1.0.1)**
+- `tools/halo_replay.py` sends the app-built requests (`HaloReplayRequestTest`) to the live gateway in the client's
+  shape and checks the replies. Final run (16:11 CAT, 20 strict cases x 5 runs): **100 of 100 pass, every case 5/5**.
+  91 runs passed on the model's first try. 9 needed the phone's own recovery, which the replay now copies from
+  `LlmClient.complete` + `Cloud.drive`: re-ask on an empty reply, flatten the tool turns after a refused shape, back off
+  after a 503. One Sunday run was fixed by `ScheduleTruth`. The gateway faults behind the retries went to the gateway with
+  request ids: a thought_signature 400 when a Gemini step follows another model's tool call, empty replies on a named
+  tool_choice, and 503 busy. Full table and every run with its request ids: files/qa/halo-replay-0.45.9.md.
+- Known, not fixed here: the replay's web_search result is a fixture with no rate in it, and the model still stated a rate
+  ("32.50 ZMW per USD") 5 of 5 times. The tool was called every time, so the case passes its tool check, but the number
+  is made up. A grounding check for numbers in search answers is queued for a later release.
+
+**Tests**
+- Full `testDebugUnitTest` (JVM, ARM sandbox): **1865 tests in 272 classes, 1766 passed, 0 failed, 99 skipped** (the known skips: ShotsTest 84 needs BLAZE_SHOTS=1; 15 native-SQLite tests are not supported on Linux aarch64 and run on x86 CI).
+- New: ScheduleTruthTest (the live replies that were wrong on Sunday, right answers left alone, chips kept), ScheduleDayTest, Halo0459Test (context block, Sunday-only church, cap, CALENDAR_OFF, cache, weather, schedule
+  tools, memory gate and its wiring, chips, greeting name, persona agreement, persona version pick, stage marks, a yes
+  to a schedule offer), HaloReplayRequestTest (writes app/build/qa/replay-0459.json) and
+  SendPathTest.contextBlockKeepsTheWireFast. Updated to the new wiring: DesktopRouteTest, PromptCacheBenchTest (the
+  new names / assistant / context_rule prompt parts) and UpdatePath0458Test (versionCode 157). The ScheduleDayTest
+  every-other-week case was wrong (a series from Mon 5 Oct does fall on Wed 21 Oct), so the test was fixed, not the code.
+
+**Not in this release** (0.45.10, see PLAN.md): Halo and Blaze coordination (one reply per message, a reviewer
+addendum, a shared tool plan, "remind me later"), plus the items moved from 0.45.8.
+
+**Needs a phone (not checked here)**
+- Schedule (/doing): CIT, NET and Church show the right day labels and times. Church shows Sunday only, and a "weekly"
+  routine with no day named shows today's weekday.
+- The calendar permission prompt: with Calendar off, "View calendar" shows Android's one-tap prompt. Allow lists today's
+  events. Don't allow gets one line and an offer to ask again, never "I can't access your calendar".
+- "@halo Yes" to Halo's calendar offer lists today's items, both with Blaze idle and while Blaze is busy (side lane).
+- The "Before the wire" rows in What happened: the stage marks and their times next to Send → working and Send → on the
+  wire. These are the real phone numbers for the targets (working under 100 ms, on the wire under 300 ms).
+- The four Halo turns, "anything on for today?" on a class day and on a Sunday, and "hi Blaze": no feelings, no stock
+  lines, only that day's items, your own name or none, and no "Memory updated" chip on any of them.
+- Checklist: files/qa/phone-task-checklist-0.45.9.md, log: files/qa/phone-task-log-0.45.9.csv.
+
+## v0.45.8: Blaze starts the instant you tap Send, one theme on every screen, a theme switcher everywhere, Design full screen (versionCode 156)
+
+**One theme everywhere (priority 1)**
+- The picked theme is now one shared state that every screen reads: Home, Projects, Chat, Settings, sheets, Music,
+  Video, Design and the Terminal. Before this, Projects drew its own flat dark ground, Home drew its Home look (navy)
+  and only Chat showed the theme's scene (user screenshots 07:28, desert theme).
+- With a theme picked, Projects, Design and Home are see-through over the chat screen's scene. Settings, Search, the
+  Gallery, Music, Video and the Music/Video player sheet draw the scene themselves. Home uses the theme's palette
+  instead of forcing dark glass. Classic keeps every screen's own ground as before.
+- **Terminal colours come from the theme.** The ground is the theme's darkest colour (in light mode, a paper tinted with
+  the theme's accent). Text is at 7:1 or more. The cursor, the accent (selected tab, Ctrl/Alt) and ANSI colours 1 to 15
+  are each pushed to 4.5:1 or more against the ground, using the 0.45.7 contrast math. ANSI 0 is a background slot, so
+  text on it is kept at 4.5:1. The key caps, bars, status bar and the ⋮ / + sheet follow too. Open tabs repaint at once.
+  Classic keeps the near-black terminal.
+
+**A theme switcher on every screen (priority 2)**
+- A palette button with the same options as the carousel is on Home, Projects, Settings, Music, Video and Design. The
+  Terminal has ⋮ › Theme, and Chat keeps profile › Themes. Every switcher writes through one path, so a change made
+  anywhere shows everywhere, including the other activities (Music, Video, Terminal), which observe the same state.
+
+**Design is its own full-screen view (priority 3)**
+- Design now covers the whole screen, like Music and Video: no chat top bar, no composer and no particles over the
+  canvas, so it has more room. It has its own "Back to chat" arrow, and the system Back does the same. It still opens
+  from its own entry (Views › Design, /design, open_view, "Open in Design?"). The 0.45.6 render check and the Beta
+  label are unchanged. It is a full-screen view inside the main app, not a separate task. The 0.46.0 rebuild builds on
+  this shell later.
+
+**Home (priority 4)**
+- **Bottom strip:** "Swipe up to chat" now sits on Home's own ground, which also reaches under the status bar. The
+  scene behind Home (a light ink picture on a dark Home) no longer shows through below it. With a theme, Home and the
+  strip both show the theme.
+- **News card ghost stack:** the cards peeking under a collapsed stack are clipped to the thin strip below the card in
+  front. Before, their edges showed through the see-through main card as doubled outlines.
+
+**Send starts at once (latency)**
+- A typed message no longer waits for more. Before, Send opened a "burst" and held the turn 0.6 s (up to 6 s while you
+  kept typing) so quick follow-ups became one turn. Now the first message's turn starts at once, and messages sent right
+  after join that turn at its next step, or start the next turn when it ends. Nothing is dropped or reordered, and there
+  are never two turns at once. The old routing is kept only for the before/after bench.
+- The on-device fast-lane model runs only offline. Online, it sat in front of every short message (starting its process
+  and an inference) before the cloud request left. Online, the instant rules and the intent cache still answer direct
+  commands with no model.
+- The session token is kept in memory after its first decrypt, keyed by the stored value, so a new token is never stale.
+- Send sets the working state (orb and work card) before anything else.
+- Chat requests to Blaze Cloud carry the reply-language pick as `X-Blaze-Reply-Lang` (BCP 47). Auto sends no header.
+- **Timing rows:** the "What happened" sheet now shows Send → working, Send → on the wire, Send → headers and
+  Send → first token, timed on the monotonic clock from the tap. `speed stats` adds a "Send → working …, on the wire …"
+  median line, and the speed log keeps both.
+- **Measured (JVM bench, not a phone):** SendPathTest sends 5 typed messages (median, after a warm-up) through the old
+  and the new path to a fake gateway on a local socket. The slow prep is faked: 1.5 s for the on-device model, 25 ms for
+  the token decrypt. The routing, burst wait, fast-lane switch, rules and timing marks are the real code.
+
+  | Send path (median of 5) | Send → working | Send → on the wire |
+  |---|---|---|
+  | Old (0.45.7), fast-lane model downloaded | 0.0 ms | 2126.4 ms |
+  | Old (0.45.7), no fast-lane model | 0.0 ms | 626.2 ms |
+  | New (0.45.8), fast-lane model downloaded | 0.0 ms | 0.7 ms |
+  | New (0.45.8), no fast-lane model | 0.0 ms | 0.8 ms |
+  | New (0.45.8), first Send after app start (token decrypt) | 0.0 ms | 26.0 ms |
+
+  Working was already set at once on the old typed path, so the gain is the request leaving: about 0.6 s sooner with no
+  fast-lane model and about 2.1 s sooner with it (with the faked 1.5 s model; a real cold start can be longer). Targets
+  were working under 100 ms and on the wire under 300 ms. **Phone numbers come from the What-happened sheet**
+  (Send → working, Send → on the wire) and have not been measured yet.
+
+**Not in this release** (moved to 0.45.10): WhatsApp-style reactions, Terminal GIDs and rootfs persistence, the
+avatar badge, and lazy init. Parallel tool calls are 0.45.9. These still keep their own grounds: BlazeOS (the Home tab
+when the Classic board is off), the call screen, onboarding/setup and the lock screen.
+
+**Tests**
+- Full `testDebugUnitTest` (1500m, build machine, Linux aarch64): **1813 tests in 265 classes: 1714 passed, 0 failed,
+  99 skipped.** The skips are the known ones: ShotsTest 84 (needs BLAZE_SHOTS=1; Robolectric native graphics don't
+  run on aarch64) and native SQLite 15 (MindDb 5, MindLogs 4, MindUpgrade 4, PrivateChat 1, LongChatIndex 1).
+- New: ThemeEverywhereTest 7:
+  - one rule answers the same for every screen (desert gives the scene on all nine);
+  - each screen's source reads the shared theme, and the old fixed grounds are gone;
+  - every screen has the switcher, and all switchers write through one path;
+  - a switch "from Music" and "from the Terminal" is seen by every reader (theme, light/dark, the Terminal palette);
+  - every theme x light/dark Terminal palette keeps text at 7:1 and cursor, accent, dim and ANSI 1-15 at 4.5:1 or
+    more, with text on ANSI 0, key caps, bars, the selected tab and sheet rows checked as well;
+  - the Terminal follows the theme, and Classic stays near-black;
+  - the ghost stack shows only strips.
+- New: DesignNavTest 4: Design opens full screen from Chat, Projects, a project chat and Home; only Design is full
+  screen; Back returns to the chat; it is wired into the chat screen with the Beta label and render check kept.
+- New: SendPathTest 4: the old/new before/after bench above (new must be under 100 ms to working and 300 ms on the
+  wire, old must wait at least the 0.6 s burst grace); typed messages route NOW and the fast-lane model is offline-only;
+  the `X-Blaze-Reply-Lang` header (none for Auto); the four Send → rows survive the What-happened round trip.
+- New: UpdatePath0458Test 4: a 0.45.5 phone reading versions.json sees 0.45.8 as newer, with the download only from
+  android.url and no GitHub host; versionCode 156 and the package id; the 0.45.5 install checks (SHA-256, same package,
+  higher versionCode, same signer, PackageInstaller, the unknown-sources prompt) are unchanged; prefs from 0.45.5 survive,
+  and the PrefCoerce migration still fixes a phone that never ran it. RapidMessagesTest now expects the new routing.
+- Not covered: rendered pixels (no ShotsTest on aarch64), and two activities on screen at once.
+
+**Needs a phone (not checked here)**
+- The theme matches on every screen: Chat, Projects, Home (Swipe and Classic tabs), Settings, sheets, Music (and its
+  player), Video, Design and the Terminal.
+- The switcher works from Music and from the Terminal (⋮ › Theme), and the change shows on the other screens.
+- Design opens full screen, and both the back arrow and the system Back return to the chat.
+- The Home strip matches Home, and the news stack shows clean edges.
+- Send shows working instantly: the orb and work card appear on the frame after Send, and a second message sent right
+  after joins the same reply.
+- The timing rows: What happened shows Send → working, on the wire, headers and first token, and `speed stats` shows
+  the median line. These are the real phone numbers for the latency targets.
+- In-app update from 0.45.5: the banner or `update` downloads 0.45.8, Android asks "Allow from this source" once if it
+  was never allowed, then asks to confirm the update; chats, theme, sign-in and settings are kept.
+
+## v0.45.7: local languages, readable on every theme, password eyes, honest Cloud sync switch (versionCode 155)
+
+**Local languages (priority 1)**
+- **Settings › Language** (new top-level row): Auto (match me), English, Kiswahili, ChiBemba, ChiNyanja, Hausa,
+  Yorùbá, አማርኛ, Français, Português, العربية. The choice adds one stable `LANGUAGE:` line to the second system
+  message (the app context) and to the chat lane's prompt. The shared persona (first system message) stays
+  byte-identical. Auto tells the model to answer in the language of your latest message, with its own spelling, tone
+  marks and script. A picked language means "always reply in X", with names, code and numbers left as they are.
+  Before this, no prompt said anything about the reply language.
+- **Fonts:** the bundled Inter is a 228-character Latin subset. It has no Hausa ɓ ɗ ƙ ƴ, no precomposed Yorùbá ẹ ọ ṣ,
+  no Chichewa ŵ, and no Ge'ez or Arabic. Android already drew missing letters from a system font (so no tofu), but
+  letter by letter, in a mix of two fonts. Now:
+  - any bubble whose text needs a letter Inter lacks is drawn wholly in the system font (Roboto / Noto);
+  - picking Hausa, Yorùbá, ChiNyanja, አማርኛ or العربية switches the whole UI to the system font;
+  - emoji don't count, since the emoji font always draws them.
+- **Nothing cuts a letter in half.** The streaming fade-in split the last 28 characters into fixed 4-char steps,
+  which could split a Yorùbá tone-mark sequence or an emoji between two alphas. Its spans now snap to grapheme
+  clusters. The same cluster-safe cut is now used by quote-chip snippets, group-chat summaries and long-chat search
+  snippets (`Scripts.clip`).
+- Markdown, ParseMemo, ReplyClean (streaming and final), ToolLeak, the chat file and the request JSON keep every
+  language byte for byte. Tests below.
+
+**Readability (priority 4)**
+- **Contrast sized per scene.** The veil over a theme's picture was a fixed 0.55 (dark) / 0.62 (light). Measured
+  against each bundled scene's darkest and brightest 1 %, that left body or secondary text below WCAG AA on several
+  scenes: lagoon, mono ink, rose dawn, prism and liquid mercury in dark; aurora, firefly, ember, neon rain, prism and
+  solar flare in light. Each scene now gets the least veil that keeps body text at 4.5:1 and secondary text and icons
+  at 3:1, on both extremes, for the palette in use.
+- **Look & feel › Background strength** slider: 1 = that AA minimum (picture strongest), 0 = a 0.92 veil (picture
+  faint). The default 0.7 dims a little more than the minimum. No position goes below AA.
+- **No hard grey band.** The veil over the chat while the Halo arc / + sheet is open (the y≈185–1150 band that ended
+  above the Halo dial) is lighter (0.10) and fades out over its bottom 30 %.
+- **Solid chips:** suggestion chips and pills are opaque (fill on the page colour) with a 1 dp border at 3:1 or more.
+  They used to be see-through glass.
+
+**Also**
+- **Show/hide eye on every password and passphrase field:** sign-in, create account, change password, Cloud sync
+  passphrase and "Type it again", the AI key field, and Saved logins while editing. It has a 40 dp target and
+  "Show password" / "Hide password" for TalkBack. The secure form card and the browser vault already had one.
+  Two-step codes are not masked, so they need none.
+- **Cloud sync switch matches its label.** Before a passphrase was set, the switch showed ON (`on || setup`) while
+  the label said "Off. Nothing leaves this phone.". It now stays off until "Turn on cloud sync" succeeds, and says
+  "Off until you set a passphrase below and tap “Turn on cloud sync”".
+- **Home weather in °C and km/h outside the US** (user bug 07:28: °F and mph in Ndola). The Home weather card now
+  reads gateway /v1/weather when you're signed in, the same source and units as chat's get_weather, and shows the
+  source and time. Units are metric unless you picked imperial, or the phone's locale is US and the place is in the
+  US. A phone set to en-US in Ndola gets °C and km/h. Chat's get_weather uses the same rule (it used to go imperial
+  on any US/LR/MM locale). The 4-day lines still come from Open-Meteo, in the same units. Signed out, or if the
+  gateway fails, the card uses Open-Meteo directly, also with the new units rule.
+- **What happened** sheet: a new "Longest pause" row (the longest gap between streamed chunks, the same number
+  `speed stats` shows).
+
+**Tests**
+- Full `testDebugUnitTest` (1500m, build machine, Linux aarch64): **1794 tests in 261 classes: 1695 passed, 0 failed,
+  99 skipped.** The skips are the known ones: ShotsTest 84 (needs BLAZE_SHOTS=1; Robolectric native graphics don't
+  run on aarch64) and native SQLite 15 (MindDb 5, MindLogs 4, MindUpgrade 4, PrivateChat 1, LongChatIndex 1).
+- New: LocalLanguagesTest 10, which runs a sample per language (Kiswahili, ChiBemba, ChiNyanja with ŵ, Hausa with
+  ɓ ɗ ƙ ƴ, Yorùbá with decomposed tone marks, Amharic, French, Portuguese, Arabic, plus emoji ZWJ, skin tone and
+  flag):
+  - ReplyClean (final and streaming), ToolLeak, Md.render, Md.plain and every streamed prefix through ParseMemo come
+    back byte for byte with the same number of combining marks;
+  - the chat file and the request JSON keep the text, and the persona stays first and byte-stable;
+  - the language lines, the font-coverage rule, cluster-safe cuts, clips and fade spans, chip snippets, and the
+    "Longest pause" round trip.
+- New: ContrastTest 9: WCAG math; every theme scene x light/dark x 11 slider steps gives body/ink 4.5:1 and
+  secondary 3:1 on the scene's darkest and brightest 1 %; the slider only adds veil; the old fixed veil failed lagoon
+  in dark; chips are opaque with a 3:1 border; the sheet veil fades to 0; eye toggles and the sync switch; a source
+  scan that every masked field has a reveal toggle.
+- New: HomeWeatherTest 3 (metric for Ndola on an en-US phone, imperial for a US place/locale or when picked, the
+  request asks units=metric, the card shows °C and km/h with the source and time). PromptCacheBenchTest carries the
+  new "lang" part.
+- Not covered: rendered pixels (no ShotsTest on aarch64), and a Robolectric Amharic text-measure test (not feasible
+  for the same reason).
+
+**Needs a phone (not checked here)**
+- In each language (Kiswahili, ChiBemba, ChiNyanja, Hausa, Yorùbá, Amharic, French, Portuguese, Arabic): type a
+  message in Auto and check the reply comes back in that language. Then pick the language in Settings and write in
+  English: the reply should be in the picked language. Check the letters render (no boxes, no mixed fonts) in the
+  bubble, the composer, the quote chip and the notification. Check Arabic lines read right-to-left.
+- Amharic glyph width: a Robolectric text-measure test isn't possible here (Robolectric's native graphics don't run
+  on Linux aarch64, the same reason ShotsTest skips), so on the phone: Amharic must not render as tofu or collapse.
+- Background strength: drag it on a bright scene (rose dawn, lagoon) in light and dark and check messages stay
+  readable at both ends. Open the Halo arc: no hard band.
+- Eye toggles on sign-in, create account, change password and both Cloud sync fields. With TalkBack it should say
+  "Show password".
+- Cloud sync before a passphrase: the switch stays off until "Turn on cloud sync" succeeds.
+- Home weather in Ndola: °C and km/h, with the "Open-Meteo · HH:MM" source line (signed in).
+
+**Deferred to 0.45.8** (written into PLAN.md): the Home bottom strip and the news card's ghost stack, theme
+everywhere and full-screen Design, WhatsApp-style reactions, Terminal GIDs and rootfs persistence, the avatar
+badge, lazy init, phone approvals. The veil for Classic backgrounds and user photos is unchanged; only theme scenes
+are sized per scene.
+
+## v0.45.6: music plays when asked, 3D designs draw (or say why), smoother scrolling and background (versionCode 154)
+
+**Music (P1, phone 21:27–21:30)**
+- **"play music" plays Blaze Music.** No approval card, no screen control. Music requests ("play music", "pause the
+  music", "next song", "previous track", "what's playing", "resume the music") now run in the app before anything else
+  reaches the model. Requests that name another app ("play music on Spotify") still go to the normal turn.
+- `music_ops` has transport actions (play, pause, resume, next, previous, stop, now). In Normal mode they run without a
+  card. A model that types `music_ops play` as a shell command gets the real tool, not the terminal.
+- **Nothing queued?** "Play music" asks what to play and offers your last playlist and/or a shuffle of your local
+  music (or says there's no music yet). It never guesses.
+- **Opening apps:** an outside app opens only on an exact package or exact label match, never a near match ("Blaze*"
+  opened BlazeFX). Blaze's own screens ("Blaze Music", "Blaze settings") are sent to open_view. After a launch the
+  foreground app is checked, and a different app in front is reported as a failure.
+- **Every turn ends with a message.** If a turn stops, pauses, times out or loses a tool and nothing was written, the
+  chat gets one plain line saying what happened (with the last step).
+
+**Design (P1, user 21:35–21:40)** · Design is now labelled **Beta** (studio header and the view chip)
+- **A blank 3D view gets fixed or explained.** Any three.js page, not only the 3D starter, now has to prove it drew
+  something: the check samples the frame for non-background pixels, and draw calls alone no longer count. If three
+  checks come back blank, the view steps in once:
+  - it gives a zero-height canvas a size;
+  - it adds default lights (hemisphere, key and ambient) and a neutral environment when the scene has none;
+  - it sets a background;
+  - it frames the camera on the model's bounds, with near/far planes scaled to the model, orbiting its centre.
+  
+  If the scene is still blank, an error card names the problem, and parts-based models fall back to the simple
+  drawing. The pane is never left empty. Until a 3D page has drawn, it shows "Drawing the 3D view…". The 3D starter's
+  camera planes now follow the model's size, so a model in the wrong units is no longer clipped (the old far plane
+  was fixed at 200).
+- **No "Done" unless it rendered.** After the design tool runs, Blaze waits up to 15 s for the Design view's
+  load/draw report on the new version. That result is added to the tool result as a RENDER CHECK line, and the reply
+  is grounded in it. A "Done… is open / is ready" opening is replaced with what's true: still opening, or "It didn't
+  render: <reason>".
+- **Motion tab:** with a design open, it shows one honest status: "The Motion timeline isn't built yet; your intro is
+  on the Page tab", with a button to go there. Chat replies to Motion requests say the same.
+- The Page tab's live preview now sits below the Phone/Desktop and version/undo pills, so a page's own overlay text
+  ("Drag to orbit • Scroll to zoom") no longer runs under them. The WebView is opaque and hardware-drawn, so a page
+  that draws nothing is never see-through.
+- Suggestion chips fit what's open: 3D models get lighting, colour, gloss and stand ideas (not "Make the headline
+  bigger", and not the old orb/halo chips), three.js pages get camera, lighting and background ideas, and web pages
+  get copy ideas.
+
+**Grouped chats (P1, item 11)**: speaker attribution in group notifications (the "Cyp home" case) is fixed. Each
+message keeps its sender ("Debi" is "Deborah"). A question meant for someone else is never put to you. Blaze never
+auto-sends into a group, and the summary names the group and each speaker.
+
+**Smoothness**
+- The animated background read its clock during composition, so it recomposed about 30 times a second while any
+  theme moved, and it was capped at 30 fps, which looked like jitter on 60–120 Hz screens. The clock is now read only
+  while drawing (no recomposition per frame) and ticks at up to 60 fps.
+- Chat rows that scroll back into view no longer re-parse their reply. Cleaning, card parsing, rich blocks and styled
+  text are kept in process-wide LRU caches keyed by the text. Before/after (JVM, build machine, ParseMemoTest):
+  - Scroll re-entry, 60 replies (861 chars on average): **14.13 ms → 0.242 ms per pass (58.3×)**, per row 0.235 ms → 0.0040 ms (first run); rerun 11.66 ms → 0.253 ms (46.1×), per row 0.194 ms → 0.0042 ms.
+  - Streaming a 3,381-char reply over 845 frames, full re-parse per frame: p50 0.301 ms, p95 0.507 ms (rerun; first run p50 0.341 ms, p95 0.705 ms).
+  - These are JVM timings on the build machine, not phone frame times.
+  Streaming is not changed in this release: every frame still re-parses the whole live reply (numbers above).
+  Incremental parsing is queued for 0.45.7.
+- Scenes were already downscaled and cached (0.45.3), and saves already run off the main thread (0.30.5), so neither
+  changed here.
+
+**Also from the parked queue (written for 0.45.5, compiled and tested now)**: a wrong-reply guard (a reply that
+repeats Blaze's own status block is caught, nudged once, then replaced by an honest line); a per-reply "What
+happened" sheet (info icon: model and provider, route, tools, timings, errors, a copyable request id); a warm-up on
+app open and on typing (at most every 25 s), with streaming kept on retries; the shared persona as the first system
+message (bundled v1, refreshed daily); and the get_weather tool on the gateway endpoint (one source, day/night aware,
+says when it's unavailable).
+
+**Not in this release (queued as 0.45.7):** startup lazy init and a Baseline Profile (debug APKs don't package one),
+incremental streaming parse, JankStats logging, phone approvals, the Home weather card on the gateway endpoint,
+password eye toggles, the Cloud sync switch state, contrast work, reactions, Terminal GIDs/rootfs, and the avatar badge.
+
+Tests: new InAppRouteTest (7), MusicCtlTest (4), TurnEndTest (3), DesignTruthTest (4), Design3dViewTest (7),
+ChatThreadsTest (5), ParseMemoTest (2), Wip0456Test (5). Full `testDebugUnitTest` on ARM Linux, JDK 21:
+**1772 tests in 258 classes: 1673 passed, 0 failed, 99 skipped** (ShotsTest 84, plus 15 native-SQLite tests that can't load on ARM Linux: MindDb 5, MindLogs 4, MindUpgrade 4, PrivateChat 1, LongChatIndex 1). The first full run had 3 failures, all fixed before this run: an empty catch in Agent.init (now logged), the prompt benchmark missing the weather part, and the group summary naming Deborah by her sender name "Debi" instead of the name the question used. CI not run. No phone tests yet (see below).
+
+**Needs a phone:**
+- "play music" → Blaze Music plays, no approval, no screen control. Also try "pause the music" and "next song", and
+  "play music" with an empty library (it asks what to play).
+- "open Blaze Music" opens the Music view. Asking for an app by a near name ("open Blaze") opens nothing outside and
+  asks which app you mean.
+- Design → 3D tab on a sample model shows the model lit and centred (the "3d-rocket" design). The chat reply says
+  "Done" only once it has drawn. With WebGL off, an error card shows instead of a blank pane.
+- Design header and view chip say Beta. The Motion tab shows the honest status. The Page preview's own text no longer
+  runs under the Phone/Desktop and v2/undo pills.
+- Grouped WhatsApp: in "Cyp home", Stefano asks Deborah, Debi says "yes", Elena says "Pronto" → no question to you.
+  The summary names each speaker.
+- Smoothness: scroll a long chat up and down, and watch a moving theme. Frame times (JankStats) and cold start need
+  the phone; no on-device numbers are claimed here.
+
 # Changelog
 
 Newest first. Builds before v0.8.0 were numbered 1.0–1.17.0; `versionCode` has always counted up.
 
+## v0.45.5: hotfix, every message failed with "String cannot be cast to Boolean" (versionCode 153)
+
+- **Fixed: a plain message ("hey how's it going") failed at once** with a red ERROR "java.lang.String cannot be cast to
+  java.lang.Boolean" and a "Continue where you stopped" chip, on every turn. Cause: two features shared one setting
+  name. The "Suggested follow-ups" switch is a yes/no setting called `followups`; the Follow-ups tracker (since 0.38.0)
+  saved its list of plans it watches in chats under the same name. Once a chat notification carried a plan, the list
+  replaced the switch, and every turn crashed reading the switch while building its prompt. Cloud sync carries that
+  setting, so it could reach your other phones too.
+- The tracker now keeps its list under its own name. On the first start of 0.45.5 the list is moved there (nothing
+  tracked is lost) and the switch goes back to on. Other settings stay as they were.
+- Every yes/no and text setting is now read safely whatever type is stored ("true", "1", "false", "0" strings count,
+  anything else falls back to the default), so a setting can never stop a turn again. Stored values are fixed to
+  their proper type once at start.
+- Cloud sync writes settings with the type this phone uses ("true" from another device becomes a real yes/no) and
+  never sends or accepts a list or text in place of a yes/no setting.
+- Tests: new PrefCoerceTest (6) and SettingsTypesTest (3, Robolectric: an upgraded phone with the old list and mistyped
+  values starts a plain turn and keeps its data). Full `testDebugUnitTest` on ARM Linux, JDK 21:
+  **1736 tests in 250 classes: 1637 passed, 0 failed, 99 skipped** (the known skips: ShotsTest 84, needs BLAZE_SHOTS=1, and 15 that open Robolectric's native SQLite).
+
+**Needs a phone:** install 0.45.5 over 0.45.4 on the phone that showed the error (settings and cloud sync left on),
+send one plain message, and check that it answers; check that Settings › Suggested follow-ups is on and that a plan
+in a chat still gets its "Are you going?" follow-up.
+
+## v0.45.4: Google and GitHub sign-in finish in the app, updates come from the Blaze site (versionCode 152)
+
+- **Sign-in with Google or GitHub comes back to Blaze.** On 0.45.3 the browser said "You're signed in" but the first-run
+  screen stayed on "Continue with Google". The app listened on 127.0.0.1 and redeemed the one-time code while the
+  browser was still in front, so the outcome (a failed redeem, or a frozen/closed app) never reached the screen, and an
+  error, when there was one, was drawn below the email form, out of sight. Now the browser returns through
+  `blaze://auth/cb` (blaze-auth 0.9.5 accepts it and says so in /v1/providers `features.app_redirect`); MainActivity
+  takes the link, checks its state, and redeems with the PKCE verifier with Blaze in front. The verifier and state are
+  kept encrypted on disk for 10 minutes, so the sign-in still finishes when Android closed Blaze while the browser was
+  open. A server without `app_redirect` keeps the 127.0.0.1 path, whose page now has an **Open Blaze** button.
+- **Two-step accounts go straight to the code screen** after Google or GitHub, from first run too (redeem answering
+  401 `mfa_required` opens the code step; the emailed code is sent by itself when email is the only way).
+- **The first-run sign-in shows what happened** (signed in, or why not) at the top of the form, and moves on by itself
+  once the session lands. Expired or reused sign-in links say so in plain words.
+- **Signed out in chat:** a message sent while signed out of Blaze Cloud, with no other model to answer, shows a
+  **Sign in** card instead of an error. The message stays and is sent by itself once you're signed in.
+- **In-app updates come from the Blaze site.** /update, Settings › Updates and the update_blaze tool read
+  https://blazeinchue.pages.dev/versions.json (no cache; schema 1, the android entry), compare versions semver-style
+  (a leading v is ignored), download android.url inside the app (redirects followed, resumable, on mobile data too),
+  check the file against android.sha256 (a mismatch deletes it and says so in plain words), check the signing key, and
+  install through Android's installer. The "Allow from this source" step now says why it's needed. Once a day on app
+  open a small "Blaze X.Y.Z is available" banner shows a newer version (Update or dismiss; silent when offline). Nothing
+  in the update path uses GitHub any more, so updates work with GitHub unreachable. Phones on 0.45.2 or 0.45.3 still
+  look on GitHub, so they need one manual install from https://blazeinchue.pages.dev.
+- **Blaze's own source links point to GitLab** (gitlab.com/blazeinchue: Blaze-agent, Blaze-dekstop, Blaze-cli) in the
+  built-in docs and the repo shortcuts; the store sources and the about screen name https://blazeinchue.pages.dev.
+  GitHub sign-in, the GitHub connector and the git and terminal tools are unchanged.
+- **My voice engine downloads from the Blaze release registry** (voice-runtime 1.13.8, the same files byte for byte),
+  and the download is now SHA-256 checked before unpacking as well as after.
+- Tests: new AuthReturnTest (14), SignInGateTest (7), VersionFeedTest (7); UpdateDownloadTest (11) checks SHA-256 and
+  resume without a known size; MfaTest expects the app_redirect flag. Full `testDebugUnitTest` on ARM Linux, JDK 21:
+  **1727 tests in 248 classes: 1628 passed, 0 failed, 99 skipped** (the known skips: ShotsTest 84, needs BLAZE_SHOTS=1,
+  and 15 that open Robolectric's native SQLite).
+
+**Needs a phone:** Google and GitHub sign-in from first run (step 01/03), with Blaze in the background and with Blaze
+closed by Android while the browser is open; the same with a two-step account (app code, and email-only); the Sign in
+card in chat and the message going out after sign-in; this build updating in-app to a newer one with GitHub unreachable; the
+update banner once a day; My voice download on a fresh install.
+
+## v0.45.3: faster first word, no Halo stalls, Autopilot knows when it's done, fewer command cards, theme pictures, yearly plans, two-step sign-in (versionCode 151)
+
+- **Halo stream stall fixed** (agent/LlmClient.readSse). The stream reader skipped handing on a text chunk that came
+  less than 16 ms after the previous one; it was only shown with the NEXT chunk. A burst followed by a pause in the
+  model's stream therefore sat invisible on screen (a reply froze mid-list, then jumped). Every chunk now goes straight
+  to the screen (StreamGate still keeps it to one update per frame). The streaming filters (tool-call text, [re:]
+  markers, follow-up and Autopilot tags) were checked chunk by chunk on the screenshot's reply: they hold back at most a
+  short ambiguous suffix, never paragraphs (StreamPromptTest). A list line that is only "- " so far waits for its words
+  (Md.dropLoneMarker). The speed line now names the longest pause inside a stream ("longest pause in the stream 3.1 s
+  (provider · model)") so a model-side pause can be told apart on a phone.
+- **Halo memory clean-up loop fixed.** "@halo yes, clean them up" ran 9 minutes until Stop: there was no way to delete a
+  memory by its #id, and `forget "#12"` answered "Nothing matched", so the model kept trying. New `memory_delete` tool
+  (ids from memory_search, up to 60 at once, ONE confirm card for the whole list, never repeated in a turn, refused in
+  private chats); `forget` with an id points to it. New LoopGuard: the same call that got the same answer twice isn't
+  run a third time, and a tool that changed nothing three times in a row is stopped for the turn (screen / desktop /
+  wait tools exempt).
+- **Autopilot stops when the answer is done** (agent/AutoContinue.kt). It used to send "decide yourself" after any reply
+  ending in a question, so a finished answer that offered something ("Want me to run the unused-apps check early…?")
+  got a second, unasked turn. Now Autopilot continues only on the model's hidden `<<continue>>` marker, a stated plan
+  with steps left ("Step 2 of 5") or a failed check after tool work; it stops on a complete answer, any question or
+  offer to the user, chit-chat, or `<<done>>`; never after a question; at most 3 automatic turns per message. The
+  markers are never shown or spoken. Approval rules for deletes, money, messages and calls are unchanged.
+- **Normal mode no longer asks for every command** (agent/CommandPolicy.kt; shell, git and Linux-desktop typing / keys /
+  opening apps). Safe and read-only commands (ls, cat, grep, git status/diff/log, local git add/commit, builds and tests
+  in the workspace: gradle, make, cargo, go, npm run/test, pytest, tsc…) run without a card. Risky ones always ask and
+  can't be pre-allowed: rm / deletes, sudo / su, installs from the network (apt, apk, pip, npm install, curl | sh…),
+  writes outside the workspace, force pushes / hard resets, disk tools, anything that texts, calls or pays. Everything
+  in between asks with two new choices on the card: "Allow for this chat" and "Always allow this command" (by program +
+  sub-command, e.g. "git push"; kept as `cmd_allow_always`). Allowances don't apply in a turn that read outside content
+  (web, messages, the screen). Several commands in one reply get ONE card ("Run these 3 commands?"). Autopilot keeps
+  its old behaviour exactly.
+- **Faster first word.** Optional look-ups before the first model call get a time budget (screen read for orientation
+  400 ms, specialists and remembered plans 250 ms; agent/PreBudget.kt) instead of holding the request; late ones are
+  named in the speed line ("late: orient"). Autopilot (the default) no longer marks every turn as an action turn, so a
+  plain question isn't sent with the action lineup's slow-route preferences. The connection is warmed as soon as the
+  message box is tapped (not only on the first key). Short / plain turns send `blaze_reasoning: low` (ignored by the
+  current gateway, which strips blaze_* fields).
+- **speed_stats** adds "First words on screen after Send" (median and slow ones) and the gateway's time to answer
+  headers; each turn's speed line has `headers` and (when reasoning came first) `first text`.
+- **Theme pictures.** The 13 scene pictures of the Blaze Site (assets/theme-scenes, full size 1376x768 WebP, 893 KB;
+  no thumbnails) are each theme's background: on the picker cards (centre-cropped to the portrait card, particles and
+  the droplet on top) and full-screen behind Chat / Home (cropped to cover, with a dark or light scrim in the page
+  colour for readable text; the living particles on top; still with reduced motion, as before). Decoded once at screen
+  size (inSampleSize, RGB_565) into a small cache; the carousel decodes the front card and two either side ahead. The
+  Weather theme picks a scene from the weather: clear → Solar Flare, heatwave → Desert Dune, cloudy → Liquid Mercury,
+  night → Nebula, rain / storm → Neon Rain, snow → Arctic Aurora, fog → Liquid Mercury, wind → Golden Ember, sunset →
+  Lagoon. Classic stays without a picture.
+- **Monthly or yearly Blaze Cloud plans** (connect/Billing.kt, ui/CheckoutPage.kt; Settings › Account › Plan). Checkout
+  shows a Monthly / Yearly switch when the gateway offers yearly prices (0.6.2 and later): the price per period, the
+  saving ("2 months free"), the local amount for the chosen period and "365 days, not auto-renewing". The payment is
+  sent with `period: "month" | "year"`; an older gateway gets no switch and monthly as before. Terms never renew by
+  themselves; payments are still confirmed by hand.
+- **Sign-in with two-step verification** (connect/Mfa.kt, BlazeAccount, Settings › Account; blaze-auth 0.9.0 / 0.9.1).
+  When an account has 2FA on, a correct password or a Google / GitHub sign-in now leads to a code step instead of
+  failing: the 6-digit code from the authenticator app, a code by email, or a recovery code. The step shows the time
+  and tries left ("4:05 left · 3 tries left"); a wrong code says how many tries remain, and after 5 minutes or 5 wrong
+  codes it goes back to sign-in. **Codes by email** (0.9.1): "Email me a code instead" sends a 6-digit code (valid 10
+  minutes); "Send a new code" waits 30 s between sends and shows how many of the 3 sends per sign-in are left. An
+  account without an authenticator app gets the email straight away ("We sent a code to l**e@example.com").
+  Settings › Account also gets: Add / Change password (changing it signs out your other devices), "Forgot password?" on
+  the sign-in form (a reset link by email), Authenticator app on / off (set-up key + "Open in authenticator app", the
+  first code, then the 10 recovery codes shown once) and Email codes on / off (confirmed with a code we email you; off
+  also takes an app code). Each part only appears when the account service says it's switched on (`password_reset`,
+  `two_factor`, `two_factor_methods` in /v1/providers), so an older service shows nothing new. No SMS codes.
+- **Tests:** full unit suite on ARM: 1699 tests, 1600 pass, 0 fail, 99 skipped (84 `ShotsTest` screenshots, 15 SQLite tests that skip on ARM). New: `MfaTest`, `BillingTest`, `CommandPolicyTest`, `LoopGuardTest`, `AutoContinueTest`, `PreBudgetTest`, `StreamPromptTest`, `ThemeScenesTest`.
+- **Needs a phone:** first-word feel after Send (and "First words on screen" in speed_stats); Halo streaming with no frozen replies (and the "longest pause" in the speed line); Autopilot stopping after a complete answer or a question and continuing only when there are steps left; command cards in Normal mode (safe commands run without a card, "Allow for this chat", "Always allow", one card for several commands); theme picture quality on the picker cards and behind Chat / Home (crop, scrim, memory on a low-end phone, Weather picking a scene); checkout with the Monthly / Yearly switch against the live gateway; 2FA sign-in (password and Google / GitHub accounts with an authenticator app, recovery codes, the 5-minute / 5-try state, back to sign-in when it runs out); emailed 2FA codes (auto-send for accounts without an app, "Email me a code instead", "Send a new code" wait and the 3-send limit, Email codes on / off); Add / Change password and "Forgot password?"; memory_delete with one confirm card ("@halo yes, clean them up").
+
+## v0.45.2: icon actions, theme carousel, keep the desktop alive, desktop live view fix, faster checks (versionCode 150)
+
+- **Message actions are icons.** The row under each message (Copy, Quote, Retry, What I did, React) is now a row of small
+  icons (copy, quote, refresh, receipt, smile) to save space (ui/MessageActions.kt, Bubbles.MetaLine). Each icon keeps a
+  40 dp touch target, a TalkBack name ("Copy message", "Quote message"…) and shows its name on a long-press. The time and
+  the Halo x Blaze / run-status chips stay where they were. User messages get the same icons (Copy, Retry).
+- **Keep desktop running** (desktop/DesktopAlive.kt; switch on the Desktop (Linux) page and in Settings › Device &
+  diagnostics › Linux desktop; off by default, saved). When on, the Linux desktop runs under a foreground service with an ongoing
+  notification (foregroundServiceType `specialUse` with its subtype property, permission FOREGROUND_SERVICE_SPECIAL_USE),
+  holds a partial wake lock while it runs (renewed hourly, released when it stops), asks once for the battery
+  optimisation exemption (ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS) when first turned on, checks the desktop every
+  15 s and repairs it when it was killed (same cap as Restart by itself: 3 times in 10 minutes), and starts it again if
+  Android killed all of Blaze while it was on (sticky service). The copy says plainly that Android 12 and newer can still
+  close it in rare cases; then the page says so and shows Restart.
+- **Removed device-model mentions** from UI strings, prompts, comments, tests and docs. The Alpine card now says
+  "Recommended for most phones". Generic device logic (memory tiers, low-RAM checks) is unchanged. A source scan test
+  (NoDeviceModelTest) keeps it that way.
+- **Desktop live view fix.** Asking to do something on the running Linux desktop ("open the browser in it") made Blaze
+  run shell commands, and once it told the user to connect a VNC client. Cause: the `desktop` and `desktop_task` tools
+  were in no tool group, so since the tool diet they were only sent on request, while the words "browser" / "install"
+  turned on the browser and terminal groups. Now: a new tool group "desktop" holds both; requests that name the desktop,
+  or a GUI action aimed at "it / there" while the desktop runs or was just discussed, turn it on (agent/DesktopRoute.kt),
+  the turn skips the phone fast path, both tools are kept past the tool cap, and a short turn hint steers the model to
+  desktop_task (which shows the live, watch-only view card in chat). A reply that still sends the user to a VNC client
+  or localhost port gets one re-prompt, then a plain line pointing at the live view. After Blaze works in the desktop a
+  "View desktop" chip appears in the chat; "view desktop" / "show desktop" also open it. Regression test:
+  DesktopRouteTest.
+- **Themes.** Profile menu › Themes (and Settings › Look & feel › Themes) opens a full-screen picker: a looping 3D
+  carousel of phone-shaped previews on a cylinder (graphicsLayer rotationY / cameraDistance / scale / alpha). The front
+  card faces you, its neighbours turn away; swipe either way; the round arrows beside the front card are tinted with the
+  accent of the theme they lead to and update as you scroll. Tap the front card to use it, tap a side card to bring it
+  to the front, back closes. Only the front preview animates. Themes: Golden Ember, Arctic Aurora, Deep Sea, Solar
+  Flare, Nebula, Mono Ink, Rose Dawn, Firefly Forest, Liquid Mercury, Prism, Desert Dune, Neon Rain, plus Weather
+  (temperature sets the colour, the weather sets the motion, the local time sets the light: heatwave, snow night, rain,
+  thunderstorm, fog dawn, windy autumn, starry night, tropical sunset, clear day; it reads the Home weather widget when
+  there is one and falls back to the time of day offline) and Classic (the look as before, with the Look & feel
+  background). Each theme is a living background (ground, particle colours, motion style) drawn by the v0.39 living
+  background, tints the Blaze droplet and its halo, and sets the app's accent. Saved as `look_theme`. Rose Dawn and
+  Desert Dune switch to light when picked.
+- **Light / dark:** the "Light theme" row left the profile menu. Long-press the profile icon (top right) to switch light
+  and dark, with a haptic tick and a short "Light theme" / "Dark theme" note. Light / Dark / Auto stays in Settings ›
+  Look & feel.
+- **Faster checks that stay real** (agent/VerifyPolicy.kt). (a) A plain answer turn (no action, no action claim) has no
+  verification step; the local final-claim rule (no "done" claim without a done receipt) still runs. In 0.45.1 such
+  turns already made no separate model check, so this mostly makes the rule explicit and measured. (b) An action is
+  checked on the phone first (app in front, setting read back, file there, next alarm, desktop port / process); a
+  conclusive result is final and the model is told no screenshot or extra look is needed; only an inconclusive one leaves
+  room for one model-side check. (c) Probed actions get 0.4 s for the local check; if it hasn't finished, the turn goes on
+  with the action marked "still checking" (never done), the check finishes in the background (up to 8 s) and the
+  receipt under the reply flips to done / failed / couldn't confirm when it ends, with the reason in "What I did".
+  (d) The specialist self-review runs on the quick route with a 12 s limit; a timeout or failure now says "Not
+  self-checked" instead of passing silently. Risky one-shot actions (send, call, pay, delete, install) always wait for
+  their check, as before. (e) Settings › Speed › Strict checks brings back the old path. The speed log line (speed_stats)
+  now has "verify N ms (local n/ms, model n/ms, background n, saved ~ms)".
+- **Tests** (full `testDebugUnitTest` on ARM Linux, JDK 21): **1644 tests in 237 classes: 1545 passed, 0 failed,
+  99 skipped.** The skips are the known ones: ShotsTest 84 (needs BLAZE_SHOTS=1) and 15 that open Robolectric's native
+  SQLite, which has no ARM Linux build (MindDb 5, MindLogs 4, MindUpgrade 4, PrivateChat 1, LongChatIndex 1). New in this
+  release: DesktopRouteTest 11, VerifyPolicyTest 12, DesktopAliveTest 8, LivingThemesTest 9, NoDeviceModelTest 1, all
+  passing. LivingThemesTest.weatherWordsParse failed in the first full run (75°F gave 23 instead of 24); WeatherLook.tempOf
+  now rounds and it passes. assembleDebug OK. GitLab CI was not run for this release.
+- **Needs a phone** (not checked on a device): the icon row (touch targets, long-press names, TalkBack names); Keep
+  desktop running (the foreground service and its notification, the wake lock, the battery-optimisation prompt, repair
+  after a kill, the sticky restart, behaviour on Android 12+ and 14+); the desktop live view fix against a real model
+  ("open the browser in it" uses desktop_task and shows the live view card, no VNC / localhost advice, the "View desktop"
+  chip); the themes carousel (3D look, swipe, arrow tints, smoothness on a low-end phone, light switch for Rose Dawn /
+  Desert Dune) and the Weather theme with a real Home weather widget; long-press on the profile icon for light / dark;
+  faster checks (receipts flipping from "still checking" to done / failed, "Not self-checked", Strict checks, the
+  verify numbers in speed_stats).
+
+## v0.45.1: faster first word and faster screen reading (versionCode 149)
+
+Speed only. Every reliability rule from v0.45.0 (proof for every action, "What I did" receipts, the pinned goal,
+context kept when the chat is shortened) works exactly as before.
+
+- **The system prompt is ordered for prompt caching** (agent/PromptParts.kt, Agent.systemPrompt). AI services reuse
+  the work for the longest identical start of a request, so a reused start answers sooner. The prompt is now built
+  from named parts in four tiers: always the same, rarely changes (connected accounts, about Blaze, project), changes
+  with the kind of request (core skills, views, terminal, skills lookup), and live (clock, memory, phone line,
+  screen awareness, setup, goals). Parts keep their exact wording; only their order changed, stable first.
+  The one wording change: "KNOW BEFORE YOU ASK" now points at "the phone line near the end of this prompt" instead of
+  "the line above". Settings key `prompt_stable_order` (default on) switches back to the old order.
+- **The live part is kept for one turn.** During a phone task each step used to rebuild the clock, phone line and
+  screen awareness, so the system message changed at every step and the whole history after it had to be read again.
+  Now the live part is built once per turn and reused by its steps (rebuilt when the memory block, full/summary
+  awareness or the request changes, and after 5 minutes). Tool results still carry the fresh screen, and proof of an
+  action still comes only from tool results, so nothing is decided from the kept part.
+- **Tools keep their place across a turn's steps** (ToolPick.keepOrder): a tool that joins mid-turn goes after the
+  ones already sent instead of in the middle; the same tools are sent, nothing added or dropped.
+- **Measured** (PromptCacheBenchTest, from the real prompt parts and core skills with sized live data and history;
+  tokens ≈ chars/4): system prompt 27.2k chars for a phone task (static 17.6k, slow 0.5k, per request kind 6.6k,
+  live 2.5k; biggest parts: core skills 5.1k, visual answers 4.5k, phone control 3.5k, memory 1.5k). Shared start
+  between turns of different kinds: about 3.7k → 5.8k tokens. Inside a 5-step phone task, the part of each step that
+  repeats the step before: 76% → 96% (about 9.6k → 12.1k tokens per step); the live part is built once instead of
+  5 times. How much this speeds up the first word depends on the AI service's caching; the speed log now shows the
+  service's cache hit ("cache 12.3k/15.1k") when it reports one.
+- **Work before the first request runs side by side** (Agent.runLoop): the memory block is prepared and the phone
+  screen is read for orientation while the tool list, skills and specialists are still being looked up, instead of
+  after them (the screen is still read on the main thread, where the element numbers live).
+- **The connection to Blaze Cloud is opened early**: on the first key press in the composer and when Blaze comes to the
+  front (LlmClient.prewarm, at most once a minute), so DNS and TLS are done before Send. The warm-up now always closes
+  its reply so the connection goes back to the pool instead of being dropped.
+- **Screen reading reuses an unchanged tree** (BlazeAccessibilityService.readScreen, agent/ScreenReadCache.kt): a read
+  within 1 s of the last one, on the same window, with no accessibility event from that app and no action by Blaze in
+  between (taps, typing, scrolls, gestures, any phone tool, apps it opened) reuses the last walk instead of asking
+  Android for every node again. Waiting for a button (every 150 ms), finding a target right after a read, the text
+  field lookup and look_at_screen after an action no longer walk the tree several times in a row. Blaze's own orb and
+  overlay redraws don't count as changes to another app. Element numbers, the "Same screen… changed" diff and the
+  output are built exactly as before. Each element's role is worked out once per read instead of up to three times.
+- **Measuring on the phone**: the speed log line (blaze_self speed_stats) now adds the system prompt size by tier and
+  its biggest parts, and the AI service's prompt-cache hit; speed_stats adds screen reads (tree walks with their average
+  time, and reads reused). "Where do my tokens go" (token_ledger) now ranks the system prompt's parts (#16).
+- **Blaze Cloud (prepared, not deployed)**: gateway 0.6.1 on branch feat/gateway-0.6.1-turn-pin reads the
+  `X-Blaze-Prefer` header the app already sends (#17), so all steps of a turn stay on the route that answered the first
+  one while it is healthy, which also keeps that service's prompt cache warm. Until it is deployed the app works as
+  in 0.45.0 for routing.
+- Not changed on purpose: the screenshot path (720 px, JPEG 60, text first, one model call per picture, 12 s cap) was
+  already tuned in v0.33.3; screen reads stay on the main thread (moving them needs the element list made
+  thread-safe); no prompt text was trimmed (no wording was removed for speed); first-token model choice stays with
+  the existing chat lane and ModelRoute.
+- Tests: new PromptPartsTest (10), PromptCacheBenchTest (2); ToolPickSizeTest shares its tool list. Needs a phone:
+  real first-word times, cache hits per AI service, screen-read times.
+
+## v0.45.0: one release with everything since v0.39.0 (versionCode 148)
+
+This release brings together every feature that was waiting in its own branch. Nothing was left out; the details of each part are in its own entry below.
+
+- **v0.43.0**: the Linux desktop really starts (or says plainly why not) and has Repair; Bank mode steps Blaze back while banking apps are open; @all asks Blaze and Halo at the same time and never shows text-form tool calls; long-press a suggestion chip and drop it on another to combine them; pick Blaze, Halo or All from the orb's arc.
+- **v0.42.0**: Cloud runs: each message goes to Blaze Cloud once as a run, so a dropped connection or a closed app never loses or doubles a reply; idempotent retries for plain cloud requests; a smaller "what's going on" block for plain chat.
+- **v0.41.0**: My voice accepts a normal recording; Blaze speaks only its answer; a quieter Simple chat; faster turns (timed phases, parallel prep, memory block cached per change); the Gemini voice.
+- **v0.40.0**: optional, end-to-end encrypted live cloud sync of chats, memory, settings and designs between your phones (off by default).
+- **v0.36.1**: 3D designs draw again instead of falling back to the simple drawing.
+- **v0.36.0**: BlazeOS native apps, phase 1: a WebAssembly runtime and Snake Native.
+- Merging notes: a memory change now both refreshes the cached prompt block (v0.41.0) and tells cloud sync (v0.40.0). There is no separate v0.44.0.
+
+### Agent reliability (part of v0.45.0)
+
+Blaze does a lot of its work out of sight, especially in Simple mode, so it must never say something worked when it didn't. This part makes every action prove itself, shows what was really done, and keeps the task's context.
+
+- **Proof for every action** (agent/ToolVerify.kt, VerifyProbes.kt, ClaimCheck.kt, ActionProof.kt): each tool result is now typed as done (verified), unverified or failed, with the evidence, and the model sees `[verified=…]` on every result.
+  - Checks after the action: a setting the system can report (Wi-Fi, Bluetooth, airplane mode, Do not disturb, mobile data) is read back; the next system alarm must match a new alarm; an opened app must really be in front; the Linux desktop must answer on its port; a written or downloaded file must exist and not be empty.
+  - Sending (WhatsApp, SMS, email, Slack) only counts when the tool says "Sent". Opening the Wi-Fi page no longer counts as turning Wi-Fi on, and reading a web page no longer counts as opening an app.
+  - Before the reply is shown, every claim in it is checked against these results. A claim backed only by an unconfirmed result becomes "I tried to … but couldn't confirm it worked (why)"; a failed one becomes "… but it didn't work: why". No extra model call is needed for that.
+  - The check works on intent, not only English words: "let Mum know I'm late" counts as a send, and claims in French, Swahili, Nyanja and Bemba ("j'ai envoyé", "nimetuma", "ndatumiza") are checked too.
+- **What I did** (agent/Receipt.kt, ui/ChatScreen.kt): every reply keeps a log of what Blaze actually did for it (each tool, a short summary of its inputs with secrets hidden, what came back, and what was checked). It is saved with the message and opens from "What I did" under the reply. A quiet line under action replies sums it up: "✓ Sent to Mum · ✓ Alarm 07:00" or "⚠ Couldn't confirm: Wi-Fi on". These receipt chips always show, also in Simple mode with technical details hidden.
+- **Recovery** (agent/Recovery.kt, OneShot.kt): a safe tool that fails for a passing reason (no connection, a timeout, a busy service) is tried again after 1 s and 3 s. Messages, calls, payments and deletes are never tried again and never run twice in one task, even when the model asks again: the earlier result is given back instead. A tool that takes too long is stopped and reported honestly; for a message or payment that means "it may or may not have gone through", never "done". Stop still ends everything at once.
+- **Context kept, not dropped** (agent/GoalPin.kt, LlmClient.kt, ToolPick.kt): the task's goal and the limits the user set ("under K150", "don't book anything", "only WhatsApp") are pinned into every step, so they survive summaries of earlier steps, long-chat windows and Cloud runs. "Continue" or "yes" keeps the goal of the request before it. When a request is too large and old messages must be cut, they are replaced by a short digest of what was asked and done instead of disappearing. When the model asks for a tool that wasn't in this turn's smaller tool list, the rest of the turn gets every tool.
+- **Simple mode talks simply** (agent/PromptProfile.kt): Simple users' prompt no longer contains the terminal and coding instructions, file paths or commands, and asks for everyday words with no paths, commands, tool or model names. The terminal, PC and MCP tools still exist but load only when the request clearly asks for them.
+- **A shorter prompt** (PromptProfile, CoreSkills): the full terminal and "make things" guidance, the coding skill and the full views list go only into turns that need them (code, files, making content, a routed view); other turns get one line each.
+- **One model for the whole turn** (agent/TurnModel.kt): every step of a turn sends the same turn id and the route that answered its first step (`X-Blaze-Turn`, `X-Blaze-Prefer`), so Blaze Cloud can keep a phone task on one model. The speed log notes when the model changed mid-turn.
+- **Saved phone plans only from turns that worked** (agent/PlanGate.kt): steps are kept for replay only when every action was verified and nothing had to be corrected; a "no, that's wrong" (also "hapana", "awe", "ayi", "non") right after drops the saved plan. The learned tool router doesn't learn from failed turns.
+- **Fewer wasted re-prompts** (agent/NudgePolicy.kt): a claim with nothing behind it gets one re-prompt only when that can help (the tool wasn't loaded, or nothing ran at all); otherwise the honest line comes straight away with a "Try again" chip. Re-prompts per turn are counted in the speed log.
+- **Requests in any language get the action tools** (ToolRouter): when no English cue matches and the request isn't English, the phone, messages and screen tools go along.
+- **Cloud runs keep going through phone steps** (agent/CloudRuns.kt): a screenshot or a note added after a phone step no longer cancels the run and uploads the whole conversation again. Notes ride along with the tool results; a screenshot is put into words by one quick vision call and sent with them. The speed log shows how many steps kept the run.
+- Also from the agent-reliability batch: action turns go to the strongest model lineup (ModelRoute), fewer tools are sent per turn (ToolPick), tool calls written as text are run or hidden (TextCalls), and Advanced › AI has a Cloud runs switch.
+- Tests: ReliabilityP2Test (each item above), AgentLoopScriptTest (scripted model and tools: a false success claim, a tool failing mid-task, an unconfirmed action, a missing tool, a repeated message, Stop mid-step, a Cloud-run phone step with a screenshot, a long chat cut down with the goal kept), plus ToolVerifyTest, ClaimCheckTest, ModelRouteTest, TextCallsTest and ToolPickTest from the batch.
+
+### Speed and correctness (part of v0.45.0)
+
+Blaze should feel instant and never lose or mix up anything, also when several things run at once.
+
+- **Saving a chat no longer re-reads every chat** (agent/ChatIndex.kt, ChatStore.kt): the chat list comes from a small index with each chat's title, time and preview. A save updates one row; the list only re-reads a chat file that something else changed (cloud sync, an older build), so it can never hide a chat. A cold start no longer builds the chat list just to check that the old-chat import already ran.
+- **Faster start** (Agent.preload, BlazeApp.kt): the main conversation is read and parsed on a background thread from the first moment of start, while the rest of the app starts; it is checked against the file before use, so it is never an older copy. Pictures and recordings in old messages are checked only when their row is drawn, not one by one for every message at start. Background scheduling (Life Log, Money radar, time capsules, the idle memory review) left the main thread, and the start time is in the speed log.
+- **Saves never fail silently** (ChatIndex.write, Agent.persist): a save that can't be written (storage full, a phone that refuses the rename) falls back to a second way of moving the file, then says once "Couldn't save this chat: phone storage is full" instead of losing it. A save that met a history change mid-way is retried instead of skipped. Each message is turned into text once and reused by later saves (ChatJson), so saving the long main chat after every turn is much cheaper; the file format is unchanged.
+- **Chats working at once no longer share model state** (agent/CallState.kt, LlmClient.kt, TurnModel.kt): background agents, Halo's side lane, @all's two streams and the visible chat each have their own call state (chat-lane or action hint, quick-thinking hint, route pin, usage, timings, last streamed chunk). A hung call is now cut off even while another chat is streaming, usage and timings belong to the call that made them, and a background step is never tagged as a chat-lane request.
+- **Stop really stops** (LlmClient.cancellable, Agent.idleGuard): tapping Stop closes the connection of the model call in flight (including the 12-second screenshot read), so nothing more arrives, no more tokens are spent and nothing is added after "Stopped.".
+- **Stop and pick up again** (agent/StopResume.kt): after Stop the chat says "Stopped." with a "Continue where you stopped" chip (also under errors). The history is tidied: a tool call that was cut off gets an honest "interrupted, may or may not have happened: check before doing it again" (so a message or payment is never repeated blindly), and the unread screenshot is dropped so the resumed call is small. Continuing (the chip, or "continue", "resume", "carry on", "endelea") pins the stopped task's goal and limits again and tells the model what was already done and checked. Anything else starts something new. The stopped task is saved with the chat, so it survives closing the app.
+- **Streaming is lighter on long chats** (ui/ItemBuilder.kt): each streamed frame only rebuilds the rows after the last unchanged message instead of the whole conversation; the result is always the same as a full rebuild.
+- **Idle chats leave memory** (agent/SessionTrim.kt): chats that were opened, background agents' chats and notification replies no longer stay in memory forever; idle ones (not on screen, not working, nothing waiting, newest save on disk) are let go after a turn and reload from disk when opened.
+- **Bank mode polls less** (bank/FrontPoll.kt): it checks the app in front every 1.5 s only right after a change, then every 3 s, and reads only the new usage events.
+- Tests: ChatIndexTest, ChatJsonTest, ChatLoadTest, CallStateTest, StopResumeTest, SessionTrimTest, ItemBuilderTest, FrontPollTest.
 
 
+### Security, safety and health (part of v0.45.0)
 
-## v0.34.1: lighter on battery and memory (versionCode 136)
+Closing doors other apps and other devices could use, and making quiet failures traceable.
 
-Optimisation only; no feature changed or removed.
-- **Task card watcher** (ui/Overlay.kt): the loop that pops the task card over other apps now sleeps until a chat is busy instead of waking the main thread every 400 ms for the life of the process.
-- **Screen watchers** (phone/Watchers.kt): full-screen text scans after accessibility content changes are spaced at least 150 ms apart (still a trailing check, so the newest screen is always seen) instead of up to ~16 per second.
-- **Offline Brain** (agent/OfflineBrain.kt, BlazeApp.kt): the on-device model (~500 MB of RAM) is released after 5 idle minutes and when Android reports memory pressure (onTrimMemory); it reloads on the next offline reply.
-- **Proactive checks** (proactive/Proactive.kt): during quiet hours, a check with no new notifications, no phone signals, no device warnings, no calendar events and no urgent message skips the model call (quiet hours only show urgent heads-ups, so nothing could have been shown).
+- **Dashboard hardened** (dashboard/DashHttp.kt, Dashboard.kt): the link's token is checked before anything of a request body is read; bodies are capped (1 MB, about 16 MB for the 12 MB file upload) and read as bytes, then decoded as UTF-8, so a message with accents or emoji no longer hangs for 5 minutes and a huge Content-Length can't run the phone out of memory. Header lines and counts are capped, tokens are compared in constant time and new tokens are 128-bit (older 72-bit ones are replaced once). "Make a new link" rotates it, and a Wi-Fi link expires when the server stops or sharing is switched. A message typed on another device counts as outside content: risky or pre-approved actions it leads to always show the confirm card.
+- **Other apps can't start Blaze listening or calling** (IntentKey.kt, MainActivity.kt): "listen now", "start a Blaze call", "open this chat" and "open the secure form" only work when Blaze's own notification, tile, shortcut, floating button or wake word sent them. The assistant button, voice command, launcher and share sheet work as before.
+- **Browser tabs only read files on saved pages** (browser/BrowserEngine.kt, SavedPages.kt): file access now follows the page: on for Blaze's own saved-page archives, off again as soon as the tab goes to a website (link taps, redirects, back and forward).
+- **BlazeOS apps can't wear out storage or spam** (blazeos/OsBridgeLimits.kt, OsWebApp.kt): an app's storage is kept in memory and written once per burst instead of on every setItem, and notification requests are limited to 5 a minute per app.
+- **Error messages point to something you can do** (PlainError, LlmClient, ToolCalls, Agent): no message sends you to "Settings → AI" (hidden in Simple and no longer used); they say "Tap Retry" or "send a shorter message". Simple mode's prompt no longer mentions run_shell.
+- **Bank mode explains phone control** (bank/BankMode.kt, BankModeLogic.kt, ui/BankModePage.kt): when the "turn phone control back on" reminder is ignored, the next one explains the trade-off in everyday words; after 5 ignored reminders Blaze stops asking and Bank mode's page says so, with "Remind me again". Simple mode explains what happens without the computer command.
+- **Quiet failures are logged** (device/CrashLog.quiet): 89 empty catch blocks in the agent, app start, memory, cloud sync, browser, dashboard and BlazeOS now write what failed to the crash log (once a minute per place; cancellation is never logged).
+- **Dead code removed** (docs/removed.md): the uncalled old @all lanes in Agent.kt and the never-shown free-model chain settings.
+- **Tests and CI** (app/build.gradle.kts, .gitlab-ci.yml): Robolectric tests now run on ARM Linux machines (Conscrypt off there); the 15 that open Robolectric's native SQLite, which has no ARM Linux build, are skipped there with that reason and still run on x86 CI; GitLab runs the unit tests on every merge request and a lint job with a baseline (only new lint errors fail; it may fail until a baseline is committed).
+
+### Reactions and lighter cloud sync (part of v0.45.0)
+
+React to Blaze's replies, and your phones only send what changed.
+
+- **Reactions** (agent/Gid.kt Reaction, ui/Reactions.kt, ChatScreen.kt): double-tap one of Blaze's replies for 👍, or tap "React" under it for 👍 👎 ❤️ 😂 😮 🙏. Tap your own reaction to take it back. Long-press (copy or quote words) and swipe (quote) work as before. Reactions are saved with the chat and sync to your other phones. Halo meeting-room messages keep their reactions when saved, but you can't add a reaction in a room yet. In a private chat they are not saved (Blaze says so once).
+- **👍 and 👎 teach Blaze** (agent/TurnFeedback.kt): 👍 on a reply that worked your phone counts as one more good use of the saved steps. 👎 deletes the steps Blaze saved for that request and takes back what that turn taught it about which tools to use. The memory review also skips that turn. Take the 👎 back and all of it is restored. Blaze hears about the reaction once, at the start of your next message. A reaction never starts a reply.
+- **Every message has a global id** (Gid): each bubble gets its own id that stays the same on every phone. A reply split into several bubbles gives each bubble its own id. Older chats get matching ids when they load, the same on every phone, so nothing has to be converted.
+- **Cloud sync sends single messages, not whole chats** (connect/ChatItems.kt, SyncEngine.kt): a new message uploads only itself plus a small chat summary, and a reaction uploads one tiny item. Each item is still encrypted on its own (AES-GCM), and the gateway API is unchanged. A message that is missing on one phone is never deleted on the others. Whole chats from an older Blaze still merge, and an older Blaze still gets the 20 newest messages of each chat.
+- **Synced changes merge into the open chat** (agent/SyncMergeIn.kt): sync no longer reloads an open chat from disk. That reload could lose a message that hadn't been saved yet, or get overwritten by a chat that was busy. Missing messages are added in time order, and nothing you have open is dropped. A reply in progress is never touched.
+
+### Tests, known gaps and what to check on a phone (v0.45.0)
+
+- **Unit tests** (full `testDebugUnitTest`, ARM Linux build machine): 1588 tests in 229 classes: 1489 passed, 0 failed, 99 skipped. The skips: 84 ShotsTest screenshots (they only run with BLAZE_SHOTS=1; they are now skipped before Robolectric's native graphics start, which has no ARM Linux build) and 15 tests that need Robolectric's native SQLite, which has no ARM Linux build either (MindDbTest 5, MindLogsTest 4, MindUpgradeTest 4, PrivateChatTest 1, LongChatIndexTest 1). Those 15 are not verified on ARM; they run on x86 CI.
+- **Not tested on a real phone yet**: everything in this release was built and unit-tested only. Worth checking by hand: Stop in the middle of a reply or a screenshot and "Continue where you stopped"; a cold start with a long main chat; the "Couldn't save this chat" note; the dashboard from a laptop (upload, a message with emoji, "Make a new link"); the notification, tile, wake word and "Call Blaze" shortcut still listen or call; a saved page, then a website, then Back in the browser; the Bank mode reminder wording; double-tap and "React" next to link taps, word selection and swipe-to-quote; two phones syncing messages and reactions; the first sync after updating on a large chat (every message is uploaded once as its own item); "What I did" and the receipt line after real phone actions.
+- **Partly done**:
+  - Prompt size (#16): heavy blocks only go into turns that need them, but the size saving hasn't been measured yet.
+  - One model per turn (#17): the phone sends the turn headers, but Blaze Cloud doesn't use them yet (the gateway needs a change).
+  - Faster start (#2): the main chat is read in the background, but long chats still load whole (no paging yet), and other chats still open on the calling thread.
+  - Streaming (#10): only changed rows are rebuilt, but the streamed text still updates the message list every frame.
+  - Chat storage (#11): messages aren't rows in the database yet.
+  - App start (#14): most start-up work is still on the main thread.
+  - BlazeOS bridge (#33): no origin-checked message channel yet.
+  - Bank mode (#24): no buttons on the reminder notification.
+  - Quiet failures (#29): about 474 empty catch blocks remain outside the cleaned files.
+  - Dead code (#27): only the clearly unused parts were removed.
+  - Reactions: can't be added inside a meeting room yet; a reaction made on another phone doesn't teach this phone; an older Blaze joining fresh only gets the 20 newest messages per chat; the memory review skips by time window, so a turn sent within 60 s after a 👎'd one in the same chat can be skipped too.
+- **Not done in this release**: the split of the agent loop into testable parts (#26, only the chat parser moved) and replay tests on the real loop (#35); one SQLite stack (#31); a shared app scope (#30); Blaze/Halo reacting instead of filler chips (R5); model inventory via the gateway admin token. Plain http stays allowed (#32) so http sites, radio/podcast streams and home-network gateways keep working. The foreground service type stays dataSync while targetSdk is 34.
+- **CI**: the new unit-test and lint jobs haven't run on GitLab yet; lint may fail until a lint baseline is committed.
+- **Signing**: the committed signing key is unchanged in this release; replacing it is deferred.
+
+## v0.43.0: The Linux desktop really starts (or says why not), Bank mode, a faster, honest @all, combined suggestions and the orb picker (versionCode 146)
+
+- **The Linux desktop starts for real, or says plainly that it didn't** (desktop/DesktopPlan.kt, DesktopHealth.kt, LinuxDesktop.kt):
+  - Why it never worked: the "is it up?" check ran `pgrep -f 'Xvnc|Xtigervnc'` inside the Linux, and pgrep found the shell running that very check (its own command line says "Xvnc"). Together with a leftover `/tmp/.X11-unix/X1` socket file it always answered "up". So Blaze reported "The desktop is running" while nothing listened on port 5901, the viewer failed with ECONNREFUSED, and every later Start returned "already running" without starting anything.
+  - Xvnc was started in the background of a shell that then became the XFCE session; with proot's `--kill-on-exit`, Xvnc died whenever the session ended, leaving that stale socket behind. Apps opened by Blaze (`setsid dillo &`) died the moment the short command that started them ended, so "Dillo has been started" was never true either.
+  - Now: "running" means the app connected to 127.0.0.1:5901 and got a VNC greeting. Start waits up to 45 s for that (and stops early if the start job dies). The job's main shell waits on Xvnc itself; XFCE runs beside it and is restarted up to 3 times. Apps go through a small launcher inside the desktop (`/tmp/blaze-run`), so they stay open. A missing password file, a missing Xvnc or an Xvnc that exits ends the start with the last lines of `/tmp/xvnc.log`.
+  - Stop no longer kills itself: every `pkill -f` pattern is written like `[X]vnc`, which can't match its own text.
+  - Fewer background processes (power manager, screensaver and similar autostarts are hidden; no accessibility bus), which matters on Android 12+.
+- **Repair** (Desktop page, the viewer, `desktop action=repair`): stops everything, clears stale locks and sockets, re-links Xvnc / vncpasswd and starts again with the port check.
+- **The viewer waits instead of failing** (desktop/Rfb.kt, ui/LinuxDesktopPage.kt): it keeps retrying a refused connection for 30 s while the desktop starts, then shows "The desktop isn't answering…" with Retry and Repair, never the raw ECONNREFUSED text. Advanced mode shows the X server's last log lines under a failed start.
+- **Blaze never claims it's running without proof** (agent/Agent.kt, LinuxDesktop.kt): the desktop tool answers "VERIFIED: …" only after the port check and "FAILED: … Do not tell the user it is running" otherwise (with the log lines); status says "VERIFIED running" or "NOT running". Opening an app says it isn't confirmed until a screenshot shows it. A new prompt rule: say something is running, open, sent or done only when a tool result this turn confirms it.
+- **Bank mode** (bank/BankMode.kt, BankModeLogic.kt, ui/BankModePage.kt; Settings › Bank mode, `/bank [on|off]`, the `bank_mode` tool): banking apps refuse to run while they see an outside accessibility service or apps drawing over them. With Bank mode on, Blaze steps back: its phone control switches itself off (AccessibilityService.disableSelf), the floating orb, Magic Hand and the pointer go away, notification reading pauses, and Jarvis stops screen glances and camera looks. A notification says "Bank mode on — Blaze is stepping back" with "Turn Blaze back on".
+  - Turn on by itself (on by default): when an app on your banking list opens, Bank mode turns on, and off again 4 s after you leave it (with usage access; otherwise use the notification). The list is filled from the apps on your phone that look like banking, payment or wallet apps, and you can switch any off or add your own.
+  - Turning it off puts back exactly what was on. Phone control comes back by itself when Blaze holds WRITE_SECURE_SETTINGS (one optional adb command, shown in Advanced); otherwise one tap goes straight to Blaze's switch.
+  - Blaze never reads, taps or types inside a banking app, with or without Bank mode (read_screen, screenshots and taps refuse; screen memory, triggers and habit watching skip banking apps).
+  - Blaze has no system VPN (the browser's VPN is a proxy inside Blaze only) and doesn't record the screen, so there was nothing else to switch off. Some banks also refuse phones with USB debugging, developer options or root on; Blaze can't change those and says so.
+- **@all is faster and never shows code** (agent/Duo.kt, DuoText.kt, Agent.kt):
+  - Why it was slow: an @all chat raced both companions, cancelled the slower one, then ran it again after the first finished, and often a third turn, each a full model call with up to 100 s of idle allowance shared between both streams. Now both answer at the same time, each streaming into its own bubble, each capped at 45 s; one that runs late gets a plain line and the other's answer stands. Timed with TurnTimer (logcat BlazeSpeed, the speed log, route "duo-all").
+  - Why Halo answered "browser_show()": the @all chat gives the models no tools, so a model that had seen tools earlier "called" one by writing it, and the text went straight to the bubble. Text-form calls (`name()`, `name(key=…)`, `name {json}`, JSON, `[/tool …]`, `<tool_call>`) are now spotted: in the meeting room an allowed research tool runs for real; anything else is dropped, Blaze asks the model once for a plain answer, then falls back to a plain line. Raw function syntax never shows, not even while streaming, and old saved replies that were only a call show "That step didn't run…".
+  - When the talk is about the Linux desktop, both get a live check from the app ("running" only if the port answered), and a new rule: never say something works unless the app confirmed it.
+- **Combine suggestions** (ui/Bubbles.kt FollowupRow, ui/ChipMerge.kt): long-press a suggestion chip under a reply and drop it on another to ask for both in one message ("set gentle wake tone and schedule bedtime reminder"). The combined chip can be tapped to send or dropped on a third ("a, b and c"). A haptic tick on pickup and when you're over a chip, which glows. Let go anywhere else and the chip goes back (a combined one splits into the chips it was made of). A plain tap still sends one chip.
+- **Pick who you talk to from the orb** (ui/TalkArc.kt, TalkArcMath.kt, Shell.kt, ChatScreen.kt): the "Talk to @blaze @halo @all" pills are gone. Tap the orb at the top left: a lit semicircle opens above the text box (above the big mic in voice mode) with the glass orb (Blaze), the halo (Halo) and the orb in its halo (All). Drag around the arc or swipe sideways to turn it; the focused one is larger and lit, with its name underneath. Tap one to pick it; tap outside or Back to close. The header orb then shows who you're talking to. Same @blaze / @halo / @all routing as before, now in Advanced mode too (it was Simple mode only). Each icon is announced to TalkBack ("Talk to Halo").
+- Tests: DesktopHealthTest (port probe on real sockets, retries, plain errors, log diagnosis, scripts that can't match themselves), BankModeTest (bank app matching, on / off / auto / restore), DuoTextTest (text-form tool calls, streaming, decisions); ChipMergeTest (join text, row order, split, drop target), TalkArcMathTest (arc layout, rotation, swipe, snap, hit); DesktopPlanTest, DesktopDistroTest, DesktopExtrasTest updated.
+
+## v0.42.0: Cloud runs: your reply is safe when the connection drops (versionCode 145)
+
+- **Cloud runs** (agent/CloudRuns.kt, Agent.kt; needs gateway 0.5.0): each message now goes to Blaze Cloud once, as a run with its own message id. Blaze Cloud works on the answer and keeps it, and the phone follows it as it streams. If the connection drops, Blaze reconnects on its own and carries on from the last piece it got (nothing is repeated or lost). If Blaze is closed, or the phone was offline for a long time, the reply lands in its chat when Blaze opens or the phone is back online, with the usual notification when Blaze isn't on screen. When Blaze needs your phone for something (a text, a setting, the screen), the cloud pauses, Blaze does it on the phone with the same approval rules as before, and sends the result back to the same run. Stop stops the run in the cloud too. A piece of an answer that the cloud had to start over is taken off the screen, and voice still reads only the final reply.
+- **Plain words while it works**: "Sending…", "Sent. Waiting for Blaze…", "Blaze is thinking…", "Busy right now, trying again in 5s…", "Doing that on your phone…" and "Waiting for internet — your reply is safe…" in the quiet working line (Simple mode) or the step card (Advanced). After a long time offline: "Connection lost. Your reply is safe and will show up here when you're back online."
+- **Falls back by itself**: an older Blaze Cloud (no runs) means the old way for 6 hours; no connection before the message got through, a message too big, or a cloud-side error means the old way for that message. Private chats, background agents, specialists, routines and Halo turns keep the old way. Settings key `cloud_runs` (on by default) switches it off.
+- **No double answers on a bad connection** (agent/Cloud.kt, LlmClient.kt): plain requests to Blaze Cloud carry an Idempotency-Key. When a request may not have arrived (no answer at all), the retry uses the same key, so Blaze Cloud hands back the answer it already made instead of making (and counting) a second one. "Still being answered" (409 in_progress) now waits and asks again.
+- **Smaller prompt for plain chat** (agent/Awareness.kt, ChatLane.kt, Agent.kt): the full "what's going on" block (what's playing, on screen and just happened) is sent only when the turn can use it: phone, screen, media, read-aloud or health tools are on, or the words point at it ("this song", "what's on my screen"). Other turns get a two or three line summary, and the chat lane now gets that summary too.
+- Tests: CloudRunsTest (the run client against a fake Blaze Cloud: create → stream → done, resume after a cut with Last-Event-ID, reset, the phone-tool round trip, a new run when the conversation moved on, idempotent resend, older-gateway and offline fallbacks, the pick-up after a long time offline or a restart, failed runs; SSE frames, event order and repeats, saved runs, Idempotency-Key reuse, the short Awareness summary).
+
+## v0.41.0: My voice works, Blaze only speaks its answer, a quieter Simple chat, faster replies and the Gemini voice (versionCode 144)
+
+- **My voice accepts a normal recording** (voice/myvoice/AudioClip.kt, MyVoiceSetup.kt, ui/MyVoiceSettings.kt): the "too short" check measured speech on the clip after it was cut to 10 s and its pauses removed, so the room's quiet was gone and only the loudest ~40 % of frames counted. A full 15 s read scored about 3.5-4 s against a 5 s minimum and was always refused, which left step 3 saying "Download the model and record first" with the model downloaded. Speech is now timed on the whole recording against the room's real noise floor, with the short gaps between words counted (AudioClip.activeSpeechSeconds), so a 10-15 s read passes. Steady noise with no talking gets "There's a lot of background noise". Step 3 says exactly what is missing ("Record again first (step 2). The last one was too short to use.", "Download the voice model first (step 1).", "Waiting for the voice model to finish downloading."). A good recording saved before you left Settings still counts.
+- **Blaze speaks only its answer** (voice/SpokenText.kt, voice/Voice.kt, agent/Agent.kt): voice turns no longer read the work steps aloud ("Looking at your series") or say "On it.". A soft tick plays while Blaze works instead. Text the model writes before a tool call becomes a step, so it is no longer spoken while it streams: streamed speech starts early only on the chat lane or once the reply is clearly longer than a one-line "Let me check…", and anything already said is stopped when it turns out to be a step. Spoken text drops markdown symbols, links and URLs, code blocks, table pipes, thinking, [re:m7] markers and status / tool lines.
+- **Quieter Simple chat** (agent/SimpleMode.kt, ui/ChatScreen.kt, ui/Shell.kt): in Simple mode the big "Done · Details" step card is gone. While Blaze works there is one small line ("Looking at your series…") next to the usual working drop, and once it is done only the answer shows. Advanced mode, or Settings › Show every step, keeps the full step card.
+- **Faster replies** (agent/TurnTimer.kt, PromptMemo.kt, Agent.kt, Cloud.kt, Memory.kt, Mind.kt, SpeedLog.kt):
+  - Every turn is timed by phase (route, tools, prep, orient, prompt, first word, model, tool work). The line goes to logcat (tag BlazeSpeed) and the speed log, and `speed_stats` shows the last turn's breakdown.
+  - The lookups before the first model call (tool list, current design, skills, specialists, saved plans) now run at the same time instead of one after another.
+  - The chat lane no longer builds the full system prompt (memory, awareness, skills) just to throw it away.
+  - The memory block is read from the database once per change (or every 20 s), not once per model call: a 6-step task read it 6 times before.
+  - The gateway task hint counts message text the way the gateway does, without turning the whole request into JSON on every call. JSON escaping alone had been tagging normal-size tool turns as "long".
+- **Gemini voice** (voice/gemini/GeminiTts.kt, GeminiVoice.kt; Settings › Voice › Gemini voice): Blaze's replies are spoken by Gemini text-to-speech (gemini-3.8-flash-lite-tts, falling back to gemini-3.8-flash-tts) through the Interactions API, using the Gemini key saved in Blaze (it also arrives through your Blaze account). You can paste a key on that screen if there isn't one. Pick from eight voices (Achird, Sulafat, Kore, Puck, Aoede, Charon, Leda, Vindemiatrix) and hear a sample. The reply is made sentence by sentence and plays while the next one is made. With no key, no connection or no quota left, Blaze tells you once in plain words and uses the phone voice.
+- Tests: MyVoiceSetupTest, SpokenTextTest, SimpleWorkTest, TurnTimerTest, PromptMemoTest, SpeedBenchTest, GeminiTtsTest; AudioClipTest still passes.
+
+## v0.40.0: Cloud sync between your phones, end-to-end encrypted (versionCode 143)
+
+- **Cloud sync** (connect/CloudSync.kt; Settings › Account › Cloud sync, `/sync`, `open_view view=sync`): optional and **off by default**. Phones signed in to the same Blaze account keep their chats, memory, settings and designs the same, live. Needs Blaze sign-in; signed out, the page says so and offers Sign in.
+  - **End-to-end encrypted** (connect/SyncCrypto.kt): you pick a sync passphrase. The key is derived on the phone (PBKDF2-HMAC-SHA256, 600 000 iterations, random salt kept with your account) and stored Keystore-encrypted on this phone; the passphrase is never stored or sent. Each item is gzipped and sealed with AES-256-GCM, its AAD binding kind + id. Blaze's service keeps only the scrambled copy. A second phone checks the passphrase against an encrypted check value before it syncs anything.
+  - **What syncs** (connect/SyncAdapters.kt, one small adapter each, switch any off): chats (the chat files), memory (the memories table, one item per line), settings (an allow-list of your own choices: Simple / Advanced, navigation, Look & feel, persona, reply and voice options, approvals, your commands) and designs (each design's page, not its undo history). **Never synced:** the Blaze session, connector tokens, API keys and MCP tokens, the PC pairing, permissions and per-phone switches (app lock, orb position, your photo background, wake word), private chats.
+  - **Live**: a push about 5 s after a change here, a round when Blaze comes to the front and every 60 s while it's open, and a WorkManager job every 15 min with a network.
+  - **Conflicts** (connect/SyncMerge.kt): last writer wins per item by its change time; chats are merged instead: messages are a union by who said it and when, so two phones never lose a message (a colliding local id gets a fresh one), and a /clear on one phone hides the older messages on both. Deletes travel as tombstones. A chat too big for one item (512 KB) sends its newest messages first (model history first to go); the other phone keeps what it already had. A design too big is kept on this phone and listed (Advanced).
+  - **The page**: the switch, passphrase set-up (twice on the first phone) or entry (other phones), the status in plain words ("Synced just now", "Waiting for internet", "Your cloud copy is full (25 MB)…"), What syncs, Sync now, Turn off (everything here stays) and Delete my cloud copy (asks first; stops sync on every phone). Signing in to another account turns sync off. Blaze knows the view and the `/sync` command (Awareness, CommandRegistry).
+  - Needs Blaze Gateway 0.4.0 (`/v1/sync`, migration 0005). Until it's deployed the page says cloud sync isn't switched on in Blaze's service yet.
+- Tests: SyncCryptoTest, SyncMergeTest, SyncEngineTest (two phones against a fake gateway: union, LWW, tombstones, paging, busy retry, size skips, resets, swapped blobs), SyncAdaptersTest.
+
+## v0.39.0: Simple mode, swipe navigation, living backgrounds and a hands-free computer (versionCode 142)
+
+- **Simple / Advanced** (agent/SimpleMode.kt; Settings, top; `/simple`, `/advanced`): Simple is the default and only hides things. Terminal and Jobs, MCP servers, BlazeRouter and the brain / model pages, usage meters, the dashboard, prompt commands, the skill library and sub-agents leave the lists (Views, the + menu, Settings › Advanced). Every view and / command still works, and Blaze can still open any of them. Advanced shows everything, technical pages included.
+- **Navigation** (agent/SwipeNav.kt; Settings › Navigation: Swipe (default) or Classic tabs, separate from Simple / Advanced, applies at once): with Swipe, Blaze opens on Home (the Home cards: weather, news, heads-ups). A grab handle sits above the system gesture area (navigation bar inset + 32 dp) with "Swipe up to chat". Drag it up, or tap it, and Chat slides up over Home and follows your finger. A fast flick or a third of the screen finishes the move; anything less springs back. In Chat, pull down from the top bar to bring Home back, or use Back. The pill becomes Chat | Projects. Classic tabs keeps the old Chat | Projects | Home pill and opens on Chat. Chat comes up by itself when Blaze asks a question, needs your OK, shows a fix card or starts using the computer. `open_view view=home` and `/home` show Home, and Awareness reports whether Home or Chat is in front.
+- **Simple chat** (agent/SimpleHome.kt, ui/SimpleUi.kt): a greeting by time of day ("Good afternoon, Sam", "Still up?") and two starters that fit the hour. A question from Blaze gets Yes / No / Later reply chips, plus Do it for me when it's about doing something. A "Talk to @blaze / @halo / @all" row keeps Halo x Blaze and team phases in reach. A big hold-to-talk mic uses the phone's own speech input: let go to send, Type for the keyboard, Photo for the + menu. / commands still work in the text field.
+- **Plain working line**: in Simple mode the work card's title is the step in plain words ("Sending Jack the location…"), "Done" afterwards, with "Details" to see each step.
+- **Undo bar** (agent/UndoCenter.kt): when Blaze makes or deletes a routine or reminder on Autopilot, a 10-second countdown bar offers Undo. Undo deletes the new routine, or brings the deleted one back (Routines.restore). Actions with no way back just get their plain line.
+- **Errors as fixes** (agent/FixCards.kt): when a tool finds notification access, phone control, usage access, the overlay or an app permission switched off, the chat shows a card with "Turn it on". That button opens the right system screen. No error codes.
+- **Things Blaze is doing** (Settings, `/doing`): routines and reminders with friendly names and when they run ("Every weekday at 07:00", "Tomorrow at 14:30"), each with a switch, then "Today I…", a diary of today's Awareness events.
+- **Look & feel** (ui/LivingLogic.kt, LivingBackground.kt; Settings, `/look`): living backgrounds drawn with Compose Canvas behind the glass UI:
+  - Your sky follows the local time (night stars, dawn, day, sunset, dusk) and the weather from a Home weather card if you have one.
+  - Aurora, Ocean, Calm paper (still; the default, so nothing changes until you pick something), Mosaic, and Your photo (slow pan).
+  - A soft wash over the background keeps text readable.
+  - Light / Dark / Auto (Auto is dark after sunset) and an accent colour.
+  - Move with music pulses the background while Blaze Music plays.
+  - Save battery: keep it still. The background also stops by itself in power saver, at 20 % battery or less (not charging), and with system animations off.
+- **Home-button sheet** (ui/AssistPanel.kt, ui/ConfirmCard.kt): Blaze was already the device assistant, so the sheet over the current app now has a "Blaze & Halo" strip with its status, "Sees: <app>", the live transcript and chips (What is this? / Reply for me / @halo / Type instead). A message waiting for your tap reads "Draft · not sent yet" with Not now / Send, here and in the chat.
+- **Hands-free computer** (desktop/DesktopAgent.kt, DesktopAgentLogic.kt; `desktop_task` tool): Blaze works the Linux desktop by itself. It takes a screenshot, the vision model picks one step (click, double or right click, type, keys, scroll, open an app, wait), xdotool does it, and the loop repeats until the job is done, Blaze needs you, or 25 steps pass (40 at most). The chat shows a watch-only live PC view: frames from the desktop's own VNC, and nothing you touch reaches it. Around it are the "Watching · you can't touch the screen" badge, "Step n of m" with the plain step, and Watch full screen / Pause / Stop. Scrolled away, it shrinks to a "Working on the computer…" pill. Paying, sending or posting, and deleting still ask, even on Autopilot.
+- **Blaze knows every view and command** (agent/CommandRegistry.kt; `blaze_command` tool): blaze_now lists every / command and every view, Home, Things Blaze is doing and Look & feel included. Blaze can run a command itself: views open, prompt commands give it their prompt, and app commands (/autopilot, /voice, /orb…) run. /stop, /new, /clear and /retry stay with you.
+- **GitLab CI** (.gitlab-ci.yml): builds the debug-signed APK (keystore/blaze.keystore) on shared runners for pushes to feat/simple-mode, merge requests and manual runs, and keeps it as a job artifact.
+- Tests: SimpleModeTest, SimpleHomeTest, FixCardsTest, UndoCenterTest, CommandRegistryTest, DoingLogicTest, SwipeNavTest, LivingLogicTest, DesktopAgentLogicTest.
+
+## v0.38.0: Jarvis mode, follow-ups, and Autopilot by default (versionCode 141)
+
+- **Autopilot is the default** (agent/Modes.kt, `ApprovalDefault`): Blaze runs commands and ordinary steps without approval cards. Someone who picks Auto in the + menu keeps the cards (a saved "auto" stays). Deleting things, spending money and messaging or calling people still need one tap. Questions wait two minutes (was one) before Blaze decides by itself, and the prompt no longer says the user is away.
+- **Jarvis mode** (proactive/Jarvis.kt, JarvisLogic.kt; Settings › Proactive › Jarvis mode; `jarvis_mode` tool): levels Off / Gentle / Eager (default) / Jarvis.
+  - Getting-to-know-you questions as heads-ups ("Quick question: what do you do for fun?"), up to 1 / 2 / 4 a day, 9:00-21:00, never in quiet hours; topics already in memory are skipped, Blaze may reword them to fit what's going on, and the reply (in the notification) is saved to memory.
+  - Screen glances (switch, off by default): the screen as text through phone control every 60 / 25 / 12 minutes, never in banks, wallets, mobile money, password managers, authenticators, Settings, or on screens showing a password, code or card. Help only when it clearly fits; a one-line note of what you were doing goes into Awareness. Never while Blaze is working a task.
+  - Camera looks (switch, off by default): one small front-camera frame only while Blaze is open on the Chat screen (Android shows its camera dot), never saved.
+  - Usage: today's top apps (Usage access) feed its thinking.
+  - Its own routines: every 14 / 7 / 3 days Blaze may propose one (never messages, money or deletes); at Jarvis it sets it up itself as "Blaze · …" and says so with a tap to remove.
+  - Call offers: in the early evening every 3 days (Eager) or daily (Jarvis), a "Got a minute?" heads-up with a Call me button (Blaze's voice call).
+- **Follow-ups** (proactive/FollowUps.kt, FollowUpLogic.kt; `follow_ups` tool): a chat message that makes a plan becomes a follow-up (who, app, what, when). "Jack Banda texted on WhatsApp about a meeting about the budget, tomorrow at 15:00. Are you going?" with Yes / No / I replied. Yes sets a reminder 30 minutes before. Opening that app while you haven't replied: "I see you're in WhatsApp. Jack wanted to talk about… Maybe get back to Jack?" (at most every 2 hours). Your own message in the chat's notification, Send tapped with that chat open, or a reply through Blaze closes it. Open follow-ups show in Awareness and in the heads-up check.
+- **Personal heads-ups** (proactive/Proactive.kt): name the person, app, time and topic, never "you have new messages", and no nudges about chats you already answered.
+- Tests: JarvisLogicTest, FollowUpLogicTest, ModesDefaultTest.
+
+## v0.37.0: Blaze knows what's going on: the song playing, the video you were watching, the screen in front (versionCode 140)
+
+- **Awareness** (agent/Awareness.kt, AwarenessHooks.kt): a WHAT'S GOING ON line in every prompt (in the changing tail, so the cached prefix stays the same). "Skip this song", "what was the movie I was just watching", "turn this up", "what am I looking at" work without asking.
+- **Live**: the song in Blaze Music (title, artist, position, playing or paused), the video in Blaze Video (where it is now), other apps' media (Spotify, YouTube, podcasts…) from their media sessions through the notification access Blaze already has, the Blaze screen in front, the view open over the chat (with the design's title in Design), and the BlazeOS app in front. Positions are worked out when the prompt is built, so nothing ticks in the background.
+- **Recently**: what you played, watched (and where you stopped), and opened, kept 3 days on the phone (filesDir/awareness.json), so "the movie I was watching" still works after Blaze restarts.
+- **blaze_now** tool: everything live, the last 30 events and every Blaze app and view with the tool that drives it.
+- Tests: AwarenessTest (8).
+
+## v0.36.1: 3D designs draw again instead of falling back to the simple drawing (versionCode 139)
+
+- **The "started but drew nothing" error is gone** (ui/DesignServe.kt, assets/design/three-safe.js). The check that decides whether a 3D scene drew anything sampled the WebGL canvas from a timer, after the browser had already cleared it (pages don't set preserveDrawingBuffer), so every scene looked blank: r170 "failed", r162 "failed", and the Design view fell back to the native sketch.
+- Now every frame records its draw calls (three-safe.js wraps render), and the pixel sample is taken right after a render while the frame is still in the buffer. A scene with draw calls is ready; only a scene that renders frames with no draw calls (or never renders) fails. Pages that don't load three.js through the safe build are never failed on a check that can't see them.
+- Tests: DesignRenderTest (17).
+
+## v0.36.0: BlazeOS native apps, phase 1: a WebAssembly runtime (versionCode 138)
+
+- **Native apps** (blazeos/OsSyscalls.kt, OsWasmRuntime.kt, OsWasmApp.kt): a new manifest entry `{ "type": "wasm", "path": "app.wasm" }`. The app is a WebAssembly module that draws straight to a Compose Canvas and gets touches, swipes, keys and Back; no web page in between.
+- **Runtime**: Chicory 1.7.5 (pure JVM interpreter, no NDK). Each app runs on its own thread at up to 60 fps; pause when it leaves the screen or BlazeOS pauses, resume when it's back, kill when it's closed. 16 MiB memory cap (8 MiB on low tier phones); memories use ByteBufferMemory so they don't need VarHandle (Android 13+ on ART).
+- **Syscalls** (`blazeos` module): canvas (clear, rect, circle, line, text, image, size), storage (the same per-app store as web apps), notify, theme, time / random, log. Every call goes through a permission gate: not in the manifest = refused, turned off in Settings = refused, notifications ask the first time. Refusals are return codes, not crashes.
+- **Snake Native** in the App Store next to the web Snake: Snake written in WebAssembly text, 2.4 KB (blazeos-sdk/samples/snake, with its build script). SDK notes in blazeos-sdk/README.md; phases 2-4 in docs/plans/plan-blazeos-native.md.
+- Tests: OsSyscallsTest (gate, imports, keys), OsWasmRuntimeTest (runs the real Snake module), OsManifestTest (wasm entries, catalog).
+
+## v0.35.0: the Design studio, phase 1 (versionCode 137)
+
+- **A real design studio** (ui/DesignView.kt, ui/DesignStudio.kt): header with the design's name, a light / dark switch and Open; a mode switcher (Page · 3D · Motion · Audio); the stage with floating tools (format, version and Undo on top, a select / colour / fit rail, the design check and zoom at the bottom); a layers dock; prompt chips and an ask box that is scoped to the selected element.
+- **Studio pages** (agent/DesignPage.kt, new kind `canvas`): a page is a small spec (format, background, elements: text, button, rect, ellipse) embedded in a self-contained HTML file, so it still opens anywhere. Formats: Post 4:5, Story 9:16, Slide 16:9, Icon 1:1, App screen, Poster A-ratio; switching keeps everything on the page.
+- **Edit by hand, natively**: one finger pans the board, pinch or double tap zooms; tap to select, drag to move, eight handles to resize (circles keep their shape, nothing collapses or is lost off the page); Front, Remove, edit text.
+- **Colour wheel with hex** (ui/ColorWheel.kt): hue / saturation wheel, brightness and opacity, hex input (#RGB, #RGBA, #RRGGBB, #RRGGBBAA), brand swatches; text or fill.
+- **Design check**: WCAG text contrast against what is under it and elements off the page, a 0-100 score; tap it to select the weakest element.
+- Hand edits save as a new version after a pause; Undo steps back; Blaze's `design` tool can create pages from elements and edit them (`set_elements`, `remove_elements`, `format`, `background`).
+- Other pages, sites and 3D scenes keep the live preview (Phone / Desktop, 3D orbit).
+- Still to come: Motion timeline and Audio tracks, versions sheet, compare with equal zoom, brand kit, per-mode export.
+- Tests: DesignPageTest.
+
+## v0.34.1: a browser toolbar you can move, one Library tab with a pull-down player (versionCode 136)
+
+- **Move the browser's floating toolbar** (browser/BrowserActivity.kt, `ToolbarDock`): drag it by its grip to the bottom, top, left or right of the page; on release it snaps (animated) to the nearest edge, never resting in between, and the edge is remembered (`browser_bar_dock`). Left / right turn it into a column. Only the grip drags, so taps on the buttons work as before; it still slides away on scroll.
+- **Library and Player are one tab** in Blaze Video and Blaze Music (pill: Library | Store). Tapping a video or song opens the full player as a sheet with a grab handle; swipe it down (or tap the handle, or Back) and it collapses into a mini-player at the bottom with play / pause and close (Music keeps Next) while playback carries on. Tap the mini-player to open it again. The player is never recreated for this (mediaapps/MediaUi.kt `PlayerSheet`, `MiniBar`).
+- **No blank space under the player**: Video lists your other library videos under the playing one, Music shows a "From your library" row under the controls; one tap switches.
+- Tests: ToolbarDockTest.
 
 ## v0.34.0: subtitles that work, smarter Video / Music / Gallery, Camera Night + HDR, a fuller Linux desktop (versionCode 135)
 
@@ -35,7 +1202,7 @@ Optimisation only; no feature changed or removed.
 ## v0.33.5: Stop the desktop download, pick your Linux (versionCode 134)
 
 - **Stop download, keeping progress**: the Desktop page's greyed-out "Working…" is now **Stop download**, and the download notification has a **Stop** action. Stop closes the download in flight (the `.part` file stays), kills the running install process (PRoot `--kill-on-exit` takes apk / apt / pacman / dnf with it) and wakes any retry wait, for the Alpine and other-Linux base downloads, the desktop packages Blaze prefetches, and the package installs. The page shows a **Download paused** card ("41.2 MB of Ubuntu is kept on the phone") with **Start** (carries on: HTTP Range resume, the package manager skips what's installed, `dpkg --configure -a` finishes a half-done apt run, a stale pacman lock is cleared) and **Remove downloaded files** (partial archives, the package caches, and a Linux whose base never finished; an installed Alpine always stays). A "Download paused" notification with **Resume** is posted too, and the paused state survives a restart.
-- **Pick the desktop's Linux**: Alpine (default, "Recommended for the A12"; an existing Alpine desktop is untouched, nothing is reinstalled), Ubuntu 24.04, Debian 12, Arch Linux ARM or Fedora (64-bit only), as cards on the Desktop page, saved as a preference. Each installs, starts and stops with its own package manager and real arm64 package names (checked against bookworm / noble arm64, Arch Linux ARM aarch64 and Fedora 41 aarch64; Fedora uses `tigervnc-server-minimal`). Small shims give every Linux the same `Xvnc` / `vncpasswd` / `import` names (Debian ships `Xtigervnc` / `tigervncpasswd`). The agent's `desktop` tool works in the chosen Linux and says so.
+- **Pick the desktop's Linux**: Alpine (default, "Recommended for most phones"; an existing Alpine desktop is untouched, nothing is reinstalled), Ubuntu 24.04, Debian 12, Arch Linux ARM or Fedora (64-bit only), as cards on the Desktop page, saved as a preference. Each installs, starts and stops with its own package manager and real arm64 package names (checked against bookworm / noble arm64, Arch Linux ARM aarch64 and Fedora 41 aarch64; Fedora uses `tigervnc-server-minimal`). Small shims give every Linux the same `Xvnc` / `vncpasswd` / `import` names (Debian ships `Xtigervnc` / `tigervncpasswd`). The agent's `desktop` tool works in the chosen Linux and says so.
 - **Terminal in the chosen Linux**: `run_shell linux=true` (and background jobs), new Terminal tabs and the Settings terminal run in the chosen Linux once it's installed, else Alpine; hints name its package manager. run_code, git, BlazeRouter and routines stay on Alpine (they use apk).
 - **BlazeOS App Store Linux apps** install with the chosen Linux's package manager (Alpine names mapped, e.g. xeyes → x11-apps / xorg-xeyes / xeyes; manifests can give `distro_packages`).
 - Tests: DesktopDistroTest + DesktopFlowTest (package mapping, scripts per manager, Stop / pause / resume transitions, removal plan, terminal tab choice), FetchTest (Stop keeps the .part and resumes), OsManifestTest (`distro_packages`).
@@ -46,9 +1213,9 @@ Optimisation only; no feature changed or removed.
 
 ## v0.33.3: links open their apps, a full-screen browser, a fast screen look, a desktop install that finishes, your apps found (versionCode 132)
 
-Fixes from a Galaxy A12.
+Fixes from a low-end phone.
 
-- **Links open the app they belong to** (browser/AppLinks.kt, `RedirectRules`): the Blaze browser, the BlazeOS Browser and installed site apps now hand off `intent://` links (the package first, then `browser_fallback_url`, then its Play page), other apps' schemes (`market:`, `mailto:`, `tel:`, `whatsapp:`, `hark:`…; ACTION_VIEW with a safe chooser fallback) and https App Links: a cross-site link tap, server redirect or JS / meta-refresh redirect ("You are being redirected to Hark to continue installation") opens the installed app that verifiably handles it (FLAG_ACTIVITY_REQUIRE_NON_BROWSER on Android 11+; on older phones only an app that handles that host and isn't a browser or Blaze). Same-site browsing, typed addresses, iframes and background (agent) tabs never jump to an app; the same URL is never handed off twice within 4 s (no loops); with no app for it, the page just loads.
+- **Links open the app they belong to** (browser/AppLinks.kt, `RedirectRules`): the Blaze browser, the BlazeOS Browser and installed site apps now hand off `intent://` links (the package first, then `browser_fallback_url`, then its Play page), other apps' schemes (`market:`, `mailto:`, `tel:`, `whatsapp:`…; ACTION_VIEW with a safe chooser fallback) and https App Links: a cross-site link tap, server redirect or JS / meta-refresh redirect ("You are being redirected to the app to continue installation") opens the installed app that verifiably handles it (FLAG_ACTIVITY_REQUIRE_NON_BROWSER on Android 11+; on older phones only an app that handles that host and isn't a browser or Blaze). Same-site browsing, typed addresses, iframes and background (agent) tabs never jump to an app; the same URL is never handed off twice within 4 s (no loops); with no app for it, the page just loads.
 - **More room in the browser**: the row of tab pills and the monospace "Slow network · still waiting on…" line are gone (the tabs button with the count still opens every tab). Loading shows as a 2 dp brand line laid over the bottom edge of the address bar, taking no space.
 - **Floating toolbar**: back, forward, home, the mascot, tabs and more sit in a rounded glass pill floating over the page, inset from the edges and the navigation bar; the page fills the screen to the bottom. It slides away when you scroll down and back when you scroll up (always shown on the start page, with a panel open or the pointer out). Pages get an 84 px spacer at the end so nothing stays hidden under it; sheets leave room for it.
 - **"Looking at the screen" is fast** (agent/VisionFast.kt): look_at_screen reads the screen as text first and answers from it when it says enough (pixels=true forces a picture for images, games, video and maps); screenshots are 720 px / JPEG 60 (was 1280 / 70), scaled and compressed off the main thread; a screenshot is seen by one model call only (later steps no longer re-send it, so they stop going to the slow vision lineup); a picture call gets 12 s, then the picture is swapped for the screen as text on the gateway's faster text route. Gateway-only routing as before.
@@ -59,7 +1226,7 @@ Fixes from a Galaxy A12.
 
 Home is now **BlazeOS**: a clean, bare virtual phone of Blaze's own (not your phone, not an Android VM, so it works on every device), with an iPhone-like look (design B), nothing signed in and only Blaze's own apps.
 
-- **The machine** (blazeos/BlazeOs.kt, OsMachine.kt): Off → Booting (the mascot boot animation) → On ⇄ Paused, Power off, Restart. At boot it reads the host (ActivityManager.MemoryInfo, isLowRamDevice, memoryClass, StatFs) and sets its budget: disk quota min(8 GB, 25 % of free space), picture cache, disk cache, icon size, blur and animation level, apps open at once (a Galaxy A12 gets the low tier: 2 apps, 8 MB pictures, drawn glass, reduced motion). Pause frees memory (pictures, background apps, web views, music) and keeps the app in front; Resume brings it back with its state. Factory reset wipes the BlazeOS disk only, after a confirm.
+- **The machine** (blazeos/BlazeOs.kt, OsMachine.kt): Off → Booting (the mascot boot animation) → On ⇄ Paused, Power off, Restart. At boot it reads the host (ActivityManager.MemoryInfo, isLowRamDevice, memoryClass, StatFs) and sets its budget: disk quota min(8 GB, 25 % of free space), picture cache, disk cache, icon size, blur and animation level, apps open at once (a low-end phone gets the low tier: 2 apps, 8 MB pictures, drawn glass, reduced motion). Pause frees memory (pictures, background apps, web views, music) and keeps the app in front; Resume brings it back with its state. Factory reset wipes the BlazeOS disk only, after a confirm.
 - **Its own disk** at filesDir/blazeos/ (OsDisk.kt): apps/, data/<app>/ (each app's own folder), system/ (registry.json, permissions.json, wallpaper), cache/. Per-app BlazeOS permission prompts (camera, microphone, files, notifications: Allow / Only this time / Don't allow), then the phone's permission when one is behind it.
 - **Fullscreen** (BlazeOsActivity): tapping Home (or /phone, or Views › Phone) opens it immersive, with no Blaze chrome or chat; the screen stays on while it runs; the volume keys change BlazeOS's own volume; Back is BlazeOS's back; the home indicator goes home (long-press: app switcher). The real power button can't be caught by an app, so BlazeOS has its own power menu (long-press the status pill, or the control centre's Power): Pause & leave, Restart, Power off, Exit to Blaze. Leaving Blaze or pressing the real power button pauses it.
 - **Control centre** (swipe down or tap the status row): BlazeOS brightness and volume, Wi-Fi status (read-only from the phone), dark mode, the power menu, recent BlazeOS notifications.
@@ -156,7 +1323,7 @@ No more "both answer, react once, stop". Blaze and Halo now really talk.
 
 ## v0.30.7: Faster phone actions
 
-The v0.30.4 trace of "stop GitHub opening links in the GitHub app" took 18 steps and 4 min 25 s (≈ 7 s a step, one model round trip per tap). v0.30.4 cut what each call carries; this release cuts the number of calls. Target for a task like that: 2 model calls (3 at most when a label differs) and ≈ 12–18 s, down from 18 calls and 265 s (estimates from the trace: ≈ 5.5 s per model call, ≈ 3.5 s on the phone; not yet re-measured on the A12).
+The v0.30.4 trace of "stop GitHub opening links in the GitHub app" took 18 steps and 4 min 25 s (≈ 7 s a step, one model round trip per tap). v0.30.4 cut what each call carries; this release cuts the number of calls. Target for a task like that: 2 model calls (3 at most when a label differs) and ≈ 12–18 s, down from 18 calls and 265 s (estimates from the trace: ≈ 5.5 s per model call, ≈ 3.5 s on the phone; not yet re-measured on the test phone).
 
 - **The prompt stopped asking for a reply per tap.** The orient rule said "check that each step worked before the next" and the first-call note said "Re-check the screen after each action before the next one", which told the model to send one action per reply, against run_plan. Both now say: plan the whole task, send it in ONE reply (run_plan or several calls), the phone checks each step and you get the screen once at the end.
 - **Whole settings tasks in one call.** run_plan steps can open a settings page by intent (`{do:open_settings, page:open_by_default, app:GitHub}` then `{do:tap, target:"Open supported links", want:"off"}`), so the trace's task is one run_plan + the one-line answer.
@@ -171,7 +1338,7 @@ The v0.30.4 trace of "stop GitHub opening links in the GitHub app" took 18 steps
 
 ## v0.30.6: Rapid messages (send while Blaze works; replies say which message they answer)
 
-Luke: "Let's make blaze like hark where I can send messages after messages with no pause and blaze highlights the one it's responding to and such (or replies to rapid succession questions that are related with one message)".
+Blazeinchue: "Let's make blaze like [another assistant] where I can send messages after messages with no pause and blaze highlights the one it's responding to and such (or replies to rapid succession questions that are related with one message)".
 
 - **The composer never blocks.** Before, a message sent while Blaze worked was silently dropped (`Session.send` returned when a turn was running, and the chat screen ignored Send while busy). Now it shows at once as your bubble and joins the running turn at its next step, between tool calls ("sent while you were working"); if the turn already gave its answer, it starts the next turn right after (never two at once). With text in the box the round button is Send even while Blaze works; Stop shows when the box is empty. Stop keeps what you sent in the conversation but starts nothing.
 - **Bursts are one turn.** Typed messages a moment apart while Blaze is idle are batched: the turn starts 0.6 s after the last send, or, if you're typing again, once you pause for 1.5 s (never more than 6 s after the last send). Your bubble, the tick and the working card show at once. Voice, Magic Hand, routines, notification replies and background agents start immediately, as before. Several messages in one turn are routed (skills, tools, the chat lane) as one request.
@@ -198,7 +1365,7 @@ Luke: "Let's make blaze like hark where I can send messages after messages with 
 
 ## v0.30.4: Fast phone actions, true storage figures
 
-The A12 trace of "stop GitHub opening links in the GitHub app" took 18 steps and 4 min 25 s before it was stopped (≈ 7 s a step, one model round trip per tap). Causes found in the code, and the fixes:
+The test phone trace of "stop GitHub opening links in the GitHub app" took 18 steps and 4 min 25 s before it was stopped (≈ 7 s a step, one model round trip per tap). Causes found in the code, and the fixes:
 
 - **Old screens were never dropped from the prompt.** The check for a screen readout looked for "Foreground app:", a header `readScreen` stopped writing in v1.9.7, so every step re-sent every earlier screen (and, with long chats on, big ones were cut to head + tail lines, hiding the middle elements). The history grew by a whole screen per tap, which could also trip the auto-compaction check and add a blocking summarise call in the middle of the task. Now `FastActions.isScreen` recognises every readout; only the newest (plus the full one a diff refers to) is kept, in the history itself. On a replay of the trace's shape the last call carries 22,018 → 9,349 characters and the task as a whole sends 44 % less (`FastActionsTest`).
 - **Skills by word overlap.** "github" + "app" + "open" pulled in android-app-builder, git-pr-workflow and three workflows (≈ 6,000 characters in full) before the first call, the "Operator" specialist matched "in the app", and "github" switched on the terminal and connector tool groups. A plain device / settings action (`FastActions.plainDevice`) now gets no skill packs, no skills lookup, no specialists and none of those groups, only a learned, replayable skill of the user's own on a strong match; other requests need score ≥ 5 from ≥ 2 distinct words for a skill in full (`SkillGateTest`).
@@ -207,7 +1374,7 @@ The A12 trace of "stop GitHub opening links in the GitHub app" took 18 steps and
 - **Macros restarted from scratch.** A run_plan stopped at step k now says steps before k are done and to resend only k onwards, and the same script sent again in the same app skips the steps already done (`FastActions.skipDone`). Its waits went from 3 s of polling + one scroll to 1.2 s + `reveal`.
 - **"Looking at the screen first" round trips.** A result that already carries the screen (open_settings, a stopped run_plan) now counts as a look, so a numbered tap after it isn't bounced back for another model call.
 - **Batching.** Several screen actions in one reply run back to back with a 0.7 s settle; the screen is read once after the last (was: settle up to 1.5 s and a full read after each). The prompt says multiple calls per reply are fine. After-action settle is 1.2 s max.
-- **Storage.** "What's my storage space" said "5.9 GB free of 118 GB" on a 128 GB A12 that Settings shows as 61.98 GB used (48 %). `device_status` read `StatFs(/data)`: its total is the /data partition only (system partitions excluded, so 118 GB) and its `availableBytes` is only what an ordinary app can allocate right now, without the space Android frees on demand (clearable caches) or reserved blocks. It now uses `StorageStatsManager.getTotalBytes/getFreeBytes(UUID_DEFAULT)` like Settings, falls back to `StatFs(Environment.getDataDirectory())` with the total rounded to the advertised size, and reports decimal GB: used, total, used %, free, plus any mounted SD card (`StorageMath`, `StorageMathTest`). The low-storage proactive check uses the same figure.
+- **Storage.** "What's my storage space" said "5.9 GB free of 118 GB" on a 128 GB low-end phone that Settings shows as 61.98 GB used (48 %). `device_status` read `StatFs(/data)`: its total is the /data partition only (system partitions excluded, so 118 GB) and its `availableBytes` is only what an ordinary app can allocate right now, without the space Android frees on demand (clearable caches) or reserved blocks. It now uses `StorageStatsManager.getTotalBytes/getFreeBytes(UUID_DEFAULT)` like Settings, falls back to `StatFs(Environment.getDataDirectory())` with the total rounded to the advertised size, and reports decimal GB: used, total, used %, free, plus any mounted SD card (`StorageMath`, `StorageMathTest`). The low-storage proactive check uses the same figure.
 - The step trace stays honest: open_settings shows "Opening GitHub's link settings", the run_plan board marks skipped steps "(already done)", and a tap by text says how many scrolls it took. Risky-tap confirmations are unchanged.
 
 ## v0.30.3: Blaze Camera Pro (zoom dial, digital zoom, focus, exposure, grid, timer)
@@ -225,7 +1392,7 @@ The A12 trace of "stop GitHub opening links in the GitHub app" took 18 steps and
 - **32-bit phones:** the 32-bit BusyBox reaches chmod, ln, rmdir, rm -r, cp -a, tar x and mkfifo through old syscalls Android's 32-bit sandbox kills. A second start-up probe catches that and leaves those commands to Android's toybox. Every BusyBox syscall on both ABIs was checked against Android 11 and 12's real allowlists (`tools/busybox/seccomp_allowlist.py`).
 - **Alpine (and every Linux): `cd phone/`, `cd /sdcard` and every other `cd` work again.** They said "can't cd to phone/: Function not implemented" and `pwd` printed nothing: the bundled PRoot answered chdir/getcwd with ENOSYS under Android's app sandbox. Blaze now ships Termux's current PRoot 5.1.107.96 (with talloc 2.5.0 and libandroid-shmem), reproduced and verified off-phone under Android 11/12's seccomp filter (`tools/proot/README.md`). ~/phone and /sdcard are real mount points in the rootfs now.
 - **`blaze-doctor`** in every Linux checks cd into ~/phone and /sdcard, getcwd, stat, the file tools and fork, and says what fails. Blaze runs it once per build in the background and turns PRoot's seccomp acceleration off on phones where only that works (`LinuxDoctor`).
-- Tests: `PhoneShellTest` (per-build verdict, first-death fallback, note width on the A12, 32-bit applets), `LinuxDoctorTest` (doctor script runs, parser, seccomp decision, pinned PRoot binaries).
+- Tests: `PhoneShellTest` (per-build verdict, first-death fallback, note width on the test phone, 32-bit applets), `LinuxDoctorTest` (doctor script runs, parser, seccomp decision, pinned PRoot binaries).
 
 ## v0.30.1: Blaze Music and Blaze Video
 
@@ -259,7 +1426,7 @@ The A12 trace of "stop GitHub opening links in the GitHub app" took 18 steps and
 
 ## v0.29.8: Terminal that explains itself, phone shell fixed
 
-- **Phone shell starts again.** On phones like the Galaxy A12 the phone tab opened straight to "[Process completed (signal 31) - press Enter]". Signal 31 is SIGSYS: Android's app sandbox (seccomp) kills any app process that calls setgid/setuid, and the bundled BusyBox called both at the start of every tool (its `check_suid` privilege drop, a no-op for an app). Both BusyBox binaries now skip that drop (one instruction each, `tools/busybox/patch_setid.py`, README there).
+- **Phone shell starts again.** On some low-end phones the phone tab opened straight to "[Process completed (signal 31) - press Enter]". Signal 31 is SIGSYS: Android's app sandbox (seccomp) kills any app process that calls setgid/setuid, and the bundled BusyBox called both at the start of every tool (its `check_suid` privilege drop, a no-op for an app). Both BusyBox binaries now skip that drop (one instruction each, `tools/busybox/patch_setid.py`, README there).
 - BusyBox's tools are really on PATH now: setup ran `libbusybox.so --list`, which BusyBox answers with "applet not found", so nothing was ever linked. It now runs through a `busybox` link and is probed first; if a phone still refuses it, the tab opens Android's own shell (toybox) instead of a dead tab and says why. ping stays Android's (it works for apps).
 - The phone tab explains itself: a welcome that says what it is (this phone's command line, nothing to install, not a full Linux) and how to get a Linux, a short tour, tappable example commands above the keys (help, ls, cd storage, top, ping, space…) and a `help` command listing the tools with plain descriptions. Renamed "Phone shell · built-in tools, no install" (tab chip "phone sh").
 - ⋮ and + open a Blaze bottom sheet (rounded, dark, Blaze blue, an icon and a hint per row, the app's motion timing) instead of the white Android pop-up. The extra keys are rounded Blaze key caps, CTRL/ALT light up blue, tabs use Blaze blue; the remaining confirmations are dark dialogs.
@@ -317,7 +1484,7 @@ The A12 trace of "stop GitHub opening links in the GitHub app" took 18 steps and
 - **Harder tests (ActionProofTest):** 41 real and paraphrased replies (incl. the Gabriel cat failure) with the exact verdict each must get; every proof tool must exist in the code; a source check fails the build if message_contact ever returns "Sent to" outside the background reply or before the on-screen SENT check; failure results must never read as success.
 
 ## v0.28.7: honest sends + phone workflows (the "send Gabriel a cat" fix)
-- **What went wrong:** asked to find Luke's older brother Gabriel and send him a cat picture made with Pollinations, Blaze said there was no Gabriel, then opened WhatsApp and claimed "Message sent" with nothing sent, and finally sent the words "orange cat" instead of the picture.
+- **What went wrong:** asked to find Blazeinchue's older brother Gabriel and send him a cat picture made with Pollinations, Blaze said there was no Gabriel, then opened WhatsApp and claimed "Message sent" with nothing sent, and finally sent the words "orange cat" instead of the picture.
 - **message_contact sends pictures:** new `image` argument ("last" = newest Gallery image, or a file name). WhatsApp gets the picture through a FileProvider share aimed at the contact's chat (`jid`), with `text` as the caption.
 - **Contacts that actually match:** names with emoji ("Gabriele❤️"), words in another order and small typos match (`phone/SendCheck.kt`, falls back to scoring every contact). Several matches come back as options for ask_user instead of "couldn't find".
 - **Verified sends:** Send is pressed only in that person's chat, and "Sent to …" is returned only when the draft or picture preview is gone afterwards (one retry). Otherwise the result says "Couldn't confirm it was sent" or "Not sent yet" and the model is told never to say it was sent.
@@ -326,7 +1493,7 @@ The A12 trace of "stop GitHub opening links in the GitHub app" took 18 steps and
 - ToolGuide: send_text is SMS; WhatsApp and pictures go through message_contact. Tests: SendCheckTest.
 
 ## v0.28.6: the camera works on every phone (Galaxy A07 fix) + Blaze Camera (Scan, Text, Ask, Photo, Translate, Document)
-- **Root cause of "No camera app found." on the Galaxy A07 (SM-A075F):** `zxing-android-embedded` (the Desktop pairing QR scanner) declares `android.permission.CAMERA` in its manifest, so CAMERA is in Blaze's merged manifest. When an app declares CAMERA and hasn't been granted it, Android refuses `ACTION_IMAGE_CAPTURE` with a `SecurityException` (even though the camera app does the shooting). A fresh install had never granted it (Luke's A12 had, through QR pairing), and the old `openCamera()` caught every exception and said "No camera app found." The permission is kept on purpose (QR pairing and Blaze Camera need it) and is now requested properly.
+- **Root cause of "No camera app found." on the Galaxy A07 (SM-A075F):** `zxing-android-embedded` (the Desktop pairing QR scanner) declares `android.permission.CAMERA` in its manifest, so CAMERA is in Blaze's merged manifest. When an app declares CAMERA and hasn't been granted it, Android refuses `ACTION_IMAGE_CAPTURE` with a `SecurityException` (even though the camera app does the shooting). A fresh install had never granted it (Blazeinchue's phone had, through QR pairing), and the old `openCamera()` caught every exception and said "No camera app found." The permission is kept on purpose (QR pairing and Blaze Camera need it) and is now requested properly.
 - **+ → Camera, robust on every phone** (`device/CameraFlow.kt` decides, `ui/CameraCapture.kt` runs it): Camera permission first (asked; explained if refused once; "Open Settings" if refused for good; "Pick a photo" always offered) → the phone's camera app with explicit URI grants (EXTRA_OUTPUT + ClipData + read/write flags) → **Blaze's own CameraX camera** when there is no camera app, the launch throws (ActivityNotFound, SecurityException, a work profile / Secure Folder / policy), or the app bounces straight back or ignores EXTRA_OUTPUT (remembered per phone) → the photo picker. The pending photo path survives Blaze being killed behind the camera app (low-RAM phones). Every failure logs the real exception class and message to logcat (`BlazeCamera` tag) and to Blaze's diagnostics log (Settings → Device & diagnostics → crash report) with the phone model and Android version, and the toast says what actually happened.
 - **Manifest:** `<queries>` for IMAGE_CAPTURE, STILL_IMAGE_CAMERA, VIDEO_CAMERA and VIDEO_CAPTURE (package visibility on Android 11+); CAMERA declared explicitly (it was only there through zxing) with every camera feature `required="false"`; the camera entries in + are hidden only when the phone has no camera at all (`FEATURE_CAMERA_ANY`).
 - **Photos are upright and small:** captures are rotated by their EXIF orientation and scaled to ~1600 px (1280 on low-RAM phones) before they're attached; picked photos are now rotated by EXIF too (BitmapFactory ignores it, so portrait photos from many phones reached the model sideways).
@@ -352,30 +1519,30 @@ The A12 trace of "stop GitHub opening links in the GitHub app" took 18 steps and
 - Tests: `ProjectDocsTest` (cap on fit / editor / update_brief / migration, multi-byte and one-line text, notes keep the old and the full text, JSON round trip incl. v0.28.4 JSON, chunk / search / read per project, reindex only on change, tools and the no-database fallback, project-only tool list), `PromptBudgetTest` (a 20k-char brief + 20k-char instructions add ≤ 700 tokens, none of the tail, and the tail is found by search).
 
 ## v0.28.4: blaze-docs: Blaze knows itself by looking it up (exact repo URLs, versions, features, settings); the work card's time is the real run time
-- **Luke's screenshot:** asked "take me to blaze-agent repo in github", Blaze guessed the owner (`LacksonKapapa` instead of `lacksonkapapahue`), decided the repo doesn't exist and sent him to a stranger's profile. The real repo is https://github.com/lacksonkapapahue/Blaze-agent.
+- **Blazeinchue's screenshot:** asked "take me to blaze-agent repo in github", Blaze guessed the owner (`Blazeinchue` instead of `blazeinchue`), decided the repo doesn't exist and sent him to a stranger's profile. The real repo is https://github.com/blazeinchue/Blaze-agent.
 - **Built-in docs, generated from this repo at build time** (`BlazeDocsTask` in `app/build.gradle.kts`, one per variant, wired as a generated assets folder): `assets/blaze-docs/` holds README, CHANGELOG split into one file per version (+ an index), STATUS, `docs/`, and the hand-written `app/blaze-docs/about.md` (what Blaze is; owner and the three repos with exact URLs: Blaze-agent, Blaze-dekstop, Blaze-cli; releases / apk branch / raw APK URLs; how to update with /update; tech stack incl. blaze.db FTS5, WorkManager, AccessibilityService, the Cloudflare Workers gateway at https://ai.blaze-app.workers.dev; feature map; settings map; privacy and security; known limits), filled in with this build's version, versionCode, commit, date and min / target / compile SDK, plus `manifest.json` (files + hash). E-mail addresses, tokens and keys, Google Cloud project IDs, long hex IDs and store passwords are scrubbed at build time and again when indexing.
 - **Stored in blaze.db, not the prompt:** on the first launch after an update (manifest hash, version or tool list changed) the docs are chunked by heading (~300–800 tokens; long sections split with their heading, small neighbours merged with every heading kept in the section path; each chunk has id `doc#n`, doc, section path, version) into the new table `blaze_docs` + FTS5 `blaze_docs_fts` (porter unicode61), replaced whole in one transaction (idempotent), signature in the shared meta table as `blaze_docs:sig`. Prefixed names; schema v1 and `user_version` untouched. Runs on an IO coroutine 2.5 s after start; while blaze.db isn't the memory store yet (the one-time mind.db copy) the docs live in memory for that run (`agent/BlazeDocs.kt`).
 - **A tool reference from the real tool list:** `Agent.toolCatalog()` (the exact list the model gets) is indexed as the doc `tools` (name + one line, grouped like ToolRouter); a changed list (a connector, a setting) reindexes off-thread, so it never drifts.
-- **Two tools:** `blaze_docs_search(query, limit ≤ 5)` returns bm25-ranked snippets with ids (section ×6, doc ×2, text ×1, the about doc preferred; "source code" / "what version" / "0.28.1" expanded to the words the docs use; a repo question always gets the exact repo URLs on top) and `blaze_docs_read(id)` returns one chunk. Both are core tools (always sent; plan-mode safe; run in parallel with other lookups). A question about Blaze itself adds a one-line per-turn hint and skips skill packs and specialists (Luke's question had pulled in five coding skills and the Coder specialist because of "repo" and "github").
+- **Two tools:** `blaze_docs_search(query, limit ≤ 5)` returns bm25-ranked snippets with ids (section ×6, doc ×2, text ×1, the about doc preferred; "source code" / "what version" / "0.28.1" expanded to the words the docs use; a repo question always gets the exact repo URLs on top) and `blaze_docs_read(id)` returns one chunk. Both are core tools (always sent; plan-mode safe; run in parallel with other lookups). A question about Blaze itself adds a one-line per-turn hint and skips skill packs and specialists (Blazeinchue's question had pulled in five coding skills and the Coder specialist because of "repo" and "github").
 - **System prompt:** one static line (`BlazeDocs.PROMPT_LINE`: use blaze_docs_search first, never guess URLs) with the repo URL as the single pinned fact; the ABOUT YOU line now points at blaze_docs_search for docs and about_blaze for live setup.
-- **GitHub near-misses open the real repo:** `ToolLeak.fixBlazeUrl` turns a github.com URL to a Blaze repo under a guessed owner or the wrong case (`LacksonKapapa/Blaze-Agent`, `lacksonkapapahue/blaze-agent`, `Lackson-Kapapa/Blaze_Agent/releases/latest`, `…/Blaze-Desktop`, `…/blaze-cli.git`) into the real one, keeping the rest of the path; used by browser_open (and its step line), fetch_page and open_url. Someone else's `octocat/blaze-agent` is left alone. The leaked `github_open` alias maps any owner (or none) for all three repos.
+- **GitHub near-misses open the real repo:** `ToolLeak.fixBlazeUrl` turns a github.com URL to a Blaze repo under a guessed owner or the wrong case (`Blazeinchue/Blaze-Agent`, `blazeinchue/blaze-agent`, `Blazeinchue/Blaze_Agent/releases/latest`, `…/Blaze-Desktop`, `…/blaze-cli.git`) into the real one, keeping the rest of the path; used by browser_open (and its step line), fetch_page and open_url. Someone else's `octocat/blaze-agent` is left alone. The leaked `github_open` alias maps any owner (or none) for all three repos.
 - **Work card timer fix** (same screenshot: "Worked · 4 steps · 97m 45s" over steps of 0–13 s): the card timed a run from the message before it, so a Retry (or a background agent's wake) 97 minutes after the prompt counted the whole gap. Each turn now stamps its real start on its first step (`ChatMessage.startAt`, saved as `start_at`; set by send / retry / wake), a finished card ends at the reply that closed it or its last step (never at a later prompt) and never reads the clock, so the total is frozen at finish however long the app sits in the background; the live card before its first step also uses the turn's start. Saved chats without the stamp count the previous message only when it is within 2 minutes of the first step (`ui/WorkTime.kt`).
 - **Audit (see STATUS.md):** memories and the journal are rows in blaze.db (FTS5), nothing writes memories to .md or JSON-in-prompt; the prefs `memory` list is a write-only mirror / fallback; the prompt carries only the pinned core + subject index + lookup tools; skills are matched per turn (top 3 within 6,000 chars) and never all read into the prompt.
 - Database: new tables `blaze_docs`, `blaze_docs_fts` (+ index `blaze_docs_doc`) in blaze.db, meta key `blaze_docs:sig`. Chats: new optional message key `start_at`. No prefs changes.
-- Tests: `BlazeDocsTest` (chunking by heading and size, real docs within budget, idempotent reindex next to the memories with schema v1 untouched, "repo" / "source code" / "blaze-agent repo in github" → the exact URL, update / language / tools / 0.28.1 questions, tool reference from the list, no secrets in the generated files or chunks, the prompt line, GitHub near-misses), `PromptBudgetTest` (500 memories + every doc indexed: the memory/docs part of the prompt grows by < 1,500 tokens (budget 6k) and holds no docs text and only pinned-core memories; skills injected within budget), `WorkTimeTest` (Luke's 97-minute case is 33 s, frozen at finish, stopped turns, old chats). Screenshot `71-blaze-docs-repo`.
+- Tests: `BlazeDocsTest` (chunking by heading and size, real docs within budget, idempotent reindex next to the memories with schema v1 untouched, "repo" / "source code" / "blaze-agent repo in github" → the exact URL, update / language / tools / 0.28.1 questions, tool reference from the list, no secrets in the generated files or chunks, the prompt line, GitHub near-misses), `PromptBudgetTest` (500 memories + every doc indexed: the memory/docs part of the prompt grows by < 1,500 tokens (budget 6k) and holds no docs text and only pinned-core memories; skills injected within budget), `WorkTimeTest` (Blazeinchue's 97-minute case is 33 s, frozen at finish, stopped turns, old chats). Screenshot `71-blaze-docs-repo`.
 ## v0.28.3: project chats are their own place; one round back button everywhere
-- **Project chats open inside Projects, never in main Chat** (Luke's A12: tapping "+ New chat in this project" or a project chat switched the pill to Chat and loaded that thread there, so the One Mind main chat looked wiped, and Chat kept coming back as the project chat). Now the **Chat pill always shows the one main conversation**; a project chat opens as its own screen in Projects: round back button, the project's name over the chat's title, ⋯ (New chat in this project / Rename / Delete), and the same message list, cards and composer as main Chat. Back: project chat → project page → projects list. Switching the pill to Chat and back to Projects puts you where you were (list, project page or chat). Navigation is one pure value, `agent/ChatNav.kt` (tab, project, chat; saved across rotation and process death).
+- **Project chats open inside Projects, never in main Chat** (Blazeinchue's phone: tapping "+ New chat in this project" or a project chat switched the pill to Chat and loaded that thread there, so the One Mind main chat looked wiped, and Chat kept coming back as the project chat). Now the **Chat pill always shows the one main conversation**; a project chat opens as its own screen in Projects: round back button, the project's name over the chat's title, ⋯ (New chat in this project / Rename / Delete), and the same message list, cards and composer as main Chat. Back: project chat → project page → projects list. Switching the pill to Chat and back to Projects puts you where you were (list, project page or chat). Navigation is one pure value, `agent/ChatNav.kt` (tab, project, chat; saved across rotation and process death).
 - **Any number of chats per project:** listed on the project page (count = chats that exist), + New chat, and each row's ⋯ (or a long-press) to Rename or Delete it (confirm first; deleting removes that chat's messages and takes it out of the project, the project and its other chats stay). A new chat joins its project with its first message, so empty ones don't pile up.
 - **Things that open a chat by themselves open it in Projects too:** the shell follows the agent (`ChatNav.follow`): a reply typed in a notification, the secure-form card's "Action required" notification, and tapping a reply notification from a project chat (new `Notifier.EXTRA_OPEN_CHAT` → `Agent.openFromLink`, main or project chats only) all land on that project chat screen, not in main Chat. A private chat stays on the Chat tab.
 - **Repair on upgrade:** older builds saved the last project chat as the chat to reopen (`last_chat_id`); on start main Chat now always opens the main thread and that pref is reset to `main` (only the main thread is remembered from now on). Checked: project chats were never written into the main thread's file (each chat saves under its own id; the journal is keyed by chat id), so nothing is deleted or hidden there.
 - **Project instructions and brief only in project chats:** the PROJECT line in the system prompt was read from the chat *on screen*, so a project turn running in the background could lose it (or the main chat get it). It now comes from the chat the turn belongs to (`systemPrompt(chatId)`), like the brief already did.
 - **One back button for the whole app** (`ui/Kit.kt` `BackButton` + `BackTitle`): a 40 dp round tonal button (surface-variant fill, 1 dp outline) with Material's rounded `AutoMirrored.Rounded.ArrowBack` (mirrors for right-to-left), a 48 dp touch target, ripple and a slight press scale, content description "Back", title aligned next to it the same way on every page. Replaces the thin "←" text on Settings (every settings page), the project page, Search, Gallery and Learn's "← Decks"; the browser's page-back uses the auto-mirrored icon. `BackButtonTest` fails the build if a "←" text glyph or the old non-mirrored icon comes back. No square shapes (NoSquareTest).
-- **Old leaked tool syntax hidden when drawn:** a reply saved before v0.28.1 could still show `[github_open repo="LacksonKapapa/Blaze-Agent"]` (Luke's 15:55 bubble, and the same text as a chat preview on the project page). Saved replies and chat previews now go through `ToolLeak.forDisplay` (text without a leak is untouched byte for byte); a reply that was only a leaked call shows "That step didn't run, so nothing was done. Tap Retry to try it again." Copy / Quote use the cleaned text. New replies were already cleaned by v0.28.1, which also maps that exact mixed-case string to opening https://github.com/lacksonkapapahue/Blaze-agent.
+- **Old leaked tool syntax hidden when drawn:** a reply saved before v0.28.1 could still show `[github_open repo="Blazeinchue/Blaze-Agent"]` (Blazeinchue's 15:55 bubble, and the same text as a chat preview on the project page). Saved replies and chat previews now go through `ToolLeak.forDisplay` (text without a leak is untouched byte for byte); a reply that was only a leaked call shows "That step didn't run, so nothing was done. Tap Retry to try it again." Copy / Quote use the cleaned text. New replies were already cleaned by v0.28.1, which also maps that exact mixed-case string to opening https://github.com/blazeinchue/Blaze-agent.
 - No database changes. Prefs: `last_chat_id` reset to `main` once (above); nothing else.
 - Tests: `ChatNavTest` (opening a project chat never changes the main chat id, new chat opens in Projects, back stack, tab switch restores, notification → Projects, deleted chat / project, save + restore), `BackButtonTest`, `ToolLeakTest` (stored leaks hidden at display time, mixed-case repo). Screenshots `71-project-page-back`, `72-project-chat`, `73-project-chat-new`, `74-main-chat-unchanged`, `75-back-buttons`.
 
 ## v0.28.2: security hardening (cleartext, Design view, backups, confirm cards, gateway CORS)
-From an external review Luke checked and agreed with.
+From an external review Blazeinchue checked and agreed with.
 - **Plain http only where it's needed, enforced in code.** Android's network config can't say "LAN only", so it still allows cleartext, and Blaze now checks every model, gateway, MCP, connector and Blaze account call itself (`connect/UrlSafety.kt`: `check` / `open`, `Http.req(strict)`, `LlmClient`, `ModelCatalog`, `ProviderCatalog`, `Quota`, `Mcp`, `BlazeAccount`, `KeySync`, `SkillSync`). `http://` is refused unless the host is this phone (localhost, 127/8, ::1, the emulator's 10.0.2.2), the LAN (10/8, 172.16/12, 192.168/16, link-local, IPv6 ULA), CGNAT / Tailscale (100.64/10), `*.local`, `*.lan`, `*.home.arpa`, `*.ts.net` or a single-label LAN name ("desktop"), with a plain error: "Blocked an unencrypted connection to api.example.com … Use https://api.example.com/v1 instead (or a local, LAN or Tailscale address)." A credentialed http request to the LAN doesn't follow redirects. Reading a public http page (web fetch) still works, but **no request ever sends an Authorization header, API key or token over http to a public host** (`UrlSafety.carriesSecret` / `checkSecret`, also the `http_request` tool). On-device runners (Needle fast lane, BlazeRouter, Ollama / OmniRoute on the PC) are unchanged.
 - **Blaze browser:** an `http://` page shows an orange "Not secure" in the address bar, and secure forms / saved logins (`browser_secure_input`, `{{secret:…}}` typing, `fillSecret`) refuse to fill it unless it's on this phone or the LAN (your router's page still works). A browser click on a button that pays, sends, posts or deletes now always asks first.
 - **Design view WebView:** `allowFileAccess` and `allowContentAccess` are off. Every page comes from the virtual origin through `shouldInterceptRequest`, including a file outside Blaze's home (`/ext/<name>`, served only from that file's own folder; files in the app's private data aren't served) (`DesignServe.servedUrl` / `extRoot`). The top frame can't leave the design's origin: a link the user taps shows "Link to … · Open in browser" (opens Blaze's browser on the tap), anything else is dropped (`DesignServe.allowNavigation`). The `BlazeDesign` bridge (gl / error / ready / fail) still only updates the view; strings are capped (500 / 16 chars) and calls after the view is gone are dropped.
@@ -389,17 +1556,17 @@ From an external review Luke checked and agreed with.
 
 ## v0.28.1: batch 1 fixes: instant grab card, no leaked tool calls, updates that survive slow networks, Markdown everywhere, picture stack + 3D viewer, table cards
 - **Magic Hand grab card opens at once.** Was: after a grab the dock said "Reading what you grabbed…" while it snapped the box (up to 0.7 s), hid every Magic Hand window for 160 ms, took a screenshot, made a new ML Kit recogniser and ran OCR on the full-size crop, and only then showed the card. Now the card (Grabbed · app, shimmer lines, Copy / Translate / Search / Save / Carry, Undo / Grab again) is set in the same frame the finger lifts, with no fade or resize animation (`MagicHandState.reading`). Snapping and the screenshot run in parallel (one screenshot for the drawn box plus room to snap, cropped again for the snapped box), only the Magic Hand windows over the area are hidden (the dock stays up) for two frames, and OCR runs on `Dispatchers.Default` on **one warm recogniser** (created and run once on a 32 px bitmap when Magic Hand starts, closed when it stops), on a crop **downscaled** to 1280 px max. Actions tapped while it's still reading are **queued** ("Copy when ready") and run the moment the text lands; an empty read drops the queue. Remove animations still respected.
-- **No junk lines from text cut by the box** (Luke's "ervAnood lot Hark handlA"): the OCR crop now has a 16 dp margin so cut lines are read whole, then every line whose bounding box is less than 60 % inside the selected box is dropped; lines are ordered by row, then left to right (`phone/MagicHandOcr.kt`).
-- **Leaked tool calls are run, not shown.** Models sometimes answered with the raw text of a call (`[/find_tool need="stock tracking"]`, `[github_open repo="LacksonKapapa/Blaze-Agent"]`, a reply starting `[/blazer_save kind=features text="## App ...`). `agent/ToolLeak.kt` parses bracketed `[/name k="v" …]` / `[name k=v …]` (also unclosed, multi-line values), `<tool_call>name k="v"</tool_call>` / `<tool_call>{json}`, `<function=name>{json}</function>` and `[TOOL_CALLS][…]`. A call that maps to a real tool becomes a real tool call and the turn continues (same step limits): exact / near names first, then aliases: `*_save` / `remember*` → `memory_save` (unknown kinds → project, subject from `kind`), `github_open` / `github_view` → `browser_open` with the repo URL (a misspelt Blaze-agent repo → https://github.com/lacksonkapapahue/Blaze-agent), tool search → `find_tool`. Anything else is stripped and the model is asked **once** to use native tool calling or plain words; if that fails too the reply is one honest line ("I meant to run a step for that but it didn't go through, so nothing was done yet. Could you ask me again?"). Tool syntax is stripped from every displayed / spoken / stored reply (`ReplyParts.split`), including a half-streamed one; specialists get the same recovery. New static system-prompt rule `ToolLeak.PROMPT_RULE` (native tool calling only, never tool syntax in text).
-- **Updates survive slow and flaky networks** (Luke's "UPDATE DIDN'T WORK: The update didn't work: unexpected end of stream"). `update/ApkDownload.kt`: resumable download into `<name>.part` with `Range: bytes=<have>-` (206 appends, 200 starts over, 416 = complete), automatic retries with backoff (2, 4, 8, 16, 30 s; a try that made progress resets the count, 10 failures in a row with no progress = stop and keep the partial file for Retry), 90 s read timeout, 16 KB buffer with an fsync every 512 KB, **mirrors** (the GitHub release asset, then the `apk` branch raw file, then the contents API; switch after 2 failures in a row on one), waits for the network to come back instead of failing (polls every 2 s; mobile data is fine), and checks the exact size and the **git blob SHA-1** from the GitHub listing before the existing signature check. The GitHub token only goes to api.github.com.
+- **No junk lines from text cut by the box** (Blazeinchue's "ervAnood lot H… handlA"): the OCR crop now has a 16 dp margin so cut lines are read whole, then every line whose bounding box is less than 60 % inside the selected box is dropped; lines are ordered by row, then left to right (`phone/MagicHandOcr.kt`).
+- **Leaked tool calls are run, not shown.** Models sometimes answered with the raw text of a call (`[/find_tool need="stock tracking"]`, `[github_open repo="Blazeinchue/Blaze-Agent"]`, a reply starting `[/blazer_save kind=features text="## App ...`). `agent/ToolLeak.kt` parses bracketed `[/name k="v" …]` / `[name k=v …]` (also unclosed, multi-line values), `<tool_call>name k="v"</tool_call>` / `<tool_call>{json}`, `<function=name>{json}</function>` and `[TOOL_CALLS][…]`. A call that maps to a real tool becomes a real tool call and the turn continues (same step limits): exact / near names first, then aliases: `*_save` / `remember*` → `memory_save` (unknown kinds → project, subject from `kind`), `github_open` / `github_view` → `browser_open` with the repo URL (a misspelt Blaze-agent repo → https://github.com/blazeinchue/Blaze-agent), tool search → `find_tool`. Anything else is stripped and the model is asked **once** to use native tool calling or plain words; if that fails too the reply is one honest line ("I meant to run a step for that but it didn't go through, so nothing was done yet. Could you ask me again?"). Tool syntax is stripped from every displayed / spoken / stored reply (`ReplyParts.split`), including a half-streamed one; specialists get the same recovery. New static system-prompt rule `ToolLeak.PROMPT_RULE` (native tool calling only, never tool syntax in text).
+- **Updates survive slow and flaky networks** (Blazeinchue's "UPDATE DIDN'T WORK: The update didn't work: unexpected end of stream"). `update/ApkDownload.kt`: resumable download into `<name>.part` with `Range: bytes=<have>-` (206 appends, 200 starts over, 416 = complete), automatic retries with backoff (2, 4, 8, 16, 30 s; a try that made progress resets the count, 10 failures in a row with no progress = stop and keep the partial file for Retry), 90 s read timeout, 16 KB buffer with an fsync every 512 KB, **mirrors** (the GitHub release asset, then the `apk` branch raw file, then the contents API; switch after 2 failures in a row on one), waits for the network to come back instead of failing (polls every 2 s; mobile data is fine), and checks the exact size and the **git blob SHA-1** from the GitHub listing before the existing signature check. The GitHub token only goes to api.github.com.
 - **Update card:** sentence case ("The update didn't finish", no shouty uppercase), plain lines ("Connection dropped, I'll keep trying in 8 s.", "No connection right now. I'll carry on when you're back online."), progress bar kept while retrying, and **any finished or failed card goes away by itself after about a minute** (also a card left over from before a restart); "Up to date" after 8 s.
-- **Markdown renders everywhere, never raw symbols.** Your own sent bubbles (Luke's "## App", "1. **Offline mode**:"), the text under sent pictures, the assistant panel, "Ask Blaze about this page", work-card steps, specialist card titles and progress lines, and notification text (heads-ups, questions, approvals, `notify`) all render or strip Markdown. While a reply streams, an unclosed `**` / `__` / `~~` / `` ` `` is hidden instead of shown (`Md.tidy`), and `##Heading` without a space is a heading. Copy still copies plain text (your own messages too).
+- **Markdown renders everywhere, never raw symbols.** Your own sent bubbles (Blazeinchue's "## App", "1. **Offline mode**:"), the text under sent pictures, the assistant panel, "Ask Blaze about this page", work-card steps, specialist card titles and progress lines, and notification text (heads-ups, questions, approvals, `notify`) all render or strip Markdown. While a reply streams, an unclosed `**` / `__` / `~~` / `` ` `` is hidden instead of shown (`Md.tidy`), and `##Heading` without a space is a heading. Copy still copies plain text (your own messages too).
 - **Several pictures = a fanned card stack** (sent bubbles): the top picture centred and full size, the next two behind it tilted left and right, smaller and dimmed; swipe left / right flips through them with a spring (instant with Remove animations); dots (or "2/6" from six up); a round ⤢ button and a tap open the full-screen viewer. One picture stays one rounded thumbnail. In the composer the thumbnail row stays (each needs its own ×), and tapping one opens the viewer at it.
 - **Full-screen viewer with a 3D flip:** dragging tilts the current picture on the Y axis (up to 30°, with perspective) as it slides out while the next swings in from the other side, over a dark blurred copy of the picture (blur on Android 12+, a dark wash before); spring settle; Remove animations = a plain slide. Round close (X) top left, round save top right (Pictures/Blaze), "2/5" at the bottom, pinch to zoom and pan (no flipping while zoomed), rubber band at the ends. Used for single pictures too. Code `ui/ImageStack.kt` (`StackMath`, `FlipMath` are pure).
 - **Table cards:** a new ```table block Blaze picks on its own for rows of facts with several columns (in the visual-answers prompt), and every Markdown pipe table is drawn the same way: a dark rounded card (24 dp), bold title and a thin divider, muted grey headers, wrapping white cells with generous row spacing and no grid lines; columns stretch to fill when they fit and scroll sideways inside the card when they don't (edge fades), with the first column kept in view (3+ columns); 8 rows then "Show all N rows". **Copy** = aligned plain text, **TSV** = tab-separated for a spreadsheet; the message's Copy turns a ```table into plain text too (`ui/TableCard.kt`, `RichKit.table`).
-- **Enter never sends** (Luke): in the chat composer, the assist panel, "Ask Blaze about this page", a specialist's Steer / Follow-up box and Design's change box, the keyboard's Enter key (and a hardware keyboard's Enter) inserts a new line; only the send button sends. The boxes are multi-line with the IME's normal Enter (`ComposerKeys.Message`, `ImeAction.Default`) and no Send action or Enter key handler; page chat's Find mode keeps its Search key (it never sends). Magic Hand's dock has no message box (its only field, the routine name, stays one line).
+- **Enter never sends** (Blazeinchue): in the chat composer, the assist panel, "Ask Blaze about this page", a specialist's Steer / Follow-up box and Design's change box, the keyboard's Enter key (and a hardware keyboard's Enter) inserts a new line; only the send button sends. The boxes are multi-line with the IME's normal Enter (`ComposerKeys.Message`, `ImeAction.Default`) and no Send action or Enter key handler; page chat's Find mode keeps its Search key (it never sends). Magic Hand's dock has no message box (its only field, the routine name, stays one line).
 - No database changes. No prefs changes (the update's partial file lives in `cache/update/`).
-- Tests: `MagicHandOcrTest`, `ToolLeakTest` (Luke's three strings exactly), `UpdateDownloadTest` (resume after "unexpected end of stream", server ignoring Range, mirror switch keeping the partial file, waiting for the network, giving up but keeping the file, damaged download, cancel, git blob SHA-1, backoff, mirrors, card words, auto-dismiss), `MdTest` (Luke's sample), `ImageStackTest`, `TableCardTest`, `ComposerKeysTest`. Screenshots `65-magic-hand-grab-reading`, `66-user-bubble-markdown`, `67-update-card`, `68-image-stack`, `69-image-viewer-flip`, `70-table-card`.
+- Tests: `MagicHandOcrTest`, `ToolLeakTest` (Blazeinchue's three strings exactly), `UpdateDownloadTest` (resume after "unexpected end of stream", server ignoring Range, mirror switch keeping the partial file, waiting for the network, giving up but keeping the file, damaged download, cancel, git blob SHA-1, backoff, mirrors, card words, auto-dismiss), `MdTest` (Blazeinchue's sample), `ImageStackTest`, `TableCardTest`, `ComposerKeysTest`. Screenshots `65-magic-hand-grab-reading`, `66-user-bubble-markdown`, `67-update-card`, `68-image-stack`, `69-image-viewer-flip`, `70-table-card`.
 
 ## v0.28.0: My voice: Blaze can speak in your own voice, cloned on the phone
 - **Joey's ask:** "I'm tired of my Android robotic voice, let's use one small voice cloning model that we can download then record our voice for a little bit and then we use that as the voice." New **Settings → Voice → Blaze voice: System voice (default) / My voice.**
@@ -409,7 +1576,7 @@ From an external review Luke checked and agreed with.
 - **Automatic fallback, told once:** if this phone makes speech slower than it plays (`SpeedWatch`: real-time factor, first piece allowed to warm up), the rest of the reply goes to the phone voice and My voice rests for 6 hours; if the engine or model fails or is missing, the phone voice speaks. Each reason is told once in plain words (a toast), e.g. "Your voice is too slow on this phone right now, so I'm using the phone voice."
 - **APK size:** the native runtime is **not** in the APK. `libsherpa-onnx-jni.so` (onnxruntime linked in) for the phone's ABI (~9 MB gz) is downloaded with the model from this repo's `voice-runtime-1.13.8` release (copied unchanged from the official AAR, `tools/voice-runtime.sh`; SHA-256 of the .so pinned in the app) and loaded with `System.load`. The Kotlin API is vendored (`com.k2fsa.sherpa.onnx`, Apache-2.0, kept from R8). Only commons-compress 1.21's bzip2 reader is added (for the model's .tar.bz2).
 - Prefs: new `blaze_voice` (system / mine), `myvoice_quality`, `myvoice_keep_slow`, `myvoice_slow_at`, `myvoice_told`. Files: `files/myvoice/{runtime,model,voice,dl}`. No database changes.
-- Tests: `SpeechChunkerTest`, `AudioClipTest` (trim, pauses, normalise cap, verdicts, WAV round trip, meter), `VoiceRouteTest` (route, 6 h slow cool-down, tell once, A12 defaults, speed watch), `VoicePackTest` (resume after a dropped connection, server ignoring Range, damaged download, cancel, tar reader incl. GNU long names, unpack keeps only model files and checks sizes). Screenshots `63-my-voice-setup`, `64-my-voice-tested`.
+- Tests: `SpeechChunkerTest`, `AudioClipTest` (trim, pauses, normalise cap, verdicts, WAV round trip, meter), `VoiceRouteTest` (route, 6 h slow cool-down, tell once, low-end phone defaults, speed watch), `VoicePackTest` (resume after a dropped connection, server ignoring Range, damaged download, cancel, tar reader incl. GNU long names, unpack keeps only model files and checks sizes). Screenshots `63-my-voice-setup`, `64-my-voice-tested`.
 
 ## v0.27.3: "show me your memories" just shows them; retries stay on your request; no fake 3D; Blaze offers to do it
 - **Root-cause fix: "show me your memories" opened an old solar-panel diagram and called it 3D** (Joey's screenshots: "Checking memory" 11 s → "Doing it properly this time" 26 s → "Doing it for real in Design" 36 s → "Opening the design" 7 s, 1 m 40 s, then "Opened the Solar Panel Working diagram in Design view. You can orbit the model with one finger and zoom with two. If the 3D doesn't load, it falls back to a simple native drawing", over a flat 2D flowchart). Causes, all fixed:
@@ -438,7 +1605,7 @@ From an external review Luke checked and agreed with.
 - Tests: `SelectionActionsTest` (links with and without a scheme, in quotes / brackets; e-mails, file names, "e.g.", numbers aren't links; kinds; the order for long / short / link selections; Quote / Select all switches; the box rule; resolve on tap; search URLs and their cap; prompts and their cap; the nudge rule). Screenshots `61-selection-pill`, `62-selection-pill-dark`.
 
 ## v0.27.1: "Ask Blaze about this page" always answers (pasted links, Lens results, empty and one-word questions)
-- **Root-cause fix: a pasted link got a reply about HTML** (Joey's screenshot, Samsung A12: the user pasted a long Google Lens results link, `google.com/search?…&udm=26&lns_mode=un&source=lns.web…`, into the sheet over a Google page; Blaze answered "The page text you provided does not include the HTML markup of the `<body>` element…"). Two causes: the sheet sent whatever was typed as the question, so the model was asked to "answer" a 2,000-character URL; and it got the page as the agent's element dump (`Elements:` with `[12] link "…" → url` lines), which reads like markup and invited talk about it. Fixes:
+- **Root-cause fix: a pasted link got a reply about HTML** (Joey's screenshot, low-end phone: the user pasted a long Google Lens results link, `google.com/search?…&udm=26&lns_mode=un&source=lns.web…`, into the sheet over a Google page; Blaze answered "The page text you provided does not include the HTML markup of the `<body>` element…"). Two causes: the sheet sent whatever was typed as the question, so the model was asked to "answer" a 2,000-character URL; and it got the page as the agent's element dump (`Elements:` with `[12] link "…" → url` lines), which reads like markup and invited talk about it. Fixes:
   - **What the user means** (`browser/PageQuestion.kt`, pure). A message that is (mostly) one link is parsed: a Google / Bing / DuckDuckGo / Yahoo / Yandex / Baidu / Ecosia / Brave / Startpage / YouTube search link becomes its query (`q`, then `oq`, …) and the question "What does this search show? Answer “query” directly", with a web search for the query; a Google Lens link (`lens.google.com`, or a Google search with `udm=26`, `lns_*`, `source=lns.*`, `vsrid`, `tbs=sbi:`) becomes "Tell me what this Lens / image search shows: what the picture seems to be and the main matches"; the link to the open page itself becomes "What does this page show?"; any other link is read (`Web.fetch`, 4,000 characters) and summarised. Words typed next to the link are kept. The bubble shows a compact **link chip** ("Google Lens result", "Google search · best budget phones"), never the raw URL, and the raw URL never goes to the model as the question.
   - **The page as a person sees it** (`browser/PageAsk.kt`, pure; `BrowserEngine.capture`): title, a short address (host + path; no query for search and Lens pages), the words on the page, button / link / field labels (field values are never read; secrets still scrubbed), and how many pictures there are with their descriptions (alt text). No indices, no element kinds, no element dump.
   - **New rules** for the page chat: always give a useful answer and start with it; never mention HTML, markup, tags, code, the DOM, `<body>`, "page text", "the text you provided" or how the page was read; never say the user gave too little; when little could be read, say in plain words what is visible, use web results and own knowledge (marked), and only as a last resort add one short tip like scrolling to the results and asking again. Fixed at the prompt and input level; replies are not filtered.
@@ -476,14 +1643,14 @@ From an external review Luke checked and agreed with.
 - Tests: `DiagramRenderTest`, `BlazeDbTest`, `MindStoreTest`, `MindUpgradeTest`; `RichRepliesTest`, `RichKitTest`, `VisualRouteTest` updated. No changes to saved chats or prefs.
 - CI fix (test-only): `MindUpgradeTest.bothStoresAnswerTheSame` failed with "No suitable driver found for jdbc:sqlite::memory:". `java.sql.DriverManager` only returns a driver registered from the caller's class loader; the plain JVM tests registered sqlite-jdbc first, so in Robolectric's sandbox class loader the lookup found nothing. The test helper `store/JdbcSql` now connects through `org.sqlite.JDBC` directly. The app itself (bundled SQLite) was never affected. Failing unit tests now print the full exception in the CI log.
 
-## v0.26.2: specialists, Hark-style (parallel, playbooks, Blaze makes its own) + no more "Done." for an empty answer
+## v0.26.2: specialists, side by side (parallel, playbooks, Blaze makes its own) + no more "Done." for an empty answer
 - **Root-cause fix: "Done." instead of an answer** (Jack, 22:37–22:40 on v0.26.0: "what sound profile is my phone set to?" and "am I on mute in terms of device sound profile" both answered "Done.", work card "1 step", the reasoning pane only "The user asks:"). The real path: since v0.25.0 every model call goes through Blaze Cloud (`LlmClient.completeRaw`; the on-phone free chain with its 40 s NVIDIA read timeout in `LlmClient.call` / `FreeRouter` is no longer called, so that timeout wasn't it, and a timeout there would have thrown, not said "Done."). The gateway picks a free upstream and, once the upstream answers 200, pipes its stream through untouched (`gateway/src/chat.ts`). The upstream streamed a little reasoning and then ended the stream with no content and no tool call. `LlmClient.readStream` returned that as a normal message (content `""`), the agent loop took a message with no tool calls as the final answer (the "1 step" was only the "Skills: phone-task-speed" line; no tool ran), and `Session.addReply` turned the empty text into `"Done."`. Inferred from the code and the card, not from a log of that request. Fixes:
   - An empty reply (no visible text after reasoning tags and follow-up chips are stripped, and no tool calls) is a failed try, never an answer (`agent/EmptyReply.kt`). The tries now live in `Cloud.drive` (pure, tested): after the first empty reply the same route is asked again without streaming and with a nudge ("Answer the user now in one or two sentences from what you know and the tool results above"); after the second, the routes that came back empty are sent in a new `blaze_avoid` field so the gateway answers with its next model; after the third the user sees one plain line ("The AI came back without an answer… Tap Retry") instead of "Done.". A stream that breaks after it started (reasoning, then a timeout: code 0) also skips the route that served it on the next try. Sign-in, quota, too-large and bad-request handling are unchanged.
   - Gateway: `blaze_avoid` (at most 8 "provider/model" strings) puts those routes last for that request and is never sent upstream (it starts with `blaze_`); avoiding every route still answers. `avoidSet` in `gateway/src/chat.ts`, test in `gateway/test/worker.test.ts`. Deploys with the Gateway workflow on main (only when the Cloudflare secrets are set); an older gateway ignores the field and the phone's retries still apply.
   - The agent loop's last line of defence: if the final answer is still empty, it shows a specific line only when you asked for an action and a tool really succeeded ("Turned on Do Not Disturb.", from that tool's step line); otherwise it asks the model once more, then shows the plain error. `addReply` never writes a bare "Done." any more.
   - **Phone-state questions answer on the phone, instantly.** Ringer / sound profile / mute / silent / vibrate / Do Not Disturb, battery and network questions ("am I on mute?") are recognised (`agent/PhoneState.kt`) and answered by `SelfControl.quick` from the same readings as the "Phone now" line plus Android's Do Not Disturb filter ("You're not on mute: the ringer is on normal, so calls and notifications ring."), with no model call. Longer ones that still reach the model get a prompt rule (answer from the Phone now line, no tools) and no skill packs. `SkillMatch` now counts generic name words ("phone", "task", "app") once instead of three times, which is why "…my phone…" pulled in the `phone-task-speed` skill and its tool-loop instructions; that starter's description now says it's for actions in apps.
-- **Specialists hand work out without blocking** (Jack: "Hark-style"). `delegate` no longer waits: each brief becomes a background agent running as that specialist (`BgAgents.Bg.specialist`, saved in `bg_agents.json` as an optional key) with its own card in the chat (label "B4 · SHOPPER", Steer / Stop / Open, reusing `AgentCard`). The turn carries on and the chat stays usable. Before two or more tasks a one-line scope note posts ("Sending Researcher and Shopper ×2 to work on this at the same time…", or the model's own `scope` line). Each result posts as soon as it lands: the finished card moves to the bottom of the chat showing the result, and the main Blaze is woken to write a short follow-up from it (and the combined pick when the last one is in). `message_agent` / `cancel_agent` and the card's Steer / Stop work on each running specialist. `delegate wait=true` (and private chats, whose work is never written to disk) keeps the old blocking run. Pure logic in `agent/Dispatch.kt`.
-  - Concurrency: network-only specialists (everything without the phone group) run up to 3 at once even on 3–4 GB phones like the A12, on their own pool; general background agents keep the 1 / 2 (6 GB+) RAM cap; phone-control specialists share that cap and never run two at once. A queued phone or general agent no longer holds up network specialists behind it. Blaze's single background browser is leased to the first agent that uses it; others are told to use web_search / fetch_page meanwhile, and the lease ends with that agent.
+- **Specialists hand work out without blocking** (Jack: "side by side"). `delegate` no longer waits: each brief becomes a background agent running as that specialist (`BgAgents.Bg.specialist`, saved in `bg_agents.json` as an optional key) with its own card in the chat (label "B4 · SHOPPER", Steer / Stop / Open, reusing `AgentCard`). The turn carries on and the chat stays usable. Before two or more tasks a one-line scope note posts ("Sending Researcher and Shopper ×2 to work on this at the same time…", or the model's own `scope` line). Each result posts as soon as it lands: the finished card moves to the bottom of the chat showing the result, and the main Blaze is woken to write a short follow-up from it (and the combined pick when the last one is in). `message_agent` / `cancel_agent` and the card's Steer / Stop work on each running specialist. `delegate wait=true` (and private chats, whose work is never written to disk) keeps the old blocking run. Pure logic in `agent/Dispatch.kt`.
+  - Concurrency: network-only specialists (everything without the phone group) run up to 3 at once even on 3–4 GB phones like the test phone, on their own pool; general background agents keep the 1 / 2 (6 GB+) RAM cap; phone-control specialists share that cap and never run two at once. A queued phone or general agent no longer holds up network specialists behind it. Blaze's single background browser is leased to the first agent that uses it; others are told to use web_search / fetch_page meanwhile, and the lease ends with that agent.
   - One specialist per target: briefs that are the same target twice in one call, or that a running specialist of the same kind already has, are rejected with the reason (steer it instead). At most 6 per call.
   - A specialist running in the background gets its own focused prompt (its playbook, skill packs, memory) and only its groups' tools, like the blocking run.
   - Prompt guidance (the per-turn hint and core skill `blaze-specialists` v2): delegate only when it helps (independent parallel parts, big research); small or sequential work stays with Blaze; never two specialists on the same target; follow up as results land.
@@ -498,7 +1665,7 @@ From an external review Luke checked and agreed with.
   - **Skills by lookup**: the per-turn prompt no longer lists up to 6 matched skills plus up to 40 other names (`SkillPacks.promptBlock`) and the top 3 learned skills with 400 characters of steps (`Learning.promptBlock`). One index of every enabled skill (bundled, your own, learned) ranked like Blaze Desktop's store (bm25 over name / description / when-to-use, weights 10 / 5 / 1; `agent/SkillIndex.kt`) puts only the 2–3 best matches in the prompt with a short description, and one line: "use_skill / find_skill to search for more". New tool `find_skill` (core, read-only). The index is rebuilt when the skill set changes (install, toggle, learn, delete; keyed on a signature of the skills). Skills attached in full by the per-turn match aren't listed twice. `find_tool` now ranks tools the same way (name / description / group, 10 / 3 / 2) with the old word score as fallback; which tools are sent each turn is unchanged (ToolRouter already sends core + matched groups, not every schema).
   - Chart x-axis labels longer than 10 characters end in an ellipsis ("Livingsto…") instead of being cut silently ("Livingston") (`RichKit.axisLabel`).
 - Judgment call: the untracked `store/BlazeDb.kt` (a port of Desktop's internal/store schema v1 with FTS5) has its `Sql` interface but no `AndroidSql`, no bundled SQLite and no sqlite-jdbc dependency, and none can be verified without a local Android toolchain, so it stays out of this release (memory isn't migrated here either). The skills index uses the same ranking in plain Kotlin and can move onto blaze.db with the memory release.
-- Tests: `DispatchTest` (A12 slots: 3 network specialists beside a general agent, phone ones one at a time, queue passing; one per target; scope line; immediate return; result message; card to the bottom; browser lease), `PlaybooksTest` (all ten built-ins pass and have six sections; Designer and Coder carry Jack's asks; rejections for a missing section, thin, generic, copied, secret and off-field playbooks with exact feedback; injection into the specialist prompt; review parsing; generation retry), `SpecialistStoreTest` (old prefs load, round trip with playbook / made_by, create_specialist rejects then accepts, built-in and user ids protected, the new one matches in later turns), `SkillIndexTest` (name outranks description, only top matches, no name list, find_skill, generic name words), `EmptyReplyTest` (a reasoning-only reply is retried without streaming plus nudge, then sent to the next model, never "Done."; three empties fail plainly; a mid-stream timeout skips that route; tool calls are an answer; sign-in / quota unchanged; an action plus a successful tool gives "Turned on Do Not Disturb."), `PhoneStateTest` (Jack's two questions, actions excluded, answers), `PolishTest` (fresh-start hidden, chip row, axis ellipsis, design check). ShotsTest `60-specialists-chip-row`. Gateway test for `blaze_avoid`. No database changes; prefs, saved chats and `bg_agents.json` backward compatible.
+- Tests: `DispatchTest` (low-end phone slots: 3 network specialists beside a general agent, phone ones one at a time, queue passing; one per target; scope line; immediate return; result message; card to the bottom; browser lease), `PlaybooksTest` (all ten built-ins pass and have six sections; Designer and Coder carry Jack's asks; rejections for a missing section, thin, generic, copied, secret and off-field playbooks with exact feedback; injection into the specialist prompt; review parsing; generation retry), `SpecialistStoreTest` (old prefs load, round trip with playbook / made_by, create_specialist rejects then accepts, built-in and user ids protected, the new one matches in later turns), `SkillIndexTest` (name outranks description, only top matches, no name list, find_skill, generic name words), `EmptyReplyTest` (a reasoning-only reply is retried without streaming plus nudge, then sent to the next model, never "Done."; three empties fail plainly; a mid-stream timeout skips that route; tool calls are an answer; sign-in / quota unchanged; an action plus a successful tool gives "Turned on Do Not Disturb."), `PhoneStateTest` (Jack's two questions, actions excluded, answers), `PolishTest` (fresh-start hidden, chip row, axis ellipsis, design check). ShotsTest `60-specialists-chip-row`. Gateway test for `blaze_avoid`. No database changes; prefs, saved chats and `bg_agents.json` backward compatible.
 
 ## v0.26.1: visual answers, picked automatically + "Thinking it through" instead of raw reasoning
 - **Blaze picks the format by itself** (like ChatGPT's Intelligent UI). Jack asked "how do solar panels work?" and got plain text: the v0.24.9 prompt told the model to use rich blocks "only when it really helps", so it almost never did. `RichReplies.PROMPT` is rewritten (still one static string, so the provider's cached prefix holds; left out only when Visual answers is off): how something works → a Mermaid flowchart plus 2–3 sentences; comparisons → a compare card; numbers and trends → a chart; anything with an amount you could change → a mini tool; a choice to make next → tappable buttons; several missing details → a small form; simple facts and chit-chat stay plain text; at most two visuals per answer. It carries worked examples (solar panels → Sunlight → Solar cells → DC power → Inverter → AC power → Home; "split a K450 bill between 3 with 10% tip" → K165 each plus a bill splitter; "compare iPhone 16 vs Galaxy S25" → a compare card).
@@ -543,13 +1710,13 @@ From an external review Luke checked and agreed with.
 - "VPN that just works" moves to v0.25.3.
 
 ## v0.25.1: Linux desktop on the phone
-- **Settings › Advanced › Desktop (Linux)** (view `linux`, aliases linux desktop / xfce / vnc): a real XFCE desktop (terminal, Thunar, Mousepad, NetSurf) inside Blaze's Alpine Linux (proot) under TigerVNC bound to 127.0.0.1 with a random 8-character password (`desktop/DesktopPlan.kt`, `desktop/LinuxDesktop.kt`). Packages come free from Alpine on first Start (~260 MB download, ~750 MB on disk); A12-friendly defaults 1024×576, 16-bit; refuses to start below 350 MB free RAM; unsupported CPUs get one plain line.
+- **Settings › Advanced › Desktop (Linux)** (view `linux`, aliases linux desktop / xfce / vnc): a real XFCE desktop (terminal, Thunar, Mousepad, NetSurf) inside Blaze's Alpine Linux (proot) under TigerVNC bound to 127.0.0.1 with a random 8-character password (`desktop/DesktopPlan.kt`, `desktop/LinuxDesktop.kt`). Packages come free from Alpine on first Start (~260 MB download, ~750 MB on disk); low-memory-friendly defaults 1024×576, 16-bit; refuses to start below 350 MB free RAM; unsupported CPUs get one plain line.
 - Blaze's own RFB viewer (`desktop/Rfb.kt`, `ui/LinuxDesktopPage.kt`): full screen, touch as a mouse, on-screen keyboard.
 - `desktop` agent tool so Blaze can install / start / stop and use the desktop (screenshots, xdotool), with a confirm card first.
 - Tests `DesktopPlanTest`, `RfbTest`; ShotsTest page. THIRD_PARTY_NOTICES lists the open-source packages. No database changes; prefs backward compatible.
 
 ## v0.25.0: Blaze Cloud only, Magic Hand can't lock the phone, swipeable Undo bar
-Bug-fix release from Luke's Galaxy A12 reports. (The planned "VPN that just works" moves to v0.25.2; v0.25.1 is the Linux desktop.)
+Bug-fix release from Blazeinchue's phone reports. (The planned "VPN that just works" moves to v0.25.2; v0.25.1 is the Linux desktop.)
 - **Magic Hand lock-up fixed** (had to reboot): in teach mode the dock's review step made its window focusable *without* `FLAG_NOT_TOUCH_MODAL`, so it captured every touch on the screen, and it sat over the navigation bar; meanwhile every accessibility event (System UI, Samsung capture…) was handled on the UI thread with binder calls, which froze Blaze into "isn't responding". Now (`phone/MagicHandSafety.kt`): the highlight layer is never touchable, the hand and dock are always `NOT_TOUCH_MODAL`, the dock sits above the nav bar / gesture area, the hand is clamped on screen; probing what's under the tip, teach events, screenshots, crops and OCR run off the UI thread with timeouts; key events are only observed, never consumed.
 - **Escape hatches**: Back twice, a long-press on the dock, an ongoing **Stop Magic Hand** notification, and a watchdog that closes Magic Hand when the UI thread stalls for over 3 s (ending Blaze's process if it stays frozen) or after 10 idle minutes.
 - **Teach mode**: a plain explainer with **Start** ("Teach Blaze a routine: tap Start, do the task once in any app, tap Done…"), then **Undo last step / Cancel / Done**, a 30-step limit; System UI, Android, launchers, screenshot tools, keyboards and Blaze are ignored; steps use button text or descriptions, never class names like `MainUiViewForStandAlone$7`.
@@ -585,8 +1752,8 @@ Bug-fix release from Luke's Galaxy A12 reports. (The planned "VPN that just work
 - Tests: `MagicHandTest`, `MagicHandStateTest`, `TaskDedupeTest`; screenshots 48–52 (dock, menu, grab, teach review, watches). No database changes; prefs unchanged.
 
 ## v0.24.5: Blaze's real mascot (pointer, launcher and notification icons), always-on pointer, Blaze-themed dialogs and work banner
-Luke couldn't see the old arrow pointer at all, wanted it on screen the whole time Blaze drives the phone, and sent the real mascot: a flame / teardrop with its tip at the top right, orange at the top to bright blue at the bottom, two dark rounded eyes and a soft orange / blue glow.
-- **The mascot, drawn as vectors** (`phone/Mascot.kt`: one shape in body units, traced from Luke's art; the gradient, cyan middle, eyes and glow colours). v0.24.4's invented "spark blob" is gone everywhere.
+Blazeinchue couldn't see the old arrow pointer at all, wanted it on screen the whole time Blaze drives the phone, and sent the real mascot: a flame / teardrop with its tip at the top right, orange at the top to bright blue at the bottom, two dark rounded eyes and a soft orange / blue glow.
+- **The mascot, drawn as vectors** (`phone/Mascot.kt`: one shape in body units, traced from Blazeinchue's art; the gradient, cyan middle, eyes and glow colours). v0.24.4's invented "spark blob" is gone everywhere.
 - **Launcher icon**: adaptive foreground = the mascot with its gradient, eyes and glow on a dark `#212226` background (`drawable/ic_launcher_foreground.xml`, `ic_launcher_background.xml`); **themed icon** = the silhouette with the eyes cut out (`ic_launcher_monochrome.xml`); **notification small icon** = the white silhouette with the eyes cut out (`ic_stat_blaze.xml`). The orb (pixel B) never used the blob and is unchanged.
 - **Pointer = the mascot** (`phone/Pointer.kt`): 52 dp tall in a 64 dp window (easy to grab; was 44 dp), gradient body, eyes, glow, a thin white edge and a soft shadow so it reads on light, dark and busy apps. The flame tip is the click point (a tiny white dot marks it). It pulses lightly while gliding, squishes on click around the tip (the click point never moves) with a ring at the tip, and its edge turns orange while you hold it.
 - **Always on while Blaze controls apps**: it no longer hides after 3 s; it stays on top of every app until the task ends. Agent taps always show it: the Settings › Phone control switch is now a one-line note, and the `show_pointer` pref is kept (old prefs load) but ignored. Every gesture path goes through it: tap and long-press, typing into a field (it glides to the field before focusing), scroll (to the list, or the swipe start), swipes (glide to the start, draw the path, end at the finish) and watcher taps (`tapNode`, e.g. Quick Settings tiles).
@@ -597,7 +1764,7 @@ Luke couldn't see the old arrow pointer at all, wanted it on screen the whole ti
 - No database changes; prefs unchanged (`show_pointer` stays readable). applicationId and signing unchanged.
 
 ## v0.24.4: simpler day to day (icon, one status notification, background updates, private chat, seven-row Settings, setup gate)
-Luke: one big "simplify-day" release (planned as v0.25.0, then v0.24.2; v0.24.3 landed first, so it ships as v0.24.4). Versioning rule from here (Luke 2026-10-13): bump the patch only (v0.24.N+1) per release.
+Blazeinchue: one big "simplify-day" release (planned as v0.25.0, then v0.24.2; v0.24.3 landed first, so it ships as v0.24.4). Versioning rule from here (Blazeinchue 2026-10-13): bump the patch only (v0.24.N+1) per release.
 - **Spark blob icon.** The launcher icon is a paper blob with Blaze's accent spark (`drawable/ic_launcher_foreground.xml`), with a themed **monochrome** layer (`ic_launcher_monochrome.xml`, spark cut out) for Android 13 themed icons. The status-bar icon (`ic_stat_blaze.xml`) is the monochrome blob instead of the pixel "B", so every notification changes with it. (No blob artwork existed in the repo or in Blaze Desktop, whose logo is still the pixel B; the blob was drawn to match the brand colours.)
 - **One combined status notification** (`notify/StatusNote.kt`, `Notifier.working/doneWorking/needs/update/visible/stopEverything`). One ongoing line says what Blaze is doing: "Thinking…", "Browsing…", "Downloading update 42%" or "Needs you: …" (a question, a confirm, a secure form), with **Stop**, which cancels the agent work and any update download. Agent work isn't repeated in the shade while Blaze is on screen; downloads and needs still show. Channel renamed "Blaze status" (same id). Kept separate on purpose: the Life logs and wake word microphone foreground notifications (merging would break their foreground type) and the routine / terminal-jobs `dataSync` foreground notifications.
 - **Background updates** (`update/Updater.kt`). The update runs in its own scope, not the chat turn: the `update_blaze` tool starts it and returns, `/update` and the card start it, and **Stop** (notification, card page) cancels between chunks and deletes the partial file. At most once a day on launch Blaze quietly checks; if a newer build is published the update card appears with Install (nothing downloads until you tap). There's only ever **one update card** (`Agent.hasCard`), and it disappears a moment after the update finishes or when you're already up to date (`Agent.removeCard`).
@@ -610,7 +1777,7 @@ Luke: one big "simplify-day" release (planned as v0.25.0, then v0.24.2; v0.24.3 
 - Prefs: new keys only (`setup_deps_done`, `setup_later`, `setup_backup_v`, `show_tech_lines`, `update_last_check`); nothing removed or renamed. applicationId and signing unchanged.
 
 ## v0.24.3: core skills, specialists and workflows, every turn
-Luke: make Blaze's answers and work better with strong built-in workflows and a character, and make it use them every turn.
+Blazeinchue: make Blaze's answers and work better with strong built-in workflows and a character, and make it use them every turn.
 - **Six core skills** (`assets/skills/blaze-*`, original text): `blaze-voice` (answer first, no filler, short texting-style messages, one pick with the reason, specifics over adjectives, match the mood, bad news first with a way forward, no faked feelings or facts, next offer only when the next step is yours, views over text walls, honest about being an AI), `blaze-task-workflow` (restate the goal, ask 1–2 short questions only when the answer changes the result, look it up first, cheapest tool first: memory → search/fetch → browser/phone, verify, retry differently and stop after two loops with options, confirm money/messages/deletions, deliver the thing, save preferences), `blaze-coding-workflow` (read first, minimal diffs, match the style, no invented APIs, build/test until green, protect data and secrets, logical commits, small runnable examples), `blaze-views` (the real views and their tools: Learn, Design, Schedule, Memory, Gallery, Projects, Skills, Browser, Archive), `blaze-specialists` and `blaze-workflow-builder`.
 - **Always on** (`agent/CoreSkills.kt`): each core skill's "Pinned" rules go into the static part of the system prompt every turn (≈ 1,500 tokens, budget 6,400 chars, read from the shipped assets so an edit in ~/skills can't drop them). Core skills can't be switched off or deleted, come back if their folder is removed, and show first in Skills under **Core** (no switch; Restore original still resets your edits).
 - **Specialists every turn** (`agent/SpecialistMatch.kt`): a keyword match (no model call) picks up to two specialists for the request; their skill packs are attached to the turn's skills, `delegate` is switched on, a hint says to keep small work and split big work into one tight brief per target, and the work card shows "Specialist: …". New built-in specialists **Shopper**, **Booker**, **Tutor** and **Designer** (never buy, pay or book; return options and a pick). Delegated specialists get their skill packs in their own prompt and can use browser / flashcards / design tools when their groups allow.
@@ -619,14 +1786,14 @@ Luke: make Blaze's answers and work better with strong built-in workflows and a 
 - No prefs or database changes (`skills_off` simply ignores core names). applicationId and signing unchanged.
 
 ## v0.24.1: a rounder composer with suggestions
-Luke: the text box was still too square; he sent a reference (a dark rounded pill with + on the left, "Follow up" in light grey, a mic on the right).
+Blazeinchue: the text box was still too square; he sent a reference (a dark rounded pill with + on the left, "Follow up" in light grey, a mic on the right).
 - **Reference composer** (`ui/Shell.kt` `Composer`). A fully rounded pill, a fill one step off the background (lighter in dark mode, like the reference) with a thin 1 dp outline, a thin **+** on the left (attach and tools; turns into × with the menu open), and an outline **mic** on the right that becomes a round **send arrow** as soon as there's text (a stop square while Blaze works). Placeholder in light grey, regular weight, 16 sp. Long or multi-line messages keep the rounded ends.
 - **Rotating placeholder** (`agent/ComposerHints.kt`, `ui/ComposerHintsSource.kt`). Every ~3 s the placeholder fades and slides to the next suggestion; it stops while the field is focused or has text, while listening, and when the phone's animations are off (reduced motion). Up to 8 suggestions, rebuilt each time Blaze comes to the front, only from what's on the phone: connected accounts ("Check my Gmail…", "Check my GitHub notifications…", "Play something on Spotify…"), launchable apps from the package manager ("Open WhatsApp…", "Play lo-fi on YouTube…"), birthdays in memory ("Wish Gloria happy birthday" when a person's remembered birthday is today), calendar events and reminders in the next 24 h ("Get me ready for NET103 quiz"; calendar only if access was already granted, never asked), and the newest project ("Pick up HomeGlow store…"). Generic fallbacks fill the rest. No network or model calls; nothing leaves the device.
 - **Tests:** `ComposerHintsTest` (fallbacks, only accounts/apps you have, app matching, birthday parsing and today-only, next-24 h window, cap/dedupe/clean, recent topic). Screenshot `43-composer` (idle with hints, typing → send, working → stop, light and dark); every chat shot shows the new pill.
 - No prefs or database changes. applicationId and signing unchanged.
 
 ## v0.24.0: messaging-style chat, /clear, no conversation switcher
-Luke: "Let's add a /clear command, it clears the screen of all the messages… I want the conversations windows to not exist at all (the one that comes from holding the chat button at the top {chat|projects}) its only there to switch between chats and projects tab. Everything looks too uniform and boxed, I want it to look like a messaging platform just with our classic theme."
+Blazeinchue: "Let's add a /clear command, it clears the screen of all the messages… I want the conversations windows to not exist at all (the one that comes from holding the chat button at the top {chat|projects}) its only there to switch between chats and projects tab. Everything looks too uniform and boxed, I want it to look like a messaging platform just with our classic theme."
 - **/clear** (`agent/ClearScreen.kt`, `Agent.clearScreen` / `undoClear`). Empties the visible thread so the chat starts empty (the greeting shows). Nothing is forgotten: the conversation's history stays in the chat file, the journal (`mind.db`, `search_chat`) and the long-chat index, and Blaze starts a new context window at that point (like Fresh start, without the bubble), so it looks older words up instead of answering from text you can't see. A floating **"Chat cleared · nothing is forgotten  UNDO"** bar puts everything back for ~12 s while nothing new was sent (no blocking dialog). Also in the slash list, `/help` and the + menu (**Clear screen**). Works in project threads too. While Blaze is working it says to stop first. The cleared state is saved, so messages don't come back on restart.
 - **No conversation switcher.** The "Conversation" rail that opened from the Chat side of the Chat | Projects toggle, the Archive sheet (`ChatsSheet.kt`, deleted), the `chats` / Archive view, `/chats` and the chat list in Search are gone. The toggle only switches tabs. Search now finds views and offers **"Ask Blaze what you said about …"**, which searches every past conversation with `search_chat`. `/chats`, `/history` and `/archive` answer with a one-line note. Data is untouched: chat files, `mind.db`, `longchat.db`, projects and prefs load as before; the app opens the main conversation (or the project thread you were in); `/new` still gives a fresh context (a new thread in a project), and project threads open from Projects.
 - **Messaging look, same classic theme** (`ui/Bubbles.kt`, new). Your messages: ink bubbles on the right. Blaze's: soft bubbles on the left (code and tables sit inset inside them). Consecutive messages from one side group 3 dp apart (16 dp between groups), with asymmetric corners: the sharp corner points at the sender on the first bubble, joined corners are tighter, the end rounds off. One quiet mono timestamp ("14:02", "Yesterday 09:05") with Copy · Quote · Retry closes each group instead of a row under every message. Errors are a Blaze bubble with an accent wash, follow-ups are rounded accent pills, the scroll-to-bottom button is round.
@@ -641,17 +1808,17 @@ Luke: "Let's add a /clear command, it clears the screen of all the messages… I
 - **Real reasons.** The catch-all "couldn't finish that one" message now includes the provider's actual reply (up to 160 characters), so a bad model, a plan limit or a region block is visible.
 
 ## v0.23.5: 3D designs survive bad objects
-On Luke's Galaxy A12 a 3D design stopped with "Cannot read properties of null (reading 'morphAttributes')". The model had named a part's shape something the starter didn't know ("Cylinder", "nosecone", "CylinderGeometry"…), the starter's `geometry(p)` returned null, and three.js r170's `Mesh` constructor read `geometry.morphAttributes` and threw, so nothing drew; the native fallback drawing also skipped unknown shapes and showed an empty box.
+On Blazeinchue's phone a 3D design stopped with "Cannot read properties of null (reading 'morphAttributes')". The model had named a part's shape something the starter didn't know ("Cylinder", "nosecone", "CylinderGeometry"…), the starter's `geometry(p)` returned null, and three.js r170's `Mesh` constructor read `geometry.morphAttributes` and threw, so nothing drew; the native fallback drawing also skipped unknown shapes and showed an empty box.
 - **Safety net for three.js** (`assets/design/three-safe.js`, new). Every served page's importmap now points `three` at `/three/three.safe.js` (or `/three/r162/three.safe.js`), which re-exports the bundled build and patches it: a Mesh / Line / Points made with a null geometry or material gets an empty one and is hidden instead of throwing, objects nulled later are fixed before each frame, `Box3` skips them, and a repeating render error is reported once. Files on disk are untouched.
 - **Hardened 3D starter** (three-d-design `mockup.html`). Shape names are normalised (case, `THREE.` prefix, `Geometry` suffix, aliases like cube, tube, nosecone, dome, ring, pill), unknown names are guessed from the part's dimensions, numbers are checked, and one bad part can't stop the rest of the scene. A spec with no parts array still opens.
 - **Same rules in Kotlin** (`Designs.normShape`, `normalizeSpec`, `shapeAliases`). The `design` tool, the served page (`DesignServe.prepareHtml` cleans the parts block) and the native drawing all agree on a part's shape, ids are unique and non-blank, and entries that aren't objects are dropped. Pages made from an older stock starter (no hand-written CUSTOM code) are served and updated from the current starter with the same parts (`Designs.upgradeStarter`).
 - **Native drawing** (`ui/PartsSketch`). Unknown shapes are drawn as boxes, faces with NaN / infinite coordinates are skipped instead of breaking the fit, and when nothing can be drawn the view says "No drawable parts in this design yet" instead of showing an empty box.
-- **CI** runs `node app/src/test/js/design-safe.test.mjs` before Gradle: it reproduces the A12 error with raw r170 and checks the safety net (r170 and r162) and the starter with a rocket full of bad parts.
+- **CI** runs `node app/src/test/js/design-safe.test.mjs` before Gradle: it reproduces the test phone error with raw r170 and checks the safety net (r170 and r162) and the starter with a rocket full of bad parts.
 - **Tests:** `DesignRenderTest` (shape aliases, `normalizeSpec`, upgrading stock starter pages, the sketch for a rocket with bad shape names and non-finite numbers, `prepareHtml` cleaning parts, `three.safe.js` served for both builds, importmaps pointing at the safety net).
 - No prefs or database changes; existing `~/designs` files open unchanged. applicationId and signing unchanged.
 
 ## v0.23.4: Auto tries every free model, and remembers what failed
-Luke: "auto routing is poor, it picks default models per provider and rotates among those; when they don't work or are rate limited I cannot talk anymore. Each provider has many models… Hopping between providers is fine, looking for working models, but make sure those that failed are not tried again until all models per provider have been tried." (NVIDIA NIM no longer lists the old default `meta/llama-3.3-70b-instruct`, so Auto's NIM entry just 404'd.)
+Blazeinchue: "auto routing is poor, it picks default models per provider and rotates among those; when they don't work or are rate limited I cannot talk anymore. Each provider has many models… Hopping between providers is fine, looking for working models, but make sure those that failed are not tried again until all models per provider have been tried." (NVIDIA NIM no longer lists the old default `meta/llama-3.3-70b-instruct`, so Auto's NIM entry just 404'd.)
 - **Every model per provider** (`agent/ProviderCatalog.kt`). For each provider in the chain (Gemini, Groq, Cerebras, NVIDIA NIM, OpenRouter, Mistral, DeepSeek, Kimi, and keyless Pollinations) Blaze fetches the model list: OpenAI-compatible `/models`, Gemini's models API, OpenRouter's public list filtered to `:free` / zero price (expired ones dropped), Pollinations' public list. Only chat-capable text models are kept (embeddings, TTS, Whisper, guard / safety, image, rerank, reward, OCR/parse, translate, retired Groq models and deprecated Mistral models are dropped). Tool calling comes from the API where it says (OpenRouter `supported_parameters`, Mistral `capabilities`, Gemini vs Gemma, Pollinations `tools`), otherwise a small known list. Order: your chain pick, then the curated defaults, then the rest by family / size / "mini, coder, preview" penalties. A built-in default the provider no longer lists is dropped instead of 404ing every turn.
 - **Cached for a day** in `filesDir/model_catalog.json` (new file), refreshed in the background when older than 24 h or when the key changes; offline or after a failed fetch the last list stays, then the defaults. A provider that was never listed is fetched once, mid-turn, when its defaults run out.
 - **Failure memory** (`agent/ModelMemory.kt`, `filesDir/model_state.json`, new file; no prefs keys changed). Per model: ok, rate-limited until T (from retry-after / rate-limit headers via `Budget`), or failed with a reason. Cooldowns: retired / not found / decommissioned 24 h, 403 6 h, other 4xx 15 min, 5xx 2 min, timeouts 3 min. A rejected key (401) or an OpenRouter daily free cap rests the whole provider. "Can't use tools" is remembered for a day and only keeps the model out of tool turns.
@@ -662,10 +1829,10 @@ Luke: "auto routing is poor, it picks default models per provider and rotates am
 - applicationId and signing unchanged; keys and prefs untouched (the saved chain `free_chain` and `free_chain_removed` read as before).
 
 ## v0.23.3: 3D designs always render
-On Luke's Galaxy A12 (Android 12, PowerVR GE8320) the design "simple-rocket" showed only its parts panel and, after 8 s, "The 3D engine didn't load, so the scene can't be drawn", on 4G. three.js never started (`window.__blazeScene` was never set). Three causes, all handled:
+On Blazeinchue's phone (Android 12, PowerVR GE8320) the design "simple-rocket" showed only its parts panel and, after 8 s, "The 3D engine didn't load, so the scene can't be drawn", on 4G. three.js never started (`window.__blazeScene` was never set). Three causes, all handled:
 - **Designs load from a virtual https origin, not file://** (`ui/DesignServe.kt`, served by `ui/DesignView.serveDesign`). `https://appassets.androidplatform.net/designs/…` is `~/designs`, `/home/…` the rest of Blaze's home, `/three/…` the bundled three.js; the page's three.js importmap is rewritten to those same-origin URLs (with `text/javascript`), so module imports no longer cross from an opaque `null` origin to intercepted CDN responses. The CDN interception stays as a fallback (and for files outside Blaze's home, which still open as file://). **Open** still hands the real file to the browser.
 - **WebGL fallback.** three.js r163+ needs WebGL 2, which Chromium's GPU blocklist often turns off on PowerVR Rogue GPUs. A small script injected first into every served page checks WebGL 2 and WebGL 1 before the renderer is made and picks the build: r170 with WebGL 2, **three.js r162** (newly bundled in `assets/design/three-r162`, the last release with WebGL 1, MIT) with only WebGL 1. If r170 fails anyway the view retries once with r162; if that fails or there's no WebGL at all, the page calls the `BlazeDesign` bridge and the Design view swaps to the native drawing of the same parts (`ui/PartsSketch`), which now turns with one finger and zooms with a pinch. Something always renders.
-- **Ready, not a timer.** The page reports ready through the bridge once `window.__blazeScene` exists and a sample of the canvas shows it really drew (a blank canvas counts as a failure). The 8 s in-page timer is gone from the app; a 3D page now gets 20 s (the A12 parses three.js slowly), and an error before ready falls back after 2 s instead of waiting.
+- **Ready, not a timer.** The page reports ready through the bridge once `window.__blazeScene` exists and a sample of the canvas shows it really drew (a blank canvas counts as a failure). The 8 s in-page timer is gone from the app; a 3D page now gets 20 s (the test phone parses three.js slowly), and an error before ready falls back after 2 s instead of waiting.
 - **The real error, with Retry.** Errors are caught from `window.onerror` (including failed module and script loads), unhandled promise rejections and `WebChromeClient.onConsoleMessage` ("Failed to load module script", shader errors, WebGL context errors). The banner shows the actual text and a **Retry** button; the last errors are written to `~/designs/.last_error.txt` (removed when a design draws), and the `design` tool's create / update / open / read results mention that file when it's there, so Blaze can see what went wrong.
 - New 3D pages carry a 20 s in-page message with the real error for browsers outside Blaze; v0.23.2 pages are upgraded on their next update and still open as they are.
 - **Screenshot:** `37-design-3d-fallback` (the native drawing with the error banner and Retry).
@@ -673,7 +1840,7 @@ On Luke's Galaxy A12 (Android 12, PowerVR GE8320) the design "simple-rocket" sho
 - No prefs or database changes; existing `~/designs` files open unchanged. applicationId and signing unchanged.
 
 ## v0.23.2: Design everything + no fake claims
-Luke asked for a 3D rocket on his Galaxy A12 and got "I'm on that tall modern 3D rocket… view it in the design section", then "I've updated the design to show the engine" and "I've opened the design view", with no design ever made, and replies from NVIDIA NIM's google/… models began with `<|channel>thought\n<channel|>`. His words: "Design is more than just for art, sites and that, like desktop it's also for 3d views and almost anything."
+Blazeinchue asked for a 3D rocket on his low-end phone and got "I'm on that tall modern 3D rocket… view it in the design section", then "I've updated the design to show the engine" and "I've opened the design view", with no design ever made, and replies from NVIDIA NIM's google/… models began with `<|channel>thought\n<channel|>`. His words: "Design is more than just for art, sites and that, like desktop it's also for 3d views and almost anything."
 - **Design is for anything visual or interactive**, like Blaze Desktop's Design tab: 3D scenes and models, 2D art, sites and landing pages, UI mockups and app screens, diagrams, charts, posters, slides, floor plans, product mockups, simple games. A new **`design` tool** (`agent/Designs.kt`, always available) makes real files in `~/designs/<name>/index.html` and opens them in Design. **3D**: Blaze sends a parts list (box, cylinder, cone, sphere, torus, capsule, plane, group, with position, rotation, colour, material, parent, visible) and the page is generated from the three-d-design skill's starter (three.js, orbit controls, parts table, .glb export, `window.__blazeScene`, Desktop's `blaze-parts` contract), so the model never writes three.js by hand. Pages and everything 2D: `html` or `svg`.
 - **Iterative edits change the same design.** The tool keeps a current design (`~/designs/current.json`); `update` merges 3D parts by id (`set_parts`, `remove_parts`, removing a group removes its children) or applies exact find/replace `edits` to pages; every update keeps the previous version (last 10) for `undo`; `read`, `open`, `list`. An update that changes nothing is an error.
 - **Follow-on edits.** When the last turn made, changed or opened a design (or you're in the Design view, or a design was touched in the past 30 minutes), a short edit ("show engine", "add fins", "make it taller", "open it for me so I can see") routes to Design with a hint naming the current design and `design action=update` / `open`. Requests about other things (calendar, messages, weather…) are left alone.
@@ -686,7 +1853,7 @@ Luke asked for a 3D rocket on his Galaxy A12 and got "I'm on that tall modern 3D
 - No prefs or database changes (designs are files in Blaze's home); applicationId and signing unchanged.
 
 ## v0.23.1: Linux works again after updates
-- **Fix:** after an app update every Alpine/proot job failed with `CANNOT LINK EXECUTABLE ... libproot.so: library "libtalloc.so.2" not found` (seen on the A12 for the BlazeRouter job). `filesDir/linux/lib/libtalloc.so.2` is a symlink to the APK's native library folder, which Android moves on every update; the old link was left dangling and never replaced. `Linux.prepare()` now checks the link on every run and re-points it (copying the library if symlinks fail). No data, prefs or signing changes.
+- **Fix:** after an app update every Alpine/proot job failed with `CANNOT LINK EXECUTABLE ... libproot.so: library "libtalloc.so.2" not found` (seen on the test phone for the BlazeRouter job). `filesDir/linux/lib/libtalloc.so.2` is a symlink to the APK's native library folder, which Android moves on every update; the old link was left dangling and never replaced. `Linux.prepare()` now checks the link on every run and re-points it (copying the library if symlinks fail). No data, prefs or signing changes.
 
 ## v0.23.0: Views + skills
 - **Blaze always uses its views.** A new always-present **VIEWS** block in the system prompt (`agent/ViewRouter.PROMPT`, in the cached prefix) lists every view (Learn, Schedule, Design, Gallery, Skills, Projects, Archive, Memory, Browser), what belongs there and the tool that writes to it, with a hard rule: output that fits a view is created there, the view is opened or named, and the chat gets one or two lines, never the whole thing as text. Fixes Blaze answering "make flashcards" with plain-text Q&A and saying it only uses views "when I use the specific tool to open them". SelfKnowledge's views section says the same.
@@ -710,21 +1877,21 @@ Luke asked for a 3D rocket on his Galaxy A12 and got "I'm on that tall modern 3D
 - **Screenshots:** `26-life-logs`, `27-life-logs-paused` (dark), `28-replies`.
 - **Tests:** `LifeLogsTest` (chunking by silence, topic and size, noise, spoken stop / pause, quick rules, brainstorm summary parsing), `ConversationsTest` (OTP and bank filtering, keys and titles, MessagingStyle dedupe, the rolling log), `MindLogsTest` (Robolectric: kind column, dedupe, delete, chat log in the journal without codes, people memories in `notif_read`, life logs reviewed separately and marked inferred).
 ## v0.21.0: Visible pointer for phone control
-Luke's ask: see where Blaze is about to act, and take over in one touch.
+Blazeinchue's ask: see where Blaze is about to act, and take over in one touch.
 - **The pointer** (`phone/Pointer.kt`): a small Blaze-blue arrow in an accessibility overlay (no extra permission). Before a tap Blaze glides it to the target (120–420 ms), re-checks that the target is still there and hasn't moved (the orient step: if it moved it aims again, if it went away nothing is tapped and Blaze looks again), shows a short ripple (held longer for a long press), then taps. Swipes are drawn as a path for a moment.
 - **Touch to pause.** Touching the screen or the pointer pauses Blaze at once (manual mode, the pointer turns orange). Drag the pointer anywhere: dragging only moves it, it never clicks. **Double-tap the pointer** and Blaze clicks right there, looks at the screen and carries on with the task. A small bar at the top offers **Resume** (Blaze looks again first) and **Stop**. Blaze's own touches never count as yours.
-- **Light on the A12:** plain Views, no Compose in the overlay; it only animates while gliding or rippling, hides after 3 s idle and leaves the screen when the task ends.
+- **Light on the test phone:** plain Views, no Compose in the overlay; it only animates while gliding or rippling, hides after 3 s idle and leaves the screen when the task ends.
 - **Settings › Phone control › Show the pointer** (on by default).
 - **Screenshot:** `34-pointer` (paused, with the bar, a ripple and a swipe path).
 - **Tests:** `PointerTest` (glide and ripple timing, re-aim threshold, double-tap vs drag, own touches).
 
 ## v0.20.0: Orient loop + background browser with secure forms
-Luke's ask after GitHub said "This account does not support password sign-in" while he typed into Blaze's browser, and phone control dropped on the way back to the chat.
+Blazeinchue's ask after GitHub said "This account does not support password sign-in" while he typed into Blaze's browser, and phone control dropped on the way back to the chat.
 - **Orient loop for phone control** (`agent/Orient.kt`): context → look → act → look, in code, not just the prompt. A phone-control turn starts with a compact screen summary (app, the fields and buttons that matter, any error line; ≤ 14 lines, never a full dump) sent with the first model call only. Before the first screen action Blaze glances (the compact summary goes in front of the result); a numbered tap or type on a screen Blaze hasn't looked at this turn, or after the app changed under it, is held back and the fresh screen returned instead (at most twice a turn, so it can't loop). After each action the diff re-read verifies the result as before. Accessibility tree first; screenshots only when the model asks.
 - **Background browser that actually works offscreen.** Tabs that were never on screen used to lay out at 0×0, so browser_read saw no elements; they now get the phone's screen size offscreen. Page alerts and confirms in the background are answered and reported to Blaze instead of needing an Activity.
 - **Secure forms in the chat** (`browser_secure_input`, `browser/SecureInput.kt`, `ui/SecureFormCard.kt`): when a page needs the user's email, phone, username + password, API key or one-time code, Blaze shows an *Action required* card with the right field types (passwords and keys masked with Show/Hide, email/phone/number keyboards). The browser fills the page from it and submits. The model only ever sees placeholders like `{{secret:password}}`; `browser_type` swaps them for the real value at the moment it types, page reads never show what's in a password or filled field, and any value that slips into tool output is scrubbed back to its placeholder. Card numbers are refused (use the live view).
 - **Saved logins.** Values typed into the form are saved by default (untick to use once) in `filesDir/vault.json`, per site, each sealed with the Android Keystore key, and filled in next time on the same site without asking. One-time codes are never saved. **Settings › Saved logins** (also `/logins`, `/vault`) shows them masked and lets you edit or delete each one or a whole site. Excluded from device-to-device transfer (the key can't leave the phone).
-- **"Action required" notification** (channel *Action required*, high importance) when Blaze isn't on screen; tapping it opens the chat waiting on the form. Android 13+ without notification permission: the card offers *Allow* (graceful; the Galaxy A12 on Android 12 needs nothing). **Watch** on the card opens the live browser to watch or take over; background stays the default.
+- **"Action required" notification** (channel *Action required*, high importance) when Blaze isn't on screen; tapping it opens the chat waiting on the form. Android 13+ without notification permission: the card offers *Allow* (graceful; the low-end phone on Android 12 needs nothing). **Watch** on the card opens the live browser to watch or take over; background stays the default.
 - **Sites that refuse passwords** (`SignInHints`): GitHub's "does not support password sign-in", passkey-only and SSO-only messages are spotted on every page read, click and submit. Blaze gets a note listing the page's other ways in (Continue with Google, passkey…) and is told to offer them with ask_user; the secure form won't ask for a password on such a page, and asks at most 3 times per site.
 - **"Blaze lost phone control", fixed where it was ours.** A browser page whose renderer died (Android reclaims it on a 3 GB phone, or it crashes) took the whole app down, and Samsung then switches the accessibility service off; tabs are now reopened instead (`onRenderProcessGone`). The banner now says which way it dropped (*reconnecting* vs *off*), **Turn on** opens Blaze's own switch (Android 11+) instead of the whole list, with a one-line why and the battery tip. Connect/disconnect events go to the crash log. Phone-control-off results tell the model that browser tools don't need it.
 - **Heads-ups no longer talk by themselves.** Reminders and heads-ups are read aloud only when *Speak up out loud* (`proactive_speak`) is on; urgent ones used to speak even with it off. Routine and reminder notifications don't call the voice anywhere else (routine turns are never voice turns).
@@ -813,7 +1980,7 @@ Port of Blaze Desktop's long-chat engine (`internal/longchat`, plan part B) to `
 - **Nothing deleted: `/views`.** Every page that was in the sidebar (and Desktop's list) opens from one picker with a filter: Chats, Design, Memory, Jobs, Schedule, Agents, Accounts, BlazeRouter, Skills, Gallery, Browser, Doctor, Usage, Voice, Phone control, Proactive, Blaze Desktop, Commands, Dashboard, Blaze account, Settings. Shortcuts: `/design /jobs /schedule /accounts /doctor /router /skills /gallery /browser /search /projects` (plus the old `/memory /routines /settings /chats`). Search lists views too.
 - **Blaze switches views itself:** new `open_view` tool. Visual work (a page, poster, design) opens **Design**, a live preview (phone or desktop width, reload, open in browser) with a box to ask for changes; other views ask first. A `DESIGN ✕ Exit` chip always returns to the chat.
 - **Projects:** group chats around a goal with instructions Blaze follows in every chat inside it; `Working` and `Needs you` chips. Stored on the phone (`projects_json`), deleting a project keeps its chats.
-- **Tests and screenshots:** `ViewsTest`; `ShotsTest` renders the shell on Robolectric (A12-sized) and CI pushes the PNGs to the `shots` branch.
+- **Tests and screenshots:** `ViewsTest`; `ShotsTest` renders the shell on Robolectric (small-phone-sized) and CI pushes the PNGs to the `shots` branch.
 
 ## v0.11.0: Browser VPN by country, private tabs, Chrome-style tab grid
 - **Browser VPN.** Import WireGuard configs (a `.conf`, several at once, or the `.zip` Proton/Mullvad download) in the browser's ⋯ › *VPN & privacy*, one per country, and pick a country. Only the browser goes through it: the tunnel runs inside Blaze (`wgproxy/`, user-space WireGuard on gVisor's netstack, shipped as `libwgproxy.so` and built by CI) as an HTTP proxy on 127.0.0.1 that the WebViews use via `ProxyController`. No Android VPN prompt; chats with your model don't use it. DNS goes through the tunnel too. After connecting, Blaze checks the real exit IP and country through the tunnel (Cloudflare trace) and fixes the country label if the file name guessed wrong. The flag shows next to the address bar.

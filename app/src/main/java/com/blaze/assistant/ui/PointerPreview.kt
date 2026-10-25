@@ -30,7 +30,7 @@ import androidx.compose.ui.draw.clip
  * the click ring and the squish; [pulse] is the gliding scale. [sizeDp] lets the icon shots draw it bigger.
  */
 @Composable
-fun PointerGlyph(paused: Boolean = false, ripple: Float = -1f, pulse: Float = 1f, modifier: Modifier = Modifier, scale: Float = 1f) {
+fun PointerGlyph(ripple: Float = -1f, pulse: Float = 1f, modifier: Modifier = Modifier, scale: Float = 1f) {
     val P = com.blaze.assistant.phone.Pointer
     val M = com.blaze.assistant.phone.Mascot
     Canvas(modifier.size((P.TOUCH_DP * scale).dp)) {
@@ -39,36 +39,24 @@ fun PointerGlyph(paused: Boolean = false, ripple: Float = -1f, pulse: Float = 1f
         val k = P.UNIT_DP * d
         val (sq1, sq2) = P.squish(ripple)
         val sx = sq1 * pulse; val sy = sq2 * pulse
-        drawMascot(tx, ty, k, sx, sy, paused, d)
+        drawMascot(tx, ty, k, sx, sy, d = d)
         drawCircle(Color.Black.copy(alpha = 0.3f), 2.1f * d, Offset(tx, ty))
         drawCircle(Color.White, 1.6f * d, Offset(tx, ty))
         if (ripple in 0f..1f) drawCircle(Color.White.copy(alpha = 1 - ripple), radius = (4 + 12 * ripple) * d, center = Offset(tx, ty), style = Stroke(2.5f * d))
     }
 }
 
-/** The "Click '…'?" check after a manual double-tap (phone/Pointer.kt showCheck draws it with plain Views). */
+/** The Stop chip at the bottom-left edge while Blaze drives the phone (phone/Pointer.kt draws it with plain Views). */
 @Composable
-fun PointerCheck(line: String) {
-    Row(Modifier.clip(BlazeShapes.pill).background(DialogColors.surface, BlazeShapes.pill).border(1.dp, DialogColors.border, BlazeShapes.pill).padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(line, Modifier.padding(start = 4.dp, end = 10.dp), maxLines = 1, style = TextStyle(fontSize = 13.sp, color = GlassTokens.ink))
-        Box(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { Text("Cancel", style = TextStyle(fontSize = 13.sp, color = GlassTokens.ink)) }
-    }
-}
-
-/** The bar shown while Blaze is paused (phone/Pointer.kt draws it with plain Views). */
-@Composable
-fun PointerBar() {
-    Row(Modifier.clip(BlazeShapes.pill).background(DialogColors.surface, BlazeShapes.pill).border(1.dp, DialogColors.border, BlazeShapes.pill).padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text("Paused · drag, double-tap to click", Modifier.padding(horizontal = 8.dp), style = TextStyle(fontSize = 12.sp, color = GlassTokens.sub))
-        Box(Modifier.clip(BlazeShapes.pill).background(BlazeBrush.primary).padding(horizontal = 14.dp, vertical = 8.dp)) { Text("Resume", maxLines = 1, softWrap = false, style = TextStyle(fontSize = 13.sp, color = Color.White)) }
-        Box(Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) { Text("Stop", maxLines = 1, softWrap = false, style = TextStyle(fontSize = 13.sp, color = GlassTokens.ink)) }
+fun PointerStopChip() {
+    Box(Modifier.clip(BlazeShapes.pill).background(Color(0xC81D1A16), BlazeShapes.pill).padding(horizontal = 10.dp, vertical = 5.dp)) {
+        Text("Stop", maxLines = 1, softWrap = false, style = TextStyle(fontSize = 12.sp, color = Color.White))
     }
 }
 
 /** Draws Blaze's mascot with its tip at (tx, ty), [k] px per unit, squish (sx, sy): glow, shadow, gradient body, edge, eyes. */
 fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMascot(tx: Float, ty: Float, k: Float, sx: Float = 1f, sy: Float = 1f,
-                                                                paused: Boolean = false, d: Float = density, edge: Boolean = true) {
+                                                                d: Float = density, edge: Boolean = true) {
     val M = com.blaze.assistant.phone.Mascot
         fun at(u: FloatArray) = M.at(u, tx, ty, k, sx, sy).let { Offset(it[0], it[1]) }
         val body = Path().apply {
@@ -86,7 +74,7 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMascot(tx: Float, ty: F
             startY = at(floatArrayOf(0f, M.GRAD_TOP)).y, endY = at(floatArrayOf(0f, M.GRAD_BOTTOM)).y))
         val hc = Color(M.HIGHLIGHT)
         drawPath(body, Brush.radialGradient(listOf(hc, hc.copy(alpha = 0f)), center = at(M.HIGHLIGHT_AT), radius = M.HIGHLIGHT_R * k * maxOf(sx, sy)))
-        if (edge || paused) drawPath(body, if (paused) Color(M.PAUSED) else Color.White.copy(alpha = 0.85f), style = Stroke((if (paused) 2.5f else 1.5f) * d, join = StrokeJoin.Round))
+        if (edge) drawPath(body, Color.White.copy(alpha = 0.85f), style = Stroke(1.5f * d, join = StrokeJoin.Round))
         for (e in M.EYES) {
             val c = at(e); val w = M.EYE_W * k * sx; val h = M.EYE_H * k * sy
             drawRoundRect(Color(M.EYE), Offset(c.x - w / 2, c.y - h / 2), androidx.compose.ui.geometry.Size(w, h),

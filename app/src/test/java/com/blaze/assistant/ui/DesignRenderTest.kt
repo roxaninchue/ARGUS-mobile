@@ -153,11 +153,20 @@ class DesignRenderTest {
         js.delete()
     }
 
+    @Test fun drawCheckReadsFramesNotACleared() {
+        // v0.36.1: the old check sampled the WebGL canvas from a timer, after the browser had cleared it, so every
+        // 3D design "drew nothing". It now reads the draw calls three-safe.js records and a sample taken in the frame.
+        val hook = DesignServe.HOOK_JS
+        assertTrue(hook.contains("__bzDrawCalls") && hook.contains("__bzWantSample") && hook.contains("preserveDrawingBuffer"))
+        val safe = File("src/main/assets/design/three-safe.js").takeIf { it.exists() } ?: File("app/src/main/assets/design/three-safe.js")
+        if (safe.exists()) { val s = safe.readText(); assertTrue(s.contains("noteFrame(this)") && s.contains("__bzSampleBlank")) }
+    }
+
     // ---------------- fallback selection ----------------
 
     @Test fun engineAndFallbackChoice() {
         assertEquals("r170", DesignServe.engineFor(gl2 = true, gl1 = true))
-        assertEquals("r162", DesignServe.engineFor(gl2 = false, gl1 = true))       // the A12 with WebGL2 blocklisted
+        assertEquals("r162", DesignServe.engineFor(gl2 = false, gl1 = true))       // the test phone with WebGL2 blocklisted
         assertEquals("r162", DesignServe.engineFor(gl2 = true, gl1 = true, forceGl1 = true))
         assertEquals("r170", DesignServe.engineFor(gl2 = true, gl1 = false, forceGl1 = true))
         assertNull(DesignServe.engineFor(gl2 = false, gl1 = false))

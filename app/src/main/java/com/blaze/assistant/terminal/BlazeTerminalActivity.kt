@@ -56,12 +56,18 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
     private val main = Handler(Looper.getMainLooper())
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private val ink = Color.parseColor("#F0F0EE")        // Blaze DarkColors.ink
-    private val dim = Color.parseColor("#8F8F8D")
-    private val accent = Color.parseColor("#6B8CFF")     // Blaze blue on dark (DarkColors.accent)
-    private val keyBg = Color.parseColor("#1B1B1F")
-    private val keyEdge = Color.parseColor("#2C2C31")
-    private val barBg = Color.parseColor("#0B0B0D")
+    // v0.45.8: every colour comes from the picked theme (TermPalette, 4.5:1 or more against the ground); set in applyTheme().
+    private var pal = com.blaze.assistant.ui.TermPalette.of(com.blaze.assistant.ui.LivingThemes.CLASSIC, true)
+    private var ink = pal.fg
+    private var dim = pal.dim
+    private var accent = pal.accent
+    private var keyBg = pal.keyBg
+    private var keyEdge = pal.keyEdge
+    private var barBg = pal.barBg
+    private lateinit var root: LinearLayout
+    private lateinit var examples: LinearLayout
+    private lateinit var keys: LinearLayout
+    private lateinit var topBar: LinearLayout
     private val sheet = TermSheet.State()
     private lateinit var examplesBar: HorizontalScrollView
 
@@ -75,15 +81,15 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
         if (fontPx == 0) fontPx = (resources.displayMetrics.scaledDensity * 13).toInt().coerceIn(TermLogic.MIN_FONT, TermLogic.MAX_FONT)
 
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
+        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.BLACK) }
 
         // Tabs + menu along the top.
-        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(6), dp(4), dp(6), dp(2)) }
+        val top = LinearLayout(this).also { topBar = it }.apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(6), dp(4), dp(6), dp(2)) }
         tabRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         top.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(tabRow) },
             LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        top.addView(chip("+", false) { newTabMenu() })
-        top.addView(chip("⋮", false) { moreMenu() })
+        top.addView(chip("+", false) { newTabMenu() }.also { it.contentDescription = "New tab" })
+        top.addView(chip("⋮", false) { moreMenu() }.also { it.contentDescription = "More: theme, paste, text size" })
         root.addView(top)
 
         term = TerminalView(this, null).apply {
@@ -97,17 +103,11 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         root.addView(term, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
         // v0.29.8: tappable example commands (phone tabs only), so the phone shell explains itself.
-        val examples = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(6), dp(4), dp(6), dp(4)) }
-        for ((label, cmd) in TermLogic.PHONE_EXAMPLES) examples.addView(chip(label, false) { runExample(cmd) })
+        examples = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(6), dp(4), dp(6), dp(4)) }
         examplesBar = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; setBackgroundColor(barBg); addView(examples) }
         root.addView(examplesBar)
 
-        val keys = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(barBg); setPadding(dp(4), dp(3), dp(4), dp(4)) }
-        for (row in TermLogic.ROWS) {
-            val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            for (k in row) r.addView(extraKey(k), LinearLayout.LayoutParams(0, dp(40), 1f).apply { setMargins(dp(2), dp(2), dp(2), dp(2)) })
-            keys.addView(r)
-        }
+        keys = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(barBg); setPadding(dp(4), dp(3), dp(4), dp(4)) }
         root.addView(keys)
 
         // The Blaze sheet floats over everything (scrim + rounded card); it draws nothing while closed.
@@ -122,9 +122,45 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
 
         TermSessions.screen = this
         val tab = TermSessions.ensureOne(this)
+        applyTheme()
         attach(tab)
         structure()
         term.requestFocus()
+        // v0.45.8: one shared theme state: a switch made here, in Chat, Music or anywhere else repaints the terminal.
+        scope.launch {
+            kotlinx.coroutines.flow.combine(com.blaze.assistant.ui.Look.theme,
+                androidx.compose.runtime.snapshotFlow { com.blaze.assistant.ui.ThemeMode.mode.value }) { a, b -> a to b }
+                .collect { applyTheme() }
+        }
+    }
+
+    /** v0.45.8: paints the bars, keys, sheet and the emulator's colours (ANSI, text, ground, cursor) from the theme. */
+    private fun applyTheme() {
+        val p = com.blaze.assistant.ui.TermPalette.of(com.blaze.assistant.ui.Look.theme.value, com.blaze.assistant.ui.AppTheme.darkNow())
+        pal = p; ink = p.fg; dim = p.dim; accent = p.accent; keyBg = p.keyBg; keyEdge = p.keyEdge; barBg = p.barBg
+        TermSheet.Palette.set(p)
+        TermColors.apply(p)
+        try {
+            window.statusBarColor = p.bg; window.navigationBarColor = p.barBg
+            androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
+                isAppearanceLightStatusBars = !p.dark; isAppearanceLightNavigationBars = !p.dark
+            }
+        } catch (_: Throwable) { }
+        root.setBackgroundColor(p.bg); topBar.setBackgroundColor(p.bg); term.setBackgroundColor(p.bg)
+        examplesBar.setBackgroundColor(p.barBg); keys.setBackgroundColor(p.barBg)
+        examples.removeAllViews()
+        for ((label, cmd) in TermLogic.PHONE_EXAMPLES) examples.addView(chip(label, false) { runExample(cmd) })
+        keys.removeAllViews(); keyViews.clear()
+        for (row in TermLogic.ROWS) {
+            val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            for (k in row) r.addView(extraKey(k), LinearLayout.LayoutParams(0, dp(40), 1f).apply { setMargins(dp(2), dp(2), dp(2), dp(2)) })
+            keys.addView(r)
+        }
+        paintToggles()
+        // The + and ⋮ chips at the end of the top bar.
+        for (i in 0 until topBar.childCount) (topBar.getChildAt(i) as? TextView)?.let { it.setTextColor(ink); it.background = pill(keyBg, keyEdge) }
+        if (::tabRow.isInitialized) structure()
+        term.invalidate()
     }
 
     override fun onResume() {
@@ -186,7 +222,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
     private fun chip(text: String, selected: Boolean, onClick: () -> Unit) = TextView(this).apply {
         this.text = text
         typeface = Typeface.MONOSPACE; textSize = 13f
-        setTextColor(if (selected) Color.WHITE else ink)
+        setTextColor(if (selected) pal.bg else ink)   // v0.45.8: the ground colour reads 4.5:1 on the accent
         background = pill(if (selected) accent else keyBg, if (selected) accent else keyEdge)
         setPadding(dp(12), dp(6), dp(12), dp(6))
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = dp(6) }
@@ -316,9 +352,21 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         }
     }
 
+    /** v0.45.8: the theme switcher (the same options as everywhere else; picking one changes every screen). */
+    private fun themeMenu() {
+        val cur = com.blaze.assistant.ui.Look.theme.value
+        val items = com.blaze.assistant.ui.AppTheme.options.map { th ->
+            TermSheet.Item(th.id.ifEmpty { "classic" }, th.name + if (th.id == cur) "  \u2713" else "", th.sub, "theme")
+        }
+        sheet.show("Theme", "Changes Blaze everywhere: chat, Home, Music, Video, Design and here", items) { item ->
+            com.blaze.assistant.ui.AppTheme.pick(if (item.id == "classic") com.blaze.assistant.ui.LivingThemes.CLASSIC else item.id)
+        }
+    }
+
     private fun moreMenu() {
         val tab = TermSessions.active()
         val items = buildList {
+            add(TermSheet.Item("theme", "Theme", com.blaze.assistant.ui.LivingThemes.of(com.blaze.assistant.ui.Look.theme.value).name + " \u00b7 the same theme as the rest of Blaze", "theme"))
             add(TermSheet.Item("paste", "Paste", "Type what's on the clipboard", "paste"))
             add(TermSheet.Item("copy", "Copy all text", "Everything in this tab, to the clipboard", "copy"))
             add(TermSheet.Item("keyboard", "Keyboard", "Show the on-screen keyboard", "keyboard"))
@@ -332,6 +380,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         sheet.show(title, tab?.env?.label.orEmpty(), items) { item ->
             val s = term.currentSession
             when (item.id) {
+                "theme" -> themeMenu()
                 "paste" -> s?.let { pasteInto(it) }
                 "copy" -> s?.emulator?.screen?.transcriptText?.let { txt ->
                     val cm = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager

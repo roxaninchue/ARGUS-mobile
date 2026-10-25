@@ -57,6 +57,8 @@
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- v0.43.0 Bank mode: optional, granted only by the user with adb; lets Blaze switch phone control back on by itself. -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
 
     <queries>
         <package android:name="com.termux" />
@@ -133,6 +135,18 @@
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:screenOrientation="unspecified" />
 
+        <!-- 0.45.19 Blaze Phone full screen: watch Blaze's own phone, take control, hand back. -->
+        <activity
+            android:name=".browser.phone.PhoneBrowserActivity"
+            android:exported="false"
+            android:label="Blaze Phone"
+            android:supportsPictureInPicture="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.blaze.assistant.phonebrowser"
+            android:theme="@style/Theme.Blaze"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".device.PermissionActivity"
             android:exported="false"
@@ -188,6 +202,9 @@
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
 
+        <!-- 0.45.19: Blaze Phone's picture-in-picture Stop / Open Blaze buttons (RemoteAction broadcasts). -->
+        <receiver android:name=".browser.phone.PhonePipReceiver" android:exported="false" />
+
         <!-- v0.33.2 BlazeOS: Blaze's own virtual phone, fullscreen (same task as Blaze; its own power / pause / exit). -->
         <activity
             android:name=".blazeos.BlazeOsActivity"
@@ -232,10 +249,19 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:supportsPictureInPicture="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- v0.45.4: Google / GitHub sign-in comes back here (blaze://auth/cb?code=..&state=..), bound by state + PKCE. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="blaze" android:host="auth" android:path="/cb" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST" />
@@ -301,7 +327,10 @@
 
         <receiver android:name=".notify.ActionReceiver" android:exported="false" />
         <receiver android:name=".update.InstallReceiver" android:exported="false" />
+        <!-- 0.45.19 App Store: PackageInstaller session status for store installs (appstore/StoreInstaller). -->
+        <receiver android:name=".appstore.StoreInstallReceiver" android:exported="false" />
         <receiver android:name=".proactive.ProactiveReceiver" android:exported="false" />
+        <receiver android:name=".proactive.FollowUpReceiver" android:exported="false" />
         <receiver android:name=".phone.SafeWalkReceiver" android:exported="false" />
         <service android:name=".phone.CallCopilotService" android:exported="false" android:foregroundServiceType="microphone" />
 
@@ -321,7 +350,7 @@
             android:foregroundServiceType="dataSync" />
         <service android:name=".terminal.JobKeeper" android:exported="false"
             android:foregroundServiceType="dataSync" />
-        <service android:name=".desktop.DesktopKeeper" android:exported="false"
+        <service android:name=".bank.BankModeService" android:exported="false"
             android:foregroundServiceType="dataSync" />
 
         <receiver android:name=".widget.BlazeWidget" android:exported="false" android:label="Blaze">

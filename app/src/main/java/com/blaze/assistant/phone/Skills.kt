@@ -97,10 +97,14 @@ object Skills {
         "add_calendar_event" to arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
     )
 
+    /** v0.45.9: never "I can't access your calendar": calling calendar_events again shows Android's one-tap prompt. */
+    const val CALENDAR_OFF = "Calendar access is off: the user didn't allow it in the one-tap prompt (yet). Say that in one short line and offer to ask again; " +
+        "if they say yes, call calendar_events again (it shows the prompt and then lists the events). Never say you can't access calendars."
+
     suspend fun run(ctx: Context, name: String, a: JSONObject): String = try {
         val want = needs[name]
         val denied = if (want != null && !com.blaze.assistant.device.Perms.ensure(ctx, *want) && name != "add_calendar_event")
-            com.blaze.assistant.device.Perms.denied(name.replace('_', ' ')) else null
+            (if (name == "calendar_events") CALENDAR_OFF else com.blaze.assistant.device.Perms.denied(name.replace('_', ' '))) else null
         denied ?: when (name) {
             "find_contact" -> findContact(ctx, a.getString("name"))
             "read_messages" -> readSms(ctx, a.optString("from").ifBlank { null }, a.optInt("limit", 10))
@@ -242,8 +246,22 @@ object Skills {
                 out += "$time: ${it.getString(0)}$loc"
             }
         }
-        return if (out.isEmpty()) "No events." else out.joinToString("\n")
+        return eventsResult(out)
     }
+
+    /**
+     * v0.45.9 replay fix (rpG schedule-wednesday 4/5: after an empty calendar_events the reply said "Nothing scheduled today"
+     * although the [context] schedule line had CIT 08:00 and NET 14:00): an empty result says it is only the phone calendar.
+     */
+    const val EVENTS_NONE = "No events in the phone's calendar app for that range. That is only the Android calendar, not the whole day: " +
+        "the schedule line in [context] still holds the day's classes and reminders, so when asked what's on, name every item on it with its time."
+
+    /**
+     * v0.45.9 replay fix (live 0.8.7, "View calendar" 1 of 5 answered only "Open the calendar?"): the result says what to do
+     * with the events, so the reply lists them. Pure; HaloReplayRequestTest builds its fixture with it.
+     */
+    fun eventsResult(lines: List<String>): String =
+        if (lines.isEmpty()) EVENTS_NONE else "Calendar events (tell the user each one with its time and place):\n" + lines.joinToString("\n")
 
     private fun addEvent(ctx: Context, a: JSONObject): String {
         val f = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)

@@ -18,6 +18,7 @@ package com.blaze.assistant.agent
  */
 object RetryGuard {
     /** Corrective re-prompts per turn, all kinds together. */
+    /** Re-prompts per turn, all kinds together (claim, proof, goal, leak, refusal, empty, echo, view, desktop): review 22 Oct #4. */
     const val MAX = 2
 
     enum class Kind { FAKE_CALL, CLAIM, REFUSAL, VERIFY, OFF_TOPIC }

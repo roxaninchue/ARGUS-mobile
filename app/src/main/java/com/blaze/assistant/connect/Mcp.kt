@@ -6,6 +6,7 @@ import com.blaze.assistant.connect.McpConfig.Tool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
@@ -329,9 +330,18 @@ object Mcp {
     }
 
     /** Tools of enabled servers (minus ones turned off), in OpenAI format. Lists servers not yet listed (quickly). */
+    private val bg = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.IO)
+    private val refreshing = ConcurrentHashMap.newKeySet<String>()
+
+    /**
+     * v0.45.9: never a network call on the send path. Before, a server whose tool list wasn't loaded yet (first Send after
+     * launch) was refreshed here, up to 8 s per server, before the chat request could go out. Now the refresh runs in the
+     * background and this turn goes out with the tools already known; the next turn has the server's tools.
+     */
     suspend fun tools(): List<JSONObject> {
         val on = _servers.value.filter { it.enabled && it.remote }
-        for (s in on) if (_tools.value[s.name] == null && _status.value[s.name]?.startsWith("Error") != true) withTimeoutOrNull(8000) { refresh(s) }
+        for (s in on) if (_tools.value[s.name] == null && _status.value[s.name]?.startsWith("Error") != true && refreshing.add(s.name))
+            bg.launch { try { withTimeoutOrNull(15_000) { refresh(s) } } catch (_: Throwable) { } finally { refreshing.remove(s.name) } }
         return on.flatMap { s -> _tools.value[s.name].orEmpty().filter { McpConfig.mode(s.toolModes[it.name], it.risk) != McpConfig.OFF }.map { t ->
             JSONObject().put("type", "function").put("function", JSONObject()
                 .put("name", McpConfig.toolName(s.name, t.name))

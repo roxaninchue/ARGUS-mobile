@@ -214,6 +214,8 @@ const mid = box.isEmpty() ? new THREE.Vector3() : box.getCenter(new THREE.Vector
 const r = Number.isFinite(Math.max(size.x, size.y, size.z)) && Math.max(size.x, size.y, size.z) > 0 ? Math.max(size.x, size.y, size.z) : 1;
 if (![mid.x, mid.y, mid.z].every(Number.isFinite)) mid.set(0, 0, 0);
 camera.position.set(mid.x + r * 1.6, mid.y + r * 1.1, mid.z + r * 1.9);
+// v0.45.6: near / far follow the model's size, so a model in the wrong units (metres read as mm) is never clipped away.
+camera.near = Math.max(r / 1000, 1e-4); camera.far = Math.max(r * 100, 200); camera.updateProjectionMatrix();
 controls.target.copy(mid); controls.update();
 
 // ---- 10. Export for other software -------------------------------------------------------

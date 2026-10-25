@@ -58,6 +58,22 @@ class LearnedRouter(private val maxWords: Int = 3000) {
         }
     }
 
+    /**
+     * v0.45.0 reactions: takes back one [learn] of [text] with [used] (a reply the user gave 👎), so a bad turn doesn't
+     * keep steering which tools load. Counts never go below zero; a word nothing is left of is forgotten.
+     */
+    @Synchronized fun unlearn(text: String, used: Set<String>) {
+        val toks = tokens(text)
+        if (toks.isEmpty()) return
+        if (turns > 0) turns--
+        for (t in toks) {
+            val w = words[t] ?: continue
+            if (w.seen > 0) w.seen--
+            for (g in used) { val c = (w.groups[g] ?: 0) - 1; if (c > 0) w.groups[g] = c else w.groups.remove(g) }
+            if (w.seen == 0) words.remove(t)
+        }
+    }
+
     /** Groups to preload for [text], strongest first, at most [MAX_ADD], minus what [already] has. */
     @Synchronized fun predict(text: String, already: Set<String> = emptySet()): List<String> {
         val score = HashMap<String, Double>()
@@ -111,6 +127,10 @@ object LearnedRoutes {
     fun learn(text: String, used: Set<String>) {
         if (!enabled) return
         try { ensure(); model.learn(text, used); Settings.setStr("learned_router_v1", model.toJson().toString()) } catch (_: Exception) { }
+    }
+
+    fun unlearn(text: String, used: Set<String>) {
+        try { ensure(); model.unlearn(text, used); Settings.setStr("learned_router_v1", model.toJson().toString()) } catch (_: Exception) { }
     }
 
     fun stats(): String = try { ensure(); "Learned tool router: ${model.size()} words from ${model.turns} turns" + (if (!enabled) " (off)" else "") } catch (_: Exception) { "Learned tool router: not loaded" }

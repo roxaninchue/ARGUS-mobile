@@ -230,6 +230,23 @@ object ToolCalls {
         return Report(repaired, unknown)
     }
 
+    /**
+     * 0.45.15 (review 22 Oct #6): keeps only calls to a tool in [all] whose arguments are a JSON object; the rest are
+     * dropped (none left: tool_calls removed). Count dropped.
+     */
+    fun dropMalformed(reply: JSONObject, all: JSONArray): Int {
+        val calls = reply.optJSONArray("tool_calls") ?: return 0
+        val known = names(all).toSet()
+        val keep = JSONArray(); var dropped = 0
+        for (i in 0 until calls.length()) {
+            val c = calls.optJSONObject(i); val f = c?.optJSONObject("function")
+            val ok = f != null && f.optString("name") in known && (f.opt("arguments").let { a -> a is JSONObject || (a is String && (a.isBlank() || try { JSONObject(a); true } catch (_: Exception) { false })) })
+            if (ok) keep.put(c) else dropped++
+        }
+        if (keep.length() == 0) reply.remove("tool_calls") else reply.put("tool_calls", keep)
+        return dropped
+    }
+
     // ---------- calls written as text ----------
 
     private val tagRe = Regex("<(tool_call|function_call|tool|function)[^>]*>([\\s\\S]*?)</\\1>", RegexOption.IGNORE_CASE)
@@ -403,7 +420,7 @@ object ToolCalls {
         val m = e.message.orEmpty()
         val who = m.substringBefore(" said (", "").ifBlank { m.substringBefore(":", "the AI") }.take(60)
         return when {
-            isShapeError(e) -> "$who refused the request even after I cleaned it up. Tap Retry, or switch model in Settings → AI if it keeps happening."
+            isShapeError(e) -> "$who refused the request even after I cleaned it up. Tap Retry, or say it a different way if it keeps happening."
             else -> m
         }
     }

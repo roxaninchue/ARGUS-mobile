@@ -263,7 +263,7 @@ object FreeRouter {
                 } catch (e: Exception) { lastErr = e }
             }
         }
-        if (pools.isEmpty()) throw LlmClient.LlmException("Auto (free) has nothing to route to yet. Add a free key (Gemini, Groq, OpenRouter…) in Settings → AI.")
+        if (pools.isEmpty()) throw LlmClient.LlmException("Auto (free) has nothing to route to yet. Tap Retry in a moment.")
 
         // Nothing ready: wait quietly once for the soonest model that frees up within ~25 s.
         val now = System.currentTimeMillis()
@@ -303,13 +303,13 @@ object FreeRouter {
     /** What the last failed Auto turn ran into, model by model (diagnostics). */
     @Volatile var lastFailures: List<String> = emptyList()
 
-    /** The message Luke sees when no free model could answer: short, plain, says when the next one frees up. */
+    /** The message Blazeinchue sees when no free model could answer: short, plain, says when the next one frees up. */
     fun friendly(attempts: Int, moreLeft: Boolean, soonest: Pair<String, Long>?, hadErrors: Boolean): String = when {
         moreLeft -> "I tried $attempts free models and none answered this time. Say \u201ctry again\u201d and I'll move on to the next ones."
         soonest != null -> "All your free models are busy right now. The next one (${soonest.first.take(48)}) frees up in ${fmt(soonest.second)}. " +
-            "Ask again then, or add another free key in Settings \u2192 AI."
-        hadErrors -> "None of your free models could answer just now. Say \u201ctry again\u201d in a minute, or check your keys in Settings \u2192 AI."
-        else -> "All your free models are resting right now. Ask again in a minute, or add another free key in Settings \u2192 AI."
+            "Ask again then."
+        hadErrors -> "None of your free models could answer just now. Say \u201ctry again\u201d in a minute."
+        else -> "All your free models are resting right now. Ask again in a minute."
     }
 
     /** Shown while Auto waits for a cooling model (empty otherwise). */

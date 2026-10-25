@@ -96,10 +96,10 @@ class OsMachineTest {
 
     // ---------------- resources ----------------
 
-    private fun a12(free: Long = 20 * GB) = HostInfo(totalRam = 3 * GB, availRam = 900 * MB, lowRam = false, heapMb = 256, freeDisk = free, sdk = 31)
+    private fun lowEnd(free: Long = 20 * GB) = HostInfo(totalRam = 3 * GB, availRam = 900 * MB, lowRam = false, heapMb = 256, freeDisk = free, sdk = 31)
 
-    @Test fun galaxyA12GetsTheLowTier() {
-        val b = OsResources.allocate(a12())
+    @Test fun threeGbPhoneGetsTheLowTier() {
+        val b = OsResources.allocate(lowEnd())
         assertEquals("low", b.tier)
         assertFalse("no real blur on a low tier, even on API 31", b.blur)
         assertEquals(AnimLevel.REDUCED, b.anim)
@@ -122,21 +122,21 @@ class OsMachineTest {
     }
 
     @Test fun tiers() {
-        assertEquals("low", OsResources.tier(a12().copy(totalRam = 8 * GB, lowRam = true, heapMb = 512)))
-        assertEquals("low", OsResources.tier(a12().copy(totalRam = 8 * GB, heapMb = 512, availRam = 300 * MB)))
-        assertEquals("mid", OsResources.tier(a12().copy(totalRam = 4 * GB, availRam = 2 * GB, heapMb = 256)))
-        assertEquals("high", OsResources.tier(a12().copy(totalRam = 8 * GB, availRam = 4 * GB, heapMb = 512)))
-        val hi = OsResources.allocate(a12().copy(totalRam = 8 * GB, availRam = 4 * GB, heapMb = 512, sdk = 34))
+        assertEquals("low", OsResources.tier(lowEnd().copy(totalRam = 8 * GB, lowRam = true, heapMb = 512)))
+        assertEquals("low", OsResources.tier(lowEnd().copy(totalRam = 8 * GB, heapMb = 512, availRam = 300 * MB)))
+        assertEquals("mid", OsResources.tier(lowEnd().copy(totalRam = 4 * GB, availRam = 2 * GB, heapMb = 256)))
+        assertEquals("high", OsResources.tier(lowEnd().copy(totalRam = 8 * GB, availRam = 4 * GB, heapMb = 512)))
+        val hi = OsResources.allocate(lowEnd().copy(totalRam = 8 * GB, availRam = 4 * GB, heapMb = 512, sdk = 34))
         assertTrue(hi.blur); assertEquals(AnimLevel.FULL, hi.anim); assertEquals(5, hi.maxLiveApps)
         assertEquals(32 * MB, hi.imageCacheBytes)
         // Blur needs API 31 whatever the tier.
-        assertFalse(OsResources.allocate(a12().copy(totalRam = 8 * GB, availRam = 4 * GB, heapMb = 512, sdk = 30)).blur)
+        assertFalse(OsResources.allocate(lowEnd().copy(totalRam = 8 * GB, availRam = 4 * GB, heapMb = 512, sdk = 30)).blur)
         // The phone's Remove animations wins.
-        assertEquals(AnimLevel.OFF, OsResources.allocate(a12().copy(animationsOff = true)).anim)
+        assertEquals(AnimLevel.OFF, OsResources.allocate(lowEnd().copy(animationsOff = true)).anim)
     }
 
     @Test fun cachesStayInsideTheHeapAndTheQuota() {
-        val tiny = OsResources.allocate(a12(free = 400 * MB).copy(heapMb = 48))
+        val tiny = OsResources.allocate(lowEnd(free = 400 * MB).copy(heapMb = 48))
         assertEquals(6 * MB, tiny.imageCacheBytes)
         assertTrue(tiny.diskCacheBytes <= tiny.diskQuota / 10)
         assertEquals("1.5 GB", OsResources.size(GB + GB / 2))

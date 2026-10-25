@@ -48,6 +48,17 @@ object CommandRunner {
         val arg = text.substringAfter(' ', "").trim()
         fun toast(s: String) = Toast.makeText(ctx, s, Toast.LENGTH_SHORT).show()
         when (name) {
+            // v0.45.13 hidden QA entry (not listed in /help): the strict phone-control self-test, 5 runs per case by default.
+            // "/phoneqa" · "/phoneqa 1" · "/phoneqa 5 alarm-set,alarm-off" · "/phoneqa cases"
+            "phoneqa" -> {
+                val parts = arg.split(Regex("\\s+")).filter { it.isNotBlank() }
+                if (parts.firstOrNull() == "cases") Agent.note(com.blaze.assistant.agent.PhoneCases.ALL.joinToString("\n") { "${it.id}: ${it.prompt} \u2192 reads ${it.reads}" })
+                else {
+                    val n = parts.firstOrNull()?.toIntOrNull() ?: 5
+                    val only = parts.drop(if (parts.firstOrNull()?.toIntOrNull() != null) 1 else 0).joinToString(",").split(',').map { it.trim() }.filter { it.isNotBlank() }.toSet()
+                    com.blaze.assistant.phone.PhoneQa.start(ctx, n, only)
+                }
+            }
             "new" -> Agent.clear()
             "clear" -> if (Agent.clearScreen() == com.blaze.assistant.agent.ClearScreen.Result.BUSY) toast("Blaze is working. Stop it first, then /clear.")
             // v0.25.0: no model or provider choice; old habits get one plain line.
@@ -65,6 +76,20 @@ object CommandRunner {
             "plan" -> { com.blaze.assistant.agent.Modes.setWork("plan"); Agent.note("Plan mode: I'll only read and look, then give you a plan. /build to let me act.")
                 if (arg.isNotEmpty()) return arg }
             "build" -> { com.blaze.assistant.agent.Modes.setWork("build"); Agent.note("Build mode: full access.") }
+            // v0.39.0 Simple / Advanced (only what's listed changes; every command keeps working).
+            "simple" -> { com.blaze.assistant.agent.SimpleMode.set(true); Agent.note("Simple mode: technical tools are tucked away in Settings \u203a Advanced. Nothing was removed.") }
+            "advanced" -> { com.blaze.assistant.agent.SimpleMode.set(false); Agent.note("Advanced mode: every tool and setting is showing.") }
+            "doing" -> openSettings("doing")
+            // v0.43.0 Bank mode: /bank (on / off / toggle; plain /bank opens its page when it's off and nothing was said).
+            "bank", "bankmode" -> when (arg.trim().lowercase()) {
+                "on" -> Agent.note(com.blaze.assistant.bank.BankMode.turnOn(ctx))
+                "off" -> Agent.note(com.blaze.assistant.bank.BankMode.turnOff(ctx))
+                "" -> Agent.note(if (com.blaze.assistant.bank.BankMode.active) com.blaze.assistant.bank.BankMode.turnOff(ctx) else com.blaze.assistant.bank.BankMode.turnOn(ctx))
+                else -> openSettings("bank")
+            }
+            "look", "theme" -> openSettings("look")
+            "sync" -> openSettings("sync")
+            "linux" -> openSettings("terminal")   // wave B-4: the on-phone Linux desktop is gone; /linux opens the terminal
             "autopilot" -> { com.blaze.assistant.agent.Modes.setApproval("autopilot")
                 Agent.note("Autopilot on: I keep going without asking, up to ${com.blaze.assistant.agent.Modes.apSteps} steps or ${com.blaze.assistant.agent.Modes.apMinutes} min. Deleting, paying and messaging people still need your tap.") }
             "auto" -> { com.blaze.assistant.agent.Modes.setApproval("auto"); Agent.note("Auto: I'll ask before risky actions.") }

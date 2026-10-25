@@ -13,7 +13,7 @@ object SelfKnowledge {
     const val TOOL = "about_blaze"
 
     /** Facts about the Blaze family that never change at runtime. */
-    const val FAMILY = "Blaze is an AI assistant made by Luke (Lackson Kapapa). It comes as three apps that share one Blaze account: " +
+    const val FAMILY = "Blaze is an AI assistant made by Blazeinchue. It comes as three apps that share one Blaze account: " +
         "Blaze for Android (you, this app), Blaze Desktop (Windows/macOS/Linux) and Blaze CLI (terminal). " +
         "The Blaze account (Settings › Blaze account; sign in with Google, GitHub or email) syncs model keys, MCP servers and your own skills between them. " +
         "Phone and PC connect with Blaze Link: on the PC open Blaze Desktop › Phone › Show pairing QR code, " +
@@ -92,11 +92,7 @@ object SelfKnowledge {
             if (on("linux")) {
                 append("## Linux and terminal\n")
                 append("Alpine Linux (proot): ").append(safe { if (com.blaze.assistant.terminal.Linux.installed()) "installed" else "not installed (blaze_self install linux)" }).append(".\n")
-                append("Desktop / linux=true Linux (user's choice on the Desktop page): ").append(safe {
-                    val d = com.blaze.assistant.desktop.LinuxDesktop.distro()
-                    "${d.name} (${d.pm.tool}), desktop " + (if (com.blaze.assistant.desktop.LinuxDesktop.installed()) "installed" else "not installed") +
-                        "; linux=true commands run in " + com.blaze.assistant.terminal.Terminal.defaultDistro()
-                }).append(".\n")
+                append("linux=true commands run in: ").append(safe { com.blaze.assistant.terminal.Terminal.defaultDistro() }).append(".\n")
                 append("Termux: ").append(safe { if (com.blaze.assistant.terminal.Terminal.termuxInstalled(ctx)) "installed (termux_run)" else "not installed" }).append(".\n")
                 append("Local dashboard: ").append(safe { if (com.blaze.assistant.dashboard.Dashboard.running.value) com.blaze.assistant.dashboard.Dashboard.localUrl().substringBefore("?") else "off" }).append(".\n\n")
             }
