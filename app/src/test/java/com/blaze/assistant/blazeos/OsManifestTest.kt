@@ -13,6 +13,36 @@ class OsManifestTest {
 
     // ---------------- manifest ----------------
 
+    @Test fun wasmEntries() {
+        val m = ok("""{"id":"dev.you.game","name":"Game","entry":{"type":"wasm","path":"bin/app.wasm"},"permissions":["storage"]}""")
+        assertEquals(OsEntry(OsManifest.WASM, path = "bin/app.wasm"), m.entry)
+        assertTrue(OsManifest.packaged(m.entry))
+        assertEquals(m, (OsManifest.parse(OsManifest.toJson(m)) as OsManifest.Parsed.Ok).m)
+        // No path: app.wasm. Not a .wasm, or outside the package: refused.
+        assertEquals("app.wasm", ok("""{"id":"a.b","name":"X","entry":{"type":"wasm"}}""").entry.path)
+        assertEquals("Bad entry", bad("""{"id":"a.b","name":"X","entry":{"type":"wasm","path":"index.html"}}"""))
+        assertEquals("Bad entry", bad("""{"id":"a.b","name":"X","entry":{"type":"wasm","path":"../x.wasm"}}"""))
+        assertEquals("Bad entry", bad("""{"id":"a.b","name":"X","entry":{"type":"wasm","path":"/sdcard/x.wasm"}}"""))
+        assertTrue(OsManifest.WASM in OsManifest.types)
+        // A catalog listing for a wasm app needs a package.
+        val c = OsManifest.catalog("""{"apps":[{"id":"a.b","name":"X","entry":{"type":"wasm"}},
+            {"id":"a.c","name":"Y","entry":{"type":"wasm"},"package":"asset:blazeos/apps/y.zip"}]}""")
+        assertEquals(listOf("a.c"), c.apps.map { it.manifest.id })
+        assertEquals(listOf("#0: bad package"), c.errors)
+    }
+
+    @Test fun nativeSnakeShipsInTheCatalog() {
+        val f = listOf(File("src/main/assets/blazeos/catalog.json"), File("app/src/main/assets/blazeos/catalog.json")).first { it.exists() }
+        val c = OsManifest.catalog(f.readText())
+        assertTrue(c.errors.toString(), c.errors.isEmpty())
+        val s = c.apps.first { it.manifest.id == "blazeos.snake.native" }
+        assertEquals(OsManifest.WASM, s.manifest.entry.type)
+        assertTrue(c.apps.any { it.manifest.id == "blazeos.snake" })   // the web Snake stays
+        val zip = File(f.parentFile, s.pkg.removePrefix("asset:blazeos/"))
+        val names = java.util.zip.ZipFile(zip).use { z -> z.entries().asSequence().map { it.name }.toList() }
+        assertTrue(names.toString(), "app.wasm" in names && "manifest.json" in names)
+    }
+
     @Test fun webAppFromAPackage() {
         val m = ok("""{"id":"com.blazeos.snake","name":"Snake","version":"1.2.0","versionCode":3,
             "icon":{"glyph":"snake","from":"#34c759","to":"#0A7D32"},"entry":{"type":"web","path":"index.html"},
@@ -27,15 +57,11 @@ class OsManifestTest {
         assertEquals(m, (OsManifest.parse(OsManifest.toJson(m)) as OsManifest.Parsed.Ok).m)
     }
 
-    @Test fun hostedBuiltinAndLinuxEntries() {
+    @Test fun hostedAndBuiltinEntries() {
         assertEquals("https://example.org/app/", ok("""{"id":"org.example.app","name":"Hosted","entry":{"type":"web","url":"https://example.org/app/"}}""").entry.url)
         assertEquals("clock", ok("""{"id":"blazeos.clock","name":"Clock","entry":{"type":"builtin","key":"clock"}}""").entry.key)
-        val l = ok("""{"id":"linux.xeyes","name":"Eyes","entry":{"type":"linux","command":"xeyes -geometry 300x200","packages":["xeyes"]}}""")
-        assertEquals(OsEntry(OsManifest.LINUX, command = "xeyes -geometry 300x200", packages = listOf("xeyes")), l.entry)
-        // v0.33.5: per-Linux package names; bad ids and names are dropped.
-        val d = ok("""{"id":"linux.xeyes","name":"Eyes","entry":{"type":"linux","command":"xeyes","packages":["xeyes"],"distro_packages":{"fedora":["xeyes","Bad;rm"],"ubuntu":["x11-apps"],"BAD ID":["x"]}}}""")
-        assertEquals(mapOf("fedora" to listOf("xeyes"), "ubuntu" to listOf("x11-apps")), d.entry.distroPackages)
-        assertEquals(d.entry.distroPackages, (OsManifest.parse(OsManifest.toJson(d).toString()) as OsManifest.Parsed.Ok).m.entry.distroPackages)
+        // Wave B-4: "linux" entries (apps for the removed on-phone Linux desktop) are refused.
+        assertEquals("Bad entry", bad("""{"id":"linux.xeyes","name":"Eyes","entry":{"type":"linux","command":"xeyes","packages":["xeyes"]}}"""))
         // A web entry with no path opens index.html.
         assertEquals("index.html", ok("""{"id":"a.b","name":"X","entry":{"type":"web"}}""").entry.path)
         assertEquals("1.0", ok("""{"id":"a.b","name":"X","entry":{"type":"web"}}""").version)
@@ -50,7 +76,7 @@ class OsManifestTest {
         assertTrue(bad("""{"id":"a.b","name":"${"x".repeat(31)}","entry":{"type":"web"}}""").startsWith("Name"))
         assertTrue(bad("""{"id":"a.b","name":"X","version":"one","entry":{"type":"web"}}""").startsWith("Bad version"))
         assertEquals("No entry", bad("""{"id":"a.b","name":"X"}"""))
-        // Path escapes, plain http, unknown types, unknown built-ins, shell tricks in a Linux command.
+        // Path escapes, plain http, unknown types (incl. the removed "linux"), unknown built-ins.
         for (e in listOf("""{"type":"web","path":"../../etc/passwd"}""", """{"type":"web","path":"/sdcard/x.html"}""",
                 """{"type":"web","url":"http://example.org"}""", """{"type":"web","url":"file:///data/x"}""", """{"type":"apk"}""",
                 """{"type":"builtin","key":"phone"}""", """{"type":"linux","command":"rm -rf / ; reboot"}""",
@@ -80,10 +106,10 @@ class OsManifestTest {
             {"id":"a.four","name":"Four","entry":{"type":"web"},"package":"asset:../secret.zip"},
             {"id":"Nope","name":"Bad"},
             {"id":"a.five","name":"Five","entry":{"type":"linux","command":"xclock"}}]}""")
-        assertEquals(listOf("a.one", "a.three", "a.five"), c.apps.map { it.manifest.id })
+        assertEquals(listOf("a.one", "a.three"), c.apps.map { it.manifest.id })
         assertEquals(1200L, c.apps[0].size)
         assertEquals("https://store.example.org/catalog.json", c.remote)
-        assertEquals(4, c.errors.size)
+        assertEquals(5, c.errors.size)   // + the "linux" entry (wave B-4)
         assertTrue(OsManifest.catalog("[]").apps.isEmpty())
     }
 

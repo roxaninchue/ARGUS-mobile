@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -88,31 +89,57 @@ val DarkColors = BlazeColors(
 
 val LocalBlaze = staticCompositionLocalOf { LightColors }
 
+/**
+ * v0.45.7: whether the UI draws in the system font. The bundled Inter is a 228-character Latin subset (no Hausa ɓ ɗ ƙ ƴ,
+ * Yorùbá ẹ ọ ṣ, Ge'ez or Arabic). Android would fill each missing letter from a system font anyway (no tofu), but
+ * letter-by-letter font mixing looks broken, so a reply language that needs them switches the whole UI to the
+ * system font (Roboto / Noto, which carry those scripts), and any single text that needs them uses it too ([Type.sansFor]).
+ */
+object FontPick {
+    val system = androidx.compose.runtime.mutableStateOf(false)
+    fun refresh() {
+        system.value = try { com.blaze.assistant.agent.ReplyLanguage.systemFont(com.blaze.assistant.agent.ReplyLanguage.current()) } catch (_: Throwable) { false }
+    }
+}
+
 object Type {
-    val Sans = FontFamily(
+    private val Inter = FontFamily(
         Font(R.font.inter_400, FontWeight.Normal),
         Font(R.font.inter_500, FontWeight.Medium),
         Font(R.font.inter_600, FontWeight.SemiBold)
     )
-    val Display = FontFamily(
+    private val InterTight = FontFamily(
         Font(R.font.inter_tight_400, FontWeight.Normal),
         Font(R.font.inter_tight_500, FontWeight.Medium),
         Font(R.font.inter_tight_600, FontWeight.SemiBold)
     )
+    val Sans: FontFamily get() = if (FontPick.system.value) FontFamily.Default else Inter
+    val Display: FontFamily get() = if (FontPick.system.value) FontFamily.Default else InterTight
+    /** The text font for [text]: the system font when it has letters Inter lacks (so a reply is never drawn in two fonts). */
+    fun sansFor(text: String): FontFamily = if (FontPick.system.value || com.blaze.assistant.agent.Scripts.needsSystemFont(text)) FontFamily.Default else Inter
     val Mono = FontFamily.Monospace
 }
 
 /** Light/dark override; "system" follows the phone. Backed by Settings.themeMode. */
 object ThemeMode {
     val mode = androidx.compose.runtime.mutableStateOf(try { com.blaze.assistant.agent.Settings.themeMode } catch (_: Exception) { "system" })
-    fun set(m: String) { mode.value = m; com.blaze.assistant.agent.Settings.themeMode = m }
+    fun set(m: String) { mode.value = m; try { com.blaze.assistant.agent.Settings.themeMode = m } catch (_: Throwable) { } }
 }
 
 @Composable
 fun BlazeTheme(content: @Composable () -> Unit) {
+    // v0.45.7: the reply language picks Inter or the system font (FontPick), read once per theme host.
+    androidx.compose.runtime.remember { FontPick.refresh(); 0 }
     // v0.31.0: the glass UI is dark-first: "system" means dark; light only when picked in the menu.
-    val dark = when (ThemeMode.mode.value) { "dark" -> true; "light" -> false; else -> true }
-    val c = if (dark) DarkColors else LightColors
+    // v0.39.0 Look & feel: "auto" follows the local time (dark after sunset); an accent picked there tints the accent only.
+    val hour = androidx.compose.runtime.remember(ThemeMode.mode.value) { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+    val dark = when (ThemeMode.mode.value) { "dark" -> true; "light" -> false; "auto" -> LivingLogic.darkFor("auto", hour); else -> true }
+    val accentHex by Look.accent.collectAsState()
+    val base = if (dark) DarkColors else LightColors
+    // v0.45.2: a picked theme's accent drives the app's accents (Classic: the Look & feel accent as before); on light grounds a
+    // pale accent is deepened so it still reads.
+    val themeId by Look.theme.collectAsState()
+    val c = LivingThemes.accentFor(themeId, LivingLogic.parseAccent(accentHex))?.let { a -> base.copy(accent = Color(if (dark) a else LivingThemes.onLight(a))) } ?: base
     // v0.24.5: Material's own colours mapped to Blaze, so no default purple / lavender can leak into anything Material draws.
     androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark), shapes = BlazeShapes.material) {
         CompositionLocalProvider(LocalBlaze provides c, content = content)

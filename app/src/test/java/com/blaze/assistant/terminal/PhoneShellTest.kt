@@ -51,7 +51,7 @@ class PhoneShellTest {
         val w = TermLogic.welcome(TermLogic.PHONE, true)
         assertTrue(w.contains("PHONE SHELL")); assertTrue(w.contains("Not a full Linux")); assertTrue(w.contains("Install a Linux"))
         for (c in listOf("ls", "cd /sdcard", "top", "help")) assertTrue(c, w.contains("   $c "))
-        // Lines fit a small phone (Galaxy A12 portrait at the default size is ~45 columns).
+        // Lines fit a small phone (low-end phone portrait at the default size is ~45 columns).
         w.split("\r\n").forEach { assertTrue("too wide: $it", it.length <= 44) }
         assertTrue(TermLogic.welcome(TermLogic.PHONE, false).contains("toybox"))
         val labels = TermLogic.PHONE_EXAMPLES.map { it.first }
@@ -108,7 +108,7 @@ class PhoneShellTest {
         assertFalse(TermLogic.autoFallback("alpine", true, -31, 100))
     }
 
-    @Test fun fallbackNoteSaysWhyAndFitsTheA12() {
+    @Test fun fallbackNoteSaysWhyAndFitsASmallPhone() {
         val n = TermLogic.fallbackNote(-31)
         assertTrue(n.contains("signal 31")); assertTrue(n.contains("Android's own shell")); assertTrue(n.contains("Nothing to do"))
         assertTrue(TermLogic.fallbackNote(127).contains("exit code 127"))

@@ -131,15 +131,35 @@ class WakeWordService : Service() {
         } catch (_: Exception) { }
     }
 
-    private fun goForeground(): Boolean {
+    // v0.45.13: the notification shows the listener's real state (WakeNote) and is re-posted when it changes.
+    @Volatile private var micBlocked = false
+    @Volatile private var shownState: WakeNote.State? = null
+
+    private fun build(st: WakeNote.State): Notification {
         val open = PendingIntent.getActivity(this, 3, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val n: Notification = NotificationCompat.Builder(this, CH)
+        return NotificationCompat.Builder(this, CH)
             .setSmallIcon(R.drawable.ic_stat_blaze)
-            .setContentTitle("Listening for \"Hey Blaze\"")
-            .setContentText("Offline. Turn off in Blaze settings.")
-            .setOngoing(true).setContentIntent(open)
+            .setContentTitle(WakeNote.title(st))
+            .setContentText(WakeNote.text(st))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(WakeNote.text(st)))
+            .setOngoing(true).setContentIntent(open).setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_MIN).build()
+    }
+
+    /** Re-posts the notification when the state changed (cheap no-op otherwise). */
+    private fun note() {
+        if (!running) return
+        val st = WakeNote.of(listening, paused, sleeping, micBlocked)
+        if (st == shownState) return
+        shownState = st
+        try { getSystemService(NotificationManager::class.java)?.notify(ID, build(st)) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("WakeNote", e) }
+    }
+
+    private fun goForeground(): Boolean {
+        val st = WakeNote.of(listening, paused, sleeping, micBlocked)
+        shownState = st
+        val n: Notification = build(st)
         try {
             ServiceCompat.startForeground(this, ID, n,
                 if (Build.VERSION.SDK_INT >= 30) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0)
@@ -182,6 +202,7 @@ class WakeWordService : Service() {
                     android.media.AudioFormat.CHANNEL_IN_MONO, android.media.AudioFormat.ENCODING_PCM_16BIT, maxOf(min, 8192))
                 if (ar.state != android.media.AudioRecord.STATE_INITIALIZED) throw IllegalStateException("mic busy")
                 ar.startRecording()
+                main.post { note() }
                 val buf = ShortArray(1600)   // 100 ms
                 var silentMs = 0L
                 var warned = false
@@ -196,8 +217,8 @@ class WakeWordService : Service() {
                     if (n <= 0) { Thread.sleep(50); continue }
                     var peak = 0
                     for (i in 0 until n) { val v = kotlin.math.abs(buf[i].toInt()); if (v > peak) peak = v }
-                    if (peak == 0) { silentMs += n / 16 } else { silentMs = 0; if (warned) { warned = false; com.blaze.assistant.notify.Notifier.clearWakeBlocked() } }
-                    if (silentMs > 6000 && !warned) { warned = true; com.blaze.assistant.notify.Notifier.wakeBlocked() }
+                    if (peak == 0) { silentMs += n / 16 } else { silentMs = 0; if (warned) { warned = false; micBlocked = false; main.post { note() }; com.blaze.assistant.notify.Notifier.clearWakeBlocked() } }
+                    if (silentMs > 6000 && !warned) { warned = true; micBlocked = true; main.post { note() }; com.blaze.assistant.notify.Notifier.wakeBlocked() }
                     if (gate) {
                         var sum = 0.0
                         for (i in 0 until n) { val v = buf[i].toDouble(); sum += v * v }
@@ -227,6 +248,7 @@ class WakeWordService : Service() {
                 try { ar?.stop() } catch (_: Exception) { }
                 ar?.release(); rec?.close()
                 listening = false
+                main.post { note() }
             }
         }.also { it.start() }
     }
@@ -236,13 +258,13 @@ class WakeWordService : Service() {
         "\"hey\", \"okay\", \"blaze\", \"play\", \"place\", \"plays\", \"base\", \"blade\", \"blessed\", \"lady\", \"baby\", \"maybe\", " +
         "\"hey babe\", \"hey they\", \"he played\", \"the\", \"a\", \"and\", \"is\", \"what\", \"yes\", \"no\", \"[unk]\"]"
 
-    private fun stopListening() { listening = false; thread = null }
+    private fun stopListening() { listening = false; thread = null; main.post { note() } }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACT_PAUSE -> { paused = true; pausedAt = System.currentTimeMillis(); stopListening() }
-            ACT_RESUME -> { paused = false; main.postDelayed({ startListening() }, 350) }
-            ACT_REFRESH -> { goForeground(); com.blaze.assistant.notify.Notifier.clearWakeBlocked()
+            ACT_RESUME -> { paused = false; note(); main.postDelayed({ startListening() }, 350) }
+            ACT_REFRESH -> { micBlocked = false; goForeground(); com.blaze.assistant.notify.Notifier.clearWakeBlocked()
                 if (!paused) { stopListening(); main.postDelayed({ startListening() }, 300) } }
             else -> if (!paused) startListening()
         }
@@ -281,9 +303,9 @@ class WakeWordService : Service() {
         if (com.blaze.assistant.ui.Overlay.canDrawOverApps(this)) {
             android.os.Handler(mainLooper).post { com.blaze.assistant.ui.Overlay.openPanel(this, listen = true) }; return
         }
-        val i = Intent(this, MainActivity::class.java)
+        val i = com.blaze.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            .putExtra(MainActivity.EXTRA_LISTEN, true)
+            .putExtra(MainActivity.EXTRA_LISTEN, true))
         try { startActivity(i) } catch (_: Exception) { com.blaze.assistant.notify.Notifier.wakeHeard() }
     }
 

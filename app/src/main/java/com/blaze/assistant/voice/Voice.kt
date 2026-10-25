@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import java.util.Locale
 import com.blaze.assistant.voice.myvoice.MyVoice
 import com.blaze.assistant.voice.myvoice.VoiceRoute
+import com.blaze.assistant.voice.gemini.GeminiTts
+import com.blaze.assistant.voice.gemini.GeminiVoice
 
 /**
  * Speech in (Android's recognizer) and speech out. Main thread only.
@@ -53,7 +55,7 @@ object Voice {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     /** Something can speak: the phone's TTS, or My voice. */
-    fun ttsOk() = ttsReady || MyVoice.route().first == VoiceRoute.Route.MINE
+    fun ttsOk() = ttsReady || MyVoice.route().first == VoiceRoute.Route.MINE || GeminiVoice.ready()
 
     fun init(ctx: Context) {
         app = ctx.applicationContext
@@ -65,6 +67,15 @@ object Voice {
                 if (!ttsReady) { utteranceDone(id); return }
                 tts?.speak(text, TextToSpeech.QUEUE_ADD, null, id)
             }
+        }
+        GeminiVoice.events = object : GeminiVoice.Events {
+            override fun started(id: String) = utteranceStarted()
+            override fun done(id: String) = utteranceDone(id)
+            override fun handoff(text: String, id: String) {
+                if (!ttsReady) { utteranceDone(id); return }
+                tts?.speak(text, TextToSpeech.QUEUE_ADD, null, id)
+            }
+            override fun tell(text: String) = tellGeminiOnce(text)
         }
         tts = TextToSpeech(app) { status ->
             ttsReady = status == TextToSpeech.SUCCESS
@@ -96,22 +107,43 @@ object Voice {
         } else WakeWordService.resume(app)
     }
 
-    private fun speakingNow() = tts?.isSpeaking == true || MyVoice.busy()
+    private fun speakingNow() = tts?.isSpeaking == true || MyVoice.busy() || GeminiVoice.busy()
+
+    /** v0.41.0: why the Gemini voice isn't speaking, said once per app run. */
+    @Volatile private var geminiTold = false
+    private fun tellGeminiOnce(text: String) {
+        if (geminiTold || text.isBlank()) return
+        geminiTold = true
+        try { android.widget.Toast.makeText(app, text, android.widget.Toast.LENGTH_LONG).show() } catch (_: Exception) { }
+    }
 
     /**
      * The one place speech goes out (VoiceOut). My voice when chosen and ready; otherwise the phone's TTS, and when
      * My voice was chosen but can't speak (slow phone, model missing/failed) the user is told why, once.
      */
     private fun out(text: String, flush: Boolean, id: String): Boolean {
+        // v0.41.0 Gemini voice: the user's Gemini key speaks; without one (or after a failure) the phone's voice does.
+        if (GeminiVoice.chosen()) {
+            if (GeminiVoice.ready()) {
+                if (flush) { tts?.stop(); MyVoice.stop() }
+                GeminiVoice.speak(text, id, flush)
+                return true
+            }
+            tellGeminiOnce(if (!GeminiVoice.hasKey()) GeminiTts.NO_KEY + " Using the phone voice for now." else GeminiVoice.lastError.ifBlank { "The Google voice isn't working right now." } + " Using the phone voice for now.")
+            if (!ttsReady) return false
+            if (flush) GeminiVoice.stop()
+            tts?.speak(text, if (flush) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, id)
+            return true
+        }
         val (route, reason) = MyVoice.route()
         if (route == VoiceRoute.Route.MINE) {
-            if (flush) tts?.stop()
+            if (flush) { tts?.stop(); GeminiVoice.stop() }
             MyVoice.speak(text, id, flush)
             return true
         }
         if (MyVoice.chosen()) MyVoice.tellOnce(reason)
         if (!ttsReady) return false
-        if (flush) MyVoice.stop()
+        if (flush) { MyVoice.stop(); GeminiVoice.stop() }
         tts?.speak(text, if (flush) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, id)
         return true
     }
@@ -200,6 +232,9 @@ object Voice {
         WakeWordService.resume(app)
     }
 
+    /** v0.39.0 hold-to-talk: the finger came off, so stop recording and deliver what was said. */
+    fun stopListening() { try { recognizer?.stopListening() } catch (_: Exception) { } }
+
     fun cancelListening() {
         recognizer?.let { it.cancel(); it.destroy() }
         recognizer = null
@@ -209,7 +244,8 @@ object Voice {
     fun speak(text: String, queue: Boolean = false) {
         if (!ttsOk()) return
         WakeWordService.pause(app)
-        val clean = com.blaze.assistant.ui.Md.plain(text).replace(Regex("[*_`#>•]"), "").take(3900)
+        // v0.41.0: only the reply's words: no markdown symbols, links, code, or step / status lines.
+        val clean = SpokenText.forSpeech(text).ifBlank { " " }
         out(clean, !queue, "blaze-${System.currentTimeMillis()}")
     }
 
@@ -217,7 +253,7 @@ object Voice {
     fun speakPart(text: String) {
         if (!ttsOk()) return
         WakeWordService.pause(app)
-        val clean = com.blaze.assistant.ui.Md.plain(text).replace(Regex("[*_`#>•]"), "").trim().take(3900)
+        val clean = SpokenText.forSpeech(text)
         if (clean.isBlank()) return
         out(clean, false, "part-${System.currentTimeMillis()}")
     }
@@ -230,6 +266,7 @@ object Voice {
             tts?.setAudioAttributes(android.media.AudioAttributes.Builder().setUsage(usage)
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH).build())
             MyVoice.setUsage(usage)
+            GeminiVoice.setUsage(usage)
             am.mode = if (on) android.media.AudioManager.MODE_IN_COMMUNICATION else android.media.AudioManager.MODE_NORMAL
             @Suppress("DEPRECATION") am.isSpeakerphoneOn = !on
         } catch (_: Exception) { }
@@ -267,7 +304,7 @@ object Voice {
     } catch (_: Exception) { emptyList() }
 
     /** "Hear it" in Settings → Voice: always the phone's voice (that's what those settings tune). */
-    fun preview(text: String = "Hi Luke, this is how I sound.") {
+    fun preview(text: String = "Hi, this is how I sound.") {
         if (!ttsReady) return
         applyPrefs()
         MyVoice.stop()
@@ -277,6 +314,7 @@ object Voice {
     fun stopSpeaking() {
         tts?.stop()
         MyVoice.stop()
+        GeminiVoice.stop()
         if (_state.value == State.SPEAKING) { _state.value = State.IDLE; WakeWordService.resume(app) }
     }
 }

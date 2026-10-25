@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings as AndroidSettings
 import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.connect.Connectors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,22 +18,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * In-chat self-update: finds the newest Blaze-v*.apk on the repo's apk branch (public repo; a GitHub connection only raises the rate limit; it
- * uses the GitHub connector token), downloads it with progress and installs it through
+ * In-chat self-update. v0.45.4: reads the Blaze site's versions.json ([VersionFeed]), downloads android.url in the app
+ * (resumable, [ApkDownload]), checks it against android.sha256 and the signing key, and installs it through
  * PackageInstaller. Prefs, keys and models live in app storage, so an update keeps them all.
  */
 object Updater {
     const val TOOL = "update_blaze"
     const val CARD = "update:card"
-    private const val REPO = "lacksonkapapahue/Blaze-agent"
-    private const val API = "https://api.github.com/repos/$REPO/contents"
 
     sealed class State {
         object Idle : State()
@@ -104,22 +100,47 @@ object Updater {
     fun finished(s: State): Boolean = s is State.Done || s is State.UpToDate
 
     private val KEY_LAST_CHECK = "update_last_check"
+    private val KEY_DISMISSED = "update_banner_dismissed"
+
+    /** v0.45.4: the "Blaze X.Y.Z is available" banner (null = hidden). */
+    data class Banner(val version: String, val line: String, val notes: String, val legacy: Boolean = false)
+    private val _banner = MutableStateFlow<Banner?>(null)
+    val banner: StateFlow<Banner?> = _banner
 
     /**
-     * v0.24.4 background updates: at most once a day, on launch, a quiet check. If a newer Blaze is published the
-     * single update card appears with Install; nothing is downloaded until the user taps it.
+     * v0.45.4: at most once a day, on app open, a quiet look at versions.json. A newer Blaze shows a small banner the
+     * user can dismiss (that version then stays hidden). Offline or any error: nothing is shown and the day isn't used up.
      */
     fun checkInBackground(ctx: Context) {
         val now = System.currentTimeMillis()
         val last = try { com.blaze.assistant.agent.Settings.str(KEY_LAST_CHECK, "0").toLongOrNull() ?: 0L } catch (_: Exception) { return }
-        if (now - last < 24 * 3600_000L || job?.isActive == true) return
-        try { com.blaze.assistant.agent.Settings.setStr(KEY_LAST_CHECK, now.toString()) } catch (_: Exception) { }
+        if (!VersionFeed.due(now, last) || job?.isActive == true) return
         val app = ctx.applicationContext
-        job = scope.launch {
-            run(app, false)
-            if (_state.value is State.Ready) showCard() else _state.value = State.Idle
+        scope.launch {
+            val a = withContext(Dispatchers.IO) { try { latest() } catch (_: Exception) { null } } ?: return@launch
+            try { com.blaze.assistant.agent.Settings.setStr(KEY_LAST_CHECK, now.toString()) } catch (_: Exception) { }
+            val dismissed = try { com.blaze.assistant.agent.Settings.str(KEY_DISMISSED, "") } catch (_: Exception) { "" }
+            VersionFeed.banner(a, installed(app), dismissed)?.let { val note = legacyNote(app); _banner.value = Banner(a.version, note ?: it, a.notes, note != null) }
         }
     }
+
+    /** The banner's ×: hide it and don't show this version again. */
+    fun dismissBanner() {
+        val b = _banner.value ?: return
+        try { com.blaze.assistant.agent.Settings.setStr(KEY_DISMISSED, b.version) } catch (_: Exception) { }
+        _banner.value = null
+    }
+
+    /** The banner's Update: the normal in-app update (card + download + install). */
+    fun updateFromBanner(ctx: Context) {
+        val b = _banner.value; _banner.value = null
+        // 0.45.18: Android 7/8 on the old key: the site's download page instead of an install that can't work.
+        if (b?.legacy == true) try {
+            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SITE)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); return
+        } catch (_: Throwable) { }
+        start(ctx)
+    }
+    const val SITE = "https://blazeinchue.pages.dev"
 
     init {
         scope.launch {
@@ -141,76 +162,52 @@ object Updater {
         if (Build.VERSION.SDK_INT >= 28) i.longVersionCode else i.versionCode.toLong()
     } catch (_: Exception) { 0L }
 
-    /**
-     * v0.8.0 renumbered Blaze for Android to 0.x to match Blaze Desktop and CLI (it was 1.17.0), so the
-     * build name no longer grows. CI therefore also publishes the same APK as `Blaze-v1.999.<versionCode>.apk`:
-     * older Blazes (which compare names) see it as newer and update, and this Blaze reads the build number
-     * from it and compares that instead. The real name (`Blaze-v0.8.0.apk`) is what the user sees.
-     */
-    private val bridgeRe = Regex("^Blaze-v1\\.999\\.(\\d+)\\.apk$")
-
-    private fun ver(s: String): List<Int> = s.split('.', '-').mapNotNull { it.toIntOrNull() }
-    private fun newer(a: String, b: String): Boolean {
-        val x = ver(a); val y = ver(b)
-        for (i in 0 until maxOf(x.size, y.size)) { val d = x.getOrElse(i) { 0 } - y.getOrElse(i) { 0 }; if (d != 0) return d > 0 }
-        return false
-    }
-
-    private fun conn(url: String, token: String?, raw: Boolean): HttpURLConnection =
+    private fun conn(url: String): HttpURLConnection =
         (URL(url).openConnection() as HttpURLConnection).apply {
             // v0.28.1: long read timeout for slow mobile data (a stalled read is retried and resumed, not fatal).
             connectTimeout = 20_000; readTimeout = 90_000
-            // The repo is public: a GitHub connection only raises the rate limit, it isn't required.
-            if (!token.isNullOrBlank()) setRequestProperty("Authorization", "Bearer $token")
-            setRequestProperty("Accept", if (raw) "application/vnd.github.raw" else "application/vnd.github+json")
+            useCaches = false
+            instanceFollowRedirects = true
+            setRequestProperty("Cache-Control", "no-cache")
+            setRequestProperty("Pragma", "no-cache")
             setRequestProperty("User-Agent", "Blaze-Android")
         }
 
-    private fun fail(msg: String): String { _state.value = State.Failed(msg); return msg }
+    /** versions.json's android entry, fresh (no cache). Throws [UpdateError] with plain words. */
+    private fun latest(): VersionFeed.Android {
+        val c = conn(VersionFeed.URL)
+        try {
+            if (c.responseCode !in 200..299) throw UpdateError("The Blaze site answered with an error (${c.responseCode}). Try again in a minute.")
+            return VersionFeed.parse(c.inputStream.bufferedReader().readText())
+                ?: throw UpdateError("The Blaze site's version list couldn't be read. Try again later.")
+        } finally { c.disconnect() }
+    }
 
-    @Volatile private var newestCode = -1L
-    private val blobShas = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private fun fail(msg: String): String { _state.value = State.Failed(msg); return msg }
 
     /** Checks and (optionally) installs. Returns a plain sentence for the model. */
     suspend fun run(ctx: Context, install: Boolean): String {
         val s = _state.value
         if (s is State.Checking || s is State.Downloading || s is State.Installing) return "An update is already running."
         _state.value = State.Checking
-        val token = withContext(Dispatchers.IO) { try { Connectors.access("github") } catch (_: Exception) { null } }
         val have = installed(ctx)
         return try {
-            val (name, version, size) = withContext(Dispatchers.IO) {
-                val c = conn("$API?ref=apk", token, false)
-                when (c.responseCode) {
-                    401 -> throw UpdateError("GitHub refused the saved GitHub login. Reconnect GitHub in Settings › Connectors, or disconnect it, and try again.")
-                    403, 429 -> throw UpdateError("GitHub is limiting update checks right now. Try again in an hour, or connect GitHub in Settings › Connectors.")
-                    404 -> throw UpdateError("Couldn't find the Blaze builds. Try again later.")
-                }
-                if (c.responseCode !in 200..299) throw UpdateError("GitHub answered with an error (${c.responseCode}). Try again in a minute.")
-                val arr = JSONArray(c.inputStream.bufferedReader().readText())
-                val files = (0 until arr.length()).map { arr.getJSONObject(it) }
-                val re = Regex("^Blaze-v(\\d+(?:\\.\\d+)*)\\.apk$")
-                val bridge = files.mapNotNull { o -> bridgeRe.find(o.optString("name"))?.let { it.groupValues[1].toLong() to o } }.maxByOrNull { it.first }
-                val named = files.filter { bridgeRe.find(it.optString("name")) == null }
-                    .mapNotNull { o -> re.find(o.optString("name"))?.let { blobShas[o.optString("name")] = o.optString("sha"); Triple(o.optString("name"), it.groupValues[1], o.optLong("size")) } }
-                    .maxWithOrNull { a, b -> if (newer(a.second, b.second)) 1 else if (newer(b.second, a.second)) -1 else 0 }
-                newestCode = bridge?.first ?: -1L
-                bridge?.let { b -> blobShas[b.second.optString("name")] = b.second.optString("sha") }
-                named ?: bridge?.let { b -> Triple(b.second.optString("name"), "build ${b.first}", b.second.optLong("size")) }
-                    ?: throw UpdateError("No Blaze builds are published yet.")
-            }
-            // Build numbers decide when CI published one (names went from 1.x to 0.x in v0.8.0); names otherwise.
-            val isNewer = if (newestCode >= 0) newestCode > installedCode(ctx) else newer(version, have)
+            val entry = withContext(Dispatchers.IO) { latest() }
+            val version = entry.version
+            val name = "blaze-$version.apk"
+            val isNewer = VersionFeed.newer(version, have)
             if (!isNewer) { _state.value = State.UpToDate(have); return "Blaze is up to date (v$have)." }
+            // 0.45.18: an Android 7/8 phone on the old key can't take this APK in place, so don't download it at all.
+            legacyNote(ctx)?.let { _state.value = State.Failed(it); return "Blaze v$version is available, but: $it" }
             if (!install) { _state.value = State.Ready(version); return "Blaze v$version is available (installed: v$have). Say update to install it." }
             if (Build.VERSION.SDK_INT >= 26 && !ctx.packageManager.canRequestPackageInstalls()) {
                 _state.value = State.NeedsPermission(version)
                 ctx.startActivity(Intent(AndroidSettings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                return "Blaze v$version is ready, but Android needs permission first: turn on 'Allow from this source' for Blaze, then tap Retry on the update card."
+                return "Blaze v$version is ready. Android asks once before an app can install its own updates: turn on 'Allow from this source' for Blaze, then tap Retry on the update card."
             }
             _state.value = State.Downloading(version, 0)
             val apk = withContext(Dispatchers.IO) {
-                // v0.28.1: resumable, retried, mirrored download (ApkDownload). The partial file of this same build is kept
+                // v0.28.1: resumable, retried download (ApkDownload); v0.45.4: only from versions.json's url. The partial file of this same build is kept
                 // between tries and between Retry taps; anything else in the folder is cleared.
                 val dir = File(ctx.cacheDir, "update").apply { mkdirs() }
                 val f = File(dir, name)
@@ -218,13 +215,13 @@ object Updater {
                 dir.listFiles()?.forEach { if (it.name != part.name) it.delete() }
                 val me = coroutineContext[kotlinx.coroutines.Job]
                 val cancelled = { me?.isActive == false }
-                val sources = ApkDownload.sources(REPO, name, version.takeIf { it.firstOrNull()?.isDigit() == true }, "$API/$name?ref=apk")
+                val sources = VersionFeed.sources(entry)
                 var last = -1
                 try {
-                    ApkDownload.fetch(sources, httpIo(ctx, token), part, f, size, blobShas[name]?.takeIf { it.length == 40 }, cancelled) { ev ->
+                    ApkDownload.fetch(sources, httpIo(ctx), part, f, 0L, entry.sha256, cancelled) { ev ->
                         when (ev) {
                             is ApkDownload.Event.Progress -> {
-                                val total = if (ev.total > 0) ev.total else size
+                                val total = ev.total
                                 val pct = if (total > 0) (ev.done * 100 / total).toInt().coerceIn(0, 100) else 0
                                 val cur = _state.value
                                 if (pct != last || (cur is State.Downloading && cur.note.isNotEmpty())) { last = pct; _state.value = State.Downloading(version, pct) }
@@ -236,7 +233,7 @@ object Updater {
                 } catch (e: ApkDownload.Cancelled) { throw kotlinx.coroutines.CancellationException("Stopped") }
                 catch (e: ApkDownload.GaveUp) { com.blaze.assistant.device.CrashLog.error("Update download", e)
                     throw UpdateError("The connection kept dropping, so I stopped for now. What's downloaded is kept: tap Retry and I'll carry on from there.") }
-                catch (e: ApkDownload.Damaged) { throw UpdateError("The download got damaged on the way, so I didn't install it. Tap Retry to get a fresh copy.") }
+                catch (e: ApkDownload.Damaged) { f.delete(); throw UpdateError(e.message ?: VersionFeed.SHA_MISMATCH) }
                 f
             }
             // Check it before Android sees it: same app, newer build, signed by the key this Blaze trusts.
@@ -246,7 +243,7 @@ object Updater {
             "Downloaded Blaze v$version. Android is asking the user to confirm the install; Blaze restarts after it."
         } catch (e: UpdateError) { fail(e.message ?: "Update failed.") }
         catch (e: java.net.UnknownHostException) { fail("No internet connection. Connect and tap Retry.") }
-        catch (e: java.net.SocketTimeoutException) { fail("GitHub is taking too long to answer. Tap Retry.") }
+        catch (e: java.net.SocketTimeoutException) { fail("The Blaze site is taking too long to answer. Tap Retry.") }
         catch (e: java.io.IOException) { com.blaze.assistant.device.CrashLog.error("Update", e); fail("The connection dropped while checking for the update. Tap Retry.") }
         catch (e: kotlinx.coroutines.CancellationException) {
             _state.value = State.Idle
@@ -258,13 +255,11 @@ object Updater {
 
     private class UpdateError(msg: String) : Exception(msg)
 
-    /** v0.28.1: real HTTP for ApkDownload: Range from the partial file; the GitHub token only for api.github.com. */
-    private fun httpIo(ctx: Context, token: String?): ApkDownload.Io = object : ApkDownload.Io {
+    /** v0.28.1: real HTTP for ApkDownload: Range from the partial file; redirects followed (the site 302s to the registry). */
+    private fun httpIo(ctx: Context): ApkDownload.Io = object : ApkDownload.Io {
         override fun open(url: String, from: Long): ApkDownload.Response {
-            val api = url.startsWith("https://api.github.com/")
-            val c = conn(url, if (api) token else null, raw = true)
-            if (!api) c.setRequestProperty("Accept", "application/octet-stream")
-            c.instanceFollowRedirects = true
+            val c = conn(url)
+            c.setRequestProperty("Accept", "application/octet-stream")
             if (from > 0) c.setRequestProperty("Range", "bytes=$from-")
             c.setRequestProperty("Accept-Encoding", "identity")
             val code = c.responseCode
@@ -277,6 +272,25 @@ object Updater {
             caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
         } catch (_: Exception) { true }
     }
+
+    /**
+     * 0.45.16: Blaze's signing key changed in 0.45.15 (the old key was public). A phone whose Blaze can't take the new
+     * build in place is told the one fix: uninstall once and reinstall from the site. The site says the same.
+     */
+    /** 0.45.18: the installed Blaze's signer fingerprints (lowercase hex SHA-256), empty when they can't be read. */
+    @Suppress("DEPRECATION")
+    private fun installedSigners(ctx: Context): Set<String> = try {
+        fun sha(b: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
+        if (Build.VERSION.SDK_INT >= 28)
+            ctx.packageManager.getPackageInfo(ctx.packageName, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners.map { sha(it.toByteArray()) }.toSet()
+        else ctx.packageManager.getPackageInfo(ctx.packageName, android.content.pm.PackageManager.GET_SIGNATURES).signatures.map { sha(it.toByteArray()) }.toSet()
+    } catch (_: Throwable) { emptySet() }
+
+    /** 0.45.18: the Android 7/8 old-key note ([UpdateKeys.legacyNote]) for this phone, or null. */
+    fun legacyNote(ctx: Context): String? = UpdateKeys.legacyNote(Build.VERSION.SDK_INT, installedSigners(ctx))
+
+    const val KEY_CHANGED = "Blaze's signing key changed in 0.45.15, so this phone can't update in place. Uninstall Blaze once, " +
+        "then install it again from blazeinchue.pages.dev. Updates work normally after that."
 
     /** Why a downloaded APK must not be installed (null = fine). */
     @Suppress("DEPRECATION")
@@ -300,7 +314,13 @@ object Updater {
             trusted = mine.signatures.map { sha(it.toByteArray()) }.toSet()
             offered = (info.signatures ?: emptyArray()).map { sha(it.toByteArray()) }.toSet()
         }
-        if (trusted.isEmpty() || !offered.containsAll(trusted)) return "That download isn't signed by Blaze's key, so I didn't install it."
+        if (trusted.isEmpty() || !offered.containsAll(trusted)) return KEY_CHANGED
+        // 0.45.15 key rotation: from now on every Blaze update is signed by the private release key (the old key is public and
+        // burned). On Android 9+ the download's current signer must be that key; the old key only counts as its history.
+        if (Build.VERSION.SDK_INT >= 28) {
+            val current = info.signingInfo?.apkContentsSigners?.map { sha(it.toByteArray()) }?.toSet().orEmpty()
+            if (!UpdateKeys.pinned(current)) return "That download isn't signed by Blaze's release key, so I didn't install it."
+        }
         return null
     }
 
@@ -331,7 +351,7 @@ object Updater {
             PackageInstaller.STATUS_SUCCESS -> _state.value = State.Done(v)
             PackageInstaller.STATUS_FAILURE_ABORTED -> _state.value = State.Failed("The install was cancelled. Tap Retry when you're ready.")
             PackageInstaller.STATUS_FAILURE_CONFLICT, PackageInstaller.STATUS_FAILURE_INCOMPATIBLE ->
-                _state.value = State.Failed("Android refused this build: it isn't signed with the same key as the Blaze you have.")
+                _state.value = State.Failed(KEY_CHANGED)
             PackageInstaller.STATUS_FAILURE_STORAGE -> _state.value = State.Failed("Not enough free space to install. Free some up and tap Retry.")
             else -> _state.value = State.Failed("Android couldn't install the update" +
                 (intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)?.let { ": $it" } ?: ".") + " Tap Retry.")

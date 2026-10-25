@@ -2,12 +2,14 @@ package com.blaze.assistant.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -49,14 +51,21 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
 /**
- * Preview screenshots of the 0.12 shell (Samsung A12-sized: 360x780 dp). Only runs with BLAZE_SHOTS=1
+ * Preview screenshots of the 0.12 shell (small-phone-sized: 360x780 dp). Only runs with BLAZE_SHOTS=1
  * (CI's screenshot step); PNGs land in app/build/shots and CI pushes them to the `shots` branch.
  */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33], qualifiers = "w360dp-h780dp-xhdpi", application = android.app.Application::class)
-class ShotsTest {
-    @get:Rule val rule = createAndroidComposeRule<androidx.activity.ComponentActivity>()
+open class ShotsTest {
+    // v0.45.0: checked before the compose rule starts its activity (and Robolectric's native graphics runtime, which has no
+    // ARM Linux build), so without BLAZE_SHOTS=1 every shot is skipped instead of failing on such machines.
+    @get:Rule(order = 0) val onlyWithShots = org.junit.rules.TestRule { base, _ ->
+        object : org.junit.runners.model.Statement() {
+            override fun evaluate() { assumeTrue(System.getProperty("blaze.shots") == "1"); base.evaluate() }
+        }
+    }
+    @get:Rule(order = 1) val rule = createAndroidComposeRule<androidx.activity.ComponentActivity>()
 
     @Before fun setUp() {
         assumeTrue(System.getProperty("blaze.shots") == "1")
@@ -75,7 +84,7 @@ class ShotsTest {
         val root = rule.activity.window.decorView
         val bmp = Bitmap.createBitmap(root.width.coerceAtLeast(1), root.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
         root.draw(android.graphics.Canvas(bmp))
-        val dir = File(System.getProperty("blaze.shotsDir") ?: "build/shots").apply { mkdirs() }
+        val dir = File(System.getProperty("blaze.shotsDir") ?: "build/shots", if (javaClass == ShotsTest::class.java) "" else javaClass.simpleName).apply { mkdirs() }
         File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
@@ -125,7 +134,7 @@ class ShotsTest {
     @Composable
     private fun Chat(plus: Boolean = false, views: Boolean = false, chip: String = "", input: String = "", busy: Boolean = true) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, routerOk = true, onRouter = {}, avatar = "Luke", onAvatar = {}, mood = if (busy) Mood.ACTING else Mood.IDLE)
+            ShellTopBar("chat", {}, {}, {}, routerOk = true, onRouter = {}, avatar = "Sam", onAvatar = {}, mood = if (busy) Mood.ACTING else Mood.IDLE)
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 ThreadSample(busy)
                 if (plus || views) SheetScrim {}
@@ -171,14 +180,14 @@ class ShotsTest {
     @Test fun views() = shot("04-views") { Chat(views = true, input = "/views") }
     @Test fun avatar() = shot("05-avatar-menu") {
         Chat()
-        AvatarMenu("Luke", "lacksonkapapahue@gmail.com", listOf(
+        AvatarMenu("Sam", "sam@example.com", listOf(
             MenuItem("account", "Account", "Signed in"), MenuItem("settings", "Settings"), MenuItem("router", "BlazeRouter", "AUTO"),
-            MenuItem("views", "All views", "/VIEWS"), MenuItem("control", "Phone control", "ON"), MenuItem("theme", "Dark theme", "System"),
+            MenuItem("views", "All views", "/VIEWS"), MenuItem("control", "Phone control", "ON"), MenuItem("themes", "Themes", "Classic"),
             MenuItem("update", "Check for updates", "v0.15.0"), MenuItem("signout", "Sign out")), onPick = {}, onDismiss = {})
     }
     @Test fun projects() = shot("06-projects") {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("projects", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
             ProjectsPane(listOf(Project("p1", "Northrise CS year 2", chats = listOf("c2")), Project("p2", "HomeGlow store", chats = listOf("c3", "c4")),
                 Project("p3", "Portfolio", chats = listOf("c1"))), chats, busy = setOf("c3"), needsYou = setOf("c1"), openId = "",
                 onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
@@ -186,7 +195,7 @@ class ShotsTest {
     }
     @Test fun design() = shot("07-design-exit", dark = true) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, viewChip = "Design")
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, viewChip = "Design")
             Box(Modifier.weight(1f)) { DesignView("~/site/index.html", busy = false, status = "", onAsk = {}, onOpenInBrowser = {}, home = File("/home"), preview = false) }
         }
     }
@@ -223,7 +232,7 @@ class ShotsTest {
     }
     @Test fun clearUndo() = shot("41-clear-undo") {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {})
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 Welcome(needsSetup = false, onSetup = {}) {}
                 UndoBar("Chat cleared \u00b7 nothing is forgotten", onUndo = {})
@@ -234,7 +243,7 @@ class ShotsTest {
     }
     @Test fun questionInline() = shot("42-question-inline", dark = true) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, mood = Mood.ACTING)
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, mood = Mood.ACTING)
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp)) {
                 UserBubble("Book me a bus to Lusaka on Friday")
                 Spacer(Modifier.height(16.dp))
@@ -248,7 +257,7 @@ class ShotsTest {
 
     @Test fun router() = shot("09-router") {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {})
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
                 Label("Settings \u203a BlazeRouter", size = 10.sp, modifier = Modifier.padding(top = 18.dp))
                 RouterPage(onClassic = {})
@@ -257,9 +266,9 @@ class ShotsTest {
     }
     @Test fun projectBrief() = shot("10-project-brief") {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("projects", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
             ProjectsPane(listOf(Project("p2", "HomeGlow store", "Friendly, short replies. Prices in USD.", chats = listOf("c3", "c4"),
-                brief = "Purpose: grow the HomeGlow Shopify store to 20 orders a week.\nRules: free tools only; every customer message needs Luke's OK.\n" +
+                brief = "Purpose: grow the HomeGlow Shopify store to 20 orders a week.\nRules: free tools only; every customer message needs Sam's OK.\n" +
                     "Key files: ~/homeglow/products.csv, ~/homeglow/brand.md\nIn progress: 5 new lamp listings, TikTok week 3.")),
                 chats, busy = setOf("c3"), needsYou = emptySet(), openId = "p2",
                 onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
@@ -267,7 +276,7 @@ class ShotsTest {
     }
     @Test fun longChat() = shot("11-long-chat", dark = true) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {})
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 UserBubble("Where did we land on the lamp prices?")
                 WorkCard(listOf(step(21, "Looking back through this chat for \u201clamp prices\u201d"), step(22, "Reading an earlier message")), live = false,
@@ -291,13 +300,13 @@ class ShotsTest {
     }
     @Test fun learn() { seedCards(); shot("12-learn") {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, viewChip = "Learn")
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, viewChip = "Learn")
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) { LearnPage() }
         }
     } }
     @Test fun flashcard() { seedCards(); shot("13-flashcard", dark = true) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, viewChip = "Learn")
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, viewChip = "Learn")
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp)) { LearnPage(startDeck = "CIT102 loops", reveal = true, now = t0) }
         }
     } }
@@ -307,7 +316,7 @@ class ShotsTest {
             accents = listOf("#e8743b", "#2f5d50"), fonts = listOf("Playfair Display", "Inter"), notes = "Warm, cosy home decor for young renters"))
         shot("14-seller") {
             Column(Modifier.fillMaxSize()) {
-                ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, viewChip = "Seller")
+                ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, viewChip = "Seller")
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) { SellerPage(digest0 = true) }
             }
         }
@@ -319,7 +328,7 @@ class ShotsTest {
         com.blaze.assistant.browser.SecureInput.Field("password", "GitHub password", com.blaze.assistant.browser.SecureInput.Kind.PASSWORD))
     @Composable private fun BrowserChat(content: @Composable () -> Unit) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, mood = Mood.ACTING)
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, mood = Mood.ACTING)
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 UserBubble("Star the Blaze-agent repo on GitHub for me")
                 WorkCard(listOf(step(31, "Browsing github.com/login"), step(32, "Reading the page"), step(33, "Waiting for you: Sign in to GitHub")),
@@ -330,7 +339,7 @@ class ShotsTest {
     }
     @Test fun secureForm() = shot("30-secure-form") {
         BrowserChat { SecureForm("github.com", "Sign in to GitHub", "GitHub needs you signed in to star the repo.", signIn,
-            onSubmit = { _, _ -> }, onCancel = {}, onWatch = {}, preset = mapOf("email" to "lacksonkapapahue", "password" to "not-a-real-one"), notifPrompt = false) }
+            onSubmit = { _, _ -> }, onCancel = {}, onWatch = {}, preset = mapOf("email" to "sam", "password" to "not-a-real-one"), notifPrompt = false) }
     }
     @Test fun secureFormDark() = shot("31-secure-form-dark", dark = true) {
         BrowserChat { SecureForm("api.groq.com", "Your Groq API key", "Paste it once; Blaze saves it encrypted on this phone.",
@@ -339,7 +348,7 @@ class ShotsTest {
     }
     @Test fun noPasswordChoice() = shot("32-no-password-choice") {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {})
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 UserBubble("Sign me in to GitHub")
                 WorkCard(listOf(step(41, "Browsing github.com/login"), step(42, "GitHub says this account can't use a password")), live = false, startAt = t0, endAt = t0 + 9_000)
@@ -352,12 +361,12 @@ class ShotsTest {
     @Test fun savedLogins() {
         com.blaze.assistant.browser.Vault.fileOverride = File(System.getProperty("java.io.tmpdir"), "blaze-shots-vault-" + System.nanoTime() + ".json")
         com.blaze.assistant.browser.Vault.seal = { it }; com.blaze.assistant.browser.Vault.open = { it }
-        com.blaze.assistant.browser.Vault.save("github.com", "email", "lacksonkapapahue@gmail.com")
+        com.blaze.assistant.browser.Vault.save("github.com", "email", "sam@example.com")
         com.blaze.assistant.browser.Vault.save("github.com", "password", "not-a-real-one")
         com.blaze.assistant.browser.Vault.save("console.groq.com", "groq_key", "gsk_not_real_0000")
         shot("33-saved-logins") {
             Column(Modifier.fillMaxSize()) {
-                ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, viewChip = "Saved logins")
+                ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, viewChip = "Saved logins")
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) { SavedLoginsPage() }
             }
         }
@@ -384,21 +393,21 @@ class ShotsTest {
     private fun mem(id: Long, kind: String, subject: String, text: String, related: String = "", turn: Long = 0, ago: Int = 40 - id.toInt()) =
         com.blaze.assistant.agent.Mind.Mem(id, kind, subject, text, related, turn, t0 - ago * day, t0 - ago * day)
     private val mems = listOf(
-        mem(1, "profile", "You", "Luke: Computer Science student at Northrise University, Ndola"),
+        mem(1, "profile", "You", "Sam: Computer Science student at Northrise University, Ndola"),
         mem(2, "profile", "You", "From Chingola, Zambia; finished school at Amano Christian School in 2025"),
-        mem(3, "profile", "You", "Phone is a Samsung A12; data is expensive, prefers low-data answers (inferred)"),
+        mem(3, "profile", "You", "Phone has 3 GB of RAM; data is expensive, prefers low-data answers (inferred)"),
         mem(4, "preference", "Replies", "Short, friendly replies; no long lists unless asked"),
         mem(5, "preference", "Money", "Picks the free or cheapest option first (inferred)"),
         mem(6, "preference", "Study", "Studies at night, 21:00 to 23:00, on weekdays", related = "Northrise University"),
         mem(7, "preference", "Music", "Lofi or afro beats while studying", related = "Study"),
-        mem(8, "person", "Gloria", "Gloria Gozza is Luke's cousin; he sends her his school documents", related = "Northrise University"),
+        mem(8, "person", "Gloria", "Gloria Gozza is Sam's cousin; he sends her his school documents", related = "Northrise University"),
         mem(9, "person", "Gloria", "Gloria's birthday is on 3 March"),
-        mem(10, "person", "Mutale", "Mutale is Luke's CIT102 lecturer", related = "CIT102"),
-        mem(11, "person", "Chanda", "Chanda is in Luke's NET103 group project", related = "NET103 group project"),
+        mem(10, "person", "Mutale", "Mutale is Sam's CIT102 lecturer", related = "CIT102"),
+        mem(11, "person", "Chanda", "Chanda is in Sam's NET103 group project", related = "NET103 group project"),
         mem(12, "project", "HomeGlow store", "Shopify dropshipping store selling lamps and home decor", related = "Gloria"),
         mem(13, "project", "HomeGlow store", "Goal: 20 orders a week by December"),
         mem(14, "project", "Portfolio", "One-page portfolio site in ~/site, hosted free on GitHub Pages"),
-        mem(15, "project", "NET103 group project", "Network design report due 30 October; Luke owns the diagrams", related = "Chanda"),
+        mem(15, "project", "NET103 group project", "Network design report due 30 October; Sam owns the diagrams", related = "Chanda"),
         mem(16, "project", "Blaze", "Building Blaze, an AI assistant for Android, Desktop and CLI"),
         mem(17, "decision", "Lamp prices", "Moon lamp at $24.99 and the mini at $19.99 for the HomeGlow store, free shipping over $35", turn = 41),
         mem(18, "decision", "Ads", "TikTok first for the HomeGlow store; no paid ads until 10 organic orders", turn = 41),
@@ -445,21 +454,6 @@ class ShotsTest {
 
     @Test fun settingsList() = shot("20-settings") { SettingsFrame("Settings") { SettingsList {} } }
 
-    @Test fun modelPicker() = shot("21-model-picker") {
-        SettingsFrame("Brain (classic editor)") {
-            Spacer(Modifier.height(18.dp))
-            Label("Model", modifier = Modifier.padding(bottom = 8.dp))
-            ModelField("meta-llama/llama-3.3-70b-instruct:free", open = true) {}
-            ModelList(listOf(
-                com.blaze.assistant.agent.ModelCatalog.Model("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B Instruct", "free"),
-                com.blaze.assistant.agent.ModelCatalog.Model("google/gemini-2.0-flash-exp:free", "Gemini 2.0 Flash", "free"),
-                com.blaze.assistant.agent.ModelCatalog.Model("deepseek/deepseek-chat-v3-0324:free", "DeepSeek V3", "free"),
-                com.blaze.assistant.agent.ModelCatalog.Model("qwen/qwen-2.5-coder-32b-instruct:free", "Qwen 2.5 Coder 32B", "free"),
-                com.blaze.assistant.agent.ModelCatalog.Model("mistralai/mistral-small-3.1-24b-instruct", "Mistral Small 3.1", "128k context")),
-                selected = "meta-llama/llama-3.3-70b-instruct:free", query = "", onQuery = {}, onPick = {})
-        }
-    }
-
     @Test fun onboarding() = shot("22-onboarding") { SetupFlow(startPage = 1) {} }
 
     @Test fun accounts() = shot("23-accounts") {
@@ -475,7 +469,7 @@ class ShotsTest {
 
     @Test fun workCard() = shot("25-work-card", dark = true) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, mood = Mood.ACTING)
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, mood = Mood.ACTING)
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 UserBubble("Make me a one-page portfolio site and show it to me")
                 WorkCard(doneSteps, live = false, startAt = t0 + 9_000, endAt = t0 + 9_000 + 191_000, open0 = true)
@@ -511,7 +505,7 @@ class ShotsTest {
     // v0.23.0: views + skills. "Make flashcards" → skills on the work card, a Learn deck, a short reply.
     @Test fun viewsSkills() = shot("35-views-skills") {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {})
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 UserBubble("Make me flashcards on CIT102 loops")
                 WorkCard(listOf(step(51, "Skills: study-flashcards, tutor"), step(52, "Making flashcards", "flashcards {\"action\":\"add\",\"deck\":\"CIT102 loops\"}"),
@@ -543,14 +537,14 @@ class ShotsTest {
             .put("units", "m").put("parts", parts))
         shot("36-design-3d") {
             Column(Modifier.fillMaxSize()) {
-                ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, viewChip = "Design")
+                ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, viewChip = "Design")
                 Box(Modifier.weight(1f)) { DesignView(made.open ?: "", busy = false, status = "", onAsk = {}, onOpenInBrowser = {}, home = null, preview = false) }
             }
         }
         com.blaze.assistant.agent.Designs.rootOverride = null
     }
 
-    // v0.23.3: three.js couldn't start (the A12 with WebGL turned off): the same parts drawn natively, the real error, Retry.
+    // v0.23.3: three.js couldn't start (the test phone with WebGL turned off): the same parts drawn natively, the real error, Retry.
     @Test fun design3dFallback() {
         val dir = java.nio.file.Files.createTempDirectory("shots-designs").toFile()
         com.blaze.assistant.agent.Designs.rootOverride = dir
@@ -568,7 +562,7 @@ class ShotsTest {
             .put("units", "m").put("parts", parts))
         shot("37-design-3d-fallback") {
             Column(Modifier.fillMaxSize()) {
-                ShellTopBar("chat", {}, {}, {}, true, {}, "Luke", {}, viewChip = "Design")
+                ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, viewChip = "Design")
                 Box(Modifier.weight(1f)) { DesignView(made.open ?: "", busy = false, status = "", onAsk = {}, onOpenInBrowser = {}, home = null, preview = false,
                     initialFailure = "WebGL is turned off in this phone's WebView (no WebGL 1 or 2), so three.js can't draw.") }
             }
@@ -576,7 +570,7 @@ class ShotsTest {
         com.blaze.assistant.agent.Designs.rootOverride = null
     }
 
-    // v0.21.0: the visible pointer over another app, paused by the user (bar), with a swipe path and a ripple.
+    // v0.21.0: the visible pointer over another app with a swipe path and a ripple; v0.45.14: the Stop chip, no paused bar.
     @Test fun pointer() = shot("34-pointer") {
         val c = LocalBlaze.current
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFFF4F4F4))) {
@@ -592,18 +586,17 @@ class ShotsTest {
                     androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.55f), strokeWidth = 5 * density, cap = androidx.compose.ui.graphics.StrokeCap.Round)
                 drawCircle(androidx.compose.ui.graphics.Color(0xFF1F4BD8).copy(alpha = 0.8f), 6 * density, androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.78f))
             }
-            PointerGlyph(paused = true, ripple = 0.35f, modifier = Modifier.padding(start = 230.dp, top = 166.dp))
-            Box(Modifier.fillMaxWidth().padding(top = 36.dp), contentAlignment = androidx.compose.ui.Alignment.TopCenter) { PointerBar() }
+            PointerGlyph(ripple = 0.35f, modifier = Modifier.padding(start = 230.dp, top = 166.dp))
+            Box(Modifier.fillMaxSize().padding(start = 8.dp, bottom = 88.dp), contentAlignment = androidx.compose.ui.Alignment.BottomStart) { PointerStopChip() }
         }
     }
 
-    // v0.24.5: the mascot pointer on light, dark and busy backgrounds, gliding and clicking, plus the "Click '…'?" check.
+    // v0.24.5: the mascot pointer on light, dark and busy backgrounds, gliding and clicking.
     @Test fun pointerMascot() = shot("44-pointer-mascot") {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFFF4F4F4))) {
                 Text("Light app \u00b7 Blaze gliding", Modifier.padding(top = 96.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color(0xFF1D1A16)))
                 PointerGlyph(pulse = 1.06f, modifier = Modifier.padding(start = 150.dp, top = 140.dp))
-                Box(Modifier.fillMaxWidth().padding(top = 36.dp), contentAlignment = Alignment.TopCenter) { PointerCheck("Click \u2018Add to cart\u2019?") }
             }
             Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFF111110))) {
                 Text("Dark app \u00b7 clicking (squish)", Modifier.padding(top = 20.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color(0xFFEDEDED)))
@@ -611,8 +604,8 @@ class ShotsTest {
             }
             Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(
                 androidx.compose.ui.graphics.Color(0xFF1F4BD8), androidx.compose.ui.graphics.Color(0xFFE8743B), androidx.compose.ui.graphics.Color(0xFF2E7D32))))) {
-                Text("Busy photo \u00b7 paused (you have it)", Modifier.padding(top = 20.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color.White))
-                PointerGlyph(paused = true, modifier = Modifier.padding(start = 120.dp, top = 70.dp))
+                Text("Busy photo \u00b7 still", Modifier.padding(top = 20.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color.White))
+                PointerGlyph(modifier = Modifier.padding(start = 120.dp, top = 70.dp))
             }
         }
     }
@@ -667,29 +660,6 @@ class ShotsTest {
     }
 
     // v0.23.4: Settings › Brains / Auto, models per provider with cooling counts, one provider opened.
-    @Test fun autoPool() = shot("38-auto-pool") {
-        fun S(pid: String, name: String, n: Int, cool: Int, tools: Int, at: Long, err: String, next: Long) =
-            com.blaze.assistant.agent.FreeRouter.PoolSummary(pid, name, n, cool, tools, at, err, next)
-        val rows = listOf(
-            S("gemini", "Google Gemini", 9, 1, 7, 1L, "", 0),
-            S("groq", "Groq", 12, 12, 9, 1L, "", 40_000),
-            S("nvidia", "NVIDIA NIM", 31, 2, 24, 1L, "", 0),
-            S("openrouter", "OpenRouter", 14, 0, 10, 1L, "", 0),
-            S("pollinations", "Keyless", 1, 0, 0, 0L, "", 0),
-        )
-        val nim = listOf(
-            PoolModel("moonshotai/kimi-k2.6", true, "worked", false),
-            PoolModel("z-ai/glm-5.3", true, "limited · back in 52s · rate limit", true),
-            PoolModel("nvidia/nemotron-3-super-120b-a12b", true, "untried", false),
-            PoolModel("meta/llama-3.3-70b-instruct", true, "failed · back in 23h 59m · not available", true),
-            PoolModel("deepseek-ai/deepseek-v4.1-flash", true, "untried", false),
-            PoolModel("google/gemma-4-31b-it", false, "untried", false),
-        )
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
-            PageHead("Brains", "Auto (free routing)", "Every free model your providers offer, taking turns.")
-            AutoPoolPanel(rows, refreshing = false, onRefresh = {}, models = { if (it == "nvidia") nim else emptyList() }, initiallyOpen = "nvidia")
-        }
-    }
     // v0.24.7 Magic Hand: the dock over an app, the menu (shared pointer tiles), grab, teach review and the watches page.
     private fun handState() = com.blaze.assistant.phone.MagicHandState.point(com.blaze.assistant.phone.MagicHandState.start(false),
         "K1,299", com.blaze.assistant.phone.MagicHandLogic.Kind.VALUE, "Jumia")
@@ -760,25 +730,6 @@ class ShotsTest {
                     com.blaze.assistant.phone.MagicHandState.teach(handState()), listOf("Open WhatsApp (package com.whatsapp)", "Tap \u201cMum\u201d")),
                     com.blaze.assistant.phone.DockCalls())
             }
-        }
-    }
-
-    // v0.25.1: the Desktop view while the Linux desktop installs.
-    @Test fun linuxDesktop() = shot("56-linux-desktop", dark = true) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
-            LinuxDesktopPage(preview = com.blaze.assistant.desktop.LinuxDesktop.State(
-                com.blaze.assistant.desktop.DesktopPlan.Phase.INSTALLING, "Installing xfce4-panel (41 of 96)", 42))
-        }
-    }
-
-    // v0.25.5: the live desktop card while Blaze clicks in the Linux desktop (no picture yet: "Connecting…").
-    @Test fun desktopLiveCard() = shot("57-desktop-live-card", dark = true) {
-        Column(Modifier.fillMaxSize().padding(top = 40.dp)) {
-            DesktopLiveCard(onOpen = {}, preview = com.blaze.assistant.desktop.DesktopNarration.Live(active = true, acting = true,
-                status = "Clicking Save", lastAt = 0L, x = 512, y = 300))
-            Spacer(Modifier.height(16.dp))
-            DesktopLiveCard(onOpen = {}, preview = com.blaze.assistant.desktop.DesktopNarration.Live(active = true, acting = true,
-                status = "Typing into Terminal", lastAt = 0L))
         }
     }
 
@@ -873,10 +824,10 @@ class ShotsTest {
         }
     }
 
-    // Luke's own message with Markdown: rendered, never raw "## App" / "**".
+    // Sam's own message with Markdown: rendered, never raw "## App" / "**".
     @Test fun userBubbleMarkdown() = shot("66-user-bubble-markdown") {
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            UserBubble("## App\n1. **Offline mode**: works without data\n2. **Voice notes**: *quick* capture\n- Sync with `git`\n- See [the repo](https://github.com/lacksonkapapahue/Blaze-agent)")
+            UserBubble("## App\n1. **Offline mode**: works without data\n2. **Voice notes**: *quick* capture\n- Sync with `git`\n- See [the repo](https://gitlab.com/blazeinchue/Blaze-agent)")
             BlazeReply(66, "## Plan\n1. **Offline mode** first: cache the last 50 chats.\n2. Then *voice notes*.", GroupPos.SINGLE)
         }
     }
@@ -937,26 +888,26 @@ class ShotsTest {
         }
     }
 
-    // v0.28.3 project chats: the project page with the round back button (Luke's A12, dark), a project chat screen inside
+    // v0.28.3 project chats: the project page with the round back button (Sam's phone, dark), a project chat screen inside
     // Projects (project name over the chat title, same thread and composer as Chat), and main Chat unchanged after it.
-    private val pcChats = listOf(ChatMeta("pc1", "Store Feature Preferences", t0, false, "[github_open repo=\"LacksonKapapa/Blaze-Agent\"]"),
+    private val pcChats = listOf(ChatMeta("pc1", "Store Feature Preferences", t0, false, "[github_open repo=\"Blazeinchue/Blaze-Agent\"]"),
         ChatMeta("pc2", "Launch checklist", t0, false, "Five steps left before the beta"))
     @Test fun projectPageBack() = shot("71-project-page-back", dark = true) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("projects", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
             ProjectsPane(listOf(Project("p9", "New project", chats = listOf("pc1", "pc2"))), pcChats, busy = emptySet(), needsYou = emptySet(), openId = "p9",
                 onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
         }
     }
     @Test fun projectChatScreen() = shot("72-project-chat", dark = true) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("projects", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
             ProjectChatHeader("New project", "Launch checklist", onBack = {}, onRename = {}, onDelete = {}, onNewChat = {})
             Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp)) {
                 UserBubble("What's left before the beta?", pos = GroupPos.SINGLE)
                 MetaLine(Side.ME, "17:31", listOf("Copy" to {}, "Retry" to {}))
                 Spacer(Modifier.height(16.dp))
-                BlazeReply(81, "Five things:\n\n1. **Sign-in** on the A12\n2. Store screenshots\n3. Privacy page\n4. Crash check\n5. Beta invite text", GroupPos.SINGLE)
+                BlazeReply(81, "Five things:\n\n1. **Sign-in** on the test phone\n2. Store screenshots\n3. Privacy page\n4. Crash check\n5. Beta invite text", GroupPos.SINGLE)
                 MetaLine(Side.BLAZE, "17:31", listOf("Copy" to {}, "Quote" to {}, "Retry" to {}))
             }
             Composer(TextFieldValue(""), {}, busy = false, canSend = false, plusOpen = false, chip = "", agents = 0,
@@ -965,7 +916,7 @@ class ShotsTest {
     }
     @Test fun projectChatEmpty() = shot("73-project-chat-new") {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar("projects", {}, {}, {}, true, {}, "Luke", {})
+            ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
             ProjectChatHeader("HomeGlow store", "", onBack = {}, onRename = {}, onDelete = {}, onNewChat = {}, canEdit = false)
             Box(Modifier.weight(1f).fillMaxWidth()) { ProjectChatEmpty("HomeGlow store", hasInstructions = true) }
             Composer(TextFieldValue(""), {}, busy = false, canSend = false, plusOpen = false, chip = "", agents = 0,
@@ -995,9 +946,9 @@ class ShotsTest {
             WorkCard(listOf(ChatMessage(71, Role.STEP, "Looking it up in Blaze's docs", at = t0 + 1_000, startAt = t0)), live = false,
                 startAt = WorkTime.start(listOf(ChatMessage(71, Role.STEP, "x", at = t0 + 1_000, startAt = t0)), t0 - 97 * 60_000L),
                 endAt = t0 + 2_000, open0 = true)
-            BlazeReply(72, "My source code is on GitHub: [lacksonkapapahue/Blaze-agent](https://github.com/lacksonkapapahue/Blaze-agent). " +
-                "It's Kotlin with Jetpack Compose. Blaze Desktop is [Blaze-dekstop](https://github.com/lacksonkapapahue/Blaze-dekstop) and the CLI is " +
-                "[Blaze-cli](https://github.com/lacksonkapapahue/Blaze-cli).", GroupPos.SINGLE)
+            BlazeReply(72, "My source code is on GitLab: [blazeinchue/Blaze-agent](https://gitlab.com/blazeinchue/Blaze-agent). " +
+                "It's Kotlin with Jetpack Compose. Blaze Desktop is [Blaze-dekstop](https://gitlab.com/blazeinchue/Blaze-dekstop) and the CLI is " +
+                "[Blaze-cli](https://gitlab.com/blazeinchue/Blaze-cli).", GroupPos.SINGLE)
         }
     }
 
@@ -1076,5 +1027,98 @@ class ShotsTest {
         com.blaze.assistant.blazeos.BlazeOs.power.value = com.blaze.assistant.blazeos.Power.ON
         com.blaze.assistant.blazeos.BlazeOs.tasks.value = com.blaze.assistant.blazeos.OsTasks()
         shot("57-blazeos-home", dark = true) { com.blaze.assistant.blazeos.BlazeOsScreen(onExit = {}) }
+    }
+
+    /** Wave A 1 (items 4 + 26): video player with the thin scrub bar and no swipe-seek hint, plus the Music seek bar. */
+    @Test fun waveA1PlayerScrub() = shot("90-wa1-player-scrub", dark = true) {
+        val c = LocalBlaze.current
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(androidx.compose.ui.graphics.Color(0xFF1B2733))) {
+                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.35f)))
+                androidx.compose.foundation.layout.Column(Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 10.dp)) {
+                    com.blaze.assistant.mediaapps.MText("18:50 / 38:48", 12.sp, androidx.compose.ui.graphics.Color.White, modifier = Modifier.padding(start = 6.dp))
+                    com.blaze.assistant.mediaapps.ScrubBar(0.485f, {}, {}, active = com.blaze.assistant.ui.BlazeBrush.blue,
+                        rest = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.3f), knob = androidx.compose.ui.graphics.Color.White)
+                }
+            }
+            androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) {
+                com.blaze.assistant.mediaapps.MText("\$215M AI CEO: How I'd Build a Profitable AI Startup in 30 Days (2026 Playbook)", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold, maxLines = 3)
+                com.blaze.assistant.mediaapps.MText("Silicon Valley Girl \u00b7 YouTube", 13.sp, c.sub)
+                androidx.compose.foundation.layout.Spacer(Modifier.height(32.dp))
+                com.blaze.assistant.mediaapps.MText("Music seek bar", 13.sp, c.sub)
+                com.blaze.assistant.mediaapps.ScrubBar(0.3f, {}, {}, active = c.ink, rest = c.hair, knob = c.ink)
+            }
+        }
+    }
+
+    /** Wave A 2 (items 27-28): the Store's two chip rows, "All" selected in both, and the For you header. */
+    @Test fun waveA2ForYouChips() = shot("91-wa2-for-you-chips", dark = true) {
+        val c = LocalBlaze.current
+        @Composable fun chips(labels: List<String>, on: Int, accent: Boolean) = androidx.compose.foundation.layout.Row(
+            Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(vertical = 4.dp),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+            labels.forEachIndexed { i, l ->
+                val sel = i == on
+                Box(Modifier.clip(com.blaze.assistant.ui.BlazeShapes.pill).background(if (sel) (if (accent) c.accent.copy(alpha = 0.22f) else c.ink) else c.faint)
+                    .padding(horizontal = 12.dp, vertical = 7.dp)) {
+                    com.blaze.assistant.mediaapps.MText(l, 12.5.sp, if (sel) (if (accent) c.ink else c.paper) else c.sub, androidx.compose.ui.text.font.FontWeight.Medium)
+                }
+            }
+        }
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().padding(14.dp)) {
+            chips(listOf("All", "YouTube", "Public-domain films", "Blender open movies"), 0, false)
+            com.blaze.assistant.ui.BlazeTextField("", {}, "Search videos", Modifier.fillMaxWidth())
+            chips(listOf("All", "Tobs Manhwa", "His Story", "Silicon Valley Girl", "Tech reviews"), 0, true)
+            com.blaze.assistant.mediaapps.MText("For you", 15.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
+            androidx.compose.foundation.layout.Spacer(Modifier.height(24.dp))
+            chips(listOf("All", "Amapiano", "Afrobeats", "Gospel", "Hip hop", "R&B"), 0, true)
+        }
+    }
+
+    /** Wave A 3 (item 25): the Subtitles and audio menu (Translate to, readable audio name) and the Translate to list. */
+    @Test fun waveA3Captions() = shot("92-wa3-captions", dark = true) {
+        val c = LocalBlaze.current
+        @Composable fun row(t: String, on: Boolean = false) = androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth()
+            .clip(com.blaze.assistant.ui.BlazeShapes.small).background(if (on) c.accent.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent)
+            .padding(horizontal = 10.dp, vertical = 11.dp)) {
+            com.blaze.assistant.mediaapps.MText(t, 14.5.sp, c.ink, if (on) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal, modifier = Modifier.weight(1f))
+            if (on) com.blaze.assistant.mediaapps.MText("\u2713", 14.sp, c.accent)
+        }
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().padding(18.dp)) {
+            com.blaze.assistant.mediaapps.MText("Subtitles and audio", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
+            com.blaze.assistant.mediaapps.MText("Subtitles", 12.sp, c.sub)
+            row("Off"); row("English (auto-generated)"); row("Swahili (translated)", true); row("Translate to\u2026"); row("Load a subtitle file (.srt, .vtt)\u2026")
+            com.blaze.assistant.mediaapps.MText("Audio", 12.sp, c.sub)
+            row(com.blaze.assistant.mediaapps.Subs.audioName(null, "und", 0, 1), true)
+            androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp))
+            com.blaze.assistant.mediaapps.MText("Translate subtitles to", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
+            com.blaze.assistant.mediaapps.Subs.translateTo.take(6).forEach { (k, n) -> row(n, k == "sw") }
+        }
+    }
+
+    /** Wave A 4 (item 17): skeleton cards while a live search loads (video 16:9 and music squares). */
+    @Test fun waveA4Skeletons() = shot("93-wa4-skeletons", dark = true) {
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().padding(14.dp)) {
+            com.blaze.assistant.ui.BlazeTextField("ptogrammers liv", {}, "Search videos", Modifier.fillMaxWidth())
+            androidx.compose.foundation.layout.Spacer(Modifier.height(12.dp))
+            for (r in 0 until 2) androidx.compose.foundation.layout.Row(Modifier.padding(bottom = 14.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                for (k in 0 until 2) Box(Modifier.weight(1f)) { com.blaze.assistant.mediaapps.SkeletonTile(false) }
+            }
+            androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                for (k in 0 until 3) Box(Modifier.weight(1f)) { com.blaze.assistant.mediaapps.SkeletonTile(true) }
+            }
+        }
+    }
+
+    /** Wave B 3 (item 20): press-and-hold multi-select: "N selected" bar and picked rows, at a 360 dp width. */
+    @Test fun waveB3MultiSelect() = shot("94-wb3-multiselect", dark = true) {
+        Column(Modifier.size(width = 360.dp, height = 640.dp).padding(14.dp)) {
+            com.blaze.assistant.mediaapps.SelectionBar("12 selected", false, {}, {}, {}, {}, {}, onAddToPlaylist = {})
+            Spacer(Modifier.height(8.dp))
+            listOf("Midnight City" to true, "Nightcall" to false, "Strobe" to true).forEachIndexed { i, (n, on) ->
+                com.blaze.assistant.mediaapps.TrackRow(com.blaze.assistant.mediaapps.Track("k$i", "content://m/$i", n, "Artist $i", durationMs = 200_000L + i * 1000),
+                    false, onClick = {}, onLongClick = {}, selected = on)
+            }
+        }
     }
 }

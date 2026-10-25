@@ -79,6 +79,8 @@ object MyVoice {
     @Volatile private var packOk = false
     fun packReady() = packOk
     fun voiceReady() = referenceFile().length() > 44
+    /** A good recording from setup, saved but not confirmed with "Use this voice" yet. */
+    fun candidateReady() = try { candidateFile().length() > 44 } catch (_: Exception) { false }
 
     private val _pack = MutableStateFlow<VoicePack.State>(VoicePack.State.Missing)
     val pack: StateFlow<VoicePack.State> = _pack
@@ -153,7 +155,7 @@ object MyVoice {
             if (!runtimeReady()) {
                 val gzBytes = VoicePack.runtimeDownloadBytes[rt.abi] ?: 0L
                 val gz = File(dl, "runtime-${rt.abi}.so.gz")
-                VoicePack.download(opener, rt.url, File(dl, gz.name + ".part"), gz, gzBytes, null, { cancelDl }) { d, t ->
+                VoicePack.download(opener, rt.url, File(dl, gz.name + ".part"), gz, gzBytes, VoicePack.runtimeDownloadSha256[rt.abi], { cancelDl }) { d, t ->
                     _pack.value = VoicePack.State.Working(VoicePack.Step.RUNTIME, d, t)
                 }
                 runtimeDir().mkdirs()
@@ -219,7 +221,7 @@ object MyVoice {
 
     /** Deletes the recording(s). Blaze goes back to the system voice. */
     fun deleteVoice() {
-        choose(false)
+        if (chosen()) choose(false) else stop()
         voiceDir().deleteRecursively()
         refCache = null
     }

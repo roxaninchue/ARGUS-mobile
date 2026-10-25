@@ -1,5 +1,11 @@
 package com.blaze.assistant.ui
 
+import androidx.compose.ui.graphics.drawscope.clipRect
+
+import androidx.compose.ui.draw.drawWithContent
+
+import androidx.compose.foundation.layout.statusBarsPadding
+
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.drawBehind
@@ -222,7 +228,12 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSky() {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {}) {
+fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
+             /**
+              * v0.45.8: Home's ground reaches the screen edges (under the status bar) and [bottom] (Swipe mode's "Swipe up to
+              * chat" strip) sits ON it, so no other scene shows through behind the strip.
+              */
+             edgeToEdge: Boolean = false, bottom: (@Composable () -> Unit)? = null) {
     val base = LocalBlaze.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -270,7 +281,11 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {}) {
 
     val kind = HomeBoard.background
     val lightInk = HomeGlass.lightInk(kind, base.dark)
+    // v0.45.8 one theme everywhere: with a living theme picked, Home shows the theme's scene (drawn behind it by the chat
+    // screen) in the theme's palette, instead of its own Home look (the navy gradient that ignored a desert theme).
+    val themed = themeOn()
     val ink0 = when {
+        themed -> base
         HomeGlass.on(kind) -> if (lightInk) LightColors else DarkColors
         HomeGlass.isGlass(kind, HomeBoard.bgColor) -> DarkColors.mono   // v0.31: the default Home is dark glass whatever the app theme
         else -> base
@@ -278,7 +293,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {}) {
     val accent = remember(look, ink0.dark) { HomeLook.accent(HomeBoard.accent, ink0.dark) }
     val c = if (accent != null) ink0.copy(accent = accent) else ink0
     val glass = if (HomeGlass.on(kind)) (if (c.dark) HomeGlass.dark else HomeGlass.light) else null
-    val bgImage = rememberHomeBackground(look)
+    val bgImage = rememberHomeBackground(look).takeIf { !themed }
 
     fun open(url: String, w: Widget?) {
         if (w != null) { HomeBoard.tapped(w.id); if (w.type == WidgetTypes.CREATORS) HomeBoard.markSeen(w.id) }
@@ -301,11 +316,13 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {}) {
     }
 
     CompositionLocalProvider(LocalBlaze provides c, LocalGlass provides glass) {
-        Box(Modifier.fillMaxSize().homeBackground(c, HomeBoard.background, HomeBoard.bgColor, look)) {
+        Box(Modifier.fillMaxSize().then(if (themed) Modifier else Modifier.homeBackground(c, HomeBoard.background, HomeBoard.bgColor, look))) {
             if (bgImage != null && HomeBoard.background == "image") {
                 // v0.29.3: the photo shows in full now; the glass cards keep text readable over it.
                 Image(bgImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().graphicsLayer { alpha = if (c.dark) 0.9f else 1f })
             }
+            Column(Modifier.fillMaxSize().then(if (edgeToEdge) Modifier.statusBarsPadding() else Modifier)) {
+            Box(Modifier.weight(1f).fillMaxWidth()) {
             if (!onboarded) {
                 InterestPicker(onDone = { chosen, subs, typed ->
                     HomeBoard.finishOnboarding(chosen, subs, typed, skipped = false); onboarded = true
@@ -328,6 +345,9 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {}) {
                         onCustomise = { customise = true },
                         onCreate = { create = true })
                 }
+            }
+            }
+            bottom?.invoke()
             }
             if (toast.isNotBlank()) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp).navigationBarsPadding()) { HomeToast(toast) }
             glassUrl?.let { u -> GlassWindow(u, onClose = { glassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
@@ -561,6 +581,8 @@ private fun BoardHeader(stamp: String, offline: Boolean, onCustomise: () -> Unit
                 Text(if (offline) "Offline \u00b7 showing saved cards" else stamp, maxLines = 2,
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, color = c.sub))
             }
+            // v0.45.8: the shared theme switcher (the same options as every screen).
+            ThemeSwitch(Modifier.size(48.dp))
             RoundIcon(Icons.Rounded.Tune, "Customise board", onCustomise)
             Spacer(Modifier.width(6.dp))
             RoundIcon(Icons.Rounded.Add, "Create a widget", onCreate, filled = true)
@@ -607,9 +629,16 @@ fun StackItem(
     Column(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth()) {
             if (s.stacked && !open) {
-                StackState.peeks(s.widgets.size).asReversed().forEach { p ->
+                // v0.45.8: each ghost card is clipped to the strip that shows below the card in front of it, so its edges
+                // no longer show through the see-through main card (the doubled outlines on the news card).
+                val peeks = StackState.peeks(s.widgets.size)
+                val strips = StackState.strips(s.widgets.size)
+                for (i in peeks.indices.reversed()) {
+                    val p = peeks[i]; val st = strips[i]
                     Box(Modifier.matchParentSize().graphicsLayer {
-                        translationY = p.offsetDp.dp.toPx() * 1.6f; scaleX = p.scale; alpha = p.alpha
+                        translationY = st.shiftDp.dp.toPx(); scaleX = p.scale; alpha = p.alpha
+                    }.drawWithContent {
+                        clipRect(top = (size.height - st.visibleDp.dp.toPx()).coerceAtLeast(0f)) { this@drawWithContent.drawContent() }
                     }.homeSurface(c, LocalGlass.current, GlassTokens.cardShape, GlassIntensity.Low, shadow = false))
                 }
             }

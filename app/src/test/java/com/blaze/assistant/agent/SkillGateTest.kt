@@ -7,7 +7,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * v0.30.4 fast actions: the A12 trace's first step was "Skills: android-app-builder, wf-find-a-person,
+ * v0.30.4 fast actions: the test phone trace's first step was "Skills: android-app-builder, wf-find-a-person,
  * wf-do-it-on-screen, blaze-workflow-builder, git-pr-workflow" (22 s) for "stop GitHub opening links in the GitHub
  * app": picked by word overlap ("github", "app", "open") and put in the prompt before the first call.
  */

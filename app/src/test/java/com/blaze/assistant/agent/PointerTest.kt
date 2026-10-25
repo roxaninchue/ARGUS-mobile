@@ -6,7 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Visible pointer: timing, re-aim, double-tap and own-touch rules (v0.21.0); always on, spark blob, click check (v0.24.4). */
+/** Visible pointer: timing and re-aim (v0.21.0); always on (v0.24.4); never touchable, never pauses, Stop chip only (v0.45.14). */
 class PointerTest {
     @Test fun glideIsQuickButVisible() {
         assertEquals(120L, Pointer.glideMs(0f, 0f, 2f))
@@ -20,20 +20,34 @@ class PointerTest {
         assertTrue(Pointer.moved(100f, 100f, 100f, 200f, 2f))    // 50 dp
     }
 
-    @Test fun doubleTapOnlyWhenQuickAndStill() {
-        assertTrue(Pointer.isDoubleTap(1000, 1200, 4f, 2f))
-        assertFalse(Pointer.isDoubleTap(0, 1200, 0f, 2f))         // first tap
-        assertFalse(Pointer.isDoubleTap(1000, 1600, 0f, 2f))      // too slow
-        assertFalse(Pointer.isDoubleTap(1000, 1200, 80f, 2f))     // that was a drag: never a click
+    @Test fun neverBlocksTouchesAndNeverPauses() {
+        val W = android.view.WindowManager.LayoutParams::class.java
+        fun flag(n: String) = W.getField(n).getInt(null)
+        // The pointer window takes no touch at all: Blaze's taps and the user's go to the app under it.
+        assertTrue(Pointer.DOT_FLAGS and flag("FLAG_NOT_TOUCHABLE") != 0)
+        assertTrue(Pointer.DOT_FLAGS and flag("FLAG_NOT_FOCUSABLE") != 0)
+        assertEquals(0, Pointer.DOT_FLAGS and flag("FLAG_WATCH_OUTSIDE_TOUCH"))
+        // The Stop chip only takes touches on itself, never outside, and never watches outside touches.
+        assertTrue(Pointer.CHIP_FLAGS and flag("FLAG_NOT_TOUCH_MODAL") != 0)
+        assertTrue(Pointer.CHIP_FLAGS and flag("FLAG_NOT_FOCUSABLE") != 0)
+        assertEquals(0, Pointer.CHIP_FLAGS and flag("FLAG_WATCH_OUTSIDE_TOUCH"))
+        assertTrue(Pointer.CHIP_EDGE_DP <= 12 && Pointer.CHIP_UP_DP >= 48)
+        // No paused mode is left: no pause / resume / gate / mode / double-tap API on the pointer.
+        val names = Pointer::class.java.declaredMethods.map { it.name.lowercase() } + Pointer::class.java.declaredFields.map { it.name.lowercase() }
+        for (bad in listOf("pause", "resume", "gate", "mode", "doubletap", "showbar", "showcheck", "clickline", "checkclick"))
+            assertTrue(bad, names.filterNot { it.contains("delegate") }.none { it.contains(bad) })
+        // The chip steps aside while Blaze's own gesture is in flight.
+        assertTrue(Pointer.chipHidden(1000, 1200)); assertFalse(Pointer.chipHidden(1300, 1200))
     }
 
-    @Test fun blazesOwnTouchesDontPause() {
-        assertTrue(Pointer.isOwnTouch(1000, 1200))
-        assertFalse(Pointer.isOwnTouch(1300, 1200))
-    }
-
-    @Test fun autoByDefault() {
-        assertEquals(Pointer.Mode.AUTO, Pointer.mode)
+    @Test fun onlyStopEndsARun() {
+        Pointer.takeStop()
+        assertFalse(Pointer.takeStop())
+        Pointer.stop()
+        assertTrue(Pointer.stopped)
+        assertTrue(Pointer.takeStop())
+        assertFalse(Pointer.takeStop())          // once
+        assertTrue(Pointer.risky("Pay now")); assertFalse(Pointer.risky("Sender name"))   // the in-app browser's check stays
     }
 
     @Test fun alwaysOnAndEasyToGrab() {
@@ -69,22 +83,6 @@ class PointerTest {
         val (sx0, sy0) = Pointer.squish(-1f); assertEquals(1f, sx0, 0f); assertEquals(1f, sy0, 0f)
         val (sx, sy) = Pointer.squish(0.5f); assertTrue(sx > 1.1f && sy < 0.9f)
         val (sx1, sy1) = Pointer.squish(1f); assertEquals(1f, sx1, 0.01f); assertEquals(1f, sy1, 0.01f)
-    }
-
-    @Test fun manualClickIsCheckedFirst() {
-        assertEquals(Pointer.ClickCheck.SHOW_THEN_CLICK, Pointer.checkClick("Add to cart"))
-        assertEquals(Pointer.ClickCheck.SHOW_THEN_CLICK, Pointer.checkClick("Settings"))
-        for (risky in listOf("Pay now", "Send", "Delete chat", "Confirm transfer", "Buy K50 bundle", "Place order"))
-            assertEquals(risky, Pointer.ClickCheck.ASK, Pointer.checkClick(risky))
-        assertEquals(Pointer.ClickCheck.ASK, Pointer.checkClick(null))
-        assertEquals(Pointer.ClickCheck.ASK, Pointer.checkClick("  "))
-        assertEquals(Pointer.ClickCheck.ASK, Pointer.checkClick("Open", candidates = 2))
-        assertFalse(Pointer.risky("Sender name"))           // whole words only
-        assertEquals("Click \u2018Add to cart\u2019?", Pointer.clickLine("Add to cart"))
-        assertEquals("Click here?", Pointer.clickLine(null))
-        val long = Pointer.clickLine("A very long label that goes on and on and on forever")
-        assertTrue(long.length <= 42 && long.contains("\u2026"))
-        assertEquals(1_500L, Pointer.CONFIRM_MS)
     }
 
     @Test fun workBannerSwipes() {

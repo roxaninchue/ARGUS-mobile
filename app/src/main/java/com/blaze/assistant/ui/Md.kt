@@ -32,9 +32,16 @@ object Md {
     private val quoteRe = Regex("^\\s*>\\s?(.*)$")
     private val tidyRes = listOf("**", "__", "~~").map { it to Regex(Regex.escape(it)) }
 
+    /** v0.45.3: while streaming, a last line that is only a list marker ("-", "*", "3.") waits for its words instead of flashing as text. */
+    fun dropLoneMarker(s: String): String {
+        val i = s.lastIndexOf('\n')
+        val last = s.substring(i + 1)
+        return if (Regex("""^\s*(?:[-*+•]|\d{1,2}[.)])\s*$""").matches(last) && last.isNotEmpty()) s.substring(0, maxOf(i, 0)) else s
+    }
+
     /** [live] = a reply still streaming: a tag being typed at the very end ("<str") is hidden until it closes. */
     fun render(src: String, accent: Color, codeBg: Color, live: Boolean = false): AnnotatedString = buildAnnotatedString {
-        val lines = src.replace("\r", "").let { if (live) HtmlLite.dropPartialTag(it) else it }.split('\n')
+        val lines = src.replace("\r", "").let { if (live) dropLoneMarker(HtmlLite.dropPartialTag(it)) else it }.split('\n')
         var inCode = false
         lines.forEachIndexed { i, raw ->
             if (raw.trimStart().startsWith("```")) { inCode = !inCode; return@forEachIndexed }

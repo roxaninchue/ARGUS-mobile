@@ -10,7 +10,7 @@ class SettingsRouteTest {
     private val apps = listOf("GitHub" to "com.github.android", "WhatsApp" to "com.whatsapp", "Settings" to "com.android.settings",
         "Chrome" to "com.android.chrome", "Git Bash Helper" to "com.example.gitbash", "My MTN" to "com.mtn.app")
 
-    @Test fun githubLinksOnTheA12() {
+    @Test fun githubLinksOnAnAndroid12Phone() {
         // "stop GitHub opening links in the GitHub app" → one call.
         assertEquals("open_by_default", SettingsRoute.page("open_by_default", true))
         assertEquals("open_by_default", SettingsRoute.page("opening links", true))
@@ -18,13 +18,13 @@ class SettingsRouteTest {
         assertEquals("open_by_default", SettingsRoute.page("app links settings", true))
         val pkg = SettingsRoute.resolveApp("GitHub", apps)!!.second
         assertEquals("com.github.android", pkg)
-        // Android 12+ (A12 on One UI 4/5): the direct per-app page, App info as the fallback.
+        // Android 12+ (One UI 4/5): the direct per-app page, App info as the fallback.
         val p12 = SettingsRoute.plan("open_by_default", pkg, 31)!!
         assertEquals(SettingsRoute.OPEN_BY_DEFAULT, p12.launches.first().action)
         assertEquals("package:com.github.android", p12.launches.first().data)
         assertEquals(SettingsRoute.DETAILS, p12.launches[1].action)
         assertEquals(1, p12.tapFrom)   // rows only tapped if we fell back to App info
-        // Android 11 (A12 on One UI 3): no direct intent, so App info, then the "Open by default" / "Set as default" row.
+        // Android 11 (One UI 3): no direct intent, so App info, then the "Open by default" / "Set as default" row.
         val p11 = SettingsRoute.plan("open_by_default", pkg, 30)!!
         assertEquals(listOf(SettingsRoute.DETAILS), p11.launches.map { it.action })
         assertEquals(0, p11.tapFrom)

@@ -16,7 +16,7 @@ class CameraZoomTest {
     // ---------------------------------------------------------------- presets
 
     @Test fun presetsOnAPhoneWithoutAnUltrawide() {
-        // Galaxy A12 through CameraX: min 1x, hardware max ~8x, digital takes it to 10x.
+        // low-end phone through CameraX: min 1x, hardware max ~8x, digital takes it to 10x.
         val max = CameraZoom.maxTotal(8f)
         assertEquals(10f, max)
         assertEquals(listOf(1f, 2f, 5f, 10f), CameraZoom.presets(1f, max))

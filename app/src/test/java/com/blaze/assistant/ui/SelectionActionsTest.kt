@@ -14,7 +14,7 @@ class SelectionActionsTest {
         assertEquals("https://example.com/a?b=1", SelectionActions.url("https://example.com/a?b=1"))
         assertEquals("http://x.org", SelectionActions.url("  http://x.org. "))
         assertEquals("https://www.blaze.ai", SelectionActions.url("www.blaze.ai"))
-        assertEquals("https://github.com/lacksonkapapahue/Blaze-agent", SelectionActions.url("(github.com/lacksonkapapahue/Blaze-agent)"))
+        assertEquals("https://github.com/octocat/Blaze-agent", SelectionActions.url("(github.com/octocat/Blaze-agent)"))
         assertEquals("https://news.bbc.co.uk", SelectionActions.url("\u201cnews.bbc.co.uk\u201d"))
     }
 

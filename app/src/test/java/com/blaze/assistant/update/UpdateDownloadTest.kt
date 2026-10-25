@@ -19,7 +19,7 @@ class UpdateDownloadTest {
     private val data = ByteArray(300_000) { (it * 31 % 251).toByte() }
     private fun tmp(): File = Files.createTempDirectory("upd").toFile()
 
-    /** A stream that throws "unexpected end of stream" after [cut] bytes (Luke's error). */
+    /** A stream that throws "unexpected end of stream" after [cut] bytes (Blazeinchue's error). */
     private class Cut(private val src: InputStream, private var cut: Int) : InputStream() {
         override fun read(): Int { if (cut-- <= 0) throw IOException("unexpected end of stream"); return src.read() }
         override fun read(b: ByteArray, off: Int, len: Int): Int {
@@ -47,7 +47,7 @@ class UpdateDownloadTest {
         override fun sleep(ms: Long) { sleeps += ms }
     }
 
-    private fun sha(): String { val d = tmp(); val f = File(d, "x"); f.writeBytes(data); return ApkDownload.gitBlobSha1(f) }
+    private fun sha(): String { val d = tmp(); val f = File(d, "x"); f.writeBytes(data); return VersionFeed.sha256(f) }
 
     @Test fun resumesAfterUnexpectedEndOfStream() {
         val d = tmp(); val io = Fake(mutableListOf(100_000, 50_000, -1))
@@ -66,8 +66,8 @@ class UpdateDownloadTest {
     @Test fun switchesToTheNextMirrorAndKeepsThePartialFile() {
         val d = tmp(); val io = Fake(mutableListOf(80_000, -1), failUrls = setOf("release"))
         // First source fails outright twice → next mirror.
-        ApkDownload.fetch(listOf("release", "raw", "api"), io, File(d, "p"), File(d, "f"), data.size.toLong(), null)
-        assertEquals(listOf("release", "release", "raw", "raw"), io.calls.map { it.first })
+        ApkDownload.fetch(listOf("release", "second", "third"), io, File(d, "p"), File(d, "f"), data.size.toLong(), null)
+        assertEquals(listOf("release", "release", "second", "second"), io.calls.map { it.first })
         assertEquals(80_000L, io.calls.last().second)
         assertArrayEquals(data, File(d, "f").readBytes())
     }
@@ -92,9 +92,17 @@ class UpdateDownloadTest {
 
     @Test fun damagedDownloadIsRejected() {
         val d = tmp(); val io = Fake(mutableListOf(-1))
-        try { ApkDownload.fetch(listOf("a"), io, File(d, "p"), File(d, "f"), data.size.toLong(), "0".repeat(40)); fail() }
-        catch (e: ApkDownload.Damaged) { }
+        try { ApkDownload.fetch(listOf("a"), io, File(d, "p"), File(d, "f"), data.size.toLong(), "0".repeat(64)); fail() }
+        catch (e: ApkDownload.Damaged) { assertEquals(VersionFeed.SHA_MISMATCH, e.message) }
         assertFalse(File(d, "f").exists()); assertFalse(File(d, "p").exists())
+    }
+
+    /** v0.45.4: versions.json gives no size; the download still resumes and is checked by SHA-256 alone. */
+    @Test fun unknownSizeResumesAndChecksSha256() {
+        val d = tmp(); val io = Fake(mutableListOf(70_000, -1))
+        ApkDownload.fetch(listOf("https://blazeinchue.pages.dev/dl/android/v0.45.4"), io, File(d, "p"), File(d, "f"), 0L, sha().uppercase())
+        assertArrayEquals(data, File(d, "f").readBytes())
+        assertEquals(listOf(0L, 70_000L), io.calls.map { it.second })
     }
 
     @Test fun cancelStops() {
@@ -103,17 +111,8 @@ class UpdateDownloadTest {
         catch (e: ApkDownload.Cancelled) { }
     }
 
-    @Test fun gitBlobShaMatchesGit() {
-        val f = File(tmp(), "h"); f.writeText("hello\n")
-        assertEquals("ce013625030ba8dba906f756967f9e9ca394464a", ApkDownload.gitBlobSha1(f))   // git hash-object
-    }
-
-    @Test fun backoffAndMirrors() {
+    @Test fun backoff() {
         assertEquals(listOf(2_000L, 4_000L, 8_000L, 16_000L, 30_000L, 30_000L), (1..6).map { ApkDownload.backoffMs(it) })
-        assertEquals(listOf("https://github.com/o/r/releases/download/v0.28.1/Blaze-v0.28.1.apk",
-            "https://raw.githubusercontent.com/o/r/apk/Blaze-v0.28.1.apk", "API"),
-            ApkDownload.sources("o/r", "Blaze-v0.28.1.apk", "0.28.1", "API"))
-        assertEquals(2, ApkDownload.sources("o/r", "Blaze-v1.999.97.apk", "build 97", "API").size)
     }
 
     @Test fun cardIsSentenceCaseAndPlain() {

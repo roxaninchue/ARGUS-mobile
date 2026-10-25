@@ -42,7 +42,7 @@ class EmptyReplyTest {
         assertEquals("You're not on mute: the ringer is on normal.", out.getString("content"))
         assertEquals(3, tries.size)
         assertTrue("first try streams", tries[0].stream && !tries[0].nudge)
-        assertTrue("second: same route, whole reply at once, with the nudge", !tries[1].stream && tries[1].nudge && tries[1].avoid.isEmpty())
+        assertTrue("second: same route, still streaming (0.45.5), with the nudge", tries[1].stream && tries[1].nudge && tries[1].avoid.isEmpty())
         assertEquals("third: the next model", listOf("nvidia/deepseek-r1"), tries[2].avoid)
         assertTrue(EmptyReply.withNudge(JSONArray().put(JSONObject().put("role", "user").put("content", "x"))).getJSONObject(1).getString("content").contains("Answer the user now"))
     }

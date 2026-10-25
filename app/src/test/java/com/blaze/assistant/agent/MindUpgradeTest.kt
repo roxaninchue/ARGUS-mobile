@@ -72,6 +72,7 @@ class MindUpgradeTest {
     }
 
     @Test fun firstLaunchBacksUpAndMovesEverything() {
+        NativeSqlite.assume()
         val old = Mind.Db(ctx); old.writableDatabase
         fill(old)
         val oldMems = old.all().map { listOf(it.id, it.kind, it.subject, it.text, it.related) }
@@ -110,6 +111,7 @@ class MindUpgradeTest {
     }
 
     @Test fun blazeDbThatCantOpenKeepsMindDb() {
+        NativeSqlite.assume()
         val old = Mind.Db(ctx); old.writableDatabase; fill(old); old.close()
         Mind.openBlaze = { throw java.io.IOException("no bundled SQLite") }
         Mind.init(ctx)
@@ -121,6 +123,7 @@ class MindUpgradeTest {
     }
 
     @Test fun newerBlazeDbIsLeftAloneWithAPlainLine() {
+        NativeSqlite.assume()
         val old = Mind.Db(ctx); old.writableDatabase; fill(old); old.close()
         JdbcSql("jdbc:sqlite:" + blazeFile.path).apply { exec("CREATE TABLE future(x)"); exec("PRAGMA user_version = 5"); close() }
         val before = blazeFile.readBytes()
@@ -139,6 +142,7 @@ class MindUpgradeTest {
     }
 
     @Test fun bothStoresAnswerTheSame() {
+        NativeSqlite.assume()
         val old = Mind.Db(ctx, null); old.writableDatabase
         val s = JdbcSql()
         val neu = MindStore(BlazeDb(s), s)

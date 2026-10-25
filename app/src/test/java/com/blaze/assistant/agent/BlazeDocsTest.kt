@@ -15,7 +15,7 @@ import java.io.File
 /**
  * v0.28.4 blaze-docs: chunking by heading (300–800 tokens, doc + section path + version), the idempotent reindex in
  * blaze.db next to the memories, bm25 search ("repo" → the exact URL), the tool reference, no secrets in what ships,
- * and the GitHub near-miss fix from Luke's screenshot.
+ * and the GitHub near-miss fix from Blazeinchue's screenshot.
  */
 class BlazeDocsTest {
     private val sqls = ArrayList<Sql>()
@@ -132,8 +132,8 @@ class BlazeDocsTest {
             assertTrue(q, st.read(hits.first().id)!!.text.contains(BlazeDocs.REPO_URL))
             val out = BlazeDocs.search(JSONObject().put("query", q))
             assertTrue(out, out.contains(BlazeDocs.REPO_URL))
-            assertTrue(out, out.contains("https://github.com/lacksonkapapahue/Blaze-dekstop"))
-            assertFalse(out, out.contains("github.com/LacksonKapapa/"))
+            assertTrue(out, out.contains("https://gitlab.com/blazeinchue/Blaze-dekstop"))
+            assertFalse(out, out.contains("github.com/Blazeinchue/"))
         }
         // Limit ≤ 5, ids readable, other questions land in the right doc.
         assertTrue(st.search("settings", 50).size <= 5)
@@ -169,7 +169,7 @@ class BlazeDocsTest {
         val samples = listOf("write to someone@example.com", "token ghp_" + "a".repeat(36), "project blaze-511220", "id " + "0123456789abcdef".repeat(2),
             "key sk-" + "x".repeat(24), "AIza" + "B".repeat(35), "storePassword = \"android\"")
         for (s in samples) { assertTrue(s, BlazeDocs.hasSecret(s)); assertFalse(s, BlazeDocs.hasSecret(BlazeDocs.scrub(s))) }
-        assertFalse(BlazeDocs.hasSecret("Blaze v0.28.1 (versionCode 97), minSdk 26, https://github.com/lacksonkapapahue/Blaze-agent"))
+        assertFalse(BlazeDocs.hasSecret("Blaze v0.28.1 (versionCode 97), minSdk 26, https://gitlab.com/blazeinchue/Blaze-agent"))
         val files = docFiles()
         val cs = BlazeDocs.chunksOf(files, "test", sampleTools())
         for (c in cs) assertFalse("${c.id} has a secret-like string", BlazeDocs.hasSecret(c.text) || BlazeDocs.hasSecret(c.section))
@@ -180,7 +180,8 @@ class BlazeDocsTest {
         // about.md carries the build facts (filled in by Gradle when generated).
         val about = files.first { it.first == "about.md" }.second
         assertTrue(about.contains(BlazeDocs.REPO_URL))
-        assertTrue(about.contains("https://github.com/lacksonkapapahue/Blaze-cli"))
+        assertTrue(about.contains("https://gitlab.com/blazeinchue/Blaze-cli"))
+        assertFalse(about.contains("github.com/"))
         assertTrue(about.contains("https://ai.blaze-app.workers.dev"))
     }
 
@@ -200,20 +201,20 @@ class BlazeDocsTest {
     }
 
     @Test fun githubNearMissesOpenTheRealRepo() {
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("https://github.com/LacksonKapapa/Blaze-Agent"))
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("github.com/lacksonkapapahue/blaze-agent"))
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("https://github.com/LACKSONKAPAPAHUE/BLAZE-AGENT"))
-        assertEquals(BlazeDocs.REPO_URL + "/releases/latest", ToolLeak.fixBlazeUrl("https://github.com/Lackson-Kapapa/Blaze_Agent/releases/latest"))
-        assertEquals("https://github.com/lacksonkapapahue/Blaze-dekstop", ToolLeak.fixBlazeUrl("https://github.com/LacksonKapapa/Blaze-Desktop"))
-        assertEquals("https://github.com/lacksonkapapahue/Blaze-cli", ToolLeak.fixBlazeUrl("https://www.github.com/lucksonkapapa/blaze-cli.git"))
+        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("https://github.com/Blazeinchue/Blaze-Agent"))
+        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("github.com/blazeinchue/blaze-agent"))
+        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("https://github.com/Blazeinchue/BLAZE-AGENT"))
+        assertEquals(BlazeDocs.REPO_URL + "/releases/latest", ToolLeak.fixBlazeUrl("https://github.com/Blazeinchue/Blaze_Agent/releases/latest"))
+        assertEquals("https://gitlab.com/blazeinchue/Blaze-dekstop", ToolLeak.fixBlazeUrl("https://github.com/Blazeinchue/Blaze-Desktop"))
+        assertEquals("https://gitlab.com/blazeinchue/Blaze-cli", ToolLeak.fixBlazeUrl("https://www.github.com/blazeinchue/blaze-cli.git"))
         // Someone else's repo of the same name, and other URLs, are left alone.
         assertEquals("https://github.com/octocat/blaze-agent", ToolLeak.fixBlazeUrl("https://github.com/octocat/blaze-agent"))
         assertEquals("https://example.com/Blaze-Agent", ToolLeak.fixBlazeUrl("https://example.com/Blaze-Agent"))
         // The leaked github_open alias: any owner or none.
         assertEquals(BlazeDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("repo", "blaze-agent")))
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("repo", "LacksonKapapa/Blaze-Agent")))
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("url", "https://github.com/LacksonKapapa/Blaze-Agent")))
-        assertEquals("https://github.com/lacksonkapapahue/Blaze-dekstop", ToolLeak.githubUrl(JSONObject().put("repo", "Blaze-Desktop")))
+        assertEquals(BlazeDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("repo", "Blazeinchue/Blaze-Agent")))
+        assertEquals(BlazeDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("url", "https://github.com/Blazeinchue/Blaze-Agent")))
+        assertEquals("https://gitlab.com/blazeinchue/Blaze-dekstop", ToolLeak.githubUrl(JSONObject().put("repo", "Blaze-Desktop")))
         assertEquals("https://github.com/octocat/hello", ToolLeak.githubUrl(JSONObject().put("repo", "octocat/hello")))
     }
 }

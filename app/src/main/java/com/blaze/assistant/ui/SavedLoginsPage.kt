@@ -42,6 +42,7 @@ fun SavedLoginsPage() {
     val sites = remember(tick) { Vault.sites().filter { it.second.isNotEmpty() }.sortedBy { it.first } }
     var editing by remember { mutableStateOf<Pair<String, String>?>(null) }
     var draft by remember { mutableStateOf("") }
+    var reveal by remember { mutableStateOf(false) }   // v0.45.7: eye on the password being edited
     Spacer(Modifier.height(10.dp))
     Text("Sign-ins you typed into Blaze's secure form. Blaze fills them in on the same site next time without asking. " +
         "They're encrypted with this phone's Keystore and never shown to the AI.",
@@ -67,16 +68,17 @@ fun SavedLoginsPage() {
                         if (!isEditing) Text(Vault.get(host, name)?.let { Vault.masked(name, it) } ?: "(can't read on this phone)",
                             style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink))
                         else BasicTextField(draft, { draft = it }, singleLine = true,
-                            visualTransformation = if (kind.masked) PasswordVisualTransformation() else VisualTransformation.None,
+                            visualTransformation = if (SecretField.masked(kind.masked, reveal)) PasswordVisualTransformation() else VisualTransformation.None,
                             textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink), cursorBrush = SolidColor(c.accent),
                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
                     }
                     if (isEditing) {
+                        if (kind.masked) RevealEye(reveal) { reveal = !reveal }
                         ActionText("Save", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
                             if (draft.isNotEmpty()) Vault.save(host, name, draft); draft = ""; editing = null; tick++ }.padding(10.dp))
                         ActionText("Cancel", size = 10.sp, modifier = Modifier.clickable { draft = ""; editing = null }.padding(10.dp))
                     } else {
-                        ActionText("Edit", color = c.accent, size = 10.sp, modifier = Modifier.clickable { draft = ""; editing = host to name }.padding(10.dp))
+                        ActionText("Edit", color = c.accent, size = 10.sp, modifier = Modifier.clickable { draft = ""; reveal = false; editing = host to name }.padding(10.dp))
                         ActionText("×", size = 12.sp, modifier = Modifier.clickable { Vault.remove(host, name); tick++ }.padding(10.dp))
                     }
                 }

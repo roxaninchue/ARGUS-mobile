@@ -15,7 +15,7 @@ class ReplyChipsTest {
     }
 
     @Test fun hidesModelAndTier() {
-        // v0.25.0: the A12 screenshot's line, old stored replies, and the new route line all show nothing by default.
+        // v0.25.0: the test phone screenshot's line, old stored replies, and the new route line all show nothing by default.
         assertEquals("", ReplyChips.visible("\u2601 Free (Google Gemini \u00b7 gemini-3.5-flash) \u00b7 first word 1.2 s \u00b7 2.3 s", false))
         assertEquals("", ReplyChips.visible("\u2601 Google Gemini \u00b7 gemini-3.5-flash \u00b7 2.3 s \u00b7 3 steps", false))
         assertEquals("", ReplyChips.visible("\u2601 Blaze Cloud / groq / llama-3.3-70b-versatile \u00b7 2.3 s", false))

@@ -21,7 +21,7 @@ class TapLoopTest {
     @Test fun failedResults() {
         for (r in listOf("Error: no steps.", "Couldn't tap [3].", "No element [9]. Call read_screen again", "No app called Foo",
             "No installed app matches \u201cFoo\u201d.", "Unknown settings page \u201cx\u201d.", "Not done yet: I looked at the screen first",
-            "Paused before tapping [3]: the user took over the pointer.", "The user did NOT approve tapping \"Pay\".",
+            "Stopped before tapping [3]: the user tapped Stop. Nothing was tapped.", "The user did NOT approve tapping \"Pay\".",
             "The target [4] went away while Blaze was aiming", "Phone control isn't connected.", ""))
             assertTrue(r, TapLoop.failed(r))
         for (r in listOf("Tapped \"Open supported links\".", "Opened GitHub \u203a Open by default (direct). Screen now:\n…",

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.verticalScroll
@@ -103,6 +104,10 @@ fun DevicePage() {
     V18Section("Speed")
     var route by remember { mutableStateOf(Settings.showRoute) }
     ToggleRow("Show speed badge", "⚡ instant / on-device or ☁ model · seconds under replies", route) { route = !route; Settings.showRoute = route }
+    // v0.45.2: the old verification path (every check waits in line) for anyone who prefers it.
+    var strictV by remember { mutableStateOf(com.blaze.assistant.agent.VerifyPolicy.strict()) }
+    ToggleRow("Strict checks", "Off: actions are checked on the phone while the reply comes in, and the receipt under it updates when the check ends. On: every check finishes before Blaze goes on (slower)", strictV) {
+        strictV = !strictV; Settings.setBool(com.blaze.assistant.agent.VerifyPolicy.PREF_STRICT, strictV) }
     var cached by remember { mutableStateOf(IntentCache.size()) }
     Spacer(Modifier.height(10.dp))
     V18Note("Instant commands: $cached. Commands that worked once on the phone run again with no model at all.")
@@ -306,9 +311,14 @@ fun DashboardPage() {
     ToggleRow("Share on Wi-Fi", "Open it from a laptop on the same network (link has a secret token)", lan) {
         lan = !lan; com.blaze.assistant.dashboard.Dashboard.lan = lan; if (running) com.blaze.assistant.dashboard.Dashboard.restart(ctx) }
     ToggleRow("Start with Blaze", "Keep the dashboard running in the background", auto) { auto = !auto; Settings.setBool("dash_auto", auto) }
+    var gen by remember { mutableStateOf(0) }
     if (running) {
         V18Section("Links")
-        Mono(com.blaze.assistant.dashboard.Dashboard.localUrl() + (if (lan) "\n" + (com.blaze.assistant.dashboard.Dashboard.lanUrl() ?: "(not on Wi-Fi)") else ""))
+        key(gen) { Mono(com.blaze.assistant.dashboard.Dashboard.localUrl() + (if (lan) "\n" + (com.blaze.assistant.dashboard.Dashboard.lanUrl() ?: "(not on Wi-Fi)") else "")) }
+        Spacer(Modifier.height(8.dp))
+        // v0.45.0: old links (and any copy seen on the network) stop working at once.
+        V18Button("Make a new link", primary = false) { com.blaze.assistant.dashboard.Dashboard.rotate(); gen++ }
+        V18Note("Wi-Fi links expire when the server stops or sharing is switched off.")
         if (lan) com.blaze.assistant.dashboard.Dashboard.lanUrl()?.let { u ->
             Spacer(Modifier.height(8.dp))
             V18Button("Copy Wi-Fi link", primary = false) {
@@ -362,6 +372,30 @@ fun ProactivePage() {
         V18Note("Samsung and others put apps to sleep. Let Blaze run in the background so it can speak up and keep the wake word alive.")
         V18Button("Allow background running", primary = false) {
             try { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:" + ctx.packageName)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
+        }
+    }
+
+    V18Section("Jarvis mode")
+    val J = com.blaze.assistant.proactive.Jarvis
+    var lvl by remember { mutableStateOf(J.level) }
+    var glances by remember { mutableStateOf(J.screenGlances) }
+    var looks by remember { mutableStateOf(J.cameraLooks) }
+    V18Note("Blaze reaches out on its own: a question now and then to get to know you (reply right in the notification), help offered in the moment, and routines it sets up for itself. Jarvis sets them up without asking; the others offer first.")
+    Row(Modifier.fillMaxWidth()) {
+        com.blaze.assistant.proactive.JarvisLogic.Level.values().forEach { l ->
+            Box(Modifier.weight(1f).height(40.dp).then(if (lvl == l) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f)).clickable { lvl = l; J.level = l },
+                contentAlignment = Alignment.Center) { ButtonText(l.label, color = if (lvl == l) c.paper else c.ink, size = 13.sp) }
+        }
+    }
+    Spacer(Modifier.height(8.dp))
+    ToggleRow("Glance at my screen", "Now and then, as text. Never banks, wallets, passwords or codes. Needs phone control", glances) { glances = !glances; J.screenGlances = glances }
+    ToggleRow("Look through the camera", "One front-camera frame while Blaze is open; never saved. Android shows its camera dot", looks) { looks = !looks; J.cameraLooks = looks }
+    if (looks && androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+        V18Note("Camera looks need the camera permission: open Blaze Camera once and allow it.", top = 4)
+    if (!com.blaze.assistant.home.HomeSources.usageAllowed(ctx)) {
+        V18Note("Allow Usage access so Blaze can see which apps you use and when, so it can time its help.", top = 6)
+        V18Button("Allow usage access", primary = false) {
+            try { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
         }
     }
 
