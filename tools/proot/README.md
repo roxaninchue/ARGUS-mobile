@@ -44,6 +44,6 @@ allowlists (`SYSCALLS.TXT` + `SECCOMP_ALLOWLIST_*` − `SECCOMP_BLOCKLIST_*`, ev
 With 5.1.107.96 under the Android filter: getcwd, chdir, fchdir, statx, faccessat, openat2, getdents64 work;
 faccessat2, clone3 and close_range return a clean ENOSYS (Android 11/12's filter doesn't allow them; musl and glibc
 fall back to faccessat / clone / a close loop on ENOSYS, which is what happens in Termux too). Not reproducible off-phone:
-arm64 kernels before 5.3 (the A12's 4.19) run seccomp before the ptrace syscall-enter stop; Termux's v5.1.107.91–.95
+arm64 kernels before 5.3 (the test phone's 4.19) run seccomp before the ptrace syscall-enter stop; Termux's v5.1.107.91–.95
 fixes cover that order. If a phone still fails, Blaze's per-build self-test turns seccomp acceleration off when that
 helps (`Linux.selfTest`, `LinuxDoctor.noSeccomp`) and `blaze-doctor` in the Linux shows what fails.
