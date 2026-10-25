@@ -40,7 +40,7 @@ object Bridge {
     fun files(ctx: Context): JSONArray {
         val a = JSONArray()
         try { com.blaze.assistant.media.Media.init(ctx); com.blaze.assistant.media.Media.items.value.take(200).forEach { m ->
-            a.put(JSONObject().put("name", m.file.name).put("kind", m.kind).put("title", m.title).put("size", m.file.length()).put("time", m.time).put("path", m.file.absolutePath)) } } catch (_: Throwable) { }
+            a.put(JSONObject().put("name", m.file.name).put("kind", m.kind).put("title", m.title).put("size", m.file.length()).put("time", m.time).put("path", m.file.absolutePath)) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Bridge: Media.initctx ", e) }
         uploadDir().listFiles()?.sortedByDescending { it.lastModified() }?.take(100)?.forEach { f ->
             a.put(JSONObject().put("name", f.name).put("kind", "upload").put("title", f.name).put("size", f.length()).put("time", f.lastModified()).put("path", f.absolutePath)) }
         return a
@@ -49,7 +49,7 @@ object Bridge {
     private fun <T> onMain(block: () -> T): T? {
         if (Looper.myLooper() == Looper.getMainLooper()) return block()
         var r: T? = null; val l = CountDownLatch(1)
-        Handler(Looper.getMainLooper()).post { try { r = block() } catch (_: Throwable) { } finally { l.countDown() } }
+        Handler(Looper.getMainLooper()).post { try { r = block() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Bridge: r block", e) } finally { l.countDown() } }
         l.await(3, TimeUnit.SECONDS); return r
     }
 

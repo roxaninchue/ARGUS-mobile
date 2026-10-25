@@ -54,7 +54,6 @@ object HomeSources {
     private fun weather(ctx: Context, w: Widget): Result {
         val cfg = w.cfg()
         val country = Locale.getDefault().country
-        val f = cfg.optString("units").let { if (it.isBlank()) OpenMeteo.usesFahrenheit(country) else it.startsWith("f", true) }
         val useLoc = cfg.optBoolean("use_location", false)
         var learned: JSONObject? = null
         var lat = Double.NaN; var lon = Double.NaN; var place = cfg.optString("place").ifBlank { cfg.optString("city") }
@@ -83,7 +82,18 @@ object HomeSources {
                 return Result(WidgetData.failed(if (useLoc) "Allow location, or type a city, to see the weather." else "Type a city to see the weather.", if (useLoc) "location" else "city"))
             }
         }
-        val d = OpenMeteo.parse(get(OpenMeteo.forecastUrl(lat, lon, f), "the weather"), place)
+        // v0.45.7: metric outside the US (a phone set to en-US in Ndola got °F / mph); imperial only when picked or in the US.
+        val units = com.blaze.assistant.agent.GatewayWeather.unitsFor(cfg.optString("units"), country, lat, lon)
+        val f = units == "imperial"
+        val forecast = try { OpenMeteo.parse(get(OpenMeteo.forecastUrl(lat, lon, f), "the weather"), place) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { null }
+        // The same source as chat's get_weather: gateway /v1/weather (signed in). Open-Meteo direct is the fallback.
+        val token = com.blaze.assistant.agent.Settings.gatewayToken()
+        val now = if (token.isBlank()) null else try {
+            val (code, body) = com.blaze.assistant.agent.GatewayWeather.fetch(lat, lon, units, token)
+            if (code in 200..299) com.blaze.assistant.agent.GatewayWeather.parse(body) else null
+        } catch (e: Exception) { null }
+        if (now != null) return Result(HomeWeather.toData(now, place, units, forecast?.lines.orEmpty()), learned)
+        val d = forecast ?: OpenMeteo.parse(get(OpenMeteo.forecastUrl(lat, lon, f), "the weather"), place)
         return Result(d.copy(link = "https://open-meteo.com/"), learned)
     }
 

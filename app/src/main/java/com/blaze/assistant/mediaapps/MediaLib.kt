@@ -132,6 +132,28 @@ object MediaLib {
         return true
     }
 
+    /**
+     * Wave B item 20: deletes several downloads at once (multi-select). One library save, one playlist save and one
+     * refresh for the lot, so deleting 200 songs doesn't rebuild the library 200 times. Returns how many were removed.
+     */
+    fun deleteDownloads(ctx: Context, keys: Collection<String>): Int {
+        val want = keys.toHashSet()
+        val gone = downloads.filter { it.key in want }
+        if (gone.isEmpty()) return 0
+        gone.forEach { MediaFiles.delete(ctx, it.uri) }
+        val goneKeys = gone.map { it.key }.toHashSet()
+        synchronized(lock) { downloads = downloads.filter { it.key !in goneKeys } }
+        var pls = _playlists.value
+        goneKeys.forEach { pls = PlaylistOps.forget(pls, it) }
+        if (pls != _playlists.value) setPlaylists(pls)
+        if (_liked.value.any { it in goneKeys }) {
+            _liked.value = _liked.value.filter { it !in goneKeys }
+            app?.let { write(f(it, "liked.json"), JSONArray(_liked.value).toString()) }
+        }
+        saveTracks(); refresh()
+        return gone.size
+    }
+
     // ---- playlists ----
     fun setPlaylists(l: List<Playlist>) {
         _playlists.value = l

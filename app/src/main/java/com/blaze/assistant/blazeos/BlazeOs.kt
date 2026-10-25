@@ -25,7 +25,7 @@ object BlazeOs {
     const val VERSION = "1.0"
     private lateinit var app: Context
     val ready: Boolean get() = ::app.isInitialized
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    internal val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     val power = MutableStateFlow(Power.OFF)
     val budget = MutableStateFlow(OsResources.allocate(HostInfo(3L * OsResources.GB, OsResources.GB, false, 256, 4L * OsResources.GB, 26)))
@@ -142,7 +142,7 @@ object BlazeOs {
     fun resume() {
         if (!go(PowerEvent.RESUME)) return
         if (tasks.value.front.isNotEmpty() && !exists(tasks.value.front)) tasks.value = OsTasks()
-        OsWeb.resumeAll()
+        OsWeb.resumeAll(); OsWasm.resumeAll()
         applyVolume()
     }
 
@@ -165,7 +165,7 @@ object BlazeOs {
     /** Drops what can be rebuilt: decoded icons and pictures, part of the disk cache, and stops BlazeOS's media. */
     private fun freeMemory() {
         OsImages.clear()
-        OsWeb.pauseAll()
+        OsWeb.pauseAll(); OsWasm.pauseAll()
         stopMedia()
         if (ready) scope.launch(Dispatchers.IO) { OsDisk.trimCache(app, budget.value.diskCacheBytes / 2) }
         System.gc()
@@ -189,7 +189,7 @@ object BlazeOs {
      */
     suspend fun factoryReset() {
         powerOff()
-        OsWeb.releaseAll()
+        OsWeb.releaseAll(); OsWasm.releaseAll()
         for (a in registry.value.apps) OsWeb.forgetOrigin(a.id)
         OsWeb.wipeProfile()
         withContext(Dispatchers.IO) { OsDisk.wipe(app) }
@@ -286,7 +286,7 @@ object BlazeOs {
         if (l.size > 0 && used + l.size - (registry.value.get(m.id)?.size ?: 0) > q) return@withContext "Not enough space on the BlazeOS disk"
         val dir = OsDisk.appDir(app, m.id)
         var size = 0L
-        if (m.entry.type == OsManifest.WEB && m.entry.url.isEmpty()) {
+        if (OsManifest.packaged(m.entry)) {
             val n = try {
                 val input = if (l.pkg.startsWith("asset:")) app.assets.open(l.pkg.removePrefix("asset:"))
                     else (java.net.URL(l.pkg).openConnection() as java.net.HttpURLConnection).apply { connectTimeout = 10000; readTimeout = 20000 }.inputStream
@@ -324,7 +324,7 @@ object BlazeOs {
     suspend fun uninstall(manifestId: String) {
         val appId = OsApps.pkgId(manifestId)
         close(appId)
-        OsWeb.release(appId)
+        OsWeb.release(appId); OsWasm.release(appId)
         OsWeb.forgetOrigin(manifestId)
         update { p -> p.copy(order = p.order - appId, dock = p.dock?.let { it - appId }, lastApp = if (p.lastApp == appId) "" else p.lastApp) }
         withContext(Dispatchers.IO) {

@@ -24,7 +24,7 @@ object TapLoop {
     // ---------------- results ----------------
 
     private val failStarts = listOf("Error", "Couldn't", "No element", "No app", "No installed app", "Unknown", "Not done yet",
-        "Paused before", "Phone control", "The target", "Stopped", "Give an element", "That page needs")
+        "Phone control", "The target", "Stopped", "Give an element", "That page needs")
 
     /** True when a screen tool's result says the step did not happen. */
     fun failed(result: String): Boolean {
@@ -202,6 +202,15 @@ object TapLoop {
         }
 
         @Synchronized fun drop(text: String) { if (map.remove(key(text)) != null) save() }
+        /** v0.45.0 reactions: removes and returns the plan for [text] (👎), so taking the 👎 back can [restore] it. */
+        @Synchronized fun take(text: String): Recipe? = map.remove(key(text))?.also { save() }
+        @Synchronized fun restore(r: Recipe) { if (r.key.isEmpty() || map.containsKey(r.key)) return; map[r.key] = r; while (map.size > MAX) map.remove(map.keys.first()); save() }
+        /** v0.45.0 reactions: 👍 counts as another good use of the plan for [text] ([by] = -1 takes it back). */
+        @Synchronized fun reinforce(text: String, by: Int = 1): Boolean {
+            val k = key(text); val r = map[k] ?: return false
+            map[k] = r.copy(uses = maxOf(0, r.uses + by)); save(); return true
+        }
+        @Synchronized fun get(text: String): Recipe? = map[key(text)]
         @Synchronized fun clear() { map.clear(); save() }
         @Synchronized fun size(): Int = map.size
 

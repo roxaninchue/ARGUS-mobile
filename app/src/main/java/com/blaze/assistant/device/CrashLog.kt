@@ -18,7 +18,7 @@ object CrashLog {
         file = File(ctx.filesDir, "blaze_log.txt")
         val prev = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
-            try { write("CRASH on ${t.name}: ${android.util.Log.getStackTraceString(e).take(6000)}") } catch (_: Throwable) { }
+            try { writeNow("CRASH on ${t.name}: ${android.util.Log.getStackTraceString(e).take(6000)}") } catch (_: Throwable) { }
             prev?.uncaughtException(t, e)
         }
     }
@@ -48,19 +48,35 @@ object CrashLog {
                 try { android.os.Looper.loop() } catch (e: Throwable) {
                     val now = System.currentTimeMillis()
                     recent.addLast(now); while (recent.isNotEmpty() && now - recent.first() > 10_000) recent.removeFirst()
+                    if (recent.size >= 5 || e is OutOfMemoryError) { writeNow("CAUGHT on main (giving up): ${android.util.Log.getStackTraceString(e).take(4000)}"); throw e }
                     write("CAUGHT on main: ${android.util.Log.getStackTraceString(e).take(4000)}")
-                    if (recent.size >= 5 || e is OutOfMemoryError) throw e
                     try { com.blaze.assistant.agent.Agent.reportError("Something went wrong (${e.javaClass.simpleName}: ${e.message?.take(120)}). Blaze kept running; it's in the crash report.") } catch (_: Throwable) { }
                 }
             }
         }
     }
 
-    @Synchronized fun write(line: String) {
+    /**
+     * 0.45.16 smoothness: log lines are written on one background thread, never on the caller's (the main thread wrote
+     * and sometimes rewrote a 400 KB file on every caught error). A crash still writes at once ([writeNow]).
+     */
+    private val writer: java.util.concurrent.ExecutorService by lazy {
+        java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "blaze-log").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
+    }
+
+    fun write(line: String) {
         if (!::file.isInitialized) return
+        val stamped = "${synchronized(fmt) { fmt.format(Date()) }}  $line\n"
+        try { writer.execute { append(stamped) } } catch (_: Throwable) { append(stamped) }
+    }
+
+    /** Synchronous write, for the crash handler (the process is about to die). */
+    fun writeNow(line: String) { if (::file.isInitialized) append("${synchronized(fmt) { fmt.format(Date()) }}  $line\n") }
+
+    @Synchronized private fun append(stamped: String) {
         try {
             if (file.length() > 400_000) file.writeText(file.readText().takeLast(200_000))
-            file.appendText("${fmt.format(Date())}  $line\n")
+            file.appendText(stamped)
         } catch (_: Exception) { }
     }
 
@@ -68,8 +84,28 @@ object CrashLog {
     fun slow(what: String, ms: Long) { if (ms >= 8000) write("SLOW ${ms} ms: $what") }
     fun error(what: String, e: Throwable?) = write("ERROR $what: ${e?.javaClass?.simpleName}: ${e?.message}")
 
+    private val quietAt = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    /**
+     * v0.45.0 (#29): for a catch that used to be empty. The failure is still not shown to the user, but it is written
+     * to the crash log (once a minute per place), so "it just didn't do anything" can be traced. Cancellation is
+     * normal control flow and is never logged. Never throws.
+     */
+    fun quiet(where: String, e: Throwable?) {
+        if (e is kotlinx.coroutines.CancellationException || e is InterruptedException) return
+        try {
+            val now = System.currentTimeMillis()
+            val last = quietAt[where] ?: 0L
+            if (now - last < 60_000) return
+            quietAt[where] = now
+            write("QUIET $where: ${e?.javaClass?.simpleName}: ${e?.message?.take(300)}")
+        } catch (_: Throwable) { }
+    }
+    /** Pure: whether [quiet] would log [e] at all (unit-tested). */
+    fun quietLogs(e: Throwable?): Boolean = !(e is kotlinx.coroutines.CancellationException || e is InterruptedException)
+
     fun read(): String = try { if (::file.isInitialized && file.exists()) file.readText() else "" } catch (_: Exception) { "" }
     fun crashes(): Int = read().lines().count { it.contains("CRASH") }
+    fun anrs(): Int = read().lines().count { it.contains("  ANR ") }
     fun clear() { try { file.delete() } catch (_: Exception) { } }
 
     fun shareIntent(ctx: Context): Intent? {

@@ -126,7 +126,30 @@ object TokenLedger {
         } catch (_: Exception) { }
     }
 
-    fun report(): String = try { report(JSONObject(Settings.str("token_ledger_v1", "{}")), hits) } catch (_: Exception) { "No token ledger yet." }
+    fun report(): String = try { report(JSONObject(Settings.str("token_ledger_v1", "{}")), hits) +
+        sectionReport(try { JSONObject(Settings.str("token_ledger_sys_v1", "{}")) } catch (_: Exception) { JSONObject() }) } catch (_: Exception) { "No token ledger yet." }
+
+    /** v0.45.1 (#16): the system prompt by part (PromptParts names), so its biggest blocks are found by measurement. */
+    @Synchronized fun recordSections(parts: List<PromptParts.Part>) {
+        if (parts.isEmpty()) return
+        if (!(try { Settings.bool("token_ledger", true) } catch (_: Throwable) { true })) return
+        try {
+            val l = try { JSONObject(Settings.str("token_ledger_sys_v1", "{}")) } catch (_: Exception) { JSONObject() }
+            Settings.setStr("token_ledger_sys_v1", fold(l, today(), sectionTokens(parts)).toString())
+        } catch (_: Exception) { }
+    }
+
+    /** Tokens per prompt part, "live: " prefixed for the per-call tail. Pure. */
+    fun sectionTokens(parts: List<PromptParts.Part>): Map<String, Int> = LinkedHashMap<String, Int>().apply {
+        parts.forEach { p -> val k = (if (p.tier == PromptParts.Tier.LIVE) "live: " else "") + p.name; put(k, (get(k) ?: 0) + tok(p.text.length)) }
+    }
+
+    /** "System prompt by part (per call): rich 2.3k, core_skills 2.0k, …" or "". Pure. */
+    fun sectionReport(ledger: JSONObject, n: Int = 8): String {
+        val (calls, lines) = top(ledger)
+        if (calls == 0L) return ""
+        return "\nSystem prompt by part (tokens per call): " + lines.take(n).joinToString(", ") { "${it.part} ${it.perCall}" }
+    }
 
     fun clear() = try { Settings.setStr("token_ledger_v1", "{}") } catch (_: Exception) { }
 }

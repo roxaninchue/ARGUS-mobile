@@ -23,11 +23,23 @@ class StreamGate(private val scope: CoroutineScope, private val apply: (String) 
         if (closed) return
         latest.set(text)
         if (scheduled.compareAndSet(false, true)) scope.launch {
+            // 0.45.16 smoothness (low-end phones): at most one bubble update every [MIN_GAP_MS]. Each update re-splits and
+            // re-renders the whole reply so far; at 60 a second that was most of a low-end frame budget while streaming.
+            val wait = gapLeft(lastApplied, (System.nanoTime() / 1_000_000L))
+            if (wait > 0) kotlinx.coroutines.delay(wait)
             try { awaitFrame() } catch (_: IllegalStateException) { /* no Choreographer (tests): apply now */ }
             scheduled.set(false)
             val v = latest.getAndSet(null) ?: return@launch
-            if (!closed) apply(v)
+            if (!closed) { lastApplied = (System.nanoTime() / 1_000_000L); apply(v) }
         }
+    }
+
+    @Volatile private var lastApplied = 0L
+
+    companion object {
+        const val MIN_GAP_MS = 50L
+        /** Pure (unit-tested): how long to wait before the next update, given the last one. */
+        fun gapLeft(lastAppliedMs: Long, nowMs: Long): Long = if (lastAppliedMs <= 0L) 0L else (lastAppliedMs + MIN_GAP_MS - nowMs).coerceIn(0L, MIN_GAP_MS)
     }
 
     fun flush() {
@@ -36,4 +48,7 @@ class StreamGate(private val scope: CoroutineScope, private val apply: (String) 
     }
 
     fun close() { closed = true; latest.set(null) }
+
+    /** v0.45.0 (#5): true after [close] (Stop): callers drop late callbacks too. */
+    val isClosed: Boolean get() = closed
 }

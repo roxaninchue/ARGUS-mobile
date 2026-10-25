@@ -81,9 +81,9 @@ object OsWeb {
 
     fun release(appId: String) {
         loadedApps.value = loadedApps.value - appId
-        live.remove(appId)?.let { try { (it.parent as? ViewGroup)?.removeView(it); it.destroy() } catch (_: Exception) { } } }
-    fun pauseAll() { for (w in live.values) try { w.onPause() } catch (_: Exception) { } ; try { live.values.firstOrNull()?.pauseTimers() } catch (_: Exception) { } }
-    fun resumeAll() { for (w in live.values) try { w.onResume() } catch (_: Exception) { } ; try { live.values.firstOrNull()?.resumeTimers() } catch (_: Exception) { } }
+        live.remove(appId)?.let { try { (it.parent as? ViewGroup)?.removeView(it); it.destroy() } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("OsWebApp: it.parent as ViewGroup.removeViewit it.d", e) } } }
+    fun pauseAll() { for (w in live.values) try { w.onPause() } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("OsWebApp: w.onPause", e) } ; try { if (!com.blaze.assistant.browser.phone.PhoneBrowser.active) live.values.firstOrNull()?.pauseTimers() } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("OsWebApp: w.onPause", e) } }
+    fun resumeAll() { for (w in live.values) try { w.onResume() } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("OsWebApp: w.onResume", e) } ; try { live.values.firstOrNull()?.resumeTimers() } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("OsWebApp: w.onResume", e) } }
     fun releaseAll() { for (id in live.keys.toList()) release(id) }
 
     /** Factory reset: BlazeOS's own WebView profile (the BlazeOS Browser's cookies and storage) is emptied. Never Blaze's own. */
@@ -93,17 +93,17 @@ object OsWeb {
             val p = androidx.webkit.ProfileStore.getInstance().getOrCreateProfile(PROFILE)
             p.cookieManager.removeAllCookies(null)
             p.webStorage.deleteAllData()
-        } catch (_: Exception) { }
+        } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("OsWebApp: val p androidx.webkit.ProfileStore.getIn", e) }
     }
 
     /** Factory reset / uninstall: the app origins' web storage goes too. */
-    fun forgetOrigin(manifestId: String) { try { WebStorage.getInstance().deleteOrigin(origin(manifestId)) } catch (_: Exception) { } }
+    fun forgetOrigin(manifestId: String) { try { WebStorage.getInstance().deleteOrigin(origin(manifestId)) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("OsWebApp: WebStorage.getInstance.deleteOriginorigi", e) } }
 
     @SuppressLint("SetJavaScriptEnabled")
     fun obtain(ctx: Context, appId: String, setup: (WebView) -> Unit): WebView {
         live[appId]?.let { (it.parent as? ViewGroup)?.removeView(it); return it }
         val w = WebView(ctx.applicationContext)
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) { try { WebViewCompat.setProfile(w, PROFILE) } catch (_: Exception) { } }
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) { try { WebViewCompat.setProfile(w, PROFILE) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("OsWebApp: WebViewCompat.setProfilew PROFILE", e) } }
         w.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -130,20 +130,43 @@ object OsWeb {
 class OsBridge(private val ctx: Context, private val appId: String, private val label: String) {
     private val file = File(OsDisk.dataDir(ctx, appId), "storage.json")
     private val lock = Any()
-    private fun read(): JSONObject = try { JSONObject(OsDisk.readText(file) ?: "{}") } catch (_: Exception) { JSONObject() }
+    // v0.45.0: storage lives in memory and is written at most once per burst (OsBridgeLimits), not on every setItem.
+    private var data: JSONObject? = null
+    private val debounce = OsBridgeLimits.WriteDebounce()
+    private val notifyRate = OsBridgeLimits.Rate(OsBridgeLimits.NOTIFY_MAX, OsBridgeLimits.NOTIFY_WINDOW_MS)
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    private fun read(): JSONObject = data ?: (try { JSONObject(OsDisk.readText(file) ?: "{}") } catch (_: Exception) { JSONObject() }).also { data = it }
+    private fun changed() {
+        if (!debounce.mark(System.currentTimeMillis())) return
+        Thread { try { Thread.sleep(debounce.delay) } catch (_: InterruptedException) { }; flush() }.apply { isDaemon = true }.start()
+    }
+    /** Writes pending storage now (also called when the app's page goes away). */
+    fun flush() {
+        synchronized(lock) {
+            if (!debounce.pending()) return
+            debounce.flushed()
+            data?.let { OsDisk.writeText(file, it.toString()) }
+        }
+    }
 
     @JavascriptInterface fun getItem(k: String): String? = synchronized(lock) { read().optString(k, "").ifEmpty { null } }
     @JavascriptInterface fun setItem(k: String, v: String) {
         synchronized(lock) {
-            val o = read().put(k.take(200), v)
+            val o = read()
+            val key = k.take(200)
+            val old = if (o.has(key)) o.opt(key) else null
+            if (old == v) return
+            o.put(key, v)
             // Keeps one app's storage reasonable (2 MB) so it can't fill the BlazeOS disk.
-            if (o.toString().length <= 2 * 1024 * 1024) OsDisk.writeText(file, o.toString())
+            if (o.toString().length > 2 * 1024 * 1024) { if (old == null) o.remove(key) else o.put(key, old); return }
+            changed()
         }
     }
-    @JavascriptInterface fun removeItem(k: String) { synchronized(lock) { val o = read(); o.remove(k); OsDisk.writeText(file, o.toString()) } }
+    @JavascriptInterface fun removeItem(k: String) { synchronized(lock) { val o = read(); if (o.remove(k) != null) changed() } }
     @JavascriptInterface fun keys(): String = synchronized(lock) { org.json.JSONArray(read().keys().asSequence().toList()).toString() }
     @JavascriptInterface fun notify(title: String, body: String) {
-        MainScope().launch { if (BlazeOs.request(appId, listOf(OsPerms.NOTIFICATIONS))) BlazeOs.notify(label, title, body) }
+        if (!notifyRate.allow(System.currentTimeMillis())) return
+        main.post { BlazeOs.scope.launch { if (BlazeOs.request(appId, listOf(OsPerms.NOTIFICATIONS))) BlazeOs.notify(label, title.take(120), body.take(500)) } }
     }
     @JavascriptInterface fun theme(): String {
         val p = BlazeOs.prefs.value
@@ -204,7 +227,7 @@ fun OsWebApp(inst: OsInstalled) {
                         when (it) { PermissionRequest.RESOURCE_VIDEO_CAPTURE -> OsPerms.CAMERA; PermissionRequest.RESOURCE_AUDIO_CAPTURE -> OsPerms.MIC; else -> null }
                     }
                     if (perms.isEmpty()) { request.deny(); return }
-                    MainScope().launch { if (BlazeOs.request(appId, perms)) request.grant(request.resources) else request.deny() }
+                    BlazeOs.scope.launch { if (BlazeOs.request(appId, perms)) request.grant(request.resources) else request.deny() }
                 }
             }
             w.loadUrl(if (hosted) m.entry.url else "$base/${m.entry.path}")

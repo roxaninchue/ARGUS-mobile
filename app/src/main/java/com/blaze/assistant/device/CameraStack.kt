@@ -18,7 +18,7 @@ import kotlin.coroutines.resume
 /**
  * v0.34.0 Blaze Camera Night and HDR shots on the phone: a short burst (Night: 4 frames, aligned, averaged and lifted)
  * or an exposure bracket (HDR: about −2 / 0 / +2 EV, fused), at up to 1600 px (1280 on low-RAM phones) so a Galaxy
- * A12 handles it. The pixel maths is in [CameraSmart]. Also the 4-corner document crop.
+ * low-end phone handles it. The pixel maths is in [CameraSmart]. Also the 4-corner document crop.
  */
 object CameraStack {
     private suspend fun grab(ctrl: CameraController, ctx: Context, maxLong: Int): Bitmap? = suspendCancellableCoroutine { cont ->

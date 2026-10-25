@@ -144,7 +144,9 @@ object Conversations {
             }
         } else {
             val text = (ex.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: ex.getCharSequence(Notification.EXTRA_TEXT))?.toString().orEmpty()
-            if (text.isNotBlank()) incoming += Msg(n.`when`.takeIf { it > 0 } ?: System.currentTimeMillis(), title, text)
+            // v0.45.5: no MessagingStyle: a group title "Cyp home: Elena" or text "Elena: Pronto" still names the real sender.
+            val (_, who, body) = ChatThreads.splitLegacy(rawTitle, text)
+            if (body.isNotBlank()) incoming += Msg(n.`when`.takeIf { it > 0 } ?: System.currentTimeMillis(), who.ifBlank { title }, body)
         }
         val reply = n.actions?.firstOrNull { a -> a.remoteInputs?.any { it.allowFreeFormInput } == true }
         add(pkg, app, title, group, incoming, reply)
@@ -165,6 +167,8 @@ object Conversations {
             f
         }
         if (add.isNotEmpty()) c.updated = maxOf(c.updated, add.maxOf { it.at })
+        // v0.38.0 follow-ups: plans in new messages; the user's own reply closes that chat's follow-ups.
+        if (add.isNotEmpty()) try { com.blaze.assistant.proactive.FollowUps.onMessages(pkg, app, title, group, add) } catch (_: Throwable) { }
         else if (incoming.isNotEmpty()) c.updated = maxOf(c.updated, System.currentTimeMillis())
         synchronized(convs) { while (convs.size > 80) { val old = convs.values.minByOrNull { it.updated }?.key ?: break; convs.remove(old) } }
         if (logOn) Mind.db()?.let { d ->
@@ -243,7 +247,15 @@ object Conversations {
         else sb.append("\nNothing saved about ${senders.firstOrNull() ?: title} yet; save who they are to the user with memory_save once you know.")
         if (thin(msgs.size)) sb.append("\nContext is thin (${msgs.size} message${if (msgs.size == 1) "" else "s"}). Before drafting a reply, ask the user what to say (ask_user with 2-3 draft options), or open the chat in ${c?.app ?: "the app"} with phone control and read the screen for more.")
         if (c != null && c.reply == null) sb.append("\nThis conversation has no live reply box right now (the notification was dismissed). To answer, open the app with phone control, or use message_contact.")
-        if (c != null && isAuto(c.key)) sb.append("\nThe user turned on auto-reply for this conversation: notif_reply sends without a card.")
+        if (c != null && isAuto(c.key) && !c.group) sb.append("\nThe user turned on auto-reply for this conversation: notif_reply sends without a card.")
+        if (c?.group == true) {
+            val lines = msgs.map { ChatThreads.Line(it.at, it.sender, it.text, it.self) }
+            val me = listOfNotNull(try { Settings.userName.takeIf { it.isNotBlank() } } catch (_: Throwable) { null })
+            ChatThreads.lastAsk(lines, true, me)?.let { a -> sb.append("\nLatest question: ${a.from} asked " +
+                when (a.target) { ChatThreads.Target.OTHER -> "${a.to} (not the user)"; ChatThreads.Target.USER -> "the user"; else -> "the group" } +
+                (if (a.answered) ", already answered." else ".") + " Never reply into a group without the user's OK on the exact text.") }
+        }
+        sb.append("\n").append(ChatThreads.UNTRUSTED)
         return sb.toString()
     }
 
@@ -254,7 +266,9 @@ object Conversations {
         val action = c.reply ?: return "${c.title}'s notification has no live reply box (it was dismissed). Open ${c.app} with phone control instead, or use message_contact."
         val t = text.trim(); if (t.isEmpty()) return "Nothing to send."
         if (Sensitive.isSensitive(t)) return "Not sent: that reply looks like it contains a code or bank details. Blaze never sends those from a notification."
-        if (!isAuto(c.key) && !Agent.confirm("Reply to ${c.title}?", "\u201c$t\u201d\n(in ${c.app}, from the notification)", "Send", always = true))
+        // v0.45.5: a group never gets an automatic reply; the card always shows the exact text first.
+        val auto = ChatThreads.canAutoSend(c.group, isAuto(c.key))
+        if (!auto && !Agent.confirm("Reply to ${c.title}?", "\u201c$t\u201d\n(in ${c.app}, from the notification)", "Send", always = true))
             return "The user declined. Nothing was sent."
         val inputs = action.remoteInputs ?: return "That notification has no reply box."
         val intent = Intent(); val b = Bundle()
@@ -263,7 +277,7 @@ object Conversations {
         return try {
             action.actionIntent.send(ctx, 0, intent)
             add(c.pkg, c.app, c.title, c.group, listOf(Msg(System.currentTimeMillis(), "You", t, true)), null)
-            "Replied to ${c.title} in ${c.app}${if (isAuto(c.key)) " (auto-reply)" else ""}."
+            "Replied to ${c.title} in ${c.app}${if (auto) " (auto-reply)" else ""}."
         } catch (_: PendingIntent.CanceledException) { "That notification is gone, so I couldn't reply. Open ${c.app} with phone control instead." }
     }
 }

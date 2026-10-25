@@ -11,9 +11,9 @@ import com.blaze.assistant.MainActivity
 class BlazeTile : TileService() {
     @SuppressLint("StartActivityAndCollapseDeprecated")
     override fun onClick() {
-        val i = Intent(this, MainActivity::class.java)
+        val i = com.blaze.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            .putExtra(MainActivity.EXTRA_LISTEN, true)
+            .putExtra(MainActivity.EXTRA_LISTEN, true))
         if (Build.VERSION.SDK_INT >= 34) {
             startActivityAndCollapse(PendingIntent.getActivity(this, 9, i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         } else {

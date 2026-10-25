@@ -133,7 +133,7 @@ object OsResources {
 
     /**
      * Low: Android says low-RAM, under 3.5 GB of RAM, a heap of 192 MB or less, or under 600 MB free right now
-     * (a Galaxy A12 with 3 GB lands here). High: 6 GB or more with a 384 MB+ heap. Mid otherwise.
+     * (a low-end phone with 3 GB lands here). High: 6 GB or more with a 384 MB+ heap. Mid otherwise.
      */
     fun tier(h: HostInfo): String = when {
         h.lowRam || h.totalRam < 3584 * MB || h.heapMb in 1..192 || h.availRam in 1 until 600 * MB -> "low"

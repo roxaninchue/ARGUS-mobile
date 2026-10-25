@@ -366,7 +366,7 @@ private fun ResetPage(back: () -> Unit) {
     OsGroup {
         if (!sure) OsRow("Erase BlazeOS…", danger = true, onClick = { sure = true })
         else {
-            OsRow("Yes, erase BlazeOS and restart", danger = true, onClick = { scope.launch { OsWeb.releaseAll(); BlazeOs.factoryReset(); BlazeOs.open() } })
+            OsRow("Yes, erase BlazeOS and restart", danger = true, onClick = { scope.launch { OsWeb.releaseAll(); OsWasm.releaseAll(); BlazeOs.factoryReset(); BlazeOs.open() } })
             OsRow("Cancel", onClick = { sure = false })
         }
     }

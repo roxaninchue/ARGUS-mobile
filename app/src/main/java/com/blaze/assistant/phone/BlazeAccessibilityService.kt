@@ -23,6 +23,9 @@ class BlazeAccessibilityService : AccessibilityService() {
         @Volatile var instance: BlazeAccessibilityService? = null
             private set
 
+        /** v0.45.1: something may have changed the screen (an app opened, a tool ran): the next read walks the tree again. */
+        fun touched() { instance?.acted() }
+
         fun isEnabled(ctx: Context): Boolean {
             if (instance != null) return true
             val enabled = Settings.Secure.getString(
@@ -39,12 +42,23 @@ class BlazeAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         instance = this
         com.blaze.assistant.device.CrashLog.write("Phone control connected")
+        try { com.blaze.assistant.bank.BankMode.a11yBack() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.error("bank restore reset", e) }
         com.blaze.assistant.voice.WakeWordService.start(this)
         if (com.blaze.assistant.agent.Settings.orbPinned) com.blaze.assistant.ui.Overlay.showOrb(this)
+        // v0.43.0: the user switched phone control back on by hand while Bank mode was on: Bank mode ends.
+        if (com.blaze.assistant.bank.BankMode.active && !com.blaze.assistant.bank.BankMode.state.value.auto) com.blaze.assistant.bank.BankMode.turnOff(this)
     }
+
+    /** v0.43.0: true when the app in front is on the user's bank list. Blaze never reads or touches banking apps. */
+    private fun bankInFront(): Boolean = try {
+        com.blaze.assistant.bank.BankMode.isBank(rootInActiveWindow?.packageName?.toString().orEmpty())
+    } catch (_: Throwable) { false }
 
     /** Time of the last screen change, so actions can wait for the UI to settle instead of sleeping. */
     @Volatile private var lastEventAt = 0L
+    // v0.45.1: event counters (not times: two events can share a millisecond).
+    @Volatile private var eventSeq = 0L
+    @Volatile private var otherEventSeq = 0L
     @Volatile private var lastWindowPkg = ""
 
     /** v0.25.0: only observed while Magic Hand is on (Back twice closes it). Never consumed: always false. */
@@ -56,9 +70,29 @@ class BlazeAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         lastEventAt = android.os.SystemClock.uptimeMillis()
+        // v0.45.1: Blaze's own orb / overlay redraws don't change another app's tree (ScreenReadCache).
+        eventSeq++
+        if (event.packageName?.toString() != packageName) otherEventSeq++
+        // 0.45.19: the cached tree re-walks only what changed (ScreenTree); events of other windows don't touch it.
+        try { treeEvent(event) } catch (_: Throwable) { tree.onWindowChanged() }
+        // v0.43.0 Bank mode: a banking app in front turns it on (this service then switches itself off); nothing in a
+        // banking app is watched, remembered or recorded.
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val p = event.packageName?.toString().orEmpty()
+            if (p.isNotEmpty() && p != packageName) {
+                try { com.blaze.assistant.bank.BankMode.onFront(this, p) } catch (_: Throwable) { }
+                if (try { com.blaze.assistant.bank.BankMode.isBank(p) } catch (_: Throwable) { false }) { lastWindowPkg = p; return }
+            }
+        } else if (try { com.blaze.assistant.bank.BankMode.isBank(event.packageName?.toString().orEmpty()) } catch (_: Throwable) { false }) return
         try { Watchers.onEvent(this, event.packageName?.toString().orEmpty()) } catch (_: Exception) { }
         // v0.24.7 Magic Hand: watches re-read when their app comes up; teach mode records the user's own taps / typing.
         try { MagicHand.onEvent(this, event) } catch (_: Exception) { }
+        // v0.38.0 follow-ups: Send tapped in a chat app with the waiting person's chat open counts as a reply.
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) try {
+            val pkg = event.packageName?.toString().orEmpty()
+            if (pkg.isNotEmpty() && pkg != packageName) com.blaze.assistant.proactive.FollowUps.onClick(pkg,
+                (event.contentDescription ?: event.text?.joinToString(" "))?.toString(), rootInActiveWindow)
+        } catch (_: Throwable) { }
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED || event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val pkg = event.packageName?.toString().orEmpty()
@@ -66,6 +100,7 @@ class BlazeAccessibilityService : AccessibilityService() {
                 lastWindowPkg = pkg
                 com.blaze.assistant.agent.ScreenMemory.onWindow(this, pkg)
                 try { com.blaze.assistant.proactive.Triggers.onApp(pkg, appLabel(pkg)) } catch (_: Exception) { }
+                try { com.blaze.assistant.proactive.FollowUps.onAppOpened(pkg) } catch (_: Throwable) { }
             }
             // v0.27.0: habit offers only from apps opened on purpose (no keyboards, home, system UI, overlays, brief visits).
             if (pkg.isNotEmpty()) try {
@@ -101,6 +136,19 @@ class BlazeAccessibilityService : AccessibilityService() {
             kotlinx.coroutines.delay(40)
         }
     }
+    /**
+     * 0.45.19: wait until the next accessibility event or [maxMs], whichever comes first (verification polls on events,
+     * not on fixed sleeps). Returns true when an event arrived.
+     */
+    suspend fun awaitEvent(maxMs: Long): Boolean {
+        val seq = eventSeq
+        val end = android.os.SystemClock.uptimeMillis() + maxMs
+        while (android.os.SystemClock.uptimeMillis() < end) {
+            if (eventSeq != seq) return true
+            kotlinx.coroutines.delay(15)
+        }
+        return eventSeq != seq
+    }
     private val settleAvg = java.util.concurrent.ConcurrentHashMap<String, Double>()
     private val settleN = java.util.concurrent.ConcurrentHashMap<String, Int>()
     override fun onInterrupt() {}
@@ -125,6 +173,7 @@ class BlazeAccessibilityService : AccessibilityService() {
     /** Screenshot of the default display, downscaled, as a data:image/jpeg URL. Android 11+. */
     suspend fun screenshot(): String? {
         if (android.os.Build.VERSION.SDK_INT < 30) return null
+        if (bankInFront()) return null
         // v0.33.3: the hardware buffer is copied, scaled (720 px long side) and compressed (JPEG 60) off the main thread.
         val buf = suspendCancellableCoroutine<ScreenshotResult?> { cont ->
             try {
@@ -163,6 +212,24 @@ class BlazeAccessibilityService : AccessibilityService() {
     private var lastReadPkg = ""
     private var lastReadAt = 0L
 
+    // v0.45.1 speed: the last tree walk, reused by a read right after it when nothing can have changed (ScreenReadCache):
+    // same window, no accessibility event since, no action by Blaze since, at most ScreenReadCache.MAX_AGE_MS old.
+    // waitFor / findTarget / anyField / visibleWords / look_at_screen used to walk the whole tree (one IPC per node)
+    // several times in a row on a screen that hadn't moved.
+    private class Walk(val windowId: Int, val pkg: String, val eventMark: Long, val actMark: Long, val at: Long,
+                       val found: List<Pair<AccessibilityNodeInfo, String>>)
+    private var lastWalk: Walk? = null
+    @Volatile private var actSeq = 0L
+    /** Reads served from [lastWalk] / full walks, since start (speed_stats). */
+    @Volatile var walksReused = 0; private set
+    @Volatile var walksDone = 0; private set
+    @Volatile var walkMsTotal = 0L; private set
+
+    internal fun acted() { actSeq++ }
+
+    /** The newest event that can matter for a read of [pkg]: any event when Blaze itself is in front, else other apps' only. */
+    private fun eventMark(pkg: String): Long = if (pkg == packageName) eventSeq else otherEventSeq
+
     private fun role(n: AccessibilityNodeInfo): String {
         val c = n.className?.toString()?.substringAfterLast('.') ?: "View"
         return when {
@@ -180,12 +247,73 @@ class BlazeAccessibilityService : AccessibilityService() {
         }
     }
 
+    // ---------- 0.45.19: event-driven cached accessibility tree ----------
+
+    private object NodeAccess : ScreenTree.Access<AccessibilityNodeInfo> {
+        override fun key(n: AccessibilityNodeInfo): Long = (n.windowId.toLong() shl 32) xor (n.hashCode().toLong() and 0xffffffffL)
+        override fun visible(n: AccessibilityNodeInfo) = n.isVisibleToUser
+        override fun text(n: AccessibilityNodeInfo) = n.text?.toString().orEmpty()
+        override fun desc(n: AccessibilityNodeInfo) = n.contentDescription?.toString().orEmpty()
+        override fun hint(n: AccessibilityNodeInfo) = if (android.os.Build.VERSION.SDK_INT >= 26) n.hintText?.toString().orEmpty() else ""
+        override fun cls(n: AccessibilityNodeInfo) = n.className?.toString().orEmpty()
+        override fun clickable(n: AccessibilityNodeInfo) = n.isClickable
+        override fun editable(n: AccessibilityNodeInfo) = n.isEditable
+        override fun scrollable(n: AccessibilityNodeInfo) = n.isScrollable
+        override fun checkable(n: AccessibilityNodeInfo) = n.isCheckable
+        override fun checked(n: AccessibilityNodeInfo) = n.isChecked
+        override fun selected(n: AccessibilityNodeInfo) = n.isSelected
+        override fun enabled(n: AccessibilityNodeInfo) = n.isEnabled
+        override fun childCount(n: AccessibilityNodeInfo) = n.childCount
+        override fun child(n: AccessibilityNodeInfo, i: Int): AccessibilityNodeInfo? = n.getChild(i)
+    }
+    private val tree = ScreenTree(NodeAccess)
+    /** The window the cached tree belongs to (events of other windows are ignored). */
+    @Volatile private var treeWindow = -1
+    /** Threads for a parallel cold walk of a big window (per-thread accessibility clients). */
+    private val treePool: java.util.concurrent.ExecutorService by lazy {
+        java.util.concurrent.Executors.newFixedThreadPool(3) { r -> Thread(r, "blaze-a11y-walk").apply { isDaemon = true } }
+    }
+    /** Cached-tree counters (speed_stats). */
+    val treeStats: String get() = "tree full ${tree.fullWalks}, partial ${tree.partialWalks}, subtrees reused ${tree.reusedSubtrees}, fetches ${tree.childFetches}"
+
+    private fun treeEvent(e: AccessibilityEvent) {
+        when (e.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED, AccessibilityEvent.TYPE_WINDOWS_CHANGED -> tree.onWindowChanged()
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED, AccessibilityEvent.TYPE_VIEW_SCROLLED,
+            AccessibilityEvent.TYPE_VIEW_SELECTED -> {
+                if (treeWindow < 0 || e.windowId != treeWindow) return
+                val src = e.source
+                tree.onContentChanged(src?.let { NodeAccess.key(it) })
+            }
+            else -> { }
+        }
+    }
+
     /** Full read. With [diff], a read of the same screen returns only what changed. */
     fun readScreen(diff: Boolean = false): String {
         val root = rootInActiveWindow ?: run { elements.clear(); return "I can't see the screen right now (no active window)." }
+        if (bankInFront()) { elements.clear(); lastWalk = null; tree.clear(); return com.blaze.assistant.bank.BankModeLogic.REFUSE }
         val pkg = root.packageName?.toString() ?: "unknown"
-        val found = ArrayList<Pair<AccessibilityNodeInfo, String>>()
-        walk(root, found, 0)
+        val t0 = android.os.SystemClock.uptimeMillis()
+        val w = lastWalk
+        val found: List<Pair<AccessibilityNodeInfo, String>> =
+            if (w != null && com.blaze.assistant.agent.ScreenReadCache.reusable(w.windowId == root.windowId && w.pkg == pkg,
+                    eventMark(pkg) != w.eventMark, actSeq != w.actMark, t0 - w.at)) { walksReused++; w.found }
+            else {
+                val evMark = eventMark(pkg); val acMark = actSeq   // taken before the walk: a change during it means "walk again"
+                // 0.45.19: the cached tree (only the subtrees events marked dirty are walked again); the old full walk is the fallback.
+                val list: List<Pair<AccessibilityNodeInfo, String>> = try {
+                    treeWindow = root.windowId
+                    tree.read(root, t0, treePool)
+                } catch (e: Throwable) {
+                    tree.clear()
+                    ArrayList<Pair<AccessibilityNodeInfo, String>>().also { walk(root, it, 0) }
+                }
+                list.also {
+                    val t1 = android.os.SystemClock.uptimeMillis()
+                    walksDone++; walkMsTotal += t1 - t0
+                    lastWalk = Walk(root.windowId, pkg, evMark, acMark, t1, it) }
+            }
         // Keys: what the element is and says (not where), with a counter for repeats.
         val seen = HashMap<String, Int>()
         val keys = found.map { (n, line) ->
@@ -247,7 +375,8 @@ class BlazeAccessibilityService : AccessibilityService() {
         val wrapper = text.isEmpty() && desc.isEmpty() && !node.isEditable && !node.isScrollable && !node.isCheckable &&
             node.childCount == 1 && node.getChild(0)?.let { c -> !c.isClickable && (!c.text.isNullOrBlank() || !c.contentDescription.isNullOrBlank()) } == true
         if (interesting && !wrapper) {
-            val sb = StringBuilder(role(node))
+            val r = role(node)
+            val sb = StringBuilder(r)
             if (text.isNotEmpty()) sb.append(" \"").append(text.take(120)).append("\"")
             if (desc.isNotEmpty() && desc != text) sb.append(" (").append(desc.take(80)).append(")")
             if (hint.isNotEmpty() && hint != text) sb.append(" hint \"").append(hint.take(60)).append("\"")
@@ -255,7 +384,7 @@ class BlazeAccessibilityService : AccessibilityService() {
             if (node.isScrollable) sb.append(" scrolls")
             if (node.isSelected) sb.append(" selected")
             if (!node.isEnabled) sb.append(" disabled")
-            if (node.isClickable && role(node) in setOf("text", "img")) sb.append(" tappable")
+            if (node.isClickable && (r == "text" || r == "img")) sb.append(" tappable")
             out.add(node to sb.toString())
         }
         for (i in 0 until node.childCount) walk(node.getChild(i), out, depth + 1)
@@ -380,6 +509,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         suspend fun bringIn(): Int? {
             val n = locate(label, wantField) ?: return null
             if (n.isVisibleToUser) return findTarget(label, wantField)
+            acted()
             if (n.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)) { settle(450, 120); findTarget(label, wantField)?.let { return it } }
             return null
         }
@@ -388,6 +518,7 @@ class BlazeAccessibilityService : AccessibilityService() {
             var sig = visibleSig()
             for (k in 0 until maxScrolls) {
                 val list = mainScroller() ?: return null
+                acted()
                 if (!list.performAction(dir)) break
                 lastRevealScrolls++
                 settle(450, 120)
@@ -487,6 +618,7 @@ class BlazeAccessibilityService : AccessibilityService() {
      * the middle of the element like a finger would.
      */
     suspend fun tap(id: Int, long: Boolean = false): String {
+        if (bankInFront()) return com.blaze.assistant.bank.BankModeLogic.REFUSE
         // v0.30.7: a tap that flipped a switch remembers which way it ended up (plan memory replays it with want=…).
         val before = try { switchState(id) } catch (_: Exception) { null }
         lastToggle = null
@@ -536,6 +668,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         // v0.21.0 visible pointer: glide there, re-check the target is still where it was (orient), ripple, then act.
         aimAt(node, id, long)?.let { return it }
         val before = android.os.SystemClock.uptimeMillis()
+        acted()
         if (target != null && target.isEnabled && target.performAction(action)) {
             if (changedSince(before, 700)) return "Tapped [$id]."
         }
@@ -545,78 +678,30 @@ class BlazeAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * The pointer's part of a tap: null = go ahead; a message = don't tap (the user paused Blaze, or the
-     * target went away or moved during the glide and is aimed at again once).
+     * The pointer's part of a tap: null = go ahead; a message = don't tap (the user tapped Stop, or the target went
+     * away or moved during the glide and is aimed at again once). The pointer never pauses a run (v0.45.14).
      */
     private suspend fun aimAt(node: AccessibilityNodeInfo, id: Int, long: Boolean): String? {
         val p0 = centerOf(node) ?: return null
-        val paused = "Paused before tapping [$id]: the user took over the pointer. Nothing was tapped."
-        if (!Pointer.aim(this, p0.first, p0.second)) return paused
+        val stopped = "Stopped before tapping [$id]: the user tapped Stop. Nothing was tapped."
+        if (!Pointer.aim(this, p0.first, p0.second)) return stopped
         node.refresh()
         val p1 = if (node.isVisibleToUser) centerOf(node) else null
         if (p1 == null) return "The target [$id] went away while Blaze was aiming (the screen changed). Nothing was tapped; look again."
         val d = resources.displayMetrics.density
-        if (Pointer.moved(p0.first, p0.second, p1.first, p1.second, d) && !Pointer.aim(this, p1.first, p1.second)) return paused
-        if (!Pointer.ripple(long)) return paused
+        if (Pointer.moved(p0.first, p0.second, p1.first, p1.second, d) && !Pointer.aim(this, p1.first, p1.second)) return stopped
+        if (!Pointer.ripple(long)) return stopped
         return null
     }
 
-    /** v0.24.4: every agent gesture shows the pointer first: glide to (x, y), ripple. False = the user paused Blaze. */
+    /** v0.24.4: every agent gesture shows the pointer first: glide to (x, y), ripple. False = the user tapped Stop. */
     private suspend fun pointTo(x: Float, y: Float, long: Boolean = false): Boolean = Pointer.aim(this, x, y) && Pointer.ripple(long)
-
-    /**
-     * What's under the pointer tip (manual double-tap check, v0.24.4): the label of the clickable element at (x, y)
-     * (its text, content description, or a child's text) and how many different clickable elements are stacked
-     * there. Blaze's own overlay windows are skipped. (null, 0) when nothing readable is there.
-     */
-    fun labelAt(x: Float, y: Float): Pair<String?, Int> {
-        val xi = x.toInt(); val yi = y.toInt()
-        val roots = try {
-            windows.filter { it.type != android.view.accessibility.AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY }.mapNotNull { it.root }
-        } catch (_: Exception) { emptyList() }.ifEmpty { listOfNotNull(rootInActiveWindow) }
-        val r = android.graphics.Rect()
-        fun contains(n: AccessibilityNodeInfo): Boolean { n.getBoundsInScreen(r); return r.contains(xi, yi) && n.isVisibleToUser }
-        fun text(n: AccessibilityNodeInfo): String? = (n.text ?: n.contentDescription)?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-        fun childText(n: AccessibilityNodeInfo, depth: Int = 0): String? {
-            if (depth > 4) return null
-            text(n)?.let { return it }
-            for (i in 0 until n.childCount) n.getChild(i)?.let { c -> childText(c, depth + 1)?.let { return it } }
-            return null
-        }
-        for (root in roots) {
-            if (!contains(root)) continue
-            var deepest: AccessibilityNodeInfo = root
-            val clickable = ArrayList<AccessibilityNodeInfo>()
-            var cur: AccessibilityNodeInfo? = root
-            var guard = 0
-            while (cur != null && guard++ < 60) {
-                if (cur.isClickable || cur.isLongClickable || cur.isEditable) clickable += cur
-                deepest = cur
-                var next: AccessibilityNodeInfo? = null
-                var hits = 0
-                for (i in cur.childCount - 1 downTo 0) cur.getChild(i)?.let { c -> if (contains(c)) { hits++; if (next == null) next = c } }
-                if (hits > 1 && cur.isClickable.not()) {
-                    // Overlapping siblings: count the clickable ones (an ambiguous spot).
-                    var n2 = 0
-                    for (i in 0 until cur.childCount) cur.getChild(i)?.let { c -> if (contains(c) && (c.isClickable || childText(c) != null)) n2++ }
-                    if (n2 > 1) return (childText(next ?: deepest)) to n2
-                }
-                cur = next
-            }
-            val target = clickable.lastOrNull() ?: deepest
-            val label = childText(target) ?: target.viewIdResourceName?.substringAfterLast('/')?.replace('_', ' ')
-            return label to (if (label == null) 0 else 1)
-        }
-        return null to 0
-    }
-
-    /** A tap the user asked for by double-tapping the pointer (manual mode). */
-    suspend fun tapAt(x: Float, y: Float): Boolean = gestureTap(x, y, 60)
 
     /** Tap a node found outside read_screen (watchers): accessibility click up the parent chain, else a touch. */
     suspend fun tapNode(node: AccessibilityNodeInfo): Boolean {
         centerOf(node)?.let { if (!pointTo(it.first, it.second)) return false }
         var n: AccessibilityNodeInfo? = node
+        acted()
         while (n != null) { if (n.isClickable && n.isEnabled) { if (n.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true; break }; n = n.parent }
         val pt = centerOf(node) ?: return false
         return gestureTap(pt.first, pt.second, 60)
@@ -654,6 +739,7 @@ class BlazeAccessibilityService : AccessibilityService() {
             val all = "$sd ${norm(n.contentDescription)}"
             return when { Regex("\\b(on|enabled|connected)\\b").containsMatchIn(all) -> true; Regex("\\b(off|disabled)\\b").containsMatchIn(all) -> false; else -> null }
         }
+        acted()
         if (!performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS)) return null
         var tile: AccessibilityNodeInfo? = null
         repeat(8) { if (tile == null) { delay(250); tile = find() } }
@@ -674,6 +760,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     /** Fresh read, then tap the element whose words match [label] (synonyms, off-screen rows scrolled in). Immune to stale numbers. */
     suspend fun tapText(label: String, long: Boolean = false): String {
+        if (bankInFront()) return com.blaze.assistant.bank.BankModeLogic.REFUSE
         val id = reveal(label) ?: return "No element matching \"$label\" on this screen, even after scrolling through it. Read the screen for the real labels."
         val scrolled = lastRevealScrolls
         val name = labelOf(id).ifBlank { label }.take(40)
@@ -683,7 +770,7 @@ class BlazeAccessibilityService : AccessibilityService() {
     suspend fun type(id: Int, text: String, submit: Boolean = false): String {
         var node = element(id) ?: return "No element [$id]. Call read_screen again."
         // v0.24.4: the pointer shows which field gets the text before Blaze focuses it (a non-field goes through tap()).
-        if (node.isEditable) centerOf(node)?.let { if (!pointTo(it.first, it.second)) return "Paused before typing into [$id]: the user took over the pointer. Nothing was typed." }
+        if (node.isEditable) centerOf(node)?.let { if (!pointTo(it.first, it.second)) return "Stopped before typing into [$id]: the user tapped Stop. Nothing was typed." }
         if (!node.isEditable) {
             // Search icons/bars often turn into a real field after a tap.
             tap(id)
@@ -695,6 +782,7 @@ class BlazeAccessibilityService : AccessibilityService() {
                 elements.firstOrNull { it?.isEditable == true }?.let { node = it }
             }
         }
+        acted()
         node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
         val args = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
@@ -706,6 +794,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     /** Presses the keyboard's Enter / Search key on a field (Android 11+). */
     private suspend fun submitIme(node: AccessibilityNodeInfo): Boolean {
+        acted()
         settle(300, 100)
         if (android.os.Build.VERSION.SDK_INT >= 30) {
             node.refresh()
@@ -715,10 +804,11 @@ class BlazeAccessibilityService : AccessibilityService() {
     }
 
     suspend fun scroll(direction: String, id: Int?): String {
+        acted()
         val forward = direction.lowercase() in listOf("down", "right", "forward")
         val target = id?.let { element(it) } ?: elements.firstOrNull { it?.isScrollable == true }
         if (target != null) {
-            centerOf(target)?.let { if (!pointTo(it.first, it.second)) return "Paused before scrolling: the user took over the pointer." }
+            centerOf(target)?.let { if (!pointTo(it.first, it.second)) return "Stopped before scrolling: the user tapped Stop." }
             var n: AccessibilityNodeInfo? = target
             while (n != null) {
                 if (n.isScrollable && n.performAction(
@@ -745,6 +835,7 @@ class BlazeAccessibilityService : AccessibilityService() {
     }
 
     fun press(button: String): String {
+        acted()
         val action = when (button.lowercase()) {
             "back" -> GLOBAL_ACTION_BACK
             "home" -> GLOBAL_ACTION_HOME
@@ -774,6 +865,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     private suspend fun dispatch(stroke: GestureDescription.StrokeDescription): Boolean =
         suspendCancellableCoroutine { cont ->
+            acted()
             val g = GestureDescription.Builder().addStroke(stroke).build()
             val ok = dispatchGesture(g, object : GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {

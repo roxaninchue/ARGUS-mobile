@@ -243,7 +243,7 @@ object GalleryRepo {
         val key = e.id + "@" + px
         thumbs.get(key)?.let { return@withContext it }
         if (synchronized(noArt) { key in noArt }) return@withContext null
-        // At most 3 decodes at once so a fast fling on a low-end phone (Galaxy A12) never starves the UI thread's CPU;
+        // At most 3 decodes at once so a fast fling on a low-end phone never starves the UI thread's CPU;
         // tiles that scroll away cancel their request before it starts.
         val b = decodeGate.withPermit {
             thumbs.get(key) ?: runCatching { diskThumb(e, px) ?: loadThumb(e, px)?.also { saveDiskThumb(e, px, it) } }.getOrNull()

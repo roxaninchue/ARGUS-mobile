@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Terminal
@@ -79,16 +80,21 @@ object TermSheet {
         fun close() { open = false }
     }
 
-    /** The terminal's palette: Blaze's dark colours on a near-black terminal. Shared with the View code (as ARGB ints). */
+    /**
+     * The terminal's palette. v0.45.8: derived from the picked theme ([com.blaze.assistant.ui.TermPalette]); the
+     * activity sets it on start and whenever the theme changes, and the sheet recomposes.
+     */
     object Palette {
-        val bg = Color(0xFF0B0B0D)
-        val sheet = Color(0xFF1B1B1F)
-        val row = Color(0xFF26262A)       // DarkColors.paper
-        val ink = DarkColors.ink
-        val sub = DarkColors.sub
-        val hair = DarkColors.hair
-        val accent = DarkColors.accent    // Blaze blue on dark
-        val danger = Color(0xFFFF6B6B)
+        private var p by mutableStateOf(com.blaze.assistant.ui.TermPalette.of(com.blaze.assistant.ui.LivingThemes.CLASSIC, true))
+        fun set(colors: com.blaze.assistant.ui.TermPalette.Colors) { p = colors }
+        val bg: Color get() = Color(p.bg)
+        val sheet: Color get() = Color(p.sheet)
+        val row: Color get() = Color(p.row)
+        val ink: Color get() = Color(p.fg)
+        val sub: Color get() = Color(p.dim)
+        val hair: Color get() = Color(p.keyEdge)
+        val accent: Color get() = Color(p.accent)
+        val danger: Color get() = if (p.dark) Color(0xFFFF6B6B) else Color(0xFFC62828)
     }
 
     fun iconFor(key: String): ImageVector = when (key) {
@@ -103,6 +109,7 @@ object TermSheet {
         "phone" -> Icons.Rounded.PhoneAndroid
         "linux" -> Icons.Rounded.Terminal
         "install" -> Icons.Rounded.Download
+        "theme" -> Icons.Rounded.Palette
         else -> Icons.Rounded.Add
     }
 }

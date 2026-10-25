@@ -8,7 +8,7 @@ import android.os.Build
 /**
  * v0.33.3: every launchable app on the phone (ACTION_MAIN / CATEGORY_LAUNCHER; the manifest's <queries> declares that
  * intent, so Android 11+ package visibility shows them all) with its label and category, cached for 60 s.
- * Call off the main thread (loadLabel for 150 apps is slow on a Galaxy A12).
+ * Call off the main thread (loadLabel for 150 apps is slow on a low-end phone).
  */
 object InstalledApps {
     @Volatile private var cache: Pair<Long, List<AppFinder.App>>? = null

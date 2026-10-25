@@ -71,7 +71,7 @@ object SelfCheck {
         out += Item("Exact alarms", exact, if (exact) "Routines and scheduled jobs run on time" else "Not allowed: routines may run a few minutes late.", "exact_alarms")
         out += Item("Fast lane", FastLane.ready(ctx), when {
             !FastLane.supported(ctx) -> "This phone's chip isn't supported."
-            !FastLane.ready(ctx) -> "Model not downloaded (Settings → AI & model)."
+            !FastLane.ready(ctx) -> "Model not downloaded yet."
             !Settings.fastLane -> "Downloaded but turned off."
             else -> "Ready · ${com.blaze.assistant.agent.IntentCache.size()} cached commands" })
         out += Item("Phone control", com.blaze.assistant.phone.BlazeAccessibilityService.instance != null,

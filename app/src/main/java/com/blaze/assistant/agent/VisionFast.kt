@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.33.3: "Looking at the screen" took 44 s on a Galaxy A12. Three causes, three rules (pure, tested in VisionFastTest):
+ * v0.33.3: "Looking at the screen" took 44 s on a low-end phone. Three causes, three rules (pure, tested in VisionFastTest):
  *  1. The screenshot was 1280 px / JPEG 70 and stayed in the history, so EVERY later step of the turn re-sent it and was
  *     routed to the slow vision lineup. Now a picture is seen by exactly one model call ([pruneShots]) and is 720 px / JPEG 60.
  *  2. look_at_screen took a screenshot even when the accessibility tree already said everything. Now a screen with

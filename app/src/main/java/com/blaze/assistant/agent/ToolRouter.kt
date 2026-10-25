@@ -14,7 +14,7 @@ object ToolRouter {
 
     /** Always sent. */
     private val core = setOf(
-        "remember", "forget", "memory_search", "memory_save", "memory_update", "open_view", "design", "about_blaze", "blaze_docs_search", "blaze_docs_read", "blazerouter", "processes", "process", "recall_memory", "device_status", "list_apps", "blaze_camera", "blaze_self", "ask_user", "self_test",
+        "save_file", "remember", "forget", "memory_search", "memory_save", "memory_update", "memory_delete", "memory_merge", "open_view", "design", "about_blaze", "blaze_now", "jarvis_mode", "bank_mode", "follow_ups", "blaze_docs_search", "blaze_docs_read", "blazerouter", "processes", "process", "recall_memory", "device_status", "get_weather", "list_apps", "blaze_camera", "blaze_self", "ask_user", "self_test",
         "web_search", "fetch_page", "load_tools", "find_tool", "goal", "use_skill", "find_skill", "search_past_chats", "run_skill",
         // Long chats (v0.15.0): always on hand so nothing older is ever out of reach.
         "search_chat", "read_turn", "read_artifact", "update_brief", "project_docs_search", "project_docs_read",
@@ -73,7 +73,8 @@ object ToolRouter {
             r("""\b(alarm|timer|volume|mute|loud|wifi|wi-fi|bluetooth|torch|flash|brightness|dnd|disturb|airplane|battery|setting|pause|play|next|skip|music|song|clipboard|copy|paste|notif\w*|share|ringer|silent|vibrate|rotat\w*|hotspot|nfc|location|split|power|screenshot|lock|usage|uninstall|camera|qr|photo|installed|apps?|secure folder|private space|phone model|android version|where am i|near me|nearby|gps|my location|address)\b"""),
             { it in setOf("set_alarm", "set_timer", "set_volume", "toggle_setting", "device_setting", "battery_level", "media_control", "get_location") || it in com.blaze.assistant.phone.AndroidControl.names }),
         Group("schedule", "calendar, routines, triggers (when X do Y)",
-            r("""\b(calendar|event|meeting|schedule|remind|reminder|every|daily|tomorrow|tonight|morning|routine|when|whenever|appointment)\b"""),
+            // v0.45.9: plurals and "what's on" questions too ("View your upcoming meetings" got no calendar tool and Blaze said it couldn't see the calendar).
+            r("""\b(calendars?|events?|meetings?|schedules?|remind|reminders?|alarms?|agenda|appointments?|classes|class|lectures?|upcoming|every|daily|tomorrow|tonight|morning|routines?|when|whenever|anything on|what'?s on|whats on|what is on|on for today|what do i have|do i have anything|am i (?:busy|free))\b"""),
             { it in setOf("calendar_events", "add_calendar_event", "gcal_events", "gcal_create", "create_routine", "list_routines", "delete_routine", "schedule_command",
                 "create_trigger", "list_triggers", "delete_trigger", "move_event", "delete_event") }),
         Group("google", "Gmail, Drive, Google contacts, Google Classroom",
@@ -82,6 +83,10 @@ object ToolRouter {
         Group("seller", "brand kit for the user's store or business (posts, ads, listings, designs)",
             r("""\b(brand|store|shop|shopify|dropship\w*|listing|product|ads?|advert\w*|caption|posts?|content calendar|tiktok|instagram|facebook|marketing|customers?|orders?|digest|competitors?|homeglow)\b"""),
             { it == "brand_kit" }),
+        // 0.45.19: App Store (free open-source apps from their own releases, installed with Android's installer).
+        Group("appstore", "App Store: free open-source Android apps from their developers' releases, installed on this phone with Android's installer",
+            r("""\b(app ?store|apps?|install|f-?droid|open[- ]source|foss|apk|get (?:me )?(?:the |an? )?app)\b"""),
+            { it.startsWith("store_") }),
         Group("study", "flashcards (spaced repetition in the Learn view), study tools",
             r("""\b(flash ?cards?|quiz|revise|revision|study|studying|exam|test me|memori[sz]e|lecture|tutor)\b"""),
             { it == "flashcards" }),
@@ -94,7 +99,7 @@ object ToolRouter {
         Group("apps", "GitHub, Notion, Slack, Spotify connectors",
             r("""\b(github|repo|issue|pull request|pr|notion|slack|spotify|playlist|song|music)\b"""),
             { it.startsWith("github_") || it.startsWith("notion_") || it.startsWith("slack_") || it.startsWith("spotify_") }),
-        Group("media", "make images (generate_image), beats/music and other media in the terminal, the Gallery",
+        Group("media", "play Blaze Music (music_ops: play, pause, next, playlists; never the terminal or screen control), make images (generate_image), beats and other media, the Gallery",
             r("""\b(aperture|shutter|iso|depth of field|hyperfocal|nd filter|receipt|prices?|subtitles?|captions?|recap|episodes?|series|videos?|autoplay|playlists?|equali[sz]er|crossfade|lyrics|karaoke|wrapped|daily mix\w*|dj|duplicates?|blurry|trash|on this day|declutter|download\w*|songs?|albums?|hum\w*|beat lab|reels?|clip studio|edit (?:my |a |the )?videos?|tiktok|status video|montage|cover art|covers?|thumbnails?|album art|image|images|picture|pictures|pic|photo|draw|drawing|paint|art|artwork|logo|icon|wallpaper|poster|illustration|generate|create|design|beat|beats|instrumental|music|song|melody|audio|sound|wav|mp3|gallery|meme|sticker|avatar)\b"""),
             { it in setOf("generate_image", "gallery", "run_code", "file_list", "file_read", "file_write", "run_shell", "terminal_status", "cover_art", "beat_lab", "clip_studio", "media_download", "video_ops", "music_ops", "gallery_ops", "camera_math") }),
         Group("read", "read aloud: articles, files, chats in the user's own cloned voice or Blaze's",
@@ -121,7 +126,29 @@ object ToolRouter {
         ?: if (name in core || name == "load_tools" || name.isBlank() || !Settings.bool("tool_lean", true)) null else "more"
 
     /** Tool groups the text looks like it needs. */
+    /** v0.45.0 (#19): the groups that hold [names]. */
+    fun groupsFor(names: Collection<String>): Set<String> = names.mapNotNull { groupOf(it) }.toSet()
+
     fun guess(text: String): Set<String> = groups.filter { it.match.containsMatchIn(text) }.map { it.id }.toSet()
+
+    /** v0.45.0 (#20): the action groups a request in any language gets when the English cues found nothing. */
+    val CORE_ACTION = setOf("device", "messages", "screen")
+
+    private val englishWords = setOf("the", "a", "an", "to", "my", "me", "is", "are", "what", "how", "why", "who", "when", "where", "please",
+        "can", "could", "you", "i", "it", "of", "for", "and", "this", "that", "with", "do", "does", "your", "tell", "about", "in", "on", "hi", "hey",
+        "hello", "thanks", "thank", "ok", "okay", "yes", "no", "good", "best", "explain", "write")
+
+    /** True when [text] reads as English (any common English word in it). Language-independent tokens. */
+    fun looksEnglish(text: String): Boolean =
+        Regex("[\\p{L}']+").findAll(text.lowercase()).any { it.value in englishWords }
+
+    /**
+     * v0.45.0 (#20) route by language, not only English keywords: when the cues matched nothing and the request isn't
+     * English (Bemba, Nyanja, French, Swahili…), the core action groups go along so the model can still act (and the
+     * claim checks have the tools to check against). English requests that match nothing stay lean (#16).
+     */
+    fun fallback(text: String, guessed: Set<String>): Set<String> =
+        if (guessed.isNotEmpty() || text.trim().length < 4 || looksEnglish(text)) emptySet() else CORE_ACTION
 
     /** Groups of every tool this chat has already used (so follow-ups keep working). */
     fun usedIn(history: JSONArray): Set<String> {
@@ -145,6 +172,18 @@ object ToolRouter {
             val t = all.opt(i)
             val n = nameOf(t)
             val g = groupOf(n)
+            if (n in core || g == null || g in groupsOn) out.put(t)
+        }
+        return out
+    }
+
+    /** v0.44.0: [select] with the diet and lean prefs on, no Settings read (ToolPickSizeTest measures with it). */
+    internal fun selectDefault(all: JSONArray, groupsOn: Set<String>): JSONArray {
+        val out = JSONArray()
+        for (i in 0 until all.length()) {
+            val t = all.opt(i)
+            val n = nameOf(t)
+            val g = groups.firstOrNull { it.names(n) }?.id ?: if (n in core || n == "load_tools" || n.isBlank()) null else "more"
             if (n in core || g == null || g in groupsOn) out.put(t)
         }
         return out

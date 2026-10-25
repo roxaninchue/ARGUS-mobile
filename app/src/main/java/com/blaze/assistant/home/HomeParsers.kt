@@ -486,3 +486,23 @@ object Plain {
         else -> "Couldn't update $what (error $code)."
     }
 }
+
+/**
+ * v0.45.7: the Home weather card from gateway /v1/weather (the same source and units as chat's get_weather), plus the
+ * 4-day lines from Open-Meteo in the same units. Pure (HomeWeatherTest).
+ */
+object HomeWeather {
+    fun toData(n: com.blaze.assistant.agent.GatewayWeather.Now, place: String, units: String, lines: List<WidgetLine>,
+               tz: TimeZone = TimeZone.getDefault()): WidgetData {
+        val t = com.blaze.assistant.agent.GatewayWeather.tempLabel(units, n.unit)
+        val w = com.blaze.assistant.agent.GatewayWeather.windLabel(units, n.windUnit)
+        val time = com.blaze.assistant.agent.GatewayWeather.localTime(n.observedAt, tz)
+        val cond = n.condition.ifBlank { n.summary }.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+        return WidgetData(headline = place, value = "${Math.round(n.temperature)}$t",
+            change = listOfNotNull(cond.takeIf { it.isNotBlank() } ?: (if (n.isDay) null else "Clear night"),
+                if (!n.feelsLike.isNaN()) "feels ${Math.round(n.feelsLike)}°" else null,
+                if (!n.wind.isNaN()) "wind ${Math.round(n.wind)} $w" else null,
+                (n.source.ifBlank { "Blaze weather" } + if (time.isNotBlank()) " · $time" else "")).joinToString(" · "),
+            lines = lines)
+    }
+}

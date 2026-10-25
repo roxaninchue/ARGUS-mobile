@@ -7,11 +7,31 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -103,13 +123,17 @@ import com.blaze.assistant.ui.PillButton
 import com.blaze.assistant.ui.Type
 import com.blaze.assistant.ui.rememberHomeImage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * v0.30.1: pieces shared by Blaze Music and Blaze Video: the Player | Library | Store pill (the same look as the
+ * v0.30.1: pieces shared by Blaze Music and Blaze Video: the Library | Store pill (the same look as the
  * Chat | Projects | Home pill), cover art, rows, and the Store (search any StoreSource as a plain thumbnail grid with
- * licences, preview, quality choice, download queue). Never a web view.
+ * licences, preview, quality choice, download queue). Never a web view. v0.34.1: the player is no longer a tab; it opens
+ * as a sheet over the Library ([PlayerSheet]) and collapses into a mini-player ([MiniBar]).
  */
 
 /** The same pill as Chat | Projects | Home (ui/Shell.kt): faint track, the chosen tab filled with ink, fading across. */
@@ -233,7 +257,16 @@ fun BoxScope.DurationBadge(text: String) {
 
 /** One Store's state, kept while the app is open (switching tabs doesn't lose results). */
 class StoreState(kind: String) {
-    var source by mutableStateOf(StoreSources.forKind(kind).firstOrNull()?.id.orEmpty())
+    /** Wave A 27: "" = the All chip (every source), the default. */
+    var source by mutableStateOf(ForYou.ALL)
+    /** Wave A 27-28: the channel (video) / genre (music) chip, "" = All. */
+    var chip by mutableStateOf(ForYou.ALL)
+    /** The source/query the current page came from, for "load more" (only when one search filled the grid). */
+    var pageSource by mutableStateOf("")
+    var pageQuery by mutableStateOf("")
+    /** Wave A 17: the search in flight (a newer one cancels it) and the query+chip it was for. */
+    var job: kotlinx.coroutines.Job? = null
+    var fired by mutableStateOf("\u0000")
     var query by mutableStateOf("")
     var results by mutableStateOf<List<StoreItem>>(emptyList())
     var next by mutableStateOf("")
@@ -247,6 +280,16 @@ class StoreState(kind: String) {
     var gen by mutableStateOf(0)
     /** v0.30.5: the idea the results came from when the box is empty ("For you" picks), "" for a typed search. */
     var feed by mutableStateOf("")
+    /** 0.45.19: sources still answering the search on screen (a skeleton row shows for them). */
+    var pending by mutableStateOf(0)
+    /** 0.45.19: recent searches (newest first), loaded on first show. */
+    var recent by mutableStateOf<List<String>?>(null)
+    /** 0.45.20: the last search failed outright (error card with Retry), the source to name, and a saved-results note. */
+    var failed by mutableStateOf(false)
+    /** 0.45.20: a key that will search was typed: skeletons show at once (spec: under 100 ms), not after the debounce. */
+    var typing by mutableStateOf(false)
+    var failedSource by mutableStateOf<String?>(null)
+    var savedNote by mutableStateOf("")
 }
 
 /**
@@ -262,16 +305,19 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
     val jobs by Downloads.jobs.collectAsState()
     val mine = jobs.filter { it.kind == kind && it.status != DlStatus.DONE && it.status != DlStatus.CANCELED }
     val sources = remember(kind) { StoreSources.forKind(kind) }
-    val src = sources.firstOrNull { it.id == state.source } ?: sources.firstOrNull()
+    // Wave A 27: null = All sources. The setup notice only shows when one source is picked and it needs setup.
+    val src = sources.firstOrNull { it.id == state.source }
     var setupTick by remember { mutableStateOf(0) }
     val setup = remember(src?.id, setupTick) { src?.setupNeeded() }
+    val ready = remember(kind, setupTick) { sources.filter { it.setupNeeded() == null } }
 
-    // v0.30.5 (Luke: "already scrollable ideas rather than a blank search in case the user isn't feeling inspired"):
+    // v0.30.5 (Blazeinchue: "already scrollable ideas rather than a blank search in case the user isn't feeling inspired"):
     // ideas from what they play and download (Taste), then starters; an empty box shows the first one's results.
-    val ideas = remember(kind, state.source) { Taste.ideas(ctx, kind) }
+    // Wave A 27-28: channels (video) / genres (music) from what they play, "All" first and selected by default.
+    val ideas = remember(kind) { Taste.chips(ctx, kind) }
+    val seeds = remember(kind) { Taste.seeds(ctx, kind) }
     fun search(more: Boolean = false, idea: String? = null) {
-        val s = src ?: return
-        if (idea != null) state.feed = idea else if (!more) state.feed = ""
+        if (idea != null) state.chip = idea
         val typed = state.query.trim()
         // v0.32.2: a link typed or pasted into the search box goes straight to "Download by link".
         if (!more && idea == null && typed.contains("://") && LinkParse.firstUrl(typed) != null) {
@@ -284,49 +330,160 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
             }
             return
         }
-        val q = typed.ifEmpty { if (s.browsable) "" else state.feed.ifEmpty { ideas.firstOrNull().orEmpty().also { state.feed = it } } }
-        if ((q.isEmpty() && !s.browsable) || state.loading || setup != null) return
-        state.loading = true; state.error = ""; state.searched = true
+        if (setup != null) return
+        if (more && state.loading) return
+        // Wave A 17: a new search cancels the one in flight (stale results never land: gen check).
+        if (!more) { state.job?.cancel(); state.gen++ }
         val gen = state.gen
-        scope.launch {
-            try {
-                val p = s.search(kind, q, if (more) state.next else "")
-                if (gen != state.gen) return@launch
-                state.results = if (more) (state.results + p.items).distinctBy { it.source + it.id } else p.items
-                state.next = p.next
-                if (!more && p.items.isEmpty()) state.error = if (q.isEmpty()) "Nothing here right now." else "Nothing found for \u201c$q\u201d."
-            } catch (e: Exception) {
-                if (gen == state.gen) state.error = e.message ?: "Search didn't work. Check the connection."
-            } finally { if (gen == state.gen) state.loading = false }
+        if (more) {
+            val s = StoreSources.get(state.pageSource) ?: return
+            if (state.next.isBlank()) return
+            state.loading = true
+            scope.launch {
+                try {
+                    val p = s.search(kind, state.pageQuery, state.next)
+                    if (gen != state.gen) return@launch
+                    state.results = (state.results + p.items).distinctBy { it.source + it.id }; state.next = p.next
+                } catch (e: Exception) { if (gen == state.gen) state.next = "" }
+                finally { if (gen == state.gen) state.loading = false }
+            }
+            return
+        }
+        val mixMode = ForYou.isMix(typed, state.chip)
+        state.feed = if (mixMode) "For you" else state.chip
+        val queries = ForYou.queries(typed, state.chip, seeds)
+        val use = (if (src != null) listOf(src) else ready)
+        if (use.isEmpty()) return
+        // One search per (source, query). In the For you mix a browsable catalogue (public-domain films, Blender)
+        // lists its own picks instead of searching taste words it would never match.
+        val pairs = use.flatMap { s -> if (mixMode && s.browsable) listOf(s to "") else queries.filter { it.isNotEmpty() || s.browsable }.map { q -> s to q } }
+        if (pairs.isEmpty()) return
+        state.fired = LiveSearch.key(typed, state.chip)
+        state.error = ""; state.searched = true; state.failed = false; state.savedNote = ""
+        state.failedSource = pairs.map { it.first.name }.distinct().singleOrNull()
+        // 0.45.19 recent searches: a query+chip+source seen in the last 10 minutes shows its results at once.
+        val cacheKey = RecentSearches.key(typed, state.chip, src?.id ?: ForYou.ALL)
+        RecentSearches.results(kind).get(cacheKey)?.let { hit ->
+            state.results = hit.items; state.next = hit.next; state.pageSource = hit.pageSource; state.pageQuery = hit.pageQuery
+            state.loading = false; state.pending = 0
+            return
+        }
+        // 0.45.20 offline: a search saved before shows at once with an offline note; a new one gets the "No internet"
+        // card with Retry instead of skeletons waiting out a 15 s timeout.
+        if (!NetWatch.now(ctx)) {
+            state.job?.cancel(); state.pending = 0; state.loading = false; state.next = ""
+            val saved = SavedSearchStore.find(ctx, kind, cacheKey)
+            if (saved != null) { state.results = saved.items; state.savedNote = "Offline \u00b7 saved results" }
+            else { state.results = emptyList(); state.failed = true; state.error = "Connect to search. Downloads still play offline." }
+            return
+        }
+        state.loading = true
+        state.results = emptyList(); state.next = ""      // skeleton cards show while it loads (wave A 17)
+        state.pending = pairs.size
+        state.job = scope.launch {
+            // 0.45.19 first results fast: every source's answer lands as it arrives (cards on screen keep their place).
+            val slots = arrayOfNulls<List<StoreItem>>(pairs.size)
+            val got = pairs.mapIndexed { i, (s, q) ->
+                async {
+                    val r = runCatching { kotlinx.coroutines.withTimeout(15_000) { s.search(kind, q, "") } }
+                    if (gen == state.gen && isActive) {
+                        slots[i] = r.getOrNull()?.items.orEmpty()
+                        state.results = LiveSearch.land(state.results, ForYou.mix(slots.map { it.orEmpty() }))
+                        state.pending = (state.pending - 1).coerceAtLeast(0)
+                    }
+                    r
+                }
+            }.map { it.await() }
+            if (gen != state.gen || !isActive) return@launch
+            state.results = LiveSearch.land(state.results, ForYou.mix(got.map { r -> r.getOrNull()?.items.orEmpty() }))
+            state.pending = 0
+            // "Load more" pages on only when one search filled the grid.
+            if (pairs.size == 1) { state.pageSource = pairs[0].first.id; state.pageQuery = pairs[0].second; state.next = got[0].getOrNull()?.next.orEmpty() }
+            else { state.pageSource = ""; state.pageQuery = ""; state.next = "" }
+            RecentSearches.results(kind).put(cacheKey, state.results, state.next, state.pageSource, state.pageQuery)
+            if (state.results.isNotEmpty()) SavedSearchStore.put(ctx, kind, cacheKey, state.results)   // 0.45.20: offline copy
+            state.failed = state.results.isEmpty() && got.all { it.isFailure }
+            state.error = when {
+                state.results.isNotEmpty() -> ""
+                got.all { it.isFailure } -> got.first().exceptionOrNull()?.message ?: "Search didn't work. Check the connection."
+                typed.isEmpty() && state.chip.isEmpty() -> "Nothing here right now."
+                else -> "Nothing found for \u201c${queries.first()}\u201d."
+            }
+            state.loading = false
         }
     }
+    // Wave A 17: results update as they type, 250 ms (0.45.19) after the last key; each keystroke restarts the wait.
+    LaunchedEffect(state.query) {
+        val t = state.query.trim()
+        if (!state.searched || !LiveSearch.shouldFire(state.fired, t, state.chip)) { state.typing = false; return@LaunchedEffect }
+        state.typing = true
+        delay(LiveSearch.DEBOUNCE_MS)
+        state.typing = false
+        search()
+    }
+    // 0.45.19 step 3: once the results settle, the top ones' details are fetched in parallel (Wi-Fi 2, good signal 1,
+    // never under Data Saver), so Preview -> Play doesn't wait on them.
+    LaunchedEffect(state.results, state.loading) {
+        if (state.loading || state.results.isEmpty()) return@LaunchedEffect
+        val n = MediaNet.warmCount(MediaNetDevice.link(ctx), MediaNetDevice.saving(ctx), state.pending)
+        if (n == 0) return@LaunchedEffect
+        delay(400)
+        state.results.take(n).forEach { r ->
+            val s = StoreSources.get(r.source) ?: return@forEach
+            val k = StreamCache.detailKey(s.id, r.id, kind)
+            if (StreamCache.details.get(k) == null) launch {
+                runCatching { kotlinx.coroutines.withTimeout(15_000) { s.detail(r, kind) } }.getOrNull()?.let { StreamCache.details.put(k, it) }
+            }
+        }
+    }
+    // 0.45.20: the saved (offline) searches are read once, off the main thread.
+    LaunchedEffect(kind) { withContext(Dispatchers.IO) { SavedSearchStore.pages(ctx, kind) } }
+    val online by remember { NetWatch.start(ctx) }.collectAsState()
+    val waitedMs = rememberStallMs(state.loading && state.results.isEmpty())
+    val searchNote = NetHonesty.search(state.loading, waitedMs, state.results.isNotEmpty(), state.failed, online)
     // Free sources list something before the first search (popular / the whole catalogue).
+    // Wave A 27-28: open on the For you mix, nothing pre-selected.
     LaunchedEffect(src?.id, setup) {
-        if (!state.searched && src != null && setup == null) { if (src.browsable) search() else search(idea = ideas.firstOrNull()) }
+        if (!state.searched && setup == null) search()
     }
 
-    val square = src?.id != null && state.results.firstOrNull()?.square == true
+    val square = state.results.isNotEmpty() && state.results.all { it.square }
     LazyVerticalGrid(GridCells.Fixed(if (square) 3 else 2), Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 96.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (sources.size > 1) item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                sources.forEach { s ->
-                    val on = s.id == src?.id
+                // Wave A 27: "All" first and on by default; tapping a source again goes back to All.
+                (listOf(ForYou.ALL to "All") + sources.map { it.id to it.name }).forEach { (id, name) ->
+                    val on = id == state.source
                     Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.ink else c.faint).clickable {
-                        if (!on) { state.source = s.id; state.results = emptyList(); state.next = ""; state.error = ""; state.searched = false; state.loading = false; state.gen++ }
+                        state.source = ForYou.toggle(state.source, id).let { if (on && id == ForYou.ALL) ForYou.ALL else it }
+                        state.results = emptyList(); state.next = ""; state.error = ""; state.searched = false; state.loading = false; state.gen++
                     }.semantics { selected = on }.padding(horizontal = 12.dp, vertical = 7.dp)) {
-                        MText(s.name, 12.5.sp, if (on) c.paper else c.sub, FontWeight.Medium)
+                        MText(name, 12.5.sp, if (on) c.paper else c.sub, FontWeight.Medium)
                     }
                 }
             }
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BlazeTextField(state.query, { state.query = it }, (if (kind == "video") "Search " else "Search ") + (src?.name ?: ""),
+                BlazeTextField(state.query, { state.query = it }, "Search " + (src?.name ?: if (kind == "video") "videos" else "music"),
                     Modifier.weight(1f), keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { search() }))
+                    keyboardActions = KeyboardActions(onSearch = { state.recent = RecentSearches.remember(ctx, kind, state.query); search() }))
                 Spacer(Modifier.width(8.dp))
-                RoundIcon(Icons.Rounded.Search, "Search", fill = c.faint) { search() }
+                RoundIcon(Icons.Rounded.Search, "Search", fill = c.faint) { state.recent = RecentSearches.remember(ctx, kind, state.query); search() }
+            }
+        }
+        // 0.45.19 recent searches: shown while the box is empty; a tap searches it again (results cached 10 min).
+        val recent = state.recent ?: RecentSearches.load(ctx, kind).also { state.recent = it }
+        if (state.query.isBlank() && recent.isNotEmpty() && setup == null) item(span = { GridItemSpan(maxLineSpan) }) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                MText("Recent", 12.sp, c.sub, FontWeight.Medium)
+                recent.forEach { q ->
+                    Box(Modifier.clip(BlazeShapes.pill).background(c.faint).clickable { state.query = q; state.recent = RecentSearches.remember(ctx, kind, q); search() }
+                        .padding(horizontal = 12.dp, vertical = 7.dp)) { MText(q, 12.5.sp, c.ink) }
+                }
+                Box(Modifier.clip(BlazeShapes.pill).clickable { RecentSearches.forget(ctx, kind); state.recent = emptyList() }
+                    .padding(horizontal = 8.dp, vertical = 7.dp)) { MText("Clear", 12.sp, c.sub) }
             }
         }
         // v0.32.1: "Download by link": a YouTube link or a direct file link, for when the Store's own search fails.
@@ -340,44 +497,64 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
                 MText("YouTube or a file link", 11.5.sp, c.sub)
             }
         }
-        if (setup == null && src != null && !src.browsable && ideas.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
+        // Wave A 27-28: "All" then channels (video) / genres (music). A chip narrows the search (typed words kept);
+        // tapping it again goes back to All.
+        if (setup == null && (src == null || !src.browsable) && ideas.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ideas.forEach { idea ->
-                    val on = state.query.isBlank() && state.feed == idea
+                (listOf(ForYou.ALL to "All") + ideas.map { it to it }).forEach { (id, label) ->
+                    val on = state.chip == id
                     Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.accent.copy(alpha = 0.22f) else c.faint)
                         .border(1.dp, if (on) c.accent.copy(alpha = 0.7f) else Color.Transparent, BlazeShapes.pill)
                         .clickable {
-                            state.query = ""; state.results = emptyList(); state.next = ""; state.error = ""; state.loading = false; state.gen++
-                            search(idea = idea)
+                            state.chip = ForYou.toggle(state.chip, id)
+                            state.results = emptyList(); state.next = ""; state.error = ""; state.loading = false; state.gen++
+                            search()
                         }.semantics { selected = on }.padding(horizontal = 12.dp, vertical = 7.dp)) {
-                        MText(idea, 12.5.sp, if (on) c.ink else c.sub, FontWeight.Medium)
+                        MText(label, 12.5.sp, if (on) c.ink else c.sub, FontWeight.Medium)
                     }
                 }
             }
         }
+        if (setup == null && ForYou.isMix(state.query, state.chip) && state.results.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
+            MText("For you", 15.sp, c.ink, FontWeight.SemiBold, modifier = Modifier.padding(top = 2.dp))
+        }
         if (setup != null && src is JamendoSource) item(span = { GridItemSpan(maxLineSpan) }) { JamendoSetup(setup) { setupTick++ } }
         else if (setup != null) item(span = { GridItemSpan(maxLineSpan) }) { MText(setup, 13.sp, c.sub, maxLines = 4) }
         if (mine.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }) { DownloadsList(mine) }
-        if (state.error.isNotBlank()) item(span = { GridItemSpan(maxLineSpan) }) {
+        // 0.45.20: a search that failed gets an honest card (Retry, saved results when there are any), never a blank grid.
+        if (searchNote == NetHonesty.Search.OFFLINE_ERROR || searchNote == NetHonesty.Search.SOURCE_ERROR) item(span = { GridItemSpan(maxLineSpan) }) {
+            val savedKey = RecentSearches.key(state.query.trim(), state.chip, src?.id ?: ForYou.ALL)
+            val saved = remember(savedKey, state.failed) { SavedSearchStore.find(ctx, kind, savedKey) }
+            SearchErrorCard(NetHonesty.errorTitle(searchNote, state.failedSource), state.error, saved != null,
+                onRetry = { search() },
+                onSaved = { saved?.let { state.results = it.items; state.failed = false; state.error = ""; state.savedNote = "Saved results" } })
+        } else if (state.error.isNotBlank()) item(span = { GridItemSpan(maxLineSpan) }) {
             MText(state.error, 13.sp, c.sub, maxLines = 4, modifier = Modifier.padding(vertical = 8.dp))
         }
-        if (state.results.isEmpty() && !state.loading && state.error.isBlank() && setup == null) item(span = { GridItemSpan(maxLineSpan) }) {
-            EmptyState(if (kind == "video") "Find a video" else "Find music",
-                "Search, then tap a result to see it, its licence and the qualities. Downloads go to " +
-                    MediaFiles.relDir(kind) + " and show up in your Library and the Gallery.")
+        if (searchNote == NetHonesty.Search.SLOW) item(span = { GridItemSpan(maxLineSpan) }) {
+            MText(NetHonesty.slowText(), 13.sp, c.sub, modifier = Modifier.padding(vertical = 4.dp))
         }
-        items(state.results, key = { it.source + ":" + it.id }) { r ->
-            Column(Modifier.clip(BlazeShapes.small).clickable { state.preview = r }) {
-                NetThumb(r.thumb, Modifier.fillMaxWidth().aspectRatio(if (r.square) 1f else 16f / 9f).clip(BlazeShapes.small)) { DurationBadge(r.durationText) }
-                Spacer(Modifier.height(6.dp))
-                MText(r.title, 13.sp, c.ink, FontWeight.Medium, maxLines = 2)
-                if (r.author.isNotBlank()) MText(r.author, 12.sp, c.sub)
-                if (r.licence.isNotBlank()) MText(r.licence, 11.sp, c.accent, FontWeight.Medium)
+        if (state.savedNote.isNotBlank() && state.results.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
+            MText(state.savedNote, 12.5.sp, c.sub, FontWeight.Medium, modifier = Modifier.padding(vertical = 2.dp))
+        }
+        // Wave A 17: skeleton cards instead of a blank grid while results load (0.45.20: from the key, not the debounce).
+        if ((state.loading && state.results.isEmpty()) || state.typing) items(LiveSearch.skeletons(kind != "video"), key = { "sk$it" }) { SkeletonTile(kind != "video") }
+        if (state.results.isEmpty() && !state.loading && !state.typing && state.error.isBlank() && !state.failed && setup == null) item(span = { GridItemSpan(maxLineSpan) }) {
+            EmptyState(if (kind == "video") "Find a video" else "Find music",
+                "Search, then tap a result to see it, its licence and the qualities. Downloads stay private in Blaze's Library; " +
+                    "export or share them from the ⋮ menu.")
+        }
+        if (!state.typing) items(state.results, key = { it.source + ":" + it.id }) { r ->
+            ResultCard(r) {
+                if (state.query.isNotBlank()) state.recent = RecentSearches.remember(ctx, kind, state.query)
+                state.previewSource = StoreSources.get(r.source); state.preview = r
             }
         }
-        if (state.loading || state.next.isNotBlank() && state.results.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
+        // 0.45.19: a skeleton row for the sources still answering, under the results that already landed.
+        if (state.results.isNotEmpty() && state.loading) items(LiveSearch.trailing(state.pending, square), key = { "skt$it" }) { SkeletonTile(square) }
+        if (state.results.isNotEmpty() && (state.loading || state.next.isNotBlank())) item(span = { GridItemSpan(maxLineSpan) }) {
             Box(Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
-                if (state.loading) MText("Searching\u2026", 13.sp, c.sub)
+                if (state.loading) MText("Loading more\u2026", 13.sp, c.sub)
                 else {
                     LaunchedEffect(state.results.size) { search(more = true) }   // reached the end: load the next page
                     MText("Loading more\u2026", 13.sp, c.sub)
@@ -393,7 +570,8 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
     state.preview?.let { item -> if (s != null) PreviewSheet(kind, item, s, onDismiss = { state.preview = null; state.previewSource = null }, onPlay = { d -> state.preview = null; state.previewSource = null; onPlay(item, d, s) },
         onDownload = { d, ch ->
             state.preview = null; state.previewSource = null
-            if (Build.VERSION.SDK_INT < 29) StoragePermission.ask(ctx)
+            // 0.45.20: downloads are private (no storage permission); the progress notification is asked for now, when it's needed.
+            StoragePermission.askNotifications()
             Downloads.add(ctx, item, d, ch, kind)
             Toast.makeText(ctx, "Downloading \u201c${(ch.title.ifBlank { item.title }).take(40)}\u201d (${ch.label.take(30)})", Toast.LENGTH_SHORT).show()
         }) }
@@ -456,7 +634,7 @@ fun JamendoSetup(text: String, onSaved: () -> Unit) {
         Spacer(Modifier.height(4.dp))
         MText(text, 12.5.sp, c.sub, maxLines = 5)
         Spacer(Modifier.height(10.dp))
-        // v0.30.5 (Luke: "a simple button to take them where they have to go, or simply asking Blaze to get it"):
+        // v0.30.5 (Blazeinchue: "a simple button to take them where they have to go, or simply asking Blaze to get it"):
         // Blaze can do it (its browser + the jamendo_setup tool), or the dev portal opens in the browser.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PillButton("Ask Blaze to set it up", primary = true) {
@@ -493,6 +671,12 @@ fun JamendoSetup(text: String, onSaved: () -> Unit) {
 object StoragePermission {
     var asker: (() -> Unit)? = null
     fun ask(ctx: Context) { asker?.invoke() }
+    /** 0.45.20 (item 15): the notification prompt, just in time (a download starting), set by the screen that can ask. */
+    var notifAsker: (() -> Unit)? = null
+    fun askNotifications() { notifAsker?.invoke() }
+    /** Android 9 and older: shared Music/Movies/Downloads need the storage permission (Blaze's own storage doesn't). */
+    fun needsForExport(ctx: Context): Boolean = Build.VERSION.SDK_INT < 29 &&
+        androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != android.content.pm.PackageManager.PERMISSION_GRANTED
 }
 
 @Composable
@@ -501,23 +685,42 @@ fun DownloadsList(jobs: List<DlJob>) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxWidth().clip(BlazeShapes.medium).background(c.faint).padding(vertical = 6.dp)) {
         MText("Downloads", 12.sp, c.sub, FontWeight.Medium, modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp))
+        // Wave B 18: a soft plan line only when the plan's cap is what keeps two or more waiting (no button, no nag).
+        val lim by Downloads.limit.collectAsState()
+        DlConcurrency.nudge(lim.first, lim.second, jobs.count { it.status == DlStatus.QUEUED && it.attempts == 0 })?.let {
+            MText(it, 11.5.sp, c.sub, maxLines = 2, modifier = Modifier.padding(horizontal = 14.dp))
+        }
+        // Wave B 3: this month's meters for the kinds in the list (server numbers; hidden on an unlimited plan).
+        val ent by com.blaze.assistant.connect.Entitlements.snap.collectAsState()
+        ent?.let { s ->
+            val kinds = jobs.map { com.blaze.assistant.connect.Entitlements.kindOf(it.kind) }.distinct()
+            kinds.forEach { k ->
+                val ctr = (if (k == "video") s.video else s.song) ?: return@forEach
+                val f = com.blaze.assistant.connect.Entitlements.fraction(ctr) ?: return@forEach
+                val warn = com.blaze.assistant.connect.Entitlements.near(ctr)
+                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp)) {
+                    MText((if (k == "video") "Video downloads \u00b7 " else "Song downloads \u00b7 ") + com.blaze.assistant.connect.Entitlements.line(ctr), 11.5.sp,
+                        if (warn) BlazeBrush.orange else c.sub)
+                    Spacer(Modifier.height(3.dp))
+                    LinearProgressIndicator(progress = { f }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(BlazeShapes.pill),
+                        color = if (warn) BlazeBrush.orange else c.accent, trackColor = c.hair)
+                }
+            }
+        }
         jobs.forEach { j ->
             Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 NetThumb(j.thumb, Modifier.size(44.dp).clip(BlazeShapes.xs))
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     MText(j.title, 13.sp, c.ink, FontWeight.Medium)
-                    val line = when (j.status) {
-                        DlStatus.RUNNING -> "${(j.progress * 100).toInt()}% \u00b7 ${TimeText.size(j.done)} of ${TimeText.size(j.total)}"
-                        DlStatus.QUEUED -> if (j.attempts > 0) "Retrying soon \u00b7 ${j.error}" else "Waiting \u00b7 ${j.quality}"
-                        DlStatus.PAUSED -> "Paused \u00b7 ${(j.progress * 100).toInt()}%"
-                        DlStatus.FAILED -> "Failed \u00b7 ${j.error}"
-                        else -> j.quality
-                    }
+                    val line = DlVerify.statusLine(j) { TimeText.size(it) }
                     MText(line, 11.5.sp, if (j.status == DlStatus.FAILED) BlazeBrush.orange else c.sub)
                     if (j.active || j.status == DlStatus.PAUSED) {
                         Spacer(Modifier.height(4.dp))
-                        LinearProgressIndicator(progress = { j.progress }, modifier = Modifier.fillMaxWidth().height(3.dp).clip(BlazeShapes.pill),
+                        // Wave B 19: verifying / saving show a moving bar, never a bar stuck at 100%.
+                        if (j.phase.isNotEmpty()) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(3.dp).clip(BlazeShapes.pill),
+                            color = c.accent, trackColor = c.hair)
+                        else LinearProgressIndicator(progress = { j.progress }, modifier = Modifier.fillMaxWidth().height(3.dp).clip(BlazeShapes.pill),
                             color = c.accent, trackColor = c.hair)
                     }
                 }
@@ -537,13 +740,16 @@ fun DownloadsList(jobs: List<DlJob>) {
 @Composable
 fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: () -> Unit, onPlay: (StoreDetail) -> Unit, onDownload: (StoreDetail, Choice) -> Unit) {
     val ctx = LocalContext.current
-    var detail by remember(item.id) { mutableStateOf<StoreDetail?>(null) }
+    // 0.45.19 step 3: details fetched ahead for the top results open at once (StreamCache.details, 10 min).
+    val detailKey = StreamCache.detailKey(source.id, item.id, kind)
+    var detail by remember(item.id) { mutableStateOf<StoreDetail?>(StreamCache.details.get(detailKey)) }
     var err by remember(item.id) { mutableStateOf("") }
     var pick by rememberSaveable(item.id) { mutableStateOf("") }
     var tries by remember { mutableStateOf(0) }
     LaunchedEffect(item.id, tries) {
         err = ""
-        try { detail = source.detail(item, kind) } catch (e: Exception) { err = e.message ?: "Couldn't load this item." }
+        if (tries == 0 && detail != null) return@LaunchedEffect
+        try { detail = source.detail(item, kind).also { StreamCache.details.put(detailKey, it) } } catch (e: Exception) { err = e.message ?: "Couldn't load this item." }
     }
     val d = detail
     val choices = remember(d) { if (d == null) emptyList() else source.choices(kind, d) }
@@ -614,6 +820,15 @@ fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: 
                         if (dl.isNotBlank()) MText("Download: " + dl.substringBefore(" · "), 12.sp, DialogColors.body)
                     }
                 }
+                // Wave B 3: what this month's plan has left, from the server (GET /v1/entitlements), never a hardcoded number.
+                val ent by com.blaze.assistant.connect.Entitlements.snap.collectAsState()
+                LaunchedEffect(Unit) { if (ent == null) withContext(Dispatchers.IO) { runCatching { com.blaze.assistant.connect.Entitlements.cached(ctx) } } }
+                val leftLine = com.blaze.assistant.connect.Entitlements.sheetLine(ent, if (kind == "video") "video" else "song")
+                if (d != null && choices.isNotEmpty() && leftLine.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    val none = leftLine.startsWith("No ")
+                    MText(leftLine, 12.sp, if (none) BlazeBrush.orange else DialogColors.body, maxLines = 2)
+                }
                 if (confirmWatch && d != null) BlazeDialog("Watch on mobile data?", "This stream uses about ${TimeText.size(streamBytes)} of your data. Downloaded videos play offline for free.",
                     confirm = "Watch", onConfirm = { confirmWatch = false; onPlay(d) }, dismiss = "Not now", onDismiss = { confirmWatch = false })
                 Spacer(Modifier.height(16.dp))
@@ -631,9 +846,13 @@ fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: 
 
 /** A row in the music library: cover, title, artist · length, and a trailing slot. */
 @Composable
-fun TrackRow(t: Track, playing: Boolean, onClick: () -> Unit, trailing: @Composable () -> Unit = {}) {
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+fun TrackRow(t: Track, playing: Boolean, onClick: () -> Unit, onLongClick: (() -> Unit)? = null, selected: Boolean? = null,
+             trailing: @Composable () -> Unit = {}) {
     val c = LocalBlaze.current
-    Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (playing) c.faint else Color.Transparent).clickable(onClick = onClick)
+    // Wave B item 20: press-and-hold starts multi-select; [selected] non-null = selection mode (pick mark instead of ⋮).
+    val tap = if (onLongClick != null) Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick) else Modifier.clickable(onClick = onClick)
+    Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (playing || selected == true) c.faint else Color.Transparent).then(tap)
         .padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Art(t, Modifier.size(46.dp), target = 140)
         Spacer(Modifier.width(12.dp))
@@ -641,9 +860,258 @@ fun TrackRow(t: Track, playing: Boolean, onClick: () -> Unit, trailing: @Composa
             MText(t.title, 14.sp, if (playing) c.accent else c.ink, FontWeight.Medium)
             MText(listOf(t.artist, if (t.durationMs > 0) TimeText.clock(t.durationMs) else "").filter { it.isNotBlank() }.joinToString(" \u00b7 "), 12.sp, c.sub)
         }
-        trailing()
+        if (selected != null) Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { SelectMark(selected) } else trailing()
     }
 }
 
 /** Download icon used by the empty library. */
 val DownloadIcon: ImageVector get() = Icons.Rounded.Download
+
+// ---------------- v0.34.1: one Library tab; the player as a sheet over it, the mini-player under it ----------------
+
+/**
+ * v0.34.1: the full player as a sheet over the Library, with a slim grab handle on top. Dragging the handle down past
+ * 140 dp (or flinging it), or tapping it, calls [onCollapse]; the caller then shows [MiniBar] and playback carries on,
+ * since nothing here owns the player (the sheet only shows and hides its [content]). Touches never fall through to the
+ * Library underneath while it is open.
+ */
+@Composable
+fun PlayerSheet(expanded: Boolean, onCollapse: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val c = LocalBlaze.current
+    val scope = rememberCoroutineScope()
+    val drag = remember { Animatable(0f) }
+    val gone = with(LocalDensity.current) { 140.dp.toPx() }
+    LaunchedEffect(expanded) { if (expanded) drag.snapTo(0f) }
+    AnimatedVisibility(expanded, modifier.fillMaxSize(),
+        enter = if (MotionTokens.enabled) slideInVertically(tween(MotionTokens.LONG, easing = MotionTokens.Decelerate)) { it } else EnterTransition.None,
+        exit = if (MotionTokens.enabled) slideOutVertically(tween(MotionTokens.MEDIUM, easing = MotionTokens.Accelerate)) { it } else ExitTransition.None) {
+        // Registered after the Library's own Back handlers (it is composed above them), so Back collapses the sheet first.
+        BackHandler(expanded) { onCollapse() }
+        // v0.45.8: the player sheet shows the theme's scene too (opaque over the Library).
+        Box(Modifier.fillMaxSize().offset { IntOffset(0, drag.value.roundToInt()) }.background(c.paper)
+            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }) {
+        if (com.blaze.assistant.ui.themeOn()) com.blaze.assistant.ui.LivingBackground()
+        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+            Box(Modifier.fillMaxWidth().height(28.dp)
+                .draggable(rememberDraggableState { d -> scope.launch { drag.snapTo((drag.value + d).coerceAtLeast(0f)) } }, Orientation.Vertical,
+                    onDragStopped = { v -> if (drag.value > gone || v > 1800f) onCollapse() else drag.animateTo(0f, MotionTokens.drag()) })
+                .clickable(onClickLabel = "Collapse the player", onClick = onCollapse)
+                .semantics { contentDescription = "Player. Drag down to go back to the Library; it keeps playing." },
+                contentAlignment = Alignment.Center) {
+                Box(Modifier.size(width = 40.dp, height = 5.dp).clip(BlazeShapes.pill).background(c.weak.copy(alpha = 0.55f)))
+            }
+            Box(Modifier.weight(1f).fillMaxWidth()) { content() }
+        }
+        }
+    }
+}
+
+/**
+ * v0.34.1: the mini-player docked at the bottom while the player sheet is collapsed: art, title, play / pause, close,
+ * an optional [extra] button and a thin progress line. Tapping it re-opens the player.
+ */
+@Composable
+fun MiniBar(t: Track?, subtitle: String, playing: Boolean, progress: Float, onOpen: () -> Unit, onPlayPause: () -> Unit, onClose: () -> Unit,
+            artRatio: Float = 1f, extra: @Composable () -> Unit = {}) {
+    val c = LocalBlaze.current
+    Column(Modifier.navigationBarsPadding().padding(10.dp).widthIn(max = 560.dp).fillMaxWidth().clip(BlazeShapes.medium)
+        .background(if (c.dark) Color(0xFF1C1C20) else Color(0xFFF1F1F3)).clickable(onClickLabel = "Open player", onClick = onOpen)) {
+        Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Art(t, Modifier.height(44.dp).aspectRatio(artRatio), target = 160)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                MText(t?.title.orEmpty(), 13.5.sp, c.ink, FontWeight.Medium)
+                MText(subtitle, 12.sp, c.sub)
+            }
+            RoundIcon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (playing) "Pause" else "Play", onClick = onPlayPause)
+            extra()
+            RoundIcon(Icons.Rounded.Close, "Close the player", tint = c.sub, onClick = onClose)
+        }
+        Box(Modifier.fillMaxWidth().height(2.dp).background(c.hair)) { Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(2.dp).background(c.accent)) }
+    }
+}
+
+
+/** Wave A 17: live search timing and skeleton counts (pure, LiveSearchTest). 0.45.19: 250 ms, see MediaNetSearchTest. */
+object LiveSearch {
+    const val DEBOUNCE_MS = 250L
+    const val MIN_CHARS = 2
+
+    fun key(typed: String, chip: String): String = typed.trim().lowercase() + "\u0001" + chip
+
+    /** Fire a live search when the words changed, are long enough (or cleared, back to For you), and aren't a link (Enter opens links). */
+    fun shouldFire(lastKey: String, typed: String, chip: String): Boolean {
+        val t = typed.trim()
+        if ("://" in t) return false
+        if (t.isNotEmpty() && t.length < MIN_CHARS) return false
+        return key(t, chip) != lastKey
+    }
+
+    /** How many skeleton cards fill the loading grid: two rows of 16:9 or three rows of squares. */
+    fun skeletons(square: Boolean): List<Int> = (0 until if (square) 9 else 6).toList()
+
+    /** 0.45.19: one row of skeleton cards after the results while [pending] sources are still answering. */
+    fun trailing(pending: Int, square: Boolean): List<Int> = if (pending <= 0) emptyList() else (0 until if (square) 3 else 2).toList()
+
+    /**
+     * 0.45.19 first results fast: each source's answer lands as it comes. Cards already on screen keep their place;
+     * the rest of the full mix ([ForYou.mix] of every answer so far) follows, so nothing jumps under the user's thumb.
+     */
+    fun land(shown: List<StoreItem>, full: List<StoreItem>): List<StoreItem> {
+        val have = shown.mapTo(HashSet()) { it.source + ":" + it.id }
+        return shown + full.filter { have.add(it.source + ":" + it.id) }
+    }
+
+    enum class Card { SKELETON, PARTIAL, READY }
+
+    /**
+     * 0.45.19 per-card loading state: no title yet = a skeleton card; a title with its thumbnail still on the way =
+     * text with a pulsing picture; a thumbnail that failed (or none) stops pulsing.
+     */
+    fun card(title: String, thumbUrl: String, thumbLoading: Boolean): Card = when {
+        title.isBlank() -> Card.SKELETON
+        thumbUrl.isNotBlank() && thumbLoading -> Card.PARTIAL
+        else -> Card.READY
+    }
+}
+
+/**
+ * 0.45.19 recent searches: the last [MAX] words searched per Store (newest first, case-insensitive dedupe, links never
+ * kept), and the last results per query+chip+source in memory for [TTL_MS], so typing a recent search shows its
+ * results at once instead of skeletons.
+ */
+object RecentSearches {
+    const val MAX = 8
+    const val TTL_MS = 10 * 60_000L
+    const val RESULTS_MAX = 12
+
+    fun add(list: List<String>, q: String, max: Int = MAX): List<String> {
+        val t = q.trim().replace(Regex("\\s+"), " ")
+        if (t.length < LiveSearch.MIN_CHARS || "://" in t) return list
+        return (listOf(t) + list.filterNot { it.equals(t, ignoreCase = true) }).take(max)
+    }
+
+    fun encode(list: List<String>): String = list.joinToString("\n")
+    fun decode(s: String): List<String> = s.split("\n").map { it.trim() }.filter { it.isNotEmpty() }.take(MAX)
+
+    private fun prefKey(kind: String) = "store_recent_" + kind
+    fun load(ctx: android.content.Context, kind: String): List<String> = decode(MediaPrefs.str(ctx, prefKey(kind)))
+    fun remember(ctx: android.content.Context, kind: String, q: String): List<String> =
+        add(load(ctx, kind), q).also { MediaPrefs.setStr(ctx, prefKey(kind), encode(it)) }
+    fun forget(ctx: android.content.Context, kind: String) = MediaPrefs.setStr(ctx, prefKey(kind), "")
+
+    /** An LRU of recent result pages; [now] is injected so tests run on a fake clock. */
+    class Results(private val max: Int = RESULTS_MAX, private val ttlMs: Long = TTL_MS, private val now: () -> Long = System::currentTimeMillis) {
+        private class Hit(val items: List<StoreItem>, val next: String, val pageSource: String, val pageQuery: String, val at: Long)
+        private val map = object : LinkedHashMap<String, Hit>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Hit>?) = size > max
+        }
+        data class Page(val items: List<StoreItem>, val next: String, val pageSource: String, val pageQuery: String)
+        @Synchronized fun put(key: String, items: List<StoreItem>, next: String = "", pageSource: String = "", pageQuery: String = "") {
+            if (items.isNotEmpty()) map[key] = Hit(items, next, pageSource, pageQuery, now())
+        }
+        @Synchronized fun get(key: String): Page? {
+            val h = map[key] ?: return null
+            if (now() - h.at > ttlMs) { map.remove(key); return null }
+            return Page(h.items, h.next, h.pageSource, h.pageQuery)
+        }
+        @Synchronized fun size() = map.size
+    }
+
+    /** One results cache per Store kind while the app process lives. */
+    val music = Results()
+    val video = Results()
+    fun results(kind: String) = if (kind == "video") video else music
+    fun key(typed: String, chip: String, source: String) = LiveSearch.key(typed, chip) + "\u0001" + source
+}
+
+/**
+ * 0.45.20: the last [SavedSearches.MAX] result pages per Store in a small file, for searching again offline. Read once
+ * (preloaded off the main thread by StoreView), written on a background thread.
+ */
+object SavedSearchStore {
+    private val mem = java.util.concurrent.ConcurrentHashMap<String, List<SavedSearches.Page>>()
+    private val io = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "blaze-saved-search").apply { isDaemon = true } }
+    private fun file(ctx: android.content.Context, kind: String) = java.io.File(ctx.applicationContext.filesDir, "store_saved_$kind.json")
+    fun pages(ctx: android.content.Context, kind: String): List<SavedSearches.Page> = mem[kind]
+        ?: SavedSearches.decode(runCatching { file(ctx, kind).takeIf { it.isFile }?.readText() }.getOrNull().orEmpty()).also { mem[kind] = it }
+    fun find(ctx: android.content.Context, kind: String, key: String): SavedSearches.Page? = SavedSearches.find(pages(ctx, kind), key)
+    fun put(ctx: android.content.Context, kind: String, key: String, items: List<StoreItem>) {
+        val app = ctx.applicationContext
+        io.execute {
+            val next = SavedSearches.put(pages(app, kind), key, items, System.currentTimeMillis())
+            mem[kind] = next
+            runCatching {
+                val f = file(app, kind); val tmp = java.io.File(f.path + ".tmp")
+                tmp.writeText(SavedSearches.encode(next)); if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
+            }
+        }
+    }
+}
+
+/** 0.45.19: the thumbnail as it loads: null while on the way, with [loading] false once it landed or failed. */
+data class ThumbState(val img: ImageBitmap?, val loading: Boolean)
+
+@Composable
+fun rememberThumb(url: String): ThumbState {
+    val ctx = LocalContext.current
+    return produceState(ThumbState(null, url.isNotBlank()), url) {
+        value = if (url.isBlank()) ThumbState(null, false)
+        else ThumbState(runCatching { com.blaze.assistant.ui.HomeImages.load(ctx, url) }.getOrNull(), false)
+    }.value
+}
+
+/**
+ * 0.45.19 a Store result card that shows its own loading state ([LiveSearch.card]): a skeleton until it has a title,
+ * then the text with a pulsing picture until the thumbnail lands.
+ */
+@Composable
+fun ResultCard(r: StoreItem, onClick: () -> Unit) {
+    val c = LocalBlaze.current
+    val thumb = rememberThumb(r.thumb)
+    when (LiveSearch.card(r.title, r.thumb, thumb.loading)) {
+        LiveSearch.Card.SKELETON -> SkeletonTile(r.square)
+        else -> Column(Modifier.clip(BlazeShapes.small).clickable(onClick = onClick)) {
+            val shape = Modifier.fillMaxWidth().aspectRatio(if (r.square) 1f else 16f / 9f).clip(BlazeShapes.small)
+            Box(shape.background(c.faint.copy(alpha = if (thumb.loading) pulse() else 1f))) {
+                thumb.img?.let { Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                DurationBadge(r.durationText)
+            }
+            Spacer(Modifier.height(6.dp))
+            MText(r.title, 13.sp, c.ink, FontWeight.Medium, maxLines = 2)
+            if (r.author.isNotBlank()) MText(r.author, 12.sp, c.sub)
+            if (r.licence.isNotBlank()) MText(r.licence, 11.sp, c.accent, FontWeight.Medium)
+        }
+    }
+}
+
+/** The skeleton pulse (0.35-0.75), held still on battery saver. */
+@Composable
+private fun pulse(): Float {
+    val ctx = LocalContext.current
+    val still = remember { (ctx.getSystemService(android.os.PowerManager::class.java))?.isPowerSaveMode == true }
+    if (still) return 0.55f
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "pl")
+    return t.animateFloat(0.35f, 0.75f, androidx.compose.animation.core.infiniteRepeatable(
+        androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse), label = "p").value
+}
+
+/** A loading placeholder shaped like a result card; it pulses softly, and holds still on battery saver. */
+@Composable
+fun SkeletonTile(square: Boolean) {
+    val c = LocalBlaze.current
+    val ctx = LocalContext.current
+    val still = remember { (ctx.getSystemService(android.os.PowerManager::class.java))?.isPowerSaveMode == true }
+    val a = if (still) 0.55f else {
+        val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "sk")
+        t.animateFloat(0.35f, 0.75f, androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse), label = "a").value
+    }
+    Column(Modifier.semantics { contentDescription = "Loading" }) {
+        Box(Modifier.fillMaxWidth().aspectRatio(if (square) 1f else 16f / 9f).clip(BlazeShapes.small).background(c.faint.copy(alpha = a)))
+        Spacer(Modifier.height(8.dp))
+        Box(Modifier.fillMaxWidth(0.9f).height(11.dp).clip(BlazeShapes.pill).background(c.faint.copy(alpha = a)))
+        Spacer(Modifier.height(6.dp))
+        Box(Modifier.fillMaxWidth(0.55f).height(10.dp).clip(BlazeShapes.pill).background(c.faint.copy(alpha = a * 0.8f)))
+    }
+}
