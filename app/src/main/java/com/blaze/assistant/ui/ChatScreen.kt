@@ -201,9 +201,17 @@ fun ChatScreen() {
     var input by remember { mutableStateOf(TextFieldValue("")) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all), typed or spoken.
     var talkTo by rememberSaveable { mutableStateOf("blaze") }
+    // v0.45.28: "Halo x Blaze" is no longer a pick (it joins in by itself): a restored "all" becomes Blaze.
+    if (talkTo != TalkArcMath.normalize(talkTo)) talkTo = TalkArcMath.normalize(talkTo)
     // v0.43.0: the Blaze / Halo / All arc, opened from the header orb (replaces the "Talk to" pills, in both modes).
     var arcOpen by remember { mutableStateOf(false) }
     var quote by rememberSaveable { mutableStateOf("") }
+    // v0.45.28: a link tapped in a reply opens in Home's glass window (GlassWindow), over the chat.
+    var chatGlassUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    val openLink: (String) -> Unit = { u ->
+        if (ChatLinks.inGlass(u)) chatGlassUrl = u
+        else try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
+    }
     // v0.33.3: a card inside a reply (an app tile's long-press) can fill the quote box.
     val cardQuote by ChatQuote.request.collectAsState()
     LaunchedEffect(cardQuote) { if (cardQuote.isNotBlank()) { quote = cardQuote; ChatQuote.request.value = "" } }
@@ -294,7 +302,8 @@ fun ChatScreen() {
     }
     fun onMic() {
         when {
-            voiceState == Voice.State.LISTENING -> Voice.cancelListening()
+            // v0.45.28: a tap while listening stops and sends what was heard (it used to throw it away).
+            voiceState == Voice.State.LISTENING -> Voice.stopByTap()
             voiceState == Voice.State.SPEAKING -> Voice.stopSpeaking()
             ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED -> startVoice()
             else -> micPermission.launch(Manifest.permission.RECORD_AUDIO)
@@ -623,7 +632,7 @@ fun ChatScreen() {
                                 if (!hasMessages) ProjectChatEmpty(proj?.name.orEmpty(), hasInstructions = proj?.let { it.instructions.isNotBlank() || it.brief.isNotBlank() } == true)
                                 else {
                                     val dens = LocalDensity.current
-                                    CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip,
+                                    CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip, LocalOpenLink provides openLink,
                                         LocalDensity provides androidx.compose.ui.unit.Density(dens.density, dens.fontScale * Settings.textScale)) {
                                         MessageList(mood, onQuote = { quote = it }, onFollowup = { send(it) })
                                     }
@@ -647,7 +656,7 @@ fun ChatScreen() {
                     else Welcome(needsSetup = !Settings.ready, onSetup = { setupPage = 0; onboard = true }) { Agent.send(it) }
                 } else {
                     val dens = LocalDensity.current
-                    CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip,
+                    CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip, LocalOpenLink provides openLink,
                         LocalDensity provides androidx.compose.ui.unit.Density(dens.density, dens.fontScale * Settings.textScale)) {
                         MessageList(mood,
                             onQuote = { quote = it },
@@ -665,7 +674,7 @@ fun ChatScreen() {
                 if (chatBody && viewShowing.isEmpty() && (plusOpen || showViews || arcOpen)) SheetScrim { plusOpen = false; showViews = false; arcOpen = false }
             }
             if (chatBody && viewShowing.isEmpty()) {
-                if (voiceState == Voice.State.LISTENING) ListeningStrip()
+                if (voiceState == Voice.State.LISTENING) ListeningStrip(onStop = { Voice.stopByTap() })
                 LaunchedEffect(a11yOn) { if (a11yOn) Settings.setBool("a11y_seen", true) }
                 LaunchedEffect(control) { if (control == com.blaze.assistant.phone.PhoneControl.State.CONNECTED) Settings.setBool("a11y_seen", true) }
                 // v0.20.0: say which way it dropped and fix it in one tap (Blaze's own switch, not the whole list).
@@ -758,6 +767,10 @@ fun ChatScreen() {
             ParticleField(mood, overlay = true, paused = streamingNow >= 0)
         }
         }   // v0.39.0: end of the Chat sheet
+
+        // v0.45.28: the same glass window Home opens links in, for links tapped in chat replies.
+        chatGlassUrl?.let { u -> GlassWindow(u, onClose = { chatGlassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
+            onAsk = { t -> chatGlassUrl = null; send(t) }, onQuote = { t -> chatGlassUrl = null; quote = t }) }
 
         // v0.27.2: the selection pill, swipe sideways for Search, Ask Blaze, Translate, Define, Read aloud, Share.
         tbRect?.let { r ->
@@ -1372,12 +1385,14 @@ private fun BlinkLabel(text: String) {
 }
 
 @Composable
-private fun ListeningStrip() {
+private fun ListeningStrip(onStop: () -> Unit) {
     val c = LocalBlaze.current
     val partial by Voice.partial.collectAsState()
     val level by Voice.level.collectAsState()
     val w by animateFloatAsState(0.15f + level * 0.85f, label = "lvl")
-    Column(Modifier.fillMaxWidth().background(c.paper).hairlineTop(c.hair).padding(horizontal = 20.dp, vertical = 14.dp)) {
+    // v0.45.28: tap the strip to stop listening and send.
+    Column(Modifier.fillMaxWidth().background(c.paper).hairlineTop(c.hair).clickable(onClickLabel = "Stop listening and send") { onStop() }
+        .padding(horizontal = 20.dp, vertical = 14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BlinkLabel("Listening")
             Spacer(Modifier.width(12.dp))
