@@ -1191,6 +1191,8 @@ When you finish, say what you did in one short sentence.
             turn("core_skills", CoreSkills.promptBlock(prof.core))
             // v0.23.0: the VIEWS block. v0.45.0 (#16): in full only when a view is routed this turn; else one line.
             turn("views", if (prof.views) ViewRouter.PROMPT else PromptProfile.viewsShort(ViewRouter.specs.map { it.name }))
+            // 0.46.0 Blaze Stage: in place first; plain Q&A stays chat; "study 30 min" is a timer card with Start.
+            if (com.blaze.assistant.stage.StageStore.enabled) s("stage", com.blaze.assistant.stage.StageTools.RULE)
             // v0.44.0: every tool result carries [verified=…]; success may only be claimed on verified=true (ToolVerify).
             s("tool_verify", ToolVerify.PROMPT_RULE)
             // v0.24.9 rich replies / v0.26.1 visual answers (diagrams, charts, compare, tools, choices, forms; picked
@@ -1295,6 +1297,8 @@ When you finish, say what you did in one short sentence.
         Learning.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.update.Updater.tool())
         t.put(com.blaze.assistant.ui.Views.tool())
+        // 0.46.0 Blaze Stage: heroes / widgets / layout on the chat itself (Stage first; open_view only when asked or the Stage can't host it).
+        if (com.blaze.assistant.stage.StageStore.enabled) com.blaze.assistant.stage.StageTools.definitions().forEach { t.put(it) }
         t.put(SelfKnowledge.tool())
         t.put(Awareness.tool())
         t.put(com.blaze.assistant.proactive.Jarvis.tool())
@@ -1477,6 +1481,9 @@ When you finish, say what you did in one short sentence.
         val turnOk = java.util.Collections.synchronizedList(mutableListOf<ClaimGuard.Call>())
         /** v0.44.0: every tool call this turn with its verified status (ClaimCheck reviews the final reply against it). */
         val turnDone = java.util.Collections.synchronizedList(mutableListOf<ClaimCheck.Done>())
+        /** 0.46.0: table cards built straight from tool results this turn (ToolCards), attached under the final reply. */
+        val turnCards = java.util.Collections.synchronizedList(mutableListOf<ToolCards.Card>())
+        @Volatile var richRepaired = false
         /** v0.45.13: the alarm / timer results of this turn (TimeEcho checks the reply's time against them). */
         val turnSetResults = java.util.Collections.synchronizedList(mutableListOf<String>())
         /** v0.45.13: GoalCheck's one "opening is only step 1" nudge per turn. */
@@ -2152,7 +2159,7 @@ When you finish, say what you did in one short sentence.
                 // v0.45.28: either one working leaves the other free (side talk, and the wait line below).
                 soloRunning = true; soloWho = voice
                 val nudge = if (notificationContext.isNullOrBlank() && agentId == null && specialistId == null && Settings.bool("duo_on", true) &&
-                    Settings.bool("duo_wait_line", true)) startWaitNudge(voice, shown, turnFrom) else null
+                    Settings.bool("duo_wait_line", true) && !WaitNudge.skip(voice, shown)) startWaitNudge(voice, shown, turnFrom) else null
                 try { runLoop() } finally { soloRunning = false; nudge?.cancel() }
                 // v0.31.2: Halo's solo answer is marked as Halo's in the history, so Blaze knows who said it.
                 if (voice == Duo.Who.HALO) tagLast(Duo.Who.HALO)
@@ -2946,6 +2953,8 @@ When you finish, say what you did in one short sentence.
                     if (!bulk && agentId == null && !isPrivate) addAll(kotlinx.coroutines.withContext(Dispatchers.Default) { LearnedRoutes.predict(lu, g0) })
                     // v0.45.0 (#20): a request in another language that no English cue matched still gets the core action groups.
                     if (!bulk) addAll(ToolRouter.fallback(lu, this))
+                    // 0.46.0: while cards are on the Stage, the Stage tools stay on hand ("pause it", "make the music small").
+                    if (com.blaze.assistant.stage.StageStore.state.value.items.isNotEmpty()) add("stage")
                     // v0.45.9: a calendar / meetings / schedule question always gets the calendar and reminder tools.
                     if (!bulk && TurnContext.scheduleAsk(lu)) add("schedule")
                     // v0.45.9: "@halo Yes" to "I can check your Google Calendar, want me to?" gets them too.
@@ -2981,6 +2990,8 @@ When you finish, say what you did in one short sentence.
                     ViewRouter.followOnHint(curDesign.title, curDesign.kind, curDesign.path) else ""
                 turnOk.clear()
                 turnDone.clear()
+                turnCards.clear(); richRepaired = false
+                LlmClient.richTurn = RichRepair.richTurn(lastUserText())
                 turnSetResults.clear(); goalNudged = false
                 turnBook = VerifyBook()
                 oneShot.clear(); loopGuard.clear()
@@ -3473,6 +3484,20 @@ When you finish, say what you did in one short sentence.
                         val intent = calledNames + (if (ToolRouter.looksEnglish(lastUserText())) emptySet() else sentNames)
                         val check = ClaimCheck.review(shown, synchronized(turnDone) { turnDone.toList() }, lastUserText(), intent)
                         if (check is ClaimCheck.Outcome.Rewrite) { textOut = check.text; reply.put("content", textOut); pendingFollowups = emptyList(); rewroteClaim = true }
+                        // 0.46.0: the user only shared news and nothing ran: no "locked in / coming / almost ready" promises.
+                        NewsPromise.clean(textOut, lastUserText(), synchronized(turnDone) { turnDone.isNotEmpty() })?.let { textOut = it; reply.put("content", textOut); pendingFollowups = emptyList() }
+                        // 0.46.0: tool data as exact cards, and one silent re-ask for a rich block that still can't be drawn.
+                        synchronized(turnCards) { turnCards.toList() }.takeIf { it.isNotEmpty() }?.let { cards -> textOut = ToolCards.attach(textOut, cards); reply.put("content", textOut) }
+                        if (!richRepaired && Settings.bool("rich_replies", true)) RichRepair.broken(textOut).firstOrNull()?.let { b ->
+                            richRepaired = true
+                            val fixed = try {
+                                val req = JSONArray().put(JSONObject().put("role", "user").put("content", RichRepair.prompt(b)))
+                                LlmClient.richTurn = true
+                                kotlinx.coroutines.withTimeoutOrNull(12_000L) { LlmClient.complete(req, null, null, null, LlmClient.Lane.BACKGROUND) }
+                                    ?.let { RichRepair.fixedBlock(b.kind, (it.opt("content") as? String).orEmpty()) }
+                            } catch (e: CancellationException) { throw e } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: rich repair", e); null }
+                            if (fixed != null) { textOut = RichRepair.splice(textOut, b, fixed); reply.put("content", textOut) }
+                        }
                         // 0.45.19-speed: while Blaze Phone is in play, "booked / paid / confirmed" needs a phone_read THIS turn that saw a
                         // confirmation; a status question counts too (device test: "Booking confirmed!" with nothing booked).
                         run {
@@ -3740,6 +3765,9 @@ When you finish, say what you did in one short sentence.
                         // desktop port, next alarm, file there); the model sees [verified=…] on every result.
                         // v0.45.2 (VerifyPolicy): risky actions and strict mode wait for the check as before; other probed actions
                         // get QUICK_MS, then the check finishes in the background and flips the receipt when it ends.
+                        // 0.46.0: a list result becomes an exact table card (no retyped rows); the model writes only the comment.
+                        try { ToolCards.card(name, args, result)?.let { card -> turnCards += card; LlmClient.richTurn = true; result = result.trimEnd() + "\n" + ToolCards.NOTE } }
+                        catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: tool card", e) }
                         val book = turnBook
                         val strictV = VerifyPolicy.strict()
                         val vMode = VerifyPolicy.mode(name, strictV)
@@ -4767,6 +4795,8 @@ When you finish, say what you did in one short sentence.
                         com.blaze.assistant.device.CameraMathTool.run(args) }
                     name == com.blaze.assistant.media.GalleryOps.TOOL -> { add(Role.STEP, com.blaze.assistant.media.GalleryOps.describe(args))
                         com.blaze.assistant.media.GalleryOps.run(app, args) }
+                    name in com.blaze.assistant.stage.StageTools.NAMES -> { add(Role.STEP, com.blaze.assistant.stage.StageTools.step(name, args))
+                        com.blaze.assistant.stage.StageStore.run(app, name, args) }
                     name == com.blaze.assistant.mediaapps.MusicTools.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.MusicTools.describe(args))
                         com.blaze.assistant.mediaapps.MusicTools.run(app, args) }
                     name == com.blaze.assistant.mediaapps.VideoTools.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.VideoTools.describe(args))
