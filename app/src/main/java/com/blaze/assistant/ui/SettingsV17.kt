@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -287,7 +289,11 @@ fun LearningSection() {
             Column(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable { shown = if (shown == s.name) "" else s.name }.padding(start = 12.dp, top = 8.dp, bottom = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(s.name + if (s.replay != null) "  ▶" else "", style = TextStyle(fontFamily = Type.Mono, fontSize = 13.sp, color = c.ink))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(s.name, style = TextStyle(fontFamily = Type.Mono, fontSize = 13.sp, color = c.ink))
+                            if (s.replay != null) androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, contentDescription = "Has a replay",
+                                tint = c.sub, modifier = Modifier.padding(start = 6.dp).size(14.dp))
+                        }
                         Text(s.description + " · used ${s.uses}×", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                     }
                     Box(Modifier.clip(BlazeShapes.pill).clickable { com.blaze.assistant.agent.Agent.send("Run my skill \"${s.name}\"") }.padding(10.dp)) { ActionText("Run", color = c.accent, size = 10.sp) }
