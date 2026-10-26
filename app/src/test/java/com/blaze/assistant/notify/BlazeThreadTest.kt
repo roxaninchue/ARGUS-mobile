@@ -32,7 +32,7 @@ class BlazeThreadTest {
     @Test fun oneBuilderForEveryBlazeMessage() {
         val n = src("notify/Notifier.kt")
         val post = n.substringAfter("fun post(").substringBefore("fun reply(")
-        for (needle in listOf("NotificationCompat.MessagingStyle(me)", "style.addMessage(m.text, m.at, blaze())", ".setShortcutId(BlazeThread.SHORTCUT)",
+        for (needle in listOf("NotificationCompat.MessagingStyle(me)", "style.addMessage(m.text, m.at, if (m.fromUser) me else blaze())", ".setShortcutId(BlazeThread.SHORTCUT)",
                 "setAllowGeneratedReplies(false)", "QuickReplies.forMessage(text, kind)", "setChoices(", "SEMANTIC_ACTION_REPLY",
                 ".notify(BlazeThread.NOTIF_ID, ", "CATEGORY_MESSAGE", "ensureShortcut()"))
             assertTrue(needle, post.contains(needle))
@@ -115,7 +115,8 @@ class BlazeThreadTest {
     @Test fun otherResultsFit() {
         assertEquals(listOf("Cancel it", "Thanks"), QuickReplies.forMessage("Done \u2713 Alarm set for 06:40, label QA wake."))
         assertEquals(listOf("Pause", "Thanks"), QuickReplies.forMessage("Now playing Despacito on YouTube."))
-        assertEquals(emptyList<String>(), QuickReplies.forMessage("Got it, I'm on it. I'll message you here when it's done.", BlazeThread.Kind.ACK))
+        assertEquals(emptyList<String>(), QuickReplies.forMessage("Got it, I'm on it. I'll message you here when it's done."))
+        assertEquals(emptyList<String>(), QuickReplies.forMessage("I play guitar", BlazeThread.Kind.USER))
         assertEquals(listOf("Not now"), QuickReplies.forMessage("Got a minute? I can catch you up out loud.", BlazeThread.Kind.CALL_OFFER))
         assertTrue(QuickReplies.forMessage("x".repeat(10)).size <= QuickReplies.MAX)
     }
