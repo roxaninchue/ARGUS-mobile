@@ -81,6 +81,8 @@ class BackupRouteTest {
     @Test fun llmClientNeverSkipsTheReserveWithoutBackup() {
         val src = HideModels19Test.srcFile("java/com/blaze/assistant/agent/LlmClient.kt").readText()
         assertFalse(src.contains("if (e is TooSlow && !backupReady) throw"))
-        assertTrue(src.contains("BackupRoute.fallbacks(backupReady"))
+        // 0.46.3: the fallback steps run through Failover (BackupRoute.fallbacks inside), for every call of the loop
+        assertTrue(src.contains("Failover.run("))
+        assertTrue(src.contains("BrainOrder.plan(backupReady"))   // 0.46.3 order: on-device, Nous reserve, Blaze Cloud
     }
 }

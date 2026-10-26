@@ -55,9 +55,24 @@ internal fun BackupBrainSection() {
         tick++
     }
 
+    // 0.46.3 Settings › Brains: the order every request follows and how each brain is doing right now
+    V18Section("Brains")
+    V18Note(com.blaze.assistant.agent.BrainOrder.plan(true).mapIndexed { i, st ->
+        val ledger = com.blaze.assistant.agent.BrainLedger.app
+        val health = when {
+            st == com.blaze.assistant.agent.BackupRoute.Step.BACKUP && !BackupBrain.ready() -> "not ready yet, requests start at Nous"
+            st == com.blaze.assistant.agent.BackupRoute.Step.BACKUP && BackupBrain.healthOk == false -> "not answering its health check"
+            else -> ledger.health(st)
+        }
+        val n = ledger.rows[st]?.calls ?: 0
+        "${i + 1}. ${com.blaze.assistant.agent.BrainOrder.label(st)}: $health" + (if (n > 0) " · $n answers" else "")
+    }.joinToString("\n") + "\nCoding jobs use the strongest free coders on the phone first. Never NVIDIA or System One models.")
     V18Section("Backup brain")
     V18Note("Answers on the phone when Blaze Cloud is busy or down, before Blaze Cloud's own reserve. Status: " +
-        BackupStatus.line(state, BackupBrain.VERSION, mb, backAt))
+        BackupStatus.line(state, BackupBrain.VERSION, mb, backAt) +
+        BackupStatus.healthLine(BackupBrain.healthOk, BackupBrain.healthAt.takeIf { it > 0 }?.let { java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(it)) }.orEmpty())
+            .let { if (it.isEmpty()) "" else " $it" })
+    if (state == BackupStatus.State.INSTALLED) V18Button("Check now") { scope.launch { note = if (BackupBrain.healthCheck()) "The backup brain answered." else "The backup brain didn't answer."; tick++ } }
     if (BackupStatus.canDownload(state)) V18Button("Download now (~$mb MB)") {
         if (BackupStatus.confirmMobileData(BackupBrain.phone())) askMobile = true else download()
     }
