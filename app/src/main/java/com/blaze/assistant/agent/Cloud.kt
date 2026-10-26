@@ -146,6 +146,11 @@ object Cloud {
      * the routes that came back empty are skipped (the gateway's next model); the third fails with
      * [EmptyReply.FAILED]. [served] = the route of the last call ("provider/model", "" if unknown).
      */
+    /** 0.46.5: in the coroutine context of a Cloud call inside BrainRace: retryable errors are not retried here. */
+    class FastFailElement : kotlin.coroutines.AbstractCoroutineContextElement(FastFailKey)
+    object FastFailKey : kotlin.coroutines.CoroutineContext.Key<FastFailElement>
+    val FastFail: kotlin.coroutines.CoroutineContext.Element = FastFailElement()
+
     suspend fun drive(streaming: Boolean, call: suspend (Attempt) -> JSONObject, served: () -> String,
                       trim: (LlmClient.LlmException) -> Boolean = { false }, sleep: suspend (Long) -> Unit = { kotlinx.coroutines.delay(it) },
                       onEmpty: (Int) -> Unit = {}, keyBase: String = newKey()): JSONObject {
@@ -182,6 +187,8 @@ object Cloud {
                 errors++
                 // A stream that stalled or broke after it started (reasoning only, then a timeout): next model.
                 if (e.code == 0) served().takeIf { it.isNotBlank() }?.let { avoid += it }
+                // 0.46.5: inside the brain race (FastFail) a busy / 5xx / CPU-killed Cloud returns at once: the race asks the others
+                if (kotlin.coroutines.coroutineContext[FastFailKey] != null && !e.unanswered) throw LlmClient.LlmException(friendly(e.code, e.message.orEmpty()), e.code, e.retryAfterSec)
                 if (errors < MAX_TRIES) sleep(backoffMs(errors - 1, e.retryAfterSec))
             }
         }

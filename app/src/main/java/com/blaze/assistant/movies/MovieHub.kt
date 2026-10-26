@@ -24,8 +24,9 @@ object MovieHub {
     suspend fun search(sources: List<MovieSource>, query: String, parallel: Int = PARALLEL, timeoutMs: Long = SOURCE_TIMEOUT_MS): Search = coroutineScope {
         val gate = Semaphore(parallel.coerceAtLeast(1))
         Search(sources.map { s -> async { gate.withPermit {
-            try { withTimeoutOrNull(timeoutMs) { SourceResult(s, s.search(query)) } ?: SourceResult(s, emptyList(), "took too long") }
-            catch (e: Exception) { SourceResult(s, emptyList(), (e.message ?: "error").take(160)) }
+            try { withTimeoutOrNull(timeoutMs) { SourceResult(s, com.blaze.assistant.mediaapps.BrowseState.clean(s.search(query))) } ?: SourceResult(s, emptyList(), "took too long") }
+            catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Throwable) { SourceResult(s, emptyList(), (e.message ?: "error").take(160)) }   // 0.46.5: Errors too (engine OOM / stack)
         } } }.awaitAll())
     }
 
@@ -65,24 +66,27 @@ object MovieHub {
         return src.episodes(g.episodesLink).firstOrNull()
     }
 
-    fun play(src: MovieSource, post: MoviePost, info: MovieInfo?, link: MovieLink, s: MovieStream): MoviePlay {
+    fun play(src: MovieSource, post: MoviePost, info: MovieInfo?, link: MovieLink, s: MovieStream, alternates: List<MovieStream> = emptyList()): MoviePlay {
         val title = info?.title?.ifBlank { null } ?: post.title
         val name = if (link.title.isNotBlank() && link.title != "Play" && link.type == "series") "$title \u00b7 ${link.title}" else title
-        return MoviePlay(src.id + ":" + link.link, name, s.link, info?.image?.ifBlank { null } ?: post.image, src.id, s.subtitles, s.headers, post.link, link.link)
+        return MoviePlay(src.id + ":" + link.link, name, s.link, info?.image?.ifBlank { null } ?: post.image, src.id, s.subtitles, StreamPlan.headers(s.headers), post.link, link.link,
+            s.type, alternates.filter { it.link != s.link })
     }
 
     /** Resolve a post all the way to something playable (details -> first link -> best stream). */
     suspend fun resolve(src: MovieSource, post: MoviePost, maxHeight: Int = 1080): MoviePlay {
         val info = src.info(post)
         val link = firstLink(src, info) ?: throw IllegalStateException("${info.title} has nothing to play")
-        val s = pickStream(src.streams(link), maxHeight) ?: throw IllegalStateException("No playable stream for ${info.title}")
-        return play(src, post, info, link, s)
+        val all = StreamPlan.order(src.streams(link), maxHeight)
+        val s = all.firstOrNull() ?: throw IllegalStateException("No playable stream for ${info.title}")
+        return play(src, post, info, link, s, all.drop(1))
     }
 
     /** A saved play whose URL wasn't kept (token) gets a fresh one from its source. */
     suspend fun refresh(src: MovieSource, p: MoviePlay, maxHeight: Int = 1080): MoviePlay {
         if (p.url.isNotBlank()) return p
-        val s = pickStream(src.streams(MovieLink(p.title, p.ref)), maxHeight) ?: throw IllegalStateException("No playable stream for ${p.title}")
-        return p.copy(url = s.link, subtitles = s.subtitles, headers = s.headers)
+        val all = StreamPlan.order(src.streams(MovieLink(p.title, p.ref)), maxHeight)
+        val s = all.firstOrNull() ?: throw IllegalStateException("No playable stream for ${p.title}")
+        return p.copy(url = s.link, subtitles = s.subtitles, headers = StreamPlan.headers(s.headers), type = s.type, alternates = all.drop(1))
     }
 }

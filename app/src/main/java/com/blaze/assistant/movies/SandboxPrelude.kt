@@ -10,6 +10,25 @@ object SandboxPrelude {
     val JS: String = """
 "use strict";
 (function(G){
+  // 0.46.5 memory guard: the big allocating builtins count (roughly) what they produce against a budget from the host
+  // (__membudget, 60 % of the engine's hard cap) and throw a plain error instead of letting the engine reach its hard
+  // limit (its out-of-memory paths can crash natively).
+  var memUsed = 0, memBudget = +__membudget() || 33554432;
+  function memAdd(n){ n = +n || 0; if (n > 0) { memUsed += n; if (memUsed > memBudget) throw new RangeError('The source used too much memory'); } }
+  function memLen(x){ return typeof x === 'string' ? x.length : (x && typeof x.length === 'number' ? x.length * 8 : 8); }
+  G.__memAdd = memAdd;
+  var aPush = Array.prototype.push, aJoin = Array.prototype.join, aConcat = Array.prototype.concat, sRep = String.prototype.repeat, sPad = String.prototype.padEnd, sPadS = String.prototype.padStart, sCat = String.prototype.concat, jParse = JSON.parse, jStr = JSON.stringify;
+  Array.prototype.push = function(){ var n = 0; for (var i = 0; i < arguments.length; i++) n += 16 + (typeof arguments[i] === 'string' ? arguments[i].length : 0); memAdd(n); return aPush.apply(this, arguments); };
+  Array.prototype.join = function(){ var r = aJoin.apply(this, arguments); memAdd(r.length); return r; };
+  Array.prototype.concat = function(){ var r = aConcat.apply(this, arguments); memAdd(r.length * 8); return r; };
+  String.prototype.repeat = function(c){ memAdd((+c || 0) * this.length); return sRep.call(this, c); };
+  String.prototype.padEnd = function(n){ memAdd(+n || 0); return sPad.apply(this, arguments); };
+  String.prototype.padStart = function(n){ memAdd(+n || 0); return sPadS.apply(this, arguments); };
+  String.prototype.concat = function(){ var r = sCat.apply(this, arguments); memAdd(r.length); return r; };
+  JSON.parse = function(t){ memAdd(memLen(t) / 2); return jParse.apply(JSON, arguments); };
+  JSON.stringify = function(){ var r = jStr.apply(JSON, arguments); if (typeof r === 'string') memAdd(r.length / 2); return r; };
+  ['push', 'join', 'concat'].forEach(function(k){ Object.defineProperty(Array.prototype, k, { enumerable: false }); });
+  ['repeat', 'padEnd', 'padStart', 'concat'].forEach(function(k){ Object.defineProperty(String.prototype, k, { enumerable: false }); });
   var logs = [];
   G.__logs = logs;
   var con = { log: function(){ if (logs.length < 40) logs.push(Array.prototype.map.call(arguments, function(a){ try { return typeof a === 'string' ? a : JSON.stringify(a); } catch(e) { return String(a); } }).join(' ').slice(0, 300)); } };
