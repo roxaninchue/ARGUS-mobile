@@ -710,6 +710,9 @@ fun ChatScreen() {
             QuestionCard()
             FixCard()
             SecureFormCard()
+            // 0.46.6 Secure form: request_secret's card, and the "looks like a secret" hold before a message is sent.
+            SecretRequestCard()
+            SecretPasteCard()
             // 0.45.19: Blaze Phone's live tile (frame, site, step, Take control) while Blaze works on its own phone.
             PhoneLiveCard()
             // v0.24.6: "Open in Design?" instead of switching views on its own.
@@ -1137,7 +1140,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
             val (quoted, body) = splitQuote(m.text)
             // v0.24.6: pictures inside your bubble (tap to preview), other files as icon chips.
             SentBubble(body, quoted, rememberPresent(m.media), m.files, pos)
-            if (delivery != null) DeliveryLabel(delivery, onRetry = if (canAct) ({
+            if (delivery != null && DeliveryView.shown(delivery)) DeliveryLabel(delivery, onRetry = if (canAct) ({
                 com.blaze.assistant.agent.Delivery.tracker().apply(listOf(m.gid), com.blaze.assistant.agent.Delivery.Ev.USER_RETRY); Agent.retry(m.id) }) else null)
         } }
         Role.BLAZE -> if (m.meta == com.blaze.assistant.update.Updater.CARD) UpdateCard()
