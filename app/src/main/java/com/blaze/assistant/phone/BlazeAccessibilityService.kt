@@ -81,6 +81,8 @@ class BlazeAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val p = event.packageName?.toString().orEmpty()
             if (p.isNotEmpty()) frontPkg = p
+            // Preserve the foreground app beneath Blaze's own floating overlay so browser context remains scoped correctly.
+            if (p.isNotEmpty() && p != packageName) foregroundExternalPackage = p
             if (p.isNotEmpty() && p != packageName) {
                 try { com.blaze.assistant.bank.BankMode.onFront(this, p) } catch (_: Throwable) { }
                 if (try { com.blaze.assistant.bank.BankMode.isBank(p) } catch (_: Throwable) { false }) { lastWindowPkg = p; return }
@@ -579,6 +581,9 @@ class BlazeAccessibilityService : AccessibilityService() {
     }
     /** Package of the last TYPE_WINDOW_STATE_CHANGED event (any app, Blaze included). */
     @Volatile var frontPkg: String = ""
+
+    /** Last external foreground app, preserved while Blaze's own overlay is shown. */
+    @Volatile var foregroundExternalPackage: String = ""
 
     /** Words visible on screen (for checking a step worked, and short "what changed" notes). */
     fun visibleWords(): Set<String> {
