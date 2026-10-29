@@ -29,6 +29,9 @@ class SmallTalkTest {
     @Test fun realLookupsStillLookUp() {
         lookup.forEach { assertTrue(it, LookupLane.isLookup(it)); assertFalse(it, SmallTalk.chitChat(it)) }
         assertEquals(SmallTalk.Kind.LOOKUP, SmallTalk.classify("what's the price of bitcoin today"))
+        listOf("What is recursion?", "Why does a rainbow form?", "Can black holes evaporate?", "Is programming difficult to learn?").forEach {
+            assertEquals("$it should defer to the model", SmallTalk.Kind.UNSURE, SmallTalk.classify(it))
+        }
     }
 
     @Test fun unsureGoesToTheModelNotTheFastLane() {
@@ -55,5 +58,6 @@ class SmallTalkTest {
         assertTrue(src("ChatLane.kt").contains("if (SmallTalk.chitChat(t) && !TurnContext.scheduleFollowUp(t, lastAssistant)"))
         assertTrue(src("ChatLane.kt").contains("if (SmallTalk.chitChat(userText)) append(SmallTalk.RULE)"))
         assertTrue(src("LookupRoutes.kt").contains("SmallTalk.describesPage(ans.text, q)"))
+        assertTrue(src("Agent.kt").contains("SmallTalk.classify(shown) == SmallTalk.Kind.LOOKUP && LookupLane.isLookup(shown)"))
     }
 }
