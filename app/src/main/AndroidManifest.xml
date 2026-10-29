@@ -62,6 +62,11 @@
 
     <queries>
         <package android:name="com.termux" />
+        <!-- Browser companion: discover apps explicitly registered as Android browsers. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_BROWSER" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
