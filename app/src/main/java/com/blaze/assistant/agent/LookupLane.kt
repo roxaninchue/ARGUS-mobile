@@ -42,7 +42,8 @@ object LookupLane {
     data class Update(val answer: Answer, val pages: List<Page>, val changed: Boolean)
 
     // ---------------- routing ----------------
-    private val ask = Regex("""(?i)^\s*(?:what|who|whom|whose|when|where|which|why|how (?:much|many|old|long|tall|big|far|fast|do|does|did|is|are|to)|is|are|was|were|does|did|do|can|find(?: out)?|look up|lookup|search(?: for)?|google|check|tell me|latest|current|price of|cost of|news)\b""")
+    /** Only strong external-fact cues or explicit search intent qualify; generic question openers do not. */
+    private val ask = Regex("""(?i)^\s*(?:find(?: out)?|look ?up|search(?: for)?|google|check (?:the )?(?:latest|current|price|cost|news|opening hours)|latest(?: news)?|current(?:ly)?|news(?: about| on)?|price of|cost of|who wrote|author of|written by|opening hours|hours of|when is|who is|who won|what(?:'s| is) (?:the )?(?:price|cost|exchange rate)|what is the (?:capital|population|president|prime minister|price|cost|exchange rate|score|release date)|how much|how many|define|meaning of)\b""")
     private val personal = Regex("""(?i)\b(?:my (?:phone|files?|photos?|messages?|texts?|calendar|alarms?|contacts?|notes?|music|songs?|battery|storage|settings|apps?|email|inbox)|remind|alarm|timer|text (?:him|her|them|mom|dad)|call |open |play |turn (?:on|off)|set (?:a|an|the)|send |screenshot|on (?:my|this) phone|you (?:remember|know about me))\b""")
     /** Things Blaze answers without the web (itself, the clock, the weather card, sums, a chat), so they never take the lane. */
     private val notWeb = Regex("""(?i)\b(?:you|your|yourself|blaze|halo|time is it|what time|today'?s date|what day is|weather|forecast|how are|joke|poem|story|translate|calculate|meaning of life)\b|^[\d\s+\-*/().x=?]+$|\bremember\b""")
