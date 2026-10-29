@@ -22,7 +22,6 @@ android-unit-tests:
       files:
         - gradle/wrapper/gradle-wrapper.properties
         - app/build.gradle.kts
-        - build.gradle.kts
     paths:
       - .gradle/caches/
       - .gradle/wrapper/
