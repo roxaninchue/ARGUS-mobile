@@ -16,7 +16,7 @@ class SmallTalkTest {
         "not much", "love you", "you're the best", "hmm", "what's new?", "morning!")
     val lookup = listOf("What is the capital of Zambia?", "what's the price of bitcoin today", "who won the champions league final in 2025",
         "latest news on the Kafue bridge", "how much is a Raspberry Pi 5?", "when is the next full moon", "who is the president of Kenya",
-        "what is the population of Ndola")
+        "what is the population of Ndola", "who wrote Things Fall Apart", "find the opening hours of the national museum")
 
     @Test fun chitChatIsChat() { chit.forEach { assertEquals(it, SmallTalk.Kind.CHAT, SmallTalk.classify(it)) } }
 
