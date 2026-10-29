@@ -27,7 +27,7 @@ android-unit-tests:
       - .gradle/wrapper/
     policy: pull-push
   script:
-    - 'SDK_ROOT="\${ANDROID_HOME:-\${ANDROID_SDK_ROOT:-}}"'
+    - 'SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"'
     - 'test -n "$SDK_ROOT"'
     - 'printf "sdk.dir=%s\n" "$SDK_ROOT" > local.properties'
     - 'chmod +x gradlew'
