@@ -156,7 +156,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
         // A page is shared only after an explicit tap; page-derived instructions stay tainted as untrusted input.
         if (sharedPage.isNotBlank()) {
             Agent.send(BrowserCompanion.prompt(sharedPage, cmd ?: text), attachments = pending,
-                untrusted = com.blaze.assistant.agent.ConfirmGate.MAGIC_HAND)
+                untrusted = "a web page (Browser Companion)")
         } else {
             // v0.30.6 rapid messages: sending while Blaze works is fine (the message joins the turn).
             Agent.send(cmd ?: text, attachments = pending)
