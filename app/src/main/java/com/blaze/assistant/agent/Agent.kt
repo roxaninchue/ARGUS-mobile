@@ -2280,7 +2280,7 @@ When you finish, say what you did in one short sentence.
                 }
                 // 0.46.3 lookup fast lane: search → the top pages in parallel → the answer first, checked in the background (LookupLane).
                 if (!offline && single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && specialistId == null &&
-                    notificationContext.isNullOrBlank() && voice == Duo.Who.BLAZE && Settings.bool("lookup_lane", true) && LookupLane.isLookup(shown)) {
+                    notificationContext.isNullOrBlank() && voice == Duo.Who.BLAZE && Settings.bool("lookup_lane", true) && SmallTalk.classify(shown) == SmallTalk.Kind.LOOKUP && LookupLane.isLookup(shown)) {
                     if (runLookup(shown)) { mood = Mood.IDLE; persist(); announce(); return@launch }
                 }
                 if (offline && !Settings.customBase.contains("127.0.0.1") && !Settings.customBase.contains("localhost")) {
