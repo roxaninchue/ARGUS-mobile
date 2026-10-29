@@ -73,6 +73,9 @@ import com.blaze.assistant.agent.ChatMessage
 import com.blaze.assistant.agent.Mood
 import com.blaze.assistant.agent.Role
 import com.blaze.assistant.agent.Settings
+import com.blaze.assistant.browser.BrowserCompanion
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.blaze.assistant.voice.Voice
 import kotlinx.coroutines.launch
 
@@ -114,6 +117,8 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
     var note by remember { mutableStateOf("") }
     var pending by remember { mutableStateOf(listOf<Attachment>()) }
     var loading by remember { mutableStateOf(false) }
+    var pageContext by remember { mutableStateOf("") }
+    val browserAvailable = remember { BrowserCompanion.available(ctx) }
     var compact by remember { mutableStateOf(previewCompact ?: Settings.bool("compact_panel", true)) }
     val recentAll = messages.filter { it.role != Role.STEP || it == messages.lastOrNull() }.takeLast(8)
     val recent = if (compact) recentAll.filter { it.role != Role.USER }.takeLast(1) else recentAll
@@ -144,11 +149,19 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
     }
     fun submit() {
         if (text.isBlank() && pending.isEmpty()) return
-        val cmd = if (text.isBlank()) null else CommandRunner.run(ctx, text.trim(), openSettings = {
-            ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }, listen = { })
+        val sharedPage = pageContext
+        val cmd = if (sharedPage.isBlank() && text.isNotBlank()) CommandRunner.run(ctx, text.trim(), openSettings = {
+            ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }, listen = { }) else null
         if (cmd == "") { text = ""; return }
-        // v0.30.6 rapid messages: sending while Blaze works is fine (the message joins the turn).
-        Agent.send(cmd ?: text, attachments = pending); text = ""; pending = emptyList()
+        // A page is shared only after an explicit tap; page-derived instructions stay tainted as untrusted input.
+        if (sharedPage.isNotBlank()) {
+            Agent.send(BrowserCompanion.prompt(sharedPage, cmd ?: text), attachments = pending,
+                untrusted = com.blaze.assistant.agent.ConfirmGate.MAGIC_HAND)
+        } else {
+            // v0.30.6 rapid messages: sending while Blaze works is fine (the message joins the turn).
+            Agent.send(cmd ?: text, attachments = pending)
+        }
+        pageContext = ""; text = ""; pending = emptyList()
     }
 
     val card = RoundedCornerShape(28.dp)
@@ -184,6 +197,31 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                     if (withScreen && sd.fresh()) { Agent.send(sd.prompt(sd.text, sd.app, prompt), attachments = sd.attachments()) } else Agent.send(prompt)
                 },
                 onType = { Voice.cancelListening(); touched = true })
+            // Browser companion is opt-in per request: no page text is read until the user taps this chip.
+            if (previewMessages == null && browserAvailable) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (pageContext.isBlank()) "Use this page" else "Page attached · tap to refresh",
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(Glass.raised)
+                            .clickable {
+                                touched = true
+                                val service = com.blaze.assistant.phone.BlazeAccessibilityService.instance
+                                if (service == null) note = "Turn on Blaze phone control to share a browser page."
+                                else scope.launch {
+                                    val captured = withContext(Dispatchers.Default) { BrowserCompanion.capture(service) }
+                                    pageContext = captured
+                                    note = if (captured.isBlank()) "Couldn't read this page. Editable and password fields are excluded." else "Page context ready for this message only."
+                                }
+                            }.padding(horizontal = 14.dp, vertical = 8.dp),
+                        style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Glass.cyan)
+                    )
+                    if (pageContext.isNotBlank()) {
+                        Spacer(Modifier.width(8.dp))
+                        Text("Clear", modifier = Modifier.clickable { pageContext = ""; note = "" }.padding(8.dp),
+                            style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
+                    }
+                }
+            }
             // Header: mascot, name + status, icon buttons.
             Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 8.dp, top = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 MascotGlyph(if (compact) 34.dp else 40.dp, pulse = listening || busy, level = level)
