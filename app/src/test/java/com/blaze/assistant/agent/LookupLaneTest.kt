@@ -21,7 +21,9 @@ class LookupLaneTest {
         listOf("What is the capital of Zambia?", "who wrote Things Fall Apart", "How much is a Raspberry Pi 5?", "find the opening hours of the national museum",
             "latest news on the Kafue bridge").forEach { assertTrue(it, LookupLane.isLookup(it)) }
         listOf("open WhatsApp", "set an alarm for 7", "what time is it", "what's the weather tomorrow", "who are you", "book a table for two tonight",
-            "what's on my calendar", "remind me to call mom", "2+2", "hi").forEach { assertFalse(it, LookupLane.isLookup(it)) }
+            "what's on my calendar", "remind me to call mom", "2+2", "hi",
+            "What is recursion?", "Why does a rainbow form?", "Can black holes evaporate?", "Is programming difficult to learn?",
+            "Explain how photosynthesis works", "How do loops work in Kotlin?").forEach { assertFalse(it, LookupLane.isLookup(it)) }
     }
 
     @Test fun answersFirstFromTwoAgreeingPagesFetchedInParallel() = runTest {
