@@ -45,6 +45,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CloseFullscreen
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.OpenInFull
 import androidx.compose.material.icons.rounded.Person
@@ -81,6 +82,7 @@ import androidx.compose.ui.unit.sp
 import com.blaze.assistant.R
 import com.blaze.assistant.agent.Agent
 import com.blaze.assistant.agent.ChatMessage
+import com.blaze.assistant.agent.Command
 import com.blaze.assistant.agent.Role
 import com.blaze.assistant.composer.ChatOverlayLogic
 import com.blaze.assistant.composer.ModelChoice
@@ -148,6 +150,8 @@ fun BlazeAvatar(size: Int = 30) {
  * The chat bar that replaces the bottom Blaze button: profile avatar LEFT, the "Message Blaze" pill, "+" RIGHT.
  * A send arrow shows inside the pill while there's text; "+" always opens Spotlight. The model chip (and attachment
  * chips) slide up above the pill on the first typed character or attachment.
+ *
+ * 0.49.0 (mem1-ui-browse): typing "/" raises the slash-command list above the pill.
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
@@ -159,6 +163,12 @@ fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile:
     Column(modifier.fillMaxWidth()
         .then(if (ime) Modifier.background(Brush.verticalGradient(listOf(ComposerLook.dock(c).copy(alpha = 0f), ComposerLook.dock(c).copy(alpha = 0.94f), ComposerLook.dock(c)))) else Modifier)
         .padding(horizontal = 12.dp, vertical = 8.dp)) {
+        // 0.49.0 (mem1-ui-browse): the slash list, above the chips so it is the first thing you read.
+        AnimatedVisibility(state.slashTyping,
+            enter = if (MotionTokens.enabled) slideInVertically(tween(MotionTokens.MEDIUM)) { it / 2 } + fadeIn(tween(MotionTokens.MEDIUM)) else fadeIn(tween(0)),
+            exit = if (MotionTokens.enabled) slideOutVertically(tween(MotionTokens.SHORT)) { it / 2 } + fadeOut(tween(MotionTokens.SHORT)) else fadeOut(tween(0))) {
+            SlashList(state.slashMatches, Modifier.padding(start = (ChatBarTokens.AVATAR_DP + 8).dp, bottom = 6.dp)) { state.pickCommand(it) }
+        }
         AnimatedVisibility(state.chipShown,
             enter = if (MotionTokens.enabled) slideInVertically(tween(MotionTokens.MEDIUM)) { it } + fadeIn(tween(MotionTokens.MEDIUM)) else fadeIn(tween(0)),
             exit = if (MotionTokens.enabled) slideOutVertically(tween(MotionTokens.SHORT)) { it } + fadeOut(tween(MotionTokens.SHORT)) else fadeOut(tween(0))) {
@@ -203,6 +213,37 @@ fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile:
                 val turn = remember { Animatable(0f) }
                 LaunchedEffect(state.spotlightOpen) { if (MotionTokens.enabled) turn.animateTo(if (state.spotlightOpen) 45f else 0f, tween(MotionTokens.MEDIUM)) else turn.snapTo(if (state.spotlightOpen) 45f else 0f) }
                 Icon(Icons.Rounded.Add, null, tint = c.ink, modifier = Modifier.size(24.dp).graphicsLayer { rotationZ = turn.value })
+            }
+        }
+    }
+}
+
+/**
+ * 0.49.0 (mem1-ui-browse): the slash-command list. One row per command: "/name" in the brand blue, its argument hint
+ * in the quiet colour, and the one-line description under it. Tapping a row runs [onPick].
+ */
+@Composable
+private fun SlashList(matches: List<Command>, modifier: Modifier = Modifier, onPick: (Command) -> Unit) {
+    val c = LocalBlaze.current
+    if (matches.isEmpty()) return
+    Column(modifier.widthIn(max = 420.dp).zIndex(12f)
+        .shadow(12.dp, RoundedCornerShape(18.dp), clip = false)
+        .clip(RoundedCornerShape(18.dp)).background(ComposerLook.menu(c))
+        .border(1.dp, c.ink.copy(alpha = 0.10f), RoundedCornerShape(18.dp))
+        .padding(vertical = 6.dp)) {
+        matches.forEach { cmd ->
+            Row(Modifier.fillMaxWidth().clickable { onPick(cmd) }
+                .semantics { contentDescription = "Command /${cmd.name}: ${cmd.desc}" }
+                .padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("/" + cmd.name, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = DuoColors.blazeBlue))
+                if (cmd.args.isNotBlank()) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(cmd.args, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(cmd.desc, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                    style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
         }
     }
@@ -264,6 +305,8 @@ fun ChatOverHome(state: ComposerState, modifier: Modifier = Modifier, bottom: @C
  * a title for project / private chats, "Show earlier messages" for the whole thread, Blaze's replies with their rich
  * formatting (lists, tables, links, pictures), and [bottom] for what Blaze is waiting on (approvals, questions, secure
  * forms, the listening strip), above the bar.
+ *
+ * 0.49.0 (mem1-ui-browse): the header carries the maximise arrows, and [ComposerState.expanded] widens the thread.
  */
 @Composable
 fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Boolean, modifier: Modifier = Modifier,
@@ -280,6 +323,8 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
     val typing = ChatOverlayLogic.typing(shown, busy)
     val listState = rememberLazyListState()
     LaunchedEffect(rows.size, typing, shown.lastOrNull()?.text?.length, followFor) { val n = rows.size + (if (typing) 1 else 0) + 2; if (n > 0) listState.scrollToItem(n - 1) }
+    // 0.49.0 (mem1-ui-browse): maximised, the thread uses the full width with tighter side padding.
+    val side = if (state.expanded) 6.dp else 14.dp
     Column(modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             val title = if (state.privateChat) "Private chat" else state.title
@@ -287,11 +332,17 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.ink))
             else Spacer(Modifier.weight(1f))
             if (earlier) { RoundButton(Icons.Rounded.History, "Show earlier messages", state::showEarlier); Spacer(Modifier.width(8.dp)) }
+            // 0.49.0 (mem1-ui-browse): the maximise arrows, top right of the chat box.
+            RoundButton(
+                if (state.expanded) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
+                if (state.expanded) "Restore the chat box" else "Maximise the chat box"
+            ) { state.expanded = !state.expanded }
+            Spacer(Modifier.width(8.dp))
             RoundButton(Icons.Rounded.Close, if (state.privateChat) "Leave private chat" else "Close chat", state::closeChat)
         }
         val list: @Composable () -> Unit = {
         LazyColumn(Modifier.fillMaxSize(), state = listState, verticalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 8.dp)) {
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = side, vertical = 8.dp)) {
             if (earlier) item(key = "earlier") {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Text("Show earlier messages", modifier = Modifier.clip(RoundedCornerShape(50)).background(ComposerLook.solidChip(c))
@@ -308,7 +359,7 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
                 when (r) {
                     is ChatOverlayLogic.Row.Steps -> StepsChip(r)
                     is ChatOverlayLogic.Row.Msg -> Column { val m = r.m
-                        if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom) else BlazeBubble(m, typeIn = m.id > state.liveFrom)
+                        if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom, wide = state.expanded) else BlazeBubble(m, typeIn = m.id > state.liveFrom, wide = state.expanded)
                         if (m.id == followFor && onSend != null) com.blaze.assistant.ui.FollowupRow(m.followups, Modifier.padding(start = 38.dp, top = 6.dp)) { onSend(it) }
                     }
                 }
@@ -341,14 +392,14 @@ private fun RoundButton(icon: androidx.compose.ui.graphics.vector.ImageVector, d
 
 /** The user's line: lifts out of the pill (rises from the bar) into a bubble on the RIGHT with their avatar on its right. */
 @Composable
-private fun UserBubble(m: ChatMessage, lift: Boolean) {
+private fun UserBubble(m: ChatMessage, lift: Boolean, wide: Boolean = false) {
     val c = LocalBlaze.current
     val rise = remember(m.id) { Animatable(if (lift && MotionTokens.enabled) 1f else 0f) }
     LaunchedEffect(m.id) { if (rise.value > 0f) rise.animateTo(0f, tween(MotionTokens.LONG, easing = MotionTokens.Decelerate)) }
     Row(Modifier.fillMaxWidth().graphicsLayer { translationY = rise.value * 260f; alpha = 1f - rise.value * 0.4f; scaleX = 1f - rise.value * 0.06f; scaleY = scaleX },
         horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.Bottom) {
         val text = com.blaze.assistant.ui.AttachView.bubbleText(m.text, m.media)
-        Column(Modifier.weight(1f, fill = false).widthIn(max = 280.dp).clip(RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp))
+        Column(Modifier.weight(1f, fill = false).widthIn(max = if (wide) 340.dp else 280.dp).clip(RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp))
             .background(DuoColors.blazeBlue.copy(alpha = if (LocalComposerSolid.current) 1f else if (c.dark) 0.85f else 0.95f)).padding(horizontal = 14.dp, vertical = 10.dp)) {
             if (m.files.isNotEmpty()) Text(m.files.joinToString(" \u00b7 "), maxLines = 1, overflow = TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f)))
@@ -361,7 +412,7 @@ private fun UserBubble(m: ChatMessage, lift: Boolean) {
 
 /** Blaze's line on the LEFT with the Blaze logo; a fresh reply types in (reduce motion: shown whole). */
 @Composable
-private fun BlazeBubble(m: ChatMessage, typeIn: Boolean) {
+private fun BlazeBubble(m: ChatMessage, typeIn: Boolean, wide: Boolean = false) {
     val c = LocalBlaze.current
     var shown by remember(m.id) { mutableIntStateOf(if (typeIn && MotionTokens.enabled) 0 else Int.MAX_VALUE) }
     LaunchedEffect(m.id, m.text.length) {
@@ -373,7 +424,7 @@ private fun BlazeBubble(m: ChatMessage, typeIn: Boolean) {
         BlazeAvatar()
         Spacer(Modifier.width(8.dp))
         val solid = LocalComposerSolid.current
-        Box(Modifier.weight(1f, fill = false).widthIn(max = 290.dp).clip(RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp))
+        Box(Modifier.weight(1f, fill = false).widthIn(max = if (wide) 360.dp else 290.dp).clip(RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp))
             .then(if (solid) Modifier.background(ComposerLook.blazeBubble(c)) else Modifier.glass(RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp), GlassIntensity.High, shadow = false))
             .then(if (err) Modifier.border(1.dp, Color(0xFFE5484D).copy(alpha = 0.6f), RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp)) else Modifier)
             .padding(horizontal = 14.dp, vertical = 10.dp)) {
