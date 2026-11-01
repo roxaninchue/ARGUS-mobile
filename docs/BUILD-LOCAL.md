@@ -66,11 +66,14 @@ that draw (Compose rules, activities, every *ShotsTest) therefore run on an **x8
 ```
 sudo dpkg --add-architecture amd64 && sudo apt-get update
 sudo apt-get install -y qemu-user libc6:amd64 libstdc++6:amd64 zlib1g:amd64 libgcc-s1:amd64
-# x86-64 Temurin 17 unpacked in work/toolchain/jdk17-x64; wrapper work/toolchain/qemu-java.sh
+# x86-64 Temurin 17 unpacked in work/toolchain/jdk17-x64; wrapper work/toolchain/qemu-jdk/bin/java (= qemu-java.sh)
 BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log --init-script work/toolchain/qemu-tests.gradle :app:testDebugUnitTest --tests '…ShotsTest'
 ```
 
-`qemu-tests.gradle` only sets the Test tasks' `executable` to the wrapper (nothing in the repo changes). It is slow
+`qemu-tests.gradle` only sets the Test tasks' `executable` to the wrapper (nothing in the repo changes). The wrapper must
+sit at `<dir>/bin/java`: Gradle treats the executable's grandparent as a Java home and probes it (a wrapper at
+`work/toolchain/qemu-java.sh` fails with "Toolchain installation … could not be probed"). After a sandbox restart
+`qemu-user` and the amd64 libraries are gone (they live on the RAM root) and must be installed again. It is slow
 (emulated JIT), so run the native aarch64 suite first and only the drawing tests under qemu.
 
 ## Low-RAM gate
