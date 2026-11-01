@@ -9,16 +9,12 @@ import android.view.WindowManager
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -34,16 +30,16 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
 /**
  * 0.50.0: while Blaze controls the screen ([ScreenWork.active]), Blaze's own particles drift along the screen edges over a
  * soft glow, so the user can see Blaze is working; gone ~1 s after the last step. Low-RAM rules:
  *  - one window, added only while active and removed after; nothing runs while idle (the watcher suspends on the flow);
- *  - 32 dots at ≤ 30 fps on one Canvas (no bitmaps, no blur), a still glow when the phone is warm or saving battery;
+ *  - the existing [EdgeParticles] (40 dots, ~24 fps, one Canvas, no bitmaps or blur; frozen when the phone is warm or
+ *    saving battery) over a still gradient glow; reduced motion = the glow only;
  *  - never takes a touch: FLAG_NOT_TOUCHABLE + NOT_FOCUSABLE, and on Android 12+ an app overlay's alpha is kept at 0.8 (the
  *    platform's "untrusted touch" limit) so taps pass through to the app below. The accessibility overlay is preferred.
- * Settings › Look & feel "screen_glow" (default on) switches it off. [EdgeParticleMath] is pure (ScreenGlowTest).
+ * Settings › Look & feel "Glow while Blaze uses the screen" (screen_glow, default on) switches it off.
  */
 object ScreenGlow {
     private var view: View? = null
@@ -88,7 +84,7 @@ object ScreenGlow {
         }
         val o = OverlayOwner().also { it.start() }
         shown.value = true
-        val v = composeView(hc, o) { EdgeParticles(shown.value) }
+        val v = composeView(hc, o) { ScreenWorkGlow(shown.value) }
         try { wm.addView(v, lp); view = v; owner = o } catch (_: Exception) { o.destroy() }
     }
 
@@ -101,73 +97,34 @@ object ScreenGlow {
     }
 }
 
-/** Where a dot is on the screen edge: pure geometry, shared by the composable and the test. */
+/** Pure numbers for the glow window (ScreenWorkTest). */
 object EdgeParticleMath {
-    const val DOTS = 32
+    /** Android 12+ passes touches through an app overlay only at or below this window alpha (untrusted-touch rule). */
     const val MAX_PASS_THROUGH_ALPHA = 0.8f
-    /** The band along each edge the dots live in, as a fraction of the shorter side. */
-    const val BAND = 0.06f
-
-    /**
-     * A dot at perimeter position [p] (0..1, clockwise from the top-left corner), [inset] (0..1 of the band) in from the edge,
-     * on a [w]×[h] screen. Always inside the screen and within the band of its edge.
-     */
-    fun at(p: Float, inset: Float, w: Float, h: Float): Offset {
-        val band = minOf(w, h) * BAND * inset.coerceIn(0f, 1f)
-        val per = 2f * (w + h)
-        var d = (((p % 1f) + 1f) % 1f) * per
-        return when {
-            d < w -> Offset(d, band)
-            d < w + h -> { d -= w; Offset(w - band, d) }
-            d < 2 * w + h -> { d -= w + h; Offset(w - d, h - band) }
-            else -> { d -= 2 * w + h; Offset(band, h - d) }
-        }.let { Offset(it.x.coerceIn(0f, w), it.y.coerceIn(0f, h)) }
-    }
-
-    /** True when [o] lies within the edge band (so the middle of the screen stays clear). */
-    fun inBand(o: Offset, w: Float, h: Float): Boolean {
-        val b = minOf(w, h) * BAND + 0.5f
-        return o.x <= b || o.y <= b || o.x >= w - b || o.y >= h - b
-    }
+    /** How deep the soft glow reaches in from each edge, as a fraction of the shorter side. */
+    const val GLOW = 0.075f
 }
 
-private data class EdgeDot(val p: Float, val inset: Float, val r: Float, val speed: Float, val hot: Boolean)
-
-/** The particles (Blaze's ParticleField dust) running round the edges over a soft warm glow. */
+/**
+ * Blaze's own signature edge particles ([EdgeParticles], the assistant-summon effect: white dots with blue / orange sparks
+ * drifting round the border) over a soft warm glow, faded in and out with [visible]. With reduced motion only the still
+ * glow shows (no frames).
+ */
 @Composable
-fun EdgeParticles(visible: Boolean, modifier: Modifier = Modifier) {
+fun ScreenWorkGlow(visible: Boolean, modifier: Modifier = Modifier) {
     val fade by animateFloatAsState(if (visible) 1f else 0f, tween(320), label = "glow")
-    var time by remember { mutableFloatStateOf(0f) }
-    val hot by com.blaze.assistant.device.Thermal.hot.collectAsState()
-    val moving = visible && !hot && MotionTokens.enabled
-    LaunchedEffect(moving) {
-        if (!moving) return@LaunchedEffect
-        var last = 0L
-        while (true) withFrameMillis { now ->
-            if (last == 0L) last = now
-            if (now - last >= 33L) { time = (time + (now - last) / 20_000f) % 1f; last = now }
-        }
-    }
-    val dots = remember {
-        val rnd = Random(23)
-        List(EdgeParticleMath.DOTS) { EdgeDot(rnd.nextFloat(), rnd.nextFloat(), 0.9f + rnd.nextFloat() * 1.2f, 0.6f + rnd.nextFloat() * 1.2f, it % 6 == 0) }
-    }
     val glow = Color(0xFFFFB648)      // the logo's gold halo
     val cool = Color(0xFF7FB2FF)
-    Canvas(modifier.fillMaxSize().graphicsLayer { alpha = fade }) {
-        val w = size.width; val h = size.height
-        val g = minOf(w, h) * 0.075f
-        val pulse = 0.75f + 0.25f * kotlin.math.sin(time * 6.283f * 8f)
-        val edge = glow.copy(alpha = 0.26f * pulse)
-        drawRect(Brush.verticalGradient(listOf(edge, Color.Transparent), 0f, g), Offset.Zero, Size(w, g))
-        drawRect(Brush.verticalGradient(listOf(Color.Transparent, cool.copy(alpha = 0.22f * pulse)), h - g, h), Offset(0f, h - g), Size(w, g))
-        drawRect(Brush.horizontalGradient(listOf(edge, Color.Transparent), 0f, g), Offset.Zero, Size(g, h))
-        drawRect(Brush.horizontalGradient(listOf(Color.Transparent, edge), w - g, w), Offset(w - g, 0f), Size(g, h))
-        dots.forEach { d ->
-            val o = EdgeParticleMath.at(d.p + time * d.speed, d.inset, w, h)
-            val col = if (d.hot) Color.White.copy(alpha = 0.85f) else ParticleBlue.of(true).copy(alpha = 0.6f)
-            drawCircle(col, d.r * 1.6f * density, o)
-            if (d.hot) drawCircle(glow.copy(alpha = 0.25f), d.r * 4.5f * density, o)
+    Box(modifier.fillMaxSize().graphicsLayer { alpha = fade }) {
+        Canvas(Modifier.fillMaxSize()) {
+            val w = size.width; val h = size.height
+            val g = minOf(w, h) * EdgeParticleMath.GLOW
+            val edge = glow.copy(alpha = 0.22f)
+            drawRect(Brush.verticalGradient(listOf(edge, Color.Transparent), 0f, g), Offset.Zero, Size(w, g))
+            drawRect(Brush.verticalGradient(listOf(Color.Transparent, cool.copy(alpha = 0.2f)), h - g, h), Offset(0f, h - g), Size(w, g))
+            drawRect(Brush.horizontalGradient(listOf(edge, Color.Transparent), 0f, g), Offset.Zero, Size(g, h))
+            drawRect(Brush.horizontalGradient(listOf(Color.Transparent, edge), w - g, w), Offset(w - g, 0f), Size(g, h))
         }
+        if (visible && MotionTokens.enabled) EdgeParticles(energy = 0.85f)
     }
 }

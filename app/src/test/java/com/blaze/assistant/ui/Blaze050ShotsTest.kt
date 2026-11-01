@@ -113,7 +113,7 @@ class Blaze050ShotsTest {
         rule.setContent {
             Box(Modifier.fillMaxSize().background(Color(0xFF101114))) {
                 androidx.compose.material3.Text("Some app", color = Color.White)
-                EdgeParticles(visible = true)
+                ScreenWorkGlow(visible = true)
             }
         }
         rule.waitUntil(5_000) { rule.onAllNodes(hasText("Some app")).fetchSemanticsNodes().isNotEmpty() }

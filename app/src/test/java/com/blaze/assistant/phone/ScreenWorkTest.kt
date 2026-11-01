@@ -32,12 +32,15 @@ class ScreenWorkTest {
         listOf("web_search", "memory_save", "get_weather", "read_screen").forEach { assertFalse(it, ScreenWork.isScreenTool(it)) }
     }
 
-    @Test fun dotsStayInTheEdgeBand() {
-        val w = 1080f; val h = 2400f
+    @Test fun particlesStayOnTheEdges() {
+        // the glow reuses Blaze's edge particles (EdgePath): every dot sits within ~22 dp of an edge, the middle stays clear
+        val w = 1080f; val h = 2400f; val d = 2.75f
         for (i in 0..400) {
-            val o = EdgeParticleMath.at(i / 400f * 3.3f - 1f, (i % 11) / 10f, w, h)
+            val inset = 6f * d + (i % 11) / 10f * 10f * d
+            val o = com.blaze.assistant.ui.EdgePath.at(i / 400f * 3.3f - 1f, w, h, inset)
             assertTrue("$o", o.x in 0f..w && o.y in 0f..h)
-            assertTrue("$o", EdgeParticleMath.inBand(o, w, h))
+            val band = 17f * d
+            assertTrue("$o", o.x <= band || o.y <= band || o.x >= w - band || o.y >= h - band)
         }
         assertTrue(EdgeParticleMath.MAX_PASS_THROUGH_ALPHA <= 0.8f)   // Android 12+ untrusted-touch limit: taps pass through
     }

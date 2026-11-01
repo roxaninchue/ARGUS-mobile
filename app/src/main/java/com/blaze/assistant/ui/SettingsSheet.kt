@@ -638,6 +638,9 @@ private fun PersonaSection() {
     Spacer(Modifier.height(6.dp))
     var dots by remember { mutableStateOf(Settings.particles) }
     ToggleRow("Background particles", "Drifting dots. Turn off for the smoothest, lightest feel", dots) { dots = !dots; Settings.particles = dots }
+    // 0.50.0: Blaze's edge particles while it controls the screen (ui/ScreenGlow)
+    var glowOn by remember { mutableStateOf(Settings.bool("screen_glow", true)) }
+    ToggleRow("Glow while Blaze uses the screen", "Particles round the screen edges while Blaze taps and types for you", glowOn) { glowOn = !glowOn; Settings.setBool("screen_glow", glowOn) }
     ToggleRow("Stream replies", "Words appear as Blaze writes them", stream) { stream = !stream; Settings.streamReplies = stream }
     HaloStudioSection()   // v0.33.0
 }
