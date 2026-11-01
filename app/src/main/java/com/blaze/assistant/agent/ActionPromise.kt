@@ -1,7 +1,7 @@
 package com.blaze.assistant.agent
 
 /**
- * 0.48.0 RC5 (owner's A12, chat over Home): "can you control my phone?" -> Blaze offered to set it up -> "okay!" ->
+ * 0.48.0 RC5 (owner's phone, chat over Home): "can you control my phone?" -> Blaze offered to set it up -> "okay!" ->
  * "I'll open the accessibility settings now." -> "okay, do it!" -> "Opening accessibility settings for you now." and NOTHING
  * opened. Two holes, both in words, not in the UI:
  *  1. "okay, do it!" took the chat lane (one call, NO tools): it starts with "okay" (small talk) and is short, so

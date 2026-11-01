@@ -90,8 +90,14 @@ apps) and `docs/<id>.txt` (the original text, verbatim).
 
 ## Tests
 
-`ChunkerTest`, `CacheStoreTest`, `TieredMemoryTest` (TOC, budget, tail cap, paging, tools, gists, map-reduce,
-relevant notes), `HomeChatToolLoopTest` (cache tools through the scripted agent loop).
+| Test | Covers |
+|---|---|
+| `ChunkerTest` (9) | headings / chapters, code fences, a huge single paragraph cut at sentences under the hard max, no-space text, Unicode + surrogate pairs, tiny-section merging, streaming 8 KB reads, pieces == input |
+| `CacheStoreTest` (8) | contentless FTS5 ingest + read-back, BM25 picks the right chapter, chat-scoped search, history append, per-doc cap, LRU eviction keeps the cap and the newest, chat delete removes files/rows/index, gists + claims |
+| `TieredMemoryTest` (16) | 6k default budget + route scaling, token-capped tail keeps the newest user turn, AutoCompact folds by tokens, paged-out turns verbatim + searchable, big paste → reference, tool output → cache, flat / chapter / run TOCs + TOC char budget, cache tools, model gists in batches + offline stop, map-reduce batching + summarize, RELEVANT NOTES |
+| `HomeChatToolLoopTest` (7) | the Home-chat tool loop with a scripted model: go-ahead → tool lane, chat-lane rerun, one re-ask then the honest line, `blaze_self` → `SelfSetup.open` → `ActivityStart` firing `ACTION_ACCESSIBILITY_SETTINGS` (from the Activity, no NEW_TASK), and `cache_search` / `cache_read` calls |
+
+All green locally on 2026-11-01 (see `docs/BUILD-LOCAL.md`).
 
 ## Known gaps
 
@@ -102,3 +108,8 @@ relevant notes), `HomeChatToolLoopTest` (cache tools through the scripted agent 
   sentence.
 - Paged-out chat history lives in the cache and in the existing journal/long-chat indexes; it is not synced to the
   cloud (the cache is per phone; long-tier memories still sync as before).
+- `HomeChatToolLoopTest` drives the same lane / guard / tool steps as `Agent.runLoop` in the same order, with the real
+  `ChatLane`, `ActionPromise`, `SelfControl`/`SelfSetup`/`ActivityStart` and `CacheTier`; `runLoop` itself has no model
+  seam, so it is not executed verbatim in a JVM test (same approach as `AgentLoopScriptTest`).
+- The low-RAM gate (cold start + LowRamSmokeTest) needs an x86-64 emulator with KVM; it was not run for 0.49.0 mem1
+  in the aarch64 build sandbox.

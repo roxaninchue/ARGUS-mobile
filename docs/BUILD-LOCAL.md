@@ -27,13 +27,20 @@ that shell (its own command line matches); use `pkill -f '[G]radleDaemon'`.
   and runs Gradle there with the CI flags (`-Xmx3g`, in-process Kotlin, the aapt2 override), so build outputs never
   land in the git tree.
   Run it detached (`nohup … &`) and poll the log; a cold `compileDebugKotlin` takes ~12 min on 2 CPUs.
+  It leaves out the paths the CI mirror never has (`gateway/`, `keystore/`, `HANDOFF*.md`, `STATUS.md` and the
+  private-repo workflows, the `EXCL` list of `work/gh_push.py`), because `OwnerName19Test` and `UpdateKeysTest` scan the
+  tree and fail on them by design.
+- `work/toolchain/jdk21-tests.gradle` — init script that runs the unit-test JVM on JDK 21 (`work/toolchain/jdk21`,
+  Temurin aarch64), as CI does. On JDK 17, `LocalLanguagesTest.cuttingNeverSplitsALetterOrAnEmoji` fails: JDK 17's
+  `BreakIterator` splits ZWJ emoji sequences; JDK 20+ follows Unicode extended grapheme clusters. The build stays on 17.
+- `work/toolchain/units.py` — totals and failures from `bb/app/build/test-results/testDebugUnitTest/*.xml` (the CI summary).
 - `work/toolchain/golibs.sh` — builds the two Go libraries into `app/src/main/jniLibs/*` exactly like `mobile-build.yml`.
 
 Typical sequence:
 
 ```
 work/toolchain/golibs.sh
-work/toolchain/gradle.sh /tmp/unit.log :app:testDebugUnitTest --continue
+work/toolchain/gradle.sh work/toolchain/logs/unit.log --init-script work/toolchain/jdk21-tests.gradle :app:testDebugUnitTest --continue
 BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ComposerShotsTest' …   # see mobile-build.yml for the list
 work/toolchain/gradle.sh /tmp/rel.log :app:assembleRelease
 ```
