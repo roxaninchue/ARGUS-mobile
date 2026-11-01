@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.blaze.assistant.agent.Agent
 import com.blaze.assistant.agent.Attachment
+import com.blaze.assistant.agent.Command
+import com.blaze.assistant.agent.Commands
 import com.blaze.assistant.composer.ChatOverlayLogic
 import com.blaze.assistant.composer.SpotlightSearch
 
@@ -42,6 +44,31 @@ class ComposerState {
     var sinceId by mutableLongStateOf(0L)
     /** User messages after this id were sent from the bar in this session: they lift out of the pill; replies after it type in. */
     var liveFrom by mutableLongStateOf(Long.MAX_VALUE)
+
+    /**
+     * 0.49.0 (mem1-ui-browse): the chat box is maximised. Owned here rather than in the composable so it survives the
+     * chat being closed and reopened, and so the bar and the chat header agree on it.
+     */
+    var expanded by mutableStateOf(false)
+
+    /**
+     * 0.49.0 (mem1-ui-browse): the user is typing a slash command. Derived from the field, never a separate flag, so
+     * the list can't get out of step with the text. Only a leading "/" with no space yet counts: once you are writing
+     * the argument ("/translate hello") the suggestions get out of the way.
+     */
+    val slashTyping: Boolean get() = text.startsWith("/") && !text.contains(' ') && !text.contains('\n')
+
+    /** The commands to offer for what is typed, best first, at most [SLASH_MAX]. */
+    val slashMatches: List<Command> get() = if (slashTyping) Commands.matching(text).take(SLASH_MAX) else emptyList()
+
+    /**
+     * 0.49.0 (mem1-ui-browse): a command was picked from the list. A command that takes no arguments sends at once;
+     * one that takes an argument fills the field with "/name " and leaves the cursor there, so you can type it.
+     */
+    fun pickCommand(c: Command) {
+        if (c.args.isBlank()) { text = ""; send("/" + c.name) }
+        else text = "/" + c.name + " "
+    }
 
     /**
      * 0.48.0 RC4: the host's send path (slash commands, /clear, call words, project chats, quotes) so a message from the
@@ -96,6 +123,11 @@ class ComposerState {
         text = ""; attachments.clear(); pickerOpen = false
         val body = t.ifEmpty { com.blaze.assistant.ui.AttachView.NO_TEXT }
         sender?.invoke(body, files) ?: Agent.send(body, attachments = files)
+    }
+
+    companion object {
+        /** How many commands the slash list offers at once: enough to scan, few enough to stay above the keyboard. */
+        const val SLASH_MAX = 8
     }
 }
 
