@@ -81,3 +81,18 @@ sit at `<dir>/bin/java`: Gradle treats the executable's grandparent as a Java ho
 The gate (`tools/smoke/run-smoke.sh`, `lowram-smoke.yml`) needs an x86-64 Android emulator with KVM. This sandbox has
 no `/dev/kvm` and is aarch64, so the gate **cannot run here**; run it on the GitHub mirror (`smoke/**` branches) or
 any x86-64 machine with KVM.
+
+## 0.49.0 mem1 results (2026-11-01, this sandbox)
+
+| Run | Where | Result |
+|---|---|---|
+| `:app:testDebugUnitTest` (whole suite) | aarch64, test JVM on JDK 21 | 2,882 tests · 13 failures · 234 skipped. The 13 are exactly the Robolectric NATIVE-graphics tests (`InstallSheetTest` 2, `BackRuleWindowTest` 1, `HomeFocusTest` 6, `HomeRedesignTest` 4): "native runtime is not supported on Linux (aarch64)". The 234 skipped include the 215 screenshot tests (they need `BLAZE_SHOTS=1`). |
+| those 4 classes + the 8 screenshot classes of `mobile-build.yml`, `BLAZE_SHOTS=1` | x86-64 JVM under qemu-user | 228 / 228 pass: the 13 above + 215 shots (`ShotsTest` 84, `Shots375Test` 84, `HomeRedesignShotsTest` 22, `ComposerShotsTest` 12, `MediaRevampShotsTest` 5, `SecretCardsShotsTest` 3, `StageShotsTest` 3, `MoviesShotsTest` 2). ~45 min. |
+| combined | | **2,882 tests, 0 failures** (RC4: 2,831 + 49 new unit tests + 2 new chat-over-Home shots). |
+
+The screenshot tests assert on what is drawn (text, distinct colours); the repo keeps no golden images, so there were no
+baselines to update. Shots land in `bb/app/build/shots/`.
+
+Memory: the Gradle daemon (3 GB heap) stays resident after a build and the JuiceFS write-back cache also uses RAM, so
+stop it between big steps (`pkill -f '[G]radleDaemon'`). A sandbox restart mid-run (seen once, 11:5x UTC) loses
+`qemu-user` and kills the run; the workspace (toolchain, Gradle home, bb) survives.
