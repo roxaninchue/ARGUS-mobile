@@ -637,11 +637,14 @@ fun ChatScreen() {
         val designFull = DesignNav.fullScreen(showing, nav)
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             // v0.39.0 Simple mode: pull down from the top (the bar above the header, or the header itself) for Home.
-            if (swipeMode && !designFull) Box(Modifier.fillMaxWidth().height(14.dp).draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop)
+            // 0.50.0: the chat box's expand arrows maximise the chat (no top bar, no pull handle); Back restores first.
+            val maxed = ChatExpand.on && chatBody
+            if (maxed) BackHandler { ChatExpand.restore() }
+            if (swipeMode && !designFull && !maxed) Box(Modifier.fillMaxWidth().height(14.dp).draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop)
                 .semantics { contentDescription = "Pull down for Home" }, contentAlignment = Alignment.Center) {
                 Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.hair))
             }
-            if (!designFull && (stage.topBar || !stageActive)) Box(if (swipeMode) Modifier.draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop) else Modifier) {
+            if (!designFull && !maxed && (stage.topBar || !stageActive)) Box(if (swipeMode) Modifier.draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop) else Modifier) {
             ShellTopBar(mode = shellMode, homeTab = !swipeMode,
                 // v0.24.0: the toggle only switches tabs; there is no conversation list behind it.
                 // v0.28.3: switching tabs keeps your place in Projects; Chat is always the main thread.
@@ -774,7 +777,7 @@ fun ChatScreen() {
                     catch (_: Exception) { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 }, onClose = { com.blaze.assistant.phone.flash.PhoneExplainer.requested.value = false; Settings.setBool("a11y_seen", true) })
                 // v0.45.4: "Blaze X.Y.Z is available" (once a day on app open, dismissible, silent offline).
-                UpdateBanner()
+                if (!ChatExpand.on) UpdateBanner()
             }
             ConfirmCard()
             QuestionCard()
@@ -851,7 +854,12 @@ fun ChatScreen() {
                     plusOpen = plusOpen, chip = modeChip(work, approval), agents = bgAgents.count { it.live },
                     listening = voiceState == Voice.State.LISTENING, speaking = voiceState == Voice.State.SPEAKING,
                     onPlus = { plusOpen = !plusOpen; showViews = false }, onMic = { if (simpleMode && input.text.isEmpty()) typing = false; onMic() }, onSend = { send(input.text) }, onStop = { Agent.stop() },
-                    onChip = { plusOpen = true }, hints = hints, animateHints = !reducedMotion)
+                    onChip = { plusOpen = true }, hints = hints, animateHints = !reducedMotion,
+                    // 0.50.0 Teamily-style card: expand arrows, model pill (→ Brains & routing), Skills, voice chat, / commands
+                    onExpand = { ChatExpand.toggle() }, expanded = ChatExpand.on,
+                    onSkills = { Views.find("skills")?.let { openView(it) } }, onCall = { startCall() },
+                    onSlash = { if (!input.text.startsWith("/")) input = TextFieldValue("/", TextRange(1)) },
+                    onRouting = { settingsPage = "ai" })
                 }
             }
         }
@@ -1462,7 +1470,7 @@ private fun QuoteStrip(q: String, onClear: () -> Unit) {
 }
 
 @Composable
-private fun SuggestionList(list: List<Suggestion>, onPick: (Suggestion) -> Unit) {
+internal fun SuggestionList(list: List<Suggestion>, onPick: (Suggestion) -> Unit) {
     val c = LocalBlaze.current
     Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp).background(c.menuSurface, RoundedCornerShape(18.dp))
         .glass(RoundedCornerShape(18.dp), GlassIntensity.High)

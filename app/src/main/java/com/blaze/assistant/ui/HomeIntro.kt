@@ -124,9 +124,14 @@ object HomeIntroBus {
     val barAlpha = androidx.compose.runtime.mutableFloatStateOf(1f)
 }
 
-/** Is the redesigned Home on? (A switch for the combined release; the old board stays one tap away.) */
+/**
+ * Is the redesigned Home on? 0.50.0 (owner, 2026-11-01): OFF. Blaze is back to the original look from before the
+ * sky-and-mountains Home (the 0.47-era chat with the Chat | Projects bar, Home board, themes and the full chat screen),
+ * with the newer engineering (tiered memory, tool loop fixes, tool cards, follow-up chips, choice buttons) inside it.
+ * The redesigned Home + chat over Home stay in the code behind this switch (screenshot tests set it themselves).
+ */
 object HomeRedesign {
-    @Volatile var enabled = true
+    @Volatile var enabled = false
 }
 
 private fun isNight(b: WeatherBoard.Board): Boolean = b.night

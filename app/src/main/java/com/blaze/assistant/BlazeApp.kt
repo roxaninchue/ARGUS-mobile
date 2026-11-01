@@ -127,6 +127,8 @@ class BlazeApp : Application() {
         // v0.38.0 Jarvis mode: questions, screen glances, camera looks, its own routines (per level).
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("proactive.Jarvis.start") { com.blaze.assistant.proactive.FollowUps.init(this); com.blaze.assistant.proactive.Jarvis.start(this) }
         com.blaze.assistant.device.StartLater.add("ui.Overlay.watchTasks") { com.blaze.assistant.ui.Overlay.watchTasks(this) }
+        // 0.50.0: edge particles while Blaze controls the screen (suspends while idle)
+        com.blaze.assistant.device.StartLater.add("ui.ScreenGlow.watch") { com.blaze.assistant.ui.ScreenGlow.watch(this) }
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("link.DesktopLink.start") { com.blaze.assistant.link.DesktopLink.start() }
         if (!com.blaze.assistant.device.StartGuard.safeStart && Settings.bool("dash_auto", false)) com.blaze.assistant.device.StartLater.add("Dashboard.start") { com.blaze.assistant.dashboard.Dashboard.start(this) }
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("Overlay.showOrb") { if (Settings.orbPinned && android.provider.Settings.canDrawOverlays(this)) com.blaze.assistant.ui.Overlay.showOrb(this) }

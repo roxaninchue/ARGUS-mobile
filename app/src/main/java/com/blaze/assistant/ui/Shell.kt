@@ -1,5 +1,13 @@
 package com.blaze.assistant.ui
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CloseFullscreen
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.OpenInFull
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Folder
@@ -190,9 +198,9 @@ object PillFit {
     }
 
     fun icon(id: String): androidx.compose.ui.graphics.vector.ImageVector = when (id) {
-        "projects" -> androidx.compose.material.icons.Icons.Rounded.Folder
-        "home" -> androidx.compose.material.icons.Icons.Rounded.Home
-        else -> androidx.compose.material.icons.Icons.Rounded.ChatBubbleOutline
+        "projects" -> Icons.Rounded.Folder
+        "home" -> Icons.Rounded.Home
+        else -> Icons.Rounded.ChatBubbleOutline
     }
 }
 
@@ -625,16 +633,24 @@ fun modeChip(work: String, approval: String): String {
 }
 
 /**
- * v0.24.1: Blazeinchue's reference composer. A fully rounded pill, a fill a step off the background with a thin outline,
- * + on the left, the mic on the right that turns into a round send arrow once there's text (a stop square while
- * Blaze works). The light-grey placeholder rotates through [hints] (on-device suggestions, ComposerHints) every ~3 s
- * with a gentle fade and slide; it stops while the field is focused or has text, and with reduced motion.
+ * 0.50.0 composer (owner's target: a Teamily-style card). A rounded, raised card at the bottom of the chat:
+ *  - top row: the message field (rotating hints as before) and, at its top right, the expand arrows that maximise the chat
+ *    to full screen and restore it ([onExpand], [expanded]);
+ *  - bottom row: + (attach and tools), the model pill ("Auto ⌄": the model / route picker, ModelChoice, with a link to
+ *    Brains & routing), small icon buttons (Skills, a voice call with Blaze, / commands) and, at the right, one large round
+ *    button: the mic when the box is empty, Send once there is text (it wins even while Blaze works), Stop while Blaze works.
+ * Older call sites keep working: every new action is optional and its button only shows when given.
+ * v0.24.1-0.49 behaviour kept: Enter is a new line (ComposerKeys), the hint rotation stops while focused or with reduced motion,
+ * the connection is pre-warmed on focus.
  */
 @Composable
 fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boolean, canSend: Boolean, plusOpen: Boolean,
              chip: String, agents: Int, listening: Boolean, speaking: Boolean,
              onPlus: () -> Unit, onMic: () -> Unit, onSend: () -> Unit, onStop: () -> Unit, onChip: () -> Unit = {},
-             hints: List<String> = emptyList(), animateHints: Boolean = true, hintIndex0: Int = 0) {
+             hints: List<String> = emptyList(), animateHints: Boolean = true, hintIndex0: Int = 0,
+             onExpand: (() -> Unit)? = null, expanded: Boolean = false,
+             onSkills: (() -> Unit)? = null, onCall: (() -> Unit)? = null, onSlash: (() -> Unit)? = null,
+             onRouting: (() -> Unit)? = null, showModel: Boolean = true) {
     val c = LocalBlaze.current
     var focused by remember { mutableStateOf(false) }
     var hintIdx by remember(hints) { mutableStateOf(if (hints.isEmpty()) 0 else hintIndex0.mod(hints.size)) }
@@ -644,57 +660,123 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
         while (true) { delay(com.blaze.assistant.agent.ComposerHints.ROTATE_MS); hintIdx = (hintIdx + 1) % hints.size }
     }
     val placeholder = when {
-        listening -> "Listening…"
+        listening -> "Listening\u2026"
         hints.isEmpty() -> com.blaze.assistant.agent.ComposerHints.DEFAULT
         else -> hints[hintIdx.coerceIn(0, hints.size - 1)]
     }
-    Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp)) {
         if (chip.isNotBlank() || agents > 0) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             if (chip.isNotBlank()) Box(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(horizontal = 10.dp, vertical = 4.dp)) {
                 ButtonText(chip, color = c.onAccent, size = 12.sp)
             }
             if (agents > 0) Label((if (chip.isNotBlank()) "   " else "") + "$agents AGENT" + (if (agents > 1) "S" else "") + " WORKING", color = c.accent, size = 9.sp)
         }
-        // v0.31.0: the composer is a frosted glass pill (rim + sheen + soft shadow), a rounded card once it grows.
-        val pill = RoundedCornerShape(percent = 50)
-        Row(Modifier.fillMaxWidth().heightIn(min = 54.dp)
-            .glass(if (value.text.contains('\n') || value.text.length > 60) RoundedCornerShape(27.dp) else pill, GlassIntensity.Medium)
-            .padding(horizontal = 5.dp, vertical = 5.dp), verticalAlignment = Alignment.Bottom) {
-            Box(Modifier.size(44.dp).clip(CircleShape).background(if (plusOpen) c.ink else Color.Transparent).clickable(onClick = onPlus)
-                .semantics { contentDescription = if (plusOpen) "Close menu" else "Attach and tools" }, contentAlignment = Alignment.Center) {
-                PlusIcon(if (plusOpen) c.paper else c.ink, open = plusOpen)
-            }
-            Box(Modifier.weight(1f).padding(start = 4.dp, end = 6.dp, top = 12.dp, bottom = 12.dp)) {
-                if (empty) androidx.compose.animation.AnimatedContent(targetState = placeholder, label = "hint",
-                    transitionSpec = {
-                        (fadeIn(tween(420)) + androidx.compose.animation.slideInVertically(tween(420)) { it / 3 }) togetherWith
-                            (fadeOut(tween(300)) + androidx.compose.animation.slideOutVertically(tween(300)) { -it / 3 })
-                    }) { t ->
-                    Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp, color = c.sub))
+        val card = RoundedCornerShape(26.dp)
+        Column(Modifier.fillMaxWidth()
+            .shadow(10.dp, card, clip = false, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
+            .clip(card).background(ComposerCard.fill(c)).border(1.dp, ComposerCard.rim(c), card)
+            .semantics { contentDescription = "Message box" }
+            .padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 6.dp)) {
+            // top row: the field, and the expand arrows at the top right
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                Box(Modifier.weight(1f).padding(start = 12.dp, end = 6.dp, top = 12.dp, bottom = 10.dp)) {
+                    if (empty) androidx.compose.animation.AnimatedContent(targetState = placeholder, label = "hint",
+                        transitionSpec = {
+                            (fadeIn(tween(420)) + androidx.compose.animation.slideInVertically(tween(420)) { it / 3 }) togetherWith
+                                (fadeOut(tween(300)) + androidx.compose.animation.slideOutVertically(tween(300)) { -it / 3 })
+                        }) { t ->
+                        Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp, color = c.sub))
+                    }
+                    BasicTextField(value = value, onValueChange = onValue,
+                        textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, lineHeight = 22.sp, color = c.ink),
+                        cursorBrush = SolidColor(c.accent), maxLines = if (expanded) 14 else 6,
+                        // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
+                        keyboardOptions = ComposerKeys.Message,
+                        modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused; if (it.isFocused) com.blaze.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
+                            .semantics { contentDescription = "Message Blaze" })
                 }
-                BasicTextField(value = value, onValueChange = onValue,
-                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, lineHeight = 22.sp, color = c.ink),
-                    cursorBrush = SolidColor(c.accent), maxLines = 6,
-                    // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
-                    keyboardOptions = ComposerKeys.Message,
-                    modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused; if (it.isFocused) com.blaze.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
-                        .semantics { contentDescription = "Message Blaze" })
+                if (onExpand != null) ComposerIcon(if (expanded) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
+                    if (expanded) "Restore the chat" else "Maximise the chat", size = 36.dp, iconSize = 17.dp, onClick = onExpand)
             }
-            // v0.30.6 rapid messages: with text in the box, Send wins even while Blaze works (the message joins the turn); Stop otherwise.
-            when {
-                canSend -> Box(Modifier.size(44.dp).glassPrimary(CircleShape).clickable(onClick = onSend)
-                    .semantics { contentDescription = "Send" }, contentAlignment = Alignment.Center) { SendMark(GlassTokens.onPrimary(c.dark), stop = false) }
-                busy -> Box(Modifier.size(44.dp).clip(CircleShape).background(c.accent).clickable(onClick = onStop)
-                    .semantics { contentDescription = "Stop" }, contentAlignment = Alignment.Center) { SendMark(c.onAccent, stop = true) }
-                else -> {
-                    val micOn = listening || speaking
-                    Box(Modifier.size(44.dp).clip(CircleShape).background(if (micOn) c.accent else Color.Transparent).clickable(onClick = onMic)
-                        .semantics { contentDescription = if (speaking) "Stop speaking" else if (listening) "Stop listening" else "Talk" }, contentAlignment = Alignment.Center) {
-                        if (speaking) SendMark(c.onAccent, stop = true) else MicIcon(if (micOn) c.onAccent else c.ink)
+            // bottom row: + · model pill · small actions · the big mic / send / stop
+            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(40.dp).clip(CircleShape).background(if (plusOpen) c.ink else Color.Transparent).clickable(onClick = onPlus)
+                    .semantics { contentDescription = if (plusOpen) "Close menu" else "Attach and tools" }, contentAlignment = Alignment.Center) {
+                    PlusIcon(if (plusOpen) c.paper else c.ink, open = plusOpen)
+                }
+                if (showModel) { Spacer(Modifier.width(4.dp)); ModelPill(onRouting) }
+                Spacer(Modifier.weight(1f))
+                if (onSkills != null) ComposerIcon(Icons.Rounded.AutoAwesome, "Skills", onClick = onSkills)
+                if (onCall != null) ComposerIcon(Icons.Rounded.RecordVoiceOver, "Voice chat with Blaze", onClick = onCall)
+                if (onSlash != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSlash).semantics { contentDescription = "Commands" },
+                    contentAlignment = Alignment.Center) { Text("/", style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = c.sub)) }
+                Spacer(Modifier.width(4.dp))
+                // v0.30.6 rapid messages: with text in the box, Send wins even while Blaze works (the message joins the turn); Stop otherwise.
+                val big = 46.dp
+                when {
+                    canSend -> Box(Modifier.size(big).glassPrimary(CircleShape).clickable(onClick = onSend)
+                        .semantics { contentDescription = "Send" }, contentAlignment = Alignment.Center) { SendMark(GlassTokens.onPrimary(c.dark), stop = false) }
+                    busy -> Box(Modifier.size(big).clip(CircleShape).background(c.accent).clickable(onClick = onStop)
+                        .semantics { contentDescription = "Stop" }, contentAlignment = Alignment.Center) { SendMark(c.onAccent, stop = true) }
+                    else -> {
+                        val micOn = listening || speaking
+                        Box(Modifier.size(big).then(if (micOn) Modifier.clip(CircleShape).background(c.accent) else Modifier.glassPrimary(CircleShape)).clickable(onClick = onMic)
+                            .semantics { contentDescription = if (speaking) "Stop speaking" else if (listening) "Stop listening" else "Talk" }, contentAlignment = Alignment.Center) {
+                            if (speaking) SendMark(c.onAccent, stop = true) else MicIcon(if (micOn) c.onAccent else GlassTokens.onPrimary(c.dark))
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+/** 0.50.0: the composer card's raised fill and rim (a step lighter than the chat in dark mode, white on light). */
+object ComposerCard {
+    fun fill(c: BlazeColors): Color = if (c.dark) Color(0xFF1C1D22) else Color(0xFFFFFFFF)
+    fun rim(c: BlazeColors): Color = if (c.dark) Color(0x24FFFFFF) else Color(0x14111112)
+}
+
+@Composable
+private fun ComposerIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, size: androidx.compose.ui.unit.Dp = 40.dp,
+                         iconSize: androidx.compose.ui.unit.Dp = 21.dp, onClick: () -> Unit) {
+    val c = LocalBlaze.current
+    Box(Modifier.size(size).clip(CircleShape).clickable(onClick = onClick).semantics { contentDescription = desc }, contentAlignment = Alignment.Center) {
+        androidx.compose.material3.Icon(icon, contentDescription = null, tint = c.sub, modifier = Modifier.size(iconSize))
+    }
+}
+
+/**
+ * 0.50.0: the model / route picker as the composer's dropdown pill ("Auto ⌄"): Auto, Spark (fast), Flare (balanced),
+ * Inferno (smartest) from [com.blaze.assistant.composer.ModelChoice] (it only hints the gateway; the brain order never
+ * changes), and "Brains & routing…" ([onRouting]).
+ */
+@Composable
+fun ModelPill(onRouting: (() -> Unit)? = null) {
+    val c = LocalBlaze.current
+    val fam by com.blaze.assistant.composer.ModelChoice.current.collectAsState()
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Row(Modifier.clip(RoundedCornerShape(50)).clickable { open = true }.padding(horizontal = 10.dp, vertical = 8.dp)
+            .semantics { contentDescription = "Model: ${fam.label}. Tap to change" }, verticalAlignment = Alignment.CenterVertically) {
+            Text(fam.label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
+            Spacer(Modifier.width(3.dp))
+            androidx.compose.material3.Icon(Icons.Rounded.ExpandMore, contentDescription = null, tint = c.sub, modifier = Modifier.size(18.dp))
+        }
+        androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.background(c.menuSurface)) {
+            com.blaze.assistant.composer.ModelChoice.Family.values().forEach { f ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Column {
+                        Text(f.label, style = TextStyle(fontFamily = Type.Sans, fontWeight = if (f == fam) FontWeight.SemiBold else FontWeight.Medium, fontSize = 15.sp, color = c.ink))
+                        Text(f.sub, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+                    } },
+                    trailingIcon = { if (f == fam) androidx.compose.material3.Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = c.ink, modifier = Modifier.size(18.dp)) },
+                    onClick = { com.blaze.assistant.composer.ModelChoice.set(f); open = false })
+            }
+            if (onRouting != null) androidx.compose.material3.DropdownMenuItem(
+                text = { Text("Brains & routing\u2026", style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub)) },
+                onClick = { open = false; onRouting() })
         }
     }
 }

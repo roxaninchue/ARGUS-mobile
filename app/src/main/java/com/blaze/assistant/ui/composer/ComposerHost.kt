@@ -98,7 +98,7 @@ fun ComposerOverlay(state: ComposerState, onLeaveHome: () -> Unit = {}, modifier
     val solid = rememberComposerSolid()
     androidx.compose.runtime.CompositionLocalProvider(LocalComposerSolid provides solid) {
     Box(modifier) {
-        if (dim > 0f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = dim }.background(ComposerLook.scrim(c, blur = !solid))
+        if (dim > 0f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = dim }.background(if (com.blaze.assistant.ui.ChatExpand.on && state.chatOpen) c.paper else ComposerLook.scrim(c, blur = !solid))
             .clickable(remember { MutableInteractionSource() }, indication = null) { if (state.spotlightOpen) state.closeSpotlight() })
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(bottom = (ChatBarTokens.HEIGHT_DP + 8).dp)) {
             AnimatedVisibility(state.chatOpen && !state.spotlightOpen, modifier = Modifier.weight(1f),
@@ -114,6 +114,7 @@ fun ComposerOverlay(state: ComposerState, onLeaveHome: () -> Unit = {}, modifier
             state.pickerOpen -> state.pickerOpen = false
             state.preview != null -> state.preview = null
             state.spotlightOpen -> state.closeSpotlight()
+            com.blaze.assistant.ui.ChatExpand.on -> com.blaze.assistant.ui.ChatExpand.restore()
             else -> state.closeChat()
         }
     }

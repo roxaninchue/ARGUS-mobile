@@ -4447,7 +4447,14 @@ When you finish, say what you did in one short sentence.
             }
         }
 
+        /** 0.50.0: screen actions light the edge particles while they run (ScreenWork → ui.ScreenGlow). */
         suspend fun runTool(name: String, args: JSONObject, shots: MutableList<String>): String {
+            if (!com.blaze.assistant.phone.ScreenWork.isScreenTool(name)) return runToolInner(name, args, shots)
+            val tok = com.blaze.assistant.phone.ScreenWork.begin()
+            try { return runToolInner(name, args, shots) } finally { com.blaze.assistant.phone.ScreenWork.end(tok) }
+        }
+
+        private suspend fun runToolInner(name: String, args: JSONObject, shots: MutableList<String>): String {
             // Plan mode is enforced here, at dispatch, not only in the prompt.
             Modes.block(name, args, agentPlan).takeIf { it.isNotEmpty() }?.let { add(Role.STEP, "Plan mode: skipped ${name.replace('_', ' ')}"); return it }
             if (agentId != null && name in BgAgents.leadOnly) return "Error: background agents can't start or steer other agents. Do the work yourself."

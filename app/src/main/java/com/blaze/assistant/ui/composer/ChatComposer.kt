@@ -47,6 +47,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.OpenInFull
+import androidx.compose.material.icons.rounded.CloseFullscreen
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.Icon
@@ -287,6 +288,11 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.ink))
             else Spacer(Modifier.weight(1f))
             if (earlier) { RoundButton(Icons.Rounded.History, "Show earlier messages", state::showEarlier); Spacer(Modifier.width(8.dp)) }
+            // 0.50.0: maximise the chat over Home to full screen (opaque, the whole thread) and restore it
+            RoundButton(if (com.blaze.assistant.ui.ChatExpand.on) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
+                if (com.blaze.assistant.ui.ChatExpand.on) "Restore the chat" else "Maximise the chat") {
+                com.blaze.assistant.ui.ChatExpand.toggle(); if (com.blaze.assistant.ui.ChatExpand.on) state.openChat(full = true) }
+            Spacer(Modifier.width(8.dp))
             RoundButton(Icons.Rounded.Close, if (state.privateChat) "Leave private chat" else "Close chat", state::closeChat)
         }
         val list: @Composable () -> Unit = {
