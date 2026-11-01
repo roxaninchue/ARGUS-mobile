@@ -8,8 +8,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 /**
  * 0.46.3 lookup fast lane + answer first (report: "Blaze takes forever when asked to find something online").
  *
- * A lookup question goes search → the top 2-3 pages fetched IN PARALLEL (each with its own timeout) → one call to the
- * fastest capable model → the answer, with its source pills, as soon as 2 or more solid sources agree. Then, off the turn,
+ * A lookup question goes search -> the top 2-3 pages fetched IN PARALLEL (each with its own timeout) -> one call to the
+ * fastest capable model -> the answer, with its source pills, as soon as 2 or more solid sources agree. Then, off the turn,
  * a bounded background check reads a few more pages; if that changes the answer, the same message is updated in place with
  * a small "Updated" marker. Escalates to the full browser only when the facts sit behind a sign-in or an interaction, or
  * when fetches failed twice. At most [Config.maxSteps] steps. The live line says plainly what's happening, with counts
@@ -42,22 +42,18 @@ object LookupLane {
     data class Update(val answer: Answer, val pages: List<Page>, val changed: Boolean)
 
     // ---------------- routing ----------------
-    private val ask = Regex("""(?i)^\s*(?:what|who|whom|whose|when|where|which|why|how (?:much|many|old|long|tall|big|far|fast|do|does|did|is|are|to)|is|are|was|were|does|did|do|can|find(?: out)?|look up|lookup|search(?: for)?|google|check|tell me|latest|current|price of|cost of|news)\b""")
-    private val personal = Regex("""(?i)\b(?:my (?:phone|files?|photos?|messages?|texts?|calendar|alarms?|contacts?|notes?|music|songs?|battery|storage|settings|apps?|email|inbox)|remind|alarm|timer|text (?:him|her|them|mom|dad)|call |open |play |turn (?:on|off)|set (?:a|an|the)|send |screenshot|on (?:my|this) phone|you (?:remember|know about me))\b""")
-    /** Things Blaze answers without the web (itself, the clock, the weather card, sums, a chat), so they never take the lane. */
-    private val notWeb = Regex("""(?i)\b(?:you|your|yourself|blaze|halo|time is it|what time|today'?s date|what day is|weather|forecast|how are|joke|poem|story|translate|calculate|meaning of life)\b|^[\d\s+\-*/().x=?]+$|\bremember\b""")
-    private val needsInteraction = Regex("""(?i)\b(?:book|buy|order|sign (?:me )?(?:in|up)|log ?in|fill (?:in|out)|apply|checkout|reserve|subscribe|my account|download)\b""")
 
-    /** A question the fast lane should take (a fact to look up on the open web). */
-    fun isLookup(text: String): Boolean {
-        val t = text.trim()
-        if (t.length < 6 || t.length > 240 || t.contains('\n')) return false
-        // 0.46.4: greetings and small talk ("what's up??") never take the lane (SmallTalk)
-        if (SmallTalk.ruleChat(t)) return false
-        if (personal.containsMatchIn(t) || needsInteraction.containsMatchIn(t) || notWeb.containsMatchIn(t)) return false
-        if (t.startsWith("http", true) || t.startsWith("@")) return false
-        return ask.containsMatchIn(t)
-    }
+    /**
+     * A question the fast lane should take (a fact to look up on the open web).
+     *
+     * 0.49.0 (mem1-ui-browse): the decision moved to [BrowseIntent]. This used to accept any text starting with a bare
+     * interrogative or soft verb, so "check the time", "tell me something interesting", "where am I" and "is that
+     * right?" all took the lane and went to the web for things Blaze already knew or could see on the phone. A question
+     * word is not evidence that the answer lives online: the answer must be able to change, or the user must have asked
+     * to search. [BrowseIntent] owns the vocabulary (search verbs, live-data markers, the phone/clock/weather/sum/memory
+     * exclusions) and the INTERACTION case, which belongs to the browser rather than this lane.
+     */
+    fun isLookup(text: String): Boolean = BrowseIntent.isLiveLookup(text)
 
     private val wall = Regex("""(?i)sign in to (?:continue|view|see)|log ?in to (?:continue|view|see)|please (?:enable|turn on) javascript|verify you are (?:a )?human|are you a robot|captcha|access denied|subscribe to (?:continue|read)|create an account to""")
 
@@ -87,8 +83,12 @@ object LookupLane {
         val t0 = now()
         var step = 1
         emit(Event.Progress(searching(), step, 0))
+        // 0.49.0 (mem1-ui-browse): only hits that are about the request are fetched. A result sharing no content word
+        // with the query is the "unrelated page" the report describes; pick() keeps the original list when nothing
+        // overlaps, so a paraphrased query still returns results.
         val hits = (withTimeoutOrNull(cfg.searchTimeoutMs) { try { net.search(q) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { null } } ?: emptyList())
             .distinctBy { ReplySources.norm(it.url) }
+            .let { BrowseIntent.pick(it, q) }
         if (hits.isEmpty()) { emit(Event.Escalate("search failed", now() - t0)); return null }
         val used = LinkedHashSet<String>()
         val pages = ArrayList<Page>()
