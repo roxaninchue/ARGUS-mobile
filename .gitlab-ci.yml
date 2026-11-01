@@ -63,13 +63,16 @@ debug-apk:
       STATUS=$?
       echo "=== gradle exit: $STATUS ==="
       echo "=== errors ==="
-      grep -nE "^e: |^w: .*(error|Error)|error:|FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory|Couldn't transform" build.log | head -60 || true
+      grep -nE "^e: |error:|FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory|Couldn't transform" build.log | head -60 || true
       echo "=== tail ==="
       tail -40 build.log
+      # Collect the APK BEFORE exiting: an `exit` here would end the job script and throw the
+      # freshly built APK away with the container (that is what emptied out/ on run 6).
+      mkdir -p out
+      find app/build/outputs -name "*.apk" -exec cp {} out/ \;
+      echo "=== collected ==="
+      ls -la out/
       exit $STATUS
-    - mkdir -p out
-    - find app/build/outputs/apk -name "*.apk" -exec cp {} out/ \;
-    - ls -la out/
   artifacts:
     name: "blaze-debug-apk-$CI_COMMIT_SHORT_SHA"
     paths: ["out/*.apk", "build.log"]
