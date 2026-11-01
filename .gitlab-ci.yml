@@ -15,7 +15,11 @@ debug-apk:
     # gradle.properties pins org.gradle.jvmargs at -Xmx2g, which OOMs during IR lowering on a
     # codebase this size. Override here rather than editing the committed gradle.properties, so
     # release builds are unaffected.
-    GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
+    GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Xss16m -Dfile.encoding=UTF-8"
+    # The JVM backend overflows the default 1m stack while transforming Agent$Session.runLoop
+    # (a ~3000-line coroutine with hundreds of try/catch blocks). The coroutine transformer walks
+    # that control-flow graph recursively, so it needs a much deeper stack than the default.
+    KOTLIN_DAEMON_JVMARGS: "-Xmx4g -Xss32m"
   cache:
     key: gradle-mem1
     paths: [".gradle/caches", ".gradle/wrapper"]
@@ -51,10 +55,10 @@ debug-apk:
       nproc || true
   script:
     - chmod +x ./gradlew
-    # in-process keeps the compiler inside the Gradle JVM we just gave 4g, instead of forking a
-    # Kotlin daemon with its own (default) heap ceiling.
+    # Daemon strategy (the default) so the compiler runs on its own thread with the 32m stack set
+    # above; in-process would inherit the Gradle thread's stack, which is what overflowed.
     - ./gradlew :app:assembleDebug --no-daemon --stacktrace
-        -Pkotlin.compiler.execution.strategy=in-process
+        -Dkotlin.daemon.jvmargs="$KOTLIN_DAEMON_JVMARGS"
         --max-workers=2
     - mkdir -p out
     - find app/build/outputs/apk -name "*.apk" -exec cp {} out/ \;
