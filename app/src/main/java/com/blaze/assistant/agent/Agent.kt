@@ -416,6 +416,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (saveWarned.add(id)) scope.launch { sessions[id]?.add(Role.BLAZE, "Couldn't save this chat: $reason. Free some space and I'll keep trying on the next message.") }
         }
         LongChat.init(app)
+        // 0.49.0 tiered memory, cache tier: big pastes / files / outputs live in filesDir/cache (opened lazily on IO).
+        com.blaze.assistant.memory.CacheTier.init(app)
+        com.blaze.assistant.memory.CacheTier.ask = { prompt -> cacheAsk(prompt) }
         try { com.blaze.assistant.media.Media.init(app) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Media.initapp", e) }
         refreshChats()
         // One mind (v0.18.0): one continuous main conversation. v0.28.3: main Chat always opens on the main thread.
@@ -970,10 +973,21 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     /** The model's context window (Settings › context_tokens, else a guess from its name; 0 = unknown). */
     fun ctxWindow(): Int = LongChat.contextWindow(Settings.model, Settings.str("context_tokens", "0").toIntOrNull() ?: 0)
     /** When older turns fold into the rolling summary. */
-    fun budget(): Int = LongChat.budget(ctxWindow())
+    /** 0.49.0 tiered memory (chat tier): ~6k tokens by default, scaled with the route's context window (ChatTier). */
+    fun budget(): Int = if (Settings.bool("tiered_memory", true)) com.blaze.assistant.memory.ChatTier.budget(ctxWindow()) else LongChat.budget(ctxWindow())
+    /** The word-for-word tail's token cap (0 = message count only, the old rule). */
+    fun tailTok(): Int = if (Settings.bool("tiered_memory", true)) com.blaze.assistant.memory.ChatTier.tailBudget(budget()) else 0
+
+    /** 0.49.0: the cheap model call the cache tier uses for gists and document summaries (the quick route, background lane). */
+    private suspend fun cacheAsk(prompt: String): String = kotlinx.coroutines.withContext(CallState().element()) {
+        LlmClient.liteTurn = true
+        LlmClient.complete(JSONArray().put(JSONObject().put("role", "user").put("content", prompt)), null, null, null, LlmClient.Lane.BACKGROUND)
+            .optString("content").substringAfterLast("</think>").trim()
+    }
 
     fun deleteChat(id: String) {
         io.launch { try { LongChat.db()?.forget(id) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: LongChat.db.forgetid", e) } }
+        io.launch { com.blaze.assistant.memory.CacheTier.deleteChat(id) }   // 0.49.0: its cached documents go with it
         sessions[id]?.stop()
         sessions.remove(id)
         ChatStore.delete(id)
@@ -1384,6 +1398,7 @@ When you finish, say what you did in one short sentence.
         // v0.39.0: every / command for Blaze itself. (The on-phone Linux desktop tools were removed in wave B-4.)
         t.put(CommandRegistry.tool())
         if (Settings.longChat || Mind.ready) LongChat.tools().forEach { t.put(it) }
+        com.blaze.assistant.memory.CacheTier.tools().forEach { t.put(it) }   // 0.49.0 cache tier
         t.put(Flashcards.tool())
         if (Designs.templateLoader == null) Designs.templateLoader = { app.assets.open("skills/three-d-design/assets/mockup.html").bufferedReader().use { it.readText() } }
         t.put(Designs.tool())
@@ -2943,6 +2958,7 @@ When you finish, say what you did in one short sentence.
                     promptGroups, turnView != null || turnDesignNote.isNotEmpty(), promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
                 (if (rung == Mind.Rung.LOOKUP) "\n" + Mind.LOOKUP_RULE + "\n" else "") +
+                cacheBlock +
                 GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) +
                 (agentId?.let { "\nYou are background agent $it, not the main chat. Work alone and finish with the result only." } ?: BgAgents.leadLine()) +
                 (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) + SkillMatch.block(turnSkills) + SpecialistMatch.hint(turnSpecs) +
@@ -3016,18 +3032,49 @@ When you finish, say what you did in one short sentence.
             if (lcUpto > history.length()) { lcUpto = 0; lcSummary = "" }
             if (lcUpto < ctxFrom && ctxFrom <= history.length()) { lcUpto = ctxFrom; lcSummary = "" }
             val st = LongChat.State(lcSummary, lcUpto)
-            if (!AutoCompact.shouldCompact(history, st, budget(), overheadTok, ctxWindow(), force)) return false
-            val r = AutoCompact.range(history, st, force)
+            val tt = tailTok()
+            if (!AutoCompact.shouldCompact(history, st, budget(), overheadTok, ctxWindow(), force, tt)) return false
+            val r = AutoCompact.range(history, st, force, tt)
             val req = LongChat.summariseRequest(lcSummary, history, r.first, r.last + 1)
+            // 0.49.0 tiered memory: the turns that fold are paged verbatim into the cache tier (never dropped).
+            if (!isPrivate) { val page = com.blaze.assistant.memory.ChatTier.pageText(history, r.first, r.last + 1); com.blaze.assistant.memory.CacheTier.pageOut(id, page) }
             var txt = try {
                 LlmClient.complete(req, null, null, null, LlmClient.Lane.BACKGROUND).optString("content").substringAfterLast("</think>").trim()
             } catch (e: CancellationException) { throw e } catch (_: Exception) { "" }
-            if (txt.isBlank() && force) txt = AutoCompact.fallbackNote(lcSummary, history, r.first, r.last + 1)
+            // 0.49.0: the budget holds even when the summariser fails, once the history is well over it (the turns are in the cache).
+            if (txt.isBlank() && (force || LongChat.tokens(history, AutoCompact.upto(history, st)) > budget() * 2)) txt = AutoCompact.fallbackNote(lcSummary, history, r.first, r.last + 1)
             if (txt.isBlank()) return false
-            val ns = LongChat.folded(history, txt, AutoCompact.keep(force))
+            val ns = LongChat.State(txt.trim().let { if (it.length > LongChat.SUMMARY_MAX) it.take(LongChat.SUMMARY_MAX) else it }, r.last + 1)
             lcSummary = ns.summary; lcUpto = ns.upto
             persist()
             return true
+        }
+
+        /** 0.49.0 tiered memory: first history index not yet checked for big texts, and this chat's CACHED DOCUMENTS block. */
+        private var pagedUpto = 0
+        @Volatile var cacheBlock = ""
+
+        /**
+         * 0.49.0 cache tier: a message over CacheTier.PASTE_OVER characters (a big paste, a file, a long routine prompt) is
+         * stored on the phone and replaced in the history by a short reference, so a huge input is never sent raw (it used
+         * to go whole to the `long` route). The chat's TOC block is refreshed for the prompt. Disk work runs on IO; the
+         * history is edited here, on the loop's own thread. Private chats stay out of the cache.
+         */
+        suspend fun pageLargeInputs() {
+            if (!Settings.bool("tiered_memory", true)) { cacheBlock = ""; return }
+            try {
+                if (pagedUpto > history.length()) pagedUpto = 0
+                val from = pagedUpto
+                val snap = JSONArray()
+                for (i in 0 until history.length()) snap.put(if (i >= from) history.opt(i) else JSONObject())
+                if (!isPrivate) {
+                    val done = com.blaze.assistant.memory.CacheTier.pageHistory(id, snap, from)
+                    for ((b, ref) in done) com.blaze.assistant.memory.CacheTier.apply(history, b, ref)
+                    if (done.isNotEmpty()) persist()
+                }
+                pagedUpto = history.length()
+                cacheBlock = if (isPrivate) "" else com.blaze.assistant.memory.CacheTier.promptBlock(id)
+            } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: pageLargeInputs", e) }
         }
 
         private suspend fun longChatTool(name: String, args: JSONObject): String {
@@ -3083,6 +3130,7 @@ When you finish, say what you did in one short sentence.
         suspend fun runLoop() {
             // Lazy start: blaze.db opens off the main thread; a turn that starts right after launch waits for it (suspends).
             try { Mind.await() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mind.await", e) }
+            pageLargeInputs()   // 0.49.0: a big paste or file goes to the cache before anything is built from the history
             var turnEnd = TurnEnd.Reason.DONE   // v0.45.6: why the turn ended, for the silent-ending watchdog
             turnDesignRender = null; turnDesignRenderSet = false
             val bytes0 = DataMeter.used()
@@ -3199,6 +3247,7 @@ When you finish, say what you did in one short sentence.
                 var rewroteClaim = false
                 var claimNudged = false
                 var proofNudged = false
+                var promiseNudged = false   // 0.49.0 (RC5 a): one re-ask when a reply says it is doing something with no tool behind it
                 var emptyNudged = false
                 var echoNudged = false
                 var leakNudged = false
@@ -3271,7 +3320,9 @@ When you finish, say what you did in one short sentence.
                 // Chat lane: small talk and plain questions = one light call with no tools.
                 val lastBlaze = msgs.lastOrNull { it.role == Role.BLAZE }?.text.orEmpty()
                 var lite = !bulk && !resuming && voice != Duo.Who.HALO && planHint.isEmpty() && history.optJSONObject(history.length() - 1)?.opt("content") is String &&
-                    ChatLane.fits(lastUserText(), lastBlaze) && turnView == null && turnSkills.full.isEmpty()
+                    ChatLane.fits(lastUserText(), lastBlaze) && turnView == null && turnSkills.full.isEmpty() &&
+                    // 0.49.0: a cached document in the recent turns needs the cache tools, which the chat lane doesn't send.
+                    !com.blaze.assistant.memory.CacheTier.referenced(liteHistory())
                 var firstMs = -1L
                 // v0.45.3 speed_stats: when the first words appeared on screen, and the gateway's time to answer headers.
                 var shownAt = -1L; var hdrMs = -1L
@@ -3370,6 +3421,7 @@ When you finish, say what you did in one short sentence.
 
                     // v0.30.7: no blocking summarise call in the middle of a phone task (a context error below still folds).
                     if (!lite && TapLoop.compactNow(step, screenActed)) compact()
+                    pageLargeInputs()   // 0.49.0: messages that joined mid-turn
                     LlmClient.liteTurn = lite
                     awareFull = stateQ || Awareness.needsFull(userNow, groupsOn)
                     // v0.31.1 jank: the system prompt, memory lookup and the whole request JSON are built off the main thread.
@@ -3494,7 +3546,9 @@ When you finish, say what you did in one short sentence.
                         lite = false
                         LlmClient.liteTurn = false
                         val said = (reply.opt("content") as? String).orEmpty()
-                        if (ChatLane.escaped(said) || (reply.optJSONArray("tool_calls")?.length() ?: 0) > 0) {
+                        // 0.49.0 (RC5 a): a chat-lane reply that announces an action ("Opening accessibility settings for you now.")
+                        // has no tools to do it with: the turn reruns on the full lane, which does.
+                        if (ChatLane.escaped(said) || (reply.optJSONArray("tool_calls")?.length() ?: 0) > 0 || ActionPromise.promises(said).isNotEmpty()) {
                             // It needs tools after all: rerun this turn on the full lane.
                             if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
                             continue
@@ -3745,6 +3799,22 @@ When you finish, say what you did in one short sentence.
                                 continue
                             }
                             textOut = ActionProof.honest(shown, miss); reply.put("content", textOut); pendingFollowups = listOf(NudgePolicy.TRY_AGAIN); rewroteClaim = true
+                        }
+                        // 0.49.0 (RC5 a): "I'll open the accessibility settings now." / "Opening it for you now." with NO tool call this
+                        // turn: nothing happened on the phone. Re-ask once with the tools (the nudge names the right one), then the
+                        // honest line with a Try again chip.
+                        val promised = if (miss == null && synchronized(turnTools) { turnTools.isEmpty() }) ActionPromise.promises(textOut) else emptyList()
+                        if (promised.isNotEmpty()) {
+                            if (!promiseNudged && nudgesLeft > 0 && step < maxSteps - 3) {
+                                promiseNudged = true
+                                nudgeCount++
+                                nudgesLeft--
+                                if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
+                                add(Role.STEP, "Doing what I said")
+                                history.put(JSONObject().put("role", "user").put("content", RetryGuard.anchor(ActionPromise.nudge(promised.first()), lastUserText())))
+                                continue
+                            }
+                            textOut = ActionPromise.honest(textOut, promised); reply.put("content", textOut); pendingFollowups = listOf(NudgePolicy.TRY_AGAIN); rewroteClaim = true
                         }
                     }
                     // v0.45.13 verify-after-act: opening an app is step 1, never the goal. A "done" for a multi-step ask whose only
@@ -4044,11 +4114,15 @@ When you finish, say what you did in one short sentence.
                             if (i in readAt || name == "do_actions") result += screenAfter(result)
                             else com.blaze.assistant.phone.BlazeAccessibilityService.instance?.settle(700, 150)
                         }
+                        // 0.49.0 cache tier: a very long result is cached (head + TOC sent); a long one keeps the artifact aside.
+                        val keepWhole = !Settings.longChat || LongChat.keeps(name) || FastActions.isScreen(result) || name in com.blaze.assistant.memory.CacheTier.names
+                        val sentResult = if (keepWhole) result else (com.blaze.assistant.memory.CacheTier.asideTool(id, name, result)
+                            ?: if (result.length > LongChat.ASIDE_OVER) kotlinx.coroutines.withContext(Dispatchers.IO) { LongChat.aside(result) } else result)
                         history.put(
                             JSONObject().put("role", "tool")
                                 .put("tool_call_id", call.optString("id", "call_$step$i"))
                                 .put("name", name)
-                                .put("content", if (!Settings.longChat || LongChat.keeps(name) || FastActions.isScreen(result)) result else LongChat.aside(result))
+                                .put("content", sentResult)
                         )
                         // v0.30.4: only the newest screen stays in the history; older readouts are dropped in place.
                         if (FastActions.isScreen(result)) FastActions.pruneScreens(history)
@@ -5004,6 +5078,11 @@ When you finish, say what you did in one short sentence.
                 }
                 else -> when {
                     name in LongChat.names -> longChatTool(name, args)
+                    name in com.blaze.assistant.memory.CacheTier.names -> {
+                        add(Role.STEP, when (name) { "cache_search" -> "Searching the document for \u201c${args.optString("query").take(40)}\u201d"
+                            "cache_summarize" -> "Reading the whole document"; "cache_toc" -> "Looking at the document's contents"; else -> "Reading the document" })
+                        com.blaze.assistant.memory.CacheTier.run(name, args, id)
+                    }
                     name == "notif_reply" -> { add(Role.STEP, "Replying to ${args.optString("conversation").take(40)}")
                         com.blaze.assistant.notify.Conversations.reply(app, args.optString("conversation"), args.optString("text")) }
                     name in com.blaze.assistant.notify.Conversations.toolNames -> { add(Role.STEP, if (name == "notif_read") "Reading the chat with ${args.optString("conversation").take(40)}" else "Checking your chats")

@@ -751,6 +751,43 @@ object Mind {
 
     fun promptBlock(): String = block(all())
 
+    // ---------------- 0.49.0 tiered memory: relevant notes each turn ----------------
+
+    /** Lines of the relevant-notes block (≈200 tokens). */
+    const val RELEVANT_CHARS = 800
+    const val RELEVANT_MAX = 5
+    private val relevantStop = setOf("the", "and", "for", "you", "your", "what", "whats", "who", "how", "can", "could", "would", "should",
+        "please", "with", "that", "this", "about", "tell", "me", "my", "is", "are", "was", "do", "does", "did", "it", "to", "of", "in", "on",
+        "a", "an", "i", "im", "be", "have", "has", "just", "now", "again", "okay", "ok", "yes", "no", "hi", "hey", "blaze", "thanks", "thank",
+        "doing", "going", "know", "want", "need", "get", "got", "any", "some", "there", "here", "from", "into")
+
+    /** The words of [query] worth searching memory for ("" when there are none). */
+    fun relevantQuery(query: String): String = words(query).filter { it !in relevantStop && it.length > 2 }.take(8).joinToString(" ")
+
+    /**
+     * Pure: the RELEVANT NOTES block from [hits] (best first): lines not already in the pinned [core], at most
+     * [RELEVANT_MAX] lines and [max] characters. "" when nothing new.
+     */
+    fun relevantLines(hits: List<Mem>, core: String, max: Int = RELEVANT_CHARS): String {
+        val sb = StringBuilder()
+        var n = 0
+        for (m in hits) {
+            if (n >= RELEVANT_MAX) break
+            if (core.contains(m.text)) continue
+            val l = "- #${m.id} [${m.kind}] ${m.subject}: ${m.text}\n"
+            if (sb.length + l.length > max) break
+            sb.append(l); n++
+        }
+        return if (sb.isEmpty()) "" else "RELEVANT NOTES (memory lines matching this message; memory_search for more)\n$sb"
+    }
+
+    /** The relevant-notes block for [query] (store search, off the main thread; "" on any failure). */
+    fun relevantBlock(query: String, coreText: String? = null): String {
+        val q = relevantQuery(query); if (q.isEmpty()) return ""
+        val d = db ?: return ""
+        return try { relevantLines(d.search(q, null, 8), coreText ?: core(d.all())) } catch (_: Exception) { "" }
+    }
+
     /** [max]: [TEXT_MAX] for a normal save; [MERGED_MAX] for a line that comes in whole (cloud sync, a restore). */
     fun save(kind: String, subject: String, text: String, related: String = "", sourceTurn: Long = 0, max: Int = TEXT_MAX): Pair<String, Long> {
         val d = db ?: return "unavailable" to 0L

@@ -18,6 +18,8 @@ object ToolRouter {
         "web_search", "fetch_page", "load_tools", "find_tool", "goal", "use_skill", "find_skill", "search_past_chats", "run_skill",
         // Long chats (v0.15.0): always on hand so nothing older is ever out of reach.
         "search_chat", "read_turn", "read_artifact", "update_brief", "project_docs_search", "project_docs_read",
+        // 0.49.0 tiered memory: cached documents (big pastes, files, long outputs) are read through these.
+        "cache_toc", "cache_read", "cache_search", "cache_summarize",
         // Basic phone control stays in core: it's the most common thing people ask for.
         "run_plan", "open_app", "search_in_app", "read_screen", "phone_task",
         // Calls: "loudspeaker", "mute", "hang up" must work mid-call without guessing a group.

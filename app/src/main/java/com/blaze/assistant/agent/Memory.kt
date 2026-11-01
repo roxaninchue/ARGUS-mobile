@@ -154,9 +154,10 @@ object Memory {
     fun promptBlock(query: String = ""): String {
         if (Mind.ready) {
             val turn = turnKey
-            if (turn == 0L) return Mind.promptBlock()
+            // 0.49.0 tiered memory (long tier): the pinned core + index, then the few saved lines that match this message.
+            if (turn == 0L) return withRelevant(query)
             // A new turn, another store, or a memory saved through Mind rebuilds it.
-            return mindBlock.get(Triple(turn, System.identityHashCode(Mind.db()), Mind.version)) { Mind.promptBlock() }
+            return mindBlock.get(Triple(turn, System.identityHashCode(Mind.db()), Mind.version)) { withRelevant(query) }
         }
         val all = _facts.value
         if (all.isEmpty()) return ""
@@ -170,6 +171,13 @@ object Memory {
         val more = all.size - chosen.size
         return "\nWhat you remember about the user (use quietly, don't recite):\n" + chosen.joinToString("\n") { "- $it" } +
             (if (more > 0) "\n($more more facts saved; call recall_memory to search them.)" else "") + "\n"
+    }
+
+    private fun withRelevant(query: String): String {
+        val all = Mind.all()
+        val b = Mind.block(all)
+        val r = if (query.isBlank()) "" else Mind.relevantBlock(query, Mind.core(all))
+        return if (r.isEmpty()) b else b + r
     }
 
     fun recall(query: String): String {

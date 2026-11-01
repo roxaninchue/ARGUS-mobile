@@ -129,12 +129,16 @@ fun MeAvatarView(av: ChatOverlayLogic.Avatar, size: Int = ChatBarTokens.AVATAR_D
     }
 }
 
-/** Blaze's avatar: the Blaze logo (the flame mascot) on Blaze blue. */
+/**
+ * Blaze's avatar: the real Blaze logo, the same one as the launcher icon and BrandMark (the glass drop in its gold halo
+ * on the dark disc). 0.49.0 (RC5 a): it was the white notification silhouette on a blue disc, which read as a blue droplet.
+ * Drawn as vectors on a Canvas (no bitmap decode per bubble on a low-RAM phone).
+ */
 @Composable
 fun BlazeAvatar(size: Int = 30) {
-    Box(Modifier.size(size.dp).clip(CircleShape).background(Brush.linearGradient(listOf(DuoColors.blazeBlue, DuoColors.blazeBlue.copy(alpha = 0.75f))))
+    Box(Modifier.size(size.dp).clip(CircleShape).background(Color(com.blaze.assistant.phone.Mascot.ICON_BG))
         .semantics { contentDescription = "Blaze" }, contentAlignment = Alignment.Center) {
-        Icon(painterResource(R.drawable.ic_stat_blaze), null, tint = Color.White, modifier = Modifier.size((size * 0.62f).dp))
+        com.blaze.assistant.ui.DuoEmblem((size * 1.05f).dp, animate = false)
     }
 }
 
@@ -245,7 +249,14 @@ fun ChatOverHome(state: ComposerState, modifier: Modifier = Modifier, bottom: @C
     val all by Agent.messages.collectAsState()
     val busyChats by Agent.busyChats.collectAsState()
     val chatId by Agent.chatId.collectAsState()
-    ChatOverHomeContent(state, all, chatId in busyChats, modifier, bottom = bottom)
+    // 0.49.0 (RC5 a): the live work line beside the typing dots, as in the old chat (step pill → task chip → status).
+    val status by Agent.status.collectAsState()
+    val chip by Agent.taskChip.collectAsState()
+    val pill by com.blaze.assistant.agent.StepPills.current.collectAsState()
+    val busy = chatId in busyChats
+    val lastStep = if (busy) all.lastOrNull { it.role == Role.STEP }?.text else null
+    val work = if (busy) ChatOverlayLogic.workLine(pill?.takeIf { it.chat == chatId }?.text, chip, status, lastStep) else null
+    ChatOverHomeContent(state, all, busy, modifier, bottom = bottom, workLine = work, onSend = { state.send(it) })
 }
 
 /**
@@ -256,14 +267,19 @@ fun ChatOverHome(state: ComposerState, modifier: Modifier = Modifier, bottom: @C
  */
 @Composable
 fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Boolean, modifier: Modifier = Modifier,
-                        now: Long = System.currentTimeMillis(), bottom: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {}) {
+                        now: Long = System.currentTimeMillis(), bottom: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {},
+                        workLine: String? = null, onSend: ((String) -> Unit)? = null, stage: Boolean = true) {
     val c = LocalBlaze.current
     val shown = remember(all, state.sinceId) { ChatOverlayLogic.visible(all, state.sinceId) }
+    // 0.49.0 (RC5 a): tool steps show as one compact chip per turn (tap to expand), follow-up chips under the newest idle
+    // reply, and choice buttons / forms inside replies send (RichSend), as in the old chat.
+    val rows = remember(all, state.sinceId, busy) { ChatOverlayLogic.rows(all, state.sinceId, busy) }
+    val followFor = ChatOverlayLogic.followupsFor(rows, busy)
     val more = remember(all, state.sinceId) { state.sinceId > 0L && ChatOverlayLogic.visible(all, 0L).size > shown.size }
     val earlier = more
     val typing = ChatOverlayLogic.typing(shown, busy)
-    val list = rememberLazyListState()
-    LaunchedEffect(shown.size, typing, shown.lastOrNull()?.text?.length) { val n = shown.size + (if (typing) 1 else 0) + 2; if (n > 0) list.scrollToItem(n - 1) }
+    val listState = rememberLazyListState()
+    LaunchedEffect(rows.size, typing, shown.lastOrNull()?.text?.length, followFor) { val n = rows.size + (if (typing) 1 else 0) + 2; if (n > 0) listState.scrollToItem(n - 1) }
     Column(modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             val title = if (state.privateChat) "Private chat" else state.title
@@ -273,7 +289,8 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
             if (earlier) { RoundButton(Icons.Rounded.History, "Show earlier messages", state::showEarlier); Spacer(Modifier.width(8.dp)) }
             RoundButton(Icons.Rounded.Close, if (state.privateChat) "Leave private chat" else "Close chat", state::closeChat)
         }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, verticalArrangement = Arrangement.spacedBy(10.dp),
+        val list: @Composable () -> Unit = {
+        LazyColumn(Modifier.fillMaxSize(), state = listState, verticalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 8.dp)) {
             if (earlier) item(key = "earlier") {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -287,10 +304,27 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
                 Text(ChatOverlayLogic.stamp(at, now), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
-            items(shown, key = { it.id }) { m ->
-                if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom) else BlazeBubble(m, typeIn = m.id > state.liveFrom)
+            items(rows, key = { it.key }) { r ->
+                when (r) {
+                    is ChatOverlayLogic.Row.Steps -> StepsChip(r)
+                    is ChatOverlayLogic.Row.Msg -> Column { val m = r.m
+                        if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom) else BlazeBubble(m, typeIn = m.id > state.liveFrom)
+                        if (m.id == followFor && onSend != null) com.blaze.assistant.ui.FollowupRow(m.followups, Modifier.padding(start = 38.dp, top = 6.dp)) { onSend(it) }
+                    }
+                }
             }
-            if (typing) item(key = "typing") { Row(verticalAlignment = Alignment.Bottom) { BlazeAvatar(); Spacer(Modifier.width(8.dp)); TypingDots() } }
+            if (typing) item(key = "typing") { Row(verticalAlignment = Alignment.CenterVertically) { BlazeAvatar(); Spacer(Modifier.width(8.dp)); TypingDots()
+                if (!workLine.isNullOrBlank()) { Spacer(Modifier.width(10.dp)); Text(workLine, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).semantics { contentDescription = "Blaze is $workLine" },
+                    style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub)) } } }
+        }
+        }
+        // Choice buttons and forms in replies answer only while Blaze is idle (like the old chat).
+        androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.RichSend.Local provides (if (!busy) onSend else null)) {
+            // 0.49.0 (RC5 a): on-chat cards (browser card, timers, mini players) on the Stage around the chat, as in the old chat.
+            val st by com.blaze.assistant.stage.StageStore.state.collectAsState()
+            if (stage && com.blaze.assistant.stage.StageStore.enabled && st.items.isNotEmpty())
+                Box(Modifier.weight(1f).fillMaxWidth()) { com.blaze.assistant.ui.StageHost(shown.lastOrNull { it.role == Role.BLAZE }?.text.orEmpty()) { m -> Box(m) { list() } } }
+            else Box(Modifier.weight(1f).fillMaxWidth()) { list() }
         }
         Column(Modifier.fillMaxWidth().heightIn(max = 460.dp).verticalScroll(rememberScrollState())) { bottom() }
     }
@@ -353,6 +387,28 @@ private fun BlazeBubble(m: ChatMessage, typeIn: Boolean) {
     }
     // Pictures, music and files Blaze made for this reply (tap to open), as in the old chat.
     if (m.media.isNotEmpty() && shown >= m.text.length) Box(Modifier.padding(start = 38.dp, top = 6.dp)) { com.blaze.assistant.ui.MediaStrip(m.media) }
+    }
+}
+
+/** 0.49.0 (RC5 a): a turn's tool steps as one chip ("3 steps · Searching the web"); tap to list them. Live = still running. */
+@Composable
+private fun StepsChip(r: ChatOverlayLogic.Row.Steps) {
+    val c = LocalBlaze.current
+    var open by remember(r.firstId) { androidx.compose.runtime.mutableStateOf(false) }
+    Column(Modifier.padding(start = 38.dp)) {
+        Row(Modifier.clip(RoundedCornerShape(50)).background(ComposerLook.solidChip(c)).clickable { open = !open }
+            .semantics { contentDescription = (if (r.live) "Working: " else "Steps: ") + ChatOverlayLogic.stepsLabel(r) }
+            .padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(7.dp).clip(CircleShape).background(if (r.live) Color(0xFF4FA3FF) else c.sub))
+            Spacer(Modifier.width(8.dp))
+            Text(ChatOverlayLogic.stepsLabel(r), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 250.dp),
+                style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.ink))
+            if (r.lines.size > 1) { Spacer(Modifier.width(4.dp)); Icon(Icons.Rounded.ExpandMore, null, tint = c.sub, modifier = Modifier.size(16.dp)) }
+        }
+        if (open && r.lines.size > 1) Column(Modifier.padding(start = 12.dp, top = 4.dp)) {
+            r.lines.forEach { l -> Text("\u00b7 " + (com.blaze.assistant.agent.StepPill.clean(l) ?: "Working on it"), maxLines = 2, overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub)) }
+        }
     }
 }
 

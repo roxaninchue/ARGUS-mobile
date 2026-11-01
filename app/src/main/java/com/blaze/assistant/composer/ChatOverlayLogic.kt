@@ -21,6 +21,61 @@ object ChatOverlayLogic {
     fun visible(all: List<ChatMessage>, sinceId: Long): List<ChatMessage> =
         all.filter { it.id > sinceId && (it.role == Role.USER || it.role == Role.BLAZE || it.role == Role.ERROR) && (it.text.isNotBlank() || it.files.isNotEmpty() || it.media.isNotEmpty()) }
 
+    /**
+     * 0.49.0 (RC5 a): what the chat over Home lists. Tool steps are no longer hidden: the steps between a user line and
+     * Blaze's reply become one compact [Row.Steps] chip ("3 steps · Opening accessibility settings"), expandable.
+     */
+    sealed class Row {
+        abstract val key: String
+        data class Msg(val m: ChatMessage) : Row() { override val key get() = "m${m.id}" }
+        data class Steps(val firstId: Long, val lines: List<String>, val live: Boolean) : Row() { override val key get() = "s$firstId" }
+    }
+
+    fun rows(all: List<ChatMessage>, sinceId: Long, busy: Boolean): List<Row> {
+        val out = ArrayList<Row>()
+        var steps = ArrayList<ChatMessage>()
+        fun flush(live: Boolean) {
+            if (steps.isNotEmpty()) out += Row.Steps(steps.first().id, steps.map { it.text.trim() }.filter { it.isNotEmpty() }, live)
+            steps = ArrayList()
+        }
+        for (m in all) {
+            if (m.id <= sinceId) continue
+            if (m.role == Role.STEP) { if (m.text.isNotBlank()) steps += m; continue }
+            if (m.role == Role.USER || m.role == Role.BLAZE || m.role == Role.ERROR) {
+                if (m.text.isBlank() && m.files.isEmpty() && m.media.isEmpty()) continue
+                flush(false); out += Row.Msg(m)
+            }
+        }
+        flush(busy)
+        return out.filter { it !is Row.Steps || it.lines.isNotEmpty() }
+    }
+
+    /** The steps chip's label: "Opening accessibility settings" or "3 steps · Searching the web". */
+    fun stepsLabel(r: Row.Steps): String {
+        val raw = r.lines.lastOrNull().orEmpty()
+        // StepPill.clean hides urls, code and model names (never shown on a pill); such a step reads "Working on it".
+        val last = com.blaze.assistant.agent.StepPill.clean(raw)?.takeIf { it.isNotBlank() } ?: "Working on it"
+        return if (r.lines.size <= 1) last else "${r.lines.size} steps \u00b7 $last"
+    }
+
+    /**
+     * The live work line beside the typing dots (same order as the old chat's WaitRow): the step pill for this chat,
+     * else an acknowledged task's chip, else the status, else the newest live step. Null = nothing to say.
+     */
+    fun workLine(pill: String?, chip: String, status: String, lastStep: String?): String? {
+        pill?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+        chip.trim().takeIf { it.isNotEmpty() }?.let { return it }
+        com.blaze.assistant.agent.StepPill.clean(status)?.takeIf { it.isNotBlank() }?.let { return it }
+        return lastStep?.let { com.blaze.assistant.agent.StepPill.clean(it) }?.takeIf { it.isNotBlank() }
+    }
+
+    /** Follow-up chips show under Blaze's newest reply only, and only when it is idle. */
+    fun followupsFor(rows: List<Row>, busy: Boolean): Long? {
+        if (busy) return null
+        val last = (rows.lastOrNull() as? Row.Msg)?.m ?: return null
+        return if (last.role == Role.BLAZE && last.followups.isNotEmpty()) last.id else null
+    }
+
     /** Typing dots: Blaze is working and hasn't started its answer to the newest user line. */
     fun typing(shown: List<ChatMessage>, busy: Boolean): Boolean = busy && shown.lastOrNull()?.role == Role.USER
 

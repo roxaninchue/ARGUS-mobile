@@ -33,6 +33,10 @@ object AutoCompact {
     /** The first history index the rolling note does not cover yet (a stale index past the end resets to 0). */
     fun upto(h: JSONArray, st: LongChat.State): Int = if (st.upto > h.length()) 0 else st.upto
 
+    /** 0.49.0: where the tail starts, by message count and (when [tailTok] > 0) by tokens too (ChatTier). */
+    fun tail(h: JSONArray, forced: Boolean, tailTok: Int): Int =
+        if (tailTok > 0) com.blaze.assistant.memory.ChatTier.tailStart(h, keep(forced), tailTok) else LongChat.tailStart(h, keep(forced))
+
     /** Where the word-for-word tail starts for this fold: [LongChat.KEEP_TAIL] normally, [FORCED_KEEP] after a refusal. */
     fun keep(forced: Boolean): Int = if (forced) FORCED_KEEP else LongChat.KEEP_TAIL
 
@@ -41,18 +45,18 @@ object AutoCompact {
      * [overheadTokens] = the system prompt and tool list of the last request; [forced] = the provider just said
      * the request is too long. Never true when there is nothing older than the tail to fold.
      */
-    fun shouldCompact(h: JSONArray, st: LongChat.State, budget: Int, overheadTokens: Int, contextWindow: Int, forced: Boolean = false): Boolean {
+    fun shouldCompact(h: JSONArray, st: LongChat.State, budget: Int, overheadTokens: Int, contextWindow: Int, forced: Boolean = false, tailTok: Int = 0): Boolean {
         val from = upto(h, st)
-        if (LongChat.tailStart(h, keep(forced)) <= from) return false
+        if (tail(h, forced, tailTok) <= from) return false
         if (forced) return true
-        if (LongChat.needsCompaction(h, st, budget)) return true
+        if (LongChat.tokens(h, from) > budget) return true   // (LongChat.needsCompaction, with the tail computed above)
         return nearLimit(overheadTokens + LongChat.tokens(h, LongChat.sendFrom(h, st)), contextWindow)
     }
 
     /** The history range [from, to) that this fold summarises: older turns only; the tail is always kept verbatim. */
-    fun range(h: JSONArray, st: LongChat.State, forced: Boolean = false): IntRange {
+    fun range(h: JSONArray, st: LongChat.State, forced: Boolean = false, tailTok: Int = 0): IntRange {
         val from = upto(h, st)
-        val to = LongChat.tailStart(h, keep(forced))
+        val to = tail(h, forced, tailTok)
         return from until maxOf(from, to)
     }
 

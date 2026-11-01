@@ -33,7 +33,7 @@ object ToolPick {
             setOf("start_agent", "list_agents", "check_agent", "message_agent", "cancel_agent"),
             r("""\b(agents?|background|in parallel|meanwhile|while (?:you|i)|long (?:task|job|research)|hand (?:it )?off|keep (?:working|going)|research)\b""")),
         Cue("history", "this chat's older turns and files, past chats, the project's brief and notes",
-            setOf("search_chat", "read_turn", "read_artifact", "search_past_chats", "update_brief", "project_docs_search", "project_docs_read", "recall_memory"),
+            setOf("search_chat", "read_turn", "read_artifact", "search_past_chats", "update_brief", "project_docs_search", "project_docs_read", "recall_memory", "cache_toc", "cache_read", "cache_search", "cache_summarize"),
             r("""\b(earlier|before|last time|you said|i said|we (?:talked|discussed|said|did)|previous\w*|that (?:file|doc|table|list|code|report)|above|chats?|conversation|project|brief|notes|what did|remind me what|recall|again)\b""")),
         Cue("self", "Blaze itself: its docs, settings and self-test, BlazeRouter, Jarvis, follow-ups, running processes (alarms, routines, jobs by ID)",
             setOf("about_blaze", "blaze_self", "self_test", "blaze_docs_search", "blaze_docs_read", "blazerouter", "jarvis_mode", "follow_ups", "processes", "process"),

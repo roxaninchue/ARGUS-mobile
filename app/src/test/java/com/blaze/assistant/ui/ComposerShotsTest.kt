@@ -133,6 +133,30 @@ class ComposerShotsTest {
         frame("chat-over-home", st, "Remind me", dim = true) { ChatOverHomeContent(st, msgs, busy = true, now = now) }
     }
 
+    /** 0.49.0 (RC5 a): a tool turn in the chat over Home: the steps chip, the live work line and a follow-up chip. */
+    @Test fun chatOverHomeToolSteps() {
+        val now = System.currentTimeMillis()
+        val msgs = listOf(
+            ChatMessage(1, Role.USER, "Can you control my phone?", at = now - 60_000),
+            ChatMessage(2, Role.BLAZE, "Yes. I need the accessibility permission first. Want me to open it?", at = now - 55_000),
+            ChatMessage(3, Role.USER, "okay, do it!", at = now - 5_000),
+            ChatMessage(4, Role.STEP, "Opening accessibility settings", at = now - 4_000))
+        val st = ComposerState().apply { chatOpen = true }
+        frame("chat-over-home-tool-steps", st, "Opening accessibility settings", dim = true) {
+            ChatOverHomeContent(st, msgs, busy = true, now = now, workLine = "Opening accessibility settings", stage = false) }
+    }
+
+    @Test fun chatOverHomeFollowups() {
+        val now = System.currentTimeMillis()
+        val msgs = listOf(
+            ChatMessage(1, Role.USER, "Search the weather in Lusaka", at = now - 60_000),
+            ChatMessage(2, Role.STEP, "Searching the web", at = now - 58_000),
+            ChatMessage(3, Role.STEP, "Reading the forecast", at = now - 57_000),
+            ChatMessage(4, Role.BLAZE, "Sunny and 26\u00b0 today, light wind.", followups = listOf("Tomorrow?", "Weekend"), at = now - 50_000))
+        val st = ComposerState().apply { chatOpen = true }
+        frame("chat-over-home-followups", st, "2 steps", dim = true) { ChatOverHomeContent(st, msgs, busy = false, now = now, onSend = {}, stage = false) }
+    }
+
     @Test fun spotlightCurated() = spot("spotlight-curated", "", "Chat with Blaze")
     @Test fun spotlightBothForms() = spot("spotlight-terminal-both-forms", "terminal", "Views > Terminal")
     @Test fun spotlightBang() = spot("spotlight-bang-distro", "!ls -la", "! ls -la")

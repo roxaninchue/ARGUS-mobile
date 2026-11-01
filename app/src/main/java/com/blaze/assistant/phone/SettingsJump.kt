@@ -61,7 +61,7 @@ object SettingsJump {
             // No resolveActivity check: package visibility (Android 11+) can hide Settings from queries, while
             // startActivity with an implicit intent still works. A missing page throws and the next one is tried.
             val before = svc?.currentPkg().orEmpty()
-            try { ctx.startActivity(intent) } catch (_: Exception) { continue }
+            try { com.blaze.assistant.device.ActivityStart.start(ctx, intent) } catch (_: Exception) { continue }   // 0.49.0: from the open Blaze screen when there is one
             used = i
             if (svc != null) {
                 val end = android.os.SystemClock.uptimeMillis() + 2500
