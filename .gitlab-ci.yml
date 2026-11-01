@@ -1,0 +1,27 @@
+# 0.49.0 (mem1-ui-browse): a throwaway DEBUG build for testing only.
+#
+# No release signing, no keystore, no secrets. `assembleDebug` signs with the debug key that the
+# Android Gradle plugin generates on the runner, so the APK installs on a test phone and cannot be
+# published anywhere. Nothing here touches blazeinchue.pages.dev or the BlazeMobile site.
+stages: [build]
+
+debug-apk:
+  stage: build
+  image: ghcr.io/cirruslabs/android-sdk:34
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feat/0.49.0-mem1-ui-browse"
+  variables:
+    GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  cache:
+    key: gradle-mem1
+    paths: [".gradle/caches", ".gradle/wrapper"]
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew :app:assembleDebug --no-daemon --stacktrace
+    - mkdir -p out
+    - find app/build/outputs/apk -name "*.apk" -exec cp {} out/ \;
+    - ls -la out/
+  artifacts:
+    name: "blaze-debug-apk-$CI_COMMIT_SHORT_SHA"
+    paths: ["out/*.apk"]
+    expire_in: 1 week
