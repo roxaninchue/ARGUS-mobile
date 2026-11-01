@@ -14,14 +14,18 @@ Written 2026-11-01 for the 0.49.0 build, when the GitHub mirror was unavailable.
 | aapt2 for AGP | `-Pandroid.aapt2FromMavenOverride=work/toolchain/arm64tools/build-tools/aapt2` | the aapt2 AGP downloads from Maven is x86-64 only |
 | Go 1.26.10 (linux-arm64) | `work/toolchain/go` | for `libwgproxy.so` / `libblazerouter.so` (gitignored jniLibs) |
 
-`work/toolchain/env.sh` exports `JAVA_HOME`, `ANDROID_HOME`, `GRADLE_USER_HOME=/tmp/gh` (local disk; re-downloads after a
-sandbox reset) and `AAPT2`.
+`work/toolchain/env.sh` exports `JAVA_HOME`, `ANDROID_HOME`, `GRADLE_USER_HOME=work/toolchain/gradle-home` and `AAPT2`.
+
+**Memory:** `/` and `/tmp` are RAM-backed (overlay on tmpfs) in this sandbox. Keeping the Gradle cache (~2 GB) and the
+build copy there left ~3 GB for Gradle and the daemon was OOM-killed. Everything heavy lives on the workspace disk
+(`work/toolchain/gradle-home`, `work/toolchain/bb`). Note: `pkill -f GradleDaemon` inside a shell command also kills
+that shell (its own command line matches); use `pkill -f '[G]radleDaemon'`.
 
 ## Scripts
 
-- `work/toolchain/gradle.sh <log> <tasks…>` — copies `work/blaze` (without `.git`, `build/`) to `/tmp/bb` and runs
-  Gradle there with the CI flags (`-Xmx3g`, in-process Kotlin, the aapt2 override). Build outputs stay out of the
-  workspace (a workspace build dir floods the file watcher and is slow on the network filesystem).
+- `work/toolchain/gradle.sh <log> <tasks…>` — copies `work/blaze` (without `.git`, `build/`) to `work/toolchain/bb`
+  and runs Gradle there with the CI flags (`-Xmx3g`, in-process Kotlin, the aapt2 override), so build outputs never
+  land in the git tree.
   Run it detached (`nohup … &`) and poll the log; a cold `compileDebugKotlin` takes ~12 min on 2 CPUs.
 - `work/toolchain/golibs.sh` — builds the two Go libraries into `app/src/main/jniLibs/*` exactly like `mobile-build.yml`.
 
@@ -45,6 +49,22 @@ java -jar $BT/lib/apksigner.jar sign --ks /tmp/test.p12 --ks-pass pass:testonly 
 ```
 
 A phone with the real (production-signed) Blaze must uninstall it before installing a test-signed APK.
+
+## Robolectric native graphics on aarch64 (screenshot tests)
+
+`app/build.gradle.kts` runs every Robolectric test with `robolectric.graphicsMode=NATIVE`, and Robolectric 4.13's native
+runtime has **no Linux aarch64 build** ("The Robolectric native runtime is not supported on Linux (aarch64)"). Tests
+that draw (Compose rules, activities, every *ShotsTest) therefore run on an **x86-64 JVM under qemu-user**:
+
+```
+sudo dpkg --add-architecture amd64 && sudo apt-get update
+sudo apt-get install -y qemu-user libc6:amd64 libstdc++6:amd64 zlib1g:amd64 libgcc-s1:amd64
+# x86-64 Temurin 17 unpacked in work/toolchain/jdk17-x64; wrapper work/toolchain/qemu-java.sh
+BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log --init-script work/toolchain/qemu-tests.gradle :app:testDebugUnitTest --tests '…ShotsTest'
+```
+
+`qemu-tests.gradle` only sets the Test tasks' `executable` to the wrapper (nothing in the repo changes). It is slow
+(emulated JIT), so run the native aarch64 suite first and only the drawing tests under qemu.
 
 ## Low-RAM gate
 
