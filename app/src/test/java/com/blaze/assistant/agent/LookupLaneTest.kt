@@ -18,8 +18,10 @@ class LookupLaneTest {
     private fun fx(id: String) = LookupBench.fixtures.first { it.id == id }
 
     @Test fun routesLookupsAndKeepsEverythingElse() {
-        listOf("What is the capital of Zambia?", "who wrote Things Fall Apart", "How much is a Raspberry Pi 5?", "find the opening hours of the national museum",
-            "latest news on the Kafue bridge").forEach { assertTrue(it, LookupLane.isLookup(it)) }
+        // 0.50.0: only an explicit search request takes the lane; a question alone goes to the model (SearchRouteTest)
+        listOf("search for the capital of Zambia", "google who wrote Things Fall Apart", "look up how much a Raspberry Pi 5 is",
+            "search the web for the opening hours of the national museum", "latest news on the Kafue bridge, search online").forEach { assertTrue(it, LookupLane.isLookup(it)) }
+        listOf("What is the capital of Zambia?", "who wrote Things Fall Apart", "How much is a Raspberry Pi 5?").forEach { assertFalse(it, LookupLane.isLookup(it)) }
         listOf("open WhatsApp", "set an alarm for 7", "what time is it", "what's the weather tomorrow", "who are you", "book a table for two tonight",
             "what's on my calendar", "remind me to call mom", "2+2", "hi").forEach { assertFalse(it, LookupLane.isLookup(it)) }
     }

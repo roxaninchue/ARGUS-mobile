@@ -27,8 +27,11 @@ class SmallTalkTest {
     }
 
     @Test fun realLookupsStillLookUp() {
-        lookup.forEach { assertTrue(it, LookupLane.isLookup(it)); assertFalse(it, SmallTalk.chitChat(it)) }
-        assertEquals(SmallTalk.Kind.LOOKUP, SmallTalk.classify("what's the price of bitcoin today"))
+        // 0.50.0: factual questions are not small talk, but they go to the model (it searches when it needs to); only an
+        // explicit "search…" takes the quick lane (SearchRouteTest).
+        lookup.forEach { assertFalse(it, LookupLane.isLookup(it)); assertFalse(it, SmallTalk.chitChat(it)) }
+        assertEquals(SmallTalk.Kind.UNSURE, SmallTalk.classify("what's the price of bitcoin today"))
+        assertEquals(SmallTalk.Kind.LOOKUP, SmallTalk.classify("search the web for the price of bitcoin today"))
     }
 
     @Test fun unsureGoesToTheModelNotTheFastLane() {

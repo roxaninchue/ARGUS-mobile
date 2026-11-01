@@ -1319,6 +1319,7 @@ When you finish, say what you did in one short sentence.
             tail("processes") { Processes.countLine().takeIf { it.isNotBlank() }?.let { "\nTracked now: $it (IDs via processes)." }.orEmpty() }
             slow("desktop", com.blaze.assistant.link.DesktopLink.promptLine())
             slow("about", SelfKnowledge.promptBlock(app)); slow("project", Projects.promptLine(chatId))
+            s("search", SearchRoute.PROMPT)
             s("calls", "\nCALLS: \"let's get on a call\", \"call me\" or \"let's talk\" with no person named means a voice call with YOU: call_control start_blaze_call. Never phone a contact unless they name who. " +
                 "Loudspeaker, mute, hang up, answer, hold, call volume and keypad presses during any call go through call_control, never the Settings app.")
             if (com.blaze.assistant.voice.Voice.inCall) tail("in_call") { " You are on a voice call with the user right now (Blaze's call screen): \"I can't hear you\" means call_control speaker on or louder." }
@@ -2292,6 +2293,16 @@ When you finish, say what you did in one short sentence.
                     runConversation(duoKind!!, shown.let { s -> if (route.explicit) Duo.route(s, false).text else s }, resumeRoom ?: -1L, users.first().id)
                     return@launch
                 }
+                // 0.50.0: "what / commands do I have?" is answered from the slash-command registry (the same list as the
+                // composer's "/" menu). No model call, no web search (it used to search the web and answer about Windows).
+                if (single && attachments.isEmpty() && !routine && agentId == null && notificationContext.isNullOrBlank() && SearchRoute.isCommandsAsk(shown)) {
+                    val reply = SlashCommands.answer()
+                    history.put(JSONObject().put("role", "assistant").put("content", reply))
+                    addReply(-1, reply, "", meta = "\u26A1 from Blaze's command list")
+                    mood = Mood.IDLE
+                    persist(); announce()
+                    return@launch
+                }
                 // v0.27.x: "show me your memories" / "what do you know about me" is answered straight from the memory table:
                 // grouped, with how to change or delete a line. No model call, no tool loop, no Design.
                 if (single && attachments.isEmpty() && !routine && agentId == null && notificationContext.isNullOrBlank() && MemoryIntent.isListRequest(shown)) {
@@ -2343,7 +2354,9 @@ When you finish, say what you did in one short sentence.
                 // 0.46.3 lookup fast lane: search → the top pages in parallel → the answer first, checked in the background (LookupLane).
                 if (!offline && single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && specialistId == null &&
                     notificationContext.isNullOrBlank() && voice == Duo.Who.BLAZE && Settings.bool("lookup_lane", true) && LookupLane.isLookup(shown)) {
-                    if (runLookup(shown)) { mood = Mood.IDLE; persist(); announce(); return@launch }
+                    // 0.50.0: the query comes from the conversation (subject of the last turns), not the raw sentence.
+                    val ctxTurns = msgs.filter { (it.role == Role.USER || it.role == Role.BLAZE) && it.id < turnFrom }.takeLast(4).map { it.text.take(300) }
+                    if (runLookup(SearchRoute.query(shown, ctxTurns))) { mood = Mood.IDLE; persist(); announce(); return@launch }
                 }
                 if (offline && !Settings.customBase.contains("127.0.0.1") && !Settings.customBase.contains("localhost")) {
                     add(Role.ERROR, "You're offline. I can still do direct commands like \u201copen WhatsApp\u201d, \u201cflashlight on\u201d or \u201cset a timer for 5 minutes\u201d.")
@@ -3167,7 +3180,8 @@ When you finish, say what you did in one short sentence.
                 val dSkills = par.async { SkillMatch.forTurn(userNow) }
                 val dLearned = par.async { if (plainDev0) SkillMatch.learnedOnly(userNow) else null }
                 val dSpecs = par.async {
-                    if (routine || stateQ0 || selfQ0 || plainDev0 || agentId != null || !Settings.bool("specialists_on", true)) emptyList()
+                    // 0.50.0: no specialist (and so none of its skill packs) for a message that doesn't ask for a task (SkillIntent).
+                    if (routine || stateQ0 || selfQ0 || plainDev0 || agentId != null || !Settings.bool("specialists_on", true) || !SkillIntent.taskIntent(userNow)) emptyList()
                     else try { SpecialistMatch.match(userNow, Specialists.all()) } catch (e: CancellationException) { throw e } catch (_: Exception) { emptyList() }
                 }
                 val dPlan = par.async {
@@ -4728,7 +4742,8 @@ When you finish, say what you did in one short sentence.
                     L.askPc(args.optString("task"), args.optBoolean("new_conversation")) { line -> add(Role.STEP, "${L.pcName}: ${line.take(90)}") }
                 }
                 // v0.33.1 content-hash cache (identical lookups reused, private chats never) + speculative fetch of the top results on Wi-Fi.
-                "web_search" -> searches.check(args.optString("query"), GoalPin.of(lastUserText()).request + " " + runningTask() + " " + recentAsks(), olderSubjects()) ?: run {
+                // 0.50.0: no web search for a question about Blaze, this chat or the user's own data (SearchRoute).
+                "web_search" -> (if (agentId == null && specialistId == null && !lastUserText().startsWith("[Scheduled routine")) SearchRoute.webNote(lastUserText()) else null) ?: searches.check(args.optString("query"), GoalPin.of(lastUserText()).request + " " + runningTask() + " " + recentAsks(), olderSubjects()) ?: run {
                     add(Role.STEP, "Searching the web for \u201c${args.optString("query").take(50)}\u201d")
                     val r = ToolCache.cached(name, args, lastUserText(), isPrivate) { Web.search(args.optString("query")) }
                     if (!r.startsWith("[Cached")) ToolCache.prefetch(r, unmetered(), Settings.lowData, isPrivate) { u -> Web.fetch(u) }

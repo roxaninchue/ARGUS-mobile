@@ -48,16 +48,24 @@ object LookupLane {
     private val notWeb = Regex("""(?i)\b(?:you|your|yourself|blaze|halo|time is it|what time|today'?s date|what day is|weather|forecast|how are|joke|poem|story|translate|calculate|meaning of life)\b|^[\d\s+\-*/().x=?]+$|\bremember\b""")
     private val needsInteraction = Regex("""(?i)\b(?:book|buy|order|sign (?:me )?(?:in|up)|log ?in|fill (?:in|out)|apply|checkout|reserve|subscribe|my account|download)\b""")
 
-    /** A question the fast lane should take (a fact to look up on the open web). */
+    /**
+     * A message the fast lane should take. 0.50.0: ONLY an explicit request to search ("search the web for…", "google…",
+     * "look up … online"), never a question just because it starts with "what" / "how" / "is" (that keyword trigger sent
+     * "what / commands do I have?" to Windows help pages). Questions go to the model, which calls web_search itself when it
+     * needs fresh or external facts ([SearchRoute]). The old [ask] / [personal] / [notWeb] rules still veto the lane.
+     */
     fun isLookup(text: String): Boolean {
         val t = text.trim()
         if (t.length < 6 || t.length > 240 || t.contains('\n')) return false
-        // 0.46.4: greetings and small talk ("what's up??") never take the lane (SmallTalk)
         if (SmallTalk.ruleChat(t)) return false
-        if (personal.containsMatchIn(t) || needsInteraction.containsMatchIn(t) || notWeb.containsMatchIn(t)) return false
         if (t.startsWith("http", true) || t.startsWith("@")) return false
-        return ask.containsMatchIn(t)
+        if (SearchRoute.route(t) != SearchRoute.Route.SEARCH) return false
+        val topic = SearchRoute.explicitTopic(t) ?: return false
+        return !(personal.containsMatchIn(topic) || needsInteraction.containsMatchIn(topic))
     }
+
+    /** 0.46.3's question-word rule, kept only to describe what is NOT auto-searched any more (tests). */
+    internal fun questionShaped(text: String): Boolean = ask.containsMatchIn(text.trim()) && !notWeb.containsMatchIn(text)
 
     private val wall = Regex("""(?i)sign in to (?:continue|view|see)|log ?in to (?:continue|view|see)|please (?:enable|turn on) javascript|verify you are (?:a )?human|are you a robot|captcha|access denied|subscribe to (?:continue|read)|create an account to""")
 
