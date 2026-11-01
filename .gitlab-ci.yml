@@ -16,10 +16,6 @@ debug-apk:
     # codebase this size. Override here rather than editing the committed gradle.properties, so
     # release builds are unaffected.
     GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Xss16m -Dfile.encoding=UTF-8"
-    # The JVM backend overflows the default 1m stack while transforming Agent$Session.runLoop
-    # (a ~3000-line coroutine with hundreds of try/catch blocks). The coroutine transformer walks
-    # that control-flow graph recursively, so it needs a much deeper stack than the default.
-    KOTLIN_DAEMON_JVMARGS: "-Xmx4g -Xss32m"
   cache:
     key: gradle-mem1
     paths: [".gradle/caches", ".gradle/wrapper"]
@@ -55,15 +51,26 @@ debug-apk:
       nproc || true
   script:
     - chmod +x ./gradlew
-    # Daemon strategy (the default) so the compiler runs on its own thread with the 32m stack set
-    # above; in-process would inherit the Gradle thread's stack, which is what overflowed.
-    - ./gradlew :app:assembleDebug --no-daemon --stacktrace
-        -Dkotlin.daemon.jvmargs="$KOTLIN_DAEMON_JVMARGS"
-        --max-workers=2
+    # The JVM backend overflows the default 1m stack while transforming Agent$Session.runLoop (a
+    # ~3000-line coroutine with hundreds of try/catch blocks): the coroutine transformer walks that
+    # control-flow graph recursively. -Xmx does nothing for it; the daemon needs a deeper stack.
+    # It must be a Gradle property (-P) so it reaches the Kotlin daemon, not a -D on the launcher.
+    - |
+      set +e
+      ./gradlew :app:assembleDebug --no-daemon --console=plain --stacktrace \
+        -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" \
+        --max-workers=2 > build.log 2>&1
+      STATUS=$?
+      echo "=== gradle exit: $STATUS ==="
+      echo "=== errors ==="
+      grep -nE "^e: |^w: .*(error|Error)|error:|FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory|Couldn't transform" build.log | head -60 || true
+      echo "=== tail ==="
+      tail -40 build.log
+      exit $STATUS
     - mkdir -p out
     - find app/build/outputs/apk -name "*.apk" -exec cp {} out/ \;
     - ls -la out/
   artifacts:
     name: "blaze-debug-apk-$CI_COMMIT_SHORT_SHA"
-    paths: ["out/*.apk"]
+    paths: ["out/*.apk", "build.log"]
     expire_in: 1 week
