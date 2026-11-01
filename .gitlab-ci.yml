@@ -15,6 +15,27 @@ debug-apk:
   cache:
     key: gradle-mem1
     paths: [".gradle/caches", ".gradle/wrapper"]
+  before_script:
+    # The image defaults to JDK 21, but the project's Java target is 17, and Gradle refuses to mix
+    # them ("Inconsistent JVM-target compatibility ... 'compileJava' (17) and 'compileKotlin' (21)").
+    # Prefer a JDK 17 the image already has; install Temurin 17 only if there isn't one.
+    - |
+      JDK17=""
+      for d in /usr/lib/jvm/*17* /opt/java/*17* /opt/jdk*17*; do
+        if [ -x "$d/bin/javac" ]; then JDK17="$d"; break; fi
+      done
+      if [ -z "$JDK17" ]; then
+        echo "No JDK 17 in the image; installing Temurin 17"
+        apt-get update -qq && apt-get install -y -qq wget apt-transport-https gnupg >/dev/null
+        wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor > /usr/share/keyrings/adoptium.gpg
+        echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb $(. /etc/os-release && echo $VERSION_CODENAME) main" > /etc/apt/sources.list.d/adoptium.list
+        apt-get update -qq && apt-get install -y -qq temurin-17-jdk >/dev/null
+        JDK17="$(dirname "$(dirname "$(readlink -f "$(which javac)")")")"
+      fi
+      export JAVA_HOME="$JDK17"
+      export PATH="$JAVA_HOME/bin:$PATH"
+      echo "JAVA_HOME=$JAVA_HOME"
+      java -version
   script:
     - chmod +x ./gradlew
     - ./gradlew :app:assembleDebug --no-daemon --stacktrace
