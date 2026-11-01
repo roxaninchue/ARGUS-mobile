@@ -121,6 +121,8 @@ object Pointer {
         val lp = WindowManager.LayoutParams(size, size, type(), DOT_FLAGS, PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START }
         try { w.addView(v, lp); dot = v; dotLp = lp } catch (_: Exception) { }
         showChip(ctx, w)
+        // 0.49.0 (mem1-ui-browse): the edge current appears with the pointer and leaves with it.
+        ScreenParticles.start(ctx)
     }
 
     private fun showChip(ctx: Context, w: WindowManager) {
@@ -210,6 +212,8 @@ object Pointer {
     /** When Blaze finishes or stops, the pointer and the Stop chip leave the screen. */
     fun done() {
         stopAsked = false
+        // 0.49.0 (mem1-ui-browse): the edge current goes with the pointer.
+        ScreenParticles.stop()
         main.post {
             chip?.let { c -> try { wm?.removeView(c) } catch (_: Exception) { } }; chip = null
             dot?.let { d -> try { wm?.removeView(d) } catch (_: Exception) { } }; dot = null; dotLp = null
