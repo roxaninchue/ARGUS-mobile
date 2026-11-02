@@ -84,6 +84,12 @@ apps) and `docs/<id>.txt` (the original text, verbatim).
   (`Agent.deleteChat` → `CacheTier.deleteChat`).
 - **Threads**: every cache call runs on `Dispatchers.IO`; the history is edited back on the loop's thread.
 
+## 0.51.0: BlazeQuery documents
+BlazeQuery (docs/BLAZEQUERY.md) stores what it fetches in this same cache: one document per topic (kind `blazequery`, in the
+chat that asked) plus a `bq` row in cache.db (topic key, doc id, expiry, the judged evidence as JSON). Topics expire after
+1 h (news) / 3 h (versions) / 6 h; storing a topic again replaces its document. The prompt gets only the compact evidence
+pack; cache_search / cache_read reach the full text.
+
 ## Settings
 
 - `tiered_memory` (bool, default true): off = the pre-0.49 behaviour (no paging of inputs, the old 12k budget).

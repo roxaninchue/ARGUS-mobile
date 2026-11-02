@@ -121,8 +121,8 @@ fun ShellTopBar(
             // v0.24.8: the mascot in a circle (was a square pixel "B").
             // v0.43.0: it shows who you're talking to (orb = Blaze, halo = Halo, orb in its halo = All); a tap opens the picker arc.
             Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onLogo)
-                .semantics { contentDescription = if (talkTo.isBlank()) "Blaze" else "Talking to ${TalkArcMath.label(talkTo)}. Tap to choose who to talk to" },
-                contentAlignment = Alignment.Center) { if (talkTo.isBlank()) BrandMark(mood, 34.dp) else TalkTargetMark(talkTo, mood, 34.dp) }
+                .semantics { contentDescription = "Blaze" },   // 0.51.0 one persona: always Blaze's mark (no Halo picker)
+                contentAlignment = Alignment.Center) { BrandMark(mood, 34.dp) }
             Spacer(Modifier.width(6.dp))
             // v0.29.0: the pill gets the room left over, and shrinks (then turns into icons) on narrow screens / big fonts.
             Box(Modifier.weight(1f)) { if (isPrivate) PrivatePill(onGhost) else Pill(mode, onMode, homeTab) }
