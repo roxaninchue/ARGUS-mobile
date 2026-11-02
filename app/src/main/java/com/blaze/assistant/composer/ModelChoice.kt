@@ -41,6 +41,30 @@ object ModelChoice {
     /** The gateway hint for [f]: null for Auto (the gateway picks as before). */
     fun wire(f: Family = _current.value): String? = if (f == Family.AUTO) null else f.id
 
+    /**
+     * 0.52.0: the gateway routes each tier leads with (gateway 0.8.61 src/tiers.ts, branch feat/tiers-0.52; the gateway
+     * resolves the tier, the phone only sends [wire]). Real route ids ("provider/model") from the live 0.8.60 routes.
+     * Never shown in the UI (model names stay hidden); kept here for the docs, the self-map and TiersTest.
+     */
+    fun routes(f: Family): List<String> = when (f) {
+        Family.AUTO -> emptyList()
+        Family.SPARK -> listOf("groq/qwen/qwen3.8-27b", "cerebras/gpt-oss-120b", "gemini/gemini-3.5-flash-lite")
+        Family.FLARE -> listOf("yeta/deepseek-v4.1-flash", "tokenharbor/deepseek-v4.1-flash:free", "gemini/gemini-3.5-flash")
+        Family.INFERNO -> listOf("yeta/glm-5.3-flash", "deepseek/deepseek-flash", "nous/reflection/beam-1.0-501b-a23b:free", "gemini/gemini-3.5-flash")
+    }
+
+    /**
+     * 0.52.0: the tier a background / blueprint agent runs on when the user left the chip on Auto: planners, reviewers
+     * and verifiers think hardest (Inferno), writers and coders are balanced (Flare), searches and rankers are fast
+     * (Spark). A tier the user picked always wins.
+     */
+    fun forRole(role: String, picked: Family = _current.value): Family = if (picked != Family.AUTO) picked else when (role.lowercase()) {
+        "planner", "reviewer", "verifier", "integrator", "sorter" -> Family.INFERNO
+        "researcher", "curator", "search", "ranker" -> Family.SPARK
+        "" -> Family.AUTO
+        else -> Family.FLARE
+    }
+
     /** Chip text: "Auto", "Spark", … */
     fun chip(f: Family = _current.value): String = f.label
 }

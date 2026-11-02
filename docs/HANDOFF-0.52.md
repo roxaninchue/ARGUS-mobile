@@ -22,7 +22,7 @@ Pushed in chunks via the GitLab commits API (work/gl_push.py). This file is upda
 | Orchestrator + pipelines | core + tests written (orchestra/Blueprint.kt, Orchestrator.kt, Pipelines.kt); tests pass (fake tools: children start before siblings finish, one writer per file, retry/escalate, cancellation cascade); not yet wired |
 | Background agents rework + pill UI | not started |
 | Removal of blocking states | not started |
-| Model tiers | not started |
+| Model tiers | gateway: Blaze-agent branch feat/tiers-0.52 @3094b9d (0.8.61, src/tiers.ts, 633/633 tests, NOT deployed); app: ModelChoice.routes/forRole + TiersTest (app already sent blaze_family; the gateway ignored it until this branch) |
 | Rich blocks | not started |
 
 ## Next
