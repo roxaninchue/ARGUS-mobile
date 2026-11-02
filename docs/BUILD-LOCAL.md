@@ -96,3 +96,14 @@ baselines to update. Shots land in `bb/app/build/shots/`.
 Memory: the Gradle daemon (3 GB heap) stays resident after a build and the JuiceFS write-back cache also uses RAM, so
 stop it between big steps (`pkill -f '[G]radleDaemon'`). A sandbox restart mid-run (seen once, 11:5x UTC) loses
 `qemu-user` and kills the run; the workspace (toolchain, Gradle home, bb) survives.
+
+## 0.50.0 results (2026-11-01, this sandbox, GitLab 7b4566c5)
+
+| Run | Where | Result |
+|---|---|---|
+| `:app:testDebugUnitTest` (whole suite) | aarch64, test JVM on JDK 21 | 2,908 tests · 240 skipped (221 screenshot tests need `BLAZE_SHOTS=1`). Failures: the same 13 native-graphics tests (env) + 3 source-scan tests updated for 0.50 (`PromptCacheBenchTest` mirrors the new `search` prompt part; `ComposerKeysTest` / `DesignNavTest` accept the expand mode) → 8/8 after the fix. |
+| 13 native-graphics tests + all 9 screenshot classes, `BLAZE_SHOTS=1` | x86-64 JVM under qemu-user, run in 4 chunks (each < 13 min) | 234 / 234 pass: 13 + `ShotsTest` 84, `Shots375Test` 84, `HomeRedesignShotsTest` 22, `ComposerShotsTest` 12, `Blaze050ShotsTest` 6, `MediaRevampShotsTest` 5, `SecretCardsShotsTest` 3, `StageShotsTest` 3, `MoviesShotsTest` 2. |
+| `FAST_R8=1 :app:assembleRelease` | aarch64 | 20m48s (cold release Kotlin compile ~11 min + R8 ~5 min); the detached (`nohup setsid`) run was not killed at 1200 s. |
+
+After a sandbox restart a cached Kotlin jar read failed once (`NoClassDefFoundError … KtTokens`, zip read errors); all
+`org.jetbrains.kotlin*` jars then passed `unzip -t` and the next run was clean, so check them before deleting the cache.
