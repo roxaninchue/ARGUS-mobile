@@ -1,5 +1,6 @@
 package com.blaze.assistant.orchestra
 
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
@@ -10,6 +11,7 @@ import org.junit.Test
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class ToolSchedulerTest {
     private fun call(i: Int, name: String, vararg kv: Pair<String, String>) =
         ToolScheduler.Call("c$i", name, JSONObject().apply { kv.forEach { put(it.first, it.second) } })
@@ -88,8 +90,8 @@ class ToolSchedulerTest {
             val n = live.getOrPut(c.args.optString("path")) { AtomicInteger() }.incrementAndGet(); peak = maxOf(peak, n)
             delay(300); live[c.args.optString("path")]!!.decrementAndGet(); "ok"
         }
-        val a = kotlinx.coroutines.async { ToolScheduler.run(listOf(call(0, "file_edit", "path" to "/p/Main.kt")), exec, locks = locks) }
-        val b = kotlinx.coroutines.async { ToolScheduler.run(listOf(call(0, "file_write", "path" to "/p//Main.kt")), exec, locks = locks) }
+        val a = async { ToolScheduler.run(listOf(call(0, "file_edit", "path" to "/p/Main.kt")), exec, locks = locks) }
+        val b = async { ToolScheduler.run(listOf(call(0, "file_write", "path" to "/p//Main.kt")), exec, locks = locks) }
         a.await(); b.await()
         assertEquals(1, peak)
         assertTrue(locks.idle("file:/p/Main.kt"))

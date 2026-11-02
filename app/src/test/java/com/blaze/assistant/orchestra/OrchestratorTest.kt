@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * The orchestrator with fake agents: dataflow starts (children before siblings finish), one writer per file, retries
  * and escalation to fix agents, blocked dependents, cancellation cascading into every agent and nested runs.
  */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class OrchestratorTest {
     private fun files(vararg f: Pair<String, List<String>>) = JSONArray(f.map { (p, deps) -> JSONObject().put("path", p).put("deps", JSONArray(deps)) }).toString()
 
