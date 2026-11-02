@@ -18,8 +18,8 @@ Pushed in chunks via the GitLab commits API (work/gl_push.py). This file is upda
 | Feature | Status |
 |---|---|
 | Version bump 0.52.0 / 187 | done |
-| ToolScheduler (parallel tools) | not started |
-| Orchestrator + pipelines | not started |
+| ToolScheduler (parallel tools) | core + tests written (orchestra/ToolScheduler.kt, KeyedLocks.kt); not yet wired into Agent.kt; not yet compiled |
+| Orchestrator + pipelines | core + tests written (orchestra/Blueprint.kt, Orchestrator.kt, Pipelines.kt); not yet wired; not yet compiled |
 | Background agents rework + pill UI | not started |
 | Removal of blocking states | not started |
 | Model tiers | not started |
