@@ -45,7 +45,7 @@ class LifeLog2Test {
         val r = LifeReview.parse(raw)!!
         assertEquals("Chanda", r.speakers["S2"]); assertEquals(1, r.memories.size); assertEquals("a restaurant", r.scenes[0].setting)
         val f = LifeReview.format(r, 40, 2, 1)
-        assertTrue(f.contains("Chanda (S2)")); assertTrue(f.contains("Halo:")); assertTrue(f.contains("Send Chanda"))
+        assertTrue(f.contains("Chanda (S2)")); assertTrue(f.contains("Second look:"));   // 0.51.0: no separate Halo persona assertTrue(f.contains("Send Chanda"))
         assertNull(LifeReview.parse("no json"))
     }
 

@@ -141,7 +141,9 @@ object Judge {
             val o = arr.optJSONObject(k) ?: continue
             val idx = (if (o.has("i")) o.optInt("i", k + 1) else k + 1) - 1
             if (idx !in 0 until n) continue
-            fun v(key: String): Double { val x = o.optDouble(key, Double.NaN); return if (x.isNaN()) 0.5 else if (x > 1.0) (x / 10.0).coerceIn(0.0, 1.0) else x.coerceIn(0.0, 1.0) }
+            // one scale per item: 0-10 when any score is above 1 (so "rel":1 next to "auth":5 means 1/10), else 0-1
+            val ten = listOf("rel", "auth", "fresh", "cons").any { o.optDouble(it, 0.0) > 1.0 }
+            fun v(key: String): Double { val x = o.optDouble(key, Double.NaN); return if (x.isNaN()) 0.5 else if (ten) (x / 10.0).coerceIn(0.0, 1.0) else x.coerceIn(0.0, 1.0) }
             out[idx] = ModelScore(v("rel"), v("auth"), v("fresh"), v("cons"), o.optString("conflict").trim().take(160))
         }
         return out
