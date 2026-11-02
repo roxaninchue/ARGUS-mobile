@@ -82,7 +82,7 @@ object SelfSetup {
             else -> null
         }
         if (i != null) return try {
-            ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); "Opened the ${target.replace('_', ' ')} screen. Tell the user what to switch on there."
+            com.blaze.assistant.device.ActivityStart.start(ctx, i); "Opened the ${target.replace('_', ' ')} screen. Tell the user what to switch on there."
         } catch (e: Exception) { "Couldn't open it: ${e.message}" }
         // Otherwise a page inside Blaze's own settings.
         val page = settingsPageFor(target)

@@ -20,6 +20,9 @@ object ChatLane {
     // Anything that smells of live data, the user's own stuff or an action goes to the tool lane.
     private val needsTools = Regex("""\b(weather|news|latest|current|currently|today|tonight|tomorrow|yesterday|now|this week|price|prices|cost|exchange rate|score|scores|search|google|look ?up|find|near|nearby|open|close|send|call|text|sms|whatsapp|remind|reminder|alarm|timer|set|turn|switch|enable|disable|play|pause|stop|start|check|my|mine|our|download|install|book|order|buy|schedule|calendar|email|mail|inbox|message|messages|screen|phone|app|apps|file|files|photo|battery|wifi|bluetooth|volume|time|date|run|code|shell|terminal|git|repo|website|url|link|http|again|same|do it|go ahead|continue|retry|remember|forget|delete|cancel|image|images|picture|pic|draw|paint|generate|create|make|design|logo|wallpaper|beat|beats|music|song|audio|gallery|python|script)\b|https?://|\.(com|org|zm|net)\b|\d{3,}""", RegexOption.IGNORE_CASE)
 
+    /** 0.48.0 RC5: words that always ask Blaze to act (never plain chat, even inside a short "okay, …"). */
+    private val goAhead = Regex("""(?i)\b(?:do it|go ahead|go for it|proceed|carry on|try again)\b""")
+
     private val knowledge = Regex("""^(what|who|why|how|when|where|which|explain|define|tell me|describe|write|compose|give me|translate|summari[sz]e|compare|is|are|can|could|should|would|do|does|did)\b""", RegexOption.IGNORE_CASE)
 
     /** True when [text] can be answered by plain chat. [lastAssistant] = Blaze's previous message. */
@@ -27,6 +30,10 @@ object ChatLane {
         if (!Settings.bool("chat_lane", true)) return false
         val t = text.trim()
         if (t.isEmpty() || t.length > 300 || t.startsWith("[") || t.startsWith("/")) return false
+        // 0.48.0 RC5: a go-ahead for what Blaze just offered or announced is part of that task and needs the tools ("okay, do it!"
+        // after "I'll open the accessibility settings now." took this no-tools lane, and the reply only SAID it was opening them).
+        if (ActionPromise.consent(t) && ActionPromise.offers(lastAssistant)) return false
+        if (goAhead.containsMatchIn(t)) return false
         // 0.46.4: small talk always takes the chat lane (no tools, no search, no sources), except a yes to a schedule offer
         // (a bare "yes" / "ok" answering Blaze's own question is part of that task and keeps the full lane)
         if (SmallTalk.chitChat(t) && !TurnContext.scheduleFollowUp(t, lastAssistant) && !(SmallTalk.ack(t) && lastAssistant.trim().endsWith("?"))) return true

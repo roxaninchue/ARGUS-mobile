@@ -75,6 +75,11 @@ object Commands {
         Command("brainstorm", "<topic>", "10 quick ideas", "Brainstorm 10 varied, specific ideas for: {input}"),
         Command("code", "<task>", "Write code", "Write clean, working code for this, with a one-line explanation: {input}"),
         Command("screen", "[question]", "Look at your screen", "Look at my screen (use look_at_screen) and help: {input}"),
+        // 0.51.0 BlazeQuery: explicit research on top of the automatic evidence pack
+        Command("query", "<question>", "Answer from freshly checked sources (BlazeQuery)",
+            "Use blaze_research with depth=quick to check current, reliable sources (official docs, registries, release notes), then answer with citations: {input}"),
+        Command("research", "<topic>", "Multi-round research with a cited brief (BlazeQuery)",
+            "Use blaze_research with depth=deep on this and give me the cited brief, saying what is still uncertain: {input}"),
         Command("brief", "", "Today's briefing", "Give me a short briefing: today's calendar, any unread texts or missed calls, and anything I asked you to remember for today. {input}")
     )
 

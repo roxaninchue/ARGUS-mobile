@@ -1,0 +1,109 @@
+# Building Blaze locally (no GitHub Actions)
+
+Written 2026-11-01 for the 0.49.0 build, when the GitHub mirror was unavailable. The build agent's sandbox is
+**Linux aarch64** (2 CPUs, ~7 GB RAM, no `/dev/kvm`), which shapes every step below.
+
+## Toolchain (kept in the Hark workspace under `work/toolchain/`)
+
+| What | Where | Notes |
+|---|---|---|
+| JDK 17 (Temurin, **aarch64**) | `work/toolchain/jdk-17.0.21+9` | `https://api.adoptium.net/v3/binary/latest/17/ga/linux/aarch64/jdk/hotspot/normal/eclipse` (CI uses 21; 17 is enough for AGP 8.5.2) |
+| Android cmdline-tools | `work/toolchain/sdk/cmdline-tools/latest` | `sdkmanager` failed to fetch its manifests through the sandbox proxy, so packages were installed by hand: |
+| `platforms;android-34` | `sdk/platforms/android-34` | unzip `https://dl.google.com/android/repository/platform-34-ext7_r03.zip` |
+| `build-tools;34.0.0` | `sdk/build-tools/34.0.0` | unzip `build-tools_r34-linux.zip` (dir `android-14` → `34.0.0`), then **replace the x86-64 binaries** `aapt aapt2 aidl dexdump split-select zipalign` with the aarch64 static builds from `https://github.com/lzhiyong/android-sdk-tools/releases/download/34.0.3/android-sdk-tools-static-aarch64.zip` (`work/toolchain/arm64tools/build-tools/`). `apksigner` and `d8` are jars and work as is. |
+| aapt2 for AGP | `-Pandroid.aapt2FromMavenOverride=work/toolchain/arm64tools/build-tools/aapt2` | the aapt2 AGP downloads from Maven is x86-64 only |
+| Go 1.26.10 (linux-arm64) | `work/toolchain/go` | for `libwgproxy.so` / `libblazerouter.so` (gitignored jniLibs) |
+
+`work/toolchain/env.sh` exports `JAVA_HOME`, `ANDROID_HOME`, `GRADLE_USER_HOME=work/toolchain/gradle-home` and `AAPT2`.
+
+**Memory:** `/` and `/tmp` are RAM-backed (overlay on tmpfs) in this sandbox. Keeping the Gradle cache (~2 GB) and the
+build copy there left ~3 GB for Gradle and the daemon was OOM-killed. Everything heavy lives on the workspace disk
+(`work/toolchain/gradle-home`, `work/toolchain/bb`). Note: `pkill -f GradleDaemon` inside a shell command also kills
+that shell (its own command line matches); use `pkill -f '[G]radleDaemon'`.
+
+## Scripts
+
+- `work/toolchain/gradle.sh <log> <tasks…>` — copies `work/blaze` (without `.git`, `build/`) to `work/toolchain/bb`
+  and runs Gradle there with the CI flags (`-Xmx3g`, in-process Kotlin, the aapt2 override), so build outputs never
+  land in the git tree.
+  Run it detached (`nohup … &`) and poll the log; a cold `compileDebugKotlin` takes ~12 min on 2 CPUs.
+  It leaves out the paths the CI mirror never has (`gateway/`, `keystore/`, `HANDOFF*.md`, `STATUS.md` and the
+  private-repo workflows, the `EXCL` list of `work/gh_push.py`), because `OwnerName19Test` and `UpdateKeysTest` scan the
+  tree and fail on them by design.
+- `work/toolchain/jdk21-tests.gradle` — init script that runs the unit-test JVM on JDK 21 (`work/toolchain/jdk21`,
+  Temurin aarch64), as CI does. On JDK 17, `LocalLanguagesTest.cuttingNeverSplitsALetterOrAnEmoji` fails: JDK 17's
+  `BreakIterator` splits ZWJ emoji sequences; JDK 20+ follows Unicode extended grapheme clusters. The build stays on 17.
+- `work/toolchain/units.py` — totals and failures from `bb/app/build/test-results/testDebugUnitTest/*.xml` (the CI summary).
+- `work/toolchain/golibs.sh` — builds the two Go libraries into `app/src/main/jniLibs/*` exactly like `mobile-build.yml`.
+
+Typical sequence:
+
+```
+work/toolchain/golibs.sh
+work/toolchain/gradle.sh work/toolchain/logs/unit.log --init-script work/toolchain/jdk21-tests.gradle :app:testDebugUnitTest --continue
+BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ComposerShotsTest' …   # see mobile-build.yml for the list
+work/toolchain/gradle.sh /tmp/rel.log :app:assembleRelease
+```
+
+## Test-signed APK (never the production key)
+
+```
+BT=$ANDROID_HOME/build-tools/34.0.0
+$BT/zipalign -f -p 4 /tmp/bb/app/build/outputs/apk/release/*-unsigned.apk /tmp/aligned.apk
+keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 -storepass testonly -keypass testonly -alias test \
+  -keyalg RSA -keysize 2048 -validity 30 -dname "CN=Blaze test"
+java -jar $BT/lib/apksigner.jar sign --ks /tmp/test.p12 --ks-pass pass:testonly --out work/out/blaze-<ver>-<tag>-<sha8>-test-signed.apk /tmp/aligned.apk
+```
+
+A phone with the real (production-signed) Blaze must uninstall it before installing a test-signed APK.
+
+## Robolectric native graphics on aarch64 (screenshot tests)
+
+`app/build.gradle.kts` runs every Robolectric test with `robolectric.graphicsMode=NATIVE`, and Robolectric 4.13's native
+runtime has **no Linux aarch64 build** ("The Robolectric native runtime is not supported on Linux (aarch64)"). Tests
+that draw (Compose rules, activities, every *ShotsTest) therefore run on an **x86-64 JVM under qemu-user**:
+
+```
+sudo dpkg --add-architecture amd64 && sudo apt-get update
+sudo apt-get install -y qemu-user libc6:amd64 libstdc++6:amd64 zlib1g:amd64 libgcc-s1:amd64
+# x86-64 Temurin 17 unpacked in work/toolchain/jdk17-x64; wrapper work/toolchain/qemu-jdk/bin/java (= qemu-java.sh)
+BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log --init-script work/toolchain/qemu-tests.gradle :app:testDebugUnitTest --tests '…ShotsTest'
+```
+
+`qemu-tests.gradle` only sets the Test tasks' `executable` to the wrapper (nothing in the repo changes). The wrapper must
+sit at `<dir>/bin/java`: Gradle treats the executable's grandparent as a Java home and probes it (a wrapper at
+`work/toolchain/qemu-java.sh` fails with "Toolchain installation … could not be probed"). After a sandbox restart
+`qemu-user` and the amd64 libraries are gone (they live on the RAM root) and must be installed again. It is slow
+(emulated JIT), so run the native aarch64 suite first and only the drawing tests under qemu.
+
+## Low-RAM gate
+
+The gate (`tools/smoke/run-smoke.sh`, `lowram-smoke.yml`) needs an x86-64 Android emulator with KVM. This sandbox has
+no `/dev/kvm` and is aarch64, so the gate **cannot run here**; run it on the GitHub mirror (`smoke/**` branches) or
+any x86-64 machine with KVM.
+
+## 0.49.0 mem1 results (2026-11-01, this sandbox)
+
+| Run | Where | Result |
+|---|---|---|
+| `:app:testDebugUnitTest` (whole suite) | aarch64, test JVM on JDK 21 | 2,882 tests · 13 failures · 234 skipped. The 13 are exactly the Robolectric NATIVE-graphics tests (`InstallSheetTest` 2, `BackRuleWindowTest` 1, `HomeFocusTest` 6, `HomeRedesignTest` 4): "native runtime is not supported on Linux (aarch64)". The 234 skipped include the 215 screenshot tests (they need `BLAZE_SHOTS=1`). |
+| those 4 classes + the 8 screenshot classes of `mobile-build.yml`, `BLAZE_SHOTS=1` | x86-64 JVM under qemu-user | 228 / 228 pass: the 13 above + 215 shots (`ShotsTest` 84, `Shots375Test` 84, `HomeRedesignShotsTest` 22, `ComposerShotsTest` 12, `MediaRevampShotsTest` 5, `SecretCardsShotsTest` 3, `StageShotsTest` 3, `MoviesShotsTest` 2). ~45 min. |
+| combined | | **2,882 tests, 0 failures** (RC4: 2,831 + 49 new unit tests + 2 new chat-over-Home shots). |
+
+The screenshot tests assert on what is drawn (text, distinct colours); the repo keeps no golden images, so there were no
+baselines to update. Shots land in `bb/app/build/shots/`.
+
+Memory: the Gradle daemon (3 GB heap) stays resident after a build and the JuiceFS write-back cache also uses RAM, so
+stop it between big steps (`pkill -f '[G]radleDaemon'`). A sandbox restart mid-run (seen once, 11:5x UTC) loses
+`qemu-user` and kills the run; the workspace (toolchain, Gradle home, bb) survives.
+
+## 0.50.0 results (2026-11-01, this sandbox, GitLab 7b4566c5)
+
+| Run | Where | Result |
+|---|---|---|
+| `:app:testDebugUnitTest` (whole suite) | aarch64, test JVM on JDK 21 | 2,908 tests · 240 skipped (221 screenshot tests need `BLAZE_SHOTS=1`). Failures: the same 13 native-graphics tests (env) + 3 source-scan tests updated for 0.50 (`PromptCacheBenchTest` mirrors the new `search` prompt part; `ComposerKeysTest` / `DesignNavTest` accept the expand mode) → 8/8 after the fix. |
+| 13 native-graphics tests + all 9 screenshot classes, `BLAZE_SHOTS=1` | x86-64 JVM under qemu-user, run in 4 chunks (each < 13 min) | 234 / 234 pass: 13 + `ShotsTest` 84, `Shots375Test` 84, `HomeRedesignShotsTest` 22, `ComposerShotsTest` 12, `Blaze050ShotsTest` 6, `MediaRevampShotsTest` 5, `SecretCardsShotsTest` 3, `StageShotsTest` 3, `MoviesShotsTest` 2. |
+| `FAST_R8=1 :app:assembleRelease` | aarch64 | 20m48s (cold release Kotlin compile ~11 min + R8 ~5 min); the detached (`nohup setsid`) run was not killed at 1200 s. |
+
+After a sandbox restart a cached Kotlin jar read failed once (`NoClassDefFoundError … KtTokens`, zip read errors); all
+`org.jetbrains.kotlin*` jars then passed `unzip -t` and the next run was clean, so check them before deleting the cache.

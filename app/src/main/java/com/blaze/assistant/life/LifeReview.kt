@@ -42,7 +42,7 @@ object LifeReview {
         "\"who\":[\"You\",\"...\"],\"summary\":\"one sentence\"}],\"memories\":[{\"kind\":\"person|project|decision|preference|fact|profile\"," +
         "\"subject\":\"short\",\"text\":\"one sentence\"}],\"todos\":[\"things the user said they'd do\"]}"
 
-    const val HALO_PROMPT = "You are Halo, the warm half of a two-assistant team. Blaze drafted a review of the user's life log. Check it " +
+    const val HALO_PROMPT = "You are Blaze, taking a second, careful look at a draft review of the user's life log. Check it " +
         "against the transcript: fix wrong names or speakers, merge or split scenes if Blaze got the setting wrong, drop memories the " +
         "transcript doesn't support, and add what Blaze missed, especially relationships and how people felt (kept factual). Keep what is " +
         "right. Answer ONLY the same JSON shape, plus \"halo\":\"one short line to the user about what you changed or agreed with\"."
@@ -89,6 +89,6 @@ object LifeReview {
             append("- ").append(if (t.isNotBlank()) "$t " else "").append(s.setting.ifBlank { "somewhere" }).append(": ").append(s.summary).append('\n') } }
         if (r.todos.isNotEmpty()) { append("\n**You said you'd**\n"); r.todos.forEach { append("- $it\n") } }
         append("\nSaved $saved ${if (saved == 1) "memory" else "memories"}, each marked as inferred.")
-        if (r.halo.isNotBlank()) append("\n\n_Halo: ${r.halo}_")
+        if (r.halo.isNotBlank()) append("\n\n_Second look: ${r.halo}_")
     }.trimEnd()
 }

@@ -41,5 +41,5 @@ object NewsPromise {
 
     /** The prompt line for the duo / Halo lanes. */
     const val RULE = "\nNEWS IS NOT A TASK: when the user just shares news or plans (\"I'm making a big update…\"), react to it as yourself in the first person; " +
-        "never say it is locked in, on it, coming, almost ready or being delivered, and never speak about Halo or Blaze in the third person as if they were building it."
+        "never say it is locked in, on it, coming, almost ready or being delivered, and never speak about Blaze in the third person as if they were building it."
 }

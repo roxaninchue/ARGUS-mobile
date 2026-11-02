@@ -60,14 +60,14 @@ object LifeLogs {
     fun reviewLast(ctx: Context): String {
         val d = LifeAudio.sessions(ctx).firstOrNull { LifeAudio.state(it) in setOf("failed", "done", "queued") } ?: return "There's no recorded life log waiting to be reviewed."
         LifeAudio.setState(d, "queued"); LifeLogWorker.enqueue(ctx, d.name)
-        return "Reviewing your last life log again. Blaze and Halo will post what they find."
+        return "Reviewing your last life log again. Blaze will post what it finds."
     }
 
     var acknowledged: Boolean
         get() = try { Settings.bool(PREF_ACK, false) } catch (_: Throwable) { false }
         set(v) = Settings.setBool(PREF_ACK, v)
 
-    const val EXPLAINER = "Life logs record what your phone's mic hears, including people near you, then transcribe it on the phone; Blaze and Halo turn it into memories and the audio is deleted after (unless you keep recordings). " +
+    const val EXPLAINER = "Life logs record what your phone's mic hears, including people near you, then transcribe it on the phone; Blaze turns it into memories and the audio is deleted after (unless you keep recordings). " +
         "Turn it off around anyone who hasn't agreed to be recorded. It stays visible in your notifications " +
         "with Pause and Stop, pauses during calls and on low battery, and you can delete the logs any time in Settings \u203a Life logs."
 
@@ -114,7 +114,7 @@ object LifeLogs {
             ContextCompat.startForegroundService(ctx, Intent(ctx, LifeLogService::class.java)
                 .setAction(LifeLogService.ACT_START).putExtra(LifeLogService.EXTRA_BRAINSTORM, brainstorm))
             if (brainstorm) "Brainstorm log on. Think out loud; say \u201cstop brainstorm\u201d (or tap Stop) and I'll write up the ideas, decisions and next steps."
-            else if (recordMode) "Life logs on. I'm recording the moments people speak; when you stop, I transcribe it, tell the voices apart, and Blaze and Halo turn it into memories."
+            else if (recordMode) "Life logs on. I'm recording the moments people speak; when you stop, I transcribe it, tell the voices apart, and turn it into memories."
             else "Life logs on. I'm transcribing what the mic hears (text only). Say \u201cstop logs\u201d or tap Stop in the notification."
         } catch (e: Exception) { "Couldn't start life logs: ${e.message}. Open Blaze and try again from the app." }
     }
@@ -218,7 +218,7 @@ object LifeLogs {
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
         .put("description", "Life logs: transcribe what the phone's mic hears (text only, on-device, free) into the journal so you learn from it later. " +
             "start for \"start logs\" / \"live logs\"; brainstorm for \"brainstorm with me\" (a summary of ideas, decisions and next steps comes when it stops); " +
-            "pause, resume, stop, status; review re-runs the transcription + Blaze/Halo review of the last recording; delete erases every saved log (asks first). The first start shows the user a consent card.")
+            "pause, resume, stop, status; review re-runs the transcription + Blaze review of the last recording; delete erases every saved log (asks first). The first start shows the user a consent card.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("start", "brainstorm", "pause", "resume", "stop", "status", "delete", "review")))))
             .put("required", JSONArray(listOf("action")))))

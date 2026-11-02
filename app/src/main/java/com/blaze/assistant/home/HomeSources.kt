@@ -65,7 +65,8 @@ object HomeSources {
                     lat = best.latitude; lon = best.longitude
                     place = try {
                         @Suppress("DEPRECATION")
-                        android.location.Geocoder(ctx, Locale.getDefault()).getFromLocation(lat, lon, 1)?.firstOrNull()?.let { it.locality ?: it.subAdminArea ?: it.adminArea }
+                        android.location.Geocoder(ctx, Locale.getDefault()).getFromLocation(lat, lon, 1)?.firstOrNull()?.let { a ->
+                            (a.locality ?: a.subAdminArea ?: a.adminArea)?.let { WeatherBoard.placeLabel(it, a.countryCode) } }
                     } catch (_: Exception) { null } ?: place.ifBlank { "Here" }
                 }
             } catch (_: Exception) { }
@@ -76,8 +77,8 @@ object HomeSources {
             } else if (cfg.optString("city").isNotBlank()) {
                 val p = OpenMeteo.parsePlace(get(OpenMeteo.geocodeUrl(cfg.optString("city")), "that city"))
                     ?: return Result(WidgetData.failed("Couldn't find the city \u201c${cfg.optString("city")}\u201d. Try another spelling.", "city"))
-                lat = p.lat; lon = p.lon; place = p.name
-                learned = JSONObject().put("lat", p.lat).put("lon", p.lon).put("place", p.name).put("geo_city", cfg.optString("city"))
+                lat = p.lat; lon = p.lon; place = WeatherBoard.placeLabel(p.name, p.countryCode)
+                learned = JSONObject().put("lat", p.lat).put("lon", p.lon).put("place", place).put("geo_city", cfg.optString("city"))
             } else {
                 return Result(WidgetData.failed(if (useLoc) "Allow location, or type a city, to see the weather." else "Type a city to see the weather.", if (useLoc) "location" else "city"))
             }
@@ -92,7 +93,7 @@ object HomeSources {
             val (code, body) = com.blaze.assistant.agent.GatewayWeather.fetch(lat, lon, units, token)
             if (code in 200..299) com.blaze.assistant.agent.GatewayWeather.parse(body) else null
         } catch (e: Exception) { null }
-        if (now != null) return Result(HomeWeather.toData(now, place, units, forecast?.lines.orEmpty()), learned)
+        if (now != null) return Result(HomeWeather.toData(now, place, units, forecast?.lines.orEmpty()).copy(sunset = forecast?.sunset.orEmpty()), learned)
         val d = forecast ?: OpenMeteo.parse(get(OpenMeteo.forecastUrl(lat, lon, f), "the weather"), place)
         return Result(d.copy(link = "https://open-meteo.com/"), learned)
     }

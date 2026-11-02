@@ -162,9 +162,19 @@ object SkillMatch {
     // v0.26.1: an in-chat diagram / chart doesn't pull in the file-route skills (VisualRoute); it's drawn in the reply.
     fun forTurn(query: String): Result = try {
         // v0.33.3: "list my apps" is about the phone (list_apps), never a skill whose words overlap (product-listing).
-        if (com.blaze.assistant.phone.AppFinder.isAppsAsk(query)) Result.NONE else
-        match(query, VisualRoute.filter(query, cached()).filter { SkillGuard.strongHit(query, it) }, fullMin = FULL_MIN, fullWords = FULL_WORDS, maxOthers = 4)
+        if (com.blaze.assistant.phone.AppFinder.isAppsAsk(query)) Result.NONE else selectForTurn(query, VisualRoute.filter(query, cached()))
     } catch (_: Throwable) { Result.NONE }
+
+    /**
+     * 0.50.0: the per-turn pick, pure. Nothing unless the message clearly asks for a task ([SkillIntent.taskIntent]); then only
+     * strong hits (SkillGuard) scoring ≥ [SkillIntent.TURN_MIN], at most [SkillIntent.MAX_NAMES] in total.
+     */
+    fun selectForTurn(query: String, cands: List<Cand>): Result {
+        if (!SkillIntent.taskIntent(query)) return Result.NONE
+        val r = match(query, cands.filter { SkillGuard.strongHit(query, it) }, minScore = SkillIntent.TURN_MIN, fullMin = FULL_MIN, fullWords = FULL_WORDS, maxOthers = 4)
+        val full = r.full.take(SkillIntent.MAX_NAMES)
+        return Result(full, r.others.take((SkillIntent.MAX_NAMES - full.size).coerceAtLeast(0)))
+    }
 
     fun invalidate() { cache = null; index = null }
 
@@ -188,10 +198,13 @@ object SkillMatch {
 
     /** The per-turn skills block: the 2-3 best matches with short descriptions and one line about find_skill. No name list. */
     fun lookupBlock(query: String, skip: Set<String> = emptySet()): String = if (com.blaze.assistant.phone.AppFinder.isAppsAsk(query)) "" else try {
-        // v0.30.5: skills that only share a stray word with the request are never suggested (SkillGuard.strongHit).
+        // 0.50.0: no "best matches" for a message that doesn't ask for a task (small talk, a status update); just the find_skill line.
         val cands = VisualRoute.filter(query, cached())
-        val weak = cands.filter { !SkillGuard.strongHit(query, it) }.map { it.name }.toSet()
-        SkillIndex.promptBlock(index(cands), query, skip + weak)
+        if (!SkillIntent.taskIntent(query)) SkillIndex.promptBlock(index(cands), "") else {
+            // v0.30.5: skills that only share a stray word with the request are never suggested (SkillGuard.strongHit).
+            val weak = cands.filter { !SkillGuard.strongHit(query, it) }.map { it.name }.toSet()
+            SkillIndex.promptBlock(index(cands), query, skip + weak)
+        }
     } catch (_: Throwable) { "" }
 
     /** find_skill: search every enabled skill. */

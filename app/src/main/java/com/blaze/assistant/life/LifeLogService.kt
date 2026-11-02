@@ -440,7 +440,7 @@ class LifeLogService : Service() {
         val text = when {
             s.downloading in 0..99 -> "Getting the offline model once (${s.downloading}%)"
             pausedFor.isNotBlank() -> if (recordMode) "The mic is off." else "The mic is off. Text only, no audio is kept."
-            recordMode -> "Only voiced moments are kept. Tap Stop and Blaze & Halo review it."
+            recordMode -> "Only voiced moments are kept. Tap Stop and Blaze reviews it."
             s.last.isNotBlank() -> "\u201c${s.last}\u201d"
             else -> "Text only, no audio. Say \u201cstop logs\u201d or tap Stop."
         }
@@ -491,7 +491,7 @@ class LifeLogService : Service() {
                 val n = try { w?.finish() ?: 0 } catch (_: Exception) { 0 }
                 val d = LifeAudio.dir(app, id)
                 if (n > 0) { LifeAudio.setState(d, "queued"); LifeLogWorker.enqueue(app, id)
-                    Agent.note("Stopped. I'm transcribing the recording now, then Blaze and Halo will go over it and save what matters.", asReply = true) }
+                    Agent.note("Stopped. I'm transcribing the recording now, then I'll go over it and save what matters.", asReply = true) }
                 else { d.deleteRecursively(); Agent.note("Stopped. Nobody spoke loud enough to record, so there's nothing to review.", asReply = true) }
             }, 400)
         }

@@ -24,7 +24,8 @@ object TalkArcMath {
     const val STEP = 60f
 
     /** v0.45.28: what an old saved pick means now ("all" = Blaze, with Halo x Blaze joining in automatically). */
-    fun normalize(who: String?): String = if (who == "halo") "halo" else "blaze"
+    // 0.51.0 one persona: every saved pick ("halo", "all") is Blaze now (OnePersona).
+    fun normalize(who: String?): String = com.blaze.assistant.agent.OnePersona.who(who)
 
     fun indexOf(who: String): Int = TARGETS.indexOf(normalize(who)).coerceAtLeast(0)
     fun targetAt(i: Int): String = TARGETS[i.coerceIn(0, TARGETS.size - 1)]

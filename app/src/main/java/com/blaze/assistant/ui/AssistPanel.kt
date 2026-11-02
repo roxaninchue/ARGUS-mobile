@@ -312,7 +312,7 @@ private fun AssistDuoStrip(listening: Boolean, busy: Boolean, partial: String, o
             Spacer(Modifier.width(3.dp))
             Box(Modifier.size(9.dp).clip(CircleShape).background(DuoColors.haloGold))
             Spacer(Modifier.width(8.dp))
-            Text("Blaze & Halo", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Glass.text))
+            Text("Blaze", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Glass.text))
             Spacer(Modifier.width(8.dp))
             Text(when { listening -> "Listening\u2026 let go to finish"; busy -> "Working"; label.isNotBlank() -> "Done \u00b7 still in $label"; else -> "Ready" },
                 maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
