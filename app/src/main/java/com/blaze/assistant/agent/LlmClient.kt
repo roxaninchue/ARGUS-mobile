@@ -397,7 +397,8 @@ object LlmClient {
             if (t.pid == Providers.GATEWAY) Cloud.tag(this, task ?: Cloud.task(messages, tools, liteTurn))
             // 0.47 chat composer: the model family picked on the composer's chip (Auto sends nothing). Read-only hint; the brain
             // order (on-phone brain → Nous → gateway) is unchanged and the gateway strips every blaze_* field before a provider.
-            if (t.pid == Providers.GATEWAY) com.blaze.assistant.composer.ModelChoice.wire()?.let { put("blaze_family", it) }
+            // 0.51.0: a call can carry its own family (BlazeQuery's judge uses the tier the user picked, Auto → Flare).
+            if (t.pid == Providers.GATEWAY) (CallState.current().family?.let { it.ifBlank { null } } ?: com.blaze.assistant.composer.ModelChoice.wire())?.let { put("blaze_family", it) }
             // v0.45.3: a hint for short / plain turns that the first visible word matters more than long reasoning. The
             // gateway strips every blaze_* field before a provider sees it, so this is safe today; a gateway that reads it can
             // map it to each provider's own setting (e.g. reasoning_effort "low" for gpt-oss). Not sent on action turns.

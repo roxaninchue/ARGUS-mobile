@@ -70,7 +70,7 @@ fun RoomCard(m: ChatMessage) {
         Text(Md.plain(m.text), maxLines = 2, overflow = TextOverflow.Ellipsis,
             style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 21.sp, color = c.ink))
         Spacer(Modifier.height(6.dp))
-        if (live) Shimmer(status.ifBlank { "Blaze and Halo are talking it through" }, Modifier.fillMaxWidth())
+        if (live) Shimmer(status.ifBlank { "Blaze is thinking it through" }, Modifier.fillMaxWidth())
         else {
             val line = if (last != null && state != Duo.DONE) "${Duo.Who.of(last.speaker).display}: ${Md.plain(last.text).replace('\n', ' ').take(110)}" else roomHead(m.meta)
             Text(line, maxLines = 2, overflow = TextOverflow.Ellipsis,

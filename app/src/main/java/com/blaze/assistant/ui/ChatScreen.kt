@@ -649,7 +649,7 @@ fun ChatScreen() {
                 // v0.24.0: the toggle only switches tabs; there is no conversation list behind it.
                 // v0.28.3: switching tabs keeps your place in Projects; Chat is always the main thread.
                 onMode = { m -> plusOpen = false; showViews = false; go(navNow().switchTab(m)) },
-                onLogo = { exitView(); go(navNow().switchTab(ChatNav.CHAT)); showViews = false; plusOpen = false; arcOpen = !arcOpen },
+                onLogo = { exitView(); go(navNow().switchTab(ChatNav.CHAT)); showViews = false; plusOpen = false; arcOpen = false },
                 talkTo = talkTo,
                 onSearch = { showSearch = true },
                 routerOk = Settings.ready,
@@ -838,10 +838,8 @@ fun ChatScreen() {
                 // v0.39.0 Simple mode: the big hold-to-talk mic until you tap Type.
                 val bigMic = simpleMode && !typing && input.text.isEmpty() && pending.isEmpty() && quote.isBlank() && !plusOpen
                 // v0.43.0: who the next message goes to (@blaze / @halo / @all), picked on the arc from the header orb.
+                // 0.51.0 one persona: the Blaze / Halo arc is gone (there is only Blaze).
                 if (arcOpen) BackHandler { arcOpen = false }
-                AnimatedVisibility(arcOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) {
-                    TalkArc(talkTo, alignEnd = !bigMic && voiceState == Voice.State.LISTENING) { talkTo = it; arcOpen = false }
-                }
                 // 0.46.0: the reply bar folded into a floating pill by the Stage (never gone): tap for the full bar.
                 if (stageActive && stage.reply == com.blaze.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     StageReplyPill { com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.SetChrome(reply = com.blaze.assistant.stage.ReplyBar.FULL)) }

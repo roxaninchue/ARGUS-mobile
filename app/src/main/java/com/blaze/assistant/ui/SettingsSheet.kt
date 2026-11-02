@@ -642,7 +642,9 @@ private fun PersonaSection() {
     var glowOn by remember { mutableStateOf(Settings.bool("screen_glow", true)) }
     ToggleRow("Glow while Blaze uses the screen", "Particles round the screen edges while Blaze taps and types for you", glowOn) { glowOn = !glowOn; Settings.setBool("screen_glow", glowOn) }
     ToggleRow("Stream replies", "Words appear as Blaze writes them", stream) { stream = !stream; Settings.streamReplies = stream }
-    HaloStudioSection()   // v0.33.0
+    // 0.51.0 BlazeQuery (Halo Persona Studio removed: Halo is part of Blaze now)
+    var bqOn by remember { mutableStateOf(Settings.bool("blazequery", true)) }
+    ToggleRow("BlazeQuery: fresh facts for every reply", "Checks trusted sources (official docs, registries, release notes; never Wikipedia) as you send, and gives Blaze a short summary. Nothing is sent from private chats", bqOn) { bqOn = !bqOn; Settings.setBool("blazequery", bqOn) }
 }
 
 @Composable

@@ -78,7 +78,7 @@ class PromptCacheBenchTest {
             s("phone_state", PhoneState.RULE); s("know", lit("s", "know"))
             turn("make", if (prof.terminal) lit("turn", "terminal") + lit("turn", "make") else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             slow("about", "\nABOUT YOU: Blaze family. You are Blaze for Android v0.45.1 (build 149). Paired PC: none. Blaze account: signed in. " + filler("about", 300))
-            s("search", SearchRoute.PROMPT)   // 0.50.0
+            s("search", SearchRoute.PROMPT + ExecRoute.PROMPT)   // 0.50.0; 0.51.0 + terminal first
             s("calls", lit("s", "calls"))
             s("autonomy", Autonomy.promptBlock())
             turn("skills", "\nSKILLS that may fit this request: " + filler("skill${live.turn}", 600))

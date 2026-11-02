@@ -45,7 +45,7 @@ object ToolRouter {
             { it in setOf("send_sms", "compose_sms", "read_messages", "call_contact", "call_number", "dial", "find_contact", "recent_calls",
                 "message_contact", "send_text", "reply_to_notification", "recent_notifications", "run_ussd", "add_contact", "edit_contact",
                 "notif_conversations", "notif_read", "notif_reply", "group_brain") }),
-        Group("persona", "Halo Persona Studio: tune how Halo talks, language mix, boundaries, saved personas",
+        Group("persona", "personality: Blaze's style is set in Settings › Personality (no separate Halo persona since 0.51)",
             r("""\b(persona\w*|personality|halo (?:be|talk|speak|sound)|be (?:funnier|nicer|more \w+)|speak (?:bemba|nyanja|english)|bemba|nyanja|stop calling me)\b"""),
             { it == "halo_persona" }),
         // v0.33.0 Agent Marketplace, Duo Workspaces, Call Copilot.

@@ -63,7 +63,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
 
     Spacer(Modifier.height(18.dp))
     Text(if (recordMode) "Say \u201cstart logs\u201d (or /logs) and Blaze records the moments people speak. When you stop, it transcribes them on the phone, " +
-        "tells the voices apart, and Blaze and Halo go over it together: where you were, who was there, and the memories worth keeping (people, plans, promises), each marked as inferred."
+        "tells the voices apart, and Blaze goes over it: where you were, who was there, and the memories worth keeping (people, plans, promises), each marked as inferred."
         else "Say \u201cstart logs\u201d (or /logs) and Blaze transcribes what your phone hears, on the phone and for free. Only text is saved, never audio; " +
         "while your phone is idle Blaze turns it into memories: people, plans, ideas and things you promised, each marked as inferred.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
@@ -111,7 +111,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
 
     // v0.33.0 Life Log 2
     V18Section("Record, then review")
-    ToggleRow("Record, then transcribe", "Keeps only the moments people speak; after Stop: transcript, voices told apart, Blaze + Halo review. Off = live text only, no audio", recordMode) {
+    ToggleRow("Record, then transcribe", "Keeps only the moments people speak; after Stop: transcript, voices told apart, Blaze review. Off = live text only, no audio", recordMode) {
         recordMode = !recordMode; LifeLogs.recordMode = recordMode }
     if (recordMode) {
         ToggleRow("Keep recordings", "Off: the audio is deleted once the review is done. On: kept on the phone (about 115 MB per hour of talking)", keepAudio) {
@@ -120,7 +120,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
         if (used > 0) V18Note("Recordings on the phone: ${"%.1f".format(used / 1e6)} MB", top = 6)
         Spacer(Modifier.height(8.dp))
         V18Button("Review my last recording again", primary = false) { note = LifeLogs.reviewLast(ctx) }
-        V18Note(if (voices.isEmpty()) "Voices Blaze knows: none yet. After each review, voices Blaze and Halo could name (\u201cYou\u201d, a friend's name) are remembered, so they're recognised next time."
+        V18Note(if (voices.isEmpty()) "Voices Blaze knows: none yet. After each review, voices Blaze could name (\u201cYou\u201d, a friend's name) are remembered, so they're recognised next time."
             else "Voices Blaze knows: ${voices.joinToString(", ")}", top = 8)
         if (voices.isNotEmpty()) V18Button("Forget voices", primary = false) { com.blaze.assistant.agent.Settings.setStr(LifeLogWorker.PREF_VOICES, "[]"); voices = emptyList() }
     }
@@ -174,7 +174,7 @@ internal fun RepliesPage(previewAccess: Boolean? = null) {
     ToggleRow("Money Radar", "Keeps a receipt vault from mobile-money and bank SMS, spots bills you pay monthly and warns before data bundles run out or expire. Only amounts, payees and balances are kept, on the phone", money) {
         money = !money; com.blaze.assistant.notify.MoneyRadar.on = money; if (money) com.blaze.assistant.notify.MoneyRadar.schedule(ctx) }
     var copilot by remember { mutableStateOf(com.blaze.assistant.phone.CallCopilot.on) }
-    ToggleRow("Call Copilot", "Live captions during phone calls (best on speaker), Halo's suggested answers, and a summary with to-dos when you hang up. Captions only, no audio is kept", copilot) {
+    ToggleRow("Call Copilot", "Live captions during phone calls (best on speaker), suggested answers, and a summary with to-dos when you hang up. Captions only, no audio is kept", copilot) {
         copilot = !copilot; com.blaze.assistant.phone.CallCopilot.on = copilot; if (copilot) com.blaze.assistant.phone.CallCopilot.init(ctx) }
     ToggleRow("Keep chat logs", "A rolling log per conversation in Blaze's memory, so replies have more context than the last few messages", logOn) {
         logOn = !logOn; Conversations.setLog(logOn) }

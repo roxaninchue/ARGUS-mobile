@@ -44,6 +44,9 @@ class CacheStore(private val sql: Sql, val dir: File, var capBytes: Long = CAP_B
             "title TEXT NOT NULL, chapter TEXT NOT NULL DEFAULT '', level INTEGER NOT NULL DEFAULT 0, gist TEXT NOT NULL DEFAULT '', " +
             "gisted INTEGER NOT NULL DEFAULT 0, start INTEGER NOT NULL, len INTEGER NOT NULL, chars INTEGER NOT NULL, UNIQUE(doc, idx))")
         sql.exec("CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        // 0.51.0 BlazeQuery: one row per fetched topic (short-term, expires), pointing at its cache document
+        sql.exec("CREATE TABLE IF NOT EXISTS bq(topic TEXT PRIMARY KEY, doc TEXT NOT NULL, chat TEXT NOT NULL, created INTEGER NOT NULL, " +
+            "expires INTEGER NOT NULL, pack TEXT NOT NULL, judged INTEGER NOT NULL DEFAULT 0, hits INTEGER NOT NULL DEFAULT 0)")
         fts = openFts()
     }
 
@@ -203,6 +206,7 @@ class CacheStore(private val sql: Sql, val dir: File, var capBytes: Long = CAP_B
         } catch (_: Exception) { }
         sql.exec("DELETE FROM sections WHERE doc=?", id)
         sql.exec("DELETE FROM docs WHERE id=?", id)
+        sql.exec("DELETE FROM bq WHERE doc=?", id)
         file(id).delete()
         Unit
     }
@@ -226,6 +230,45 @@ class CacheStore(private val sql: Sql, val dir: File, var capBytes: Long = CAP_B
             delete(d.id); gone += d.id; total -= d.bytes
         }
         return gone
+    }
+
+    // ---------------- 0.51.0 BlazeQuery topics (short-term, with TTL) ----------------
+
+    /** A BlazeQuery topic: [pack] = the judged evidence as JSON (BlazeQuery.encode), [doc] = the document with the full text. */
+    data class Bq(val topic: String, val doc: String, val chat: String, val created: Long, val expires: Long, val pack: String, val judged: Boolean, val hits: Int)
+
+    private fun bqOf(r: Sql.Row) = Bq(r.text(0), r.text(1), r.text(2), r.long(3), r.long(4), r.text(5), r.long(6) != 0L, r.long(7).toInt())
+    private val bqCols = "topic, doc, chat, created, expires, pack, judged, hits"
+
+    /** Stores (or replaces) [topic]; the previous document of the same topic is deleted (dedupe). */
+    fun bqPut(topic: String, doc: String, chat: String, ttlMs: Long, pack: String, judged: Boolean) {
+        val old = bqRow(topic)
+        val now = clock()
+        synchronized(lock) {
+            sql.exec("INSERT OR REPLACE INTO bq(topic, doc, chat, created, expires, pack, judged, hits) VALUES(?,?,?,?,?,?,?,?)",
+                topic, doc, chat, now, now + ttlMs, pack, if (judged) 1 else 0, old?.hits ?: 0)
+        }
+        if (old != null && old.doc != doc && old.doc.isNotEmpty()) delete(old.doc)
+    }
+
+    private fun bqRow(topic: String): Bq? = sql.query("SELECT $bqCols FROM bq WHERE topic=?", topic) { bqOf(it) }.firstOrNull()
+
+    /** [topic] if it has not expired (counts a hit). */
+    fun bqGet(topic: String): Bq? {
+        val b = bqRow(topic)?.takeIf { it.expires > clock() } ?: return null
+        synchronized(lock) { sql.exec("UPDATE bq SET hits=hits+1 WHERE topic=?", topic) }
+        touch(b.doc)
+        return b
+    }
+
+    /** Every topic still alive, newest first. */
+    fun bqAlive(): List<Bq> = sql.query("SELECT $bqCols FROM bq WHERE expires>? ORDER BY created DESC LIMIT 200", clock()) { bqOf(it) }
+
+    /** Drops expired topics and their documents. Returns how many went. */
+    fun bqExpire(): Int {
+        val gone = sql.query("SELECT $bqCols FROM bq WHERE expires<=?", clock()) { bqOf(it) }
+        for (b in gone) { synchronized(lock) { sql.exec("DELETE FROM bq WHERE topic=?", b.topic) }; if (b.doc.isNotEmpty()) delete(b.doc) }
+        return gone.size
     }
 
     companion object {
