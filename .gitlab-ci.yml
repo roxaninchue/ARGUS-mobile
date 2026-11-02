@@ -7,12 +7,13 @@ stages: [test, build]
 
 variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
   # The Kotlin JVM backend overflows the default 1m stack while transforming Agent$Session.runLoop
   # (a ~3000-line coroutine with hundreds of try/catch blocks): the coroutine transformer walks that
-  # control-flow graph recursively. -Xmx alone does nothing for it. in-process keeps the compiler in
-  # this JVM so -Xss8m applies to it (the same combination the GitHub workflow uses).
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
-  GRADLE_FLAGS: "--console=plain -Pkotlin.compiler.execution.strategy=in-process -Pkotlin.jvm.target.validation.mode=warning --max-workers=4"
+  # control-flow graph recursively. -Xss in org.gradle.jvmargs only sizes the *main* thread, and the
+  # transformer recurses on a worker thread, so the stack has to be raised on the Kotlin daemon
+  # itself. This is the combination that worked on feat/0.49.0-mem1-ui-browse (pipeline 16).
+  GRADLE_FLAGS: "--no-daemon --console=plain -Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m -Pkotlin.jvm.target.validation.mode=warning --max-workers=2"
   GO_VERSION: "1.26.10"
 
 .setup: &setup
