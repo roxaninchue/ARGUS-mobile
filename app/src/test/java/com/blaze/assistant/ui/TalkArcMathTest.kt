@@ -10,16 +10,17 @@ class TalkArcMathTest {
 
     @Test fun targetsAndLabels() {
         assertEquals(listOf("blaze", "halo"), TalkArcMath.TARGETS)
-        assertEquals(1, TalkArcMath.indexOf("halo")); assertEquals(0, TalkArcMath.indexOf("nobody"))
+        // 0.51.0 one persona: a saved "halo" pick is Blaze now
+        assertEquals(0, TalkArcMath.indexOf("halo")); assertEquals(0, TalkArcMath.indexOf("nobody"))
         assertEquals("halo", TalkArcMath.targetAt(9)); assertEquals("blaze", TalkArcMath.targetAt(-1))
-        assertEquals("Halo", TalkArcMath.label("halo")); assertEquals("Blaze", TalkArcMath.label("blaze"))
+        assertEquals("Blaze", TalkArcMath.label("halo")); assertEquals("Blaze", TalkArcMath.label("blaze"))
     }
 
     @Test fun oldHaloXBlazePickMigratesToBlaze() {
         assertEquals("blaze", TalkArcMath.normalize("all"))
         assertEquals(0, TalkArcMath.indexOf("all"))
         assertEquals("Blaze", TalkArcMath.label("all"))
-        assertEquals("halo", TalkArcMath.normalize("halo")); assertEquals("blaze", TalkArcMath.normalize(null))
+        assertEquals("blaze", TalkArcMath.normalize("halo")); assertEquals("blaze", TalkArcMath.normalize(null))
     }
 
     @Test fun layoutPutsTheFocusedOnTop() {
