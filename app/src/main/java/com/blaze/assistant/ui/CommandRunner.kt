@@ -29,10 +29,10 @@ object CommandRunner {
                 else -> emptyList()
             }
         }
-        return Commands.matching(text).take(30).map { c ->
-            val needsArg = c.args.startsWith("<")
-            Suggestion("/" + c.name + if (c.args.isNotEmpty()) " " + c.args else "", c.desc,
-                "/" + c.name + if (c.args.isNotEmpty()) " " else "", runNow = c.args.isEmpty())
+        // 0.50.0: the same registry Blaze answers "what / commands do I have" from (SlashCommands): name matches first, then
+        // descriptions; a lone "/" lists everything. Tap runs a command that needs nothing, or puts "/name " in the box.
+        return com.blaze.assistant.agent.SlashCommands.filter(text).take(60).map { e ->
+            Suggestion(e.label, e.desc, e.fill, runNow = e.args.isEmpty())
         }
     }
 

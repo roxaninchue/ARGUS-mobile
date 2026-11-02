@@ -34,6 +34,7 @@ class ComposerKeysTest {
         val shell = src("ui/Shell.kt")
         val composer = shell.substring(shell.indexOf("keyboardOptions = ComposerKeys.Message") - 600, shell.indexOf("keyboardOptions = ComposerKeys.Message"))
         assertFalse(composer.contains("singleLine = true"))
-        assertTrue(composer.contains("maxLines = 6"))
+        // 0.50.0: 6 lines, 14 when the chat is expanded (ChatExpand)
+        assertTrue(composer.contains("maxLines = 6") || composer.contains("maxLines = if (expanded) 14 else 6"))
     }
 }

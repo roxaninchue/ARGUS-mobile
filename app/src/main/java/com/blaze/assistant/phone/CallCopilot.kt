@@ -31,7 +31,7 @@ import org.vosk.Recognizer
 
 /**
  * v0.33.0 Call Copilot (opt-in, pref call_copilot): when a call starts, live captions run on the phone (offline Vosk) in
- * a notification; "Halo, help" asks Halo for a suggested answer (and a translation if the other side switched language)
+ * a notification; "Blaze, help" asks Halo for a suggested answer (and a translation if the other side switched language)
  * from what was said so far; after you hang up, Blaze writes a summary with the to-dos and offers reminders. Android
  * gives apps the microphone during a call, so on speaker both sides are heard; on the earpiece mostly your side.
  * Nothing is recorded as audio; only the caption text, and it's dropped after the summary unless you keep it.
@@ -58,7 +58,7 @@ object CallCopilot {
 
     const val TOOL = "call_copilot"
     fun tool(): org.json.JSONObject = org.json.JSONObject().put("type", "function").put("function", org.json.JSONObject().put("name", TOOL)
-        .put("description", "Call Copilot: live captions during phone calls, Halo's suggested answers, and a summary with to-dos after hanging up. enable / disable / status.")
+        .put("description", "Call Copilot: live captions during phone calls, suggested answers, and a summary with to-dos after hanging up. enable / disable / status.")
         .put("parameters", org.json.JSONObject().put("type", "object").put("properties", org.json.JSONObject()
             .put("action", org.json.JSONObject().put("type", "string").put("enum", org.json.JSONArray(listOf("enable", "disable", "status"))))).put("required", org.json.JSONArray(listOf("action")))))
     fun run(ctx: Context, a: org.json.JSONObject): String = when (a.optString("action")) {
@@ -148,7 +148,7 @@ class CallCopilotService : Service() {
     private fun note() = NotificationCompat.Builder(this, CH).setSmallIcon(R.drawable.ic_stat_blaze).setOngoing(true).setOnlyAlertOnce(true)
         .setContentTitle("Call Copilot · live captions").setContentText(hint.ifBlank { CallCopilot.Pure.tail(synchronized(lines) { lines.toList() } + listOf(partial).filter { it.isNotBlank() }) })
         .setStyle(NotificationCompat.BigTextStyle().bigText(hint.ifBlank { CallCopilot.Pure.tail(synchronized(lines) { lines.toList() } + listOf(partial).filter { it.isNotBlank() }, 420) }))
-        .addAction(0, "Halo, help", pi(HELP, 61)).addAction(0, "Stop", pi(STOP, 62)).build()
+        .addAction(0, "Blaze, help", pi(HELP, 61)).addAction(0, "Stop", pi(STOP, 62)).build()
 
     private fun refresh() { if (live) try { getSystemService(NotificationManager::class.java).notify(NID, note()) } catch (_: Throwable) { } }
 
@@ -180,7 +180,7 @@ class CallCopilotService : Service() {
         if (snap.isEmpty()) return
         scope.launch {
             val r = try { Agent.ask("Call Copilot", CallCopilot.Pure.suggestPrompt(snap)) } catch (_: Throwable) { "" }
-            if (r.isNotBlank()) { hint = "Halo: " + r.take(300); main.post { refresh() }; main.postDelayed({ hint = ""; refresh() }, 25_000) }
+            if (r.isNotBlank()) { hint = "Blaze: " + r.take(300); main.post { refresh() }; main.postDelayed({ hint = ""; refresh() }, 25_000) }
         }
     }
 

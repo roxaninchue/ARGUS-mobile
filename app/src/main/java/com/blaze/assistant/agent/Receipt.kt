@@ -28,7 +28,7 @@ object Receipt {
 
     /** Tools that only look things up / organise the turn: in the log, never in the line. */
     val LOOKUPS = setOf("find_tool", "load_tools", "web_search", "fetch_page", "browser_read", "read_screen", "look_at_screen", "memory_search",
-        "recall_memory", "search_chat", "read_turn", "read_artifact", "search_past_chats", "device_status", "blaze_now", "processes", "list_apps",
+        "recall_memory", "search_chat", "read_turn", "read_artifact", "cache_toc", "cache_read", "cache_search", "cache_summarize", "search_past_chats", "device_status", "blaze_now", "processes", "list_apps",
         "file_read", "file_list", "file_search", "terminal_status", "gmail_search", "gmail_read", "gcal_events", "calendar_events", "recent_notifications",
         "read_messages", "recent_calls", "find_contact", "get_location", "get_weather", "battery_level", "spotify_now_playing", "blaze_docs_search", "blaze_docs_read",
         "project_docs_search", "project_docs_read", "ask_user", "wait", "viewport", "use_skill", "about_blaze", "check_agent", "list_agents", "goal")

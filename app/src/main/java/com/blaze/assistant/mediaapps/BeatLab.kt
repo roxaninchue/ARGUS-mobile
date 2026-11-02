@@ -149,7 +149,7 @@ object BeatLab {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
         .put("description", "Beat Lab: the user hums a melody (record for N seconds, or give a WAV path) and Blaze makes a beat from it on the phone: key, " +
-            "chords per bar, drums, bass, pad and the hummed melody as lead, saved to the Music library. Then offer lyrics from Halo on the chords. " +
+            "chords per bar, drums, bass, pad and the hummed melody as lead, saved to the Music library. Then offer to write lyrics on the chords. " +
             "Tell the user to start humming right when you call record.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("record", "file"))))
@@ -204,7 +204,7 @@ object BeatLab {
             "", "download", System.currentTimeMillis(), "", "audio", "Yours", "beatlab")) } catch (_: Throwable) { }
         val names = chords.map { Dsp.chordName(key, it) }
         "Beat made: \u201c$title\u201d, ${Dsp.NAMES[key]} major, $bpm BPM, ${style.ifBlank { "pop" }}, $bars bars x2 (${pcm.size / OUT_RATE}s), " +
-            "chords ${names.joinToString(" | ")}, ${notes.size} melody notes. It's in Music (Downloads). Offer: Halo writes lyrics on these chords in the user's style, " +
+            "chords ${names.joinToString(" | ")}, ${notes.size} melody notes. It's in Music (Downloads). Offer: Blaze writes lyrics on these chords in the user's style, " +
             "another tempo/style, or cover art (cover_art)."
     }
 }

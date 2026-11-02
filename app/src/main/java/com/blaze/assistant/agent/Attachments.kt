@@ -55,8 +55,18 @@ object Attachments {
                     Attachment(name, parts, first?.let { saveThumb(ctx, it, name) })
                 }
                 mime.startsWith("text/") || name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".csv") || name.endsWith(".json") -> {
-                    val body = cr.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty().take(60_000)
-                    Attachment(name, listOf(text("File $name:\n$body")))
+                    // 0.49.0 tiered memory: a big text file is streamed into the cache tier (never loaded whole) and the
+                    // message carries a reference; a small one is sent as before.
+                    val size = try { cr.openFileDescriptor(uri, "r")?.use { it.statSize } ?: -1L } catch (_: Exception) { -1L }
+                    val big = size < 0 || size > com.blaze.assistant.memory.CacheTier.PASTE_OVER
+                    val ref = if (!big) null else cr.openInputStream(uri)?.bufferedReader()?.use { com.blaze.assistant.memory.CacheTier.cacheAttachment(name, it) }
+                    if (ref != null) Attachment(name, listOf(text("File $name:\n$ref")))
+                    else {
+                        val body = cr.openInputStream(uri)?.bufferedReader()?.use { r -> val b = CharArray(60_000); var n = 0
+                            while (n < b.size) { val k = r.read(b, n, b.size - n); if (k < 0) break; n += k }
+                            String(b, 0, n) }.orEmpty()
+                        Attachment(name, listOf(text("File $name:\n$body")))
+                    }
                 }
                 else -> null
             }

@@ -18,6 +18,8 @@ object ToolRouter {
         "web_search", "fetch_page", "load_tools", "find_tool", "goal", "use_skill", "find_skill", "search_past_chats", "run_skill",
         // Long chats (v0.15.0): always on hand so nothing older is ever out of reach.
         "search_chat", "read_turn", "read_artifact", "update_brief", "project_docs_search", "project_docs_read",
+        // 0.49.0 tiered memory: cached documents (big pastes, files, long outputs) are read through these.
+        "cache_toc", "cache_read", "cache_search", "cache_summarize",
         // Basic phone control stays in core: it's the most common thing people ask for.
         "run_plan", "open_app", "search_in_app", "read_screen", "phone_task",
         // Calls: "loudspeaker", "mute", "hang up" must work mid-call without guessing a group.
@@ -43,7 +45,7 @@ object ToolRouter {
             { it in setOf("send_sms", "compose_sms", "read_messages", "call_contact", "call_number", "dial", "find_contact", "recent_calls",
                 "message_contact", "send_text", "reply_to_notification", "recent_notifications", "run_ussd", "add_contact", "edit_contact",
                 "notif_conversations", "notif_read", "notif_reply", "group_brain") }),
-        Group("persona", "Halo Persona Studio: tune how Halo talks, language mix, boundaries, saved personas",
+        Group("persona", "personality: Blaze's style is set in Settings › Personality (no separate Halo persona since 0.51)",
             r("""\b(persona\w*|personality|halo (?:be|talk|speak|sound)|be (?:funnier|nicer|more \w+)|speak (?:bemba|nyanja|english)|bemba|nyanja|stop calling me)\b"""),
             { it == "halo_persona" }),
         // v0.33.0 Agent Marketplace, Duo Workspaces, Call Copilot.

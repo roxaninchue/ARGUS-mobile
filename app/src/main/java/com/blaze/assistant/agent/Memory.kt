@@ -26,10 +26,27 @@ object Memory {
     } catch (_: Exception) { emptyList() }
 
     /** [mergeLegacy]: also fold the prefs list into the table (after a backup was restored). */
-    fun init(ctx: Context, mergeLegacy: Boolean = false) {
+    /** [attachLater] (lazy start, BlazeApp): never touch the table here; attach on the store's background thread once open. */
+    fun init(ctx: Context, mergeLegacy: Boolean = false, attachLater: Boolean = false) {
         prefs = ctx.getSharedPreferences("blaze", Context.MODE_PRIVATE)
+        if (attachLater) {
+            if (Mind.db() == null) _facts.value = legacy()
+            Mind.openLater(ctx) { attach(mergeLegacy) }
+            return
+        }
         val d = Mind.db()
-        if (d == null) { _facts.value = legacy(); return }
+        if (d == null) {
+            _facts.value = legacy()
+            // Lazy start: blaze.db is still opening off the main thread; attach to its table there once it is open.
+            if (Mind.opening) Mind.openLater(ctx) { attach(mergeLegacy) }
+            return
+        }
+        attach(mergeLegacy)
+    }
+
+    /** Joins the memories table once the store is open (imports the old list once). Runs off the main thread at start. */
+    fun attach(mergeLegacy: Boolean = false) {
+        val d = Mind.db() ?: return
         try {
             if (d.meta("mig_memory") != "1") { Mind.importFacts(d, legacy()); d.setMeta("mig_memory", "1") }
             else if (mergeLegacy) Mind.importFacts(d, legacy())
@@ -62,7 +79,7 @@ object Memory {
         if (f.isEmpty()) return "Nothing to remember."
         // Keys, passwords, codes and card/account numbers are never kept, even when asked (Desktop v0.7 rule).
         if (Learn.secret(f)) return "Not saved: that looks like a password, code or account number, which Blaze never keeps in memory."
-        val d = Mind.db()
+        val d = Mind.dbOrWait()
         if (d != null) {
             val r = replaces.trim().lowercase()
             var gone = 0
@@ -96,7 +113,7 @@ object Memory {
         // v0.45.3: "#12" is an id, not words to match: memory_delete removes lines by id (with one confirm card).
         if (MemoryDelete.isIdQuery(q)) return "forget matches words, not ids. To remove #ids, call memory_delete with ids=[" +
             MemoryDelete.idsOf(q).joinToString(",") + "]."
-        val d = Mind.db()
+        val d = Mind.dbOrWait()
         if (d != null) {
             val hit = try { d.all().filter { matches(it.text, q) || matches(it.subject + ": " + it.text, q) } } catch (_: Exception) { emptyList() }
             hit.forEach { d.delete(it.id) }
@@ -110,14 +127,14 @@ object Memory {
     }
 
     fun remove(index: Int) {
-        val d = Mind.db()
+        val d = Mind.dbOrWait()
         if (d != null) { ids.getOrNull(index)?.let { d.delete(it) }; reload(); return }
         persist(_facts.value.filterIndexed { i, _ -> i != index })
     }
 
     /** "Forget all" on the Memory screen (the user's explicit request). */
     fun clear() {
-        val d = Mind.db()
+        val d = Mind.dbOrWait()
         if (d != null) { try { d.all().forEach { d.delete(it.id) } } catch (_: Exception) { }; reload(); return }
         persist(emptyList())
     }
@@ -137,9 +154,10 @@ object Memory {
     fun promptBlock(query: String = ""): String {
         if (Mind.ready) {
             val turn = turnKey
-            if (turn == 0L) return Mind.promptBlock()
+            // 0.49.0 tiered memory (long tier): the pinned core + index, then the few saved lines that match this message.
+            if (turn == 0L) return withRelevant(query)
             // A new turn, another store, or a memory saved through Mind rebuilds it.
-            return mindBlock.get(Triple(turn, System.identityHashCode(Mind.db()), Mind.version)) { Mind.promptBlock() }
+            return mindBlock.get(Triple(turn, System.identityHashCode(Mind.db()), Mind.version)) { withRelevant(query) }
         }
         val all = _facts.value
         if (all.isEmpty()) return ""
@@ -153,6 +171,13 @@ object Memory {
         val more = all.size - chosen.size
         return "\nWhat you remember about the user (use quietly, don't recite):\n" + chosen.joinToString("\n") { "- $it" } +
             (if (more > 0) "\n($more more facts saved; call recall_memory to search them.)" else "") + "\n"
+    }
+
+    private fun withRelevant(query: String): String {
+        val all = Mind.all()
+        val b = Mind.block(all)
+        val r = if (query.isBlank()) "" else Mind.relevantBlock(query, Mind.core(all))
+        return if (r.isEmpty()) b else b + r
     }
 
     fun recall(query: String): String {

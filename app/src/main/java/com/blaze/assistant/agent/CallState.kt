@@ -32,6 +32,8 @@ class CallState(val parent: CallState? = null) {
     /** 0.46.4: the caller's own [BrainRace.Kind] (Halo's side lane = CHAT); null = decided per call. */
     @Volatile var raceKind: BrainRace.Kind? = null
     @Volatile var turnModel: TurnModel? = null
+    /** 0.51.0 BlazeQuery: a per-call model family hint ("spark" / "flare" / "inferno"; "" = none) that wins over the composer's pick. */
+    @Volatile var family: String? = null
 
     /** Wall-clock time of the latest streamed chunk of a call in this state (or a child's). */
     val chunkAt = AtomicLong(0)
@@ -63,7 +65,7 @@ class CallState(val parent: CallState? = null) {
     }
 
     /** A child for one call: same turn flags and route pin, its own results. */
-    fun fork(): CallState = CallState(this).also { it.lite = lite; it.quick = quick; it.heavy = heavy; it.turnModel = turnModel; it.raceKind = raceKind }
+    fun fork(): CallState = CallState(this).also { it.lite = lite; it.quick = quick; it.heavy = heavy; it.turnModel = turnModel; it.raceKind = raceKind; it.family = family }
 
     /** Hands this call's results to its parent (the turn reads them after the call, as it read the globals before). */
     fun publish() {

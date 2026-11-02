@@ -47,8 +47,15 @@ class ChatOverlayLogicTest {
 
     @Test fun initials() {
         assertEquals("R", ChatOverlayLogic.initial("roxan"))
-        assertEquals("Y", ChatOverlayLogic.initial(""))
-        assertEquals("Y", ChatOverlayLogic.initial(null))
+        assertEquals(null, ChatOverlayLogic.initial(""))
+        assertEquals(null, ChatOverlayLogic.initial(null))
+        // RC4: the real account, never a static "Y"
+        assertEquals(ChatOverlayLogic.Avatar.Letter("A"), ChatOverlayLogic.avatar(true, "Ada", "x@y.z", ""))
+        assertEquals(ChatOverlayLogic.Avatar.Letter("A"), ChatOverlayLogic.avatar(true, "", "ada@y.z", null))
+        assertEquals(ChatOverlayLogic.Avatar.Photo("https://img/x.png", "A"), ChatOverlayLogic.avatar(true, "Ada", "", "https://img/x.png"))
+        assertEquals(ChatOverlayLogic.Avatar.Letter("A"), ChatOverlayLogic.avatar(true, "Ada", "", "http://insecure/x.png"))
+        assertEquals(ChatOverlayLogic.Avatar.Neutral, ChatOverlayLogic.avatar(false, "Ada", "x@y.z", "https://img/x.png"))
+        assertEquals(ChatOverlayLogic.Avatar.Neutral, ChatOverlayLogic.avatar(true, "", "", ""))
     }
 
     private fun src(rel: String): String {
@@ -73,6 +80,6 @@ class ChatOverlayLogicTest {
         // search never runs on main
         assertTrue(src("ui/composer/SpotlightPanel.kt").contains("withContext(Dispatchers.Default)"))
         // routing only reads the choice
-        assertTrue(src("agent/LlmClient.kt").contains("ModelChoice.wire()?.let { put(\"blaze_family\", it) }"))
+        assertTrue(src("agent/LlmClient.kt").contains("ModelChoice.wire())?.let { put(\"blaze_family\", it) }"))
     }
 }

@@ -683,15 +683,110 @@ object Mind {
         return out.path
     }
 
+    // ---------------- lazy open (0.46.6 lazy start) ----------------
+
+    /** Completed once blaze.db (or mind.db) is open, or failed to open; null until [openLater] or [await] started it. */
+    @Volatile private var opened: kotlinx.coroutines.CompletableDeferred<Store?>? = null
+    private val openLock = Any()
+
+    /** True while the store is being opened in the background (not yet [ready]). */
+    val opening: Boolean get() = db == null && opened?.isCompleted == false
+
+    /**
+     * Starts opening the mind on a background thread and returns at once (never blocks the caller). [then] runs on that
+     * thread after the store is open (or failed to open), e.g. Memory attaching to the table. Calling it again only adds
+     * [then]; the store is opened once.
+     */
+    fun openLater(ctx: Context, then: (() -> Unit)? = null): kotlinx.coroutines.Deferred<Store?> {
+        val app = ctx.applicationContext ?: ctx
+        val (d, start) = synchronized(openLock) {
+            opened?.let { it to false } ?: kotlinx.coroutines.CompletableDeferred<Store?>().also { opened = it }.let { it to true }
+        }
+        if (start) Thread({
+            try { init(app) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: openLater", e) }
+            d.complete(db)
+        }, "blaze-mind-open").apply { isDaemon = true }.start()
+        if (then != null) {
+            if (d.isCompleted) Thread({ runThen(then) }, "blaze-mind-then").apply { isDaemon = true }.start()
+            else d.invokeOnCompletion { runThen(then) }
+        }
+        return d
+    }
+
+    private fun runThen(then: () -> Unit) {
+        try { then() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: after open", e) }
+    }
+
+    /**
+     * Suspends until the store is open and returns it (null when it could not open). Never blocks a thread: the open
+     * itself runs on Dispatchers.IO. With no [ctx] and nothing started, returns what is there now.
+     */
+    suspend fun await(ctx: Context? = null): Store? {
+        db?.let { return it }
+        val d = opened ?: if (ctx != null) openLater(ctx) else return db
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { d.await() }
+    }
+
+    /**
+     * The store for a background caller: when it is still opening, waits for it (at most [LazyStart.MIND_WAIT_MS]) so a
+     * save made right after start still lands in the table. The main thread never waits: it gets what is there now.
+     */
+    fun dbOrWait(): Store? {
+        db?.let { return it }
+        val d = opened ?: return null
+        val main = try { android.os.Looper.getMainLooper()?.isCurrentThread == true } catch (_: Throwable) { false }
+        if (!LazyStart.mayWaitForMind(main, !d.isCompleted)) return db
+        return try { kotlinx.coroutines.runBlocking { kotlinx.coroutines.withTimeoutOrNull(LazyStart.MIND_WAIT_MS) { d.await() } } } catch (e: Throwable) {
+            com.blaze.assistant.device.CrashLog.quiet("Mind: dbOrWait", e); db
+        }
+    }
+
     /** For tests: use this store. */
     fun use(d: Store?) { db = d }
 
     /** For tests: forget the open store and the notice (the next [init] opens again). */
-    fun resetForTests() { db = null; notice = null }
+    fun resetForTests() { db = null; notice = null; opened = null }
 
     fun all(): List<Mem> = try { db?.all() ?: emptyList() } catch (_: Exception) { emptyList() }
 
     fun promptBlock(): String = block(all())
+
+    // ---------------- 0.49.0 tiered memory: relevant notes each turn ----------------
+
+    /** Lines of the relevant-notes block (≈200 tokens). */
+    const val RELEVANT_CHARS = 800
+    const val RELEVANT_MAX = 5
+    private val relevantStop = setOf("the", "and", "for", "you", "your", "what", "whats", "who", "how", "can", "could", "would", "should",
+        "please", "with", "that", "this", "about", "tell", "me", "my", "is", "are", "was", "do", "does", "did", "it", "to", "of", "in", "on",
+        "a", "an", "i", "im", "be", "have", "has", "just", "now", "again", "okay", "ok", "yes", "no", "hi", "hey", "blaze", "thanks", "thank",
+        "doing", "going", "know", "want", "need", "get", "got", "any", "some", "there", "here", "from", "into")
+
+    /** The words of [query] worth searching memory for ("" when there are none). */
+    fun relevantQuery(query: String): String = words(query).filter { it !in relevantStop && it.length > 2 }.take(8).joinToString(" ")
+
+    /**
+     * Pure: the RELEVANT NOTES block from [hits] (best first): lines not already in the pinned [core], at most
+     * [RELEVANT_MAX] lines and [max] characters. "" when nothing new.
+     */
+    fun relevantLines(hits: List<Mem>, core: String, max: Int = RELEVANT_CHARS): String {
+        val sb = StringBuilder()
+        var n = 0
+        for (m in hits) {
+            if (n >= RELEVANT_MAX) break
+            if (core.contains(m.text)) continue
+            val l = "- #${m.id} [${m.kind}] ${m.subject}: ${m.text}\n"
+            if (sb.length + l.length > max) break
+            sb.append(l); n++
+        }
+        return if (sb.isEmpty()) "" else "RELEVANT NOTES (memory lines matching this message; memory_search for more)\n$sb"
+    }
+
+    /** The relevant-notes block for [query] (store search, off the main thread; "" on any failure). */
+    fun relevantBlock(query: String, coreText: String? = null): String {
+        val q = relevantQuery(query); if (q.isEmpty()) return ""
+        val d = db ?: return ""
+        return try { relevantLines(d.search(q, null, 8), coreText ?: core(d.all())) } catch (_: Exception) { "" }
+    }
 
     /** [max]: [TEXT_MAX] for a normal save; [MERGED_MAX] for a line that comes in whole (cloud sync, a restore). */
     fun save(kind: String, subject: String, text: String, related: String = "", sourceTurn: Long = 0, max: Int = TEXT_MAX): Pair<String, Long> {
