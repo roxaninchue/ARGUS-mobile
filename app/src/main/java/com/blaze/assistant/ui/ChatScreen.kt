@@ -349,6 +349,7 @@ fun ChatScreen() {
     val swipeMode = HomeRoute.swipe(swipeSetting, HomeRedesign.enabled)
     var typing by rememberSaveable { mutableStateOf(false) }
     var avatarMenu by remember { mutableStateOf(false) }
+    var topMenu by remember { mutableStateOf(false) }   // 0.52.1: the Blaze pill's views overlay
     var plusOpen by remember { mutableStateOf(false) }
     val showing by Views.showing.collectAsState()
     val designTarget by Views.designTarget.collectAsState()
@@ -668,6 +669,9 @@ fun ChatScreen() {
                 isPrivate = isPrivate,
                 onGhost = { if (isPrivate) confirmLeavePrivate = true else { exitView(); go(navNow().switchTab(ChatNav.CHAT)); Agent.enterPrivate() } })
             }
+            // 0.52.1 (owner): the small Blaze pill under the top bar (the project's name inside a project); tap = views overlay.
+            if (!designFull && !maxed) BlazeTopPill(BlazeTopPillModel.label(if (nav.tab == ChatNav.PROJECTS && nav.project.isNotBlank())
+                com.blaze.assistant.agent.Projects.get(nav.project)?.name.orEmpty() else ""), mood, onClick = { topMenu = true })
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 // v0.27.0: Chat and Projects cross-fade when you switch tabs.
                 // v0.28.3: three panes: main Chat, the Projects list / a project page, and a project chat screen.
@@ -928,6 +932,14 @@ fun ChatScreen() {
             SelectionPill(r, acts, ink = c.ink, paper = c.paper) { a -> onSelection(a) }
         }
 
+        BlazeTopOverlay(topMenu, current = if (showing.isNotEmpty()) showing else nav.tab, options = BlazeTopPillModel.options(homeTab = !swipeMode),
+            onPick = { id -> topMenu = false; plusOpen = false; showViews = false
+                when (id) {
+                    "chat", "projects", "home" -> { exitView(); go(navNow().switchTab(id)) }
+                    else -> Views.find(id)?.let { v -> go(navNow().switchTab(ChatNav.CHAT)); openView(v) }
+                } },
+            onDismiss = { topMenu = false })
+        if (topMenu) BackHandler { topMenu = false }
         if (avatarMenu) {
             val dark = c.dark
             val themeName = LivingThemes.of(Look.theme.value).name
@@ -1028,7 +1040,16 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val simpleUi by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
     val hideDoneSteps = com.blaze.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, live = false) == com.blaze.assistant.agent.SimpleMode.Work.NONE
     // v0.45.0 (#10): built incrementally: a streamed frame only rebuilds the rows after the last unchanged message.
-    val items = remember(messages, mood, hideDoneSteps) { itemBuilder.build(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) }, mood != Mood.IDLE, hideDoneSteps) }
+    // 0.52.1 (owner): no step rows and no agent cards in the chat: the task's work is ONE line in the TaskPill at the end.
+    val items = remember(messages, mood, hideDoneSteps) { itemBuilder.build(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
+        it.role == Role.STEP || it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD) }, mood != Mood.IDLE, hideDoneSteps) }
+    // The running turn's step texts (after your newest message), for the pill's line.
+    val turnSteps = remember(messages) { val u = messages.indexOfLast { it.role == Role.USER }
+        messages.drop(u + 1).filter { it.role == Role.STEP }.takeLast(12).map { it.text } }
+    val agentsAll by com.blaze.assistant.agent.BgAgents.all.collectAsState()
+    val chatHere by Agent.chatId.collectAsState()
+    val agentLogs = remember(agentsAll, chatHere) { agentsAll.filter { it.live && it.parent == chatHere }.sortedBy { it.started }
+        .map { b -> b.log.ifEmpty { listOfNotNull(b.last.takeIf { l -> l.isNotBlank() }) } } }
     val total = items.size + 1 // + working row
     val atBottom by remember { derivedStateOf { !state.canScrollForward } }
     var follow by remember { mutableStateOf(true) }
@@ -1125,7 +1146,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 }
                 }
             }
-            item(key = "working") {
+            item(key = "working") { Column(Modifier.fillMaxWidth()) {
                 val live by Agent.thinking.collectAsState()
                 val status by Agent.status.collectAsState()
                 // One live card per turn: before the first step it's an empty "Working · 3s" card.
@@ -1141,7 +1162,9 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 // 0.45.24: the live line sits beside the drop (same row, centred) and goes as soon as the reply starts.
                 val working = mood != Mood.IDLE
                 val lineOn = waitLineOn
-                val dropOn = WaitRow.showDrop(working, streamId >= 0, chip.isNotBlank(), duoLive.isNotEmpty())
+                // 0.52.1: the waiting drop is replaced by the one TaskPill below (no second "working" indicator).
+                @Suppress("UNUSED_VARIABLE") val dropWas = WaitRow.showDrop(working, streamId >= 0, chip.isNotBlank(), duoLive.isNotEmpty())
+                val dropOn = false
                 // The step pill first; otherwise what Blaze is doing (the status line that used to sit above in the work card).
                 val liveSteps = (items.lastOrNull() as? Item.Steps)?.takeIf { it.live }
                 val pillText = WaitRow.line(pill?.takeIf { it.chat == chatNow }?.text, if (chip.isBlank()) status else "",
@@ -1163,8 +1186,13 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 if (ChatPolicy.STATUS_LINES) { if (chip.isNotBlank() && working && streamId < 0) TaskChip(chip)
                 StepPillRow(pillText, pill?.specialist == true, Modifier.weight(1f, fill = false), inline = true) }
                 }
+                // 0.52.1 (owner): ONE pill per task, natural text that changes as the work moves on, gone when done.
+                val pillLine = com.blaze.assistant.agent.TaskLine.pick(if (working) turnSteps else null, agentLogs)
+                AnimatedVisibility(pillLine != null, enter = MotionTokens.enterUp(), exit = MotionTokens.fadeAway()) {
+                    TaskPill(pillLine ?: "")
+                }
                 // v0.26.0: no "this chat is getting long" banner; long chats compact themselves (AutoCompact).
-            }
+            } }
         }
         }
         AnimatedVisibility(!atBottom, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
@@ -1271,7 +1299,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
                 com.blaze.assistant.agent.Delivery.tracker().apply(listOf(m.gid), com.blaze.assistant.agent.Delivery.Ev.USER_RETRY); Agent.retry(m.id) }) else null)
         } }
         Role.BLAZE -> if (m.meta == com.blaze.assistant.update.Updater.CARD) UpdateCard()
-        else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) AgentPill(m.meta.removePrefix(com.blaze.assistant.agent.BgAgents.CARD))
+        else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) Unit   // 0.52.1: agents show only in the one TaskPill
         else if (m.meta.startsWith(com.blaze.assistant.agent.Duo.ROOM_CARD)) RoomCard(m)   // v0.32.0 meeting room
         else SwipeToQuote(true, onQuote = { onQuote(com.blaze.assistant.agent.ToolLeak.forDisplay(m.text)) }) { Column(Modifier.fillMaxWidth()
             // v0.45.0 reactions: double-tap a finished reply for 👍 (taps, long-press and swipes still reach the bubble).

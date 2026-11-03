@@ -652,6 +652,7 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
              onSkills: (() -> Unit)? = null, onCall: (() -> Unit)? = null, onSlash: (() -> Unit)? = null,
              onRouting: (() -> Unit)? = null, showModel: Boolean = true) {
     val c = LocalBlaze.current
+    ClearFocusOnLeave()   // 0.52.1: the keyboard only shows when you tap the box
     var focused by remember { mutableStateOf(false) }
     var hintIdx by remember(hints) { mutableStateOf(if (hints.isEmpty()) 0 else hintIndex0.mod(hints.size)) }
     val empty = value.text.isEmpty()
@@ -665,11 +666,11 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
         else -> hints[hintIdx.coerceIn(0, hints.size - 1)]
     }
     Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp)) {
-        if (chip.isNotBlank() || agents > 0) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (chip.isNotBlank()) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             if (chip.isNotBlank()) Box(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(horizontal = 10.dp, vertical = 4.dp)) {
                 ButtonText(chip, color = c.onAccent, size = 12.sp)
             }
-            if (agents > 0) Label((if (chip.isNotBlank()) "   " else "") + "$agents AGENT" + (if (agents > 1) "S" else "") + " WORKING", color = c.accent, size = 9.sp)
+            // 0.52.1 (owner): no "N AGENTS WORKING" label; agents show only as the one task pill in the chat.
         }
         val card = RoundedCornerShape(26.dp)
         Column(Modifier.fillMaxWidth()

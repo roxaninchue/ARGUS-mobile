@@ -103,7 +103,8 @@ fun ModeBar() {
         Chip(if (work == "plan") "PLAN" else "BUILD", on = work == "plan") { Modes.toggleWork() }
         Chip(if (appr == "autopilot") "AUTOPILOT" else "AUTO", on = appr == "autopilot") { Modes.toggleApproval() }
         Spacer(Modifier.weight(1f))
-        if (live > 0) Label("$live AGENT" + (if (live > 1) "S" else "") + " WORKING", color = c.accent, size = 9.sp)
+        // 0.52.1 (owner): no agent counter here; agents show only as the one task pill in the chat.
+        @Suppress("UNUSED_EXPRESSION") live
     }
 }
 

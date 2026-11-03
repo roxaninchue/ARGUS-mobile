@@ -1,4 +1,29 @@
-# Blaze 0.52.0 handoff (branch `feat/blaze-0.52`)
+# Blaze 0.52.1 handoff (branch `feat/blaze-0.52`) — IN PROGRESS
+
+0.52.1 = versionCode 188 (from 0.52.0 / 187). Session started 2026-11-03 23:27 CAT. Pushed in chunks with `work/push052.sh "<msg>"`
+(GitLab commits API; plain `git push` over HTTPS does not work here). GitLab CI runs unit-tests / shots / release-apk on this branch.
+
+## 0.52.1 status (owner's list; updated every chunk)
+
+| # | Item | Status | Where |
+|---|---|---|---|
+| 0 | Version 0.52.1 / 188 | done | app/build.gradle.kts; UpdatePath0458Test no longer pins an exact old code |
+| 1 | Fix errors / crash audit / full unit + shots | in progress. CI on 0.52.0 (pipeline 3020912740): units 3002, 3 failed (UpdatePath0458Test pinned 0.51.0/186 → fixed; PhonePerfTest p50 wall-clock bar on the shared runner → relaxed to 1/4; 3rd: see local run), shots green | |
+| 2 | "That took too long" redesign | todo | |
+| 3 | ONE task pill (no step pills / work cards / agent pills / "N AGENTS WORKING" / status sublines) | **written, not compiled yet** | agent/TaskLine.kt (pure line), ui/TaskPill.kt (shimmer, never expands), ChatScreen (no STEP rows / agent cards; pill is the last row so text sits above it), ChatComposer (Home chat), Shell Composer + AgentCard ModeBar counters removed |
+| 4 | Real progress replies / agent control tools | todo | |
+| 5 | Durable task memory + vague-prompt retrieval | pure core done: agent/TaskMemory.kt; VaguePromptTest 44 cases, **before 3/44 (6%) → after 44/44 (100%)** (standalone kotlinc run); app wiring todo | |
+| 6 | Browser vs Phone surface stickiness | pure core done (TaskMemory.surfaceGuard / SURFACE_RULE / surfaceOf); wiring todo | |
+| 7 | Top Blaze pill + views overlay | written, not compiled | ui/BlazeTopPill.kt, ChatScreen (under ShellTopBar) |
+| 8 | No keyboard on return | written | MainActivity stateAlwaysHidden; ui/KeyboardPolicy.kt ClearFocusOnLeave in both composers + Spotlight |
+| 9 | "•••• Read" receipt | written | ui/DeliveryStatus.kt (ReceiptDots), CrashReport465Test updated |
+| A | Song download loop | todo | |
+| B | docs/BIOMETRIC-LOGIN.md + stable test key | todo | |
+| P | Blaze Phone next plan (docs/PLAN-blaze-phone-next.md) | todo, after 1–9 | |
+
+---
+
+## 0.52.0 handoff (previous session, kept for reference)
 
 Base: `main` @ 64280448 (0.51.0 merged). versionName 0.52.0, versionCode 187.
 Pushed in chunks through the GitLab commits API (`work/gl_push.py`; helper `work/push052.sh "<msg>"`).

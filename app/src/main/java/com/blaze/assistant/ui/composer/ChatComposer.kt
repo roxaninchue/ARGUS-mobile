@@ -174,6 +174,7 @@ fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile:
                 }
             }
         }
+        com.blaze.assistant.ui.ClearFocusOnLeave()   // 0.52.1: the keyboard only shows when you tap the box
         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             MeAvatar(onClick = onProfile)
             Spacer(Modifier.width(8.dp))
@@ -280,8 +281,16 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
     val more = remember(all, state.sinceId) { state.sinceId > 0L && ChatOverlayLogic.visible(all, 0L).size > shown.size }
     val earlier = more
     val typing = ChatOverlayLogic.typing(shown, busy)
+    val rowsShown = remember(rows) { rows.filter { it !is ChatOverlayLogic.Row.Steps && !(it is ChatOverlayLogic.Row.Msg && it.m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) } }
+    val agentsAll by com.blaze.assistant.agent.BgAgents.all.collectAsState()
+    val chatNow by com.blaze.assistant.agent.Agent.chatId.collectAsState()
+    val agentLogs = remember(agentsAll, chatNow) { agentsAll.filter { it.live && it.parent == chatNow }.sortedBy { it.started }
+        .map { b -> b.log.ifEmpty { listOfNotNull(b.last.takeIf { l -> l.isNotBlank() }) } } }
+    val turnLines = (rows.lastOrNull() as? ChatOverlayLogic.Row.Steps)?.takeIf { it.live }?.lines ?: emptyList()
+    @Suppress("UNUSED_VARIABLE") val unusedWorkLine = workLine
+    val pillLine = com.blaze.assistant.agent.TaskLine.pick(if (busy) turnLines else null, agentLogs)
     val listState = rememberLazyListState()
-    LaunchedEffect(rows.size, typing, shown.lastOrNull()?.text?.length, followFor) { val n = rows.size + (if (typing) 1 else 0) + 2; if (n > 0) listState.scrollToItem(n - 1) }
+    LaunchedEffect(rowsShown.size, pillLine != null, shown.lastOrNull()?.text?.length, followFor) { val n = rowsShown.size + (if (pillLine != null) 1 else 0) + 2; if (n > 0) listState.scrollToItem(n - 1) }
     Column(modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             val title = if (state.privateChat) "Private chat" else state.title
@@ -311,24 +320,18 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
                 Text(ChatOverlayLogic.stamp(at, now), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
-            items(rows, key = { it.key }) { r ->
+            // 0.52.1 (owner): no step chips, work cards or agent pills in the chat: the task's work is ONE TaskPill at the end.
+            items(rowsShown, key = { it.key }) { r ->
                 when (r) {
-                    // 0.52.0: a turn's steps are one work pill ("● Working · 4 steps · 1m 12s ›"); tap for the steps.
-                    is ChatOverlayLogic.Row.Steps -> Box(Modifier.padding(start = 38.dp)) {
-                        if (r.items.isNotEmpty()) com.blaze.assistant.ui.WorkCard(r.items, r.live, r.startAt, r.endAt, status = "", exact = com.blaze.assistant.agent.Settings.showSteps)
-                        else StepsChip(r)
-                    }
+                    is ChatOverlayLogic.Row.Steps -> Unit
                     is ChatOverlayLogic.Row.Msg -> Column { val m = r.m
-                        // 0.52.0: a background agent is its work pill (no bubble, no card)
-                        if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) Box(Modifier.padding(start = 38.dp)) { com.blaze.assistant.ui.AgentPill(m.meta.removePrefix(com.blaze.assistant.agent.BgAgents.CARD)) }
-                        else if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom) else BlazeBubble(m, typeIn = m.id > state.liveFrom)
+                        if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom) else BlazeBubble(m, typeIn = m.id > state.liveFrom)
                         if (m.id == followFor && onSend != null) com.blaze.assistant.ui.FollowupRow(m.followups, Modifier.padding(start = 38.dp, top = 6.dp)) { onSend(it) }
                     }
                 }
             }
-            if (typing) item(key = "typing") { Row(verticalAlignment = Alignment.CenterVertically) { BlazeAvatar(); Spacer(Modifier.width(8.dp)); TypingDots()
-                if (!workLine.isNullOrBlank()) { Spacer(Modifier.width(10.dp)); Text(workLine, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).semantics { contentDescription = "Blaze is $workLine" },
-                    style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub)) } } }
+            if (pillLine != null) item(key = "typing") { Row(verticalAlignment = Alignment.CenterVertically) { BlazeAvatar(); Spacer(Modifier.width(8.dp))
+                com.blaze.assistant.ui.TaskPill(pillLine) } }
         }
         }
         // Choice buttons and forms in replies answer only while Blaze is idle (like the old chat).

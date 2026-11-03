@@ -34,7 +34,8 @@ class UpdatePath0458Test {
         // v0.45.18 (163): the 0.45.5 → current update path still holds with a higher versionCode.
         val code = Regex("versionCode = (\\d+)").find(g)!!.groupValues[1].toInt()
         assertTrue(code >= 156)
-        assertTrue(g.contains("versionCode = 186") && g.contains("versionName = \"0.51.0\""))
+        // 0.52.1: pin the current release (188 / 0.52.1); the update path only needs it higher than every older one.
+        assertTrue(code >= 188 && Regex("versionName = \"0\\.5\\d\\.\\d+\"").containsMatchIn(g))
         assertTrue(g.contains("applicationId = \"com.blaze.assistant\""))
         assertTrue(156 > 153)
     }
