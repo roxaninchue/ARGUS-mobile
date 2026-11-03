@@ -1145,6 +1145,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             p.msgs = Dispatch.moveToEnd(p.msgs, { it.meta == BgAgents.CARD + bg.id }, { it.copy(at = System.currentTimeMillis()) })
             p.persist()
         }
+        // 0.52.0: a blueprint run's result (document card, gallery, build summary) is posted as the agent's reply right under
+        // its pill; the main Blaze then adds at most one short line.
+        if (bg.specialist == com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST && bg.result.isNotBlank()) {
+            p.add(Role.BLAZE, bg.result)
+            p.persist()
+        }
         p.wake(BgAgents.resultMessage(bg))
     }
 
@@ -1443,7 +1449,7 @@ When you finish, say what you did in one short sentence.
         t.put(com.blaze.assistant.voice.ReadAloud.tool())
         t.put(com.blaze.assistant.notify.GroupBrain.tool())
         t.put(com.blaze.assistant.phone.CallControl.tool())
-        if (Settings.bool("bg_agents", true)) BgAgents.tools().forEach { t.put(it) }
+        if (Settings.bool("bg_agents", true)) { BgAgents.tools().forEach { t.put(it) }; t.put(com.blaze.assistant.orchestra.OrchestraRuns.tool()) }
         if (com.blaze.assistant.link.DesktopLink.paired) t.put(com.blaze.assistant.link.DesktopLink.tool())
         com.blaze.assistant.connect.Connectors.tools().forEach { t.put(it) }
         try { com.blaze.assistant.connect.Mcp.tools().forEach { t.put(it) } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mcp.tools.fo", e) }
@@ -2177,7 +2183,8 @@ When you finish, say what you did in one short sentence.
             focus = focus + id
             markSent(id)
             com.blaze.assistant.device.Haptics.tick(app)
-            sideLine(BusyRoute.steered(runningTask()))
+            // 0.52.0: no "Got it, I've passed that…" bubble (ChatPolicy): the bubble is marked sent and the work pill shows it taken up.
+            if (com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) sideLine(BusyRoute.steered(runningTask()))
             persist()
             // the turn reads it at its next step; if it ends first, the next turn starts with it
             scope.launch { job?.join(); drain() }
@@ -2381,7 +2388,7 @@ When you finish, say what you did in one short sentence.
                 // v0.45.28: either one working leaves the other free (side talk, and the wait line below).
                 soloRunning = true; soloWho = voice
                 val nudge = if (notificationContext.isNullOrBlank() && agentId == null && specialistId == null && Settings.bool("duo_on", true) &&
-                    Settings.bool("duo_wait_line", true) && !WaitNudge.skip(voice, shown)) startWaitNudge(voice, shown, turnFrom) else null
+                    com.blaze.assistant.ui.ChatPolicy.STATUS_LINES && Settings.bool("duo_wait_line", false) && !WaitNudge.skip(voice, shown)) startWaitNudge(voice, shown, turnFrom) else null
                 try { runLoop() } finally { soloRunning = false; nudge?.cancel() }
                 // v0.31.2: Halo's solo answer is marked as Halo's in the history, so Blaze knows who said it.
                 if (voice == Duo.Who.HALO) tagLast(Duo.Who.HALO)
@@ -2655,14 +2662,14 @@ When you finish, say what you did in one short sentence.
                 inbox.add(Inbound(mid, text, emptyList(), false, null))
                 focus = focus + mid
                 markSent(mid)
-                if (job?.isActive == true) sideLine(BusyRoute.steered(runningTask()))
+                if (job?.isActive == true && com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) sideLine(BusyRoute.steered(runningTask()))
                 scope.launch { job?.join(); drain() }
                 persist()
                 return
             }
             // 0.46.4: Halo answers within a couple of seconds: if no word came by BrainRace.HALO_HOLD_MS, a plain line says
             // where Blaze is (the app's own state, no model); the model's reply replaces it when it comes.
-            val raw = try { BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { if (who == Duo.Who.HALO) BrainRace.haloHolding(runningTask(), status) else "" }, { live.show(it) }) { say ->
+            val raw = try { BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { if (who == Duo.Who.HALO && com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) BrainRace.haloHolding(runningTask(), status) else "" }, { live.show(it) }) { say ->
                 duoCall(who, req, roomTools(if (sched) Duo.SIDE_SCHEDULE_TOOLS else emptySet()), -1L, side = true) {
                 // 0.45.19: a handoff line ("Passed to Blaze, let me know…") never shows, not even while it streams.
                 if (!Ack.isGeneric(it)) say(it) } } }
@@ -4354,7 +4361,21 @@ When you finish, say what you did in one short sentence.
             results.joinToString("\n\n")
         }
 
-        private suspend fun runSpecialist(spec0: Specialists.Spec, task: String, all: JSONArray): String {
+        /**
+         * 0.52.0: one blueprint node as a specialist tool loop (OrchestraRuns): [role] picks the specialist, [family] its tier
+         * hint (planner → Inferno …). No playbook self-check (a planner's JSON must come back as written). [saveDoc] =
+         * (markdown, title): saves the finished document with save_file instead and returns its result line.
+         */
+        suspend fun runNode(role: String, prompt: String, family: String, saveDoc: Pair<String, String>? = null): String {
+            if (saveDoc != null) return runTool(SaveFile.TOOL, JSONObject().put("content", saveDoc.first).put("language", "markdown")
+                .put("filename", Specialists.slug(saveDoc.second).ifBlank { "blaze-report" } + ".md"), mutableListOf())
+            val specId = when (role.lowercase()) { "planner", "sorter" -> "planner"; "coder" -> "coder"; "writer" -> "writer"; else -> "researcher" }
+            val spec = Specialists.byId(specId) ?: Specialists.builtIn.first()
+            val all = tools().let { if (isPrivate) PrivateChat.filterTools(it) else it }.let { if (Projects.of(id) == null) ProjectDocs.strip(it) else it }
+            return kotlinx.coroutines.withContext(CallState().also { it.family = family }.element()) { runSpecialist(spec, prompt, all, review = false) }
+        }
+
+        private suspend fun runSpecialist(spec0: Specialists.Spec, task: String, all: JSONArray, review: Boolean = true): String {
             // v0.26.2: its field playbook goes into its prompt (a custom one without a playbook gets one written first).
             val spec = Specialists.byId(spec0.id) ?: spec0
             val playbook = Playbooks.forSpec(spec).ifBlank { if (spec.custom && !isPrivate) Agent.ensurePlaybook(spec) else "" }
@@ -4364,7 +4385,7 @@ When you finish, say what you did in one short sentence.
                     SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date()), Memory.promptBlock(task))))
                 .put(JSONObject().put("role", "user").put("content", task))
             val shots = mutableListOf<String>()
-            var reviewed = playbook.isBlank()
+            var reviewed = !review || playbook.isBlank()
             for (step in 0 until 16) {
                 val reply = LlmClient.complete(msgs, if (tools.length() > 0) tools else null, null, null, LlmClient.Lane.STEPS)
                 reply.remove("_reasoning")
@@ -5026,8 +5047,26 @@ When you finish, say what you did in one short sentence.
                         if (shot.startsWith("data:")) { shots += shot; "Screenshot taken. It is attached in the next message." } else shot
                     }
                 }
-                "start_agent" -> {
-                    val bg = BgAgents.start(args.optString("task"), args.optString("title"), id)
+                com.blaze.assistant.orchestra.OrchestraRuns.TOOL -> {
+                    // 0.52.0: a blueprint run (planner → parallel agents → verify / stitch) as one background agent with its work pill
+                    val goal = args.optString("goal").trim()
+                    if (goal.isEmpty()) "Error: say the goal." else {
+                        val ask = com.blaze.assistant.orchestra.OrchestraRuns.decode(com.blaze.assistant.orchestra.OrchestraRuns.encode(goal, args.optString("pipeline"), args.optString("inputs")))
+                        val bg = BgAgents.start(com.blaze.assistant.orchestra.OrchestraRuns.encode(goal, ask.shape.id, ask.inputs),
+                            args.optString("title").ifBlank { Dispatch.title(goal) }, id, com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST)
+                        val mid = add(Role.BLAZE, "Blueprint ${bg.id}: ${bg.title}")
+                        msgs = msgs.map { if (it.id == mid) it.copy(meta = BgAgents.CARD + bg.id) else it }
+                        persist()
+                        "Started blueprint run ${bg.id} (${ask.shape.id} pipeline). Its pill is in the chat and its result lands there on its own. " +
+                            "Tell the user in one short line what you started and keep chatting; don't wait for it or poll."
+                    }
+                }
+                "spawn_agent", "start_agent" -> {
+                    // 0.52.0: spawn_agent = start_agent with an optional specialist type (researcher, coder, writer…)
+                    val specArg = args.optString("specialist").trim().lowercase()
+                    val specId = if (specArg.isNotEmpty() && Specialists.byId(specArg) != null) specArg else ""
+                    val task0 = args.optString("task") + args.optString("inputs").takeIf { it.isNotBlank() }?.let { "\n\nInputs: $it" }.orEmpty()
+                    val bg = BgAgents.start(task0, args.optString("title"), id, specId)
                     val mid = add(Role.BLAZE, "Background agent ${bg.id}: ${bg.title}")
                     msgs = msgs.map { if (it.id == mid) it.copy(meta = BgAgents.CARD + bg.id) else it }
                     persist()

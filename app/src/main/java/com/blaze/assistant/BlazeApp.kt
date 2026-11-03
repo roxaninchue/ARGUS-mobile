@@ -79,6 +79,7 @@ class BlazeApp : Application() {
         try { com.blaze.assistant.stage.StageStore.init(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: StageStore.init", e) }
         try { com.blaze.assistant.movies.Movies.init(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: Movies.init", e) }
         val agentMs = android.os.SystemClock.elapsedRealtime() - tAgent
+        com.blaze.assistant.device.StartGuard.step("orchestra.OrchestraRuns.init") { com.blaze.assistant.orchestra.OrchestraRuns.init(this) }
         com.blaze.assistant.device.StartGuard.step("agent.BgAgents.init") { com.blaze.assistant.agent.BgAgents.init(this) }
         com.blaze.assistant.device.StartGuard.step("routine.Routines.init") { com.blaze.assistant.routine.Routines.init(this) }
         // v0.29.0 Home board: widgets + cached content in blaze.db, refreshed by WorkManager (≥ 1 h).

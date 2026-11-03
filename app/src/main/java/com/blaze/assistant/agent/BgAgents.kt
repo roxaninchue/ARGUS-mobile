@@ -36,6 +36,8 @@ object BgAgents {
         val resume: Boolean = false, val followUp: String = "",
         /** v0.26.2: the specialist this agent runs as ("" = a general background agent). */
         val specialist: String = "",
+        /** 0.52.0: its newest steps (up to [LOG_MAX]), for its work pill's expanded list. */
+        val log: List<String> = emptyList(),
     ) {
         val live get() = status == QUEUED || status == RUNNING
         val seconds get() = (((if (ended > 0) ended else System.currentTimeMillis()) - (if (started > 0) started else created)) / 1000).coerceAtLeast(0)
@@ -44,14 +46,15 @@ object BgAgents {
     const val QUEUED = "queued"; const val RUNNING = "running"; const val DONE = "done"
     const val FAILED = "failed"; const val CANCELLED = "cancelled"
     const val CARD = "agent:"
+    const val LOG_MAX = 40
     const val RESULT_PREFIX = "[Background agent result"
 
     /** Marks a coroutine as belonging to an agent, so its confirm and question cards say which. */
     class Tag(val id: String) : AbstractCoroutineContextElement(Key) { companion object Key : CoroutineContext.Key<Tag> }
 
-    val toolNames = setOf("start_agent", "list_agents", "check_agent", "message_agent", "cancel_agent")
+    val toolNames = setOf("start_agent", "spawn_agent", "list_agents", "check_agent", "message_agent", "cancel_agent")
     /** Agents don't start or steer other agents. */
-    val leadOnly = setOf("start_agent", "message_agent", "cancel_agent", "delegate", "create_specialist")
+    val leadOnly = setOf("start_agent", "spawn_agent", "message_agent", "cancel_agent", "delegate", "create_specialist", "orchestrate")
 
     private lateinit var app: Context
     private lateinit var file: File
@@ -69,7 +72,7 @@ object BgAgents {
                 Bg(it.getString("id"), it.optString("title"), it.optString("task"), it.optString("parent"), it.optString("chat"),
                     it.optBoolean("plan"), it.optString("status", DONE), it.optLong("created"), it.optLong("started"), it.optLong("ended"),
                     it.optInt("steps"), it.optString("last"), it.optString("result"), false, it.optBoolean("resume"), it.optString("follow_up"),
-                    it.optString("specialist"))
+                    it.optString("specialist"), it.optJSONArray("log")?.let { a -> (0 until a.length()).map { i -> a.optString(i) } } ?: emptyList())
             }
         } catch (_: Exception) { emptyList() }
         // Blaze was closed mid-run: those go back in the queue and continue where they were.
@@ -89,6 +92,7 @@ object BgAgents {
                     .put("plan", it.plan).put("status", it.status).put("created", it.created).put("started", it.started).put("ended", it.ended)
                     .put("steps", it.steps).put("last", it.last).put("result", it.result.take(20000)).put("resume", it.resume).put("follow_up", it.followUp)
                     .apply { if (it.specialist.isNotBlank()) put("specialist", it.specialist) }
+                    .put("log", JSONArray(it.log.takeLast(LOG_MAX)))
             }).toString())
         } catch (_: Exception) { }
     }
@@ -103,13 +107,18 @@ object BgAgents {
 
     fun get(id: String): Bg? = _all.value.firstOrNull { it.id.equals(id.trim(), true) }
 
-    /** How many agents may run at once: 1, or 2 on phones with 6 GB of RAM or more. */
+    /**
+     * How many agents may run at once. 0.52.0: 4 on 6 GB+ phones, 3 on 4 GB+, 2 below, 1 on phones Android flags as
+     * low-RAM (orchestra/AgentBudget); was 1, or 2 on 6 GB+.
+     */
     fun cap(): Int {
         val mi = ActivityManager.MemoryInfo()
         return try {
-            app.getSystemService(ActivityManager::class.java).getMemoryInfo(mi)
-            // totalMem reports a little under the marketing size (a "6 GB" phone shows ~5.5 GB).
-            if (mi.totalMem >= 5_200L * 1024 * 1024) 2 else 1
+            val am = app.getSystemService(ActivityManager::class.java)
+            am.getMemoryInfo(mi)
+            // totalMem reports a little under the marketing size (a "6 GB" phone shows ~5.5 GB). Under memory pressure, one fewer.
+            val c = com.blaze.assistant.orchestra.AgentBudget.cap(mi.totalMem, am.isLowRamDevice)
+            if (mi.lowMemory) (c - 1).coerceAtLeast(1) else c
         } catch (_: Exception) { 1 }
     }
 
@@ -157,6 +166,7 @@ object BgAgents {
         "When finished, reply with the result only: what you did or found, short but complete, with any links or file names.]\n${bg.task}"
 
     private suspend fun runOne(start: Bg) {
+        if (start.specialist == com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST) { runBlueprint(start); return }
         var bg = start
         val s = Agent.agentSession(bg)
         val text = when {
@@ -171,9 +181,10 @@ object BgAgents {
             withContext(Dispatchers.Main) { s.send(t) }
             // Live progress for the card, without writing the file every second.
             while (s.job?.isActive == true) {
-                val steps = s.msgs.count { it.role == Role.STEP }
-                val last = s.msgs.lastOrNull { it.role == Role.STEP }?.text.orEmpty()
-                update(bg.id, persist = false) { it.copy(steps = steps, last = last.take(120)) }
+                val stepMsgs = s.msgs.filter { it.role == Role.STEP }
+                val steps = stepMsgs.size
+                val last = stepMsgs.lastOrNull()?.text.orEmpty()
+                update(bg.id, persist = false) { it.copy(steps = steps, last = last.take(120), log = stepMsgs.takeLast(LOG_MAX).map { m -> m.text.take(160) }) }
                 delay(1000)
             }
         }
@@ -204,6 +215,23 @@ object BgAgents {
         val result = lastMsg?.text.orEmpty().ifBlank { "(no result)" }
         update(bg.id) { it.copy(status = if (failed) FAILED else DONE, ended = System.currentTimeMillis(), result = result,
             steps = s.msgs.count { m -> m.role == Role.STEP }, waiting = false) }
+        get(bg.id)?.let { Agent.agentFinished(it) }
+        pump()
+    }
+
+    /** 0.52.0: a blueprint run (OrchestraRuns): every node event is a step on its pill; the result is its reply. */
+    private suspend fun runBlueprint(start: Bg) {
+        update(start.id) { it.copy(resume = false, waiting = false, followUp = "") }
+        val (ok, result) = try {
+            com.blaze.assistant.orchestra.OrchestraRuns.run(start) { line, n, log -> update(start.id, persist = false) { it.copy(steps = n, last = line.take(120), log = log) } }
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) {
+            false to ("The blueprint run stopped: " + (e.message ?: e.javaClass.simpleName))
+        }
+        val bg = get(start.id) ?: return
+        jobs.remove(bg.id)
+        if (bg.status == CANCELLED) { save(); pump(); return }
+        update(bg.id) { it.copy(status = if (ok) DONE else FAILED, ended = System.currentTimeMillis(), result = result, waiting = false) }
+        com.blaze.assistant.orchestra.OrchestraRuns.forget(bg.id)
         get(bg.id)?.let { Agent.agentFinished(it) }
         pump()
     }
@@ -244,8 +272,12 @@ object BgAgents {
     fun leadLine(): String {
         if (!Settings.bool("bg_agents", true)) return ""
         val live = _all.value.filter { it.live }
-        return "\nBACKGROUND AGENTS: for long or slow work (deep research, multi-step jobs, anything over about a minute) call start_agent and keep chatting; the result comes back to you on its own. Quick things you do yourself. " +
-            "Specialist work goes out with delegate (it doesn't block either; results land one by one)." +
+        return "\nYOU ARE THE CONVERSATION: the user must always be able to keep talking to you. Answer quick things yourself in one turn. " +
+            "Anything that needs more than about two tool steps or a minute goes to a background agent and you reply at once in one short line: " +
+            "spawn_agent (one task, optional specialist type), delegate (several specialists in parallel) or orchestrate (a big multi-part job: an app / APK, " +
+            "deep research with a fact-checked document, curated media lists with artwork, long documents). Results come back to you on their own; " +
+            "never wait or poll. While agents work, keep chatting; if the user asks how one is going, answer from list_agents / check_agent; " +
+            "to change what one does use message_agent, to stop it cancel_agent. When you call several tools in one reply, independent ones run at the same time." +
             (if (live.isNotEmpty()) " Working now: " + live.joinToString("; ") { "${it.id} ${it.title} (${it.status})" } + "." else "")
     }
 
@@ -280,6 +312,11 @@ object BgAgents {
                 "Give a complete, self-contained task: it doesn't see this chat. Its result comes back to you automatically when it's done; don't wait for it or poll. " +
                 "One or two run at a time; more wait in a queue.",
                 JSONObject().put("task", s("Everything the agent needs to know and do")).put("title", s("2-5 word name for its card")), listOf("task")),
+            fn("spawn_agent", "Delegate a task to a background agent of a given specialist type and keep talking with the user (you stay responsive). " +
+                "specialist: researcher, coder, writer, planner, shopper, booker, operator, inbox, designer, tutor (or empty for a general agent). " +
+                "Give a self-contained task and any inputs; the result comes back to you as soon as it lands. Several can run at once.",
+                JSONObject().put("task", s("Everything the agent needs to know and do")).put("specialist", s("Specialist type, optional"))
+                    .put("inputs", s("Data or details it needs, optional")).put("title", s("2-5 word pill title")), listOf("task")),
             fn("list_agents", "List background agents and what each is doing.", JSONObject(), emptyList()),
             fn("check_agent", "Status, current step and (when done) the full result of one background agent.", JSONObject().put("id", s("e.g. B2")), listOf("id")),
             fn("message_agent", "Steer a background agent: add an instruction while it works, or give a follow-up after it finished.", JSONObject().put("id", s("e.g. B2")).put("text", s("What to tell it")), listOf("id", "text")),

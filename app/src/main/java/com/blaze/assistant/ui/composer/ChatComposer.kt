@@ -256,7 +256,8 @@ fun ChatOverHome(state: ComposerState, modifier: Modifier = Modifier, bottom: @C
     val pill by com.blaze.assistant.agent.StepPills.current.collectAsState()
     val busy = chatId in busyChats
     val lastStep = if (busy) all.lastOrNull { it.role == Role.STEP }?.text else null
-    val work = if (busy) ChatOverlayLogic.workLine(pill?.takeIf { it.chat == chatId }?.text, chip, status, lastStep) else null
+    // 0.52.0: no status line beside the typing dots (ChatPolicy): the work pill above carries the progress.
+    val work = if (busy && com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) ChatOverlayLogic.workLine(pill?.takeIf { it.chat == chatId }?.text, chip, status, lastStep) else null
     ChatOverHomeContent(state, all, busy, modifier, bottom = bottom, workLine = work, onSend = { state.send(it) })
 }
 
@@ -312,9 +313,15 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
             }
             items(rows, key = { it.key }) { r ->
                 when (r) {
-                    is ChatOverlayLogic.Row.Steps -> StepsChip(r)
+                    // 0.52.0: a turn's steps are one Hark-style work pill ("● Working · 4 steps · 1m 12s ›"); tap for the steps.
+                    is ChatOverlayLogic.Row.Steps -> Box(Modifier.padding(start = 38.dp)) {
+                        if (r.items.isNotEmpty()) com.blaze.assistant.ui.WorkCard(r.items, r.live, r.startAt, r.endAt, status = "", exact = com.blaze.assistant.agent.Settings.showSteps)
+                        else StepsChip(r)
+                    }
                     is ChatOverlayLogic.Row.Msg -> Column { val m = r.m
-                        if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom) else BlazeBubble(m, typeIn = m.id > state.liveFrom)
+                        // 0.52.0: a background agent is its work pill (no bubble, no card)
+                        if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) Box(Modifier.padding(start = 38.dp)) { com.blaze.assistant.ui.AgentPill(m.meta.removePrefix(com.blaze.assistant.agent.BgAgents.CARD)) }
+                        else if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom) else BlazeBubble(m, typeIn = m.id > state.liveFrom)
                         if (m.id == followFor && onSend != null) com.blaze.assistant.ui.FollowupRow(m.followups, Modifier.padding(start = 38.dp, top = 6.dp)) { onSend(it) }
                     }
                 }

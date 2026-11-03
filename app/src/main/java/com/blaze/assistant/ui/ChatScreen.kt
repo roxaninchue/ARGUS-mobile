@@ -1107,10 +1107,11 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                             val m = if (Settings.longChat && com.blaze.assistant.agent.ReplyChips.showTech() && (item.live || item.key == lastStepsKey)) meter else null
                             when (com.blaze.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, item.live)) {
                                 com.blaze.assistant.agent.SimpleMode.Work.CARD ->
-                                    WorkCard(item.steps, item.live, item.startAt, item.endAt, status = if (item.live && !waitLineOn) st else "", exact = Settings.showSteps,
+                                    WorkCard(item.steps, item.live, item.startAt, item.endAt, status = "", exact = Settings.showSteps,
                                         meter = m?.text.orEmpty(), meterHigh = m?.high == true, simple = false)
                                 // v0.41.0 Simple mode: one small quiet line while working, nothing once done.
-                                com.blaze.assistant.agent.SimpleMode.Work.HINT -> if (chipOn.isBlank() && !(item.live && waitLineOn)) SimpleWorkHint(com.blaze.assistant.agent.SimpleMode.hint(st, item.steps.lastOrNull()?.text.orEmpty()))
+                                // 0.52.0: Simple mode shows the same work pill (no quiet status line any more)
+                                com.blaze.assistant.agent.SimpleMode.Work.HINT -> WorkCard(item.steps, item.live, item.startAt, item.endAt, status = "", exact = false)
                                 com.blaze.assistant.agent.SimpleMode.Work.NONE -> Unit
                             }
                         }
@@ -1158,8 +1159,9 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                     }
                 }
                 // Ack-and-background: an acknowledged task shows its small chip instead of the drop.
-                if (chip.isNotBlank() && working && streamId < 0) TaskChip(chip)
-                StepPillRow(pillText, pill?.specialist == true, Modifier.weight(1f, fill = false), inline = true)
+                // 0.52.0: no task chip and no status line beside the drop: only replies and work pills in the chat.
+                if (ChatPolicy.STATUS_LINES) { if (chip.isNotBlank() && working && streamId < 0) TaskChip(chip)
+                StepPillRow(pillText, pill?.specialist == true, Modifier.weight(1f, fill = false), inline = true) }
                 }
                 // v0.26.0: no "this chat is getting long" banner; long chats compact themselves (AutoCompact).
             }
@@ -1269,7 +1271,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
                 com.blaze.assistant.agent.Delivery.tracker().apply(listOf(m.gid), com.blaze.assistant.agent.Delivery.Ev.USER_RETRY); Agent.retry(m.id) }) else null)
         } }
         Role.BLAZE -> if (m.meta == com.blaze.assistant.update.Updater.CARD) UpdateCard()
-        else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) AgentCard(m.meta.removePrefix(com.blaze.assistant.agent.BgAgents.CARD))
+        else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) AgentPill(m.meta.removePrefix(com.blaze.assistant.agent.BgAgents.CARD))
         else if (m.meta.startsWith(com.blaze.assistant.agent.Duo.ROOM_CARD)) RoomCard(m)   // v0.32.0 meeting room
         else SwipeToQuote(true, onQuote = { onQuote(com.blaze.assistant.agent.ToolLeak.forDisplay(m.text)) }) { Column(Modifier.fillMaxWidth()
             // v0.45.0 reactions: double-tap a finished reply for 👍 (taps, long-press and swipes still reach the bubble).
