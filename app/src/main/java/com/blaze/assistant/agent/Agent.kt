@@ -1135,6 +1135,44 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     }
 
     /** An agent finished: its result wakes the chat that started it (queued behind a turn in progress). */
+    /** 0.52.1 (ProgressGate): the last interim update posted per chat. */
+    private val lastUpdate = java.util.concurrent.ConcurrentHashMap<String, ProgressGate.Posted>()
+
+    /** agent_progress: an agent's newest steps and its latest real tool results. */
+    fun agentProgress(id: String): String {
+        val bg = BgAgents.get(id) ?: return "No agent $id. Call list_agents."
+        val found = try { agentSession(bg).recentResults(4) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: agentProgress", e); emptyList() }
+        return buildString {
+            append(BgAgents.describe(bg))
+            if (bg.log.isNotEmpty()) append("\nSteps so far: ").append(bg.log.takeLast(12).joinToString("; "))
+            if (found.isNotEmpty()) { append("\nLatest results:\n"); found.forEach { append("- ").append(it).append('\n') } }
+            if (bg.result.isNotBlank()) append("\nResult:\n").append(bg.result.take(6000))
+        }
+    }
+
+    /** post_update: one interim message from the main Blaze, above the task pill; gated by ProgressGate. */
+    fun postUpdate(chatId: String, text: String): String {
+        val p = sessions[chatId] ?: return "Not posted: no such chat."
+        val mine = BgAgents.all.value.filter { it.parent == chatId && (it.live || it.ended > System.currentTimeMillis() - 3600_000) }
+        val now = System.currentTimeMillis()
+        val steps = mine.sumOf { it.steps }; val finished = mine.count { !it.live }; val live = mine.count { it.live }
+        ProgressGate.refuse(lastUpdate[chatId], now, steps, finished, live, text)?.let { return it }
+        lastUpdate[chatId] = ProgressGate.Posted(now, steps, finished, text.trim())
+        p.add(Role.BLAZE, text.trim())
+        p.persist()
+        return "Posted. End this turn now: reply with exactly ${ProgressGate.SKIP}."
+    }
+
+    /** A background agent reached a milestone: the main Blaze may tell the user, in its own words (never while it is busy). */
+    fun agentMilestone(bg: BgAgents.Bg) {
+        if (!Settings.bool("progress_updates", true)) return
+        val p = sessions[bg.parent] ?: return
+        if (p.job?.isActive == true || p.isPrivate || p.agentId != null) return
+        val found = try { agentSession(bg).recentResults(4) } catch (e: Throwable) { emptyList() }
+        p.progressWake = true
+        p.wake(ProgressGate.wakeText(bg.id, bg.title, bg.steps, bg.seconds, bg.log, found))
+    }
+
     fun agentFinished(bg: BgAgents.Bg) {
         refreshChats()
         val p = sessions[bg.parent] ?: load(bg.parent) ?: return
@@ -1763,6 +1801,58 @@ When you finish, say what you did in one short sentence.
         }
 
         /** 0.52.1: writes this turn into its task record (TaskMemory): goal, state, surface, sign-ins, what it found, next step. */
+        /** 0.52.1 (Handoff): this turn's work already moved to a background agent. */
+        @Volatile var handedOff = false
+        /** 0.52.1 (ProgressGate): this turn is an agent-milestone wake; a SKIP reply is dropped, no closing line. */
+        @Volatile var progressWake = false
+
+        /** The newest tool results in this chat's history (an agent's findings so far), newest last. */
+        fun recentResults(n: Int): List<String> {
+            val out = ArrayList<String>()
+            try {
+                var i = history.length() - 1
+                while (i >= 0 && out.size < n) {
+                    val m = history.optJSONObject(i); i--
+                    if (m?.optString("role") != "tool") continue
+                    val c = m.optString("content").replace(Regex("\\s+"), " ").trim()
+                    if (c.isNotEmpty() && !c.startsWith("Not run")) out += c.take(700)
+                }
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: recentResults", e) }
+            return out.reversed()
+        }
+
+        /** After a milestone wake: the model's SKIP (or an empty "nothing to say") never shows. */
+        private fun dropSkip() {
+            val from = turnAt
+            msgs = msgs.filterNot { it.role == Role.BLAZE && it.at >= from && ProgressGate.skip(it.text) }
+            try {
+                val last = history.length() - 1
+                if (last >= 0 && history.optJSONObject(last)?.let { it.optString("role") == "assistant" && ProgressGate.skip(it.optString("content")) } == true) history.remove(last)
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: dropSkip", e) }
+        }
+
+        /**
+         * 0.52.1 (owner: "long work must not die"): the turn's work moves into a background agent with a self-contained
+         * brief and this chat is free again. False when it can't move (an agent's own turn, a private chat, nothing done yet).
+         */
+        fun handOff(results: List<String>): Boolean {
+            val t = Handoff.Turn(agentId == null && specialistId == null, isPrivate, turnTools.size, handedOff)
+            if (!Handoff.movable(t) || !Settings.bool("bg_agents", true)) return false
+            return try {
+                val from = turnFrom
+                val done = msgs.filter { it.id > from && it.role == Role.STEP }.map { it.text }
+                val req = lastUserText()
+                BgAgents.start(Handoff.brief(req, turnGoal?.request, done, synchronized(results) { results.toList() }), Handoff.title(req), id)
+                handedOff = true
+                add(Role.BLAZE, "This is taking longer than a quick reply, so I'm finishing it in the background. Keep chatting; the result lands here.")
+                true
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: handOff", e); false }
+        }
+
+        /** [handOff] when the turn is within Handoff.MARGIN_MS of its hard end [end]. */
+        fun handOffNearEnd(end: Long, results: List<String>): Boolean =
+            Handoff.nearEnd(Handoff.Turn(agentId == null && specialistId == null, isPrivate, turnTools.size, handedOff), System.currentTimeMillis(), end) && handOff(results)
+
         private fun recordTask(stopped: Boolean) {
             if (agentId != null) return
             try {
@@ -1856,7 +1946,7 @@ When you finish, say what you did in one short sentence.
         @Volatile var turnAt = 0L
         @Volatile private var turnStamped = true
 
-        fun beginTurn(at: Long = System.currentTimeMillis()) { turnAt = at; turnStamped = false; pendingSources.begin(); searches.begin() }
+        fun beginTurn(at: Long = System.currentTimeMillis()) { turnAt = at; turnStamped = false; pendingSources.begin(); searches.begin(); handedOff = false; memoryLookups = 0; songResolved = "" }
         /** 0.46.3: this turn's searches (duplicate / off-topic guard). */
         val searches = SearchGuard()
 
@@ -3222,6 +3312,43 @@ When you finish, say what you did in one short sentence.
             return kotlin.math.abs(x.length - y.length) - common * 6
         }
 
+        /** The end of every turn (was runLoop's finally body; moved out in 0.52.1 to keep runLoop under the JVM's 64 KB method limit). */
+        private fun endTurn(turnEnd: TurnEnd.Reason, notSent: Boolean, bytes0: Long, turnModel: TurnModel?, cloudTurn: CloudRuns.Turn?) {
+            val wasProgress = progressWake; progressWake = false
+            if (wasProgress) dropSkip()
+            liveGate = null
+            // v0.45.6: a turn never ends silently (stop, timeout, tool failure): one plain closing line.
+            if (agentId == null) StepPills.end(id)
+            recordTask(stopped = turnEnd == TurnEnd.Reason.STOPPED)
+            if (agentId == null && !notSent && !wasProgress) try {
+                if (TurnEnd.silent(msgs.filterNot { it.meta == Ack.META }.map { it.role })) {
+                    val lastStep = msgs.lastOrNull { it.role == Role.STEP }?.text.orEmpty()
+                    val why = if (turnEnd == TurnEnd.Reason.DONE && lastStep == "You stopped me") TurnEnd.Reason.STOPPED else turnEnd
+                    add(Role.BLAZE, TurnEnd.line(why, lastStep))
+                }
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnEnd", e) }
+            // Low-data mode: how much this task used (Blaze's own traffic: models, web, browser).
+            if (Settings.lowData) try { DataMeter.chip(bytes0)?.let { chip -> msgs.lastOrNull { it.role == Role.BLAZE }?.let { addMeta(it.id, chip) } } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: DataMeter.chipbytes0.let chip msgs.lastO", e) }
+            LlmClient.liteTurn = false
+            LlmClient.heavyTurn = false
+            turnModel?.let { tm -> if (TurnModel.current === tm) TurnModel.current = null }
+            // v0.42.0: a run still waiting for the phone is stopped; one still answering stays saved and is picked up later.
+            cloudTurn?.let { try { CloudRuns.endTurn(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: CloudRuns.endTurnit", e) } }
+            lastTurnDesign = ViewRouter.byId("design")?.let { d -> synchronized(turnOk) { turnOk.any { ClaimGuard.backs(d, it) } } } == true
+            if (agentId == null) com.blaze.assistant.phone.Pointer.done()
+            try { finishAck() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: finishAck", e) }
+            thinking = ""
+            mood = Mood.IDLE
+            currentStep = 0
+            persist()
+            announce()
+            learnAfterTurn()
+            trimSessions()   // v0.45.0 (#12)
+            if (wakes.isNotEmpty()) scope.launch { job?.join(); wakes.poll()?.let { wake(it) } }
+            // v0.30.6: messages that came in after this turn's last step start the next turn (after this one ends).
+            if (inbox.isNotEmpty()) scope.launch { job?.join(); drain() }
+        }
+
         suspend fun runLoop() {
             // Lazy start: blaze.db opens off the main thread; a turn that starts right after launch waits for it (suspends).
             try { Mind.await() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mind.await", e) }
@@ -3452,7 +3579,7 @@ When you finish, say what you did in one short sentence.
                     val pk = try { kotlinx.coroutines.withTimeoutOrNull(left) { dQuery.await() } } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
                     if (pk == null) { lateSteps += "blazequery"; dQuery.cancel() }
                     else if (pk.block.isNotEmpty() && queryBlock.isEmpty()) { queryBlock = pk.block; queryEvidence = pk.evidence }
-                    try { android.util.Log.i("BlazeQuery", "${pk?.status ?: "LATE"} ${pk?.reason.orEmpty()} ${System.currentTimeMillis() - bqStart} ms, ${queryBlock.length} chars") } catch (_: Throwable) { }
+                    try { android.util.Log.i("BlazeQuery", "${pk?.status ?: "LATE"} ${pk?.reason.orEmpty()} ${System.currentTimeMillis() - bqStart} ms, ${queryBlock.length} chars") } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                     timer.mark("blazequery")
                 }
                 var orientSent = false
@@ -3525,6 +3652,7 @@ When you finish, say what you did in one short sentence.
                         add(Role.BLAZE, "Autopilot stopped at its time budget (${Modes.apMinutes} min). Say \"continue\" to keep going.")
                         break
                     }
+                    if (handOffNearEnd(hardEnd(), lastResults)) break   // 0.52.1: long work moves to a background agent instead of dying
                     if (System.currentTimeMillis() > hardEnd()) { add(Role.BLAZE, TurnDeadline.line(hardEnd() - turnStart)); break }
                     mood = Mood.THINKING
                     status = Friendly.between(turnTools.lastOrNull())
@@ -3616,15 +3744,26 @@ When you finish, say what you did in one short sentence.
                         return kotlinx.coroutines.withTimeoutOrNull(left) { LlmClient.complete(r, tools, onText, onThink, lane) }
                             ?: throw LlmClient.LlmException(TurnDeadline.line(hardEnd() - turnStart))
                     }
-                    suspend fun callPlain(r: JSONArray): JSONObject = (Agent.idleGuard(limit) { model(r) }
-                        ?.also { gate.flush() })
-                        ?: run {
+                    // 0.52.1 heartbeat: a silent or slow step (gateway timeout, 1102, busy) is tried again up to Handoff.STEP_TRIES
+                    // times while the turn has time; sign-in, credits and 4xx errors still end it at once.
+                    suspend fun callPlain(r: JSONArray): JSONObject {
+                        var lastErr: LlmClient.LlmException? = null
+                        for (attempt in 1..Handoff.STEP_TRIES) {
+                            if (attempt > 1) {
+                                if (System.currentTimeMillis() > hardEnd() - 5_000L) break
+                                add(Role.STEP, if (lastErr == null) "The model went silent, retrying" else "The model is slow, trying again")
+                                if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
+                                kotlinx.coroutines.delay(Handoff.RETRY_GAP_MS)
+                            }
+                            val got = try { Agent.idleGuard(limit) { model(r) } } catch (e: LlmClient.LlmException) {
+                                if (!Handoff.slowFailure(e.message, e.code) || LlmClient.tooLarge(e)) { gate.flush(); throw e }
+                                lastErr = e; null
+                            }
                             gate.flush()
-                            add(Role.STEP, "The model went silent, retrying")
-                            if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
-                            Agent.idleGuard(limit) { model(r) }
-                                ?: throw LlmClient.LlmException("${LlmClient.lastRoute.ifBlank { "The model" }} sent nothing for ${limit / 1000}s, twice. Tap Retry, or send a shorter message.")
+                            if (got != null) return got
                         }
+                        throw lastErr ?: LlmClient.LlmException("${LlmClient.lastRoute.ifBlank { "The model" }} sent nothing for ${limit / 1000}s, ${Handoff.STEP_TRIES} times. Tap Retry, or send a shorter message.")
+                    }
                     suspend fun call(r0: JSONArray): JSONObject {
                         var r = r0
                         // v0.33.3: a call that must read a fresh screenshot gets 12 s; then the picture becomes the screen
@@ -3655,6 +3794,7 @@ When you finish, say what you did in one short sentence.
                         gate.flush(); streamId = -1L
                         // v0.26.0: "too long for the model" → fold older turns into the summary (same chat, nothing
                         // asked) and retry once. Only if that still fails does the user see an error.
+                        if (!liteNow && Handoff.slowFailure(e.message, e.code) && handOff(lastResults)) break   // 0.52.1: carry on in the background
                         if (liteNow || !(LlmClient.tooLarge(e) || AutoCompact.isContextError(e.message, e.code))) throw e
                         if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
                         squeezed = true
@@ -4172,7 +4312,7 @@ When you finish, say what you did in one short sentence.
                                 if (call.name !in Friendly.selfNarrating) { addStep(Friendly.say(call.name, call.args), Friendly.exact(call.name, call.args)); preStepped += pick[index] }
                             }
                         })
-                        try { android.util.Log.i("BlazeSpeed", "parallel tools: " + com.blaze.assistant.orchestra.ToolScheduler.describe(tcs)) } catch (_: Throwable) { }
+                        try { android.util.Log.i("BlazeSpeed", "parallel tools: " + com.blaze.assistant.orchestra.ToolScheduler.describe(tcs)) } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                         pick.zip(res).associate { (i, r) -> i to r.output }
                     }
                     for (i in 0 until calls.length()) {
@@ -4210,7 +4350,7 @@ When you finish, say what you did in one short sentence.
                                 .also { r -> oneShot.record(name, args, r) })
                         if (!result.startsWith("Not run:")) loopGuard.record(name, args, result)
                         // 0.52.1: a sign-in wall on a web surface is remembered with the task (so "I signed you in" finds it).
-                        try { TaskMemory.signInWall(name, args, result).takeIf { it.isNotBlank() }?.let { turnSignInWall = it } } catch (_: Throwable) { }
+                        try { TaskMemory.signInWall(name, args, result).takeIf { it.isNotBlank() }?.let { turnSignInWall = it } } catch (e: Throwable) { android.util.Log.w("Blaze", "signInWall: ${e.message}") }
                         ToolStats.add(name, when {
                             name in unknownCalls -> "unknown"
                             repairedThisStep.any { it.startsWith(name) || it.contains("→ $name") || (it.startsWith("split") && it.contains(name)) } -> "repaired"
@@ -4345,37 +4485,7 @@ When you finish, say what you did in one short sentence.
                 keepForResume()
                 add(Role.ERROR, e.message ?: "Something went wrong.")
             } finally {
-                liveGate = null
-                // v0.45.6: a turn never ends silently (stop, timeout, tool failure): one plain closing line.
-                if (agentId == null) StepPills.end(id)
-                recordTask(stopped = turnEnd == TurnEnd.Reason.STOPPED)
-                if (agentId == null && !notSent) try {
-                    if (TurnEnd.silent(msgs.filterNot { it.meta == Ack.META }.map { it.role })) {
-                        val lastStep = msgs.lastOrNull { it.role == Role.STEP }?.text.orEmpty()
-                        val why = if (turnEnd == TurnEnd.Reason.DONE && lastStep == "You stopped me") TurnEnd.Reason.STOPPED else turnEnd
-                        add(Role.BLAZE, TurnEnd.line(why, lastStep))
-                    }
-                } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnEnd", e) }
-                // Low-data mode: how much this task used (Blaze's own traffic: models, web, browser).
-                if (Settings.lowData) try { DataMeter.chip(bytes0)?.let { chip -> msgs.lastOrNull { it.role == Role.BLAZE }?.let { addMeta(it.id, chip) } } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: DataMeter.chipbytes0.let chip msgs.lastO", e) }
-                LlmClient.liteTurn = false
-                LlmClient.heavyTurn = false
-                turnModel?.let { tm -> if (TurnModel.current === tm) TurnModel.current = null }
-                // v0.42.0: a run still waiting for the phone is stopped; one still answering stays saved and is picked up later.
-                cloudTurn?.let { try { CloudRuns.endTurn(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: CloudRuns.endTurnit", e) } }
-                lastTurnDesign = ViewRouter.byId("design")?.let { d -> synchronized(turnOk) { turnOk.any { ClaimGuard.backs(d, it) } } } == true
-                if (agentId == null) com.blaze.assistant.phone.Pointer.done()
-                try { finishAck() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: finishAck", e) }
-                thinking = ""
-                mood = Mood.IDLE
-                currentStep = 0
-                persist()
-                announce()
-                learnAfterTurn()
-                trimSessions()   // v0.45.0 (#12)
-                if (wakes.isNotEmpty()) scope.launch { job?.join(); wakes.poll()?.let { wake(it) } }
-                // v0.30.6: messages that came in after this turn's last step start the next turn (after this one ends).
-                if (inbox.isNotEmpty()) scope.launch { job?.join(); drain() }
+                endTurn(turnEnd, notSent, bytes0, turnModel, cloudTurn)   // 0.52.1: out of runLoop (a finally body is copied per exit: "Method too large")
             }
         }
 
@@ -4621,7 +4731,20 @@ When you finish, say what you did in one short sentence.
         }
 
         /** 0.50.0: screen actions light the edge particles while they run (ScreenWork → ui.ScreenGlow). */
+        /** 0.52.1 (MemoryLoop): memory lookups this turn, and the song a song-download turn has resolved ("" = none yet). */
+        @Volatile var memoryLookups = 0
+        @Volatile var songResolved = ""
+
         suspend fun runTool(name: String, args: JSONObject, shots: MutableList<String>): String {
+            val user = lastUserText()
+            MemoryLoop.gate(name, user, memoryLookups, songResolved.ifBlank { MemoryLoop.concrete(user).orEmpty() })?.let { add(Role.STEP, "Skipping another memory check"); return it }
+            if (MemoryLoop.isLookup(name)) memoryLookups++
+            val out = runToolScreen(name, args, shots)
+            if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
+            return out
+        }
+
+        private suspend fun runToolScreen(name: String, args: JSONObject, shots: MutableList<String>): String {
             if (!com.blaze.assistant.phone.ScreenWork.isScreenTool(name)) return runToolInner(name, args, shots)
             val tok = com.blaze.assistant.phone.ScreenWork.begin()
             try { return runToolInner(name, args, shots) } finally { com.blaze.assistant.phone.ScreenWork.end(tok) }

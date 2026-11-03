@@ -52,21 +52,40 @@ object BgAgents {
     /** Marks a coroutine as belonging to an agent, so its confirm and question cards say which. */
     class Tag(val id: String) : AbstractCoroutineContextElement(Key) { companion object Key : CoroutineContext.Key<Tag> }
 
-    val toolNames = setOf("start_agent", "spawn_agent", "list_agents", "check_agent", "message_agent", "cancel_agent")
+    val toolNames = setOf("start_agent", "spawn_agent", "list_agents", "check_agent", "message_agent", "cancel_agent", "agent_progress", "post_update")
     /** Agents don't start or steer other agents. */
-    val leadOnly = setOf("start_agent", "spawn_agent", "message_agent", "cancel_agent", "delegate", "create_specialist", "orchestrate")
+    val leadOnly = setOf("start_agent", "spawn_agent", "message_agent", "cancel_agent", "delegate", "create_specialist", "orchestrate", "post_update")
 
     private lateinit var app: Context
     private lateinit var file: File
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard)
-    private val jobs = HashMap<String, Job>()
+    // 0.52.1 crash audit: touched from Main (runOne/pump) and from tool threads (cancel via the lead's tool call).
+    private val jobs = java.util.concurrent.ConcurrentHashMap<String, Job>()
+    /** 0.52.1: the file is written off the main thread, one write at a time, newest snapshot wins. */
+    private val io = Dispatchers.IO.limitedParallelism(1)
+    private val pending = java.util.concurrent.atomic.AtomicReference<String?>(null)
     private val _all = MutableStateFlow<List<Bg>>(emptyList())
     val all: StateFlow<List<Bg>> = _all
 
     fun init(ctx: Context) {
         app = ctx.applicationContext
         file = File(app.filesDir, "bg_agents.json")
-        val list = try {
+        // 0.52.1 crash audit: the file can be ~1 MB (40 results); read it off the main thread (init runs in Application.onCreate).
+        scope.launch {
+            val list = withContext(io) { load() }
+            // Blaze was closed mid-run: those go back in the queue and continue where they were.
+            synchronized(this@BgAgents) {
+                val restored = list.map { if (it.status == RUNNING) it.copy(status = QUEUED, resume = true) else it }
+                val fresh = _all.value.filter { n -> restored.none { it.id == n.id } }   // started before the read finished
+                _all.value = (restored + fresh).sortedBy { it.created }.takeLast(40)
+            }
+            save()
+            delay(4000); pump()
+        }
+    }
+
+    private fun load(): List<Bg> = try {
+        if (!file.exists()) emptyList() else {
             val a = JSONArray(file.readText())
             (0 until a.length()).map { a.getJSONObject(it) }.map {
                 Bg(it.getString("id"), it.optString("title"), it.optString("task"), it.optString("parent"), it.optString("chat"),
@@ -74,27 +93,31 @@ object BgAgents {
                     it.optInt("steps"), it.optString("last"), it.optString("result"), false, it.optBoolean("resume"), it.optString("follow_up"),
                     it.optString("specialist"), it.optJSONArray("log")?.let { a -> (0 until a.length()).map { i -> a.optString(i) } } ?: emptyList())
             }
-        } catch (_: Exception) { emptyList() }
-        // Blaze was closed mid-run: those go back in the queue and continue where they were.
-        _all.value = list.map { if (it.status == RUNNING) it.copy(status = QUEUED, resume = true) else it }
-            .sortedBy { it.created }.takeLast(40)
-        save()
-        scope.launch { delay(4000); pump() }
-    }
+        }
+    } catch (e: Exception) { android.util.Log.w("BgAgents", "load: ${e.message}"); emptyList() }
 
     private fun ok() = ::file.isInitialized
 
     @Synchronized private fun save() {
         if (!ok()) return
-        try {
-            file.writeText(JSONArray(_all.value.map {
+        val text = try {
+            JSONArray(_all.value.map {
                 JSONObject().put("id", it.id).put("title", it.title).put("task", it.task).put("parent", it.parent).put("chat", it.chat)
                     .put("plan", it.plan).put("status", it.status).put("created", it.created).put("started", it.started).put("ended", it.ended)
                     .put("steps", it.steps).put("last", it.last).put("result", it.result.take(20000)).put("resume", it.resume).put("follow_up", it.followUp)
                     .apply { if (it.specialist.isNotBlank()) put("specialist", it.specialist) }
                     .put("log", JSONArray(it.log.takeLast(LOG_MAX)))
-            }).toString())
-        } catch (_: Exception) { }
+            }).toString()
+        } catch (e: Exception) { android.util.Log.w("BgAgents", "save: ${e.message}"); return }
+        // 0.52.1 crash audit: never write on the caller's thread (runOne runs on Main). Only the newest snapshot is written.
+        if (pending.getAndSet(text) == null) scope.launch(io) {
+            val t = pending.getAndSet(null) ?: return@launch
+            try {
+                val tmp = File(file.parentFile, file.name + ".tmp")
+                tmp.writeText(t)
+                if (!tmp.renameTo(file)) { file.writeText(t); tmp.delete() }
+            } catch (e: Exception) { android.util.Log.w("BgAgents", "write: ${e.message}") }
+        }
     }
 
     @Synchronized private fun update(id: String, persist: Boolean = true, f: (Bg) -> Bg) {
@@ -136,7 +159,7 @@ object BgAgents {
         val id = Processes.nextId("agent")
         val bg = Bg(id, title.ifBlank { task.lineSequence().first().take(40) }.take(60), task, parent,
             "bg-" + java.util.UUID.randomUUID().toString().take(10), plan = Modes.plan, specialist = specialist)
-        _all.value = (_all.value + bg).takeLast(40)
+        synchronized(this) { _all.value = (_all.value + bg).takeLast(40) }
         save()
         scope.launch { pump() }
         return bg
@@ -177,14 +200,16 @@ object BgAgents {
         update(bg.id) { it.copy(resume = false, waiting = false, followUp = "") }
         // v0.26.2: a custom specialist without a playbook gets one written (validated) before its first run.
         spec(bg)?.let { sp -> if (sp.custom && sp.playbook.isBlank()) { update(bg.id, persist = false) { it.copy(last = "Writing its field playbook") }; Agent.ensurePlaybook(sp) } }
+        // 0.52.1 (ProgressGate): milestones this agent has already reported to the main Blaze.
+        var fired = ProgressGate.reached(bg.steps)
         suspend fun runAndWait(t: String) {
             withContext(Dispatchers.Main) { s.send(t) }
-            // Live progress for the card, without writing the file every second.
             while (s.job?.isActive == true) {
                 val stepMsgs = s.msgs.filter { it.role == Role.STEP }
                 val steps = stepMsgs.size
                 val last = stepMsgs.lastOrNull()?.text.orEmpty()
                 update(bg.id, persist = false) { it.copy(steps = steps, last = last.take(120), log = stepMsgs.takeLast(LOG_MAX).map { m -> m.text.take(160) }) }
+                get(bg.id)?.let { now -> if (now.status == RUNNING && ProgressGate.due(steps, now.seconds, fired)) { fired = ProgressGate.reached(steps); Agent.agentMilestone(now) } }
                 delay(1000)
             }
         }
@@ -268,7 +293,7 @@ object BgAgents {
     }
 
     /** Forget a finished agent (its chat stays in the chat list). */
-    fun discard(id: String) { _all.value = _all.value.filterNot { it.id == id && !it.live }; save() }
+    @Synchronized fun discard(id: String) { _all.value = _all.value.filterNot { it.id == id && !it.live }; save() }
 
     fun setWaiting(id: String, w: Boolean) = update(id, persist = false) { it.copy(waiting = w) }
 
@@ -281,7 +306,8 @@ object BgAgents {
             "spawn_agent (one task, optional specialist type), delegate (several specialists in parallel) or orchestrate (a big multi-part job: an app / APK, " +
             "deep research with a fact-checked document, curated media lists with artwork, long documents). Results come back to you on their own; " +
             "never wait or poll. While agents work, keep chatting; if the user asks how one is going, answer from list_agents / check_agent; " +
-            "to change what one does use message_agent, to stop it cancel_agent. When you call several tools in one reply, independent ones run at the same time." +
+            "for what one has found so far agent_progress; to change what one does use message_agent, to stop it cancel_agent. " +
+            "While they work you may post_update the user once per real milestone, in your own words from their actual results; never stock progress lines. When you call several tools in one reply, independent ones run at the same time." +
             (if (live.isNotEmpty()) " Working now: " + live.joinToString("; ") { "${it.id} ${it.title} (${it.status})" } + "." else "")
     }
 
@@ -325,6 +351,11 @@ object BgAgents {
             fn("check_agent", "Status, current step and (when done) the full result of one background agent.", JSONObject().put("id", s("e.g. B2")), listOf("id")),
             fn("message_agent", "Steer a background agent: add an instruction while it works, or give a follow-up after it finished.", JSONObject().put("id", s("e.g. B2")).put("text", s("What to tell it")), listOf("id", "text")),
             fn("cancel_agent", "Stop a background agent.", JSONObject().put("id", s("e.g. B2")), listOf("id")),
+            fn("agent_progress", "What a running background agent has done and found so far: its newest steps and its latest real tool results. " +
+                "Use it to answer \"how is it going\" or before steering it.", JSONObject().put("id", s("e.g. B2")), listOf("id")),
+            fn("post_update", "Post one short interim message to the user while your background agents work, written by you from what they really found " +
+                "(e.g. what turned up so far and what is left). Only for real progress: refused when nothing is new. Not for the final answer.",
+                JSONObject().put("text", s("One or two short sentences in your own words")), listOf("text")),
         )
     }
 
@@ -334,6 +365,8 @@ object BgAgents {
         "check_agent" -> get(a.optString("id"))?.let { describe(it) + (if (it.result.isNotBlank()) "\nResult:\n" + it.result.take(8000) else "") } ?: "No agent ${a.optString("id")}."
         "message_agent" -> steer(a.optString("id"), a.optString("text"))
         "cancel_agent" -> cancel(a.optString("id"))
+        "agent_progress" -> Agent.agentProgress(a.optString("id"))
+        "post_update" -> Agent.postUpdate(parent, a.optString("text"))
         else -> "Unknown agent tool."
     }
 }
