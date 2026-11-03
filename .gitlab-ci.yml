@@ -1,4 +1,4 @@
-# 0.51.0 verification: unit suite, screenshot/graphics tests, test-signed release APK.
+# 0.51.0 / 0.52.0 verification: unit suite, screenshot/graphics tests, test-signed release APK.
 #
 # Nothing here signs with the production key, reads keystore/, or publishes anywhere.
 # The release APK is signed with a throwaway key generated inside the job, so it installs on a
@@ -61,17 +61,18 @@ variables:
         && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libblazerouter.so .) || echo "blazerouter build skipped"
       ls -la app/src/main/jniLibs/arm64-v8a/ || true
 
-# ------------------------------------------------------------------ unit suite
+# ---------------------------------------------------------------- unit suite
 unit-tests:
   <<: *setup
   stage: test
   timeout: 2h
   rules:
     - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
+    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
   script:
     - |
       set +e
-      # Scrubbed copy: gateway/, keystore/, HANDOFF*.md and STATUS.md are private paths the GitHub
+      # Scrubed copy: gateway/, keystore/, HANDOFF*.md and STATUS.md are private paths the GitHub
       # mirror never carries. OwnerName19Test and UpdateKeysTest scan the tree and fail on them by
       # design (docs/BUILD-LOCAL.md), so the documented local procedure leaves them out. This is not
       # a test change: the same suite runs, on the same code.
@@ -79,6 +80,7 @@ unit-tests:
       mkdir -p /tmp/bb
       tar -cf - --exclude='./.git' --exclude='./build' --exclude='./app/build' --exclude='./.gradle' \
         --exclude='./gateway' --exclude='./keystore' --exclude='./HANDOFF.md' --exclude='./HANDOFF-gallery.md' \
+        --exclude='./docs/HANDOFF-0.52.md' \
         --exclude='./STATUS.md' --exclude='./.github' . | tar -xf - -C /tmp/bb
       cd /tmp/bb
       ls -la | head -20
@@ -110,18 +112,19 @@ unit-tests:
       cp test.log "$CI_PROJECT_DIR/out/" 2>/dev/null || true
       cp -r app/build/test-results/testDebugUnitTest "$CI_PROJECT_DIR/out/xml" 2>/dev/null || true
   artifacts:
-    name: "blaze-051-units-$CI_COMMIT_SHORT_SHA"
+    name: "blaze-units-$CI_COMMIT_SHORT_SHA"
     when: always
     paths: ["out/"]
     expire_in: 1 week
 
-# ------------------------------------------------- screenshot / graphics tests
+# ---------------------------------------------------------------- screenshot / graphics tests
 shots:
   <<: *setup
   stage: test
   timeout: 2h
   rules:
     - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
+    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
   variables:
     BLAZE_SHOTS: "1"
   script:
@@ -139,7 +142,8 @@ shots:
         --tests 'com.blaze.assistant.ui.HomeRedesignShotsTest' \
         --tests 'com.blaze.assistant.ui.ComposerShotsTest' \
         --tests 'com.blaze.assistant.ui.Blaze050ShotsTest' \
-        --continue $GRADLE_FLAGS \
+        --tests 'com.blaze.assistant.ui.RichMediaShotsTest' \
+        -continue $GRADLE_FLAGS \
         -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" > shots.log 2>&1
       STATUS=$?
       echo "=== gradle exit: $STATUS ==="
@@ -167,12 +171,12 @@ shots:
       (cd app/build && zip -qr "$CI_PROJECT_DIR/out/shots.zip" shots) 2>/dev/null || true
       ls -la "$CI_PROJECT_DIR/out" || true
   artifacts:
-    name: "blaze-051-shots-$CI_COMMIT_SHORT_SHA"
+    name: "blaze-shots-$CI_COMMIT_SHORT_SHA"
     when: always
     paths: ["out/"]
     expire_in: 1 week
 
-# ------------------------------------------------------- release APK (test key)
+# ---------------------------------------------------------------- release APK (test key)
 release-apk:
   <<: *setup
   stage: build
@@ -181,6 +185,7 @@ release-apk:
   needs: []
   rules:
     - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
+    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
   script:
     - |
       set +e
@@ -220,7 +225,7 @@ release-apk:
       echo "${CI_COMMIT_SHA}" > out/COMMIT
       cp rel.log out/
 
-      # Generic package registry, 0.51.0. Uses the job token: no stored credential.
+      # Generic package registry. Uses the job token: no stored credential.
       echo "=== package registry upload ==="
       for f in out/*.apk out/SHA256SUMS; do
         code=$(curl -sS -o /tmp/up.txt -w '%{http_code}' --header "JOB-TOKEN: $CI_JOB_TOKEN" \
@@ -230,7 +235,7 @@ release-apk:
         [ "$code" = "201" ] || [ "$code" = "200" ] || cat /tmp/up.txt
       done
   artifacts:
-    name: "blaze-051-release-apk-$CI_COMMIT_SHORT_SHA"
+    name: "blaze-release-apk-$CI_COMMIT_SHORT_SHA"
     when: always
     paths: ["out/"]
     expire_in: 1 month
