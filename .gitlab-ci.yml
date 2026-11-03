@@ -239,3 +239,49 @@ release-apk:
     when: always
     paths: ["out/"]
     expire_in: 1 month
+
+# --------------------------------------------------------- debug APK (SDK key)
+# The signed debug/test APK: assembleDebug signs with the SDK debug key that ships
+# with build-tools, so it installs on a test phone with no keystore and no secret.
+# It is debuggable by design and must never be shipped.
+debug-apk:
+  <<: *setup
+  stage: build
+  timeout: 2h
+  # Built regardless of the test stage: a red unit suite must not hide the APK.
+  needs: []
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
+    - if: $CI_COMMIT_BRANCH == "feat/subagent-visibility-9f3c"
+  script:
+    - |
+      set +e
+      ./gradlew :app:assembleDebug $GRADLE_FLAGS \
+        -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" > dbg.log 2>&1
+      STATUS=$?
+      echo "=== gradle exit: $STATUS ==="
+      grep -nE "^e: |error:|FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory" dbg.log | head -40 || true
+      tail -30 dbg.log
+      if [ $STATUS -ne 0 ]; then mkdir -p out; cp dbg.log out/; exit $STATUS; fi
+
+      VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+      VC=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+      echo "version=$VER versionCode=$VC"
+      mkdir -p out
+      APK_SRC=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+      echo "debug apk: $APK_SRC"
+      APK="out/Blaze-v${VER}-vc${VC}-debug.apk"
+      cp "$APK_SRC" "$APK"
+      BT="$ANDROID_HOME/build-tools/34.0.0"
+      java -jar "$BT/lib/apksigner.jar" verify --print-certs "$APK" | head -8
+      "$BT/aapt2" dump badging "$APK" > out/badging.txt 2>&1 || true
+      grep -E "package:|sdkVersion|targetSdkVersion" out/badging.txt || true
+      (cd out && sha256sum *.apk | tee SHA256SUMS)
+      ls -la out/
+      echo "${CI_COMMIT_SHA}" > out/COMMIT
+      cp dbg.log out/
+  artifacts:
+    name: "blaze-debug-apk-$CI_COMMIT_SHORT_SHA"
+    when: always
+    paths: ["out/"]
+    expire_in: 1 month
