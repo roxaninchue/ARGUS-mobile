@@ -4,7 +4,7 @@ Base: `main` @ 64280448 (0.51.0 merged). versionName 0.52.0, versionCode 187.
 Pushed in chunks via the GitLab commits API (work/gl_push.py). This file is updated with every chunk.
 
 ## Scope
-1. Background agents (Hark-style): Blaze always keeps talking; work goes to background agents shown as one
+1. Background agents (compact): Blaze always keeps talking; work goes to background agents shown as one
    "Working · N steps · 1m 2s ›" pill each; results post back as replies. No other status bubbles/banners.
 2. Parallel, conflict-free multi tool calling (resource locks, dependency detection, per-call timeouts, ordered results).
 3. Blueprint-driven nested orchestration (DAG dataflow; APK / research / media pipelines; tests with fake tools).

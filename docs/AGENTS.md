@@ -1,7 +1,7 @@
 # Blaze agents (0.52.0): background agents, parallel tools, blueprint orchestration
 
 Blaze is one conversation agent that **never blocks**. Work that takes more than a couple of tool steps goes to
-background agents; the chat keeps answering. The chat shows only replies and Hark-style pills.
+background agents; the chat keeps answering. The chat shows only replies and work pills.
 
 ```
  user ──► chat agent (fast lane, Session turn)

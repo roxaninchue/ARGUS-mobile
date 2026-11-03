@@ -313,7 +313,7 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
             }
             items(rows, key = { it.key }) { r ->
                 when (r) {
-                    // 0.52.0: a turn's steps are one Hark-style work pill ("● Working · 4 steps · 1m 12s ›"); tap for the steps.
+                    // 0.52.0: a turn's steps are one work pill ("● Working · 4 steps · 1m 12s ›"); tap for the steps.
                     is ChatOverlayLogic.Row.Steps -> Box(Modifier.padding(start = 38.dp)) {
                         if (r.items.isNotEmpty()) com.blaze.assistant.ui.WorkCard(r.items, r.live, r.startAt, r.endAt, status = "", exact = com.blaze.assistant.agent.Settings.showSteps)
                         else StepsChip(r)

@@ -30,7 +30,7 @@ import java.io.File
 
 /**
  * 0.52.0 screenshots (BLAZE_SHOTS=1): the new reply blocks (song gallery with artwork, poster grid, link cards, document
- * card, collapsible section, a pie chart) and the Hark-style pills (a turn's work pill, background agent pills live and
+ * card, collapsible section, a pie chart) and the work pills (a turn's work pill, background agent pills live and
  * done). Pictures come from a local stand-in loader (no network in tests).
  */
 @RunWith(AndroidJUnit4::class)
