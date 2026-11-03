@@ -241,7 +241,11 @@ object BgAgents {
         val bg = get(id) ?: return "No agent $id. Call list_agents."
         if (text.isBlank()) return "Say what to tell it."
         return when (bg.status) {
-            RUNNING -> { Agent.agentSession(bg).steer.add(text.trim()); "Told ${bg.id}: it picks this up at its next step." }
+            RUNNING -> {
+                if (bg.specialist == com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST && com.blaze.assistant.orchestra.OrchestraRuns.steer(bg.id, text))
+                    "Told blueprint ${bg.id}: every part that starts from now on follows it."
+                else { Agent.agentSession(bg).steer.add(text.trim()); "Told ${bg.id}: it picks this up at its next step." }
+            }
             QUEUED -> { update(id) { it.copy(task = it.task + "\n\nAlso: " + text.trim()) }; "${bg.id} hasn't started yet; added that to its task." }
             else -> {
                 // Follow-up: the agent's chat continues with the new instruction when a slot is free.

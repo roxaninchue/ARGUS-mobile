@@ -29,6 +29,8 @@ object OrchestraRuns {
     const val TOOL = "orchestrate"
 
     private lateinit var dir: File
+    /** One background thread for snapshot writes (ordered, off the main thread). */
+    private val writer = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "blaze-orchestra-io").apply { isDaemon = true } }
     fun init(ctx: Context) { dir = File(ctx.applicationContext.filesDir, "orchestra").apply { mkdirs() } }
     private fun file(id: String): File? = if (::dir.isInitialized) File(dir, "$id.json") else null
 
@@ -64,6 +66,7 @@ object OrchestraRuns {
         val root = "/root/phone/Blaze/blueprints/${bg.id.lowercase()}"
         val saved = file(bg.id)?.takeIf { it.exists() }?.let { f -> try { BlueprintStore.restore(JSONObject(withContext(Dispatchers.IO) { f.readText() })) } catch (_: Exception) { null } }
         val store = saved ?: BlueprintStore(Pipelines.skeleton(ask.shape, ask.goal, bg.id, ask.inputs)).also { it.note("meta/root", root) }
+        active[bg.id] = store
         val log = ArrayList<String>()
         var count = 0
         store.onEvent = { e ->
@@ -93,9 +96,11 @@ object OrchestraRuns {
             }
         }
         val cfg = Orchestrator.Config(maxParallel = try { BgAgents.cap() } catch (_: Throwable) { 2 })
-        val outcome = Orchestrator(store, Pipelines.runner(ops), cfg, AgentBudget.escalation(root), save = { s ->
-            file(bg.id)?.let { f -> try { f.writeText(s.snapshot().toString()) } catch (_: Exception) { } }
-        }).run()
+        val outcome = try { Orchestrator(store, Pipelines.runner(ops), cfg, AgentBudget.escalation(root), save = { s ->
+            // the snapshot is taken here; the write happens on the run's own I/O thread (never the main thread), in order
+            val f = file(bg.id); val json = s.snapshot().toString()
+            if (f != null) writer.execute { try { f.writeText(json) } catch (_: Exception) { } }
+        }).run() } finally { active.remove(bg.id) }
         return outcome.ok to result(store, outcome)
     }
 
@@ -146,5 +151,14 @@ object OrchestraRuns {
     /** The document's title and summary lines (the full text is in the doc card). */
     private fun summaryOf(md: String): String = md.lines().filter { it.isNotBlank() }.take(4).joinToString("\n")
 
-    fun forget(id: String) { file(id)?.delete() }
+    private val active = java.util.concurrent.ConcurrentHashMap<String, BlueprintStore>()
+
+    /** The user messaged a running blueprint: every agent that starts from now on reads it (Pipelines.prompt). */
+    fun steer(id: String, text: String): Boolean {
+        val st = active[id] ?: return false
+        st.note("steer/" + System.currentTimeMillis(), text.trim().take(1000))
+        return true
+    }
+
+    fun forget(id: String) { val f = file(id) ?: return; writer.execute { f.delete() } }
 }

@@ -119,6 +119,8 @@ object Pipelines {
         val contracts = ctx.store.contracts()
         if (contracts.isNotEmpty()) append("Shared contracts (other files rely on these exactly):\n").append(contracts.entries.joinToString("\n") { "- ${it.key}: ${it.value.take(600)}" }).append('\n')
         if (ctx.inputs.isNotEmpty()) append("What the parts before you produced:\n").append(ctx.inputs.entries.joinToString("\n\n") { "## ${it.key}\n${it.value.take(4000)}" }).append('\n')
+        val steer = ctx.store.notes("steer/")
+        if (steer.isNotEmpty()) append("The user added while the job runs (follow it):\n").append(steer.values.joinToString("\n") { "- $it" }).append('\n')
         if (extra.isNotEmpty()) append(extra).append('\n')
         if (ctx.lastError.isNotEmpty()) append("Your previous attempt failed: ").append(ctx.lastError.take(1500)).append("\nFix that this time.\n")
     }

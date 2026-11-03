@@ -126,6 +126,13 @@ class PipelinesTest {
         assertEquals(2, store.attempts("plan"))
     }
 
+    @Test fun aMessageToARunningBlueprintReachesEveryLaterAgent() {
+        val store = BlueprintStore(Pipelines.skeleton(Pipelines.Shape.GENERIC, "plan my week"))
+        store.note("steer/1", "keep Fridays free")
+        val p = Pipelines.prompt(NodeContext(store.node("plan")!!, store, emptyMap(), 1, "") { })
+        assertTrue(p.contains("keep Fridays free"))
+    }
+
     @Test fun budgetFollowsRam() {
         assertEquals(1, AgentBudget.cap(8L shl 30, lowRamDevice = true))
         assertEquals(4, AgentBudget.cap(6L shl 30))
