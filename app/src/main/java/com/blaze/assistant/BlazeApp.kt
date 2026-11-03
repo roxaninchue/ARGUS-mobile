@@ -81,6 +81,7 @@ class BlazeApp : Application() {
         val agentMs = android.os.SystemClock.elapsedRealtime() - tAgent
         com.blaze.assistant.device.StartGuard.step("orchestra.OrchestraRuns.init") { com.blaze.assistant.orchestra.OrchestraRuns.init(this) }
         com.blaze.assistant.device.StartGuard.step("agent.BgAgents.init") { com.blaze.assistant.agent.BgAgents.init(this) }
+        com.blaze.assistant.device.StartGuard.step("agent.TaskMemoryStore.init") { com.blaze.assistant.agent.TaskMemoryStore.init(this) }   // 0.52.1: reads on IO
         com.blaze.assistant.device.StartGuard.step("routine.Routines.init") { com.blaze.assistant.routine.Routines.init(this) }
         // v0.29.0 Home board: widgets + cached content in blaze.db, refreshed by WorkManager (≥ 1 h).
         com.blaze.assistant.device.StartGuard.step("home.HomeBoard.init") { com.blaze.assistant.home.HomeBoard.init(this) }

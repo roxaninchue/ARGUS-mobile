@@ -1617,6 +1617,11 @@ When you finish, say what you did in one short sentence.
         @Volatile var turnGoal: GoalPin.Goal? = null
         /** 0.45.29 (stale "Yes"): what this turn's short "yes" answers (FollowUpBind), or null. */
         @Volatile var turnBind: FollowUpBind.Binding? = null
+        /** 0.52.1 (TaskMemory): what this turn refers back to, the task record it works on, and sign-in facts seen this turn. */
+        @Volatile var turnRef: TaskMemory.Resolution? = null
+        @Volatile var turnTaskId: String? = null
+        @Volatile var turnSignInWall: String = ""
+        @Volatile var turnSignedIn: String = ""
         /** v0.45.0 (#12): last time this chat was used (sent, answered, saved), for trimming idle chats from memory. */
         @Volatile var touchedAt: Long = System.currentTimeMillis()
         /** v0.45.0 (#12): the newest save of this chat has reached the disk (no write queued or failed). */
@@ -1743,6 +1748,42 @@ When you finish, say what you did in one short sentence.
         }
 
         /** v0.45.0 (#38): tidies the history after an interrupted turn and keeps the task (goal + receipts) to resume. */
+        /** 0.52.1: the note that keeps a task on the web surface it is using (TaskMemory.surfaceGuard), or null to run [name]. */
+        private fun surfaceNote(name: String, quiet: Boolean = false): String? {
+            if (agentId != null || !(name.startsWith("phone_") || name.startsWith("browser_"))) return null
+            return try {
+                val now = System.currentTimeMillis()
+                val rec = turnTaskId?.let { TaskMemoryStore.get(it) }
+                val sticky = rec?.surface?.takeIf { it == TaskMemory.Surface.BROWSER || it == TaskMemory.Surface.PHONE }
+                    ?: TaskMemory.surfaceOf(synchronized(turnTools) { turnTools.toList() })
+                val t = (rec ?: TaskMemory.Rec("turn", id, turnGoal?.request.orEmpty(), updated = now)).copy(surface = sticky, updated = now,
+                    state = if (rec?.state == TaskMemory.State.DONE) TaskMemory.State.ACTIVE else rec?.state ?: TaskMemory.State.ACTIVE)
+                TaskMemory.surfaceGuard(name, t, lastUserText(), now)?.also { if (!quiet) add(Role.STEP, "Staying on the same screen") }
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: surfaceNote", e); null }
+        }
+
+        /** 0.52.1: writes this turn into its task record (TaskMemory): goal, state, surface, sign-ins, what it found, next step. */
+        private fun recordTask(stopped: Boolean) {
+            if (agentId != null) return
+            try {
+                val tools = synchronized(turnTools) { turnTools.toList() }
+                val existing = turnTaskId?.let { TaskMemoryStore.get(it) }
+                if (existing == null && tools.isEmpty()) return
+                val now = System.currentTimeMillis()
+                val from = turnFrom
+                val after = msgs.filter { it.id > from }
+                val failed = after.any { it.role == Role.ERROR }
+                val state = when { stopped -> TaskMemory.State.STOPPED; failed -> TaskMemory.State.FAILED; else -> TaskMemory.State.DONE }
+                val finding = after.lastOrNull { it.role == Role.BLAZE && it.meta != Ack.META && !it.meta.startsWith(BgAgents.CARD) }?.text.orEmpty()
+                    .let { com.blaze.assistant.ui.Md.plain(it) }.replace(Regex("\\s+"), " ").take(300)
+                val next = resume?.let { p -> p.interrupted.firstOrNull()?.let { "check, then redo: $it" } ?: "continue: ${p.goal.request.take(160)}" }.orEmpty()
+                val base = existing ?: TaskMemory.Rec("t" + now.toString(36), id, (turnGoal?.request ?: lastUserText()).take(400), created = now, updated = now)
+                val rec = TaskMemory.afterTurn(base, tools, state, finding, next, turnSignInWall, turnSignedIn, now)
+                TaskMemoryStore.put(rec)
+                turnTaskId = rec.id
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: recordTask", e) }
+        }
+
         private fun keepForResume() {
             try {
                 val t = StopResume.tidy(history)
@@ -2507,7 +2548,7 @@ When you finish, say what you did in one short sentence.
          * Returns the raw final content (control tag included).
          */
         private suspend fun duoCall(who: Duo.Who, req: JSONArray, tools: JSONArray?, room: Long, side: Boolean = false, hardMs: Long = 0L, onShow: (String) -> Unit): String {
-            val limit = Settings.str("model_timeout_s", "100").toLongOrNull()?.coerceIn(30, 600)?.times(1000) ?: 100_000L
+            val limit = Settings.str("model_timeout_s", "60").toLongOrNull()?.coerceIn(30, 600)?.times(1000) ?: 60_000L   // 0.52.1 (gw061): the gateway answers or errors within 40 s
             val shots = mutableListOf<String>()
             var rounds = 0
             var nudged = false
@@ -2995,7 +3036,7 @@ When you finish, say what you did in one short sentence.
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
                 (if (rung == Mind.Rung.LOOKUP) "\n" + Mind.LOOKUP_RULE + "\n" else "") +
                 cacheBlock +
-                GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) +
+                GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) + TaskMemory.block(turnRef) + (if (agentId == null) TaskMemory.SURFACE_RULE else "") +
                 (agentId?.let { "\nYou are background agent $it, not the main chat. Work alone and finish with the result only." } ?: BgAgents.leadLine()) +
                 (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) + SkillMatch.block(turnSkills) + SpecialistMatch.hint(turnSpecs) +
                 // v0.27.x: "how do I install X" → lead with the action and end with one concrete offer to do it.
@@ -3316,6 +3357,14 @@ When you finish, say what you did in one short sentence.
                     FollowUpBind.bind(userNow, newest, System.currentTimeMillis())
                 } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: FollowUpBind", e); null }
                 turnGoal = if (bulk) null else resumeGoal ?: GoalPin.of(userNow, GoalPin.userTexts(history).let { l -> if (l.lastOrNull()?.contains(userNow.trim().take(40)) == true) l.dropLast(1) else l }, turnBind)
+                // 0.52.1 (owner: "memory of tasks and old context"): a vague reference back ("I signed you in", "retry it",
+                // "continue", "same as before but for X") is resolved to the task it means; its record goes into the prompt.
+                turnSignInWall = ""; turnSignedIn = ""
+                turnRef = if (bulk || agentId != null) null else try { TaskMemory.resolve(userNow, TaskMemoryStore.forChat(id)) }
+                    catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TaskMemory.resolve", e); null }
+                turnTaskId = turnRef?.rec?.id
+                turnRef?.let { r -> if (r.kind == TaskMemory.Kind.SIGNED_IN) turnSignedIn = r.rec?.needsSignIn.orEmpty() }
+                turnRef?.rec?.let { r -> if (r.state != TaskMemory.State.ACTIVE) TaskMemoryStore.put(r.copy(state = TaskMemory.State.ACTIVE, updated = System.currentTimeMillis())) }
                 resumeGoal = null
                 var nudgeCount = 0
                 var rewroteClaim = false
@@ -3364,17 +3413,24 @@ When you finish, say what you did in one short sentence.
                 // v0.45.0 context: once the model asks for a tool it wasn't sent (or one that doesn't exist), the rest of the
                 // turn gets the full tool set instead of a guessed subset.
                 var widened = false
+                val widenNames = HashSet<String>()
                 var sentOrder = emptyList<String>()   // v0.45.1: tools keep their place across the turn's steps (prompt caching)
                 fun pickTools(): JSONArray {
-                    if (widened) { sizeLine = "tools all ${allTools.length()} (widened)"; return allTools }
+                    // 0.52.1 (gw061): widening adds the tools the model asked for (and their groups), never all 128+ schemas.
+                    if (widened && widenNames.isEmpty()) { sizeLine = "tools all ${allTools.length()} (widened)"; return allTools }
                     // v0.45.9 (ToolTruth): every agent request carries the full registered list (gateway 0.8.2 drops calls to tools not in it).
                     // 0.45.29: a browser task's steps carry the browser tools (+ ask / search / memory); asking for another widens again.
                     if (!bulk && com.blaze.assistant.browser.BrowserFocus.active(synchronized(turnTools) { turnTools.toList() })) {
                         val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
                     if (ToolTruth.full) { sizeLine = "tools all ${allTools.length()}"; return ToolTruth.forRequest(allTools) { allTools } }
                     val diet = ToolRouter.select(allTools, groupsOn)
-                    val sent = ToolPick.keepOrder(sentOrder, ToolPick.pick(diet, userNow, usedNames + synchronized(turnTools) { turnTools.toSet() }, groupsOn, keepAll = bulk,
-                        must = (if (TurnContext.scheduleAsk(userNow)) TurnContext.SCHEDULE_TOOLS else emptySet())))
+                    val joinNames = widenNames + ToolTruth.MUST   // 0.52.1: the must-have tools and what the model asked for always join
+                    val diet2 = JSONArray().apply {
+                        val have = ToolPick.names(diet).toSet(); for (i in 0 until diet.length()) put(diet.opt(i))
+                        val allNames = ToolPick.names(allTools)
+                        for (i in 0 until allTools.length()) { val n = allNames[i]; if (n in joinNames && n !in have) put(allTools.opt(i)) } }
+                    val sent = ToolPick.keepOrder(sentOrder, ToolPick.pick(diet2, userNow, usedNames + synchronized(turnTools) { turnTools.toSet() }, groupsOn, keepAll = bulk,
+                        must = (if (TurnContext.scheduleAsk(userNow)) TurnContext.SCHEDULE_TOOLS else emptySet()) + widenNames + ToolTruth.MUST, max = ToolPick.MAX_TOOLS + widenNames.size))
                     sizeLine = ToolPick.sizeLine(sent, allTools, diet)
                     sentOrder = ToolPick.names(sent)
                     return sent
@@ -3531,7 +3587,7 @@ When you finish, say what you did in one short sentence.
                     // Watchdog: only a model that goes SILENT (no text, thinking or tool-call chunks) for the
                     // limit is cut off and retried once on the same model. Long thinking is fine while it streams.
                     val lane = if (step == 0) LlmClient.Lane.MAIN else LlmClient.Lane.STEPS
-                    val limit = Settings.str("model_timeout_s", "100").toLongOrNull()?.coerceIn(30, 600)?.times(1000) ?: 100_000L
+                    val limit = Settings.str("model_timeout_s", "60").toLongOrNull()?.coerceIn(30, 600)?.times(1000) ?: 60_000L   // 0.52.1 (gw061): the gateway answers or errors within 40 s
                     // v0.42.0: the turn's Cloud run when there is one (null = this call goes the old way).
                     // v0.45.9 (TurnDeadline): a Cloud run step is cut at CLOUD_STEP_MS (cancelled on the gateway, then sent direct once);
                     // any step at STEP_MS or the turn's hard end, whichever is first.
@@ -3677,7 +3733,11 @@ When you finish, say what you did in one short sentence.
                             ReplyFix.keepFlowTool(reply, named, lastUserText())
                             if (ReplyFix.fixEventDays(reply, lastUserText(), java.time.LocalDate.now()) > 0) CallState.current().errors.add("event day moved to the day asked")
                         } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ReplyFix", e) }
-                        if (!widened && !lite && ToolPick.missing(reply, tools).isNotEmpty()) { widened = true; add(Role.STEP, "Loading all tools") }
+                        if (!lite) ToolPick.missing(reply, tools).takeIf { it.isNotEmpty() }?.let { miss ->
+                            // 0.52.1: only real tools join (a made-up name stays out; the unknown-tool answer handles it)
+                            val real = ToolPick.names(allTools).toSet()
+                            val add = miss.filter { it in real }
+                            if (add.isNotEmpty() && !widenNames.containsAll(add)) { widened = true; widenNames += add; add(Role.STEP, "Loading more tools") } }
                     } catch (e: Exception) {
                         com.blaze.assistant.device.CrashLog.error("tool gatekeeper", e)
                         // 0.45.15 (review 22 Oct #6): a reply the gatekeeper choked on never goes on with broken calls.
@@ -4099,7 +4159,7 @@ When you finish, say what you did in one short sentence.
                     val preStepped = HashSet<Int>()
                     val pre: Map<Int, String> = run {
                         val pick = (0 until calls.length()).filter { i -> val n = callName(i)
-                            com.blaze.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && i !in refusedCmds &&
+                            com.blaze.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && i !in refusedCmds && surfaceNote(n, quiet = true) == null &&
                                 loopGuard.check(n, callArgs(i)) == null && oneShot.earlier(n, callArgs(i)) == null }
                         if (pick.size < 2 || !Settings.bool("parallel_tools", true)) return@run emptyMap()
                         val tcs = pick.map { i -> com.blaze.assistant.orchestra.ToolScheduler.Call(calls.getJSONObject(i).optString("id", "call_$step$i"), callName(i), callArgs(i)) }
@@ -4140,7 +4200,8 @@ When you finish, say what you did in one short sentence.
                             add(Role.STEP, "Loading ${g.joinToString(", ")} tools")
                             "Loaded: ${g.joinToString(", ")}. Those tools are available now."
                         } else if (name == "ask_user") runTool(name, args, shots)
-                        else loopGuard.check(name, args)?.also { add(Role.STEP, "Not trying ${Friendly.say(name, args).trimEnd('.', '\u2026')} again: it made no difference") }
+                        else surfaceNote(name)
+                        ?: loopGuard.check(name, args)?.also { add(Role.STEP, "Not trying ${Friendly.say(name, args).trimEnd('.', '\u2026')} again: it made no difference") }
                         ?: oneShot.earlier(name, args)?.also { add(Role.STEP, "Not repeating ${Friendly.say(name, args).trimEnd('.', '\u2026')}: it already ran") }
                             ?: (Recovery.run(name, OneShot.risky(name), Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L) {
                                 // 0.52.0: the screen, the browser, files and named terminal sessions are held in the locks every agent shares
@@ -4148,6 +4209,8 @@ When you finish, say what you did in one short sentence.
                                     com.blaze.assistant.orchestra.ToolScheduler.Resources.claims(name, args))) { runTool(name, args, shots) } }
                                 .also { r -> oneShot.record(name, args, r) })
                         if (!result.startsWith("Not run:")) loopGuard.record(name, args, result)
+                        // 0.52.1: a sign-in wall on a web surface is remembered with the task (so "I signed you in" finds it).
+                        try { TaskMemory.signInWall(name, args, result).takeIf { it.isNotBlank() }?.let { turnSignInWall = it } } catch (_: Throwable) { }
                         ToolStats.add(name, when {
                             name in unknownCalls -> "unknown"
                             repairedThisStep.any { it.startsWith(name) || it.contains("→ $name") || (it.startsWith("split") && it.contains(name)) } -> "repaired"
@@ -4285,6 +4348,7 @@ When you finish, say what you did in one short sentence.
                 liveGate = null
                 // v0.45.6: a turn never ends silently (stop, timeout, tool failure): one plain closing line.
                 if (agentId == null) StepPills.end(id)
+                recordTask(stopped = turnEnd == TurnEnd.Reason.STOPPED)
                 if (agentId == null && !notSent) try {
                     if (TurnEnd.silent(msgs.filterNot { it.meta == Ack.META }.map { it.role })) {
                         val lastStep = msgs.lastOrNull { it.role == Role.STEP }?.text.orEmpty()

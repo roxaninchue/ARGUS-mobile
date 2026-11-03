@@ -44,13 +44,14 @@ class ToolTruthTest {
         File(dir, "tools-full-0459.json").writeText(JSONObject().put("count", names.size).put("missed", JSONArray(missed)).put("tools", all).toString())
     }
 
-    @Test fun agentLaneSendsTheWholeList() {
+    @Test fun agentLaneSendsTheRelevantSubset() {
         val (all, _) = registry()
-        assertTrue(ToolTruth.full)
-        val sent = ToolTruth.forRequest(all) { JSONArray() }
-        assertEquals(all.length(), sent.length())
-        // Every strict request, whatever ToolRouter guesses, gets the same full list.
-        for (p in strict) assertTrue(p, ToolTruth.names(ToolTruth.forRequest(all) { ToolRouter.selectDefault(all, ToolRouter.guess(p)) }).containsAll(ToolTruth.MUST))
+        // 0.52.1 (gw061): the full list is off by default (request size budget): the turn's subset goes out, and the
+        // agent loop adds ToolTruth.MUST to it (Agent.pickTools), so save_file & co. are never left out.
+        assertFalse(ToolTruth.full)
+        val sub = JSONArray().put(all.opt(0))
+        assertTrue(ToolTruth.forRequest(all) { sub } === sub)
+        assertTrue(all.length() > RequestBudget.MAX_TOOLS)
     }
 
     @Test fun oldSubsetsMissedTools() {

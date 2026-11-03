@@ -80,7 +80,13 @@ object LlmClient {
         // with the tool turns flattened to plain text, which every provider accepts.
         // v0.25.0: pictures go to the gateway as they are; its vision lineup reads them.
         // v0.31.1 jank: cleaning (a full pass over the history JSON) never runs on the main thread.
-        val clean = withContext(kotlinx.coroutines.Dispatchers.Default) { try { ToolCalls.clean(messages) } catch (_: Exception) { messages } }
+        val clean0 = withContext(kotlinx.coroutines.Dispatchers.Default) { try { ToolCalls.clean(messages) } catch (_: Exception) { messages } }
+        // 0.52.1 (gw061): every request is fitted to ~60 KB (tool results trimmed, at most 32 tool schemas, older steps
+        // summarised): bigger bodies are what the gateway's 10 ms CPU limit kills (Cloudflare 1102 → "That took too long").
+        val fit = withContext(kotlinx.coroutines.Dispatchers.Default) { RequestBudget.fit(clean0, tools) }
+        lastFit = fit.bytesBefore to fit.bytesAfter
+        val clean = fit.messages
+        @Suppress("NAME_SHADOWING") val tools = fit.tools
         return try { completeRaw(clean, tools, onText, onThink, lane) }
         catch (e: LlmException) {
             if (!ToolCalls.isShapeError(e)) throw e
@@ -89,6 +95,9 @@ object LlmClient {
             catch (e2: LlmException) { throw LlmException(if (e2.code == 400) Cloud.BUSY else e2.message.orEmpty(), e2.code, e2.retryAfterSec) }
         }
     }
+
+    /** 0.52.1: the last request's size before / after RequestBudget (bytes; diagnostics). */
+    @Volatile var lastFit: Pair<Int, Int> = 0 to 0
 
     /** The provider error the last self-heal recovered from (diagnostics). */
     @Volatile var lastHealed: String = ""
@@ -144,7 +153,7 @@ object LlmClient {
                 workerKilled = true
                 CallState.current().errors.add("gateway worker killed (1102?): sending a slim request")
             }
-            kotlinx.coroutines.delay(ReserveBody.PAUSE_MS)
+            if (ReserveBody.PAUSE_MS > 0) kotlinx.coroutines.delay(ReserveBody.PAUSE_MS)
             return gateway(reserve, shrink(msgs, keep = ReserveBody.KEEP), ReserveBody.slimForReserve(tools, msgs), txt, thk)
         }
         // 0.46.4 hotfix (BrainRace): brains in order, each with hard deadlines; the on-phone brain only when it is warm (never

@@ -33,9 +33,10 @@ class BrainRaceTest {
 
     @Test fun orderNeverWaitsOnACold() {
         // setup in progress / server stopped (not warm): the on-phone brain is left out, the call starts at Nous at once
-        assertEquals(listOf(R, C), BrainRace.order(BrainRace.Kind.TASK, warm = false, signedIn = true))
-        assertEquals(listOf(P, R, C), BrainRace.order(BrainRace.Kind.TASK, warm = true, signedIn = true))   // 0.46.3 order when warm
-        assertEquals(listOf(P, R, C), BrainRace.order(BrainRace.Kind.CODING, true, true))
+        // 0.52.1 (gw061): tool turns ask Blaze Cloud before the Nous reserve
+        assertEquals(listOf(C, R), BrainRace.order(BrainRace.Kind.TASK, warm = false, signedIn = true))
+        assertEquals(listOf(P, C, R), BrainRace.order(BrainRace.Kind.TASK, warm = true, signedIn = true))
+        assertEquals(listOf(P, C, R), BrainRace.order(BrainRace.Kind.CODING, true, true))
         // 0.46.6: chat keeps the standing order too (on-phone → Nous → gateway); speed never puts the gateway before Nous
         assertEquals(listOf(P, R, C), BrainRace.order(BrainRace.Kind.CHAT, true, true))
         assertEquals(listOf(R, C), BrainRace.order(BrainRace.Kind.CHAT, false, true))

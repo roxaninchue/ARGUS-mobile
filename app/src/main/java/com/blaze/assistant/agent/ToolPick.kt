@@ -18,7 +18,7 @@ import org.json.JSONObject
  */
 object ToolPick {
     /** Upper bound of tool schemas per model call (load_tools / find_tool always on top). */
-    const val MAX_TOOLS = 36
+    const val MAX_TOOLS = 30   // 0.52.1 (gw061): was 36; RequestBudget caps the wire at 32
 
     /** Always sent, whatever the request. */
     val ESSENTIAL = setOf("load_tools", "find_tool", "ask_user", "memory_search", "memory_save", "remember", "web_search", "fetch_page",
