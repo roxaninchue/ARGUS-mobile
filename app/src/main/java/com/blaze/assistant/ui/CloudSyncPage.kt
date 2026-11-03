@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,12 +47,12 @@ fun CloudSyncPage(onSignIn: () -> Unit = {}) {
     LaunchedEffect(Unit) { while (true) { delay(20_000); now = System.currentTimeMillis() } }
 
     Spacer(Modifier.height(10.dp))
-    Text("Keep your chats, memory, settings and designs the same on every phone signed in to your Blaze account.",
+    Text("Keep your chats, memory, settings and designs the same on every phone signed in to your ${BrandName.NAME} account.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 21.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
 
     if (acct.user == null) {
-        SyncNote("You're signed out. Sign in to your Blaze account to use cloud sync.")
+        SyncNote("You're signed out. Sign in to your ${BrandName.NAME} account to use cloud sync.")
         SyncButton("Sign in") { onSignIn() }
         return
     }
@@ -65,7 +67,7 @@ fun CloudSyncPage(onSignIn: () -> Unit = {}) {
 
     if (!v.on || v.needsPassphrase) {
         if (setup || v.needsPassphrase) PassphraseSetup(needsExisting = v.needsPassphrase) { setup = false }
-        else SyncNote("Locked with a passphrase only you know. Blaze's service stores a scrambled copy it can't read.", top = 12)
+        else SyncNote("Locked with a passphrase only you know. ${BrandName.NAME}'s service stores a scrambled copy it can't read.", top = 12)
         return
     }
 
@@ -77,7 +79,7 @@ fun CloudSyncPage(onSignIn: () -> Unit = {}) {
         val on = k !in v.off
         ToggleRow(SyncKinds.label(k), SyncKinds.detail(k), on) { CloudSync.setKind(k, !on) }
     }
-    SyncNote("Never synced: your Blaze sign-in, connected accounts, API keys, PC pairing and phone permissions.", top = 12)
+    SyncNote("Never synced: your ${BrandName.NAME} sign-in, connected accounts, API keys, PC pairing and phone permissions.", top = 12)
     if (!simple && v.skipped.isNotEmpty()) SyncNote("Too big to sync, kept on this phone: " + v.skipped.take(8).joinToString(", ") +
         (if (v.skipped.size > 8) " and ${v.skipped.size - 8} more" else "") + ".")
 
@@ -95,7 +97,7 @@ fun CloudSyncPage(onSignIn: () -> Unit = {}) {
     var err by remember { mutableStateOf("") }
     if (!confirm) ActionText("Delete my cloud copy", color = c.accent, size = 10.sp, modifier = Modifier.clickable { confirm = true }.padding(vertical = 8.dp))
     else {
-        SyncNote("This deletes the synced copy from Blaze's service and stops sync on every phone. Chats, memory and designs on your phones stay.")
+        SyncNote("This deletes the synced copy from ${BrandName.NAME}'s service and stops sync on every phone. Chats, memory and designs on your phones stay.")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Box(Modifier.weight(1f)) { SyncButton("Keep it", primary = false) { confirm = false } }
             Box(Modifier.weight(1f)) {
@@ -125,7 +127,7 @@ private fun PassphraseSetup(needsExisting: Boolean, onDone: () -> Unit) {
     val existing = hasCopy == true
     if (hasCopy == null) { SyncNote("Checking your account…"); return }
     SyncNote(if (existing) "Your account already syncs from another phone. Enter the sync passphrase you picked there."
-        else "Pick a sync passphrase. You'll type it once on each phone. Blaze can't recover it, so keep it somewhere safe.")
+        else "Pick a sync passphrase. You'll type it once on each phone. ${BrandName.NAME} can't recover it, so keep it somewhere safe.")
     Field("Sync passphrase", pass, { pass = it; err = "" }, "At least 8 characters", secret = true)
     if (!existing) Field("Type it again", again, { again = it; err = "" }, "The same passphrase", secret = true)
     SyncButton(if (busy) "Turning on…" else "Turn on cloud sync") {

@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -133,7 +135,7 @@ object GitHubApps {
         val pm = ctx.packageManager
         if (Build.VERSION.SDK_INT >= 26 && !pm.canRequestPackageInstalls()) {
             ctx.startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            return "Downloaded ${out.name}. Android needs permission for Blaze to install apps: I opened that setting. Once the user allows it, call github_install_apk again."
+            return "Downloaded ${out.name}. Android needs permission for ${BrandName.NAME} to install apps: I opened that setting. Once the user allows it, call github_install_apk again."
         }
         val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", out)
         ctx.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive")

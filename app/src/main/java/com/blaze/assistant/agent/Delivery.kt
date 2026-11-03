@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -90,7 +92,7 @@ object Delivery {
     fun spoken(s: DeliveryState): String = when (s) {
         DeliveryState.SENDING -> "Sending your message"
         DeliveryState.SENT -> "Message sent"
-        DeliveryState.READ -> "Blaze read your message"
+        DeliveryState.READ -> "${BrandName.NAME} read your message"
         DeliveryState.NOT_SENT -> "Message not sent. Double tap to retry"
     }
 

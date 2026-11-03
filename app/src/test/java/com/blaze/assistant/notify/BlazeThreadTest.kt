@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -66,10 +68,10 @@ class BlazeThreadTest {
     }
 
     @Test fun titleIsBlazeOrHonestFailure() {
-        assertEquals("Blaze", BlazeThread.title(BlazeThread.Kind.CHECK_IN))
-        assertEquals("Blaze", BlazeThread.title(BlazeThread.Kind.RESULT))
+        assertEquals("${BrandName.NAME}", BlazeThread.title(BlazeThread.Kind.CHECK_IN))
+        assertEquals("${BrandName.NAME}", BlazeThread.title(BlazeThread.Kind.RESULT))
         assertEquals(MessageThread.FAILED_TITLE, BlazeThread.title(BlazeThread.Kind.FAILED))
-        assertEquals("Blaze \u00b7 important", BlazeThread.title(BlazeThread.Kind.HEADS_UP, urgent = true))
+        assertEquals("${BrandName.NAME} \u00b7 important", BlazeThread.title(BlazeThread.Kind.HEADS_UP, urgent = true))
     }
 
     // ---------- quick replies that fit (5/5 each over phrasings) ----------
@@ -92,7 +94,7 @@ class BlazeThreadTest {
         "Done \u2713 Dark mode is off.", "Wi-Fi is now off.", "Done \u2713 Bluetooth is off.", "I turned it off.", "Airplane mode is already off.")
 
     @Test fun failureGetsTryAgain() = fits(listOf("Try again", "What happened?"),
-        "I couldn't find the Dark mode switch.", "That failed: no network.", "I wasn't able to open Settings.", "Blaze hit a problem.", "Sorry, it didn't work.")
+        "I couldn't find the Dark mode switch.", "That failed: no network.", "I wasn't able to open Settings.", "${BrandName.NAME} hit a problem.", "Sorry, it didn't work.")
 
     @Test fun honestFallbackGetsCheckAgain() = fits(listOf("Check it again", "Thanks"),
         "I turned it on but couldn't check it; it should be on.", "I turned Dark mode on but couldn't check it; it should be on.",

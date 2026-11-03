@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 /**
  * Magic Hand safety (v0.25.0), pure part (MagicHandSafetyTest). After a low-end phone got stuck in teach mode
  * (Home / Back / Recents dead, "Blaze isn't responding"), these are the rules every Magic Hand window and event
@@ -116,7 +118,7 @@ object MagicHandSafety {
         else -> Verdict.OK
     }
 
-    const val TEACH_INTRO = "Teach Blaze a routine: tap Start, do the task once in any app, tap Done. Blaze saves it as a skill it can repeat for you, after asking."
-    const val STALLED_NOTE = "Magic Hand closed because Blaze stopped responding."
+    const val TEACH_INTRO = "Teach ${BrandName.NAME} a routine: tap Start, do the task once in any app, tap Done. ${BrandName.NAME} saves it as a skill it can repeat for you, after asking."
+    const val STALLED_NOTE = "Magic Hand closed because ${BrandName.NAME} stopped responding."
     const val IDLE_NOTE = "Magic Hand closed after 10 minutes without use."
 }

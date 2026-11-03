@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -81,7 +83,7 @@ class PhonePerfTest {
         override suspend fun open(url: String): String {
             p.open { when { url.contains("login") -> Sites.login(p); url.contains("automationintesting") -> Sites.rooms(p); else -> Sites.shop(p, 1) } }
             e.afterOpen()
-            return "Opened on Blaze Phone.\n" + (e.read()?.let { PhonePolicy.render(it) } ?: "Couldn't read")
+            return "Opened on ${BrandName.NAME} Phone.\n" + (e.read()?.let { PhonePolicy.render(it) } ?: "Couldn't read")
         }
         override suspend fun snapshot() = e.read()
         override suspend fun locate(target: String, field: Boolean) = e.locate(target, field)

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,10 +39,10 @@ fun SkillLibraryPage(rows0: List<SkillLibrary.Row>? = null, open0: String = "", 
     val rows = remember(tick, local) { local ?: runCatching { SkillLibrary.rows() }.getOrDefault(emptyList()) }
     fun change(f: () -> Unit) { if (local != null) return; runCatching(f); tick++ }
 
-    PageHead("Skills", "Skill library", "Methods Blaze reads before a matching task: research, emails, plans, documents, data, code and more. " +
+    PageHead("Skills", "Skill library", "Methods ${BrandName.NAME} reads before a matching task: research, emails, plans, documents, data, code and more. " +
         "Bundled skills update themselves unless you edit them.")
     if (rows.isEmpty()) {
-        Rows { EmptyState("No skills yet", "After a task, say \u201csave this as a skill\u201d and Blaze keeps the steps for next time.") }
+        Rows { EmptyState("No skills yet", "After a task, say \u201csave this as a skill\u201d and ${BrandName.NAME} keeps the steps for next time.") }
         return
     }
     val on = rows.count { it.installed && it.on }
@@ -51,9 +53,9 @@ fun SkillLibraryPage(rows0: List<SkillLibrary.Row>? = null, open0: String = "", 
     val shown = rows.filter { q.isEmpty() || it.name.contains(q, true) || it.shown.contains(q, true) || it.description.contains(q, true) }
     if (shown.isEmpty()) { Rows { EmptyState("No skill matches \u201c$q\u201d", "Try a word from what the skill does, like \u201cemail\u201d or \u201cplan\u201d.", mark = false) }; return }
     val groups = listOf(
-        Triple("Core", "Always on: how Blaze talks, works, codes, uses views and specialists, and saves workflows. Can't be switched off.", shown.filter { it.installed && it.core }),
-        Triple("Yours", "Skills you or Blaze saved on this phone.", shown.filter { it.installed && !it.bundled }),
-        Triple("Bundled", "Shipped with Blaze, the same SKILL.md files as Blaze Desktop.", shown.filter { it.installed && it.bundled && !it.core }),
+        Triple("Core", "Always on: how ${BrandName.NAME} talks, works, codes, uses views and specialists, and saves workflows. Can't be switched off.", shown.filter { it.installed && it.core }),
+        Triple("Yours", "Skills you or ${BrandName.NAME} saved on this phone.", shown.filter { it.installed && !it.bundled }),
+        Triple("Bundled", "Shipped with ${BrandName.NAME}, the same SKILL.md files as ${BrandName.NAME} Desktop.", shown.filter { it.installed && it.bundled && !it.core }),
         Triple("Deleted", "Bundled skills you removed. Restore brings one back.", shown.filter { !it.installed }))
     var n = 0
     groups.forEach { (title, desc, list) ->

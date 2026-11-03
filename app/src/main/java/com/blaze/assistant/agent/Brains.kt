@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
@@ -56,7 +58,7 @@ object Brains {
                 val port = server.localPort
                 val cb = "http://localhost:$port/callback"
                 val url = "https://openrouter.ai/auth?" + Http.form("callback_url" to cb, "code_challenge" to challenge,
-                    "code_challenge_method" to "S256", "key_label" to "Blaze on my phone")
+                    "code_challenge_method" to "S256", "key_label" to "${BrandName.NAME} on my phone")
                 _status.value = "Waiting for you to sign in to OpenRouter\u2026"
                 withContext(Dispatchers.Main) { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 server.soTimeout = 600_000
@@ -66,7 +68,7 @@ object Brains {
                         val q = Uri.parse("http://x" + line.split(" ").getOrElse(1) { "" })
                         val c = q.getQueryParameter("code")
                         val html = "<html><head><meta name='viewport' content='width=device-width'></head><body style='font-family:sans-serif;padding:40px'><h2>" +
-                            (if (c != null) "Blaze is connected \u2713" else "Sign-in didn't finish") + "</h2><p>Going back to Blaze\u2026</p></body></html>"
+                            (if (c != null) "${BrandName.NAME} is connected \u2713" else "Sign-in didn't finish") + "</h2><p>Going back to ${BrandName.NAME}\u2026</p></body></html>"
                         sock.getOutputStream().write(("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ${html.toByteArray().size}\r\nConnection: close\r\n\r\n$html").toByteArray())
                         c
                     }
@@ -148,7 +150,7 @@ object Brains {
         try { if (android.os.Build.VERSION.SDK_INT >= 28) ctx.getSystemService(ClipboardManager::class.java)?.clearPrimaryClip() } catch (_: Exception) { }
         val name = Providers.byId(pid).name
         _status.value = "Saved your $name key \u2713"
-        return "Got your $name key. Blaze will use it automatically."
+        return "Got your $name key. ${BrandName.NAME} will use it automatically."
     }
 
     fun catchKey(ctx: Context): String? {

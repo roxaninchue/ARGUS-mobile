@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -34,7 +36,7 @@ class GidTest {
             .put(JSONObject().put("id", 1).put("role", "USER").put("text", "hi").put("at", 100))
             .put(JSONObject().put("id", 2).put("role", "STEP").put("text", "Stopped."))
             .put(JSONObject().put("id", 3).put("role", "STEP").put("text", "Stopped."))
-            .put(JSONObject().put("id", 4).put("role", "BLAZE").put("text", "new").put("gid", "zzzz0000-abc"))
+            .put(JSONObject().put("id", 4).put("role", "${BrandName.UPPER}").put("text", "new").put("gid", "zzzz0000-abc"))
         val a = old(); val b = old()
         assertEquals(3, Gid.fill(a))
         Gid.fill(b)
@@ -51,7 +53,7 @@ class GidTest {
     }
 
     @Test fun loadingAnOldChatAssignsIdsAndSavingKeepsThem() {
-        val file = """{"id":"main","title":"T","messages":[{"id":1,"role":"USER","text":"hi","at":100},{"id":2,"role":"BLAZE","text":"hello","at":110,"mark":3}]}"""
+        val file = """{"id":"main","title":"T","messages":[{"id":1,"role":"USER","text":"hi","at":100},{"id":2,"role":"${BrandName.UPPER}","text":"hello","at":110,"mark":3}]}"""
         val p1 = ChatJson.parse(JSONObject(file)); val p2 = ChatJson.parse(JSONObject(file))
         assertEquals(p1.msgs.map { it.gid }, p2.msgs.map { it.gid })      // every load, every phone: the same ids
         assertTrue(p1.msgs.all { Gid.isLegacy(it.gid) })

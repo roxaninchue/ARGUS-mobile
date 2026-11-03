@@ -1,5 +1,7 @@
 package com.blaze.assistant.movies
 
+
+import com.blaze.assistant.BrandName
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
@@ -37,12 +39,12 @@ object MovieDownloads {
         }
         val dm = ctx.getSystemService(DownloadManager::class.java) ?: return "Downloads aren't available on this phone"
         val file = (play.title.replace(Regex("[^\\p{L}\\p{N} ._-]"), "").trim().ifBlank { "video" }.take(80)) + "." + s.type.lowercase().ifBlank { "mp4" }.take(5)
-        val r = DownloadManager.Request(Uri.parse(s.link)).setTitle(play.title).setDescription("Blaze Movies")
+        val r = DownloadManager.Request(Uri.parse(s.link)).setTitle(play.title).setDescription("${BrandName.NAME} Movies")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
         val pub = try { r.setDestinationInExternalPublicDir(Environment.DIRECTORY_MOVIES, "Blaze/$file"); true }
             catch (_: Exception) { r.setDestinationInExternalFilesDir(ctx, Environment.DIRECTORY_MOVIES, file); false }
         s.headers.forEach { (k, v) -> runCatching { r.addRequestHeader(k, v) } }
-        return try { dm.enqueue(r); "Downloading \u201c${play.title}\u201d to " + (if (pub) "Movies/Blaze." else "Blaze's Movies folder.") }
+        return try { dm.enqueue(r); "Downloading \u201c${play.title}\u201d to " + (if (pub) "Movies/Blaze." else "${BrandName.NAME}'s Movies folder.") }
             catch (e: Exception) { "Couldn't start the download: ${e.message}" }
     }
 }

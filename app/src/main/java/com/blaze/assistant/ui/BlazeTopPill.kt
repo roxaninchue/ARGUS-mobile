@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,15 +55,15 @@ object BlazeTopPillModel {
 
     /** The overlay's options, in order. Home only where Home is a tab (not in Simple mode's swipe layout). */
     fun options(homeTab: Boolean = true): List<Option> = buildList {
-        add(Option("chat", "Chat", "Your conversation with Blaze"))
+        add(Option("chat", "Chat", "Your conversation with ${BrandName.NAME}"))
         add(Option("projects", "Projects", "Ongoing efforts with their own threads"))
         if (homeTab) add(Option("home", "Home", "Your dashboard cards"))
-        add(Option("agents", "Agents", "Tasks Blaze is working on in the background"))
-        add(Option("terminal", "Terminal", "Blaze Terminal"))
+        add(Option("agents", "Agents", "Tasks ${BrandName.NAME} is working on in the background"))
+        add(Option("terminal", "Terminal", "${BrandName.NAME} Terminal"))
     }
 
     /** The pill's label: the project's name inside a project, else "Blaze". */
-    fun label(project: String): String = project.trim().ifBlank { "Blaze" }.let { if (it.length > 28) it.take(27).trimEnd() + "\u2026" else it }
+    fun label(project: String): String = project.trim().ifBlank { "${BrandName.NAME}" }.let { if (it.length > 28) it.take(27).trimEnd() + "\u2026" else it }
 
     fun icon(id: String): ImageVector = when (id) {
         "projects" -> Icons.Rounded.Folder
@@ -82,7 +84,9 @@ fun BlazeTopPill(label: String, mood: Mood = Mood.IDLE, onClick: () -> Unit, mod
             .padding(start = 8.dp, end = 14.dp, top = 5.dp, bottom = 5.dp), verticalAlignment = Alignment.CenterVertically) {
             BrandMark(mood, 20.dp)
             Spacer(Modifier.width(7.dp))
-            Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            // 0.52.1 Argus: outside a project the pill carries the wide-tracked ARGUS wordmark.
+            if (label == BrandName.NAME) Text(BrandName.UPPER, maxLines = 1, style = ArgusBrand.wordmark(12.sp, c.ink))
+            else Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.ink))
         }
     }

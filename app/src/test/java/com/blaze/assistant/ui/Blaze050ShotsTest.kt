@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -54,7 +56,7 @@ class Blaze050ShotsTest {
     @Composable
     private fun Card(text: String, busy: Boolean = false, expanded: Boolean = false) {
         Composer(TextFieldValue(text), {}, busy = busy, canSend = text.isNotEmpty(), plusOpen = false, chip = "", agents = 0,
-            listening = false, speaking = false, onPlus = {}, onMic = {}, onSend = {}, onStop = {}, hints = listOf("Message Blaze"),
+            listening = false, speaking = false, onPlus = {}, onMic = {}, onSend = {}, onStop = {}, hints = listOf("Message ${BrandName.NAME}"),
             animateHints = false, onExpand = {}, expanded = expanded, onSkills = {}, onCall = {}, onSlash = {}, onRouting = {})
     }
 

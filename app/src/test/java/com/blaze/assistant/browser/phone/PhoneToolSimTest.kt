@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -26,7 +28,7 @@ class PhoneToolSimTest {
         override suspend fun open(url: String): String {
             mode = PhonePolicy.Mode.AGENT
             page = if (url.contains("login") || !signedIn) "login" else "home"
-            return "Opened on Blaze Phone.\n" + PhonePolicy.render(snapshot()!!)
+            return "Opened on ${BrandName.NAME} Phone.\n" + PhonePolicy.render(snapshot()!!)
         }
         private fun n(id: String, role: String, name: String, value: String = "", type: String = "", card: Boolean = false, sens: Boolean = false) =
             PhonePolicy.Node(id, role, name, value, type, sensitive = sens, card = card, x = 100, y = 200, w = 80, h = 40)
@@ -84,13 +86,13 @@ class PhoneToolSimTest {
         }
         override suspend fun handoff(reason: String): String {
             handoffs++
-            if (!userTakesOver) return "The user didn't take over within 10 minutes. Stop here and tell them what's waiting on Blaze Phone ($reason)."
+            if (!userTakesOver) return "The user didn't take over within 10 minutes. Stop here and tell them what's waiting on ${BrandName.NAME} Phone ($reason)."
             mode = PhonePolicy.Mode.USER   // the user solves it, then Hand back
             mode = PhonePolicy.Mode.AGENT
             return "The user handed back. Fresh read:\n" + PhonePolicy.render(snapshot()!!)
         }
         override suspend fun awaitAgentTurn() = mode != PhonePolicy.Mode.USER
-        override fun status() = "Blaze Phone: ${if (mode == PhonePolicy.Mode.OFF) "idle" else "Blaze is driving"}. Page: $page."
+        override fun status() = "${BrandName.NAME} Phone: ${if (mode == PhonePolicy.Mode.OFF) "idle" else "${BrandName.NAME} is driving"}. Page: $page."
     }
 
     private val shots = mutableListOf<String>()
@@ -116,14 +118,14 @@ class PhoneToolSimTest {
     @Test fun phone_open_5of5() = fiveTimes("phone_open") {
         val d = DemoSite()
         val r = run(d, "phone_open", JSONObject().put("url", "demo-tables.test/login"))
-        assertTrue(r.startsWith("Opened on Blaze Phone."))
+        assertTrue(r.startsWith("Opened on ${BrandName.NAME} Phone."))
         assertTrue(r.contains("[e1] textbox:email \"Email\"")); assertTrue(r.contains("NOT VERIFIED"))
         assertTrue(run(d, "phone_open", JSONObject()).startsWith("Give a URL"))
     }
 
     @Test fun phone_read_5of5() = fiveTimes("phone_read") {
         val d = DemoSite()
-        assertTrue(run(d, "phone_read").startsWith("Blaze Phone has no page open"))
+        assertTrue(run(d, "phone_read").startsWith("${BrandName.NAME} Phone has no page open"))
         signIn(d)
         val r = run(d, "phone_read")
         assertTrue(r, r.lines()[1].startsWith("SIGNED IN")); assertTrue(r.contains("[e4] link \"Book a table\""))
@@ -172,7 +174,7 @@ class PhoneToolSimTest {
 
     @Test fun phone_screenshot_5of5() = fiveTimes("phone_screenshot") {
         val d = DemoSite()
-        assertTrue(run(d, "phone_screenshot").startsWith("Blaze Phone has no page open"))
+        assertTrue(run(d, "phone_screenshot").startsWith("${BrandName.NAME} Phone has no page open"))
         run(d, "phone_open", JSONObject().put("url", "https://demo-tables.test/login"))
         val r = run(d, "phone_screenshot")
         assertTrue(r.contains("attached")); assertEquals(1, shots.size); assertTrue(shots[0].startsWith("data:image/jpeg;base64,"))
@@ -205,7 +207,7 @@ class PhoneToolSimTest {
         val d = DemoSite()
         assertTrue(run(d, "phone_status").contains("idle"))
         signIn(d)
-        assertTrue(run(d, "phone_status").contains("Blaze is driving"))
+        assertTrue(run(d, "phone_status").contains("${BrandName.NAME} is driving"))
     }
 
     @Test fun whileTheUserDrivesBlazeWaits() {
@@ -216,7 +218,7 @@ class PhoneToolSimTest {
     }
 
     @Test fun describeLinesForTheChatSteps() {
-        assertEquals("Opening opentable.com on Blaze Phone", PhoneBrowserTools.describe("phone_open", JSONObject().put("url", "https://www.opentable.com/r/x")))
+        assertEquals("Opening opentable.com on ${BrandName.NAME} Phone", PhoneBrowserTools.describe("phone_open", JSONObject().put("url", "https://www.opentable.com/r/x")))
         assertEquals("Asking you to take control", PhoneBrowserTools.describe("phone_handoff", JSONObject()))
         // 0.45.19: element refs never reach the status line ("Tapping e61" on the phone).
         assertEquals("Tapping on the page", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "click").put("target", "e10")))

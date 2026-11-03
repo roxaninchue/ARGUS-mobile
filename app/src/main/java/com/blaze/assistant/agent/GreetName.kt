@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /** v0.45.9: which name greetings use (pure; GreetNameTest). */
 object GreetName {
     /** The user's own pick, else the account's first name, else null. Emails, handles and placeholders never count. */
@@ -9,5 +11,5 @@ object GreetName {
     }
 
     /** The prompt rule: greet by that name or by none (the maker named in Blaze's own docs is not the user). */
-    const val RULE = "\nNAMES: call the user only by the name given above as the user's name; with none given, use no name. Names in Blaze's own docs (its maker, testers) are not the user's."
+    const val RULE = "\nNAMES: call the user only by the name given above as the user's name; with none given, use no name. Names in ${BrandName.NAME}'s own docs (its maker, testers) are not the user's."
 }

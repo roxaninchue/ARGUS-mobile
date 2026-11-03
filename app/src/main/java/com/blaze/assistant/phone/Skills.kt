@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
@@ -41,7 +43,7 @@ object Skills {
 
     private fun has(ctx: Context, p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
     private fun missing(group: String) =
-        "Blaze doesn't have the $group permission yet. Tell the user to open Blaze → Settings → Skills and turn on $group."
+        "${BrandName.NAME} doesn't have the $group permission yet. Tell the user to open ${BrandName.NAME} → Settings → Skills and turn on $group."
 
     private fun fn(name: String, desc: String, props: JSONObject = JSONObject(), required: List<String> = emptyList()) =
         JSONObject().put("type", "function").put("function", JSONObject().put("name", name).put("description", desc)

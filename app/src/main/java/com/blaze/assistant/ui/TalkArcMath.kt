@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -29,7 +31,7 @@ object TalkArcMath {
 
     fun indexOf(who: String): Int = TARGETS.indexOf(normalize(who)).coerceAtLeast(0)
     fun targetAt(i: Int): String = TARGETS[i.coerceIn(0, TARGETS.size - 1)]
-    fun label(who: String): String = if (normalize(who) == "halo") "Halo" else "Blaze"
+    fun label(who: String): String = if (normalize(who) == "halo") "Halo" else "${BrandName.NAME}"
 
     /** v0.45.28: the flat arc's height for its [width]: about a third of a semicircle's, never under [minRy]. */
     fun flatRy(rx: Float, minRy: Float): Float = maxOf(minRy, rx * 0.34f)

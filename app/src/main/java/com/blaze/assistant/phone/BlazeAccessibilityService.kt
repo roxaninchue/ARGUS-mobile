@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.content.Context
@@ -710,7 +712,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         if (!Pointer.aim(this, p0.first, p0.second)) return stopped
         node.refresh()
         val p1 = if (node.isVisibleToUser) centerOf(node) else null
-        if (p1 == null) return "The target [$id] went away while Blaze was aiming (the screen changed). Nothing was tapped; look again."
+        if (p1 == null) return "The target [$id] went away while ${BrandName.NAME} was aiming (the screen changed). Nothing was tapped; look again."
         val d = resources.displayMetrics.density
         if (Pointer.moved(p0.first, p0.second, p1.first, p1.second, d) && !Pointer.aim(this, p1.first, p1.second)) return stopped
         if (!Pointer.ripple(long)) return stopped
@@ -925,7 +927,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         if (f != null && !f.isEditable) { flashTap(f, false); settle(700, 150); f = null }
         if (f == null) f = rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.takeIf { it.isEditable }
         f ?: return "No text field to type into."
-        if (f.isPassword) return "That's a password field. Blaze never types passwords; the user types it."
+        if (f.isPassword) return "That's a password field. ${BrandName.NAME} never types passwords; the user types it."
         acted()
         f.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
         val args = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text) }

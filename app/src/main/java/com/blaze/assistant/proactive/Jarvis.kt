@@ -1,5 +1,7 @@
 package com.blaze.assistant.proactive
 
+
+import com.blaze.assistant.BrandName
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
@@ -129,7 +131,7 @@ object Jarvis {
         val q = JarvisLogic.pick(asked, mem, Settings.str("jarvis_last_topic", ""), (now / 86_400_000L).toInt()) ?: return false
         // Blaze may reword it to fit what's going on ("You've had a lot of jazz on today: who got you into it?").
         val own = try {
-            val sys = "You are Blaze, the user's phone assistant, getting to know them like a friend would. Write ONE short, warm, specific question on the topic \"${q.topic}\" " +
+            val sys = "You are ${BrandName.NAME}, the user's phone assistant, getting to know them like a friend would. Write ONE short, warm, specific question on the topic \"${q.topic}\" " +
                 "(example: \"${q.text}\"), tied to what they're doing if that fits naturally. Never about passwords, money details or anything private. ${mem.take(800)}\n" +
                 "Reply ONLY with JSON: {\"question\": \"...?\"}"
             val ctx = Awareness.promptBlock().ifBlank { "Nothing in particular is going on." }
@@ -163,7 +165,7 @@ object Jarvis {
         if (JarvisLogic.sensitive(pkg, screen)) return false
         val label = try { app.packageManager.getApplicationLabel(app.packageManager.getApplicationInfo(pkg, 0)).toString() } catch (_: Throwable) { pkg }
         val compact = com.blaze.assistant.agent.Orient.compact(screen, maxLines = 30, maxChars = 1800)
-        val sys = "You are Blaze, the user's phone assistant, glancing at their screen on your own to see if you can help right now. " +
+        val sys = "You are ${BrandName.NAME}, the user's phone assistant, glancing at their screen on your own to see if you can help right now. " +
             "Speak only when you can clearly save them time or effort with something concrete you can do (compare prices, add an event they're looking at, " +
             "translate, summarise a long article, find a better route, reply drafts, remind them later). Never comment on private messages or content, never judge. " +
             "Most glances say nothing. ${Memory.promptBlock(label).take(600)}\n" +
@@ -225,7 +227,7 @@ object Jarvis {
 
     private suspend fun cameraLook(): Boolean {
         val url = frontFrame() ?: return false
-        val sys = "You are Blaze, the user's phone assistant, taking a quick look through the front camera while they have you open. " +
+        val sys = "You are ${BrandName.NAME}, the user's phone assistant, taking a quick look through the front camera while they have you open. " +
             "Say something only if it genuinely helps or is kind and natural (they look tired late at night, they're somewhere new, they're holding something you could help with). " +
             "Never comment on looks, body or other people, never guess identity, age or emotion beyond the obvious. Most looks say nothing. " +
             "Reply ONLY with JSON: {\"say\": \"\" or \"one short friendly sentence\", \"suggest\": \"\" or \"a request they'd tap, max 6 words\", \"note\": \"\"}"
@@ -258,7 +260,7 @@ object Jarvis {
 
     private suspend fun selfRoutine(create: Boolean) {
         val existing = try { com.blaze.assistant.routine.Routines.all.value.joinToString("; ") { "${it.name} at %02d:%02d".format(it.hour, it.minute) } } catch (_: Throwable) { "" }
-        val sys = "You are Blaze, the user's phone assistant. Propose at most ONE routine you would run for them on a schedule that would genuinely help, " +
+        val sys = "You are ${BrandName.NAME}, the user's phone assistant. Propose at most ONE routine you would run for them on a schedule that would genuinely help, " +
             "based on their habits, usage and what you know (a morning brief before their usual first app, a wind-down nudge if late-night scrolling is high, " +
             "a weekly check-in on a goal). Never one that sends messages, spends money or deletes anything. Not a copy of an existing routine. ${Memory.promptBlock("routine habits").take(800)}\n" +
             "Reply ONLY with JSON: {\"name\": \"\" (empty = none), \"prompt\": \"what you will do each time, as an instruction to yourself\", \"hour\": 0-23, \"minute\": 0-59, " +
@@ -296,7 +298,7 @@ object Jarvis {
     const val TOOL = "jarvis_mode"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Jarvis mode: how much Blaze reaches out on its own (questions to get to know the user, screen glances, camera looks while Blaze is open, its own routines). " +
+        .put("description", "Jarvis mode: how much ${BrandName.NAME} reaches out on its own (questions to get to know the user, screen glances, camera looks while ${BrandName.NAME} is open, its own routines). " +
             "Use when the user says 'be more / less proactive', 'stop asking me questions', 'look at my screen now and then', 'don't use the camera'. No arguments = show the current settings.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("level", JSONObject().put("type", "string").put("enum", JSONArray(Level.values().map { it.id })))
@@ -313,7 +315,7 @@ object Jarvis {
         }
         val lim = JarvisLogic.limits(level)
         return "Jarvis mode: ${level.label} (up to ${lim.questionsPerDay} questions a day; ${if (lim.selfRoutines) "sets up its own routines" else "offers routines"}). " +
-            "Screen glances ${if (screenGlances) "on, every ${lim.glanceEveryMin} min" else "off"}. Camera looks ${if (cameraLooks && lim.cameraEveryMin > 0) "on while Blaze is open, every ${lim.cameraEveryMin} min" else "off"}." +
+            "Screen glances ${if (screenGlances) "on, every ${lim.glanceEveryMin} min" else "off"}. Camera looks ${if (cameraLooks && lim.cameraEveryMin > 0) "on while ${BrandName.NAME} is open, every ${lim.cameraEveryMin} min" else "off"}." +
             (if (needs.isNotEmpty()) " Still needed: " + needs.joinToString("; ") + "." else "")
     }
 

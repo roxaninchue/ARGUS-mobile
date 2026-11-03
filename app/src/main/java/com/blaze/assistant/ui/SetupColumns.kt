@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -173,7 +175,7 @@ fun SetupGateScreen(onOpenPage: (String) -> Unit, onDone: () -> Unit) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 22.dp, vertical = 18.dp)) {
             Label("Finish setting up \u00b7 ${shown.size - left.size}/${shown.size}", color = c.weak, size = 10.sp)
             Spacer(Modifier.height(14.dp))
-            Text(if (blocking.isEmpty()) "Almost there." else "A few things Blaze needs.",
+            Text(if (blocking.isEmpty()) "Almost there." else "A few things ${BrandName.NAME} needs.",
                 style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 30.sp, lineHeight = 36.sp, color = c.ink))
             Spacer(Modifier.height(8.dp))
             Text("Only what's missing on this phone. Everything you already set up is kept and skipped.",
@@ -198,7 +200,7 @@ fun SetupGateScreen(onOpenPage: (String) -> Unit, onDone: () -> Unit) {
             Box(Modifier.fillMaxWidth().height(54.dp).clip(BlazeShapes.pill).glassButton(c).clickable {
                 if (next == null) onDone() else { asked = asked + next.id; setupFix(ctx, next.id, { perm.launch(it) }, onOpenPage, scope) }
             }, contentAlignment = Alignment.Center) {
-                ButtonText(if (next == null) "Open Blaze" else "Set up: ${next.title.lowercase()}", color = Color.White)
+                ButtonText(if (next == null) "Open ${BrandName.NAME}" else "Set up: ${next.title.lowercase()}", color = Color.White)
             }
             if (blocking.isNotEmpty()) Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
                 Label("Required steps can't be skipped.", color = c.weak, size = 10.sp)
@@ -218,7 +220,7 @@ fun PermissionsPage(onOpenPage: (String) -> Unit = {}) {
     val linuxBusy by com.blaze.assistant.terminal.Linux.installing.collectAsState()
     val perm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
     Spacer(Modifier.height(10.dp))
-    GroupHead("Permissions & setup", "What Blaze can use on this phone. Tap one that's off to turn it on.")
+    GroupHead("Permissions & setup", "What ${BrandName.NAME} can use on this phone. Tap one that's off to turn it on.")
     SetupGate.deps.forEach { d ->
         val ok = have[d.id] == true
         SetupColumnRow(d.title, d.why, if (ok) Mark.DONE else if (d.id == "linux" && linuxBusy) Mark.WORKING else Mark.TODO, d.required,
@@ -233,7 +235,7 @@ fun PermissionsPage(onOpenPage: (String) -> Unit = {}) {
 fun UpdatesPage() {
     val ctx = LocalContext.current
     Spacer(Modifier.height(10.dp))
-    GroupHead("Updates", "Blaze checks once a day. Updates download in the background with progress in the notification (and a Stop button); Android asks you to confirm the install.")
+    GroupHead("Updates", "${BrandName.NAME} checks once a day. Updates download in the background with progress in the notification (and a Stop button); Android asks you to confirm the install.")
     UpdateCard()
     Spacer(Modifier.height(12.dp))
     Row {
@@ -254,12 +256,12 @@ fun AboutPage() {
         OrbFace(48.dp)
         Spacer(Modifier.width(14.dp))
         Column {
-            Text("Blaze", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 22.sp, color = c.ink))
+            Text(BrandName.UPPER, style = ArgusBrand.wordmark(20.sp, c.ink))   // 0.52.1 Argus wordmark
             Label("Version $v", color = c.weak, size = 10.sp)
         }
     }
     Spacer(Modifier.height(16.dp))
-    Text("Your chats, memories, keys and saved logins stay on this phone (keys are synced only when you sign in to a Blaze account). Private chats are never saved.",
+    Text("Your chats, memories, keys and saved logins stay on this phone (keys are synced only when you sign in to a ${BrandName.NAME} account). Private chats are never saved.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     Spacer(Modifier.height(14.dp))
     Label("blazeinchue.pages.dev", color = c.sub, size = 10.sp)

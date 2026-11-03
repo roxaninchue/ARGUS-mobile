@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -100,9 +102,9 @@ fun SecureForm(site: String, title: String, reason: String, fields: List<SecureI
                 if (save) Text("✓", style = TextStyle(fontSize = 11.sp, color = c.paper))
             }
             Spacer(Modifier.width(10.dp))
-            Text("Save to Blaze's vault for $site (encrypted on this phone)", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
+            Text("Save to ${BrandName.NAME}'s vault for $site (encrypted on this phone)", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
         }
-        Text("Goes straight into the page. Blaze's AI never sees it.", modifier = Modifier.padding(top = 8.dp),
+        Text("Goes straight into the page. ${BrandName.NAME}'s AI never sees it.", modifier = Modifier.padding(top = 8.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
         NotificationsLine(notifPrompt)
         Spacer(Modifier.height(12.dp))
@@ -124,7 +126,7 @@ private fun NotificationsLine(force: Boolean?) {
     if (!ask) return
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted = it }
     Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("Allow notifications so Blaze can tell you when it needs you.", modifier = Modifier.weight(1f),
+        Text("Allow notifications so ${BrandName.NAME} can tell you when it needs you.", modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
         ActionText("Allow", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
             if (sdk >= 33) try { launcher.launch("android.permission.POST_NOTIFICATIONS") } catch (_: Exception) { }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
@@ -98,7 +100,7 @@ object BackRule {
     /** Activities that return a result to the chat that opened them (Back cancels; the chat is under them anyway). */
     val EXEMPT_ACTIVITIES = mapOf(
         "com.blaze.assistant.device.PermissionActivity" to "transparent permission prompt; Back cancels it and returns to the screen that asked",
-        "com.blaze.assistant.ui.CameraActivity" to "Blaze Camera for a photo the chat asked for; Back cancels the capture and returns to the chat",
+        "com.blaze.assistant.ui.CameraActivity" to "${BrandName.NAME} Camera for a photo the chat asked for; Back cancels the capture and returns to the chat",
     )
 
     /** Does Back in this activity go straight to the chat? (MainActivity: only when the shell's front isn't the chat.) */

@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.random.Random
@@ -97,7 +99,7 @@ object DjSpeech {
     /** The first intro: what the DJ is doing and the first song, in two short sentences. */
     fun start(first: Track, vibe: DjPlan.Vibe, hour: Int): String {
         val v = if (vibe == DjPlan.Vibe.AUTO) DjPlan.vibeFor(hour) else vibe
-        return "Blaze DJ is on, playing ${v.label.lowercase()} songs from your library. First up: ${who(first)}."
+        return "${BrandName.NAME} DJ is on, playing ${v.label.lowercase()} songs from your library. First up: ${who(first)}."
     }
 
     /** Between songs: one short sentence. */

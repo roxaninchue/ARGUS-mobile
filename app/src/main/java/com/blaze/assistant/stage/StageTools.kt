@@ -1,5 +1,7 @@
 package com.blaze.assistant.stage
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -35,8 +37,8 @@ object StageTools {
         .put("minutes", JSONObject().put("type", "number").put("description", "timer: length in minutes (pomodoro: focus length)"))
         .put("pomodoro", JSONObject().put("type", "boolean")).put("break_minutes", JSONObject().put("type", "number")).put("cycles", JSONObject().put("type", "integer"))
         .put("autostart", JSONObject().put("type", "boolean").put("description", "timer: start now (only when the user said start / go); default shows Start"))
-        .put("query", str("music: what to play (song, artist, mix name, or empty to resume / Blaze DJ)"))
-        .put("url", str("video: a video file path or direct link (YouTube opens in Blaze Video); browser: the page or search words to open (empty = the current tab)"))
+        .put("query", str("music: what to play (song, artist, mix name, or empty to resume / ${BrandName.NAME} DJ)"))
+        .put("url", str("video: a video file path or direct link (YouTube opens in ${BrandName.NAME} Video); browser: the page or search words to open (empty = the current tab)"))
         .put("deck", str("flashcards: Learn deck name (add cards first with flashcards action=add)"))
         .put("questions", JSONObject().put("type", "array").put("description", "quiz: [{q, options:[..], answer: index or text, hint (optional)}]").put("items", JSONObject().put("type", "object")))
         .put("items", JSONObject().put("type", "array").put("description", "plan: checklist lines").put("items", JSONObject().put("type", "string")))

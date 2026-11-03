@@ -1,5 +1,7 @@
 package com.blaze.assistant.routine
 
+
+import com.blaze.assistant.BrandName
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -75,9 +77,9 @@ class RoutineService : Service() {
         val id = intent?.getIntExtra("id", -1) ?: -1
         val nm = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(
-            NotificationChannel("blaze_routine", "Blaze routines", NotificationManager.IMPORTANCE_MIN))
+            NotificationChannel("blaze_routine", "${BrandName.NAME} routines", NotificationManager.IMPORTANCE_MIN))
         val n: Notification = NotificationCompat.Builder(this, "blaze_routine")
-            .setSmallIcon(R.drawable.ic_stat_blaze).setContentTitle("Blaze routine")
+            .setSmallIcon(R.drawable.ic_stat_blaze).setContentTitle("${BrandName.NAME} routine")
             .setContentText(Routines.get(id)?.name ?: "Running").setOngoing(true).build()
         try {
             if (Build.VERSION.SDK_INT >= 29) startForeground(77, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)

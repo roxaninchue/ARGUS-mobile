@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
@@ -60,7 +62,7 @@ class NotificationBrain : NotificationListenerService() {
         fun since(since: Long): List<Item> = synchronized(items) { items.filter { it.time > since } }
 
         fun list(app: String?, hours: Double): String {
-            if (instance == null) return "Notification access is off. Ask the user to turn it on in Blaze → Settings → Phone control."
+            if (instance == null) return "Notification access is off. Ask the user to turn it on in ${BrandName.NAME} → Settings → Phone control."
             val since = System.currentTimeMillis() - (hours * 3_600_000).toLong()
             val l = synchronized(items) { items.toList() }.asReversed()
                 .filter { it.time >= since && (app.isNullOrBlank() || it.app.contains(app, true)) }.take(40)

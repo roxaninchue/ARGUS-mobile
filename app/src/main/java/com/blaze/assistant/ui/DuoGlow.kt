@@ -47,7 +47,7 @@ val LocalSpeaker = compositionLocalOf { Duo.Who.BLAZE }
 
 object DuoColors {
     // v0.45.2: a picked theme tints the drop and its halo (ThemeTint, Compose state: the orb redraws when it changes).
-    val blazeBlue: Color get() = ThemeTint.current.value?.let { Color(it.droplet) } ?: Color(0xFF4DA8FF)
+    val blazeBlue: Color get() = ThemeTint.current.value?.let { Color(it.droplet) } ?: Color(0xFF3466FF)   /* 0.52.1 Argus electric blue */
     val blazeIce: Color get() = ThemeTint.current.value?.let { Color(LivingLogic.mix(it.droplet, 0xFFFFFFFF, 0.6f)) } ?: Color(0xFFBFE3FF)
     val haloGold: Color get() = ThemeTint.current.value?.let { Color(it.halo) } ?: Color(0xFFFFC94D)
     val haloCream: Color get() = ThemeTint.current.value?.let { Color(LivingLogic.mix(it.halo, 0xFFFFFFFF, 0.6f)) } ?: Color(0xFFFFF0C2)
@@ -143,9 +143,8 @@ fun Modifier.duoShimmer(speaker: Duo.Who, tracking: Boolean, layout: () -> TextL
  * side [w]. [t] = clock for the wobble and the breathing ring (0 = a still picture).
  */
 fun DrawScope.drawDuoEmblem(center: Offset, w: Float, t: Float = 0f, alpha: Float = 1f) {
-    val r = w * 0.19f
-    drawHaloRing(center, r, t, alpha)
-    drawWaterOrb(center, r, t, alpha = alpha)
+    // 0.52.1 (Argus rename): the brand emblem is the silver Argus "A" (ui/ArgusMark.kt); while working, its sheen moves.
+    drawArgusMark(center, w, t, alpha)
 }
 
 /** The new Blaze icon as a composable: still when idle, gently alive when [animate]. */

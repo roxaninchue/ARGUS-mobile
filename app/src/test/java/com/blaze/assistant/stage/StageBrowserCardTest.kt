@@ -1,5 +1,7 @@
 package com.blaze.assistant.stage
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ClaimGuard
 import com.blaze.assistant.agent.InAppRoute
 import com.blaze.assistant.agent.ViewRouter
@@ -47,7 +49,7 @@ class StageBrowserCardTest {
 
     @Test fun routing_browserCardIsTheStageNotTheFullView() {
         for (t in listOf("pull up browser card", "Pull up the browser card", "open the browser", "open browser", "show me the browser",
-                "bring up the browser", "browser card", "Blaze, open the browser please"))
+                "bring up the browser", "browser card", "${BrandName.NAME}, open the browser please"))
             assertEquals(t, InAppRoute.Route.Stage("browser"), InAppRoute.match(t))
         for (t in listOf("open the browser full screen", "open browser in full view", "full screen browser"))
             assertEquals(t, InAppRoute.Route.View("browser"), InAppRoute.match(t))

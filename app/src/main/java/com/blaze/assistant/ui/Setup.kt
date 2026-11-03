@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -94,10 +96,10 @@ private fun granted(ctx: Context, p: String) = ContextCompat.checkSelfPermission
 
 private val needs = listOf(
     // 0.45.20 (item 15): phone control is no longer asked here; the first task that needs it asks in chat (PermissionGate).
-    Need("mic", "Hear you", "For talking to Blaze instead of typing.") { granted(it, Manifest.permission.RECORD_AUDIO) },
+    Need("mic", "Hear you", "For talking to ${BrandName.NAME} instead of typing.") { granted(it, Manifest.permission.RECORD_AUDIO) },
     Need("notifications", "Tell you when it's done", "A quick heads-up when a task finishes.") { Build.VERSION.SDK_INT < 33 || granted(it, Manifest.permission.POST_NOTIFICATIONS) },
-    Need("overlay", "Show up over other apps", "So Blaze can pop up wherever you are.") { android.provider.Settings.canDrawOverlays(it) },
-    Need("battery", "Keep working in the background", "Stops the phone from putting Blaze to sleep halfway through a job.") {
+    Need("overlay", "Show up over other apps", "So ${BrandName.NAME} can pop up wherever you are.") { android.provider.Settings.canDrawOverlays(it) },
+    Need("battery", "Keep working in the background", "Stops the phone from putting ${BrandName.NAME} to sleep halfway through a job.") {
         it.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(it.packageName) == true },
 )
 
@@ -168,9 +170,15 @@ fun SetupFlow(startPage: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
             }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(top = 18.dp)) {
                 OrbFace(64.dp)
+                // 0.52.1 Argus: the first page greets with the wordmark under the mark (clear space ≈ one cap height).
+                if (page == 0) {
+                    Spacer(Modifier.height(18.dp))
+                    Text("Welcome to", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Light, fontSize = 15.sp, color = c.sub))
+                    Text(BrandName.UPPER, style = ArgusBrand.wordmark(26.sp, c.ink))
+                }
                 Spacer(Modifier.height(22.dp))
                 val (title, body) = when (page) {
-                    0 -> "Sign in to Blaze." to "One free Blaze account and I'm ready. Blaze Cloud picks the best free model for every message. No keys, no settings."
+                    0 -> "Sign in to ${BrandName.NAME}." to "One free ${BrandName.NAME} account and I'm ready. ${BrandName.NAME} Cloud picks the best free model for every message. No keys, no settings."
                     1 -> "Let me help on your phone." to "Tap the button and switch each one on. I'll bring you straight back here every time."
                     else -> "All set. Say hi." to "Ask me anything, tell me to do something on your phone, or ask me to draw a picture or make a beat."
                 }
@@ -194,7 +202,7 @@ fun SetupFlow(startPage: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
             val label = when (page) {
                 0 -> if (Settings.ready) "Continue" else "Later"
                 1 -> if (nextNeed != null) "Turn on: ${nextNeed.title.lowercase()}" else "Continue"
-                else -> "Say hi to Blaze"
+                else -> "Say hi to ${BrandName.NAME}"
             }
             Box(Modifier.fillMaxWidth().height(56.dp).clip(BlazeShapes.pill).glassButton(c).clickable {
                 when (page) {
@@ -245,7 +253,7 @@ fun BrainCard(onSignIn: () -> Unit = {}) {
     Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
         Label("Brain", size = 10.sp)
         Spacer(Modifier.height(6.dp))
-        Text("Blaze Cloud", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 18.sp, color = c.ink))
+        Text("${BrandName.NAME} Cloud", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 18.sp, color = c.ink))
         Text(BrainStatus.TAGLINE, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth().pageGlass(c, PageGlass.row).clickable { if (!signedIn) onSignIn() else tick++ }.padding(14.dp),
@@ -265,9 +273,9 @@ object BrainStatus {
     const val TAGLINE = "Picks the best free model for every message and skips busy ones by itself."
     enum class Dot { OK, BAD, WAIT }
     fun of(signedIn: Boolean, reachable: Boolean?): Pair<Dot, String> = when {
-        !signedIn -> Dot.BAD to "Not signed in. Sign in to your Blaze account to start."
+        !signedIn -> Dot.BAD to "Not signed in. Sign in to your ${BrandName.NAME} account to start."
         reachable == null -> Dot.WAIT to "Checking the connection\u2026"
         reachable -> Dot.OK to "Connected"
-        else -> Dot.BAD to "Can't reach Blaze Cloud right now. Check your data or Wi-Fi."
+        else -> Dot.BAD to "Can't reach ${BrandName.NAME} Cloud right now. Check your data or Wi-Fi."
     }
 }

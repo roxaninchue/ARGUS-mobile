@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.44.0 the final self-check on tool turns. Before the final reply is shown, every claim in it ("sent", "alarm set",
  * "Wi-Fi is on", "the desktop is running", "opened WhatsApp") must be backed by a tool result from THIS turn whose
@@ -123,7 +125,7 @@ object ClaimCheck {
             return if (read == null) "the tap wasn't asked to turn it $w, and nothing read the switch back as $w"
                 else "the switch read back ${if (read) "on" else "off"}, not $w"
         }
-        if (a.id == "booked") return "Blaze Phone's page shows no confirmation number or confirmation text"
+        if (a.id == "booked") return "${BrandName.NAME} Phone's page shows no confirmation number or confirmation text"
         return "only ${d.name.replace('_', ' ')} ran, which doesn't confirm it"
     }
 

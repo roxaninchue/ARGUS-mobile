@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -19,13 +21,13 @@ object Cloud {
     /** Tries per request (the first + two quiet retries). */
     const val MAX_TRIES = 3
 
-    const val SIGNED_OUT = "Sign in to your Blaze account and I'm ready to go."
-    const val EXPIRED = "Your Blaze sign-in has expired. Sign in again and I'll carry on."
-    const val UNREACHABLE = "I couldn't reach Blaze Cloud just now. Check your data or Wi-Fi, then tap Retry."
-    const val BUSY = "Blaze Cloud is busy right now. Tap Retry in a moment."
+    const val SIGNED_OUT = "Sign in to your ${BrandName.NAME} account and I'm ready to go."
+    const val EXPIRED = "Your ${BrandName.NAME} sign-in has expired. Sign in again and I'll carry on."
+    const val UNREACHABLE = "I couldn't reach ${BrandName.NAME} Cloud just now. Check your data or Wi-Fi, then tap Retry."
+    const val BUSY = "${BrandName.NAME} Cloud is busy right now. Tap Retry in a moment."
     /** Gateway 0.3.0 waiting list: 403 `waitlisted` (signed in, not approved yet) / `access_rejected`. */
-    const val WAITLISTED = "You're on the Blaze waiting list. You'll get access as soon as you're approved."
-    const val REJECTED = "Your Blaze account doesn't have access to Blaze AI. If you think this is a mistake, contact the Blaze team."
+    const val WAITLISTED = "You're on the ${BrandName.NAME} waiting list. You'll get access as soon as you're approved."
+    const val REJECTED = "Your ${BrandName.NAME} account doesn't have access to ${BrandName.NAME} AI. If you think this is a mistake, contact the ${BrandName.NAME} team."
 
     /** The waiting-list line for a gateway 403 (by its error code, or a line already made plain), else null. */
     fun access(code: Int, text: String): String? {

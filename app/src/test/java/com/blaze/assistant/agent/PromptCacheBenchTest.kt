@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -74,10 +76,10 @@ class PromptCacheBenchTest {
             live("memory", "\nWhat you remember about the user (use quietly, don't recite):\n" + filler("m", 1400) + "\n")
             s("learn", Learn.rules(true))
             live("device", "\nPhone: an Android phone, Android 12, One UI 4.1.\nPhone now: battery ${81 - live.t}%, Wi-Fi, ringer normal.")
-            live("awareness", "\nAWARENESS: front app ${if (live.screen % 2 == 0) "WhatsApp" else "Blaze"}; screen step ${live.screen}; " + filler("aw${live.screen}", 700))
+            live("awareness", "\nAWARENESS: front app ${if (live.screen % 2 == 0) "WhatsApp" else "${BrandName.NAME}"}; screen step ${live.screen}; " + filler("aw${live.screen}", 700))
             s("phone_state", PhoneState.RULE); s("know", lit("s", "know"))
             turn("make", if (prof.terminal) lit("turn", "terminal") + lit("turn", "make") else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
-            slow("about", "\nABOUT YOU: Blaze family. You are Blaze for Android v0.45.1 (build 149). Paired PC: none. Blaze account: signed in. " + filler("about", 300))
+            slow("about", "\nABOUT YOU: ${BrandName.NAME} family. You are ${BrandName.NAME} for Android v0.45.1 (build 149). Paired PC: none. ${BrandName.NAME} account: signed in. " + filler("about", 300))
             s("search", SearchRoute.PROMPT + ExecRoute.PROMPT)   // 0.50.0; 0.51.0 + terminal first
             s("calls", lit("s", "calls"))
             s("autonomy", Autonomy.promptBlock())

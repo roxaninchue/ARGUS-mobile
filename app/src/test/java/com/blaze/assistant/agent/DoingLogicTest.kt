@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.Calendar
@@ -19,7 +21,7 @@ class DoingLogicTest {
     }
 
     @Test fun names() {
-        assertEquals("Tidy up phone storage", DoingLogic.friendlyName("Blaze \u00b7 tidy up phone storage"))
+        assertEquals("Tidy up phone storage", DoingLogic.friendlyName("${BrandName.NAME} \u00b7 tidy up phone storage"))
         assertEquals("Something I do for you", DoingLogic.friendlyName(" "))
     }
 

@@ -1,5 +1,7 @@
 package com.blaze.assistant.proactive
 
+
+import com.blaze.assistant.BrandName
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -196,7 +198,7 @@ object FollowUps {
     // ---------------- tool ----------------
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Plans and messages Blaze is keeping an eye on (who, app, what, when, going?, replied?). list (default); going / not_going / replied / done with id. " +
+        .put("description", "Plans and messages ${BrandName.NAME} is keeping an eye on (who, app, what, when, going?, replied?). list (default); going / not_going / replied / done with id. " +
             "Use for 'what do I need to get back to', 'yes I'm going', 'I already replied to Jack'.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("list", "going", "not_going", "replied", "done"))))

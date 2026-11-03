@@ -1,5 +1,7 @@
 package com.blaze.assistant.stage
 
+
+import com.blaze.assistant.BrandName
 import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.NotificationChannel
@@ -217,7 +219,7 @@ object StageStore {
             else " Ready with a Start button (${StageTimer.words(t?.left ?: 0L)}); it's not running until the user taps Start."
         }
         StageKind.MUSIC -> " " + com.blaze.assistant.mediaapps.StageMusic.play(ctx, args.optString("query"))
-        StageKind.VIDEO -> if (item.props["url"].isNullOrBlank()) " No video given: the card offers Blaze Video." else { com.blaze.assistant.ui.StageVideo.autoplay = true; "" }
+        StageKind.VIDEO -> if (item.props["url"].isNullOrBlank()) " No video given: the card offers ${BrandName.NAME} Video." else { com.blaze.assistant.ui.StageVideo.autoplay = true; "" }
         StageKind.FLASHCARDS -> com.blaze.assistant.agent.Flashcards.queue(item.props["deck"].orEmpty()).size.let { n ->
             if (n == 0) " That deck has nothing due (or doesn't exist): add cards with flashcards action=add." else " $n card${if (n == 1) "" else "s"} to go." }
         StageKind.BROWSER -> browserShown(ctx, args.optString("url").trim().ifBlank { args.optString("query").trim() })

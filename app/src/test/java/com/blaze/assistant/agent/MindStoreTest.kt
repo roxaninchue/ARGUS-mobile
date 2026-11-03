@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.store.BlazeDb
 import com.blaze.assistant.store.JdbcSql
 import com.blaze.assistant.store.Sql
@@ -259,7 +261,7 @@ class MindStoreTest {
     @Test fun newerSchemaFromDesktopIsRefused() {
         val f = File(dir, "newer.db")
         JdbcSql("jdbc:sqlite:" + f.path).apply { exec("PRAGMA user_version = 2"); close() }
-        try { open("newer.db"); fail() } catch (e: BlazeDb.NewerSchema) { assertTrue(e.message!!.startsWith("Your memory was saved by a newer version of Blaze")) }
+        try { open("newer.db"); fail() } catch (e: BlazeDb.NewerSchema) { assertTrue(e.message!!.startsWith("Your memory was saved by a newer version of ${BrandName.NAME}")) }
         assertNotNull(Mind.NEWER)
     }
 

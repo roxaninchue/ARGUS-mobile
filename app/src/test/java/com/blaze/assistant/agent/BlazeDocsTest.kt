@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.store.BlazeDb
 import com.blaze.assistant.store.JdbcSql
 import com.blaze.assistant.store.Sql
@@ -50,14 +52,14 @@ class BlazeDocsTest {
     private fun sampleTools() = JSONArray().apply {
         BlazeDocs.tools().forEach { put(it) }
         put(tool("web_search", "Search the web for anything. Returns results with links."))
-        put(tool("browser_open", "Open a web page (or search words) in Blaze's own built-in browser, in the background. No screen control needed."))
+        put(tool("browser_open", "Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background. No screen control needed."))
         put(tool("memory_search", "Search what you know about the user."))
     }
 
     // ---------------- chunking ----------------
 
     @Test fun chunksFollowHeadingsAndSizes() {
-        val big = (1..400).joinToString(" ") { "Sentence number $it explains one more detail about installing Blaze on a phone." }
+        val big = (1..400).joinToString(" ") { "Sentence number $it explains one more detail about installing ${BrandName.NAME} on a phone." }
         val md = "# Guide\nIntro line.\n\n## Install\n$big\n\n## Tiny one\nShort.\n\n## Tiny two\nAlso short.\n\n```\n# not a heading\n```\n\n### Deep\nDeep text."
         val cs = BlazeDocs.chunk("guide", md, "9.9.9")
         assertTrue(cs.size >= 4)
@@ -153,12 +155,12 @@ class BlazeDocsTest {
 
     @Test fun toolReferenceComesFromTheToolList() {
         val doc = BlazeDocs.toolsDoc(sampleTools()) { if (it.startsWith("browser_")) "browser" else null }
-        assertTrue(doc, doc.contains("- ${BlazeDocs.TOOL_SEARCH}: Search Blaze's own docs"))
+        assertTrue(doc, doc.contains("- ${BlazeDocs.TOOL_SEARCH}: Search ${BrandName.NAME}'s own docs"))
         assertTrue(doc, doc.contains("## Tools: browser"))
         assertTrue(doc, doc.contains("- web_search: Search the web for anything."))
         assertFalse(doc, doc.contains("Returns results with links"))   // one line only
-        assertEquals("Open a web page (or search words) in Blaze's own built-in browser, in the background.",
-            BlazeDocs.oneLine("Open a web page (or search words) in Blaze's own built-in browser, in the background. No screen control needed."))
+        assertEquals("Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background.",
+            BlazeDocs.oneLine("Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background. No screen control needed."))
         assertTrue(BlazeDocs.oneLine("x".repeat(400)).length <= 160)
         assertTrue(BlazeDocs.toolsHash(sampleTools()) != BlazeDocs.toolsHash(JSONArray().put(tool("a", "b"))))
     }
@@ -194,7 +196,7 @@ class BlazeDocsTest {
         assertTrue(BlazeDocs.isAboutBlaze("take me to blaze-agent repo in github"))
         assertTrue(BlazeDocs.isAboutBlaze("where is your source code"))
         assertTrue(BlazeDocs.isAboutBlaze("what version are you"))
-        assertTrue(BlazeDocs.isAboutBlaze("How do I change Blaze settings?"))
+        assertTrue(BlazeDocs.isAboutBlaze("How do I change ${BrandName.NAME} settings?"))
         assertFalse(BlazeDocs.isAboutBlaze("what's the weather in Ndola"))
         assertFalse(BlazeDocs.isAboutBlaze("open my github notifications"))
         assertTrue(BlazeDocs.run(null, BlazeDocs.TOOL_SEARCH, JSONObject().put("query", "repo")).contains(BlazeDocs.REPO_URL))

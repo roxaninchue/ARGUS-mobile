@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.os.Build
 import android.system.Os
@@ -66,7 +68,7 @@ object LinuxReadyRunner {
                     } else {
                         prefs().edit().putLong(lastKey, System.currentTimeMillis()).apply()
                         runCatching { com.blaze.assistant.device.CrashLog.write("LinuxReady $distroId failed: " + out.takeLast(600).replace('\n', ' ')) }
-                        line = "Couldn't finish setting up the Linux tools; Blaze will try again later."
+                        line = "Couldn't finish setting up the Linux tools; ${BrandName.NAME} will try again later."
                     }
                 }
             }

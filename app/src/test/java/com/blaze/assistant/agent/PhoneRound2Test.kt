@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ToolVerify.Status
 import org.json.JSONArray
 import org.json.JSONObject
@@ -85,7 +87,7 @@ class PhoneRound2Test {
         for (u in listOf("run ls in the terminal", "@halo run ls in the terminal", "run ls -la in the terminal", "please run git status in the shell",
                 "execute python3 hello.py in the terminal", "run `df -h`", "run ls", "ls", "ls -la ~/projects", "pwd", "git status", "can you run whoami in the terminal?"))
             assertEquals(u, "run_shell", ToolTruth.choiceFor(u, emptyList(), tools))
-        for (u in listOf("open the terminal", "open Terminal", "hi Blaze", "find my phone", "run to the shop", "what's the weather", "list my files", "cat videos please"))
+        for (u in listOf("open the terminal", "open Terminal", "hi ${BrandName.NAME}", "find my phone", "run to the shop", "what's the weather", "list my files", "cat videos please"))
             assertTrue(u, ToolTruth.choiceFor(u, emptyList(), tools) != "run_shell")
         assertEquals("open_view", ToolTruth.choiceFor("open the terminal", emptyList(), tools))
         // Simple mode (no run_shell in the list): never named

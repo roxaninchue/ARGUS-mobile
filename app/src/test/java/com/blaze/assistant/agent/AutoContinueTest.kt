@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,7 +14,7 @@ class AutoContinueTest {
 - **Communication Skills class** — Tuesdays 10:00 (that was this morning at 10:00)
 - **Clean up unused apps** — Thursday 22 Oct at 10:00
 
-Your startup podcast alarm went off at 06:00 today. You've been in Blaze Music the last couple of hours.
+Your startup podcast alarm went off at 06:00 today. You've been in ${BrandName.NAME} Music the last couple of hours.
 
 Nothing urgent right now — Thursday's cleanup is the next scheduled thing. Want me to run the unused-apps check early or set a reminder for anything else?"""
 

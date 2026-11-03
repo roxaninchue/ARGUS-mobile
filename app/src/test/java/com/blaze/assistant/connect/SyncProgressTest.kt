@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -41,7 +43,7 @@ class SyncProgressTest {
         assertTrue(SyncProgress.ok("Synced, but 2 item(s) couldn't be opened with this passphrase."))
         assertFalse(SyncProgress.ok("Waiting for internet."))
         assertEquals("Waiting for internet", SyncProgress.endLine("Waiting for internet."))
-        assertEquals("Blaze's service is busy", SyncProgress.endLine("Blaze's service is busy. Trying again in a minute."))
+        assertEquals("${BrandName.NAME}'s service is busy", SyncProgress.endLine("${BrandName.NAME}'s service is busy. Trying again in a minute."))
     }
 
     @Test fun aRoundReportsPullAndPushSteps() {

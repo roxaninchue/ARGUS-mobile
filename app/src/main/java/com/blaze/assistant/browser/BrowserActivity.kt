@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color as AColor
@@ -312,7 +314,7 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
             pip = { h, x, y ->
                 BrowserEngine.tab()?.live?.evaluateJavascript(PagePointer.focusVideoJs(x, y), null)
                 pointer = false
-                if (!onPopOut(h.w, h.h)) android.widget.Toast.makeText(ctx, "This phone doesn't allow picture-in-picture for Blaze.", android.widget.Toast.LENGTH_SHORT).show()
+                if (!onPopOut(h.w, h.h)) android.widget.Toast.makeText(ctx, "This phone doesn't allow picture-in-picture for ${BrandName.NAME}.", android.widget.Toast.LENGTH_SHORT).show()
             },
             isPrivate = priv)
     }
@@ -511,8 +513,8 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
             Box(Modifier.size(44.dp).clip(CircleShape).background(if (pointer) Sky.blue.copy(alpha = 0.75f) else Sky.blue)
                 .combinedClickable(onClick = { if (url.startsWith("http") && !pointer) { askFirst = null; askOpen = true } else pointer = !pointer },
                     onLongClick = { pointer = true; panel = Panel.NONE },
-                    onClickLabel = "Ask Blaze about this page", onLongClickLabel = "Summon the Blaze pointer")
-                .semantics { contentDescription = "Blaze: tap to ask about this page, long-press for the pointer" }, contentAlignment = Alignment.Center) {
+                    onClickLabel = "Ask ${BrandName.NAME} about this page", onLongClickLabel = "Summon the ${BrandName.NAME} pointer")
+                .semantics { contentDescription = "${BrandName.NAME}: tap to ask about this page, long-press for the pointer" }, contentAlignment = Alignment.Center) {
                 Icon(Icons.Rounded.AutoAwesome, null, tint = Color.White, modifier = Modifier.size(20.dp))
             }
         }
@@ -619,7 +621,7 @@ private fun BlazeStatusChip(tab: BrowserEngine.Tab?, modifier: Modifier) {
     Row(modifier.height(36.dp).frost(Sky.pill, Sky.frost).clickable(enabled = !here) { BrowserEngine.switchTo(agent) }.padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(7.dp).clip(CircleShape).background(Sky.green)); Spacer(Modifier.width(8.dp))
-        Text(if (here) "Blaze is browsing this tab" else "Blaze ${s.what.ifBlank { "reading" }.replaceFirstChar { it.lowercase() }.take(30)} in background \u00b7 Watch", Sky.ink, 12, maxLines = 1)
+        Text(if (here) "${BrandName.NAME} is browsing this tab" else "${BrandName.NAME} ${s.what.ifBlank { "reading" }.replaceFirstChar { it.lowercase() }.take(30)} in background \u00b7 Watch", Sky.ink, 12, maxLines = 1)
     }
 }
 

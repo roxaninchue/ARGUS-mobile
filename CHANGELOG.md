@@ -1,3 +1,10 @@
+## v0.52.1: Blaze is now ARGUS, long tasks keep going in the background, and progress you can trust (versionCode 188)
+- Blaze is now **Argus**: a new name, a new silver "A" icon on Argus Black and cobalt, the ARGUS wordmark, Inter type from Light to Bold, and electric-blue accents. Argus Phone, Argus Music, Argus Terminal, Argus Store and the rest follow. Your chats, memories, settings, logins and downloads stay exactly where they were, and the app updates in place. "Hey Argus" wakes it (the old "Hey Blaze" still works).
+- The speed tiers are now Insight (fast), Oracle (balanced) and Panoptes (deepest); whatever you had picked stays picked.
+- Long work no longer dies with "That took too long": a slow step is retried, and a task that runs out of time moves to a background agent and keeps going while you chat.
+- While agents work, Argus may post a short update in its own words when they really find something, above the one task pill. No stock progress lines.
+- "Download that song" no longer loops through memory: once the song is known, Argus downloads it.
+
 ## v0.52.0: Blaze keeps talking while agents work, runs tools side by side, and builds big things from one blueprint (versionCode 187)
 - You can always keep talking to Blaze. Anything that takes more than a moment goes to a background agent and Blaze answers you straight away; each agent shows as one pill in the chat ("Working · Researcher · 5 steps · 40s ›"). Tap it to see its steps, message it or stop it. When it's done, its result lands right under it.
 - Up to 4 agents work at once on phones with 6 GB of RAM (3 on 4 GB, 2 below, 1 on low-memory phones).

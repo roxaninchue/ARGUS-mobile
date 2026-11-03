@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.launch
 import android.content.Context
 import android.net.ConnectivityManager
@@ -59,7 +61,7 @@ object OfflineBrain {
         val keep = ArrayList<Pair<String, String>>(); var used = 0
         for (t in turns.asReversed()) { if (used + t.second.length > budget && keep.isNotEmpty()) break; keep.add(0, t); used += t.second.length }
         if (keep.firstOrNull()?.first == "assistant") keep.removeAt(0)
-        val sys = "You are Blaze, a helpful assistant on the user's phone, running OFFLINE (no internet, no tools). Answer briefly and kindly. " +
+        val sys = "You are ${BrandName.NAME}, a helpful assistant on the user's phone, running OFFLINE (no internet, no tools). Answer briefly and kindly. " +
             "If the request needs the internet or the phone (search, sending, booking, settings), say you'll do it when the connection is back and offer a short draft or plan now."
         return buildString {
             append("<|im_start|>system\n").append(sys).append("<|im_end|>\n")

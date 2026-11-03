@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.store.BlazeDb
 import com.blaze.assistant.store.Sql
@@ -34,9 +36,9 @@ object BlazeDocs {
     const val META_SIG = "blaze_docs:sig"
 
     /** The only docs text in any prompt: static (it stays in the cached prefix) and the same size whatever is indexed. */
-    const val PROMPT_LINE = "\nBLAZE DOCS: questions about Blaze itself (its repo or source code, versions, changelog, features, settings, " +
-        "\"how do I … in Blaze\", what it's built with) → call $TOOL_SEARCH first, then $TOOL_READ for the whole section; never guess URLs, " +
-        "repo names or owners. Pinned fact: Blaze for Android's source code is $REPO_URL ."
+    const val PROMPT_LINE = "\nBLAZE DOCS: questions about ${BrandName.NAME} itself (its repo or source code, versions, changelog, features, settings, " +
+        "\"how do I … in ${BrandName.NAME}\", what it's built with) → call $TOOL_SEARCH first, then $TOOL_READ for the whole section; never guess URLs, " +
+        "repo names or owners. Pinned fact: ${BrandName.NAME} for Android's source code is $REPO_URL ."
 
     data class Chunk(val id: String, val doc: String, val section: String, val version: String, val ord: Int, val text: String)
     data class Hit(val id: String, val doc: String, val section: String, val snippet: String)
@@ -145,7 +147,7 @@ object BlazeDocs {
             .map { it.optString("name") to oneLine(it.optString("description")) }.filter { it.first.isNotBlank() }.distinctBy { it.first }
         val byGroup = rows.groupBy { (n, _) -> try { groupOf(n) } catch (_: Throwable) { null } ?: "core" }
         val order = listOf("core") + ToolRouter.groups.map { it.id }
-        val sb = StringBuilder("# Blaze tools (generated from this build's tool list, ${rows.size} tools)\n\n" +
+        val sb = StringBuilder("# ${BrandName.NAME} tools (generated from this build's tool list, ${rows.size} tools)\n\n" +
             "Core tools are always available; the others load by group (load_tools / find_tool).\n")
         for (g in order + (byGroup.keys - order.toSet()).sorted()) {
             val l = byGroup[g] ?: continue
@@ -263,14 +265,14 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
 
     fun tools(): List<JSONObject> = listOf(
         JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL_SEARCH)
-            .put("description", "Search Blaze's own docs (built into this app): its GitHub repos and exact URLs, versions and changelog, features, settings, " +
-                "how to do things in Blaze, how to update, tech stack, privacy, limits, and every tool. Use it first for any question about Blaze itself; never guess URLs.")
+            .put("description", "Search ${BrandName.NAME}'s own docs (built into this app): its GitHub repos and exact URLs, versions and changelog, features, settings, " +
+                "how to do things in ${BrandName.NAME}, how to update, tech stack, privacy, limits, and every tool. Use it first for any question about ${BrandName.NAME} itself; never guess URLs.")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
                 .put("query", JSONObject().put("type", "string").put("description", "What to look up, e.g. 'repo url', 'what changed in 0.28.1', 'how to update'"))
                 .put("limit", JSONObject().put("type", "integer").put("description", "1-5, default 3")))
                 .put("required", JSONArray(listOf("query"))))),
         JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL_READ)
-            .put("description", "Read one section of Blaze's docs in full, by the id $TOOL_SEARCH gave (e.g. about#2).")
+            .put("description", "Read one section of ${BrandName.NAME}'s docs in full, by the id $TOOL_SEARCH gave (e.g. about#2).")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
                 .put("id", JSONObject().put("type", "string")))
                 .put("required", JSONArray(listOf("id"))))),
@@ -281,16 +283,16 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
 
     fun formatHits(q: String, hits: List<Hit>): String =
         (if (repoRe.containsMatchIn(q.lowercase())) "$REPOS_LINE\n" else "") +
-        if (hits.isEmpty()) "Nothing in Blaze's docs matches \u201c$q\u201d. Try other words; for live setup state use about_blaze. Blaze for Android's repo is $REPO_URL ."
+        if (hits.isEmpty()) "Nothing in ${BrandName.NAME}'s docs matches \u201c$q\u201d. Try other words; for live setup state use about_blaze. ${BrandName.NAME} for Android's repo is $REPO_URL ."
         else hits.joinToString("\n") { "[${it.id}] ${it.section.ifBlank { it.doc }}: ${it.snippet.replace(Regex("\\s+"), " ").trim()}" } +
             "\n$TOOL_READ {id} returns a whole section."
 
-    fun formatChunk(c: Chunk?, id: String): String = c?.let { "[${it.id}] ${it.section.ifBlank { it.doc }} (Blaze v${it.version})\n${it.text}" }
+    fun formatChunk(c: Chunk?, id: String): String = c?.let { "[${it.id}] ${it.section.ifBlank { it.doc }} (${BrandName.NAME} v${it.version})\n${it.text}" }
         ?: "No docs section \u201c$id\u201d. Use $TOOL_SEARCH for ids."
 
     /** Runs a docs tool against [s] (null: not ready yet). */
     fun run(s: Store?, name: String, args: JSONObject): String {
-        val st = s ?: return "Blaze's docs are still loading. Blaze for Android's repo is $REPO_URL ."
+        val st = s ?: return "${BrandName.NAME}'s docs are still loading. ${BrandName.NAME} for Android's repo is $REPO_URL ."
         return when (name) {
             TOOL_SEARCH -> { val q = args.optString("query").ifBlank { args.optString("q") }; formatHits(q, st.search(q, args.optInt("limit", 3).coerceIn(1, 5))) }
             TOOL_READ -> args.optString("id").let { formatChunk(st.read(it), it) }
@@ -305,7 +307,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
         return Regex("\\b(your (repo|repository|source code|code|github|version|changelog|settings?)|what version are you|are you open source|who (made|built|created) you|what (language|stack) are you)\\b").containsMatchIn(l)
     }
 
-    const val TURN_HINT = "\n[This is about Blaze itself: call $TOOL_SEARCH first and answer from what it returns; never guess URLs or repo names.]"
+    const val TURN_HINT = "\n[This is about ${BrandName.NAME} itself: call $TOOL_SEARCH first and answer from what it returns; never guess URLs or repo names.]"
 
     // ---------------- Android ----------------
 

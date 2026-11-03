@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -21,7 +23,7 @@ object PageAsk {
 
     const val PAGE_BUDGET = 9000
 
-    const val SYSTEM = "You are Blaze, helping the user with the web page they have open in Blaze's browser. Below is what Blaze " +
+    const val SYSTEM = "You are ${BrandName.NAME}, helping the user with the web page they have open in ${BrandName.NAME}'s browser. Below is what ${BrandName.NAME} " +
         "could see on their screen: the page title and address, the words on the page, the labels of its buttons and links, and " +
         "its pictures. Rules:\n" +
         "- Always give a useful answer, and start with it. Plain words, the way a person would describe the page: what it shows, " +
@@ -73,7 +75,7 @@ object PageAsk {
 
     /** The page as the model sees it: no indices, no element kinds, no raw element dump. */
     fun pageBlock(c: Capture, budget: Int = PAGE_BUDGET): String {
-        if (c == Capture.NONE || (c.url.isBlank() && c.text.isBlank() && c.title.isBlank())) return "Blaze couldn't read this page at all (it may still be loading)."
+        if (c == Capture.NONE || (c.url.isBlank() && c.text.isBlank() && c.title.isBlank())) return "${BrandName.NAME} couldn't read this page at all (it may still be loading)."
         val sb = StringBuilder()
         if (c.title.isNotBlank()) sb.append("Title: ").append(c.title.trim().take(200)).append('\n')
         if (c.url.isNotBlank()) {
@@ -96,7 +98,7 @@ object PageAsk {
             if (alts.isNotEmpty()) sb.append("; described as: ").append(alts.joinToString("; "))
             sb.append('\n')
         }
-        notes(c).takeIf { it.isNotEmpty() }?.let { sb.append("\nNote for Blaze: ").append(it.joinToString(" ")).append('\n') }
+        notes(c).takeIf { it.isNotEmpty() }?.let { sb.append("\nNote for ${BrandName.NAME}: ").append(it.joinToString(" ")).append('\n') }
         return sb.toString().take(budget + 200)
     }
 

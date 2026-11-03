@@ -31,4 +31,4 @@ Total = hook × 0.4 + clarity × 0.35 + CTA × 0.25, one decimal.
 
 ## Rules
 - No false claims, fake reviews, fake countdowns, before/after health claims or anything the platform bans.
-- Blaze writes ads; it never spends ad money or launches campaigns.
+- Argus writes ads; it never spends ad money or launches campaigns.

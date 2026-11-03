@@ -1,5 +1,7 @@
 package com.blaze.assistant.movies
 
+
+import com.blaze.assistant.BrandName
 import com.dokar.quickjs.QuickJs
 import com.dokar.quickjs.binding.asyncFunction
 import com.dokar.quickjs.binding.function
@@ -49,7 +51,7 @@ class ProviderSandbox(private val http: SandboxHttp = DefaultSandboxHttp, privat
         /** The engine stayed busy for the whole wait. */
         const val BUSY = "Sources are busy right now. Try again in a moment."
         /** A source got stuck in a loop that never ends (the engine can't be stopped from outside); a restart frees it. */
-        const val STUCK = "A source got stuck. Close and reopen Blaze to reset your sources."
+        const val STUCK = "A source got stuck. Close and reopen ${BrandName.NAME} to reset your sources."
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     }
 

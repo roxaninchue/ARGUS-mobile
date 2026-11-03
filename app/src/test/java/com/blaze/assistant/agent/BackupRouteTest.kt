@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -56,8 +58,8 @@ class BackupRouteTest {
         assertEquals(R, BackupRoute.fallbacks(false, 503, Cloud.BUSY, false))
         assertEquals(R, BackupRoute.fallbacks(false, 429, Cloud.BUSY, false))                 // busy, not the allowance
         assertEquals(R, BackupRoute.fallbacks(false, 0, Cloud.UNREACHABLE, false))
-        assertEquals(R, BackupRoute.fallbacks(false, 0, "Blaze Cloud too slow (no first chunk in 15s)", false))
-        assertEquals(R, BackupRoute.fallbacks(false, 502, "Blaze · blaze-auto said (502): upstream", false))
+        assertEquals(R, BackupRoute.fallbacks(false, 0, "${BrandName.NAME} Cloud too slow (no first chunk in 15s)", false))
+        assertEquals(R, BackupRoute.fallbacks(false, 502, "${BrandName.NAME} · blaze-auto said (502): upstream", false))
         // with the backup ready: backup first, then the reserve
         assertEquals(listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE), BackupRoute.fallbacks(true, 503, Cloud.BUSY, false))
         // never for what no other brain can fix, nor a request the services refuse as such
@@ -68,7 +70,7 @@ class BackupRouteTest {
     }
 
     @Test fun partialStreamFailureFallsBack() {
-        val broke = "Blaze · blaze-auto stopped sending (timed out mid-reply)."
+        val broke = "${BrandName.NAME} · blaze-auto stopped sending (timed out mid-reply)."
         assertTrue(BackupRoute.brokeMidReply(broke))
         assertTrue(BackupRoute.brokeMidReply("unexpected end of stream on https://gateway"))
         assertFalse(BackupRoute.brokeMidReply(Cloud.SIGNED_OUT))

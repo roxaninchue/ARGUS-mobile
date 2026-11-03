@@ -1,5 +1,7 @@
 package com.blaze.assistant.device
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.device.CameraModes.CodeKind
 import com.blaze.assistant.device.CameraModes.Mode
 import com.blaze.assistant.device.CameraModes.Origin
@@ -54,7 +56,7 @@ class CameraModesTest {
         assertTrue(CameraModes.payload(Mode.TRANSLATE, "", null).contains("no readable text"))
         assertTrue(CameraModes.payload(Mode.SCAN, null, "https://x.y").contains("https://x.y"))
         assertEquals("", CameraModes.payload(Mode.PHOTO, "ignored", null))
-        Mode.values().forEach { assertTrue(CameraModes.openingLine(it).startsWith("Opening Blaze Camera")) }
+        Mode.values().forEach { assertTrue(CameraModes.openingLine(it).startsWith("Opening ${BrandName.NAME} Camera")) }
         Mode.values().forEach { assertTrue(it.talkback.isNotBlank()) }
     }
     @Test fun scanChips() {

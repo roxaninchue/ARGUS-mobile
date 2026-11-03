@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -52,14 +54,14 @@ class IntentHonestyTest {
             Mind.Mem(1, "profile", "You", "Lives in Ndola", created = 1),
             Mind.Mem(2, "person", "Gloria", "Sister, studies in Lusaka", created = 2),
             Mind.Mem(3, "preference", "You", "Takes coffee black.", created = 3),
-            Mind.Mem(4, "weird", "Blaze", "Building the Blaze app", created = 4),
+            Mind.Mem(4, "weird", "${BrandName.NAME}", "Building the ${BrandName.NAME} app", created = 4),
         )
         val r = MemoryIntent.format(mems)
         assertTrue(r.startsWith("Here's what I remember about you:"))
         assertTrue(r.contains("**About you**\n- Lives in Ndola"))
         assertTrue(r.contains("**People**\n- Gloria: Sister, studies in Lusaka"))
         assertTrue(r.contains("- Takes coffee black\n"))
-        assertTrue(r.contains("**Other things**\n- Blaze: Building the Blaze app"))
+        assertTrue(r.contains("**Other things**\n- ${BrandName.NAME}: Building the ${BrandName.NAME} app"))
         assertTrue(r.indexOf("About you") < r.indexOf("Preferences") && r.indexOf("Preferences") < r.indexOf("People"))
         assertTrue(r.endsWith(MemoryIntent.MANAGE))
         assertFalse(r.contains("Design"))
@@ -143,7 +145,7 @@ class IntentHonestyTest {
 
     @Test fun howToGetSomethingEndsWithAConcreteOffer() {
         assertEquals("install", AnswerStyle.offerVerb("how do I get a lightweight TTS model?"))
-        assertEquals("install", AnswerStyle.offerVerb("How can I install the Blaze APK"))
+        assertEquals("install", AnswerStyle.offerVerb("How can I install the ${BrandName.NAME} APK"))
         assertEquals("turn on", AnswerStyle.offerVerb("how do I enable the built-in TTS"))
         assertEquals("download", AnswerStyle.offerVerb("where can I download the offline voice?"))
         assertEquals("set up", AnswerStyle.offerVerb("how to set up the wake word"))

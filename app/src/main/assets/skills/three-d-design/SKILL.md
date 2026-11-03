@@ -5,7 +5,7 @@ tags: [3d, design, threejs, cad, blender, modeling, mockup]
 version: 1
 ---
 
-> **On the phone:** make the mockup with the `design` tool: `design action=create kind=3d title=… units=… parts=[…]` (the same part entries as the blaze-parts JSON below). Blaze generates this starter page from the parts, opens it in the Design view (orbit with one finger, zoom with two) and makes it the current design. Every follow-on ("show the engine", "make it taller") is `design action=update` with `set_parts` (by id, only the keys that change) / `remove_parts` on that same design; `design action=read` shows the current parts. Part picking and write-back are Desktop-only: the user names the part to change in chat. Building in Blender/FreeCAD needs a PC (`ask_pc` if paired); OpenSCAD and Python exports can run in Blaze's Alpine Linux (`apk add openscad`).
+> **On the phone:** make the mockup with the `design` tool: `design action=create kind=3d title=… units=… parts=[…]` (the same part entries as the blaze-parts JSON below). Argus generates this starter page from the parts, opens it in the Design view (orbit with one finger, zoom with two) and makes it the current design. Every follow-on ("show the engine", "make it taller") is `design action=update` with `set_parts` (by id, only the keys that change) / `remove_parts` on that same design; `design action=read` shows the current parts. Part picking and write-back are Desktop-only: the user names the part to change in chat. Building in Blender/FreeCAD needs a PC (`ask_pc` if paired); OpenSCAD and Python exports can run in Argus's Alpine Linux (`apk add openscad`).
 
 # 3D design: mockup first, then the real program
 

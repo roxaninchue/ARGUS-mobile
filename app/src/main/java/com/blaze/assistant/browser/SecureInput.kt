@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -121,7 +123,7 @@ object SecureInput {
     fun summary(fields: List<Field>, saved: Boolean, fromVault: Boolean): String {
         val list = fields.joinToString(", ") { "${it.label} as ${placeholder(it.name)}" }
         return (if (fromVault) "Used the saved values for this site: " else "The user filled in: ") + list + "." +
-            (if (saved) " Saved to Blaze's vault for this site." else "") +
+            (if (saved) " Saved to ${BrandName.NAME}'s vault for this site." else "") +
             " You never see these values; reuse them with browser_type text=\"${placeholder(fields.first().name)}\" if a page asks again."
     }
 

@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -33,7 +35,7 @@ object CallControl {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", "call_control")
-        .put("description", "Control a call in progress: the user's call with you (Blaze's call screen) or a real phone call. " +
+        .put("description", "Control a call in progress: the user's call with you (${BrandName.NAME}'s call screen) or a real phone call. " +
             "speaker on/off (loudspeaker), mute on/off (their microphone), end, answer or decline a ringing call, hold, keypad digits (e.g. \"1\" for menus), " +
             "louder/quieter/max call volume, status. Also start_blaze_call to start a voice call with you. Use this, never the Settings app, when the user asks for loudspeaker, mute or hang up.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
@@ -70,8 +72,8 @@ object CallControl {
             "mute" -> { Voice.callMute.value = on; if (on) "Muted the mic. Tell the user to tap Unmute to talk again." else "Mic unmuted." }
             "end" -> { Voice.callEnded.value = Voice.callEnded.value + 1; "Ended the call." }
             "louder", "quieter", "max_volume" -> volume(ctx, action, if (Voice.callSpeaker.value) AudioManager.STREAM_MUSIC else AudioManager.STREAM_VOICE_CALL)
-            "status" -> "On a call with Blaze. Loudspeaker ${if (Voice.callSpeaker.value) "on" else "off"}, mic ${if (Voice.callMute.value) "muted" else "on"}."
-            else -> "That doesn't apply to a call with Blaze."
+            "status" -> "On a call with ${BrandName.NAME}. Loudspeaker ${if (Voice.callSpeaker.value) "on" else "off"}, mic ${if (Voice.callMute.value) "muted" else "on"}."
+            else -> "That doesn't apply to a call with ${BrandName.NAME}."
         }
         return when (action) {
             "status" -> when {
@@ -100,7 +102,7 @@ object CallControl {
         if (Build.VERSION.SDK_INT >= 26 && Perms.ensure(ctx, Manifest.permission.ANSWER_PHONE_CALLS)) {
             if (runCatching { tm(ctx).acceptRingingCall() }.isSuccess) return "Answered the call."
         }
-        return if (tapAny(listOf("answer", "accept"))) "Answered the call." else "Couldn't answer it. Allow Blaze to answer calls (App info › Permissions › Phone)."
+        return if (tapAny(listOf("answer", "accept"))) "Answered the call." else "Couldn't answer it. Allow ${BrandName.NAME} to answer calls (App info › Permissions › Phone)."
     }
 
     @SuppressLint("MissingPermission")
@@ -111,7 +113,7 @@ object CallControl {
         }
         showCallScreen(ctx)
         return if (tapAny(listOf("end call", "end", "decline", "hang up", "reject"))) done
-        else "Couldn't hang up from here. Allow Blaze to manage calls (App info › Permissions › Phone)."
+        else "Couldn't hang up from here. Allow ${BrandName.NAME} to manage calls (App info › Permissions › Phone)."
     }
 
     private fun speakerOn(ctx: Context): Boolean =
@@ -132,14 +134,14 @@ object CallControl {
             am.isSpeakerphoneOn = on
         }
         delay(300)
-        return if (speakerOn(ctx) == on) "Loudspeaker ${if (on) "on" else "off"}." else "This phone didn't let me switch the loudspeaker. Turn on Blaze's accessibility service so I can press the call screen's Speaker button."
+        return if (speakerOn(ctx) == on) "Loudspeaker ${if (on) "on" else "off"}." else "This phone didn't let me switch the loudspeaker. Turn on ${BrandName.NAME}'s accessibility service so I can press the call screen's Speaker button."
     }
 
     private suspend fun mute(ctx: Context, on: Boolean): String {
         showCallScreen(ctx)
         if (toggle(ctx, listOf("mute", "mute call", "microphone"), on) != null) return if (on) "Muted your mic." else "Unmuted your mic."
         withContext(Dispatchers.Main) { am(ctx).isMicrophoneMute = on }
-        return if (am(ctx).isMicrophoneMute == on) (if (on) "Muted your mic." else "Unmuted your mic.") else "Couldn't change mute. Turn on Blaze's accessibility service."
+        return if (am(ctx).isMicrophoneMute == on) (if (on) "Muted your mic." else "Unmuted your mic.") else "Couldn't change mute. Turn on ${BrandName.NAME}'s accessibility service."
     }
 
     private suspend fun keypad(ctx: Context, digits: String): String {

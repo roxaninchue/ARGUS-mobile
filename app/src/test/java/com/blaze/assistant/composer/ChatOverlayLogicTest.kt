@@ -1,5 +1,7 @@
 package com.blaze.assistant.composer
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ChatMessage
 import com.blaze.assistant.agent.Role
 import org.junit.Assert.assertEquals
@@ -21,7 +23,7 @@ class ChatOverlayLogicTest {
     }
 
     @Test fun visibleSkipsStepsAndBlanks() {
-        val all = listOf(m(1, Role.USER), m(2, Role.STEP, "Looking it up"), m(3, Role.BLAZE, ""), m(4, Role.BLAZE), m(5, Role.ERROR, "Couldn't reach Blaze"))
+        val all = listOf(m(1, Role.USER), m(2, Role.STEP, "Looking it up"), m(3, Role.BLAZE, ""), m(4, Role.BLAZE), m(5, Role.ERROR, "Couldn't reach ${BrandName.NAME}"))
         assertEquals(listOf(1L, 4L, 5L), ChatOverlayLogic.visible(all, 0L).map { it.id })
         assertEquals(listOf(4L, 5L), ChatOverlayLogic.visible(all, 3L).map { it.id })
     }
@@ -72,7 +74,7 @@ class ChatOverlayLogicTest {
         assertFalse(all.contains("\"No results"))
         // the chat bar: Message Blaze pill, send arrow inside it, + opens Spotlight
         val bar = src("ui/composer/ChatComposer.kt")
-        assertTrue(bar.contains("\"Message Blaze\"") && bar.contains("Icons.Rounded.ArrowUpward") && bar.contains("state.openSpotlight()"))
+        assertTrue(bar.contains("\"Message ${BrandName.NAME}\"") && bar.contains("Icons.Rounded.ArrowUpward") && bar.contains("state.openSpotlight()"))
         // one cached blur, reduce motion respected
         val host = src("ui/composer/ComposerHost.kt")
         assertTrue(host.contains("remember(px) { BlurEffect(") && host.contains("GlassTokens.blurSupported"))

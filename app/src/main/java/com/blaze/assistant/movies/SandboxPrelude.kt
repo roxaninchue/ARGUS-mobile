@@ -1,5 +1,7 @@
 package com.blaze.assistant.movies
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.46.2 the JavaScript a provider module runs on top of (written for Blaze, not copied): small axios-, fetch- and
  * cheerio-like shims over host functions (__h_fetch = [SandboxHttp]; __c_* = Jsoup on the Kotlin side), URL/URLSearchParams,
@@ -164,7 +166,7 @@ object SandboxPrelude {
   G.__ctx = Object.freeze({
     axios: axios, cheerio: cheerio, commonHeaders: {}, kvStore: Object.freeze(kv),
     getBaseUrl: function(v){ return __h_baseurl(String(v || '')); },
-    openWebView: function(){ return Promise.reject(new Error('Blaze does not open web views for sources')); },
+    openWebView: function(){ return Promise.reject(new Error('${BrandName.NAME} does not open web views for sources')); },
     Crypto: undefined
   });
   G.__require = function(n){ if (n === 'axios') return axios; if (n === 'cheerio' || n === 'cheerio-without-node-native') return cheerio; return {}; };

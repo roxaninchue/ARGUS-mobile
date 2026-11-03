@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.app.DownloadManager
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -50,7 +52,7 @@ object PagePointer {
         Action.SAVE_IMAGE -> "Save"; Action.COPY_IMAGE_LINK -> "Copy image link"; Action.SEARCH_IMAGE -> "Search image"
         Action.OPEN -> "Open"; Action.OPEN_BG -> "Open in background"; Action.SHARE -> "Share"
         Action.COPY_TEXT -> "Copy"; Action.TRANSLATE -> "Translate"; Action.EXPLAIN -> "Explain"; Action.SUMMARISE -> "Summarise"
-        Action.ASK -> if (kind == Kind.IMAGE) "Ask Blaze" else "Ask Blaze about this"
+        Action.ASK -> if (kind == Kind.IMAGE) "Ask ${BrandName.NAME}" else "Ask ${BrandName.NAME} about this"
     }
 
     /** Spoken description for TalkBack. */
@@ -115,10 +117,10 @@ object PagePointer {
         val low = u.lowercase()
         return when {
             u.isBlank() -> "This element doesn't expose a file to download."
-            low.startsWith("blob:") || low.startsWith("mediasource:") -> "This video is streamed in pieces (blob:), so there's no file to download. Blaze doesn't get around streaming protection."
+            low.startsWith("blob:") || low.startsWith("mediasource:") -> "This video is streamed in pieces (blob:), so there's no file to download. ${BrandName.NAME} doesn't get around streaming protection."
             low.startsWith("data:") -> "This is embedded in the page itself; use Copy instead."
             !(low.startsWith("http://") || low.startsWith("https://")) -> "Only web files (http/https) can be downloaded."
-            Regex("""\.(m3u8|mpd|ism)(\?|#|$)""").containsMatchIn(low) || low.contains("/manifest") -> "This is a streaming playlist, not a file. Blaze doesn't download streams."
+            Regex("""\.(m3u8|mpd|ism)(\?|#|$)""").containsMatchIn(low) || low.contains("/manifest") -> "This is a streaming playlist, not a file. ${BrandName.NAME} doesn't download streams."
             else -> null
         }
     }
@@ -203,7 +205,7 @@ object PointerActions {
         PagePointer.cantDownload(url)?.let { toast(ctx, it); return }
         try {
             val name = URLUtil.guessFileName(url, null, null)
-            val req = DownloadManager.Request(Uri.parse(url)).setTitle(name).setDescription("Downloading with Blaze")
+            val req = DownloadManager.Request(Uri.parse(url)).setTitle(name).setDescription("Downloading with ${BrandName.NAME}")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
             if (!isPrivate) CookieManager.getInstance().getCookie(url)?.let { req.addRequestHeader("Cookie", it) }

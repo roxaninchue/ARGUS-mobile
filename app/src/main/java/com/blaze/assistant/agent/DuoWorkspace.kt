@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -67,7 +69,7 @@ object DuoWorkspace {
     private fun find(q: String): Ws? = all().firstOrNull { it.slug == Board.slug(q) } ?: all().firstOrNull { it.name.contains(q, true) } ?: if (q.isBlank()) all().firstOrNull() else null
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Duo Workspaces: long projects Blaze and Halo run over days. create (name, goal), list, show (board + folder), add (task, owner blaze|halo|you), " +
+        .put("description", "Duo Workspaces: long projects ${BrandName.NAME} and Halo run over days. create (name, goal), list, show (board + folder), add (task, owner blaze|halo|you), " +
             "move (id, col todo|doing|done), note (log line), standup (time HH:MM daily, or off). Files live in ~/workspaces/<name>/ for file/terminal tools.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("create", "list", "show", "add", "move", "note", "standup"))))
@@ -105,7 +107,7 @@ object DuoWorkspace {
     }
 
     fun standupPrompt(w: Ws): String = "@all Daily standup for the Duo Workspace \u201c${w.name}\u201d. Board:\n${Board.render(w)}\n" +
-        "Blaze and Halo: say in two lines each what moved since yesterday, what's next and what's blocked; then actually do the next card you own " +
+        "${BrandName.NAME} and Halo: say in two lines each what moved since yesterday, what's next and what's blocked; then actually do the next card you own " +
         "(files go in ~/workspaces/${w.slug}/), move cards with duo_workspace, and add a log note. Ask the user only about cards they own."
 }
 

@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
@@ -345,8 +347,8 @@ object PhoneBrowser {
         }
         override fun onRenderProcessGone(v: WebView, d: android.webkit.RenderProcessGoneDetail): Boolean {
             val url = _live.value.url
-            lastCrash = "The page renderer stopped (Android closed it to save memory) on ${url.take(80)}; Blaze Phone reopened it and anything typed there was lost."
-            com.blaze.assistant.device.CrashLog.write("Blaze Phone renderer gone on ${url.take(80)}")
+            lastCrash = "The page renderer stopped (Android closed it to save memory) on ${url.take(80)}; ${BrandName.NAME} Phone reopened it and anything typed there was lost."
+            com.blaze.assistant.device.CrashLog.write("${BrandName.NAME} Phone renderer gone on ${url.take(80)}")
             main.post {
                 if (web === v) { detachBridge(v); web = null; try { (v.parent as? ViewGroup)?.removeView(v); v.destroy() } catch (_: Throwable) { }; session = null; wrap = null
                     if (url.startsWith("http")) ensure(url).let { w -> expectLoad(w); w.loadUrl(url) } }
@@ -403,7 +405,7 @@ object PhoneBrowser {
         return r && _live.value.mode == PhonePolicy.Mode.AGENT
     }
 
-    private fun stillUser() = "The user is in control of Blaze Phone and hasn't handed back yet. Don't act; tell them you'll continue when they tap Hand back."
+    private fun stillUser() = "The user is in control of ${BrandName.NAME} Phone and hasn't handed back yet. Don't act; tell them you'll continue when they tap Hand back."
 
     // ------------------------------------------------------------------ the engine's page
     /** The WebView as [PhoneEngine] sees it. */
@@ -442,7 +444,7 @@ object PhoneBrowser {
         init(ctx)
         if (!waitForUser()) return stillUser()
         val url = com.blaze.assistant.browser.BrowserEngine.toUrl(url0)
-        if (!url.startsWith("https://") && !url.startsWith("http://")) return "Blaze Phone opens web pages only (https)."
+        if (!url.startsWith("https://") && !url.startsWith("http://")) return "${BrandName.NAME} Phone opens web pages only (https)."
         withContext(Dispatchers.Main) {
             val w = ensure(url)
             expectLoad(w)
@@ -450,7 +452,7 @@ object PhoneBrowser {
             touch()
         }
         engine.afterOpen()
-        return "Opened on Blaze Phone.\n" + readText()
+        return "Opened on ${BrandName.NAME} Phone.\n" + readText()
     }
 
     suspend fun read(): PhonePolicy.Snapshot? {
@@ -460,7 +462,7 @@ object PhoneBrowser {
     }
 
     suspend fun readText(): String {
-        val s = read() ?: return if (web == null) "Blaze Phone has no page open. Use phone_open first." else "Couldn't read this page (still loading?). Try phone_wait, then phone_read."
+        val s = read() ?: return if (web == null) "${BrandName.NAME} Phone has no page open. Use phone_open first." else "Couldn't read this page (still loading?). Try phone_wait, then phone_read."
         val notes = buildList { lastCrash?.let { add(it); lastCrash = null } }
         return PhonePolicy.render(s) + if (notes.isEmpty()) "" else "\n\n" + notes.joinToString("\n")
     }
@@ -560,13 +562,13 @@ object PhoneBrowser {
      * [ms]); then Blaze continues with a fresh read. [notify]: post the "Action required" notification.
      */
     suspend fun handoff(reason: String, ms: Long = 10 * 60_000L, notify: (String, String) -> Unit): String {
-        if (web == null) return "Blaze Phone has no page open."
+        if (web == null) return "${BrandName.NAME} Phone has no page open."
         set { it.copy(mode = PhonePolicy.Mode.WAITING, reason = reason.take(160)) }
-        notify(reason, SecureInput.hostOf(_live.value.url).ifBlank { "Blaze Phone" })
+        notify(reason, SecureInput.hostOf(_live.value.url).ifBlank { "${BrandName.NAME} Phone" })
         val ok = waitForUser(ms)
         if (!ok) {
             if (_live.value.mode == PhonePolicy.Mode.WAITING) set { it.copy(mode = PhonePolicy.Mode.AGENT, reason = null) }
-            return "The user didn't take over within ${ms / 60_000} minutes. Stop here and tell them what's waiting on Blaze Phone (${reason.take(80)})."
+            return "The user didn't take over within ${ms / 60_000} minutes. Stop here and tell them what's waiting on ${BrandName.NAME} Phone (${reason.take(80)})."
         }
         return "The user handed back. Fresh read:\n" + readText()
     }
@@ -624,11 +626,11 @@ object PhoneBrowser {
     // ------------------------------------------------------------------ status / settings
     fun status(): String {
         val l = _live.value
-        if (l.mode == PhonePolicy.Mode.OFF) return "Blaze Phone is idle (nothing open). Sessions kept for: ${sites().take(12).joinToString().ifBlank { "no sites yet" }}."
+        if (l.mode == PhonePolicy.Mode.OFF) return "${BrandName.NAME} Phone is idle (nothing open). Sessions kept for: ${sites().take(12).joinToString().ifBlank { "no sites yet" }}."
         val c = config()
-        val mode = when (l.mode) { PhonePolicy.Mode.AGENT -> "Blaze is driving"; PhonePolicy.Mode.WAITING -> "waiting for the user to take control (${l.reason})"
+        val mode = when (l.mode) { PhonePolicy.Mode.AGENT -> "${BrandName.NAME} is driving"; PhonePolicy.Mode.WAITING -> "waiting for the user to take control (${l.reason})"
             PhonePolicy.Mode.USER -> "the user is in control"; else -> "idle" }
-        return "Blaze Phone: $mode. Page: ${l.title.take(80)} \u2014 ${l.url.take(160)}. Session: ${session?.site ?: "?"} (" +
+        return "${BrandName.NAME} Phone: $mode. Page: ${l.title.take(80)} \u2014 ${l.url.take(160)}. Session: ${session?.site ?: "?"} (" +
             (if (session?.isolated == true) "own profile" else "shared with the browser: this phone's WebView has no profiles") + "). " +
             "Screen: ${if (l.surfaceOk) "live" else "offscreen (no live view on this phone)"}, ${if (c.lowRam) "low-RAM mode" else "normal mode"}. " +
             "Page reading: ${if (bridgeOn) "live DOM bridge (${domCache.nodeCount()} elements cached)" else "direct DOM reads (no bridge on this page)"}. " +
@@ -640,7 +642,7 @@ object PhoneBrowser {
         val heap = (rt.totalMemory() - rt.freeMemory()) / 1_048_576
         val native = android.os.Debug.getNativeHeapAllocatedSize() / 1_048_576
         val sfc = (surface?.bytesHeld() ?: 0L) / 1_048_576
-        return "RAM: app heap ${heap} MB, native ${native} MB, Blaze Phone screen buffers ${sfc} MB."
+        return "RAM: app heap ${heap} MB, native ${native} MB, ${BrandName.NAME} Phone screen buffers ${sfc} MB."
     }
 
     /** Settings › Blaze Phone › Sign out: forgets one site's cookies and storage. Main thread. */

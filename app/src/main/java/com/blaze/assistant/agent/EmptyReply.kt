@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -17,7 +19,7 @@ import org.json.JSONObject
  * Pure (EmptyReplyTest).
  */
 object EmptyReply {
-    const val NUDGE = "[Blaze] Your last reply came back empty (no answer text). Answer the user now in one or two sentences, " +
+    const val NUDGE = "[${BrandName.NAME}] Your last reply came back empty (no answer text). Answer the user now in one or two sentences, " +
         "from what you already know, the 'Phone now' line and the tool results above. Don't call a tool unless the answer truly needs one."
     const val FAILED = "The AI came back without an answer, a few times in a row. Tap Retry and I'll ask again."
     /** LlmException code for "the model answered with nothing". */

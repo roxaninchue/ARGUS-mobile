@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -37,7 +39,7 @@ class ChatIndexTest {
         val idx = ChatIndex(dir)
         idx.list()
         val p0 = idx.parses
-        repeat(10) { n -> assertTrue(idx.save(chat("main", "Blaze", 5000L + n))) }
+        repeat(10) { n -> assertTrue(idx.save(chat("main", "${BrandName.NAME}", 5000L + n))) }
         val l = idx.list()
         assertEquals(p0, idx.parses)   // the saved header is taken from the object, nothing is read back
         assertEquals("main", l.first().id)

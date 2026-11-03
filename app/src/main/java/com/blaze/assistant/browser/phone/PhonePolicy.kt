@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.browser.SiteDomain
 import org.json.JSONArray
 import org.json.JSONObject
@@ -192,8 +194,8 @@ object PhonePolicy {
         fun progress(): String = when {
             confirmed -> "Completed: the page shows a confirmation \u201c${evidence.take(120)}\u201d" + (ref?.let { " (reference $it)" } ?: "") + "."
             blocker != null -> "Not booked, ordered or paid: the page shows a problem: \u201c${blocker.take(120)}\u201d."
-            loggedIn -> "Signed in. Not booked, ordered or paid yet: no confirmation page or number seen on Blaze Phone."
-            else -> "Not booked, ordered or paid yet: no confirmation page or number seen on Blaze Phone."
+            loggedIn -> "Signed in. Not booked, ordered or paid yet: no confirmation page or number seen on ${BrandName.NAME} Phone."
+            else -> "Not booked, ordered or paid yet: no confirmation page or number seen on ${BrandName.NAME} Phone."
         }
 
         fun line(): String = when {

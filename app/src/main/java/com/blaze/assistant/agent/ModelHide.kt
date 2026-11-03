@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.45.19 chat fixes (user rule for every client): never show which model or provider replied. Blaze is Blaze and Halo is
  * Halo. No model or provider ids in chat footers, the "What happened" sheet, settings, errors or fallback notices.
@@ -32,8 +34,8 @@ object ModelHide {
         if (!mentions(text)) return text
         var t = paren.replace(text) { m -> if (mentions(m.groupValues[1])) "" else m.value }
         t = id.replace(t) { m -> if (mentions(m.value)) "" else m.value }
-        t = word.replace(t, "Blaze")
-        t = t.replace(Regex("\\bBlaze(\\s*[\u00b7,/-]?\\s*Blaze)+\\b"), "Blaze")
+        t = word.replace(t, "${BrandName.NAME}")
+        t = t.replace(Regex("\\bBlaze(\\s*[\u00b7,/-]?\\s*${BrandName.NAME})+\\b"), "${BrandName.NAME}")
             .replace(Regex("(\\s*\u00b7\\s*)+$"), "").replace(Regex("^(\\s*\u00b7\\s*)+"), "")
             .replace(Regex("\\s*\u00b7\\s*(\u00b7\\s*)+"), " \u00b7 ")
             .replace(Regex("[ \\t]{2,}"), " ").replace(Regex("\\s+([.,!?])"), "$1")

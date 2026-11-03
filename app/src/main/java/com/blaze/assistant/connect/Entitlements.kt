@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -119,8 +121,8 @@ object Entitlements {
         code == 429 -> Gate.Blocked(runCatching { JSONObject(body).optJSONObject("error")?.optString("message").orEmpty() }.getOrDefault("")
             .ifBlank { "You've used this month's downloads on your plan." })
         code in 400..499 -> Gate.Blocked(runCatching { JSONObject(body).optJSONObject("error")?.optString("message").orEmpty() }.getOrDefault("")
-            .ifBlank { "Blaze couldn't start this download ($code)." })
-        else -> Gate.Offline("Couldn't reach Blaze to check your download limit")
+            .ifBlank { "${BrandName.NAME} couldn't start this download ($code)." })
+        else -> Gate.Offline("Couldn't reach ${BrandName.NAME} to check your download limit")
     }
 
     // ---------------------------------------------------------------- state + network
@@ -174,7 +176,7 @@ object Entitlements {
         if (!signedIn()) return Gate.Skip
         val body = JSONObject().put("kind", kindOf(jobKind)).apply { if (ref.isNotBlank()) put("ref", ref.take(200)) }.toString()
         val g = runCatching { call("POST", "/downloads/consume", body) }.map { (code, text) -> gateFor(code, text) }
-            .getOrElse { Gate.Offline("Couldn't reach Blaze to check your download limit") }
+            .getOrElse { Gate.Offline("Couldn't reach ${BrandName.NAME} to check your download limit") }
         if (g is Gate.Ok || g is Gate.Blocked) runCatching { refresh(ctx, force = true) }
         return g
     }

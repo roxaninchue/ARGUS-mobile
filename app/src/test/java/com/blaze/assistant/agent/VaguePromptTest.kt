@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.TaskMemory.Rec
 import com.blaze.assistant.agent.TaskMemory.State
 import com.blaze.assistant.agent.TaskMemory.Surface
@@ -60,7 +62,7 @@ class VaguePromptTest {
     private val news = Rec("i2", "c", "Give me today's top news", State.DONE, updated = min(1))
     private val sI = listOf(oldSongs, news)
 
-    private val apk = Rec("j1", "c", "Build the Blaze APK in the terminal", State.FAILED, Surface.TERMINAL, updated = min(15),
+    private val apk = Rec("j1", "c", "Build the ${BrandName.NAME} APK in the terminal", State.FAILED, Surface.TERMINAL, updated = min(15),
         findings = listOf("Gradle failed: missing SDK platform 34"), next = "install platform 34 and rebuild")
     private val email = Rec("j2", "c", "Draft an email to Ana about Friday", State.DONE, updated = min(8))
     private val sJ = listOf(apk, email)
@@ -149,7 +151,7 @@ class VaguePromptTest {
         // and the guard stops a switch to Blaze Phone for that task
         assertTrue(TaskMemory.surfaceGuard("phone_open", r.rec, "I signed you in", now)!!.startsWith("Not run"))
         assertEquals(null, TaskMemory.surfaceGuard("browser_read", r.rec, "I signed you in", now))
-        assertEquals(null, TaskMemory.surfaceGuard("phone_open", r.rec, "use Blaze Phone instead", now))
+        assertEquals(null, TaskMemory.surfaceGuard("phone_open", r.rec, "use ${BrandName.NAME} Phone instead", now))
     }
 
     @Test fun sameForCarriesTheNewSubject() {

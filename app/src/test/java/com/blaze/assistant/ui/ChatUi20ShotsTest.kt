@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -98,7 +100,7 @@ class ChatUi20ShotsTest {
         val gap: @Composable (GroupPos) -> Unit = { p -> Spacer(Modifier.height(Bubbles.gapAbove(p, false))) }
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp)) {
             DayChip("Yesterday")
-            UserBubble("Hey Blaze", pos = GroupPos.FIRST)
+            UserBubble("Hey ${BrandName.NAME}", pos = GroupPos.FIRST)
             gap(GroupPos.LAST)
             Timed("18:48") { UserBubble("Can you plan Friday for me? Lab at 10, quiz at 2", pos = GroupPos.LAST) }
             gap(GroupPos.FIRST)
@@ -107,7 +109,7 @@ class ChatUi20ShotsTest {
             Timed("18:49") { BlazeReply(2, "Here's Friday:\n\n| Time | What |\n|---|---|\n| 10:00 | CIT102 lab |\n| 14:00 | NET103 quiz |\n\n" +
                 "```kotlin\nval free = listOf(\"12:00\", \"16:30\")\n```", GroupPos.LAST) }
             DayChip("Today")
-            Timed("09:12") { UserBubble("Star the Blaze repo on GitHub for me", quoted = "Here's Friday:", pos = GroupPos.SINGLE) }
+            Timed("09:12") { UserBubble("Star the ${BrandName.NAME} repo on GitHub for me", quoted = "Here's Friday:", pos = GroupPos.SINGLE) }
             gap(GroupPos.FIRST)
             WorkCard(listOf(step(31, "Browsing github.com/login"), step(32, "Reading the page")), live = false, startAt = t0, endAt = t0 + 21_000)
             gap(GroupPos.MIDDLE)

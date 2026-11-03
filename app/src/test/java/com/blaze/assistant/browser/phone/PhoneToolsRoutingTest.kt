@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ClaimCheck
 import com.blaze.assistant.agent.ClaimCheck.Done
 import com.blaze.assistant.agent.ClaimCheck.Outcome
@@ -39,7 +41,7 @@ class PhoneToolsRoutingTest {
 
     private val notPhone = listOf(
         "remind me at 5 to call mum", "set an alarm for 6am", "what's on my calendar today", "add a meeting to my calendar tomorrow at 3",
-        "open youtube", "search the web for zesco load shedding", "log into my bank and transfer money", "sign in to my Blaze account",
+        "open youtube", "search the web for zesco load shedding", "log into my bank and transfer money", "sign in to my ${BrandName.NAME} account",
         "play a game with me", "run ls in the terminal", "what do you remember about me", "turn on wifi", "book",
     )
 

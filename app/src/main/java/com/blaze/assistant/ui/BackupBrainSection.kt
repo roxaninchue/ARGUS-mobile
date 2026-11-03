@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -68,7 +70,7 @@ internal fun BackupBrainSection() {
         "${i + 1}. ${com.blaze.assistant.agent.BrainOrder.label(st)}: $health" + (if (n > 0) " · $n answers" else "")
     }.joinToString("\n") + "\nCoding jobs use the strongest free coders on the phone first.")
     V18Section("On-phone brain")
-    V18Note("Blaze's first brain, right on your phone. It sets itself up on Wi-Fi. Status: " +
+    V18Note("${BrandName.NAME}'s first brain, right on your phone. It sets itself up on Wi-Fi. Status: " +
         BackupStatus.line(state, BackupBrain.VERSION, mb, backAt) +
         BackupStatus.healthLine(BackupBrain.healthOk, BackupBrain.healthAt.takeIf { it > 0 }?.let { java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(it)) }.orEmpty())
             .let { if (it.isEmpty()) "" else " $it" })
@@ -89,7 +91,7 @@ internal fun BackupBrainSection() {
     Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
             Text("Wait before switching", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
-            Text("How long Blaze Cloud gets to start answering", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+            Text("How long ${BrandName.NAME} Cloud gets to start answering", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             fun set(sec: Int) { wait = sec; Settings.setStr("backup_ttft_ms", (sec * 1000L).toString()) }

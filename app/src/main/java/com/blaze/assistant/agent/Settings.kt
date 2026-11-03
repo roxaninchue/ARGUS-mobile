@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.SharedPreferences
 
@@ -73,7 +75,7 @@ object Settings {
         try {
             com.blaze.assistant.notify.Notifier.proactive(
                 "Your settings and chats came over from your old phone, but API keys and sign-ins can't move between phones. " +
-                    "Sign in to your Blaze account to sync your model keys back, then reconnect your accounts in Settings.",
+                    "Sign in to your ${BrandName.NAME} account to sync your model keys back, then reconnect your accounts in Settings.",
                 "", false)
         } catch (_: Exception) { }
     }

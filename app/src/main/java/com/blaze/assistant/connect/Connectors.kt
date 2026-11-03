@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -52,7 +54,7 @@ object Connectors {
             setupUrl = "https://console.cloud.google.com/apis/credentials"),
         Connector("github", "GitHub", Kind.DEVICE, "Notifications, issues, pull requests, repos",
             "https://github.com/login/device/code", "https://github.com/login/oauth/access_token", "repo notifications read:user",
-            help = "1. github.com → Settings → Developer settings → OAuth Apps → New OAuth App (any homepage/callback URL).\n2. Tick \"Enable Device Flow\".\n3. Paste the Client ID here, then Connect and enter the code Blaze shows.",
+            help = "1. github.com → Settings → Developer settings → OAuth Apps → New OAuth App (any homepage/callback URL).\n2. Tick \"Enable Device Flow\".\n3. Paste the Client ID here, then Connect and enter the code ${BrandName.NAME} shows.",
             setupUrl = "https://github.com/settings/developers"),
         Connector("spotify", "Spotify", Kind.LOOPBACK, "Play, pause, skip, search, now playing",
             "https://accounts.spotify.com/authorize", "https://accounts.spotify.com/api/token",
@@ -60,7 +62,7 @@ object Connectors {
             help = "1. developer.spotify.com → Dashboard → Create app.\n2. Redirect URI: $REDIRECT\n3. Tick Web API, save, and paste the Client ID here.",
             setupUrl = "https://developer.spotify.com/dashboard"),
         Connector("notion", "Notion", Kind.TOKEN, "Search pages, add notes",
-            help = "1. notion.so/my-integrations → New integration (Internal).\n2. Copy the Internal Integration Secret and paste it here.\n3. In Notion, open the pages Blaze may use → ••• → Connections → add your integration.",
+            help = "1. notion.so/my-integrations → New integration (Internal).\n2. Copy the Internal Integration Secret and paste it here.\n3. In Notion, open the pages ${BrandName.NAME} may use → ••• → Connections → add your integration.",
             setupUrl = "https://www.notion.so/my-integrations"),
         Connector("slack", "Slack", Kind.TOKEN, "Read channels, post messages",
             help = "1. api.slack.com/apps → Create New App → From scratch.\n2. OAuth & Permissions → User Token Scopes: channels:read, channels:history, chat:write, users:read.\n3. Install to workspace and paste the User OAuth Token (xoxp-…) here.",
@@ -107,7 +109,7 @@ object Connectors {
         if (available(id)) return oneClick(ctx, c).also { status(id, it) }
         withContext(Dispatchers.IO) { BlazeAccount.refreshProviders(true) }
         if (available(id)) return oneClick(ctx, c).also { status(id, it) }
-        return (if (!BlazeAccount.view.value.online) "Couldn't reach Blaze's sign-in service. Check your internet connection."
+        return (if (!BlazeAccount.view.value.online) "Couldn't reach ${BrandName.NAME}'s sign-in service. Check your internet connection."
                 else "One-tap Connect for ${c.name} is coming soon.").also { status(id, it) }
     }
 
@@ -161,7 +163,7 @@ object Connectors {
                     val line = sock.getInputStream().bufferedReader().readLine().orEmpty()   // GET /callback?code=…&state=… HTTP/1.1
                     val q = Uri.parse("http://x" + line.split(" ").getOrElse(1) { "" })
                     val ok = q.getQueryParameter("state") == st && q.getQueryParameter("code") != null
-                    val html = "<html><body style='font-family:sans-serif;padding:40px'><h2>${if (ok) "Connected to ${c.name}" else "Sign-in didn't finish"}</h2><p>You can go back to Blaze.</p></body></html>"
+                    val html = "<html><body style='font-family:sans-serif;padding:40px'><h2>${if (ok) "Connected to ${c.name}" else "Sign-in didn't finish"}</h2><p>You can go back to ${BrandName.NAME}.</p></body></html>"
                     sock.getOutputStream().write(("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ${html.toByteArray().size}\r\nConnection: close\r\n\r\n$html").toByteArray())
                     if (ok) q.getQueryParameter("code") else null
                 }
@@ -273,7 +275,7 @@ object Connectors {
             fn("spotify_control", "Pause, skip or go back on Spotify.", JSONObject().put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("pause", "next", "previous")))), listOf("action")),
         ),
         "notion" to listOf(
-            fn("notion_search", "Search the user's Notion pages shared with Blaze.", JSONObject().put("query", s("Words")), listOf("query")),
+            fn("notion_search", "Search the user's Notion pages shared with ${BrandName.NAME}.", JSONObject().put("query", s("Words")), listOf("query")),
             fn("notion_add_page", "Create a Notion page under a parent page (found by title).", JSONObject().put("parent", s("Parent page title")).put("title", s("New page title")).put("content", s("Text content")), listOf("parent", "title")),
         ),
         "slack" to listOf(
@@ -546,7 +548,7 @@ object Connectors {
             "notion_add_page" -> {
                 val parent = send("POST", "https://api.notion.com/v1/search", JSONObject().put("query", a.optString("parent"))
                     .put("filter", JSONObject().put("property", "object").put("value", "page")).put("page_size", 1), t, h)
-                    .optJSONArray("results")?.optJSONObject(0) ?: return "No Notion page called \"${a.optString("parent")}\" is shared with Blaze."
+                    .optJSONArray("results")?.optJSONObject(0) ?: return "No Notion page called \"${a.optString("parent")}\" is shared with ${BrandName.NAME}."
                 val txt = a.optString("content").take(1900)
                 val body = JSONObject().put("parent", JSONObject().put("page_id", parent.getString("id")))
                     .put("properties", JSONObject().put("title", JSONObject().put("title", JSONArray().put(JSONObject().put("text", JSONObject().put("content", a.optString("title")))))))

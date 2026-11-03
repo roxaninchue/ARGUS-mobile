@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -192,7 +194,7 @@ class SiteResolverTest {
         override fun site() = "acme.test"
         override fun step(what: String) { assertFalse("no raw ids in step lines: $what", Regex("\\be\\d+\\b").containsMatchIn(what)) }
         override suspend fun resolve(query: String) = res(query)
-        override suspend fun open(url: String): String { opened += url; page = if (url.contains("/login")) "login" else "home"; return "Opened on Blaze Phone.\n" + PhonePolicy.render(snapshot()!!) }
+        override suspend fun open(url: String): String { opened += url; page = if (url.contains("/login")) "login" else "home"; return "Opened on ${BrandName.NAME} Phone.\n" + PhonePolicy.render(snapshot()!!) }
         override suspend fun snapshot(): PhonePolicy.Snapshot? = when (page) {
             "home" -> PhonePolicy.Snapshot("Acme Rooms", "https://acme.test/", "Welcome to Acme Rooms",
                 listOf(PhonePolicy.Node("e1", "link", "Rooms", ""), PhonePolicy.Node("e2", "link", "Sign up", ""), PhonePolicy.Node("e3", "link", "Log in", "")), false)

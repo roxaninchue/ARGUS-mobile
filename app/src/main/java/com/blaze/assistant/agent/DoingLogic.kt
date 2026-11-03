@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import java.util.Calendar
 
 /**
@@ -9,7 +11,7 @@ import java.util.Calendar
 object DoingLogic {
     /** "Blaze · Tidy up phone storage" → "Tidy up phone storage"; empty → "Something I do for you". */
     fun friendlyName(name: String): String =
-        name.trim().removePrefix("Blaze \u00b7 ").removePrefix("Blaze - ").trim().replaceFirstChar { it.uppercase() }.ifBlank { "Something I do for you" }
+        name.trim().removePrefix("${BrandName.NAME} \u00b7 ").removePrefix("${BrandName.NAME} - ").trim().replaceFirstChar { it.uppercase() }.ifBlank { "Something I do for you" }
 
     private fun hm(h: Int, m: Int) = "%02d:%02d".format(h, m)
 

@@ -1,6 +1,6 @@
 ---
 name: study-flashcards
-description: Make and study flashcards in Blaze's Learn view (spaced repetition) instead of writing questions and answers in chat. Use for "make flashcards", "flashcards on…", "quiz me", "test me on…", "help me study / revise / memorise", "turn my notes into cards", or exam prep.
+description: Make and study flashcards in Argus's Learn view (spaced repetition) instead of writing questions and answers in chat. Use for "make flashcards", "flashcards on…", "quiz me", "test me on…", "help me study / revise / memorise", "turn my notes into cards", or exam prep.
 tags: [flashcards, flash cards, quiz, quiz me, test me, study, studying, revise, revision, memorise, memorize, exam, deck, learn, cards]
 version: 1
 ---

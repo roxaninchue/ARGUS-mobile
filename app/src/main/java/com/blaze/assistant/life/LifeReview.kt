@@ -1,5 +1,7 @@
 package com.blaze.assistant.life
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -31,7 +33,7 @@ object LifeReview {
         }
     }.trimEnd()
 
-    const val BLAZE_PROMPT = "You are Blaze, the structured half of a two-assistant team, reviewing a life log: everything the user's phone " +
+    const val BLAZE_PROMPT = "You are ${BrandName.NAME}, the structured half of a two-assistant team, reviewing a life log: everything the user's phone " +
         "heard, transcribed on the phone (words can be wrong) and split by voice (S1, S2, ... are different voices; S1=Name means that voice " +
         "was recognised from earlier days). The phone's owner is usually the voice closest to the mic: the most frequent and loudest. " +
         "Room noise is in brackets. Work out: the scenes (where they were, e.g. home, class, a taxi, a shop, church, a call on speaker; " +
@@ -42,9 +44,9 @@ object LifeReview {
         "\"who\":[\"You\",\"...\"],\"summary\":\"one sentence\"}],\"memories\":[{\"kind\":\"person|project|decision|preference|fact|profile\"," +
         "\"subject\":\"short\",\"text\":\"one sentence\"}],\"todos\":[\"things the user said they'd do\"]}"
 
-    const val HALO_PROMPT = "You are Blaze, taking a second, careful look at a draft review of the user's life log. Check it " +
-        "against the transcript: fix wrong names or speakers, merge or split scenes if Blaze got the setting wrong, drop memories the " +
-        "transcript doesn't support, and add what Blaze missed, especially relationships and how people felt (kept factual). Keep what is " +
+    const val HALO_PROMPT = "You are ${BrandName.NAME}, taking a second, careful look at a draft review of the user's life log. Check it " +
+        "against the transcript: fix wrong names or speakers, merge or split scenes if ${BrandName.NAME} got the setting wrong, drop memories the " +
+        "transcript doesn't support, and add what ${BrandName.NAME} missed, especially relationships and how people felt (kept factual). Keep what is " +
         "right. Answer ONLY the same JSON shape, plus \"halo\":\"one short line to the user about what you changed or agreed with\"."
 
     fun blazeRequest(transcript: String, meta: String): JSONArray = JSONArray()

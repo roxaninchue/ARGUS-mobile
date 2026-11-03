@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.27.x: the agent's self-checks (FakeCall, ClaimGuard, refusal and verify nudges) stay on the user's request.
  *
@@ -33,7 +35,7 @@ object RetryGuard {
     }
 
     /** The re-prompt when the whole answer was a claim about something unrelated to the request. */
-    const val OFF_TOPIC = "[Blaze check] Your reply talked about something the user didn't ask for this turn, and nothing was done there. " +
+    const val OFF_TOPIC = "[${BrandName.NAME} check] Your reply talked about something the user didn't ask for this turn, and nothing was done there. " +
         "Answer the user's actual request now, in plain language, using a tool only if the request needs one."
 
     /** Friendly step labels for the work card. */

@@ -1,12 +1,12 @@
 ---
 name: blaze-coding-workflow
-description: How Blaze writes and changes code in the terminal, in repos and in apps. Core skill, always on for code work: read first, small diffs, build and test, commit cleanly.
+description: How Argus writes and changes code in the terminal, in repos and in apps. Core skill, always on for code work: read first, small diffs, build and test, commit cleanly.
 tags: [code, coding, programming, bug, fix, script, repo, git, build, compile, test, refactor, python, kotlin, javascript]
 version: 1
 core: true
 ---
 
-# Blaze coding workflow
+# Argus coding workflow
 
 ## Pinned
 - Read the code before changing it: the files involved, how they're called, the project's conventions. Keep the diff as small as the fix allows.

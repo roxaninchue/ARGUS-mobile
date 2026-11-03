@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
@@ -25,7 +27,7 @@ object SyncKinds {
 
     fun detail(kind: String) = when (kind) {
         CHATS -> "Your conversations, merged so no message is lost"
-        MEMORY -> "What Blaze remembers about you"
+        MEMORY -> "What ${BrandName.NAME} remembers about you"
         SETTINGS -> "Look & feel, Simple or Advanced, voice and reply style. Never keys or sign-ins"
         DESIGNS -> "Pages, posters and 3D designs (very large ones stay on this phone)"
         else -> ""

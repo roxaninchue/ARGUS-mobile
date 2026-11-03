@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
@@ -191,8 +193,8 @@ object Playbooks {
 
     /** The whole system prompt of a specialist run (delegate with wait, or a background agent running as a specialist). */
     fun specialistSystem(s: Specialists.Spec, playbook: String, skills: String, now: String, memory: String, agentId: String? = null): String = buildString {
-        append("You are Blaze's ${s.name} specialist")
-        if (agentId != null) append(", working as background agent $agentId while the user keeps chatting with the main Blaze; nobody watches this chat")
+        append("You are ${BrandName.NAME}'s ${s.name} specialist")
+        if (agentId != null) append(", working as background agent $agentId while the user keeps chatting with the main ${BrandName.NAME}; nobody watches this chat")
         append(". ").append(s.prompt.trim())
         append(inject(s.name, playbook))
         append(skills)

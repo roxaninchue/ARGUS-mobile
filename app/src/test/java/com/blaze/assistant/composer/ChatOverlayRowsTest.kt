@@ -1,5 +1,7 @@
 package com.blaze.assistant.composer
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ChatMessage
 import com.blaze.assistant.agent.Role
 import org.junit.Assert.assertEquals
@@ -13,7 +15,7 @@ class ChatOverlayRowsTest {
 
     @Test fun stepsBetweenUserAndReplyBecomeOneChip() {
         val all = listOf(m(1, Role.USER, "open accessibility"), m(2, Role.STEP, "Opening accessibility settings"), m(3, Role.STEP, "Checking the screen"),
-            m(4, Role.BLAZE, "Switch on Blaze there."))
+            m(4, Role.BLAZE, "Switch on ${BrandName.NAME} there."))
         val rows = ChatOverlayLogic.rows(all, 0, busy = false)
         assertEquals(3, rows.size)
         val s = rows[1] as ChatOverlayLogic.Row.Steps

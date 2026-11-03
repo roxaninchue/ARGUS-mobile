@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -89,7 +91,7 @@ fun MediaTopBar(title: String, onAccount: () -> Unit, onClose: () -> Unit, actio
         Text(title, color = c.ink, fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f).semantics { heading() })
         actions()
-        RoundIcon(Icons.Rounded.Close, "Close and go back to Blaze chat", onClick = onClose)
+        RoundIcon(Icons.Rounded.Close, "Close and go back to ${BrandName.NAME} chat", onClick = onClose)
     }
 }
 
@@ -215,12 +217,12 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
         // The Blaze DJ tile.
         item {
             Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp).fillMaxWidth().clip(BlazeShapes.medium).glass(BlazeShapes.medium, GlassIntensity.Medium, shadow = false)
-                .clickable(role = Role.Button, onClickLabel = "Start Blaze DJ") { onDj() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                .clickable(role = Role.Button, onClickLabel = "Start ${BrandName.NAME} DJ") { onDj() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(52.dp).clip(BlazeShapes.pill).background(Brush.linearGradient(listOf(c.accent.copy(alpha = 0.9f), BlazeBrushTint.warm))),
                     contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Headphones, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp)) }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Blaze DJ", color = c.ink, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("${BrandName.NAME} DJ", color = c.ink, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Text("Songs from your library, picked for " + DjPlan.partOfDay(hour), color = c.sub, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = c.ink, modifier = Modifier.size(28.dp))
@@ -402,7 +404,7 @@ internal fun PlaylistPage(tile: MusicHome.Tile, np: NowPlaying, playList: (List<
                 Text(name, color = c.ink, fontSize = 24.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
                     AccountBadgeSmall()
-                    Text(listOf(if (tile.kind == "mix" || tile.kind == "smart") "Blaze" else "You", PlaylistMeta.total(tracks)).filter { it.isNotBlank() }.joinToString(" \u00b7 "),
+                    Text(listOf(if (tile.kind == "mix" || tile.kind == "smart") "${BrandName.NAME}" else "You", PlaylistMeta.total(tracks)).filter { it.isNotBlank() }.joinToString(" \u00b7 "),
                         color = c.sub, fontSize = 12.5.sp, modifier = Modifier.padding(start = 8.dp))
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -517,14 +519,14 @@ internal fun MusicCreatePage(onCreated: (MusicHome.Tile) -> Unit, onAskBlaze: (S
                 onCreated(MusicHome.Tile(id, n, emptyList(), "playlist"))
             }
         }
-        SectionTitle("Ask Blaze", Modifier.offset(x = (-16).dp))
+        SectionTitle("Ask ${BrandName.NAME}", Modifier.offset(x = (-16).dp))
         BlazeTextField(ask, { ask = it }, "Make a chill playlist", Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Make a chill playlist", "Songs for a workout", "Focus music for studying").forEach { s -> SmallChip(s, Icons.Rounded.AutoAwesome) { onAskBlaze(s) } }
         }
         Spacer(Modifier.height(10.dp))
-        PillButton("Ask Blaze", primary = false) { onAskBlaze(ask.ifBlank { "Make a chill playlist" }) }
+        PillButton("Ask ${BrandName.NAME}", primary = false) { onAskBlaze(ask.ifBlank { "Make a chill playlist" }) }
         Spacer(Modifier.height(150.dp))
     }
 }
@@ -544,7 +546,7 @@ internal fun DjSheet(onDismiss: () -> Unit) {
         val s = MusicService.current
         if (s == null) { ctx.startService(Intent(ctx, MusicService::class.java)); Toast.makeText(ctx, "Starting the player. Tap again in a moment.", Toast.LENGTH_SHORT).show() } else block(s)
     }
-    com.blaze.assistant.ui.BlazeDialog(onDismiss = onDismiss, title = "Blaze DJ", confirm = if (on) "Stop DJ" else "Start", onConfirm = {
+    com.blaze.assistant.ui.BlazeDialog(onDismiss = onDismiss, title = "${BrandName.NAME} DJ", confirm = if (on) "Stop DJ" else "Start", onConfirm = {
         if (on) svc { it.startDj(false) } else svc { it.djFresh(null) }
         onDismiss()
     }) {

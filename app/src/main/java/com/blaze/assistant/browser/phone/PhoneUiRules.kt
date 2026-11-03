@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.45.19 Blaze Phone UI fixes, the pure part (PhoneUiRulesTest, PhonePipTest): when the chat tile shows, what its chip
  * says, which buttons the full screen offers, and when the picture-in-picture window follows the user out of Blaze.
@@ -18,7 +20,7 @@ object PhoneUiRules {
     fun host(url: String): String = url.removePrefix("https://").removePrefix("http://").removePrefix("www.").substringBefore('/')
 
     fun pill(mode: PhonePolicy.Mode, step: String, reason: String?): String = when (mode) {
-        PhonePolicy.Mode.WAITING -> "Blaze needs you: " + (reason ?: "take control")
+        PhonePolicy.Mode.WAITING -> "${BrandName.NAME} needs you: " + (reason ?: "take control")
         PhonePolicy.Mode.USER -> "You're in control"
         PhonePolicy.Mode.OFF -> step.ifBlank { "Idle" }
         else -> step.ifBlank { "Browsing" }
@@ -33,7 +35,7 @@ object PhoneUiRules {
     const val TAKE_CONTROL = "Take control"
 
     /** The bar text while the user drives. */
-    fun controlLine(agentWaiting: Boolean): String = if (agentWaiting) "Blaze paused, you're in control" else "You're in control"
+    fun controlLine(agentWaiting: Boolean): String = if (agentWaiting) "${BrandName.NAME} paused, you're in control" else "You're in control"
 }
 
 /**
@@ -78,11 +80,11 @@ object PhonePip {
 
     /** The window's buttons, in order: Stop while a turn runs, and Open Blaze always. */
     fun actions(working: Boolean): List<String> = if (working) listOf(ACTION_STOP, ACTION_OPEN) else listOf(ACTION_OPEN)
-    fun title(action: String): String = if (action == ACTION_STOP) "Stop" else "Open Blaze"
+    fun title(action: String): String = if (action == ACTION_STOP) "Stop" else "Open ${BrandName.NAME}"
 
     /** The one line drawn over the live view in the window (null = just the page). */
     fun label(working: Boolean, mode: PhonePolicy.Mode, step: String): String? = when {
-        mode == PhonePolicy.Mode.WAITING -> "Blaze needs you"
+        mode == PhonePolicy.Mode.WAITING -> "${BrandName.NAME} needs you"
         step == "Stopped" -> "Stopped"
         !working -> "Done"
         else -> null

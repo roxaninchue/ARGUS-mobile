@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.os.Handler
 import android.os.Looper
 import android.webkit.WebView
@@ -186,7 +188,7 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
                 MascotGlyph(34.dp, pulse = busy)
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Ask Blaze about this page", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Glass.text))
+                    Text("Ask ${BrandName.NAME} about this page", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Glass.text))
                     Text(title.ifBlank { "This page" }, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
                 }

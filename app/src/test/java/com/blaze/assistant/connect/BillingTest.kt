@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.connect.Billing.Period
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -51,6 +53,6 @@ class BillingTest {
         assertEquals(364, me.daysLeft); assertEquals("Pro, yearly", Billing.historyLabel(me.payments[0])); assertEquals("Standard", Billing.historyLabel(me.payments[1]))
         assertEquals(Period.MONTH, me.payments[1].period)
         assertEquals("Choose monthly or yearly", Billing.errorLine(400, """{"error":{"message":"Choose monthly or yearly","code":"bad_period"}}"""))
-        assertEquals("Sign in to Blaze first.", Billing.errorLine(401, ""))
+        assertEquals("Sign in to ${BrandName.NAME} first.", Billing.errorLine(401, ""))
     }
 }

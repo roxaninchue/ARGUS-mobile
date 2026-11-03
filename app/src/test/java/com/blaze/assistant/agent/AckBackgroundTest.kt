@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.notify.MessageThread
 import com.blaze.assistant.notify.Notifier
 import com.blaze.assistant.notify.StatusNote
@@ -15,7 +17,7 @@ import org.junit.Test
 /** Work in the background, report when done (HQ 22 Oct 20:35 / 20:36); since 0.45.29 without any ack text. */
 class AckBackgroundTest {
 
-    private val greetings = listOf("hi", "Hey Blaze", "hello!", "good morning", "thanks", "thank you", "ok", "lol", "how are you?",
+    private val greetings = listOf("hi", "Hey ${BrandName.NAME}", "hello!", "good morning", "thanks", "thank you", "ok", "lol", "how are you?",
         "what's up", "gn", "yo halo", "bye", "nice", "cool")
 
     private val tasks = listOf(
@@ -46,7 +48,7 @@ class AckBackgroundTest {
         assertFalse(Notifier.statusInput().busy)
         assertNull(StatusNote.line(Notifier.statusInput()))
         assertFalse(MessageThread.FAILED_TITLE.contains("done", ignoreCase = true))
-        assertEquals("Blaze", QuietChannel.TITLE)
+        assertEquals("${BrandName.NAME}", QuietChannel.TITLE)
     }
 
     // ---------------- gateway `ack` event ----------------

@@ -1,5 +1,7 @@
 package com.blaze.assistant.bank
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.43.0 Bank mode, pure part (BankModeTest). Banking apps refuse to run, or blank their screens, when they see an
  * accessibility service from an app outside the store, apps drawing over other apps, the screen being read, and
@@ -130,13 +132,13 @@ object BankModeLogic {
     }
 
     // ---------- words ----------
-    const val NOTICE_TITLE = "Bank mode on \u2014 Blaze is stepping back"
+    const val NOTICE_TITLE = "Bank mode on \u2014 ${BrandName.NAME} is stepping back"
     const val NOTICE_TEXT = "Phone control, the floating button and screen reading are off so your bank app can run."
-    const val NOTICE_ACTION = "Turn Blaze back on"
-    const val SETTING_LINE = "Turns off phone control, the floating button and screen reading so banking apps work. Blaze never reads or touches banking apps."
+    const val NOTICE_ACTION = "Turn ${BrandName.NAME} back on"
+    const val SETTING_LINE = "Turns off phone control, the floating button and screen reading so banking apps work. ${BrandName.NAME} never reads or touches banking apps."
     const val STILL_BLOCKED = "If a bank still refuses: some banks also block phones with USB debugging, developer options or root turned on. " +
-        "Blaze can't change those; turn them off in Android settings, or ask your bank."
-    const val RESTORE_ASK = "Turn phone control back on: tap Blaze, then the switch."
+        "${BrandName.NAME} can't change those; turn them off in Android settings, or ask your bank."
+    const val RESTORE_ASK = "Turn phone control back on: tap ${BrandName.NAME}, then the switch."
 
     /**
      * v0.45.0 (#24): what the "turn phone control back on" notification says. [ignored]: how many earlier asks in a row
@@ -148,16 +150,16 @@ object BankModeLogic {
     fun restoreAsk(ignored: Int, simple: Boolean): RestoreAsk? = when {
         ignored >= RESTORE_GIVE_UP -> null
         ignored >= 2 -> RestoreAsk("Phone control is still off",
-            "Bank apps won't open while Blaze can control the phone, so Bank mode switched it off. Without it Blaze can't tap or read the screen for you. " +
-                "Tap here, then Blaze's switch, to turn it back on." + if (simple) "" else " (The optional computer command in Bank mode does this by itself.)")
+            "Bank apps won't open while ${BrandName.NAME} can control the phone, so Bank mode switched it off. Without it ${BrandName.NAME} can't tap or read the screen for you. " +
+                "Tap here, then ${BrandName.NAME}'s switch, to turn it back on." + if (simple) "" else " (The optional computer command in Bank mode does this by itself.)")
         else -> RestoreAsk("Bank mode is off", RESTORE_ASK)
     }
 
     /** The line on Bank mode's card when Blaze stopped asking. */
-    const val RESTORE_STOPPED = "Blaze stopped reminding you to turn phone control back on after Bank mode. Turn it on in Blaze's settings whenever you want Blaze to use the phone again."
+    const val RESTORE_STOPPED = "${BrandName.NAME} stopped reminding you to turn phone control back on after Bank mode. Turn it on in ${BrandName.NAME}'s settings whenever you want ${BrandName.NAME} to use the phone again."
     const val ADB_GRANT = "adb shell pm grant com.blaze.assistant android.permission.WRITE_SECURE_SETTINGS"
-    const val ADB_LINE = "Optional: with this one-time computer command, Blaze switches phone control back on by itself after Bank mode:"
-    const val REFUSE = "This is a banking app. Blaze doesn't read or touch banking apps. Ask the user to do this step themselves."
+    const val ADB_LINE = "Optional: with this one-time computer command, ${BrandName.NAME} switches phone control back on by itself after Bank mode:"
+    const val REFUSE = "This is a banking app. ${BrandName.NAME} doesn't read or touch banking apps. Ask the user to do this step themselves."
 
     /** Edits Android's enabled_accessibility_services list: [component] added (once) or removed, other services kept. */
     fun editServices(current: String?, component: String, enable: Boolean): String {

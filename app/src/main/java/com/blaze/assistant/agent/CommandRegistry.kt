@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.ui.Views
 import org.json.JSONArray
 import org.json.JSONObject
@@ -48,7 +50,7 @@ object CommandRegistry {
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Run one of Blaze's own / commands as if the user typed it: a view (/music, /gallery, /schedule, /doing, /look …) opens it, " +
+        .put("description", "Run one of ${BrandName.NAME}'s own / commands as if the user typed it: a view (/music, /gallery, /schedule, /doing, /look …) opens it, " +
             "a prompt command (/summarize, /translate, /brief …) gives you its prompt to follow, an app command (/autopilot, /voice, /orb, /plan …) runs it. " +
             "/stop, /new, /clear and /retry are for the user only. The full list is in blaze_now.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()

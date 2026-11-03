@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * Views first (v0.23.0). Blazeinchue's rule: Blaze always uses its views. Output that fits a view (a deck of
  * flashcards, a page, a reminder, a picture, a memory…) is made THERE, the view is opened or linked,
@@ -54,7 +56,7 @@ object ViewRouter {
             "UI mockups and app screens, diagrams and charts as files to save or export, posters, flyers, slides, floor plans, product mockups, simple games",
             listOf(Designs.TOOL, "file_write", "open_view"), listOf("terminal", "media"),
             r(DESIGN_STRONG + "|" + DESIGN_OBJECT)),
-        Spec("gallery", "Gallery", "images, pictures, logos, wallpapers, beats, music and other media Blaze makes",
+        Spec("gallery", "Gallery", "images, pictures, logos, wallpapers, beats, music and other media ${BrandName.NAME} makes",
             listOf("generate_image", "gallery"), listOf("media"),
             r("""\b(?:(?:make|generate|draw|create|paint|produce)\b.{0,40}\b(?:image|picture|pic|photo|logo|icon|wallpaper|art|artwork|illustration|beat|beats|song|instrumental|sticker|avatar)s?|my gallery|in (?:the|my) gallery)\b""")),
         Spec("skills", "Skills", "saved methods and workflows (skills), installing skill packs",
@@ -70,7 +72,7 @@ object ViewRouter {
             listOf("memory_save", "remember", "forget", "memory_search"), emptyList(),
             r("""\b(remember (?:that|this|my|me)|don'?t forget (?:that|my)|forget (?:that|my|about)|what do you (?:know|remember)|keep in mind|""" +
                 """(?:show|list|see|view|read|display)\b.{0,20}\b(?:your |my |all |saved )?memories|(?:your|my) memories)\b""")),
-        Spec("browser", "Browser", "websites Blaze opens, fills in or signs in to (background tabs; browser_show only when the user must step in)",
+        Spec("browser", "Browser", "websites ${BrandName.NAME} opens, fills in or signs in to (background tabs; browser_show only when the user must step in)",
             listOf("browser_open", "browser_click", "browser_type", "browser_secure_input"), listOf("browser"),
             r("""(\b(?:open|go to|visit|log ?in to|sign ?in to|sign up (?:on|for)|fill (?:in|out))\b.{0,40}(?:\bsite\b|\bwebsite\b|\bportal\b|\.com\b|\.org\b|\.zm\b|https?://)|https?://)""")),
     )
@@ -120,7 +122,7 @@ object ViewRouter {
     fun routeAll(text: String): List<Spec> = if (route(text) == null) emptyList() else specs.filter { it.cue.containsMatchIn(text) }
 
     val PROMPT: String = buildString {
-        append("\n\nVIEWS (always on; you use them without being asked). Blaze has views, screens the user can open from /views. ")
+        append("\n\nVIEWS (always on; you use them without being asked). ${BrandName.NAME} has views, screens the user can open from /views. ")
         append("HARD RULE: output that fits a view is CREATED in that view with its tool, then the view is opened (open_view) or named so the user can tap it, ")
         append("and the chat reply is one or two short lines (what you made, where). Never dump it as text in chat instead. ")
         append("You don't need the user to say \"use the view\": every turn, pick the view that fits.\n")
@@ -130,7 +132,7 @@ object ViewRouter {
             "2D art (svg), sites, UI mockups, diagrams, charts, posters, slides, floor plans, product mockups, games (html). The Design view opens by itself. " +
             "EXCEPT a diagram, flowchart or chart asked for in chat: draw it inline in the reply (```mermaid / ```chart), no design tool, files or preview; Design only when they ask to save, export, edit or make a file. " +
             "Follow-ons (\"show the engine\", \"make it taller\", \"add fins\") change the CURRENT design with design action=update, never a new one or a text answer.\n")
-        append("- Never say you created, updated or opened something in a view (\"I've updated the design\", \"view it in the design section\") unless that view's tool succeeded this turn; Blaze checks.\n")
+        append("- Never say you created, updated or opened something in a view (\"I've updated the design\", \"view it in the design section\") unless that view's tool succeeded this turn; ${BrandName.NAME} checks.\n")
         append("- \"Remind me\" or anything repeating → Schedule (create_routine / schedule_command / create_trigger). Pictures and beats → Gallery. A method or multi-step task to reuse → Skills (save_workflow with trigger, steps, checks).\n")
         append("- STAGE FIRST (0.46): when the chat Stage can host it (timer, music, video, quiz, flashcards, plan, note), show it in place with stage_show instead of opening a view; " +
             "the view still holds the data (a deck is still made with flashcards add). Open a view only when the user asks for it or the Stage can't host it.\n")
@@ -161,7 +163,7 @@ object ViewRouter {
         "memory" -> "\nREQUIRED VIEW THIS TURN: Memory. Save, update or forget with memory_save / remember / forget (or look up with memory_search); confirm in one line. " +
             "To show what you remember (\"show me your memories\", \"what do you know about me\"), call memory_search query=all and list the lines in chat grouped plainly " +
             "(about you, preferences, people, projects…), then one line on how to change or delete one. Never open Design or another view for this."
-        "browser" -> "\nREQUIRED VIEW THIS TURN: Browser. Do it in Blaze's background browser (browser_open, browser_click, browser_type, browser_secure_input); browser_show only if the user must step in."
+        "browser" -> "\nREQUIRED VIEW THIS TURN: Browser. Do it in ${BrandName.NAME}'s background browser (browser_open, browser_click, browser_type, browser_secure_input); browser_show only if the user must step in."
         else -> "\nREQUIRED VIEW THIS TURN: ${s.name}. Create the result there with ${s.tools.joinToString(" / ")}, open or link it, and reply briefly."
     }
 

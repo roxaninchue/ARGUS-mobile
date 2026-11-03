@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -57,7 +59,7 @@ object SpeedLog {
         fun p90(xs: List<Long>) = xs.sorted()[((xs.size - 1) * 9) / 10]
         val hdr = l.map { it.headersMs }.filter { it > 0 }
         return "\nFirst words on screen after Send (last ${shown.size}): median %.1f s, slow ones %.1f s".format(med(shown) / 1000.0, p90(shown) / 1000.0) +
-            (if (hdr.isNotEmpty()) "; Blaze Cloud answered (headers) in %.1f s median".format(med(hdr) / 1000.0) else "") + startLine(l)
+            (if (hdr.isNotEmpty()) "; ${BrandName.NAME} Cloud answered (headers) in %.1f s median".format(med(hdr) / 1000.0) else "") + startLine(l)
     }
 
     /** v0.45.8: "Send → working 16 ms, on the wire 180 ms (median)" for speed_stats; "" before any timed turn. */

@@ -1,5 +1,7 @@
 package com.blaze.assistant.appstore
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -80,7 +82,7 @@ class StoreCatalogTest {
         assertTrue(StoreTools.names.containsAll(setOf("store_search", "store_install", "store_update", "store_open", "store_status")))
         val install = defs.first { it.getString("name") == StoreTools.INSTALL }.getString("description")
         assertTrue(install.contains("Android's"))
-        assertFalse(install.contains("Blaze Phone"))
+        assertFalse(install.contains("${BrandName.NAME} Phone"))
     }
 
     @Test fun versions() {

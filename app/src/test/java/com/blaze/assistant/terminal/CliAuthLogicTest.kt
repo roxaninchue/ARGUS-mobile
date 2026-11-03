@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,6 +40,6 @@ class CliAuthLogicTest {
         assertEquals(CliAuthLogic.Need.CLEAR, CliAuthLogic.need(null, "tok", "u1"))
         assertEquals(CliAuthLogic.Need.NOTHING, CliAuthLogic.need(null, "", ""))
         assertFalse(CliAuthLogic.CLIENT.contains("Hark"))
-        assertTrue(CliAuthLogic.CLIENT.startsWith("Blaze CLI"))
+        assertTrue(CliAuthLogic.CLIENT.startsWith("${BrandName.NAME} CLI"))
     }
 }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -179,7 +181,7 @@ class DownloadLogicTest {
         assertEquals(60 + 100 + DlLogic.SPACE_MARGIN, DlLogic.spaceNeeded(j))
         assertFalse(DlLogic.hasSpace(1000, j))
         assertEquals("AC-DC- Back in Black.m4a", DlLogic.fileName("AC/DC: Back in Black", "m4a"))
-        assertEquals("Blaze.mp4", DlLogic.fileName("...", "mp4"))
+        assertEquals("${BrandName.NAME}.mp4", DlLogic.fileName("...", "mp4"))
     }
 
     @Test fun expiryFromUrl() {

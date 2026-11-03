@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -273,7 +275,7 @@ object DevTools {
     private fun fn(name: String, desc: String, props: JSONObject, req: List<String>) = JSONObject().put("type", "function").put("function",
         JSONObject().put("name", name).put("description", desc).put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(req))))
     private fun p(t: String, d: String) = JSONObject().put("type", t).put("description", d)
-    private const val PATHS = "Path: ~/x (Blaze home, = /root/phone in Linux), /root/x or linux:/x (inside Alpine), /sdcard/... (phone storage)."
+    private const val PATHS = "Path: ~/x (${BrandName.NAME} home, = /root/phone in Linux), /root/x or linux:/x (inside Alpine), /sdcard/... (phone storage)."
 
     fun tools(): List<JSONObject> = listOf(
         fn("file_read", "Read a text file with line numbers. Prefer this over cat. $PATHS",
@@ -298,10 +300,10 @@ object DevTools {
         fn("http_request", "Call any HTTP API: method, headers, JSON or form body. Returns status and body (JSON pretty-printed). Use for APIs; fetch_page is for reading web pages.",
             JSONObject().put("url", p("string", "URL")).put("method", p("string", "GET, POST, PUT, PATCH, DELETE")).put("headers", p("object", "Header map"))
                 .put("body", p("string", "Request body (JSON text or form)")).put("save_to", p("string", "Save the response to this file instead")), listOf("url")),
-        fn("download_file", "Download a file (up to 500 MB) into Blaze's home, default ~/downloads/.",
+        fn("download_file", "Download a file (up to 500 MB) into ${BrandName.NAME}'s home, default ~/downloads/.",
             JSONObject().put("url", p("string", "URL")).put("path", p("string", "Where to save")), listOf("url")),
-        fn("export_file", "Copy a file from Blaze's home to the phone's Downloads/Blaze folder so the user can open it, optionally opening the share sheet.",
-            JSONObject().put("path", p("string", "File in Blaze's home")).put("share", p("boolean", "Open the share sheet")), listOf("path")),
+        fn("export_file", "Copy a file from ${BrandName.NAME}'s home to the phone's Downloads/Blaze folder so the user can open it, optionally opening the share sheet.",
+            JSONObject().put("path", p("string", "File in ${BrandName.NAME}'s home")).put("share", p("boolean", "Open the share sheet")), listOf("path")),
         fn("terminal_status", "Check the terminal: shell, Linux, which tools are installed (python, node, git...), free space, running jobs. Call before assuming a tool exists.", JSONObject(), emptyList()),
     )
 }

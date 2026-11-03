@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,7 +68,7 @@ internal fun SellerPage(digest0: Boolean? = null) {
         }.padding(horizontal = 18.dp), contentAlignment = Alignment.Center) { ButtonText("Save brand kit", color = Color.White) }
         if (saved.isNotBlank()) Label(saved, color = c.accent, size = 9.sp, modifier = Modifier.padding(start = 12.dp))
     }
-    Text("Or ask Blaze: \u201cread my brand from homeglow.store\u201d. Kept in ~/.blaze/brand.json, the same shape as Blaze Desktop's.",
+    Text("Or ask ${BrandName.NAME}: \u201cread my brand from homeglow.store\u201d. Kept in ~/.blaze/brand.json, the same shape as ${BrandName.NAME} Desktop's.",
         modifier = Modifier.padding(top = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))
     Spacer(Modifier.height(18.dp))
     Label("Jobs", modifier = Modifier.padding(bottom = 4.dp))
@@ -74,7 +76,7 @@ internal fun SellerPage(digest0: Boolean? = null) {
         digest = !digest; Seller.setDigest(digest) }
     Spacer(Modifier.height(8.dp))
     Label("Customer replies from your PC", modifier = Modifier.padding(bottom = 6.dp))
-    Text("Blaze Desktop can draft WhatsApp replies and send them through this phone over Blaze Link. Every one shows a card here first (even in Autopilot) and only goes when you tap Send.",
+    Text("${BrandName.NAME} Desktop can draft WhatsApp replies and send them through this phone over ${BrandName.NAME} Link. Every one shows a card here first (even in Autopilot) and only goes when you tap Send.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
     Text("Skills: content-calendar, product-listing, ad-lab, research-brief, whatsapp-replies, weekly-digest (Settings \u203a Skill library).",
         modifier = Modifier.padding(top = 14.dp, bottom = 18.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))

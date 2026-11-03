@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -30,7 +32,7 @@ class HandoffTest {
         assertTrue(Handoff.slowFailure(TurnDeadline.line(300_000)))
         assertTrue(Handoff.slowFailure("error code: 1102", 503))
         assertTrue(Handoff.slowFailure("whatever", 504))
-        assertFalse(Handoff.slowFailure("Sign in to Blaze Cloud", 401))
+        assertFalse(Handoff.slowFailure("Sign in to ${BrandName.NAME} Cloud", 401))
         assertFalse(Handoff.slowFailure("Credits used up.", 402))
         assertFalse(Handoff.slowFailure("bad request timeout field", 400))
         assertTrue(Handoff.slowFailure("rate limited, busy", 429))

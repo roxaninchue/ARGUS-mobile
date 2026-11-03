@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -19,7 +21,7 @@ class RequestBudgetTest {
 
     private fun bigRequest(steps: Int, resultChars: Int): Pair<JSONArray, JSONArray> {
         val m = JSONArray()
-        m.put(JSONObject().put("role", "system").put("content", "You are Blaze. " + "Rules and context. ".repeat(900)))   // ~17 KB
+        m.put(JSONObject().put("role", "system").put("content", "You are ${BrandName.NAME}. " + "Rules and context. ".repeat(900)))   // ~17 KB
         m.put(JSONObject().put("role", "user").put("content", "Find the three best budget phones and compare them"))
         for (s in 0 until steps) {
             val id = "call_$s"

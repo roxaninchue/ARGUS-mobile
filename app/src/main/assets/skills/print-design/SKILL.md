@@ -5,7 +5,7 @@ tags: [print, poster, flyer, business-card, pdf, design]
 version: 1
 ---
 
-> **On the phone:** files go under `~` (/root/phone). Preview HTML/SVG with `preview_server` (there is no Design tab here); install missing tools in Blaze's Alpine Linux with run_shell (`apk add …`, `pip install …`).
+> **On the phone:** files go under `~` (/root/phone). Preview HTML/SVG with `preview_server` (there is no Design tab here); install missing tools in Argus's Alpine Linux with run_shell (`apk add …`, `pip install …`).
 
 # Print design
 

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.45.20 (feature batch item 9, the duo rule of 2026-10-21): @all no longer gets two full answers at once ("both
  * yapping"). Blaze is the doer and answers first (the work, the tools when the turn needs them). Halo then sees Blaze's
@@ -22,11 +24,11 @@ object DuoAll {
         "[[to: user]] if you asked the user something, else [[done]]."
 
     fun haloSystem(base: String, blazeAnswer: String): String = base +
-        "\nThe user wrote to you and Blaze together (@all). Blaze has ALREADY answered; here is Blaze's answer:\n\"\"\"\n" +
+        "\nThe user wrote to you and ${BrandName.NAME} together (@all). ${BrandName.NAME} has ALREADY answered; here is ${BrandName.NAME}'s answer:\n\"\"\"\n" +
         blazeAnswer.take(4000) + "\n\"\"\"\n" +
-        "Your job: be brief and accurate. If Blaze's answer is right and complete, reply with exactly $QUIET and nothing else. " +
-        "Otherwise add ONLY what Blaze missed or got wrong, in one or two short sentences. Never repeat, rephrase or praise " +
-        "Blaze's answer, never greet again if Blaze already greeted, and never use tools for this. No control tags other than $QUIET."
+        "Your job: be brief and accurate. If ${BrandName.NAME}'s answer is right and complete, reply with exactly $QUIET and nothing else. " +
+        "Otherwise add ONLY what ${BrandName.NAME} missed or got wrong, in one or two short sentences. Never repeat, rephrase or praise " +
+        "${BrandName.NAME}'s answer, never greet again if ${BrandName.NAME} already greeted, and never use tools for this. No control tags other than $QUIET."
 
     private val tag = Regex("""\[\[[^\]]*\]\]""")
     private val words = Regex("[\\p{L}\\p{N}']+")

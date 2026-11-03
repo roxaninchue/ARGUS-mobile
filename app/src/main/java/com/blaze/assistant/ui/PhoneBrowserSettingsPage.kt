@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -33,13 +35,13 @@ fun PhoneBrowserSettingsPage() {
     PhoneBrowser.init(ctx)
     val sites = remember(tick) { PhoneBrowser.sites() }
     Spacer(Modifier.height(10.dp))
-    Text("Blaze Phone is Blaze's own phone screen: it browses, signs in and books for you in the background, and you can watch it " +
+    Text("${BrandName.NAME} Phone is ${BrandName.NAME}'s own phone screen: it browses, signs in and books for you in the background, and you can watch it " +
         "live in the chat or take control. It keeps its sign-ins per site, apart from your own browser." +
-        if (!PhoneBrowser.multiProfile) " This phone's WebView can't keep separate profiles, so Blaze Phone shares cookies with Blaze's browser (not its private tabs)." else "",
+        if (!PhoneBrowser.multiProfile) " This phone's WebView can't keep separate profiles, so ${BrandName.NAME} Phone shares cookies with ${BrandName.NAME}'s browser (not its private tabs)." else "",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
     Spacer(Modifier.height(14.dp))
     Rows {
-        KitRow("Open Blaze Phone", "Watch it, or use it yourself", first = true, onClick = { PhoneBrowserActivity.open(ctx, control = false) }) {
+        KitRow("Open ${BrandName.NAME} Phone", "Watch it, or use it yourself", first = true, onClick = { PhoneBrowserActivity.open(ctx, control = false) }) {
             Text("\u2192", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
         }
     }
@@ -55,8 +57,8 @@ fun PhoneBrowserSettingsPage() {
     }
     Spacer(Modifier.height(18.dp))
     Rows {
-        KitRow(if (sure) "Tap again to clear everything" else "Clear Blaze Phone data", "Every Blaze Phone sign-in, cookie and saved site data", first = true,
-            onClick = { if (!sure) sure = true else { val n = PhoneBrowser.clearAll(); sure = false; note = "Cleared Blaze Phone data ($n sessions)."; tick++ } })
+        KitRow(if (sure) "Tap again to clear everything" else "Clear ${BrandName.NAME} Phone data", "Every ${BrandName.NAME} Phone sign-in, cookie and saved site data", first = true,
+            onClick = { if (!sure) sure = true else { val n = PhoneBrowser.clearAll(); sure = false; note = "Cleared ${BrandName.NAME} Phone data ($n sessions)."; tick++ } })
     }
     if (note.isNotBlank()) { Spacer(Modifier.height(10.dp)); Label(note) }
 }

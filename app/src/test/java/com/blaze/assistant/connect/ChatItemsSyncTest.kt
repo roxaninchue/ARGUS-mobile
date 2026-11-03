@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -59,13 +61,13 @@ class ChatItemsSyncTest {
         b = Phone(tmp.newFolder("b"), server, key)
     }
 
-    private fun oldChat(vararg m: Triple<String, String, Long>) = JSONObject().put("id", "main").put("title", "Blaze").put("updated", 10)
+    private fun oldChat(vararg m: Triple<String, String, Long>) = JSONObject().put("id", "main").put("title", "${BrandName.NAME}").put("updated", 10)
         .put("messages", JSONArray().apply { m.forEachIndexed { i, (role, text, at) -> put(JSONObject().put("id", i + 1).put("role", role).put("text", text).put("at", at)) } })
 
     private fun kinds() = server.rows.keys.groupingBy { it.substringBefore('|') }.eachCount()
 
     @Test fun oldChatsMigrateAndRoundTripAsMessages() {
-        a.write("main", oldChat(Triple("USER", "hello", 100), Triple("BLAZE", "hi there", 110), Triple("USER", "how are you", 120)))
+        a.write("main", oldChat(Triple("USER", "hello", 100), Triple("${BrandName.UPPER}", "hi there", 110), Triple("USER", "how are you", 120)))
         val r = a.sync()
         assertEquals(4, r.pushed)                       // the chat item + one item per message
         assertEquals(mapOf("chat" to 1, "msg" to 3), kinds())
@@ -80,7 +82,7 @@ class ChatItemsSyncTest {
     }
 
     @Test fun aNewMessageIsOneSmallItemAndAReactionIsOneTinyItem() {
-        a.write("main", oldChat(Triple("USER", "hello", 100), Triple("BLAZE", "hi there", 110)))
+        a.write("main", oldChat(Triple("USER", "hello", 100), Triple("${BrandName.UPPER}", "hi there", 110)))
         a.sync(); b.sync()
         a.add("main", "USER", "one more", 200, gid = "devA0000-1")
         assertEquals(2, a.sync().pushed)               // that message + the chat item (its newest messages changed)
@@ -107,7 +109,7 @@ class ChatItemsSyncTest {
         a.sync(); b.sync()
         a.add("main", "USER", "A says hi", 200, gid = "devA0000-1")
         b.add("main", "USER", "B says hello", 250, gid = "devB0000-1")
-        b.add("main", "BLAZE", "B's reply", 260, gid = "devB0000-2")
+        b.add("main", "${BrandName.UPPER}", "B's reply", 260, gid = "devB0000-2")
         a.sync(); b.sync(); a.sync()
         val want = listOf("start", "A says hi", "B says hello", "B's reply")
         assertEquals(want, a.texts("main")); assertEquals(want, b.texts("main"))
@@ -119,15 +121,15 @@ class ChatItemsSyncTest {
 
     @Test fun twoBubblesOfOneReplyAtTheSameMomentStaySeparate() {
         a.write("main", oldChat(Triple("USER", "two things", 100)))
-        a.add("main", "BLAZE", "Answer one", 300, gid = "devA0000-1")
-        a.add("main", "BLAZE", "Answer two", 300, gid = "devA0000-2")
+        a.add("main", "${BrandName.UPPER}", "Answer one", 300, gid = "devA0000-1")
+        a.add("main", "${BrandName.UPPER}", "Answer two", 300, gid = "devA0000-2")
         a.sync(); b.sync()
         assertEquals(listOf("two things", "Answer one", "Answer two"), b.texts("main"))
     }
 
     @Test fun theSameMessageChangedOnBothPhonesSettlesOnTheFullerCopy() {
         a.write("main", oldChat(Triple("USER", "q", 100)))
-        a.add("main", "BLAZE", "Half a rep", 200, gid = "devA0000-1")
+        a.add("main", "${BrandName.UPPER}", "Half a rep", 200, gid = "devA0000-1")
         a.sync(); b.sync()
         a.edit("main") { it.getJSONArray("messages").getJSONObject(1).put("text", "Half a reply that finished.") }
         b.edit("main") { it.getJSONArray("messages").getJSONObject(1).put("meta", "chip") }
@@ -138,7 +140,7 @@ class ChatItemsSyncTest {
     }
 
     @Test fun aMessageThatLeftOnePhoneIsNeverDeletedElsewhere() {
-        a.write("main", oldChat(Triple("USER", "keep me", 100), Triple("BLAZE", "and me", 110)))
+        a.write("main", oldChat(Triple("USER", "keep me", 100), Triple("${BrandName.UPPER}", "and me", 110)))
         a.sync(); b.sync()
         a.edit("main") { o -> o.put("messages", JSONArray().put(o.getJSONArray("messages").get(1))) }   // trimmed / overwritten on A
         a.sync(); b.sync()
@@ -170,7 +172,7 @@ class ChatItemsSyncTest {
         val cChats = ChatAdapter({ cDir })
         var cState: String? = null
         fun cSync() = SyncEngine(server, listOf(cChats), key, JsonSyncState({ cState }, { cState = it }), { 5_000_000L }).run()
-        File(cDir, "main.json").writeText(oldChat(Triple("USER", "from the old phone", 100), Triple("BLAZE", "old reply", 110)).toString())
+        File(cDir, "main.json").writeText(oldChat(Triple("USER", "from the old phone", 100), Triple("${BrandName.UPPER}", "old reply", 110)).toString())
         cSync()
         a.sync()
         assertEquals(listOf("from the old phone", "old reply"), a.texts("main"))
@@ -192,7 +194,7 @@ class ChatItemsSyncTest {
         // Sync puts a message from the other phone into its parsed copy …
         assertTrue(sp.edit("main", create = false) { o -> MessageAdapter.put(o, "devB0000-1", JSONObject().put("role", "USER").put("text", "from B").put("at", 150)) })
         // … and the app saves the chat with a new message before the round writes.
-        a.add("main", "BLAZE", "app reply", 200, gid = "devA0000-1")
+        a.add("main", "${BrandName.UPPER}", "app reply", 200, gid = "devA0000-1")
         sp.flush()
         assertEquals(listOf("one", "from B", "app reply"), a.texts("main"))
     }
@@ -217,8 +219,8 @@ class ChatItemsSyncTest {
      */
     @Test fun restoringALongChatIndexesItOnceNotPerMessage() {
         val n = 1500
-        val o = JSONObject().put("id", "main").put("title", "Blaze").put("updated", 10).put("messages", JSONArray().apply {
-            for (i in 0 until n) put(JSONObject().put("id", i + 1).put("role", if (i % 2 == 0) "USER" else "BLAZE").put("text", "message number $i " + "x".repeat(i % 40)).put("at", 1_000L + i))
+        val o = JSONObject().put("id", "main").put("title", "${BrandName.NAME}").put("updated", 10).put("messages", JSONArray().apply {
+            for (i in 0 until n) put(JSONObject().put("id", i + 1).put("role", if (i % 2 == 0) "USER" else "${BrandName.UPPER}").put("text", "message number $i " + "x".repeat(i % 40)).put("at", 1_000L + i))
         })
         a.write("main", o)
         assertEquals(n + 1, a.sync().pushed)

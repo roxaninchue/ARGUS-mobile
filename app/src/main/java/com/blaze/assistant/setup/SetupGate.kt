@@ -1,5 +1,7 @@
 package com.blaze.assistant.setup
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -25,13 +27,13 @@ object SetupGate {
 
     /** Order is the order of the columns on screen. */
     val deps = listOf(
-        Dep("notifications", "Notifications", "So Blaze can show what it's doing (with Stop) and tell you when a task is done.", required = true),
-        Dep("linux", "Terminal (Linux)", "A small Linux on the phone (about 3.5 MB) for scripts, files, code and the tools Blaze runs.", required = true),
+        Dep("notifications", "Notifications", "So ${BrandName.NAME} can show what it's doing (with Stop) and tell you when a task is done.", required = true),
+        Dep("linux", "Terminal (Linux)", "A small Linux on the phone (about 3.5 MB) for scripts, files, code and the tools ${BrandName.NAME} runs.", required = true),
         // 0.45.20 (item 15): no "accessibility" step; the first task that needs phone control asks in chat (agent/PermissionGate).
-        Dep("mic", "Microphone", "For talking to Blaze and \u201cHey Blaze\u201d.", required = false),
-        Dep("overlay", "Show over other apps", "So Blaze can pop up wherever you are.", required = false),
-        Dep("battery", "Keep working in the background", "Stops the phone putting Blaze to sleep halfway through a job.", required = false),
-        Dep("desktop", "Pair with Blaze Desktop", "Share chats, keys and files with Blaze on your computer (scan the code in Blaze Desktop \u203a Phone).", required = false),
+        Dep("mic", "Microphone", "For talking to ${BrandName.NAME} and \u201cHey ${BrandName.NAME}\u201d.", required = false),
+        Dep("overlay", "Show over other apps", "So ${BrandName.NAME} can pop up wherever you are.", required = false),
+        Dep("battery", "Keep working in the background", "Stops the phone putting ${BrandName.NAME} to sleep halfway through a job.", required = false),
+        Dep("desktop", "Pair with ${BrandName.NAME} Desktop", "Share chats, keys and files with ${BrandName.NAME} on your computer (scan the code in ${BrandName.NAME} Desktop \u203a Phone).", required = false),
     )
 
     fun dep(id: String): Dep? = deps.firstOrNull { it.id == id }

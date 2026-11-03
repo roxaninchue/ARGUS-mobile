@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -35,7 +37,7 @@ object PhoneTools {
                 .put("text", p("string", "Visible text or description of the element, instead of a number"))
                 .put("long_press", p("boolean", "Long-press instead of tap"))
                 .put("want", JSONObject().put("type", "string").put("enum", JSONArray(listOf("on", "off")))
-                    .put("description", "For a switch: the state it should end in. Blaze reads it first and doesn't tap if it already is."))))
+                    .put("description", "For a switch: the state it should end in. ${BrandName.NAME} reads it first and doesn't tap if it already is."))))
         put(fn("type_text", "Type into a text field (replaces its content). A search icon/bar works too: it's tapped first. Set submit=true to press Enter/Search after typing.",
             JSONObject().put("element", p("integer", "Element number of the field"))
                 .put("text", p("string", "Text to type"))
@@ -89,8 +91,8 @@ object PhoneTools {
 
     suspend fun run(ctx: Context, name: String, args: JSONObject): String {
         val svc = BlazeAccessibilityService.instance
-        fun needSvc() = "Phone control is off right now. Blaze's browser tools (browser_*) and background tools don't need it, so keep going with those if they fit. " +
-            "For the screen itself, the chat shows a one-tap 'Turn on' banner; tell the user to tap it (it opens Blaze's switch in Accessibility settings)."
+        fun needSvc() = "Phone control is off right now. ${BrandName.NAME}'s browser tools (browser_*) and background tools don't need it, so keep going with those if they fit. " +
+            "For the screen itself, the chat shows a one-tap 'Turn on' banner; tell the user to tap it (it opens ${BrandName.NAME}'s switch in Accessibility settings)."
         // v0.45.1: any phone tool but a read may change the screen, so the next read walks the tree again (ScreenReadCache).
         if (name != "read_screen") BlazeAccessibilityService.touched()
         return try {
@@ -135,7 +137,7 @@ object PhoneTools {
                     val h = args.getInt("hour"); val m = args.getInt("minute")
                     val pid = com.blaze.assistant.agent.Processes.nextId("alarm")
                     val name = args.optString("label").trim()
-                    val label = (if (name.isNotBlank()) "$name " else "") + "(Blaze $pid)"
+                    val label = (if (name.isNotBlank()) "$name " else "") + "(${BrandName.NAME} $pid)"
                     val i = Intent(AlarmClock.ACTION_SET_ALARM)
                         .putExtra(AlarmClock.EXTRA_HOUR, h)
                         .putExtra(AlarmClock.EXTRA_MINUTES, m)
@@ -202,7 +204,7 @@ object PhoneTools {
         val q = AppMatch.clean(name)
         if (q.isEmpty()) return "Couldn't tell which app '$name' means. Ask the user, or use the earlier context."
         // v0.45.6: Blaze's own screens open in-app (open_view), never by launching a look-alike app.
-        AppMatch.blazeView(name)?.let { v -> return "\u201c$name\u201d is part of Blaze itself: call open_view with view=$v (or music_ops for playback) instead of open_app." }
+        AppMatch.blazeView(name)?.let { v -> return "\u201c$name\u201d is part of ${BrandName.NAME} itself: call open_view with view=$v (or music_ops for playback) instead of open_app." }
         val labelled = apps.map { it.loadLabel(pm).toString() to it.activityInfo.packageName }
         // v0.45.6: exact package or exact label only, never a fuzzy match ("Blaze*" opened BlazeFX).
         val best = AppMatch.exact(name, labelled, ctx.packageName)

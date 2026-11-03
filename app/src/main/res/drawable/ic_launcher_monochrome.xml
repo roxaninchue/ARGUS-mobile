@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v0.24.5: themed icon = the mascot silhouette with its eyes cut out (alpha only). -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 0.52.1 Argus mark: the brushed-silver "A" of slanted bars (vector redraw of work/ref/argus/argus-logo-source.jpg). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd" android:pathData="M55.2,29 C47,32.6 34,47.2 34,59.6 C34,70.64 42.96,79.6 54,79.6 C65.04,79.6 74,70.64 74,59.6 C74,48.6 67.2,43.6 62.4,39.2 C60,37.2 59,33.6 58.8,30.6 C58.8,28.4 56.4,28 55.2,29 Z M47.8,53.4 h0 a1.8,1.8 0 0 1 1.8,1.8 v2.4 a1.8,1.8 0 0 1 -1.8,1.8 h-0 a1.8,1.8 0 0 1 -1.8,-1.8 v-2.4 a1.8,1.8 0 0 1 1.8,-1.8 Z M60,53.4 h0 a1.8,1.8 0 0 1 1.8,1.8 v2.4 a1.8,1.8 0 0 1 -1.8,1.8 h-0 a1.8,1.8 0 0 1 -1.8,-1.8 v-2.4 a1.8,1.8 0 0 1 1.8,-1.8 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M49.68,34.99 L52.04,38.74 L30.06,78.15 L23.00,79.55 Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M56.40,41.53 L58.40,44.84 L41.75,71.18 L36.52,73.62 Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M57.10,49.90 L61.89,50.77 L74.27,71.61 L69.30,71.18 Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M53.96,28.10 L85.00,79.90 L79.51,78.68 L54.22,36.82 Z"/>
 </vector>

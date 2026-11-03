@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
@@ -226,9 +228,9 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
             val msgs = org.json.JSONArray().put(org.json.JSONObject().put("role", "user").put("content", VideoSmart.recapPrompt(t.title, text)))
             val out = com.blaze.assistant.agent.LlmClient.complete(msgs, null, null, null, com.blaze.assistant.agent.LlmClient.Lane.BACKGROUND)
                 .optString("content").substringAfterLast("</think>").trim()
-            return out.ifBlank { "Blaze couldn't write a recap right now. Try again in a moment." }
+            return out.ifBlank { "${BrandName.NAME} couldn't write a recap right now. Try again in a moment." }
         } catch (e: Exception) {
-            return "Blaze couldn't write a recap: " + (e.message ?: "no connection")
+            return "${BrandName.NAME} couldn't write a recap: " + (e.message ?: "no connection")
         } finally { work.value = "" }
     }
 
@@ -1212,7 +1214,7 @@ private fun TracksDialog(a: VideoActivity, onDismiss: () -> Unit) {
         BlazeDialog("Translate subtitles to", confirm = "Back", onConfirm = { translating = false }, onDismiss = { translating = false }) {
             Column(Modifier.fillMaxWidth().heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
                 if (Subs.translationBase(available) == null)
-                    MText("This video has no YouTube captions, so Blaze's AI translates the subtitles it has. That takes a minute.", 12.5.sp, DialogColors.body, maxLines = 3)
+                    MText("This video has no YouTube captions, so ${BrandName.NAME}'s AI translates the subtitles it has. That takes a minute.", 12.5.sp, DialogColors.body, maxLines = 3)
                 langs.forEach { (code, label) -> Option(label, menu.any { it.selected && Subs.sameLang(it.lang, code) && it.label.contains("translat", true) }) {
                     translating = false; a.translateTo(code, scope) } }
             }
@@ -1352,7 +1354,7 @@ private fun VideoLibrary(a: VideoActivity) {
         item(span = { GridItemSpan(maxLineSpan) }) { MText(if (q.isBlank()) "All videos \u00b7 ${videos.size}" else "Results", 15.sp, c.ink, FontWeight.SemiBold) }
         if (shown.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
             EmptyState(if (q.isBlank()) "No videos yet" else "No match",
-                if (q.isBlank()) "Films you download in the Store, and videos in Blaze's Gallery, show up here and play offline." else "Nothing matches \u201c$q\u201d.")
+                if (q.isBlank()) "Films you download in the Store, and videos in ${BrandName.NAME}'s Gallery, show up here and play offline." else "Nothing matches \u201c$q\u201d.")
         }
         items(VideoKeys.unique(shown) { it.key }, key = { "v|" + it.key }) { t ->
             var menu by remember { mutableStateOf(false) }

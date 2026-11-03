@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -35,7 +37,7 @@ object TurnContext {
     /** What's new in the version the user just updated to (short, plain words). */
     val NEW_IN: Map<String, String> = mapOf(
         "0.45.8" to "send starts instantly; theme on every screen; full-screen Design",
-        "0.45.9" to "Blaze knows today's schedule, weather and open tasks; no memory saves for small talk",
+        "0.45.9" to "${BrandName.NAME} knows today's schedule, weather and open tasks; no memory saves for small talk",
     )
     /** The release whose news is shown (0.45.9 users still hear about 0.45.8 first, as agreed). */
     const val NEW_IN_VERSION = "0.45.8"

@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.connect.Connectors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -47,7 +49,7 @@ object Git {
     suspend fun run(a: JSONObject): String = withContext(Dispatchers.IO) {
         Terminal.setup()
         if (!Linux.installed()) {
-            if (!Linux.supported()) return@withContext "Git needs Blaze's Linux, which this phone's CPU doesn't support. Use termux_run with git instead if Termux is installed."
+            if (!Linux.supported()) return@withContext "Git needs ${BrandName.NAME}'s Linux, which this phone's CPU doesn't support. Use termux_run with git instead if Termux is installed."
             Linux.install()
             if (!Linux.installed()) return@withContext "Couldn't set up Linux for git: ${Linux.status.value}"
         }
@@ -67,10 +69,10 @@ object Git {
             setup.append("git config --global --get user.email >/dev/null || { ")
             val id = identity(token)
             if (id != null) setup.append("git config --global user.name ${q(id.first)}; git config --global user.email ${q(id.second)}; ")
-            else setup.append("git config --global user.name 'Blaze'; git config --global user.email 'blaze@localhost'; ")
+            else setup.append("git config --global user.name '${BrandName.NAME}'; git config --global user.email 'blaze@localhost'; ")
             setup.append("}\n")
         } else {
-            setup.append("git config --global --unset credential.helper 2>/dev/null\ngit config --global --get user.email >/dev/null || { git config --global user.name 'Blaze'; git config --global user.email 'blaze@localhost'; }\n")
+            setup.append("git config --global --unset credential.helper 2>/dev/null\ngit config --global --get user.email >/dev/null || { git config --global user.name '${BrandName.NAME}'; git config --global user.email 'blaze@localhost'; }\n")
         }
         setup.append("git config --global init.defaultBranch main; git config --global pull.rebase true; git config --global core.pager cat\n")
 
@@ -107,7 +109,7 @@ object Git {
         var out = Terminal.run(setup.toString() + cmd, if (action in setOf("clone", "push", "pull", "raw")) 300 else 90, true, distro = "alpine")
         if (token != null) out = out.replace(token, "***")
         if (needsAuth && Regex("(?i)(authentication failed|could not read username|403|permission to .* denied)").containsMatchIn(out))
-            out += if (token == null) "\n[hint: GitHub isn't connected in Blaze. Ask the user to connect GitHub in Settings → Connections, then retry.]"
+            out += if (token == null) "\n[hint: GitHub isn't connected in ${BrandName.NAME}. Ask the user to connect GitHub in Settings → Connections, then retry.]"
                    else "\n[hint: GitHub refused this account. The connection may lack 'repo' access or the repo belongs to someone else; ask the user to reconnect GitHub.]"
         out.replace("/root/phone/", "~/")
     }
@@ -115,7 +117,7 @@ object Git {
     fun tool(): JSONObject {
         fun p(t: String, d: String) = JSONObject().put("type", t).put("description", d)
         return JSONObject().put("type", "function").put("function", JSONObject().put("name", NAME)
-            .put("description", "Git in Blaze's Linux, signed in as the user's connected GitHub account (private repos work; nothing to set up). " +
+            .put("description", "Git in ${BrandName.NAME}'s Linux, signed in as the user's connected GitHub account (private repos work; nothing to set up). " +
                 "Repos live in ~/code/<name>; use file_read/file_edit/file_search on them and run_shell linux=true with cwd there to build or test. " +
                 "Actions: clone, status, pull, commit (adds all files unless files given), push, log, diff, branch (list, or create+switch with branch), checkout, init, raw (any git args).")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()

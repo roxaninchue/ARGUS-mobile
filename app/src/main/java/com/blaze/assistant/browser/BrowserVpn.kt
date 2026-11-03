@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -194,7 +196,7 @@ object BrowserVpn {
         stopProc()
         withContext(Dispatchers.Main) {
             selected = id; status = Status.CONNECTING; error = ""; exitIp = ""; exitCountry = null
-            detail = if (attempt > 0) "Reconnecting (try $attempt of ${WarpFree.MAX_RETRIES})…" else if (id == FREE_ID) "Connecting to Blaze Free…" else ""
+            detail = if (attempt > 0) "Reconnecting (try $attempt of ${WarpFree.MAX_RETRIES})…" else if (id == FREE_ID) "Connecting to ${BrandName.NAME} Free…" else ""
         }
         setProxy(1)   // kill switch while connecting: nothing goes direct
         save(true)
@@ -210,7 +212,7 @@ object BrowserVpn {
             withContext(Dispatchers.Main) { onMaskChanged?.invoke() }
             startHealth(id, g)
             val c = Countries.byCode(t.country)
-            return if (id == FREE_ID) "VPN on (Blaze Free, Cloudflare WARP): browsing from ${c?.name ?: t.country ?: "a nearby country"} (${t.ip.ifBlank { "IP hidden" }})."
+            return if (id == FREE_ID) "VPN on (${BrandName.NAME} Free, Cloudflare WARP): browsing from ${c?.name ?: t.country ?: "a nearby country"} (${t.ip.ifBlank { "IP hidden" }})."
                 else "VPN on: browsing from ${c?.name ?: t.country ?: loc.label} (${t.ip.ifBlank { "IP hidden" }})."
         } catch (e: CancellationException) {
             if (gen != g) return "The VPN was switched to another location or turned off."
@@ -244,7 +246,7 @@ object BrowserVpn {
     private suspend fun connectFree(g: Int): WarpFree.Trace {
         var fresh = false
         var acct: WarpFree.Account = loadFree() ?: run {
-            withContext(Dispatchers.Main) { detail = "Setting up Blaze Free (first time only)…" }
+            withContext(Dispatchers.Main) { detail = "Setting up ${BrandName.NAME} Free (first time only)…" }
             fresh = true
             registerFree()
         }
@@ -268,13 +270,13 @@ object BrowserVpn {
             }
             // Every route failed. The device may have been dropped by Cloudflare: sign up again once and retry.
             if (round == 0 && !fresh) {
-                withContext(Dispatchers.Main) { detail = "Refreshing Blaze Free…" }
+                withContext(Dispatchers.Main) { detail = "Refreshing ${BrandName.NAME} Free…" }
                 acct = try { registerFree() } catch (e: Exception) { last = e; break }
                 fresh = true
             } else break
         }
         throw FreeFailed(if (last is FreeFailed) last.message.orEmpty() else
-            "Blaze Free couldn't get through on this network (tried ports ${WarpFree.PORTS.joinToString()}). It may block VPNs; try Wi-Fi or mobile data.")
+            "${BrandName.NAME} Free couldn't get through on this network (tried ports ${WarpFree.PORTS.joinToString()}). It may block VPNs; try Wi-Fi or mobile data.")
     }
 
     private fun freeFile() = File(app.filesDir, "blaze_free.json")
@@ -294,7 +296,7 @@ object BrowserVpn {
         val tos = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
             .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date())
         val body = WarpFree.registrationBody(keys.publicKey, tos).toByteArray()
-        var why = "Couldn't reach Cloudflare to set up Blaze Free. Check the internet connection."
+        var why = "Couldn't reach Cloudflare to set up ${BrandName.NAME} Free. Check the internet connection."
         for (v in WarpFree.API_VARIANTS) {
             try {
                 val c = URL(v.regUrl).openConnection() as java.net.HttpURLConnection
@@ -434,7 +436,7 @@ object BrowserVpn {
         Status.OFF -> "VPN off. Locations: ${WarpFree.NAME} (free, one tap, exits near the user)" +
             (if (locations.isEmpty()) "; no imported countries (the user can import WireGuard configs in the browser: ⋯ › VPN & privacy)." else ", " + locations.joinToString { it.label } + ".")
         Status.CONNECTING -> "VPN connecting to ${current()?.label}… ${detail}".trim()
-        Status.ON -> "VPN on${if (isFree) " (Blaze Free)" else ""}: ${Countries.byCode(exitCountry)?.name ?: current()?.label} · $exitIp. Location masking ${if (maskLocation) "on" else "off"}."
+        Status.ON -> "VPN on${if (isFree) " (${BrandName.NAME} Free)" else ""}: ${Countries.byCode(exitCountry)?.name ?: current()?.label} · $exitIp. Location masking ${if (maskLocation) "on" else "off"}."
         Status.FAILED -> "VPN not connected ($error) ${detail} Browser blocked by the kill switch.".replace("  ", " ")
     }
 
@@ -442,9 +444,9 @@ object BrowserVpn {
     fun statusLine(): String {
         val country = Countries.byCode(exitCountry ?: current()?.country)
         return when (status) {
-            Status.OFF -> if (locations.isEmpty()) "Off. Turn on for Blaze Free: one tap, no setup." else "Off. Sites see your real IP."
+            Status.OFF -> if (locations.isEmpty()) "Off. Turn on for ${BrandName.NAME} Free: one tap, no setup." else "Off. Sites see your real IP."
             Status.CONNECTING -> detail.ifBlank { "Connecting to ${current()?.label ?: "the VPN"}…" }
-            Status.ON -> ("${country?.flag ?: ""} ${country?.name ?: current()?.label} · $exitIp" + if (isFree) " · Blaze Free" else "").trim()
+            Status.ON -> ("${country?.flag ?: ""} ${country?.name ?: current()?.label} · $exitIp" + if (isFree) " · ${BrandName.NAME} Free" else "").trim()
             Status.FAILED -> "Not connected: $error ${detail.ifBlank { "Pages stay blocked so nothing leaks." }}"
         }
     }

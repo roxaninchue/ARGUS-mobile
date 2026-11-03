@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.isActive
@@ -132,7 +134,7 @@ object LlmClient {
             heavyTurn && lane != Lane.BACKGROUND, tools != null && tools.length() > 0, Cloud.textChars(msgs, ModelRoute.AGENT_MAX_CHARS + 1))
         val task = pick.task
         var trimmed = false
-        val cloudLabel = { "Blaze Cloud" + (if (lastServedBy.isNotBlank()) " · $lastServedBy" else "") + ModelRoute.label(pick) + if (trimmed) " · trimmed" else "" }
+        val cloudLabel = { "${BrandName.NAME} Cloud" + (if (lastServedBy.isNotBlank()) " · $lastServedBy" else "") + ModelRoute.label(pick) + if (trimmed) " · trimmed" else "" }
         val gateway: suspend (String, JSONArray, JSONArray?, ((String) -> Unit)?, ((String) -> Unit)?) -> JSONObject = { reserve, m, tl, txt, thk ->
             Cloud.drive(txt != null, call = { a ->
                 call(t, if (a.nudge) EmptyReply.withNudge(m) else m, tl, if (a.stream) txt else null,
@@ -141,7 +143,7 @@ object LlmClient {
             }, served = { lastServedKey },
                 trim = { e -> lastCloudError = e.message.orEmpty().take(300); CallState.current().errors.add(lastCloudError); if (!trimmed && tooLarge(e)) { trimmed = true; msgs = shrink(msgs); true } else false },
                 onEmpty = { n -> lastCloudError = "empty reply #$n from ${lastServedBy.ifBlank { "the gateway" }}"; CallState.current().errors.add(lastCloudError)
-                    try { com.blaze.assistant.device.CrashLog.write("Blaze Cloud: $lastCloudError (reasoning only / no content)") } catch (_: Throwable) { } })
+                    try { com.blaze.assistant.device.CrashLog.write("${BrandName.NAME} Cloud: $lastCloudError (reasoning only / no content)") } catch (_: Throwable) { } })
         }
         val coding = BrainOrder.coding(msgs)
         val gdata = BrainOrder.googleData(msgs)
@@ -202,7 +204,7 @@ object LlmClient {
                     if (e is HedgeRace.TooSlow && onText != null) BrainLedger.app.ttft(step, BrainRace.limits(kind).firstMs)
                     if (step == BackupRoute.Step.CLOUD) cloudErr = e
                     parent.errors.add(step.name.lowercase() + ": " + e.message.orEmpty().take(200))
-                    if (step == BackupRoute.Step.CLOUD && (e as? LlmException)?.code != 401) try { com.blaze.assistant.device.CrashLog.write("Blaze Cloud failed: ${lastCloudError.ifBlank { e.message.orEmpty() }}") } catch (_: Throwable) { }
+                    if (step == BackupRoute.Step.CLOUD && (e as? LlmException)?.code != 401) try { com.blaze.assistant.device.CrashLog.write("${BrandName.NAME} Cloud failed: ${lastCloudError.ifBlank { e.message.orEmpty() }}") } catch (_: Throwable) { }
                     if (step == BackupRoute.Step.BACKUP) try { com.blaze.assistant.device.CrashLog.write("Backup brain failed: ${e.message.orEmpty().take(200)}") } catch (_: Throwable) { }
                 },
                 // a brain that lost the race without a word is at least that slow (the chat router learns the faster one)
@@ -226,13 +228,13 @@ object LlmClient {
     }
 
     /** A6: the message for gateway 0.8.56's blaze_stream_broken frame (BackupRoute.brokeMidReply matches it). */
-    const val STREAM_BROKEN = "Blaze Cloud stopped sending (stream broke mid-reply)."
+    const val STREAM_BROKEN = "${BrandName.NAME} Cloud stopped sending (stream broke mid-reply)."
 
     /** 0.46.3: told when another brain took over a call ("Switched to backup"); the agent shows it as a quiet status. */
     @Volatile var switchListener: ((String) -> Unit)? = null
 
     /** Thrown inside [watchFirstChunk] when Blaze Cloud showed no sign of life in time (the backup takes over). */
-    class TooSlow(ms: Long) : LlmException("Blaze Cloud too slow (no first chunk in ${ms / 1000}s)", 0)
+    class TooSlow(ms: Long) : LlmException("${BrandName.NAME} Cloud too slow (no first chunk in ${ms / 1000}s)", 0)
 
     // 0.46.4: watchFirstChunk (never called in 0.46.3, so no gateway call had a first-token cap) is replaced by HedgeRace.
 

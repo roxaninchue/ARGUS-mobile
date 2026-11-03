@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -63,7 +65,7 @@ class EmptyReplyTest {
         val tries = mutableListOf<Cloud.Attempt>()
         val out = Cloud.drive(true, call = { a ->
             tries += a
-            if (tries.size == 1) throw LlmClient.LlmException("Blaze Cloud · blaze-auto stopped sending (timed out mid-reply).", 0) else msg("ok")
+            if (tries.size == 1) throw LlmClient.LlmException("${BrandName.NAME} Cloud · blaze-auto stopped sending (timed out mid-reply).", 0) else msg("ok")
         }, served = { "nvidia/m" }, sleep = {})
         assertEquals("ok", out.getString("content"))
         assertEquals(listOf("nvidia/m"), tries[1].avoid)

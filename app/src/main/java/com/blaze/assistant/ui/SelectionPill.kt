@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -99,7 +101,7 @@ object SelectionDo {
         try {
             ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url), ctx, com.blaze.assistant.browser.BrowserActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
-        } catch (_: Exception) { toast(ctx, "Couldn't open Blaze's browser") }
+        } catch (_: Exception) { toast(ctx, "Couldn't open ${BrandName.NAME}'s browser") }
     }
 
     fun share(ctx: Context, text: String) {

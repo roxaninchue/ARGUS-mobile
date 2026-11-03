@@ -1,5 +1,7 @@
 package com.blaze.assistant.movies
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URI
@@ -41,7 +43,7 @@ object ProviderRepo {
      * lives in Blaze's GitLab (blazeinchue-group/blaze-providers-example); the public copy is served from Blaze's site.
      */
     const val OFFICIAL_BASE = "https://blazeinchue.pages.dev/providers/blaze-official"
-    const val OFFICIAL_LABEL = "Blaze Official"
+    const val OFFICIAL_LABEL = "${BrandName.NAME} Official"
     /** What the Add source field shows as its example (Blaze's own repo, never a third-party one). */
     const val EXAMPLE = OFFICIAL_BASE
 
@@ -156,7 +158,7 @@ object AddSourceLink {
 
 /** The one-time notice shown the first time the user adds a source (and only then). */
 object SourceNotice {
-    const val TEXT = "Third-party sources aren't made or checked by Blaze. You're responsible for what you add and watch."
+    const val TEXT = "Third-party sources aren't made or checked by ${BrandName.NAME}. You're responsible for what you add and watch."
     const val KEY = "movies_source_notice_seen"
     /** Show the notice before this add? (first add only) */
     fun shouldShow(seen: Boolean): Boolean = !seen

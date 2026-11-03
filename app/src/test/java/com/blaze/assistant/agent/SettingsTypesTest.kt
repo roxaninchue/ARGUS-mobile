@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -39,7 +41,7 @@ class SettingsTypesTest {
         Settings.init(ctx)
         // The exact read that crashed every turn, and the chat lane's request for the user's message.
         assertTrue("default switch back", Settings.followups)
-        val req = ChatLane.messages(JSONArray(), "hey how's it going", "You are Blaze.", null)
+        val req = ChatLane.messages(JSONArray(), "hey how's it going", "You are ${BrandName.NAME}.", null)
         assertTrue(req.getJSONObject(0).getString("content").contains("follow-ups"))
         assertTrue(Settings.streamReplies); assertFalse(Settings.showRoute); assertFalse(Settings.fastLane)
         assertEquals("true", Settings.userName)
@@ -58,7 +60,7 @@ class SettingsTypesTest {
         assertTrue(Settings.followups)
         assertTrue(Settings.lowData)
         assertTrue(Settings.bool("followups", true))
-        ChatLane.messages(JSONArray(), "hey how's it going", "You are Blaze.", null)
+        ChatLane.messages(JSONArray(), "hey how's it going", "You are ${BrandName.NAME}.", null)
     }
 
     @Test fun aCleanInstallKeepsDefaults() {

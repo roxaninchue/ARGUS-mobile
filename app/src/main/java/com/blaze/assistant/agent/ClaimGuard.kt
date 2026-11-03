@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -115,7 +117,7 @@ object ClaimGuard {
     }
 
     /** The one re-prompt: do it for real now. */
-    fun nudge(spec: ViewRouter.Spec, current: Designs.Current?): String = "[Blaze check] Your reply says you made, changed or opened something in ${spec.name}, " +
+    fun nudge(spec: ViewRouter.Spec, current: Designs.Current?): String = "[${BrandName.NAME} check] Your reply says you made, changed or opened something in ${spec.name}, " +
         "but no ${spec.name} tool succeeded this turn, so nothing is there. Do it for real now: " + when (spec.id) {
             "design" -> if (current != null) "the current design is \u201c${current.title}\u201d (${current.kind}, ${current.path}); change it with design action=update " +
                 "(3D: set_parts/remove_parts; pages: edits or html), or design action=open to show it, or design action=create for something new. "
@@ -195,7 +197,7 @@ object ClaimGuard {
     }
 
     /** The one re-prompt for an unbacked card claim. */
-    fun cardNudge(kind: String): String = "[Blaze check] Your reply says the $kind card is open, but no $kind card is on the screen: nothing showed it this turn. " +
+    fun cardNudge(kind: String): String = "[${BrandName.NAME} check] Your reply says the $kind card is open, but no $kind card is on the screen: nothing showed it this turn. " +
         "Show it for real now with stage_show kind=$kind" + (if (kind == "browser") " (url optional)" else "") + ", then reply in one short line about what the tool did."
 
     /** The claim sentences swapped for an honest line. */

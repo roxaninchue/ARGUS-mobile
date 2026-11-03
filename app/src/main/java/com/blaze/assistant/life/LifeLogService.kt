@@ -1,5 +1,7 @@
 package com.blaze.assistant.life
 
+
+import com.blaze.assistant.BrandName
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -318,7 +320,7 @@ class LifeLogService : Service() {
             override fun onError(code: Int) {
                 when (code) {
                     SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> again(300)
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> setPause("Blaze needs the microphone permission")
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> setPause("${BrandName.NAME} needs the microphone permission")
                     else -> { fallbackErrors++
                         if (fallbackErrors >= 12) setPause("the speech recogniser keeps failing; download the offline model in Settings \u203a Life logs")
                         else again(minOf(30_000L, 1000L shl minOf(fallbackErrors, 5))) }
@@ -383,7 +385,7 @@ class LifeLogService : Service() {
     private fun autoReason(): String {
         val am = getSystemService(AudioManager::class.java)
         if (am != null && (am.mode == AudioManager.MODE_IN_CALL || am.mode == AudioManager.MODE_IN_COMMUNICATION || am.mode == AudioManager.MODE_RINGTONE)) return "phone call"
-        if (Voice.state.value != Voice.State.IDLE) return "Blaze is listening"
+        if (Voice.state.value != Voice.State.IDLE) return "${BrandName.NAME} is listening"
         if (othersRecording && model != null) return "another app is using the mic"
         val now = System.currentTimeMillis()
         if (now - lastBatteryCheck > 60_000) {
@@ -440,7 +442,7 @@ class LifeLogService : Service() {
         val text = when {
             s.downloading in 0..99 -> "Getting the offline model once (${s.downloading}%)"
             pausedFor.isNotBlank() -> if (recordMode) "The mic is off." else "The mic is off. Text only, no audio is kept."
-            recordMode -> "Only voiced moments are kept. Tap Stop and Blaze reviews it."
+            recordMode -> "Only voiced moments are kept. Tap Stop and ${BrandName.NAME} reviews it."
             s.last.isNotBlank() -> "\u201c${s.last}\u201d"
             else -> "Text only, no audio. Say \u201cstop logs\u201d or tap Stop."
         }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent.query
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.composer.ModelChoice
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -43,7 +45,7 @@ class NeedDetectTest {
 
     @Test fun blazeLocalQuestionsNeverSearch() {
         for (t in listOf("what / commands do I have?", "what can you do?", "what did I say earlier?", "how many photos do I have?",
-                "what's on my calendar today?", "which settings does Blaze have?", "/help"))
+                "what's on my calendar today?", "which settings does ${BrandName.NAME} have?", "/help"))
             assertFalse(t, NeedDetect.decide(t).external)
         assertEquals(NeedDetect.Need.LOCAL, need("what / commands do I have?"))
         assertEquals(NeedDetect.Need.LOCAL, need("what did I say earlier?"))

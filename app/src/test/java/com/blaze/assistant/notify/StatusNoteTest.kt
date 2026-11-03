@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -21,7 +23,7 @@ class StatusNoteTest {
     }
 
     @Test fun updateDownloadShowsPercentWithStop() {
-        val l = StatusNote.line(StatusNote.Input(updatePct = 42, updateLabel = "Blaze v0.24.4"))!!
+        val l = StatusNote.line(StatusNote.Input(updatePct = 42, updateLabel = "${BrandName.NAME} v0.24.4"))!!
         assertEquals("Downloading update 42%", l.title); assertEquals(42, l.progress); assertTrue(l.stop)
         assertEquals("Checking for an update…", StatusNote.line(StatusNote.Input(updatePct = -1, updateLabel = "Checking for an update…"))!!.title)
     }
@@ -43,7 +45,7 @@ class StatusNoteTest {
         // v0.45.18 ack/background: "Blaze is working" is gone (WORKING_NOTE=false), so working() feeds no status line.
         Notifier.working("Opening youtube.com")
         assertNull(StatusNote.line(Notifier.statusInput()))
-        Notifier.update(55, "Blaze v0.24.4")
+        Notifier.update(55, "${BrandName.NAME} v0.24.4")
         assertEquals("Downloading update 55%", StatusNote.line(Notifier.statusInput())!!.title)
         Notifier.doneWorking()
         assertEquals("Downloading update 55%", StatusNote.line(Notifier.statusInput())!!.title)

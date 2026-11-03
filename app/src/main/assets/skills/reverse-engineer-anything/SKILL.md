@@ -1,7 +1,7 @@
 ---
 name: reverse-engineer-anything
 title: "REA: Reverse Engineer Anything"
-description: Understand how an app, feature, website, Android APK, native binary, or JavaScript/Electron app works from the shipped artifact - static analysis first with REA (rea-agents) in Blaze's Linux terminal, JADX/apktool for APKs, then an evidence-backed explanation and an offer to build something similar. Use when the user asks how an app or feature works under the hood, to decompile or inspect an APK/binary/ASAR, or to compare versions. Only software the user owns or may inspect.
+description: Understand how an app, feature, website, Android APK, native binary, or JavaScript/Electron app works from the shipped artifact - static analysis first with REA (rea-agents) in Argus's Linux terminal, JADX/apktool for APKs, then an evidence-backed explanation and an offer to build something similar. Use when the user asks how an app or feature works under the hood, to decompile or inspect an APK/binary/ASAR, or to compare versions. Only software the user owns or may inspect.
 tags: [reverse-engineering, apk, android, binary, javascript, electron, decompile, analysis, rea]
 version: 1
 ---

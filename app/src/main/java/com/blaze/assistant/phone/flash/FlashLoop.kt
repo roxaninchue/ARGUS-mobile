@@ -6,6 +6,8 @@
  */
 package com.blaze.assistant.phone.flash
 
+
+import com.blaze.assistant.BrandName
 /** What the engine saw: the app in front, the indexed elements, and (only when the tree is empty) a screenshot. */
 data class Obs(
     val app: String,
@@ -228,7 +230,7 @@ class FlashLoop(
                 }
             }
             when (guard.check(obs.sig, act.key())) {
-                FlashGuard.Verdict.STOP -> { log.add("step $step: loop guard stop"); return result(false, "", step, "Stopped: Blaze was going round in circles on this screen (loop guard). Last tried: ${act.describe()}.") }
+                FlashGuard.Verdict.STOP -> { log.add("step $step: loop guard stop"); return result(false, "", step, "Stopped: ${BrandName.NAME} was going round in circles on this screen (loop guard). Last tried: ${act.describe()}.") }
                 FlashGuard.Verdict.BLOCK -> {
                     fails++; mode = FlashMode.PRO
                     note = "Not run: ${act.describe()} already changed nothing twice on this screen. Try a different way (another element, scroll, back, or [x,y])."

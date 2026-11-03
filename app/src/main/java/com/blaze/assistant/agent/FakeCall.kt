@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * Catches replies that only *look* like work: a tool call or shell command written as text
  * ("$ python app.py", run_shell(command=…), "Action: web_search"), or a claim of having done
@@ -10,7 +12,7 @@ package com.blaze.assistant.agent
 object FakeCall {
     // v0.27.x: every use of NUDGE is anchored to the user's latest message (RetryGuard.anchor).
 
-    const val NUDGE = "[Blaze check] Your last reply wrote a command or tool call as text, or said you did something " +
+    const val NUDGE = "[${BrandName.NAME} check] Your last reply wrote a command or tool call as text, or said you did something " +
         "that no tool actually did this turn. The user can't run text and never sees your tools. If something needs doing, " +
         "call the tool for real now. Otherwise answer in plain, natural language: what you did and what came of it, " +
         "with no commands, tool names, \"\$ …\" lines or code blocks, unless the user asked for code."

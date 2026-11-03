@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
@@ -48,7 +50,7 @@ object SafeWalk {
         .put("due", it.dueAt).put("dest", it.dest).put("stage", it.stage).toString() } ?: "")
 
     fun message(dest: String, lat: Double?, lng: Double?, minsLate: Long, update: Boolean): String = buildString {
-        append(if (update) "Safe Walk update: " else "Safe Walk alert from Blaze: ")
+        append(if (update) "Safe Walk update: " else "Safe Walk alert from ${BrandName.NAME}: ")
         if (!update) append("I haven't checked in ${if (minsLate > 0) "$minsLate min after" else "at"} the time I set" +
             (if (dest.isNotBlank()) " on my way to $dest" else "") + ". Please check on me. ")
         append(if (lat != null && lng != null) "Last location: https://maps.google.com/?q=%.5f,%.5f".format(Locale.US, lat, lng) else "Location unavailable.")
@@ -56,7 +58,7 @@ object SafeWalk {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
         .put("description", "Safe Walk: the user names a trusted contact and how long they'll be (walking home, a taxi, a date). If they don't " +
-            "tap I'm safe in time, Blaze texts the contact their location. Only start when the user asks; it shows a confirmation card.")
+            "tap I'm safe in time, ${BrandName.NAME} texts the contact their location. Only start when the user asks; it shows a confirmation card.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("start", "safe", "extend", "status"))))
             .put("contact", JSONObject().put("type", "string").put("description", "contact name or number"))
@@ -74,11 +76,11 @@ object SafeWalk {
             "start" -> {
                 val mins = a.optInt("minutes", 0); if (mins !in 1..720) return "How many minutes until you should be there?"
                 val c = a.optString("contact").trim(); if (c.isEmpty()) return "Who should get your location if you don't check in?"
-                if (ContextCompatHas(ctx, Manifest.permission.SEND_SMS).not()) return "Blaze needs the SMS permission for Safe Walk (Settings › Apps › Blaze › Permissions)."
+                if (ContextCompatHas(ctx, Manifest.permission.SEND_SMS).not()) return "${BrandName.NAME} needs the SMS permission for Safe Walk (Settings › Apps › ${BrandName.NAME} › Permissions)."
                 val (who, num) = Skills.resolve(ctx, c) ?: return "Couldn't tell which number \"$c\" is. Ask the user which contact."
                 val due = System.currentTimeMillis() + mins * 60_000L
                 val dest = a.optString("destination").trim()
-                if (!Agent.confirm("Start Safe Walk with $who?", "If you don't tap \u201cI'm safe\u201d by ${df.format(due)}, Blaze texts $who ($num) your location" +
+                if (!Agent.confirm("Start Safe Walk with $who?", "If you don't tap \u201cI'm safe\u201d by ${df.format(due)}, ${BrandName.NAME} texts $who ($num) your location" +
                         (if (dest.isNotBlank()) " and that you were going to $dest" else "") + ", then updates them every 10 min until you check in.", "Start", always = true))
                     return "The user declined. Safe Walk NOT started."
                 val w = Walk(who, num, due, dest, 0); save(w); arm(ctx, due); ongoing(ctx, w)
@@ -119,7 +121,7 @@ object SafeWalk {
         save(null)
         try { ctx.getSystemService(AlarmManager::class.java)?.cancel(pi(ctx, ACT_CHECK, 1)) } catch (_: Exception) { }
         try { nm(ctx).cancel(NID) } catch (_: Throwable) { }
-        if (safe && w != null && w.stage >= 2) send(ctx, w.number, "Safe Walk: I've checked in, I'm safe. (Blaze)")
+        if (safe && w != null && w.stage >= 2) send(ctx, w.number, "Safe Walk: I've checked in, I'm safe. (${BrandName.NAME})")
     }
 
     @SuppressLint("MissingPermission")

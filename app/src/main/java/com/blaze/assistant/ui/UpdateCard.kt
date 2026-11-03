@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,14 +67,14 @@ fun UpdateCard(preview: State? = null) {
 /** v0.28.1: the card's words, sentence case and plain (pure, tested in UpdateDownloadTest). Title, line, progress (-1 = none). */
 object UpdateCardText {
     fun of(st: State, have: String): Triple<String, String, Int> = when (val s = st) {
-        is State.Idle -> Triple("Blaze update", "You're on v$have.", -1)
-        is State.Checking -> Triple("Checking for an update", "Looking for a newer Blaze\u2026", -1)
-        is State.Downloading -> Triple("Downloading ${s.pct}%", s.note.ifBlank { "Blaze v${s.version}. Works on mobile data too." }, s.pct)
-        is State.Installing -> Triple("Installing", "Confirm on the Android screen. Blaze restarts by itself, and your keys, settings and models stay.", 100)
-        is State.UpToDate -> Triple("Up to date", "You have the newest Blaze, v${s.version}.", -1)
-        is State.Ready -> Triple("Update available", "Blaze v${s.version} is ready to install.", -1)
-        is State.NeedsPermission -> Triple("One permission needed", "Android asks once before Blaze can install its own updates. Turn on \"Allow from this source\" for Blaze, come back, then tap Retry.", -1)
-        is State.Done -> Triple("Updated", "Blaze v${s.version} is installed.", 100)
+        is State.Idle -> Triple("${BrandName.NAME} update", "You're on v$have.", -1)
+        is State.Checking -> Triple("Checking for an update", "Looking for a newer ${BrandName.NAME}\u2026", -1)
+        is State.Downloading -> Triple("Downloading ${s.pct}%", s.note.ifBlank { "${BrandName.NAME} v${s.version}. Works on mobile data too." }, s.pct)
+        is State.Installing -> Triple("Installing", "Confirm on the Android screen. ${BrandName.NAME} restarts by itself, and your keys, settings and models stay.", 100)
+        is State.UpToDate -> Triple("Up to date", "You have the newest ${BrandName.NAME}, v${s.version}.", -1)
+        is State.Ready -> Triple("Update available", "${BrandName.NAME} v${s.version} is ready to install.", -1)
+        is State.NeedsPermission -> Triple("One permission needed", "Android asks once before ${BrandName.NAME} can install its own updates. Turn on \"Allow from this source\" for ${BrandName.NAME}, come back, then tap Retry.", -1)
+        is State.Done -> Triple("Updated", "${BrandName.NAME} v${s.version} is installed.", 100)
         is State.Failed -> Triple("The update didn't finish", s.message, -1)
     }
 }

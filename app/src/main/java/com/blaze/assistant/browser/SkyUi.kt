@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -172,7 +174,7 @@ internal fun SkyStartPage(tick: Int, bottomSpace: Dp, open: (String) -> Unit, on
         Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(72.dp))
-            SkyText("BLAZE", 44, weight = FontWeight.Normal, spacing = 18f)
+            SkyText("${BrandName.UPPER}", 44, weight = FontWeight.Normal, spacing = 18f)
             Spacer(Modifier.height(8.dp))
             SkyText(clock, 14, Sky.ink.copy(alpha = 0.9f))
             Spacer(Modifier.height(48.dp))
@@ -201,8 +203,8 @@ internal fun SkyStartPage(tick: Int, bottomSpace: Dp, open: (String) -> Unit, on
                 }
             }
             val pick = ArrayList<Triple<String, String, () -> Unit>>()
-            others.take(2).forEach { t -> pick += Triple(t.title.ifBlank { skyHost(t.url) }, if (t === agent) "Blaze" else "Tab") { BrowserEngine.switchTo(t) } }
-            if (agent != null && others.none { it === agent } && agent !== cur) pick += Triple(agent.title, "Blaze") { BrowserEngine.switchTo(agent) }
+            others.take(2).forEach { t -> pick += Triple(t.title.ifBlank { skyHost(t.url) }, if (t === agent) "${BrandName.NAME}" else "Tab") { BrowserEngine.switchTo(t) } }
+            if (agent != null && others.none { it === agent } && agent !== cur) pick += Triple(agent.title, "${BrandName.NAME}") { BrowserEngine.switchTo(agent) }
             if (pick.isEmpty()) recent.take(2).forEach { e -> pick += Triple(e.title.ifBlank { skyHost(e.url) }, "Recent") { open(e.url) } }
             if (pick.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
@@ -289,7 +291,7 @@ internal fun SkyTabsSheet(startSeg: TabSeg, onDone: () -> Unit, onGrid: () -> Un
                 Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 6.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     SkyText("Tabs", 22, weight = FontWeight.Medium, modifier = Modifier.weight(1f))
                     Row(Modifier.frost(Sky.pill, Color.White.copy(alpha = 0.08f)).padding(3.dp)) {
-                        listOf(TabSeg.OPEN to "Open ${BrowserEngine.normalTabs().size}", TabSeg.PRIVATE to "Private ${BrowserEngine.privateTabs().size}", TabSeg.BLAZE to "Blaze")
+                        listOf(TabSeg.OPEN to "Open ${BrowserEngine.normalTabs().size}", TabSeg.PRIVATE to "Private ${BrowserEngine.privateTabs().size}", TabSeg.BLAZE to "${BrandName.NAME}")
                             .forEach { (s, l) ->
                                 SkyText(l, 13, if (seg == s) Sky.navy else Sky.ink, Modifier.clip(Sky.pill).background(if (seg == s) Color.White else Color.Transparent)
                                     .clickable { seg = s }.padding(horizontal = 12.dp, vertical = 6.dp))
@@ -310,7 +312,7 @@ internal fun SkyTabsSheet(startSeg: TabSeg, onDone: () -> Unit, onGrid: () -> Un
                 LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                     if (list.isEmpty()) item {
                         SkyText(when (seg) { TabSeg.PRIVATE -> "No private tabs. Private tabs keep no history; their cookies go when the last one closes."
-                            TabSeg.BLAZE -> "Tabs Blaze browses for you show up here."; else -> "No open tabs" }, 14, Sky.sub, Modifier.padding(18.dp), maxLines = 4)
+                            TabSeg.BLAZE -> "Tabs ${BrandName.NAME} browses for you show up here."; else -> "No open tabs" }, 14, Sky.sub, Modifier.padding(18.dp), maxLines = 4)
                     }
                     if (awake.isNotEmpty()) { item { Section("AWAKE") }; items(awake, key = { it.id }) { t -> TabRow(t, t === cur, t === agent, now, onDone) } }
                     if (asleep.isNotEmpty()) { item { Section("SLEEPING \u00b7 0 MB EACH") }; items(asleep, key = { it.id }) { t -> TabRow(t, false, t === agent, now, onDone) } }
@@ -353,7 +355,7 @@ private fun TabRow(t: BrowserEngine.Tab, selected: Boolean, isAgent: Boolean, no
             SkyText(t.title.ifBlank { if (t.isPrivate) "Private tab" else "New tab" }, 15)
             SkyText(if (t.isPrivate) "Private \u00b7 not saved" else if (blank) "New tab page" else if (SavedPages.isSavedUrl(t.url)) "Offline copy" else skyHost(t.url), 12, Sky.sub)
         }
-        SkyText(when { selected -> "Live"; isAgent -> "Blaze"; t.live != null -> "Awake"; else -> age(t.lastSeen, now) }, 11, Sky.sub, Modifier.padding(start = 8.dp))
+        SkyText(when { selected -> "Live"; isAgent -> "${BrandName.NAME}"; t.live != null -> "Awake"; else -> age(t.lastSeen, now) }, 11, Sky.sub, Modifier.padding(start = 8.dp))
         Box(Modifier.size(40.dp).clip(CircleShape).clickable {
             val i = BrowserEngine.tabs.indexOf(t); if (i >= 0) BrowserEngine.close(i)
             if (BrowserEngine.normalTabs().isEmpty() && BrowserEngine.tabs.none { it.isPrivate }) BrowserEngine.newTab(BrowserEngine.appContext())
@@ -416,7 +418,7 @@ internal fun SkyLauncher(onDismiss: () -> Unit, onGo: (String) -> Unit, onAsk: (
                     Result("Go to \u201c${q.take(60)}\u201d", skyHost(BrowserEngine.toUrl(q)), "Enter", null) { onGo(q) }
                     if (http) Row(Modifier.fillMaxWidth().clickable { onAsk(q) }.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.AutoAwesome, null, tint = Sky.blue, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(12.dp))
-                        SkyText("Ask Blaze \u201c${q.take(40)}\u201d", 15, modifier = Modifier.weight(1f)); SkyText("Blaze", 11, Sky.weak)
+                        SkyText("Ask ${BrandName.NAME} \u201c${q.take(40)}\u201d", 15, modifier = Modifier.weight(1f)); SkyText("${BrandName.NAME}", 11, Sky.weak)
                     }
                     Divider()
                 }
@@ -524,7 +526,7 @@ internal fun SkySiteSheet(onDismiss: () -> Unit, onAction: (SiteAction) -> Unit)
                 if (url.startsWith("https://") && !t.isPrivate) Row2(Icons.Rounded.Apps, "Install as app", "Add to Home") { onAction(SiteAction.INSTALL) }
                 Row2(Icons.Rounded.Share, "Share link", "") { onAction(SiteAction.SHARE) }
                 Row2(Icons.Rounded.OpenInNew, "Open in another app", "") { onAction(SiteAction.OPEN_WITH) }
-                Row2(Icons.Rounded.AutoAwesome, "Ask Blaze about this page", "") { onAction(SiteAction.ASK) }
+                Row2(Icons.Rounded.AutoAwesome, "Ask ${BrandName.NAME} about this page", "") { onAction(SiteAction.ASK) }
             }
         }
     }

@@ -30,4 +30,15 @@ class TiersTest {
         assertEquals("inferno", ModelChoice.wire(ModelChoice.forRole("reviewer", ModelChoice.Family.AUTO)))
         assertTrue(JSONObject().put("blaze_family", "flare").has("blaze_family"))
     }
+
+    /** 0.52.1 Argus rename: new labels, same ids on the wire, and saved picks keep their tier. */
+    @Test fun argusLabelsKeepIdsAndMigrateSavedPicks() {
+        assertEquals(listOf("Insight", "Oracle", "Panoptes"), listOf(ModelChoice.Family.SPARK, ModelChoice.Family.FLARE, ModelChoice.Family.INFERNO).map { it.label })
+        assertEquals(listOf("spark", "flare", "inferno"), listOf(ModelChoice.Family.SPARK, ModelChoice.Family.FLARE, ModelChoice.Family.INFERNO).map { ModelChoice.wire(it) })
+        assertEquals(null, ModelChoice.migrate("spark")); assertEquals(null, ModelChoice.migrate("auto"))
+        assertEquals("spark", ModelChoice.migrate("Spark")); assertEquals("flare", ModelChoice.migrate("Oracle"))
+        assertEquals("inferno", ModelChoice.migrate("Panoptes")); assertEquals("inferno", ModelChoice.migrate(" Inferno "))
+        assertEquals("auto", ModelChoice.migrate("Blaze Max"))
+        assertEquals(ModelChoice.Family.INFERNO, ModelChoice.of("panoptes")); assertEquals(ModelChoice.Family.SPARK, ModelChoice.of("Insight"))
+    }
 }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.app.Application
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
@@ -130,13 +132,13 @@ class HomeChatToolLoopTest {
         val loop = Loop(lite = mutableListOf(), full = mutableListOf(
             say("Opening accessibility settings for you now."),
             call("blaze_self", JSONObject().put("action", "open").put("target", "accessibility")),
-            say("Done. Switch on Blaze under Installed apps.")))
+            say("Done. Switch on ${BrandName.NAME} under Installed apps.")))
         val out = loop.turn("okay, do it!", "I'll open the accessibility settings now.")
         assertEquals("tools", loop.lane)
         assertEquals(listOf("Doing what I said"), loop.steps)
         assertEquals(listOf("blaze_self"), loop.ran)
         assertNotNull(accessibilityOpened())
-        assertEquals("Done. Switch on Blaze under Installed apps.", out)
+        assertEquals("Done. Switch on ${BrandName.NAME} under Installed apps.", out)
     }
 
     @Test fun chatLaneReplyThatAnnouncesAnActionReruns() = runBlocking {

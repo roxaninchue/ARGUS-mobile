@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.45.0 (#13, #16) what goes into the system prompt, by who is asking and what the turn needs.
  *
@@ -94,6 +96,6 @@ object PromptProfile {
 
     /** One line instead of the full VIEWS block when no view is routed this turn. */
     fun viewsShort(viewNames: List<String>): String =
-        "\nVIEWS: output that fits a Blaze view (" + viewNames.joinToString(", ") + ") is created in that view with its tool and opened with open_view; " +
+        "\nVIEWS: output that fits a ${BrandName.NAME} view (" + viewNames.joinToString(", ") + ") is created in that view with its tool and opened with open_view; " +
             "the chat reply is one or two lines. Never claim you made or opened something in a view unless its tool succeeded this turn."
 }

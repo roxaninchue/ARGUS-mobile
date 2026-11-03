@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -138,7 +140,7 @@ object BrainRace {
     /** Halo's side reply: if no word arrived by then, Halo says where Blaze is (from the app's own state, no model). */
     const val HALO_HOLD_MS = 2_000L
     fun haloHolding(task: String, now: String): String = buildString {
-        append("Blaze is still on ")
+        append("${BrandName.NAME} is still on ")
         append(if (task.isBlank()) "your request" else "\u201c${task.trim().take(60)}\u201d")
         val n = now.trim().trimEnd('.', '\u2026')
         if (n.isNotBlank() && !n.equals(CloudRuns.QUEUED.trimEnd('\u2026'), true)) append(". Right now: ").append(n.take(80))

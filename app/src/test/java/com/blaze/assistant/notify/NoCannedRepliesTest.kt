@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.Ack
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -36,7 +38,7 @@ class NoCannedRepliesTest {
     @Test fun thereIsNoAckKindOrAckPost() {
         assertFalse(BlazeThread.Kind.values().any { it.name == "ACK" })
         assertFalse(Notifier::class.java.declaredMethods.any { it.name == "ack" })
-        assertEquals(BlazeThread.Kind.FAILED, Notifier.replyKind("Couldn't reach Blaze Cloud.", true))
+        assertEquals(BlazeThread.Kind.FAILED, Notifier.replyKind("Couldn't reach ${BrandName.NAME} Cloud.", true))
         assertEquals(BlazeThread.Kind.REPLY, Notifier.replyKind("Got it, here's the plan.", false))   // model words are a reply, never an "ack"
         assertEquals(BlazeThread.Kind.RESULT, Notifier.replyKind("Done \u2713 Dark mode is on.", false))
     }
@@ -49,7 +51,7 @@ class NoCannedRepliesTest {
 
     @Test fun noCannedLineIsPostedBetweenAMessageAndItsAnswer() {
         val agent = src("agent/Agent.kt")
-        for (bad in listOf("Ack.local(", "showAck(", "Notifier.ack(", "Blaze got your message", "Ack.receipt("))
+        for (bad in listOf("Ack.local(", "showAck(", "Notifier.ack(", "${BrandName.NAME} got your message", "Ack.receipt("))
             assertFalse("Agent.kt still has $bad", agent.contains(bad))
         val receiver = src("notify/Notifier.kt")
         assertFalse(receiver.contains("Thinking about: "))

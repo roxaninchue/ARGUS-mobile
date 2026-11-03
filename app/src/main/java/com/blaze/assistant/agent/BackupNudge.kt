@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.45.27, pure (BackupNudgeTest): what the chat says when a request failed for good (Blaze Cloud busy or erroring and
  * every fallback, the gateway's Nous reserve included, failed too) on a phone that could run the on-device backup brain
@@ -62,7 +64,7 @@ object BackupNudge {
     fun setupMb(bytes: Long): Long = ((mb(bytes) + 9) / 10) * 10
 
     /** 0.46.3 (Rocky 18:20): the only prompt the on-phone brain setup may show, worded without any product name. */
-    fun mobileDataQuestion(bytes: Long): String = "Finish setting up Blaze on mobile data? About ${setupMb(bytes)} MB, one time."
+    fun mobileDataQuestion(bytes: Long): String = "Finish setting up ${BrandName.NAME} on mobile data? About ${setupMb(bytes)} MB, one time."
 
     const val OOPS = "Oops, I ran into an error."
 
@@ -71,9 +73,9 @@ object BackupNudge {
         val size = "${mb(bytes)} MB"
         return when (pick) {
             Pick.NONE -> null
-            Pick.LATER -> "$OOPS You can try again when Blaze Cloud is available, or get on Wi-Fi and I'll download a $size feature to make sure this doesn't happen again."
-            Pick.NEEDS_LINUX -> "$OOPS You can try again when Blaze Cloud is available, or install Alpine Linux in the Terminal and get on Wi-Fi, and I'll download a $size feature to make sure this doesn't happen again."
-            Pick.DOWNLOADING -> "$OOPS You can try again when Blaze Cloud is available. Meanwhile I'm downloading a $size feature to make sure this doesn't happen again."
+            Pick.LATER -> "$OOPS You can try again when ${BrandName.NAME} Cloud is available, or get on Wi-Fi and I'll download a $size feature to make sure this doesn't happen again."
+            Pick.NEEDS_LINUX -> "$OOPS You can try again when ${BrandName.NAME} Cloud is available, or install Alpine Linux in the Terminal and get on Wi-Fi, and I'll download a $size feature to make sure this doesn't happen again."
+            Pick.DOWNLOADING -> "$OOPS You can try again when ${BrandName.NAME} Cloud is available. Meanwhile I'm downloading a $size feature to make sure this doesn't happen again."
         }
     }
 

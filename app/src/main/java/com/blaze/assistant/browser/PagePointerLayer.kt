@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.webkit.WebView
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
@@ -173,7 +175,7 @@ fun PagePointerLayer(web: WebView?, host: PointerHost, onClose: () -> Unit, modi
         Box(Modifier
             .offset { IntOffset((tip.x - tipIn.x).roundToInt(), (tip.y - tipIn.y).roundToInt()) }
             .size(box)
-            .semantics { contentDescription = "Blaze pointer. Drag onto something on the page, double-tap for options." }
+            .semantics { contentDescription = "${BrandName.NAME} pointer. Drag onto something on the page, double-tap for options." }
             .pointerInput(web) {
                 detectDragGestures(onDragEnd = { probe() }) { ch, delta ->
                     ch.consume(); menu = false
@@ -183,7 +185,7 @@ fun PagePointerLayer(web: WebView?, host: PointerHost, onClose: () -> Unit, modi
             }
             .pointerInput(web) {
                 detectTapGestures(onDoubleTap = { if (hit != null) menu = true else { menuAfter = true; probe() } },
-                    onTap = { if (menu) menu = false else Toast.makeText(ctx, "Double-tap Blaze for options", Toast.LENGTH_SHORT).show() })
+                    onTap = { if (menu) menu = false else Toast.makeText(ctx, "Double-tap ${BrandName.NAME} for options", Toast.LENGTH_SHORT).show() })
             }) {
             MascotGlyph(box, pulse = inflight || menu)
         }
@@ -192,7 +194,7 @@ fun PagePointerLayer(web: WebView?, host: PointerHost, onClose: () -> Unit, modi
         Row(Modifier.align(Alignment.TopCenter).padding(top = 10.dp, start = 12.dp, end = 12.dp)
             .shadow(10.dp, Glass.pill).clip(Glass.pill).background(Glass.surface).border(1.dp, Glass.border, Glass.pill)
             .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(hit?.let { "On: " + it.describe } ?: "Drag Blaze onto anything \u00b7 double-tap for options", maxLines = 1, overflow = TextOverflow.Ellipsis,
+            Text(hit?.let { "On: " + it.describe } ?: "Drag ${BrandName.NAME} onto anything \u00b7 double-tap for options", maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.widthIn(max = 250.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = Glass.text))
             Spacer(Modifier.width(6.dp))
             GlassIconButton(Icons.Rounded.Close, "Put the pointer away", size = 32.dp, onClick = onClose)
@@ -221,7 +223,7 @@ private fun runAction(ctx: android.content.Context, a: PagePointer.Action, h: Pa
         PagePointer.Action.DOWNLOAD, PagePointer.Action.SAVE_IMAGE -> PointerActions.download(ctx, h.src, web, host.isPrivate)
         PagePointer.Action.COPY_LINK -> PointerActions.copy(ctx, "Link", h.href.ifBlank { h.src })
         PagePointer.Action.COPY_IMAGE_LINK -> PointerActions.copy(ctx, "Image link", h.src)
-        PagePointer.Action.PIP -> host.pip?.invoke(h, tip.x, tip.y) ?: toast("Picture-in-picture works in Blaze's browser.")
+        PagePointer.Action.PIP -> host.pip?.invoke(h, tip.x, tip.y) ?: toast("Picture-in-picture works in ${BrandName.NAME}'s browser.")
         PagePointer.Action.SEARCH_IMAGE -> if (h.src.startsWith("http")) host.openUrl(PointerActions.lensUrl(h.src), OpenMode.NEW)
             else toast("This picture has no web address to search with.")
         PagePointer.Action.OPEN -> host.openUrl(h.href, OpenMode.SAME)

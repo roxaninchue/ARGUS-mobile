@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,12 +56,12 @@ internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Lon
         Review(deck, queue.firstOrNull(), queue.size, reveal, clock, onBack = { deck = "" })
         return
     }
-    Text("Flashcards come back just before you'd forget them. Ask Blaze to make some from your notes, a PDF or slides (\u201cmake flashcards from my CIT102 notes\u201d), then study here.",
+    Text("Flashcards come back just before you'd forget them. Ask ${BrandName.NAME} to make some from your notes, a PDF or slides (\u201cmake flashcards from my CIT102 notes\u201d), then study here.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     Spacer(Modifier.height(16.dp))
     Label("Decks", modifier = Modifier.padding(bottom = 8.dp))
     val decks = remember(all) { Flashcards.decks(clock) }
-    if (decks.isEmpty()) Rows { EmptyState("No cards yet", "Ask Blaze to \u201cmake flashcards from my notes\u201d, or study with the tutor skill. Decks show up here.") }
+    if (decks.isEmpty()) Rows { EmptyState("No cards yet", "Ask ${BrandName.NAME} to \u201cmake flashcards from my notes\u201d, or study with the tutor skill. Decks show up here.") }
     decks.forEachIndexed { i, d ->
         Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable { deck = d.name }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Label("%02d".format(i + 1), color = c.weak, size = 10.sp)

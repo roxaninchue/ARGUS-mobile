@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
@@ -28,14 +30,14 @@ object Autonomy {
 
     fun looksLikeRefusal(text: String): Boolean = text.length < 900 && refusal.containsMatchIn(text)
 
-    const val REFUSAL_NUDGE = "[Blaze check] Before telling the user you can't: think of three other ways with your tools " +
+    const val REFUSAL_NUDGE = "[${BrandName.NAME} check] Before telling the user you can't: think of three other ways with your tools " +
         "(find_tool or load_tools for more tools, the background browser, run_shell in the Linux terminal, phone screen control with run_plan, " +
         "skills, web_search). Try the most promising one now. Only if they all truly fail, say briefly what you tried and the one thing the user can do."
 
     private val failed = Regex("""^(Error|Couldn't|No element|No app|Stopped at step|Failed|The user did NOT)""")
     fun lastFailed(results: List<String>): Boolean = results.lastOrNull()?.let { failed.containsMatchIn(it.trim()) } == true
 
-    const val VERIFY_NUDGE = "[Blaze check] Your last action failed. Don't report success. Try another way (different target, scroll, a deep link, " +
+    const val VERIFY_NUDGE = "[${BrandName.NAME} check] Your last action failed. Don't report success. Try another way (different target, scroll, a deep link, " +
         "the browser, or the terminal), or check the screen/result to confirm what actually happened, then answer."
 
     // ---------- find_tool ----------

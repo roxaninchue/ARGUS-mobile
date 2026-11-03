@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -116,11 +118,11 @@ class ComposerShotsTest {
         frame(name, st, expect, dim = true) { SpotlightPanel(st, onAct = {}) }
     }
 
-    @Test fun barEmpty() = frame("bar-empty", ComposerState(), "Message Blaze")
+    @Test fun barEmpty() = frame("bar-empty", ComposerState(), "Message ${BrandName.NAME}")
 
     @Test fun barTypingWithModelPicker() {
         val st = ComposerState().apply { text = "Plan my Saturday"; pickerOpen = true }
-        frame("bar-typing-model-picker", st, "Inferno (Smartest)")
+        frame("bar-typing-model-picker", st, "Panoptes (Deepest)")
     }
 
     @Test fun chatOverHome() {
@@ -157,11 +159,11 @@ class ComposerShotsTest {
         frame("chat-over-home-followups", st, "2 steps", dim = true) { ChatOverHomeContent(st, msgs, busy = false, now = now, onSend = {}, stage = false) }
     }
 
-    @Test fun spotlightCurated() = spot("spotlight-curated", "", "Chat with Blaze")
+    @Test fun spotlightCurated() = spot("spotlight-curated", "", "Chat with ${BrandName.NAME}")
     @Test fun spotlightBothForms() = spot("spotlight-terminal-both-forms", "terminal", "Views > Terminal")
     @Test fun spotlightBang() = spot("spotlight-bang-distro", "!ls -la", "! ls -la")
-    @Test fun spotlightModels() = spot("spotlight-model-inf", "inf", "Blaze Inferno")
+    @Test fun spotlightModels() = spot("spotlight-model-inf", "pan", "${BrandName.NAME} Panoptes")
     @Test fun spotlightLibrary() = spot("spotlight-library-fuzzy", "bohemain", "Music > Library > Bohemian Rhapsody")
-    @Test fun spotlightFallbacks() = spot("spotlight-fallbacks", "zqxj food", "Ask Blaze about")
+    @Test fun spotlightFallbacks() = spot("spotlight-fallbacks", "zqxj food", "Ask ${BrandName.NAME} about")
     @Test fun spotlightViews() = spot("spotlight-at-views", "@", "@browser")
 }

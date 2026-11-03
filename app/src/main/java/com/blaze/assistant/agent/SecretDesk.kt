@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +17,7 @@ import org.json.JSONObject
  */
 object SecretDesk {
     const val TOOL = SecretRules.TOOL
-    const val COPY = "Only on this phone. Blaze uses it without seeing it."
+    const val COPY = "Only on this phone. ${BrandName.NAME} uses it without seeing it."
 
     data class Request(val id: Long, val kind: SecretVault.Kind, val label: String, val service: String, val hint: String,
                        val hosts: List<String>, val fields: List<SecretVault.FieldSpec>, val answer: CompletableDeferred<Map<String, String>?>)
@@ -54,7 +56,7 @@ object SecretDesk {
         return JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
             .put("description", "Ask the user for a password, API key/token, login, card or one-time code with a Secure Form card. NEVER ask for these in chat. " +
                 "The value is encrypted on the phone; you get a handle like {{secret:cloudflare_token}} and a safe preview. Put the handle where the value goes " +
-                "in http_request / run_shell / run_code / git / browser_type: Blaze swaps the value in on the phone, only for the hosts it was saved for. " +
+                "in http_request / run_shell / run_code / git / browser_type: ${BrandName.NAME} swaps the value in on the phone, only for the hosts it was saved for. " +
                 "A saved one is returned without asking.")
             .put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(listOf("kind", "label")))))
     }
@@ -78,12 +80,12 @@ object SecretDesk {
     /** The text the model gets back: handles, preview and where it may go. Never a value. */
     fun summary(e: SecretVault.Entry, reused: Boolean): String {
         val hs = SecretVault.handlesOf(e)
-        val where = if (e.hosts.isEmpty()) "only typed into pages in Blaze's browser" else "only for ${e.hosts.joinToString(", ")}" +
+        val where = if (e.hosts.isEmpty()) "only typed into pages in ${BrandName.NAME}'s browser" else "only for ${e.hosts.joinToString(", ")}" +
             (SecretUse.serviceClis[SecretUse.serviceId(e.service)]?.let { " (and the ${it.joinToString("/")} CLI)" } ?: "")
         return (if (reused) "Already saved securely: " else "Saved securely on the phone: ") + "${e.label} as ${hs.first()} (${e.preview})" +
             (if (hs.size > 1) "; fields: ${hs.drop(1).joinToString(", ")}" else "") + ". Usable $where. " +
             (if (e.kind == SecretVault.Kind.CARD) "Card details are only typed into the payment page with browser_type; never send them anywhere else. "
-             else "Put the handle exactly where the value goes; Blaze swaps it in on the phone. ") +
+             else "Put the handle exactly where the value goes; ${BrandName.NAME} swaps it in on the phone. ") +
             "You never see the value. Don't repeat the handle to the user and never ask them to type it in chat."
     }
 

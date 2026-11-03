@@ -1,5 +1,7 @@
 package com.blaze.assistant.life
 
+
+import com.blaze.assistant.BrandName
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -149,7 +151,7 @@ class LifeLogWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
 
         // 5. Blaze drafts, Halo reviews (per ~18k-char part for long days)
         LifeAudio.setState(d, "reviewing")
-        progress("Blaze is going over it\u2026", 0)
+        progress("${BrandName.NAME} is going over it\u2026", 0)
         val parts = splitLines(transcript, 18_000).take(6)
         val results = ArrayList<LifeReview.Result>()
         for ((i, part) in parts.withIndex()) {
@@ -158,11 +160,11 @@ class LifeLogWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
             val b = LifeReview.parse(draft)
             val h = if (draft != null && b != null) LifeReview.parse(MindReview.cheap(LifeReview.haloRequest(part, m, draft.take(8000)))) else null
             (h ?: b)?.let { results += it }
-            progress("Blaze is going over it (${i + 1}/${parts.size})", (i + 1) * 100 / parts.size)
+            progress("${BrandName.NAME} is going over it (${i + 1}/${parts.size})", (i + 1) * 100 / parts.size)
         }
         if (results.isEmpty()) {
             LifeAudio.setState(d, "failed", JSONObject().put("error", "review"))
-            return "Your life log is transcribed and saved ($minutes min, $voices ${if (voices == 1) "voice" else "voices"}), but Blaze couldn't review it right now. " +
+            return "Your life log is transcribed and saved ($minutes min, $voices ${if (voices == 1) "voice" else "voices"}), but ${BrandName.NAME} couldn't review it right now. " +
                 "Say \u201creview my last life log\u201d later."
         }
         val r = merge(results)

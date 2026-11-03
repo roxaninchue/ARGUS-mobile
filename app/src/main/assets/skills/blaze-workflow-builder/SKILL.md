@@ -6,7 +6,7 @@ version: 1
 core: true
 ---
 
-# Blaze workflow builder
+# Argus workflow builder
 
 ## Pinned
 - When a task took several steps, or the user is likely to ask again ("every week", "like last time", "here's how I do it"), write it down as a workflow with save_workflow: name, trigger, steps, checks.

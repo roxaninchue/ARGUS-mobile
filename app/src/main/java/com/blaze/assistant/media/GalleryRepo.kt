@@ -1,5 +1,7 @@
 package com.blaze.assistant.media
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.app.WallpaperManager
 import android.content.ClipData
@@ -122,7 +124,7 @@ object GalleryRepo {
             synchronized(metaCache) { metaCache[key] = t }; t
         }
         return Entry(id = "file:" + f.absolutePath, name = f.name, title = it.title, kind = it.kind, src = Src.BLAZE, time = it.time,
-            size = f.length(), durationMs = dur, width = w, height = h, folder = "Blaze gallery")
+            size = f.length(), durationMs = dur, width = w, height = h, folder = "${BrandName.NAME} gallery")
     }
 
     private fun metaOf(r: MediaMetadataRetriever): Triple<Long, Int, Int> = Triple(
@@ -149,7 +151,7 @@ object GalleryRepo {
         val args = ArrayList<String>()
         val where = if (q) {
             val ors = arrayListOf("${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?", "${MediaStore.MediaColumns.OWNER_PACKAGE_NAME} = ?")
-            args += "%Blaze%"; args += app.packageName
+            args += "%${BrandName.NAME}%"; args += app.packageName
             if (all) { ors += "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"; args += "%Screenshots%"; ors += "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"; args += "DCIM/%" }
             "$types AND (" + ors.joinToString(" OR ") + ")"
         } else {
@@ -400,7 +402,7 @@ object GalleryRepo {
                 val n = app.contentResolver.update(Uri.parse(e.id), ContentValues().apply { put(MediaStore.MediaColumns.DISPLAY_NAME, newName) }, null, null)
                 if (n <= 0) return@withContext "Couldn't rename it."
             } catch (_: SecurityException) {
-                return@withContext "Android only lets Blaze rename files Blaze saved. Rename this one in your phone's Files app."
+                return@withContext "Android only lets ${BrandName.NAME} rename files ${BrandName.NAME} saved. Rename this one in your phone's Files app."
             } catch (ex: Exception) { return@withContext "Couldn't rename it: ${ex.message}" }
         }
         _albums.value = albumStore().albums

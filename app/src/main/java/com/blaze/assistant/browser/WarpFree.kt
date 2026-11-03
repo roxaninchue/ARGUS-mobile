@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigInteger
@@ -14,7 +16,7 @@ import java.util.Base64
  */
 object WarpFree {
     const val ID = "blaze-free"
-    const val NAME = "Blaze Free (Cloudflare WARP)"
+    const val NAME = "${BrandName.NAME} Free (Cloudflare WARP)"
     const val API = "https://api.cloudflareclient.com"
 
     /** Cloudflare's own WARP peer key, used if a registration answer leaves it out. */
@@ -98,8 +100,8 @@ object WarpFree {
                     ep(o.optString("endpoint")) ?: Endpoint(DEFAULT_HOST, PORTS[0]),
                     o.optString("v4"), o.optString("v6"), o.optString("client_id"), o.optLong("created"), ep(o.optString("last_good")),
                 )
-                require(isKey(a.privateKey)) { "The saved Blaze Free key is damaged." }
-                require(a.addresses().isNotEmpty()) { "The saved Blaze Free config has no address." }
+                require(isKey(a.privateKey)) { "The saved ${BrandName.NAME} Free key is damaged." }
+                require(a.addresses().isNotEmpty()) { "The saved ${BrandName.NAME} Free config has no address." }
                 return a
             }
         }
@@ -135,13 +137,13 @@ object WarpFree {
 
     /** Turns Cloudflare's answer into an [Account]. Throws IllegalArgumentException in plain words. */
     fun parseRegistration(text: String, keys: KeyPair, now: Long = 0): Account {
-        val root = try { JSONObject(text) } catch (_: Exception) { throw IllegalArgumentException("Cloudflare sent an answer Blaze couldn't read.") }
+        val root = try { JSONObject(text) } catch (_: Exception) { throw IllegalArgumentException("Cloudflare sent an answer ${BrandName.NAME} couldn't read.") }
         errorIn(root)?.let { throw IllegalArgumentException(it) }
         val r = root.optJSONObject("result") ?: root
         val cfg = r.optJSONObject("config") ?: throw IllegalArgumentException("Cloudflare didn't send a VPN config.")
         val peer = cfg.optJSONArray("peers")?.optJSONObject(0)
         val peerKey = peer?.optString("public_key").orEmpty().ifBlank { DEFAULT_PEER_KEY }
-        require(isKey(peerKey)) { "Cloudflare sent a VPN key Blaze couldn't use." }
+        require(isKey(peerKey)) { "Cloudflare sent a VPN key ${BrandName.NAME} couldn't use." }
         val epObj = peer?.optJSONObject("endpoint")
         val endpoint = epObj?.let { endpointOf(it) } ?: Endpoint(DEFAULT_HOST, PORTS[0])
         val addrs = cfg.optJSONObject("interface")?.optJSONObject("addresses")
@@ -224,7 +226,7 @@ object WarpFree {
 
     /** Plain-words line while trying [ep], the [index]th candidate. */
     fun tryingLine(index: Int, ep: Endpoint): String =
-        if (index == 0) "Connecting to Blaze Free…" else "That route is blocked here. Trying port ${ep.port}…"
+        if (index == 0) "Connecting to ${BrandName.NAME} Free…" else "That route is blocked here. Trying port ${ep.port}…"
 
     private fun withPrefix(ip: String, bits: Int) = if (ip.contains('/')) ip else "$ip/$bits"
 }

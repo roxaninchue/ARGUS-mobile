@@ -1,5 +1,7 @@
 package com.blaze.assistant.composer
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -14,14 +16,19 @@ import kotlinx.coroutines.flow.StateFlow
 object ModelChoice {
     enum class Family(val id: String, val label: String, val sub: String) {
         AUTO("auto", "Auto", "Picks for you"),
-        SPARK("spark", "Spark", "Fast"),
-        FLARE("flare", "Flare", "Balanced"),
-        INFERNO("inferno", "Inferno", "Smartest");
+        // 0.52.1 (Argus rename): user-facing labels Insight / Oracle / Panoptes (fast → balanced → deepest). The ids stay
+        // spark / flare / inferno: they are what is saved (Settings "composer_model") and what the gateway's tiers.ts reads.
+        SPARK("spark", "Insight", "Fast"),
+        FLARE("flare", "Oracle", "Balanced"),
+        INFERNO("inferno", "Panoptes", "Deepest");
 
-        /** "Spark (Fast)", the picker row. */
+        /** Old labels (and ids) that still find this tier in Spotlight search. */
+        val aliases: List<String> get() = when (this) { AUTO -> emptyList(); SPARK -> listOf("spark", "fast"); FLARE -> listOf("flare"); INFERNO -> listOf("inferno", "smartest") }
+
+        /** "Insight (Fast)", the picker row. */
         val pickerLabel: String get() = if (this == AUTO) label else "$label ($sub)"
         /** "Blaze Inferno", the Spotlight / self-map name. */
-        val blazeName: String get() = "Blaze $label"
+        val blazeName: String get() = "${BrandName.NAME} $label"
     }
 
     const val PREF = "composer_model"
@@ -29,9 +36,27 @@ object ModelChoice {
     private val _current = MutableStateFlow(load())
     val current: StateFlow<Family> = _current
 
-    fun of(id: String?): Family = Family.values().firstOrNull { it.id == id?.trim()?.lowercase() } ?: Family.AUTO
+    /** A saved or typed pick: an id ("spark"), a current label ("Insight") or an old label ("Spark"). Anything else is Auto. */
+    fun of(id: String?): Family {
+        val k = id?.trim()?.lowercase().orEmpty()
+        return Family.values().firstOrNull { it.id == k || it.label.lowercase() == k } ?: Family.AUTO
+    }
 
-    private fun load(): Family = of(runCatching { com.blaze.assistant.agent.Settings.str(PREF, "auto") }.getOrDefault("auto"))
+    /**
+     * 0.52.1 migration: a pick saved as a label (an old build, a restored backup, a hand-edited setting: "Spark",
+     * "Insight", "Panoptes"…) is rewritten as its id once, so it keeps meaning the same tier.
+     */
+    fun migrate(saved: String?): String? {
+        val k = saved?.trim() ?: return null
+        val f = of(k)
+        return if (k == f.id) null else f.id
+    }
+
+    private fun load(): Family {
+        val saved = runCatching { com.blaze.assistant.agent.Settings.str(PREF, "auto") }.getOrDefault("auto")
+        migrate(saved)?.let { id -> runCatching { com.blaze.assistant.agent.Settings.setStr(PREF, id) } }
+        return of(saved)
+    }
 
     fun set(f: Family) {
         _current.value = f
@@ -65,6 +90,6 @@ object ModelChoice {
         else -> Family.FLARE
     }
 
-    /** Chip text: "Auto", "Spark", … */
+    /** Chip text: "Auto", "Insight", … */
     fun chip(f: Family = _current.value): String = f.label
 }

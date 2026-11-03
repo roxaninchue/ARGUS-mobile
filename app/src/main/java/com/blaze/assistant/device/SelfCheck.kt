@@ -1,5 +1,7 @@
 package com.blaze.assistant.device
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -22,16 +24,16 @@ object SelfCheck {
         if (includeAi) out += try {
             withTimeoutOrNull(25_000) {
                 LlmClient.complete(JSONArray().put(JSONObject().put("role", "user").put("content", "Reply with the single word OK.")), null, null, null, LlmClient.Lane.BACKGROUND)
-            }?.let { Item("AI model", true, "Blaze Cloud answered in ${System.currentTimeMillis() - t0} ms") }
+            }?.let { Item("AI model", true, "${BrandName.NAME} Cloud answered in ${System.currentTimeMillis() - t0} ms") }
                 ?: Item("AI model", false, "No answer in 25 s. Check your data or Wi-Fi.")
         } catch (e: Exception) { Item("AI model", false, e.message?.take(160) ?: "Failed") }
         val signed = Settings.ready
-        out += Item("Blaze account", signed, if (signed) "Signed in: Blaze Cloud answers" else "Not signed in (Settings → Account).", "settings account")
+        out += Item("${BrandName.NAME} account", signed, if (signed) "Signed in: ${BrandName.NAME} Cloud answers" else "Not signed in (Settings → Account).", "settings account")
         val dropped = Settings.secretsDropped
         val plain = com.blaze.assistant.agent.Secrets.plainFallbacks
         out += Item("Saved keys", dropped == 0 && plain == 0, when {
             plain > 0 -> "The phone's secure key store failed, so $plain key(s) were saved unencrypted this run. Restart the phone; if it keeps happening, send the crash report."
-            dropped > 0 -> "$dropped key(s) or sign-in(s) came from another phone and couldn't be read here. Sign in to your Blaze account to sync model keys back, and reconnect accounts."
+            dropped > 0 -> "$dropped key(s) or sign-in(s) came from another phone and couldn't be read here. Sign in to your ${BrandName.NAME} account to sync model keys back, and reconnect accounts."
             else -> "Encrypted with this phone's Keystore" }, if (dropped > 0) "settings account" else "")
         val http = (listOf(Settings.customBase) + com.blaze.assistant.connect.Mcp.servers.value.map { it.url })
             .filter { it.isNotBlank() && com.blaze.assistant.connect.UrlSafety.isRiskyCleartext(it) }
@@ -58,13 +60,13 @@ object SelfCheck {
         val gh = com.blaze.assistant.connect.Connectors.connected("github")
         out += Item("Git / GitHub", true, if (gh) "GitHub connected: git can push and pull private repos" else "GitHub not connected: git works for public repos only (Settings → Connections).")
         val free = ctx.filesDir.usableSpace / 1e9
-        out += Item("Storage", free > 0.5, "%.1f GB free for Blaze".format(free))
+        out += Item("Storage", free > 0.5, "%.1f GB free for ${BrandName.NAME}".format(free))
         // Runtime permissions
         val P = Manifest.permission.READ_CONTACTS
         listOf("Contacts" to arrayOf(P), "Calendar" to arrayOf(Manifest.permission.READ_CALENDAR), "SMS" to arrayOf(Manifest.permission.READ_SMS),
             "Call log" to arrayOf(Manifest.permission.READ_CALL_LOG), "Location" to arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)).forEach { (label, perms) ->
             val ok = Perms.has(ctx, *perms)
-            out += Item("$label permission", true, if (ok) "Allowed" else "Not yet allowed: Blaze will ask the first time it needs it.")
+            out += Item("$label permission", true, if (ok) "Allowed" else "Not yet allowed: ${BrandName.NAME} will ask the first time it needs it.")
         }
         val am = ctx.getSystemService(android.app.AlarmManager::class.java)
         val exact = android.os.Build.VERSION.SDK_INT < 31 || am?.canScheduleExactAlarms() == true
@@ -75,19 +77,19 @@ object SelfCheck {
             !Settings.fastLane -> "Downloaded but turned off."
             else -> "Ready · ${com.blaze.assistant.agent.IntentCache.size()} cached commands" })
         out += Item("Phone control", com.blaze.assistant.phone.BlazeAccessibilityService.instance != null,
-            if (com.blaze.assistant.phone.BlazeAccessibilityService.instance != null) "Accessibility service connected" else "Turn on Blaze in Accessibility settings.", "accessibility")
+            if (com.blaze.assistant.phone.BlazeAccessibilityService.instance != null) "Accessibility service connected" else "Turn on ${BrandName.NAME} in Accessibility settings.", "accessibility")
         out += Item("Notifications access", com.blaze.assistant.notify.NotificationBrain.enabled(ctx),
-            if (com.blaze.assistant.notify.NotificationBrain.enabled(ctx)) "Can read and reply to notifications" else "Off: Blaze can't see or react to notifications.", "notification_access")
+            if (com.blaze.assistant.notify.NotificationBrain.enabled(ctx)) "Can read and reply to notifications" else "Off: ${BrandName.NAME} can't see or react to notifications.", "notification_access")
         out += Item("Overlay", android.provider.Settings.canDrawOverlays(ctx), if (android.provider.Settings.canDrawOverlays(ctx)) "Orb and live task card allowed" else "Not allowed: no floating orb or task card.", "overlay")
         val mic = ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         out += Item("Microphone", mic, if (mic) "Allowed" else "Not allowed: voice and wake word won't work.", "app_permissions")
         val notif = android.os.Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        out += Item("Post notifications", notif, if (notif) "Allowed" else "Not allowed: Blaze can't speak up on its own.", "app_permissions")
+        out += Item("Post notifications", notif, if (notif) "Allowed" else "Not allowed: ${BrandName.NAME} can't speak up on its own.", "app_permissions")
         val wake = java.io.File(ctx.filesDir, "wake-model").exists()
         out += Item("Wake word model", wake, if (wake) "Downloaded" else "Not downloaded yet (Settings → Voice).", "settings voice")
         val pm = ctx.getSystemService(android.os.PowerManager::class.java)
         val unrestricted = pm?.isIgnoringBatteryOptimizations(ctx.packageName) == true
-        out += Item("Background running", unrestricted, if (unrestricted) "Battery optimisation is off for Blaze" else "Battery optimisation may stop Blaze in the background.", "battery")
+        out += Item("Background running", unrestricted, if (unrestricted) "Battery optimisation is off for ${BrandName.NAME}" else "Battery optimisation may stop ${BrandName.NAME} in the background.", "battery")
         val conns = com.blaze.assistant.connect.Connectors.connectedCount()
         out += Item("Connections", true, "$conns connected")
         try {
@@ -120,6 +122,6 @@ object SelfCheck {
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", "self_test")
-        .put("description", "Check Blaze itself: API key, internet, terminal, Linux, git, phone control, notifications, permissions, storage, voice. Use when something isn't working or before a long task; then tell the user exactly what to fix.")
+        .put("description", "Check ${BrandName.NAME} itself: API key, internet, terminal, Linux, git, phone control, notifications, permissions, storage, voice. Use when something isn't working or before a long task; then tell the user exactly what to fix.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()).put("required", JSONArray())))
 }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui.composer
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.composer.ComposerLook
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -41,6 +43,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Check
@@ -138,7 +143,7 @@ fun MeAvatarView(av: ChatOverlayLogic.Avatar, size: Int = ChatBarTokens.AVATAR_D
 @Composable
 fun BlazeAvatar(size: Int = 30) {
     Box(Modifier.size(size.dp).clip(CircleShape).background(Color(com.blaze.assistant.phone.Mascot.ICON_BG))
-        .semantics { contentDescription = "Blaze" }, contentAlignment = Alignment.Center) {
+        .semantics { contentDescription = "${BrandName.NAME}" }, contentAlignment = Alignment.Center) {
         com.blaze.assistant.ui.DuoEmblem((size * 1.05f).dp, animate = false)
     }
 }
@@ -182,12 +187,12 @@ fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile:
                 .border(1.dp, c.ink.copy(alpha = 0.10f), RoundedCornerShape(50))
                 .padding(start = 18.dp, end = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                    if (state.text.isEmpty()) Text("Message Blaze", style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.sub))
+                    if (state.text.isEmpty()) Text("Message ${BrandName.NAME}", style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.sub))
                     BasicTextField(state.text, { state.text = it },
                         textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.ink), cursorBrush = SolidColor(DuoColors.blazeBlue),
                         maxLines = 5, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                         keyboardActions = KeyboardActions(onSend = { if (state.canSend) state.send() }),
-                        modifier = Modifier.fillMaxWidth().focusRequester(state.barFocus).semantics { contentDescription = "Message Blaze" })
+                        modifier = Modifier.fillMaxWidth().focusRequester(state.barFocus).semantics { contentDescription = "Message ${BrandName.NAME}" })
                 }
                 // The send arrow lives INSIDE the pill and only while there's text.
                 AnimatedVisibility(state.canSend, enter = fadeIn(tween(MotionTokens.ms(MotionTokens.SHORT).toInt())), exit = fadeOut(tween(MotionTokens.ms(MotionTokens.SHORT).toInt()))) {
@@ -221,7 +226,15 @@ private fun SmallChip(label: String, desc: String, trailing: Boolean = false, cl
     }
 }
 
-/** Auto / Spark (Fast) / Flare (Balanced) / Inferno (Smartest). */
+/** 0.52.1 (Argus): the tier marks: Insight an eye, Oracle a spark of foresight, Panoptes the all-seeing (many eyes). */
+fun tierIcon(f: ModelChoice.Family): androidx.compose.ui.graphics.vector.ImageVector? = when (f) {
+    ModelChoice.Family.AUTO -> null
+    ModelChoice.Family.SPARK -> Icons.Rounded.Visibility
+    ModelChoice.Family.FLARE -> Icons.Rounded.AutoAwesome
+    ModelChoice.Family.INFERNO -> Icons.Rounded.Insights
+}
+
+/** Auto / Insight (Fast) / Oracle (Balanced) / Panoptes (Deepest). */
 @Composable
 fun ModelPicker(current: ModelChoice.Family, onPick: (ModelChoice.Family) -> Unit) {
     val c = LocalBlaze.current
@@ -233,6 +246,7 @@ fun ModelPicker(current: ModelChoice.Family, onPick: (ModelChoice.Family) -> Uni
         ModelChoice.Family.values().forEach { f ->
             Row(Modifier.fillMaxWidth().clickable { onPick(f) }.semantics { contentDescription = "Model ${f.pickerLabel}" }
                 .padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                tierIcon(f)?.let { Icon(it, null, tint = c.sub, modifier = Modifier.padding(end = 10.dp).size(18.dp)) }
                 Text(f.pickerLabel, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontWeight = if (f == current) FontWeight.SemiBold else FontWeight.Normal, fontSize = 15.sp, color = c.ink))
                 if (f == current) Icon(Icons.Rounded.Check, null, tint = DuoColors.blazeBlue, modifier = Modifier.size(18.dp))
             }
@@ -435,7 +449,7 @@ fun TypingDots() {
     val solid = LocalComposerSolid.current
     Row(Modifier.clip(RoundedCornerShape(18.dp))
         .then(if (solid) Modifier.background(ComposerLook.blazeBubble(c)) else Modifier.glass(RoundedCornerShape(18.dp), GlassIntensity.High, shadow = false))
-        .semantics { contentDescription = "Blaze is typing" }.padding(horizontal = 14.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        .semantics { contentDescription = "${BrandName.NAME} is typing" }.padding(horizontal = 14.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         if (!MotionTokens.enabled) repeat(3) { Box(Modifier.size(7.dp).clip(CircleShape).background(c.sub)) }
         else {
             val t = rememberInfiniteTransition(label = "dots")

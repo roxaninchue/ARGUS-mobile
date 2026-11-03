@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.foundation.background
@@ -78,7 +80,7 @@ import kotlinx.coroutines.launch
 
 /** Header buttons of the assistant panel, in order (pure, tested). Compact shows Magic Hand, Show more and Close (v0.24.7: the hand). */
 object PanelButtons {
-    enum class B(val desc: String) { HAND("Magic Hand: point at anything on screen"), NEW("New chat"), PIN("Pin the floating orb"), OPEN("Open Blaze"), MORE("Show more"), LESS("Show less"), CLOSE("Close") }
+    enum class B(val desc: String) { HAND("Magic Hand: point at anything on screen"), NEW("New chat"), PIN("Pin the floating orb"), OPEN("Open ${BrandName.NAME}"), MORE("Show more"), LESS("Show less"), CLOSE("Close") }
     fun of(compact: Boolean): List<B> = if (compact) listOf(B.HAND, B.MORE, B.CLOSE) else listOf(B.HAND, B.NEW, B.PIN, B.OPEN, B.LESS, B.CLOSE)
 }
 
@@ -133,7 +135,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
 
     fun listen() {
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            note = "Open Blaze once and allow the microphone."; return
+            note = "Open ${BrandName.NAME} once and allow the microphone."; return
         }
         Voice.listen(onText = { if (it.isNotBlank()) Agent.send(it, byVoice = true) }, onError = { note = it })
     }
@@ -189,7 +191,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 MascotGlyph(if (compact) 34.dp else 40.dp, pulse = listening || busy, level = level)
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
-                    if (!compact) Text("Blaze", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Glass.text))
+                    if (!compact) Text("${BrandName.NAME}", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Glass.text))
                     val status = when {
                         listening -> "Listening"
                         voice == Voice.State.SPEAKING -> "Speaking"
@@ -261,7 +263,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
             Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).clip(Glass.pill).background(Glass.raised).border(1.dp, Glass.border, Glass.pill)
                     .padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    if (text.isEmpty()) Text("Ask Blaze", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Glass.weak))
+                    if (text.isEmpty()) Text("Ask ${BrandName.NAME}", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Glass.weak))
                     AcceptImages(onImage = { uri, mime -> addImage(uri, mime) }) {
                         BasicTextField(text, { text = it; touched = true },
                             textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Glass.text),
@@ -273,7 +275,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 Spacer(Modifier.width(8.dp))
                 val micOn = voice != Voice.State.IDLE
                 GlassIconButton(if (micOn) Icons.Rounded.Stop else Icons.Rounded.Mic, when (voice) {
-                    Voice.State.LISTENING -> "Stop listening"; Voice.State.SPEAKING -> "Stop speaking"; else -> "Speak to Blaze" },
+                    Voice.State.LISTENING -> "Stop listening"; Voice.State.SPEAKING -> "Stop speaking"; else -> "Speak to ${BrandName.NAME}" },
                     size = 46.dp, bg = if (micOn) Glass.blue else Glass.raised2) {
                     note = ""; touched = true
                     when (voice) {
@@ -283,7 +285,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                     }
                 }
                 Spacer(Modifier.width(6.dp))
-                if (busy) GlassIconButton(Icons.Rounded.Stop, "Stop Blaze", size = 46.dp, bg = Glass.orange) { Agent.stop() }
+                if (busy) GlassIconButton(Icons.Rounded.Stop, "Stop ${BrandName.NAME}", size = 46.dp, bg = Glass.orange) { Agent.stop() }
                 else GlassIconButton(Icons.Rounded.Send, "Send", size = 46.dp,
                     bg = if (text.isNotBlank() || pending.isNotEmpty()) Glass.blue else Glass.raised2) { submit() }
             }
@@ -312,7 +314,7 @@ private fun AssistDuoStrip(listening: Boolean, busy: Boolean, partial: String, o
             Spacer(Modifier.width(3.dp))
             Box(Modifier.size(9.dp).clip(CircleShape).background(DuoColors.haloGold))
             Spacer(Modifier.width(8.dp))
-            Text("Blaze", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Glass.text))
+            Text("${BrandName.NAME}", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Glass.text))
             Spacer(Modifier.width(8.dp))
             Text(when { listening -> "Listening\u2026 let go to finish"; busy -> "Working"; label.isNotBlank() -> "Done \u00b7 still in $label"; else -> "Ready" },
                 maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))

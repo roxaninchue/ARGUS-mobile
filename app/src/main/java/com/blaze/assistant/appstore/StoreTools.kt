@@ -1,5 +1,7 @@
 package com.blaze.assistant.appstore
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -19,7 +21,7 @@ object StoreTools {
     private fun p(t: String, d: String) = JSONObject().put("type", t).put("description", d)
 
     fun definitions(): List<JSONObject> = listOf(
-        fn(SEARCH, "Search Blaze's App Store: free open-source Android apps from their developers' own releases (not made by Blazeinchue). Returns ids, names, licenses and source repos.",
+        fn(SEARCH, "Search ${BrandName.NAME}'s App Store: free open-source Android apps from their developers' own releases (not made by Blazeinchue). Returns ids, names, licenses and source repos.",
             JSONObject().put("query", p("string", "Words, e.g. 'password manager'")).put("category", p("string", "Optional category id")), listOf("query")),
         fn(INFO, "Details of one App Store app: summary, license, source repo, site, whether it is installed.", JSONObject().put("app", p("string", "App id or name")), listOf("app")),
         fn(INSTALL, "Install an App Store app on this phone with Android's installer: asks the user on a confirm card first, downloads the developer's official release, " +

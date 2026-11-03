@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
@@ -120,7 +122,7 @@ object Modes {
         if (!plan && !agentPlan) return ""
         val why = planBlock(name, args)
         if (why.isEmpty()) return ""
-        return "Refused: Blaze is in PLAN mode (read and look only) and $why. Don't retry it. Finish investigating with read-only tools, then present the plan: exactly what you would do, step by step, and the risks. The user switches to Build to let you carry it out."
+        return "Refused: ${BrandName.NAME} is in PLAN mode (read and look only) and $why. Don't retry it. Finish investigating with read-only tools, then present the plan: exactly what you would do, step by step, and the risks. The user switches to Build to let you carry it out."
     }
 
     /** Plan shows the model only tools it may use (the dispatch check above still guards). */

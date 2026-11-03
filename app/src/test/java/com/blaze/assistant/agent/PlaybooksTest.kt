@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -105,7 +107,7 @@ A good answer names the crop, the planting window for the farmer's region, the s
         val p = Playbooks.forSpec(s)
         assertTrue(p.contains("## Self-check"))
         val sys = Playbooks.specialistSystem(s, p, "\nSKILLS (follow them):\n### blaze-views", "Wednesday", "", agentId = "B3")
-        assertTrue(sys.contains("You are Blaze's Designer specialist, working as background agent B3"))
+        assertTrue(sys.contains("You are ${BrandName.NAME}'s Designer specialist, working as background agent B3"))
         assertTrue(sys.contains("PLAYBOOK — Designer")); assertTrue(sys.contains("## Quality bar")); assertTrue(sys.contains(s.prompt))
         assertTrue(sys.contains("Output format"))
         // A custom specialist uses its own playbook; one without gets none here (it's generated on first use).

@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.work.Constraints
@@ -204,12 +206,12 @@ object CloudSync {
     fun plain(e: Throwable): String = when (e) {
         is Offline -> "Waiting for internet."
         is HttpError -> when {
-            e.code == 401 -> "You're signed out. Sign in to your Blaze account to keep syncing."
-            e.code == 404 || e.code == 405 -> "Cloud sync isn't switched on in Blaze's service yet."
+            e.code == 401 -> "You're signed out. Sign in to your ${BrandName.NAME} account to keep syncing."
+            e.code == 404 || e.code == 405 -> "Cloud sync isn't switched on in ${BrandName.NAME}'s service yet."
             e.err == "already_set_up" -> "Cloud sync already has a passphrase from another phone. Enter that one."
-            e.code == 413 -> "That was too much to send at once. Blaze will try again in smaller parts."
-            e.code == 429 -> "Blaze's service is busy. Trying again in a minute."
-            e.code >= 500 -> "Blaze's service had a problem. Trying again in a minute."
+            e.code == 413 -> "That was too much to send at once. ${BrandName.NAME} will try again in smaller parts."
+            e.code == 429 -> "${BrandName.NAME}'s service is busy. Trying again in a minute."
+            e.code >= 500 -> "${BrandName.NAME}'s service had a problem. Trying again in a minute."
             else -> "Couldn't sync (${e.err})."
         }
         is SyncEngine.Busy -> "Your other phone is syncing right now. Trying again shortly."
@@ -225,7 +227,7 @@ object CloudSync {
      */
     suspend fun enable(passphrase: String): String = withContext(Dispatchers.IO) {
         val pass = passphrase.trim()
-        if (!BlazeAccount.signedIn()) return@withContext "Sign in to your Blaze account first. Cloud sync keeps your copy with your account."
+        if (!BlazeAccount.signedIn()) return@withContext "Sign in to your ${BrandName.NAME} account first. Cloud sync keeps your copy with your account."
         if (pass.length < 8) return@withContext "Use a passphrase of at least 8 characters."
         try {
             val m = metaOf(http("GET", "/v1/sync/meta"))
@@ -332,11 +334,11 @@ object CloudSync {
             val key = key()
             if (key == null) { publish("Enter your sync passphrase to keep syncing."); return@withLock _view.value.status }
             if (!BlazeAccount.signedIn() || BlazeAccount.sessionToken().isBlank()) {
-                publish("You're signed out. Sign in to your Blaze account to keep syncing."); return@withLock _view.value.status
+                publish("You're signed out. Sign in to your ${BrandName.NAME} account to keep syncing."); return@withLock _view.value.status
             }
             val uid = BlazeAccount.user()?.id.orEmpty()
             if (Settings.str(UID).isNotEmpty() && uid.isNotEmpty() && uid != Settings.str(UID)) {
-                turnOff("You signed in to a different Blaze account, so cloud sync is off. Turn it on again for this account.")
+                turnOff("You signed in to a different ${BrandName.NAME} account, so cloud sync is off. Turn it on again for this account.")
                 return@withLock _view.value.status
             }
             publish(busy = true)
@@ -349,7 +351,7 @@ object CloudSync {
                 Settings.setStr(LAST, System.currentTimeMillis().toString())
                 publish(skipped = r.skipped)
                 when {
-                    r.full -> "Your cloud copy is full (25 MB). Turn off Designs or delete some, and Blaze syncs the rest."
+                    r.full -> "Your cloud copy is full (25 MB). Turn off Designs or delete some, and ${BrandName.NAME} syncs the rest."
                     r.failedOpen > 0 -> "Synced, but ${r.failedOpen} item(s) couldn't be opened with this passphrase."
                     else -> "Synced"
                 }

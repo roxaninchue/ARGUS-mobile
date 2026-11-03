@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -23,7 +25,7 @@ class ChatAck19Test {
     }
 
     @Test fun questionsAreAnsweredNotAcked() = fiveTimes {
-        for (q in listOf("did you already book?", "what is Blaze phone doing", "is the alarm set?", "how's the booking going?",
+        for (q in listOf("did you already book?", "what is ${BrandName.NAME} phone doing", "is the alarm set?", "how's the booking going?",
             "Did you send it", "where are you on the booking?", "has it opened yet", "why did it stop?", "booking done?")) {
             assertTrue(q, Ack.isQuestion(q))
             assertFalse(q, Ack.wants(q))
@@ -58,12 +60,12 @@ class ChatAck19Test {
     }
 
     @Test fun halosHandoffLineIsNeverShown() = fiveTimes {
-        for (h in listOf("Got it \u2014 passing that straight to Blaze.", "Passed to Blaze \u2014 let me know if you need anything else while that runs.",
-            "Handing that over to Blaze.", "On it!", "Halo here, I'll handle it."))
+        for (h in listOf("Got it \u2014 passing that straight to ${BrandName.NAME}.", "Passed to ${BrandName.NAME} \u2014 let me know if you need anything else while that runs.",
+            "Handing that over to ${BrandName.NAME}.", "On it!", "Halo here, I'll handle it."))
             assertTrue(h, Ack.isGeneric(h))
         assertTrue(Duo.isRelay("[[relay]]"))
         assertTrue(Duo.sideSystem(null, "book a room", "").contains("reply with only the tag [[relay]]"))
-        assertFalse(Duo.sideSystem(null, "book a room", "").contains("say in one short warm line that you've passed it to Blaze"))
+        assertFalse(Duo.sideSystem(null, "book a room", "").contains("say in one short warm line that you've passed it to ${BrandName.NAME}"))
         // A real answer from Halo is not a handoff.
         assertFalse(Ack.isGeneric("The room is \u00a3100 a night with check-in on 31 October."))
     }

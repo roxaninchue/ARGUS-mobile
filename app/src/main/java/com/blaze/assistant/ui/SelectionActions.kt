@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import java.net.URLEncoder
 
 /**
@@ -15,7 +17,7 @@ object SelectionActions {
 
     enum class Action(val label: String) {
         COPY("Copy"), QUOTE("Quote"), SELECT_ALL("Select all"),
-        SEARCH("Search"), OPEN_LINK("Open link"), ASK("Ask Blaze"), TRANSLATE("Translate"),
+        SEARCH("Search"), OPEN_LINK("Open link"), ASK("Ask ${BrandName.NAME}"), TRANSLATE("Translate"),
         DEFINE("Define"), READ_ALOUD("Read aloud"), SHARE("Share")
     }
 

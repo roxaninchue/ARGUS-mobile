@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.51.0 terminal-first routing (owner: "many tasks are faster in Blaze Terminal than by opening apps or tapping").
  *
@@ -56,7 +58,7 @@ object ExecRoute {
 
     /** Every prompt carries the rule; the turn hint names the route for this message. */
     const val PROMPT = "\nTERMINAL FIRST: when a task is easy as a command (web lookups with curl / http_request / fetch_page, files, sums and conversions, " +
-        "git, package or version lookups, API calls, text processing, downloads, network checks), do it in Blaze Terminal (run_shell, run_code) or with the " +
+        "git, package or version lookups, API calls, text processing, downloads, network checks), do it in ${BrandName.NAME} Terminal (run_shell, run_code) or with the " +
         "HTTP tools instead of opening apps, tapping the screen or driving the browser. Use phone control only for GUI apps or a signed-in app session, and " +
         "the browser only for sites that need a login, a form or a click. Destructive or sending commands still need the user's OK (the confirm card)."
 

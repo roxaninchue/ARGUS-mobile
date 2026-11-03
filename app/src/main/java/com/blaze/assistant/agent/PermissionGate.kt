@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 
@@ -20,8 +22,8 @@ object PermissionGate {
     const val POLL_MS = 600L
 
     const val TITLE = "Turn on phone control?"
-    const val REASON = "To do this, Blaze needs to see and tap the screen in other apps. Turn on Blaze under Accessibility; " +
-        "you'll come straight back here. Blaze still asks before sending, paying or deleting."
+    const val REASON = "To do this, ${BrandName.NAME} needs to see and tap the screen in other apps. Turn on ${BrandName.NAME} under Accessibility; " +
+        "you'll come straight back here. ${BrandName.NAME} still asks before sending, paying or deleting."
     const val ACTION = "Open settings"
 
     /** Ask only when the tool needs it, the switch is off, and the user hasn't turned phone control off in Blaze. */

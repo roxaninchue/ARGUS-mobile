@@ -1,14 +1,14 @@
 ---
 name: skill-creator
-description: How to write or improve a Blaze skill (SKILL.md) - when a workflow is worth saving, how to name and describe it so it's found, how to structure the steps, checklists and templates, and how to update it later. Use before calling write_skill, when the user says "save this as a skill" or teaches you a method, or when an existing skill turned out wrong.
+description: How to write or improve a Argus skill (SKILL.md) - when a workflow is worth saving, how to name and describe it so it's found, how to structure the steps, checklists and templates, and how to update it later. Use before calling write_skill, when the user says "save this as a skill" or teaches you a method, or when an existing skill turned out wrong.
 tags: [skills, meta, writing, workflow]
 version: 1
 ---
 
 # Writing a good skill
 
-A skill is a reusable method Blaze loads before doing a kind of task. It lives in
-`~/skills/<name>/SKILL.md` and is used by Blaze on this phone (Blaze Desktop and the CLI keep theirs in ~/.blaze/skills).
+A skill is a reusable method Argus loads before doing a kind of task. It lives in
+`~/skills/<name>/SKILL.md` and is used by Argus on this phone (Argus Desktop and the CLI keep theirs in ~/.blaze/skills).
 
 ## 1. When to create or change one
 
@@ -83,5 +83,5 @@ combination as its own skill instead of copying their contents:
 
 ## 6. Bundled skills
 
-Skills shipped with Blaze are seeded on start. Editing one is fine: Blaze never overwrites a
+Skills shipped with Argus are seeded on start. Editing one is fine: Argus never overwrites a
 skill you or it changed, and the user can reset it, turn it off or delete it in Settings › Skills.

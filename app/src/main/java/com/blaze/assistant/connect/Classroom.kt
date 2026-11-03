@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.Settings
 import org.json.JSONArray
 import org.json.JSONObject
@@ -25,7 +27,7 @@ object Classroom {
         get() = Settings.bool("classroom_on", false)
         set(v) = Settings.setBool("classroom_on", v)
 
-    const val NEEDS_SCOPE = "Google Classroom isn't allowed yet. Turn on Settings \u203a Learn \u203a Google Classroom, then reconnect Google once (Settings \u203a Connections) so Blaze can read your courses and assignments."
+    const val NEEDS_SCOPE = "Google Classroom isn't allowed yet. Turn on Settings \u203a Learn \u203a Google Classroom, then reconnect Google once (Settings \u203a Connections) so ${BrandName.NAME} can read your courses and assignments."
 
     data class Work(val id: String, val course: String, val courseName: String, val title: String, val due: Long?,
                     val link: String, val points: Double, val state: String)

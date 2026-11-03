@@ -1,5 +1,7 @@
 package com.blaze.assistant.dashboard
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -71,7 +73,7 @@ object Dashboard {
                     catch (e: DashHttp.BadRequest) { runCatching { send(c.getOutputStream(), e.code, "text/plain", e.message.orEmpty()) } }
                     catch (e: java.net.SocketTimeoutException) { }
                     catch (e: java.io.IOException) { }
-                    catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("dashboard request", e); runCatching { send(c.getOutputStream(), 500, "text/plain", "Blaze dashboard error") } }
+                    catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("dashboard request", e); runCatching { send(c.getOutputStream(), 500, "text/plain", "${BrandName.NAME} dashboard error") } }
                     finally { runCatching { c.close() } }
                 }
             }
@@ -100,7 +102,7 @@ object Dashboard {
         val head = DashHttp.readHead(inp) ?: return
         val out = c.getOutputStream()
         // v0.45.0: token first; nothing of the body is read for a caller without the link.
-        if (!DashHttp.tokenOk(head.token, token)) return send(out, 401, "text/plain", "Blaze dashboard: open the link from Blaze (Settings → Dashboard).")
+        if (!DashHttp.tokenOk(head.token, token)) return send(out, 401, "text/plain", "${BrandName.NAME} dashboard: open the link from ${BrandName.NAME} (Settings → Dashboard).")
         val method = head.method; val path = head.path; val q = head.query
         // Long agent turns (/api/send) may take minutes; the body itself must arrive promptly.
         val body = DashHttp.readBody(inp, head)

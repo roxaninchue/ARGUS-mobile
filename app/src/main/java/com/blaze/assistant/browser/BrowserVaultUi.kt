@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
@@ -163,7 +165,7 @@ internal fun SavedPasswordsPanel() {
         T("Saved passwords", Glass.text, 16, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
         Icon(Icons.Rounded.Lock, null, tint = Glass.weak, modifier = Modifier.size(15.dp))
     }
-    T("Saved from sign-in forms in Blaze Browser (never from private tabs). Encrypted with this phone's Keystore. Unlock with your fingerprint or PIN to see, copy or change one.",
+    T("Saved from sign-in forms in ${BrandName.NAME} Browser (never from private tabs). Encrypted with this phone's Keystore. Unlock with your fingerprint or PIN to see, copy or change one.",
         Glass.sub, 12, modifier = Modifier.padding(horizontal = 18.dp))
     Spacer(Modifier.height(8.dp))
     if (logins.size > 5) Row(Modifier.padding(horizontal = 14.dp).fillMaxWidth().height(40.dp).clip(Glass.pill).background(Glass.raised)
@@ -177,7 +179,7 @@ internal fun SavedPasswordsPanel() {
     }
     LazyColumn(Modifier.heightIn(max = 460.dp).padding(horizontal = 10.dp)) {
         if (logins.isEmpty()) item {
-            T("No saved passwords yet. When you sign in to a site, Blaze offers to save it.", Glass.sub, 13, modifier = Modifier.padding(8.dp, 12.dp))
+            T("No saved passwords yet. When you sign in to a site, ${BrandName.NAME} offers to save it.", Glass.sub, 13, modifier = Modifier.padding(8.dp, 12.dp))
         }
         items(list, key = { it.id }) { l ->
             val open = l.id in shown; val isEdit = editing == l.id

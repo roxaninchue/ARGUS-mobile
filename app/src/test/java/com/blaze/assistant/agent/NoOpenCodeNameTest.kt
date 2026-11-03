@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -45,6 +47,6 @@ class NoOpenCodeNameTest {
         assertEquals("On-phone brain", BrainOrder.label(BackupRoute.Step.BACKUP))
         assertEquals("On-phone brain ready.", BackupStatus.line(BackupStatus.State.INSTALLED, "1.0", 78))
         assertEquals("Getting your on-phone brain ready (one-time)…", BackupStatus.line(BackupStatus.State.DOWNLOADING, "1.0", 78))
-        assertEquals("Finish setting up Blaze on mobile data? About 80 MB, one time.", BackupNudge.mobileDataQuestion(BackupBrain.DOWNLOAD_BYTES))
+        assertEquals("Finish setting up ${BrandName.NAME} on mobile data? About 80 MB, one time.", BackupNudge.mobileDataQuestion(BackupBrain.DOWNLOAD_BYTES))
     }
 }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -78,7 +80,7 @@ class StageShotsTest {
     private fun data(i: StageItem) = when (i.kind) {
         StageKind.TIMER -> StageData(now = t0 + 61_000, timer = timer)
         StageKind.MUSIC -> StageData(now = t0, music = musicNow)
-        StageKind.BROWSER -> StageData(now = t0, browser = StageBrowserNow(true, "Blaze – Home", "https://blaze.example/", 60, canBack = true))
+        StageKind.BROWSER -> StageData(now = t0, browser = StageBrowserNow(true, "${BrandName.NAME} – Home", "https://blaze.example/", 60, canBack = true))
         StageKind.FLASHCARDS -> StageData(now = t0, cardFront = "What does a for loop repeat?", cardBack = "Its body, once per item", cardsLeft = 12)
         else -> StageData(now = t0)
     }

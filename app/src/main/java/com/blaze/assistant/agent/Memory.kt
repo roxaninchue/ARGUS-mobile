@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,10 +77,10 @@ object Memory {
     fun add(fact: String, replaces: String = ""): String {
         val f = SecretVault.scrub(fact).trim().removeSuffix(".")
         // 0.46.6: a Secure Form handle is not a fact to keep.
-        if (SecretVault.hasHandle(f)) return "Not saved: saved secrets stay in Blaze's vault (Settings › Saved secrets), never in memory."
+        if (SecretVault.hasHandle(f)) return "Not saved: saved secrets stay in ${BrandName.NAME}'s vault (Settings › Saved secrets), never in memory."
         if (f.isEmpty()) return "Nothing to remember."
         // Keys, passwords, codes and card/account numbers are never kept, even when asked (Desktop v0.7 rule).
-        if (Learn.secret(f)) return "Not saved: that looks like a password, code or account number, which Blaze never keeps in memory."
+        if (Learn.secret(f)) return "Not saved: that looks like a password, code or account number, which ${BrandName.NAME} never keeps in memory."
         val d = Mind.dbOrWait()
         if (d != null) {
             val r = replaces.trim().lowercase()

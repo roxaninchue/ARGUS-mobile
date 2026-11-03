@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -45,7 +47,7 @@ object ToolRouter {
             { it in setOf("send_sms", "compose_sms", "read_messages", "call_contact", "call_number", "dial", "find_contact", "recent_calls",
                 "message_contact", "send_text", "reply_to_notification", "recent_notifications", "run_ussd", "add_contact", "edit_contact",
                 "notif_conversations", "notif_read", "notif_reply", "group_brain") }),
-        Group("persona", "personality: Blaze's style is set in Settings › Personality (no separate Halo persona since 0.51)",
+        Group("persona", "personality: ${BrandName.NAME}'s style is set in Settings › Personality (no separate Halo persona since 0.51)",
             r("""\b(persona\w*|personality|halo (?:be|talk|speak|sound)|be (?:funnier|nicer|more \w+)|speak (?:bemba|nyanja|english)|bemba|nyanja|stop calling me)\b"""),
             { it == "halo_persona" }),
         // v0.33.0 Agent Marketplace, Duo Workspaces, Call Copilot.
@@ -96,7 +98,7 @@ object ToolRouter {
         Group("study", "flashcards (spaced repetition in the Learn view), study tools",
             r("""\b(flash ?cards?|quiz|revise|revision|study|studying|exam|test me|memori[sz]e|lecture|tutor)\b"""),
             { it == "flashcards" }),
-        Group("browser", "Blaze's own background browser: open sites, click, fill forms, log in, private tabs, browser VPN by country",
+        Group("browser", "${BrandName.NAME}'s own background browser: open sites, click, fill forms, log in, private tabs, browser VPN by country",
             r("""\b(site|website|web ?page|browser|log ?in|sign ?in|form|book|order|buy|account|portal|vpn|incognito|private tab|from (?:the )?(?:us|uk|usa|another country)|\.com|\.org|\.zm|https?://)"""),
             { it.startsWith("browser_") }),
         Group("terminal", "Linux shell, code, files, Termux",
@@ -105,13 +107,13 @@ object ToolRouter {
         Group("apps", "GitHub, Notion, Slack, Spotify connectors",
             r("""\b(github|repo|issue|pull request|pr|notion|slack|spotify|playlist|song|music)\b"""),
             { it.startsWith("github_") || it.startsWith("notion_") || it.startsWith("slack_") || it.startsWith("spotify_") }),
-        Group("media", "play Blaze Music (music_ops: play, pause, next, playlists; never the terminal or screen control), make images (generate_image), beats and other media, the Gallery",
+        Group("media", "play ${BrandName.NAME} Music (music_ops: play, pause, next, playlists; never the terminal or screen control), make images (generate_image), beats and other media, the Gallery",
             r("""\b(movies?|films?|watch(?:ing|list)?|jellyfin|aperture|shutter|iso|depth of field|hyperfocal|nd filter|receipt|prices?|subtitles?|captions?|recap|episodes?|series|videos?|autoplay|playlists?|equali[sz]er|crossfade|lyrics|karaoke|wrapped|daily mix\w*|dj|duplicates?|blurry|trash|on this day|declutter|download\w*|songs?|albums?|hum\w*|beat lab|reels?|clip studio|edit (?:my |a |the )?videos?|tiktok|status video|montage|cover art|covers?|thumbnails?|album art|image|images|picture|pictures|pic|photo|draw|drawing|paint|art|artwork|logo|icon|wallpaper|poster|illustration|generate|create|design|beat|beats|instrumental|music|song|melody|audio|sound|wav|mp3|gallery|meme|sticker|avatar)\b"""),
             { it in setOf("generate_image", "gallery", "run_code", "file_list", "file_read", "file_write", "run_shell", "terminal_status", "cover_art", "beat_lab", "clip_studio", "media_download", "video_ops", "music_ops", "gallery_ops", "camera_math", "movies") }),
-        Group("read", "read aloud: articles, files, chats in the user's own cloned voice or Blaze's",
+        Group("read", "read aloud: articles, files, chats in the user's own cloned voice or ${BrandName.NAME}'s",
             r("""\b(read (?:it |this |that )?(?:out|aloud|to me)|read me|listen to (?:this|the|an?)|my voice|audiobook|text to speech|narrat\w*)\b"""),
             { it == "read_aloud" }),
-        Group("pc", "the user's paired computer running Blaze Desktop (ask_pc)",
+        Group("pc", "the user's paired computer running ${BrandName.NAME} Desktop (ask_pc)",
             r("""\b(pc|computer|laptop|desktop|my mac|macbook|on windows)\b"""),
             { it == "ask_pc" }),
         // v0.29.0 Home board widgets.

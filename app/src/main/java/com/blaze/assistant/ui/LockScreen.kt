@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +30,7 @@ fun LockScreen(onUnlock: () -> Unit) {
         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
             BrandMark(Mood.IDLE, 56.dp)
             Spacer(Modifier.height(20.dp))
-            Text("Blaze is locked", style = TextStyle(fontFamily = Type.Display, fontSize = 24.sp, color = c.ink))
+            Text("${BrandName.NAME} is locked", style = TextStyle(fontFamily = Type.Display, fontSize = 24.sp, color = c.ink))
             Spacer(Modifier.height(18.dp))
             Box(Modifier.clip(BlazeShapes.pill).glassButton(c).clickable(onClick = onUnlock).padding(horizontal = 22.dp, vertical = 14.dp)) {
                 ButtonText("Unlock", color = Color.White)

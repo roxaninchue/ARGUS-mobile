@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,9 +42,9 @@ fun BankModePage() {
     LaunchedEffect(rev) { list = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { BankMode.listFor(ctx) } }
     LaunchedEffect(adding, rev) { if (adding) others = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { BankMode.others(ctx) } }
 
-    PageHead("Bank mode", "Use banking apps with Blaze", BankModeLogic.SETTING_LINE)
+    PageHead("Bank mode", "Use banking apps with ${BrandName.NAME}", BankModeLogic.SETTING_LINE)
     Spacer(Modifier.height(10.dp))
-    ToggleRow("Bank mode", if (st.on) (if (st.auto) "On while your banking app is open" else "On. Blaze is stepping back.") else "Off", st.on) {
+    ToggleRow("Bank mode", if (st.on) (if (st.auto) "On while your banking app is open" else "On. ${BrandName.NAME} is stepping back.") else "Off", st.on) {
         note = if (st.on) BankMode.turnOff(ctx) else BankMode.turnOn(ctx)
     }
     ToggleRow("Turn on by itself", "When an app on the list below opens, Bank mode turns on, and off again when you leave it.", auto) {
@@ -77,7 +79,7 @@ fun BankModePage() {
     if (simple && !BankMode.canRestoreA11y(ctx)) {
         Spacer(Modifier.height(18.dp))
         GroupHead("Phone control after banking", "")
-        Text("Bank apps won't open while Blaze can control the phone, so Bank mode switches that off. When you leave the bank app, Blaze shows a notification: tap it, then Blaze's switch, to turn it back on.",
+        Text("Bank apps won't open while ${BrandName.NAME} can control the phone, so Bank mode switches that off. When you leave the bank app, ${BrandName.NAME} shows a notification: tap it, then ${BrandName.NAME}'s switch, to turn it back on.",
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
     }
     if (stopped) {
@@ -88,7 +90,7 @@ fun BankModePage() {
     }
     if (!simple) {
         Spacer(Modifier.height(18.dp))
-        GroupHead("Phone control after Bank mode", if (BankMode.canRestoreA11y(ctx)) "Blaze can switch it back on by itself." else "You switch it back on with one tap.")
+        GroupHead("Phone control after Bank mode", if (BankMode.canRestoreA11y(ctx)) "${BrandName.NAME} can switch it back on by itself." else "You switch it back on with one tap.")
         Text(BankModeLogic.ADB_LINE, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
         Spacer(Modifier.height(6.dp))
         Text(BankModeLogic.ADB_GRANT, style = TextStyle(fontFamily = Type.Mono, fontSize = 12.sp, lineHeight = 17.sp, color = c.ink))

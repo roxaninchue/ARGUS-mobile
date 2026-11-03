@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
@@ -32,7 +34,7 @@ object TaskKeeper {
     /** The honest line for a task that stopped when Blaze was closed (no reply came back for it). */
     fun stoppedLine(said: String): String {
         val s = said.trim().replace(Regex("\\s+"), " ").let { if (it.length > 60) it.take(57).trimEnd() + "\u2026" else it }
-        return "I was working on \u201c$s\u201d when Blaze closed, so it stopped before I could confirm it. Send it again and I'll finish it."
+        return "I was working on \u201c$s\u201d when ${BrandName.NAME} closed, so it stopped before I could confirm it. Send it again and I'll finish it."
     }
 
     /** Pure JSON form of the ledger (TaskKeeperTest). */
@@ -115,13 +117,13 @@ class TaskWorker(ctx: Context, p: WorkerParameters) : CoroutineWorker(ctx, p) {
 object QuietChannel {
     const val ID = "blaze_quiet"
     const val NOTE_ID = 41
-    const val TITLE = "Blaze"
+    const val TITLE = "${BrandName.NAME}"
 
     fun info(ctx: Context): ForegroundInfo {
         if (android.os.Build.VERSION.SDK_INT >= 26) {
             val nm = ctx.getSystemService(android.app.NotificationManager::class.java)
             nm?.createNotificationChannel(android.app.NotificationChannel(ID, "Background tasks", android.app.NotificationManager.IMPORTANCE_MIN).apply {
-                description = "Only on older Android versions, while a task you gave Blaze finishes in the background. Silent."
+                description = "Only on older Android versions, while a task you gave ${BrandName.NAME} finishes in the background. Silent."
                 setShowBadge(false); setSound(null, null); enableVibration(false)
             })
         }

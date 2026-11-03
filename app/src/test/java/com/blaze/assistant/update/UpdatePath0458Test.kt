@@ -1,5 +1,7 @@
 package com.blaze.assistant.update
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.PrefCoerce
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -18,13 +20,13 @@ class UpdatePath0458Test {
     private fun src(p: String) = File(app, p).readText()
 
     private val feed = """{"schema":1,"android":{"version":"0.45.8","url":"https://blazeinchue.pages.dev/dl/android/v0.45.8",""" +
-        """"sha256":"${"e".repeat(64)}","notes":"Blaze starts working the instant you tap Send"},"desktop":{"version":"0.19.10","platforms":{}},"cli":{"version":"v0.14.12"}}"""
+        """"sha256":"${"e".repeat(64)}","notes":"${BrandName.NAME} starts working the instant you tap Send"},"desktop":{"version":"0.19.10","platforms":{}},"cli":{"version":"v0.14.12"}}"""
 
     @Test fun feedFrom0455SeesTheUpdate() {
         val a = VersionFeed.parse(feed)
         assertNotNull(a)
         assertTrue(VersionFeed.newer(a!!.version, "0.45.5"))
-        assertEquals("Blaze 0.45.8 is available", VersionFeed.banner(a, "0.45.5", ""))
+        assertEquals("${BrandName.NAME} 0.45.8 is available", VersionFeed.banner(a, "0.45.5", ""))
         assertEquals(listOf("https://blazeinchue.pages.dev/dl/android/v0.45.8"), VersionFeed.sources(a))
         assertTrue(VersionFeed.hosts(a).none { "github" in it })
     }

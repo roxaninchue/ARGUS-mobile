@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -59,7 +61,7 @@ object SharedPersona {
 
     /** The second system message's opening: the user's first name and the local time in natural words. */
     fun contextLine(firstName: String?, natural: String): String = buildString {
-        append("App context for Blaze on the user's Android phone. ")
+        append("App context for ${BrandName.NAME} on the user's Android phone. ")
         if (!firstName.isNullOrBlank()) append("User's first name: ").append(firstName.trim().substringBefore(' ')).append(". ")
         if (natural.isNotBlank()) append("Local time: ").append(natural).append(". ")
     }

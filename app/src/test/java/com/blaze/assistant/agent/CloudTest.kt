@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -59,7 +61,7 @@ class CloudTest {
     }
 
     @Test fun waitingListIsNotAnExpiredSignIn() {
-        assertEquals(Cloud.WAITLISTED, Cloud.friendly(403, "waitlisted You're on the Blaze waiting list."))
+        assertEquals(Cloud.WAITLISTED, Cloud.friendly(403, "waitlisted You're on the ${BrandName.NAME} waiting list."))
         assertEquals(Cloud.REJECTED, Cloud.friendly(403, "access_rejected nope"))
         assertEquals(Cloud.EXPIRED, Cloud.friendly(403, "forbidden"))
         assertFalse(Cloud.retryable(403, "waitlisted"))

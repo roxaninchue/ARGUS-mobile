@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -104,10 +106,10 @@ object BlazeAccount {
     fun message(e: Throwable): String = when (e) {
         is NotConfigured -> "That sign-in isn't switched on yet. Use your email instead."
         is Cancelled -> "Sign-in was cancelled."
-        is Unreachable -> "Couldn't reach Blaze's sign-in service. Check your internet connection."
+        is Unreachable -> "Couldn't reach ${BrandName.NAME}'s sign-in service. Check your internet connection."
         is ApiError -> when (e.code) {
             "invalid_credentials" -> "That email and password don't match."
-            "email_taken" -> "There's already a Blaze account with that email. Sign in instead."
+            "email_taken" -> "There's already a ${BrandName.NAME} account with that email. Sign in instead."
             "invalid_email" -> "That doesn't look like an email address."
             "invalid_password" -> "Use a password of at least 8 characters."
             "rate_limited" -> "Too many tries. Wait a few minutes and try again."
@@ -119,7 +121,7 @@ object BlazeAccount {
             "signin_expired" -> "That sign-in took too long or was already used. Tap Continue again."
             "state_mismatch" -> "That sign-in page belonged to an older try. Tap Continue again."
             "missing_code" -> "The sign-in came back without finishing. Tap Continue again."
-            "no_session" -> "Signed in, but Blaze didn't get your session. Tap Continue again."
+            "no_session" -> "Signed in, but ${BrandName.NAME} didn't get your session. Tap Continue again."
             "mfa_required" -> "This account uses two-step verification. Start the sign-in again to enter your code."
             "current_password_required" -> "Enter your current password too."
             "already_enabled" -> "Two-step verification is already on."
@@ -340,7 +342,7 @@ object BlazeAccount {
         if (e.isEmpty()) return@withContext "Enter your email first."
         try {
             call("POST", "/v1/auth/password/forgot", body = JSONObject().put("email", e))
-            "If $e has a Blaze account, a link to set a new password is on its way. It works for 1 hour."
+            "If $e has a ${BrandName.NAME} account, a link to set a new password is on its way. It works for 1 hour."
         } catch (x: ApiError) { if (x.status == 503) "Password reset isn't switched on yet." else message(x) }
         catch (x: Exception) { message(x) }
     }
@@ -390,10 +392,10 @@ object BlazeAccount {
 
     /** Starts the browser sign-in. The outcome lands in [view] (user, or message). Returns "" when the browser opened. */
     fun signInWith(ctx: Context, provider: String): String {
-        if (provider != "google" && provider != "github") return "Blaze can't sign in with $provider."
+        if (provider != "google" && provider != "github") return "${BrandName.NAME} can't sign in with $provider."
         val v = _view.value
         if (v.login[provider] != true) {
-            return if (!v.online) "Couldn't reach Blaze's sign-in service. Check your internet connection."
+            return if (!v.online) "Couldn't reach ${BrandName.NAME}'s sign-in service. Check your internet connection."
             else "Sign in with ${title(provider)} isn't switched on yet. Use your email instead."
         }
         cancel()
@@ -461,7 +463,7 @@ object BlazeAccount {
                     if (!target.startsWith("/cb")) { reply(s, 404, page(false, "Not found", "")); return@use }
                     val q = Uri.parse("http://x$target")
                     if (q.getQueryParameter("state") != state) {
-                        reply(s, 200, page(false, "Sign-in didn't finish", "That link doesn't match the sign-in Blaze started. Start again from Blaze."))
+                        reply(s, 200, page(false, "Sign-in didn't finish", "That link doesn't match the sign-in ${BrandName.NAME} started. Start again from ${BrandName.NAME}."))
                         return@use
                     }
                     val e = q.getQueryParameter("error").orEmpty()
@@ -471,9 +473,9 @@ object BlazeAccount {
                             err = e.ifEmpty { "missing_code" }
                             reply(s, 200, page(false, "Sign-in didn't finish",
                                 if (err == "access_denied") "You declined access. Nothing changed; you can close this tab."
-                                else "The sign-in came back with an error ($err). Go back to Blaze and try again."))
+                                else "The sign-in came back with an error ($err). Go back to ${BrandName.NAME} and try again."))
                         }
-                        else -> { code = c; reply(s, 200, page(true, "You're signed in", "Go back to Blaze to finish.", openApp = true)) }
+                        else -> { code = c; reply(s, 200, page(true, "You're signed in", "Go back to ${BrandName.NAME} to finish.", openApp = true)) }
                     }
                 }
             }
@@ -497,12 +499,12 @@ object BlazeAccount {
     private fun page(ok: Boolean, title: String, msg: String, openApp: Boolean = false): String {
         fun esc(x: String) = x.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
         val mark = if (ok) "#1F4BD8" else "#111110"
-        return "<!doctype html><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Blaze</title>" +
+        return "<!doctype html><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>${BrandName.NAME}</title>" +
             "<body style=\"font:15px/1.5 system-ui,sans-serif;background:#FBFBFA;color:#111110;display:grid;place-items:center;min-height:100vh;margin:0\">" +
             "<div style=\"max-width:440px;margin:16px;padding:32px;border:1px solid rgba(17,17,16,.18);background:#fff;box-shadow:inset 3px 0 0 $mark\">" +
-            "<div style=\"font:500 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:$mark\">Blaze</div>" +
+            "<div style=\"font:500 11px monospace;letter-spacing:.12em;text-transform:uppercase;color:$mark\">${BrandName.NAME}</div>" +
             "<h2 style=\"margin:8px 0 6px;font-weight:600\">${esc(title)}</h2><p style=\"margin:0;color:rgba(17,17,16,.6)\">${esc(msg)}</p>" +
-            (if (openApp) "<a href=\"$OPEN_APP\" style=\"display:inline-block;margin-top:18px;padding:12px 20px;background:$mark;color:#fff;text-decoration:none;font-weight:600\">Open Blaze</a>" else "") +
+            (if (openApp) "<a href=\"$OPEN_APP\" style=\"display:inline-block;margin-top:18px;padding:12px 20px;background:$mark;color:#fff;text-decoration:none;font-weight:600\">Open ${BrandName.NAME}</a>" else "") +
             "</div></body>"
     }
 

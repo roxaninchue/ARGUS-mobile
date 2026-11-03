@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -215,7 +217,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
                 Column(Modifier.align(Alignment.Center).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Label("Design")
                     Spacer(Modifier.padding(4.dp))
-                    Text("Ask Blaze for anything visual: a 3D model, a site, an app screen, a diagram, a chart, a poster. It opens here.",
+                    Text("Ask ${BrandName.NAME} for anything visual: a 3D model, a site, an app screen, a diagram, a chart, a poster. It opens here.",
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub))
                 }
             } else if (!preview && glPage && spec3d == null) {
@@ -607,7 +609,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                 }
                 if (busy) Box(Modifier.align(Alignment.Center).clip(RoundedCornerShape(20.dp)).background(c.menuSurface).border(1.dp, c.hair2, RoundedCornerShape(20.dp))
                     .padding(horizontal = 18.dp, vertical = 12.dp)) {
-                    Text(status.ifBlank { "Blaze is designing\u2026" }, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.ink))
+                    Text(status.ifBlank { "${BrandName.NAME} is designing\u2026" }, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.ink))
                 }
                 if (note.isNotEmpty()) Box(Modifier.align(Alignment.TopCenter).padding(top = 48.dp).clip(BlazeShapes.pill).background(c.menuSurface, BlazeShapes.pill)
                     .border(1.dp, c.hair2, BlazeShapes.pill).padding(horizontal = 15.dp, vertical = 9.dp)) {
@@ -705,9 +707,9 @@ private fun StudioEmpty(mode: StudioMode, hasPage: Boolean, onNewPage: () -> Uni
             Label(mode.label)
             Spacer(Modifier.height(8.dp))
             Text(when (mode) {
-                StudioMode.PAGE -> "Posts, stories, slides, icons and posters. Start a page and move, resize and recolour anything by hand, or ask Blaze for one."
-                StudioMode.THREE_D -> "Ask Blaze for a 3D model: a product, a room, a logo in glass. Drag to orbit, pinch to zoom."
-                StudioMode.MOTION -> "Animated intros, loops and transitions. The Motion timeline isn't built yet; Blaze can make an animated page, which opens on the Page tab."
+                StudioMode.PAGE -> "Posts, stories, slides, icons and posters. Start a page and move, resize and recolour anything by hand, or ask ${BrandName.NAME} for one."
+                StudioMode.THREE_D -> "Ask ${BrandName.NAME} for a 3D model: a product, a room, a logo in glass. Drag to orbit, pinch to zoom."
+                StudioMode.MOTION -> "Animated intros, loops and transitions. The Motion timeline isn't built yet; ${BrandName.NAME} can make an animated page, which opens on the Page tab."
                 StudioMode.AUDIO -> "Sonic logos, chimes and sound beds. The audio tracks are coming to the studio next."
             }, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub))
             Spacer(Modifier.height(16.dp))

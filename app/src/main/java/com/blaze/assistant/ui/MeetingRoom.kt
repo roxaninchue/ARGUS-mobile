@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,7 +64,7 @@ fun RoomCard(m: ChatMessage) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             DuoMark()
             Spacer(Modifier.width(8.dp))
-            Label("MEETING ROOM · BLAZE × HALO", color = c.accent, size = 9.sp)
+            Label("MEETING ROOM · ${BrandName.UPPER} × HALO", color = c.accent, size = 9.sp)
             Spacer(Modifier.weight(1f))
             Label("$talk msg" + if (talk == 1) "" else "s", size = 9.sp)
         }
@@ -70,7 +72,7 @@ fun RoomCard(m: ChatMessage) {
         Text(Md.plain(m.text), maxLines = 2, overflow = TextOverflow.Ellipsis,
             style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 21.sp, color = c.ink))
         Spacer(Modifier.height(6.dp))
-        if (live) Shimmer(status.ifBlank { "Blaze is thinking it through" }, Modifier.fillMaxWidth())
+        if (live) Shimmer(status.ifBlank { "${BrandName.NAME} is thinking it through" }, Modifier.fillMaxWidth())
         else {
             val line = if (last != null && state != Duo.DONE) "${Duo.Who.of(last.speaker).display}: ${Md.plain(last.text).replace('\n', ' ').take(110)}" else roomHead(m.meta)
             Text(line, maxLines = 2, overflow = TextOverflow.Ellipsis,

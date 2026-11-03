@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -195,7 +197,7 @@ object Designs {
      * are still the starter's empty example), so it can be re-made from the current starter without losing anything.
      */
     fun isStockStarter(html: String): Boolean =
-        html.contains("Blaze 3D mockup starter") && Regex("""const CUSTOM = \{\s*//[^\n]*\n\s*\};""").containsMatchIn(html)
+        html.contains("${BrandName.NAME} 3D mockup starter") && Regex("""const CUSTOM = \{\s*//[^\n]*\n\s*\};""").containsMatchIn(html)
 
     /** v0.23.5: a stock starter page re-made from the current [template] (same parts, title and Blaze additions), else [html]. */
     fun upgradeStarter(html: String, template: String?): String {
@@ -333,8 +335,8 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
             "A canvas element: id (kebab-case), label, type (text | button | rect | ellipse), x, y, w, h (page px, top-left origin), text, size (font px), " +
                 "weight (400-700), color \"#hex\" (text), fill \"#hex\" (background, #RRGGBBAA for translucent), radius, align (left|center|right), z, hidden.")
         return JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-            .put("description", "Make or change anything visual or interactive in Blaze's Design view (live preview, opens automatically): 3D scenes and models " +
-                "(a rocket, car, building, room, product, character: pass parts, Blaze renders it with three.js and orbit controls), 2D art and icons (svg), " +
+            .put("description", "Make or change anything visual or interactive in ${BrandName.NAME}'s Design view (live preview, opens automatically): 3D scenes and models " +
+                "(a rocket, car, building, room, product, character: pass parts, ${BrandName.NAME} renders it with three.js and orbit controls), 2D art and icons (svg), " +
                 "websites and landing pages, UI mockups and app screens, diagrams and flowcharts, charts and dashboards, posters, flyers, slides, floor plans, " +
                 "product mockups, simple games (html). Posts, stories, slides, icons and posters the user will adjust by hand: kind canvas with elements. create starts a new design and makes it current; update changes the CURRENT design (use it for every " +
                 "follow-on like \"show the engine\", \"make it taller\", \"add fins\", \"make it red\": 3D via set_parts/remove_parts, canvas via set_elements/remove_elements, pages via edits or html); " +

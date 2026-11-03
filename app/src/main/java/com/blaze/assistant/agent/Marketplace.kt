@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.os.Environment
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +34,7 @@ object Marketplace {
         Triple(Regex("""(?i)\b(ask|collect|get|send|store|save)\b.{0,40}\b(pin|password|otp|cvv|card number|seed phrase|private key)\b"""), 6, "handles PINs, passwords, codes or card numbers"),
         Triple(Regex("""(?i)\b(send|transfer|pay)\b.{0,30}\b(money|k\d|zmw|\$\d|airtime|momo|mobile money)\b"""), 3, "moves money"),
         Triple(Regex("""(?i)(without (asking|confirm\w*|telling)|skip (the )?(confirm\w*|approval)|don'?t (ask|tell) the user|silently|secretly)"""), 5, "acts without the user's approval or hides it"),
-        Triple(Regex("""(?i)ignore (all |any )?(previous|prior|system|other) (instructions|rules|prompts)"""), 6, "tries to override Blaze's rules"),
+        Triple(Regex("""(?i)ignore (all |any )?(previous|prior|system|other) (instructions|rules|prompts)"""), 6, "tries to override ${BrandName.NAME}'s rules"),
         Triple(Regex("""(?i)(curl|wget)[^\n|]{0,120}\|\s*(ba|z)?sh\b"""), 5, "runs a script straight from the internet"),
         Triple(Regex("""(?i)\b(upload|post|send|forward)\b.{0,40}\b(contacts|messages|sms|photos|location|chat logs?|memories)\b.{0,40}\b(to|at)\b.{0,20}(https?://|server|webhook|discord|telegram bot)"""), 6, "sends your data to an outside server"),
         Triple(Regex("""(?i)\b(delete|wipe|format|factory reset)\b.{0,30}\b(all|everything|phone|storage|files)\b"""), 4, "deletes data broadly"),
@@ -55,7 +57,7 @@ object Marketplace {
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Agent Marketplace: browse skill packs other Blaze users published (GitHub topic blaze-skill), review one for safety, " +
+        .put("description", "Agent Marketplace: browse skill packs other ${BrandName.NAME} users published (GitHub topic blaze-skill), review one for safety, " +
             "install it (shows a confirm card with the review), or share one of the user's own skills as a .blazepack.zip.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("browse", "review", "install", "share"))))
@@ -83,7 +85,7 @@ object Marketplace {
                     val branch = info.optString("default_branch", "main")
                     val tree = JSONObject(get("https://api.github.com/repos/$repo/git/trees/$branch?recursive=1")).optJSONArray("tree") ?: JSONArray()
                     val paths = (0 until tree.length()).map { tree.getJSONObject(it).optString("path") }.filter { it.endsWith("SKILL.md") }.take(8)
-                    if (paths.isEmpty()) return@withContext "$repo has no SKILL.md, so it isn't a Blaze skill pack."
+                    if (paths.isEmpty()) return@withContext "$repo has no SKILL.md, so it isn't a ${BrandName.NAME} skill pack."
                     paths.joinToString("\n\n") { p -> "<!-- $p -->\n" + get("https://raw.githubusercontent.com/$repo/$branch/$p").take(40_000) }
                 } catch (e: Exception) { return@withContext "Couldn't read $repo (${e.message})." }
                 val r = review(md)
@@ -102,7 +104,7 @@ object Marketplace {
                 val out = File(dir, "${p.dir.name}.blazepack.zip")
                 ZipOutputStream(out.outputStream()).use { z -> p.dir.walkTopDown().filter { it.isFile && it.length() < 1_000_000 }.forEach { f ->
                     z.putNextEntry(ZipEntry(p.dir.name + "/" + f.relativeTo(p.dir).path)); f.inputStream().use { it.copyTo(z) }; z.closeEntry() } }
-                "Saved ${out.name} in Download/Blaze. Send it to a friend (they install it by giving Blaze the file link), or put the folder in a public GitHub repo with the topic $TOPIC to list it in the marketplace."
+                "Saved ${out.name} in Download/Blaze. Send it to a friend (they install it by giving ${BrandName.NAME} the file link), or put the folder in a public GitHub repo with the topic $TOPIC to list it in the marketplace."
             }
             else -> "Unknown action."
         }

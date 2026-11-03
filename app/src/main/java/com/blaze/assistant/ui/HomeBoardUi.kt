@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.ui.graphics.drawscope.clipRect
 
 import androidx.compose.ui.draw.drawWithContent
@@ -155,7 +157,7 @@ import kotlinx.coroutines.withContext
 object HomeLook {
     data class Accent(val id: String, val name: String, val light: Color, val dark: Color)
     val accents = listOf(
-        Accent("", "Blaze", Color(0xFF1A1A1C), GlassTokens.accent),   // v0.31: monochrome (glass) default
+        Accent("", "${BrandName.NAME}", Color(0xFF1A1A1C), GlassTokens.accent),   // v0.31: monochrome (glass) default
         Accent("orange", "Orange", Color(0xFFD9480F), Color(0xFFFF9A3C)),
         Accent("green", "Green", Color(0xFF2B8A3E), Color(0xFF69DB7C)),
         Accent("purple", "Purple", Color(0xFF6741D9), Color(0xFFB197FC)),
@@ -320,7 +322,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             a == "city" -> cityFor = w.id
             a == "usage" -> openUsageAccess(ctx)
             a == "interests" -> { onboarded = false }
-            a.startsWith("ask:") -> { onAsk(a.removePrefix("ask:")); toast = "Asked Blaze. The answer is in Chat." }
+            a.startsWith("ask:") -> { onAsk(a.removePrefix("ask:")); toast = "Asked ${BrandName.NAME}. The answer is in Chat." }
         }
     }
 
@@ -341,7 +343,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
                 }, onSkip = { HomeBoard.finishOnboarding(emptySet(), emptySet(), "", skipped = true); onboarded = true })
             } else if (redesign) {
                 // Lazy start: the new Home (splash, grid) is composed from the frame after Blaze's first frame; the sky is the first frame.
-                if (firstFrameShown()) HomeRedesignScreen(onAsk = { t -> onAsk(t); if (askToast) toast = "Asked Blaze. The answer is in Chat." }, onOpenLink = { u -> open(u, null) },
+                if (firstFrameShown()) HomeRedesignScreen(onAsk = { t -> onAsk(t); if (askToast) toast = "Asked ${BrandName.NAME}. The answer is in Chat." }, onOpenLink = { u -> open(u, null) },
                     onAllWidgets = { showBoard = true }, onPickInterests = { onboarded = false }, drawSky = false,
                     reserveBottom = false, chatBar = chatBar)
             } else {
@@ -371,7 +373,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             if (toast.isNotBlank()) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp).navigationBarsPadding()) { HomeToast(toast) }
             glassUrl?.let { u -> GlassWindow(u, onClose = { glassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
                 // v0.29.9: the selection pill on the page: Ask / Translate / Define go to Blaze, Quote goes into the chat box.
-                onAsk = { t -> onAsk(t); toast = "Asked Blaze. The answer is in Chat." },
+                onAsk = { t -> onAsk(t); toast = "Asked ${BrandName.NAME}. The answer is in Chat." },
                 onQuote = { t -> onQuote(t) }) }
             // v0.30.5: while Blaze works in its browser, a fixed glass window previews the page (× hides it until the next task).
             if (glassUrl == null && onboarded && liveShowing && !liveHidden) BrowserLivePreview(onHide = { liveHidden = true })
@@ -415,7 +417,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
                         create = false
                         val spec = WidgetIntent.parse(text)
                         if (spec != null) { HomeBoard.add(spec); toast = "Added \u201c${spec.title}\u201d." }
-                        else { onAsk("Add a widget to my Home board: $text"); toast = "Asked Blaze. It appears here when it's ready." }
+                        else { onAsk("Add a widget to my Home board: $text"); toast = "Asked ${BrandName.NAME}. It appears here when it's ready." }
                     }, onClose = { create = false })
                 }
                 androidx.activity.compose.BackHandler { create = false }
@@ -434,8 +436,8 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             askChange?.let { w ->
                 var t by remember { mutableStateOf("") }
                 androidx.compose.ui.window.Dialog(onDismissRequest = { askChange = null }) {
-                    BlazeDialogCard("Change \u201c${w.title}\u201d", "Say it in plain words, e.g. \u201cshow Chelsea instead\u201d or \u201cmake it euros\u201d.", confirm = "Ask Blaze", onConfirm = {
-                        if (t.isNotBlank()) { onAsk("Change my Home widget \u201c${w.title}\u201d (id ${w.id}): ${t.trim()}"); toast = "Asked Blaze. The answer is in Chat." }
+                    BlazeDialogCard("Change \u201c${w.title}\u201d", "Say it in plain words, e.g. \u201cshow Chelsea instead\u201d or \u201cmake it euros\u201d.", confirm = "Ask ${BrandName.NAME}", onConfirm = {
+                        if (t.isNotBlank()) { onAsk("Change my Home widget \u201c${w.title}\u201d (id ${w.id}): ${t.trim()}"); toast = "Asked ${BrandName.NAME}. The answer is in Chat." }
                         askChange = null
                     }, dismiss = "Cancel", onDismiss = { askChange = null }) {
                         BlazeTextField(t, { t = it }, "What should change?", singleLine = false)
@@ -775,7 +777,7 @@ fun WidgetCard(
                     d.action == "calendar" -> "Allow calendar"
                     d.action == "usage" -> "Open Usage access"
                     d.action == "interests" -> "Pick my interests"
-                    d.action.startsWith("ask:") -> "Ask Blaze"
+                    d.action.startsWith("ask:") -> "Ask ${BrandName.NAME}"
                     else -> ""
                 }
                 if (label.isNotBlank()) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -875,7 +877,7 @@ fun WidgetMenuCard(w: Widget, onPick: (String) -> Unit) {
                 }
             }
         }
-        item("Refresh", "refresh"); item("Ask Blaze to change", "ask"); item("Hide", "hide"); item("Remove", "remove", warm = true)
+        item("Refresh", "refresh"); item("Ask ${BrandName.NAME} to change", "ask"); item("Hide", "hide"); item("Remove", "remove", warm = true)
     }
 }
 

@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import android.util.Base64
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.agent.SkillLibrary
@@ -45,7 +47,7 @@ object SkillSync {
     private const val MAX_FILE = 256 * 1024
     private const val MAX_BLOB = 2 * 1024 * 1024
 
-    class Unsupported : Exception("Skill sync isn't switched on in Blaze's service yet (it needs blaze-auth 0.8.0).")
+    class Unsupported : Exception("Skill sync isn't switched on in ${BrandName.NAME}'s service yet (it needs blaze-auth 0.8.0).")
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val lock = Mutex()
@@ -204,7 +206,7 @@ object SkillSync {
 
     private fun syncLocked(): String {
         val token = BlazeAccount.sessionToken()
-        if (token.isBlank()) return "Sign in to your Blaze account to take your skills to all your devices."
+        if (token.isBlank()) return "Sign in to your ${BrandName.NAME} account to take your skills to all your devices."
         repeat(3) {
             val (code, st) = http("GET", token)
             when {
@@ -219,7 +221,7 @@ object SkillSync {
             var remote: Map<String, SkillMerge.Rec> = emptyMap()
             if (blob.isNotEmpty()) {
                 val p = JSONObject(decrypt(key, blob))
-                if (p.optInt("v", 1) > 1) return "Your skills were saved by a newer Blaze. Update Blaze to sync them."
+                if (p.optInt("v", 1) > 1) return "Your skills were saved by a newer ${BrandName.NAME}. Update ${BrandName.NAME} to sync them."
                 remote = parse(p.optJSONObject("skills"))
             }
             val res = SkillMerge.merge(local(), remote)
@@ -252,7 +254,7 @@ object SkillSync {
         val parts = mutableListOf<String>()
         if (got.isNotEmpty()) parts += "Got ${got.size} skill${if (got.size == 1) "" else "s"} from your account (${got.take(4).joinToString(", ")}${if (got.size > 4) "…" else ""})"
         if (gone.isNotEmpty()) parts += "removed ${gone.size} deleted elsewhere"
-        if (pushed) parts += if (parts.isEmpty()) "Your skills are on your Blaze account" else "sent yours up"
+        if (pushed) parts += if (parts.isEmpty()) "Your skills are on your ${BrandName.NAME} account" else "sent yours up"
         return if (parts.isEmpty()) "Skills are up to date." else parts.joinToString(", ").replaceFirstChar { it.uppercase() } + "."
     }
 }

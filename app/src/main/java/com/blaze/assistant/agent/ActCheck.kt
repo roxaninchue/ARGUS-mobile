@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.45.13 verify-after-act (phone-control sweep 0). A phone action is "done" only when the phone READ IT BACK:
  * the accessibility tree, the Clock / Calendar / Contacts providers, Settings, NotificationManager (DND), Wi-Fi /
@@ -67,7 +69,7 @@ object GoalCheck {
         return verified.isNotEmpty() && verified.all { it.name in OPENERS && !it.why.contains("shows a route") }
     }
 
-    const val NUDGE = "[Blaze check] Opening the app is only the first step: the user's task isn't done yet. Continue the flow now " +
+    const val NUDGE = "[${BrandName.NAME} check] Opening the app is only the first step: the user's task isn't done yet. Continue the flow now " +
         "(read_screen, then tap / type / search with the right tool) until the result is read back with verified=true, then reply. " +
         "If you can't finish, say plainly what is left."
 

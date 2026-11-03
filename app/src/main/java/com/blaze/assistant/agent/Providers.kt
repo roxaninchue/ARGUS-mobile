@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /** Built-in AI services. All speak the OpenAI chat-completions format at [baseUrl]. */
 data class Provider(
     val id: String,
@@ -27,7 +29,7 @@ object Providers {
         // Runs on this phone (agent/BlazeRouter.kt); its key is set when it starts.
         Provider("blazerouter", "BlazeRouter (on this phone)", "http://127.0.0.1:20128/v1/", "auto/best-free", "set automatically", "", ""),
         // Signs in with your Blaze account (no key to paste); until you sign in, Auto (free) answers instead.
-        Provider(GATEWAY, "Blaze Gateway", GATEWAY_BASE, "blaze-auto", "your Blaze account", "", ""),
+        Provider(GATEWAY, "${BrandName.NAME} Gateway", GATEWAY_BASE, "blaze-auto", "your ${BrandName.NAME} account", "", ""),
         Provider("gemini", "Google Gemini", "https://generativelanguage.googleapis.com/v1beta/openai/",
             "gemini-3.8-flash", "AIza…", "https://aistudio.google.com/apikey",
             "https://aistudio.google.com/rate-limit?timeRange=last-28-days"),

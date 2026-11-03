@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -101,7 +103,7 @@ class ToolTruthTest {
     }
 
     @Test fun traceKeepsNormalizedAndToolsSent() {
-        val tr = TurnTrace.build(mapOf("x-blaze-normalized" to "retried;bad_call;from=groq/x", "x-request-id" to "r1"), "Blaze Cloud", "agent", listOf("r1"),
+        val tr = TurnTrace.build(mapOf("x-blaze-normalized" to "retried;bad_call;from=groq/x", "x-request-id" to "r1"), "${BrandName.NAME} Cloud", "agent", listOf("r1"),
             100, 50, 900, 1, emptyList(), emptyList(), toolsSent = listOf("save_file", "run_shell"))
         val back = TurnTrace.fromJson(TurnTrace.toJson(tr))!!
         assertEquals("retried;bad_call;from=groq/x", back.normalized)
@@ -123,12 +125,12 @@ class ToolTruthTest {
         assertEquals(null, ToolTruth.choiceFor("remember when we went to Ndola?", emptyList(), all - "memory_search"))
         assertEquals("run_shell", ToolTruth.choiceFor("run ls in the terminal", emptyList(), all))  // v0.45.13 round 2
         assertEquals(null, ToolTruth.choiceFor("search the web for Zambia news", emptyList(), all))
-        assertEquals(null, ToolTruth.choiceFor("hi Blaze", emptyList(), all))
+        assertEquals(null, ToolTruth.choiceFor("hi ${BrandName.NAME}", emptyList(), all))
     }
 
     @Test fun blazeMusicPlayIsMusicOps() {
         val tools = listOf("music_ops", "search_in_app", "run_plan")
-        assertEquals("music_ops", ToolTruth.choiceFor("play Calm Down by Rema in Blaze Music", emptyList(), tools))
+        assertEquals("music_ops", ToolTruth.choiceFor("play Calm Down by Rema in ${BrandName.NAME} Music", emptyList(), tools))
         assertEquals("music_ops", ToolTruth.choiceFor("put on something chill from my downloads", emptyList(), tools))
         assertEquals("search_in_app", ToolTruth.choiceFor("play Despacito on YouTube", emptyList(), tools))
     }

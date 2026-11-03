@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -145,7 +147,7 @@ class WarpFreeTest {
     }
 
     @Test fun statusLinesArePlain() {
-        assertEquals("Connecting to Blaze Free…", WarpFree.tryingLine(0, WarpFree.Endpoint("x", 2408)))
+        assertEquals("Connecting to ${BrandName.NAME} Free…", WarpFree.tryingLine(0, WarpFree.Endpoint("x", 2408)))
         assertEquals("That route is blocked here. Trying port 500…", WarpFree.tryingLine(2, WarpFree.Endpoint("x", 500)))
     }
 }

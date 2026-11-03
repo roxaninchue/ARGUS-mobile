@@ -1,6 +1,6 @@
 ---
 name: android-app-builder
-description: Build a real Android app (Kotlin + Jetpack Compose) from the phone and install it - creates a GitHub repo, writes the code, lets GitHub Actions build the APK, fixes build errors from the log, and installs the result. Use when the user asks to make, build or create an Android app, or to change one Blaze built before. Needs GitHub connected.
+description: Build a real Android app (Kotlin + Jetpack Compose) from the phone and install it - creates a GitHub repo, writes the code, lets GitHub Actions build the APK, fixes build errors from the log, and installs the result. Use when the user asks to make, build or create an Android app, or to change one Argus built before. Needs GitHub connected.
 tags: [android, app, kotlin, compose, github, apk, ci]
 version: 1
 ---
@@ -17,7 +17,7 @@ Tools: `github_create_repo`, `git`, `run_shell` (Linux), `file_write` / `file_ed
 - GitHub must be connected (Settings › Connections). If `github_create_repo` isn't available, say so and stop.
 - Ask at most one question, only if the idea is unclear: what the app does, and its name. Pick everything
   else yourself (package `com.<github-login>.<appname>` in lowercase, Material 3, light/dark).
-- Changing an app Blaze built before: skip to step 3 with `git` action `clone` (it pulls if already cloned).
+- Changing an app Argus built before: skip to step 3 with `git` action `clone` (it pulls if already cloned).
 
 ## Steps
 
@@ -47,7 +47,7 @@ Tools: `github_create_repo`, `git`, `run_shell` (Linux), `file_write` / `file_ed
    files, fix the cause (not just the symptom), commit, push, and go back to 6. After 5 failed rounds,
    stop and tell the user plainly what's still failing.
 8. **Install.** On success: `github_install_apk` with the repo. Android shows its installer; the user taps
-   Install. If Android asks to allow Blaze to install apps, it opens that setting: ask the user to allow it,
+   Install. If Android asks to allow Argus to install apps, it opens that setting: ask the user to allow it,
    then run `github_install_apk` again.
 9. **Report** in two or three plain sentences: what the app does, that it's installed, and the repo link.
    Offer one next improvement.

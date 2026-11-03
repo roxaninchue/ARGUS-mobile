@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 /**
  * Wave B item 20: press-and-hold multi-select in the Music and Video libraries. Pure state rules (no Android) so the
  * behaviour is unit tested: the selection is an immutable set of track keys; every op returns the new set.
@@ -56,7 +58,7 @@ object LibrarySelection {
         val title = if (del == 1) "Delete 1 $noun?" else "Delete $del ${noun}s?"
         val body = buildString {
             append(if (kind == "video") "They're removed from your phone." else "They're removed from your phone and from every playlist.")
-            if (kept > 0) append(" $kept from Blaze's Gallery stay" + (if (kept == 1) "s" else "") + "; delete those in Gallery.")
+            if (kept > 0) append(" $kept from ${BrandName.NAME}'s Gallery stay" + (if (kept == 1) "s" else "") + "; delete those in Gallery.")
         }
         return title to body
     }
@@ -71,7 +73,7 @@ object LibrarySelection {
     fun exportName(title: String, uri: String, kind: String): String {
         val ext = uri.substringAfterLast('/').substringAfterLast('.', "").lowercase().takeIf { it.length in 2..4 && it.all(Char::isLetterOrDigit) }
             ?: if (kind == "video") "mp4" else "m4a"
-        val base = title.replace(Regex("[\\\\/:*?\"<>|\\u0000-\\u001f]"), " ").replace(Regex("\\s+"), " ").trim().take(80).ifBlank { "Blaze $kind" }
+        val base = title.replace(Regex("[\\\\/:*?\"<>|\\u0000-\\u001f]"), " ").replace(Regex("\\s+"), " ").trim().take(80).ifBlank { "${BrandName.NAME} $kind" }
         return if (base.lowercase().endsWith(".$ext")) base else "$base.$ext"
     }
 }

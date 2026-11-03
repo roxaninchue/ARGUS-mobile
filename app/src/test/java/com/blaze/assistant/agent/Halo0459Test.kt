@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -93,7 +95,7 @@ class Halo0459Test {
     @Test fun scheduleQuestionsCarryTheCalendarTools() {
         for (t in listOf("View calendar", "View your upcoming meetings", "anything on for today?", "what's on friday", "any reminders?", "do I have class tomorrow"))
             assertTrue(t, TurnContext.scheduleAsk(t))
-        for (t in listOf("hi Blaze", "doing good thanks!", "play some music", "feel free to explain"))
+        for (t in listOf("hi ${BrandName.NAME}", "doing good thanks!", "play some music", "feel free to explain"))
             assertFalse(t, TurnContext.scheduleAsk(t))
         assertTrue(TurnContext.SCHEDULE_TOOLS.containsAll(listOf("calendar_events", "list_routines")))
         assertTrue("the router picks the schedule group for plurals", "schedule" in ToolRouter.guess("View your upcoming meetings"))
@@ -102,7 +104,7 @@ class Halo0459Test {
     }
 
     @Test fun memoryGateStopsSmallTalkAndReadOnlyQuestions() {
-        for (t in listOf("@halo hi", "hi", "hi Blaze", "ok", "thanks", "thanks!", "doing good thanks!", "how are you feeling??", "@halo how are you feeling??",
+        for (t in listOf("@halo hi", "hi", "hi ${BrandName.NAME}", "ok", "thanks", "thanks!", "doing good thanks!", "how are you feeling??", "@halo how are you feeling??",
                 "Hey there!", "good morning", "ok cool thanks", "lol", "zikomo", "I'm good, you?",
                 "anything on for today?", "so what's on for today specifically?", "what time is it", "what's the weather", "will it rain tomorrow?"))
             assertFalse(t, MemoryGate.allows(t))
@@ -166,9 +168,9 @@ class Halo0459Test {
         val p = SharedPersona.parse(asset)!!
         assertEquals("1.0.1", p.version)
         assertTrue(p.system.contains("Assistant rules ("))
-        val old = """{"version":"1.0.0","system":"You are Blaze, a friendly assistant."}"""
+        val old = """{"version":"1.0.0","system":"You are ${BrandName.NAME}, a friendly assistant."}"""
         assertEquals("1.0.1", SharedPersona.pick(old, asset)!!.version)
-        val newer = """{"version":"1.0.2","system":"You are Blaze."}"""
+        val newer = """{"version":"1.0.2","system":"You are ${BrandName.NAME}."}"""
         assertEquals("1.0.2", SharedPersona.pick(newer, asset)!!.version)
         assertTrue(SharedPersona.VersionCmp.compare("1.0.10", "1.0.9") > 0)
         assertEquals(0, SharedPersona.VersionCmp.compare("v1.0", "1.0.0"))

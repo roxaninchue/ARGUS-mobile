@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.mediaapps.store.LinkYt
 import com.blaze.assistant.mediaapps.store.StoreItem
@@ -135,7 +137,7 @@ object MusicExtras {
     }
 
     fun wrappedText(w: MusicSmart.Wrapped?): String {
-        if (w == null) return "Nothing played yet in this period. Wrapped counts songs you play in Blaze Music."
+        if (w == null) return "Nothing played yet in this period. Wrapped counts songs you play in ${BrandName.NAME} Music."
         return buildString {
             append("${w.label}: ${w.minutes} minutes, ${w.plays} plays, ${w.songs} songs, ${w.artists} artists.\n")
             if (w.topSongs.isNotEmpty()) append("Top songs: " + w.topSongs.joinToString("; ") { "${it.first.title} (${it.second})" } + "\n")

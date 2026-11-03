@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -94,7 +96,7 @@ object Mfa {
     }
 
     const val EXPIRED = "The sign-in code step ran out (5 minutes or 5 tries). Sign in again."
-    private const val OFFLINE = "Couldn't reach Blaze's sign-in service. Check your internet connection."
+    private const val OFFLINE = "Couldn't reach ${BrandName.NAME}'s sign-in service. Check your internet connection."
 
     /** Emails a sign-in code. Never sends while the wait or the limit says no. */
     fun sendEmail(p: Pending, now: Long, post: (path: String, body: JSONObject) -> Pair<Int, JSONObject>): Outcome {

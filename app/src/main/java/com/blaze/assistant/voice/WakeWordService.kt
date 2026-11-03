@@ -1,5 +1,7 @@
 package com.blaze.assistant.voice
 
+
+import com.blaze.assistant.BrandName
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -106,7 +108,7 @@ class WakeWordService : Service() {
         if (Build.VERSION.SDK_INT >= 26) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(
                 NotificationChannel(CH, "Wake word", NotificationManager.IMPORTANCE_MIN).apply {
-                    description = "Shown while Blaze listens for \"Hey Blaze\""; setShowBadge(false)
+                    description = "Shown while ${BrandName.NAME} listens for \"Hey ${BrandName.NAME}\""; setShowBadge(false)
                 })
         }
         if (!goForeground()) { running = false; stopSelf(); return }
@@ -253,8 +255,11 @@ class WakeWordService : Service() {
         }.also { it.start() }
     }
 
-    private val PHRASES = setOf("hey blaze", "okay blaze", "ok blaze", "wake up blaze")
-    private val GRAMMAR = "[\"hey blaze\", \"okay blaze\", \"ok blaze\", \"wake up blaze\", " +
+    // 0.52.1 (Argus rename): "Hey Argus" wakes it; the old "Hey Blaze" keeps working for people used to it.
+    // (A word missing from the offline model's vocabulary is ignored by the grammar, never an error.)
+    private val PHRASES = setOf("hey argus", "okay argus", "ok argus", "wake up argus", "hey blaze", "okay blaze", "ok blaze", "wake up blaze")
+    private val GRAMMAR = "[\"hey argus\", \"okay argus\", \"ok argus\", \"wake up argus\", \"argus\", \"august\", \"argues\", \"angus\", " +
+        "\"hey blaze\", \"okay blaze\", \"ok blaze\", \"wake up blaze\", " +
         "\"hey\", \"okay\", \"blaze\", \"play\", \"place\", \"plays\", \"base\", \"blade\", \"blessed\", \"lady\", \"baby\", \"maybe\", " +
         "\"hey babe\", \"hey they\", \"he played\", \"the\", \"a\", \"and\", \"is\", \"what\", \"yes\", \"no\", \"[unk]\"]"
 

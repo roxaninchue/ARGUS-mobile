@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -57,7 +59,7 @@ fun SimpleAdvancedSwitch() {
             }
         }
     }
-    Text(if (simple) "Hidden in Advanced: ${SimpleMode.HIDDEN_LINE}. Everything still works, and Blaze can still open any of it."
+    Text(if (simple) "Hidden in Advanced: ${SimpleMode.HIDDEN_LINE}. Everything still works, and ${BrandName.NAME} can still open any of it."
         else "Everything is showing, including ${SimpleMode.HIDDEN_LINE}.",
         modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
     NavigationChoice()
@@ -79,7 +81,7 @@ fun NavigationChoice() {
             }
         }
     }
-    Text(if (swipe) "Blaze opens on Home. Swipe up from the handle for Chat; pull down from the top for Home."
+    Text(if (swipe) "${BrandName.NAME} opens on Home. Swipe up from the handle for Chat; pull down from the top for Home."
         else "The Chat | Projects | Home tabs, opening on Chat.",
         modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
 }
@@ -192,11 +194,11 @@ fun LookPage() {
         }
     }
     Spacer(Modifier.height(14.dp))
-    ToggleRow("Move with music", "Pulses gently with what's playing in Blaze Music", music) { Look.setMusic(!music) }
+    ToggleRow("Move with music", "Pulses gently with what's playing in ${BrandName.NAME} Music", music) { Look.setMusic(!music) }
     ToggleRow("Save battery: keep it still", "Also pauses by itself on low battery or in power saver", still) { Look.setStill(!still) }
     // 0.46.0 Blaze Stage: timers, music, quizzes and other live cards right on the chat (off = Blaze answers in chat / opens views).
     var stageOn by remember { mutableStateOf(com.blaze.assistant.stage.StageStore.enabled) }
-    ToggleRow("Blaze Stage", "Live cards right on the chat: timers, music, quizzes. Drag to move; back or Reset layout restores the chat", stageOn) {
+    ToggleRow("${BrandName.NAME} Stage", "Live cards right on the chat: timers, music, quizzes. Drag to move; back or Reset layout restores the chat", stageOn) {
         stageOn = !stageOn; com.blaze.assistant.agent.Settings.setBool("stage_on", stageOn)
         if (!stageOn) com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.Reset)
     }

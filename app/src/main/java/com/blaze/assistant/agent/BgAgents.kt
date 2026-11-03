@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.app.ActivityManager
 import android.content.Context
 import kotlinx.coroutines.CoroutineScope
@@ -183,8 +185,8 @@ object BgAgents {
         }
     }
 
-    private fun prompt(bg: Bg) = if (bg.specialist.isNotBlank()) "[Brief from the main Blaze for you, ${spec(bg)?.name ?: bg.specialist} ${bg.id}]\n${bg.task}"
-        else "[Background agent ${bg.id} \u00ab${bg.title}\u00bb. You work on your own in the background while the user keeps chatting with the main Blaze; " +
+    private fun prompt(bg: Bg) = if (bg.specialist.isNotBlank()) "[Brief from the main ${BrandName.NAME} for you, ${spec(bg)?.name ?: bg.specialist} ${bg.id}]\n${bg.task}"
+        else "[Background agent ${bg.id} \u00ab${bg.title}\u00bb. You work on your own in the background while the user keeps chatting with the main ${BrandName.NAME}; " +
         "nobody watches this chat. Don't ask questions unless you're truly blocked (ask_user shows the user a card). Use background tools; touch the phone screen only if the task can't be done any other way. " +
         "When finished, reply with the result only: what you did or found, short but complete, with any links or file names.]\n${bg.task}"
 
@@ -194,7 +196,7 @@ object BgAgents {
         val s = Agent.agentSession(bg)
         val text = when {
             bg.followUp.isNotBlank() -> "[Follow-up from the user]\n${bg.followUp}"
-            bg.resume -> "[Blaze restarted while you were working. Continue the task from where you left off; check what's already done first, don't redo it.]"
+            bg.resume -> "[${BrandName.NAME} restarted while you were working. Continue the task from where you left off; check what's already done first, don't redo it.]"
             else -> prompt(bg)
         }
         update(bg.id) { it.copy(resume = false, waiting = false, followUp = "") }

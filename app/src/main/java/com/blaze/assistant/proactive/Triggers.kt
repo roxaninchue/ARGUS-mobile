@@ -1,5 +1,7 @@
 package com.blaze.assistant.proactive
 
+
+import com.blaze.assistant.BrandName
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -126,12 +128,12 @@ object Triggers {
     val names = setOf("create_trigger", "list_triggers", "delete_trigger")
     fun tools(): List<JSONObject> = listOf(
         JSONObject().put("type", "function").put("function", JSONObject().put("name", "create_trigger")
-            .put("description", "Make Blaze react to events on its own: 'when Mary texts, read it to me', 'when battery drops below 20, turn on saver', 'when I plug in, summarise my day', 'when I open Instagram, remind me of my goal'. For time-based things use create_routine instead.")
+            .put("description", "Make ${BrandName.NAME} react to events on its own: 'when Mary texts, read it to me', 'when battery drops below 20, turn on saver', 'when I plug in, summarise my day', 'when I open Instagram, remind me of my goal'. For time-based things use create_routine instead.")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
                 .put("name", JSONObject().put("type", "string"))
                 .put("event", JSONObject().put("type", "string").put("enum", JSONArray(EVENTS.toList())))
                 .put("match", JSONObject().put("type", "string").put("description", "notification: words/app/sender to match (comma-separated, blank = all); battery_below: the % ; charging: 'plugged in' or 'unplugged'; app_opened: app name; place_arrive/place_leave: Name@lat,lng[,radius m] or \"here\"; bluetooth: part of the device name (blank = any); wifi: part of the network name"))
-                .put("prompt", JSONObject().put("type", "string").put("description", "What Blaze should do when it fires")))
+                .put("prompt", JSONObject().put("type", "string").put("description", "What ${BrandName.NAME} should do when it fires")))
                 .put("required", JSONArray(listOf("name", "event", "prompt"))))),
         JSONObject().put("type", "function").put("function", JSONObject().put("name", "list_triggers").put("description", "List event triggers.")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()))),

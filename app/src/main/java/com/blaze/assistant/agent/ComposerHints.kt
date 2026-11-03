@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import java.util.Calendar
 
 /**
@@ -14,7 +16,7 @@ object ComposerHints {
     const val MAX = 8
     const val ROTATE_MS = 3_000L
     /** Shown when there is nothing to rotate, with reduced motion, or while listening isn't on. */
-    const val DEFAULT = "Message Blaze, or type /"
+    const val DEFAULT = "Message ${BrandName.NAME}, or type /"
 
     /** A memory line: [kind] (person, project…), who/what it's about, and the text. */
     data class Note(val kind: String, val subject: String, val text: String, val updated: Long = 0)

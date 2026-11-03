@@ -9,7 +9,7 @@ version: 1
 
 ## 1. Frame it
 
-- Restate the question as one sentence plus the decision it feeds ("Which free STT model runs offline on an 8 GB laptop - for Blaze's voice input").
+- Restate the question as one sentence plus the decision it feeds ("Which free STT model runs offline on an 8 GB laptop - for Argus's voice input").
 - List what would change the answer: constraints (budget, region, OS, date range, language), must-haves vs. nice-to-haves.
 - Write 3-6 sub-questions. Note what you already know and how sure you are.
 - Recall memory first (`recall`) for the user's stack, location, past choices.

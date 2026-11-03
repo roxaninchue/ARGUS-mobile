@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
@@ -360,7 +362,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         val items = com.blaze.assistant.ui.AppTheme.options.map { th ->
             TermSheet.Item(th.id.ifEmpty { "classic" }, th.name + if (th.id == cur) "  \u2713" else "", th.sub, "theme")
         }
-        sheet.show("Theme", "Changes Blaze everywhere: chat, Home, Music, Video, Design and here", items) { item ->
+        sheet.show("Theme", "Changes ${BrandName.NAME} everywhere: chat, Home, Music, Video, Design and here", items) { item ->
             com.blaze.assistant.ui.AppTheme.pick(if (item.id == "classic") com.blaze.assistant.ui.LivingThemes.CLASSIC else item.id)
         }
     }
@@ -368,7 +370,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
     private fun moreMenu() {
         val tab = TermSessions.active()
         val items = buildList {
-            add(TermSheet.Item("theme", "Theme", com.blaze.assistant.ui.LivingThemes.of(com.blaze.assistant.ui.Look.theme.value).name + " \u00b7 the same theme as the rest of Blaze", "theme"))
+            add(TermSheet.Item("theme", "Theme", com.blaze.assistant.ui.LivingThemes.of(com.blaze.assistant.ui.Look.theme.value).name + " \u00b7 the same theme as the rest of ${BrandName.NAME}", "theme"))
             add(TermSheet.Item("paste", "Paste", "Type what's on the clipboard", "paste"))
             add(TermSheet.Item("copy", "Copy all text", "Everything in this tab, to the clipboard", "copy"))
             add(TermSheet.Item("keyboard", "Keyboard", "Show the on-screen keyboard", "keyboard"))
@@ -386,7 +388,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
                 "paste" -> s?.let { pasteInto(it) }
                 "copy" -> s?.emulator?.screen?.transcriptText?.let { txt ->
                     val cm = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    cm.setPrimaryClip(android.content.ClipData.newPlainText("Blaze Terminal", txt)); Toast.makeText(this, "Copied", Toast.LENGTH_SHORT).show()
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("${BrandName.NAME} Terminal", txt)); Toast.makeText(this, "Copied", Toast.LENGTH_SHORT).show()
                 }
                 "keyboard" -> showKeyboard()
                 "bigger" -> setFont(TermLogic.zoom(fontPx, 1.15f))
@@ -398,7 +400,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         }
     }
 
-    @Deprecated("Back closes the Blaze sheet first")
+    @Deprecated("Back closes the ${BrandName.NAME} sheet first")
     override fun onBackPressed() {
         if (sheet.open) { sheet.close(); return }
         @Suppress("DEPRECATION") super.onBackPressed()

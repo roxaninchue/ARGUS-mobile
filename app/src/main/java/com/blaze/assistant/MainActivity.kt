@@ -82,7 +82,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         try {
             val sm = getSystemService(android.content.pm.ShortcutManager::class.java)
             sm?.dynamicShortcuts = listOf(android.content.pm.ShortcutInfo.Builder(this, "call")
-                .setShortLabel("Call Blaze").setLongLabel("Call Blaze")
+                .setShortLabel("Call ${BrandName.NAME}").setLongLabel("Call ${BrandName.NAME}")
                 .setIcon(android.graphics.drawable.Icon.createWithResource(this, applicationInfo.icon))
                 .setIntent(IntentKey.sign(this, android.content.Intent(this, MainActivity::class.java).setAction(ACTION_CALL))).build())
         } catch (_: Exception) { }
@@ -170,7 +170,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         val chatId = i.getStringExtra(Notifier.EXTRA_OPEN_CHAT)
         val askedListen = i.getBooleanExtra(EXTRA_LISTEN, false) || i.action == ACTION_CALL
         i.removeExtra(Notifier.EXTRA_OPEN_FORM); i.removeExtra(Notifier.EXTRA_OPEN_CHAT); i.removeExtra(EXTRA_LISTEN); i.removeExtra(IntentKey.EXTRA)
-        if (askedListen && !ok.listen && !ok.call) com.blaze.assistant.device.CrashLog.write("Ignored a listen/call request from outside Blaze")
+        if (askedListen && !ok.listen && !ok.call) com.blaze.assistant.device.CrashLog.write("Ignored a listen/call request from outside ${BrandName.NAME}")
         // "Action required" notification: open the chat that's waiting on the secure form (the card shows there).
         if (ok.openForm) { Agent.showFormChat(); Notifier.clearAction() }
         // v0.28.3: a reply notification from a project chat opens that chat in Projects (the shell follows Agent's chat).
@@ -206,7 +206,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         if (BiometricManager.from(this).canAuthenticate(auth) != BiometricManager.BIOMETRIC_SUCCESS) { locked.value = false; return }
         BiometricPrompt(this, mainExecutor, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(r: BiometricPrompt.AuthenticationResult) { locked.value = false }
-        }).authenticate(BiometricPrompt.PromptInfo.Builder().setTitle("Unlock Blaze").setAllowedAuthenticators(auth).build())
+        }).authenticate(BiometricPrompt.PromptInfo.Builder().setTitle("Unlock ${BrandName.NAME}").setAllowedAuthenticators(auth).build())
     }
 
     override fun onStart() {
@@ -275,5 +275,5 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
 }
 
 /** 0.46.5: the one-time prompt after a crash (local report; nothing is sent unless the user picks where). */
-internal const val CRASH_TITLE = "Blaze closed unexpectedly"
+internal const val CRASH_TITLE = "${BrandName.NAME} closed unexpectedly"
 internal const val CRASH_BODY = "Send a crash report so it can be fixed? It stays on this phone until you choose where to send it."

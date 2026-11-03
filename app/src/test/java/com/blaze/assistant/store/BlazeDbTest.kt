@@ -1,5 +1,7 @@
 package com.blaze.assistant.store
 
+
+import com.blaze.assistant.BrandName
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -71,7 +73,7 @@ class BlazeDbTest {
         JdbcSql("jdbc:sqlite:" + f.path).apply { exec("CREATE TABLE future(x)"); exec("PRAGMA user_version = 7"); close() }
         val before = f.readBytes()
         try { BlazeDb(sql("new.db")); fail("a newer schema must be refused") } catch (e: BlazeDb.NewerSchema) {
-            assertTrue(e.message!!, e.message!!.contains("newer version of Blaze"))
+            assertTrue(e.message!!, e.message!!.contains("newer version of ${BrandName.NAME}"))
             assertTrue(e.message!!, e.message!!.contains("v7"))
         }
         open.forEach { it.close() }; open.clear()

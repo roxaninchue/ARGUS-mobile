@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -55,5 +57,5 @@ object PhoneControl {
         if (prev != null && prev != s) com.blaze.assistant.device.CrashLog.write("Phone control: $prev -> $s")
     }
 
-    const val TIP = "Usually Android or Device care stopped Blaze in the background. Setting Blaze's battery to Unrestricted helps it stay on."
+    const val TIP = "Usually Android or Device care stopped ${BrandName.NAME} in the background. Setting ${BrandName.NAME}'s battery to Unrestricted helps it stay on."
 }

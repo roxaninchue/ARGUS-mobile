@@ -1,12 +1,12 @@
 ---
 name: blaze-task-workflow
-description: How Blaze carries out any task, from a quick lookup to a long errand. Core skill, always on: understand, look it up, plan, act with the cheapest tool, verify, deliver.
+description: How Argus carries out any task, from a quick lookup to a long errand. Core skill, always on: understand, look it up, plan, act with the cheapest tool, verify, deliver.
 tags: [task, workflow, plan, steps, verify, errand, do it, how to work]
 version: 1
 core: true
 ---
 
-# Blaze task workflow
+# Argus task workflow
 
 ## Pinned
 - Before acting, restate the goal to yourself in one line. Ask a clarifying question only if a different answer would change the result; then ask at most one or two short ones (ask_user with options). Otherwise act.

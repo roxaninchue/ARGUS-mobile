@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,8 +16,8 @@ object MusicTools {
     const val TOOL = "music_ops"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Blaze Music (the in-app music player; use this, never the terminal or screen control, for Blaze Music). " +
-            "action: play | pause | resume | next | previous | stop | now (transport: safe, runs at once; play with nothing queued returns a question to ask the user), dj (on = true|false: Blaze DJ keeps playing songs the user loves), " +
+        .put("description", "${BrandName.NAME} Music (the in-app music player; use this, never the terminal or screen control, for ${BrandName.NAME} Music). " +
+            "action: play | pause | resume | next | previous | stop | now (transport: safe, runs at once; play with nothing queued returns a question to ask the user), dj (on = true|false: ${BrandName.NAME} DJ keeps playing songs the user loves), " +
             "mixes (list daily mixes and smart playlists), play_list (name = a daily mix or smart playlist name like \"Daily Mix 1\" / \"Most played\" / " +
             "\"On repeat\", shuffle), wrapped (period = month|year|all: listening stats), eq (preset = " + MusicSmart.presets.keys.joinToString(" | ") + "), " +
             "crossfade (seconds = 0|3|6|10), data_saver (on), import (url = a YouTube or Spotify playlist / album link: downloads every song and builds " +
@@ -33,7 +35,7 @@ object MusicTools {
 
     fun describe(args: JSONObject): String = when (args.optString("action")) {
         "import" -> "Importing the playlist"; "fix_tags" -> "Fixing song tags and covers"; "wrapped" -> "Working out your Wrapped"
-        "dj" -> "Blaze DJ"; "eq" -> "Setting the equalizer"; else -> "Blaze Music"
+        "dj" -> "${BrandName.NAME} DJ"; "eq" -> "Setting the equalizer"; else -> "${BrandName.NAME} Music"
     }
 
     private fun lists(): List<MusicSmart.SmartList> {
@@ -92,8 +94,8 @@ object MusicTools {
         return when (args.optString("action")) {
             "dj" -> {
                 val on = !args.has("on") || args.optBoolean("on")
-                if (!on) { MediaPrefs.setBool(ctx, MediaPrefs.DJ, false); return "Blaze DJ is off." }
-                if (MediaLib.songs.value.isEmpty()) return "There are no songs in Blaze Music yet. Download some (media_download) or import a playlist first."
+                if (!on) { MediaPrefs.setBool(ctx, MediaPrefs.DJ, false); return "${BrandName.NAME} DJ is off." }
+                if (MediaLib.songs.value.isEmpty()) return "There are no songs in ${BrandName.NAME} Music yet. Download some (media_download) or import a playlist first."
                 withContext(Dispatchers.Main) {
                     val svc = MusicService.current
                     if (svc != null) svc.startDj(true) else {
@@ -102,9 +104,9 @@ object MusicTools {
                         openPlayer(ctx)
                     }
                 }
-                "Blaze DJ is on: it plays songs the user loves and keeps adding more when the queue runs out."
+                "${BrandName.NAME} DJ is on: it plays songs the user loves and keeps adding more when the queue runs out."
             }
-            "mixes" -> lists().joinToString("\n") { "${it.name}: ${it.about} (${it.keys.size} songs)" }.ifBlank { "No mixes yet: they build from songs played in Blaze Music." }
+            "mixes" -> lists().joinToString("\n") { "${it.name}: ${it.about} (${it.keys.size} songs)" }.ifBlank { "No mixes yet: they build from songs played in ${BrandName.NAME} Music." }
             "play_list" -> {
                 val n = args.optString("name").trim()
                 val l = lists().firstOrNull { it.name.equals(n, true) } ?: lists().firstOrNull { it.name.contains(n, true) || n.contains(it.name, true) }

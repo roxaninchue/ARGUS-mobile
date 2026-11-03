@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -163,9 +165,9 @@ object TaskMemory {
 
     fun surfaceName(s: Surface): String = when (s) {
         Surface.BROWSER -> "the in-app Browser (browser_* tools)"
-        Surface.PHONE -> "Blaze Phone (phone_* tools)"
+        Surface.PHONE -> "${BrandName.NAME} Phone (phone_* tools)"
         Surface.SCREEN -> "the phone screen (screen control)"
-        Surface.TERMINAL -> "Blaze Terminal"
+        Surface.TERMINAL -> "${BrandName.NAME} Terminal"
         Surface.NONE -> ""
     }
 
@@ -195,7 +197,7 @@ object TaskMemory {
     }
 
     /** One standing line for the lead prompt: which surface to choose for web work. */
-    const val SURFACE_RULE = "\nWEB SURFACES: a single-page web task (one site: log in, check, fill one form) goes to Blaze Phone (phone_*); a task that " +
+    const val SURFACE_RULE = "\nWEB SURFACES: a single-page web task (one site: log in, check, fill one form) goes to ${BrandName.NAME} Phone (phone_*); a task that " +
         "needs several tabs or pages side by side goes to the Browser (browser_*). Once a task has used one surface, stay on it for that task " +
         "(the user's sign-ins live there) and never switch mid-task unless the user asks."
 

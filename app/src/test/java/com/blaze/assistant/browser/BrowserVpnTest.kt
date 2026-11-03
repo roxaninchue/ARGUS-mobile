@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,7 +16,7 @@ class BrowserVpnTest {
 
     private val proton = """
         [Interface]
-        # Key for Blaze
+        # Key for ${BrandName.NAME}
         PrivateKey = $key
         Address = 10.2.0.2/32
         DNS = 10.2.0.1

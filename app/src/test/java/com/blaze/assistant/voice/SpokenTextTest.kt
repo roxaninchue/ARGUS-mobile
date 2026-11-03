@@ -1,5 +1,7 @@
 package com.blaze.assistant.voice
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -25,7 +27,7 @@ class SpokenTextTest {
     }
 
     @Test fun statusAndToolLinesAreNeverRead() {
-        val out = say("TOOLS: [{\"name\":\"media_search\"}]\n⚡ Blaze itself\n(step) Looking at your series\nYour library has no series grouped.")
+        val out = say("TOOLS: [{\"name\":\"media_search\"}]\n⚡ ${BrandName.NAME} itself\n(step) Looking at your series\nYour library has no series grouped.")
         assertEquals("Your library has no series grouped.", out)
     }
 

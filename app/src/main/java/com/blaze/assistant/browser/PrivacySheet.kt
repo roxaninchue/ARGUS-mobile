@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
@@ -109,7 +111,7 @@ fun PrivacySheet(onImport: () -> Unit, onPrivateTab: () -> Unit) {
             Switch(checked = BrowserVpn.maskLocation, onCheckedChange = { BrowserVpn.setMask(it) }, colors = SwitchDefaults.colors(checkedTrackColor = c.accent))
         }
         Row2("New private tab", if (BrowserEngine.privateIsolated) "No history; cookies and site data wiped when you close it" else "No history (cookies are shared on this phone's WebView)", onPrivateTab)
-        P("Blaze Free needs nothing. To pick a country, import configs: Proton VPN's free plan (account.protonvpn.com › Downloads › WireGuard) covers a few countries; Mullvad, IVPN, Windscribe and Surfshark give WireGuard files for most. One file per country.",
+        P("${BrandName.NAME} Free needs nothing. To pick a country, import configs: Proton VPN's free plan (account.protonvpn.com › Downloads › WireGuard) covers a few countries; Mullvad, IVPN, Windscribe and Surfshark give WireGuard files for most. One file per country.",
             c.weak, 11, Modifier.hairlineTop(c.hair).padding(16.dp))
     }
 }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.24.4: the line under a reply shows only what matters to a person ("Memory updated", "Skill saved",
  * "Heads-up · 14:02"). Technical parts (timings, "instant/on-device", data used, token meters, model ids,
@@ -25,7 +27,7 @@ object ReplyChips {
     /** A reply's model / route line (starts with the cloud mark, or names a provider in brackets). */
     fun isRoute(meta: String): Boolean {
         val t = meta.trim()
-        return t.startsWith("\u2601") || t.startsWith("Free (") || t.startsWith("Blaze Cloud") || t.contains("Free (daily cap)")
+        return t.startsWith("\u2601") || t.startsWith("Free (") || t.startsWith("${BrandName.NAME} Cloud") || t.contains("Free (daily cap)")
     }
 
     fun isTechnical(part: String): Boolean = tech.any { it.containsMatchIn(part.trim()) }

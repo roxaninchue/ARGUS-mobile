@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.app.Activity
 import android.app.Application
 import android.content.ComponentName
@@ -23,13 +25,13 @@ object AwarenessHooks {
     @Volatile private var installed = false
     @Volatile private var started = 0
     private val friendly = mapOf(
-        "MainActivity" to "Chat", "VideoActivity" to "Blaze Video", "MusicActivity" to "Blaze Music",
+        "MainActivity" to "Chat", "VideoActivity" to "${BrandName.NAME} Video", "MusicActivity" to "${BrandName.NAME} Music",
         "BrowserActivity" to "Browser", "SiteAppActivity" to "a site app",
         "BlazeTerminalActivity" to "Terminal",
     )
 
     fun screenName(a: Activity): String = friendly[a.javaClass.simpleName]
-        ?: a.javaClass.simpleName.removeSuffix("Activity").replace(Regex("([a-z])([A-Z])"), "$1 $2").ifBlank { "Blaze" }
+        ?: a.javaClass.simpleName.removeSuffix("Activity").replace(Regex("([a-z])([A-Z])"), "$1 $2").ifBlank { "${BrandName.NAME}" }
 
     fun install(app: Application) {
         if (installed) return
@@ -38,7 +40,7 @@ object AwarenessHooks {
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityResumed(a: Activity) {
                 val name = screenName(a)
-                Awareness.set(Awareness.Now("screen", "On screen", name, "Blaze"))
+                Awareness.set(Awareness.Now("screen", "On screen", name, "${BrandName.NAME}"))
                 if (name != "Chat") Awareness.did("opened", "opened $name")
             }
             override fun onActivityStarted(a: Activity) { started++ }
@@ -58,7 +60,7 @@ object AwarenessHooks {
         if (v.isBlank() || Awareness.get("screen")?.title != "Chat") return emptyList()
         val name = com.blaze.assistant.ui.Views.find(v)?.name ?: v
         val title = if (v == "design") (try { Designs.current()?.title } catch (_: Throwable) { null })?.ifBlank { null } else null
-        return listOf(Awareness.Now("view", "Open", title ?: name, if (title != null) "the Design view" else "Blaze"))
+        return listOf(Awareness.Now("view", "Open", title ?: name, if (title != null) "the Design view" else "${BrandName.NAME}"))
     }
 
     /** Other apps' media sessions (Blaze's own are reported by the players themselves). */
@@ -100,9 +102,9 @@ object AwarenessHooks {
             val title = t?.title ?: item.mediaMetadata.title?.toString() ?: return
             val artist = t?.artist?.ifBlank { null } ?: item.mediaMetadata.artist?.toString() ?: ""
             val dur = p.duration.takeIf { it > 0 } ?: t?.durationMs?.takeIf { it > 0 } ?: -1
-            Awareness.set(Awareness.Now("music", if (p.isPlaying) "Playing" else "Paused", title, "Blaze Music",
+            Awareness.set(Awareness.Now("music", if (p.isPlaying) "Playing" else "Paused", title, "${BrandName.NAME} Music",
                 if (artist.isNotBlank()) "by $artist" else "", p.currentPosition, dur, p.isPlaying))
-            if (songChanged || p.isPlaying) Awareness.did("listened", "played \"$title\"" + (if (artist.isNotBlank()) " by $artist" else "") + " in Blaze Music")
+            if (songChanged || p.isPlaying) Awareness.did("listened", "played \"$title\"" + (if (artist.isNotBlank()) " by $artist" else "") + " in ${BrandName.NAME} Music")
         } catch (_: Throwable) { }
     }
 
@@ -113,7 +115,7 @@ object AwarenessHooks {
         try {
             if (t == null) { Awareness.clear("video"); return }
             val dur = p.duration.takeIf { it > 0 } ?: t.durationMs.takeIf { it > 0 } ?: -1
-            Awareness.set(Awareness.Now("video", if (p.isPlaying) "Watching" else "Paused", t.title, "Blaze Video",
+            Awareness.set(Awareness.Now("video", if (p.isPlaying) "Watching" else "Paused", t.title, "${BrandName.NAME} Video",
                 "", p.currentPosition, dur, p.isPlaying))
         } catch (_: Throwable) { }
     }
@@ -125,7 +127,7 @@ object AwarenessHooks {
             val dur = p.duration.takeIf { it > 0 } ?: t.durationMs
             val pos = p.currentPosition
             val done = dur > 0 && pos >= dur - 30_000
-            Awareness.did("watched", "watched \"${t.title}\" in Blaze Video, " +
+            Awareness.did("watched", "watched \"${t.title}\" in ${BrandName.NAME} Video, " +
                 if (done) "finished it" else "stopped at ${Awareness.clock(pos)}" + (if (dur > 0) " of ${Awareness.clock(dur)}" else ""))
             if (clear) Awareness.clear("video")
         } catch (_: Throwable) { }

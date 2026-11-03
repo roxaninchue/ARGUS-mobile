@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
@@ -49,7 +51,7 @@ object Mind {
 
     const val LOOKUP_RULE = "CONTEXT RESET: earlier turns are NOT in this prompt. You don't remember them; look them up. Use memory_search for facts, preferences and decisions, and search_chat / read_turn for exact earlier words, before you answer. Don't guess and don't ask the user to repeat."
 
-    const val EXTRACT_PROMPT = "You maintain the user's memory for Blaze. From the conversation below, list what is worth remembering for months: profile facts (name, school, work, where they live), standing preferences (with every condition the user attached), people in their life and who they are to them, project state, decisions and why, commitments and deadlines.\n" +
+    const val EXTRACT_PROMPT = "You maintain the user's memory for ${BrandName.NAME}. From the conversation below, list what is worth remembering for months: profile facts (name, school, work, where they live), standing preferences (with every condition the user attached), people in their life and who they are to them, project state, decisions and why, commitments and deadlines.\n" +
         "Skip: procedure, how a tool works, one-off values (prices, counts, order numbers, codes), small talk, secrets and passwords, anything already in EXISTING unless it changed.\n" +
         "Write lines no broader or firmer than the user said. Mark your inferences \"(inferred)\".\n" +
         "Answer ONLY a JSON array, [] when nothing: [{\"kind\":\"profile|preference|person|project|decision|fact\",\"subject\":\"who or what it is about\",\"text\":\"one line\",\"related\":\"other subjects, comma-separated\"}]"
@@ -632,7 +634,7 @@ object Mind {
             val hadOld = oldFile.exists()
             val blaze: MindStore? = try {
                 val sql = openBlaze(java.io.File(app.filesDir, "blaze.db"))
-                try { MindStore(com.blaze.assistant.store.BlazeDb(sql), sql) } catch (e: Throwable) { try { sql.close() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: MindStorecom.blaze.assistant.store.Blaze", e) }; throw e }
+                try { MindStore(com.blaze.assistant.store.BlazeDb(sql), sql) } catch (e: Throwable) { try { sql.close() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: MindStorecom.blaze.assistant.store.${BrandName.NAME}", e) }; throw e }
             } catch (e: com.blaze.assistant.store.BlazeDb.NewerSchema) {
                 notice = NEWER; null
             } catch (_: Throwable) {
@@ -650,8 +652,8 @@ object Mind {
         }
     }
 
-    const val NEWER = "Your memory file was saved by a newer version of Blaze. Update Blaze to see everything; until then Blaze uses the copy it kept on this phone."
-    const val UNAVAILABLE = "Blaze couldn't open its new memory file, so it's using the copy it kept on this phone. Nothing was lost."
+    const val NEWER = "Your memory file was saved by a newer version of ${BrandName.NAME}. Update ${BrandName.NAME} to see everything; until then ${BrandName.NAME} uses the copy it kept on this phone."
+    const val UNAVAILABLE = "${BrandName.NAME} couldn't open its new memory file, so it's using the copy it kept on this phone. Nothing was lost."
 
     /**
      * The one-time copy mind.db → blaze.db. Holds mind.db's lock for the whole copy, so nothing is written to it
@@ -963,7 +965,7 @@ object Mind {
                     "saved" -> "Saved #$id."
                     "updated" -> "Updated #$id (the newer line replaced the old one)."
                     "same" -> "Already saved as #$id."
-                    "secret" -> "Not saved: that looks like a password, code or account number, which Blaze never keeps."
+                    "secret" -> "Not saved: that looks like a password, code or account number, which ${BrandName.NAME} never keeps."
                     else -> "Nothing to save."
                 }
             }

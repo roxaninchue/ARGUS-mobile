@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,11 +26,11 @@ import com.blaze.assistant.voice.myvoice.VoiceRecorder
 import kotlinx.coroutines.launch
 
 /** What the user reads aloud: varied sounds, ~15–20 s at a relaxed pace. */
-const val MY_VOICE_SCRIPT = "Hi, this is my voice for Blaze. I'm reading this at my normal pace, the way I'd talk to a friend. " +
+const val MY_VOICE_SCRIPT = "Hi, this is my voice for ${BrandName.NAME}. I'm reading this at my normal pace, the way I'd talk to a friend. " +
     "The quick brown fox jumps over the lazy dog. What's the weather like tomorrow? Remind me to call Mum at six, " +
     "and play something relaxing while I cook dinner."
 
-const val MY_VOICE_TEST = "Hey, it's me. This is how Blaze sounds with my voice. Pretty cool, right?"
+const val MY_VOICE_TEST = "Hey, it's me. This is how ${BrandName.NAME} sounds with my voice. Pretty cool, right?"
 
 /** Where the setup is. Pure state, so the screenshot test can draw each step. */
 data class MyVoiceUi(
@@ -131,12 +133,12 @@ fun MyVoiceSection() {
         },
         onUse = {
             if (MyVoice.useCandidate()) { hasVoice = true; candidateSaved = false; chosen = true; geminiChosen = false; geminiOpen = false; setupOpen = false; recorded = null; test = null
-                message = "Done. Blaze speaks with your voice now." }
+                message = "Done. ${BrandName.NAME} speaks with your voice now." }
             else message = "Couldn't save your voice. Try recording again."
         },
         onRerecord = { setupOpen = true; recorded = null; test = null; message = "" },
         onDeleteVoice = { MyVoice.deleteVoice(); hasVoice = false; candidateSaved = false; chosen = false; recorded = null; test = null; message = "Your recording is deleted." },
-        onDeletePack = { MyVoice.deletePack(); chosen = MyVoice.chosen(); message = "Voice model deleted. Blaze uses the phone voice." },
+        onDeletePack = { MyVoice.deletePack(); chosen = MyVoice.chosen(); message = "Voice model deleted. ${BrandName.NAME} uses the phone voice." },
         onQuality = { quality = it; Settings.setStr("myvoice_quality", it) },
         onKeepSlow = { keepSlow = !keepSlow; Settings.setBool("myvoice_keep_slow", keepSlow); if (keepSlow) Settings.setStr("myvoice_slow_at", "0") },
         onOpenAppSettings = {
@@ -169,12 +171,12 @@ fun MyVoiceCard(
     val step3 = MyVoiceSetup.step3(steps)
 
     Spacer(Modifier.height(22.dp))
-    Label("Blaze voice", modifier = Modifier.padding(bottom = 6.dp))
+    Label("${BrandName.NAME} voice", modifier = Modifier.padding(bottom = 6.dp))
     val geminiActive = ui.geminiChosen
     Choice("System voice", "Your phone's built-in speech voice", !mineActive && !setupOpen && !geminiActive && !geminiOpen, onPickSystem)
     Choice("My voice", when {
-        mineActive -> "Blaze speaks with your voice, made on this phone"
-        else -> "Record yourself for about 15 seconds and Blaze talks like you"
+        mineActive -> "${BrandName.NAME} speaks with your voice, made on this phone"
+        else -> "Record yourself for about 15 seconds and ${BrandName.NAME} talks like you"
     }, (mineActive || setupOpen) && !geminiActive && !geminiOpen, onPickMine)
     Choice("Google voice", "Natural voices from Google, with your Google AI Studio key", geminiActive || geminiOpen, onPickGemini)
     if (geminiOpen) GeminiVoicePanel(active = geminiActive, onReady = onGeminiReady)
@@ -224,7 +226,7 @@ fun MyVoiceCard(
                 }
             }
             if (ui.micDenied) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Body("Blaze needs the microphone to record you.", color = c.accent, modifier = Modifier.weight(1f))
+                Body("${BrandName.NAME} needs the microphone to record you.", color = c.accent, modifier = Modifier.weight(1f))
                 ActionText("Allow", color = c.accent, size = 11.sp, modifier = Modifier.clickable(onClick = onOpenAppSettings).padding(vertical = 6.dp))
             }
 
@@ -260,7 +262,7 @@ fun MyVoiceCard(
             }
         }
         Body("Fast is slightly quicker; Best sounds a little smoother.", modifier = Modifier.padding(top = 4.dp))
-        ToggleRow("Keep my voice when it's slow", "Off: if your phone can't keep up, Blaze switches to the phone voice and tells you", keepSlow, onKeepSlow)
+        ToggleRow("Keep my voice when it's slow", "Off: if your phone can't keep up, ${BrandName.NAME} switches to the phone voice and tells you", keepSlow, onKeepSlow)
         Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
             if (ui.hasVoice && !setupOpen) ActionText("Re-record", color = c.accent, size = 10.sp, modifier = Modifier.clickable(onClick = onRerecord).padding(vertical = 10.dp).padding(end = 14.dp))
             if (ui.hasVoice) ActionText("Delete my voice", color = c.accent, size = 10.sp, modifier = Modifier.clickable(onClick = onDeleteVoice).padding(vertical = 10.dp).padding(end = 14.dp))
@@ -282,15 +284,15 @@ fun GeminiVoicePanel(active: Boolean, onReady: () -> Unit) {
     var noteBad by remember { mutableStateOf(false) }
     fun hear() {
         busy = true; note = ""
-        GeminiVoice.preview("Hi, I'm Blaze. This is how I sound with this voice.", voice) { err ->
+        GeminiVoice.preview("Hi, I'm ${BrandName.NAME}. This is how I sound with this voice.", voice) { err ->
             busy = false
-            if (err == null) { note = if (active) "That's the voice Blaze uses now." else "Blaze speaks with this voice now."; noteBad = false; onReady() }
+            if (err == null) { note = if (active) "That's the voice ${BrandName.NAME} uses now." else "${BrandName.NAME} speaks with this voice now."; noteBad = false; onReady() }
             else { note = err; noteBad = true }
         }
     }
     Column(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 8.dp).hairline(c.hair).padding(14.dp)) {
         if (!hasKey) {
-            Body("Paste your Google AI Studio key. You can get one free at aistudio.google.com. It stays on this phone and in your Blaze account.")
+            Body("Paste your Google AI Studio key. You can get one free at aistudio.google.com. It stays on this phone and in your ${BrandName.NAME} account.")
             BlazeTextField(keyText, { keyText = it.trim() }, "Google AI Studio key", modifier = Modifier.fillMaxWidth().padding(top = 8.dp), mono = true)
             PillButton("Save key", primary = true, modifier = Modifier.padding(top = 8.dp), onClick = {
                 if (keyText.length < 20) { note = "That doesn't look like a Google AI Studio key."; noteBad = true }
@@ -317,7 +319,7 @@ fun GeminiVoicePanel(active: Boolean, onReady: () -> Unit) {
             if (busy) { Body("Making a sample\u2026", modifier = Modifier.padding(top = 6.dp)); Bar(-1f) }
         }
         if (note.isNotEmpty()) Body(note, color = if (noteBad) c.accent else c.sub, modifier = Modifier.padding(top = 8.dp))
-        if (active) Body("If Google's voice can't be reached, Blaze uses the phone voice and tells you.", modifier = Modifier.padding(top = 6.dp))
+        if (active) Body("If Google's voice can't be reached, ${BrandName.NAME} uses the phone voice and tells you.", modifier = Modifier.padding(top = 6.dp))
     }
 }
 

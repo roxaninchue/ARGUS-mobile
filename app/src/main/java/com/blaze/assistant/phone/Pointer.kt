@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -130,7 +132,7 @@ object Pointer {
             text = "Stop"; textSize = 12f; isSingleLine = true; setTextColor(Color.WHITE)
             setPadding((10 * d).toInt(), (5 * d).toInt(), (10 * d).toInt(), (5 * d).toInt())
             background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = 14 * d; setColor(Color.argb(200, 29, 26, 22)) }
-            contentDescription = "Stop Blaze"
+            contentDescription = "Stop ${BrandName.NAME}"
             setOnClickListener { stop(); visibility = View.GONE }
         }
         val lp = WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, type(),

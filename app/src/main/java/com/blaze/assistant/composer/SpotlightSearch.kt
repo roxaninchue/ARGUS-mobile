@@ -1,5 +1,7 @@
 package com.blaze.assistant.composer
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.47 Spotlight v2 search (pure; SpotlightSearchTest). Everything comes from the [SelfMap] plus the user's media library.
  *
@@ -78,7 +80,7 @@ object SpotlightSearch {
         if (cmd.isNotEmpty()) {
             rows += Row("cmd", Icon.TERMINAL, "! $cmd", if (d.installed) "Run in ${d.name} \u00b7 here on Home" else "${d.name} isn't installed \u00b7 tap to set it up",
                 if (d.installed) Act.RunCommand(cmd, d.id) else Act.OpenView("terminal"), 100)
-            rows += Row("cmd:ask", Icon.CHAT, "Ask Blaze to run it", "Blaze runs \u201c$cmd\u201d and explains the result", Act.AskBlaze("Run this in the terminal (${d.name}): $cmd"), 50)
+            rows += Row("cmd:ask", Icon.CHAT, "Ask ${BrandName.NAME} to run it", "${BrandName.NAME} runs \u201c$cmd\u201d and explains the result", Act.AskBlaze("Run this in the terminal (${d.name}): $cmd"), 50)
         } else {
             rows += Row("cmd:hint", Icon.TERMINAL, "Type a command", "Runs in ${d.name}" + (if (d.installed) "" else " (not installed yet)"), Act.Complete("!"), 100)
         }
@@ -138,9 +140,9 @@ object SpotlightSearch {
         val shown = if (q.isBlank()) "anything" else "\u2018$q\u2019"
         return listOf(
             Row("fb:browse", Icon.BROWSER, "Browse $shown", "Search the web in a preview", Act.Browse(q), -1),
-            Row("fb:music", Icon.MUSIC, "Music: search $shown", "Find songs in Blaze Music", Act.MusicSearch(q), -2),
-            Row("fb:video", Icon.VIDEO, "Video: search $shown", "Find videos in Blaze Video", Act.VideoSearch(q), -3),
-            Row("fb:ask", Icon.CHAT, "Ask Blaze about \u2018$q\u2019".let { if (q.isBlank()) "Ask Blaze" else it }, "Sends it into the chat", Act.AskBlaze(q), -4),
+            Row("fb:music", Icon.MUSIC, "Music: search $shown", "Find songs in ${BrandName.NAME} Music", Act.MusicSearch(q), -2),
+            Row("fb:video", Icon.VIDEO, "Video: search $shown", "Find videos in ${BrandName.NAME} Video", Act.VideoSearch(q), -3),
+            Row("fb:ask", Icon.CHAT, "Ask ${BrandName.NAME} about \u2018$q\u2019".let { if (q.isBlank()) "Ask ${BrandName.NAME}" else it }, "Sends it into the chat", Act.AskBlaze(q), -4),
         )
     }
 

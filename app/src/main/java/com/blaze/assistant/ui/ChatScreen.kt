@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -255,7 +257,7 @@ fun ChatScreen() {
     fun pasteImage() {
         clipHasImage = false
         val clipData = try { sysClip.primaryClip } catch (_: Exception) { null }
-        if (clipData == null) { Toast.makeText(ctx, "Android didn't let Blaze read the clipboard. Copy the image again, then paste.", Toast.LENGTH_SHORT).show(); return }
+        if (clipData == null) { Toast.makeText(ctx, "Android didn't let ${BrandName.NAME} read the clipboard. Copy the image again, then paste.", Toast.LENGTH_SHORT).show(); return }
         val d = clipData.description
         // Some keyboards and the Samsung clipboard don't say the file type when asked, so pass on what the clip declared.
         val hint = (0 until d.mimeTypeCount).map { d.getMimeType(it) }.firstOrNull { it.startsWith("image/") }.orEmpty()
@@ -305,7 +307,7 @@ fun ChatScreen() {
             onError = { Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show() })
     }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) startVoice() else Toast.makeText(ctx, "Blaze needs the microphone to hear you.", Toast.LENGTH_SHORT).show()
+        if (ok) startVoice() else Toast.makeText(ctx, "${BrandName.NAME} needs the microphone to hear you.", Toast.LENGTH_SHORT).show()
     }
     fun onMic() {
         when {
@@ -321,7 +323,7 @@ fun ChatScreen() {
     // Call Blaze: full-screen voice call.
     var inCall by remember { mutableStateOf(false) }
     val callPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) inCall = true else Toast.makeText(ctx, "Blaze needs the microphone for calls.", Toast.LENGTH_SHORT).show()
+        if (ok) inCall = true else Toast.makeText(ctx, "${BrandName.NAME} needs the microphone for calls.", Toast.LENGTH_SHORT).show()
     }
     fun startCall() {
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) inCall = true
@@ -395,7 +397,7 @@ fun ChatScreen() {
 
     fun clearScreen() {
         when (Agent.clearScreen()) {
-            com.blaze.assistant.agent.ClearScreen.Result.BUSY -> Toast.makeText(ctx, "Blaze is working. Stop it first, then /clear.", Toast.LENGTH_SHORT).show()
+            com.blaze.assistant.agent.ClearScreen.Result.BUSY -> Toast.makeText(ctx, "${BrandName.NAME} is working. Stop it first, then /clear.", Toast.LENGTH_SHORT).show()
             com.blaze.assistant.agent.ClearScreen.Result.EMPTY -> {}
             com.blaze.assistant.agent.ClearScreen.Result.CLEARED -> { quote = ""; exitView(); clearedAt = System.currentTimeMillis() }
         }
@@ -514,9 +516,9 @@ fun ChatScreen() {
             "voice" -> { onMic(); true }
             "call" -> { startCall(); true }
             "plan" -> { com.blaze.assistant.agent.Modes.toggleWork()
-                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.plan) "Plan mode on: Blaze plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
+                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.plan) "Plan mode on: ${BrandName.NAME} plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
             "approval" -> { com.blaze.assistant.agent.Modes.toggleApproval()
-                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.autopilot) "Autopilot: Blaze acts, you can undo" else "Blaze asks before it acts", Toast.LENGTH_SHORT).show(); true }
+                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.autopilot) "Autopilot: ${BrandName.NAME} acts, you can undo" else "${BrandName.NAME} asks before it acts", Toast.LENGTH_SHORT).show(); true }
             "clear" -> { clearScreen(); true }
             "views" -> { composer.openSpotlight(); composer.query = "@"; true }
             "profile" -> { avatarMenu = true; true }
@@ -582,7 +584,7 @@ fun ChatScreen() {
     }
     // Awareness: which surface is in front (Home or Chat).
     val surface by remember(swipeMode) { derivedStateOf { if (!swipeMode) (if (navNow().tab == ChatNav.HOME) "home" else "chat") else com.blaze.assistant.agent.SwipeNav.surfaceOf(sheetP) } }
-    LaunchedEffect(surface) { try { com.blaze.assistant.agent.Awareness.set(com.blaze.assistant.agent.Awareness.Now("surface", "Showing", com.blaze.assistant.agent.SwipeNav.awarenessLine(surface), "Blaze")) } catch (_: Throwable) { } }
+    LaunchedEffect(surface) { try { com.blaze.assistant.agent.Awareness.set(com.blaze.assistant.agent.Awareness.Now("surface", "Showing", com.blaze.assistant.agent.SwipeNav.awarenessLine(surface), "${BrandName.NAME}")) } catch (_: Throwable) { } }
     // 0.45.19 fix 7: Back returns to the chat from everything (BackRule); the chat is the root, so Back from Chat no
     // longer goes down to Home (that made Home and Chat a loop Back could never leave). The shell publishes what is
     // in front and how to close it; BackRule's window interceptor acts on it before any nested BackHandler.
@@ -770,7 +772,7 @@ fun ChatScreen() {
                 // 0.46.3: the on-phone brain's one-time question before its setup uses mobile data
                 val askData by com.blaze.assistant.agent.BackupBrain.askMobile.collectAsState()
                 if (askData) BlazeDialog(com.blaze.assistant.agent.BackupNudge.mobileDataQuestion(com.blaze.assistant.agent.BackupBrain.DOWNLOAD_BYTES),
-                    "Until then, Blaze answers online. On Wi-Fi this finishes by itself.",
+                    "Until then, ${BrandName.NAME} answers online. On Wi-Fi this finishes by itself.",
                     confirm = "Use mobile data", onConfirm = { com.blaze.assistant.agent.BackupBrain.answerMobile(true) },
                     dismiss = "Wait for Wi-Fi", onDismiss = { com.blaze.assistant.agent.BackupBrain.answerMobile(false) })
                 // 0.46.3: the one-time phone control explainer (a phone task needed control and it was off).
@@ -822,7 +824,7 @@ fun ChatScreen() {
                         when (id) {
                             "camera" -> cameraCapture.open()
                             "blazecam" -> if (!com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
-                                Toast.makeText(ctx, "Blaze Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
+                                Toast.makeText(ctx, "${BrandName.NAME} Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
                             "photos" -> photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                             "files" -> files.launch(arrayOf("image/*", "application/pdf", "text/*"))
                             "atfile" -> { val t = input.text.let { if (it.isEmpty() || it.endsWith(" ")) it else "$it " } + "@"; input = TextFieldValue(t, TextRange(t.length)) }
@@ -909,7 +911,7 @@ fun ChatScreen() {
             // RC4: the one-time questions the chat screen used to ask, over Home.
             val askData by com.blaze.assistant.agent.BackupBrain.askMobile.collectAsState()
             if (askData) BlazeDialog(com.blaze.assistant.agent.BackupNudge.mobileDataQuestion(com.blaze.assistant.agent.BackupBrain.DOWNLOAD_BYTES),
-                "Until then, Blaze answers online. On Wi-Fi this finishes by itself.",
+                "Until then, ${BrandName.NAME} answers online. On Wi-Fi this finishes by itself.",
                 confirm = "Use mobile data", onConfirm = { com.blaze.assistant.agent.BackupBrain.answerMobile(true) },
                 dismiss = "Wait for Wi-Fi", onDismiss = { com.blaze.assistant.agent.BackupBrain.answerMobile(false) })
             val explain by com.blaze.assistant.phone.flash.PhoneExplainer.requested.collectAsState()
@@ -1175,10 +1177,10 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 AnimatedVisibility(dropOn, enter = MotionTokens.enterUp(), exit = androidx.compose.animation.ExitTransition.None) {
                     Box(Modifier.padding(top = 3.dp)) {
                         val label = com.blaze.assistant.agent.ThinkingLabel.label(live = true, hasThought = live.isNotBlank(), show = Settings.showReasoning)
-                            ?: status.ifBlank { "Blaze is thinking" }
+                            ?: status.ifBlank { "${BrandName.NAME} is thinking" }
                         // v0.32.0 split: while Halo talks with you, the drop works alone (its halo went with her).
                         val ring by androidx.compose.animation.core.animateFloatAsState(if (split) 0f else 1f, androidx.compose.animation.core.tween(520), label = "ring")
-                        ThinkingOrb(if (split) "Blaze is working" else label, size = OrbAnchor.SIZE, ring = ring)
+                        ThinkingOrb(if (split) "${BrandName.NAME} is working" else label, size = OrbAnchor.SIZE, ring = ring)
                     }
                 }
                 // Ack-and-background: an acknowledged task shows its small chip instead of the drop.
@@ -1536,7 +1538,7 @@ internal fun Welcome(needsSetup: Boolean, onSetup: () -> Unit, onPick: (String) 
         )
         Spacer(Modifier.height(14.dp))
         Text(
-            "Ask anything. Blaze answers, opens apps, taps and types for you, and checks with you before anything that matters.",
+            "Ask anything. ${BrandName.NAME} answers, opens apps, taps and types for you, and checks with you before anything that matters.",
             style = TextStyle(fontFamily = Type.Sans, fontSize = 17.sp, lineHeight = 26.sp, color = c.body)
         )
         Spacer(Modifier.height(32.dp))

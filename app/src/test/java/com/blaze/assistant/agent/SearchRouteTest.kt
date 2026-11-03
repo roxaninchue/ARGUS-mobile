@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -54,7 +56,7 @@ class SearchRouteTest {
     }
 
     @Test fun aboutBlazeTheChatAndMyDataStayLocal() {
-        listOf("what can you do?", "which features does Blaze have", "how do I turn on Halo in Blaze settings", "what did I say earlier about the trip",
+        listOf("what can you do?", "which features does ${BrandName.NAME} have", "how do I turn on Halo in ${BrandName.NAME} settings", "what did I say earlier about the trip",
             "what's on my calendar today", "how many photos do I have", "what version are you", "do I have any alarms set?",
             "what skills do you have").forEach {
             assertEquals(it, SearchRoute.Route.LOCAL, SearchRoute.route(it))

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -63,18 +65,18 @@ class BrainRaceTest {
         val shown = mutableListOf<Pair<Long, String>>()
         val blaze = backgroundScope.launch { delay(10 * 60_000) }   // the stuck main turn, untouched by Halo
         val r = BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { BrainRace.haloHolding("check my GitLab tokens", "Reading 2 pages") }, { shown += testScheduler.currentTime to it }) { say ->
-            delay(6_000); say("Blaze is still on it - about a minute more."); "Blaze is still on it - about a minute more." }
+            delay(6_000); say("${BrandName.NAME} is still on it - about a minute more."); "${BrandName.NAME} is still on it - about a minute more." }
         assertEquals(2_000L, shown.first().first)
-        assertEquals("Blaze is still on \u201ccheck my GitLab tokens\u201d. Right now: Reading 2 pages.", shown.first().second)
-        assertEquals("Blaze is still on it - about a minute more.", r)
+        assertEquals("${BrandName.NAME} is still on \u201ccheck my GitLab tokens\u201d. Right now: Reading 2 pages.", shown.first().second)
+        assertEquals("${BrandName.NAME} is still on it - about a minute more.", r)
         assertTrue(blaze.isActive)
         // fast model: no holding line at all
         val shown2 = mutableListOf<String>()
         BrainRace.haloReply(2_000, { "hold" }, { shown2 += it }) { say -> delay(800); say("Hi!"); "Hi!" }
         assertEquals(listOf("Hi!"), shown2)
         // every brain fails after the holding line: the holding line is Halo's reply, not an error
-        val r3 = BrainRace.haloReply(2_000, { "Blaze is still on your request." }, { }) { _ -> delay(9_000); throw LlmClient.LlmException(Cloud.BUSY, 503) }
-        assertEquals("Blaze is still on your request.", r3)
+        val r3 = BrainRace.haloReply(2_000, { "${BrandName.NAME} is still on your request." }, { }) { _ -> delay(9_000); throw LlmClient.LlmException(Cloud.BUSY, 503) }
+        assertEquals("${BrandName.NAME} is still on your request.", r3)
     }
 
     @Test fun wiring() {
@@ -99,21 +101,22 @@ class BrainRaceTest {
     }
 
     // ---- 0.46.5: reliability ledger, final error. 0.46.6: the ledger no longer reorders the brains ----
+    // 0.52.1 (gw061): tool (TASK) turns ask the gateway before the Nous reserve; chat keeps on-phone → Nous → gateway.
     @Test fun orderStaysOnPhoneNousGatewayWhateverTheLedgerSays() {
         val ttft = { s: BackupRoute.Step -> if (s == C) 900L else if (s == R) 15_000L else 25_000L }
         // Nous mostly failing, gateway fast: Nous is still asked before the gateway (0.46.5 put it last, so it was skipped)
         assertEquals(listOf(R, C), BrainRace.order(BrainRace.Kind.CHAT, false, true, ttft) { if (it == R) 0.1 else 0.95 })
-        assertEquals(listOf(P, R, C), BrainRace.order(BrainRace.Kind.TASK, true, true, ttft) { if (it == R) 0.1 else 0.95 })
+        assertEquals(listOf(P, C, R), BrainRace.order(BrainRace.Kind.TASK, true, true, ttft) { if (it == R) 0.1 else 0.95 })
         assertEquals(listOf(R, C), BrainRace.order(BrainRace.Kind.CHAT, false, true, ttft) { 0.9 })
-        assertEquals(listOf(P, R, C), BrainRace.order(BrainRace.Kind.TASK, true, true, ttft) { 0.9 })
-        assertEquals(listOf(P, R, C), BrainRace.order(BrainRace.Kind.TASK, true, true, ttft) { if (it == P) 0.1 else null })
+        assertEquals(listOf(P, C, R), BrainRace.order(BrainRace.Kind.TASK, true, true, ttft) { 0.9 })
+        assertEquals(listOf(P, C, R), BrainRace.order(BrainRace.Kind.TASK, true, true, ttft) { if (it == P) 0.1 else null })
         // the ledger: successes and real failures move the rate; nothing else does
         val l = BrainLedger { 0L }
         assertEquals(null, l.reliability(C))
         repeat(3) { l.fail(C, "busy") }; repeat(3) { l.ok(R, 20_000) }
         assertTrue(l.reliability(C)!! < 0.5); assertTrue(l.reliability(R)!! >= 0.8)
         assertEquals(listOf(R, C), BrainRace.order(BrainRace.Kind.CHAT, false, true, { if (it == C) 900L else 15_000L }, { l.reliability(it) }))
-        assertEquals(listOf(R, C), BrainRace.order(BrainRace.Kind.TASK, false, true, { null }, { if (it == R) 0.0 else 1.0 }))
+        assertEquals(listOf(C, R), BrainRace.order(BrainRace.Kind.TASK, false, true, { null }, { if (it == R) 0.0 else 1.0 }))
         val l2 = BrainLedger(); l2.load(l.toJson()); assertEquals(l.reliability(R)!!, l2.reliability(R)!!, 1e-9)
         // retry pick: most reliable, ties keep the order
         assertEquals(R, BrainRace.retryPick(listOf(P, R, C)) { if (it == R) 0.9 else 0.3 })
@@ -133,12 +136,12 @@ class BrainRaceTest {
     @Test fun cloudInTheRaceFailsAtOnceInsteadOfRetrying() = runTest {
         var tries = 0
         val busy = runCatching { kotlinx.coroutines.withContext(Cloud.FastFail) {
-            Cloud.drive(true, call = { _ -> tries++; throw LlmClient.LlmException("Blaze Cloud is busy (503)", 503) }, served = { "" }, sleep = { })
+            Cloud.drive(true, call = { _ -> tries++; throw LlmClient.LlmException("${BrandName.NAME} Cloud is busy (503)", 503) }, served = { "" }, sleep = { })
         } }
         assertTrue(busy.isFailure); assertEquals(1, tries)
         // outside the race the old quiet retries still apply
         tries = 0
-        runCatching { Cloud.drive(true, call = { _ -> tries++; throw LlmClient.LlmException("Blaze Cloud is busy (503)", 503) }, served = { "" }, sleep = { }) }
+        runCatching { Cloud.drive(true, call = { _ -> tries++; throw LlmClient.LlmException("${BrandName.NAME} Cloud is busy (503)", 503) }, served = { "" }, sleep = { }) }
         assertTrue(tries > 1)
     }
 }

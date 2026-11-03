@@ -1,5 +1,7 @@
 package com.blaze.assistant.home
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -132,7 +134,7 @@ object HomeSources {
         if (platform != "YouTube") {
             val url = if (who.startsWith("http")) who else YouTube.profileUrl(platform, who)
             return Result(WidgetData(headline = w.title, change = "New posts from $platform open in the app or browser.",
-                lines = listOf(WidgetLine("Open ${who.substringAfterLast('/').ifBlank { who }} on $platform", "Blaze can't read $platform feeds for free, so this is a link.", url)), link = url))
+                lines = listOf(WidgetLine("Open ${who.substringAfterLast('/').ifBlank { who }} on $platform", "${BrandName.NAME} can't read $platform feeds for free, so this is a link.", url)), link = url))
         }
         var learned: JSONObject? = null
         val id = w.opt("channel_id").ifBlank { null } ?: YouTube.directId(who) ?: run {
@@ -248,7 +250,7 @@ object HomeSources {
     private fun routines(now: Long): WidgetData {
         val R = com.blaze.assistant.routine.Routines
         val list = try { R.all.value.filter { it.enabled }.map { it to R.next(it, now) }.filter { it.second > now }.sortedBy { it.second } } catch (_: Throwable) { emptyList() }
-        if (list.isEmpty()) return WidgetData(headline = "Next routine", change = "No routines yet. Ask Blaze, e.g. \u201cevery weekday at 7, brief me\u201d.", action = "ask:Set up a morning routine for me")
+        if (list.isEmpty()) return WidgetData(headline = "Next routine", change = "No routines yet. Ask ${BrandName.NAME}, e.g. \u201cevery weekday at 7, brief me\u201d.", action = "ask:Set up a morning routine for me")
         val (r, at) = list.first()
         return WidgetData(headline = "Next routine", value = r.name, change = Dates.dayTime(at) + " · " + r.daysLabel(),
             lines = list.drop(1).take(5).map { (x, t) -> WidgetLine(x.name, Dates.dayTime(t) + " · " + x.daysLabel()) })
@@ -262,7 +264,7 @@ object HomeSources {
         val mems = try { com.blaze.assistant.agent.Mind.all().filter { deadlineRe.containsMatchIn(it.text) }.sortedByDescending { it.id }.take(6)
             .map { WidgetLine(it.text.take(120), it.subject.takeIf { s -> s.isNotBlank() }.orEmpty(), "", "From memory") } } catch (_: Throwable) { emptyList() }
         val lines = (oneOffs + mems).take(8)
-        if (lines.isEmpty()) return WidgetData(headline = "Deadlines", change = "No deadlines yet. Tell Blaze about one, e.g. \u201cmy essay is due Friday\u201d.", action = "ask:Help me track my deadlines")
+        if (lines.isEmpty()) return WidgetData(headline = "Deadlines", change = "No deadlines yet. Tell ${BrandName.NAME} about one, e.g. \u201cmy essay is due Friday\u201d.", action = "ask:Help me track my deadlines")
         return WidgetData(headline = "Deadlines", value = lines.first().title, change = lines.first().sub, lines = lines.drop(1))
     }
 
@@ -276,7 +278,7 @@ object HomeSources {
     } catch (_: Throwable) { false }
 
     private fun apps(ctx: Context, now: Long): WidgetData {
-        if (!usageAllowed(ctx)) return WidgetData.failed("Blaze can show the apps you use most. It needs Usage access, which stays on this phone.", "usage")
+        if (!usageAllowed(ctx)) return WidgetData.failed("${BrandName.NAME} can show the apps you use most. It needs Usage access, which stays on this phone.", "usage")
         val usm = ctx.getSystemService(android.app.usage.UsageStatsManager::class.java) ?: return WidgetData.failed("Usage stats aren't available on this phone.")
         val stats = try { usm.queryAndAggregateUsageStats(now - 7 * 86_400_000L, now) } catch (_: Exception) { emptyMap() }
         val pm = ctx.packageManager
