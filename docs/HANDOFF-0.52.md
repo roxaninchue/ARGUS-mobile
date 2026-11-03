@@ -1,29 +1,48 @@
 # Blaze 0.52.0 handoff (branch `feat/blaze-0.52`)
 
 Base: `main` @ 64280448 (0.51.0 merged). versionName 0.52.0, versionCode 187.
-Pushed in chunks via the GitLab commits API (work/gl_push.py). This file is updated with every chunk.
+Pushed in chunks through the GitLab commits API (`work/gl_push.py`; helper `work/push052.sh "<msg>"`).
+Architecture: **docs/AGENTS.md**. User-facing notes: CHANGELOG v0.52.0.
 
-## Scope
-1. Background agents (compact): Blaze always keeps talking; work goes to background agents shown as one
-   "Working · N steps · 1m 2s ›" pill each; results post back as replies. No other status bubbles/banners.
-2. Parallel, conflict-free multi tool calling (resource locks, dependency detection, per-call timeouts, ordered results).
-3. Blueprint-driven nested orchestration (DAG dataflow; APK / research / media pipelines; tests with fake tools).
-4. Spark / Flare / Inferno tiers mapped to real gateway route ids (gateway change on `feat/tiers-0.52` in Blaze-agent, not deployed).
-5. Rich reply blocks (gallery, link cards, document card, collapsible sections; existing chart/table/images kept).
-6. Version, CHANGELOG, docs/AGENTS.md.
+## Status per feature
 
-## Status
-(see the table at the bottom; updated per chunk)
+| Feature | Status | Where |
+|---|---|---|
+| Version 0.52.0 / 187, CHANGELOG, docs/AGENTS.md | done | app/build.gradle.kts, CHANGELOG.md, docs/AGENTS.md |
+| Parallel, conflict-free tool calls | **real**, wired, compiled, tested | orchestra/ToolScheduler.kt, KeyedLocks.kt; Agent.kt chat loop (`pre` prefetch, steps stream live), Session.runSpecialist (whole batch), screen/browser/file calls in the main loop hold the shared locks |
+| Blueprint orchestrator (generic DAG dataflow) | **real** core, tested with fake tools | orchestra/Blueprint.kt, Orchestrator.kt, Pipelines.kt (apk / research / media / document / generic) |
+| Blueprint runs in the app | **wired, compiled, not run on a device** | orchestra/OrchestraRuns.kt (`orchestrate` tool → BgAgents entry → Orchestrator over `Session.runNode` specialist loops, Blaze Terminal builds, resumable snapshots, steer notes) |
+| Background agents (always responsive) | **real** (built on the existing BgAgents): spawn_agent (+specialist, inputs), RAM cap 4/3/2/1, step log, steer/cancel/progress, persistence; lead prompt = conversation agent that delegates | agent/BgAgents.kt, Agent.kt (spawn_agent/orchestrate, agentFinished posts blueprint results) |
+| Pills only in chat | **real**: AgentPill replaces AgentCard (both chat surfaces); turn steps = WorkCard pill in the Home chat too | ui/AgentPill.kt, ui/composer/ChatComposer.kt, ui/ChatScreen.kt |
+| Removed blocking / status states | **real** (behind `ui/ChatPolicy.STATUS_LINES = false`): work line beside the typing dots (where "Waiting for your task to finish"-style lines showed), task chip, step-pill row, Simple-mode hint line, WaitNudge wait line, steer "Got it…" bubbles, Halo holding line | ui/ChatPolicy.kt + call sites |
+| Spark / Flare / Inferno | app: **real** (ModelChoice.routes / forRole, TiersTest; app already sent `blaze_family`). gateway: **branch only, NOT deployed** | Blaze-agent `feat/tiers-0.52` @ 3094b9d (gateway 0.8.61, src/tiers.ts, test/tiers.test.ts; 633/633 vitest, tsc clean) |
+| Rich reply blocks | **real**, compiled: gallery (artwork list / poster grid), links, doc (Open/Share), details (collapsible); prompt prefers visuals + short text | ui/RichMedia.kt, ui/RichMediaViews.kt, RichReplies/RichKit/AnswerCards/RichRepair hooks |
 
-| Feature | Status |
-|---|---|
-| Version bump 0.52.0 / 187 | done; CHANGELOG entry and docs/AGENTS.md (architecture) written |
-| ToolScheduler (parallel tools) | core + tests written (orchestra/ToolScheduler.kt, KeyedLocks.kt); 34 orchestra unit tests pass (standalone kotlinc harness work/kq.sh); not yet wired into Agent.kt |
-| Orchestrator + pipelines | core + tests written (orchestra/Blueprint.kt, Orchestrator.kt, Pipelines.kt); tests pass (fake tools: children start before siblings finish, one writer per file, retry/escalate, cancellation cascade); not yet wired |
-| Background agents rework + pill UI | wired (uncompiled): spawn_agent (specialist + inputs), orchestrate tool, BgAgents cap 4/3/2/1 by RAM (AgentBudget), per-agent step log, AgentPill (ui/AgentPill.kt) replaces AgentCard in both chat surfaces, lead prompt = always-responsive conversation agent |
-| Removal of blocking states | wired (uncompiled) behind ui/ChatPolicy.STATUS_LINES=false: work line beside typing dots, task chip, step pill row, Simple-mode hint line, WaitNudge wait line, steer confirmation bubbles, Halo holding line. Turn steps = WorkCard pill in the Home chat too |
-| Model tiers | gateway: Blaze-agent branch feat/tiers-0.52 @3094b9d (0.8.61, src/tiers.ts, 633/633 tests, NOT deployed); app: ModelChoice.routes/forRole + TiersTest (app already sent blaze_family; the gateway ignored it until this branch) |
-| Rich blocks | wired (uncompiled): ui/RichMedia.kt (gallery, links, doc, details parsers + PROMPT "show, don't tell"), ui/RichMediaViews.kt renderers, RichReplies/RichKit/AnswerCards/RichRepair hooks, RichMediaTest + RichMediaShotsTest. Existing chart (bar/line/pie/scatter), table, inline images kept |
+### The "Waiting for your task to finish" pill
+That exact string is not in the app or gateway source: it was a dynamic line shown in the live work row beside the
+typing dots (`ChatOverlayLogic.workLine` → step pill / task chip / status / last step; in the full chat `WaitRow.line`
++ `TaskChip` + `StepPillRow`). All of those rows are now off (ChatPolicy), so no such line can show.
+
+## Tests
+- `orchestra/ToolSchedulerTest` (13), `OrchestratorTest` (14), `PipelinesTest` (11): pass (also standalone via
+  `work/kq.sh`, kotlinc-embeddable, ~15 s). Prove: children start before their parent's siblings finish; cross-folder
+  import waits until planned+written; no two agents write one file at once (real threads); retry with error;
+  build failure → fixer → success; failure cancels only dependents; skip; cancellation cascades into all agents and a
+  nested run; parallel cap; restore after restart; orphan deps; steer notes; research/media/APK/generic end to end.
+- `composer/TiersTest`, `ui/RichMediaTest`: written; see the targeted Gradle run below.
+- `ui/RichMediaShotsTest` (screenshots of the new blocks and the pills): written, needs the qemu x86 Robolectric
+  native-graphics setup (BUILD-LOCAL.md) — **not run yet**.
+- Gradle: `:app:compileDebugKotlin` and `:app:compileDebugUnitTestKotlin` succeed (build copy work/toolchain/bb052,
+  `work/toolchain/gradle052.sh`).
 
 ## Next
-Start with the pure cores (ToolScheduler, Orchestrator) + unit tests, then wire into Agent.kt.
+1. Run the full unit suite on JDK 21 and fix any old test that pinned removed behaviour (none expected: the old pure
+   helpers are unchanged).
+2. Run RichMediaShotsTest on the qemu x86 JDK (BLAZE_SHOTS=1) and look at the PNGs.
+3. Device test: send a long task, keep chatting, watch the agent pill; `orchestrate` a research goal and a media
+   goal; check the doc card opens the saved file (save_file returns a Downloads path — the doc card's Open falls back
+   to a toast when the path isn't an absolute file).
+4. Gateway: review / merge `feat/tiers-0.52` and deploy 0.8.61 when the owner approves (until then the tiers route the same).
+5. Possible follow-ups: a real "detach the running turn into an agent" when the user sends a new task mid-turn (today
+   the parallel answer lane answers and the lead prompt makes long work go to agents up front); orchestrator pill
+   could show a mini DAG; per-node model routing telemetry.
