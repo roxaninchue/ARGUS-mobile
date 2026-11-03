@@ -4083,20 +4083,38 @@ When you finish, say what you did in one short sentence.
                     fun callName(i: Int) = calls.getJSONObject(i).getJSONObject("function").getString("name")
                     fun callArgs(i: Int) = try { JSONObject(calls.getJSONObject(i).getJSONObject("function").optString("arguments", "{}").ifBlank { "{}" }) }
                         catch (_: Exception) { JSONObject() }
-                    val pre: Map<Int, String> = if (calls.length() > 1 && (0 until calls.length()).all { callName(it) in parallelSafe })
-                        (0 until calls.length()).map { i -> scope.async { i to runTool(callName(i), callArgs(i), shots) } }
-                            .map { it.await() }.toMap()
-                    else emptyMap()
                     val readAt = FastActions.screenReadAt((0 until calls.length()).map { callName(it) }, screenActions + "do_actions")
                     // v0.45.3: Normal mode asks once for all the commands in this reply (CommandPolicy batch card).
                     val refusedCmds = if (calls.length() > 1) batchApprove((0 until calls.length()).map { callName(it) to callArgs(it) }) else { cmdBatchOkClear(); emptySet() }
+                    // 0.52.0 parallel tools (orchestra/ToolScheduler): every independent call of this reply runs at once (network
+                    // fully parallel, file paths locked, shell calls kept in order with file calls, one screen action at a time),
+                    // each with its own timeout; screen actions, cards and agent tools stay in the in-order loop below.
+                    val preStepped = HashSet<Int>()
+                    val pre: Map<Int, String> = run {
+                        val pick = (0 until calls.length()).filter { i -> val n = callName(i)
+                            com.blaze.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && i !in refusedCmds &&
+                                loopGuard.check(n, callArgs(i)) == null && oneShot.earlier(n, callArgs(i)) == null }
+                        if (pick.size < 2 || !Settings.bool("parallel_tools", true)) return@run emptyMap()
+                        val tcs = pick.map { i -> com.blaze.assistant.orchestra.ToolScheduler.Call(calls.getJSONObject(i).optString("id", "call_$step$i"), callName(i), callArgs(i)) }
+                        val toolMs = Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L
+                        val res = com.blaze.assistant.orchestra.ToolScheduler.run(tcs, { c ->
+                            Recovery.run(c.name, OneShot.risky(c.name), toolMs) { runTool(c.name, c.args, shots) }.also { r -> oneShot.record(c.name, c.args, r) }
+                        }, timeoutMs = toolMs + 15_000L, listener = object : com.blaze.assistant.orchestra.ToolScheduler.Listener {
+                            override fun started(index: Int, call: com.blaze.assistant.orchestra.ToolScheduler.Call) {
+                                // each call's step shows the moment it starts (the work pill counts it live)
+                                if (call.name !in Friendly.selfNarrating) { addStep(Friendly.say(call.name, call.args), Friendly.exact(call.name, call.args)); preStepped += pick[index] }
+                            }
+                        })
+                        try { android.util.Log.i("BlazeSpeed", "parallel tools: " + com.blaze.assistant.orchestra.ToolScheduler.describe(tcs)) } catch (_: Throwable) { }
+                        pick.zip(res).associate { (i, r) -> i to r.output }
+                    }
                     for (i in 0 until calls.length()) {
                         val call = calls.getJSONObject(i)
                         val fn = call.getJSONObject("function")
                         val name = fn.getString("name")
                         val args = try { JSONObject(fn.optString("arguments", "{}").ifBlank { "{}" }) }
                             catch (_: Exception) { JSONObject() }
-                        if (name !in Friendly.selfNarrating && name !in unknownCalls) addStep(Friendly.say(name, args), Friendly.exact(name, args))
+                        if (name !in Friendly.selfNarrating && name !in unknownCalls && i !in preStepped) addStep(Friendly.say(name, args), Friendly.exact(name, args))
                         if (pre.containsKey(i)) autoStepId = -1L
                         val toolT0 = System.currentTimeMillis()
                         var result = if (pre.containsKey(i)) pre.getValue(i) else if (i in refusedCmds) "The user did NOT approve this command (they refused the card for this step's commands). Don't run it; ask how they'd like to go on."
@@ -4117,7 +4135,10 @@ When you finish, say what you did in one short sentence.
                         } else if (name == "ask_user") runTool(name, args, shots)
                         else loopGuard.check(name, args)?.also { add(Role.STEP, "Not trying ${Friendly.say(name, args).trimEnd('.', '\u2026')} again: it made no difference") }
                         ?: oneShot.earlier(name, args)?.also { add(Role.STEP, "Not repeating ${Friendly.say(name, args).trimEnd('.', '\u2026')}: it already ran") }
-                            ?: (Recovery.run(name, OneShot.risky(name), Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L) { runTool(name, args, shots) }
+                            ?: (Recovery.run(name, OneShot.risky(name), Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L) {
+                                // 0.52.0: the screen, the browser, files and named terminal sessions are held in the locks every agent shares
+                                com.blaze.assistant.orchestra.KeyedLocks.shared.with(com.blaze.assistant.orchestra.ToolScheduler.Resources.lockClaims(
+                                    com.blaze.assistant.orchestra.ToolScheduler.Resources.claims(name, args))) { runTool(name, args, shots) } }
                                 .also { r -> oneShot.record(name, args, r) })
                         if (!result.startsWith("Not run:")) loopGuard.record(name, args, result)
                         ToolStats.add(name, when {
@@ -4371,15 +4392,20 @@ When you finish, say what you did in one short sentence.
                     }
                     return draft
                 }
-                for (i in 0 until calls.length()) {
+                // 0.52.0: a specialist's calls run through the ToolScheduler too: independent ones at once, conflicting ones in
+                // order, the screen / browser / files held in the locks every agent shares; results go back in the model's order.
+                val batch = (0 until calls.length()).map { i ->
                     val call = calls.getJSONObject(i)
                     val fn = call.getJSONObject("function")
-                    val name = fn.getString("name")
                     val args = try { JSONObject(fn.optString("arguments", "{}").ifBlank { "{}" }) } catch (_: Exception) { JSONObject() }
-                    var result = if (name in unknown) "Error: there is no tool called \"$name\". Use one of the tools you were given (exact name)." else runTool(name, args, shots)
-                    if (name == "do_actions" || (name in screenActions && !FastActions.isScreen(result))) result += screenAfter(result)
-                    msgs.put(JSONObject().put("role", "tool").put("tool_call_id", call.optString("id", "s$step$i")).put("name", name).put("content", result.take(12000)))
+                    com.blaze.assistant.orchestra.ToolScheduler.Call(call.optString("id", "s$step$i"), fn.getString("name"), args)
                 }
+                val outs = com.blaze.assistant.orchestra.ToolScheduler.run(batch, { c ->
+                    var result = if (c.name in unknown) "Error: there is no tool called \"${c.name}\". Use one of the tools you were given (exact name)." else runTool(c.name, c.args, shots)
+                    if (c.name == "do_actions" || (c.name in screenActions && !FastActions.isScreen(result))) result += screenAfter(result)
+                    result
+                }, timeoutMs = Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L)
+                batch.zip(outs).forEach { (c, r) -> msgs.put(JSONObject().put("role", "tool").put("tool_call_id", c.id).put("name", c.name).put("content", r.output.take(12000))) }
                 VisionFast.pruneShots(msgs, SHOT_NOTE)
                 shots.lastOrNull()?.let { url -> shots.clear()
                     msgs.put(JSONObject().put("role", "user").put("content", JSONArray()

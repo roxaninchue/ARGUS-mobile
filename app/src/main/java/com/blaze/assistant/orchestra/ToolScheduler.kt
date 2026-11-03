@@ -80,6 +80,7 @@ object ToolScheduler {
                 name in screen -> out += KeyedLocks.Claim("screen", true)
                 browser(name) -> out += KeyedLocks.Claim("browser", true)
                 name in fileWrite -> {
+                    out += KeyedLocks.Claim(FILE_OP, false)
                     val p = path(args)
                     out += KeyedLocks.Claim(if (p.isEmpty()) "file:?" else "file:$p", true)
                     // A write inside a folder conflicts with a listing of that folder, not with other writes beside it:
@@ -87,11 +88,13 @@ object ToolScheduler {
                     parents(p).forEach { out += KeyedLocks.Claim("dir:$it", false) }
                 }
                 name in fileRead -> {
+                    out += KeyedLocks.Claim(FILE_OP, false)
                     val p = path(args)
                     out += KeyedLocks.Claim(if (p.isEmpty()) "file:?" else "file:$p", false)
                     if (name == "file_list" || name == "file_search") out += KeyedLocks.Claim("dir:${p.ifEmpty { "/" }}", true)
                 }
                 name in terminal -> {
+                    out += KeyedLocks.Claim(SHELL, false)
                     val session = listOf("session", "job", "id", "pid").firstNotNullOfOrNull { k -> args.optString(k).trim().takeIf { it.isNotEmpty() } }
                     if (session != null) out += KeyedLocks.Claim("term:$session", true)
                 }
@@ -119,8 +122,30 @@ object ToolScheduler {
             return out
         }
 
-        fun conflict(a: Set<KeyedLocks.Claim>, b: Set<KeyedLocks.Claim>): Boolean =
-            a.any { x -> b.any { y -> x.key == y.key && (x.write || y.write) } }
+        /** In-batch ordering tags: a shell command may read or write any file, so shell calls keep their order with file calls. */
+        const val SHELL = "~shell"
+        const val FILE_OP = "~file"
+
+        fun conflict(a: Set<KeyedLocks.Claim>, b: Set<KeyedLocks.Claim>): Boolean {
+            val aSh = a.any { it.key == SHELL }; val bSh = b.any { it.key == SHELL }
+            val aF = a.any { it.key == FILE_OP }; val bF = b.any { it.key == FILE_OP }
+            if ((aSh && bF) || (bSh && aF)) return true
+            return a.any { x -> b.any { y -> x.key == y.key && (x.write || y.write) } }
+        }
+
+        /**
+         * The claims held in the shared [KeyedLocks] (across batches and agents): real resources only (screen, browser,
+         * files, folders, named terminal sessions). "user", "unknown", "tool:*" and the "~" tags order calls inside one
+         * reply but are never held across agents, so one agent's approval card can't stall another agent.
+         */
+        fun lockClaims(claims: Set<KeyedLocks.Claim>): Set<KeyedLocks.Claim> =
+            claims.filter { c -> c.key == "screen" || c.key == "browser" || c.key.startsWith("file:") || c.key.startsWith("dir:") || c.key.startsWith("term:") }.toSet()
+
+        /** Tools the chat agent may run ahead, in parallel, before its in-order loop (screen, cards and agent tools stay in the loop). */
+        fun prefetchable(name: String): Boolean = name !in screen && name !in user && name !in loopOnly
+
+        val loopOnly = setOf("find_tool", "load_tools", "ask_user", "delegate", "start_agent", "spawn_agent", "orchestrate", "message_agent", "cancel_agent",
+            "create_specialist", "goal", "do_actions", "run_plan", "browser_show", "phone_handoff", "self_test", "blaze_self", "update_brief")
     }
 
     /** For each call, the earlier calls it must wait for (pure; the plan the tests check). */
@@ -157,7 +182,7 @@ object ToolScheduler {
             async {
                 try {
                     deps[i].forEach { done[it].await() }
-                    val claims = Resources.claims(c.name, c.args)
+                    val claims = Resources.lockClaims(Resources.claims(c.name, c.args))
                     locks.with(claims) {
                         listener?.started(i, c)
                         val t0 = clock()

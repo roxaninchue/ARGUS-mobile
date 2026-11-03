@@ -62,6 +62,19 @@ class ToolSchedulerTest {
         assertEquals(listOf(emptySet(), emptySet(), emptySet(), setOf(2)), ToolScheduler.plan(calls))
     }
 
+    @Test fun shellCommandsKeepTheirOrderWithFileCalls() {
+        val calls = listOf(call(0, "file_write", "path" to "a.py"), call(1, "run_shell", "command" to "python a.py"), call(2, "web_search", "query" to "q"), call(3, "file_read", "path" to "out.txt"))
+        assertEquals(listOf(emptySet(), setOf(0), emptySet(), setOf(1)), ToolScheduler.plan(calls))
+    }
+
+    @Test fun onlyRealResourcesAreHeldAcrossAgents() {
+        val held = ToolScheduler.Resources.lockClaims(ToolScheduler.Resources.claims("send_sms", JSONObject()) + ToolScheduler.Resources.claims("tap", JSONObject()) +
+            ToolScheduler.Resources.claims("file_write", JSONObject().put("path", "/x/y.kt")) + ToolScheduler.Resources.claims("new_tool", JSONObject()))
+        assertEquals(setOf("screen", "file:/x/y.kt", "dir:/x", "dir:/"), held.map { it.key }.toSet())
+        assertTrue(ToolScheduler.Resources.prefetchable("web_search"))
+        assertTrue(!ToolScheduler.Resources.prefetchable("tap") && !ToolScheduler.Resources.prefetchable("ask_user") && !ToolScheduler.Resources.prefetchable("delegate"))
+    }
+
     @Test fun unknownToolsTakeTurnsButNotWithNetwork() {
         val calls = listOf(call(0, "brand_new_tool"), call(1, "other_new_tool"), call(2, "web_search", "query" to "q"))
         assertEquals(listOf(emptySet(), setOf(0), emptySet<Int>()), ToolScheduler.plan(calls))
