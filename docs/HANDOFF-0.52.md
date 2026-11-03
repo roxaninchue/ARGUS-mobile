@@ -23,7 +23,7 @@ Pushed in chunks via the GitLab commits API (work/gl_push.py). This file is upda
 | Background agents rework + pill UI | wired (uncompiled): spawn_agent (specialist + inputs), orchestrate tool, BgAgents cap 4/3/2/1 by RAM (AgentBudget), per-agent step log, AgentPill (ui/AgentPill.kt) replaces AgentCard in both chat surfaces, lead prompt = always-responsive conversation agent |
 | Removal of blocking states | wired (uncompiled) behind ui/ChatPolicy.STATUS_LINES=false: work line beside typing dots, task chip, step pill row, Simple-mode hint line, WaitNudge wait line, steer confirmation bubbles, Halo holding line. Turn steps = WorkCard pill in the Home chat too |
 | Model tiers | gateway: Blaze-agent branch feat/tiers-0.52 @3094b9d (0.8.61, src/tiers.ts, 633/633 tests, NOT deployed); app: ModelChoice.routes/forRole + TiersTest (app already sent blaze_family; the gateway ignored it until this branch) |
-| Rich blocks | not started |
+| Rich blocks | wired (uncompiled): ui/RichMedia.kt (gallery, links, doc, details parsers + PROMPT "show, don't tell"), ui/RichMediaViews.kt renderers, RichReplies/RichKit/AnswerCards/RichRepair hooks, RichMediaTest + RichMediaShotsTest. Existing chart (bar/line/pie/scatter), table, inline images kept |
 
 ## Next
 Start with the pure cores (ToolScheduler, Orchestrator) + unit tests, then wire into Agent.kt.
