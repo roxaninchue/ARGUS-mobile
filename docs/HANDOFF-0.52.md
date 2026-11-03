@@ -17,7 +17,7 @@ Pushed in chunks via the GitLab commits API (work/gl_push.py). This file is upda
 
 | Feature | Status |
 |---|---|
-| Version bump 0.52.0 / 187 | done |
+| Version bump 0.52.0 / 187 | done; CHANGELOG entry and docs/AGENTS.md (architecture) written |
 | ToolScheduler (parallel tools) | core + tests written (orchestra/ToolScheduler.kt, KeyedLocks.kt); 34 orchestra unit tests pass (standalone kotlinc harness work/kq.sh); not yet wired into Agent.kt |
 | Orchestrator + pipelines | core + tests written (orchestra/Blueprint.kt, Orchestrator.kt, Pipelines.kt); tests pass (fake tools: children start before siblings finish, one writer per file, retry/escalate, cancellation cascade); not yet wired |
 | Background agents rework + pill UI | wired (uncompiled): spawn_agent (specialist + inputs), orchestrate tool, BgAgents cap 4/3/2/1 by RAM (AgentBudget), per-agent step log, AgentPill (ui/AgentPill.kt) replaces AgentCard in both chat surfaces, lead prompt = always-responsive conversation agent |
