@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.24.4: the one ongoing "what Blaze is doing" notification. Pure state → line so it can be tested
  * without Android. Priority: something that needs the user, then agent work, then an update download.
@@ -39,7 +41,7 @@ object StatusNote {
         pct == null -> ""
         pct >= 0 -> "Downloading update $pct%"
         label.isNotBlank() -> label
-        else -> "Updating Blaze…"
+        else -> "Updating ${BrandName.NAME}…"
     }
 
     /** Null = nothing is running: the notification goes away. */

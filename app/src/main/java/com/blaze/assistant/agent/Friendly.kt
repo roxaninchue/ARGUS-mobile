@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -108,7 +110,7 @@ object Friendly {
             "update_brief" -> "Updating the project brief"
             "project_docs_search", "project_docs_read" -> "Checking the project's notes"
             "uninstall_app" -> "Uninstalling an app"
-            "update_blaze" -> "Checking for a Blaze update"
+            "update_blaze" -> "Checking for a ${BrandName.NAME} update"
             "ask_pc" -> "Asking your PC"
             "processes", "goal" -> "Keeping track of the task"
             "run_plan", "do_actions" -> "Working on your phone"

@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.Mind
 import com.blaze.assistant.agent.MindLogs
 import org.json.JSONArray
@@ -58,7 +60,7 @@ object GroupBrain {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
         .put("description", "Group Brain: answer questions from a group chat's history ('when is the test?' in the class group), catch up on many " +
-            "unread messages, or list who owes what. Uses the chat logs Blaze keeps from notifications (WhatsApp, Telegram, SMS...).")
+            "unread messages, or list who owes what. Uses the chat logs ${BrandName.NAME} keeps from notifications (WhatsApp, Telegram, SMS...).")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("ask", "catchup", "owes"))))
             .put("group", JSONObject().put("type", "string").put("description", "group name or id from notif_conversations"))

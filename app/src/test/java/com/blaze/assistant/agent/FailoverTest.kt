@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -33,7 +35,7 @@ class FailoverTest {
                     }, onSwitch = { status.add(it) })
                     via.add(out.via.name)
                     context.add(out.value)
-                    if (turn == 10) bubbles.add("BLAZE: done")
+                    if (turn == 10) bubbles.add("${BrandName.UPPER}: done")
                 } catch (e: LlmClient.LlmException) { bubbles.add("ERROR: ${e.message}"); break }
             }
         }
@@ -51,14 +53,14 @@ class FailoverTest {
 
     @Test fun failureAtTurn1FinishesViaNousWithNoErrorBubble() {
         val s = task(mapOf(1 to setOf(B)), backupReady = true)
-        assertEquals(listOf("BLAZE: done"), s.bubbles)
+        assertEquals(listOf("${BrandName.UPPER}: done"), s.bubbles)
         assertEquals("RESERVE", s.via[0]); assertTrue(s.via.drop(1).all { it == "BACKUP" })
         assertEquals(listOf(Failover.SWITCHED), s.status)
     }
 
     @Test fun failureAtTurn8MidTaskContinuesWithItsContext() {
         val s = task(mapOf(8 to setOf(B, R)), backupReady = true)
-        assertEquals(listOf("BLAZE: done"), s.bubbles)
+        assertEquals(listOf("${BrandName.UPPER}: done"), s.bubbles)
         assertEquals(10, s.via.size)
         assertEquals("CLOUD", s.via[7])
     }
@@ -67,7 +69,7 @@ class FailoverTest {
         val s = task(emptyMap(), backupReady = false)
         assertTrue(s.via.all { it == "RESERVE" }); assertTrue(s.status.isEmpty())
         val s8 = task(mapOf(8 to setOf(R)), backupReady = false)
-        assertEquals(listOf("BLAZE: done"), s8.bubbles); assertEquals("CLOUD", s8.via[7])
+        assertEquals(listOf("${BrandName.UPPER}: done"), s8.bubbles); assertEquals("CLOUD", s8.via[7])
     }
 
     @Test fun errorOnlyWhenEveryBrainFailed() {

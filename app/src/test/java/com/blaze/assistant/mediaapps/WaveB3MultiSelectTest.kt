@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -71,7 +73,7 @@ class WaveB3MultiSelectTest {
         assertTrue(b1.contains("every playlist"))
         val (t2, b2) = LibrarySelection.deleteText(listOf(t("a", kind = "video"), t("b", kind = "video"), t("g", "gallery", "video")), "video")
         assertEquals("Delete 2 videos?", t2)
-        assertTrue(b2.contains("1 from Blaze's Gallery stays"))
+        assertTrue(b2.contains("1 from ${BrandName.NAME}'s Gallery stays"))
     }
 
     @Test fun shareTypeAndExportName() {
@@ -80,7 +82,7 @@ class WaveB3MultiSelectTest {
         assertEquals("*/*", LibrarySelection.shareType(listOf("audio/mp4", "video/mp4")))
         assertEquals("AC DC Live.m4a", LibrarySelection.exportName("AC/DC: Live", "content://media/external/audio/media/12", "audio"))
         assertEquals("Film.webm", LibrarySelection.exportName("Film", "file:///data/gallery/x.webm", "video"))
-        assertEquals("Blaze video.mp4", LibrarySelection.exportName("  ", "content://m/1", "video"))
+        assertEquals("${BrandName.NAME} video.mp4", LibrarySelection.exportName("  ", "content://m/1", "video"))
         assertEquals("Track.mp3", LibrarySelection.exportName("Track.mp3", "file:///g/Track.mp3", "audio"))
     }
 

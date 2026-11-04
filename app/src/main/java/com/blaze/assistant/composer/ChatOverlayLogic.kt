@@ -28,14 +28,21 @@ object ChatOverlayLogic {
     sealed class Row {
         abstract val key: String
         data class Msg(val m: ChatMessage) : Row() { override val key get() = "m${m.id}" }
-        data class Steps(val firstId: Long, val lines: List<String>, val live: Boolean) : Row() { override val key get() = "s$firstId" }
+        /** 0.52.0: [items] = the step messages and [startAt] / [endAt] the run's times, for the work pill ("Worked · 5 steps · 1m 2s ›"). */
+        data class Steps(val firstId: Long, val lines: List<String>, val live: Boolean, val items: List<ChatMessage> = emptyList(),
+                         val startAt: Long = 0L, val endAt: Long = 0L) : Row() { override val key get() = "s$firstId" }
     }
 
     fun rows(all: List<ChatMessage>, sinceId: Long, busy: Boolean): List<Row> {
         val out = ArrayList<Row>()
         var steps = ArrayList<ChatMessage>()
-        fun flush(live: Boolean) {
-            if (steps.isNotEmpty()) out += Row.Steps(steps.first().id, steps.map { it.text.trim() }.filter { it.isNotEmpty() }, live)
+        var prevAt = 0L
+        fun flush(live: Boolean, next: ChatMessage?) {
+            if (steps.isNotEmpty()) {
+                val start = com.blaze.assistant.ui.WorkTime.start(steps, prevAt)
+                val end = com.blaze.assistant.ui.WorkTime.end(steps, live, next?.at ?: 0L, next?.role == Role.BLAZE, System.currentTimeMillis())
+                out += Row.Steps(steps.first().id, steps.map { it.text.trim() }.filter { it.isNotEmpty() }, live, steps.toList(), start, end)
+            }
             steps = ArrayList()
         }
         for (m in all) {
@@ -43,10 +50,10 @@ object ChatOverlayLogic {
             if (m.role == Role.STEP) { if (m.text.isNotBlank()) steps += m; continue }
             if (m.role == Role.USER || m.role == Role.BLAZE || m.role == Role.ERROR) {
                 if (m.text.isBlank() && m.files.isEmpty() && m.media.isEmpty()) continue
-                flush(false); out += Row.Msg(m)
+                flush(false, m); out += Row.Msg(m); prevAt = m.at
             }
         }
-        flush(busy)
+        flush(busy, null)
         return out.filter { it !is Row.Steps || it.lines.isNotEmpty() }
     }
 

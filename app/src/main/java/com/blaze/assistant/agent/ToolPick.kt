@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -18,7 +20,7 @@ import org.json.JSONObject
  */
 object ToolPick {
     /** Upper bound of tool schemas per model call (load_tools / find_tool always on top). */
-    const val MAX_TOOLS = 36
+    const val MAX_TOOLS = 30   // 0.52.1 (gw061): was 36; RequestBudget caps the wire at 32
 
     /** Always sent, whatever the request. */
     val ESSENTIAL = setOf("load_tools", "find_tool", "ask_user", "memory_search", "memory_save", "remember", "web_search", "fetch_page",
@@ -35,7 +37,7 @@ object ToolPick {
         Cue("history", "this chat's older turns and files, past chats, the project's brief and notes",
             setOf("search_chat", "read_turn", "read_artifact", "search_past_chats", "update_brief", "project_docs_search", "project_docs_read", "recall_memory", "cache_toc", "cache_read", "cache_search", "cache_summarize"),
             r("""\b(earlier|before|last time|you said|i said|we (?:talked|discussed|said|did)|previous\w*|that (?:file|doc|table|list|code|report)|above|chats?|conversation|project|brief|notes|what did|remind me what|recall|again)\b""")),
-        Cue("self", "Blaze itself: its docs, settings and self-test, BlazeRouter, Jarvis, follow-ups, running processes (alarms, routines, jobs by ID)",
+        Cue("self", "${BrandName.NAME} itself: its docs, settings and self-test, BlazeRouter, Jarvis, follow-ups, running processes (alarms, routines, jobs by ID)",
             setOf("about_blaze", "blaze_self", "self_test", "blaze_docs_search", "blaze_docs_read", "blazerouter", "jarvis_mode", "follow_ups", "processes", "process"),
             r("""\b(blaze|yourself|your (?:settings|docs|repo|version|features?)|update|what can you|can you|self.?test|router|jarvis|follow.?ups?|reach out|process(?:es)?|running|stop|cancel|delete|alarms?|timers?|routines?|jobs?|r\d+|version|halo)\b""")),
         Cue("skills", "skills, goals and saved workflows",

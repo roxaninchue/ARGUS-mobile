@@ -1,5 +1,7 @@
 package com.blaze.assistant.store
 
+
+import com.blaze.assistant.BrandName
 /**
  * blaze.db: the same SQLite store as Blaze Desktop and Blaze CLI (internal/store, schema v1).
  * Memories, plus an index of skills and one of tools, each with an FTS5 table so a turn pulls only the
@@ -17,7 +19,7 @@ class BlazeDb(private val sql: Sql) {
     data class Skill(val name: String, val desc: String, val path: String, val body: String = "", val mtime: Long = 0)
     data class ToolRow(val name: String, val desc: String, val group: String)
 
-    class NewerSchema(v: Int) : Exception("Your memory was saved by a newer version of Blaze (schema v$v, this build knows v${MIGRATIONS.size}). Please update Blaze to use memory.")
+    class NewerSchema(v: Int) : Exception("Your memory was saved by a newer version of ${BrandName.NAME} (schema v$v, this build knows v${MIGRATIONS.size}). Please update ${BrandName.NAME} to use memory.")
 
     private val lock = Any()
 

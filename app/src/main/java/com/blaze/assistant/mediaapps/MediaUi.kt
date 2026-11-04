@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -541,7 +543,7 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
         if ((state.loading && state.results.isEmpty()) || state.typing) items(LiveSearch.skeletons(kind != "video"), key = { "sk$it" }) { SkeletonTile(kind != "video") }
         if (state.results.isEmpty() && !state.loading && !state.typing && state.error.isBlank() && !state.failed && setup == null) item(span = { GridItemSpan(maxLineSpan) }) {
             EmptyState(if (kind == "video") "Find a video" else "Find music",
-                "Search, then tap a result to see it, its licence and the qualities. Downloads stay private in Blaze's Library; " +
+                "Search, then tap a result to see it, its licence and the qualities. Downloads stay private in ${BrandName.NAME}'s Library; " +
                     "export or share them from the ⋮ menu.")
         }
         if (!state.typing) items(state.results, key = { it.source + ":" + it.id }) { r ->
@@ -637,8 +639,8 @@ fun JamendoSetup(text: String, onSaved: () -> Unit) {
         // v0.30.5 (Blazeinchue: "a simple button to take them where they have to go, or simply asking Blaze to get it"):
         // Blaze can do it (its browser + the jamendo_setup tool), or the dev portal opens in the browser.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Ask Blaze to set it up", primary = true) {
-                com.blaze.assistant.agent.Agent.send("Set up the Jamendo Store in Blaze Music for me: get a free Jamendo API client_id on " +
+            PillButton("Ask ${BrandName.NAME} to set it up", primary = true) {
+                com.blaze.assistant.agent.Agent.send("Set up the Jamendo Store in ${BrandName.NAME} Music for me: get a free Jamendo API client_id on " +
                     JamendoSource.DEVPORTAL + " (ask me before creating an account) and save it with " + JamendoSource.TOOL + ".")
                 runCatching { ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java)
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }

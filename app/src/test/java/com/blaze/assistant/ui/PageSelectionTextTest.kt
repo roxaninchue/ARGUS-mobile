@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -23,6 +25,6 @@ class PageSelectionTextTest {
     @Test fun pillListForPageWords() {
         // The same list the chat shows: Quote only when the window can hand it to the chat box.
         val acts = SelectionActions.forText("serendipity", allowQuote = true, allowSelectAll = true).map { it.label }
-        assertEquals(listOf("Copy", "Quote", "Select all", "Search", "Ask Blaze", "Translate", "Define", "Read aloud", "Share"), acts)
+        assertEquals(listOf("Copy", "Quote", "Select all", "Search", "Ask ${BrandName.NAME}", "Translate", "Define", "Read aloud", "Share"), acts)
     }
 }

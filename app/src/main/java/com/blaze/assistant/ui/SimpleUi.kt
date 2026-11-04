@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
@@ -141,7 +143,7 @@ fun HoldToTalkBar(listening: Boolean, busy: Boolean, onHold: () -> Unit, onRelea
             Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(104.dp).scale(grow).clip(CircleShape).background(DuoColors.blazeBlue.copy(alpha = if (listening) 0.28f else 0.14f)))
                 Box(Modifier.size(84.dp).clip(CircleShape).background(if (busy) c.ink else DuoColors.blazeBlue)
-                    .semantics { contentDescription = if (busy) "Stop Blaze" else if (listening) "Stop listening and send" else "Hold to talk" }
+                    .semantics { contentDescription = if (busy) "Stop ${BrandName.NAME}" else if (listening) "Stop listening and send" else "Hold to talk" }
                     .pointerInput(busy) {
                         if (busy) detectTapGestures(onTap = { onStop() })
                         else detectTapGestures(onPress = {

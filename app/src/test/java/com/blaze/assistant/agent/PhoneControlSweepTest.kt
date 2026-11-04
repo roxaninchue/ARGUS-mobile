@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ToolVerify.Status
 import com.blaze.assistant.voice.WakeNote
 import kotlinx.coroutines.runBlocking
@@ -41,11 +43,11 @@ class PhoneControlSweepTest {
 
     @Test fun alarmDeleteIsOnlyDoneWhenReadBack() {
         // 0.45.9's result for process(delete) was classed verified by default: the root of the fake success.
-        val old = "Asked the clock app to delete alarm A2 (label \u201cDemo app alarm (Blaze A2)\u201d). If it shows a list, it's the one with that label."
+        val old = "Asked the clock app to delete alarm A2 (label \u201cDemo app alarm (${BrandName.NAME} A2)\u201d). If it shows a list, it's the one with that label."
         assertEquals(Status.UNVERIFIED, ToolVerify.classify("process", a("id" to "A2", "action" to "delete"), old).status)
-        val off = "Turned off alarm A2 (18:15). " + ActCheck.checked("the switch of \u201cDemo app alarm (Blaze A2)\u201d (18:15) reads OFF in the Clock app")
+        val off = "Turned off alarm A2 (18:15). " + ActCheck.checked("the switch of \u201cDemo app alarm (${BrandName.NAME} A2)\u201d (18:15) reads OFF in the Clock app")
         assertEquals(Status.VERIFIED, ToolVerify.classify("process", a("id" to "A2", "action" to "delete"), off).status)
-        val still = "I tried to turn off alarm A2. " + ActCheck.notConfirmed("\u201cDemo app alarm (Blaze A2)\u201d still reads ON in the Clock app", "switch it off in the Clock app")
+        val still = "I tried to turn off alarm A2. " + ActCheck.notConfirmed("\u201cDemo app alarm (${BrandName.NAME} A2)\u201d still reads ON in the Clock app", "switch it off in the Clock app")
         val v = ToolVerify.classify("process", a("id" to "A2", "action" to "delete"), still)
         assertEquals(Status.UNVERIFIED, v.status); assertTrue(v.why, v.why.contains("still reads ON"))
         // Blaze's own things (a routine) are still done by their own words.
@@ -68,7 +70,7 @@ class PhoneControlSweepTest {
     /** Samsung Clock 17:14: header, then one card "Demo app alarm (Blaze A2)" · 18:15 · Wed, Oct 21 · switch ON. */
     private fun samsung(on: Boolean, extra: List<AlarmRows.Node> = emptyList()) = n(kids = listOf(
         n("Alarm in 1 hour 1 minute"), n("Wed, Oct 21, 18:15"),
-        n(kids = (listOf(n(clickable = true, kids = listOf(n("Demo app alarm (Blaze A2)"), n("18:15"), n("Wed, Oct 21"), n(desc = "Alarm switch", checkable = true, checked = on, clickable = true))))
+        n(kids = (listOf(n(clickable = true, kids = listOf(n("Demo app alarm (${BrandName.NAME} A2)"), n("18:15"), n("Wed, Oct 21"), n(desc = "Alarm switch", checkable = true, checked = on, clickable = true))))
             + extra))))
 
     @Test fun clockRowsAreFoundByLabelThenTime() {
@@ -76,8 +78,8 @@ class PhoneControlSweepTest {
         assertNotNull(r); assertEquals(true, r!!.on); assertFalse(r.byTime)
         assertEquals(false, AlarmRows.find(samsung(false), "A2", "18:15")!!.on)
         // A2 never matches A21; by time only when one row shows it.
-        val a21 = n(clickable = true, kids = listOf(n("Gym (Blaze A21)"), n("06:00"), n(checkable = true, checked = true, clickable = true)))
-        assertEquals("Demo app alarm (Blaze A2)", AlarmRows.find(samsung(true, listOf(a21)), "A2", null)!!.label.text)
+        val a21 = n(clickable = true, kids = listOf(n("Gym (${BrandName.NAME} A21)"), n("06:00"), n(checkable = true, checked = true, clickable = true)))
+        assertEquals("Demo app alarm (${BrandName.NAME} A2)", AlarmRows.find(samsung(true, listOf(a21)), "A2", null)!!.label.text)
         val noLabel = n(kids = listOf(n(clickable = true, kids = listOf(n("6:15 PM"), n(checkable = true, checked = true)))))
         assertTrue(AlarmRows.find(noLabel, "clock@18:15", "18:15")!!.byTime)
         val two = n(kids = listOf(n(kids = listOf(n("18:15"), n(checkable = true, checked = true))), n(kids = listOf(n("18:15"), n(checkable = true, checked = false)))))
@@ -91,7 +93,7 @@ class PhoneControlSweepTest {
     // ---------- A2: the time said must be the time set ----------
 
     @Test fun replyEchoesTheTimeReallySet() {
-        assertEquals(listOf("18:15"), TimeEcho.setTimes(listOf("Alarm set for 18:15, label \u201cDemo app alarm (Blaze A2)\u201d. [ID A2]")))
+        assertEquals(listOf("18:15"), TimeEcho.setTimes(listOf("Alarm set for 18:15, label \u201cDemo app alarm (${BrandName.NAME} A2)\u201d. [ID A2]")))
         assertEquals("Your alarm is set for 18:15. Your class is at 08:00.", TimeEcho.fix("Your alarm is set for 18:30. Your class is at 08:00.", listOf("18:15")))
         assertEquals("Alarm set for 18:15.", TimeEcho.fix("Alarm set for 6:15 pm.".replace("6:15 pm", "18:15"), listOf("18:15")))
         assertEquals("I'll wake you at 06:40.", TimeEcho.fix("I'll wake you at 6:45 am.", listOf("06:40")))
@@ -202,7 +204,7 @@ class PhoneControlSweepTest {
         assertEquals(Status.VERIFIED, check("navigate_to", nav, "Opened directions.", Fake(fg = "com.google.android.apps.maps", words = "levy junction mall 12 min 4.2 km start")).status)
         assertEquals(Status.UNVERIFIED, check("navigate_to", nav, "Opened directions.", Fake(fg = "com.google.android.apps.maps", words = "search here")).status)
         // set_alarm hidden behind an earlier alarm: the Clock list proves it.
-        assertEquals(Status.VERIFIED, check("set_alarm", a("hour" to 6, "minute" to 40), "Alarm set for 06:40, label \u201cQA wake (Blaze A5)\u201d. [ID A5]", Fake(alarm = 6 to 0, clock = true)).status)
+        assertEquals(Status.VERIFIED, check("set_alarm", a("hour" to 6, "minute" to 40), "Alarm set for 06:40, label \u201cQA wake (${BrandName.NAME} A5)\u201d. [ID A5]", Fake(alarm = 6 to 0, clock = true)).status)
         // A tap on a switch read back on proves a setting claim.
         val t = ToolVerify.classify("tap", a("text" to "Dark mode", "want" to "on"), "Tapped \"Dark mode\". " + ActCheck.checked("the switch \u201cDark mode\u201d now reads on"))
         assertEquals(Status.VERIFIED, t.status)

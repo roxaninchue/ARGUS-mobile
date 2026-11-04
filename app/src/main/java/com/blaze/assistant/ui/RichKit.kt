@@ -12,7 +12,10 @@ import org.json.JSONObject
 object RichKit {
     /** Fence languages that are interactive blocks (```buttons is an alias of ```choices). */
     val LANGS = mapOf("chart" to "chart", "choices" to "choices", "buttons" to "choices", "form" to "form",
-        "tool" to "tool", "calculator" to "tool", "compare" to "compare", "table" to "table", "apps" to "apps")
+        "tool" to "tool", "calculator" to "tool", "compare" to "compare", "table" to "table", "apps" to "apps",
+        // 0.52.0 (RichMedia)
+        "gallery" to "gallery", "grid" to "gallery", "songs" to "gallery", "links" to "links", "cards" to "links", "doc" to "doc", "document" to "doc",
+        "details" to "details", "collapse" to "details")
 
     const val MAX_POINTS = 60
     const val MAX_SERIES = 4

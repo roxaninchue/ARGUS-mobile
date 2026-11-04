@@ -1,5 +1,7 @@
 package com.blaze.assistant.update
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -80,11 +82,11 @@ class VersionFeedTest {
 
     @Test fun bannerShowsOnlyANewerUndismissedVersion() {
         val a = VersionFeed.parse(json())!!
-        assertEquals("Blaze 0.45.4 is available", VersionFeed.banner(a, "0.45.3", ""))
+        assertEquals("${BrandName.NAME} 0.45.4 is available", VersionFeed.banner(a, "0.45.3", ""))
         assertNull(VersionFeed.banner(a, "0.45.4", ""))
         assertNull(VersionFeed.banner(a, "0.45.3", "0.45.4"))
         assertNull(VersionFeed.banner(a, "0.45.3", "v0.45.4"))
-        assertEquals("Blaze 0.45.4 is available", VersionFeed.banner(a, "0.45.3", "0.45.2"))
+        assertEquals("${BrandName.NAME} 0.45.4 is available", VersionFeed.banner(a, "0.45.3", "0.45.2"))
         assertNull(VersionFeed.banner(null, "0.45.3", ""))   // offline / unreadable: silent
     }
 

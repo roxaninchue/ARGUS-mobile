@@ -1,5 +1,7 @@
 package com.blaze.assistant.device
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.28.x camera-fix: the pure decisions behind "+ → Camera" (and the open_camera tool), so every phone ends up
  * with a working way to take a picture instead of a blanket "No camera app found." (CameraFlowTest).
@@ -77,14 +79,14 @@ object CameraFlow {
     fun externalFailNote(kind: String, message: String?): String {
         val m = message.orEmpty()
         return when {
-            kind.endsWith("ActivityNotFoundException") -> "This phone has no camera app Blaze can use, so Blaze's own camera is opening."
+            kind.endsWith("ActivityNotFoundException") -> "This phone has no camera app ${BrandName.NAME} can use, so ${BrandName.NAME}'s own camera is opening."
             kind.endsWith("SecurityException") && (m.contains("CAMERA", true) || m.contains("permission", true)) ->
-                "Android blocked the camera app (camera permission), so Blaze's own camera is opening."
-            kind.endsWith("SecurityException") -> "Android blocked the camera app (${m.take(80).ifBlank { "security policy" }}), so Blaze's own camera is opening."
+                "Android blocked the camera app (camera permission), so ${BrandName.NAME}'s own camera is opening."
+            kind.endsWith("SecurityException") -> "Android blocked the camera app (${m.take(80).ifBlank { "security policy" }}), so ${BrandName.NAME}'s own camera is opening."
             kind.endsWith("IllegalArgumentException") || kind.endsWith("FileNotFoundException") ->
-                "Blaze couldn't prepare the photo file for the camera app, so Blaze's own camera is opening."
-            kind == "Broken" -> "The camera app didn't hand the photo back, so Blaze's own camera is opening."
-            else -> "The camera app failed (${kind.substringAfterLast('.')}), so Blaze's own camera is opening."
+                "${BrandName.NAME} couldn't prepare the photo file for the camera app, so ${BrandName.NAME}'s own camera is opening."
+            kind == "Broken" -> "The camera app didn't hand the photo back, so ${BrandName.NAME}'s own camera is opening."
+            else -> "The camera app failed (${kind.substringAfterLast('.')}), so ${BrandName.NAME}'s own camera is opening."
         }
     }
 
@@ -95,8 +97,8 @@ object CameraFlow {
             m.contains("in use", true) || m.contains("CAMERA_IN_USE", true) || m.contains("max cameras", true) ->
                 "The camera is busy in another app. Close it and try again, or pick a photo."
             m.contains("disabled", true) || m.contains("policy", true) -> "The camera is turned off on this phone (device policy). Pick a photo instead."
-            m.contains("No available camera", true) || m.contains("unavailable", true) -> "Blaze couldn't find a working camera on this phone. Pick a photo instead."
-            else -> "Blaze's camera couldn't start (${kind.substringAfterLast('.')}). Pick a photo instead."
+            m.contains("No available camera", true) || m.contains("unavailable", true) -> "${BrandName.NAME} couldn't find a working camera on this phone. Pick a photo instead."
+            else -> "${BrandName.NAME}'s camera couldn't start (${kind.substringAfterLast('.')}). Pick a photo instead."
         }
     }
 

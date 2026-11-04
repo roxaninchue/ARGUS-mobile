@@ -1,5 +1,7 @@
 package com.blaze.assistant.appstore
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -65,7 +67,7 @@ data class Catalog(val schema: Int, val name: String, val updated: String, val c
         const val SCHEMA = 1
         const val ALL = "all"
         const val OTHER = "other"
-        val EMPTY = Catalog(SCHEMA, "Blaze Store", "", emptyList(), emptyList())
+        val EMPTY = Catalog(SCHEMA, "${BrandName.NAME} Store", "", emptyList(), emptyList())
     }
 }
 
@@ -84,13 +86,13 @@ object CatalogParser {
         val o = try { JSONObject(text) } catch (e: Exception) { throw Bad("not JSON: ${e.message}") }
         val schema = o.optInt("schema", 0)
         if (schema < 1) throw Bad("no schema")
-        if (schema > Catalog.SCHEMA) throw Bad("schema $schema is newer than this Blaze (knows ${Catalog.SCHEMA})")
+        if (schema > Catalog.SCHEMA) throw Bad("schema $schema is newer than this ${BrandName.NAME} (knows ${Catalog.SCHEMA})")
         val arr = o.optJSONArray("apps") ?: throw Bad("no apps")
         val cats = o.optJSONArray("categories")?.let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) }
             .mapNotNull { c -> c.optString("id").takeIf { it.isNotBlank() }?.let { StoreCategory(it, c.optString("name").ifBlank { it }) } } }.orEmpty()
         val seen = HashSet<String>()
         val apps = (0 until arr.length()).mapNotNull { arr.optJSONObject(it) }.mapNotNull { app(it) }.filter { seen.add(it.id) }
-        return Catalog(schema, o.optString("name").ifBlank { "Blaze Store" }, o.optString("updated"), cats, apps)
+        return Catalog(schema, o.optString("name").ifBlank { "${BrandName.NAME} Store" }, o.optString("updated"), cats, apps)
     }
 
     /** One app, or null when a required field is missing or malformed. */

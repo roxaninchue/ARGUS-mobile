@@ -1,5 +1,7 @@
 package com.blaze.assistant.update
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 import java.io.File
 import java.net.URI
@@ -67,7 +69,7 @@ object VersionFeed {
     fun banner(a: Android?, installed: String, dismissed: String): String? {
         if (a == null || !newer(a.version, installed)) return null
         if (dismissed.isNotBlank() && compare(dismissed, a.version) == 0) return null
-        return "Blaze ${a.version} is available"
+        return "${BrandName.NAME} ${a.version} is available"
     }
 
     fun sha256(f: File): String {
@@ -76,5 +78,5 @@ object VersionFeed {
         return md.digest().joinToString("") { "%02x".format(it) }
     }
 
-    const val SHA_MISMATCH = "The downloaded file didn't match the Blaze site's fingerprint, so I deleted it and didn't install it. Tap Retry to download it again."
+    const val SHA_MISMATCH = "The downloaded file didn't match the ${BrandName.NAME} site's fingerprint, so I deleted it and didn't install it. Tap Retry to download it again."
 }

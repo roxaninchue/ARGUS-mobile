@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -64,7 +66,7 @@ object CallCopilot {
     fun run(ctx: Context, a: org.json.JSONObject): String = when (a.optString("action")) {
         "enable" -> { on = true; init(ctx)
             if (ctx.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED || ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-                "Call Copilot is on, but it needs the Phone and Microphone permissions (Settings › Apps › Blaze › Permissions)."
+                "Call Copilot is on, but it needs the Phone and Microphone permissions (Settings › Apps › ${BrandName.NAME} › Permissions)."
             else "Call Copilot is on: captions start with your next call (best on speaker), and I'll summarise it when you hang up." }
         "disable" -> { on = false; "Call Copilot is off." }
         else -> if (on) "Call Copilot is on." else "Call Copilot is off."
@@ -148,7 +150,7 @@ class CallCopilotService : Service() {
     private fun note() = NotificationCompat.Builder(this, CH).setSmallIcon(R.drawable.ic_stat_blaze).setOngoing(true).setOnlyAlertOnce(true)
         .setContentTitle("Call Copilot · live captions").setContentText(hint.ifBlank { CallCopilot.Pure.tail(synchronized(lines) { lines.toList() } + listOf(partial).filter { it.isNotBlank() }) })
         .setStyle(NotificationCompat.BigTextStyle().bigText(hint.ifBlank { CallCopilot.Pure.tail(synchronized(lines) { lines.toList() } + listOf(partial).filter { it.isNotBlank() }, 420) }))
-        .addAction(0, "Blaze, help", pi(HELP, 61)).addAction(0, "Stop", pi(STOP, 62)).build()
+        .addAction(0, "${BrandName.NAME}, help", pi(HELP, 61)).addAction(0, "Stop", pi(STOP, 62)).build()
 
     private fun refresh() { if (live) try { getSystemService(NotificationManager::class.java).notify(NID, note()) } catch (_: Throwable) { } }
 
@@ -180,7 +182,7 @@ class CallCopilotService : Service() {
         if (snap.isEmpty()) return
         scope.launch {
             val r = try { Agent.ask("Call Copilot", CallCopilot.Pure.suggestPrompt(snap)) } catch (_: Throwable) { "" }
-            if (r.isNotBlank()) { hint = "Blaze: " + r.take(300); main.post { refresh() }; main.postDelayed({ hint = ""; refresh() }, 25_000) }
+            if (r.isNotBlank()) { hint = "${BrandName.NAME}: " + r.take(300); main.post { refresh() }; main.postDelayed({ hint = ""; refresh() }, 25_000) }
         }
     }
 

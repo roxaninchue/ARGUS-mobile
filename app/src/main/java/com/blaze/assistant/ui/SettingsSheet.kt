@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
@@ -78,40 +80,40 @@ val topPages = listOf(
     // v0.39.0 Simple mode: Look & feel (living backgrounds) and what Blaze does on its own.
     SettingsPage("look", "Look & feel", "Living backgrounds, Light / Dark / Auto, accent colour"),
     // v0.45.7: the reply language (Auto matches you; Kiswahili, ChiBemba, ChiNyanja, Hausa, Yorùbá, አማርኛ…).
-    SettingsPage("language", "Language", "Which language Blaze replies in. Auto matches yours"),
-    SettingsPage("doing", "Things Blaze is doing", "Routines and reminders, on or off, and today's diary"),
+    SettingsPage("language", "Language", "Which language ${BrandName.NAME} replies in. Auto matches yours"),
+    SettingsPage("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders, on or off, and today's diary"),
     // v0.43.0: Bank mode, where non-technical users look for it (not under Advanced).
-    SettingsPage("bank", "Bank mode", "Use banking apps: Blaze steps back while they're open"),
-    SettingsPage("voice", "Voice", "Hey Blaze, spoken replies, default assistant"),
+    SettingsPage("bank", "Bank mode", "Use banking apps: ${BrandName.NAME} steps back while they're open"),
+    SettingsPage("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, default assistant"),
     SettingsPage("permissions", "Permissions", "Phone control, notifications, mic, overlay"),
-    SettingsPage("account", "Account", "Blaze account and connected apps"),
-    SettingsPage("updates", "Updates", "Check for a newer Blaze; updates run in the background"),
-    SettingsPage("about", "About", "Version and what Blaze keeps on this phone"),
+    SettingsPage("account", "Account", "${BrandName.NAME} account and connected apps"),
+    SettingsPage("updates", "Updates", "Check for a newer ${BrandName.NAME}; updates run in the background"),
+    SettingsPage("about", "About", "Version and what ${BrandName.NAME} keeps on this phone"),
     SettingsPage("advanced", "Advanced", "Everything else, page by page"),
 )
 
 /** Pages under Advanced (the old list without the router dashboard). */
 val advancedPages = listOf(
     SettingsPage("connections", "Connected accounts", "Google, GitHub, Spotify, Notion, Slack"),
-    SettingsPage("desktop", "Blaze Desktop", "Pair with Blaze on your computer"),
+    SettingsPage("desktop", "${BrandName.NAME} Desktop", "Pair with ${BrandName.NAME} on your computer"),
     SettingsPage("control", "Phone control", "Accessibility, skills, the pointer"),
-    SettingsPage("persona", "Personality", "How Blaze talks"),
+    SettingsPage("persona", "Personality", "How ${BrandName.NAME} talks"),
     SettingsPage("feel", "Taps, sounds & panel", "Tap highlights, sounds, compact panel"),
     SettingsPage("privacy", "Privacy & safety", "App lock, approvals"),
     SettingsPage("watches", "Watches", "Values Magic Hand is watching for you"),
     SettingsPage("secrets", "Saved secrets", "Keys, tokens, logins and cards from the Secure Form, only on this phone"),
-    SettingsPage("logins", "Saved logins", "Sign-ins from Blaze's secure form, encrypted on this phone"),
-    SettingsPage("phonebrowser", "Blaze Phone", "Blaze's own phone browser: sign out of sites, clear its data"),
+    SettingsPage("logins", "Saved logins", "Sign-ins from ${BrandName.NAME}'s secure form, encrypted on this phone"),
+    SettingsPage("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: sign out of sites, clear its data"),
     SettingsPage("proactive", "Proactive & triggers", "Speak up on its own, when-X-do-Y"),
     SettingsPage("commands", "Slash commands", "Your own /commands and prompt skills"),
-    SettingsPage("orb", "Floating orb", "Keep Blaze over other apps"),
+    SettingsPage("orb", "Floating orb", "Keep ${BrandName.NAME} over other apps"),
     SettingsPage("logs", "Life logs", "Transcribe what the mic hears into memory, brainstorms"),
     SettingsPage("replies", "Notification replies", "Chat logs and replies from notifications, auto-reply"),
     SettingsPage("usage", "Usage", "Tokens and estimated cost"),
     SettingsPage("device", "Device & diagnostics", "Phone health, self-check, crash report"),
     SettingsPage("backup", "Backup", "Export or import everything"),
     // v0.45.28: the on-device backup brain (also on the Brain page).
-    SettingsPage("backup_brain", "Backup brain", "Answers on the phone when Blaze Cloud is down: status, download, wait"),
+    SettingsPage("backup_brain", "Backup brain", "Answers on the phone when ${BrandName.NAME} Cloud is down: status, download, wait"),
 )
 
 /**
@@ -119,18 +121,18 @@ val advancedPages = listOf(
  * open_view and the "Open in …?" chip. Brain stays here too (models live on the gateway dashboard).
  */
 val viewPages = listOf(
-    SettingsPage("ai", "Brain", "Blaze Cloud picks the best free model for every message"),
+    SettingsPage("ai", "Brain", "${BrandName.NAME} Cloud picks the best free model for every message"),
     SettingsPage("terminal", "Jobs", "A real shell, jobs, Linux, Termux"),
-    SettingsPage("memory", "Memory", "What Blaze remembers and has learned"),
-    SettingsPage("routines", "Schedule", "Things Blaze does on a schedule"),
-    SettingsPage("specialists", "Agents", "Sub-agents Blaze can delegate to"),
+    SettingsPage("memory", "Memory", "What ${BrandName.NAME} remembers and has learned"),
+    SettingsPage("routines", "Schedule", "Things ${BrandName.NAME} does on a schedule"),
+    SettingsPage("specialists", "Agents", "Sub-agents ${BrandName.NAME} can delegate to"),
     SettingsPage("skills", "Skills", "Research, email, plans, docs, code: on, off, restore"),
     SettingsPage("learn", "Learn", "Flashcards, Google Classroom, low-data mode"),
     SettingsPage("appstore", "App Store", "Free open-source apps from their developers' own releases"),
     SettingsPage("seller", "Seller", "Brand kit, weekly store digest, replies from your PC"),
     SettingsPage("dashboard", "Dashboard", "Local web dashboard and analytics"),
     // v0.40.0: under Account (and /sync).
-    SettingsPage("plan", "Plan", "Blaze Cloud plans, monthly or yearly"),
+    SettingsPage("plan", "Plan", "${BrandName.NAME} Cloud plans, monthly or yearly"),
     SettingsPage("sync", "Cloud sync", "Chats, memory, settings and designs on all your phones, end-to-end encrypted"),
 )
 
@@ -227,7 +229,7 @@ fun SettingsList(advanced0: Boolean = false, onPage: (String) -> Unit) {
     if (advanced0) { Spacer(Modifier.height(18.dp)); AdvancedList(onPage) }
     Spacer(Modifier.height(22.dp))
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    Label("Blaze " + runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault(""), color = c.weak, size = 10.sp)
+    Label("${BrandName.NAME} " + runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault(""), color = c.weak, size = 10.sp)
 }
 
 /** Advanced: every other page, unchanged. */
@@ -238,7 +240,7 @@ fun AdvancedList(onPage: (String) -> Unit) {
     val simple by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
     val shown = advancedPages.filter { com.blaze.assistant.agent.SimpleMode.pageVisible(it.id, simple) } +
         (if (simple) emptyList() else viewPages.filter { it.id in com.blaze.assistant.agent.SimpleMode.TECH_PAGES })
-    GroupHead("Advanced \u00b7 %02d".format(shown.size), if (simple) "Everything else Blaze can do. Switch to Advanced at the top of Settings for the technical tools." else "Everything else Blaze can do, page by page.")
+    GroupHead("Advanced \u00b7 %02d".format(shown.size), if (simple) "Everything else ${BrandName.NAME} can do. Switch to Advanced at the top of Settings for the technical tools." else "Everything else ${BrandName.NAME} can do, page by page.")
     Rows {
         shown.forEachIndexed { i, sp ->
             KitRow(sp.title, sp.sub, n = i + 1, first = i == 0, onClick = { onPage(sp.id) }) {
@@ -262,12 +264,12 @@ private fun AiPage() {
     // Saved when you leave the page.
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { Settings.userName = name } }
     Spacer(Modifier.height(12.dp))
-    Field("Your name", name, { name = it; Settings.userName = it }, "What should Blaze call you?")
+    Field("Your name", name, { name = it; Settings.userName = it }, "What should ${BrandName.NAME} call you?")
     Spacer(Modifier.height(10.dp))
     ToggleRow("Show thinking", "A quiet \u201cThinking it through\u2026\u201d line while the model thinks (its reasoning itself isn't shown)", think) { think = !think; Settings.showReasoning = think }
     // v0.26.1: the rich_replies pref (default on) now covers diagrams, charts, buttons, forms and mini tools.
     var visual by remember { mutableStateOf(Settings.bool("rich_replies", true)) }
-    ToggleRow("Visual answers", "Blaze picks diagrams, charts, compare cards, buttons, forms and little calculators when they explain better than text", visual) { visual = !visual; Settings.setBool("rich_replies", visual) }
+    ToggleRow("Visual answers", "${BrandName.NAME} picks diagrams, charts, compare cards, buttons, forms and little calculators when they explain better than text", visual) { visual = !visual; Settings.setBool("rich_replies", visual) }
     var tech by remember { mutableStateOf(com.blaze.assistant.agent.ReplyChips.showTech()) }
     ToggleRow("Show technical details", "Timings, data used and the token meter under replies (hidden by default)", tech) { tech = !tech; Settings.setBool(com.blaze.assistant.agent.ReplyChips.PREF, tech) }
     // 0.45.19: which model replied is never shown to users; a debug build has a developer switch for it (off by default).
@@ -277,10 +279,10 @@ private fun AiPage() {
             devInfo = !devInfo; Settings.setBool(com.blaze.assistant.agent.DevFlags.MODEL_INFO, devInfo) }
     }
     ToggleRow("Show every step", "List each tool call as it happens, instead of one plain line and \"Worked for 12s\"", showSteps) { showSteps = !showSteps; Settings.showSteps = showSteps }
-    ToggleRow("Background agents", "Blaze can hand long work to an agent and keep chatting (${com.blaze.assistant.agent.BgAgents.cap()} at a time on this phone)", bgAgents) { bgAgents = !bgAgents; Settings.setBool("bg_agents", bgAgents) }
+    ToggleRow("Background agents", "${BrandName.NAME} can hand long work to an agent and keep chatting (${com.blaze.assistant.agent.BgAgents.cap()} at a time on this phone)", bgAgents) { bgAgents = !bgAgents; Settings.setBool("bg_agents", bgAgents) }
     // v0.44.0: the cloud_runs pref (v0.42.0) had no switch. Brain is an Advanced-only page, so Simple never shows it.
     var cloudRuns by remember { mutableStateOf(Settings.bool(com.blaze.assistant.agent.CloudRuns.PREF, true)) }
-    ToggleRow("Cloud runs", "Each message is answered in Blaze Cloud and kept there, so a dropped connection or closing Blaze never loses the reply. Off: the phone runs every step itself", cloudRuns) { cloudRuns = !cloudRuns; Settings.setBool(com.blaze.assistant.agent.CloudRuns.PREF, cloudRuns) }
+    ToggleRow("Cloud runs", "Each message is answered in ${BrandName.NAME} Cloud and kept there, so a dropped connection or closing ${BrandName.NAME} never loses the reply. Off: the phone runs every step itself", cloudRuns) { cloudRuns = !cloudRuns; Settings.setBool(com.blaze.assistant.agent.CloudRuns.PREF, cloudRuns) }
     ToggleRow("Mode switches", "Show Plan/Build and Auto/Autopilot above the message box", modeBar) { modeBar = !modeBar; Settings.setBool("mode_bar", modeBar) }
     ToggleRow("Fold long answers", "Long tables, lists, code and reports open as cards you tap to expand", fold) { fold = !fold; Settings.foldAnswers = fold }
     ToggleRow("Suggested follow-ups", "Three tap-to-send ideas under each answer", fu) { fu = !fu; Settings.followups = fu }
@@ -294,7 +296,7 @@ private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
     Spacer(Modifier.height(8.dp))
     ToggleRow("Phone control", "Open apps, tap, type and scroll for you", control) { control = !control; Settings.phoneControl = control }
     // v0.24.5: the pointer is always shown while Blaze controls apps (no switch; the old show_pointer pref is ignored).
-    Text("Blaze's mascot pointer is always on screen while it controls your phone. It never blocks your taps or Blaze's. Tap the small Stop chip at the bottom-left to stop.",
+    Text("${BrandName.NAME}'s mascot pointer is always on screen while it controls your phone. It never blocks your taps or ${BrandName.NAME}'s. Tap the small Stop chip at the bottom-left to stop.",
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.weak))
     Spacer(Modifier.height(12.dp))
     Row(Modifier.fillMaxWidth().hairline(if (a11yOn) c.hair else c.accent).clickable(onClick = onOpenAccessibility).padding(16.dp),
@@ -305,7 +307,7 @@ private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
             modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
         Label("Open →", color = c.accent)
     }
-    if (!a11yOn) Text("If Android calls it a restricted setting: App info → Blaze → ⋮ → Allow restricted settings, then try again.",
+    if (!a11yOn) Text("If Android calls it a restricted setting: App info → ${BrandName.NAME} → ⋮ → Allow restricted settings, then try again.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub), modifier = Modifier.padding(top = 8.dp))
     SkillsSection()
     NotificationAccessRow()
@@ -319,7 +321,7 @@ private fun CommandsSection() {
     var desc by remember { mutableStateOf("") }
     var prompt by remember { mutableStateOf("") }
     Spacer(Modifier.height(12.dp))
-    Text("Type / in the chat box to see every command. Make your own: Blaze swaps {input} for whatever you type after it.",
+    Text("Type / in the chat box to see every command. Make your own: ${BrandName.NAME} swaps {input} for whatever you type after it.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
     if (list.isNotEmpty()) {
@@ -398,7 +400,7 @@ internal fun RevealEye(reveal: Boolean, onToggle: () -> Unit) {
 private fun LanguagePage() {
     val c = LocalBlaze.current.mono
     var sel by remember { mutableStateOf(com.blaze.assistant.agent.ReplyLanguage.current()) }
-    Text("Blaze replies in this language. Auto answers in whatever language you write in.",
+    Text("${BrandName.NAME} replies in this language. Auto answers in whatever language you write in.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub), modifier = Modifier.padding(vertical = 8.dp))
     com.blaze.assistant.agent.ReplyLanguage.OPTIONS.forEach { o ->
         val on = o.code == sel
@@ -552,11 +554,11 @@ private fun VoiceSection() {
     Label("Voice & assistant", modifier = Modifier.padding(bottom = 4.dp))
     ToggleRow("Speak replies", "Read answers aloud when you ask by voice", speak) { speak = !speak; Settings.speakReplies = speak }
     ToggleRow(
-        "\u201cHey Blaze\u201d",
+        "\u201cHey ${BrandName.NAME}\u201d",
         when {
             dl in 0..99 -> "Downloading voice model\u2026 $dl%"
-            wake && modelReady -> "Listening offline for \u201cHey Blaze\u201d or \u201cWake up Blaze\u201d"
-            else -> "Wake Blaze hands-free. One-time ${WakeModel.SIZE_MB} MB offline download"
+            wake && modelReady -> "Listening offline for \u201cHey ${BrandName.NAME}\u201d or \u201cWake up ${BrandName.NAME}\u201d"
+            else -> "Wake ${BrandName.NAME} hands-free. One-time ${WakeModel.SIZE_MB} MB offline download"
         },
         wake
     ) { if (dl !in 0..99) setWake(!wake) }
@@ -572,14 +574,14 @@ private fun VoiceSection() {
         Box(Modifier.size(6.dp).background(if (isDefault) c.accent else c.weak, BlazeShapes.pill))
         Spacer(Modifier.width(10.dp))
         Text(
-            if (isDefault) "Blaze is your default assistant" else "Make Blaze your default assistant",
+            if (isDefault) "${BrandName.NAME} is your default assistant" else "Make ${BrandName.NAME} your default assistant",
             modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body)
         )
         Label("Open →", color = c.accent)
     }
     if (!isDefault) Text(
-        "Pick Digital assistant app \u2192 Blaze. Then long-press power or home to talk to Blaze instead of the phone's built-in assistant.",
+        "Pick Digital assistant app \u2192 ${BrandName.NAME}. Then long-press power or home to talk to ${BrandName.NAME} instead of the phone's built-in assistant.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub),
         modifier = Modifier.padding(top = 8.dp)
     )
@@ -595,8 +597,8 @@ private fun OrbSection() {
     androidx.compose.runtime.LaunchedEffect(Unit) {
         while (true) { allowed = Overlay.canDrawOverApps(ctx); on = Overlay.orbShowing; kotlinx.coroutines.delay(1200) }
     }
-    ToggleRow("Floating orb", if (on) "Blaze stays on screen. Tap to chat, hold to talk, drag to move"
-        else "Keep Blaze on screen while you use other apps", on) {
+    ToggleRow("Floating orb", if (on) "${BrandName.NAME} stays on screen. Tap to chat, hold to talk, drag to move"
+        else "Keep ${BrandName.NAME} on screen while you use other apps", on) {
         if (on) { Overlay.hideOrb(ctx); on = false }
         else if (!Overlay.showOrb(ctx)) Overlay.requestOverlayPermission(ctx) else on = true
     }
@@ -632,7 +634,7 @@ private fun PersonaSection() {
     }
     if (pid == com.blaze.assistant.agent.Personas.CUSTOM) {
         Spacer(Modifier.height(10.dp))
-        Field("Describe Blaze's personality", custom, { custom = it; Settings.customPersona = it },
+        Field("Describe ${BrandName.NAME}'s personality", custom, { custom = it; Settings.customPersona = it },
             "e.g. Talk like a calm big brother, mix in some Nyanja, keep it short")
     }
     Spacer(Modifier.height(6.dp))
@@ -640,11 +642,11 @@ private fun PersonaSection() {
     ToggleRow("Background particles", "Drifting dots. Turn off for the smoothest, lightest feel", dots) { dots = !dots; Settings.particles = dots }
     // 0.50.0: Blaze's edge particles while it controls the screen (ui/ScreenGlow)
     var glowOn by remember { mutableStateOf(Settings.bool("screen_glow", true)) }
-    ToggleRow("Glow while Blaze uses the screen", "Particles round the screen edges while Blaze taps and types for you", glowOn) { glowOn = !glowOn; Settings.setBool("screen_glow", glowOn) }
-    ToggleRow("Stream replies", "Words appear as Blaze writes them", stream) { stream = !stream; Settings.streamReplies = stream }
+    ToggleRow("Glow while ${BrandName.NAME} uses the screen", "Particles round the screen edges while ${BrandName.NAME} taps and types for you", glowOn) { glowOn = !glowOn; Settings.setBool("screen_glow", glowOn) }
+    ToggleRow("Stream replies", "Words appear as ${BrandName.NAME} writes them", stream) { stream = !stream; Settings.streamReplies = stream }
     // 0.51.0 BlazeQuery (Halo Persona Studio removed: Halo is part of Blaze now)
     var bqOn by remember { mutableStateOf(Settings.bool("blazequery", true)) }
-    ToggleRow("BlazeQuery: fresh facts for every reply", "Checks trusted sources (official docs, registries, release notes; never Wikipedia) as you send, and gives Blaze a short summary. Nothing is sent from private chats", bqOn) { bqOn = !bqOn; Settings.setBool("blazequery", bqOn) }
+    ToggleRow("BlazeQuery: fresh facts for every reply", "Checks trusted sources (official docs, registries, release notes; never Wikipedia) as you send, and gives ${BrandName.NAME} a short summary. Nothing is sent from private chats", bqOn) { bqOn = !bqOn; Settings.setBool("blazequery", bqOn) }
 }
 
 @Composable
@@ -667,7 +669,7 @@ private fun BackupSection() {
             val n = Settings.importJson(ctx.contentResolver.openInputStream(uri)!!.bufferedReader().readText())
             com.blaze.assistant.agent.Memory.init(ctx, mergeLegacy = true)
             "Restored $n settings. Close and reopen Settings to see them."
-        } catch (e: Exception) { "That file isn't a Blaze backup." }
+        } catch (e: Exception) { "That file isn't a ${BrandName.NAME} backup." }
     }
     Spacer(Modifier.height(22.dp))
     Label("Backup", modifier = Modifier.padding(bottom = 8.dp))
@@ -744,8 +746,8 @@ private fun SecuritySection() {
     var risky by remember { mutableStateOf(Settings.confirmRisky) }
     Spacer(Modifier.height(22.dp))
     Label("Privacy & safety", modifier = Modifier.padding(bottom = 4.dp))
-    ToggleRow("Lock Blaze", "Fingerprint, face or PIN to open the app", lock) { lock = !lock; Settings.appLock = lock }
-    ToggleRow("Ask before risky actions", "Blaze asks before tapping Send, Pay, Buy, Delete or Post", risky) { risky = !risky; Settings.confirmRisky = risky }
+    ToggleRow("Lock ${BrandName.NAME}", "Fingerprint, face or PIN to open the app", lock) { lock = !lock; Settings.appLock = lock }
+    ToggleRow("Ask before risky actions", "${BrandName.NAME} asks before tapping Send, Pay, Buy, Delete or Post", risky) { risky = !risky; Settings.confirmRisky = risky }
 }
 
 

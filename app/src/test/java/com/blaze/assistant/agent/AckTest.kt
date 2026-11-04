@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -21,7 +23,7 @@ class AckTest {
         "find me a cheap flight to Lusaka", "write an email to my landlord", "schedule a meeting with Ana on monday at 3pm",
         "delete the photos from yesterday", "translate this to French", "research the best budget phones",
     )
-    private val chat = listOf("hi", "hey Blaze", "good morning", "thanks", "thank you!", "ok", "lol", "how are you?",
+    private val chat = listOf("hi", "hey ${BrandName.NAME}", "good morning", "thanks", "thank you!", "ok", "lol", "how are you?",
         "what's the capital of Zambia?", "who won the game last night?", "why is the sky blue")
 
     @Test fun tasksAreTrackedChatIsNot() {
@@ -149,6 +151,6 @@ class AckTest {
         assertNull(com.blaze.assistant.notify.StatusNote.line(i))
         assertTrue(com.blaze.assistant.notify.MessageThread.KEEP in 2..8)
         assertFalse(com.blaze.assistant.notify.MessageThread.FAILED_TITLE.contains("Done"))
-        assertEquals("Blaze", QuietChannel.TITLE)                          // the only background note (old Android): no "working" words
+        assertEquals("${BrandName.NAME}", QuietChannel.TITLE)                          // the only background note (old Android): no "working" words
     }
 }

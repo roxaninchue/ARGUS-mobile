@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
@@ -18,11 +20,11 @@ object FixCards {
         USAGE("Turn on usage access?",
             "This lets me see which apps you used today, so I can help at the right moment.",
             "android.settings.USAGE_ACCESS_SETTINGS"),
-        OVERLAY("Let Blaze show over other apps?",
+        OVERLAY("Let ${BrandName.NAME} show over other apps?",
             "This lets me float a small card over the app you're in while I work.",
             "android.settings.action.MANAGE_OVERLAY_PERMISSION"),
-        APP_PERMISSION("Allow this for Blaze?",
-            "Blaze needs one more permission for that. Turn it on in Blaze's app settings, then ask me again.",
+        APP_PERMISSION("Allow this for ${BrandName.NAME}?",
+            "${BrandName.NAME} needs one more permission for that. Turn it on in ${BrandName.NAME}'s app settings, then ask me again.",
             "android.settings.APPLICATION_DETAILS_SETTINGS"),
     }
 

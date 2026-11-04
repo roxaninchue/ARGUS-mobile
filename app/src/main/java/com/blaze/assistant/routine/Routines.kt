@@ -1,5 +1,7 @@
 package com.blaze.assistant.routine
 
+
+import com.blaze.assistant.BrandName
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -169,9 +171,9 @@ object Routines {
                 .put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(req))))
         fun p(d: String) = JSONObject().put("type", "string").put("description", d)
         return listOf(
-            fn("create_routine", "Schedule something Blaze does by itself at a time, once or repeating, e.g. a morning brief, a reminder, checking messages. The result arrives as a notification.",
+            fn("create_routine", "Schedule something ${BrandName.NAME} does by itself at a time, once or repeating, e.g. a morning brief, a reminder, checking messages. The result arrives as a notification.",
                 JSONObject().put("name", p("Short name, e.g. 'Morning brief'"))
-                    .put("prompt", p("What Blaze should do when it runs, written as an instruction to Blaze"))
+                    .put("prompt", p("What ${BrandName.NAME} should do when it runs, written as an instruction to ${BrandName.NAME}"))
                     .put("time", p("24h time HH:mm"))
                     .put("days", p("daily, weekdays, weekends, once, or days like 'mon,wed,fri'"))
                     .put("date", p("Optional yyyy-MM-dd for a one-off on that date (reminders before a deadline)")),

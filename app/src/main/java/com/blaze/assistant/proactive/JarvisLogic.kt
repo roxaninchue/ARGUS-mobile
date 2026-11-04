@@ -1,5 +1,7 @@
 package com.blaze.assistant.proactive
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -156,7 +158,7 @@ object JarvisLogic {
     }
 
     /** Routines Blaze made for itself carry this prefix, so the user can see (and remove) them. */
-    const val SELF_PREFIX = "Blaze · "
+    const val SELF_PREFIX = "${BrandName.NAME} · "
 
     private fun obj(raw: String?): JSONObject? {
         if (raw.isNullOrBlank()) return null

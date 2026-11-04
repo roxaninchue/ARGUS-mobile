@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.ui.graphics.Color
 import com.blaze.assistant.ui.Md
 import com.blaze.assistant.ui.ParseMemo
@@ -71,7 +73,7 @@ class LocalLanguagesTest {
 
     @Test fun theChatFileRoundTripsEveryLanguage() {
         val msgs = SAMPLES.values.mapIndexed { i, s -> ChatMessage(i + 1L, if (i % 2 == 0) Role.USER else Role.BLAZE, s, at = 10L + i) }
-        val head = JSONObject().put("id", "main").put("title", "Blaze").put("pinned", false).put("updated", 9L)
+        val head = JSONObject().put("id", "main").put("title", "${BrandName.NAME}").put("pinned", false).put("updated", 9L)
         val file = ChatJson.file(head, ChatJson.messages(msgs, emptyMap()), JSONArray())
         val back = ChatJson.parse(JSONObject(file)).msgs
         assertEquals(msgs.map { it.text }, back.map { it.text })
@@ -163,7 +165,7 @@ class LocalLanguagesTest {
     }
 
     @Test fun whatHappenedKeepsTheLongestPause() {
-        val t = TurnTrace.build(mapOf("x-request-id" to "abc"), "Blaze Cloud", "agent", listOf("abc"), 900, 400, 5000, 1, emptyList(), emptyList(), 2300)
+        val t = TurnTrace.build(mapOf("x-request-id" to "abc"), "${BrandName.NAME} Cloud", "agent", listOf("abc"), 900, 400, 5000, 1, emptyList(), emptyList(), 2300)
         val back = TurnTrace.fromJson(TurnTrace.toJson(t))!!
         assertEquals(2300L, back.maxGapMs)
         assertEquals("2.30 s", TurnTrace.rows(back).first { it.first == "Longest pause" }.second)

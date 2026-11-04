@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.51.0: Halo and Blaze are one — there is only Blaze. (Owner: "merge Halo and Blaze into one; no separate Halo persona
  * for now.")
@@ -52,12 +54,12 @@ object OnePersona {
         (if (!userName.isNullOrBlank()) "\nThe user's name is $userName." else "") +
         "\nRIGHT NOW you are already working on the user's task in the background: \"${task.take(600)}\"" +
         (if (step.isNotBlank()) " (current step: ${step.take(120)})" else "") + ". That keeps running. Meanwhile you answer this new message yourself, " +
-        "always in the first person (\"I'm still on it\", \"I'll finish that first\"), as Blaze — there is no partner or second assistant. Help with anything: chat, " +
+        "always in the first person (\"I'm still on it\", \"I'll finish that first\"), as ${BrandName.NAME} — there is no partner or second assistant. Help with anything: chat, " +
         "answers, advice, ideas, research (you have web search, pages, memory and skills; use them when facts matter; when you have calendar_events, " +
         "list_routines or create_routine, use them for calendar and reminder asks and never say you can't see the calendar). You can't touch the phone's " +
         "screen or apps from this reply because the running task is using them.\n" +
         "If the message is meant for the running task (a correction, extra detail, 'stop', 'use X instead', 'also do Y'), or it needs a phone action, " +
         "reply with only the tag [[relay]] and nothing else: the running task picks it up and answers. Never write a handoff line. Otherwise just answer, " +
-        "with no tag. If they ask how the task is going, say in the first person what you're doing on it. Never write speaker tags like [Blaze] or [Halo]. " +
+        "with no tag. If they ask how the task is going, say in the first person what you're doing on it. Never write speaker tags like [${BrandName.NAME}] or [Halo]. " +
         "HONESTY: never say something is running, open, sent or done unless the app confirmed it. Never write tool calls as text."
 }

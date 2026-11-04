@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.50.0 (owner, 2026-11-01: asked "what "/" commands do I have available?" and Blaze searched the web and answered about
  * Windows help pages). The old fast lane ([LookupLane.isLookup], 0.46.3) took ANY message that started with a question word
@@ -22,7 +24,7 @@ object SearchRoute {
 
     /** The model's rule (every prompt): search only when it needs the outside world, and search for the conversation's subject. */
     const val PROMPT = "\nWEB SEARCH: call web_search only when the answer needs fresh or external facts you don't have (news, prices, scores, " +
-        "opening hours, recent releases, a page the user named). Never search for questions about Blaze, this app, its / commands, " +
+        "opening hours, recent releases, a page the user named). Never search for questions about ${BrandName.NAME}, this app, its / commands, " +
         "this conversation or the user's own data: answer those from your context, about_blaze, blaze_docs_search, memory_search or the " +
         "phone tools. When you do search, write the query about the conversation's actual subject (resolve \"it\", \"there\", \"that\" from " +
         "earlier turns), not the user's raw sentence. Weather: get_weather."
@@ -102,9 +104,9 @@ object SearchRoute {
         val t = request.trim()
         if (t.isEmpty() || t.startsWith("[")) return null
         return when (route(t)) {
-            Route.COMMANDS -> "Not run: the user asked about Blaze's own / commands. Answer from this list, not the web:\n" + SlashCommands.answer()
+            Route.COMMANDS -> "Not run: the user asked about ${BrandName.NAME}'s own / commands. Answer from this list, not the web:\n" + SlashCommands.answer()
             Route.LOCAL -> if (t.length <= 200 && !t.contains('\n') && questionShape.containsMatchIn(t) && !worldFact.containsMatchIn(t))
-                "Not run: this is about Blaze, this conversation or the user's own data, which the web doesn't know. " +
+                "Not run: this is about ${BrandName.NAME}, this conversation or the user's own data, which the web doesn't know. " +
                     "Answer from your context, about_blaze, blaze_docs_search, memory_search or the phone tools." else null
             // small talk never reaches the tools (ChatLane); a bare "yes" / "ok" may approve a search Blaze offered, so it is not refused here
             else -> null

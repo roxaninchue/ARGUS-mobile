@@ -1,5 +1,7 @@
 package com.blaze.assistant.device
 
+
+import com.blaze.assistant.BrandName
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -65,7 +67,7 @@ object PhoneHealth {
         val list = if (usage) apps(ctx) else emptyList()
         val unused = list.filter { it.lastUsed in 1 until now - 30L * 86_400_000L || it.lastUsed == 0L }.sortedByDescending { it.sizeMb }
         return when (a.optString("detail", "report")) {
-            "unused_apps" -> if (!usage) "Needs Usage access (Settings › Apps › Special access › Usage access › Blaze)." else if (unused.isEmpty()) "Every app was used in the last 30 days."
+            "unused_apps" -> if (!usage) "Needs Usage access (Settings › Apps › Special access › Usage access › ${BrandName.NAME})." else if (unused.isEmpty()) "Every app was used in the last 30 days."
                 // 0.46.0: every unused app (the old cap of 30 hid 12 of 42); an app whose size is unknown says so instead of being left out.
                 else "Unused for 30+ days, ${unused.size} apps (app size only; data and cache come on top" +
                     unused.count { it.sizeMb <= 0 }.let { n -> if (n > 0) "; $n without a known size" else "" } + "):\n" +

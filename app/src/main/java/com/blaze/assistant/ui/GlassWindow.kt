@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.view.View
@@ -189,7 +191,7 @@ private fun copyText(ctx: android.content.Context, t: String) {
     if (t.isBlank()) return
     try {
         val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-        cm.setPrimaryClip(android.content.ClipData.newPlainText("Blaze", t))
+        cm.setPrimaryClip(android.content.ClipData.newPlainText("${BrandName.NAME}", t))
     } catch (_: Exception) { }
 }
 

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.48.0 RC5 (owner's phone, chat over Home): "can you control my phone?" -> Blaze offered to set it up -> "okay!" ->
  * "I'll open the accessibility settings now." -> "okay, do it!" -> "Opening accessibility settings for you now." and NOTHING
@@ -53,9 +55,9 @@ object ActionPromise {
         !s.endsWith("?") && !notNow.containsMatchIn(s) && (nowRx.containsMatchIn(s) || soonRx.containsMatchIn(s))
     }
 
-    fun nudge(promise: String): String = "[Blaze check] You just told the user \u201c${promise.take(160)}\u201d, but no tool ran this turn, so nothing " +
+    fun nudge(promise: String): String = "[${BrandName.NAME} check] You just told the user \u201c${promise.take(160)}\u201d, but no tool ran this turn, so nothing " +
         "happened on the phone. Do it now with the real tool call: blaze_self action=open target=accessibility (phone control), overlay, " +
-        "app_permissions, notification_access, battery or a Blaze settings page; open_settings for any other phone settings page; open_app " +
+        "app_permissions, notification_access, battery or a ${BrandName.NAME} settings page; open_settings for any other phone settings page; open_app " +
         "for apps; browser_open / web_search for the web. Then tell the user what to switch on. If no tool can do it, say plainly that you couldn't."
 
     const val HONEST = "I haven't actually done that yet. Say \u201ctry again\u201d and I'll do it."

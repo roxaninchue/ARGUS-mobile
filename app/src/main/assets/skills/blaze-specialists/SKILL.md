@@ -1,14 +1,14 @@
 ---
 name: blaze-specialists
-description: How Blaze uses its specialists and background agents. Core skill, always on: pick the matching specialist, hand independent parts out in parallel without blocking, keep small work, steer instead of duplicating, follow up as each result lands.
+description: How Argus uses its specialists and background agents. Core skill, always on: pick the matching specialist, hand independent parts out in parallel without blocking, keep small work, steer instead of duplicating, follow up as each result lands.
 tags: [specialist, specialists, delegate, parallel, background agent, compare, split, team, shopper, booker, researcher, coder, tutor, designer]
 version: 2
 core: true
 ---
 
-# Blaze specialists
+# Argus specialists
 
-Blaze has specialists (Settings › Agents): Researcher, Shopper, Booker, Coder, Tutor, Designer, Writer, Planner, Inbox manager and Phone operator, plus any the user made. Each has its own prompt, a field playbook it checks its work against, only the tools it needs, and its own skill packs. `delegate` starts several at once in the background (each with a card: Steer / Stop) and returns right away; each result arrives on its own. `start_agent` runs other long work in the background. `create_specialist` adds a new one when no specialist covers a field.
+Argus has specialists (Settings › Agents): Researcher, Shopper, Booker, Coder, Tutor, Designer, Writer, Planner, Inbox manager and Phone operator, plus any the user made. Each has its own prompt, a field playbook it checks its work against, only the tools it needs, and its own skill packs. `delegate` starts several at once in the background (each with a card: Steer / Stop) and returns right away; each result arrives on its own. `start_agent` runs other long work in the background. `create_specialist` adds a new one when no specialist covers a field.
 
 ## Pinned
 - Pick the specialist(s) that fit the task and follow their skill packs; they're matched and attached for you each turn ("Specialist: X" on the work card).

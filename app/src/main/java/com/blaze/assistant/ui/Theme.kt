@@ -66,15 +66,16 @@ data class BlazeColors(
 )
 
 // v0.31.0: greyscale. Light keeps working (Settings → theme) but the glass look is designed dark-first.
+// 0.52.1 Argus light: white and silver with cobalt accents (cobalt on white 7.6:1).
 val LightColors = BlazeColors(
-    paper = Color(0xFFF4F4F5),
-    ink = Color(0xFF111112),
-    body = Color(0xD1111112),
-    sub = Color(0x8F111112),
-    weak = Color(0x57111112),
-    hair = Color(0x1F111112),
-    faint = Color(0x0F111112),
-    accent = Color(0xFF2A2A2E),
+    paper = Color(0xFFF6F7F9),
+    ink = Color(0xFF0A0A0A),
+    body = Color(0xD10A0A0A),
+    sub = Color(0x990A0A0A),
+    weak = Color(0x5C0A0A0A),
+    hair = Color(0x24384056),
+    faint = Color(0x10384056),
+    accent = Color(0xFF0D28FF),
     dark = false
 )
 
@@ -121,20 +122,38 @@ object FontPick {
 
 object Type {
     private val Inter = FontFamily(
+        Font(R.font.inter_300, FontWeight.Light),   // 0.52.1 Argus type: Inter (OFL) as the Aeonik stand-in, Light → Bold
         Font(R.font.inter_400, FontWeight.Normal),
         Font(R.font.inter_500, FontWeight.Medium),
-        Font(R.font.inter_600, FontWeight.SemiBold)
+        Font(R.font.inter_600, FontWeight.SemiBold),
+        Font(R.font.inter_700, FontWeight.Bold)
     )
     private val InterTight = FontFamily(
         Font(R.font.inter_tight_400, FontWeight.Normal),
         Font(R.font.inter_tight_500, FontWeight.Medium),
-        Font(R.font.inter_tight_600, FontWeight.SemiBold)
+        Font(R.font.inter_tight_600, FontWeight.SemiBold),
+        Font(R.font.inter_300, FontWeight.Light),
+        Font(R.font.inter_700, FontWeight.Bold)
     )
     val Sans: FontFamily get() = if (FontPick.system.value) FontFamily.Default else Inter
     val Display: FontFamily get() = if (FontPick.system.value) FontFamily.Default else InterTight
     /** The text font for [text]: the system font when it has letters Inter lacks (so a reply is never drawn in two fonts). */
     fun sansFor(text: String): FontFamily = if (FontPick.system.value || com.blaze.assistant.agent.Scripts.needsSystemFont(text)) FontFamily.Default else Inter
     val Mono = FontFamily.Monospace
+
+    /** 0.52.1: Material's type scale in the brand font, so every stock Text / button reads Inter (Light → Bold). */
+    fun material(): androidx.compose.material3.Typography {
+        val t = androidx.compose.material3.Typography()
+        val d = Display; val s = Sans
+        return t.copy(
+            displayLarge = t.displayLarge.copy(fontFamily = d, fontWeight = FontWeight.Light), displayMedium = t.displayMedium.copy(fontFamily = d, fontWeight = FontWeight.Light),
+            displaySmall = t.displaySmall.copy(fontFamily = d), headlineLarge = t.headlineLarge.copy(fontFamily = d), headlineMedium = t.headlineMedium.copy(fontFamily = d),
+            headlineSmall = t.headlineSmall.copy(fontFamily = d), titleLarge = t.titleLarge.copy(fontFamily = s, fontWeight = FontWeight.SemiBold),
+            titleMedium = t.titleMedium.copy(fontFamily = s, fontWeight = FontWeight.Medium), titleSmall = t.titleSmall.copy(fontFamily = s, fontWeight = FontWeight.Medium),
+            bodyLarge = t.bodyLarge.copy(fontFamily = s), bodyMedium = t.bodyMedium.copy(fontFamily = s), bodySmall = t.bodySmall.copy(fontFamily = s),
+            labelLarge = t.labelLarge.copy(fontFamily = s, fontWeight = FontWeight.Medium), labelMedium = t.labelMedium.copy(fontFamily = s), labelSmall = t.labelSmall.copy(fontFamily = s),
+        )
+    }
 }
 
 /** Light/dark override; "system" follows the phone. Backed by Settings.themeMode. */
@@ -157,7 +176,7 @@ fun BlazeTheme(content: @Composable () -> Unit) {
     val themeId by Look.theme.collectAsState()
     val c = androidx.compose.runtime.remember(themeId, dark, accentHex) { blazePalette(themeId, dark, LivingLogic.parseAccent(accentHex)) }
     // v0.24.5: Material's own colours mapped to Blaze, so no default purple / lavender can leak into anything Material draws.
-    androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark), shapes = BlazeShapes.material) {
+    androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark), shapes = BlazeShapes.material, typography = Type.material()) {
         CompositionLocalProvider(LocalBlaze provides c, content = content)
     }
 }
@@ -186,9 +205,8 @@ object BlazeShapes {
  */
 object BlazeBrush {
     val orange = Color(0xFFD6B48E)
-    val blue = Color(0xFFDADADF)
-    val primary: androidx.compose.ui.graphics.Brush get() = androidx.compose.ui.graphics.Brush.verticalGradient(
-        listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.18f)))
+    val blue = Color(0xFF3466FF)   // 0.52.1 Argus electric blue
+    val primary: androidx.compose.ui.graphics.Brush get() = ArgusBrand.primary   // 0.52.1 Argus: cobalt → electric, white text
     val primarySoft: androidx.compose.ui.graphics.Brush get() = androidx.compose.ui.graphics.SolidColor(Color.White.copy(alpha = 0.10f))
 }
 
@@ -197,8 +215,8 @@ fun blazeScheme(dark: Boolean): androidx.compose.material3.ColorScheme {
     // v0.31.0: Material's slots mapped to the greyscale glass palette, so stock components pick up the look.
     // Containers are opaque greys (Material layers them), surfaces sit a step above the near-black ground.
     return if (dark) androidx.compose.material3.darkColorScheme(
-        primary = GlassTokens.accent, onPrimary = GlassTokens.onAccent, primaryContainer = Color(0xFF2A2A2E), onPrimaryContainer = GlassTokens.ink,
-        secondary = Color(0xFFBDBDC2), onSecondary = GlassTokens.onAccent, secondaryContainer = Color(0xFF242427), onSecondaryContainer = GlassTokens.ink,
+        primary = GlassTokens.accent, onPrimary = GlassTokens.onAccent, primaryContainer = Color(0xFF0B1A6B), onPrimaryContainer = GlassTokens.ink,
+        secondary = Color(0xFFA6ABB3), onSecondary = GlassTokens.onAccent, secondaryContainer = Color(0xFF242427), onSecondaryContainer = GlassTokens.ink,
         tertiary = Color(0xFFA9A9AE), onTertiary = GlassTokens.onAccent, tertiaryContainer = Color(0xFF242427), onTertiaryContainer = GlassTokens.ink,
         background = GlassTokens.bg, onBackground = GlassTokens.ink, surface = Color(0xFF131315), onSurface = GlassTokens.ink,
         surfaceVariant = Color(0xFF1E1E21), onSurfaceVariant = GlassTokens.sub, surfaceTint = Color.Transparent,
@@ -209,7 +227,7 @@ fun blazeScheme(dark: Boolean): androidx.compose.material3.ColorScheme {
         surfaceContainerHighest = Color(0xFF212124), error = GlassTokens.error, onError = Color(0xFF1A0F0E),
         errorContainer = Color(0xFF3A2624), onErrorContainer = Color(0xFFF2D6D2))
     else androidx.compose.material3.lightColorScheme(
-        primary = Color(0xFF1C1C1F), onPrimary = Color.White, primaryContainer = Color(0xFFE4E4E7), onPrimaryContainer = Color(0xFF111112),
+        primary = Color(0xFF0D28FF), onPrimary = Color.White, primaryContainer = Color(0xFFDDE3FF), onPrimaryContainer = Color(0xFF0A0A0A),
         secondary = Color(0xFF4A4A4F), onSecondary = Color.White, secondaryContainer = Color(0xFFE8E8EA), onSecondaryContainer = Color(0xFF111112),
         tertiary = Color(0xFF5A5A5F), onTertiary = Color.White, tertiaryContainer = Color(0xFFE8E8EA), onTertiaryContainer = Color(0xFF111112),
         background = LightColors.paper, onBackground = LightColors.ink, surface = Color(0xFFFFFFFF), onSurface = LightColors.ink,

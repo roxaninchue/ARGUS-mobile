@@ -59,8 +59,13 @@ class CrashReport465Test {
         assertEquals(2 * 1024 * 1024, HomeImages.cacheBytes(true)); assertEquals(6 * 1024 * 1024, HomeImages.cacheBytes(false))
     }
 
-    @Test fun noReadChipUnderYourMessage() {
-        assertFalse(DeliveryView.shown(DeliveryState.READ))
+    // 0.52.1 (owner, screenshot 1000172533): the "•••• Read" receipt is back; dots animate until it is read.
+    @Test fun readReceiptUnderYourMessage() {
+        assertTrue(DeliveryView.shown(DeliveryState.READ))
         assertTrue(DeliveryView.shown(DeliveryState.SENT)); assertTrue(DeliveryView.shown(DeliveryState.NOT_SENT))
+        assertEquals("Read", DeliveryView.word(DeliveryState.READ))
+        assertEquals("", DeliveryView.word(DeliveryState.SENDING))
+        assertTrue(DeliveryView.animates(DeliveryState.SENDING) && DeliveryView.animates(DeliveryState.SENT))
+        assertFalse(DeliveryView.animates(DeliveryState.READ))
     }
 }

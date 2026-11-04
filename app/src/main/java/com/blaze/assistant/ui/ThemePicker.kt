@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -188,7 +190,7 @@ fun ThemePreview(th: LivingThemes.Theme, t: Float, dark: Boolean, reqW: Int = 0,
             drawDropletHalo(th, Offset(size.width / 2f, size.height * 0.42f), size.width * 0.12f, t)
         }
         Column(Modifier.fillMaxSize().padding(14.dp)) {
-            Text("Welcome\nto Blaze.", style = TextStyle(fontFamily = Type.Display, fontSize = 20.sp, lineHeight = 22.sp, color = ink))
+            Text("Welcome\nto ${BrandName.NAME}.", style = TextStyle(fontFamily = Type.Display, fontSize = 20.sp, lineHeight = 22.sp, color = ink))
             Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf("Today", "Music").forEach { l ->

@@ -1,5 +1,7 @@
 package com.blaze.assistant.device
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -130,7 +132,7 @@ object CrashLog {
      */
     fun lineFor(e: Throwable, kept: Boolean = false): String = when {
         e is com.blaze.assistant.agent.LlmClient.LlmException && !e.message.isNullOrBlank() -> e.message!!.trim()
-        kept -> "Something went wrong, but Blaze kept running. It's in the crash report."
+        kept -> "Something went wrong, but ${BrandName.NAME} kept running. It's in the crash report."
         else -> "Something went wrong. It's in the crash report; try again."
     }
 
@@ -217,10 +219,10 @@ object CrashLog {
         if (!::file.isInitialized || !file.exists()) return null
         val out = File(ctx.cacheDir, "blaze-report.txt")
         val pi = try { ctx.packageManager.getPackageInfo(ctx.packageName, 0) } catch (_: Exception) { null }
-        out.writeText(scrubSecrets("Blaze ${pi?.versionName} (${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE})\n\n" + read().takeLast(150_000)))
+        out.writeText(scrubSecrets("${BrandName.NAME} ${pi?.versionName} (${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE})\n\n" + read().takeLast(150_000)))
         val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", out)
         return Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_STREAM, uri)
-            .putExtra(Intent.EXTRA_SUBJECT, "Blaze report").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Send report")
+            .putExtra(Intent.EXTRA_SUBJECT, "${BrandName.NAME} report").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Send report")
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 }

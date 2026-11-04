@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ToolVerify.Status
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
@@ -210,7 +212,7 @@ class ReliabilityP2Test {
         assertTrue(b.contains("CURRENT TASK") && b.contains("Yango"))
         assertEquals("", GoalPin.block(null))
         val h = JSONArray().put(JSONObject().put("role", "user").put("content", "first"))
-            .put(JSONObject().put("role", "user").put("content", "[Blaze check] x")).put(JSONObject().put("role", "user").put("content", "second"))
+            .put(JSONObject().put("role", "user").put("content", "[${BrandName.NAME} check] x")).put(JSONObject().put("role", "user").put("content", "second"))
         assertEquals(listOf("first", "second"), GoalPin.userTexts(h))
     }
 

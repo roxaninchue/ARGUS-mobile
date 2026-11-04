@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -255,7 +257,7 @@ fun ChatScreen() {
     fun pasteImage() {
         clipHasImage = false
         val clipData = try { sysClip.primaryClip } catch (_: Exception) { null }
-        if (clipData == null) { Toast.makeText(ctx, "Android didn't let Blaze read the clipboard. Copy the image again, then paste.", Toast.LENGTH_SHORT).show(); return }
+        if (clipData == null) { Toast.makeText(ctx, "Android didn't let ${BrandName.NAME} read the clipboard. Copy the image again, then paste.", Toast.LENGTH_SHORT).show(); return }
         val d = clipData.description
         // Some keyboards and the Samsung clipboard don't say the file type when asked, so pass on what the clip declared.
         val hint = (0 until d.mimeTypeCount).map { d.getMimeType(it) }.firstOrNull { it.startsWith("image/") }.orEmpty()
@@ -305,7 +307,7 @@ fun ChatScreen() {
             onError = { Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show() })
     }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) startVoice() else Toast.makeText(ctx, "Blaze needs the microphone to hear you.", Toast.LENGTH_SHORT).show()
+        if (ok) startVoice() else Toast.makeText(ctx, "${BrandName.NAME} needs the microphone to hear you.", Toast.LENGTH_SHORT).show()
     }
     fun onMic() {
         when {
@@ -321,7 +323,7 @@ fun ChatScreen() {
     // Call Blaze: full-screen voice call.
     var inCall by remember { mutableStateOf(false) }
     val callPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) inCall = true else Toast.makeText(ctx, "Blaze needs the microphone for calls.", Toast.LENGTH_SHORT).show()
+        if (ok) inCall = true else Toast.makeText(ctx, "${BrandName.NAME} needs the microphone for calls.", Toast.LENGTH_SHORT).show()
     }
     fun startCall() {
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) inCall = true
@@ -349,6 +351,7 @@ fun ChatScreen() {
     val swipeMode = HomeRoute.swipe(swipeSetting, HomeRedesign.enabled)
     var typing by rememberSaveable { mutableStateOf(false) }
     var avatarMenu by remember { mutableStateOf(false) }
+    var topMenu by remember { mutableStateOf(false) }   // 0.52.1: the Blaze pill's views overlay
     var plusOpen by remember { mutableStateOf(false) }
     val showing by Views.showing.collectAsState()
     val designTarget by Views.designTarget.collectAsState()
@@ -394,7 +397,7 @@ fun ChatScreen() {
 
     fun clearScreen() {
         when (Agent.clearScreen()) {
-            com.blaze.assistant.agent.ClearScreen.Result.BUSY -> Toast.makeText(ctx, "Blaze is working. Stop it first, then /clear.", Toast.LENGTH_SHORT).show()
+            com.blaze.assistant.agent.ClearScreen.Result.BUSY -> Toast.makeText(ctx, "${BrandName.NAME} is working. Stop it first, then /clear.", Toast.LENGTH_SHORT).show()
             com.blaze.assistant.agent.ClearScreen.Result.EMPTY -> {}
             com.blaze.assistant.agent.ClearScreen.Result.CLEARED -> { quote = ""; exitView(); clearedAt = System.currentTimeMillis() }
         }
@@ -513,9 +516,9 @@ fun ChatScreen() {
             "voice" -> { onMic(); true }
             "call" -> { startCall(); true }
             "plan" -> { com.blaze.assistant.agent.Modes.toggleWork()
-                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.plan) "Plan mode on: Blaze plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
+                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.plan) "Plan mode on: ${BrandName.NAME} plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
             "approval" -> { com.blaze.assistant.agent.Modes.toggleApproval()
-                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.autopilot) "Autopilot: Blaze acts, you can undo" else "Blaze asks before it acts", Toast.LENGTH_SHORT).show(); true }
+                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.autopilot) "Autopilot: ${BrandName.NAME} acts, you can undo" else "${BrandName.NAME} asks before it acts", Toast.LENGTH_SHORT).show(); true }
             "clear" -> { clearScreen(); true }
             "views" -> { composer.openSpotlight(); composer.query = "@"; true }
             "profile" -> { avatarMenu = true; true }
@@ -581,7 +584,7 @@ fun ChatScreen() {
     }
     // Awareness: which surface is in front (Home or Chat).
     val surface by remember(swipeMode) { derivedStateOf { if (!swipeMode) (if (navNow().tab == ChatNav.HOME) "home" else "chat") else com.blaze.assistant.agent.SwipeNav.surfaceOf(sheetP) } }
-    LaunchedEffect(surface) { try { com.blaze.assistant.agent.Awareness.set(com.blaze.assistant.agent.Awareness.Now("surface", "Showing", com.blaze.assistant.agent.SwipeNav.awarenessLine(surface), "Blaze")) } catch (_: Throwable) { } }
+    LaunchedEffect(surface) { try { com.blaze.assistant.agent.Awareness.set(com.blaze.assistant.agent.Awareness.Now("surface", "Showing", com.blaze.assistant.agent.SwipeNav.awarenessLine(surface), "${BrandName.NAME}")) } catch (_: Throwable) { } }
     // 0.45.19 fix 7: Back returns to the chat from everything (BackRule); the chat is the root, so Back from Chat no
     // longer goes down to Home (that made Home and Chat a loop Back could never leave). The shell publishes what is
     // in front and how to close it; BackRule's window interceptor acts on it before any nested BackHandler.
@@ -668,6 +671,9 @@ fun ChatScreen() {
                 isPrivate = isPrivate,
                 onGhost = { if (isPrivate) confirmLeavePrivate = true else { exitView(); go(navNow().switchTab(ChatNav.CHAT)); Agent.enterPrivate() } })
             }
+            // 0.52.1 (owner): the small Blaze pill under the top bar (the project's name inside a project); tap = views overlay.
+            if (!designFull && !maxed) BlazeTopPill(BlazeTopPillModel.label(if (nav.tab == ChatNav.PROJECTS && nav.project.isNotBlank())
+                com.blaze.assistant.agent.Projects.get(nav.project)?.name.orEmpty() else ""), mood, onClick = { topMenu = true })
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 // v0.27.0: Chat and Projects cross-fade when you switch tabs.
                 // v0.28.3: three panes: main Chat, the Projects list / a project page, and a project chat screen.
@@ -766,7 +772,7 @@ fun ChatScreen() {
                 // 0.46.3: the on-phone brain's one-time question before its setup uses mobile data
                 val askData by com.blaze.assistant.agent.BackupBrain.askMobile.collectAsState()
                 if (askData) BlazeDialog(com.blaze.assistant.agent.BackupNudge.mobileDataQuestion(com.blaze.assistant.agent.BackupBrain.DOWNLOAD_BYTES),
-                    "Until then, Blaze answers online. On Wi-Fi this finishes by itself.",
+                    "Until then, ${BrandName.NAME} answers online. On Wi-Fi this finishes by itself.",
                     confirm = "Use mobile data", onConfirm = { com.blaze.assistant.agent.BackupBrain.answerMobile(true) },
                     dismiss = "Wait for Wi-Fi", onDismiss = { com.blaze.assistant.agent.BackupBrain.answerMobile(false) })
                 // 0.46.3: the one-time phone control explainer (a phone task needed control and it was off).
@@ -818,7 +824,7 @@ fun ChatScreen() {
                         when (id) {
                             "camera" -> cameraCapture.open()
                             "blazecam" -> if (!com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
-                                Toast.makeText(ctx, "Blaze Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
+                                Toast.makeText(ctx, "${BrandName.NAME} Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
                             "photos" -> photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                             "files" -> files.launch(arrayOf("image/*", "application/pdf", "text/*"))
                             "atfile" -> { val t = input.text.let { if (it.isEmpty() || it.endsWith(" ")) it else "$it " } + "@"; input = TextFieldValue(t, TextRange(t.length)) }
@@ -905,7 +911,7 @@ fun ChatScreen() {
             // RC4: the one-time questions the chat screen used to ask, over Home.
             val askData by com.blaze.assistant.agent.BackupBrain.askMobile.collectAsState()
             if (askData) BlazeDialog(com.blaze.assistant.agent.BackupNudge.mobileDataQuestion(com.blaze.assistant.agent.BackupBrain.DOWNLOAD_BYTES),
-                "Until then, Blaze answers online. On Wi-Fi this finishes by itself.",
+                "Until then, ${BrandName.NAME} answers online. On Wi-Fi this finishes by itself.",
                 confirm = "Use mobile data", onConfirm = { com.blaze.assistant.agent.BackupBrain.answerMobile(true) },
                 dismiss = "Wait for Wi-Fi", onDismiss = { com.blaze.assistant.agent.BackupBrain.answerMobile(false) })
             val explain by com.blaze.assistant.phone.flash.PhoneExplainer.requested.collectAsState()
@@ -928,6 +934,14 @@ fun ChatScreen() {
             SelectionPill(r, acts, ink = c.ink, paper = c.paper) { a -> onSelection(a) }
         }
 
+        BlazeTopOverlay(topMenu, current = if (showing.isNotEmpty()) showing else nav.tab, options = BlazeTopPillModel.options(homeTab = !swipeMode),
+            onPick = { id -> topMenu = false; plusOpen = false; showViews = false
+                when (id) {
+                    "chat", "projects", "home" -> { exitView(); go(navNow().switchTab(id)) }
+                    else -> Views.find(id)?.let { v -> go(navNow().switchTab(ChatNav.CHAT)); openView(v) }
+                } },
+            onDismiss = { topMenu = false })
+        if (topMenu) BackHandler { topMenu = false }
         if (avatarMenu) {
             val dark = c.dark
             val themeName = LivingThemes.of(Look.theme.value).name
@@ -1028,7 +1042,16 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val simpleUi by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
     val hideDoneSteps = com.blaze.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, live = false) == com.blaze.assistant.agent.SimpleMode.Work.NONE
     // v0.45.0 (#10): built incrementally: a streamed frame only rebuilds the rows after the last unchanged message.
-    val items = remember(messages, mood, hideDoneSteps) { itemBuilder.build(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) }, mood != Mood.IDLE, hideDoneSteps) }
+    // 0.52.1 (owner): no step rows and no agent cards in the chat: the task's work is ONE line in the TaskPill at the end.
+    val items = remember(messages, mood, hideDoneSteps) { itemBuilder.build(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
+        it.role == Role.STEP || it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD) }, mood != Mood.IDLE, hideDoneSteps) }
+    // The running turn's step texts (after your newest message), for the pill's line.
+    val turnSteps = remember(messages) { val u = messages.indexOfLast { it.role == Role.USER }
+        messages.drop(u + 1).filter { it.role == Role.STEP }.takeLast(12).map { it.text } }
+    val agentsAll by com.blaze.assistant.agent.BgAgents.all.collectAsState()
+    val chatHere by Agent.chatId.collectAsState()
+    val agentLogs = remember(agentsAll, chatHere) { agentsAll.filter { it.live && it.parent == chatHere }.sortedBy { it.started }
+        .map { b -> b.log.ifEmpty { listOfNotNull(b.last.takeIf { l -> l.isNotBlank() }) } } }
     val total = items.size + 1 // + working row
     val atBottom by remember { derivedStateOf { !state.canScrollForward } }
     var follow by remember { mutableStateOf(true) }
@@ -1107,10 +1130,11 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                             val m = if (Settings.longChat && com.blaze.assistant.agent.ReplyChips.showTech() && (item.live || item.key == lastStepsKey)) meter else null
                             when (com.blaze.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, item.live)) {
                                 com.blaze.assistant.agent.SimpleMode.Work.CARD ->
-                                    WorkCard(item.steps, item.live, item.startAt, item.endAt, status = if (item.live && !waitLineOn) st else "", exact = Settings.showSteps,
+                                    WorkCard(item.steps, item.live, item.startAt, item.endAt, status = "", exact = Settings.showSteps,
                                         meter = m?.text.orEmpty(), meterHigh = m?.high == true, simple = false)
                                 // v0.41.0 Simple mode: one small quiet line while working, nothing once done.
-                                com.blaze.assistant.agent.SimpleMode.Work.HINT -> if (chipOn.isBlank() && !(item.live && waitLineOn)) SimpleWorkHint(com.blaze.assistant.agent.SimpleMode.hint(st, item.steps.lastOrNull()?.text.orEmpty()))
+                                // 0.52.0: Simple mode shows the same work pill (no quiet status line any more)
+                                com.blaze.assistant.agent.SimpleMode.Work.HINT -> WorkCard(item.steps, item.live, item.startAt, item.endAt, status = "", exact = false)
                                 com.blaze.assistant.agent.SimpleMode.Work.NONE -> Unit
                             }
                         }
@@ -1124,7 +1148,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 }
                 }
             }
-            item(key = "working") {
+            item(key = "working") { Column(Modifier.fillMaxWidth()) {
                 val live by Agent.thinking.collectAsState()
                 val status by Agent.status.collectAsState()
                 // One live card per turn: before the first step it's an empty "Working · 3s" card.
@@ -1140,7 +1164,9 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 // 0.45.24: the live line sits beside the drop (same row, centred) and goes as soon as the reply starts.
                 val working = mood != Mood.IDLE
                 val lineOn = waitLineOn
-                val dropOn = WaitRow.showDrop(working, streamId >= 0, chip.isNotBlank(), duoLive.isNotEmpty())
+                // 0.52.1: the waiting drop is replaced by the one TaskPill below (no second "working" indicator).
+                @Suppress("UNUSED_VARIABLE") val dropWas = WaitRow.showDrop(working, streamId >= 0, chip.isNotBlank(), duoLive.isNotEmpty())
+                val dropOn = false
                 // The step pill first; otherwise what Blaze is doing (the status line that used to sit above in the work card).
                 val liveSteps = (items.lastOrNull() as? Item.Steps)?.takeIf { it.live }
                 val pillText = WaitRow.line(pill?.takeIf { it.chat == chatNow }?.text, if (chip.isBlank()) status else "",
@@ -1151,18 +1177,24 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 AnimatedVisibility(dropOn, enter = MotionTokens.enterUp(), exit = androidx.compose.animation.ExitTransition.None) {
                     Box(Modifier.padding(top = 3.dp)) {
                         val label = com.blaze.assistant.agent.ThinkingLabel.label(live = true, hasThought = live.isNotBlank(), show = Settings.showReasoning)
-                            ?: status.ifBlank { "Blaze is thinking" }
+                            ?: status.ifBlank { "${BrandName.NAME} is thinking" }
                         // v0.32.0 split: while Halo talks with you, the drop works alone (its halo went with her).
                         val ring by androidx.compose.animation.core.animateFloatAsState(if (split) 0f else 1f, androidx.compose.animation.core.tween(520), label = "ring")
-                        ThinkingOrb(if (split) "Blaze is working" else label, size = OrbAnchor.SIZE, ring = ring)
+                        ThinkingOrb(if (split) "${BrandName.NAME} is working" else label, size = OrbAnchor.SIZE, ring = ring)
                     }
                 }
                 // Ack-and-background: an acknowledged task shows its small chip instead of the drop.
-                if (chip.isNotBlank() && working && streamId < 0) TaskChip(chip)
-                StepPillRow(pillText, pill?.specialist == true, Modifier.weight(1f, fill = false), inline = true)
+                // 0.52.0: no task chip and no status line beside the drop: only replies and work pills in the chat.
+                if (ChatPolicy.STATUS_LINES) { if (chip.isNotBlank() && working && streamId < 0) TaskChip(chip)
+                StepPillRow(pillText, pill?.specialist == true, Modifier.weight(1f, fill = false), inline = true) }
+                }
+                // 0.52.1 (owner): ONE pill per task, natural text that changes as the work moves on, gone when done.
+                val pillLine = com.blaze.assistant.agent.TaskLine.pick(if (working) turnSteps else null, agentLogs)
+                AnimatedVisibility(pillLine != null, enter = MotionTokens.enterUp(), exit = MotionTokens.fadeAway()) {
+                    TaskPill(pillLine ?: "")
                 }
                 // v0.26.0: no "this chat is getting long" banner; long chats compact themselves (AutoCompact).
-            }
+            } }
         }
         }
         AnimatedVisibility(!atBottom, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
@@ -1269,7 +1301,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
                 com.blaze.assistant.agent.Delivery.tracker().apply(listOf(m.gid), com.blaze.assistant.agent.Delivery.Ev.USER_RETRY); Agent.retry(m.id) }) else null)
         } }
         Role.BLAZE -> if (m.meta == com.blaze.assistant.update.Updater.CARD) UpdateCard()
-        else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) AgentCard(m.meta.removePrefix(com.blaze.assistant.agent.BgAgents.CARD))
+        else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) Unit   // 0.52.1: agents show only in the one TaskPill
         else if (m.meta.startsWith(com.blaze.assistant.agent.Duo.ROOM_CARD)) RoomCard(m)   // v0.32.0 meeting room
         else SwipeToQuote(true, onQuote = { onQuote(com.blaze.assistant.agent.ToolLeak.forDisplay(m.text)) }) { Column(Modifier.fillMaxWidth()
             // v0.45.0 reactions: double-tap a finished reply for 👍 (taps, long-press and swipes still reach the bubble).
@@ -1506,7 +1538,7 @@ internal fun Welcome(needsSetup: Boolean, onSetup: () -> Unit, onPick: (String) 
         )
         Spacer(Modifier.height(14.dp))
         Text(
-            "Ask anything. Blaze answers, opens apps, taps and types for you, and checks with you before anything that matters.",
+            "Ask anything. ${BrandName.NAME} answers, opens apps, taps and types for you, and checks with you before anything that matters.",
             style = TextStyle(fontFamily = Type.Sans, fontSize = 17.sp, lineHeight = 26.sp, color = c.body)
         )
         Spacer(Modifier.height(32.dp))

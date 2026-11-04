@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -39,7 +41,7 @@ class SyncNote(private val ctx: Context?, private val manual: Boolean) {
         c.getSystemService(NotificationManager::class.java)?.also { m ->
             if (Build.VERSION.SDK_INT >= 26 && m.getNotificationChannel(CHANNEL) == null)
                 m.createNotificationChannel(NotificationChannel(CHANNEL, "Cloud sync", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "How far a sync with Blaze Cloud is"
+                    description = "How far a sync with ${BrandName.NAME} Cloud is"
                     setShowBadge(false)
                 })
         }
@@ -66,7 +68,7 @@ class SyncNote(private val ctx: Context?, private val manual: Boolean) {
         last = now
         try {
             if (!allowed(c)) return
-            val n = builder(c).setContentTitle("Syncing with Blaze Cloud").setContentText(text).setOngoing(true)
+            val n = builder(c).setContentTitle("Syncing with ${BrandName.NAME} Cloud").setContentText(text).setOngoing(true)
                 .setProgress(100, pct ?: 0, pct == null).build()
             nm(c)?.notify(ID, n)
             shown = true

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -398,11 +400,11 @@ private fun MusicFace(item: StageItem, s: StageMusicLogic.Snapshot, on: (StageEv
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 StageIconButton(Icons.Rounded.PlayArrow, "Play music", primary = true, size = 56.dp) { on(StageEvent.Music("play")) }
-                StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open Blaze Music") { on(StageEvent.OpenFull) }
+                StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open ${BrandName.NAME} Music") { on(StageEvent.OpenFull) }
             }
             return@Column
         }
-        Text(m.title.ifBlank { "Blaze Music" }, color = c.ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+        Text(m.title.ifBlank { "${BrandName.NAME} Music" }, color = c.ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         if (m.artist.isNotBlank()) Text(m.artist, color = c.sub, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
         SeekBar(m.posMs, m.durMs, Modifier.fillMaxWidth(0.92f)) { ms -> on(StageEvent.Music("seek:$ms")) }
@@ -467,7 +469,7 @@ private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifi
                 StageIconButton(Icons.Rounded.Speed, "Playback speed", size = 40.dp) { on(StageEvent.Video("speed")) }
                 StageIconButton(if (item.immersive) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen, if (item.immersive) "Exit full screen" else "Full screen", size = 40.dp) {
                     on(StageEvent.Video("fullscreen")) }
-                StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open in Blaze Video", size = 40.dp) { on(StageEvent.OpenFull) }
+                StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open in ${BrandName.NAME} Video", size = 40.dp) { on(StageEvent.OpenFull) }
             }
         }
         return
@@ -492,14 +494,14 @@ private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifi
             d.movies.forEachIndexed { i, pr -> MovieRow(pr.play.title, (pr.fraction * 100).toInt().toString() + "% watched", busy) { on(StageEvent.Video("resume:$i")) } }
             if (err.isNotBlank()) Text(err, color = c.sub, fontSize = 12.sp, maxLines = 2)
             Spacer(Modifier.height(6.dp))
-            StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open Movies in Blaze Video", size = 40.dp) { on(StageEvent.OpenFull) }
+            StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open Movies in ${BrandName.NAME} Video", size = 40.dp) { on(StageEvent.OpenFull) }
             return@Column
         }
         Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(14.dp)).background(Color.Black.copy(alpha = if (c.dark) 0.6f else 0.85f)), contentAlignment = Alignment.Center) {
-            StageIconButton(Icons.Rounded.PlayArrow, "Open in Blaze Video", primary = true, size = 60.dp) { on(StageEvent.OpenFull) }
+            StageIconButton(Icons.Rounded.PlayArrow, "Open in ${BrandName.NAME} Video", primary = true, size = 60.dp) { on(StageEvent.OpenFull) }
         }
         Spacer(Modifier.height(8.dp))
-        Text(if (url.isBlank()) "No video picked" else if (StageVideoUrl.isYouTube(url)) "YouTube plays in Blaze Video" else url.substringAfterLast('/').take(60), color = c.sub, fontSize = 13.sp, maxLines = 1)
+        Text(if (url.isBlank()) "No video picked" else if (StageVideoUrl.isYouTube(url)) "YouTube plays in ${BrandName.NAME} Video" else url.substringAfterLast('/').take(60), color = c.sub, fontSize = 13.sp, maxLines = 1)
     }
 }
 
@@ -839,9 +841,9 @@ fun StageChatTile(last: String, modifier: Modifier = Modifier, onOpen: () -> Uni
 fun StageReplyPill(modifier: Modifier = Modifier, onOpen: () -> Unit) {
     val c = LocalBlaze.current
     Box(modifier.clip(RoundedCornerShape(50)).background(stageSurface()).border(1.dp, c.hair, RoundedCornerShape(50))
-        .clickable(role = Role.Button, onClickLabel = "Show the reply bar") { onOpen() }.semantics { contentDescription = "Message Blaze" }
+        .clickable(role = Role.Button, onClickLabel = "Show the reply bar") { onOpen() }.semantics { contentDescription = "Message ${BrandName.NAME}" }
         .padding(horizontal = 18.dp, vertical = 10.dp)) {
-        Text("Message Blaze", color = c.sub, fontSize = 14.sp)
+        Text("Message ${BrandName.NAME}", color = c.sub, fontSize = 14.sp)
     }
 }
 

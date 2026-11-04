@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -421,7 +423,7 @@ class CloudRunsTest {
 
     @Test fun awarenessSummaryIsShortAndFullOnlyWhenRelevant() {
         val now = 10_000_000L
-        val nows = (1..5).map { Awareness.Now("k$it", "Playing", "Song number $it with a fairly long title ".repeat(3), "Blaze Music", at = now - it) }
+        val nows = (1..5).map { Awareness.Now("k$it", "Playing", "Song number $it with a fairly long title ".repeat(3), "${BrandName.NAME} Music", at = now - it) }
         val evs = (1..9).map { Awareness.Event("did", "Opened something interesting number $it", now - it * 60_000L) }
         val full = Awareness.format(nows, evs, now)
         val short = Awareness.summary(nows, evs, now)

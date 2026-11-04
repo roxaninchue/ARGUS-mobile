@@ -1,6 +1,6 @@
 ---
 name: classroom-sync
-description: Bring Google Classroom into Blaze: list courses and assignments, turn every upcoming assignment into a Schedule reminder 24 hours before it's due, and give a "what's due" briefing. Use for "sync Classroom", "what's due this week", "any assignments?", "remind me before deadlines".
+description: Bring Google Classroom into Argus: list courses and assignments, turn every upcoming assignment into a Schedule reminder 24 hours before it's due, and give a "what's due" briefing. Use for "sync Classroom", "what's due this week", "any assignments?", "remind me before deadlines".
 tags: [student, google-classroom, assignments, reminders, schedule]
 version: 1
 ---
@@ -23,5 +23,5 @@ version: 1
 - Group work: offer the group-project skill.
 
 ## Rules
-- Read-only: Blaze never submits, unsubmits or edits anything in Classroom.
+- Read-only: Argus never submits, unsubmits or edits anything in Classroom.
 - Times from Classroom are UTC; always show the user's local time.

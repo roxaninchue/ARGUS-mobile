@@ -1,5 +1,7 @@
 package com.blaze.assistant.device
 
+
+import com.blaze.assistant.BrandName
 /**
  * Blaze Camera's modes and where each capture goes (pure, CameraModesTest). All on-device: Photo, Ask (photo → chat
  * with a prompt ready), Text (ML Kit OCR, the Magic Hand recogniser), Translate (OCR, then Blaze translates it: ML Kit
@@ -9,7 +11,7 @@ package com.blaze.assistant.device
 object CameraModes {
     enum class Mode(val id: String, val label: String, val talkback: String) {
         PHOTO("photo", "Photo", "Photo mode: take a picture"),
-        ASK("ask", "Ask", "Ask mode: snap something and ask Blaze about it"),
+        ASK("ask", "Ask", "Ask mode: snap something and ask ${BrandName.NAME} about it"),
         TEXT("text", "Text", "Text mode: read the words in a picture"),
         TRANSLATE("translate", "Translate", "Translate mode: read and translate the words in a picture"),
         SCAN("scan", "Scan", "Scan mode: read a QR code or barcode"),
@@ -93,7 +95,7 @@ object CameraModes {
         return when (mode) {
             Mode.PHOTO -> ""
             Mode.ASK -> "What is this?"
-            Mode.TEXT -> "Here's the text from Blaze Camera."
+            Mode.TEXT -> "Here's the text from ${BrandName.NAME} Camera."
             Mode.TRANSLATE -> "Translate this into $language."
             Mode.SCAN -> "I scanned this code. What is it?"
             Mode.DOCUMENT -> "Here's a document I scanned."
@@ -102,20 +104,20 @@ object CameraModes {
 
     /** What the turn carries besides the photo: the words read on the device, or the code's value. */
     fun payload(mode: Mode, ocr: String?, code: String?): String = when (mode) {
-        Mode.TEXT, Mode.TRANSLATE -> ocr?.trim()?.takeIf { it.isNotEmpty() }?.let { "\n\n[Text read on the phone by Blaze Camera]\n$it" }
-            ?: "\n\n[Blaze Camera found no readable text; the photo is attached.]"
+        Mode.TEXT, Mode.TRANSLATE -> ocr?.trim()?.takeIf { it.isNotEmpty() }?.let { "\n\n[Text read on the phone by ${BrandName.NAME} Camera]\n$it" }
+            ?: "\n\n[${BrandName.NAME} Camera found no readable text; the photo is attached.]"
         Mode.SCAN -> code?.let { "\n\n[Scanned code]\n$it" }.orEmpty()
         else -> ""
     }
 
     /** The step line in chat while the camera is open. */
     fun openingLine(mode: Mode): String = when (mode) {
-        Mode.PHOTO -> "Opening Blaze Camera. Take the picture and I'll have a look."
-        Mode.ASK -> "Opening Blaze Camera. Point it at the thing and tap the shutter; I'll tell you what I see."
-        Mode.TEXT -> "Opening Blaze Camera in Text mode. Snap the words and I'll read them."
-        Mode.TRANSLATE -> "Opening Blaze Camera in Translate mode. Snap the text and I'll translate it."
-        Mode.SCAN -> "Opening Blaze Camera in Scan mode. Point it at the code."
-        Mode.DOCUMENT -> "Opening Blaze Camera in Document mode. Hold the page flat and fill the frame."
+        Mode.PHOTO -> "Opening ${BrandName.NAME} Camera. Take the picture and I'll have a look."
+        Mode.ASK -> "Opening ${BrandName.NAME} Camera. Point it at the thing and tap the shutter; I'll tell you what I see."
+        Mode.TEXT -> "Opening ${BrandName.NAME} Camera in Text mode. Snap the words and I'll read them."
+        Mode.TRANSLATE -> "Opening ${BrandName.NAME} Camera in Translate mode. Snap the text and I'll translate it."
+        Mode.SCAN -> "Opening ${BrandName.NAME} Camera in Scan mode. Point it at the code."
+        Mode.DOCUMENT -> "Opening ${BrandName.NAME} Camera in Document mode. Hold the page flat and fill the frame."
     }
 
     // ---------------------------------------------------------------- scan results
@@ -124,12 +126,12 @@ object CameraModes {
 
     /** The chips a scanned code offers, main action first. Copy is always there. */
     fun scanActions(kind: CodeKind): List<String> = when (kind) {
-        CodeKind.URL -> listOf("Open link", "Copy", "Ask Blaze")
-        CodeKind.WIFI -> listOf("Join Wi-Fi", "Copy password", "Ask Blaze")
-        CodeKind.CONTACT -> listOf("Add contact", "Copy", "Ask Blaze")
-        CodeKind.PHONE -> listOf("Call", "Copy", "Ask Blaze")
-        CodeKind.EMAIL -> listOf("Email", "Copy", "Ask Blaze")
-        CodeKind.TEXT -> listOf("Copy", "Ask Blaze")
+        CodeKind.URL -> listOf("Open link", "Copy", "Ask ${BrandName.NAME}")
+        CodeKind.WIFI -> listOf("Join Wi-Fi", "Copy password", "Ask ${BrandName.NAME}")
+        CodeKind.CONTACT -> listOf("Add contact", "Copy", "Ask ${BrandName.NAME}")
+        CodeKind.PHONE -> listOf("Call", "Copy", "Ask ${BrandName.NAME}")
+        CodeKind.EMAIL -> listOf("Email", "Copy", "Ask ${BrandName.NAME}")
+        CodeKind.TEXT -> listOf("Copy", "Ask ${BrandName.NAME}")
     }
 
     /** Plain text → kind (used for QR text that ML Kit typed as TEXT, and in tests). */

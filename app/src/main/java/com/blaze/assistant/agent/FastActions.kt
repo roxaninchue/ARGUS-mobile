@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -137,6 +139,6 @@ object FastActions {
         "\n- Several tool calls in ONE reply are fine when you already know them (open_settings, then tap text=\"Open supported links\"): they run in order and you get the screen once, at the end." +
         "\n- If run_plan stops at step k, steps before k are done: fix and resend only step k onwards. Don't call list_apps to find an app: open_app and open_settings take the app's name." +
         // v0.30.7: whole settings tasks in one call, and switches that are never flipped the wrong way.
-        "\n- A switch tap takes want=\"on\"/\"off\" (tap and run_plan steps): Blaze reads the switch and only taps when it isn't already that way. run_plan steps can open settings too: " +
+        "\n- A switch tap takes want=\"on\"/\"off\" (tap and run_plan steps): ${BrandName.NAME} reads the switch and only taps when it isn't already that way. run_plan steps can open settings too: " +
         "{do:open_settings, page:open_by_default, app:GitHub} then {do:tap, target:\"Open supported links\", want:\"off\"} is the whole task in one call."
 }

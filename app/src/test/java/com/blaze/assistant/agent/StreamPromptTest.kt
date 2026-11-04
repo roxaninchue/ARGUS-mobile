@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,7 +14,7 @@ import org.junit.Test
 class StreamPromptTest {
     private val halo = "Looking at your 79 memories, here's what's safe to clean up:\n\n**Duplicates & redundant entries:**\n" +
         "- **Task speed** — #2, #12, #26 all say the same thing\n- **Communication style** — #17, #24, #72, #73, #75, #77 (6 entries for one preference)\n" +
-        "- **Default browser = Blaze** — #19, #20, #21, #27 (4 entries)\n- **Music/video taste** — #13, #22, #62 overlap\n\n" +
+        "- **Default browser = ${BrandName.NAME}** — #19, #20, #21, #27 (4 entries)\n- **Music/video taste** — #13, #22, #62 overlap\n\n" +
         "**Outdated / one-time facts:**\n- **Phone health** — #63 (score 92%, battery 43% from a past check)\n- **Unused apps list** — #64 (specific apps/sizes from a past scan)\n" +
         "- **Linux browser launch** — #67 (one-time action done)\n\nWant me to remove the duplicates and outdated ones? I'd keep the newest version of each."
 

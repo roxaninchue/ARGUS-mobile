@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +53,7 @@ internal fun RouterPage(onClassic: () -> Unit) {
     fun act(f: suspend () -> String) { busy = true; scope.launch { msg = f(); busy = false; up = BlazeRouter.healthy(); using = Settings.providerId == BlazeRouter.ID } }
 
     Spacer(Modifier.height(22.dp))
-    Text("Blaze Desktop's model router, running on this phone. It ranks free models by task and tier, fans out to several providers when one is slow, and remembers the last model that worked. Every OmniRoute auto/* preset is here, including auto/best-free.",
+    Text("${BrandName.NAME} Desktop's model router, running on this phone. It ranks free models by task and tier, fans out to several providers when one is slow, and remembers the last model that worked. Every OmniRoute auto/* preset is here, including auto/best-free.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     Spacer(Modifier.height(18.dp))
     Row(Modifier.fillMaxWidth().hairline(c.hair).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -75,7 +77,7 @@ internal fun RouterPage(onClassic: () -> Unit) {
             }
         }
     }
-    Text("Auto tries Blaze's Alpine Linux first, then Termux, then runs it straight from Blaze.", modifier = Modifier.padding(top = 6.dp),
+    Text("Auto tries ${BrandName.NAME}'s Alpine Linux first, then Termux, then runs it straight from ${BrandName.NAME}.", modifier = Modifier.padding(top = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     Spacer(Modifier.height(16.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -88,11 +90,11 @@ internal fun RouterPage(onClassic: () -> Unit) {
     Box(Modifier.fillMaxWidth().height(46.dp).then(if (using) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f))
         .clickable(enabled = !busy) { act { if (using) { Settings.providerId = com.blaze.assistant.agent.Providers.AUTO; "Back to Auto." } else BlazeRouter.run(ctx, org.json.JSONObject().put("action", "use")) } },
         contentAlignment = Alignment.Center) {
-        ButtonText(if (using) "Blaze answers through BlazeRouter · ${Settings.model}" else "Use as Blaze's brain (${BlazeRouter.DEFAULT_MODEL})", color = if (using) c.paper else c.ink, size = 13.sp)
+        ButtonText(if (using) "${BrandName.NAME} answers through BlazeRouter · ${Settings.model}" else "Use as ${BrandName.NAME}'s brain (${BlazeRouter.DEFAULT_MODEL})", color = if (using) c.paper else c.ink, size = 13.sp)
     }
     if (msg.isNotBlank()) Text(msg, modifier = Modifier.padding(top = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
     Spacer(Modifier.height(8.dp))
-    ToggleRow("Start with Blaze", "Run the router whenever Blaze opens", auto) { auto = !auto; BlazeRouter.autostart = auto }
+    ToggleRow("Start with ${BrandName.NAME}", "Run the router whenever ${BrandName.NAME} opens", auto) { auto = !auto; BlazeRouter.autostart = auto }
     Row(Modifier.fillMaxWidth().clickable(onClick = onClassic).padding(vertical = 16.dp)) {
         Label("Classic editor: keys and models  →", color = c.accent, size = 10.sp)
     }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.30.2 `blaze-doctor`: a small self-test that lives in every installed Linux (/usr/local/bin/blaze-doctor) and
  * that Blaze also runs once per build in the background (Linux.selfTest). It checks the system calls a shell needs
@@ -33,7 +35,7 @@ object LinuxDoctor {
     /** The script written into the rootfs. POSIX sh, so it runs in Alpine's ash and in bash. Exit status = failures. */
     fun script(): String = buildString {
         append("#!/bin/sh\n")
-        append("# blaze-doctor: checks what a Linux in Blaze needs (cd, getcwd, stat, file tools, fork). Safe to run any time.\n")
+        append("# blaze-doctor: checks what a Linux in ${BrandName.NAME} needs (cd, getcwd, stat, file tools, fork). Safe to run any time.\n")
         append("ok=0; bad=0\n")
         append("chk() {\n")
         append("  if [ -n \"\$3\" ] && [ ! -e \"\$3\" ]; then echo \"skip \$1\"; return; fi\n")
@@ -41,7 +43,7 @@ object LinuxDoctor {
         append("}\n")
         for (c in CHECKS) append("chk ").append(q(c.name)).append(' ').append(q(c.cmd)).append(' ').append(q(c.needs.orEmpty())).append('\n')
         append("echo \"blaze-doctor: \$ok ok, \$bad failed\"\n")
-        append("[ \$bad -eq 0 ] || echo \"Something is off. Copy this output to Blaze.\"\n")
+        append("[ \$bad -eq 0 ] || echo \"Something is off. Copy this output to ${BrandName.NAME}.\"\n")
         append("exit \$bad\n")
     }
 

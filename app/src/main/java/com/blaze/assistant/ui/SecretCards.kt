@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -175,7 +177,7 @@ fun SecretPasteHold(labels: List<String>, masked: String, onSave: () -> Unit, on
             Text("This looks like a secret", modifier = Modifier.weight(1f),
                 style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
         }
-        Text("Save it securely instead? Blaze gets a stand-in, never the value." + if (labels.isNotEmpty()) " (${labels.joinToString(", ")})" else "",
+        Text("Save it securely instead? ${BrandName.NAME} gets a stand-in, never the value." + if (labels.isNotEmpty()) " (${labels.joinToString(", ")})" else "",
             modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
         Text(masked.take(240), maxLines = 3, modifier = Modifier.padding(top = 8.dp).fillMaxWidth().clip(BlazeShapes.small).background(c.field).padding(10.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -14,7 +16,7 @@ class BackupNudgeTest {
 
     @Test fun busyCloudOnMobileDataSaysGetOnWifi() {
         assertEquals(BackupNudge.Pick.LATER, BackupNudge.pick(503, Cloud.BUSY, ready))
-        assertEquals("Oops, I ran into an error. You can try again when Blaze Cloud is available, or get on Wi-Fi and I'll download a 78 MB feature to make sure this doesn't happen again.",
+        assertEquals("Oops, I ran into an error. You can try again when ${BrandName.NAME} Cloud is available, or get on Wi-Fi and I'll download a 78 MB feature to make sure this doesn't happen again.",
             BackupNudge.line(BackupNudge.Pick.LATER, bytes))
     }
 
@@ -40,8 +42,8 @@ class BackupNudgeTest {
     @Test fun cloudFailuresThatQualify() {
         assertEquals(BackupNudge.Pick.LATER, BackupNudge.pick(0, Cloud.UNREACHABLE, ready))
         assertEquals(BackupNudge.Pick.LATER, BackupNudge.pick(429, Cloud.BUSY, ready))
-        assertEquals(BackupNudge.Pick.LATER, BackupNudge.pick(500, "Blaze Cloud is busy right now. Tap Retry in a moment.", ready))
-        assertEquals(BackupNudge.Pick.LATER, BackupNudge.pick(502, "Blaze · blaze-auto said (502): upstream", ready))
+        assertEquals(BackupNudge.Pick.LATER, BackupNudge.pick(500, "${BrandName.NAME} Cloud is busy right now. Tap Retry in a moment.", ready))
+        assertEquals(BackupNudge.Pick.LATER, BackupNudge.pick(502, "${BrandName.NAME} · blaze-auto said (502): upstream", ready))
         assertEquals(BackupNudge.Pick.LATER, BackupNudge.pick(400, Cloud.BUSY, ready))
     }
 

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.phone.BlazeAccessibilityService
 import com.blaze.assistant.phone.PhoneTools
@@ -185,9 +187,9 @@ object Learning {
         val skillNames = _skills.value.joinToString(", ") { it.name }.ifEmpty { "(none)" }
         val skillRule = if (d.skill) "Skill: only if the user taught a method or this is a repeated multi-step task likely to be asked again. use_trace=true only if the recorded phone actions completed that task. Steps are numbered, with checks and pitfalls. Don't duplicate an existing skill."
             else "Do not propose a skill this time (skill: null)."
-        val memRule = if (d.memory) "Memory: durable facts or preferences about the user (people, places, routines, work, goals, likes and dislikes, apps and accounts they use, how they want Blaze to behave), one short sentence each with its context. Keep the user's certainty; never turn one occurrence into a habit. If a known fact changed, use replace. Never secrets, codes, passwords, card or ID numbers, one-off task details, or things only true today. Skip anything already known. At most 2."
+        val memRule = if (d.memory) "Memory: durable facts or preferences about the user (people, places, routines, work, goals, likes and dislikes, apps and accounts they use, how they want ${BrandName.NAME} to behave), one short sentence each with its context. Keep the user's certainty; never turn one occurrence into a habit. If a known fact changed, use replace. Never secrets, codes, passwords, card or ID numbers, one-off task details, or things only true today. Skip anything already known. At most 2."
             else "Do not propose memories this time (memory: [])."
-        val sys = """You maintain the long-term memory of Blaze, the user's phone assistant. Read the last exchange and decide what is worth keeping. Most turns have nothing: then return empty lists.
+        val sys = """You maintain the long-term memory of ${BrandName.NAME}, the user's phone assistant. Read the last exchange and decide what is worth keeping. Most turns have nothing: then return empty lists.
 Return ONLY a JSON object:
 {"memory":[{"op":"add|replace|remove","fact":"short fact","old":"text of the fact to replace/remove"}],
  "skill":null or {"name":"kebab-name","description":"one line: when to use it","when":"when to use","steps":"1. … 2. … 3. …","use_trace":true|false}}

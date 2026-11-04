@@ -11,7 +11,7 @@ Goal: the user walks into the office (or submits online) once, with everything r
 
 ## 1. Pin down the case (one short question at most)
 - Which document, which country, first time or renewal/replacement (lost? damaged? name change?), and for whom (self, child).
-- Use what Blaze already knows (country, city, age, student status) instead of asking.
+- Use what Argus already knows (country, city, age, student status) instead of asking.
 
 ## 2. Get the current rules from the official source
 - web_search + fetch_page the official site first (e.g. in Zambia: Department of National Registration, Passport and Citizenship for NRC/passport; ZRA for TPIN; RTSA for licences; HEELMB for student loans and bursaries; PACRA for business names). Otherwise the government portal of the user's country.
@@ -26,7 +26,7 @@ Goal: the user walks into the office (or submits online) once, with everything r
 
 ## 4. Filling the form
 - Go field by field: say what goes in each, in plain words, with the user's details from memory where they're known (ask before using anything sensitive). Flag fields people get wrong (names exactly as on the birth certificate/NRC, dates DD/MM/YYYY, signatures inside the box).
-- For an online form, offer to fill it in Blaze's browser, stopping before submit for a confirm card. Never submit, pay or sign without the user's yes.
+- For an online form, offer to fill it in Argus's browser, stopping before submit for a confirm card. Never submit, pay or sign without the user's yes.
 - Never store ID numbers in memory unless the user asks.
 
 ## 5. After

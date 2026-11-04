@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.app.WallpaperManager
 import android.media.MediaPlayer
 import android.widget.MediaController
@@ -342,10 +344,10 @@ fun GalleryScreen(onDismiss: () -> Unit) {
                             when {
                                 query.isNotBlank() -> EmptyState("Nothing called \u201c$query\u201d", "Try another word, or clear the search.")
                                 userAlbum != null -> EmptyState("This album is empty", "Long-press anything in the Gallery, then tap Album to put it here.")
-                                loading -> EmptyState("Loading\u2026", "Looking through Blaze's pictures, music and videos.")
-                                tab == "music" -> EmptyState("No music yet", "Songs Blaze downloads (Music/Blaze) and beats it makes show up here.")
-                                tab == "videos" -> EmptyState("No videos yet", "Videos Blaze downloads (Movies/Blaze) show up here.")
-                                else -> EmptyState("Nothing here yet", "Ask Blaze to \u201cdraw a lion in sunglasses\u201d or \u201cmake me an afro beat\u201d. Everything it makes or downloads lands here.")
+                                loading -> EmptyState("Loading\u2026", "Looking through ${BrandName.NAME}'s pictures, music and videos.")
+                                tab == "music" -> EmptyState("No music yet", "Songs ${BrandName.NAME} downloads (Music/Blaze) and beats it makes show up here.")
+                                tab == "videos" -> EmptyState("No videos yet", "Videos ${BrandName.NAME} downloads (Movies/Blaze) show up here.")
+                                else -> EmptyState("Nothing here yet", "Ask ${BrandName.NAME} to \u201cdraw a lion in sunglasses\u201d or \u201cmake me an afro beat\u201d. Everything it makes or downloads lands here.")
                             }
                         }
                     }
@@ -620,7 +622,7 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
         item(span = { GridItemSpan(2) }) { Label("On this phone", color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 14.dp, bottom = 4.dp)) }
         items(autos, key = { it.id }) { a -> AlbumCard(a.name, a.items.size, a.items.firstOrNull(), onClick = { onOpen(a.id) }, onLongClick = null) }
         if (autos.isEmpty()) item(span = { GridItemSpan(2) }) {
-            Label("Pictures, songs and videos Blaze makes or downloads get their own albums here.", color = c.weak, size = 11.sp, modifier = Modifier.padding(6.dp))
+            Label("Pictures, songs and videos ${BrandName.NAME} makes or downloads get their own albums here.", color = c.weak, size = 11.sp, modifier = Modifier.padding(6.dp))
         }
         if (!canPhone) item(span = { GridItemSpan(2) }) {
             Row(Modifier.padding(6.dp).fillMaxWidth().glassInset(c).clickable(onClick = onAllowPhone).padding(14.dp),
@@ -629,7 +631,7 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Show Screenshots and Camera", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
-                    Text("Lets Blaze read your phone's photos and videos. Blaze's own files show without it.",
+                    Text("Lets ${BrandName.NAME} read your phone's photos and videos. ${BrandName.NAME}'s own files show without it.",
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
             }
@@ -897,7 +899,7 @@ private fun InfoDialog(e: Entry, onDismiss: () -> Unit) {
         add("Date" to dateLabel(e.time))
         if (e.width > 0 && e.height > 0) add("Resolution" to "${e.width} \u00d7 ${e.height}")
         if (e.durationMs > 0) add("Length" to GalleryModel.duration(e.durationMs))
-        add("Where" to (if (e.isFile) "Blaze's gallery (only Blaze can see it)" else e.folder.trimEnd('/').ifBlank { "Phone storage" }))
+        add("Where" to (if (e.isFile) "${BrandName.NAME}'s gallery (only ${BrandName.NAME} can see it)" else e.folder.trimEnd('/').ifBlank { "Phone storage" }))
     }
     BlazeDialog(title = "Info", confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
         rows.forEach { (k, v) ->

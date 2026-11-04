@@ -1,5 +1,7 @@
 package com.blaze.assistant.movies
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,7 +18,7 @@ object MovieTools {
     const val TOOL = "movies"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Movies in Blaze Video, shown on the Stage video card. Sources: free public-domain films (Internet Archive), Blender open movies, " +
+        .put("description", "Movies in ${BrandName.NAME} Video, shown on the Stage video card. Sources: free public-domain films (Internet Archive), Blender open movies, " +
             "the user's own videos, and their Jellyfin server. action: play (query = the title), search (query), continue (resume the last unfinished one), " +
             "watchlist (list it). Sources the user added in Providers: only when the user asked for one by name or said to use their sources (use_providers=true, source=its name).")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
@@ -85,7 +87,7 @@ object MovieTools {
 
     private fun show(ctx: Context, p: MoviePlay): String =
         if (com.blaze.assistant.stage.StageStore.enabled) StageMovies.show(p)
-        else { com.blaze.assistant.mediaapps.VideoActivity.openMovie(ctx, p); "Playing \u201c${p.title}\u201d in Blaze Video." }
+        else { com.blaze.assistant.mediaapps.VideoActivity.openMovie(ctx, p); "Playing \u201c${p.title}\u201d in ${BrandName.NAME} Video." }
 
     private fun failed(s: MovieHub.Search) = if (s.failed.isEmpty()) "" else " (Didn't answer: " + s.failed.joinToString(", ") { it.source.name } + ".)"
 

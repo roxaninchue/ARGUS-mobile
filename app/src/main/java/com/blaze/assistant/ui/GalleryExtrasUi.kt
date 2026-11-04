@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -201,7 +203,7 @@ fun BackupPlanDialog(all: List<Entry>, onDismiss: () -> Unit) {
                 p.biggest.forEach { DText("${it.title.take(40)} \u00b7 ${GalleryModel.size(it.size)}", 12.5f) }
             }
             Spacer(Modifier.height(8.dp))
-            DText("Blaze doesn't upload anything itself; use this to pick a plan in Google Photos, OneDrive or a computer backup.", 12f)
+            DText("${BrandName.NAME} doesn't upload anything itself; use this to pick a plan in Google Photos, OneDrive or a computer backup.", 12f)
         }
     }
 }

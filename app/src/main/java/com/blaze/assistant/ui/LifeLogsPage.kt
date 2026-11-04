@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -62,10 +64,10 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
     }
 
     Spacer(Modifier.height(18.dp))
-    Text(if (recordMode) "Say \u201cstart logs\u201d (or /logs) and Blaze records the moments people speak. When you stop, it transcribes them on the phone, " +
-        "tells the voices apart, and Blaze goes over it: where you were, who was there, and the memories worth keeping (people, plans, promises), each marked as inferred."
-        else "Say \u201cstart logs\u201d (or /logs) and Blaze transcribes what your phone hears, on the phone and for free. Only text is saved, never audio; " +
-        "while your phone is idle Blaze turns it into memories: people, plans, ideas and things you promised, each marked as inferred.",
+    Text(if (recordMode) "Say \u201cstart logs\u201d (or /logs) and ${BrandName.NAME} records the moments people speak. When you stop, it transcribes them on the phone, " +
+        "tells the voices apart, and ${BrandName.NAME} goes over it: where you were, who was there, and the memories worth keeping (people, plans, promises), each marked as inferred."
+        else "Say \u201cstart logs\u201d (or /logs) and ${BrandName.NAME} transcribes what your phone hears, on the phone and for free. Only text is saved, never audio; " +
+        "while your phone is idle ${BrandName.NAME} turns it into memories: people, plans, ideas and things you promised, each marked as inferred.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
 
     V18Section("Status")
@@ -111,7 +113,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
 
     // v0.33.0 Life Log 2
     V18Section("Record, then review")
-    ToggleRow("Record, then transcribe", "Keeps only the moments people speak; after Stop: transcript, voices told apart, Blaze review. Off = live text only, no audio", recordMode) {
+    ToggleRow("Record, then transcribe", "Keeps only the moments people speak; after Stop: transcript, voices told apart, ${BrandName.NAME} review. Off = live text only, no audio", recordMode) {
         recordMode = !recordMode; LifeLogs.recordMode = recordMode }
     if (recordMode) {
         ToggleRow("Keep recordings", "Off: the audio is deleted once the review is done. On: kept on the phone (about 115 MB per hour of talking)", keepAudio) {
@@ -120,13 +122,13 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
         if (used > 0) V18Note("Recordings on the phone: ${"%.1f".format(used / 1e6)} MB", top = 6)
         Spacer(Modifier.height(8.dp))
         V18Button("Review my last recording again", primary = false) { note = LifeLogs.reviewLast(ctx) }
-        V18Note(if (voices.isEmpty()) "Voices Blaze knows: none yet. After each review, voices Blaze could name (\u201cYou\u201d, a friend's name) are remembered, so they're recognised next time."
-            else "Voices Blaze knows: ${voices.joinToString(", ")}", top = 8)
+        V18Note(if (voices.isEmpty()) "Voices ${BrandName.NAME} knows: none yet. After each review, voices ${BrandName.NAME} could name (\u201cYou\u201d, a friend's name) are remembered, so they're recognised next time."
+            else "Voices ${BrandName.NAME} knows: ${voices.joinToString(", ")}", top = 8)
         if (voices.isNotEmpty()) V18Button("Forget voices", primary = false) { com.blaze.assistant.agent.Settings.setStr(LifeLogWorker.PREF_VOICES, "[]"); voices = emptyList() }
     }
 
     V18Section("On-device speech")
-    if (modelReady) V18Note("Offline English model ready (about ${WakeModel.SIZE_MB} MB, shared with \u201cHey Blaze\u201d). It stays across updates.")
+    if (modelReady) V18Note("Offline English model ready (about ${WakeModel.SIZE_MB} MB, shared with \u201cHey ${BrandName.NAME}\u201d). It stays across updates.")
     else {
         V18Note(if (dl in 0..99) "Downloading the offline model: $dl%" else
             "The offline model (about ${WakeModel.SIZE_MB} MB) downloads once, the first time you start logs. Until then Android's own speech recogniser is used.")
@@ -134,7 +136,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
     }
 
     V18Section("Stays out of the way")
-    V18Note("Pauses by itself during phone calls, while another app uses the mic, while Blaze listens or speaks, and when the battery is below ${LifeLogs.LOW_BATTERY}% and not charging. " +
+    V18Note("Pauses by itself during phone calls, while another app uses the mic, while ${BrandName.NAME} listens or speaks, and when the battery is below ${LifeLogs.LOW_BATTERY}% and not charging. " +
         "The notification (with Pause and Stop) and Android's mic dot show the whole time it listens. Say \u201cstop logs\u201d to end it hands-free.")
 
     V18Section("Your logs")
@@ -143,7 +145,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
         V18Button("Delete $chunks chunks", modifier = Modifier.weight(1f)) { val n = LifeLogs.deleteAll(); note = "Deleted $n log chunks."; confirmDelete = false; refresh++ }
         V18Button("Keep", primary = false, modifier = Modifier.weight(1f)) { confirmDelete = false }
     }
-    V18Note("Deleting removes the transcripts. Memories Blaze already learned from them stay in Memory, where you can delete them too.", top = 8)
+    V18Note("Deleting removes the transcripts. Memories ${BrandName.NAME} already learned from them stay in Memory, where you can delete them too.", top = 8)
 }
 
 /**
@@ -161,11 +163,11 @@ internal fun RepliesPage(previewAccess: Boolean? = null) {
     val convs = remember { Conversations.list().take(12) }
 
     Spacer(Modifier.height(18.dp))
-    Text("Blaze reads your chat notifications (WhatsApp, SMS, Telegram, Messenger and more), keeps a log of each conversation, and can draft and send replies from the notification without opening the app.",
+    Text("${BrandName.NAME} reads your chat notifications (WhatsApp, SMS, Telegram, Messenger and more), keeps a log of each conversation, and can draft and send replies from the notification without opening the app.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     V18Section("Notification access")
     if (access) V18Note("On. Ask \u201cwhat did Gloria say?\u201d or \u201creply to the family group\u201d.")
-    else { V18Note("Off. Turn on notification access for Blaze to use replies."); V18Button("Open notification access") {
+    else { V18Note("Off. Turn on notification access for ${BrandName.NAME} to use replies."); V18Button("Open notification access") {
         try { ctx.startActivity(NotificationBrain.settingsIntent()) } catch (_: Exception) { } } }
     var shield by remember { mutableStateOf(com.blaze.assistant.notify.ScamShield.on) }
     ToggleRow("Scam Shield", "Warns you when an SMS or chat message looks like a mobile-money scam, a fake prize or a phishing link (checked on the phone)", shield) {
@@ -176,12 +178,12 @@ internal fun RepliesPage(previewAccess: Boolean? = null) {
     var copilot by remember { mutableStateOf(com.blaze.assistant.phone.CallCopilot.on) }
     ToggleRow("Call Copilot", "Live captions during phone calls (best on speaker), suggested answers, and a summary with to-dos when you hang up. Captions only, no audio is kept", copilot) {
         copilot = !copilot; com.blaze.assistant.phone.CallCopilot.on = copilot; if (copilot) com.blaze.assistant.phone.CallCopilot.init(ctx) }
-    ToggleRow("Keep chat logs", "A rolling log per conversation in Blaze's memory, so replies have more context than the last few messages", logOn) {
+    ToggleRow("Keep chat logs", "A rolling log per conversation in ${BrandName.NAME}'s memory, so replies have more context than the last few messages", logOn) {
         logOn = !logOn; Conversations.setLog(logOn) }
     V18Note("Codes, PINs and bank or mobile-money messages are never stored or read out.", top = 8)
 
     V18Section("Auto-reply")
-    V18Note("Every reply shows a card with the text first. Switch on auto-reply only for a conversation where you want Blaze to send without asking.")
+    V18Note("Every reply shows a card with the text first. Switch on auto-reply only for a conversation where you want ${BrandName.NAME} to send without asking.")
     if (convs.isEmpty()) V18Note("Conversations show up here after their next message arrives.")
     convs.forEach { cv ->
         ToggleRow(cv.title, "${cv.app}${if (cv.group) " · group" else ""} · ${if (cv.key in auto) "sends without asking" else "asks first"}", cv.key in auto) {

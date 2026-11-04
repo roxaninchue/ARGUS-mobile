@@ -45,8 +45,20 @@ import com.blaze.assistant.agent.DeliveryState
 object DeliveryView {
     const val TAG = "delivery_label"
 
-    /** 0.46.6 (Rocky, asked several times): no "Read" chip under your message; Sending / Sent / Not sent (retry) stay. */
-    fun shown(state: DeliveryState): Boolean = state != DeliveryState.READ
+    /**
+     * 0.52.1 (owner, screenshot 1000172533): the receipt is back under your latest message, "•••• Read" style: the four
+     * dots animate while it is sending / being read, then stay still beside "Read". (0.46.6 had hidden Read.)
+     */
+    fun shown(@Suppress("UNUSED_PARAMETER") state: DeliveryState): Boolean = true
+
+    /** The word beside the dots: none while the dots animate (sending / sent), "Read" once read, the retry line when refused. */
+    fun word(state: DeliveryState): String = when (state) {
+        DeliveryState.SENDING, DeliveryState.SENT -> ""
+        else -> Delivery.label(state)
+    }
+
+    /** Dots animate until it is read (or refused). */
+    fun animates(state: DeliveryState): Boolean = state == DeliveryState.SENDING || state == DeliveryState.SENT
 
     /**
      * What the label shows for the latest user bubble. [tracked] = the tracker's state (null: never tracked, e.g. older
@@ -69,41 +81,38 @@ fun DeliveryLabel(state: DeliveryState, modifier: Modifier = Modifier, onRetry: 
     val c = LocalBlaze.current
     val ink = BubblePalette.capsuleInk(c)
     val failed = state == DeliveryState.NOT_SENT
-    Row(modifier.fillMaxWidth().padding(top = 3.dp, end = 4.dp), horizontalArrangement = Arrangement.End) {
-        Row(Modifier.clip(RoundedCornerShape(10.dp)).background(BubblePalette.capsule(c), RoundedCornerShape(10.dp))
+    Row(modifier.fillMaxWidth().padding(top = 4.dp, end = 6.dp), horizontalArrangement = Arrangement.End) {
+        Row(Modifier
+            .let { m -> if (failed) m.clip(RoundedCornerShape(10.dp)).background(BubblePalette.capsule(c), RoundedCornerShape(10.dp)) else m }
             .let { m -> if (failed && onRetry != null) m.clickable(role = Role.Button, onClickLabel = "Retry sending") { onRetry() } else m }
             .heightIn(min = if (failed) 32.dp else 0.dp)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite; contentDescription = Delivery.spoken(state) }
-            .padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-            when (state) {
-                DeliveryState.SENDING -> SendingDots(ink)
-                // A short dotted lead like the reference ("•••• Read"), still, quiet.
-                DeliveryState.SENT, DeliveryState.READ -> StillDots(ink, if (state == DeliveryState.READ) 4 else 2)
-                DeliveryState.NOT_SENT -> Unit
+            .padding(horizontal = if (failed) 8.dp else 2.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (!failed) ReceiptDots(ink, animate = DeliveryView.animates(state))
+            val word = DeliveryView.word(state)
+            if (word.isNotEmpty()) {
+                if (!failed) Spacer(Modifier.width(6.dp))
+                Text(word, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 14.sp,
+                    fontWeight = if (failed) FontWeight.Medium else FontWeight.Normal, color = if (failed) c.ink else ink))
             }
-            if (state != DeliveryState.NOT_SENT) Spacer(Modifier.width(5.dp))
-            Text(Delivery.label(state), style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, lineHeight = 13.sp,
-                fontWeight = if (failed) FontWeight.Medium else FontWeight.Normal, color = if (failed) c.ink else ink))
         }
     }
 }
 
+/**
+ * "••••": four dots growing left to right (the reference receipt). While [animate], a soft wave runs through them
+ * (each dot brightens and swells in turn); still with Remove animations on.
+ */
 @Composable
-private fun StillDots(ink: androidx.compose.ui.graphics.Color, n: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
-        repeat(n) { Box(Modifier.size(2.5.dp).clip(CircleShape).background(ink)) }
-    }
-}
-
-/** Three dots that pulse in turn while sending (still with Remove animations on). */
-@Composable
-private fun SendingDots(ink: androidx.compose.ui.graphics.Color) {
-    val tr = rememberInfiniteTransition(label = "sending")
-    val phase = tr.animateFloat(0f, 3f, infiniteRepeatable(tween(1200), RepeatMode.Restart), label = "sendingDots")
-    Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
-        repeat(3) { i ->
-            val on = !MotionTokens.enabled || phase.value.toInt() == i
-            Box(Modifier.size(3.dp).alpha(if (on) 1f else 0.35f).clip(CircleShape).background(ink))
+private fun ReceiptDots(ink: androidx.compose.ui.graphics.Color, animate: Boolean) {
+    val sizes = listOf(2.2f, 2.8f, 3.4f, 4.0f)
+    val phase = if (animate && MotionTokens.enabled) rememberInfiniteTransition(label = "receipt")
+        .animateFloat(0f, 4f, infiniteRepeatable(tween(1100), RepeatMode.Restart), label = "receiptDots").value else -1f
+    Row(horizontalArrangement = Arrangement.spacedBy(2.5.dp), verticalAlignment = Alignment.CenterVertically) {
+        sizes.forEachIndexed { i, d ->
+            val near = if (phase < 0f) 0f else (1f - kotlin.math.abs(phase - i - 0.5f).coerceAtMost(1f))
+            val a = if (animate) 0.35f + 0.65f * near else 0.55f + 0.45f * (i / 3f)
+            Box(Modifier.size((d + if (animate) 0.8f * near else 0f).dp).alpha(a).clip(CircleShape).background(ink))
         }
     }
 }

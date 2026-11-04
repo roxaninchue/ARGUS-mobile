@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipData
@@ -44,11 +46,11 @@ object AndroidControl {
     )
 
     fun tools(): List<JSONObject> = listOf(
-        fn("clipboard", "The phone's clipboard, even while Blaze is in the background. get: text on it (and whether there's an image). get_image: look at a copied picture. set: copy text. set_image: copy a file or picture (path) so the user can paste it into any app. history: recent copied text. clear.",
+        fn("clipboard", "The phone's clipboard, even while ${BrandName.NAME} is in the background. get: text on it (and whether there's an image). get_image: look at a copied picture. set: copy text. set_image: copy a file or picture (path) so the user can paste it into any app. history: recent copied text. clear.",
             JSONObject().put("action", en("get", "get_image", "set", "set_image", "history", "clear")).put("text", str("Text to copy (set)")).put("path", str("File to copy (set_image), e.g. a Gallery file or /root/phone/chart.png")), listOf("action")),
-        fn("post_notification", "Show a notification from Blaze (a reminder, a test, a progress bar). Tapping it can ask Blaze to do something.",
+        fn("post_notification", "Show a notification from ${BrandName.NAME} (a reminder, a test, a progress bar). Tapping it can ask ${BrandName.NAME} to do something.",
             JSONObject().put("title", str()).put("text", str()).put("progress", JSONObject().put("type", "integer").put("description", "0-100, optional"))
-                .put("on_tap", str("Request Blaze runs when tapped, optional")), listOf("title")),
+                .put("on_tap", str("Request ${BrandName.NAME} runs when tapped, optional")), listOf("title")),
         fn("share_text", "Open the share sheet with some text or a link.", JSONObject().put("text", str()), listOf("text")),
         fn("phone_mode", "Ringer and screen: ringer normal/vibrate/silent, Do Not Disturb on/off, brightness 0-100, auto-rotate on/off.",
             JSONObject().put("setting", en("ringer", "dnd", "brightness", "rotation")).put("value", str("normal|vibrate|silent, on|off, or 0-100")), listOf("setting", "value")),
@@ -61,7 +63,7 @@ object AndroidControl {
             "The filter matches loosely: words of the name or package, partial words, and categories ('car rally game', 'music', 'maps'). Use it before saying an app isn't installed, and instead of asking the user what they have.",
             JSONObject().put("filter", str("Optional words, e.g. 'rally game', 'bank', 'whatsapp'")), emptyList()),
         fn("open_camera", "Open the phone's own camera app for the user (photo or video, saved to their gallery), or scan a QR code. To SEE something yourself use blaze_camera instead.", JSONObject().put("mode", en("photo", "video", "qr")), emptyList()),
-        fn("blaze_camera", "Open Blaze Camera so the user can show you something. The capture comes back into this chat as their next message. Modes: ask (look at a thing and answer), photo, text (read words, on-device OCR), translate (read words and translate them), scan (QR code / barcode), document (scan a page, crop and clean it).",
+        fn("blaze_camera", "Open ${BrandName.NAME} Camera so the user can show you something. The capture comes back into this chat as their next message. Modes: ask (look at a thing and answer), photo, text (read words, on-device OCR), translate (read words and translate them), scan (QR code / barcode), document (scan a page, crop and clean it).",
             JSONObject().put("mode", en("ask", "photo", "text", "translate", "scan", "document")), listOf("mode")),
     )
 
@@ -70,9 +72,9 @@ object AndroidControl {
     fun run(ctx: Context, name: String, a: JSONObject): String { return when (name) {
         "clipboard" -> {
             val cm = ctx.getSystemService(ClipboardManager::class.java)
-            if (a.optString("action") == "set") { cm.setPrimaryClip(ClipData.newPlainText("Blaze", a.optString("text"))); "Copied to the clipboard." }
+            if (a.optString("action") == "set") { cm.setPrimaryClip(ClipData.newPlainText("${BrandName.NAME}", a.optString("text"))); "Copied to the clipboard." }
             else cm.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(ctx)?.toString()?.take(4000)?.ifBlank { null }
-                ?: "The clipboard is empty (Android only lets Blaze read it while Blaze is on screen)."
+                ?: "The clipboard is empty (Android only lets ${BrandName.NAME} read it while ${BrandName.NAME} is on screen)."
         }
         "post_notification" -> notify(ctx, a.optString("title"), a.optString("text"), if (a.has("progress")) a.optInt("progress") else -1, a.optString("on_tap"))
         "share_text" -> if (start(ctx, Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, a.optString("text")), "Share"))) "Opened the share sheet." else "Couldn't open sharing."
@@ -109,19 +111,19 @@ object AndroidControl {
             catch (e: Exception) { cs.log("open_camera $what failed", e); e }
         val blaze = com.blaze.assistant.device.BlazeCamera
         return when (mode) {
-            "qr" -> if (blaze.open(ctx, com.blaze.assistant.device.CameraModes.Mode.SCAN, com.blaze.assistant.device.CameraModes.Origin.STANDALONE)) "Opened Blaze Camera's scanner: point it at the code." else "Couldn't open the scanner (it's in Blaze's log)."
+            "qr" -> if (blaze.open(ctx, com.blaze.assistant.device.CameraModes.Mode.SCAN, com.blaze.assistant.device.CameraModes.Origin.STANDALONE)) "Opened ${BrandName.NAME} Camera's scanner: point it at the code." else "Couldn't open the scanner (it's in ${BrandName.NAME}'s log)."
             "video" -> {
                 val e1 = tryStart(Intent(android.provider.MediaStore.INTENT_ACTION_VIDEO_CAMERA), "video camera") ?: return "Opened the video camera."
                 // ACTION_VIDEO_CAPTURE needs Blaze's CAMERA permission (declared by the QR library), so only try it when granted.
                 if (cs.granted(ctx) && tryStart(Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE), "video capture") == null) return "Opened the video camera."
-                if (e1 is SecurityException) "Android blocked the video camera (${e1.message?.take(80)}). Blaze's own camera takes photos only."
-                else if (!cs.granted(ctx)) "No video camera app answered directly, and Blaze's Camera permission is off. Turn it on in Settings → Apps → Blaze → Permissions."
-                else "This phone has no video camera app Blaze can open."
+                if (e1 is SecurityException) "Android blocked the video camera (${e1.message?.take(80)}). ${BrandName.NAME}'s own camera takes photos only."
+                else if (!cs.granted(ctx)) "No video camera app answered directly, and ${BrandName.NAME}'s Camera permission is off. Turn it on in Settings → Apps → ${BrandName.NAME} → Permissions."
+                else "This phone has no video camera app ${BrandName.NAME} can open."
             }
             else -> {
                 tryStart(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA), "still camera") ?: return "Opened the camera."
-                if (blaze.open(ctx, com.blaze.assistant.device.CameraModes.Mode.PHOTO, com.blaze.assistant.device.CameraModes.Origin.STANDALONE)) "The phone's camera app didn't open, so I opened Blaze Camera (photos save to Pictures/Blaze)."
-                else "Couldn't open any camera (the reason is in Blaze's log)."
+                if (blaze.open(ctx, com.blaze.assistant.device.CameraModes.Mode.PHOTO, com.blaze.assistant.device.CameraModes.Origin.STANDALONE)) "The phone's camera app didn't open, so I opened ${BrandName.NAME} Camera (photos save to Pictures/Blaze)."
+                else "Couldn't open any camera (the reason is in ${BrandName.NAME}'s log)."
             }
         }
     }
@@ -131,9 +133,9 @@ object AndroidControl {
     private fun notify(ctx: Context, title: String, text0: String, progress: Int, onTap: String): String {
         val text = com.blaze.assistant.ui.Md.plain(text0)
         val nm = ctx.getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("blaze_custom", "Blaze notes", NotificationManager.IMPORTANCE_DEFAULT))
+        if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("blaze_custom", "${BrandName.NAME} notes", NotificationManager.IMPORTANCE_DEFAULT))
         val b = NotificationCompat.Builder(ctx, "blaze_custom").setSmallIcon(R.drawable.ic_stat_blaze)
-            .setContentTitle(title.ifBlank { "Blaze" }).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text)).setAutoCancel(true)
+            .setContentTitle(title.ifBlank { "${BrandName.NAME}" }).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text)).setAutoCancel(true)
         if (progress in 0..100) b.setProgress(100, progress, false).setOnlyAlertOnce(true)
         if (onTap.isNotBlank()) {
             val pi = android.app.PendingIntent.getBroadcast(ctx, onTap.hashCode(), Intent(ctx, com.blaze.assistant.notify.ActionReceiver::class.java)
@@ -146,7 +148,7 @@ object AndroidControl {
             }
         }
         return try { NotificationManagerCompat.from(ctx).notify(nextNote++, b.build()); "Notification shown." }
-        catch (_: SecurityException) { "Blaze isn't allowed to post notifications. Turn them on in Settings → Apps → Blaze → Notifications." }
+        catch (_: SecurityException) { "${BrandName.NAME} isn't allowed to post notifications. Turn them on in Settings → Apps → ${BrandName.NAME} → Notifications." }
     }
 
     private fun mode(ctx: Context, setting: String, v: String): String {
@@ -156,14 +158,14 @@ object AndroidControl {
             "ringer" -> try {
                 audio.ringerMode = when (v) { "silent" -> AudioManager.RINGER_MODE_SILENT; "vibrate" -> AudioManager.RINGER_MODE_VIBRATE; else -> AudioManager.RINGER_MODE_NORMAL }
                 "Ringer set to $v."
-            } catch (_: SecurityException) { start(ctx, Intent("android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS")); "Android needs Do Not Disturb access for Blaze first: I opened that page, switch Blaze on." }
+            } catch (_: SecurityException) { start(ctx, Intent("android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS")); "Android needs Do Not Disturb access for ${BrandName.NAME} first: I opened that page, switch ${BrandName.NAME} on." }
             "dnd" -> if (nm.isNotificationPolicyAccessGranted) {
                 nm.setInterruptionFilter(if (v == "on") NotificationManager.INTERRUPTION_FILTER_PRIORITY else NotificationManager.INTERRUPTION_FILTER_ALL)
                 "Do Not Disturb ${if (v == "on") "on" else "off"}."
-            } else { start(ctx, Intent("android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS")); "Allow Blaze Do Not Disturb access on the page I opened, then ask again." }
+            } else { start(ctx, Intent("android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS")); "Allow ${BrandName.NAME} Do Not Disturb access on the page I opened, then ask again." }
             "brightness", "rotation" -> if (!Settings.System.canWrite(ctx)) {
                 start(ctx, Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + ctx.packageName)))
-                "Android needs 'Modify system settings' for Blaze: I opened that page, switch it on and ask again."
+                "Android needs 'Modify system settings' for ${BrandName.NAME}: I opened that page, switch it on and ask again."
             } else if (setting == "brightness") {
                 val pct = v.filter { it.isDigit() }.toIntOrNull()?.coerceIn(0, 100) ?: return "Give brightness as 0-100."
                 Settings.System.putInt(ctx.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
@@ -178,7 +180,7 @@ object AndroidControl {
     }
 
     private fun system(action: String): String {
-        val svc = BlazeAccessibilityService.instance ?: return "Turn on Blaze phone control first."
+        val svc = BlazeAccessibilityService.instance ?: return "Turn on ${BrandName.NAME} phone control first."
         val g = when (action) {
             "power_dialog" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_POWER_DIALOG
             "split_screen" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN
@@ -196,7 +198,7 @@ object AndroidControl {
         val usm = ctx.getSystemService(android.app.usage.UsageStatsManager::class.java) ?: return "Usage stats aren't available."
         val end = System.currentTimeMillis()
         val stats = try { usm.queryAndAggregateUsageStats(end - days * 86_400_000L, end) } catch (_: Exception) { emptyMap() }
-        if (stats.isEmpty()) { start(ctx, Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); return "Blaze needs Usage access: I opened that page, switch Blaze on and ask again." }
+        if (stats.isEmpty()) { start(ctx, Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); return "${BrandName.NAME} needs Usage access: I opened that page, switch ${BrandName.NAME} on and ask again." }
         val pm = ctx.packageManager
         return stats.values.filter { it.totalTimeInForeground > 60_000 }.sortedByDescending { it.totalTimeInForeground }.take(10).joinToString("\n") {
             val label = try { pm.getApplicationLabel(pm.getApplicationInfo(it.packageName, 0)).toString() } catch (_: Exception) { it.packageName }

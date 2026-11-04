@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.system.Os
@@ -205,7 +207,7 @@ object Terminal {
         }
     }
 
-    private fun banner(s: Session) = "Blaze terminal · ${if (s.mode.value == "linux") (TermLogic.distro(defaultDistro())?.name ?: "Linux") else "sh + BusyBox"} · home is ~\n"
+    private fun banner(s: Session) = "${BrandName.NAME} terminal · ${if (s.mode.value == "linux") (TermLogic.distro(defaultDistro())?.name ?: "Linux") else "sh + BusyBox"} · home is ~\n"
 
     fun switchMode(m: String) {
         val s = active.value
@@ -353,7 +355,7 @@ object Terminal {
         Thread.sleep(1500)
         logAgent("job ${j.id} $ ${cmd.take(300)}", "(running in background)")
         val port = Regex("""(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::\]|port)[: ]+(\d{2,5})""", RegexOption.IGNORE_CASE).find(synchronized(j.log) { j.log.toString() } + " " + cmd)?.groupValues?.get(1)
-        val preview = port?.let { "\n[server on port $it: call preview_server port=$it to open it in Blaze's browser]" } ?: ""
+        val preview = port?.let { "\n[server on port $it: call preview_server port=$it to open it in ${BrandName.NAME}'s browser]" } ?: ""
         return "Started job ${j.id} [ID $pid]: $cmd\n" + (if (!p.isAlive) "It already exited (code ${p.exitValue()}).\n" else "") + synchronized(j.log) { j.log.toString().takeLast(1500) } + preview
     }
 
@@ -396,10 +398,10 @@ object Terminal {
      * and opens Termux so the user only has to paste.
      */
     suspend fun runInTermux(ctx: Context, cmd: String, background: Boolean): String {
-        if (!termuxInstalled(ctx)) return "Termux isn't installed. Blaze's own Linux (run_code / run_shell) does the same job with no setup; use that."
+        if (!termuxInstalled(ctx)) return "Termux isn't installed. ${BrandName.NAME}'s own Linux (run_code / run_shell) does the same job with no setup; use that."
         val perm = "com.termux.permission.RUN_COMMAND"
         if (!com.blaze.assistant.device.Perms.ensure(ctx, perm))
-            return "The user didn't allow 'Run commands in Termux' in the Android pop-up. Use Blaze's own Linux (run_code / run_shell) instead."
+            return "The user didn't allow 'Run commands in Termux' in the Android pop-up. Use ${BrandName.NAME}'s own Linux (run_code / run_shell) instead."
         val id = System.nanoTime().toInt()
         val result = kotlinx.coroutines.CompletableDeferred<android.os.Bundle?>()
         val rx = object : android.content.BroadcastReceiver() {
@@ -445,9 +447,9 @@ object Terminal {
     private fun needsFix(ctx: Context): String {
         try { ctx.getSystemService(android.content.ClipboardManager::class.java)?.setPrimaryClip(android.content.ClipData.newPlainText("Termux fix", TERMUX_FIX)) } catch (_: Exception) { }
         try { ctx.packageManager.getLaunchIntentForPackage("com.termux")?.let { ctx.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } } catch (_: Exception) { }
-        return "Termux is blocking other apps until one setting is on. Blaze already copied the fix to the clipboard and opened Termux. " +
+        return "Termux is blocking other apps until one setting is on. ${BrandName.NAME} already copied the fix to the clipboard and opened Termux. " +
             "Tell the user in ONE short line: 'Termux is open: long-press, tap Paste, press Enter, then come back.' When they're back, retry termux_run. " +
-            "(Better: Blaze's own Linux via run_code / run_shell needs none of this.)"
+            "(Better: ${BrandName.NAME}'s own Linux via run_code / run_shell needs none of this.)"
     }
 
     // ---------- Tool definitions ----------
@@ -460,26 +462,26 @@ object Terminal {
     /** v0.33.5: the linux=true description names the Linux it really runs in and its package manager. */
     private fun linuxParam(): String {
         val d = defaultDistro()
-        return if (d == "alpine") "Run inside Blaze's Alpine Linux (apk add python3/nodejs/git/openjdk17…) instead of the phone shell"
-        else "Run inside Blaze's ${TermLogic.distro(d)?.name ?: d} (${installHint(d)}, e.g. python3, nodejs, git) instead of the phone shell"
+        return if (d == "alpine") "Run inside ${BrandName.NAME}'s Alpine Linux (apk add python3/nodejs/git/openjdk17…) instead of the phone shell"
+        else "Run inside ${BrandName.NAME}'s ${TermLogic.distro(d)?.name ?: d} (${installHint(d)}, e.g. python3, nodejs, git) instead of the phone shell"
     }
 
     /** v0.45.9: [tools] without the Termux check (no Context), so the full-list tests can build it on the JVM. */
     fun tools(ctx: Context): List<JSONObject> = shellTools() + listOfNotNull(if (termuxInstalled(ctx)) termuxTool() else null)
 
     internal fun shellTools(): List<JSONObject> = buildList {
-        add(fn("run_shell", "Run a shell command on the phone (Android sh + BusyBox: ls, cat, grep, sed, awk, wget, curl-less http via wget, tar, unzip, vi, nc, httpd, find, ps, top, df, du...). Working dir is Blaze's home (~). Set background=true for servers, downloads, scraping or anything over ~30 s: it keeps running if Blaze is closed and the user gets a notification when it finishes or fails (optionally limit it with max_minutes). Returns exit code, current folder and output. The shell remembers cd between calls; put exports in ~/.blaze_env to keep them. For writing files use file_write, not echo/heredocs.",
+        add(fn("run_shell", "Run a shell command on the phone (Android sh + BusyBox: ls, cat, grep, sed, awk, wget, curl-less http via wget, tar, unzip, vi, nc, httpd, find, ps, top, df, du...). Working dir is ${BrandName.NAME}'s home (~). Set background=true for servers, downloads, scraping or anything over ~30 s: it keeps running if ${BrandName.NAME} is closed and the user gets a notification when it finishes or fails (optionally limit it with max_minutes). Returns exit code, current folder and output. The shell remembers cd between calls; put exports in ~/.blaze_env to keep them. For writing files use file_write, not echo/heredocs.",
             JSONObject().put("command", p("string", "Shell command")).put("timeout_seconds", p("integer", "Max seconds (default 60)")).put("background", p("boolean", "Run as a background job")).put("max_minutes", p("integer", "Time budget for a background job; 0 = none"))
-            .put("linux", p("boolean", try { linuxParam() } catch (_: Throwable) { "Run inside Blaze's Linux instead of the phone shell" })), listOf("command")))
-        add(fn("linux_install", "Download and set up Alpine Linux inside Blaze (one time, ~3.5 MB, no root).", JSONObject(), emptyList()))
+            .put("linux", p("boolean", try { linuxParam() } catch (_: Throwable) { "Run inside ${BrandName.NAME}'s Linux instead of the phone shell" })), listOf("command")))
+        add(fn("linux_install", "Download and set up Alpine Linux inside ${BrandName.NAME} (one time, ~3.5 MB, no root).", JSONObject(), emptyList()))
         add(fn("terminal_jobs", "Background shell jobs. No id: list them with a short tail of output. With id: that job's latest output (lines, default 80). Type into one with job_input, stop with terminal_stop.",
             JSONObject().put("id", p("integer", "Job number for its full output")).put("lines", p("integer", "Last N lines, default 80")), emptyList()))
-        add(fn("preview_server", "Open a local server running on the phone (e.g. a dev server started as a background job) in Blaze's built-in browser and show it to the user.",
+        add(fn("preview_server", "Open a local server running on the phone (e.g. a dev server started as a background job) in ${BrandName.NAME}'s built-in browser and show it to the user.",
             JSONObject().put("port", p("integer", "Port, e.g. 8000")).put("path", p("string", "Optional path, e.g. /index.html")), listOf("port")))
         add(fn("terminal_stop", "Stop a background shell job.", JSONObject().put("id", p("integer", "Job number")), listOf("id")))
     }
 
-    private fun termuxTool(): JSONObject = fn("termux_run", "Run a command in the Termux app and get its output back. Only when the user wants Termux; Blaze's own Linux (run_code/run_shell) is the default. Sets itself up (permission pop-up, copies the one-line fix if Termux blocks it).",
+    private fun termuxTool(): JSONObject = fn("termux_run", "Run a command in the Termux app and get its output back. Only when the user wants Termux; ${BrandName.NAME}'s own Linux (run_code/run_shell) is the default. Sets itself up (permission pop-up, copies the one-line fix if Termux blocks it).",
             JSONObject().put("command", p("string", "bash command")).put("background", p("boolean", "Run without opening a Termux window")), listOf("command"))
 
 }

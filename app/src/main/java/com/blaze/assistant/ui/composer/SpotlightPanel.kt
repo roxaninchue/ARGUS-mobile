@@ -117,7 +117,8 @@ fun SpotlightPanel(state: ComposerState, onAct: (Act) -> Unit, modifier: Modifie
         }
     }
     val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }   // Spotlight is opened by a tap, so it may focus its own search
+    com.blaze.assistant.ui.ClearFocusOnLeave()
     val solid = LocalComposerSolid.current
     val shape = RoundedCornerShape(26.dp)
 

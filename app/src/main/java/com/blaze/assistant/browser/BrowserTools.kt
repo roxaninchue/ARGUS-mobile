@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import org.json.JSONArray
@@ -19,7 +21,7 @@ object BrowserTools {
     private fun p(t: String, d: String) = JSONObject().put("type", t).put("description", d)
 
     fun definitions(): List<JSONObject> = listOf(
-        fn("browser_open", "Open a web page (or search words) in Blaze's own built-in browser, in the background. No screen control needed. " +
+        fn("browser_open", "Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background. No screen control needed. " +
             "Use it for sites you must interact with: forms, logins, shopping, booking, reading a full page. Returns the page text and numbered elements.",
             JSONObject().put("url", p("string", "URL or search words")).put("new_tab", p("boolean", "Open in a new tab"))
                 .put("show", p("boolean", "Also show the browser to the user"))
@@ -47,7 +49,7 @@ object BrowserTools {
         fn("browser_scroll", "Scroll the browser page by a screen; returns what's on screen after.", JSONObject().put("direction", JSONObject().put("type", "string").put("enum", JSONArray(listOf("down", "up"))))),
         fn("browser_back", "Go back one page in the browser."),
         fn("browser_tabs", "List browser tabs, or switch with switch_to.", JSONObject().put("switch_to", p("integer", "Tab number to switch to"))),
-        fn(SECURE, "When the page in Blaze's background browser needs something only the user has (email, phone, username + password, API key, " +
+        fn(SECURE, "When the page in ${BrandName.NAME}'s background browser needs something only the user has (email, phone, username + password, API key, " +
             "one-time code), call this instead of asking in chat or showing the browser. The user gets a secure form card in the chat (an 'Action required' " +
             "notification if they're away); the browser fills the page from it and (by default) submits. You never see the values: you get placeholders like " +
             "{{secret:password}} that browser_type can reuse. Saved values for the site are used without asking. Never for card numbers (use browser_show for payment).",
@@ -63,9 +65,9 @@ object BrowserTools {
                 .put("submit", p("boolean", "Submit the form after filling (default true)"))
                 .put("fresh", p("boolean", "Ask even if values are saved for this site (e.g. the saved password was wrong)")), listOf("title", "fields")),
         fn("browser_show", "Show the built-in browser on screen with the current page, so the user can watch or take over (e.g. to pay, solve a captcha, or approve Google's own sign-in). Optional: work stays in the background by default."),
-        fn("browser_vpn", "The built-in browser's VPN (only the browser goes through it). Built in and free: Blaze Free (Cloudflare WARP), one tap, no setup, exits near the user " +
+        fn("browser_vpn", "The built-in browser's VPN (only the browser goes through it). Built in and free: ${BrandName.NAME} Free (Cloudflare WARP), one tap, no setup, exits near the user " +
             "(hides the real IP but can't pick a country). Plus any per-country WireGuard configs the user imported. " +
-            "status: is it on, which country, which IP, which locations exist. connect: with no country (or \"free\") uses Blaze Free when nothing is imported, else the last/first imported one; " +
+            "status: is it on, which country, which IP, which locations exist. connect: with no country (or \"free\") uses ${BrandName.NAME} Free when nothing is imported, else the last/first imported one; " +
             "with a country (name or code) uses that imported config, e.g. to see a site as it looks there. disconnect: back to the real connection. " +
             "Countries need an imported WireGuard config (browser ⋯ › VPN & privacy).",
             JSONObject().put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("status", "connect", "disconnect"))))
@@ -142,7 +144,7 @@ object BrowserTools {
         return when (a.optString("action")) {
             "connect" -> {
                 val q = a.optString("country")
-                val loc = BrowserVpn.find(q) ?: return "No VPN location for \u201c$q\u201d. Available: Blaze Free (Cloudflare WARP, exits near the user)" +
+                val loc = BrowserVpn.find(q) ?: return "No VPN location for \u201c$q\u201d. Available: ${BrandName.NAME} Free (Cloudflare WARP, exits near the user)" +
                     BrowserVpn.locations.joinToString("") { ", " + it.label } + ". Other countries need a WireGuard config imported in the browser (⋯ › VPN & privacy)."
                 BrowserVpn.connectNow(loc.id)
             }

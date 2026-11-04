@@ -1,5 +1,7 @@
 package com.blaze.assistant.bank
 
+
+import com.blaze.assistant.BrandName
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -143,7 +145,7 @@ object BankMode {
         app = ctx.applicationContext
         if (active) return "Bank mode is already on."
         step(ctx, Event.TurnOn(now(ctx)))
-        return "Bank mode is on. Blaze has stepped back: phone control, the floating button and screen reading are off until you turn it off."
+        return "Bank mode is on. ${BrandName.NAME} has stepped back: phone control, the floating button and screen reading are off until you turn it off."
     }
 
     fun turnOff(ctx: Context): String {
@@ -151,7 +153,7 @@ object BankMode {
         if (!active) return "Bank mode is already off."
         val hadA11y = _state.value.saved.accessibility
         step(ctx, Event.TurnOff)
-        return if (!hadA11y || canRestoreA11y(ctx)) "Bank mode is off. Blaze is back." else "Bank mode is off. " + BankModeLogic.RESTORE_ASK
+        return if (!hadA11y || canRestoreA11y(ctx)) "Bank mode is off. ${BrandName.NAME} is back." else "Bank mode is off. " + BankModeLogic.RESTORE_ASK
     }
 
     /** The app in front changed (from the accessibility service while it's on, else the watcher's usage check). */
@@ -260,7 +262,7 @@ object BankMode {
     // ---------- agent tool ----------
     const val TOOL = "bank_mode"
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Bank mode: Blaze steps back so banking apps work (they refuse to run while Blaze's phone control, floating button or screen reading is on). " +
+        .put("description", "Bank mode: ${BrandName.NAME} steps back so banking apps work (they refuse to run while ${BrandName.NAME}'s phone control, floating button or screen reading is on). " +
             "on / off / status. Turn it on when the user asks or wants to use a bank, payment or wallet app. While it's on you can't read or control the screen. " +
             "Never read, tap or type inside a banking app, with or without Bank mode.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()

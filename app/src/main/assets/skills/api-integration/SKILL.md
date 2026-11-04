@@ -10,7 +10,7 @@ version: 1
 ## 1. Before writing code
 
 - Find the official docs (web_search "<service> API reference"), and fetch the page for the exact endpoint: method, URL, auth, required params, response shape, rate limits, pagination, API version.
-- Check if Blaze already has a connector or MCP server for it (Accounts screen / find_tool) - use that before building your own.
+- Check if Argus already has a connector or MCP server for it (Accounts screen / find_tool) - use that before building your own.
 - Prefer an official SDK when it's maintained; plain HTTP is fine for a few endpoints.
 - Decide where it runs (one-off script, scheduled job, part of an app) - that sets error handling and logging needs.
 

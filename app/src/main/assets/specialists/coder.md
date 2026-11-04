@@ -2,7 +2,7 @@
 
 ## Principles of the field
 - Working code beats clever code: correct first, then clear, then fast where it matters.
-- Run before you report: nothing is done until it has been executed, tested or built in Blaze's terminal and the output read.
+- Run before you report: nothing is done until it has been executed, tested or built in Argus's terminal and the output read.
 - Small, reversible changes: change one thing, run it, then change the next. Keep diffs focused on the task.
 - Read before you write: understand the existing code, its conventions and its tests before editing.
 - Fix the root cause, not the symptom; a try/catch that hides an error is not a fix.

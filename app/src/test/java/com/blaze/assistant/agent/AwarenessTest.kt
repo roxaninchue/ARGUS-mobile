@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,7 +28,7 @@ class AwarenessTest {
     }
 
     @Test fun playingPositionMovesOnAndStopsAtTheEnd() {
-        val n = Awareness.Now("music", "Playing", "Song", "Blaze Music", "by X", 60_000, 200_000, true, t0)
+        val n = Awareness.Now("music", "Playing", "Song", "${BrandName.NAME} Music", "by X", 60_000, 200_000, true, t0)
         assertEquals(90_000, Awareness.position(n, t0 + 30_000))
         assertEquals(200_000, Awareness.position(n, t0 + 10 * 60_000))
         val paused = n.copy(playing = false)
@@ -35,25 +37,25 @@ class AwarenessTest {
     }
 
     @Test fun lineReadsNaturally() {
-        val song = Awareness.Now("music", "Playing", "Blinding Lights", "Blaze Music", "by The Weeknd", 72_000, 200_000, true, t0)
-        assertEquals("Playing \"Blinding Lights\" by The Weeknd in Blaze Music, 1:12 of 3:20", Awareness.line(song, t0))
-        val film = Awareness.Now("video", "Paused", "Dune", "Blaze Video", "", 2_462_000, 9_312_000, false, t0)
-        assertEquals("Paused \"Dune\" in Blaze Video, 41:02 of 2:35:12 (5 min ago)", Awareness.line(film, t0 + 5 * 60_000))
-        val screen = Awareness.Now("screen", "On screen", "Chat", "Blaze", at = t0)
-        assertEquals("On screen \"Chat\" in Blaze", Awareness.line(screen, t0 + 5 * 60_000))
+        val song = Awareness.Now("music", "Playing", "Blinding Lights", "${BrandName.NAME} Music", "by The Weeknd", 72_000, 200_000, true, t0)
+        assertEquals("Playing \"Blinding Lights\" by The Weeknd in ${BrandName.NAME} Music, 1:12 of 3:20", Awareness.line(song, t0))
+        val film = Awareness.Now("video", "Paused", "Dune", "${BrandName.NAME} Video", "", 2_462_000, 9_312_000, false, t0)
+        assertEquals("Paused \"Dune\" in ${BrandName.NAME} Video, 41:02 of 2:35:12 (5 min ago)", Awareness.line(film, t0 + 5 * 60_000))
+        val screen = Awareness.Now("screen", "On screen", "Chat", "${BrandName.NAME}", at = t0)
+        assertEquals("On screen \"Chat\" in ${BrandName.NAME}", Awareness.line(screen, t0 + 5 * 60_000))
     }
 
     @Test fun promptPutsPlayingMediaFirstAndRecentAfter() {
         val now = t0 + 60_000
         val nows = listOf(
-            Awareness.Now("screen", "On screen", "Chat", "Blaze", at = t0 + 50_000),
+            Awareness.Now("screen", "On screen", "Chat", "${BrandName.NAME}", at = t0 + 50_000),
             Awareness.Now("media:spotify", "Playing", "Song", "Spotify", "by X", 10_000, 180_000, true, t0),
         )
-        val ev = listOf(Awareness.Event("watched", "watched \"Dune\" in Blaze Video, stopped at 41:02 of 2:35:12", t0 - 20 * 60_000))
+        val ev = listOf(Awareness.Event("watched", "watched \"Dune\" in ${BrandName.NAME} Video, stopped at 41:02 of 2:35:12", t0 - 20 * 60_000))
         val s = Awareness.format(nows, ev, now)
         assertTrue(s.startsWith("\nWHAT'S GOING ON"))
         assertTrue(s.indexOf("Spotify") < s.indexOf("Chat"))
-        assertTrue(s.contains("Recently: watched \"Dune\" in Blaze Video, stopped at 41:02 of 2:35:12 (21 min ago)"))
+        assertTrue(s.contains("Recently: watched \"Dune\" in ${BrandName.NAME} Video, stopped at 41:02 of 2:35:12 (21 min ago)"))
         assertEquals("", Awareness.format(emptyList(), emptyList(), now))
         // Events older than three days are dropped.
         assertEquals("", Awareness.format(emptyList(), listOf(Awareness.Event("x", "old", now - 4 * 86_400_000L)), now))
@@ -62,10 +64,10 @@ class AwarenessTest {
     @Test fun eventsDedupeAndSurviveARestart() {
         val dir = createTempDir()
         Awareness.init(dir)
-        Awareness.did("listened", "played \"A\" in Blaze Music", t0)
+        Awareness.did("listened", "played \"A\" in ${BrandName.NAME} Music", t0)
         Awareness.did("watched", "watched \"Dune\"", t0 + 1000)
-        Awareness.did("listened", "played \"A\" in Blaze Music", t0 + 2000)   // same thing within 10 min: moves up, not twice
-        assertEquals(listOf("played \"A\" in Blaze Music", "watched \"Dune\""), Awareness.recent().map { it.text })
+        Awareness.did("listened", "played \"A\" in ${BrandName.NAME} Music", t0 + 2000)   // same thing within 10 min: moves up, not twice
+        assertEquals(listOf("played \"A\" in ${BrandName.NAME} Music", "watched \"Dune\""), Awareness.recent().map { it.text })
         Awareness.reset()
         assertTrue(Awareness.recent().isEmpty())
         Awareness.init(dir)
@@ -82,10 +84,10 @@ class AwarenessTest {
     }
 
     @Test fun readersAddLiveItemsAndNeverBreakThePrompt() {
-        Awareness.set(Awareness.Now("music", "Playing", "Song", "Blaze Music", posMs = 0, durMs = 1000, playing = true))
+        Awareness.set(Awareness.Now("music", "Playing", "Song", "${BrandName.NAME} Music", posMs = 0, durMs = 1000, playing = true))
         Awareness.readers += { listOf(Awareness.Now("media:x", "Playing", "song", "Other")) }   // same title: dropped
         Awareness.readers += { throw IllegalStateException("boom") }
-        Awareness.readers += { listOf(Awareness.Now("view", "Open", "Snake", "Blaze")) }
+        Awareness.readers += { listOf(Awareness.Now("view", "Open", "Snake", "${BrandName.NAME}")) }
         val titles = Awareness.nows().map { it.title }
         assertEquals(listOf("Song", "Snake"), titles)
         assertFalse(Awareness.promptBlock().isBlank())
@@ -95,7 +97,7 @@ class AwarenessTest {
 
     @Test fun reportListsFeatures() {
         val r = Awareness.report(listOf(Triple("Learn", "learn", "flashcards")))
-        assertTrue(r.contains("## Live now") && r.contains("Blaze Music") && r.contains("- Learn (/learn): flashcards"))
+        assertTrue(r.contains("## Live now") && r.contains("${BrandName.NAME} Music") && r.contains("- Learn (/learn): flashcards"))
         assertEquals(Awareness.TOOL, Awareness.tool().getJSONObject("function").getString("name"))
     }
 

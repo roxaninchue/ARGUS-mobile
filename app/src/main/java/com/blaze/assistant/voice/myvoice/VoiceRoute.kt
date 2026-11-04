@@ -1,5 +1,7 @@
 package com.blaze.assistant.voice.myvoice
 
+
+import com.blaze.assistant.BrandName
 /**
  * The decisions behind My voice, kept pure so they're tested on the JVM (VoiceRouteTest):
  * which voice speaks, when a slow phone hands the rest of a reply to the system voice, and what to tell the user (once).
@@ -95,7 +97,7 @@ class SpeedWatch(
             rtf < 0.7f -> "Fast enough on this phone."
             rtf <= 1.0f -> "Just fast enough on this phone. Long replies may pause now and then."
             rtf <= 2.0f -> "A bit slow on this phone: it takes longer to make the speech than to say it, so replies will pause between sentences."
-            else -> "Too slow on this phone for live replies. Blaze will use the phone voice when it can't keep up."
+            else -> "Too slow on this phone for live replies. ${BrandName.NAME} will use the phone voice when it can't keep up."
         }
     }
 }

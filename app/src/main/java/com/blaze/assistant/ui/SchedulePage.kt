@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,12 +51,12 @@ fun SchedulePage(list0: List<Routine>? = null, adding0: Boolean = false, now: Lo
     val fmt = remember { java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()) }
     val short = remember { java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()) }
 
-    PageHead("Schedule", "Routines", "Things Blaze does on a schedule, even when the app is closed. Or just ask: \u201cevery weekday at 7, brief me on my calendar\u201d.")
+    PageHead("Schedule", "Routines", "Things ${BrandName.NAME} does on a schedule, even when the app is closed. Or just ask: \u201cevery weekday at 7, brief me on my calendar\u201d.")
     if (adding) {
         Column(Modifier.fillMaxWidth().pageGlass(c, PageGlass.row, strongRim = true).padding(14.dp)) {
             Label("New routine", size = 10.sp, color = c.accent, modifier = Modifier.padding(bottom = 12.dp))
             Field("Name", name, { name = it }, "Morning brief")
-            Field("What should Blaze do?", prompt, { prompt = it }, "Summarise today's calendar and unread texts")
+            Field("What should ${BrandName.NAME} do?", prompt, { prompt = it }, "Summarise today's calendar and unread texts")
             Field("Time (24h)", time, { time = it }, "07:00")
             Label("Days", modifier = Modifier.padding(bottom = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -101,7 +103,7 @@ fun SchedulePage(list0: List<Routine>? = null, adding0: Boolean = false, now: Lo
                 KitSwitch(r.enabled) { if (list0 == null) Routines.setEnabled(r.id, !r.enabled) }
             }
             if (open == r.id) Column(Modifier.fillMaxWidth().glassInset(c).hairlineTop(c.hair).padding(start = 46.dp, end = 14.dp, top = 10.dp, bottom = 12.dp)) {
-                Label(if (r.isCommand) "Shell job" + (if (r.linux) " \u00b7 Linux" else "") else "Blaze does", size = 9.sp, color = c.weak)
+                Label(if (r.isCommand) "Shell job" + (if (r.linux) " \u00b7 Linux" else "") else "${BrandName.NAME} does", size = 9.sp, color = c.weak)
                 Text(if (r.isCommand) "$ " + r.command else r.prompt, modifier = Modifier.padding(top = 4.dp, bottom = 10.dp),
                     style = TextStyle(fontFamily = if (r.isCommand) Type.Mono else Type.Sans, fontSize = 12.5.sp, lineHeight = 18.sp, color = c.body))
                 KitButton("Remove", Btn.LINE) { if (list0 == null) Routines.delete(r.id); open = -1 }

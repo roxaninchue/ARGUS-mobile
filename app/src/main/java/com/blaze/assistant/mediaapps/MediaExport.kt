@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -145,7 +147,7 @@ class ExportActions(private val ctx: Context, private val pickFolder: (List<Trac
             MediaStorePolicy.Target.FOLDER -> pickFolder(tracks)
             else -> if (StoragePermission.needsForExport(ctx)) {
                 // 0.45.20 (item 15): asked when exporting to a shared folder on Android 9 and older, with the reason.
-                StoragePermission.ask(ctx); toast("Allow storage so Blaze can copy to your shared folders, then export again")
+                StoragePermission.ask(ctx); toast("Allow storage so ${BrandName.NAME} can copy to your shared folders, then export again")
             } else MediaExport.toShared(ctx, tracks, target) { toast(it) }
         }
     }

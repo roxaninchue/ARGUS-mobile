@@ -1,5 +1,7 @@
 package com.blaze.assistant.home
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -18,7 +20,7 @@ object HomeTools {
         "creators {channel: @handle | YouTube channel URL | TikTok/Instagram URL}; sports {team}; " +
         "prices {kind: crypto, ids: \"bitcoin,ethereum\", vs: usd} | {kind: fx, base: USD, symbols: \"EUR,ZMW\"} | {kind: stock, symbols: \"AAPL\"} (stocks best effort); " +
         "calendar {}; routines {}; deadlines {}; github {repo: owner/name} or {notifications:true} (needs the GitHub connector); apps {} (most-used apps, needs Usage access); " +
-        "custom {text?, value?, url?, items:[{title, sub?, url?}]} for anything else Blaze composes itself."
+        "custom {text?, value?, url?, items:[{title, sub?, url?}]} for anything else ${BrandName.NAME} composes itself."
 
     private fun fn(name: String, desc: String, props: JSONObject, req: List<String>) = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", name).put("description", desc)

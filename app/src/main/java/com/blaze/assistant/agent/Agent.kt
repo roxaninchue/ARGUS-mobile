@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.notify.Notifier
 import com.blaze.assistant.phone.PhoneTools
@@ -533,7 +535,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
      */
     private fun mainSession(): Session = synchronized(mainLock) {
         val s = sessions[Mind.MAIN] ?: loadRaw(Mind.MAIN) ?: Session(Mind.MAIN)
-        s.title = "Blaze"; s.titleSource = Titles.MANUAL; s.keep = true
+        s.title = "${BrandName.NAME}"; s.titleSource = Titles.MANUAL; s.keep = true
         sessions.putIfAbsent(Mind.MAIN, s) ?: s
     }
 
@@ -603,7 +605,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     /** The whole visible chat as plain text. */
     fun transcript(): String = cur.msgs.filter { it.role != Role.STEP }.joinToString("\n\n") {
-        (if (it.role == Role.USER) "You: " else "Blaze: ") + it.text }
+        (if (it.role == Role.USER) "You: " else "${BrandName.NAME}: ") + it.text }
 
     /** Retry the newest answer. */
     fun retryLast() { cur.msgs.lastOrNull { it.role == Role.BLAZE || it.role == Role.ERROR }?.let { retry(it.id) } }
@@ -635,8 +637,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 when (r) {
                     is InAppRoute.Route.Music -> scope.launch {
                         val reply = try { com.blaze.assistant.mediaapps.MusicTools.transport(app, r.action) }
-                            catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app music", e); "Couldn't reach Blaze Music: " + (e.message ?: "unknown error") + "." }
-                        s.selfTurn(text.trim(), reply, byVoice, "♫ Blaze Music")
+                            catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app music", e); "Couldn't reach ${BrandName.NAME} Music: " + (e.message ?: "unknown error") + "." }
+                        s.selfTurn(text.trim(), reply, byVoice, "♫ ${BrandName.NAME} Music")
                     }
                     is InAppRoute.Route.Stage -> scope.launch {
                         // 0.46.1: the card in place on the chat (the Stage off: the full Browser screen, as asked before 0.46).
@@ -646,18 +648,18 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             val res = com.blaze.assistant.stage.StageStore.run(app, com.blaze.assistant.stage.StageTools.SHOW, JSONObject().put("kind", r.kind))
                             if (com.blaze.assistant.stage.StageStore.state.value.items.any { it.kind.id == r.kind }) "The browser card is on the chat; its open-in-full-view button gives the whole screen." else res
                         } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app stage", e); "Couldn't put the browser card up: " + (e.message ?: "unknown error") + "." }
-                        s.selfTurn(text.trim(), reply, byVoice, "\u26A1 Blaze itself")
+                        s.selfTurn(text.trim(), reply, byVoice, "\u26A1 ${BrandName.NAME} itself")
                     }
                     is InAppRoute.Route.Movie -> scope.launch {
                         // 0.46.2: "play the movie …", "search movies …", "continue watching" -> the Stage video card (official sources first).
                         val reply = try { com.blaze.assistant.movies.MovieTools.route(app, r.action, r.query, text) }
                             catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app movies", e); "Couldn't reach Movies: " + (e.message ?: "unknown error") + "." }
-                        s.selfTurn(text.trim(), reply, byVoice, "\u26A1 Blaze itself")
+                        s.selfTurn(text.trim(), reply, byVoice, "\u26A1 ${BrandName.NAME} itself")
                     }
                     is InAppRoute.Route.View -> {
                         val v = com.blaze.assistant.ui.Views.find(r.id)
                         if (v != null) com.blaze.assistant.ui.Views.open(v.id, if (v.id == "design") (try { Designs.current()?.path } catch (_: Exception) { null }).orEmpty() else "")
-                        s.selfTurn(text.trim(), if (v != null) "Opened ${v.name}." else "Couldn't find that screen.", byVoice, "⚡ Blaze itself")
+                        s.selfTurn(text.trim(), if (v != null) "Opened ${v.name}." else "Couldn't find that screen.", byVoice, "⚡ ${BrandName.NAME} itself")
                     }
                 }
                 return
@@ -672,7 +674,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val s = cur
                 if (com.blaze.assistant.device.BlazeCamera.open(app, mode, com.blaze.assistant.device.CameraModes.Origin.REQUEST, s.id, text.trim())) {
                     com.blaze.assistant.device.Haptics.tick(app)
-                    s.selfTurn(text.trim(), com.blaze.assistant.device.CameraModes.openingLine(mode), byVoice, "\uD83D\uDCF7 Blaze Camera")
+                    s.selfTurn(text.trim(), com.blaze.assistant.device.CameraModes.openingLine(mode), byVoice, "\uD83D\uDCF7 ${BrandName.NAME} Camera")
                     return
                 }
             }
@@ -1135,6 +1137,44 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     }
 
     /** An agent finished: its result wakes the chat that started it (queued behind a turn in progress). */
+    /** 0.52.1 (ProgressGate): the last interim update posted per chat. */
+    private val lastUpdate = java.util.concurrent.ConcurrentHashMap<String, ProgressGate.Posted>()
+
+    /** agent_progress: an agent's newest steps and its latest real tool results. */
+    fun agentProgress(id: String): String {
+        val bg = BgAgents.get(id) ?: return "No agent $id. Call list_agents."
+        val found = try { agentSession(bg).recentResults(4) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: agentProgress", e); emptyList() }
+        return buildString {
+            append(BgAgents.describe(bg))
+            if (bg.log.isNotEmpty()) append("\nSteps so far: ").append(bg.log.takeLast(12).joinToString("; "))
+            if (found.isNotEmpty()) { append("\nLatest results:\n"); found.forEach { append("- ").append(it).append('\n') } }
+            if (bg.result.isNotBlank()) append("\nResult:\n").append(bg.result.take(6000))
+        }
+    }
+
+    /** post_update: one interim message from the main Blaze, above the task pill; gated by ProgressGate. */
+    fun postUpdate(chatId: String, text: String): String {
+        val p = sessions[chatId] ?: return "Not posted: no such chat."
+        val mine = BgAgents.all.value.filter { it.parent == chatId && (it.live || it.ended > System.currentTimeMillis() - 3600_000) }
+        val now = System.currentTimeMillis()
+        val steps = mine.sumOf { it.steps }; val finished = mine.count { !it.live }; val live = mine.count { it.live }
+        ProgressGate.refuse(lastUpdate[chatId], now, steps, finished, live, text)?.let { return it }
+        lastUpdate[chatId] = ProgressGate.Posted(now, steps, finished, text.trim())
+        p.add(Role.BLAZE, text.trim())
+        p.persist()
+        return "Posted. End this turn now: reply with exactly ${ProgressGate.SKIP}."
+    }
+
+    /** A background agent reached a milestone: the main Blaze may tell the user, in its own words (never while it is busy). */
+    fun agentMilestone(bg: BgAgents.Bg) {
+        if (!Settings.bool("progress_updates", true)) return
+        val p = sessions[bg.parent] ?: return
+        if (p.job?.isActive == true || p.isPrivate || p.agentId != null) return
+        val found = try { agentSession(bg).recentResults(4) } catch (e: Throwable) { emptyList() }
+        p.progressWake = true
+        p.wake(ProgressGate.wakeText(bg.id, bg.title, bg.steps, bg.seconds, bg.log, found))
+    }
+
     fun agentFinished(bg: BgAgents.Bg) {
         refreshChats()
         val p = sessions[bg.parent] ?: load(bg.parent) ?: return
@@ -1143,6 +1183,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         // then the main Blaze writes a short follow-up from it.
         if (bg.specialist.isNotBlank()) {
             p.msgs = Dispatch.moveToEnd(p.msgs, { it.meta == BgAgents.CARD + bg.id }, { it.copy(at = System.currentTimeMillis()) })
+            p.persist()
+        }
+        // 0.52.0: a blueprint run's result (document card, gallery, build summary) is posted as the agent's reply right under
+        // its pill; the main Blaze then adds at most one short line.
+        if (bg.specialist == com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST && bg.result.isNotBlank()) {
+            p.add(Role.BLAZE, bg.result)
             p.persist()
         }
         p.wake(BgAgents.resultMessage(bg))
@@ -1204,7 +1250,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     private fun personaText(): String =
         if (Settings.personaId == Personas.CUSTOM && Settings.customPersona.isNotBlank())
-            "You are Blaze, an AI assistant on the user's Android phone. " + Settings.customPersona
+            "You are ${BrandName.NAME}, an AI assistant on the user's Android phone. " + Settings.customPersona
         else Personas.byId(Settings.personaId).prompt
 
     /** v0.45.1: the live tail of the system prompt, kept per chat for the steps of one turn (PromptParts.LiveSnap). */
@@ -1218,7 +1264,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val name = Settings.greetName()
         val control = Settings.phoneControl
         val persona = if (Settings.personaId == Personas.CUSTOM && Settings.customPersona.isNotBlank())
-            "You are Blaze, an AI assistant on the user's Android phone. " + Settings.customPersona
+            "You are ${BrandName.NAME}, an AI assistant on the user's Android phone. " + Settings.customPersona
         else Personas.byId(Settings.personaId).prompt
         // v0.45.0 (#13, #16): Simple users get no terminal / coding content; turn-specific blocks only when the turn needs them.
         val prof = PromptProfile.plan(SimpleMode.simple, userText, groups, viewRouted = viewRouted)
@@ -1243,7 +1289,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             s("voice", VoiceFiller.RULE)   // 0.45.20 (item 10): no filler on voice greetings / small talk
             s("style", AnswerStyle.RULE)
             s("format", AnswerStyle.FORMAT)   // v0.31.1: HTML tags, tables never in code fences, rich blocks open in glass windows
-            s("self", "\nYou are Blaze and you can control yourself with blaze_self (close/go quiet, stop, orb, wake word, read-aloud, model, personality, settings, your setup and crash log). When the user wants help setting you up, or asks what you can do or what's installed, call blaze_self setup_check and guide them one step at a time. If the user asks you to shut down, close, go away or stop, do that with blaze_self, never a phone setting. ")
+            s("self", "\nYou are ${BrandName.NAME} and you can control yourself with blaze_self (close/go quiet, stop, orb, wake word, read-aloud, model, personality, settings, your setup and crash log). When the user wants help setting you up, or asks what you can do or what's installed, call blaze_self setup_check and guide them one step at a time. If the user asks you to shut down, close, go away or stop, do that with blaze_self, never a phone setting. ")
             s("remember", "\nWhen the user tells you something lasting about themselves (names, preferences, plans, decisions), save it quietly with the remember tool. Never save greetings, moods, small talk, thanks or questions. ")
             s("again", "\nIf the user says \"again\", \"do it again\" or \"same for X\", repeat your last actions from this chat (adapted to X) without asking. ")
             // v0.30.6 rapid messages: [m7] ids on user messages, [re:m7] markers on replies (static, so it stays in the cached prefix).
@@ -1252,7 +1298,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             s("ask", "\nIf you're unsure what the user wants, or there are several options (accounts, contacts, items, times), don't guess and don't end your turn: call ask_user with short options, then carry on with the answer. ")
             if (control) {
                 s("control", """
-BACKGROUND FIRST: never take over the user's screen when a background tool can do it. Web questions → web_search/fetch_page; sites you must click, fill or log in to → browser_open/browser_click/browser_type (Blaze's own background browser; browser_show only when the user must see or take over). When a page needs the user's email, phone, username + password, API key or a one-time code, call browser_secure_input (a secure form in the chat; you get {{secret:name}} placeholders, never the values) instead of asking in chat or showing the browser. ${SecretRules.PROMPT} If a page says the account can't sign in with a password, don't loop on the password: offer Continue with Google, a passkey or the live browser with ask_user. Browser tools never need phone control. Messaging someone → message_contact (never open WhatsApp on screen yourself); a picture Blaze makes → generate_image, then message_contact with image="last"; several contacts match → ask_user with the exact names; only a result starting "Sent to" means it was sent. Email → gmail_search/gmail_read. Calendar → gcal_events or calendar tools. Texts, calls, contacts → the SMS/call/contact tools. Notifications → recent_notifications. Music → spotify tools. ${PromptProfile.filesLine(prof.simple)} Only if no background tool exists or it isn't connected, use the screen; when a background tool isn't connected, offer to connect it (blaze_self open "settings connections") instead of silently driving the app.
+BACKGROUND FIRST: never take over the user's screen when a background tool can do it. Web questions → web_search/fetch_page; sites you must click, fill or log in to → browser_open/browser_click/browser_type (${BrandName.NAME}'s own background browser; browser_show only when the user must see or take over). When a page needs the user's email, phone, username + password, API key or a one-time code, call browser_secure_input (a secure form in the chat; you get {{secret:name}} placeholders, never the values) instead of asking in chat or showing the browser. ${SecretRules.PROMPT} If a page says the account can't sign in with a password, don't loop on the password: offer Continue with Google, a passkey or the live browser with ask_user. Browser tools never need phone control. Messaging someone → message_contact (never open WhatsApp on screen yourself); a picture ${BrandName.NAME} makes → generate_image, then message_contact with image="last"; several contacts match → ask_user with the exact names; only a result starting "Sent to" means it was sent. Email → gmail_search/gmail_read. Calendar → gcal_events or calendar tools. Texts, calls, contacts → the SMS/call/contact tools. Notifications → recent_notifications. Music → spotify tools. ${PromptProfile.filesLine(prof.simple)} Only if no background tool exists or it isn't connected, use the screen; when a background tool isn't connected, offer to connect it (blaze_self open "settings connections") instead of silently driving the app.
 You can control the phone. SPEED MATTERS: the user is watching.
 ${Orient.RULE}
 - For anything in an app (not Settings: use open_settings), call run_plan ONCE with the whole script, using the visible words on buttons and fields as targets (e.g. open_app YouTube → tap "Search" → type "lofi hip hop" submit → tap the first result's title). You know how common apps look; you don't need to read the screen first. Add optional:true for popups you might need to dismiss, and expect:"..." when a step must lead somewhere.
@@ -1326,7 +1372,7 @@ When you finish, say what you did in one short sentence.
                     "Only drive the screen when the task truly lives inside another app (sending in WhatsApp, a setting with no tool). Never tell the user you can't make images or music. " +
                     "DO IT, DON'T DIRECT: when something needs a permission or a setting, YOU fix it: ask with the tool that triggers Android's own pop-up, open the exact screen with blaze_self open, and when phone control is on, tap through it yourself (find the switch, flip it, come back). " +
                     "Never hand the user a numbered list of where to tap in Settings; only if you tried and truly can't, say the ONE thing they must tap. Never ask them to type terminal commands: run them yourself. " +
-                    "For terminal work use Blaze's own Linux (run_code / run_shell) first; Termux only if the user asks for it. " +
+                    "For terminal work use ${BrandName.NAME}'s own Linux (run_code / run_shell) first; Termux only if the user asks for it. " +
                     "generate_image is ONLY for art and photos; charts, graphs, tables, PDFs and documents are always made with run_code. If the terminal fails, say so plainly; never substitute an AI picture.")
             } else turn("make", if (prof.simple) PromptProfile.MAKE_SIMPLE else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             tail("setup") { SelfSetup.promptLine(app) }
@@ -1337,7 +1383,7 @@ When you finish, say what you did in one short sentence.
             s("search", SearchRoute.PROMPT + ExecRoute.PROMPT)   // 0.51.0: + terminal first
             s("calls", "\nCALLS: \"let's get on a call\", \"call me\" or \"let's talk\" with no person named means a voice call with YOU: call_control start_blaze_call. Never phone a contact unless they name who. " +
                 "Loudspeaker, mute, hang up, answer, hold, call volume and keypad presses during any call go through call_control, never the Settings app.")
-            if (com.blaze.assistant.voice.Voice.inCall) tail("in_call") { " You are on a voice call with the user right now (Blaze's call screen): \"I can't hear you\" means call_control speaker on or louder." }
+            if (com.blaze.assistant.voice.Voice.inCall) tail("in_call") { " You are on a voice call with the user right now (${BrandName.NAME}'s call screen): \"I can't hear you\" means call_control speaker on or louder." }
             s("autonomy", Autonomy.promptBlock()); tail("goals") { Autonomy.promptLine() }
             // v0.30.4: no skills lookup for a plain device / settings action (it only ever pulled in unrelated skills).
             if (!FastActions.plainDevice(userText)) turn("skills", SkillMatch.lookupBlock(userText, skipSkills))
@@ -1443,12 +1489,12 @@ When you finish, say what you did in one short sentence.
         t.put(com.blaze.assistant.voice.ReadAloud.tool())
         t.put(com.blaze.assistant.notify.GroupBrain.tool())
         t.put(com.blaze.assistant.phone.CallControl.tool())
-        if (Settings.bool("bg_agents", true)) BgAgents.tools().forEach { t.put(it) }
+        if (Settings.bool("bg_agents", true)) { BgAgents.tools().forEach { t.put(it) }; t.put(com.blaze.assistant.orchestra.OrchestraRuns.tool()) }
         if (com.blaze.assistant.link.DesktopLink.paired) t.put(com.blaze.assistant.link.DesktopLink.tool())
         com.blaze.assistant.connect.Connectors.tools().forEach { t.put(it) }
         try { com.blaze.assistant.connect.Mcp.tools().forEach { t.put(it) } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mcp.tools.fo", e) }
         if (Settings.phoneControl) t.put(JSONObject().put("type", "function").put("function", JSONObject().put("name", "run_plan")
-            .put("description", "FASTEST way to do anything in an app or settings page. Give the whole script at once; Blaze runs it on-device in a few seconds, finding things by their visible text (no element numbers, no need to read the screen first), checking each step on the phone, and only comes back when done or stuck. Steps can open a settings page by intent (do=open_settings page=… app=…).")
+            .put("description", "FASTEST way to do anything in an app or settings page. Give the whole script at once; ${BrandName.NAME} runs it on-device in a few seconds, finding things by their visible text (no element numbers, no need to read the screen first), checking each step on the phone, and only comes back when done or stuck. Steps can open a settings page by intent (do=open_settings page=… app=…).")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject().put("steps", JSONObject().put("type", "array")
                 .put("items", JSONObject().put("type", "object").put("properties", JSONObject()
                     .put("do", JSONObject().put("type", "string").put("enum", JSONArray(listOf("open_app", "open_settings", "tap", "long_press", "type", "enter", "scroll", "back", "home", "wait", "search_in_app"))))
@@ -1611,6 +1657,11 @@ When you finish, say what you did in one short sentence.
         @Volatile var turnGoal: GoalPin.Goal? = null
         /** 0.45.29 (stale "Yes"): what this turn's short "yes" answers (FollowUpBind), or null. */
         @Volatile var turnBind: FollowUpBind.Binding? = null
+        /** 0.52.1 (TaskMemory): what this turn refers back to, the task record it works on, and sign-in facts seen this turn. */
+        @Volatile var turnRef: TaskMemory.Resolution? = null
+        @Volatile var turnTaskId: String? = null
+        @Volatile var turnSignInWall: String = ""
+        @Volatile var turnSignedIn: String = ""
         /** v0.45.0 (#12): last time this chat was used (sent, answered, saved), for trimming idle chats from memory. */
         @Volatile var touchedAt: Long = System.currentTimeMillis()
         /** v0.45.0 (#12): the newest save of this chat has reached the disk (no write queued or failed). */
@@ -1737,6 +1788,94 @@ When you finish, say what you did in one short sentence.
         }
 
         /** v0.45.0 (#38): tidies the history after an interrupted turn and keeps the task (goal + receipts) to resume. */
+        /** 0.52.1: the note that keeps a task on the web surface it is using (TaskMemory.surfaceGuard), or null to run [name]. */
+        private fun surfaceNote(name: String, quiet: Boolean = false): String? {
+            if (agentId != null || !(name.startsWith("phone_") || name.startsWith("browser_"))) return null
+            return try {
+                val now = System.currentTimeMillis()
+                val rec = turnTaskId?.let { TaskMemoryStore.get(it) }
+                val sticky = rec?.surface?.takeIf { it == TaskMemory.Surface.BROWSER || it == TaskMemory.Surface.PHONE }
+                    ?: TaskMemory.surfaceOf(synchronized(turnTools) { turnTools.toList() })
+                val t = (rec ?: TaskMemory.Rec("turn", id, turnGoal?.request.orEmpty(), updated = now)).copy(surface = sticky, updated = now,
+                    state = if (rec?.state == TaskMemory.State.DONE) TaskMemory.State.ACTIVE else rec?.state ?: TaskMemory.State.ACTIVE)
+                TaskMemory.surfaceGuard(name, t, lastUserText(), now)?.also { if (!quiet) add(Role.STEP, "Staying on the same screen") }
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: surfaceNote", e); null }
+        }
+
+        /** 0.52.1: writes this turn into its task record (TaskMemory): goal, state, surface, sign-ins, what it found, next step. */
+        /** 0.52.1 (Handoff): this turn's work already moved to a background agent. */
+        @Volatile var handedOff = false
+        /** 0.52.1 (ProgressGate): this turn is an agent-milestone wake; a SKIP reply is dropped, no closing line. */
+        @Volatile var progressWake = false
+
+        /** The newest tool results in this chat's history (an agent's findings so far), newest last. */
+        fun recentResults(n: Int): List<String> {
+            val out = ArrayList<String>()
+            try {
+                var i = history.length() - 1
+                while (i >= 0 && out.size < n) {
+                    val m = history.optJSONObject(i); i--
+                    if (m?.optString("role") != "tool") continue
+                    val c = m.optString("content").replace(Regex("\\s+"), " ").trim()
+                    if (c.isNotEmpty() && !c.startsWith("Not run")) out += c.take(700)
+                }
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: recentResults", e) }
+            return out.reversed()
+        }
+
+        /** After a milestone wake: the model's SKIP (or an empty "nothing to say") never shows. */
+        private fun dropSkip() {
+            val from = turnAt
+            msgs = msgs.filterNot { it.role == Role.BLAZE && it.at >= from && ProgressGate.skip(it.text) }
+            try {
+                val last = history.length() - 1
+                if (last >= 0 && history.optJSONObject(last)?.let { it.optString("role") == "assistant" && ProgressGate.skip(it.optString("content")) } == true) history.remove(last)
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: dropSkip", e) }
+        }
+
+        /**
+         * 0.52.1 (owner: "long work must not die"): the turn's work moves into a background agent with a self-contained
+         * brief and this chat is free again. False when it can't move (an agent's own turn, a private chat, nothing done yet).
+         */
+        fun handOff(results: List<String>): Boolean {
+            val t = Handoff.Turn(agentId == null && specialistId == null, isPrivate, turnTools.size, handedOff)
+            if (!Handoff.movable(t) || !Settings.bool("bg_agents", true)) return false
+            return try {
+                val from = turnFrom
+                val done = msgs.filter { it.id > from && it.role == Role.STEP }.map { it.text }
+                val req = lastUserText()
+                BgAgents.start(Handoff.brief(req, turnGoal?.request, done, synchronized(results) { results.toList() }), Handoff.title(req), id)
+                handedOff = true
+                add(Role.BLAZE, "This is taking longer than a quick reply, so I'm finishing it in the background. Keep chatting; the result lands here.")
+                true
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: handOff", e); false }
+        }
+
+        /** [handOff] when the turn is within Handoff.MARGIN_MS of its hard end [end]. */
+        fun handOffNearEnd(end: Long, results: List<String>): Boolean =
+            Handoff.nearEnd(Handoff.Turn(agentId == null && specialistId == null, isPrivate, turnTools.size, handedOff), System.currentTimeMillis(), end) && handOff(results)
+
+        private fun recordTask(stopped: Boolean) {
+            if (agentId != null) return
+            try {
+                val tools = synchronized(turnTools) { turnTools.toList() }
+                val existing = turnTaskId?.let { TaskMemoryStore.get(it) }
+                if (existing == null && tools.isEmpty()) return
+                val now = System.currentTimeMillis()
+                val from = turnFrom
+                val after = msgs.filter { it.id > from }
+                val failed = after.any { it.role == Role.ERROR }
+                val state = when { stopped -> TaskMemory.State.STOPPED; failed -> TaskMemory.State.FAILED; else -> TaskMemory.State.DONE }
+                val finding = after.lastOrNull { it.role == Role.BLAZE && it.meta != Ack.META && !it.meta.startsWith(BgAgents.CARD) }?.text.orEmpty()
+                    .let { com.blaze.assistant.ui.Md.plain(it) }.replace(Regex("\\s+"), " ").take(300)
+                val next = resume?.let { p -> p.interrupted.firstOrNull()?.let { "check, then redo: $it" } ?: "continue: ${p.goal.request.take(160)}" }.orEmpty()
+                val base = existing ?: TaskMemory.Rec("t" + now.toString(36), id, (turnGoal?.request ?: lastUserText()).take(400), created = now, updated = now)
+                val rec = TaskMemory.afterTurn(base, tools, state, finding, next, turnSignInWall, turnSignedIn, now)
+                TaskMemoryStore.put(rec)
+                turnTaskId = rec.id
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: recordTask", e) }
+        }
+
         private fun keepForResume() {
             try {
                 val t = StopResume.tidy(history)
@@ -1809,7 +1948,7 @@ When you finish, say what you did in one short sentence.
         @Volatile var turnAt = 0L
         @Volatile private var turnStamped = true
 
-        fun beginTurn(at: Long = System.currentTimeMillis()) { turnAt = at; turnStamped = false; pendingSources.begin(); searches.begin() }
+        fun beginTurn(at: Long = System.currentTimeMillis()) { turnAt = at; turnStamped = false; pendingSources.begin(); searches.begin(); handedOff = false; memoryLookups = 0; songResolved = "" }
         /** 0.46.3: this turn's searches (duplicate / off-topic guard). */
         val searches = SearchGuard()
 
@@ -2022,7 +2161,7 @@ When you finish, say what you did in one short sentence.
         // ---------- Turns ----------
 
         /** A self-command handled on-device: shown and remembered like a normal exchange. */
-        fun selfTurn(text: String, reply: String, byVoice: Boolean, chip: String = "⚡ Blaze itself") {
+        fun selfTurn(text: String, reply: String, byVoice: Boolean, chip: String = "⚡ ${BrandName.NAME} itself") {
             // v0.30.6: while a turn runs (or a burst is open) the history mustn't get lines in the middle of a tool call:
             // the exchange waits in the inbox, in order, as one user-side note ("Blaze already answered this one").
             val defer = busy || waiting
@@ -2177,7 +2316,8 @@ When you finish, say what you did in one short sentence.
             focus = focus + id
             markSent(id)
             com.blaze.assistant.device.Haptics.tick(app)
-            sideLine(BusyRoute.steered(runningTask()))
+            // 0.52.0: no "Got it, I've passed that…" bubble (ChatPolicy): the bubble is marked sent and the work pill shows it taken up.
+            if (com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) sideLine(BusyRoute.steered(runningTask()))
             persist()
             // the turn reads it at its next step; if it ends first, the next turn starts with it
             scope.launch { job?.join(); drain() }
@@ -2303,7 +2443,7 @@ When you finish, say what you did in one short sentence.
                 // v0.31.2: @all and team jobs run on the duo lanes (both companions, no tool loop).
                 if (duoMode != null) {
                     if (!FastLane.online(app)) {
-                        add(Role.ERROR, "You're offline, so Blaze can't do that right now. Direct commands like \u201copen WhatsApp\u201d still work.")
+                        add(Role.ERROR, "You're offline, so ${BrandName.NAME} can't do that right now. Direct commands like \u201copen WhatsApp\u201d still work.")
                         mood = Mood.IDLE; persist(); return@launch
                     }
                     runConversation(duoKind!!, shown.let { s -> if (route.explicit) Duo.route(s, false).text else s }, resumeRoom ?: -1L, users.first().id)
@@ -2314,7 +2454,7 @@ When you finish, say what you did in one short sentence.
                 if (single && attachments.isEmpty() && !routine && agentId == null && notificationContext.isNullOrBlank() && SearchRoute.isCommandsAsk(shown)) {
                     val reply = SlashCommands.answer()
                     history.put(JSONObject().put("role", "assistant").put("content", reply))
-                    addReply(-1, reply, "", meta = "\u26A1 from Blaze's command list")
+                    addReply(-1, reply, "", meta = "\u26A1 from ${BrandName.NAME}'s command list")
                     mood = Mood.IDLE
                     persist(); announce()
                     return@launch
@@ -2381,7 +2521,7 @@ When you finish, say what you did in one short sentence.
                 // v0.45.28: either one working leaves the other free (side talk, and the wait line below).
                 soloRunning = true; soloWho = voice
                 val nudge = if (notificationContext.isNullOrBlank() && agentId == null && specialistId == null && Settings.bool("duo_on", true) &&
-                    Settings.bool("duo_wait_line", true) && !WaitNudge.skip(voice, shown)) startWaitNudge(voice, shown, turnFrom) else null
+                    com.blaze.assistant.ui.ChatPolicy.STATUS_LINES && Settings.bool("duo_wait_line", false) && !WaitNudge.skip(voice, shown)) startWaitNudge(voice, shown, turnFrom) else null
                 try { runLoop() } finally { soloRunning = false; nudge?.cancel() }
                 // v0.31.2: Halo's solo answer is marked as Halo's in the history, so Blaze knows who said it.
                 if (voice == Duo.Who.HALO) tagLast(Duo.Who.HALO)
@@ -2500,7 +2640,7 @@ When you finish, say what you did in one short sentence.
          * Returns the raw final content (control tag included).
          */
         private suspend fun duoCall(who: Duo.Who, req: JSONArray, tools: JSONArray?, room: Long, side: Boolean = false, hardMs: Long = 0L, onShow: (String) -> Unit): String {
-            val limit = Settings.str("model_timeout_s", "100").toLongOrNull()?.coerceIn(30, 600)?.times(1000) ?: 100_000L
+            val limit = Settings.str("model_timeout_s", "60").toLongOrNull()?.coerceIn(30, 600)?.times(1000) ?: 60_000L   // 0.52.1 (gw061): the gateway answers or errors within 40 s
             val shots = mutableListOf<String>()
             var rounds = 0
             var nudged = false
@@ -2591,7 +2731,7 @@ When you finish, say what you did in one short sentence.
             }
             val watch = launch {
                 jobs.values.forEach { j -> try { j.await() } catch (e: CancellationException) { } }
-                if (!won.isCompleted) won.completeExceptionally(LlmClient.LlmException("Blaze couldn't reach the model just now. Tap Retry."))
+                if (!won.isCompleted) won.completeExceptionally(LlmClient.LlmException("${BrandName.NAME} couldn't reach the model just now. Tap Retry."))
             }
             val w = won.await()
             jobs.getValue(w.other).cancel()
@@ -2655,14 +2795,14 @@ When you finish, say what you did in one short sentence.
                 inbox.add(Inbound(mid, text, emptyList(), false, null))
                 focus = focus + mid
                 markSent(mid)
-                if (job?.isActive == true) sideLine(BusyRoute.steered(runningTask()))
+                if (job?.isActive == true && com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) sideLine(BusyRoute.steered(runningTask()))
                 scope.launch { job?.join(); drain() }
                 persist()
                 return
             }
             // 0.46.4: Halo answers within a couple of seconds: if no word came by BrainRace.HALO_HOLD_MS, a plain line says
             // where Blaze is (the app's own state, no model); the model's reply replaces it when it comes.
-            val raw = try { BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { if (who == Duo.Who.HALO) BrainRace.haloHolding(runningTask(), status) else "" }, { live.show(it) }) { say ->
+            val raw = try { BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { if (who == Duo.Who.HALO && com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) BrainRace.haloHolding(runningTask(), status) else "" }, { live.show(it) }) { say ->
                 duoCall(who, req, roomTools(if (sched) Duo.SIDE_SCHEDULE_TOOLS else emptySet()), -1L, side = true) {
                 // 0.45.19: a handoff line ("Passed to Blaze, let me know…") never shows, not even while it streams.
                 if (!Ack.isGeneric(it)) say(it) } } }
@@ -2784,11 +2924,11 @@ When you finish, say what you did in one short sentence.
                     prevWho = who; prevSig = sig; next = who.other
                 }
                 if (Settings.showRoute) msgs.lastOrNull { it.role == Role.BLAZE && !it.meta.startsWith(Duo.ROOM_CARD) }
-                    ?.let { addMeta(it.id, "\u2726 Blaze · %.1f s".format((System.currentTimeMillis() - t0) / 1000.0)) }
+                    ?.let { addMeta(it.id, "\u2726 ${BrandName.NAME} · %.1f s".format((System.currentTimeMillis() - t0) / 1000.0)) }
                 com.blaze.assistant.device.Haptics.done(app)
             } catch (e: CancellationException) { throw e
             } catch (e: Exception) {
-                add(Role.ERROR, e.message ?: "Blaze lost the connection. Tap Retry.")
+                add(Role.ERROR, e.message ?: "${BrandName.NAME} lost the connection. Tap Retry.")
             } finally {
                 if (room >= 0 && msgs.firstOrNull { it.id == room }?.meta?.let { Duo.cardState(it) } == Duo.LIVE) setCard(room, Duo.cardMeta(Duo.STOPPED))
                 voice = Duo.Who.BLAZE; roomSink = -1L
@@ -2988,7 +3128,7 @@ When you finish, say what you did in one short sentence.
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
                 (if (rung == Mind.Rung.LOOKUP) "\n" + Mind.LOOKUP_RULE + "\n" else "") +
                 cacheBlock +
-                GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) +
+                GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) + TaskMemory.block(turnRef) + (if (agentId == null) TaskMemory.SURFACE_RULE else "") +
                 (agentId?.let { "\nYou are background agent $it, not the main chat. Work alone and finish with the result only." } ?: BgAgents.leadLine()) +
                 (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) + SkillMatch.block(turnSkills) + SpecialistMatch.hint(turnSpecs) +
                 // v0.27.x: "how do I install X" → lead with the action and end with one concrete offer to do it.
@@ -3174,6 +3314,43 @@ When you finish, say what you did in one short sentence.
             return kotlin.math.abs(x.length - y.length) - common * 6
         }
 
+        /** The end of every turn (was runLoop's finally body; moved out in 0.52.1 to keep runLoop under the JVM's 64 KB method limit). */
+        private fun endTurn(turnEnd: TurnEnd.Reason, notSent: Boolean, bytes0: Long, turnModel: TurnModel?, cloudTurn: CloudRuns.Turn?) {
+            val wasProgress = progressWake; progressWake = false
+            if (wasProgress) dropSkip()
+            liveGate = null
+            // v0.45.6: a turn never ends silently (stop, timeout, tool failure): one plain closing line.
+            if (agentId == null) StepPills.end(id)
+            recordTask(stopped = turnEnd == TurnEnd.Reason.STOPPED)
+            if (agentId == null && !notSent && !wasProgress) try {
+                if (TurnEnd.silent(msgs.filterNot { it.meta == Ack.META }.map { it.role })) {
+                    val lastStep = msgs.lastOrNull { it.role == Role.STEP }?.text.orEmpty()
+                    val why = if (turnEnd == TurnEnd.Reason.DONE && lastStep == "You stopped me") TurnEnd.Reason.STOPPED else turnEnd
+                    add(Role.BLAZE, TurnEnd.line(why, lastStep))
+                }
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnEnd", e) }
+            // Low-data mode: how much this task used (Blaze's own traffic: models, web, browser).
+            if (Settings.lowData) try { DataMeter.chip(bytes0)?.let { chip -> msgs.lastOrNull { it.role == Role.BLAZE }?.let { addMeta(it.id, chip) } } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: DataMeter.chipbytes0.let chip msgs.lastO", e) }
+            LlmClient.liteTurn = false
+            LlmClient.heavyTurn = false
+            turnModel?.let { tm -> if (TurnModel.current === tm) TurnModel.current = null }
+            // v0.42.0: a run still waiting for the phone is stopped; one still answering stays saved and is picked up later.
+            cloudTurn?.let { try { CloudRuns.endTurn(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: CloudRuns.endTurnit", e) } }
+            lastTurnDesign = ViewRouter.byId("design")?.let { d -> synchronized(turnOk) { turnOk.any { ClaimGuard.backs(d, it) } } } == true
+            if (agentId == null) com.blaze.assistant.phone.Pointer.done()
+            try { finishAck() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: finishAck", e) }
+            thinking = ""
+            mood = Mood.IDLE
+            currentStep = 0
+            persist()
+            announce()
+            learnAfterTurn()
+            trimSessions()   // v0.45.0 (#12)
+            if (wakes.isNotEmpty()) scope.launch { job?.join(); wakes.poll()?.let { wake(it) } }
+            // v0.30.6: messages that came in after this turn's last step start the next turn (after this one ends).
+            if (inbox.isNotEmpty()) scope.launch { job?.join(); drain() }
+        }
+
         suspend fun runLoop() {
             // Lazy start: blaze.db opens off the main thread; a turn that starts right after launch waits for it (suspends).
             try { Mind.await() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mind.await", e) }
@@ -3305,10 +3482,18 @@ When you finish, say what you did in one short sentence.
                 turnBind = if (bulk || agentId != null || resuming) null else try {
                     val uid = msgs.lastOrNull { it.role == Role.USER && it.id !in sideIds }?.id ?: Long.MAX_VALUE
                     val newest = msgs.lastOrNull { it.role == Role.BLAZE && it.id < uid && it.text.isNotBlank() && it.meta != Ack.META }
-                        ?.let { FollowUpBind.Said(it.speaker.ifBlank { "Blaze" }.replaceFirstChar { c -> c.uppercase() }, it.text, it.at) }
+                        ?.let { FollowUpBind.Said(it.speaker.ifBlank { "${BrandName.NAME}" }.replaceFirstChar { c -> c.uppercase() }, it.text, it.at) }
                     FollowUpBind.bind(userNow, newest, System.currentTimeMillis())
                 } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: FollowUpBind", e); null }
                 turnGoal = if (bulk) null else resumeGoal ?: GoalPin.of(userNow, GoalPin.userTexts(history).let { l -> if (l.lastOrNull()?.contains(userNow.trim().take(40)) == true) l.dropLast(1) else l }, turnBind)
+                // 0.52.1 (owner: "memory of tasks and old context"): a vague reference back ("I signed you in", "retry it",
+                // "continue", "same as before but for X") is resolved to the task it means; its record goes into the prompt.
+                turnSignInWall = ""; turnSignedIn = ""
+                turnRef = if (bulk || agentId != null) null else try { TaskMemory.resolve(userNow, TaskMemoryStore.forChat(id)) }
+                    catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TaskMemory.resolve", e); null }
+                turnTaskId = turnRef?.rec?.id
+                turnRef?.let { r -> if (r.kind == TaskMemory.Kind.SIGNED_IN) turnSignedIn = r.rec?.needsSignIn.orEmpty() }
+                turnRef?.rec?.let { r -> if (r.state != TaskMemory.State.ACTIVE) TaskMemoryStore.put(r.copy(state = TaskMemory.State.ACTIVE, updated = System.currentTimeMillis())) }
                 resumeGoal = null
                 var nudgeCount = 0
                 var rewroteClaim = false
@@ -3357,17 +3542,24 @@ When you finish, say what you did in one short sentence.
                 // v0.45.0 context: once the model asks for a tool it wasn't sent (or one that doesn't exist), the rest of the
                 // turn gets the full tool set instead of a guessed subset.
                 var widened = false
+                val widenNames = HashSet<String>()
                 var sentOrder = emptyList<String>()   // v0.45.1: tools keep their place across the turn's steps (prompt caching)
                 fun pickTools(): JSONArray {
-                    if (widened) { sizeLine = "tools all ${allTools.length()} (widened)"; return allTools }
+                    // 0.52.1 (gw061): widening adds the tools the model asked for (and their groups), never all 128+ schemas.
+                    if (widened && widenNames.isEmpty()) { sizeLine = "tools all ${allTools.length()} (widened)"; return allTools }
                     // v0.45.9 (ToolTruth): every agent request carries the full registered list (gateway 0.8.2 drops calls to tools not in it).
                     // 0.45.29: a browser task's steps carry the browser tools (+ ask / search / memory); asking for another widens again.
                     if (!bulk && com.blaze.assistant.browser.BrowserFocus.active(synchronized(turnTools) { turnTools.toList() })) {
                         val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
                     if (ToolTruth.full) { sizeLine = "tools all ${allTools.length()}"; return ToolTruth.forRequest(allTools) { allTools } }
                     val diet = ToolRouter.select(allTools, groupsOn)
-                    val sent = ToolPick.keepOrder(sentOrder, ToolPick.pick(diet, userNow, usedNames + synchronized(turnTools) { turnTools.toSet() }, groupsOn, keepAll = bulk,
-                        must = (if (TurnContext.scheduleAsk(userNow)) TurnContext.SCHEDULE_TOOLS else emptySet())))
+                    val joinNames = widenNames + ToolTruth.MUST   // 0.52.1: the must-have tools and what the model asked for always join
+                    val diet2 = JSONArray().apply {
+                        val have = ToolPick.names(diet).toSet(); for (i in 0 until diet.length()) put(diet.opt(i))
+                        val allNames = ToolPick.names(allTools)
+                        for (i in 0 until allTools.length()) { val n = allNames[i]; if (n in joinNames && n !in have) put(allTools.opt(i)) } }
+                    val sent = ToolPick.keepOrder(sentOrder, ToolPick.pick(diet2, userNow, usedNames + synchronized(turnTools) { turnTools.toSet() }, groupsOn, keepAll = bulk,
+                        must = (if (TurnContext.scheduleAsk(userNow)) TurnContext.SCHEDULE_TOOLS else emptySet()) + widenNames + ToolTruth.MUST, max = ToolPick.MAX_TOOLS + widenNames.size))
                     sizeLine = ToolPick.sizeLine(sent, allTools, diet)
                     sentOrder = ToolPick.names(sent)
                     return sent
@@ -3389,7 +3581,7 @@ When you finish, say what you did in one short sentence.
                     val pk = try { kotlinx.coroutines.withTimeoutOrNull(left) { dQuery.await() } } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
                     if (pk == null) { lateSteps += "blazequery"; dQuery.cancel() }
                     else if (pk.block.isNotEmpty() && queryBlock.isEmpty()) { queryBlock = pk.block; queryEvidence = pk.evidence }
-                    try { android.util.Log.i("BlazeQuery", "${pk?.status ?: "LATE"} ${pk?.reason.orEmpty()} ${System.currentTimeMillis() - bqStart} ms, ${queryBlock.length} chars") } catch (_: Throwable) { }
+                    try { android.util.Log.i("BlazeQuery", "${pk?.status ?: "LATE"} ${pk?.reason.orEmpty()} ${System.currentTimeMillis() - bqStart} ms, ${queryBlock.length} chars") } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                     timer.mark("blazequery")
                 }
                 var orientSent = false
@@ -3462,6 +3654,7 @@ When you finish, say what you did in one short sentence.
                         add(Role.BLAZE, "Autopilot stopped at its time budget (${Modes.apMinutes} min). Say \"continue\" to keep going.")
                         break
                     }
+                    if (handOffNearEnd(hardEnd(), lastResults)) break   // 0.52.1: long work moves to a background agent instead of dying
                     if (System.currentTimeMillis() > hardEnd()) { add(Role.BLAZE, TurnDeadline.line(hardEnd() - turnStart)); break }
                     mood = Mood.THINKING
                     status = Friendly.between(turnTools.lastOrNull())
@@ -3524,7 +3717,7 @@ When you finish, say what you did in one short sentence.
                     // Watchdog: only a model that goes SILENT (no text, thinking or tool-call chunks) for the
                     // limit is cut off and retried once on the same model. Long thinking is fine while it streams.
                     val lane = if (step == 0) LlmClient.Lane.MAIN else LlmClient.Lane.STEPS
-                    val limit = Settings.str("model_timeout_s", "100").toLongOrNull()?.coerceIn(30, 600)?.times(1000) ?: 100_000L
+                    val limit = Settings.str("model_timeout_s", "60").toLongOrNull()?.coerceIn(30, 600)?.times(1000) ?: 60_000L   // 0.52.1 (gw061): the gateway answers or errors within 40 s
                     // v0.42.0: the turn's Cloud run when there is one (null = this call goes the old way).
                     // v0.45.9 (TurnDeadline): a Cloud run step is cut at CLOUD_STEP_MS (cancelled on the gateway, then sent direct once);
                     // any step at STEP_MS or the turn's hard end, whichever is first.
@@ -3553,15 +3746,26 @@ When you finish, say what you did in one short sentence.
                         return kotlinx.coroutines.withTimeoutOrNull(left) { LlmClient.complete(r, tools, onText, onThink, lane) }
                             ?: throw LlmClient.LlmException(TurnDeadline.line(hardEnd() - turnStart))
                     }
-                    suspend fun callPlain(r: JSONArray): JSONObject = (Agent.idleGuard(limit) { model(r) }
-                        ?.also { gate.flush() })
-                        ?: run {
+                    // 0.52.1 heartbeat: a silent or slow step (gateway timeout, 1102, busy) is tried again up to Handoff.STEP_TRIES
+                    // times while the turn has time; sign-in, credits and 4xx errors still end it at once.
+                    suspend fun callPlain(r: JSONArray): JSONObject {
+                        var lastErr: LlmClient.LlmException? = null
+                        for (attempt in 1..Handoff.STEP_TRIES) {
+                            if (attempt > 1) {
+                                if (System.currentTimeMillis() > hardEnd() - 5_000L) break
+                                add(Role.STEP, if (lastErr == null) "The model went silent, retrying" else "The model is slow, trying again")
+                                if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
+                                kotlinx.coroutines.delay(Handoff.RETRY_GAP_MS)
+                            }
+                            val got = try { Agent.idleGuard(limit) { model(r) } } catch (e: LlmClient.LlmException) {
+                                if (!Handoff.slowFailure(e.message, e.code) || LlmClient.tooLarge(e)) { gate.flush(); throw e }
+                                lastErr = e; null
+                            }
                             gate.flush()
-                            add(Role.STEP, "The model went silent, retrying")
-                            if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
-                            Agent.idleGuard(limit) { model(r) }
-                                ?: throw LlmClient.LlmException("${LlmClient.lastRoute.ifBlank { "The model" }} sent nothing for ${limit / 1000}s, twice. Tap Retry, or send a shorter message.")
+                            if (got != null) return got
                         }
+                        throw lastErr ?: LlmClient.LlmException("${LlmClient.lastRoute.ifBlank { "The model" }} sent nothing for ${limit / 1000}s, ${Handoff.STEP_TRIES} times. Tap Retry, or send a shorter message.")
+                    }
                     suspend fun call(r0: JSONArray): JSONObject {
                         var r = r0
                         // v0.33.3: a call that must read a fresh screenshot gets 12 s; then the picture becomes the screen
@@ -3592,6 +3796,7 @@ When you finish, say what you did in one short sentence.
                         gate.flush(); streamId = -1L
                         // v0.26.0: "too long for the model" → fold older turns into the summary (same chat, nothing
                         // asked) and retry once. Only if that still fails does the user see an error.
+                        if (!liteNow && Handoff.slowFailure(e.message, e.code) && handOff(lastResults)) break   // 0.52.1: carry on in the background
                         if (liteNow || !(LlmClient.tooLarge(e) || AutoCompact.isContextError(e.message, e.code))) throw e
                         if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
                         squeezed = true
@@ -3670,7 +3875,11 @@ When you finish, say what you did in one short sentence.
                             ReplyFix.keepFlowTool(reply, named, lastUserText())
                             if (ReplyFix.fixEventDays(reply, lastUserText(), java.time.LocalDate.now()) > 0) CallState.current().errors.add("event day moved to the day asked")
                         } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ReplyFix", e) }
-                        if (!widened && !lite && ToolPick.missing(reply, tools).isNotEmpty()) { widened = true; add(Role.STEP, "Loading all tools") }
+                        if (!lite) ToolPick.missing(reply, tools).takeIf { it.isNotEmpty() }?.let { miss ->
+                            // 0.52.1: only real tools join (a made-up name stays out; the unknown-tool answer handles it)
+                            val real = ToolPick.names(allTools).toSet()
+                            val add = miss.filter { it in real }
+                            if (add.isNotEmpty() && !widenNames.containsAll(add)) { widened = true; widenNames += add; add(Role.STEP, "Loading more tools") } }
                     } catch (e: Exception) {
                         com.blaze.assistant.device.CrashLog.error("tool gatekeeper", e)
                         // 0.45.15 (review 22 Oct #6): a reply the gatekeeper choked on never goes on with broken calls.
@@ -3952,7 +4161,7 @@ When you finish, say what you did in one short sentence.
                         val ctxTexts = try { (0 until req.length()).mapNotNull { k -> req.optJSONObject(k)?.takeIf { it.optString("role") == "system" }?.optString("content") } +
                             listOf(Awareness.promptBlock(), Awareness.summaryBlock()) } catch (_: Throwable) { emptyList() }
                         if (shown.isNotBlank() && EchoGuard.echoes(shown, lastUserText(), ctxTexts, EchoGuard.contextToolTexts(history))) {
-                            CallState.current().errors.add("reply repeated Blaze's context or a tool result" + if (echoNudged) "; replaced" else "; asked again")
+                            CallState.current().errors.add("reply repeated ${BrandName.NAME}'s context or a tool result" + if (echoNudged) "; replaced" else "; asked again")
                             if (!echoNudged && nudgesLeft > 0 && step < maxSteps - 2) {
                                 echoNudged = true; nudgesLeft--
                                 if (history.length() > 0 && history.optJSONObject(history.length() - 1) === reply) history.remove(history.length() - 1)
@@ -4042,14 +4251,14 @@ When you finish, say what you did in one short sentence.
                         try { android.util.Log.i("BlazeSpeed", "turn ${step + 1} steps, ${LlmClient.lastRoute}: ${timer.line()}" + (if (extra.isNotBlank()) " · $extra" else "")) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: android.util.Log.iBlazeSpeed turn step 1", e) }
                         val idsBefore = ids.get()
                         addReply(liveId, textOut, turnThink.toString(), pendingFollowups,
-                            if (Settings.showRoute) "☁ " + listOf(LlmClient.lastRoute.ifBlank { "Blaze Cloud" }.replace(" · ", " / "),
+                            if (Settings.showRoute) "☁ " + listOf(LlmClient.lastRoute.ifBlank { "${BrandName.NAME} Cloud" }.replace(" · ", " / "),
                                 if (firstMs > 0) "first word %.1f s".format(firstMs / 1000.0) else "",
                                 "%.1f s".format(secs),
                                 if (step > 0) "${step + 1} steps" else "").filter { it.isNotBlank() }.joinToString(" · ") else "",
                             Receipt.toJson(logNow),
                             // v0.45.5 (#1): the "What happened" sheet for this reply.
                             try { val st = CallState.current()
-                                TurnTrace.toJson(TurnTrace.build(st.gw, LlmClient.lastRoute.ifBlank { "Blaze Cloud" }, if (ct != null) "cloud run" else if (liteNow) "chat lane" else "agent",
+                                TurnTrace.toJson(TurnTrace.build(st.gw, LlmClient.lastRoute.ifBlank { "${BrandName.NAME} Cloud" }, if (ct != null) "cloud run" else if (liteNow) "chat lane" else "agent",
                                     st.requestIds.toList(), if (shownAt > 0) shownAt - turnStart else LlmClient.lastFirstTextMs, hdrMs, System.currentTimeMillis() - turnStart, step + 1,
                                     logNow.map { e -> TurnTrace.Tool(e.tool, e.args, e.result, e.status != ToolVerify.Status.FAILED) }, st.errors.toList(), LlmClient.lastMaxGapMs,
                                     if (agentId == null) StartTrace.take() else null, ToolTruth.names(tools)))
@@ -4083,20 +4292,38 @@ When you finish, say what you did in one short sentence.
                     fun callName(i: Int) = calls.getJSONObject(i).getJSONObject("function").getString("name")
                     fun callArgs(i: Int) = try { JSONObject(calls.getJSONObject(i).getJSONObject("function").optString("arguments", "{}").ifBlank { "{}" }) }
                         catch (_: Exception) { JSONObject() }
-                    val pre: Map<Int, String> = if (calls.length() > 1 && (0 until calls.length()).all { callName(it) in parallelSafe })
-                        (0 until calls.length()).map { i -> scope.async { i to runTool(callName(i), callArgs(i), shots) } }
-                            .map { it.await() }.toMap()
-                    else emptyMap()
                     val readAt = FastActions.screenReadAt((0 until calls.length()).map { callName(it) }, screenActions + "do_actions")
                     // v0.45.3: Normal mode asks once for all the commands in this reply (CommandPolicy batch card).
                     val refusedCmds = if (calls.length() > 1) batchApprove((0 until calls.length()).map { callName(it) to callArgs(it) }) else { cmdBatchOkClear(); emptySet() }
+                    // 0.52.0 parallel tools (orchestra/ToolScheduler): every independent call of this reply runs at once (network
+                    // fully parallel, file paths locked, shell calls kept in order with file calls, one screen action at a time),
+                    // each with its own timeout; screen actions, cards and agent tools stay in the in-order loop below.
+                    val preStepped = HashSet<Int>()
+                    val pre: Map<Int, String> = run {
+                        val pick = (0 until calls.length()).filter { i -> val n = callName(i)
+                            com.blaze.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && i !in refusedCmds && surfaceNote(n, quiet = true) == null &&
+                                loopGuard.check(n, callArgs(i)) == null && oneShot.earlier(n, callArgs(i)) == null }
+                        if (pick.size < 2 || !Settings.bool("parallel_tools", true)) return@run emptyMap()
+                        val tcs = pick.map { i -> com.blaze.assistant.orchestra.ToolScheduler.Call(calls.getJSONObject(i).optString("id", "call_$step$i"), callName(i), callArgs(i)) }
+                        val toolMs = Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L
+                        val res = com.blaze.assistant.orchestra.ToolScheduler.run(tcs, { c ->
+                            Recovery.run(c.name, OneShot.risky(c.name), toolMs) { runTool(c.name, c.args, shots) }.also { r -> oneShot.record(c.name, c.args, r) }
+                        }, timeoutMs = toolMs + 15_000L, listener = object : com.blaze.assistant.orchestra.ToolScheduler.Listener {
+                            override fun started(index: Int, call: com.blaze.assistant.orchestra.ToolScheduler.Call) {
+                                // each call's step shows the moment it starts (the work pill counts it live)
+                                if (call.name !in Friendly.selfNarrating) { addStep(Friendly.say(call.name, call.args), Friendly.exact(call.name, call.args)); preStepped += pick[index] }
+                            }
+                        })
+                        try { android.util.Log.i("BlazeSpeed", "parallel tools: " + com.blaze.assistant.orchestra.ToolScheduler.describe(tcs)) } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
+                        pick.zip(res).associate { (i, r) -> i to r.output }
+                    }
                     for (i in 0 until calls.length()) {
                         val call = calls.getJSONObject(i)
                         val fn = call.getJSONObject("function")
                         val name = fn.getString("name")
                         val args = try { JSONObject(fn.optString("arguments", "{}").ifBlank { "{}" }) }
                             catch (_: Exception) { JSONObject() }
-                        if (name !in Friendly.selfNarrating && name !in unknownCalls) addStep(Friendly.say(name, args), Friendly.exact(name, args))
+                        if (name !in Friendly.selfNarrating && name !in unknownCalls && i !in preStepped) addStep(Friendly.say(name, args), Friendly.exact(name, args))
                         if (pre.containsKey(i)) autoStepId = -1L
                         val toolT0 = System.currentTimeMillis()
                         var result = if (pre.containsKey(i)) pre.getValue(i) else if (i in refusedCmds) "The user did NOT approve this command (they refused the card for this step's commands). Don't run it; ask how they'd like to go on."
@@ -4115,11 +4342,17 @@ When you finish, say what you did in one short sentence.
                             add(Role.STEP, "Loading ${g.joinToString(", ")} tools")
                             "Loaded: ${g.joinToString(", ")}. Those tools are available now."
                         } else if (name == "ask_user") runTool(name, args, shots)
-                        else loopGuard.check(name, args)?.also { add(Role.STEP, "Not trying ${Friendly.say(name, args).trimEnd('.', '\u2026')} again: it made no difference") }
+                        else surfaceNote(name)
+                        ?: loopGuard.check(name, args)?.also { add(Role.STEP, "Not trying ${Friendly.say(name, args).trimEnd('.', '\u2026')} again: it made no difference") }
                         ?: oneShot.earlier(name, args)?.also { add(Role.STEP, "Not repeating ${Friendly.say(name, args).trimEnd('.', '\u2026')}: it already ran") }
-                            ?: (Recovery.run(name, OneShot.risky(name), Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L) { runTool(name, args, shots) }
+                            ?: (Recovery.run(name, OneShot.risky(name), Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L) {
+                                // 0.52.0: the screen, the browser, files and named terminal sessions are held in the locks every agent shares
+                                com.blaze.assistant.orchestra.KeyedLocks.shared.with(com.blaze.assistant.orchestra.ToolScheduler.Resources.lockClaims(
+                                    com.blaze.assistant.orchestra.ToolScheduler.Resources.claims(name, args))) { runTool(name, args, shots) } }
                                 .also { r -> oneShot.record(name, args, r) })
                         if (!result.startsWith("Not run:")) loopGuard.record(name, args, result)
+                        // 0.52.1: a sign-in wall on a web surface is remembered with the task (so "I signed you in" finds it).
+                        try { TaskMemory.signInWall(name, args, result).takeIf { it.isNotBlank() }?.let { turnSignInWall = it } } catch (e: Throwable) { android.util.Log.w("Blaze", "signInWall: ${e.message}") }
                         ToolStats.add(name, when {
                             name in unknownCalls -> "unknown"
                             repairedThisStep.any { it.startsWith(name) || it.contains("→ $name") || (it.startsWith("split") && it.contains(name)) } -> "repaired"
@@ -4254,36 +4487,7 @@ When you finish, say what you did in one short sentence.
                 keepForResume()
                 add(Role.ERROR, e.message ?: "Something went wrong.")
             } finally {
-                liveGate = null
-                // v0.45.6: a turn never ends silently (stop, timeout, tool failure): one plain closing line.
-                if (agentId == null) StepPills.end(id)
-                if (agentId == null && !notSent) try {
-                    if (TurnEnd.silent(msgs.filterNot { it.meta == Ack.META }.map { it.role })) {
-                        val lastStep = msgs.lastOrNull { it.role == Role.STEP }?.text.orEmpty()
-                        val why = if (turnEnd == TurnEnd.Reason.DONE && lastStep == "You stopped me") TurnEnd.Reason.STOPPED else turnEnd
-                        add(Role.BLAZE, TurnEnd.line(why, lastStep))
-                    }
-                } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnEnd", e) }
-                // Low-data mode: how much this task used (Blaze's own traffic: models, web, browser).
-                if (Settings.lowData) try { DataMeter.chip(bytes0)?.let { chip -> msgs.lastOrNull { it.role == Role.BLAZE }?.let { addMeta(it.id, chip) } } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: DataMeter.chipbytes0.let chip msgs.lastO", e) }
-                LlmClient.liteTurn = false
-                LlmClient.heavyTurn = false
-                turnModel?.let { tm -> if (TurnModel.current === tm) TurnModel.current = null }
-                // v0.42.0: a run still waiting for the phone is stopped; one still answering stays saved and is picked up later.
-                cloudTurn?.let { try { CloudRuns.endTurn(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: CloudRuns.endTurnit", e) } }
-                lastTurnDesign = ViewRouter.byId("design")?.let { d -> synchronized(turnOk) { turnOk.any { ClaimGuard.backs(d, it) } } } == true
-                if (agentId == null) com.blaze.assistant.phone.Pointer.done()
-                try { finishAck() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: finishAck", e) }
-                thinking = ""
-                mood = Mood.IDLE
-                currentStep = 0
-                persist()
-                announce()
-                learnAfterTurn()
-                trimSessions()   // v0.45.0 (#12)
-                if (wakes.isNotEmpty()) scope.launch { job?.join(); wakes.poll()?.let { wake(it) } }
-                // v0.30.6: messages that came in after this turn's last step start the next turn (after this one ends).
-                if (inbox.isNotEmpty()) scope.launch { job?.join(); drain() }
+                endTurn(turnEnd, notSent, bytes0, turnModel, cloudTurn)   // 0.52.1: out of runLoop (a finally body is copied per exit: "Method too large")
             }
         }
 
@@ -4333,7 +4537,21 @@ When you finish, say what you did in one short sentence.
             results.joinToString("\n\n")
         }
 
-        private suspend fun runSpecialist(spec0: Specialists.Spec, task: String, all: JSONArray): String {
+        /**
+         * 0.52.0: one blueprint node as a specialist tool loop (OrchestraRuns): [role] picks the specialist, [family] its tier
+         * hint (planner → Inferno …). No playbook self-check (a planner's JSON must come back as written). [saveDoc] =
+         * (markdown, title): saves the finished document with save_file instead and returns its result line.
+         */
+        suspend fun runNode(role: String, prompt: String, family: String, saveDoc: Pair<String, String>? = null): String {
+            if (saveDoc != null) return runTool(SaveFile.TOOL, JSONObject().put("content", saveDoc.first).put("language", "markdown")
+                .put("filename", Specialists.slug(saveDoc.second).ifBlank { "blaze-report" } + ".md"), mutableListOf())
+            val specId = when (role.lowercase()) { "planner", "sorter" -> "planner"; "coder" -> "coder"; "writer" -> "writer"; else -> "researcher" }
+            val spec = Specialists.byId(specId) ?: Specialists.builtIn.first()
+            val all = tools().let { if (isPrivate) PrivateChat.filterTools(it) else it }.let { if (Projects.of(id) == null) ProjectDocs.strip(it) else it }
+            return kotlinx.coroutines.withContext(CallState().also { it.family = family }.element()) { runSpecialist(spec, prompt, all, review = false) }
+        }
+
+        private suspend fun runSpecialist(spec0: Specialists.Spec, task: String, all: JSONArray, review: Boolean = true): String {
             // v0.26.2: its field playbook goes into its prompt (a custom one without a playbook gets one written first).
             val spec = Specialists.byId(spec0.id) ?: spec0
             val playbook = Playbooks.forSpec(spec).ifBlank { if (spec.custom && !isPrivate) Agent.ensurePlaybook(spec) else "" }
@@ -4343,7 +4561,7 @@ When you finish, say what you did in one short sentence.
                     SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date()), Memory.promptBlock(task))))
                 .put(JSONObject().put("role", "user").put("content", task))
             val shots = mutableListOf<String>()
-            var reviewed = playbook.isBlank()
+            var reviewed = !review || playbook.isBlank()
             for (step in 0 until 16) {
                 val reply = LlmClient.complete(msgs, if (tools.length() > 0) tools else null, null, null, LlmClient.Lane.STEPS)
                 reply.remove("_reasoning")
@@ -4371,15 +4589,20 @@ When you finish, say what you did in one short sentence.
                     }
                     return draft
                 }
-                for (i in 0 until calls.length()) {
+                // 0.52.0: a specialist's calls run through the ToolScheduler too: independent ones at once, conflicting ones in
+                // order, the screen / browser / files held in the locks every agent shares; results go back in the model's order.
+                val batch = (0 until calls.length()).map { i ->
                     val call = calls.getJSONObject(i)
                     val fn = call.getJSONObject("function")
-                    val name = fn.getString("name")
                     val args = try { JSONObject(fn.optString("arguments", "{}").ifBlank { "{}" }) } catch (_: Exception) { JSONObject() }
-                    var result = if (name in unknown) "Error: there is no tool called \"$name\". Use one of the tools you were given (exact name)." else runTool(name, args, shots)
-                    if (name == "do_actions" || (name in screenActions && !FastActions.isScreen(result))) result += screenAfter(result)
-                    msgs.put(JSONObject().put("role", "tool").put("tool_call_id", call.optString("id", "s$step$i")).put("name", name).put("content", result.take(12000)))
+                    com.blaze.assistant.orchestra.ToolScheduler.Call(call.optString("id", "s$step$i"), fn.getString("name"), args)
                 }
+                val outs = com.blaze.assistant.orchestra.ToolScheduler.run(batch, { c ->
+                    var result = if (c.name in unknown) "Error: there is no tool called \"${c.name}\". Use one of the tools you were given (exact name)." else runTool(c.name, c.args, shots)
+                    if (c.name == "do_actions" || (c.name in screenActions && !FastActions.isScreen(result))) result += screenAfter(result)
+                    result
+                }, timeoutMs = Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L)
+                batch.zip(outs).forEach { (c, r) -> msgs.put(JSONObject().put("role", "tool").put("tool_call_id", c.id).put("name", c.name).put("content", r.output.take(12000))) }
                 VisionFast.pruneShots(msgs, SHOT_NOTE)
                 shots.lastOrNull()?.let { url -> shots.clear()
                     msgs.put(JSONObject().put("role", "user").put("content", JSONArray()
@@ -4434,7 +4657,7 @@ When you finish, say what you did in one short sentence.
             val S = com.blaze.assistant.browser.SecureInput
             val V = com.blaze.assistant.browser.Vault
             val host = kotlinx.coroutines.withContext(Dispatchers.Main) { B.host() }
-            if (host.isBlank()) return "No page is open in Blaze's browser. Open the sign-in page with browser_open first, then call this again."
+            if (host.isBlank()) return "No page is open in ${BrandName.NAME}'s browser. Open the sign-in page with browser_open first, then call this again."
             // v0.28.2: no secure form or saved login on a plain-http page (except this phone / the LAN).
             val pageUrl = kotlinx.coroutines.withContext(Dispatchers.Main) { B.url() }
             if (!com.blaze.assistant.connect.UrlSafety.autofillAllowed(pageUrl)) return com.blaze.assistant.connect.UrlSafety.AUTOFILL_REFUSED
@@ -4499,18 +4722,31 @@ When you finish, say what you did in one short sentence.
             return when (ConfirmGate.screenAct(name, label, taint.source != null, taint.outside, taint.screenOk)) {
                 ConfirmGate.ScreenDecision.PASS -> null
                 ConfirmGate.ScreenDecision.ASK_ONCE ->
-                    if (confirm("Use the screen in $app0?", "Blaze wants to $what, and keep working on the screen this turn.", "Allow", always = true)) { taint.screenOk = true; null }
+                    if (confirm("Use the screen in $app0?", "${BrandName.NAME} wants to $what, and keep working on the screen this turn.", "Allow", always = true)) { taint.screenOk = true; null }
                     else "The user did NOT approve acting on the screen after reading ${taint.outside}. Don't retry; tell them what you would have done so they can do it."
                 ConfirmGate.ScreenDecision.ASK -> {
                     taint.askedLabel = label
-                    if (confirm("${what.replaceFirstChar { it.uppercase() }}?", "Blaze wants to $what in $app0.", "Tap", always = true)) null
+                    if (confirm("${what.replaceFirstChar { it.uppercase() }}?", "${BrandName.NAME} wants to $what in $app0.", "Tap", always = true)) null
                     else "The user did NOT approve tapping \"$label\". Don't retry; tell them it's ready for them to finish."
                 }
             }
         }
 
         /** 0.50.0: screen actions light the edge particles while they run (ScreenWork → ui.ScreenGlow). */
+        /** 0.52.1 (MemoryLoop): memory lookups this turn, and the song a song-download turn has resolved ("" = none yet). */
+        @Volatile var memoryLookups = 0
+        @Volatile var songResolved = ""
+
         suspend fun runTool(name: String, args: JSONObject, shots: MutableList<String>): String {
+            val user = lastUserText()
+            MemoryLoop.gate(name, user, memoryLookups, songResolved.ifBlank { MemoryLoop.concrete(user).orEmpty() })?.let { add(Role.STEP, "Skipping another memory check"); return it }
+            if (MemoryLoop.isLookup(name)) memoryLookups++
+            val out = runToolScreen(name, args, shots)
+            if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
+            return out
+        }
+
+        private suspend fun runToolScreen(name: String, args: JSONObject, shots: MutableList<String>): String {
             if (!com.blaze.assistant.phone.ScreenWork.isScreenTool(name)) return runToolInner(name, args, shots)
             val tok = com.blaze.assistant.phone.ScreenWork.begin()
             try { return runToolInner(name, args, shots) } finally { com.blaze.assistant.phone.ScreenWork.end(tok) }
@@ -4528,7 +4764,7 @@ When you finish, say what you did in one short sentence.
             }
             // v0.43.0 Bank mode: Blaze has stepped back, so it doesn't look at or act on the screen until the user turns it off.
             if (com.blaze.assistant.bank.BankMode.active && (name in Orient.acting || name in Orient.looking || name == "open_app" || name == "search_in_app"))
-                return "Bank mode is on: Blaze has stepped back so the user's banking app works, and doesn't read or use the screen. " +
+                return "Bank mode is on: ${BrandName.NAME} has stepped back so the user's banking app works, and doesn't read or use the screen. " +
                     "Tell the user, and offer to turn Bank mode off (bank_mode action=off) when they're done banking."
             // 0.45.20 (item 15): phone control is asked for the first time a task needs it, with the reason, not in setup.
             if (PermissionGate.shouldAsk(name, com.blaze.assistant.phone.BlazeAccessibilityService.instance != null, Settings.phoneControl))
@@ -4844,8 +5080,8 @@ When you finish, say what you did in one short sentence.
                     }
                 }
                 in com.blaze.assistant.home.HomeTools.NAMES -> { add(Role.STEP, com.blaze.assistant.home.HomeTools.step(name, args)); kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.home.HomeBoard.runTool(name, args) } }
-                BlazeDocs.TOOL_SEARCH -> { add(Role.STEP, "Looking it up in Blaze's docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.search(args) } }
-                BlazeDocs.TOOL_READ -> { add(Role.STEP, "Reading Blaze's docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.read(args) } }
+                BlazeDocs.TOOL_SEARCH -> { add(Role.STEP, "Looking it up in ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.search(args) } }
+                BlazeDocs.TOOL_READ -> { add(Role.STEP, "Reading ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.read(args) } }
                 ProjectDocs.TOOL_SEARCH -> { add(Role.STEP, "Checking the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.search(id, args) } }
                 ProjectDocs.TOOL_READ -> { add(Role.STEP, "Reading the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.read(id, args) } }
                 com.blaze.assistant.proactive.FollowUps.TOOL -> { add(Role.STEP, "Checking what you need to get back to"); com.blaze.assistant.proactive.FollowUps.run(args) }
@@ -5000,8 +5236,26 @@ When you finish, say what you did in one short sentence.
                         if (shot.startsWith("data:")) { shots += shot; "Screenshot taken. It is attached in the next message." } else shot
                     }
                 }
-                "start_agent" -> {
-                    val bg = BgAgents.start(args.optString("task"), args.optString("title"), id)
+                com.blaze.assistant.orchestra.OrchestraRuns.TOOL -> {
+                    // 0.52.0: a blueprint run (planner → parallel agents → verify / stitch) as one background agent with its work pill
+                    val goal = args.optString("goal").trim()
+                    if (goal.isEmpty()) "Error: say the goal." else {
+                        val ask = com.blaze.assistant.orchestra.OrchestraRuns.decode(com.blaze.assistant.orchestra.OrchestraRuns.encode(goal, args.optString("pipeline"), args.optString("inputs")))
+                        val bg = BgAgents.start(com.blaze.assistant.orchestra.OrchestraRuns.encode(goal, ask.shape.id, ask.inputs),
+                            args.optString("title").ifBlank { Dispatch.title(goal) }, id, com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST)
+                        val mid = add(Role.BLAZE, "Blueprint ${bg.id}: ${bg.title}")
+                        msgs = msgs.map { if (it.id == mid) it.copy(meta = BgAgents.CARD + bg.id) else it }
+                        persist()
+                        "Started blueprint run ${bg.id} (${ask.shape.id} pipeline). Its pill is in the chat and its result lands there on its own. " +
+                            "Tell the user in one short line what you started and keep chatting; don't wait for it or poll."
+                    }
+                }
+                "spawn_agent", "start_agent" -> {
+                    // 0.52.0: spawn_agent = start_agent with an optional specialist type (researcher, coder, writer…)
+                    val specArg = args.optString("specialist").trim().lowercase()
+                    val specId = if (specArg.isNotEmpty() && Specialists.byId(specArg) != null) specArg else ""
+                    val task0 = args.optString("task") + args.optString("inputs").takeIf { it.isNotBlank() }?.let { "\n\nInputs: $it" }.orEmpty()
+                    val bg = BgAgents.start(task0, args.optString("title"), id, specId)
                     val mid = add(Role.BLAZE, "Background agent ${bg.id}: ${bg.title}")
                     msgs = msgs.map { if (it.id == mid) it.copy(meta = BgAgents.CARD + bg.id) else it }
                     persist()
@@ -5036,7 +5290,7 @@ When you finish, say what you did in one short sentence.
                             add(Role.STEP, "Reading your clipboard")
                             val clip = C.read(app)
                             when {
-                                clip == null -> "Couldn't read the clipboard. Turn on Blaze's accessibility service or 'draw over apps' so it can read it in the background."
+                                clip == null -> "Couldn't read the clipboard. Turn on ${BrandName.NAME}'s accessibility service or 'draw over apps' so it can read it in the background."
                                 clip.text.isEmpty() && clip.uris.isEmpty() -> "The clipboard is empty."
                                 else -> clip.text.take(4000) + (if (clip.uris.isNotEmpty()) "\n[Also ${clip.uris.size} file(s) on the clipboard (${clip.uris.first().second.ifBlank { "file" }}). Use clipboard get_image to look at a picture.]" else "")
                             }
@@ -5051,7 +5305,7 @@ When you finish, say what you did in one short sentence.
                     text
                 }
                 in com.blaze.assistant.phone.AndroidControl.names -> {
-                    add(Role.STEP, if (name == "blaze_camera") "Opening Blaze Camera" else name.replace('_', ' ').replaceFirstChar { it.uppercase() })
+                    add(Role.STEP, if (name == "blaze_camera") "Opening ${BrandName.NAME} Camera" else name.replace('_', ' ').replaceFirstChar { it.uppercase() })
                     // v0.28.x: Blaze Camera brings its capture back into this chat, as an answer to the user's last message.
                     val a2 = if (name != "blaze_camera") args else JSONObject(args.toString()).put("_chat", id)
                         .put("_asked", msgs.lastOrNull { it.role == Role.USER }?.text.orEmpty())
@@ -5104,13 +5358,13 @@ When you finish, say what you did in one short sentence.
                 in com.blaze.assistant.browser.phone.PhoneBrowserTools.names -> {
                     // 0.45.19 Blaze Phone: one screen, so parallel specialists take turns (the first to use it holds it).
                     agentId?.let { me -> Dispatch.phone.take(me) { h -> BgAgents.get(h)?.live == true }?.let {
-                        return "Blaze Phone is in use by another agent right now. Use web_search / fetch_page for this step, or finish without it." } }
+                        return "${BrandName.NAME} Phone is in use by another agent right now. Use web_search / fetch_page for this step, or finish without it." } }
                     add(Role.STEP, com.blaze.assistant.browser.phone.PhoneBrowserTools.describe(name, args))
                     // 0.45.19 fix 4: who drives Blaze Phone now, so the picture-in-picture Stop cancels exactly this turn.
                     com.blaze.assistant.browser.phone.PhoneBrowser.own(id, agentId)
                     val drv = com.blaze.assistant.browser.phone.PhoneBrowser.Driver(app) { reason, site ->
                         if (!inForeground) Notifier.actionRequired("Take control: ${reason.take(50)}", site,
-                            "Blaze needs you on Blaze Phone ($site): ${reason.take(80)}. Tap, then Take control.") }
+                            "${BrandName.NAME} needs you on ${BrandName.NAME} Phone ($site): ${reason.take(80)}. Tap, then Take control.") }
                     com.blaze.assistant.browser.phone.PhoneBrowserTools.run(drv, name, args, shots) { t, d, a -> confirm(t, d, a, always = true) }
                 }
                 in com.blaze.assistant.browser.BrowserTools.names -> {
@@ -5146,7 +5400,7 @@ When you finish, say what you did in one short sentence.
                     if (want != null && wantNow != null && !TapLoop.needsTap(want, wantNow))
                         "Already ${TapLoop.wantWord(want)}: \u201c${(wantId?.let { svc?.labelOf(it) } ?: label).ifBlank { label }.take(40)}\u201d. Not tapped, it's already how you wanted it."
                     else if (Settings.confirmRisky && risky.containsMatchIn(label) && kotlin.coroutines.coroutineContext[ConfirmGate.Taint]?.askedLabel != label.trim() &&
-                        !confirm("Tap \u201c${label.take(40)}\u201d?", "Blaze wants to tap this in ${svc?.currentApp() ?: "the app"}.", "Tap", always = true))
+                        !confirm("Tap \u201c${label.take(40)}\u201d?", "${BrandName.NAME} wants to tap this in ${svc?.currentApp() ?: "the app"}.", "Tap", always = true))
                         "The user did NOT approve tapping \"$label\". Don't retry; tell them it's ready for them to finish."
                     else PhoneTools.run(app, name, args).let { r ->
                         // v0.45.13 verify-after-act: a switch tapped toward a wanted state is read back before anything says it changed.
@@ -5190,7 +5444,7 @@ When you finish, say what you did in one short sentence.
                     name == com.blaze.assistant.phone.flash.FlashRunner.TOOL -> { add(Role.STEP, "Working on the screen: ${args.optString("goal").take(50)}")
                         com.blaze.assistant.phone.flash.FlashRunner.run(app, args) }
                     name == com.blaze.assistant.phone.CallCopilot.TOOL -> { add(Role.STEP, "Call Copilot"); com.blaze.assistant.phone.CallCopilot.run(app, args) }
-                    name == HaloStudio.TOOL -> "Halo is now part of Blaze (0.51.0): there's no separate Halo persona to tune. Change Blaze's personality in Settings › Personality."
+                    name == HaloStudio.TOOL -> "Halo is now part of ${BrandName.NAME} (0.51.0): there's no separate Halo persona to tune. Change ${BrandName.NAME}'s personality in Settings › Personality."
                     name == com.blaze.assistant.agent.query.QueryRuntime.TOOL -> {
                         add(Role.STEP, "Researching \u201c${args.optString("question").take(50)}\u201d")
                         val recent = try { msgs.takeLast(8).filter { it.role == Role.USER || it.role == Role.BLAZE }.map { it.text.take(300) } } catch (_: Throwable) { emptyList() }
@@ -5237,7 +5491,7 @@ When you finish, say what you did in one short sentence.
          */
         suspend fun runPlan(args: JSONObject): String {
             val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance
-                ?: return "Phone control isn't connected. Ask the user to turn on Blaze in Accessibility settings."
+                ?: return "Phone control isn't connected. Ask the user to turn on ${BrandName.NAME} in Accessibility settings."
             val steps = args.optJSONArray("steps") ?: return "Error: no steps."
             val n = minOf(steps.length(), 15)
             fun desc(st: JSONObject): String = when (st.optString("do")) {
@@ -5305,7 +5559,7 @@ When you finish, say what you did in one short sentence.
                             else {
                                 val label = svc.labelOf(id)
                                 if (Settings.confirmRisky && risky.containsMatchIn(label) &&
-                                    !confirm("Tap \u201c${label.take(40)}\u201d?", "Blaze wants to tap this in ${svc.currentApp() ?: "the app"}.", "Tap", always = true))
+                                    !confirm("Tap \u201c${label.take(40)}\u201d?", "${BrandName.NAME} wants to tap this in ${svc.currentApp() ?: "the app"}.", "Tap", always = true))
                                     return "The user did NOT approve tapping \"$label\" (step ${i + 1}). Don't retry; tell them it's ready for them to finish."
                                 svc.flash(id)
                                 val r = svc.tap(id, st.optString("do") == "long_press")
@@ -5430,7 +5684,7 @@ When you finish, say what you did in one short sentence.
             val d = if (Mind.ready) d0.copy(memory = false) else d0
             if (!d.reflect || (!d.memory && !d.skill)) return
             val exchange = msgs.drop(maxOf(0, lastUser - 4)).joinToString("\n") { m ->
-                when (m.role) { Role.USER -> "User: "; Role.BLAZE -> "Blaze: "; Role.STEP -> "  (step) "; Role.ERROR -> "  (error) " } + m.text.take(1500) }
+                when (m.role) { Role.USER -> "User: "; Role.BLAZE -> "${BrandName.NAME}: "; Role.STEP -> "  (step) "; Role.ERROR -> "  (error) " } + m.text.take(1500) }
             val t = JSONArray(trace.toString())
             io.launch {
                 val chip = Learning.review(exchange, t, d, tools)
@@ -5495,7 +5749,7 @@ When you finish, say what you did in one short sentence.
             if (!isPrivate) try { com.blaze.assistant.widget.BlazeWidget.update(app, last.text.take(240)) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeWidget.u", e) }
             if (this === curRef && (inForeground || overlayOpen)) return
             // v0.24.4: a private chat's words never land in the notification shade.
-            if (isPrivate) { Notifier.reply("Blaze answered in your private chat.", last.role == Role.ERROR, id); return }
+            if (isPrivate) { Notifier.reply("${BrandName.NAME} answered in your private chat.", last.role == Role.ERROR, id); return }
             // A chat you left kept working: say which one finished.
             Notifier.reply(if (this === curRef) last.text else "${title.ifBlank { "A chat" }}: ${last.text}", last.role == Role.ERROR, id)
         }

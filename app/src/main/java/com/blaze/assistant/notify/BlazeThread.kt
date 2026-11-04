@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.45.19 phone tasks (user testing 0.45.18, Fri 23 Oct 09:22): Blaze texts like a messaging app with its own icon.
  *
@@ -18,8 +20,8 @@ package com.blaze.assistant.notify
 object BlazeThread {
     /** The one channel every Blaze message posts on (IMPORTANCE_HIGH). New id: old channels can't be raised. */
     const val CHANNEL = "blaze_messages_v2"
-    const val CHANNEL_NAME = "Blaze messages"
-    const val CHANNEL_DESC = "Blaze's messages: answers, finished tasks, check-ins and heads-ups. Sound and vibration follow your phone's settings."
+    const val CHANNEL_NAME = "${BrandName.NAME} messages"
+    const val CHANNEL_DESC = "${BrandName.NAME}'s messages: answers, finished tasks, check-ins and heads-ups. Sound and vibration follow your phone's settings."
     /** Channels the messages used to post on; deleted once [CHANNEL] exists (their posts moved to it). */
     val OLD_CHANNELS = listOf("blaze_reply", "blaze_proactive", "blaze_calls", "blaze_followups")
     /** The long-lived conversation shortcut the thread is attached to (Android 11+ conversation section). */
@@ -27,7 +29,7 @@ object BlazeThread {
     /** The one notification id of the Blaze thread (was the replies' id). */
     const val NOTIF_ID = 2
     const val PERSON_KEY = "blaze"
-    const val PERSON_NAME = "Blaze"
+    const val PERSON_NAME = "${BrandName.NAME}"
 
     /**
      * What a line of the thread is. [USER] (0.45.29) is the user's own inline reply, shown as theirs ("You") in their
@@ -46,7 +48,7 @@ object BlazeThread {
     /** The collapsed title. A failure says so honestly; everything else is just "Blaze", like a text. */
     fun title(kind: Kind, urgent: Boolean = false): String = when {
         kind == Kind.FAILED -> MessageThread.FAILED_TITLE
-        urgent -> "Blaze \u00b7 important"
+        urgent -> "${BrandName.NAME} \u00b7 important"
         else -> PERSON_NAME
     }
 

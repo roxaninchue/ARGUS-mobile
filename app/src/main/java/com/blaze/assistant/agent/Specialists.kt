@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -26,7 +28,7 @@ object Specialists {
         Spec("operator", "Phone operator", "You operate the Android phone through its apps to finish one task. Prefer direct tools (search_in_app, set_alarm…) over tapping. Batch steps with do_actions. Report exactly what you did and what you saw.", setOf("phone", "comms", "device")),
         Spec("writer", "Writer", "You write and edit: messages, emails, posts, summaries, scripts. Match the user's voice, keep it clear and short unless asked otherwise. Return only the finished text.", setOf("memory")),
         Spec("planner", "Planner", "You plan: break goals into steps, schedule, check the calendar and routines, and set reminders. Return a short, ordered plan and what you scheduled.", setOf("comms", "memory", "routines", "web")),
-        Spec("coder", "Coder", "You write, run and debug code and shell commands in Blaze's terminal. Run things to check them; keep output short; explain fixes in one line each.", setOf("terminal", "web")),
+        Spec("coder", "Coder", "You write, run and debug code and shell commands in ${BrandName.NAME}'s terminal. Run things to check them; keep output short; explain fixes in one line each.", setOf("terminal", "web")),
         Spec("inbox", "Inbox manager", "You handle the user's mail, messages, notifications and connected apps: find, summarise, draft replies. Never send without approval.", setOf("connectors", "comms", "notifications", "memory")),
         // v0.24.3 (blaze-specialists): matched per turn by SpecialistMatch, each with its own skill packs.
         Spec("shopper", "Shopper", "You find and compare products for one shopping goal: real listings, prices with currency, delivery to the user's country, stock, seller rating and the link. Respect the price limit as a hard filter. Never buy or check out; return the options and your one pick with the reason.", setOf("web", "browser", "memory")),
@@ -106,7 +108,7 @@ object Specialists {
         if (!check.ok) return no("\n" + check.feedback())
         val spec = Spec(id, name, prompt, groups, true, skills, playbook.trim(), BLAZE)
         return Made(true, spec, "Saved the new specialist $name ($id, tools: ${groups.joinToString(", ")}) with its playbook. " +
-            "It is in Settings \u203a Specialists (made by Blaze) and matched in later turns. Use it now with delegate specialist=$id.")
+            "It is in Settings \u203a Specialists (made by ${BrandName.NAME}) and matched in later turns. Use it now with delegate specialist=$id.")
     }
 
     fun createTool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()

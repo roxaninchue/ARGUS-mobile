@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -99,7 +101,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
     val status = when {
         muted -> "Muted"
         voice == Voice.State.LISTENING -> "Listening"
-        voice == Voice.State.SPEAKING -> "Blaze is talking · tap to cut in"
+        voice == Voice.State.SPEAKING -> "${BrandName.NAME} is talking · tap to cut in"
         mood != Mood.IDLE -> agentStatus.ifBlank { com.blaze.assistant.agent.Friendly.between(null) }
         else -> "Connecting"
     }
@@ -121,7 +123,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
             Spacer(Modifier.height(28.dp))
             Label("CALL", color = c.ink.copy(alpha = 0.55f), size = 10.sp)
             Spacer(Modifier.height(6.dp))
-            Text("Blaze", style = TextStyle(fontFamily = Type.Display, fontSize = 30.sp, color = c.ink))
+            Text("${BrandName.NAME}", style = TextStyle(fontFamily = Type.Display, fontSize = 30.sp, color = c.ink))
             Spacer(Modifier.height(4.dp))
             Text("%d:%02d".format(seconds / 60, seconds % 60),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink.copy(alpha = 0.6f)))

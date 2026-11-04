@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -208,7 +210,7 @@ class PhoneBridgeTest {
         for (n in PhonePolicy.TOOLS) assertTrue(n, n in com.blaze.assistant.agent.CallScan.SEED)
         val line = PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "click").put("target", "e$i"))
         assertFalse(line, Regex("\\be\\d+\\b").containsMatchIn(line))
-        assertEquals("Working on Blaze Phone", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "{\"name\":\"x\"}")))
+        assertEquals("Working on ${BrandName.NAME} Phone", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "{\"name\":\"x\"}")))
     }
 
     @Test fun bridgeScriptShape() {

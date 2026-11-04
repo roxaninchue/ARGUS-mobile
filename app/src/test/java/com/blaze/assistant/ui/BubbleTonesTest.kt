@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -19,7 +21,7 @@ class BubbleTonesTest {
         for (dark in modes) for (t in LivingThemes.PICKER) {
             val c = blazePalette(t.id, dark, null)
             assertTrue("${t.id} dark=$dark: no user bubble colour", c.bubbleMe != Color.Unspecified)
-            assertTrue("${t.id} dark=$dark: no Blaze bubble colour", c.bubbleBlaze != Color.Unspecified)
+            assertTrue("${t.id} dark=$dark: no ${BrandName.NAME} bubble colour", c.bubbleBlaze != Color.Unspecified)
         }
     }
 

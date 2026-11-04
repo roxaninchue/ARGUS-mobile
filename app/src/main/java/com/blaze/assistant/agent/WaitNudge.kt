@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.45.28, pure (WaitNudgeTest): the free one's short line while its partner works on a task and the screen has gone
  * quiet ("Hang tight, Sam, Halo will be back with the results shortly…" in tone, never a fixed string). The words are
@@ -35,7 +37,7 @@ object WaitNudge {
             "do the task yourself, no lists, no tags, and never mention models, tools, prompts or that you were asked to write this. " +
             "Don't restate what their message is about and never promise it's locked in, coming or almost ready."
 
-    private val tagRe = Regex("\\[\\[[^\\]]*]]|\\[(Blaze|Halo)]\\s*", RegexOption.IGNORE_CASE)
+    private val tagRe = Regex("\\[\\[[^\\]]*]]|\\[(${BrandName.NAME}|Halo)]\\s*", RegexOption.IGNORE_CASE)
     private val sentenceEnd = Regex("(?<=[.!?])\\s+")
     /** A sentence that offers or asks something ("Anything I can do meanwhile?", "Want me to…", "Let me know if…"). */
     private val offerRe = Regex("""\?\s*$|\b(?:want me to|shall i|should i|can i|could i|would you like|do you want|let me know|anything (?:else )?(?:i can|you need)|i can (?:help|also|sort|do)|happy to help|feel free|meanwhile,? (?:i|if))\b""", RegexOption.IGNORE_CASE)

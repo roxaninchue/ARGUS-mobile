@@ -23,7 +23,10 @@ object RichRepair {
         when (kind) {
             "table" -> RichKit.table(body) != null; "chart" -> RichKit.chart(body) != null; "choices" -> RichKit.choices(body) != null
             "form" -> RichKit.form(body) != null; "compare" -> RichKit.compare(body) != null; "tool" -> RichKit.tool(body) != null
-            "apps" -> RichKit.apps(body) != null; else -> true
+            "apps" -> RichKit.apps(body) != null
+            "gallery" -> com.blaze.assistant.ui.RichMedia.gallery(body) != null; "links" -> com.blaze.assistant.ui.RichMedia.links(body) != null
+            "doc" -> com.blaze.assistant.ui.RichMedia.doc(body) != null; "details" -> com.blaze.assistant.ui.RichMedia.details(body) != null
+            else -> true
         }
     } catch (_: Exception) { false }
 

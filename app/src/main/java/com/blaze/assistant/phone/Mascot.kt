@@ -52,7 +52,7 @@ object Mascot {
     const val GLOW_BLUE_R = 1.6f
     const val EYE = 0xFF23252D.toInt()
     /** The launcher icon background. */
-    const val ICON_BG = 0xFF212226.toInt()
+    const val ICON_BG = 0xFF0E2A47.toInt()   // 0.52.1 Argus navy (was 0xFF212226)
 
     /**
      * Walks [s] at [k] px per unit with the unit point [anchor] placed at (ax, ay) and the shape scaled by

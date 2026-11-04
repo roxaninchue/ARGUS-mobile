@@ -1,5 +1,7 @@
 package com.blaze.assistant.appstore
 
+
+import com.blaze.assistant.BrandName
 import java.io.File
 
 /**
@@ -54,9 +56,9 @@ sealed class VtVerdict {
 /** Shown on every listing, card and details page (user policy, 2026-10-23). */
 object StorePolicy {
     const val NOTICE = "Open-source, not made by Blazeinchue. Install at your own risk."
-    const val FREE = "Free. Blaze charges nothing and earns nothing from these apps. Star the developers' repos."
+    const val FREE = "Free. ${BrandName.NAME} charges nothing and earns nothing from these apps. Star the developers' repos."
     const val SOURCE_BUTTON = "Source repo"
-    const val PERMISSION = "To install apps, allow Blaze to install unknown apps in Android's settings (once). You still confirm every install in Android's own dialog."
+    const val PERMISSION = "To install apps, allow ${BrandName.NAME} to install unknown apps in Android's settings (once). You still confirm every install in Android's own dialog."
 }
 
 /** What Android's installer said about one session. */
@@ -121,7 +123,7 @@ class InstallPipeline(private val env: Env) {
         val verb = if (update) "Update" else "Install"
         val go = try {
             env.confirmInstall("$verb ${app.name}?", "${StorePolicy.NOTICE} License: ${app.license.ifBlank { "not stated" }}. " +
-                "Blaze downloads the developer's official release from ${app.source.url}, checks its SHA-256 and signing key, " +
+                "${BrandName.NAME} downloads the developer's official release from ${app.source.url}, checks its SHA-256 and signing key, " +
                 "checks it with VirusTotal, then Android asks you to confirm.")
         } catch (e: Exception) { false }
         if (!go) return stop(StoreStep.CANCELLED, "Not installed: you said no.")
@@ -131,7 +133,7 @@ class InstallPipeline(private val env: Env) {
             report.on(StoreStep.PERMISSION, StorePolicy.PERMISSION, 0, 0)
             try { env.requestInstallPermission() } catch (_: Exception) { }
             if (!env.awaitInstallPermission(PERMISSION_WAIT_MS))
-                return stop(StoreStep.NEEDS_PERMISSION, "Not installed: Blaze isn't allowed to install apps yet. ${StorePolicy.PERMISSION} Then tap Get again.")
+                return stop(StoreStep.NEEDS_PERMISSION, "Not installed: ${BrandName.NAME} isn't allowed to install apps yet. ${StorePolicy.PERMISSION} Then tap Get again.")
         }
         if (cancelled()) return stop(StoreStep.CANCELLED, "Cancelled.")
 

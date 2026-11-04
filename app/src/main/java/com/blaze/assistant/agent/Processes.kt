@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
@@ -174,7 +176,7 @@ object Processes {
     /** v0.45.13: an alarm in the Clock app with no registry row: "A2" (found by its label) or "clock@18:15" (by its time). */
     private fun untracked(id: String, action: String): P? {
         if (action !in setOf("delete", "pause", "resume")) return null
-        Regex("^A\\d+$").matchEntire(id)?.let { return P(id, "alarm", "Alarm $id", "", 0, props = JSONObject().put("label", "Blaze $id")) }
+        Regex("^A\\d+$").matchEntire(id)?.let { return P(id, "alarm", "Alarm $id", "", 0, props = JSONObject().put("label", "${BrandName.NAME} $id")) }
         Regex("^clock@([01]?\\d|2[0-3]):([0-5]\\d)$").matchEntire(id)?.let { m ->
             val t = "%02d:%s".format(m.groupValues[1].toInt(), m.groupValues[2])
             return P(id, "alarm", "Clock alarm $t", "", 0, props = JSONObject().put("time", t).put("label", "alarm at $t"))
@@ -190,7 +192,7 @@ object Processes {
         val t = try { nextSystemAlarm() } catch (_: Throwable) { null } ?: return null
         if (tracked.any { it.kind == "alarm" && it.status == "active" && Math.abs(it.due - t) < 60_000L }) return null
         val hm = SimpleDateFormat("HH:mm", Locale.US).format(Date(t))
-        return "clock@$hm · alarm · next Clock alarm (not tracked by Blaze) · ${fmt.format(Date(t))} · on. To switch it off or delete it use process with id clock@$hm, or A<n> if its label says (Blaze A<n>)."
+        return "clock@$hm · alarm · next Clock alarm (not tracked by ${BrandName.NAME}) · ${fmt.format(Date(t))} · on. To switch it off or delete it use process with id clock@$hm, or A<n> if its label says (${BrandName.NAME} A<n>)."
     }
 
     /** Short count line for the system prompt, e.g. "3 routines, 1 alarm". */
@@ -254,7 +256,7 @@ object Processes {
         val label = p.props.optString("label")
         val hhmm = p.props.optString("time").ifBlank { null } ?: if (p.due > 0) SimpleDateFormat("HH:mm", Locale.US).format(Date(p.due)) else null
         val what = "alarm ${p.id}" + (hhmm?.let { " ($it" + (if (label.isNotBlank()) ", \u201c$label\u201d" else "") + ")" } ?: "")
-        val o = com.blaze.assistant.phone.ClockUi.alarmOff(ctx, p.id, hhmm, label.ifBlank { "Blaze ${p.id}" }, delete)
+        val o = com.blaze.assistant.phone.ClockUi.alarmOff(ctx, p.id, hhmm, label.ifBlank { "${BrandName.NAME} ${p.id}" }, delete)
         lastTrace = o.trace
         return when (o.state) {
             ClockState.DELETED, ClockState.GONE -> { drop(p.id); "Deleted $what from the Clock app. " + ActCheck.checked(o.evidence) }
@@ -278,7 +280,7 @@ object Processes {
         if (off) return alarmOff(ctx, p, delete = false)
         val label = p.props.optString("label")
         val hhmm = p.props.optString("time").ifBlank { null }
-        val o = com.blaze.assistant.phone.ClockUi.alarmOn(ctx, p.id, hhmm, label.ifBlank { "Blaze ${p.id}" })
+        val o = com.blaze.assistant.phone.ClockUi.alarmOn(ctx, p.id, hhmm, label.ifBlank { "${BrandName.NAME} ${p.id}" })
         lastTrace = o.trace
         return if (o.state == com.blaze.assistant.phone.ClockUi.State.ON) { update(p.id) { it.copy(status = "active") }; "Turned alarm ${p.id} back on. " + ActCheck.checked(o.evidence) }
             else "I tried to turn alarm ${p.id} back on. " + ActCheck.notConfirmed(o.evidence, "switch it on in the Clock app")

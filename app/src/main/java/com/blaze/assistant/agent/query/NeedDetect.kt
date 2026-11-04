@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent.query
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.SearchRoute
 
 /**
@@ -72,8 +74,8 @@ object NeedDetect {
         if (t.startsWith("[Scheduled routine")) return Decision(Need.NONE, "routine")
         when (SearchRoute.route(t)) {
             SearchRoute.Route.CHAT -> return Decision(Need.NONE, "small talk")
-            SearchRoute.Route.COMMANDS -> return Decision(Need.LOCAL, "Blaze's own commands")
-            SearchRoute.Route.LOCAL -> return Decision(Need.LOCAL, "about Blaze, this chat or the user's data")
+            SearchRoute.Route.COMMANDS -> return Decision(Need.LOCAL, "${BrandName.NAME}'s own commands")
+            SearchRoute.Route.LOCAL -> return Decision(Need.LOCAL, "about ${BrandName.NAME}, this chat or the user's data")
             SearchRoute.Route.WEATHER -> return Decision(Need.NONE, "weather tool")
             SearchRoute.Route.SEARCH -> return Decision(if (isCode(t)) Need.CODE else Need.EXTERNAL, "explicit search", intents(t))
             SearchRoute.Route.MODEL -> { }

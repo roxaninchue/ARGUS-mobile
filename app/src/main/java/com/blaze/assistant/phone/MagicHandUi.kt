@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.togetherWith
@@ -257,7 +259,7 @@ private fun DockCard(u: MagicHandState.Ui, calls: DockCalls, widthDp: Float, bar
             Panel.MENU -> Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
                 MagicHandMenuCard(u, widthDp - 36f, calls.onMenu)
             }
-            Panel.ASKING -> Line("Asking Blaze about \u201c${MagicHandLogic.preview(u.question.ifBlank { u.pointing }, 40)}\u201d\u2026")
+            Panel.ASKING -> Line("Asking ${BrandName.NAME} about \u201c${MagicHandLogic.preview(u.question.ifBlank { u.pointing }, 40)}\u201d\u2026")
             Panel.ANSWER -> {
                 Box(Modifier.padding(horizontal = 16.dp)) { SelectionBar(bar) }
                 Column(Modifier.fillMaxWidth().heightIn(max = 240.dp).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp)) {
@@ -378,7 +380,7 @@ private fun TeachReviewCard(u: MagicHandState.Ui, calls: DockCalls) {
             u.teachSteps.forEachIndexed { i, s -> StepLine(i + 1, s) }
         }
         Spacer(Modifier.height(4.dp))
-        Text("Saved as not tested yet. Blaze follows it once with you before trusting it.", style = sans.copy(fontSize = 11.5.sp, color = Glass.sub))
+        Text("Saved as not tested yet. ${BrandName.NAME} follows it once with you before trusting it.", style = sans.copy(fontSize = 11.5.sp, color = Glass.sub))
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         GlassIconButton(Icons.Rounded.Delete, "Discard", size = 40.dp, bg = Glass.raised2) { calls.onTeachDiscard() }
@@ -444,7 +446,7 @@ fun MagicHandWatchesPage(preview: List<MagicHandWatch.Watch>? = null, now: Long 
     if (preview == null) androidx.compose.runtime.LaunchedEffect(Unit) { MagicHandWatches.load(ctx) }
     val list = (preview ?: live).sortedByDescending { it.created }
     val c = LocalBlaze.current
-    PageHead("Magic Hand", "Watches", "Values you held the hand on. Blaze re-reads each one about once an hour while its app is open and tells you when it changes.")
+    PageHead("Magic Hand", "Watches", "Values you held the hand on. ${BrandName.NAME} re-reads each one about once an hour while its app is open and tells you when it changes.")
     if (list.isEmpty()) EmptyState("Nothing watched yet", "Summon Magic Hand from the assistant panel, then hold it on a price, score or status and tap Watch.")
     else Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.raised)) {
         list.forEachIndexed { i, w ->

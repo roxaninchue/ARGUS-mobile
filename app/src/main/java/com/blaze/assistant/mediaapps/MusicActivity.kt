@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.ComponentName
 import android.content.Context
@@ -307,7 +309,7 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
             val page = if (tab == "player") under else MusicNav.normalize(tab)
             MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Your library"; "create" -> "Create"; else -> "Music" },
                 onAccount = { account = true }, onClose = onClose) {
-                RoundIcon(Icons.Rounded.Headphones, if (djOn) "Blaze DJ is on" else "Blaze DJ", tint = if (djOn) c.accent else c.ink) { djOpen = true }
+                RoundIcon(Icons.Rounded.Headphones, if (djOn) "${BrandName.NAME} DJ is on" else "${BrandName.NAME} DJ", tint = if (djOn) c.accent else c.ink) { djOpen = true }
                 com.blaze.assistant.ui.ThemeSwitch(Modifier.width(44.dp))
             }
             Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -361,7 +363,7 @@ private fun AccountDialog(onDismiss: () -> Unit) {
         }
         Row(Modifier.fillMaxWidth().clickable { voice = !voice; BlazeDj.setVoice(ctx, voice) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.Icon(Icons.Rounded.RecordVoiceOver, contentDescription = null, tint = c.ink)
-            MText(if (voice) "Blaze DJ spoken intros: on" else "Blaze DJ spoken intros: off", 14.sp, c.ink, modifier = Modifier.padding(start = 10.dp))
+            MText(if (voice) "${BrandName.NAME} DJ spoken intros: on" else "${BrandName.NAME} DJ spoken intros: off", 14.sp, c.ink, modifier = Modifier.padding(start = 10.dp))
         }
     }
 }
@@ -474,7 +476,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                         add((if (fadeS == 0) "Fade between songs: off" else "Fade between songs: $fadeS s") to { fadeMenu = true })
                         add("Lyrics" to { view = if (view == "lyrics") "art" else "lyrics" })
                         add("Karaoke" to { view = if (view == "karaoke") "art" else "karaoke" })
-                        if (BlazeDj.on.value) add("Blaze DJ: more like this" to { MusicService.current?.djMoreLikeThis(); Unit })
+                        if (BlazeDj.on.value) add("${BrandName.NAME} DJ: more like this" to { MusicService.current?.djMoreLikeThis(); Unit })
                     }.map { (l, f) -> l to { more = false; f() } })
                     BlazeMenu(eqMenu, { eqMenu = false }, MusicSmart.presets.keys.map { n ->
                         (n + if (n == eqName) "  \u2713" else "") to { eqName = n; MediaPrefs.setStr(ctx, MediaPrefs.EQ, n); MusicService.current?.applyEq(n); eqMenu = false } })
@@ -865,7 +867,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         }
                     }
                     if (songs.isEmpty()) item {
-                        EmptyState("No songs yet", "Songs you download in the Store, and music in Blaze's Gallery, show up here and play offline.")
+                        EmptyState("No songs yet", "Songs you download in the Store, and music in ${BrandName.NAME}'s Gallery, show up here and play offline.")
                     }
                     itemsIndexed(sortedSongs, key = { _, t -> t.key }) { i, t -> SongRow(t, sortedSongs, i) }
                 }
@@ -1042,10 +1044,10 @@ private fun ForYou(songs: List<Track>, liked: List<String>, playList: (List<Trac
     var busy by remember { mutableStateOf("") }
     Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Blaze DJ", primary = true) {
+            PillButton("${BrandName.NAME} DJ", primary = true) {
                 val svc = MusicService.current
-                if (svc == null) android.widget.Toast.makeText(ctx, "Play any song first, then start Blaze DJ.", android.widget.Toast.LENGTH_SHORT).show()
-                else { svc.startDj(true); android.widget.Toast.makeText(ctx, "Blaze DJ is on: it keeps the music going with songs you love.", android.widget.Toast.LENGTH_SHORT).show() }
+                if (svc == null) android.widget.Toast.makeText(ctx, "Play any song first, then start ${BrandName.NAME} DJ.", android.widget.Toast.LENGTH_SHORT).show()
+                else { svc.startDj(true); android.widget.Toast.makeText(ctx, "${BrandName.NAME} DJ is on: it keeps the music going with songs you love.", android.widget.Toast.LENGTH_SHORT).show() }
             }
             PillButton("Wrapped", primary = false) { wrapped = MusicExtras.wrappedText(MusicExtras.wrapped("year")) }
             PillButton("Import playlist", primary = false) { importing = true }
@@ -1089,7 +1091,7 @@ private fun ImportDialog(onDismiss: () -> Unit) {
     var text by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var msg by remember { mutableStateOf("") }
-    BlazeDialog("Import a playlist", "Paste a YouTube or Spotify playlist link (Spotify albums work too). Blaze finds each song, downloads it and builds the playlist.",
+    BlazeDialog("Import a playlist", "Paste a YouTube or Spotify playlist link (Spotify albums work too). ${BrandName.NAME} finds each song, downloads it and builds the playlist.",
         confirm = if (busy) "Importing\u2026" else if (msg.isNotBlank()) "Done" else "Import", onConfirm = {
             if (msg.isNotBlank()) { onDismiss(); return@BlazeDialog }
             if (busy || text.isBlank()) return@BlazeDialog

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui.composer
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.composer.ComposerLook
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -41,6 +43,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Check
@@ -138,7 +143,7 @@ fun MeAvatarView(av: ChatOverlayLogic.Avatar, size: Int = ChatBarTokens.AVATAR_D
 @Composable
 fun BlazeAvatar(size: Int = 30) {
     Box(Modifier.size(size.dp).clip(CircleShape).background(Color(com.blaze.assistant.phone.Mascot.ICON_BG))
-        .semantics { contentDescription = "Blaze" }, contentAlignment = Alignment.Center) {
+        .semantics { contentDescription = "${BrandName.NAME}" }, contentAlignment = Alignment.Center) {
         com.blaze.assistant.ui.DuoEmblem((size * 1.05f).dp, animate = false)
     }
 }
@@ -174,6 +179,7 @@ fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile:
                 }
             }
         }
+        com.blaze.assistant.ui.ClearFocusOnLeave()   // 0.52.1: the keyboard only shows when you tap the box
         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             MeAvatar(onClick = onProfile)
             Spacer(Modifier.width(8.dp))
@@ -181,12 +187,12 @@ fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile:
                 .border(1.dp, c.ink.copy(alpha = 0.10f), RoundedCornerShape(50))
                 .padding(start = 18.dp, end = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                    if (state.text.isEmpty()) Text("Message Blaze", style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.sub))
+                    if (state.text.isEmpty()) Text("Message ${BrandName.NAME}", style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.sub))
                     BasicTextField(state.text, { state.text = it },
                         textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.ink), cursorBrush = SolidColor(DuoColors.blazeBlue),
                         maxLines = 5, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                         keyboardActions = KeyboardActions(onSend = { if (state.canSend) state.send() }),
-                        modifier = Modifier.fillMaxWidth().focusRequester(state.barFocus).semantics { contentDescription = "Message Blaze" })
+                        modifier = Modifier.fillMaxWidth().focusRequester(state.barFocus).semantics { contentDescription = "Message ${BrandName.NAME}" })
                 }
                 // The send arrow lives INSIDE the pill and only while there's text.
                 AnimatedVisibility(state.canSend, enter = fadeIn(tween(MotionTokens.ms(MotionTokens.SHORT).toInt())), exit = fadeOut(tween(MotionTokens.ms(MotionTokens.SHORT).toInt()))) {
@@ -220,7 +226,15 @@ private fun SmallChip(label: String, desc: String, trailing: Boolean = false, cl
     }
 }
 
-/** Auto / Spark (Fast) / Flare (Balanced) / Inferno (Smartest). */
+/** 0.52.1 (Argus): the tier marks: Insight an eye, Oracle a spark of foresight, Panoptes the all-seeing (many eyes). */
+fun tierIcon(f: ModelChoice.Family): androidx.compose.ui.graphics.vector.ImageVector? = when (f) {
+    ModelChoice.Family.AUTO -> null
+    ModelChoice.Family.SPARK -> Icons.Rounded.Visibility
+    ModelChoice.Family.FLARE -> Icons.Rounded.AutoAwesome
+    ModelChoice.Family.INFERNO -> Icons.Rounded.Insights
+}
+
+/** Auto / Insight (Fast) / Oracle (Balanced) / Panoptes (Deepest). */
 @Composable
 fun ModelPicker(current: ModelChoice.Family, onPick: (ModelChoice.Family) -> Unit) {
     val c = LocalBlaze.current
@@ -232,6 +246,7 @@ fun ModelPicker(current: ModelChoice.Family, onPick: (ModelChoice.Family) -> Uni
         ModelChoice.Family.values().forEach { f ->
             Row(Modifier.fillMaxWidth().clickable { onPick(f) }.semantics { contentDescription = "Model ${f.pickerLabel}" }
                 .padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                tierIcon(f)?.let { Icon(it, null, tint = c.sub, modifier = Modifier.padding(end = 10.dp).size(18.dp)) }
                 Text(f.pickerLabel, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontWeight = if (f == current) FontWeight.SemiBold else FontWeight.Normal, fontSize = 15.sp, color = c.ink))
                 if (f == current) Icon(Icons.Rounded.Check, null, tint = DuoColors.blazeBlue, modifier = Modifier.size(18.dp))
             }
@@ -256,7 +271,8 @@ fun ChatOverHome(state: ComposerState, modifier: Modifier = Modifier, bottom: @C
     val pill by com.blaze.assistant.agent.StepPills.current.collectAsState()
     val busy = chatId in busyChats
     val lastStep = if (busy) all.lastOrNull { it.role == Role.STEP }?.text else null
-    val work = if (busy) ChatOverlayLogic.workLine(pill?.takeIf { it.chat == chatId }?.text, chip, status, lastStep) else null
+    // 0.52.0: no status line beside the typing dots (ChatPolicy): the work pill above carries the progress.
+    val work = if (busy && com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) ChatOverlayLogic.workLine(pill?.takeIf { it.chat == chatId }?.text, chip, status, lastStep) else null
     ChatOverHomeContent(state, all, busy, modifier, bottom = bottom, workLine = work, onSend = { state.send(it) })
 }
 
@@ -279,8 +295,16 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
     val more = remember(all, state.sinceId) { state.sinceId > 0L && ChatOverlayLogic.visible(all, 0L).size > shown.size }
     val earlier = more
     val typing = ChatOverlayLogic.typing(shown, busy)
+    val rowsShown = remember(rows) { rows.filter { it !is ChatOverlayLogic.Row.Steps && !(it is ChatOverlayLogic.Row.Msg && it.m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) } }
+    val agentsAll by com.blaze.assistant.agent.BgAgents.all.collectAsState()
+    val chatNow by com.blaze.assistant.agent.Agent.chatId.collectAsState()
+    val agentLogs = remember(agentsAll, chatNow) { agentsAll.filter { it.live && it.parent == chatNow }.sortedBy { it.started }
+        .map { b -> b.log.ifEmpty { listOfNotNull(b.last.takeIf { l -> l.isNotBlank() }) } } }
+    val turnLines = (rows.lastOrNull() as? ChatOverlayLogic.Row.Steps)?.takeIf { it.live }?.lines ?: emptyList()
+    @Suppress("UNUSED_VARIABLE") val unusedWorkLine = workLine
+    val pillLine = com.blaze.assistant.agent.TaskLine.pick(if (busy) turnLines else null, agentLogs)
     val listState = rememberLazyListState()
-    LaunchedEffect(rows.size, typing, shown.lastOrNull()?.text?.length, followFor) { val n = rows.size + (if (typing) 1 else 0) + 2; if (n > 0) listState.scrollToItem(n - 1) }
+    LaunchedEffect(rowsShown.size, pillLine != null, shown.lastOrNull()?.text?.length, followFor) { val n = rowsShown.size + (if (pillLine != null) 1 else 0) + 2; if (n > 0) listState.scrollToItem(n - 1) }
     Column(modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             val title = if (state.privateChat) "Private chat" else state.title
@@ -310,18 +334,18 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
                 Text(ChatOverlayLogic.stamp(at, now), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
-            items(rows, key = { it.key }) { r ->
+            // 0.52.1 (owner): no step chips, work cards or agent pills in the chat: the task's work is ONE TaskPill at the end.
+            items(rowsShown, key = { it.key }) { r ->
                 when (r) {
-                    is ChatOverlayLogic.Row.Steps -> StepsChip(r)
+                    is ChatOverlayLogic.Row.Steps -> Unit
                     is ChatOverlayLogic.Row.Msg -> Column { val m = r.m
                         if (m.role == Role.USER) UserBubble(m, lift = m.id > state.liveFrom) else BlazeBubble(m, typeIn = m.id > state.liveFrom)
                         if (m.id == followFor && onSend != null) com.blaze.assistant.ui.FollowupRow(m.followups, Modifier.padding(start = 38.dp, top = 6.dp)) { onSend(it) }
                     }
                 }
             }
-            if (typing) item(key = "typing") { Row(verticalAlignment = Alignment.CenterVertically) { BlazeAvatar(); Spacer(Modifier.width(8.dp)); TypingDots()
-                if (!workLine.isNullOrBlank()) { Spacer(Modifier.width(10.dp)); Text(workLine, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).semantics { contentDescription = "Blaze is $workLine" },
-                    style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub)) } } }
+            if (pillLine != null) item(key = "typing") { Row(verticalAlignment = Alignment.CenterVertically) { BlazeAvatar(); Spacer(Modifier.width(8.dp))
+                com.blaze.assistant.ui.TaskPill(pillLine) } }
         }
         }
         // Choice buttons and forms in replies answer only while Blaze is idle (like the old chat).
@@ -425,7 +449,7 @@ fun TypingDots() {
     val solid = LocalComposerSolid.current
     Row(Modifier.clip(RoundedCornerShape(18.dp))
         .then(if (solid) Modifier.background(ComposerLook.blazeBubble(c)) else Modifier.glass(RoundedCornerShape(18.dp), GlassIntensity.High, shadow = false))
-        .semantics { contentDescription = "Blaze is typing" }.padding(horizontal = 14.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        .semantics { contentDescription = "${BrandName.NAME} is typing" }.padding(horizontal = 14.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         if (!MotionTokens.enabled) repeat(3) { Box(Modifier.size(7.dp).clip(CircleShape).background(c.sub)) }
         else {
             val t = rememberInfiniteTransition(label = "dots")

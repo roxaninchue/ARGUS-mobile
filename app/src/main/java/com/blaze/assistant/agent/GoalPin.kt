@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -31,7 +33,7 @@ object GoalPin {
     fun of(current: String, earlier: List<String> = emptyList(), bind: FollowUpBind.Binding? = null): Goal {
         val cur = FollowUpBind.untag(current)
         val base = when (bind?.kind) {
-            FollowUpBind.Kind.BOUND -> "${bind.offer?.who ?: "Blaze"} offered: " + bind.offer?.text?.trim()?.take(300).orEmpty()
+            FollowUpBind.Kind.BOUND -> "${bind.offer?.who ?: "${BrandName.NAME}"} offered: " + bind.offer?.text?.trim()?.take(300).orEmpty()
             FollowUpBind.Kind.STALE -> ""
             else -> if (isFollowUp(cur)) earlier.map { FollowUpBind.untag(it) }.lastOrNull { !isFollowUp(it) }?.trim().orEmpty() else ""
         }

@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review code changes - a diff, a branch, a pull request or a file - for bugs, security, performance, readability and tests, and report findings ranked by severity with concrete fixes. Use when the user asks to "review", "check my code", "look over this PR" or before merging Blaze's own work.
+description: Review code changes - a diff, a branch, a pull request or a file - for bugs, security, performance, readability and tests, and report findings ranked by severity with concrete fixes. Use when the user asks to "review", "check my code", "look over this PR" or before merging Argus's own work.
 tags: [code, review, quality, security, git]
 version: 1
 ---

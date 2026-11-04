@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.foundation.background
@@ -94,7 +96,7 @@ fun StepsModelSection() {
     var model by remember { mutableStateOf(Settings.stepsModel) }
     val c = LocalBlaze.current.mono
     Section("Model for phone steps")
-    Note("Optional: a quicker model for the in-between turns while Blaze taps through an app (e.g. a Flash-Lite model). Leave on \u201cSame as main\u201d to use your main model.")
+    Note("Optional: a quicker model for the in-between turns while ${BrandName.NAME} taps through an app (e.g. a Flash-Lite model). Leave on \u201cSame as main\u201d to use your main model.")
     val options = listOf("" to "Same as main") + Providers.all.filter { it.id == Providers.AUTO || Settings.keyFor(it.id).isNotBlank() }.map { it.id to it.name }
     Column(Modifier.fillMaxWidth().hairline(c.hair)) {
         options.forEach { (id, name) ->
@@ -127,10 +129,10 @@ fun ConnectionsPage(connected0: Set<String>? = null, online0: Boolean? = null, o
     if (connected0 == null) LaunchedEffect(Unit) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { com.blaze.assistant.connect.BlazeAccount.refreshProviders(true) } }
     }
-    PageHead("Accounts", "Connected accounts", "Let Blaze use your apps: tap Connect, approve in your browser, and you're back. Tokens stay encrypted on this phone; sending or posting always asks you first.")
+    PageHead("Accounts", "Connected accounts", "Let ${BrandName.NAME} use your apps: tap Connect, approve in your browser, and you're back. Tokens stay encrypted on this phone; sending or posting always asks you first.")
     if (!acct.online) Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).glassInset(c).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(6.dp).background(c.sub, BlazeShapes.pill)); Spacer(Modifier.width(10.dp))
-        Text("Can't reach Blaze's sign-in service right now. Check your connection.", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.body))
+        Text("Can't reach ${BrandName.NAME}'s sign-in service right now. Check your connection.", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.body))
     }
     val states = Connectors.all.map { conn -> conn to (connected0?.contains(conn.id) ?: remember(tick, st) { runCatching { Connectors.connected(conn.id) }.getOrDefault(false) }) }
     GroupHead("Apps \u00b7 %02d".format(states.size), right = { Label("${states.count { it.second }} connected", size = 9.sp, color = c.weak) })
@@ -144,11 +146,11 @@ fun ConnectionsPage(connected0: Set<String>? = null, online0: Boolean? = null, o
                 when {
                     on -> KitButton("Disconnect", Btn.LINE) { Connectors.disconnect(conn.id); tick++ }
                     one -> {
-                        Note("Blaze opens ${conn.name} in your browser. Approve, and you're back here connected.")
+                        Note("${BrandName.NAME} opens ${conn.name} in your browser. Approve, and you're back here connected.")
                         KitButton("Connect ${conn.name}", Btn.ACCENT) { scope.launch { Connectors.connect(ctx, conn.id); tick++ } }
                     }
                     acct.online -> Note("One-tap Connect for ${conn.name} is coming soon.")
-                    else -> Note("Connect needs Blaze's sign-in service, which can't be reached right now.")
+                    else -> Note("Connect needs ${BrandName.NAME}'s sign-in service, which can't be reached right now.")
                 }
             }
         }
@@ -174,7 +176,7 @@ private fun McpSection() {
     var paste by remember { mutableStateOf("") }
     var msg by remember { mutableStateOf("") }
     Section("MCP servers")
-    Note("Remote MCP servers (Streamable HTTP or SSE). Their tools become Blaze tools named mcp__server__tool. Read-only tools run; others ask first (Action tools pass in Autopilot, destructive ones always ask). Tap a server to set each tool to Ask, Always or Off. The list uses the same mcp.json shape as Blaze CLI and Desktop and syncs with your Blaze account. Local (stdio) servers need a PC.")
+    Note("Remote MCP servers (Streamable HTTP or SSE). Their tools become ${BrandName.NAME} tools named mcp__server__tool. Read-only tools run; others ask first (Action tools pass in Autopilot, destructive ones always ask). Tap a server to set each tool to Ask, Always or Off. The list uses the same mcp.json shape as ${BrandName.NAME} CLI and Desktop and syncs with your ${BrandName.NAME} account. Local (stdio) servers need a PC.")
     if (servers.isNotEmpty()) Column(Modifier.fillMaxWidth().hairline(c.hair)) {
         servers.forEach { s ->
             Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable { open = if (open == s.name) "" else s.name }
@@ -192,7 +194,7 @@ private fun McpSection() {
             }
             if (open == s.name) {
                 val tools = toolLists[s.name]
-                if (tools == null) Text(if (s.remote) "Tap Test to list its tools." else "Runs on Blaze Desktop or CLI only.", modifier = Modifier.padding(12.dp),
+                if (tools == null) Text(if (s.remote) "Tap Test to list its tools." else "Runs on ${BrandName.NAME} Desktop or CLI only.", modifier = Modifier.padding(12.dp),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 else tools.forEach { t ->
                     val mode = McpConfig.mode(s.toolModes[t.name], t.risk)
@@ -258,11 +260,11 @@ fun LearningSection() {
     var shown by remember { mutableStateOf("") }
     Section("Learning")
     var titles by remember { mutableStateOf(Settings.autoTitles) }
-    ToggleRow("Learn from chats", "Blaze saves lasting facts and preferences as you go, replaces ones that changed, and saves tasks you teach it or repeat as skills. Small talk costs nothing: it only checks when something worth keeping was said", auto) { auto = !auto; Settings.autoLearn = auto }
+    ToggleRow("Learn from chats", "${BrandName.NAME} saves lasting facts and preferences as you go, replaces ones that changed, and saves tasks you teach it or repeat as skills. Small talk costs nothing: it only checks when something worth keeping was said", auto) { auto = !auto; Settings.autoLearn = auto }
     var long by remember { mutableStateOf(Settings.longChat) }
-    ToggleRow("Long chats", "Older turns fold into a running summary, Blaze searches the chat instead of re-reading it, long tool output is saved aside, and the work card shows tokens in and out", long) { long = !long; Settings.longChat = long }
+    ToggleRow("Long chats", "Older turns fold into a running summary, ${BrandName.NAME} searches the chat instead of re-reading it, long tool output is saved aside, and the work card shows tokens in and out", long) { long = !long; Settings.longChat = long }
     var review by remember { mutableStateOf(com.blaze.assistant.agent.MindReview.enabled) }
-    ToggleRow("Review past conversations when idle", "When the phone is idle and charging, or idle on Wi-Fi, Blaze reads past turns (old chats too) a little at a time with the cheapest free model and saves what's worth remembering", review) {
+    ToggleRow("Review past conversations when idle", "When the phone is idle and charging, or idle on Wi-Fi, ${BrandName.NAME} reads past turns (old chats too) a little at a time with the cheapest free model and saves what's worth remembering", review) {
         review = !review; com.blaze.assistant.agent.MindReview.enabled = review
         try { com.blaze.assistant.agent.MindReview.schedule(ctx) } catch (_: Throwable) { }
     }
@@ -282,8 +284,8 @@ fun LearningSection() {
             }
         }
     }
-    Section("Skills Blaze learned")
-    if (skills.isEmpty()) Note("None yet. When Blaze works out a multi-step task (like ordering your usual ride), it saves the steps so next time is faster. Recorded phone steps can be replayed without the AI.")
+    Section("Skills ${BrandName.NAME} learned")
+    if (skills.isEmpty()) Note("None yet. When ${BrandName.NAME} works out a multi-step task (like ordering your usual ride), it saves the steps so next time is faster. Recorded phone steps can be replayed without the AI.")
     else Column(Modifier.fillMaxWidth().hairline(c.hair)) {
         skills.sortedByDescending { it.uses }.forEach { s ->
             Column(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable { shown = if (shown == s.name) "" else s.name }.padding(start = 12.dp, top = 8.dp, bottom = 8.dp)) {
@@ -322,7 +324,7 @@ fun NotificationAccessRow() {
     Row(Modifier.fillMaxWidth().hairline(if (on) c.hair else c.accent).clickable { ctx.startActivity(NotificationBrain.settingsIntent()) }.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(6.dp).background(if (on) c.accent else c.weak, BlazeShapes.pill)); Spacer(Modifier.width(10.dp))
-        Text(if (on) "Notification access is on" else "Let Blaze read notifications", modifier = Modifier.weight(1f),
+        Text(if (on) "Notification access is on" else "Let ${BrandName.NAME} read notifications", modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
         Label("Open →", color = c.accent)
     }

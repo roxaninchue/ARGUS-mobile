@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -105,7 +107,7 @@ open class ShotsTest {
     private fun ThreadSample(busy: Boolean = true) {
         val gap: @Composable (GroupPos, Boolean) -> Unit = { p, first -> Spacer(Modifier.height(Bubbles.gapAbove(p, first))) }
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 14.dp)) {
-            UserBubble("Hey Blaze", pos = GroupPos.FIRST)
+            UserBubble("Hey ${BrandName.NAME}", pos = GroupPos.FIRST)
             gap(GroupPos.LAST, false)
             UserBubble("Make me a one-page portfolio site and show it to me", pos = GroupPos.LAST)
             MetaLine(Side.ME, "09:41", listOf("Copy" to {}, "Retry" to {}))
@@ -342,7 +344,7 @@ open class ShotsTest {
             onSubmit = { _, _ -> }, onCancel = {}, onWatch = {}, preset = mapOf("email" to "sam", "password" to "not-a-real-one"), notifPrompt = false) }
     }
     @Test fun secureFormDark() = shot("31-secure-form-dark", dark = true) {
-        BrowserChat { SecureForm("api.groq.com", "Your Groq API key", "Paste it once; Blaze saves it encrypted on this phone.",
+        BrowserChat { SecureForm("api.groq.com", "Your Groq API key", "Paste it once; ${BrandName.NAME} saves it encrypted on this phone.",
             listOf(com.blaze.assistant.browser.SecureInput.Field("groq_key", "Groq API key", com.blaze.assistant.browser.SecureInput.Kind.API_KEY)),
             onSubmit = { _, _ -> }, onCancel = {}, onWatch = {}, notifPrompt = true) }
     }
@@ -408,7 +410,7 @@ open class ShotsTest {
         mem(13, "project", "HomeGlow store", "Goal: 20 orders a week by December"),
         mem(14, "project", "Portfolio", "One-page portfolio site in ~/site, hosted free on GitHub Pages"),
         mem(15, "project", "NET103 group project", "Network design report due 30 October; Sam owns the diagrams", related = "Chanda"),
-        mem(16, "project", "Blaze", "Building Blaze, an AI assistant for Android, Desktop and CLI"),
+        mem(16, "project", "${BrandName.NAME}", "Building ${BrandName.NAME}, an AI assistant for Android, Desktop and CLI"),
         mem(17, "decision", "Lamp prices", "Moon lamp at $24.99 and the mini at $19.99 for the HomeGlow store, free shipping over $35", turn = 41),
         mem(18, "decision", "Ads", "TikTok first for the HomeGlow store; no paid ads until 10 organic orders", turn = 41),
         mem(19, "decision", "Hosting", "GitHub Pages for the portfolio: free and no card needed", related = "Portfolio"),
@@ -429,7 +431,7 @@ open class ShotsTest {
             com.blaze.assistant.agent.SkillLibrary.Row(n, d, bundled, on, edited, installed, update, core)
         SettingsFrame("Skill library") {
             SkillLibraryPage(listOf(
-                r("blaze-voice", "How Blaze sounds in every reply: answer first, short, one clear pick.", core = true),
+                r("blaze-voice", "How ${BrandName.NAME} sounds in every reply: answer first, short, one clear pick.", core = true),
                 r("blaze-specialists", "Pick the matching specialist, split big work into parallel briefs.", core = true),
                 r("homeglow-weekly", "Monday numbers for the HomeGlow store: orders, revenue, top post.", bundled = false),
                 r("deep-research", "Search widely, read the sources, cite every claim with a link."),
@@ -595,7 +597,7 @@ open class ShotsTest {
     @Test fun pointerMascot() = shot("44-pointer-mascot") {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFFF4F4F4))) {
-                Text("Light app \u00b7 Blaze gliding", Modifier.padding(top = 96.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color(0xFF1D1A16)))
+                Text("Light app \u00b7 ${BrandName.NAME} gliding", Modifier.padding(top = 96.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color(0xFF1D1A16)))
                 PointerGlyph(pulse = 1.06f, modifier = Modifier.padding(start = 150.dp, top = 140.dp))
             }
             Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFF111110))) {
@@ -943,7 +945,7 @@ open class ShotsTest {
     @Test fun blazeDocsRepo() = shot("76-blaze-docs-repo") {
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             UserBubble("where is your source code")
-            WorkCard(listOf(ChatMessage(71, Role.STEP, "Looking it up in Blaze's docs", at = t0 + 1_000, startAt = t0)), live = false,
+            WorkCard(listOf(ChatMessage(71, Role.STEP, "Looking it up in ${BrandName.NAME}'s docs", at = t0 + 1_000, startAt = t0)), live = false,
                 startAt = WorkTime.start(listOf(ChatMessage(71, Role.STEP, "x", at = t0 + 1_000, startAt = t0)), t0 - 97 * 60_000L),
                 endAt = t0 + 2_000, open0 = true)
             BlazeReply(72, "My source code is on GitLab: [blazeinchue/Blaze-agent](https://gitlab.com/blazeinchue/Blaze-agent). " +

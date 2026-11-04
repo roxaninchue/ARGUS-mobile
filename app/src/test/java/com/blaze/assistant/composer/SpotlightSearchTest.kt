@@ -1,5 +1,7 @@
 package com.blaze.assistant.composer
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.composer.SpotlightSearch.Act
 import com.blaze.assistant.composer.SpotlightSearch.Distro
 import com.blaze.assistant.composer.SpotlightSearch.Media
@@ -14,11 +16,11 @@ import org.junit.Test
 class SpotlightSearchTest {
     private val views = listOf(
         SelfMap.ViewInfo("home", "Home", "The Home cards"),
-        SelfMap.ViewInfo("browser", "Browser", "Blaze's own browser and tabs"),
-        SelfMap.ViewInfo("music", "Music", "Blaze Music: your songs", listOf("songs", "player")),
-        SelfMap.ViewInfo("video", "Video", "Blaze Video: your videos", listOf("videos", "movies")),
+        SelfMap.ViewInfo("browser", "Browser", "${BrandName.NAME}'s own browser and tabs"),
+        SelfMap.ViewInfo("music", "Music", "${BrandName.NAME} Music: your songs", listOf("songs", "player")),
+        SelfMap.ViewInfo("video", "Video", "${BrandName.NAME} Video: your videos", listOf("videos", "movies")),
         SelfMap.ViewInfo("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell", listOf("shell", "console")),
-        SelfMap.ViewInfo("memory", "Memory", "What Blaze remembers"),
+        SelfMap.ViewInfo("memory", "Memory", "What ${BrandName.NAME} remembers"),
         SelfMap.ViewInfo("look", "Look & feel", "Living backgrounds, theme", listOf("wallpaper", "theme")),
         SelfMap.ViewInfo("settings", "Settings", "Behaviour, voice, privacy, backup"),
     )
@@ -56,7 +58,7 @@ class SpotlightSearchTest {
         val r = s("   ")
         assertEquals(Mode.CURATED, r.mode)
         assertTrue(r.rows.size in 3..8)
-        assertEquals("Chat with Blaze", r.rows.first().title)
+        assertEquals("Chat with ${BrandName.NAME}", r.rows.first().title)
         assertTrue(r.rows.any { it.title == "Views > Music" })
     }
 
@@ -66,7 +68,7 @@ class SpotlightSearchTest {
         val r = s("zqxjv kkwp")
         assertEquals(Mode.PLAIN, r.mode)
         assertEquals(listOf("fb:browse", "fb:music", "fb:video", "fb:ask"), r.rows.map { it.id })
-        assertEquals("Ask Blaze about \u2018zqxjv kkwp\u2019", r.rows.last().title)
+        assertEquals("Ask ${BrandName.NAME} about \u2018zqxjv kkwp\u2019", r.rows.last().title)
         assertEquals(Act.AskBlaze("zqxjv kkwp"), r.rows.last().act)
         assertFalse(r.rows.any { it.title.contains("No results", true) })
     }
@@ -112,8 +114,8 @@ class SpotlightSearchTest {
     // ---------------------------------------------------------------- models
 
     @Test fun modelsAreSearchable() {
-        val top = s("inf").rows.first()
-        assertEquals("Blaze Inferno \u00b7 Smartest", top.title)
+        val top = s("pan").rows.first()
+        assertEquals("${BrandName.NAME} Panoptes \u00b7 Deepest", top.title)
         assertEquals(Act.PickModel("inferno"), top.act)
         assertEquals(Act.PickModel("spark"), s("spark").rows.first().act)
         assertTrue(s("fast").rows.any { it.act == Act.PickModel("spark") })
@@ -211,7 +213,7 @@ class SpotlightSearchTest {
     @Test fun fuzzyScores() {
         assertEquals(100, Fuzzy.score("music", "Music"))
         assertEquals(90, Fuzzy.score("ter", "Terminal"))
-        assertEquals(80, Fuzzy.score("inf", "Blaze Inferno"))
+        assertEquals(80, Fuzzy.score("pan", "${BrandName.NAME} Panoptes"))
         assertTrue(Fuzzy.score("termnal", "Terminal") >= 45)
         assertEquals(0, Fuzzy.score("zz", "Terminal"))
         assertTrue(Fuzzy.typo1("abc", "abd") && Fuzzy.typo1("abc", "abcd") && !Fuzzy.typo1("abc", "xyz"))
@@ -226,9 +228,9 @@ class SpotlightSearchTest {
     @Test fun modelChoiceWire() {
         assertEquals(null, ModelChoice.wire(ModelChoice.Family.AUTO))
         assertEquals("inferno", ModelChoice.wire(ModelChoice.Family.INFERNO))
-        assertEquals("Spark (Fast)", ModelChoice.Family.SPARK.pickerLabel)
-        assertEquals("Flare (Balanced)", ModelChoice.Family.FLARE.pickerLabel)
-        assertEquals("Inferno (Smartest)", ModelChoice.Family.INFERNO.pickerLabel)
+        assertEquals("Insight (Fast)", ModelChoice.Family.SPARK.pickerLabel)
+        assertEquals("Oracle (Balanced)", ModelChoice.Family.FLARE.pickerLabel)
+        assertEquals("Panoptes (Deepest)", ModelChoice.Family.INFERNO.pickerLabel)
         assertEquals("Auto", ModelChoice.Family.AUTO.pickerLabel)
         assertEquals(ModelChoice.Family.AUTO, ModelChoice.of("nope"))
     }

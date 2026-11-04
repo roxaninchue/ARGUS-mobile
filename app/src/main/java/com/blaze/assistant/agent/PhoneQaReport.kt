@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -52,7 +54,7 @@ object PhoneQaReport {
     private fun cell(s: String) = s.replace("|", "\\|").replace("\n", " ").trim()
 
     fun markdown(runs: List<Run>, meta: Map<String, String>): String = buildString {
-        append("# Blaze phone-control self-test (DEVICE evidence)\n\n")
+        append("# ${BrandName.NAME} phone-control self-test (DEVICE evidence)\n\n")
         meta.forEach { (k, v) -> append("- ").append(k).append(": ").append(v).append('\n') }
         append("\nStrict pass = the phone read the result back (verifier) AND the turn's verdicts and reply were right (no premature or false \"done\").\n\n")
         append("| case | pass | runs | strict |\n|---|---|---|---|\n")

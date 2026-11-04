@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -48,8 +50,8 @@ object Notifier {
         } catch (_: Throwable) { }
         if (Build.VERSION.SDK_INT >= 26) {
             val nm = app.getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(NotificationChannel(CH_WORK, "Blaze status", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "What Blaze is doing right now (thinking, browsing, downloading an update, waiting for you), with a Stop button"
+            nm.createNotificationChannel(NotificationChannel(CH_WORK, "${BrandName.NAME} status", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "What ${BrandName.NAME} is doing right now (thinking, browsing, downloading an update, waiting for you), with a Stop button"
                 setShowBadge(false)
             })
             // 0.45.19: every Blaze message (replies, results, check-ins, heads-ups) on ONE alerting channel; the old
@@ -64,7 +66,7 @@ object Notifier {
                 BlazeThread.toDelete(existing).forEach { nm.deleteNotificationChannel(it) }
             } catch (_: Throwable) { }
             nm.createNotificationChannel(NotificationChannel(CH_ACTION, "Action required", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "When Blaze's background browser needs a sign-in, a code or another detail only you have"
+                description = "When ${BrandName.NAME}'s background browser needs a sign-in, a code or another detail only you have"
             })
         }
     }
@@ -162,8 +164,8 @@ object Notifier {
     fun updateFrom(st: com.blaze.assistant.update.Updater.State) {
         when (st) {
             is com.blaze.assistant.update.Updater.State.Checking -> update(-1, "Checking for an update…")
-            is com.blaze.assistant.update.Updater.State.Downloading -> update(st.pct, "Blaze v${st.version}")
-            is com.blaze.assistant.update.Updater.State.Installing -> update(-1, "Installing Blaze v${st.version}…")
+            is com.blaze.assistant.update.Updater.State.Downloading -> update(st.pct, "${BrandName.NAME} v${st.version}")
+            is com.blaze.assistant.update.Updater.State.Installing -> update(-1, "Installing ${BrandName.NAME} v${st.version}…")
             else -> if (stUpdatePct != null) update(null)
         }
     }
@@ -210,7 +212,7 @@ object Notifier {
         if (shortcutPushed) return
         try {
             val sc = androidx.core.content.pm.ShortcutInfoCompat.Builder(app, BlazeThread.SHORTCUT)
-                .setShortLabel(BlazeThread.PERSON_NAME).setLongLabel("Chat with Blaze")
+                .setShortLabel(BlazeThread.PERSON_NAME).setLongLabel("Chat with ${BrandName.NAME}")
                 .setLongLived(true).setPerson(blaze())
                 .setIcon(avatarIcon() ?: androidx.core.graphics.drawable.IconCompat.createWithResource(app, R.mipmap.ic_launcher))
                 .setIntent(Intent(app, MainActivity::class.java).setAction(Intent.ACTION_VIEW).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
@@ -236,7 +238,7 @@ object Notifier {
         val chips = QuickReplies.forMessage(text, kind)
         // The collapsed line is Blaze's newest words; the user's own reply shows in the conversation as theirs.
         val lastBlaze = lines.lastOrNull { !it.fromUser }?.text ?: text
-        val input = RemoteInput.Builder(KEY_REPLY).setLabel("Reply to Blaze")
+        val input = RemoteInput.Builder(KEY_REPLY).setLabel("Reply to ${BrandName.NAME}")
             .apply { if (chips.isNotEmpty()) setChoices(Array<CharSequence>(chips.size) { chips[it] }) }.build()
         val replyA = NotificationCompat.Action.Builder(0, "Reply", replyIntent(7101, chatId, context ?: if (chatId == null && kind != BlazeThread.Kind.USER) text else null))
             .addRemoteInput(input)
@@ -301,7 +303,7 @@ object Notifier {
         val n = NotificationCompat.Builder(app, CH_REPLY)
             .setSmallIcon(R.drawable.ic_stat_blaze).setColor(ACCENT)
             .setContentTitle("I'm listening")
-            .setContentText("Tap to talk to Blaze")
+            .setContentText("Tap to talk to ${BrandName.NAME}")
             .setContentIntent(pi).setFullScreenIntent(pi, true)
             .setAutoCancel(true).setTimeoutAfter(15000)
             .setCategory(NotificationCompat.CATEGORY_CALL).setPriority(NotificationCompat.PRIORITY_MAX)
@@ -316,7 +318,7 @@ object Notifier {
         val pi = PendingIntent.getActivity(app, 6, Intent(app, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             .putExtra("restart_wake", true), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = NotificationCompat.Builder(app, CH_REPLY).setSmallIcon(R.drawable.ic_stat_blaze).setColor(ACCENT)
-            .setContentTitle("\u201cHey Blaze\u201d is paused by Android")
+            .setContentTitle("\u201cHey ${BrandName.NAME}\u201d is paused by Android")
             .setContentText("Tap once to turn the wake word back on.")
             .setAutoCancel(true).setContentIntent(pi).setOnlyAlertOnce(true).build()
         try { NotificationManagerCompat.from(app).notify(ID_WAKE_BLOCKED, n) } catch (_: SecurityException) { }
@@ -394,7 +396,7 @@ object Notifier {
         val open = PendingIntent.getActivity(app, ID_ACTION, com.blaze.assistant.IntentKey.sign(app, Intent(app, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP).putExtra(EXTRA_OPEN_FORM, true)),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val text = text0 ?: "Blaze is waiting for you on $site. Tap to fill it in securely."
+        val text = text0 ?: "${BrandName.NAME} is waiting for you on $site. Tap to fill it in securely."
         val n = NotificationCompat.Builder(app, CH_ACTION).setSmallIcon(R.drawable.ic_stat_blaze).setColor(ACCENT)
             .setContentTitle("Action required: ${title.take(60)}").setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))

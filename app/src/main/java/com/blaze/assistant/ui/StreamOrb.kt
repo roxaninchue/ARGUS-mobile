@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.Spring
@@ -292,7 +294,7 @@ fun BoxScope.OrbLayer(tracker: OrbTracker, live: Boolean, size: Dp = 14.dp, spea
         alpha = vis.value * dim.value
         val s = 0.55f + 0.45f * vis.value
         scaleX = s; scaleY = s
-    }.semantics { contentDescription = if (haloSpeaks) "Halo is writing" else "Blaze is writing" }) {
+    }.semantics { contentDescription = if (haloSpeaks) "Halo is writing" else "${BrandName.NAME} is writing" }) {
         val c = Offset(this.size.width / 2f, this.size.height / 2f)
         val r = size.toPx() / 2f
         if (haloSpeaks) drawHaloRing(c, r, clock)

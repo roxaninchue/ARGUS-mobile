@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -517,7 +519,7 @@ object MagicHand {
                 catch (e: Exception) { "Couldn't save the workflow: ${e.message}" }
             }
             recorder = null
-            set { MagicHandState.endTeach(it, if (r.startsWith("Workflow")) "Saved \u201c${d.name}\u201d. Blaze will follow it with you once before trusting it." else r) }
+            set { MagicHandState.endTeach(it, if (r.startsWith("Workflow")) "Saved \u201c${d.name}\u201d. ${BrandName.NAME} will follow it with you once before trusting it." else r) }
         }
     }
 
@@ -612,7 +614,7 @@ object MagicHand {
                 val reply = Agent.messages.value.lastOrNull { it.id > before && (it.role == Role.BLAZE || it.role == Role.ERROR) }
                 if (reply != null && reply.text.isNotBlank()) set { MagicHandState.answered(it, reply.text) }
                 if ((seenBusy || SystemClock.uptimeMillis() - t0 > 3_000) && Agent.mood.value == Mood.IDLE) {
-                    if (reply == null) set { MagicHandState.answered(it, "Blaze didn't answer. Open Blaze to see what happened.") }
+                    if (reply == null) set { MagicHandState.answered(it, "${BrandName.NAME} didn't answer. Open ${BrandName.NAME} to see what happened.") }
                     break
                 }
             }
@@ -968,7 +970,7 @@ object MagicHand {
         if (ok) return true
         val s = svc ?: return false
         return try {
-            s.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Blaze", carried))
+            s.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("${BrandName.NAME}", carried))
             node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
             node.performAction(AccessibilityNodeInfo.ACTION_PASTE)
         } catch (_: Exception) { false }

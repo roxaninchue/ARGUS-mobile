@@ -1,5 +1,7 @@
 package com.blaze.assistant.voice.myvoice
 
+
+import com.blaze.assistant.BrandName
 /**
  * The My voice setup steps as pure state (MyVoiceSetupTest): whether step 2 is done, whether "Try it" can run, and
  * the plain line under step 3 that says exactly what is still missing.
@@ -34,7 +36,7 @@ object MyVoiceSetup {
 
     fun step3(i: Inputs): Step3 {
         val rec = haveRecording(i)
-        if (i.packReady && rec) return Step3(true, "Blaze will say a test sentence in your voice.")
+        if (i.packReady && rec) return Step3(true, "${BrandName.NAME} will say a test sentence in your voice.")
         val recHint = when {
             i.recording -> "Finish recording first (step 2)."
             i.recorded != null && i.recorded != AudioClip.Verdict.OK -> "Record again first (step 2). " + shortReason(i.recorded)

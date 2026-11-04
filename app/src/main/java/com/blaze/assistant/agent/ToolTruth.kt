@@ -19,7 +19,12 @@ import org.json.JSONObject
  */
 object ToolTruth {
     /** On by default; "tool_full" = false brings back the old guessed subsets (a debugging switch only). */
-    val full: Boolean get() = try { Settings.bool("tool_full", true) } catch (_: Throwable) { true }
+    /**
+     * 0.52.1 (gw061): off by default. Sending every registered tool (128+ schemas, ~100 KB) is what the gateway's 10 ms CPU
+     * limit kills; the turn now gets ToolPick's relevant subset (≤ 30) and asks for more with load_tools / find_tool, and a
+     * call to a tool it wasn't sent widens the next step with exactly those tools. "tool_full" = true restores the old way.
+     */
+    val full: Boolean get() = try { Settings.bool("tool_full", false) } catch (_: Throwable) { false }
 
     const val RULE = "\nYOUR TOOLS ARE REAL: every tool in your list works on this phone. Never say \"I don't have the capability\", \"I can't access\", " +
         "\"I'm unable to\" or \"as an AI I can't\" about anything a tool in your list does (terminal, browser, opening views and screens, " +

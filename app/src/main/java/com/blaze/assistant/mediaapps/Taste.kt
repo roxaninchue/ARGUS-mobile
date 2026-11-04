@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
@@ -89,7 +91,7 @@ object TasteLogic {
         if (ma.isNotEmpty() || ms.isNotEmpty()) parts += "Music: " + (ma + ms).joinToString(", ")
         if (va.isNotEmpty() || vs.isNotEmpty()) parts += "Videos: " + (va + vs).joinToString(", ")
         if (parts.isEmpty() || events.size < 5) return ""
-        return "Listens to / watches in Blaze Music and Video (learned from plays and downloads): " + parts.joinToString(". ") + "."
+        return "Listens to / watches in ${BrandName.NAME} Music and Video (learned from plays and downloads): " + parts.joinToString(". ") + "."
     }
 
     fun toJson(events: List<TasteEvent>): String = JSONArray(events.map {

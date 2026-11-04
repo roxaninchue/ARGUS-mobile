@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.45.28, pure (BackupStatusTest): the one status line Settings › On-phone brain shows, and which buttons go with it.
  */
@@ -21,7 +23,7 @@ object BackupStatus {
         State.NOT_SUPPORTED -> "Not supported on this phone (it needs a 64-bit phone)."
         State.INSTALLED -> "On-phone brain ready."
         State.RESTING -> "On-phone brain ready. Free allowance used" + (if (backAt.isNotBlank()) ", back at $backAt." else ", back later.")
-        State.OFF -> "Off. Blaze answers with its online brains."
+        State.OFF -> "Off. ${BrandName.NAME} answers with its online brains."
         State.DOWNLOADING -> "Getting your on-phone brain ready (one-time)…"
         State.NEEDS_LINUX -> "Getting ready: a small one-time setup comes first."
         State.WAITING_WIFI -> "Not set up yet: it finishes by itself on Wi-Fi (about $mb MB, one time)."
@@ -32,7 +34,7 @@ object BackupStatus {
     fun healthLine(ok: Boolean?, at: String): String = when (ok) {
         null -> ""
         true -> "Health check: answering" + (if (at.isNotBlank()) " ($at)." else ".")
-        false -> "Health check: not answering" + (if (at.isNotBlank()) " ($at)" else "") + ". Blaze answers with its online brains meanwhile."
+        false -> "Health check: not answering" + (if (at.isNotBlank()) " ($at)" else "") + ". ${BrandName.NAME} answers with its online brains meanwhile."
     }
 
     /** "Download now" is offered for these. */

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -44,13 +46,14 @@ class ToolTruthTest {
         File(dir, "tools-full-0459.json").writeText(JSONObject().put("count", names.size).put("missed", JSONArray(missed)).put("tools", all).toString())
     }
 
-    @Test fun agentLaneSendsTheWholeList() {
+    @Test fun agentLaneSendsTheRelevantSubset() {
         val (all, _) = registry()
-        assertTrue(ToolTruth.full)
-        val sent = ToolTruth.forRequest(all) { JSONArray() }
-        assertEquals(all.length(), sent.length())
-        // Every strict request, whatever ToolRouter guesses, gets the same full list.
-        for (p in strict) assertTrue(p, ToolTruth.names(ToolTruth.forRequest(all) { ToolRouter.selectDefault(all, ToolRouter.guess(p)) }).containsAll(ToolTruth.MUST))
+        // 0.52.1 (gw061): the full list is off by default (request size budget): the turn's subset goes out, and the
+        // agent loop adds ToolTruth.MUST to it (Agent.pickTools), so save_file & co. are never left out.
+        assertFalse(ToolTruth.full)
+        val sub = JSONArray().put(all.opt(0))
+        assertTrue(ToolTruth.forRequest(all) { sub } === sub)
+        assertTrue(all.length() > RequestBudget.MAX_TOOLS)
     }
 
     @Test fun oldSubsetsMissedTools() {
@@ -100,7 +103,7 @@ class ToolTruthTest {
     }
 
     @Test fun traceKeepsNormalizedAndToolsSent() {
-        val tr = TurnTrace.build(mapOf("x-blaze-normalized" to "retried;bad_call;from=groq/x", "x-request-id" to "r1"), "Blaze Cloud", "agent", listOf("r1"),
+        val tr = TurnTrace.build(mapOf("x-blaze-normalized" to "retried;bad_call;from=groq/x", "x-request-id" to "r1"), "${BrandName.NAME} Cloud", "agent", listOf("r1"),
             100, 50, 900, 1, emptyList(), emptyList(), toolsSent = listOf("save_file", "run_shell"))
         val back = TurnTrace.fromJson(TurnTrace.toJson(tr))!!
         assertEquals("retried;bad_call;from=groq/x", back.normalized)
@@ -122,12 +125,12 @@ class ToolTruthTest {
         assertEquals(null, ToolTruth.choiceFor("remember when we went to Ndola?", emptyList(), all - "memory_search"))
         assertEquals("run_shell", ToolTruth.choiceFor("run ls in the terminal", emptyList(), all))  // v0.45.13 round 2
         assertEquals(null, ToolTruth.choiceFor("search the web for Zambia news", emptyList(), all))
-        assertEquals(null, ToolTruth.choiceFor("hi Blaze", emptyList(), all))
+        assertEquals(null, ToolTruth.choiceFor("hi ${BrandName.NAME}", emptyList(), all))
     }
 
     @Test fun blazeMusicPlayIsMusicOps() {
         val tools = listOf("music_ops", "search_in_app", "run_plan")
-        assertEquals("music_ops", ToolTruth.choiceFor("play Calm Down by Rema in Blaze Music", emptyList(), tools))
+        assertEquals("music_ops", ToolTruth.choiceFor("play Calm Down by Rema in ${BrandName.NAME} Music", emptyList(), tools))
         assertEquals("music_ops", ToolTruth.choiceFor("put on something chill from my downloads", emptyList(), tools))
         assertEquals("search_in_app", ToolTruth.choiceFor("play Despacito on YouTube", emptyList(), tools))
     }

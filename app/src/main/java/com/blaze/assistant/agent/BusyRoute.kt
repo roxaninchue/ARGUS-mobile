@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.46.3 (report: while Blaze works on a long task, a new message sits at "Sending" until it finishes). A message that
  * arrives while a task runs is never queued behind the agent loop:
@@ -26,12 +28,12 @@ object BusyRoute {
 
     /** The one-line confirmations, first person (Halo), plain. */
     const val STOPPED = "Stopped. Nothing more will run for that task."
-    fun steered(task: String): String = if (task.isBlank()) "Got it, I've passed that to Blaze. It's added to what Blaze is doing now."
-        else "Got it, I've passed that to Blaze. It's added to \u201c${task.take(60)}\u201d."
+    fun steered(task: String): String = if (task.isBlank()) "Got it, I've passed that to ${BrandName.NAME}. It's added to what ${BrandName.NAME} is doing now."
+        else "Got it, I've passed that to ${BrandName.NAME}. It's added to \u201c${task.take(60)}\u201d."
 
     /** What Halo is told about the running task (read only), e.g. "Blaze is working on: X. Now: Reading 3 pages (step 4)." */
     fun status(task: String, now: String, step: Int): String = buildString {
-        append("Blaze is working on: ").append(task.take(160).ifBlank { "a task" }).append('.')
+        append("${BrandName.NAME} is working on: ").append(task.take(160).ifBlank { "a task" }).append('.')
         if (now.isNotBlank()) append(" Right now: ").append(now.take(120)).append(if (step > 0) " (step $step)." else ".")
         append(" You can't change or stop it yourself; answer the user, and if they ask how it's going, say what it's doing in plain words.")
     }

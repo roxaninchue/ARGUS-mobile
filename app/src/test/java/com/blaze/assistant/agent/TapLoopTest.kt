@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -22,7 +24,7 @@ class TapLoopTest {
         for (r in listOf("Error: no steps.", "Couldn't tap [3].", "No element [9]. Call read_screen again", "No app called Foo",
             "No installed app matches \u201cFoo\u201d.", "Unknown settings page \u201cx\u201d.", "Not done yet: I looked at the screen first",
             "Stopped before tapping [3]: the user tapped Stop. Nothing was tapped.", "The user did NOT approve tapping \"Pay\".",
-            "The target [4] went away while Blaze was aiming", "Phone control isn't connected.", ""))
+            "The target [4] went away while ${BrandName.NAME} was aiming", "Phone control isn't connected.", ""))
             assertTrue(r, TapLoop.failed(r))
         for (r in listOf("Tapped \"Open supported links\".", "Opened GitHub \u203a Open by default (direct). Screen now:\n…",
             "Typed.", "Scrolled down.", "Already off: \u201cOpen supported links\u201d. Not tapped, it's already how you wanted it.", "Opened YouTube."))

@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone.flash
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.phone.ScreenTree
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -465,7 +467,7 @@ object FlashBench {
         fun f1(d: Double) = String.format(java.util.Locale.US, "%.1f", d)
         fun f2(d: Double) = String.format(java.util.Locale.US, "%.2f", d)
         val both = old.indices.filter { old[it].success && new[it].success }
-        append("# Blaze phone control benchmark (0.46.3): old engine vs flash engine\n\n")
+        append("# ${BrandName.NAME} phone control benchmark (0.46.3): old engine vs flash engine\n\n")
         append("${old.size} deterministic fixture tasks, scripted mock policy (same for both engines), mock vision for screenshots, virtual clock; ")
         append("every model call costs a fixed ${MODEL_MS} ms in both engines (assumption). Not measured on a phone or with a live model.\n\n")
         append("| metric | old | new |\n|---|---|---|\n")

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -13,13 +15,13 @@ class TalkArcMathTest {
         // 0.51.0 one persona: a saved "halo" pick is Blaze now
         assertEquals(0, TalkArcMath.indexOf("halo")); assertEquals(0, TalkArcMath.indexOf("nobody"))
         assertEquals("halo", TalkArcMath.targetAt(9)); assertEquals("blaze", TalkArcMath.targetAt(-1))
-        assertEquals("Blaze", TalkArcMath.label("halo")); assertEquals("Blaze", TalkArcMath.label("blaze"))
+        assertEquals("${BrandName.NAME}", TalkArcMath.label("halo")); assertEquals("${BrandName.NAME}", TalkArcMath.label("blaze"))
     }
 
     @Test fun oldHaloXBlazePickMigratesToBlaze() {
         assertEquals("blaze", TalkArcMath.normalize("all"))
         assertEquals(0, TalkArcMath.indexOf("all"))
-        assertEquals("Blaze", TalkArcMath.label("all"))
+        assertEquals("${BrandName.NAME}", TalkArcMath.label("all"))
         assertEquals("blaze", TalkArcMath.normalize("halo")); assertEquals("blaze", TalkArcMath.normalize(null))
     }
 

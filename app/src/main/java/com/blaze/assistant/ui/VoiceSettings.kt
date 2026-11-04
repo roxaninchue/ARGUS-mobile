@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.foundation.background
@@ -30,7 +32,7 @@ fun VoiceTuning() {
     LaunchedEffect(Unit) { var n = 0; while (voices.isEmpty() && n++ < 10) { kotlinx.coroutines.delay(500); voices = Voice.voices() } }
 
     Spacer(Modifier.height(22.dp))
-    Label("Blaze's voice", modifier = Modifier.padding(bottom = 6.dp))
+    Label("${BrandName.NAME}'s voice", modifier = Modifier.padding(bottom = 6.dp))
     Row(Modifier.fillMaxWidth().hairline(c.hair).clickable { Voice.preview() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, contentDescription = null, tint = c.ink, modifier = Modifier.padding(end = 8.dp).size(18.dp))
         Text("Hear it", modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink))
@@ -71,7 +73,7 @@ fun VoiceTuning() {
     var greet by remember { mutableStateOf(Settings.bool("call_greet", true)) }
     var ear by remember { mutableStateOf(Settings.bool("call_earpiece", false)) }
     var bye by remember { mutableStateOf(Settings.bool("call_bye", true)) }
-    ToggleRow("Say hello when a call starts", "Blaze picks up with a short greeting", greet) { greet = !greet; Settings.setBool("call_greet", greet) }
+    ToggleRow("Say hello when a call starts", "${BrandName.NAME} picks up with a short greeting", greet) { greet = !greet; Settings.setBool("call_greet", greet) }
     ToggleRow("Start on earpiece", "Hold the phone to your ear like a normal call. Off: loudspeaker", ear) { ear = !ear; Settings.setBool("call_earpiece", ear) }
     ToggleRow("\u201cBye\u201d hangs up", "Saying bye, thanks or that's all ends the call", bye) { bye = !bye; Settings.setBool("call_bye", bye) }
 }

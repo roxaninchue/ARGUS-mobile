@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -94,7 +96,7 @@ class ChatUi20Test {
     @Test fun chatScreen_hooks() = five {
         val src = listOf(File("src/main/java/com/blaze/assistant/ui/ChatScreen.kt"), File("app/src/main/java/com/blaze/assistant/ui/ChatScreen.kt")).first { it.exists() }.readText()
         assertTrue("delivery only under the latest user bubble", src.contains("delivery = if (item.m.id == lastUserId)"))
-        assertTrue("action row only on the latest Blaze reply", src.contains("showActs = item.m.id == lastBlazeId && mood == Mood.IDLE"))
+        assertTrue("action row only on the latest ${BrandName.NAME} reply", src.contains("showActs = item.m.id == lastBlazeId && mood == Mood.IDLE"))
         assertTrue(src.contains("StepPillRow(") && src.contains("DayChip(") && src.contains("BubbleMenu("))
         // No ticks anywhere in the label.
         val label = listOf(File("src/main/java/com/blaze/assistant/ui/DeliveryStatus.kt"), File("app/src/main/java/com/blaze/assistant/ui/DeliveryStatus.kt")).first { it.exists() }.readText()

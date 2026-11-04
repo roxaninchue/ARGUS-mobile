@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,7 +58,7 @@ internal fun DesktopPage() {
     LaunchedEffect(Unit) { DesktopLink.start(); if (DesktopLink.paired) msg = DesktopLink.ping() }
 
     Spacer(Modifier.height(22.dp))
-    Text("Link this phone to Blaze on your computer. Ask your PC to work on files and code from here, and let Blaze on the PC text, call and check this phone. Same Wi-Fi, or anywhere when both are on Tailscale.",
+    Text("Link this phone to ${BrandName.NAME} on your computer. Ask your PC to work on files and code from here, and let ${BrandName.NAME} on the PC text, call and check this phone. Same Wi-Fi, or anywhere when both are on Tailscale.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
     Spacer(Modifier.height(18.dp))
 
@@ -78,18 +80,18 @@ internal fun DesktopPage() {
                 contentAlignment = Alignment.Center) { Label("Unpair", color = c.ink, size = 11.sp) }
         }
         Spacer(Modifier.height(8.dp))
-        ToggleRow("Let the PC use this phone", "Blaze on the PC can ask this phone to text, call, check notifications and more. Risky actions still ask you here.", inboxOn) {
+        ToggleRow("Let the PC use this phone", "${BrandName.NAME} on the PC can ask this phone to text, call, check notifications and more. Risky actions still ask you here.", inboxOn) {
             inboxOn = !inboxOn
             Settings.setBool("pc_inbox", inboxOn)
             if (inboxOn) DesktopLink.start() else DesktopLink.stopInbox()
         }
     } else {
         Label("Pair a computer", modifier = Modifier.padding(bottom = 8.dp))
-        Text("On the computer, open Blaze Desktop › Phone › Show pairing QR code, then scan it.",
+        Text("On the computer, open ${BrandName.NAME} Desktop › Phone › Show pairing QR code, then scan it.",
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.body))
         Spacer(Modifier.height(10.dp))
         Box(Modifier.fillMaxWidth().height(50.dp).hairline(c.accent).clickable(enabled = !busy) {
-            scanner.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt("Scan the QR code in Blaze Desktop › Phone")
+            scanner.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt("Scan the QR code in ${BrandName.NAME} Desktop › Phone")
                 .setBeepEnabled(false).setOrientationLocked(false))
         }, contentAlignment = Alignment.Center) { Label("Scan QR code", color = c.accent, size = 12.sp) }
         Spacer(Modifier.height(16.dp))

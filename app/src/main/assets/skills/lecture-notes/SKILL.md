@@ -9,7 +9,7 @@ version: 1
 
 ## 1. Get the text
 - Recording on the phone (Recorder, WhatsApp voice note, video): find it under /sdcard (Recordings, Music, Download, WhatsApp/Media) or the attachment the user sent.
-- Transcribe with free Whisper in Blaze's Linux (no paid APIs):
+- Transcribe with free Whisper in Argus's Linux (no paid APIs):
   `linux_install` if needed, then run_code python: `pip install faster-whisper` and use model "base" (or "tiny" on low storage / low-data mode), `compute_type="int8"`, language auto. Long files: run it in the background (run_shell background=true) and tell the user it's working; check with terminal_jobs.
 - Convert video or odd formats first with ffmpeg (`ffmpeg -i in.mp4 -ac 1 -ar 16000 out.wav`).
 - If the user pasted a transcript or photos of the board, use that instead (photos: read them as images).

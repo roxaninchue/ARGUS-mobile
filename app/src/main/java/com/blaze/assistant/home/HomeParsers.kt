@@ -1,5 +1,7 @@
 package com.blaze.assistant.home
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
@@ -508,7 +510,7 @@ object HomeWeather {
             change = listOfNotNull(cond.takeIf { it.isNotBlank() } ?: (if (n.isDay) null else "Clear night"),
                 if (!n.feelsLike.isNaN()) "feels ${Math.round(n.feelsLike)}°" else null,
                 if (!n.wind.isNaN()) "wind ${Math.round(n.wind)} $w" else null,
-                (n.source.ifBlank { "Blaze weather" } + if (time.isNotBlank()) " · $time" else "")).joinToString(" · "),
+                (n.source.ifBlank { "${BrandName.NAME} weather" } + if (time.isNotBlank()) " · $time" else "")).joinToString(" · "),
             lines = lines)
     }
 }

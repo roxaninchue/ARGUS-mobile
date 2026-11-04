@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -47,16 +49,16 @@ internal fun FeelPage() {
     var compact by remember { mutableStateOf(Settings.bool("compact_panel", true)) }
     var autoHide by remember { mutableStateOf(Settings.bool("auto_hide_panel", true)) }
     var traces by remember { mutableStateOf(Traces.count()) }
-    ToggleRow("Show where I tap", "A soft blue ring flashes on whatever Blaze is about to tap", taps) { taps = !taps; Settings.setBool("show_taps", taps) }
-    ToggleRow("Sounds", "A blip when Blaze wakes, a tick when a task is done", sounds) { sounds = !sounds; Settings.setBool("sounds", sounds) }
+    ToggleRow("Show where I tap", "A soft blue ring flashes on whatever ${BrandName.NAME} is about to tap", taps) { taps = !taps; Settings.setBool("show_taps", taps) }
+    ToggleRow("Sounds", "A blip when ${BrandName.NAME} wakes, a tick when a task is done", sounds) { sounds = !sounds; Settings.setBool("sounds", sounds) }
     ToggleRow("Compact panel", "Over other apps, show a slim bar with just the latest line. Tap More to expand", compact) { compact = !compact; Settings.setBool("compact_panel", compact) }
     ToggleRow("Fade away when done", "The compact panel closes itself a few seconds after a task finishes", autoHide) { autoHide = !autoHide; Settings.setBool("auto_hide_panel", autoHide) }
     var habits by remember { mutableStateOf(Settings.bool("habit_offers", true)) }
     var morning by remember { mutableStateOf(Settings.bool("morning_brief", true)) }
     ToggleRow("Morning brief", "A short good-morning card with your day when your quiet hours end", morning) { morning = !morning; Settings.setBool("morning_brief", morning) }
-    ToggleRow("Offer to automate habits", "If you open an app at the same time most days, Blaze offers once to do it for you", habits) { habits = !habits; Settings.setBool("habit_offers", habits) }
+    ToggleRow("Offer to automate habits", "If you open an app at the same time most days, ${BrandName.NAME} offers once to do it for you", habits) { habits = !habits; Settings.setBool("habit_offers", habits) }
     V18Section("Learning from what I do")
-    V18Note("Blaze keeps a private log of the steps it runs on screen ($traces so far). It never leaves your phone and will train a faster on-device model later.")
+    V18Note("${BrandName.NAME} keeps a private log of the steps it runs on screen ($traces so far). It never leaves your phone and will train a faster on-device model later.")
     Spacer(Modifier.height(8.dp))
     V18Button("Clear step log", primary = false) { Traces.clear(); traces = 0 }
 }
@@ -90,9 +92,9 @@ fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
                 OrbFace(72.dp)
                 Spacer(Modifier.height(28.dp))
                 val (title, body) = when (page) {
-                    0 -> "Hi, I'm Blaze." to "I live in your phone and get things done for you: open apps, play music, send texts, find answers. Sign in to your Blaze account and I'm ready."
-                    1 -> "Let me use your phone." to "Turn on Blaze in Accessibility so I can tap and type for you. I'll always ask before sending, paying or deleting anything."
-                    else -> "Just say it." to "Type or tap the mic and tell me what you want, like \u201cplay lofi on YouTube\u201d. Turn on \u201cHey Blaze\u201d in Settings to call me hands-free."
+                    0 -> "Hi, I'm ${BrandName.NAME}." to "I live in your phone and get things done for you: open apps, play music, send texts, find answers. Sign in to your ${BrandName.NAME} account and I'm ready."
+                    1 -> "Let me use your phone." to "Turn on ${BrandName.NAME} in Accessibility so I can tap and type for you. I'll always ask before sending, paying or deleting anything."
+                    else -> "Just say it." to "Type or tap the mic and tell me what you want, like \u201cplay lofi on YouTube\u201d. Turn on \u201cHey ${BrandName.NAME}\u201d in Settings to call me hands-free."
                 }
                 Text(title, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 34.sp, lineHeight = 40.sp, color = c.ink))
                 Spacer(Modifier.height(14.dp))
@@ -100,9 +102,9 @@ fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
                 Spacer(Modifier.height(24.dp))
                 when (page) {
                     0 -> {
-                        Choice("Free \u2014 start now", "Blaze Cloud picks the best free model for every message.", true) { brain = "free" }
+                        Choice("Free \u2014 start now", "${BrandName.NAME} Cloud picks the best free model for every message.", true) { brain = "free" }
                     }
-                    1 -> Choice(if (a11y) "Phone control is on \u2713" else "Open Accessibility settings", if (a11y) "Nice. I can see and tap the screen now." else "Find Blaze in the list and switch it on.", a11y) {
+                    1 -> Choice(if (a11y) "Phone control is on \u2713" else "Open Accessibility settings", if (a11y) "Nice. I can see and tap the screen now." else "Find ${BrandName.NAME} in the list and switch it on.", a11y) {
                         if (!a11y) ctx.startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 }
             }

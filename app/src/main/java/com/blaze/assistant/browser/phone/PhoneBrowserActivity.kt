@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -164,19 +166,19 @@ private fun PhoneScreen(control: Boolean, onTake: () -> Unit, onHandBack: () -> 
                 tint = Color(pal.onButton), bg = Color(pal.button)) { onExit() }
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                Text("Blaze Phone", maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(pal.screenText)))
+                Text("${BrandName.NAME} Phone", maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(pal.screenText)))
                 Text(host.ifBlank { "No page" }, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = Color(pal.screenSub)))
             }
             Box {
-                GlassIconButton(Icons.Rounded.MoreVert, "Blaze Phone menu", size = 36.dp, tint = Color(pal.onButton), bg = Color(pal.button)) { menu = true }
+                GlassIconButton(Icons.Rounded.MoreVert, "${BrandName.NAME} Phone menu", size = 36.dp, tint = Color(pal.onButton), bg = Color(pal.button)) { menu = true }
                 DropdownMenu(menu, { menu = false }) {
                     if (host.isNotBlank()) DropdownMenuItem(text = { Text("Sign out of ${PhonePolicy.siteOf(live.url).ifBlank { host }}") }, onClick = {
                         menu = false; val s = PhonePolicy.siteOf(live.url); PhoneBrowser.signOut(s)
                         // fix 9: the note used to be set on a screen that closed in the same tap (never seen); a toast survives.
-                        Toast.makeText(ctx, "Signed out of $s on Blaze Phone.", Toast.LENGTH_SHORT).show(); onExit() })
-                    DropdownMenuItem(text = { Text("Clear Blaze Phone data") }, onClick = {
+                        Toast.makeText(ctx, "Signed out of $s on ${BrandName.NAME} Phone.", Toast.LENGTH_SHORT).show(); onExit() })
+                    DropdownMenuItem(text = { Text("Clear ${BrandName.NAME} Phone data") }, onClick = {
                         menu = false; val n = PhoneBrowser.clearAll()
-                        Toast.makeText(ctx, "Cleared Blaze Phone data ($n sessions).", Toast.LENGTH_SHORT).show(); onExit() })
+                        Toast.makeText(ctx, "Cleared ${BrandName.NAME} Phone data ($n sessions).", Toast.LENGTH_SHORT).show(); onExit() })
                 }
             }
         }

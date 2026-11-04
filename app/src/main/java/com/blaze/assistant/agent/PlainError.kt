@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * Turns raw provider/system errors (JSON blobs, stack messages, URLs) into one or two plain
  * sentences for the chat. The raw text goes to the crash log for debugging.
@@ -23,7 +25,7 @@ object PlainError {
         val looksRaw = t.contains('{') || t.contains("\"error\"") || t.contains("http", true) || t.length > 220 || t.contains("Exception")
         if (!looksRaw) return t
         try { com.blaze.assistant.device.CrashLog.error("chat error", RuntimeException(t.take(1500))) } catch (_: Throwable) { }
-        val who = "Blaze"   // 0.45.19: never the provider name
+        val who = "${BrandName.NAME}"   // 0.45.19: never the provider name
         val code = codeRe.find(t)?.groupValues?.get(1)?.toIntOrNull()
         val low = t.lowercase()
         return when {

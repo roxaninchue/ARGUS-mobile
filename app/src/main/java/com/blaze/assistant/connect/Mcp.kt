@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.connect.McpConfig.Server
 import com.blaze.assistant.connect.McpConfig.Tool
@@ -60,7 +62,7 @@ object Mcp {
             }
         }
         _servers.value = list
-        list.filter { !it.remote }.forEach { setStatus(it.name, if (it.transport == McpConfig.STDIO) "Needs a PC (runs on Blaze Desktop/CLI)" else "No URL") }
+        list.filter { !it.remote }.forEach { setStatus(it.name, if (it.transport == McpConfig.STDIO) "Needs a PC (runs on ${BrandName.NAME} Desktop/CLI)" else "No URL") }
     }
 
     private fun save(l: List<Server>, sync: Boolean = true) {
@@ -241,7 +243,7 @@ object Mcp {
                 if (o.has("id")) {
                     val reply = JSONObject().put("jsonrpc", "2.0").put("id", o.get("id"))
                     if (o.optString("method") == "ping") reply.put("result", JSONObject())
-                    else reply.put("error", JSONObject().put("code", -32601).put("message", "Blaze doesn't support ${o.optString("method")}"))
+                    else reply.put("error", JSONObject().put("code", -32601).put("message", "${BrandName.NAME} doesn't support ${o.optString("method")}"))
                     Thread { try { send(reply) } catch (_: Exception) { } }.start()
                 }
                 return
@@ -283,7 +285,7 @@ object Mcp {
 
     private fun initialize(c: Conn) {
         c.request("initialize", JSONObject().put("protocolVersion", PROTOCOL).put("capabilities", JSONObject())
-            .put("clientInfo", JSONObject().put("name", "Blaze Android").put("version", CLIENT_VERSION)))
+            .put("clientInfo", JSONObject().put("name", "${BrandName.NAME} Android").put("version", CLIENT_VERSION)))
         c.notify("notifications/initialized")
     }
 
@@ -310,7 +312,7 @@ object Mcp {
 
     /** Connects and lists a server's tools. Returns the status line. */
     suspend fun refresh(s: Server): String = withContext(Dispatchers.IO) {
-        if (!s.remote) return@withContext (if (s.transport == McpConfig.STDIO) "Needs a PC (runs on Blaze Desktop/CLI)" else "No URL").also { setStatus(s.name, it) }
+        if (!s.remote) return@withContext (if (s.transport == McpConfig.STDIO) "Needs a PC (runs on ${BrandName.NAME} Desktop/CLI)" else "No URL").also { setStatus(s.name, it) }
         setStatus(s.name, "Connecting…")
         try {
             conns.remove(s.name)?.close()

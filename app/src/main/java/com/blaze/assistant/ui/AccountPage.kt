@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -65,7 +67,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
                 if (how.isNotEmpty()) Label("Signs in with " + how.joinToString(", "), color = c.weak, size = 9.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
-        Note("The same account works in Blaze Desktop and Blaze CLI, and it is how Blaze Cloud answers you. Your own skills and MCP servers follow it, so one added on your PC works here and the other way round. Connected accounts stay on this phone.", top = 12)
+        Note("The same account works in ${BrandName.NAME} Desktop and ${BrandName.NAME} CLI, and it is how ${BrandName.NAME} Cloud answers you. Your own skills and MCP servers follow it, so one added on your PC works here and the other way round. Connected accounts stay on this phone.", top = 12)
         if (v.message.isNotEmpty()) Note(v.message)
         // v0.40.0: optional, end-to-end encrypted live sync with your other phones (off by default).
         CloudSyncRow { onOpen("sync") }
@@ -98,7 +100,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
         var confirm by remember { mutableStateOf(false) }
         if (!confirm) ActionText("Delete account", color = c.accent, size = 10.sp, modifier = Modifier.clickable { confirm = true }.padding(vertical = 8.dp))
         else {
-            Note("This deletes your Blaze account, its sign-ins and sessions everywhere. Chats, keys and connected accounts on this phone stay.")
+            Note("This deletes your ${BrandName.NAME} account, its sign-ins and sessions everywhere. Chats, keys and connected accounts on this phone stay.")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Box(Modifier.weight(1f)) { AccountButton("Keep it", primary = false) { confirm = false } }
                 Box(Modifier.weight(1f)) {
@@ -120,8 +122,8 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
-    Note("Sign in once and Blaze Cloud answers you: it picks the best free model for every message. The same account works in Blaze Desktop.")
-    if (!v.online) Note("Can't reach Blaze's sign-in service right now. Check your connection.")
+    Note("Sign in once and ${BrandName.NAME} Cloud answers you: it picks the best free model for every message. The same account works in ${BrandName.NAME} Desktop.")
+    if (!v.online) Note("Can't reach ${BrandName.NAME}'s sign-in service right now. Check your connection.")
     // v0.45.4: how the browser sign-in ended shows up here, at the top, where the first-run screen can see it.
     if (v.message.isNotEmpty() && err.isEmpty()) Note(v.message)
 
@@ -151,7 +153,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
             busy = false
         }
     }
-    Label(if (signUp) "Have an account? Sign in" else "New to Blaze? Create an account", color = c.accent, size = 10.sp,
+    Label(if (signUp) "Have an account? Sign in" else "New to ${BrandName.NAME}? Create an account", color = c.accent, size = 10.sp,
         modifier = Modifier.clickable { signUp = !signUp; err = "" }.padding(vertical = 14.dp))
     if (!signUp && v.features["password_reset"] == true) {
         Label("Forgot password?", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
@@ -336,7 +338,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
                 else -> {
                     val (secret, uri) = setup!!
                     val ctx = LocalContext.current
-                    Note("Add Blaze to your authenticator app with this key, then enter the 6-digit code it shows.")
+                    Note("Add ${BrandName.NAME} to your authenticator app with this key, then enter the 6-digit code it shows.")
                     Text(secret.chunked(4).joinToString(" "), modifier = Modifier.padding(bottom = 6.dp),
                         style = TextStyle(fontFamily = Type.Mono, fontSize = 14.sp, color = c.ink))
                     if (uri.isNotBlank()) Label("Open in authenticator app", color = c.accent, size = 10.sp, modifier = Modifier.clickable {

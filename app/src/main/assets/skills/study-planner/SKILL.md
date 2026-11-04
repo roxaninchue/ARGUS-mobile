@@ -22,7 +22,7 @@ version: 1
 
 ## 3. Show it, then schedule it
 - Show the plan as a compact table: Day | Time | Topic | Task (read / practise / past paper / flashcards).
-- After the user says OK, add each session with create_routine using `date` (yyyy-MM-dd), `time`, `days: once`, a short name ("CIT102: loops, practice") and a prompt that tells Blaze to remind them and offer a 5-question quiz on that topic.
+- After the user says OK, add each session with create_routine using `date` (yyyy-MM-dd), `time`, `days: once`, a short name ("CIT102: loops, practice") and a prompt that tells Argus to remind them and offer a 5-question quiz on that topic.
 - Offer to make flashcards for weak topics (tutor skill, flashcards tool) so the Learn view drills them between sessions.
 - Save the plan to ~/study/<course>-plan.md so it can be re-planned later.
 

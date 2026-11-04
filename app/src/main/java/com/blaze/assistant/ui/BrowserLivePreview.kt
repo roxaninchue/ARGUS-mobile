@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.view.View
 import android.webkit.WebView
 import android.widget.FrameLayout
@@ -77,9 +79,9 @@ fun BrowserLivePreview(onHide: () -> Unit) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(c.accent))
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                Text(step?.what?.ifBlank { null } ?: "Blaze is browsing", maxLines = 1, overflow = TextOverflow.Ellipsis,
+                Text(step?.what?.ifBlank { null } ?: "${BrandName.NAME} is browsing", maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, color = c.ink))
-                Text(tab?.url?.let { hostOf(it) }?.ifBlank { null } ?: "Blaze's browser", maxLines = 1, overflow = TextOverflow.Ellipsis,
+                Text(tab?.url?.let { hostOf(it) }?.ifBlank { null } ?: "${BrandName.NAME}'s browser", maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = c.sub))
             }
             Spacer(Modifier.width(6.dp))
@@ -104,7 +106,7 @@ fun BrowserLivePreview(onHide: () -> Unit) {
             if (tab == null) Text("Starting the browser\u2026", modifier = Modifier.align(Alignment.Center).padding(12.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = LightColors.sub))
             // Over the page, so taps and drags never reach it; a tap opens the full browser to watch or take over.
-            Box(Modifier.matchParentSize().semantics { contentDescription = "Blaze's browser, live. Tap to watch." }
+            Box(Modifier.matchParentSize().semantics { contentDescription = "${BrandName.NAME}'s browser, live. Tap to watch." }
                 .clickable(onClickLabel = "Watch in the browser") { BrowserTools.show(ctx) })
         })
 }

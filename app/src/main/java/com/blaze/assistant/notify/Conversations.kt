@@ -1,5 +1,7 @@
 package com.blaze.assistant.notify
 
+
+import com.blaze.assistant.BrandName
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
@@ -193,7 +195,7 @@ object Conversations {
     fun tools(): List<JSONObject> = listOf(
         fn("notif_conversations", "Chat conversations the user got messages in (WhatsApp, SMS, Telegram, Messenger…), newest first, from notifications. Each has an id for notif_read / notif_reply and says whether it can be answered from the notification.",
             JSONObject().put("app", str("Optional app filter, e.g. WhatsApp")).put("hours", JSONObject().put("type", "number").put("description", "How far back, default 24")), emptyList()),
-        fn("notif_read", "Read one chat conversation: the recent messages from its notifications plus the longer rolling log Blaze kept, and what memory says about the sender. If it says context is thin, ask the user (ask_user) or open the chat with phone control and read the screen before drafting a reply.",
+        fn("notif_read", "Read one chat conversation: the recent messages from its notifications plus the longer rolling log ${BrandName.NAME} kept, and what memory says about the sender. If it says context is thin, ask the user (ask_user) or open the chat with phone control and read the screen before drafting a reply.",
             JSONObject().put("conversation", str("Id from notif_conversations, or the person's / group's name")).put("limit", JSONObject().put("type", "integer").put("description", "Messages, default 30")),
             listOf("conversation")),
         fn("notif_reply", "Send a reply in a chat conversation through its notification's reply box, without opening the app. The user sees a confirm card first (unless they turned on auto-reply for this conversation). Draft the text in the user's voice; read the conversation first.",
@@ -211,7 +213,7 @@ object Conversations {
     private fun off() = NotificationBrain.instance == null
 
     fun conversations(app: String?, hours: Double): String {
-        if (off()) return "Notification access is off. Ask the user to turn it on in Blaze \u203a Settings \u203a Notification replies."
+        if (off()) return "Notification access is off. Ask the user to turn it on in ${BrandName.NAME} \u203a Settings \u203a Notification replies."
         val since = System.currentTimeMillis() - (hours * 3_600_000).toLong()
         val l = list().filter { it.updated >= since && (app.isNullOrBlank() || it.app.contains(app, true) || appCode(it.pkg) == app.lowercase()) }
         if (l.isEmpty()) return "No chat messages in that window."
@@ -261,11 +263,11 @@ object Conversations {
 
     /** Sends [text] through the conversation's reply box. Confirm card first unless auto-reply is on for it. */
     suspend fun reply(ctx: Context, q: String, text: String): String {
-        if (off()) return "Notification access is off. Ask the user to turn it on in Blaze \u203a Settings \u203a Notification replies."
+        if (off()) return "Notification access is off. Ask the user to turn it on in ${BrandName.NAME} \u203a Settings \u203a Notification replies."
         val c = find(q) ?: return "No conversation matches \u201c$q\u201d. Call notif_conversations for the ids."
         val action = c.reply ?: return "${c.title}'s notification has no live reply box (it was dismissed). Open ${c.app} with phone control instead, or use message_contact."
         val t = text.trim(); if (t.isEmpty()) return "Nothing to send."
-        if (Sensitive.isSensitive(t)) return "Not sent: that reply looks like it contains a code or bank details. Blaze never sends those from a notification."
+        if (Sensitive.isSensitive(t)) return "Not sent: that reply looks like it contains a code or bank details. ${BrandName.NAME} never sends those from a notification."
         // v0.45.5: a group never gets an automatic reply; the card always shows the exact text first.
         val auto = ChatThreads.canAutoSend(c.group, isAuto(c.key))
         if (!auto && !Agent.confirm("Reply to ${c.title}?", "\u201c$t\u201d\n(in ${c.app}, from the notification)", "Send", always = true))

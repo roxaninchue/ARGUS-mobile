@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps.store
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.mediaapps.TimeText
 import org.json.JSONArray
@@ -99,7 +101,7 @@ object JamendoSource : StoreSource {
     /** v0.30.5: the jamendo_setup tool, so "Ask Blaze to set it up" can save the id Blaze got from the dev portal. */
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", TOOL)
-        .put("description", "Save a Jamendo API client_id for Blaze Music's Jamendo Store (checked against Jamendo before it's saved). " +
+        .put("description", "Save a Jamendo API client_id for ${BrandName.NAME} Music's Jamendo Store (checked against Jamendo before it's saved). " +
             "Get one free at $DEVPORTAL: sign in or sign up (ask the user before creating an account), My applications, create an app " +
             "(name Blaze Music, website https://blazeinchue.pages.dev), then copy its Client ID here.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
@@ -112,11 +114,11 @@ object JamendoSource : StoreSource {
         if (id.isEmpty()) return "Error: give client_id."
         if (!works(id)) return "Jamendo didn't accept that client_id. Check it on $DEVPORTAL (My applications) and try again."
         setClientId(id)
-        return "Saved. The Jamendo Store in Blaze Music works now."
+        return "Saved. The Jamendo Store in ${BrandName.NAME} Music works now."
     }
 
     override fun setupNeeded(): String? = if (clientId().isBlank())
-        "Jamendo needs a free client_id. Blaze can get it for you, or make one on the Jamendo dev portal and paste it below." else null
+        "Jamendo needs a free client_id. ${BrandName.NAME} can get it for you, or make one on the Jamendo dev portal and paste it below." else null
 
     override suspend fun search(kind: String, query: String, next: String): StorePage {
         val id = clientId().ifBlank { throw StoreError(setupNeeded() ?: "Jamendo isn't configured") }

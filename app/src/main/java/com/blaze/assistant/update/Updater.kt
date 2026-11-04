@@ -1,5 +1,7 @@
 package com.blaze.assistant.update
 
+
+import com.blaze.assistant.BrandName
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -51,7 +53,7 @@ object Updater {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", TOOL)
-        .put("description", "Update the Blaze app itself to the newest build (checks, downloads and installs; settings, keys and models are kept). Use when the user asks to update Blaze or check for a new version. install=false only checks.")
+        .put("description", "Update the ${BrandName.NAME} app itself to the newest build (checks, downloads and installs; settings, keys and models are kept). Use when the user asks to update ${BrandName.NAME} or check for a new version. install=false only checks.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("install", JSONObject().put("type", "boolean").put("description", "Install if newer (default true)")))))
 
@@ -71,7 +73,7 @@ object Updater {
     }
 
     /** One update card at a time: never a second one in the chat. */
-    fun showCard() { if (!Agent.hasCard(CARD)) Agent.card("Blaze update", CARD) }
+    fun showCard() { if (!Agent.hasCard(CARD)) Agent.card("${BrandName.NAME} update", CARD) }
 
     fun retry(ctx: Context) { showCard(); launch(ctx, true) }
 
@@ -85,7 +87,7 @@ object Updater {
         if (s is State.Checking || s is State.Downloading || s is State.Installing) return "An update is already running in the background."
         showCard()
         launch(ctx, true)
-        return "Started updating Blaze in the background. Progress is on the update card and in the notification (with Stop); Android asks the user to confirm the install at the end."
+        return "Started updating ${BrandName.NAME} in the background. Progress is on the update card and in the notification (with Stop); Android asks the user to confirm the install at the end."
     }
 
     /** Stop (from the notification or the card): cancels the download and removes the card. */
@@ -177,9 +179,9 @@ object Updater {
     private fun latest(): VersionFeed.Android {
         val c = conn(VersionFeed.URL)
         try {
-            if (c.responseCode !in 200..299) throw UpdateError("The Blaze site answered with an error (${c.responseCode}). Try again in a minute.")
+            if (c.responseCode !in 200..299) throw UpdateError("The ${BrandName.NAME} site answered with an error (${c.responseCode}). Try again in a minute.")
             return VersionFeed.parse(c.inputStream.bufferedReader().readText())
-                ?: throw UpdateError("The Blaze site's version list couldn't be read. Try again later.")
+                ?: throw UpdateError("The ${BrandName.NAME} site's version list couldn't be read. Try again later.")
         } finally { c.disconnect() }
     }
 
@@ -196,14 +198,14 @@ object Updater {
             val version = entry.version
             val name = "blaze-$version.apk"
             val isNewer = VersionFeed.newer(version, have)
-            if (!isNewer) { _state.value = State.UpToDate(have); return "Blaze is up to date (v$have)." }
+            if (!isNewer) { _state.value = State.UpToDate(have); return "${BrandName.NAME} is up to date (v$have)." }
             // 0.45.18: an Android 7/8 phone on the old key can't take this APK in place, so don't download it at all.
-            legacyNote(ctx)?.let { _state.value = State.Failed(it); return "Blaze v$version is available, but: $it" }
-            if (!install) { _state.value = State.Ready(version); return "Blaze v$version is available (installed: v$have). Say update to install it." }
+            legacyNote(ctx)?.let { _state.value = State.Failed(it); return "${BrandName.NAME} v$version is available, but: $it" }
+            if (!install) { _state.value = State.Ready(version); return "${BrandName.NAME} v$version is available (installed: v$have). Say update to install it." }
             if (Build.VERSION.SDK_INT >= 26 && !ctx.packageManager.canRequestPackageInstalls()) {
                 _state.value = State.NeedsPermission(version)
                 ctx.startActivity(Intent(AndroidSettings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                return "Blaze v$version is ready. Android asks once before an app can install its own updates: turn on 'Allow from this source' for Blaze, then tap Retry on the update card."
+                return "${BrandName.NAME} v$version is ready. Android asks once before an app can install its own updates: turn on 'Allow from this source' for ${BrandName.NAME}, then tap Retry on the update card."
             }
             _state.value = State.Downloading(version, 0)
             val apk = withContext(Dispatchers.IO) {
@@ -240,10 +242,10 @@ object Updater {
             withContext(Dispatchers.IO) { verify(ctx, apk) }?.let { apk.delete(); return fail(it) }
             _state.value = State.Installing(version)
             withContext(Dispatchers.IO) { installApk(ctx, apk) }
-            "Downloaded Blaze v$version. Android is asking the user to confirm the install; Blaze restarts after it."
+            "Downloaded ${BrandName.NAME} v$version. Android is asking the user to confirm the install; ${BrandName.NAME} restarts after it."
         } catch (e: UpdateError) { fail(e.message ?: "Update failed.") }
         catch (e: java.net.UnknownHostException) { fail("No internet connection. Connect and tap Retry.") }
-        catch (e: java.net.SocketTimeoutException) { fail("The Blaze site is taking too long to answer. Tap Retry.") }
+        catch (e: java.net.SocketTimeoutException) { fail("The ${BrandName.NAME} site is taking too long to answer. Tap Retry.") }
         catch (e: java.io.IOException) { com.blaze.assistant.device.CrashLog.error("Update", e); fail("The connection dropped while checking for the update. Tap Retry.") }
         catch (e: kotlinx.coroutines.CancellationException) {
             _state.value = State.Idle
@@ -289,7 +291,7 @@ object Updater {
     /** 0.45.18: the Android 7/8 old-key note ([UpdateKeys.legacyNote]) for this phone, or null. */
     fun legacyNote(ctx: Context): String? = UpdateKeys.legacyNote(Build.VERSION.SDK_INT, installedSigners(ctx))
 
-    const val KEY_CHANGED = "Blaze's signing key changed in 0.45.15, so this phone can't update in place. Uninstall Blaze once, " +
+    const val KEY_CHANGED = "${BrandName.NAME}'s signing key changed in 0.45.15, so this phone can't update in place. Uninstall ${BrandName.NAME} once, " +
         "then install it again from blazeinchue.pages.dev. Updates work normally after that."
 
     /** Why a downloaded APK must not be installed (null = fine). */
@@ -298,11 +300,11 @@ object Updater {
         val pm = ctx.packageManager
         val flags = if (Build.VERSION.SDK_INT >= 28) android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES else android.content.pm.PackageManager.GET_SIGNATURES
         val info = pm.getPackageArchiveInfo(apk.absolutePath, flags) ?: return "That download isn't a valid app file. Tap Retry."
-        if (info.packageName != ctx.packageName) return "That download isn't Blaze, so I didn't install it."
+        if (info.packageName != ctx.packageName) return "That download isn't ${BrandName.NAME}, so I didn't install it."
         val mine = pm.getPackageInfo(ctx.packageName, flags)
         val newCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
         val oldCode = if (Build.VERSION.SDK_INT >= 28) mine.longVersionCode else mine.versionCode.toLong()
-        if (newCode <= oldCode) return "That download isn't newer than the Blaze you have, so I didn't install it."
+        if (newCode <= oldCode) return "That download isn't newer than the ${BrandName.NAME} you have, so I didn't install it."
         fun sha(b: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
         val trusted: Set<String>; val offered: Set<String>
         if (Build.VERSION.SDK_INT >= 28) {
@@ -319,7 +321,7 @@ object Updater {
         // burned). On Android 9+ the download's current signer must be that key; the old key only counts as its history.
         if (Build.VERSION.SDK_INT >= 28) {
             val current = info.signingInfo?.apkContentsSigners?.map { sha(it.toByteArray()) }?.toSet().orEmpty()
-            if (!UpdateKeys.pinned(current)) return "That download isn't signed by Blaze's release key, so I didn't install it."
+            if (!UpdateKeys.pinned(current)) return "That download isn't signed by ${BrandName.NAME}'s release key, so I didn't install it."
         }
         return null
     }

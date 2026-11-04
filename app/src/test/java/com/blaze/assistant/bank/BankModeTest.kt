@@ -1,5 +1,7 @@
 package com.blaze.assistant.bank
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.bank.BankModeLogic.Action
 import com.blaze.assistant.bank.BankModeLogic.Event
 import com.blaze.assistant.bank.BankModeLogic.Saved
@@ -24,7 +26,7 @@ class BankModeTest {
         listOf(
             "com.whatsapp" to "WhatsApp", "com.android.chrome" to "Chrome", "com.android.vending" to "Google Play Store", "com.android.settings" to "Settings",
             "com.spotify.music" to "Spotify", "com.king.candycrushsaga" to "Candy Crush Saga", "com.foo.display" to "Display Tuner", "com.foo.replay" to "Replay",
-            "com.foo.powerbank" to "Power Bank Monitor", "com.blaze.assistant" to "Blaze", "com.google.android.gms" to "Google Play services",
+            "com.foo.powerbank" to "Power Bank Monitor", "com.blaze.assistant" to "${BrandName.NAME}", "com.google.android.gms" to "Google Play services",
             "com.foo.games" to "Piggy Bank Game", "com.google.android.youtube" to "YouTube",
         ).forEach { (p, l) -> assertFalse("$p / $l", BankApps.looksLikeBank(p, l)) }
     }
@@ -32,7 +34,7 @@ class BankModeTest {
     @Test fun theUsersListWins() {
         assertTrue(BankApps.isBank("com.my.taxapp", "Taxes", added = setOf("com.my.taxapp"), removed = emptySet()))
         assertFalse(BankApps.isBank("com.chase.sig.android", "Chase", added = emptySet(), removed = setOf("com.chase.sig.android")))
-        val seeded = BankApps.preseed(mapOf("com.whatsapp" to "WhatsApp", "com.revolut.revolut" to "Revolut", "com.acme.bank" to "Acme Bank", "com.blaze.assistant" to "Blaze"))
+        val seeded = BankApps.preseed(mapOf("com.whatsapp" to "WhatsApp", "com.revolut.revolut" to "Revolut", "com.acme.bank" to "Acme Bank", "com.blaze.assistant" to "${BrandName.NAME}"))
         assertEquals(listOf("com.acme.bank", "com.revolut.revolut"), seeded)
     }
 

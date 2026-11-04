@@ -14,7 +14,7 @@ version: 1
 - No access to orders (Google not connected)? Say so in one line and offer to connect Google; don't guess numbers.
 
 ## 2. Top posts
-- If the user is signed in to TikTok / Instagram / Facebook in Blaze's browser, read the analytics pages (browser_open, browser_read): views, likes, comments, shares, link clicks for last week's posts. Otherwise use what the user tells you, or skip this part with one line.
+- If the user is signed in to TikTok / Instagram / Facebook in Argus's browser, read the analytics pages (browser_open, browser_read): views, likes, comments, shares, link clicks for last week's posts. Otherwise use what the user tells you, or skip this part with one line.
 - Name the top 2 posts and why they worked (hook, product, time).
 
 ## 3. Next 3 posts

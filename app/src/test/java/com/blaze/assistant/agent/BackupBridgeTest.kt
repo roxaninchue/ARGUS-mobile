@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -15,7 +17,7 @@ class BackupBridgeTest {
         {"type":"function","function":{"name":"web_search","description":"Search the web","parameters":{"type":"object","properties":{"query":{"type":"string"}}}}}]""")
 
     private fun msgs() = JSONArray()
-        .put(JSONObject().put("role", "system").put("content", "You are Blaze. Warm, brief. User: Rocky."))
+        .put(JSONObject().put("role", "system").put("content", "You are ${BrandName.NAME}. Warm, brief. User: Rocky."))
         .put(JSONObject().put("role", "user").put("content", "Wake me at 7"))
         .put(JSONObject().put("role", "assistant").put("content", JSONObject.NULL).put("tool_calls", JSONArray().put(JSONObject()
             .put("id", "c1").put("type", "function").put("function", JSONObject().put("name", "set_alarm").put("arguments", "{\"hour\":7}")))))
@@ -24,7 +26,7 @@ class BackupBridgeTest {
     @Test fun personaAndToolsGoInTheSystemPrompt() {
         val s = BackupBridge.system(msgs(), tools)
         assertTrue(s.startsWith(BackupBridge.IDENTITY))
-        assertTrue(s.contains("You are Blaze. Warm, brief. User: Rocky."))
+        assertTrue(s.contains("You are ${BrandName.NAME}. Warm, brief. User: Rocky."))
         assertTrue(s.contains("- set_alarm: Set an alarm"))
         assertTrue(s.contains("<tool_call>{\"name\": \"tool_name\""))
         assertFalse(BackupBridge.system(msgs(), null).contains("## Tools"))
@@ -36,7 +38,7 @@ class BackupBridgeTest {
         assertTrue(t.contains("User: Wake me at 7"))
         assertTrue(t.contains("<tool_call>{\"name\":\"set_alarm\",\"arguments\":{\"hour\":7}}</tool_call>"))
         assertTrue(t.contains("<tool_response name=\"set_alarm\">\nAlarm set for 07:00\n</tool_response>"))
-        assertFalse(t.contains("You are Blaze. Warm"))   // system text is not repeated in the transcript
+        assertFalse(t.contains("You are ${BrandName.NAME}. Warm"))   // system text is not repeated in the transcript
         assertTrue(t.endsWith("(use the tool results above)."))
     }
 
@@ -73,7 +75,7 @@ class BackupBridgeTest {
         // An unknown tool stays text (the agent loop's own guards handle it); plain answers stay plain.
         assertFalse(BackupBridge.toOpenAI("<tool_call>{\"name\":\"rm_rf\",\"arguments\":{}}</tool_call>", tools).has("tool_calls"))
         assertEquals("Hi Rocky!", BackupBridge.toOpenAI("Hi Rocky!", tools).getString("content"))
-        assertEquals("I'm Blaze, here to help.", BackupBridge.toOpenAI("I'm OpenCode, here to help.", null).getString("content"))
+        assertEquals("I'm ${BrandName.NAME}, here to help.", BackupBridge.toOpenAI("I'm OpenCode, here to help.", null).getString("content"))
     }
 
     @Test fun replyPartsAndErrors() {

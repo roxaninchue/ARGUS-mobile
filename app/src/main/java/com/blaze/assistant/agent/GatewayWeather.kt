@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 import java.util.Locale
 
@@ -76,7 +78,7 @@ object GatewayWeather {
         return "${Math.round(n.temperature)}${n.unit}, ${n.condition}" + (if (!n.isDay) " (it's night)" else "") +
             (if (!n.feelsLike.isNaN()) ", feels ${Math.round(n.feelsLike)}${n.unit}" else "") +
             (if (n.humidity >= 0) ", humidity ${n.humidity}%" else "") + (if (!n.wind.isNaN()) ", wind ${Math.round(n.wind)} ${n.windUnit}" else "") +
-            ". Source: ${n.source.ifBlank { "Blaze weather" }}" + (if (t.isNotBlank()) " · $t" else "") + ". Quote the source and time."
+            ". Source: ${n.source.ifBlank { "${BrandName.NAME} weather" }}" + (if (t.isNotBlank()) " · $t" else "") + ". Quote the source and time."
     }
 
     /** Raw GET; returns (code, body). Blocking: call off the main thread. */
@@ -95,7 +97,7 @@ object GatewayWeather {
         var lat = args.optDouble("lat", Double.NaN); var lon = args.optDouble("lon", Double.NaN)
         if (lat.isNaN() || lon.isNaN()) here()?.let { lat = it.first; lon = it.second }
         if (lat.isNaN() || lon.isNaN()) return "No location: call get_location (or ask which place), then call get_weather with lat and lon."
-        if (token.isBlank()) return "Weather needs the Blaze sign-in. Ask the user to sign in to Blaze; don't guess the weather."
+        if (token.isBlank()) return "Weather needs the ${BrandName.NAME} sign-in. Ask the user to sign in to ${BrandName.NAME}; don't guess the weather."
         val units = unitsFor(args.optString("units"), Locale.getDefault().country, lat, lon)   // v0.45.7: metric outside the US
         val (code, body) = try { fetch(lat, lon, units, token) } catch (e: Exception) { return UNAVAILABLE }
         if (code == 503 || code !in 200..299) return UNAVAILABLE

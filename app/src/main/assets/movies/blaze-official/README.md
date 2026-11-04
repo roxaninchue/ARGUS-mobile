@@ -1,6 +1,6 @@
-# Blaze Official providers (example repo)
+# Argus Official providers (example repo)
 
-Blaze's own example of a provider repo in the Vega provider format: free, legal films only
+Argus's own example of a provider repo in the Vega provider format: free, legal films only
 (Internet Archive public-domain feature films and the Blender Foundation's open movies, CC BY).
 
     manifest.json                     list of providers: value, display_name, version, icon, type

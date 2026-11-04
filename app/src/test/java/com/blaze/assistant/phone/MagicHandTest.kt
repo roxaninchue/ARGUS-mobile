@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.phone.MagicHandLogic.Action
 import com.blaze.assistant.phone.MagicHandLogic.Gesture
 import com.blaze.assistant.phone.MagicHandLogic.Intent
@@ -134,7 +136,7 @@ class MagicHandTest {
     @Test fun teachRecorderFoldsAndSkipsOwnApp() {
         val r = MagicHandTeach.Recorder("com.blaze.assistant")
         r.window("com.whatsapp", "WhatsApp", "Chats")
-        r.window("com.blaze.assistant", "Blaze", "Magic Hand")   // ignored
+        r.window("com.blaze.assistant", "${BrandName.NAME}", "Magic Hand")   // ignored
         r.click("com.whatsapp", "WhatsApp", "New chat", "com.whatsapp:id/fab", "android.widget.ImageButton")
         r.window("com.whatsapp", "WhatsApp", "Select contact")
         r.window("com.whatsapp", "WhatsApp", "Contacts")         // replaces the previous screen step

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.device.CameraModes.Mode
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -10,7 +12,7 @@ class CameraIntentTest {
 
     @Test fun documents() {
         assertMode(Mode.DOCUMENT, "scan this document for me")
-        assertMode(Mode.DOCUMENT, "Hey Blaze, scan this document")
+        assertMode(Mode.DOCUMENT, "Hey ${BrandName.NAME}, scan this document")
         assertMode(Mode.DOCUMENT, "scan my homework")
         assertMode(Mode.DOCUMENT, "Can you scan this receipt please?")
         assertMode(Mode.DOCUMENT, "scanne ce document")                 // French

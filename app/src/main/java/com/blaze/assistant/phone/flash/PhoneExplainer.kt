@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone.flash
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.46.3: the one-time "Let Blaze use your phone" explainer. Phones have no ADB here, so on-phone control runs only
  * through Blaze's accessibility service, which the user switches on once in Android Settings. The first time a phone task
@@ -10,14 +12,14 @@ package com.blaze.assistant.phone.flash
 object PhoneExplainer {
     const val SEEN_KEY = "a11y_explainer_seen"
 
-    const val TITLE = "Let Blaze use your phone"
+    const val TITLE = "Let ${BrandName.NAME} use your phone"
     val POINTS = listOf(
-        "Blaze reads what's on screen and taps, types and scrolls for you, only when you ask it to do something.",
+        "${BrandName.NAME} reads what's on screen and taps, types and scrolls for you, only when you ask it to do something.",
         "It uses Android's accessibility switch. No cable, computer or ADB needed.",
-        "Banking apps on your bank list are never read or touched, and Blaze asks before anything risky.",
+        "Banking apps on your bank list are never read or touched, and ${BrandName.NAME} asks before anything risky.",
         "You can switch it off any time in Settings \u2192 Accessibility.",
     )
-    const val STEPS = "Tap Open Settings, choose Blaze, and switch it on."
+    const val STEPS = "Tap Open Settings, choose ${BrandName.NAME}, and switch it on."
     const val OPEN = "Open Settings"
     const val LATER = "Not now"
 

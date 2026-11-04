@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -27,7 +29,7 @@ object BackupBridge {
     private const val MAX_TOOL_PARAMS = 1_400
     private const val MAX_TOOL_RESULT = 6_000
 
-    const val IDENTITY = "You are Blaze, the user's personal assistant on their phone. Answer as Blaze, in Blaze's voice. " +
+    const val IDENTITY = "You are ${BrandName.NAME}, the user's personal assistant on their phone. Answer as ${BrandName.NAME}, in ${BrandName.NAME}'s voice. " +
         "Never call yourself OpenCode, a CLI, a coding agent or a model, and never mention which model or service answers."
 
     /** OpenCode's built-in tools, all off (the wildcard covers ones added in later versions). */
@@ -87,7 +89,7 @@ object BackupBridge {
                 "system", "developer" -> {}
                 "user" -> turns += "User: " + textOf(m.opt("content"))
                 "assistant" -> {
-                    val sb = StringBuilder("Blaze: ").append(textOf(m.opt("content")))
+                    val sb = StringBuilder("${BrandName.NAME}: ").append(textOf(m.opt("content")))
                     val calls = m.optJSONArray("tool_calls")
                     if (calls != null) for (j in 0 until calls.length()) {
                         val c = calls.optJSONObject(j) ?: continue
@@ -113,7 +115,7 @@ object BackupBridge {
             kept.addFirst(if (t.length > max) t.takeLast(max) else t); n += t.length
         }
         val head = if (kept.size < turns.size) "[earlier conversation left out]\n\n" else ""
-        return head + kept.joinToString("\n\n") + "\n\nReply as Blaze to the latest message" + (if (turns.lastOrNull()?.startsWith("<tool_response") == true) " (use the tool results above)." else ".")
+        return head + kept.joinToString("\n\n") + "\n\nReply as ${BrandName.NAME} to the latest message" + (if (turns.lastOrNull()?.startsWith("<tool_response") == true) " (use the tool results above)." else ".")
     }
 
     /** POST /session/{id}/message (or prompt_async) body. */
@@ -153,7 +155,7 @@ object BackupBridge {
     private val selfName = Regex("""\b(I am|I'm|I’m|this is|my name is)\s+(?:an?\s+)?(?:OpenCode|opencode)\b""")
 
     /** The rare reply where a model still introduces itself by the server's name: it's Blaze. */
-    fun cleanText(text: String): String = selfName.replace(text) { "${it.groupValues[1]} Blaze" }
+    fun cleanText(text: String): String = selfName.replace(text) { "${it.groupValues[1]} ${BrandName.NAME}" }
 
     /** OpenAI assistant message: tool calls written in the reply become real `tool_calls` (Blaze runs them). */
     fun toOpenAI(text: String, tools: JSONArray?): JSONObject {
@@ -233,7 +235,7 @@ object BackupBridge {
         .put("tools", JSONObject().apply { OFF_TOOLS.forEach { put(it, false) } })
         .put("permission", JSONObject().put("edit", "deny").put("bash", "deny").put("webfetch", "deny"))
         .put("agent", JSONObject().put(AGENT, JSONObject()
-            .put("description", "Blaze, the user's assistant")
+            .put("description", "${BrandName.NAME}, the user's assistant")
             .put("mode", "primary")
             .put("prompt", IDENTITY)
             .put("tools", JSONObject().apply { OFF_TOOLS.forEach { put(it, false) } })))

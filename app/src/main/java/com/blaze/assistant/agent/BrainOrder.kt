@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 
 /**
@@ -31,7 +33,7 @@ object BrainOrder {
     fun label(s: BackupRoute.Step): String = when (s) {
         BackupRoute.Step.BACKUP -> "On-phone brain"
         BackupRoute.Step.RESERVE -> "Nous reserve"
-        BackupRoute.Step.CLOUD -> "Blaze Cloud"
+        BackupRoute.Step.CLOUD -> "${BrandName.NAME} Cloud"
     }
 
     private val codeWords = Regex("""(?i)\b(code|coding|bug|debug|function|class|method|compile|compiler|stack ?trace|traceback|exception|refactor|repo|repository|git|github|gitlab|commit|pull request|merge request|terminal|shell|bash|script|python|kotlin|java|javascript|typescript|rust|golang|c\+\+|sql|regex|api|json|yaml|dockerfile|npm|pip|gradle|apk|decompile|reverse engineer|rea|exam coach)\b|```""")

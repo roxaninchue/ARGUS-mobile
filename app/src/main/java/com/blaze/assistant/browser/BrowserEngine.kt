@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Context
@@ -655,14 +657,14 @@ object BrowserEngine {
         val ok = try { BrowserLogins.save(o.host, o.user, o.pass) != null } catch (_: Throwable) { false }
         toast(if (!ok) "Couldn't save the password." else if (o.update) "Password updated" else "Password saved for ${o.site}")
     }
-    fun neverForSite() { val o = loginOffer ?: return; loginOffer = null; BrowserLogins.addNever(o.host); toast("Blaze won't offer to save passwords on ${o.site}.") }
+    fun neverForSite() { val o = loginOffer ?: return; loginOffer = null; BrowserLogins.addNever(o.host); toast("${BrandName.NAME} won't offer to save passwords on ${o.site}.") }
     fun dismissLoginOffer() { loginOffer = null }
 
     /** Fills a saved account into the page (never submits). https (or LAN) and the same site only. */
     fun fillLogin(t: Tab, l: BrowserLogins.Login) {
         t.fillAccounts = emptyList()
         if (t.isPrivate) return
-        if (!com.blaze.assistant.connect.UrlSafety.autofillAllowed(t.url)) { toast("This page isn't secure (http), so Blaze won't fill a password here."); return }
+        if (!com.blaze.assistant.connect.UrlSafety.autofillAllowed(t.url)) { toast("This page isn't secure (http), so ${BrandName.NAME} won't fill a password here."); return }
         if (!SiteDomain.sameSite(l.host, SiteDomain.hostOf(t.url))) return
         val pass = l.password
         if (pass.isEmpty()) { toast("This password can't be read on this phone. Save it again."); return }
@@ -790,7 +792,7 @@ object BrowserEngine {
     fun load(t: Tab, input: String) {
         val u = toUrl(input)
         t.pending = null
-        if (u.startsWith("file:") && !SavedPages.isSavedUrl(u)) { toast("Blaze only opens its own saved pages from the phone."); return }
+        if (u.startsWith("file:") && !SavedPages.isSavedUrl(u)) { toast("${BrandName.NAME} only opens its own saved pages from the phone."); return }
         allowFiles(t, u)
         t.url = u; t.loaded = CompletableDeferred()
         t.web.loadUrl(u)
@@ -801,7 +803,7 @@ object BrowserEngine {
             if (url.startsWith("blob:") || url.startsWith("data:")) { toast("This download type isn't supported yet."); return }
             val name = URLUtil.guessFileName(url, disposition, mime)
             val req = DownloadManager.Request(Uri.parse(url))
-                .setMimeType(mime).setTitle(name).setDescription("Downloading with Blaze")
+                .setMimeType(mime).setTitle(name).setDescription("Downloading with ${BrandName.NAME}")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
             CookieManager.getInstance().getCookie(url)?.let { req.addRequestHeader("Cookie", it) }

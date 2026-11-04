@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -11,7 +13,7 @@ class DuoTest {
     @Test fun tagsRoute() {
         assertEquals(Duo.Mode.HALO, Duo.route("@halo what do you think?").mode)
         assertEquals("what do you think?", Duo.route("@halo what do you think?").text)
-        assertEquals(Duo.Mode.BLAZE, Duo.route("@Blaze open WhatsApp").mode)
+        assertEquals(Duo.Mode.BLAZE, Duo.route("@${BrandName.NAME} open WhatsApp").mode)
         assertEquals(Duo.Mode.ALL, Duo.route("@all best pizza topping?").mode)
         assertEquals(Duo.Mode.ALL, Duo.route("hey @blaze and @halo, ideas?").mode)
         assertEquals(Duo.Mode.HALO, Duo.route("hey @halo, how are you").mode)
@@ -43,7 +45,7 @@ class DuoTest {
     }
 
     @Test fun cleanAndPass() {
-        assertEquals("Hello", Duo.clean("[Blaze] Hello"))
+        assertEquals("Hello", Duo.clean("[${BrandName.NAME}] Hello"))
         assertEquals("Hi there", Duo.clean("**Halo:** Hi there"))
         assertTrue(Duo.isPass("PASS"))
         assertTrue(Duo.isPass(" pass. "))

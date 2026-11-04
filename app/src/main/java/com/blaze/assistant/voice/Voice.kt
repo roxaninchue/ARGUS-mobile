@@ -1,5 +1,7 @@
 package com.blaze.assistant.voice
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -224,7 +226,7 @@ object Voice {
                 finish()
                 if (code == SpeechRecognizer.ERROR_NO_MATCH || code == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) onText("")
                 else onError(when (code) {
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Blaze needs microphone permission."
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "${BrandName.NAME} needs microphone permission."
                     SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Voice needs a connection right now."
                     else -> "Couldn't hear that (code $code)."
                 })

@@ -8,7 +8,7 @@ version: 1
 # Image and asset handling
 
 Check tools first (`magick -version` or `convert -version`, `ffmpeg -version`, `python -c "import PIL"`). On the phone,
-Blaze's Linux is Alpine: install what's missing yourself with run_shell (`apk add imagemagick ffmpeg`, or `pip install pillow`
+Argus's Linux is Alpine: install what's missing yourself with run_shell (`apk add imagemagick ffmpeg`, or `pip install pillow`
 via run_code). Never overwrite originals: write to a new file or an `out/` folder. Save results under ~ (/root/phone) so
 they land in the user's Gallery.
 
@@ -42,7 +42,7 @@ Python (Pillow) when logic is needed: `Image.open(p).convert("RGB").thumbnail((1
 ## SVG by hand (logos, icons, simple illustrations)
 
 - `viewBox` set, no fixed width/height for icons; `currentColor` for strokes/fills so CSS can theme it.
-- Simple geometry on a grid (e.g. 24×24, stroke 1.5-2, round or square caps consistent with the brand). Blaze icons use square caps and no rounded corners.
+- Simple geometry on a grid (e.g. 24×24, stroke 1.5-2, round or square caps consistent with the brand). Argus icons use square caps and no rounded corners.
 - Title for accessibility: `<svg role="img" aria-label="…">`; decorative: `aria-hidden="true"`.
 - Optimise: remove editor metadata; `npx svgo in.svg -o out.svg` if available.
 - Text in logos: convert to paths or use a web-safe font; check it at 16px and 512px.

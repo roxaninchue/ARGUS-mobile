@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -43,7 +45,7 @@ object TokenLedger {
                 "system" -> add("system prompt", tok(chars))
                 "user" -> add(if (c is String && c.startsWith("[")) "context notes" else "your messages", tok(chars))
                 "assistant" -> {
-                    add("Blaze replies", tok(chars))
+                    add("${BrandName.NAME} replies", tok(chars))
                     m.optJSONArray("tool_calls")?.let { add("tool calls", tok(it.toString().length)) }
                 }
                 "tool" -> {
@@ -89,7 +91,7 @@ object TokenLedger {
         part == "screen readouts" -> "phone tasks: run_plan batches taps so the screen is read once"
         part == "results: fetch_page" -> "long pages; ask for a summary or one section instead of whole pages"
         part.startsWith("results: ") -> "large tool results; Long chats saves big ones aside (keep it on)"
-        part == "your messages" || part == "Blaze replies" -> "long chat history; start a new chat for a new topic, or let Long chats fold old turns"
+        part == "your messages" || part == "${BrandName.NAME} replies" -> "long chat history; start a new chat for a new topic, or let Long chats fold old turns"
         part == "images" -> "screenshots and photos cost ~800 tokens each; Low-data mode drops screenshots"
         part == "context notes" -> "orientation / heads-up notes; normal, shrinks with fewer pending notices"
         else -> ""

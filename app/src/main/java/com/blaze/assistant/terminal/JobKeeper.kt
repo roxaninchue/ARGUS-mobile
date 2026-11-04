@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -37,9 +39,9 @@ class JobKeeper : Service() {
 
     private fun note(text: String): Notification {
         val nm = getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("blaze_jobs", "Blaze background jobs", NotificationManager.IMPORTANCE_MIN))
+        if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("blaze_jobs", "${BrandName.NAME} background jobs", NotificationManager.IMPORTANCE_MIN))
         return NotificationCompat.Builder(this, "blaze_jobs").setSmallIcon(R.drawable.ic_stat_blaze)
-            .setContentTitle("Blaze is running jobs").setContentText(text).setOngoing(true).build()
+            .setContentTitle("${BrandName.NAME} is running jobs").setContentText(text).setOngoing(true).build()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

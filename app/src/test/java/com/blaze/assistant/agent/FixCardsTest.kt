@@ -1,14 +1,16 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class FixCardsTest {
     @Test fun matchesMissingAccess() {
-        assertEquals(FixCards.Kind.NOTIFICATIONS, FixCards.kindOf("Notification access is off. Ask the user to turn it on in Blaze › Settings."))
+        assertEquals(FixCards.Kind.NOTIFICATIONS, FixCards.kindOf("Notification access is off. Ask the user to turn it on in ${BrandName.NAME} › Settings."))
         assertEquals(FixCards.Kind.PHONE_CONTROL, FixCards.kindOf("Phone control is off, so I can't take a screenshot."))
-        assertEquals(FixCards.Kind.USAGE, FixCards.kindOf("Blaze needs Usage access: I opened that page."))
+        assertEquals(FixCards.Kind.USAGE, FixCards.kindOf("${BrandName.NAME} needs Usage access: I opened that page."))
         assertEquals(FixCards.Kind.APP_PERMISSION, FixCards.kindOf("Error: permission denied for contacts"))
         assertNull(FixCards.kindOf("Opened WhatsApp."))
     }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,8 +45,8 @@ object CloudRuns {
 
     // Plain lines (the quiet working line in Simple mode, the step card's title in Advanced).
     const val SENDING = "Sending\u2026"
-    const val QUEUED = "Sent. Waiting for Blaze\u2026"
-    const val RUNNING = "Blaze is thinking\u2026"
+    const val QUEUED = "Sent. Waiting for ${BrandName.NAME}\u2026"
+    const val RUNNING = "${BrandName.NAME} is thinking\u2026"
     const val ON_PHONE = "Doing that on your phone\u2026"
     const val OFFLINE = "Waiting for internet \u2014 your reply is safe\u2026"
     const val SAFE = "Connection lost. Your reply is safe and will show up here when you're back online."
@@ -52,7 +54,7 @@ object CloudRuns {
     const val EXPIRED = "This reply timed out. Tap Retry to send it again."
     const val NO_REPLY = "No answer came back. Tap Retry to try again."
     const val STOPPED = "Stopped."
-    const val CUT_SHORT = "I was doing something on your phone when Blaze closed, so that task stopped. Send it again and I'll finish it."
+    const val CUT_SHORT = "I was doing something on your phone when ${BrandName.NAME} closed, so that task stopped. Send it again and I'll finish it."
 
     fun waiting(ms: Long): String = "Busy right now, trying again in ${maxOf(1L, (ms + 999) / 1000)}s\u2026"
 
@@ -856,7 +858,7 @@ object CloudRuns {
                 override fun ack(text: String) = onAck(text)
                 override fun raw(ev: JSONObject) = onRaw(ev)
                 override fun beat() { LlmClient.lastChunkAt = System.currentTimeMillis() }
-            }).also { LlmClient.lastRoute = "Blaze Cloud · run" + (if (LlmClient.lastServedBy.isNotBlank()) " · ${LlmClient.lastServedBy}" else "") }
+            }).also { LlmClient.lastRoute = "${BrandName.NAME} Cloud · run" + (if (LlmClient.lastServedBy.isNotBlank()) " · ${LlmClient.lastServedBy}" else "") }
         } catch (f: Fallback) {
             t.off = true
             LlmClient.lastCloudError = "cloud run: ${f.why}"

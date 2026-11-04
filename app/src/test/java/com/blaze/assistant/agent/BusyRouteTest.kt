@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -36,7 +38,7 @@ class BusyRouteTest {
     @Test fun haloGetsAPlainReadOnlyStatus() {
         val s = BusyRoute.status("compare phone prices", "Reading 3 pages", 4)
         assertTrue(s, s.contains("compare phone prices") && s.contains("Reading 3 pages") && s.contains("step 4"))
-        assertTrue(BusyRoute.steered("compare phone prices").startsWith("Got it, I've passed that to Blaze"))
+        assertTrue(BusyRoute.steered("compare phone prices").startsWith("Got it, I've passed that to ${BrandName.NAME}"))
         assertTrue(BusyRoute.STOPPED.startsWith("Stopped."))
     }
 
@@ -46,11 +48,11 @@ class BusyRouteTest {
         val replies = ArrayList<Pair<Long, String>>()
         var task: Job? = null
         val read = ArrayList<String>()
-        fun startTask(steps: Int) { task = scope.launch { repeat(steps) { delay(5_000); generateSequence { inbox.poll() }.forEach { read.add(it) } }; replies.add(currentTimeOf() to "BLAZE: task done") } }
+        fun startTask(steps: Int) { task = scope.launch { repeat(steps) { delay(5_000); generateSequence { inbox.poll() }.forEach { read.add(it) } }; replies.add(currentTimeOf() to "${BrandName.UPPER}: task done") } }
         var clock: () -> Long = { 0L }
         fun currentTimeOf() = clock()
         fun send(text: String) {
-            if (task?.isActive != true) { replies.add(clock() to "BLAZE: $text"); return }
+            if (task?.isActive != true) { replies.add(clock() to "${BrandName.UPPER}: $text"); return }
             when (BusyRoute.route(text)) {
                 BusyRoute.Kind.STOP -> { task?.cancel(); replies.add(clock() to "HALO: " + BusyRoute.STOPPED) }
                 BusyRoute.Kind.STEER -> { inbox.add(text); replies.add(clock() to "HALO: " + BusyRoute.steered("task")) }
@@ -65,10 +67,10 @@ class BusyRouteTest {
         delay(3_000); l.send("how's it going?")
         withTimeout(60_000) { l.task!!.join() }
         val halo = l.replies.first { it.second.startsWith("HALO") }
-        val done = l.replies.first { it.second == "BLAZE: task done" }
+        val done = l.replies.first { it.second == "${BrandName.UPPER}: task done" }
         assertTrue(halo.first < done.first)
         assertEquals(1, l.replies.count { it.second.startsWith("HALO") })    // no double reply
-        assertEquals(1, l.replies.count { it.second == "BLAZE: task done" })
+        assertEquals(1, l.replies.count { it.second == "${BrandName.UPPER}: task done" })
     }
 
     @Test fun steerIsReadOnceByTheRunningTaskAndStopCancels() = runTest {
@@ -80,7 +82,7 @@ class BusyRouteTest {
         l.send("stop")
         withTimeout(5_000) { l.task!!.join() }
         assertTrue(l.task!!.isCancelled)
-        assertFalse(l.replies.any { it.second == "BLAZE: task done" })
+        assertFalse(l.replies.any { it.second == "${BrandName.UPPER}: task done" })
         assertEquals(listOf("HALO: " + BusyRoute.steered("task"), "HALO: " + BusyRoute.STOPPED), l.replies.map { it.second })
     }
 

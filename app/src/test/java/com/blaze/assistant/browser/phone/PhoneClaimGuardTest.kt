@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ToolVerify
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -31,7 +33,7 @@ class PhoneClaimGuardTest {
     @Test fun midTaskStatusQuestion_cantSayConfirmed_5of5() = fiveTimes("status mid-task") { i ->
         val d = site(listOf("form", "review", "home", "form", "review")[i])
         val status = call(d, "phone_status")
-        assertTrue(status, status.contains("Not booked, ordered or paid yet: no confirmation page or number seen on Blaze Phone."))
+        assertTrue(status, status.contains("Not booked, ordered or paid yet: no confirmation page or number seen on ${BrandName.NAME} Phone."))
         val done = listOf("phone_status" to ToolVerify.phoneVerdict(status).why)
         val out = PhoneClaimGuard.review(CLAIMS[i], done, inPlay = true)
         assertTrue(CLAIMS[i], out != null && out.startsWith("Not booked yet") && PhoneClaimGuard.claims(out).isEmpty())
@@ -78,6 +80,6 @@ class PhoneClaimGuardTest {
         assertEquals("page not verified", ToolVerify.phoneVerdict(r).why.substringBefore(" ("))
         // Nothing open at all.
         val none = PhoneToolSimTest.DemoSite()
-        assertTrue(call(none, "phone_status").contains("Nothing open on Blaze Phone: nothing booked, ordered or paid."))
+        assertTrue(call(none, "phone_status").contains("Nothing open on ${BrandName.NAME} Phone: nothing booked, ordered or paid."))
     }
 }

@@ -12,3 +12,11 @@ app/src/main/jniLibs/*/libblazerouter.so
 
 # YouTube Store plug-in: separate private repo, cloned here for builds (see README "YouTube plug-in")
 youtube/
+
+# Signing material must never be committed
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.key
+*.pem

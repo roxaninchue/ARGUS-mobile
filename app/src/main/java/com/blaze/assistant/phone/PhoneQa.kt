@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import com.blaze.assistant.agent.Agent
@@ -230,6 +232,6 @@ object PhoneQa {
         val j = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.json", "application/json", PhoneQaReport.json(out, meta)))
         val m = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.md", "text/markdown", PhoneQaReport.markdown(out, meta)))
         val sum = PhoneQaReport.summary(out).joinToString("\n") { "${it.case}: ${it.passed}/${it.runs}" + if (it.strict) " PASS" else " FAIL" }
-        say("Phone self-test finished.\n$sum\n${SaveFile.pathIn(j) ?: j}\n${SaveFile.pathIn(m) ?: m}\nShare both files with the team (Files \u2192 Downloads \u2192 Blaze).", asReply = true)
+        say("Phone self-test finished.\n$sum\n${SaveFile.pathIn(j) ?: j}\n${SaveFile.pathIn(m) ?: m}\nShare both files with the team (Files \u2192 Downloads \u2192 ${BrandName.NAME}).", asReply = true)
     }
 }

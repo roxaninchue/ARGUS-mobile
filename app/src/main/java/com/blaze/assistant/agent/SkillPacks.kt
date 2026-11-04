@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -234,7 +236,7 @@ object SkillPacks {
     private val starters = listOf(
         Triple("sign-in-flows", "Signing in to websites and apps quickly and safely (Google sign-in, Continue as, cookie banners)", """
 # Sign-in flows
-1. Prefer Blaze's background browser for websites; use the screen only when the site needs the user's own app session.
+1. Prefer ${BrandName.NAME}'s background browser for websites; use the screen only when the site needs the user's own app session.
 2. In the background browser, deal with a cookie banner or pop-up first: browser_read shows it ("Dialog open"), click its accept / close button. If a click says it is covered, close what covers it.
 3. For "Choose an account", ask the user which account with ask_user unless they named one.
 4. Emails, passwords, phone numbers, API keys and codes come from browser_secure_input (a secure form in the chat; saved logins fill in by themselves). Never ask for them in chat, never invent or guess one; you only see {{secret:...}} placeholders.
@@ -242,7 +244,7 @@ object SkillPacks {
 7. If the site says the account can't use a password (e.g. GitHub's "does not support password sign-in"), stop asking for it: offer Continue with Google, a passkey or the live browser with ask_user.
 6. Check you are really signed in (an account name, avatar or dashboard) before saying it worked.
 """),
-        Triple("browser-tasks", "Doing a task on a website in Blaze's background browser (search, forms, shopping, booking, reading listings)", """
+        Triple("browser-tasks", "Doing a task on a website in ${BrandName.NAME}'s background browser (search, forms, shopping, booking, reading listings)", """
 # Browser tasks
 1. Plan the steps in one line, then browser_open the site (or its search page directly).
 2. Read what is on screen (browser_read). Close a cookie banner or pop-up first.

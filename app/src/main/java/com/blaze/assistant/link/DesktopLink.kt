@@ -1,5 +1,7 @@
 package com.blaze.assistant.link
 
+
+import com.blaze.assistant.BrandName
 import android.net.Uri
 import com.blaze.assistant.agent.Agent
 import com.blaze.assistant.agent.Settings
@@ -116,15 +118,15 @@ object DesktopLink {
     private fun err(body: String) = runCatching { JSONObject(body).optString("error") }.getOrNull().orEmpty()
 
     private fun unreachable(e: Exception) =
-        if (e is javax.net.ssl.SSLException || e.cause is CertificateException) "That isn't the PC you paired with (its security key changed). Pair again from Blaze Desktop › Phone."
-        else "Can't reach $pcName. Blaze Desktop must be open, and both devices on the same Wi-Fi (or both on Tailscale)."
+        if (e is javax.net.ssl.SSLException || e.cause is CertificateException) "That isn't the PC you paired with (its security key changed). Pair again from ${BrandName.NAME} Desktop › Phone."
+        else "Can't reach $pcName. ${BrandName.NAME} Desktop must be open, and both devices on the same Wi-Fi (or both on Tailscale)."
 
     // ---------- pairing ----------
 
     /** Pair from the QR code / link Blaze Desktop shows. Returns a line for the user. */
     suspend fun pair(link: String, deviceName: String): String = withContext(Dispatchers.IO) {
         val u = runCatching { Uri.parse(link.trim()) }.getOrNull()
-        if (u == null || u.scheme != "blaze" || u.host != "pair") return@withContext "That's not a Blaze Desktop pairing code. Open Blaze Desktop › Phone › Show pairing QR code."
+        if (u == null || u.scheme != "blaze" || u.host != "pair") return@withContext "That's not a ${BrandName.NAME} Desktop pairing code. Open ${BrandName.NAME} Desktop › Phone › Show pairing QR code."
         val hs = u.getQueryParameter("h").orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
         val prt = u.getQueryParameter("p")?.toIntOrNull() ?: 7377
         val f = u.getQueryParameter("fp").orEmpty()
@@ -150,7 +152,7 @@ object DesktopLink {
                 return@withContext "Paired with $pcName."
             } catch (e: Exception) { lastErr = e.message.orEmpty() }
         }
-        "Can't reach the PC at ${hs.joinToString(", ")}. Put both on the same Wi-Fi (or both on Tailscale) and allow Blaze through the PC's firewall. ($lastErr)"
+        "Can't reach the PC at ${hs.joinToString(", ")}. Put both on the same Wi-Fi (or both on Tailscale) and allow ${BrandName.NAME} through the PC's firewall. ($lastErr)"
     }
 
     /** Forget the PC (and tell it, if it's reachable). */
@@ -177,7 +179,7 @@ object DesktopLink {
             val (c, b) = call("GET", "/v1/ping", null, 6_000)
             if (c == 401) { clearLocal(); return@withContext "$pcName unpaired this phone. Pair again." }
             val o = JSONObject(b)
-            "Connected to ${o.optString("pc_name")} · Blaze Desktop ${o.optString("version")} · ${o.optString("os")}"
+            "Connected to ${o.optString("pc_name")} · ${BrandName.NAME} Desktop ${o.optString("version")} · ${o.optString("os")}"
         } catch (e: Exception) { unreachable(e) }
     }
 
@@ -188,7 +190,7 @@ object DesktopLink {
      * Approvals the PC needs are asked here with Blaze's normal confirm card.
      */
     suspend fun askPc(task: String, fresh: Boolean, onStep: (String) -> Unit): String {
-        if (!paired) return "No PC is paired. The user can pair one in Settings › Blaze Desktop (scan the QR code from Blaze Desktop › Phone)."
+        if (!paired) return "No PC is paired. The user can pair one in Settings › ${BrandName.NAME} Desktop (scan the QR code from ${BrandName.NAME} Desktop › Phone)."
         val id = try {
             val (c, b) = withContext(Dispatchers.IO) { call("POST", "/v1/task", JSONObject().put("text", task).put("fresh", fresh).toString()) }
             if (c == 401) { clearLocal(); return "$pcName unpaired this phone. The user needs to pair again." }
@@ -274,7 +276,7 @@ object DesktopLink {
 
     private suspend fun answer(id: String, text: String) {
         val reply = try {
-            withContext(Dispatchers.Main) { Agent.ask("From $pcName", "[Request from Blaze on the user's PC \"$pcName\" (paired). Do it with your tools; anything risky asks the user for approval here as usual. " +
+            withContext(Dispatchers.Main) { Agent.ask("From $pcName", "[Request from ${BrandName.NAME} on the user's PC \"$pcName\" (paired). Do it with your tools; anything risky asks the user for approval here as usual. " +
                 "Then reply in 1-3 short sentences for the PC.]\n$text", visible = true) }
         } catch (e: Exception) { "The phone hit an error: ${e.message}" }
         runCatching { call("POST", "/v1/inbox/$id/reply", JSONObject().put("text", reply).toString(), 15_000) }
@@ -284,7 +286,7 @@ object DesktopLink {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", "ask_pc")
-        .put("description", "Ask Blaze on the user's paired computer ($pcName) to do something there, in plain words: work with its files and code projects, run programs or commands, install software, check its disk or downloads, open things on it. It works on the PC with its own tools and returns its answer. Not for things on this phone.")
+        .put("description", "Ask ${BrandName.NAME} on the user's paired computer ($pcName) to do something there, in plain words: work with its files and code projects, run programs or commands, install software, check its disk or downloads, open things on it. It works on the PC with its own tools and returns its answer. Not for things on this phone.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("task", JSONObject().put("type", "string").put("description", "The complete request for the PC, e.g. \"Run the tests in my blaze-desktop project and tell me what fails\""))
             .put("new_conversation", JSONObject().put("type", "boolean").put("description", "true to start fresh instead of continuing the last PC conversation")))
@@ -292,5 +294,5 @@ object DesktopLink {
 
     /** Line for the system prompt when a PC is paired. */
     fun promptLine(): String = if (!paired) "" else
-        "\nPAIRED PC: \"$pcName\" runs Blaze Desktop. For anything on the computer (its files, code, programs, installs, terminal) use ask_pc with the request in plain words."
+        "\nPAIRED PC: \"$pcName\" runs ${BrandName.NAME} Desktop. For anything on the computer (its files, code, programs, installs, terminal) use ask_pc with the request in plain words."
 }

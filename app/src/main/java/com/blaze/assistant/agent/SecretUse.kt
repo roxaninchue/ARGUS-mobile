@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -131,7 +133,7 @@ object SecretUse {
         for (m in SecretVault.HANDLE.findAll(raw)) {
             val id = m.groupValues[1]
             val e = SecretVault.get(id) ?: return Prep.Denied("There's no saved secret ${m.value}. Ask the user with request_secret (never in chat), then use the handle it returns.")
-            if (e.kind == SecretVault.Kind.CARD) return Prep.Denied("Card details are only ever typed into the payment page in Blaze's browser (browser_type on ${e.hosts.firstOrNull() ?: "its site"}), never sent through $tool.")
+            if (e.kind == SecretVault.Kind.CARD) return Prep.Denied("Card details are only ever typed into the payment page in ${BrandName.NAME}'s browser (browser_type on ${e.hosts.firstOrNull() ?: "its site"}), never sent through $tool.")
             val f = m.groupValues[2].ifBlank { null }
             if (f != null && f !in e.fields) return Prep.Denied("${e.label} has no field \"$f\". Use ${SecretVault.handlesOf(e).joinToString(" or ")}.")
             val allowed = e.hosts

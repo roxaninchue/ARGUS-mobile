@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -93,7 +95,7 @@ object BlazeRouter {
         return "BlazeRouter didn't start. " + notes.joinToString("; ")
     }
 
-    fun label(r: String) = when (r) { "alpine" -> "Alpine Linux"; "termux" -> "Termux"; "direct" -> "Blaze"; else -> r }
+    fun label(r: String) = when (r) { "alpine" -> "Alpine Linux"; "termux" -> "Termux"; "direct" -> "${BrandName.NAME}"; else -> r }
 
     /** Starts the server one way; null = launched (health is checked by the caller). */
     private suspend fun launch(ctx: Context, r: String, bin: File, keys: String): String? = when (r) {
@@ -146,7 +148,7 @@ object BlazeRouter {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", "blazerouter")
         .put("description", "BlazeRouter, the local model router on this phone (OmniRoute presets like auto/best-free, auto/fast, chaos fan-out, last-known-good) with a web dashboard. " +
-            "status, start (runs in Alpine Linux, Termux or directly), stop, use (make it Blaze's brain), dashboard (open it).")
+            "status, start (runs in Alpine Linux, Termux or directly), stop, use (make it ${BrandName.NAME}'s brain), dashboard (open it).")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", org.json.JSONArray(listOf("status", "start", "stop", "use", "dashboard"))))
             .put("runner", JSONObject().put("type", "string").put("enum", org.json.JSONArray(RUNNERS)).put("description", "start: where to run it (default: the saved choice, auto)"))
@@ -158,7 +160,7 @@ object BlazeRouter {
         "stop" -> stop(ctx)
         "use" -> {
             if (!ensure(ctx)) "BlazeRouter isn't running: ${state.value.note}"
-            else { Settings.providerId = ID; Settings.model = args.optString("model").ifBlank { DEFAULT_MODEL }; "Blaze now answers through BlazeRouter · ${Settings.model}." }
+            else { Settings.providerId = ID; Settings.model = args.optString("model").ifBlank { DEFAULT_MODEL }; "${BrandName.NAME} now answers through BlazeRouter · ${Settings.model}." }
         }
         "dashboard" -> {
             if (!ensure(ctx)) "BlazeRouter isn't running: ${state.value.note}"

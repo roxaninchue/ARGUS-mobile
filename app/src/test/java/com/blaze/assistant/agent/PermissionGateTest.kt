@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.currentTime
@@ -66,7 +68,7 @@ class PermissionGateTest {
         assertTrue(PermissionGate.shouldAsk("tap", serviceOn = false, phoneControlAllowed = true))
         assertTrue(PermissionGate.shouldAsk("read_screen", false, true))
         assertFalse("already on", PermissionGate.shouldAsk("tap", true, true))
-        assertFalse("the user turned phone control off in Blaze", PermissionGate.shouldAsk("tap", false, false))
+        assertFalse("the user turned phone control off in ${BrandName.NAME}", PermissionGate.shouldAsk("tap", false, false))
         listOf("web_search", "set_alarm", "add_calendar_event", "phone_open", "memory_save").forEach { assertFalse(it, PermissionGate.shouldAsk(it, false, true)) }
         assertTrue(PermissionGate.REASON.isNotBlank() && "Accessibility" in PermissionGate.REASON)
     }

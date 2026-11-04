@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -17,7 +19,7 @@ class SkillIntentTest {
     private val bundled = root.listFiles()!!.filter { it.isDirectory }.mapNotNull { SkillMatch.fromDir(it, "bundled", true) }
 
     private val casual = listOf(
-        "need to make improvements to Blaze agent(an Android ai agent I'm making). I'll try and sleep soon!",
+        "need to make improvements to ${BrandName.NAME} agent(an Android ai agent I'm making). I'll try and sleep soon!",
         "can't sleep honestly", "hi!", "thanks, that's great", "I'm working on my android app tonight", "ok",
         "my essay was due today lol", "I've been reading about reverse engineering, it's fascinating")
 

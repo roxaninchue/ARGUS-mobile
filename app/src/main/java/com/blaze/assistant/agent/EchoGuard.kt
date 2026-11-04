@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 
 /**
@@ -11,15 +13,15 @@ import org.json.JSONArray
  * "what's playing") is exempt. Pure Kotlin (EchoGuardTest).
  */
 object EchoGuard {
-    const val NUDGE = "[Blaze] Your last reply repeated Blaze's own context or a tool result instead of answering. " +
+    const val NUDGE = "[${BrandName.NAME}] Your last reply repeated ${BrandName.NAME}'s own context or a tool result instead of answering. " +
         "Answer the user's latest message directly, in your own words, in one or two sentences. Don't copy context, tables or tool output."
     const val HONEST = "Sorry, that reply went wrong (it repeated my own status notes). Ask me again and I'll answer properly."
 
     /** Context-reading tools whose output is for Blaze, not the user (unless the user asked for it). */
     val CONTEXT_TOOLS = setOf("blaze_now", "device_status", "processes", "about_blaze", "self_test", "blaze_docs_read")
 
-    private val markers = listOf("WHAT'S GOING ON (live", "## Live now", "## Blaze apps", "## Views (open_view)", "pull down from the top for Home",
-        "swipe up for Chat)", "Current Blaze UI", "CURRENT LOCAL TIME:", "Phone now:", "Tracked now:", "(Details: blaze_now)")
+    private val markers = listOf("WHAT'S GOING ON (live", "## Live now", "## ${BrandName.NAME} apps", "## Views (open_view)", "pull down from the top for Home",
+        "swipe up for Chat)", "Current ${BrandName.NAME} UI", "CURRENT LOCAL TIME:", "Phone now:", "Tracked now:", "(Details: blaze_now)")
 
     private val askState = Regex("\\b(what'?s (?:going on|happening|playing|on (?:my|the) screen|open|running)|blaze_now|live now|status report|" +
         "what (?:are you|is blaze) (?:doing|running)|recent apps?|what did (?:i|you) (?:just )?(?:do|open)|show (?:me )?(?:the )?(?:status|context|prompt))\\b", RegexOption.IGNORE_CASE)

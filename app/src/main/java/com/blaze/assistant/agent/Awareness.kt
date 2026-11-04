@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -117,7 +119,7 @@ object Awareness {
         val fresh = events.filter { now - it.at < KEEP_MS }.take(maxEvents)
         if (nows.isEmpty() && fresh.isEmpty()) return ""
         return buildString {
-            append("\nWHAT'S GOING ON (live, from Blaze and the phone; \"this song\", \"the video I was watching\", \"what's on my screen\" mean these; act on them with music_ops / video_ops / the media tools, details with ")
+            append("\nWHAT'S GOING ON (live, from ${BrandName.NAME} and the phone; \"this song\", \"the video I was watching\", \"what's on my screen\" mean these; act on them with music_ops / video_ops / the media tools, details with ")
             append(TOOL).append("): ")
             if (nows.isNotEmpty()) append(order(nows).take(6).joinToString("; ") { line(it, now) }).append(". ")
             if (fresh.isNotEmpty()) append("Recently: ").append(fresh.joinToString("; ") { "${it.text} (${ago(now, it.at)})" }).append('.')
@@ -153,19 +155,19 @@ object Awareness {
 
     /** Every Blaze feature: what it is, and how Blaze drives it. [views] come from the Views list (name, id, description). */
     fun features(views: List<Triple<String, String, String>>, commands: String = ""): String = buildString {
-        append("## Blaze apps\n")
-        append("- Chat: talking to Blaze (this). Projects and Home (widgets) are its other tabs.\n")
-        append("- Blaze Music: library, Store (Jamendo, Internet Archive), playlists, smart mixes, DJ, equaliser, sleep timer, lyrics. Drive it with music_ops.\n")
-        append("- Blaze Video: library, Store, series and episodes, subtitles (incl. AI translation), recaps, picture-in-picture, resume where you left off. Drive it with video_ops.\n")
-        append("- Gallery: photos and everything Blaze makes; clean-up, trash, editor. Drive it with gallery / gallery_ops.\n")
+        append("## ${BrandName.NAME} apps\n")
+        append("- Chat: talking to ${BrandName.NAME} (this). Projects and Home (widgets) are its other tabs.\n")
+        append("- ${BrandName.NAME} Music: library, Store (Jamendo, Internet Archive), playlists, smart mixes, DJ, equaliser, sleep timer, lyrics. Drive it with music_ops.\n")
+        append("- ${BrandName.NAME} Video: library, Store, series and episodes, subtitles (incl. AI translation), recaps, picture-in-picture, resume where you left off. Drive it with video_ops.\n")
+        append("- Gallery: photos and everything ${BrandName.NAME} makes; clean-up, trash, editor. Drive it with gallery / gallery_ops.\n")
         append("- Camera: Photo (Night, HDR), Document, Text (prices, sums), barcodes. blaze_camera, camera_math.\n")
-        append("- Browser: Blaze's own browser (browser_open / browser_show) and installed site apps.\n")
-        append("- Blaze Link: the paired PC (ask_pc).\n")
+        append("- Browser: ${BrandName.NAME}'s own browser (browser_open / browser_show) and installed site apps.\n")
+        append("- ${BrandName.NAME} Link: the paired PC (ask_pc).\n")
         append("- Simple / Advanced (Settings): Simple hides Terminal, MCP, BlazeRouter, AI models and developer settings from lists; every view and / command still works and you can open any of them.\n")
-        append("- Home and Chat: with Swipe navigation (Settings › Navigation, the default) Blaze opens on Home (weather, news, heads-ups); the user swipes up the handle for Chat and pulls down from the top for Home; open_view view=home shows Home. Classic tabs is the old Chat | Projects | Home pill. 'surface' in Live now says which is in front.\n")
-        append("- Bank mode (/bank, the bank_mode tool, Settings › Bank mode): Blaze steps back so banking apps run (phone control, the floating button, screen reading and notification reading pause). " +
+        append("- Home and Chat: with Swipe navigation (Settings › Navigation, the default) ${BrandName.NAME} opens on Home (weather, news, heads-ups); the user swipes up the handle for Chat and pulls down from the top for Home; open_view view=home shows Home. Classic tabs is the old Chat | Projects | Home pill. 'surface' in Live now says which is in front.\n")
+        append("- Bank mode (/bank, the bank_mode tool, Settings › Bank mode): ${BrandName.NAME} steps back so banking apps run (phone control, the floating button, screen reading and notification reading pause). " +
             "It can turn on by itself when a banking app opens. Never read, tap or type inside a banking app. Now: " + (try { com.blaze.assistant.bank.BankMode.statusLine() } catch (_: Throwable) { "unknown." }) + "\n")
-        append("- Things Blaze is doing (/doing): routines and reminders with on/off, and a Today I\u2026 diary. Look & feel (/look): living backgrounds, theme, accent, Move with music.\n")
+        append("- Things ${BrandName.NAME} is doing (/doing): routines and reminders with on/off, and a Today I\u2026 diary. Look & feel (/look): living backgrounds, theme, accent, Move with music.\n")
         append("- Cloud sync (/sync, Settings › Account › Cloud sync; open_view view=sync): optional, off by default. Keeps chats, memory, settings and designs the same on the user's phones, end-to-end encrypted with a passphrase only they know. Sign-ins, keys, connected accounts and permissions never sync. Turning it on, the passphrase and deleting the cloud copy are the user's to do on that page.\n")
         if (views.isNotEmpty()) {
             append("## Views (open_view)\n")
@@ -177,7 +179,7 @@ object Awareness {
     fun report(views: List<Triple<String, String, String>>, now: Long = System.currentTimeMillis(), commands: String = ""): String = buildString {
         val ns = order(nows())
         append("## Live now\n")
-        if (ns.isEmpty()) append("Nothing playing or open that Blaze can see.\n") else ns.forEach { append("- ").append(line(it, now)).append('\n') }
+        if (ns.isEmpty()) append("Nothing playing or open that ${BrandName.NAME} can see.\n") else ns.forEach { append("- ").append(line(it, now)).append('\n') }
         append("## Recently\n")
         val ev = recent(30)
         if (ev.isEmpty()) append("Nothing yet.\n") else ev.forEach { append("- ").append(it.text).append(" (").append(ago(now, it.at)).append(")\n") }
@@ -185,7 +187,7 @@ object Awareness {
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "What's going on in Blaze and on the phone: what's playing (Blaze Music, Blaze Video, Spotify, YouTube and other apps), where a video was left, the screen and view in front, the design open, what the user just did, and every Blaze feature with the tool that drives it. Use it for 'this song', 'the movie I was watching', 'what am I looking at', 'what can you do'.")
+        .put("description", "What's going on in ${BrandName.NAME} and on the phone: what's playing (${BrandName.NAME} Music, ${BrandName.NAME} Video, Spotify, YouTube and other apps), where a video was left, the screen and view in front, the design open, what the user just did, and every ${BrandName.NAME} feature with the tool that drives it. Use it for 'this song', 'the movie I was watching', 'what am I looking at', 'what can you do'.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject())))
 
     // ---------------- disk ----------------

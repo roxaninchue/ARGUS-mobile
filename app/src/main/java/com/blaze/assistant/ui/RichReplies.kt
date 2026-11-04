@@ -34,6 +34,11 @@ object RichReplies {
         @androidx.compose.runtime.Immutable data class Table(val table: RichKit.TableCard, val raw: String) : Block()
         /** v0.33.3: the user's installed apps as a tappable grid (```apps, added by list_apps). */
         @androidx.compose.runtime.Immutable data class Apps(val apps: RichKit.AppsCard) : Block()
+        // 0.52.0 smarter rich replies (RichMedia): artwork lists / poster grids, link cards, a document card, a collapsible section.
+        @androidx.compose.runtime.Immutable data class Gallery(val gallery: RichMedia.Gallery) : Block()
+        @androidx.compose.runtime.Immutable data class Links(val links: RichMedia.Links) : Block()
+        @androidx.compose.runtime.Immutable data class Doc(val doc: RichMedia.Doc) : Block()
+        @androidx.compose.runtime.Immutable data class Details(val details: RichMedia.Details) : Block()
         /**
          * A visual still streaming in (its fence isn't closed and it can't be drawn yet). Shown as a quiet placeholder
          * while the reply streams; [fallback] once the reply is done (a reply that never closed its fence).
@@ -77,7 +82,7 @@ object RichReplies {
         "\"which laptop should I get?\" with no details -> a ```form or ```choices to narrow it down. \"what's the capital of Zambia?\" or \"thanks!\" -> plain text. " +
         "Other formats the chat draws: a picture for a section: ![alt](https url) on its own line right before that paragraph; several picture lines in a row become a row (up to 3) or a swipeable deck. " +
         "Use only real image URLs you found (Wikimedia Commons, Openverse, the source page); never invent one. " +
-        "Diagrams: ```mermaid (flowchart, sequenceDiagram, mindmap, timeline, pie), or ```graphviz / ```plantuml. Keep node labels 1-4 words, no more than ~12 nodes."
+        "Diagrams: ```mermaid (flowchart, sequenceDiagram, mindmap, timeline, pie), or ```graphviz / ```plantuml. Keep node labels 1-4 words, no more than ~12 nodes." + RichMedia.PROMPT
 
     private val imgLine = Regex("""^\s*!\[([^\]]*)]\(\s*<?((?:https?://|/)[^\s)>]+)>?(?:\s+"[^"]*")?\s*\)\s*$""")
     private val stepRe = Regex("""^\s*(\d+)[.)]\s+\*\*(.+?)\*\*\s*[:.\u2014\u2013-]?\s*(.*)$""")
@@ -134,6 +139,10 @@ object RichReplies {
                 "compare" -> RichKit.compare(s.code)?.let { Block.Compare(it) }
                 "table" -> RichKit.table(s.code)?.let { Block.Table(it, s.raw) }
                 "apps" -> RichKit.apps(s.code)?.let { Block.Apps(it) }
+                "gallery" -> RichMedia.gallery(s.code)?.let { Block.Gallery(it) }
+                "links" -> RichMedia.links(s.code)?.let { Block.Links(it) }
+                "doc" -> RichMedia.doc(s.code)?.let { Block.Doc(it) }
+                "details" -> RichMedia.details(s.code)?.let { Block.Details(it) }
                 else -> null
             }
         } catch (_: Exception) { null } catch (_: StackOverflowError) { null }
@@ -160,6 +169,10 @@ object RichReplies {
         "form" -> "Making a quick form\u2026"
         "diagram" -> "Drawing a diagram\u2026"
         "apps" -> "Laying out your apps\u2026"
+        "gallery" -> "Laying out the list\u2026"
+        "links" -> "Adding links\u2026"
+        "doc" -> "Attaching the document\u2026"
+        "details" -> "Adding details\u2026"
         else -> "Adding options\u2026"
     }
 

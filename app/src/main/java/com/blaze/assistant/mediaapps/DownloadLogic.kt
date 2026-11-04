@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -126,7 +128,7 @@ object DlLogic {
 
     /** A safe file name for a title ("AC/DC: Back in Black" → "AC-DC- Back in Black"). */
     fun fileName(title: String, ext: String): String {
-        val base = title.replace(Regex("""[\\/:*?"<>|\u0000-\u001f]"""), "-").replace(Regex("\\s+"), " ").trim().trim('.').take(80).ifBlank { "Blaze" }
+        val base = title.replace(Regex("""[\\/:*?"<>|\u0000-\u001f]"""), "-").replace(Regex("\\s+"), " ").trim().trim('.').take(80).ifBlank { "${BrandName.NAME}" }
         return "$base.$ext"
     }
 

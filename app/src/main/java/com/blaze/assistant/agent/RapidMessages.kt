@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.30.6 rapid messages. Blazeinchue: "Let's make blaze like hark where I can send messages after messages with no pause and
  * blaze highlights the one it's responding to and such (or replies to rapid succession questions that are related with
@@ -47,7 +49,7 @@ object RapidMessages {
     /** An on-device answer (time, battery, "hide the orb") made while a turn ran: one user-side note, so the history never ends on an assistant line mid-task. */
     fun answeredNote(labelled: String, reply: String): String =
         if (reply.isBlank()) labelled
-        else "$labelled\n[Blaze already answered this one on the phone: \"${reply.take(400)}\". Don't answer it again.]"
+        else "$labelled\n[${BrandName.NAME} already answered this one on the phone: \"${reply.take(400)}\". Don't answer it again.]"
 
     private val idTagRe = Regex("""(?m)^\[m\d+(?: \u00b7 [^\]\n]*)?\] ?""")
 

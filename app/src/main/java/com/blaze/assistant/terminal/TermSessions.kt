@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -67,7 +69,7 @@ object TermSessions {
         }
         override fun onCopyTextToClipboard(s: TerminalSession, text: String?) {
             val cm = app.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("Blaze Terminal", text.orEmpty()))
+            cm.setPrimaryClip(ClipData.newPlainText("${BrandName.NAME} Terminal", text.orEmpty()))
         }
         override fun onPasteTextFromClipboard(s: TerminalSession?) {
             val cm = app.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

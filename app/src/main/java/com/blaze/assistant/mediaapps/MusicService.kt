@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
@@ -184,7 +186,7 @@ class MusicService : MediaLibraryService() {
             val picks = BlazeDj.picks(10)
             if (picks.isEmpty()) return
             player.setMediaItems(picks.map { item(it) }); player.prepare(); player.play()
-            MusicContext.set("Blaze DJ")
+            MusicContext.set("${BrandName.NAME} DJ")
             BlazeDj.say(this, DjSpeech.start(picks[0], BlazeDj.vibe.value, BlazeDj.hour()))
         } else { djTopUp(force = true); if (!player.isPlaying) { player.prepare(); player.play() } }
     }
@@ -196,7 +198,7 @@ class MusicService : MediaLibraryService() {
         val picks = BlazeDj.picks(12)
         if (picks.isEmpty()) return
         player.setMediaItems(picks.map { item(it) }); player.shuffleModeEnabled = false; player.prepare(); player.play()
-        MusicContext.set("Blaze DJ")
+        MusicContext.set("${BrandName.NAME} DJ")
         BlazeDj.say(this, if (v != null) DjSpeech.changed(v) + " " + DjSpeech.next(picks[0]) else DjSpeech.start(picks[0], BlazeDj.vibe.value, BlazeDj.hour()))
     }
 
@@ -454,7 +456,7 @@ class MusicService : MediaLibraryService() {
 
     private val controls = object : MediaLibrarySession.Callback {
         override fun onGetLibraryRoot(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?): ListenableFuture<LibraryResult<MediaItem>> =
-            Futures.immediateFuture(LibraryResult.ofItem(folder(AutoTree.ROOT, "Blaze Music"), params))
+            Futures.immediateFuture(LibraryResult.ofItem(folder(AutoTree.ROOT, "${BrandName.NAME} Music"), params))
 
         override fun onGetChildren(session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String, page: Int, pageSize: Int,
                                    params: LibraryParams?): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {

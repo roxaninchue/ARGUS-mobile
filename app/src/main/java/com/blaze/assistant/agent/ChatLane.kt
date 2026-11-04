@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -65,7 +67,7 @@ object ChatLane {
             append(Awareness.summaryBlock().trim()).append(' ')
             // v0.31.1: same formatting rule as the full prompt (tables never in code fences, HTML tags allowed).
             append(AnswerStyle.FORMAT.trimStart()).append(' ')
-            append("You are Blaze: you CAN generate images, make beats and music, run Python in your own Linux terminal, browse, and use the user's phone, just not in this short reply. ")
+            append("You are ${BrandName.NAME}: you CAN generate images, make beats and music, run Python in your own Linux terminal, browse, and use the user's phone, just not in this short reply. ")
             append("You run on the user's phone: never give desktop or text-editor advice and never say you can't save, run, open or check something. ")
             if (SmallTalk.chitChat(userText)) append(SmallTalk.RULE).append(' ') else {
             append("You have NO tools in this reply. If answering properly needs live or current information (news, weather, prices, scores, anything about today), ")

@@ -1,5 +1,7 @@
 package com.blaze.assistant.composer
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.47 Spotlight v2: Blaze's self-map. ONE list of every view, action, setting and model Blaze has. Spotlight searches
  * it ([SpotlightSearch]) and the agent reads it ([describe], about_blaze section "map"), so the two never disagree.
@@ -25,18 +27,18 @@ object SelfMap {
 
     /** The composer / Spotlight actions (ids are handled by the composer host). */
     val ACTIONS = listOf(
-        Entry("action:chat", Kind.ACTION, "Chat with Blaze", "Open the chat over Home", "chat", listOf("talk", "message", "ask")),
+        Entry("action:chat", Kind.ACTION, "Chat with ${BrandName.NAME}", "Open the chat over Home", "chat", listOf("talk", "message", "ask")),
         Entry("action:new_chat", Kind.ACTION, "New chat", "A fresh start; nothing is deleted", "new_chat", listOf("clear", "fresh", "reset chat")),
-        Entry("action:private", Kind.ACTION, "Private chat", "A chat Blaze doesn't keep", "private", listOf("incognito", "ghost", "secret chat")),
-        Entry("action:voice", Kind.ACTION, "Talk", "Speak to Blaze", "voice", listOf("mic", "microphone", "speak", "listen", "hey blaze")),
+        Entry("action:private", Kind.ACTION, "Private chat", "A chat ${BrandName.NAME} doesn't keep", "private", listOf("incognito", "ghost", "secret chat")),
+        Entry("action:voice", Kind.ACTION, "Talk", "Speak to ${BrandName.NAME}", "voice", listOf("mic", "microphone", "speak", "listen", "hey blaze")),
         Entry("action:attach", Kind.ACTION, "Attach a file", "Add a photo or file to your message", "attach", listOf("photo", "picture", "image", "upload", "file", "document", "pdf")),
         // 0.48.0 RC4: everything the old chat screen's + menu and top bar did, now reachable from Spotlight.
         Entry("action:history", Kind.ACTION, "Chat history", "The whole conversation, over Home", "history", listOf("history", "earlier", "old messages", "full chat", "scroll back")),
         Entry("action:photos", Kind.ACTION, "Attach photos", "Pick photos for your message", "photos", listOf("gallery photo", "pictures", "images")),
         Entry("action:camera", Kind.ACTION, "Take a photo", "Camera, attached to your message", "camera", listOf("camera", "snap", "picture")),
         Entry("action:paste", Kind.ACTION, "Paste image", "The picture on your clipboard", "paste", listOf("clipboard", "paste")),
-        Entry("action:call", Kind.ACTION, "Call Blaze", "A hands-free voice call", "call", listOf("phone call", "voice call", "ring")),
-        Entry("action:plan", Kind.ACTION, "Plan mode", "Blaze plans before it acts (on / off)", "plan", listOf("plan first", "work mode")),
+        Entry("action:call", Kind.ACTION, "Call ${BrandName.NAME}", "A hands-free voice call", "call", listOf("phone call", "voice call", "ring")),
+        Entry("action:plan", Kind.ACTION, "Plan mode", "${BrandName.NAME} plans before it acts (on / off)", "plan", listOf("plan first", "work mode")),
         Entry("action:approval", Kind.ACTION, "Ask before acting", "Autopilot or ask first (on / off)", "approval", listOf("autopilot", "approvals", "ask first", "drafts")),
         Entry("action:clear", Kind.ACTION, "Clear the screen", "/clear: hides the chat, nothing is forgotten", "clear", listOf("/clear", "clean")),
         Entry("action:account", Kind.ACTION, "Profile", "Account, settings, sign out", "profile", listOf("me", "sign out", "logout", "avatar")),
@@ -46,18 +48,18 @@ object SelfMap {
     val SETTINGS = listOf(
         Entry("setting:wallpaper", Kind.SETTING, "Wallpaper", "Living backgrounds and your photo", "look", listOf("background", "backgrounds", "photo background")),
         Entry("setting:theme", Kind.SETTING, "Light or dark", "Light / Dark / Auto and accent colour", "look", listOf("dark mode", "light mode", "theme", "accent", "colour", "color")),
-        Entry("setting:voice", Kind.SETTING, "Voice", "Hey Blaze, spoken replies", "voice", listOf("wake word", "speech", "read aloud")),
-        Entry("setting:brain", Kind.SETTING, "Brain", "On-phone brain and Blaze Cloud", "brain", listOf("models", "ai", "on-phone brain")),
+        Entry("setting:voice", Kind.SETTING, "Voice", "Hey ${BrandName.NAME}, spoken replies", "voice", listOf("wake word", "speech", "read aloud")),
+        Entry("setting:brain", Kind.SETTING, "Brain", "On-phone brain and ${BrandName.NAME} Cloud", "brain", listOf("models", "ai", "on-phone brain")),
         Entry("setting:sync", Kind.SETTING, "Cloud sync", "Keep phones the same", "sync", listOf("backup")),
         Entry("setting:logins", Kind.SETTING, "Saved logins", "Sign-ins from the secure form", "logins", listOf("passwords", "vault")),
         Entry("setting:control", Kind.SETTING, "Phone control", "Accessibility and permissions", "control", listOf("permissions", "accessibility")),
-        Entry("setting:proactive", Kind.SETTING, "Proactive", "When Blaze speaks up on its own", "proactive", listOf("notifications", "triggers")),
+        Entry("setting:proactive", Kind.SETTING, "Proactive", "When ${BrandName.NAME} speaks up on its own", "proactive", listOf("notifications", "triggers")),
     )
 
-    /** The model families, searchable by name and speed ("inf" → Blaze Inferno · Smartest). */
+    /** The model families, searchable by name and speed ("pan" → Argus Panoptes · Deepest; old names like "inferno" still find it). */
     val MODELS: List<Entry> = ModelChoice.Family.values().map { f ->
         Entry("model:${f.id}", Kind.MODEL, "${f.blazeName} \u00b7 ${f.sub}", "Model", f.id,
-            listOf(f.label.lowercase(), f.sub.lowercase(), "model", "brain"))
+            listOf(f.label.lowercase(), f.sub.lowercase(), "model", "brain") + f.aliases)
     }
 
     fun of(views: List<ViewInfo>): List<Entry> {
@@ -74,11 +76,11 @@ object SelfMap {
 
     val FALLBACK_VIEWS = listOf(
         ViewInfo("home", "Home", "The Home cards"),
-        ViewInfo("browser", "Browser", "Blaze's own browser and tabs"),
-        ViewInfo("music", "Music", "Blaze Music: your songs and playlists", listOf("songs", "player")),
-        ViewInfo("video", "Video", "Blaze Video: your videos", listOf("videos", "movies")),
+        ViewInfo("browser", "Browser", "${BrandName.NAME}'s own browser and tabs"),
+        ViewInfo("music", "Music", "${BrandName.NAME} Music: your songs and playlists", listOf("songs", "player")),
+        ViewInfo("video", "Video", "${BrandName.NAME} Video: your videos", listOf("videos", "movies")),
         ViewInfo("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell", listOf("shell", "console")),
-        ViewInfo("gallery", "Gallery", "Images, music and files Blaze made"),
+        ViewInfo("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made"),
         ViewInfo("look", "Look & feel", "Backgrounds and theme", listOf("wallpaper", "theme")),
         ViewInfo("settings", "Settings", "Behaviour, voice, privacy, backup"),
     )

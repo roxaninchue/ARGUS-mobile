@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -9,7 +11,7 @@ object SecretRules {
     const val PROMPT = "SECRETS: never ask the user to type, paste or send a password, API key, token, card number, CVC, PIN or one-time code in the chat, " +
         "not even \"one message each\". Always call request_secret (kind, label, service): the user gets a Secure Form card, the value stays encrypted on the phone " +
         "and you get a handle like {{secret:cloudflare_token}}. Put the handle exactly where the value goes in http_request / run_shell / run_code / git / " +
-        "browser_type; Blaze swaps the value in on the phone, only for the hosts it was saved for, and you never see it. Never write a handle into messages, " +
+        "browser_type; ${BrandName.NAME} swaps the value in on the phone, only for the hosts it was saved for, and you never see it. Never write a handle into messages, " +
         "notes, files or memory. If the user pastes a secret anyway, it is saved for you and arrives as a handle."
 }
 
@@ -71,7 +73,7 @@ object SecretAsk {
         val calls = JSONArray()
         wants(reply, userText).forEachIndexed { i, w ->
             val args = JSONObject().put("kind", w.kind.id).put("label", w.label).put("service", w.service)
-                .put("hint", "So Blaze can use it without it going through the chat.")
+                .put("hint", "So ${BrandName.NAME} can use it without it going through the chat.")
             calls.put(JSONObject().put("id", "secretask_$i").put("type", "function")
                 .put("function", JSONObject().put("name", SecretRules.TOOL).put("arguments", args.toString())))
         }

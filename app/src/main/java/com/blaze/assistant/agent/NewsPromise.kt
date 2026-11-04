@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.46.0 (phone screenshot): Rocky shared news with "@halo making a huge blaze update!! Modular screens and study coach, you'll
  * hear about them when they're ready!" and got back "Halo's got the modular screens and study coach locked in—just a few more
@@ -41,5 +43,5 @@ object NewsPromise {
 
     /** The prompt line for the duo / Halo lanes. */
     const val RULE = "\nNEWS IS NOT A TASK: when the user just shares news or plans (\"I'm making a big update…\"), react to it as yourself in the first person; " +
-        "never say it is locked in, on it, coming, almost ready or being delivered, and never speak about Blaze in the third person as if they were building it."
+        "never say it is locked in, on it, coming, almost ready or being delivered, and never speak about ${BrandName.NAME} in the third person as if they were building it."
 }

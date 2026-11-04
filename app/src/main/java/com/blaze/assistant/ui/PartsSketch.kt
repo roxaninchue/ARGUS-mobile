@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -31,7 +33,7 @@ import kotlin.math.sqrt
 object PartsSketch {
 
     /** v0.23.5: shown when a design has no part that can be drawn. */
-    const val NO_PARTS = "No drawable parts in this design yet. Ask Blaze to add or fix its parts."
+    const val NO_PARTS = "No drawable parts in this design yet. Ask ${BrandName.NAME} to add or fix its parts."
 
     data class Face(val pts: List<Pair<Float, Float>>, val depth: Double, val argb: Long)
 

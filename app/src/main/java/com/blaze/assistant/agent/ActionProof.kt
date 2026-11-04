@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.28.8: proof for every action. v0.28.7 stopped fake "message sent" replies; this does the same for every
  * action Blaze can claim in a final reply: calls, alarms and timers, reminders and routines, calendar events,
@@ -179,7 +181,7 @@ object ActionProof {
     }
 
     /** The one re-prompt: do it with a tool now, or say plainly it isn't done. */
-    fun nudge(a: Action): String = "[Blaze check] Your reply says you did this (${a.what}), but no tool that does it succeeded this turn, " +
+    fun nudge(a: Action): String = "[${BrandName.NAME} check] Your reply says you did this (${a.what}), but no tool that does it succeeded this turn, " +
         "so it has NOT happened. Do it now with the right tool${if (a.tools.isEmpty()) "" else " (" + a.tools.take(5).joinToString(" / ") + ")"}, wait for its result, and only then reply. " +
         "If the tool fails or you can't, say plainly that it wasn't done and why. Never say it was done without a successful tool result."
 

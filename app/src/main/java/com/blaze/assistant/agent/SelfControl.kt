@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -87,7 +89,7 @@ object SelfControl {
                 try { Overlay.closePanel() } catch (_: Throwable) { }
                 try { activity?.get()?.moveTaskToBack(true) } catch (_: Throwable) { }
             }, 700)
-            if (Settings.wakeWord) "Going quiet. Say \u201cHey Blaze\u201d when you need me." else "Going quiet. Tap the orb when you need me."
+            if (Settings.wakeWord) "Going quiet. Say \u201cHey ${BrandName.NAME}\u201d when you need me." else "Going quiet. Tap the orb when you need me."
         }
         "setup" -> {
             val missing = SelfSetup.audit(ctx).filter { !it.ok && it.id !in setOf("connections", "fast_lane") }
@@ -99,9 +101,9 @@ object SelfControl {
         "hide_orb" -> { main.post { Overlay.hideOrb(ctx) }; "Orb hidden. Ask me to bring it back any time." }
         "show_orb" -> if (Overlay.canDrawOverApps(ctx)) { main.post { Settings.orbPinned = true; Overlay.showOrb(ctx) }; "Orb's back." }
             else "I need permission to draw over other apps first. It's in Settings → Floating orb."
-        "wake_off" -> { Settings.wakeWord = false; WakeWordService.stop(ctx); "Stopped listening for \u201cHey Blaze\u201d." }
+        "wake_off" -> { Settings.wakeWord = false; WakeWordService.stop(ctx); "Stopped listening for \u201cHey ${BrandName.NAME}\u201d." }
         "wake_on" -> { Settings.wakeWord = true; WakeWordService.start(ctx)
-            if (com.blaze.assistant.voice.WakeModel.ready(ctx)) "Listening for \u201cHey Blaze\u201d." else "Turned on. The voice model still needs downloading in Settings → Voice." }
+            if (com.blaze.assistant.voice.WakeModel.ready(ctx)) "Listening for \u201cHey ${BrandName.NAME}\u201d." else "Turned on. The voice model still needs downloading in Settings → Voice." }
         "voice_off" -> { Settings.speakReplies = false; Voice.stopSpeaking(); "Okay, I'll answer in text only." }
         "voice_on" -> { Settings.speakReplies = true; "Okay, I'll read answers aloud when you ask by voice." }
         "status", "setup_check" -> SelfSetup.report(ctx)
@@ -112,7 +114,7 @@ object SelfControl {
         "tool_stats" -> ToolStats.report() + (LlmClient.lastHealed.takeIf { it.isNotBlank() }?.let { "\n\nLast self-healed error: ${it.take(200)}" } ?: "")
         "crash_log" -> com.blaze.assistant.device.CrashLog.read().takeLast(3000).ifBlank { "No errors logged." }
         // v0.25.0: no model choice any more; Blaze Cloud picks per message.
-        "set_model" -> "Blaze picks the best free model for every message by itself. There's nothing to choose."
+        "set_model" -> "${BrandName.NAME} picks the best free model for every message by itself. There's nothing to choose."
         "set_persona" -> {
             val id = args.optString("persona")
             val pz = Personas.all.firstOrNull { it.id.equals(id, true) || it.name.equals(id, true) }
@@ -146,7 +148,7 @@ object SelfControl {
             val sec = value.trim().removeSuffix("s").trim().toDoubleOrNull() ?: return "Give a number of seconds (0 = switch only on errors)."
             val ms = if (k == "backup_ttft_ms" && sec > 300) sec.toLong() else (sec * 1000).toLong()
             Settings.setStr("backup_ttft_ms", ms.toString())
-            return if (ms == 0L) "The on-phone brain now takes over only when Blaze Cloud fails." else "Blaze Cloud now gets ${BackupRoute.ttftMs(true, ms) / 1000} s to start answering before the backup brain takes over."
+            return if (ms == 0L) "The on-phone brain now takes over only when ${BrandName.NAME} Cloud fails." else "${BrandName.NAME} Cloud now gets ${BackupRoute.ttftMs(true, ms) / 1000} s to start answering before the backup brain takes over."
         }
         return "I can't change \u201c$key\u201d. I can change: ${boolKeys.keys.joinToString()}, wake_conf, backup_wait (seconds)."
     }
@@ -154,7 +156,7 @@ object SelfControl {
     fun status(ctx: Context): String {
         val v = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault("?")
         return buildString {
-            append("Blaze $v. Brain: Blaze Cloud (picks the best free model per message). Personality: ${Personas.byId(Settings.personaId).name}.\n")
+            append("${BrandName.NAME} $v. Brain: ${BrandName.NAME} Cloud (picks the best free model per message). Personality: ${Personas.byId(Settings.personaId).name}.\n")
             append("Phone control ${if (Settings.phoneControl && com.blaze.assistant.phone.BlazeAccessibilityService.instance != null) "on" else "off"}, ")
             append("wake word ${if (Settings.wakeWord) "on" else "off"}, read aloud ${if (Settings.speakReplies) "on" else "off"}, ")
             append("fast lane ${if (Settings.fastLane) "on" else "off"}, orb ${if (Overlay.orbShowing) "showing" else "hidden"}.\n")
@@ -163,13 +165,13 @@ object SelfControl {
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", "blaze_self")
-        .put("description", "Control Blaze itself: close/go quiet, stop the task, hide or show the floating orb, wake word on/off, read-aloud on/off, switch AI model or personality, change one of Blaze's settings, check its own setup (setup_check: what's installed, granted or missing — use it to guide the user through full setup), open the exact system/Blaze screen that fixes something, install Linux / the voice model / the fast lane, read its crash log to diagnose a problem, or token_ledger: where its tokens go per feature (biggest costs + fixes), the tool cache and the learned router.")
+        .put("description", "Control ${BrandName.NAME} itself: close/go quiet, stop the task, hide or show the floating orb, wake word on/off, read-aloud on/off, switch AI model or personality, change one of ${BrandName.NAME}'s settings, check its own setup (setup_check: what's installed, granted or missing — use it to guide the user through full setup), open the exact system/Blaze screen that fixes something, install Linux / the voice model / the fast lane, read its crash log to diagnose a problem, or token_ledger: where its tokens go per feature (biggest costs + fixes), the tool cache and the learned router.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("close", "stop", "hide_orb", "show_orb", "wake_on", "wake_off",
                 "voice_on", "voice_off", "status", "setup_check", "open", "install", "crash_log", "speed_stats", "tool_stats", "token_ledger", "set_model", "set_persona", "set_setting"))))
             .put("provider", JSONObject().put("type", "string")).put("model", JSONObject().put("type", "string"))
             .put("persona", JSONObject().put("type", "string"))
-            .put("target", JSONObject().put("type", "string").put("description", "open: accessibility, overlay, app_permissions, battery, notification_access, assistant, exact_alarms, or ONE Blaze settings page id: ai, voice, control, terminal, connections, feel, persona, memory, routines, privacy, device, orb, backup, backup_brain"))
+            .put("target", JSONObject().put("type", "string").put("description", "open: accessibility, overlay, app_permissions, battery, notification_access, assistant, exact_alarms, or ONE ${BrandName.NAME} settings page id: ai, voice, control, terminal, connections, feel, persona, memory, routines, privacy, device, orb, backup, backup_brain"))
             .put("what", JSONObject().put("type", "string").put("description", "install: linux, wake_model or fast_lane"))
             .put("key", JSONObject().put("type", "string")).put("value", JSONObject().put("type", "string")))
             .put("required", JSONArray(listOf("action")))))

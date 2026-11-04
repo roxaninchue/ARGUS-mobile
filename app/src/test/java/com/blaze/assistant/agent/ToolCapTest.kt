@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -50,7 +52,7 @@ class ToolCapTest {
         "View calendar" to "calendar_events", "open example.com in the Linux browser" to null, "open Settings" to "open_view",   // wave B-4: desktop_task removed
         "open Design view" to "open_view", "remind me to call mum at 18:00 today" to "create_routine", "what reminders do I have set?" to "list_routines",
         "what do you remember about my exams?" to "memory_search", "remember that my NET exam is on 3 November" to "memory_save",
-        "@halo hi" to null, "hi Blaze" to null, "anything on for today?" to null, "run ls in the terminal" to "run_shell", // round 2: named run_shell
+        "@halo hi" to null, "hi ${BrandName.NAME}" to null, "anything on for today?" to null, "run ls in the terminal" to "run_shell", // round 2: named run_shell
         "search the web for today's US dollar to kwacha exchange rate" to null, "now list what's inside projects" to null,
         "@halo run ls in the terminal" to "run_shell", "@halo search the web for Zambia news today" to null, "doing good thanks!" to null,
         "so what's on for today specifically?" to null, "well as the assistant shouldn't you be telling me?" to null)
@@ -137,7 +139,7 @@ class ToolCapTest {
     }
 
     @Test fun unconfirmedActionIsAlwaysSaid() {
-        val why = "\u201cDemo app alarm (Blaze A2)\u201d still reads ON in the Clock app"
+        val why = "\u201cDemo app alarm (${BrandName.NAME} A2)\u201d still reads ON in the Clock app"
         val done = listOf(ClaimCheck.Done("processes", ToolVerify.Status.VERIFIED), ClaimCheck.Done("process", ToolVerify.Status.UNVERIFIED, why))
         // replay round 1, runs 2 and 4: the reply only gave the next step
         assertEquals("I couldn't confirm it: $why. Open the Clock app and switch it off.", UnconfirmedEcho.fix("Open the Clock app and switch it off.", done))

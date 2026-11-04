@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import kotlinx.coroutines.Dispatchers
@@ -75,9 +77,9 @@ object StageMusic {
                 songs.isNotEmpty() -> {
                     val picks = MusicSmart.djPicks(songs, MediaLib.plays.value, MediaLib.liked.value.toSet(), MediaLib.recent.value, 10, System.nanoTime()).map { it.key }
                     if (svc != null) svc.playKeys(picks, false) else { MusicService.pendingPlay = picks to false; startQuiet(ctx) }
-                    if (q.isNotEmpty()) "No song matched \u201c$q\u201d; playing Blaze DJ picks on the Stage instead." else "Playing Blaze DJ picks on the Stage."
+                    if (q.isNotEmpty()) "No song matched \u201c$q\u201d; playing ${BrandName.NAME} DJ picks on the Stage instead." else "Playing ${BrandName.NAME} DJ picks on the Stage."
                 }
-                else -> "There are no songs in Blaze Music yet: the music card is on the Stage with a button to the Music store (media_download can fetch songs)."
+                else -> "There are no songs in ${BrandName.NAME} Music yet: the music card is on the Stage with a button to the Music store (media_download can fetch songs)."
             }
         }
     }

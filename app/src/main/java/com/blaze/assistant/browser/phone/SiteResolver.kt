@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.browser.SiteDomain
 import org.json.JSONArray
 import org.json.JSONObject
@@ -198,7 +200,7 @@ object SiteResolver {
             val kind = KINDS.first { it.name == it0.kind }
             val hits = sites.filter { u -> u.all.any { v -> kind.match.containsMatchIn(host(v.url)) || kind.match.containsMatchIn(v.title) } }
             if (hits.isEmpty()) return Resolution(null, it0.subpage, "no ${kind.noun} in history",
-                ask = "Ask the user which ${kind.noun} they mean (its name is enough). Blaze has no ${kind.noun} in their history, and it doesn't guess one.")
+                ask = "Ask the user which ${kind.noun} they mean (its name is enough). ${BrandName.NAME} has no ${kind.noun} in their history, and it doesn't guess one.")
             val top = hits[0]
             if (hits.size > 1 && hits[1].count * 2 > top.count)
                 return Resolution(null, it0.subpage, "several ${kind.noun}s in history",

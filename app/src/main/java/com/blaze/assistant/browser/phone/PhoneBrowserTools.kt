@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,21 +25,21 @@ object PhoneBrowserTools {
     private fun p(t: String, d: String) = JSONObject().put("type", t).put("description", d)
     private fun e(d: String, vararg v: String) = JSONObject().put("type", "string").put("description", d).put("enum", JSONArray(v.toList()))
 
-    const val RULE = "Blaze Phone is Blaze's own phone screen: a real browser that keeps the user's sign-ins per site and runs in the background " +
+    const val RULE = "${BrandName.NAME} Phone is ${BrandName.NAME}'s own phone screen: a real browser that keeps the user's sign-ins per site and runs in the background " +
         "while they use other apps (they can watch it live in the chat and take control). Use it to log in, book, order, fill forms and check accounts on websites. " +
         "Never say something is booked, ordered, paid or confirmed unless the page read says VERIFIED; otherwise say exactly what the page shows. " +
         "Users never give web addresses: pass what they called the site to phone_open as they said it ('the booking site', 'my bank', 'herokuapp login page', " +
-        "'the-internet login'); Blaze picks the site (ones they used before first, then a search that skips ads and look-alike sites, official domain) and the " +
+        "'the-internet login'); ${BrandName.NAME} picks the site (ones they used before first, then a search that skips ads and look-alike sites, official domain) and the " +
         "sub-page (e.g. the login form). If it says it can't tell which site, ask the user; never guess or invent a URL. " +
         "No games; on banking sites open and read only, never move money."
 
     fun definitions(): List<JSONObject> = listOf(
-        fn("phone_open", "$RULE Opens a site on Blaze Phone: a URL, or what the user called it (resolved for you), and returns the page: a VERIFIED/NOT VERIFIED line, " +
+        fn("phone_open", "$RULE Opens a site on ${BrandName.NAME} Phone: a URL, or what the user called it (resolved for you), and returns the page: a VERIFIED/NOT VERIFIED line, " +
             "elements with ids like [e12], and the text.",
             JSONObject().put("url", p("string", "A URL, or the site as the user named it: 'the booking site', 'my bank', 'github login'")), listOf("url")),
-        fn("phone_read", "Reads the Blaze Phone page again: verification line, interactive elements with stable ids (password and card values hidden), headings and text. " +
+        fn("phone_read", "Reads the ${BrandName.NAME} Phone page again: verification line, interactive elements with stable ids (password and card values hidden), headings and text. " +
             "Call it before saying anything is done."),
-        fn("phone_act", "Acts on the Blaze Phone page with real taps and keys. action: click (target), type (target + text; submit=true presses Enter), " +
+        fn("phone_act", "Acts on the ${BrandName.NAME} Phone page with real taps and keys. action: click (target), type (target + text; submit=true presses Enter), " +
             "key (key: enter/tab/back/escape/backspace/up/down…), scroll (direction), select (target + option), navigate (text = URL), back, forward, reload, " +
             "fill_login (fills this site's saved login, not submitted; text = which username if several). target = an element id from phone_read (e.g. e12) or its visible words. " +
             "Typing {{secret:name}} uses a value the user saved, never shown to you. Buttons that pay, book, send, submit or delete ask the user first. " +
@@ -50,33 +52,33 @@ object PhoneBrowserTools {
                 .put("direction", e("Scroll direction", "down", "up"))
                 .put("submit", p("boolean", "After typing, press Enter"))
                 .put("clear", p("boolean", "Replace what's in the field (default true)")), listOf("action")),
-        fn("phone_screenshot", "A picture of Blaze Phone's screen, attached for you to look at (use it to check a confirmation page, a captcha, or a layout the read doesn't explain)."),
-        fn("phone_wait", "Waits on Blaze Phone until a CSS selector is visible, some text appears, or (gone=true) disappears; with neither, until the page loads. Timeout 0.5-30 s (default 10).",
+        fn("phone_screenshot", "A picture of ${BrandName.NAME} Phone's screen, attached for you to look at (use it to check a confirmation page, a captcha, or a layout the read doesn't explain)."),
+        fn("phone_wait", "Waits on ${BrandName.NAME} Phone until a CSS selector is visible, some text appears, or (gone=true) disappears; with neither, until the page loads. Timeout 0.5-30 s (default 10).",
             JSONObject().put("selector", p("string", "CSS selector")).put("text", p("string", "Text to wait for"))
                 .put("gone", p("boolean", "Wait for it to go away")).put("timeout", p("number", "Seconds"))),
-        fn("phone_handoff", "Asks the user to take control of Blaze Phone (a captcha, their own password, a card form, an approval only they can give) and waits until they hand back " +
+        fn("phone_handoff", "Asks the user to take control of ${BrandName.NAME} Phone (a captcha, their own password, a card form, an approval only they can give) and waits until they hand back " +
             "(up to 10 minutes), then returns a fresh read. They see the request in the chat's live view (and a notification if they're away).",
             JSONObject().put("reason", p("string", "One short line the user sees, e.g. 'Solve the captcha', 'Enter your card details'")), listOf("reason")),
-        fn("phone_status", "What Blaze Phone is doing: who is in control, the page, the site session, live view and memory."),
+        fn("phone_status", "What ${BrandName.NAME} Phone is doing: who is in control, the page, the site session, live view and memory."),
     )
 
     fun describe(name: String, a: JSONObject): String = when (name) {
-        "phone_open" -> "Opening ${hostish(a.optString("url"))} on Blaze Phone"
-        "phone_read" -> "Reading Blaze Phone's page"
+        "phone_open" -> "Opening ${hostish(a.optString("url"))} on ${BrandName.NAME} Phone"
+        "phone_read" -> "Reading ${BrandName.NAME} Phone's page"
         "phone_act" -> when (a.optString("action")) {
             "click" -> "Tapping " + readable(a.optString("target"), "on the page")
-            "type" -> "Typing on Blaze Phone"
+            "type" -> "Typing on ${BrandName.NAME} Phone"
             "key" -> "Pressing ${a.optString("key").ifBlank { "a key" }}"
-            "scroll" -> "Scrolling Blaze Phone"
+            "scroll" -> "Scrolling ${BrandName.NAME} Phone"
             "select" -> "Choosing " + readable(a.optString("option"), "an option")
             "navigate" -> "Going to ${hostish(a.optString("text"))}"
             "fill_login" -> "Filling your saved login"
-            else -> "Working on Blaze Phone"
+            else -> "Working on ${BrandName.NAME} Phone"
         }
-        "phone_screenshot" -> "Looking at Blaze Phone"
+        "phone_screenshot" -> "Looking at ${BrandName.NAME} Phone"
         "phone_wait" -> "Waiting for the page"
         "phone_handoff" -> "Asking you to take control"
-        else -> "Checking Blaze Phone"
+        else -> "Checking ${BrandName.NAME} Phone"
     }
 
     /**
@@ -97,7 +99,7 @@ object PhoneBrowserTools {
     /** The user's answer to a confirm card: true = go ahead. */
     // (a plain suspend function type: confirm(title, detail, action))
 
-    private const val NO_PAGE = "Blaze Phone has no page open. Use phone_open first."
+    private const val NO_PAGE = "${BrandName.NAME} Phone has no page open. Use phone_open first."
 
     suspend fun run(d: PhoneDriver, name: String, a: JSONObject, shots: MutableList<String>, confirm: suspend (String, String, String) -> Boolean): String {
         // 0.45.19-speed: timings for phone_status (the user's approval time on a confirm card isn't Blaze's).
@@ -125,22 +127,22 @@ object PhoneBrowserTools {
             "phone_screenshot" -> if (!d.hasPage()) NO_PAGE else {
                 val shot = d.screenshot()
                 val v = d.snapshot()?.let { PhonePolicy.verify(it).line() }.orEmpty()
-                if (shot == null) "No picture on this phone (Blaze Phone runs offscreen here). Use phone_read. $v".trim()
-                else { shots += shot; "Screenshot of Blaze Phone taken; it is attached in the next message. $v".trim() }
+                if (shot == null) "No picture on this phone (${BrandName.NAME} Phone runs offscreen here). Use phone_read. $v".trim()
+                else { shots += shot; "Screenshot of ${BrandName.NAME} Phone taken; it is attached in the next message. $v".trim() }
             }
             "phone_wait" -> if (!d.hasPage()) NO_PAGE else d.waitFor(a.optString("selector").ifBlank { null }, a.optString("text").ifBlank { null },
                 a.optBoolean("gone", false), PhonePolicy.waitMs(if (a.has("timeout")) a.optDouble("timeout") else null))
-            "phone_handoff" -> d.handoff(a.optString("reason").ifBlank { "Blaze needs you for a step" })
+            "phone_handoff" -> d.handoff(a.optString("reason").ifBlank { "${BrandName.NAME} needs you for a step" })
             "phone_act" -> act(d, a, confirm)
-            else -> "Unknown Blaze Phone tool."
+            else -> "Unknown ${BrandName.NAME} Phone tool."
         }
-    } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { "Blaze Phone error: ${com.blaze.assistant.browser.SecureInput.scrub(e.message.orEmpty().take(200))}" }
+    } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { "${BrandName.NAME} Phone error: ${com.blaze.assistant.browser.SecureInput.scrub(e.message.orEmpty().take(200))}" }
 
     /** What Blaze Phone has and hasn't completed, from the page as it is now. Never claims more than the page shows. */
     suspend fun progress(d: PhoneDriver): String {
-        if (!d.hasPage()) return "Nothing open on Blaze Phone: nothing booked, ordered or paid."
+        if (!d.hasPage()) return "Nothing open on ${BrandName.NAME} Phone: nothing booked, ordered or paid."
         val s = try { d.snapshot() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { null }
-            ?: return "Couldn't read the page right now: not booked, ordered or paid as far as Blaze can see (no confirmation seen)."
+            ?: return "Couldn't read the page right now: not booked, ordered or paid as far as ${BrandName.NAME} can see (no confirmation seen)."
         return "So far: " + PhonePolicy.verify(s).progress() + " Page: " + s.title.take(80) + "."
     }
 
@@ -148,7 +150,7 @@ object PhoneBrowserTools {
     private suspend fun readFallback(d: PhoneDriver, shots: MutableList<String>): String {
         val shot = d.screenshot()
         return if (shot != null) { shots += shot
-            "The page's elements couldn't be read right now (still loading, or the page blocks it); a screenshot of Blaze Phone is attached in the next message. " +
+            "The page's elements couldn't be read right now (still loading, or the page blocks it); a screenshot of ${BrandName.NAME} Phone is attached in the next message. " +
                 "NOT VERIFIED: nothing counts as done from a picture; phone_wait, then phone_read." }
         else "Couldn't read this page (still loading?). phone_wait, then phone_read."
     }
@@ -178,7 +180,7 @@ object PhoneBrowserTools {
         return "$head Went to the $sub page (tapped \u201c${t.label.take(40)}\u201d). ${c.text}\n\nNow:\n$now"
     }
 
-    private const val USER_HAS_IT = "The user is in control of Blaze Phone and hasn't handed back. Don't act; tell them you'll continue when they tap Hand back."
+    private const val USER_HAS_IT = "The user is in control of ${BrandName.NAME} Phone and hasn't handed back. Don't act; tell them you'll continue when they tap Hand back."
 
     private fun refused(label: String) = "The user did NOT approve \u201c${label.take(50)}\u201d. Don't retry; tell them it's ready for them to finish (phone_handoff)."
 
@@ -203,8 +205,8 @@ object PhoneBrowserTools {
                 if (t.label.isNotBlank()) d.step("Tapping \u201c${t.label.take(40)}\u201d")
                 val card = d.focusInfo().card
                 when (PhonePolicy.gate("click", t.label, t.node(), card)) {
-                    PhonePolicy.Gate.CONFIRM -> if (!confirm("Tap \u201c${t.label.take(40)}\u201d on $site?", "On Blaze Phone. This looks like it books, pays, sends or submits something.", "Tap")) return refused(t.label)
-                    PhonePolicy.Gate.REFUSE -> return "Blaze doesn't press that. Use phone_handoff."
+                    PhonePolicy.Gate.CONFIRM -> if (!confirm("Tap \u201c${t.label.take(40)}\u201d on $site?", "On ${BrandName.NAME} Phone. This looks like it books, pays, sends or submits something.", "Tap")) return refused(t.label)
+                    PhonePolicy.Gate.REFUSE -> return "${BrandName.NAME} doesn't press that. Use phone_handoff."
                     PhonePolicy.Gate.PASS -> {}
                 }
                 after(d, d.click(t), true)
@@ -218,8 +220,8 @@ object PhoneBrowserTools {
                 val submit = a.optBoolean("submit", false)
                 val f = d.focusInfo()
                 when (PhonePolicy.gate("type", if (submit) f.submit.ifBlank { t.label } else t.label, t.node(), f.card, submit)) {
-                    PhonePolicy.Gate.REFUSE -> return "\u201c${t.label.take(40)}\u201d is a card field. Blaze never types card details: call phone_handoff so the user enters them."
-                    PhonePolicy.Gate.CONFIRM -> if (!confirm("Submit on $site?", "Blaze Phone will type into \u201c${t.label.take(40)}\u201d and press Enter, which submits \u201c${f.submit.ifBlank { "the form" }.take(40)}\u201d.", "Submit"))
+                    PhonePolicy.Gate.REFUSE -> return "\u201c${t.label.take(40)}\u201d is a card field. ${BrandName.NAME} never types card details: call phone_handoff so the user enters them."
+                    PhonePolicy.Gate.CONFIRM -> if (!confirm("Submit on $site?", "${BrandName.NAME} Phone will type into \u201c${t.label.take(40)}\u201d and press Enter, which submits \u201c${f.submit.ifBlank { "the form" }.take(40)}\u201d.", "Submit"))
                         return refused(f.submit.ifBlank { "submit" })
                     PhonePolicy.Gate.PASS -> {}
                 }
@@ -231,7 +233,7 @@ object PhoneBrowserTools {
                 val f = d.focusInfo()
                 val isSubmit = k == "enter" && f.inForm && PhonePolicy.irreversible(f.submit)
                 if (PhonePolicy.gate("key", k, null, f.card && k == "enter", isSubmit) == PhonePolicy.Gate.CONFIRM &&
-                    !confirm("Press Enter on $site?", "On Blaze Phone this submits \u201c${f.submit.ifBlank { "the form" }.take(40)}\u201d.", "Submit")) return refused(f.submit.ifBlank { "Enter" })
+                    !confirm("Press Enter on $site?", "On ${BrandName.NAME} Phone this submits \u201c${f.submit.ifBlank { "the form" }.take(40)}\u201d.", "Submit")) return refused(f.submit.ifBlank { "Enter" })
                 d.key(k)
                 after(d, PhoneDriver.ActResult(true, "Pressed ${k.replaceFirstChar { it.uppercase() }}."), k == "enter" || k == "back")
             }
@@ -240,7 +242,7 @@ object PhoneBrowserTools {
                 if (target.isEmpty() || opt.isEmpty()) return "select needs target and option."
                 val t = d.locate(target, true) ?: return "No dropdown \u201c${target.take(40)}\u201d. phone_read for fresh ids."
                 if (PhonePolicy.gate("select", opt, t.node()) == PhonePolicy.Gate.CONFIRM &&
-                    !confirm("Choose \u201c${opt.take(40)}\u201d on $site?", "On Blaze Phone. This option looks like it confirms or pays.", "Choose")) return refused(opt)
+                    !confirm("Choose \u201c${opt.take(40)}\u201d on $site?", "On ${BrandName.NAME} Phone. This option looks like it confirms or pays.", "Choose")) return refused(opt)
                 d.select(t, opt).text
             }
             "scroll" -> d.scroll(a.optString("direction", "down") != "up").text

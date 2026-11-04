@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -179,7 +181,7 @@ class HedgeRaceTest {
 
     // ---- 0.46.5 (Rocky 21:00): slow but working brains must not be dropped by the first-token deadline ----
 
-    class Busy : Exception("Blaze Cloud is busy right now. Tap Retry in a moment.")
+    class Busy : Exception("${BrandName.NAME} Cloud is busy right now. Tap Retry in a moment.")
 
     /** Runs a race recording when each brain was cancelled as a loser and when the first real word was shown. */
     private suspend fun TestScope.slowRace(lim: HedgeRace.Limits, brains: Map<B, Fake>, order: List<B>, cancels: MutableList<Pair<B, Long>>, fails: MutableList<String> = mutableListOf()) =
@@ -228,7 +230,7 @@ class HedgeRaceTest {
         var nousCalls = 0
         val o = HedgeRace.run(listOf(B.PHONE, B.NOUS, B.CLOUD), chat, true, call = { a ->
             when (a.step) {
-                B.NOUS -> if (++nousCalls == 1) { delay(300); throw Busy() } else { delay(70_000); a.visible(); "late but fine" }   // 70 s > the 60 s chat cap
+                B.NOUS -> if (++nousCalls == 1) { delay(300); throw Busy() } else { delay(50_000); a.visible(); "late but fine" }   // 0.52.1: RETRY_MS is 60 s (was 90 s); a slow 50 s retry still lands
                 else -> { delay(200); throw Busy() }
             } }, retryPick = { BrainRace.retryPick(listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE, BackupRoute.Step.CLOUD)) { s -> if (s == BackupRoute.Step.RESERVE) 0.95 else 0.2 }
                 ?.let { s -> B.values()[listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE, BackupRoute.Step.CLOUD).indexOf(s)] } },
@@ -244,7 +246,7 @@ class HedgeRaceTest {
                 retryPick = { BrainRace.retryPick(it) { null } }, retryMs = BrainRace.RETRY_MS, now = { testScheduler.currentTime })
             fail("should fail")
         } catch (e: LlmClient.LlmException) {
-            assertEquals(BrainRace.TOO_LONG, e.message); assertFalse(e.message!!.contains("Blaze Cloud is busy"))
+            assertEquals(BrainRace.TOO_LONG, e.message); assertFalse(e.message!!.contains("${BrandName.NAME} Cloud is busy"))
         }
     }
 }

@@ -115,5 +115,5 @@ parentheses, no exclamation marks.
 9. Reduced motion and the offscreen pause both verified.
 10. Screenshot ink and paper sections at desktop and phone widths and look at them before calling it done.
 
-For the Blaze brand (square edges, blue accent) use `web-design-blaze-classic` instead: the
-pills and orange belong to Team of Keys, not Blaze.
+For the Argus brand (square edges, blue accent) use `web-design-blaze-classic` instead: the
+pills and orange belong to Team of Keys, not Argus.

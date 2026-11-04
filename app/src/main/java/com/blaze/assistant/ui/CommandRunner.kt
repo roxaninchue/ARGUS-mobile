@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.widget.Toast
 import com.blaze.assistant.agent.Agent
@@ -60,9 +62,9 @@ object CommandRunner {
                 }
             }
             "new" -> Agent.clear()
-            "clear" -> if (Agent.clearScreen() == com.blaze.assistant.agent.ClearScreen.Result.BUSY) toast("Blaze is working. Stop it first, then /clear.")
+            "clear" -> if (Agent.clearScreen() == com.blaze.assistant.agent.ClearScreen.Result.BUSY) toast("${BrandName.NAME} is working. Stop it first, then /clear.")
             // v0.25.0: no model or provider choice; old habits get one plain line.
-            "model", "provider" -> Agent.note("Blaze picks the best free model for every message by itself. There's nothing to choose.")
+            "model", "provider" -> Agent.note("${BrandName.NAME} picks the best free model for every message by itself. There's nothing to choose.")
             "persona" -> {
                 val p = Personas.all.firstOrNull { it.id.equals(arg, true) || it.name.equals(arg, true) }
                 if (p == null) openSettings("persona") else { Settings.personaId = p.id; Agent.note("Personality: ${p.name}") }
@@ -111,7 +113,7 @@ object CommandRunner {
             "brainstorm" -> com.blaze.assistant.life.LifeLogs.toggleFromCommand(ctx, if (com.blaze.assistant.life.LifeLogs.active && arg.isBlank()) "stop" else "brainstorm")
             "copy" -> {
                 val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
-                cm.setPrimaryClip(android.content.ClipData.newPlainText("Blaze chat", Agent.transcript())); toast("Chat copied")
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("${BrandName.NAME} chat", Agent.transcript())); toast("Chat copied")
             }
             "help", "commands" -> Agent.note(Commands.all().joinToString("\n") { c ->
                 "/" + c.name + (if (c.args.isNotEmpty()) " " + c.args else "") + " — " + c.desc }, asReply = true)

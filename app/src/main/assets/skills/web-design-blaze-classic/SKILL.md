@@ -5,7 +5,7 @@ tags: [design, web, css, brand, blaze]
 version: 1
 ---
 
-# Web design: classic Blaze
+# Web design: classic Argus
 
 Studied from https://blazeinchue.netlify.app/ (HTML, `styles.css`, `script.js`). Quiet,
 editorial and engineered: a near-white page, near-black ink at several opacities, **one** blue
@@ -56,7 +56,7 @@ to grey hex values. Numbers (metrics, indexes, table values) are mono or tight d
 ## 3. Layout
 
 - Container: `width: min(var(--maxw), 100% - 2 * var(--container-pad)); margin: 0 auto`.
-- Topbar: brand left (28px ink square with a white mono "B" + the word "Blaze"), nav right in 13px uppercase `--ink-sub`; `border-bottom:1px solid var(--ink-hair)`.
+- Topbar: brand left (28px ink square with a white mono "B" + the word "Argus"), nav right in 13px uppercase `--ink-sub`; `border-bottom:1px solid var(--ink-hair)`.
 - Hero: two columns `1.05fr .95fr`, gap 48px, `padding:72px 0`, bottom hairline. Left: eyebrow, h1, lede, CTA row, proof row (big numbers with small captions). Right: a **system card**, a ruled data table instead of an illustration.
 - Grids are **joined**, not gapped: `gap:0`, one `1px solid var(--ink-hair)` outer border, inner dividers `1px solid var(--ink-faint)` (`border-right` between cells, `border-bottom` between rows). Last cell drops its divider.
 - Metrics strip: `grid-template-columns: 1.3fr repeat(3, 1fr)`, min-height 168px per cell.
@@ -89,7 +89,7 @@ to grey hex values. Numbers (metrics, indexes, table values) are mono or tight d
 
 ## 6. Voice
 
-Plain and specific, engineered rather than salesy: "Made for you.", "Shipped from Blaze.",
+Plain and specific, engineered rather than salesy: "Made for you.", "Shipped from Argus.",
 "Every system we ship is one we run on ourselves, on modest hardware." Short h1s, a one-line
 h2 per section, ledes under 40 words, uppercase meta lines with middots.
 
@@ -106,5 +106,5 @@ h2 per section, ledes under 40 words, uppercase meta lines with middots.
 9. Motion: reduced-motion honoured; particle and glitch loops stop offscreen and when hidden; CPU idle when nothing moves.
 10. Screenshot both themes and look at them before calling it done.
 
-In the Blaze desktop app the same tokens are the app's CSS variables; reuse them instead of
+In the Argus desktop app the same tokens are the app's CSS variables; reuse them instead of
 copying hex values.

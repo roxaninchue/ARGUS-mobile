@@ -31,4 +31,4 @@ version: 1
 
 ## Rules
 - Never claim certifications, materials or results the supplier page doesn't show.
-- Blaze doesn't publish to the store by itself; the user pastes it (or asks Blaze to fill the store's admin page in the browser, with their OK before Save).
+- Argus doesn't publish to the store by itself; the user pastes it (or asks Argus to fill the store's admin page in the browser, with their OK before Save).

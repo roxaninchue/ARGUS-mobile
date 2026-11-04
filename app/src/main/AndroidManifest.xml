@@ -109,9 +109,9 @@
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_rules"
-        android:label="Blaze"
+        android:label="Argus"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:extractNativeLibs="true"
         android:networkSecurityConfig="@xml/network_security_config"
@@ -130,7 +130,7 @@
         <activity
             android:name=".ui.CameraActivity"
             android:exported="false"
-            android:label="Blaze Camera"
+            android:label="Argus Camera"
             android:theme="@style/Theme.Blaze"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:screenOrientation="unspecified" />
@@ -139,7 +139,7 @@
         <activity
             android:name=".browser.phone.PhoneBrowserActivity"
             android:exported="false"
-            android:label="Blaze Phone"
+            android:label="Argus Phone"
             android:supportsPictureInPicture="true"
             android:launchMode="singleTask"
             android:taskAffinity="com.blaze.assistant.phonebrowser"
@@ -158,7 +158,7 @@
         <activity
             android:name=".terminal.BlazeTerminalActivity"
             android:exported="false"
-            android:label="Blaze Terminal"
+            android:label="Argus Terminal"
             android:launchMode="singleTask"
             android:taskAffinity="com.blaze.assistant.terminal"
             android:theme="@android:style/Theme.Black.NoTitleBar"
@@ -169,7 +169,7 @@
         <activity
             android:name=".mediaapps.MusicActivity"
             android:exported="false"
-            android:label="Blaze Music"
+            android:label="Argus Music"
             android:launchMode="singleTask"
             android:taskAffinity="com.blaze.assistant.music"
             android:theme="@style/Theme.Blaze"
@@ -200,7 +200,7 @@
         <activity
             android:name=".movies.MovieOpenActivity"
             android:exported="true"
-            android:label="Blaze Video"
+            android:label="Argus Video"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
             android:noHistory="true">
@@ -220,7 +220,7 @@
         <activity
             android:name=".mediaapps.VideoActivity"
             android:exported="false"
-            android:label="Blaze Video"
+            android:label="Argus Video"
             android:launchMode="singleTask"
             android:taskAffinity="com.blaze.assistant.video"
             android:theme="@style/Theme.Blaze"
@@ -263,7 +263,7 @@
             android:name=".browser.BrowserActivity"
             android:exported="true"
             android:supportsPictureInPicture="true"
-            android:label="Blaze browser"
+            android:label="Argus browser"
             android:launchMode="singleTask"
             android:taskAffinity="com.blaze.assistant.browser"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
@@ -283,7 +283,7 @@
             android:launchMode="singleTask"
             android:supportsPictureInPicture="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize|stateAlwaysHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -323,7 +323,7 @@
         <service
             android:name=".assist.BlazeInteractionService"
             android:exported="true"
-            android:label="Blaze"
+            android:label="Argus"
             android:permission="android.permission.BIND_VOICE_INTERACTION">
             <meta-data android:name="android.voice_interaction" android:resource="@xml/blaze_interaction" />
             <intent-filter><action android:name="android.service.voice.VoiceInteractionService" /></intent-filter>
@@ -335,7 +335,7 @@
         <service
             android:name=".assist.BlazeRecognitionService"
             android:exported="true"
-            android:label="Blaze">
+            android:label="Argus">
             <intent-filter><action android:name="android.speech.RecognitionService" /></intent-filter>
             <meta-data android:name="android.speech" android:resource="@xml/blaze_recognizer" />
         </service>
@@ -352,7 +352,7 @@
             android:name=".assist.BlazeTile"
             android:exported="true"
             android:icon="@drawable/ic_stat_blaze"
-            android:label="Ask Blaze"
+            android:label="Ask Argus"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
         </service>
@@ -386,7 +386,7 @@
         <service android:name=".bank.BankModeService" android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <receiver android:name=".widget.BlazeWidget" android:exported="false" android:label="Blaze">
+        <receiver android:name=".widget.BlazeWidget" android:exported="false" android:label="Argus">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.blaze.assistant.WIDGET_ASK" />
@@ -398,7 +398,7 @@
         <service
             android:name=".phone.BlazeAccessibilityService"
             android:exported="false"
-            android:label="Blaze phone control"
+            android:label="Argus phone control"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -410,7 +410,7 @@
         <service
             android:name=".notify.NotificationBrain"
             android:exported="true"
-            android:label="Blaze notification brain"
+            android:label="Argus notification brain"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />

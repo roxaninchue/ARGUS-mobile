@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -78,14 +80,14 @@ object MagicHandWatches {
     private fun notifyChange(ctx: Context, w: MagicHandWatch.Watch, c: MagicHandWatch.Change) {
         val app = ctx.applicationContext
         if (android.os.Build.VERSION.SDK_INT >= 26) app.getSystemService(NotificationManager::class.java)
-            .createNotificationChannel(NotificationChannel(CH, "Blaze watches", NotificationManager.IMPORTANCE_DEFAULT).apply {
+            .createNotificationChannel(NotificationChannel(CH, "${BrandName.NAME} watches", NotificationManager.IMPORTANCE_DEFAULT).apply {
                 description = "When a value you asked Magic Hand to watch changes"
             })
         val open = app.packageManager.getLaunchIntentForPackage(w.pkg)?.let {
             android.app.PendingIntent.getActivity(app, w.id.hashCode(), it, android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)
         }
         val n = NotificationCompat.Builder(app, CH).setSmallIcon(com.blaze.assistant.R.drawable.ic_stat_blaze).setColor(0xFF4C7DFF.toInt())
-            .setContentTitle(w.app.ifBlank { "Blaze watch" }).setContentText(c.summary(w.label))
+            .setContentTitle(w.app.ifBlank { "${BrandName.NAME} watch" }).setContentText(c.summary(w.label))
             .setAutoCancel(true).apply { open?.let { setContentIntent(it) } }.build()
         try { NotificationManagerCompat.from(app).notify(7400 + (w.id.hashCode() and 0xff), n) } catch (_: SecurityException) { }
     }

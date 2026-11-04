@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -30,7 +32,7 @@ object SyncMerge {
         companion object {
             fun parse(kind: String, id: String, plain: String): Item {
                 val o = JSONObject(plain)
-                require(o.optInt("v", 1) <= 1) { "made by a newer Blaze" }
+                require(o.optInt("v", 1) <= 1) { "made by a newer ${BrandName.NAME}" }
                 // The envelope repeats kind + id (the AAD already binds them); a mismatch means a broken blob.
                 require(o.optString("kind", kind) == kind && o.optString("id", id) == id) { "item mismatch" }
                 return Item(kind, id, o.optLong("t"), if (o.optBoolean("del")) null else o.optJSONObject("data") ?: JSONObject())

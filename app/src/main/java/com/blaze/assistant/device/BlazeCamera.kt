@@ -1,5 +1,7 @@
 package com.blaze.assistant.device
 
+
+import com.blaze.assistant.BrandName
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
@@ -39,10 +41,10 @@ object BlazeCamera {
 
     /** Opens Blaze Camera. False (with the reason logged) when this phone has no camera or Android refused. */
     fun open(ctx: Context, mode: Mode?, origin: Origin, chatId: String? = null, prompt: String? = null): Boolean {
-        if (!CameraSupport.hasCamera(ctx)) { CameraSupport.log("Blaze Camera: no camera on this device (FEATURE_CAMERA_ANY)"); return false }
+        if (!CameraSupport.hasCamera(ctx)) { CameraSupport.log("${BrandName.NAME} Camera: no camera on this device (FEATURE_CAMERA_ANY)"); return false }
         return try {
             ctx.startActivity(intent(ctx, mode, origin, chatId, prompt).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); true
-        } catch (e: Exception) { CameraSupport.log("Blaze Camera didn't open", e); false }
+        } catch (e: Exception) { CameraSupport.log("${BrandName.NAME} Camera didn't open", e); false }
     }
 
     /** The phone language's English name, for "Translate this into …". */
@@ -64,7 +66,7 @@ object BlazeCamera {
                     doc?.let { Attachments.load(app, it) })
             }
             val text = CameraModes.prompt(effectiveMode, asked, language()) + CameraModes.payload(effectiveMode, ocr, code)
-            CameraSupport.log("Blaze Camera result: mode=${mode.id} origin=${origin.name} route=$route photo=${photo != null} doc=${doc != null} ocr=${ocr?.length ?: 0} code=${code != null}")
+            CameraSupport.log("${BrandName.NAME} Camera result: mode=${mode.id} origin=${origin.name} route=$route photo=${photo != null} doc=${doc != null} ocr=${ocr?.length ?: 0} code=${code != null}")
             when (route) {
                 Route.SEND_TURN -> Agent.fromCamera(chatId, text.trim().ifEmpty { "Take a look at this." }, atts)
                 Route.DRAFT -> { Agent.sharedDraft.value = Agent.SharedDraft(text.trim(), atts.firstOrNull()) }
@@ -76,15 +78,15 @@ object BlazeCamera {
 
     fun bringBlazeForward(ctx: Context) {
         try { ctx.startActivity(Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
-        catch (e: Exception) { CameraSupport.log("couldn't bring Blaze forward", e) }
+        catch (e: Exception) { CameraSupport.log("couldn't bring ${BrandName.NAME} forward", e) }
     }
 
     /** For the model's blaze_camera tool and open_camera. */
     fun openFromTool(ctx: Context, modeArg: String?, chatId: String?, asked: String?): String {
         val mode = CameraModes.parse(modeArg) ?: Mode.ASK
-        if (!CameraSupport.hasCamera(ctx)) return "This phone has no camera, so Blaze Camera can't open. The user can attach a photo with + → Photos instead."
+        if (!CameraSupport.hasCamera(ctx)) return "This phone has no camera, so ${BrandName.NAME} Camera can't open. The user can attach a photo with + → Photos instead."
         val origin = if (chatId.isNullOrBlank()) Origin.STANDALONE else Origin.TOOL
-        return if (open(ctx, mode, origin, chatId, asked)) "Blaze Camera is open in ${mode.label} mode. When the user takes the picture it comes back into this chat as their next message; wait for it and don't describe a picture you haven't seen."
-        else "Blaze Camera couldn't open (it's in Blaze's log). Ask the user to attach a photo with + → Photos instead."
+        return if (open(ctx, mode, origin, chatId, asked)) "${BrandName.NAME} Camera is open in ${mode.label} mode. When the user takes the picture it comes back into this chat as their next message; wait for it and don't describe a picture you haven't seen."
+        else "${BrandName.NAME} Camera couldn't open (it's in ${BrandName.NAME}'s log). Ask the user to attach a photo with + → Photos instead."
     }
 }

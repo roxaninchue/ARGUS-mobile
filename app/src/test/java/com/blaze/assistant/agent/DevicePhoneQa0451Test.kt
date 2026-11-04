@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -69,7 +71,7 @@ class DevicePhoneQa0451Test {
             .put(JSONObject().put("role", "user").put("content", note))
         assertTrue(ToolTruth.isAppNote(note))
         assertEquals("open_settings", ToolTruth.choiceName(msgs, ToolTruth.names(tools)))
-        val orient = Orient.contextNote("Screen: Blaze (com.blaze.assistant) (14 elements)\n[12] field")
+        val orient = Orient.contextNote("Screen: ${BrandName.NAME} (com.blaze.assistant) (14 elements)\n[12] field")
         val m2 = JSONArray().put(JSONObject().put("role", "user").put("content", "set an alarm for 6:40 am called QA wake")).put(JSONObject().put("role", "user").put("content", orient))
         assertEquals("set_alarm", ToolTruth.choiceName(m2, ToolTruth.names(tools)))
         // A direct phone ask never gets the saved tap plan.

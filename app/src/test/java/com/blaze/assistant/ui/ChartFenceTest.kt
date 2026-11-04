@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.ui.RichReplies.Block
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -69,7 +71,7 @@ class ChartFenceTest {
         assertTrue(b.none { it is Block.Plain && it.seg is AnswerCards.Seg.Text && (it.seg as AnswerCards.Seg.Text).md.contains("{\"") })
         // Ordinary code is still code.
         assertTrue(rawCode(blocks("```kotlin\nval x = mapOf(\"a\" to 1)\n```")))
-        assertTrue(rawCode(blocks("```json\n{\"name\":\"Blaze\",\"version\":2}\n```")))
+        assertTrue(rawCode(blocks("```json\n{\"name\":\"${BrandName.NAME}\",\"version\":2}\n```")))
     }
 
     @Test fun promptShowsTheKindAloneOnTheFenceLine() {

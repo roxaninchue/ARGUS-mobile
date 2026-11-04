@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -33,7 +35,7 @@ class ChatJsonTest {
                 at = 6, thinkMs = 10, startAt = 4, replyTo = listOf(1), speaker = "halo", receipt = "[]"),
             ChatMessage(3, Role.STEP, "Opening"))
         val marks = mapOf(1L to 0, 3L to 7)
-        val head = JSONObject().put("id", "main").put("title", "Blaze").put("pinned", false).put("updated", 9L)
+        val head = JSONObject().put("id", "main").put("title", "${BrandName.NAME}").put("pinned", false).put("updated", 9L)
         val hist = JSONArray().put(JSONObject().put("role", "user").put("content", "Hi"))
         val text = ChatJson.file(head, ChatJson.messages(msgs, marks), hist)
         val expected = JSONObject(head.toString()).put("messages", JSONArray().apply { msgs.forEach { put(old(it, marks[it.id])) } }).put("history", hist)

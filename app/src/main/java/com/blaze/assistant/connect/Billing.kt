@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -99,7 +101,7 @@ object Billing {
     /** The gateway's own words for a refused payment ("Choose monthly or yearly" for bad_period), else a plain line. */
     fun errorLine(code: Int, body: String): String = try {
         JSONObject(body).optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
-    } catch (_: Exception) { null } ?: if (code == 401) "Sign in to Blaze first." else "The payment couldn't be sent ($code). Try again in a moment."
+    } catch (_: Exception) { null } ?: if (code == 401) "Sign in to ${BrandName.NAME} first." else "The payment couldn't be sent ($code). Try again in a moment."
 
     /** The gateway calls (signed in with the Blaze account token). */
     object Client {

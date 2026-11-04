@@ -1,5 +1,7 @@
 package com.blaze.assistant.proactive
 
+
+import com.blaze.assistant.BrandName
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -143,7 +145,7 @@ object Proactive {
             append("Calendar today:\n$cal\n\n")
             signals.takeIf { it.isNotBlank() }?.let { append("Phone signals:\n").append(it).append("\n\n") }
             synchronized(digest) { if (digest.isNotEmpty()) append("Saved for the next brief:\n").append(digest.joinToString("\n") { "- $it" }).append("\n\n") }
-            try { com.blaze.assistant.proactive.FollowUps.run(JSONObject()).takeIf { it != "Nothing open." }?.let { append("Follow-ups Blaze is tracking (don't repeat these unless the time is close; never nudge about one marked replied):\n").append(it).append("\n\n") } } catch (_: Throwable) { }
+            try { com.blaze.assistant.proactive.FollowUps.run(JSONObject()).takeIf { it != "Nothing open." }?.let { append("Follow-ups ${BrandName.NAME} is tracking (don't repeat these unless the time is close; never nudge about one marked replied):\n").append(it).append("\n\n") } } catch (_: Throwable) { }
             append("Already told the user recently:\n").append(recent.value.takeLast(6).joinToString("\n") { "- ${it.text}" }.ifEmpty { "(nothing)" })
         }
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -154,7 +156,7 @@ object Proactive {
         if (evening) Settings.setStr("evening_day", today)
         if (morning || evening) synchronized(digest) { digest.clear() }
         val brief = if (evening) "\nThis is the evening check: ALWAYS give a short wrap-up (2-3 sentences): anything still waiting on them, unfinished goals, and what's first on tomorrow's calendar. Set urgent false." else if (morning) "\nThis is the first check of the user's morning: ALWAYS give a short good-morning brief (2-3 sentences): the day, what's on the calendar, anything important waiting, and one useful heads-up (e.g. low battery). Set urgent false." else ""
-        val sys = """You are Blaze, the user's phone assistant, deciding whether to speak up on your own right now.$brief ${Memory.promptBlock(ctx.take(600))}
+        val sys = """You are ${BrandName.NAME}, the user's phone assistant, deciding whether to speak up on your own right now.$brief ${Memory.promptBlock(ctx.take(600))}
 Speak only when it truly helps now: a bill or payment due, low airtime/data or a mobile-money message that needs action, a delivery arriving, a missed call or message that's been waiting hours, an urgent or important message they may have missed, a meeting or event starting soon, something that needs a reply or decision, a phone problem (very low battery, overheating, storage full), or a genuinely useful nudge tied to their routines. Be personal and specific, like a friend who read it: name the person, the app, the time and the topic ("Jack texted on WhatsApp: the budget meeting moved to 15:00"), never "you have new messages" or "you have notifications". If the user has already replied in a chat (a "You:" line after theirs), don't nudge about it. Never repeat what was already said. Never mention codes or passwords. Most of the time, say nothing.
 Reply ONLY with JSON: {"say": "" or "one or two short friendly sentences", "urgent": true|false, "suggest": "" or "a short request the user could tap to have you do it, e.g. 'Reply to Mary that I'm on my way'"}"""
         val msgs = JSONArray().put(JSONObject().put("role", "system").put("content", sys)).put(JSONObject().put("role", "user").put("content", ctx))

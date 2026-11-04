@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -40,14 +42,14 @@ class MindTest {
             m(1, "preference", "food", "No pork, on weekdays and weekends"),
             m(2, "profile", "You", "Studies at Northrise University"),
             m(3, "person", "Gloria", "Cousin"), m(4, "person", "Gloria", "Lives in Chingola"), m(5, "person", "Mutale", "Lecturer"),
-            m(6, "project", "Blaze", "One mind memory in progress"),
+            m(6, "project", "${BrandName.NAME}", "One mind memory in progress"),
         )
         val core = Mind.core(mems)
         assertTrue(core.indexOf("Northrise") < core.indexOf("No pork"))
         assertFalse(core.contains("Gloria"))
         val idx = Mind.index(mems)
         assertTrue(idx, idx.contains("- person: Gloria (2), Mutale (1)"))
-        assertTrue(idx.contains("- project: Blaze (1)"))
+        assertTrue(idx.contains("- project: ${BrandName.NAME} (1)"))
         val block = Mind.block(mems)
         assertTrue(block.contains("ONE MIND") && block.contains("WHAT YOU KNOW") && block.contains("MEMORY INDEX"))
         // The core never passes its cap.
@@ -98,7 +100,7 @@ class MindTest {
 
     @Test fun extractionParsesTolerantlyAndDropsSecrets() {
         val raw = "Sure!\n```json\n[{\"kind\":\"preference\",\"subject\":\"food\",\"text\":\"No pork on weekdays\",\"related\":\"You\"}," +
-            "{\"kind\":\"weird\",\"subject\":\"Blaze\",\"text\":\"Ships v0.18 next\"}," +
+            "{\"kind\":\"weird\",\"subject\":\"${BrandName.NAME}\",\"text\":\"Ships v0.18 next\"}," +
             "{\"kind\":\"fact\",\"subject\":\"bank\",\"text\":\"Card 4111 1111 1111 1111\"}]\n```"
         val items = Mind.parseExtract(raw)
         assertEquals(2, items.size)

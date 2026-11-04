@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -48,10 +50,12 @@ object BrainRace {
     // (thinking counts as a chunk, so a slow but working brain is never cut by it). 45 s matches the on-phone brain's own
     // first-chunk cap ([BackupBrain.FIRST_CHUNK_MS]).
     val CHAT_LIMITS = HedgeRace.Limits(firstMs = 8_000L, hedgeMs = 3_000L, stallMs = 30_000L, thinkMs = 60_000L, wholeMs = 60_000L, quietMs = 20_000L)
-    val TASK_LIMITS = HedgeRace.Limits(firstMs = 20_000L, hedgeMs = 6_000L, stallMs = 30_000L, thinkMs = 120_000L, wholeMs = 90_000L, quietMs = 45_000L)
+    // 0.52.1 (gw061): quietMs 60 s for tool turns: the gateway buffers a tool step until it is complete (nothing, not even
+    // thinking, arrives before that) and since 0.8.62 gives first output or a clean error within 40 s.
+    val TASK_LIMITS = HedgeRace.Limits(firstMs = 20_000L, hedgeMs = 6_000L, stallMs = 30_000L, thinkMs = 120_000L, wholeMs = 90_000L, quietMs = 60_000L)
 
     /** 0.46.5: every brain hard-failed → the most reliable one is asked once more with the long-task cap. */
-    const val RETRY_MS = 90_000L
+    const val RETRY_MS = 60_000L   // 0.52.1: was 90 s (one failing step could burn 3–4 min)
 
     /** 0.46.5: the one calm line when every brain (and the retry) failed. Never "Blaze Cloud is busy" unless Cloud was the only path. */
     const val TOO_LONG = "That took too long. Tap Retry."
@@ -94,7 +98,9 @@ object BrainRace {
     fun order(kind: Kind, warm: Boolean, signedIn: Boolean, ttft: (BackupRoute.Step) -> Long? = { null },
               reliability: (BackupRoute.Step) -> Double? = { null }): List<BackupRoute.Step> = buildList {
         if (warm) add(BackupRoute.Step.BACKUP)
-        if (signedIn) { add(BackupRoute.Step.RESERVE); add(BackupRoute.Step.CLOUD) }
+        // 0.52.1 (gw061): on tool turns Blaze Cloud goes before the Nous reserve (the reserve is the same gateway with the
+        // same body on the slowest path, 60 s per attempt); plain chat keeps on-phone → Nous → Cloud.
+        if (signedIn) { if (kind == Kind.CHAT) { add(BackupRoute.Step.RESERVE); add(BackupRoute.Step.CLOUD) } else { add(BackupRoute.Step.CLOUD); add(BackupRoute.Step.RESERVE) } }
     }
 
     /** Reliability band: 2 = answers (>= 80 % or not measured yet), 1 = shaky (>= 50 %), 0 = mostly failing. */
@@ -134,7 +140,7 @@ object BrainRace {
     /** Halo's side reply: if no word arrived by then, Halo says where Blaze is (from the app's own state, no model). */
     const val HALO_HOLD_MS = 2_000L
     fun haloHolding(task: String, now: String): String = buildString {
-        append("Blaze is still on ")
+        append("${BrandName.NAME} is still on ")
         append(if (task.isBlank()) "your request" else "\u201c${task.trim().take(60)}\u201d")
         val n = now.trim().trimEnd('.', '\u2026')
         if (n.isNotBlank() && !n.equals(CloudRuns.QUEUED.trimEnd('\u2026'), true)) append(". Right now: ").append(n.take(80))

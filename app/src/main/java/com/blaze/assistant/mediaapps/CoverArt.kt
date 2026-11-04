@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
@@ -38,7 +40,7 @@ object CoverArt {
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Cover Art Forge: make AI cover art for songs / thumbnails for videos in Blaze's Music and Video library " +
+        .put("description", "Cover Art Forge: make AI cover art for songs / thumbnails for videos in ${BrandName.NAME}'s Music and Video library " +
             "(missing = every track without art, max 6; or one track by name), saved with the track.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("track", JSONObject().put("type", "string").put("description", "title to match, or \"missing\""))

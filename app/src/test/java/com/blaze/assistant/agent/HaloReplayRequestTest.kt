@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertTrue
@@ -128,7 +130,7 @@ class HaloReplayRequestTest {
             .put(JSONObject().put("id", "schedule-sunday").put("calendar_result", com.blaze.assistant.phone.Skills.eventsResult(emptyList())).put("turns", JSONArray()
                 .put(turn("anything on for today?", sun, false, true))
                 .put(turn("so what's on for today specifically?", sun.plusMinutes(1), false, true))))
-            .put(JSONObject().put("id", "hi-blaze").put("turns", JSONArray().put(turn("hi Blaze", wed.plusMinutes(15), false, true))))
+            .put(JSONObject().put("id", "hi-blaze").put("turns", JSONArray().put(turn("hi ${BrandName.NAME}", wed.plusMinutes(15), false, true))))
             // "View calendar": granted → the phone's calendar_events returns the fixture event; not granted → the tool shows
             // Android's one-tap prompt and (denied) returns Skills.CALENDAR_OFF.
             .put(JSONObject().put("id", "view-calendar-granted").put("calendar_result", com.blaze.assistant.phone.Skills.eventsResult(listOf("Wed 21 Oct 15:00\u201316:00: Lab group meeting @ Room 4")))

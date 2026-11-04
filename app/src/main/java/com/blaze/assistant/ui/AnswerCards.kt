@@ -190,6 +190,10 @@ fun AnswerBody(key: Long, src: String, live: Boolean = false) {
                     is RichReplies.Block.Choices -> RichChoices(b.choices)
                     is RichReplies.Block.Form -> RichForm(b.form)
                     is RichReplies.Block.Apps -> RichApps(b.apps)
+                    is RichReplies.Block.Gallery -> RichGallery(b.gallery)
+                    is RichReplies.Block.Links -> RichLinks(b.links)
+                    is RichReplies.Block.Doc -> RichDoc(b.doc)
+                    is RichReplies.Block.Details -> RichDetails(b.details) { MdText(it) }
                     is RichReplies.Block.Pending -> if (streaming) RichPending(b.kind)
                         else { val n = b.seg.code.lines().size; PlainCard((b.seg.lang.ifBlank { "Code" }) + " · $n lines", b.seg.raw) { CodeText(b.seg.code) } }
                     is RichReplies.Block.Plain -> when (val s = b.seg) {

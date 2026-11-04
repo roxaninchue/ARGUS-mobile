@@ -12,7 +12,7 @@ version: 2
 > Everything below is only for when they ask to **save, export, download, edit or make a file** (a PNG for a report,
 > an SVG for slides, a README diagram).
 
-> **On the phone:** files go under `~` (/root/phone). Preview HTML/SVG with `preview_server` (there is no Design tab here); install missing tools in Blaze's Alpine Linux with run_shell (`apk add …`, `pip install …`).
+> **On the phone:** files go under `~` (/root/phone). Preview HTML/SVG with `preview_server` (there is no Design tab here); install missing tools in Argus's Alpine Linux with run_shell (`apk add …`, `pip install …`).
 
 # Diagrams
 

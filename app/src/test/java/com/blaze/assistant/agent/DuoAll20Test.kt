@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,15 +25,15 @@ class DuoAll20Test {
     @Test fun prompts_blazeDoes_haloAddsOnlyWhatsMissing() = five {
         val b = DuoAll.blazeSystem("SOUL")
         assertTrue(b.startsWith("SOUL") && b.contains("You are the doer") && b.contains("don't hand anything to Halo"))
-        val h = DuoAll.haloSystem("SOUL", "Blaze said this.")
-        assertTrue(h.contains("Blaze said this.") && h.contains(DuoAll.QUIET) && h.contains("Never repeat") && h.contains("never use tools"))
+        val h = DuoAll.haloSystem("SOUL", "${BrandName.NAME} said this.")
+        assertTrue(h.contains("${BrandName.NAME} said this.") && h.contains(DuoAll.QUIET) && h.contains("Never repeat") && h.contains("never use tools"))
     }
 
     @Test fun agent_allChatRunsBlazeFirstThenHalo() = five {
         val src = listOf(File("src/main/java/com/blaze/assistant/agent/Agent.kt"), File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         assertTrue(src.contains("if (kind == Duo.Kind.CHAT) { duoDoer(name, facts)"))
         val body = src.substringAfter("private suspend fun duoDoer(").substringBefore("/** After both agreed")
-        assertTrue("Blaze before Halo", body.indexOf("ask(Duo.Who.BLAZE") in 0 until body.indexOf("DuoAll.haloSystem"))
+        assertTrue("${BrandName.NAME} before Halo", body.indexOf("ask(Duo.Who.BLAZE") in 0 until body.indexOf("DuoAll.haloSystem"))
         assertTrue("Halo isn't streamed (a dropped repeat never flashes up)", body.contains("DuoAll.haloSystem(base(Duo.Who.HALO), blaze), stream = false"))
         assertFalse("no tools for the chat duo", body.contains("roomTools("))
     }

@@ -1,9 +1,11 @@
 package com.blaze.assistant.dashboard
 
+
+import com.blaze.assistant.BrandName
 /** The dashboard web page (served by Dashboard). */
 object Page {
     val html = """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Blaze dashboard</title>
+<title>${BrandName.NAME} dashboard</title>
 <style>
 :root{--paper:#fcfcfc;--ink:#111110;--sub:#6b6b68;--weak:#a5a5a0;--hair:#e6e6e2;--faint:#f3f3f0;--accent:#1f4bd8}
 @media (prefers-color-scheme:dark){:root{--paper:#26262a;--ink:#f0f0ee;--sub:#a9a9a4;--weak:#77777a;--hair:#3a3a3f;--faint:#2e2e33;--accent:#6b8cff}}
@@ -27,17 +29,17 @@ button{border:0;background:var(--ink);color:var(--paper);padding:0 22px;font:11p
 .bars{display:flex;align-items:flex-end;gap:4px;height:90px;margin-top:10px}.bars div{flex:1;background:var(--accent);min-height:2px}
 .warn{color:var(--accent);font-size:13px}
 </style></head><body>
-<header><div class="mark"></div><h1>Blaze</h1><span class="lab" id="ver"></span><span style="flex:1"></span><span class="lab" id="model"></span></header>
+<header><div class="mark"></div><h1>${BrandName.NAME}</h1><span class="lab" id="ver"></span><span style="flex:1"></span><span class="lab" id="model"></span></header>
 <main>
 <aside><div class="lab" style="margin-bottom:8px">Chats</div><div class="chat" onclick="openChat('')"><b>+ New chat</b></div><div id="chats"></div></aside>
 <section><div class="lab" id="title">New chat</div><div id="msgs"></div>
-<form onsubmit="return send()"><input id="inp" placeholder="Message Blaze… (it can use your phone)" autocomplete="off"><button id="btn">Send</button></form></section>
+<form onsubmit="return send()"><input id="inp" placeholder="Message ${BrandName.NAME}… (it can use your phone)" autocomplete="off"><button id="btn">Send</button></form></section>
 <section style="border-right:0">
 <div class="card"><div class="lab">Today</div><div class="big" id="tok">–</div><div class="lab" id="cost"></div>
 <div class="bars" id="bars"></div><div class="lab" style="margin-top:6px">Tokens, last 14 days</div></div>
 ${Bridge.CARDS}
 <div class="card"><div class="lab" style="margin-bottom:6px">Phone</div><div id="dev"></div><div id="warn"></div></div>
-<div class="card"><div class="lab" style="margin-bottom:6px">Blaze</div><div id="blz"></div></div>
+<div class="card"><div class="lab" style="margin-bottom:6px">${BrandName.NAME}</div><div id="blz"></div></div>
 </section></main>
 <script>
 var T=new URLSearchParams(location.search).get('t'),chat='';
@@ -58,7 +60,7 @@ function chats(){api('/api/chats').then(function(l){document.getElementById('cha
 function render(m){var b=document.getElementById('msgs');b.innerHTML=m.map(function(x){return '<div class="m '+x.role+'">'+esc(x.text)+(x.meta?'<div class="meta">'+esc(x.meta)+'</div>':'')+'</div>'}).join('');b.scrollTop=b.scrollHeight}
 function openChat(id){chat=id;document.getElementById('title').textContent=id?'Chat':'New chat';if(!id){render([]);chats();return}api('/api/chat?id='+id).then(render);chats()}
 function send(){var i=document.getElementById('inp'),t=i.value.trim();if(!t)return false;i.value='';
- var b=document.getElementById('msgs');b.innerHTML+='<div class="m USER">'+esc(t)+'</div><div class="m STEP" id="wait">Blaze is working…</div>';b.scrollTop=b.scrollHeight;
+ var b=document.getElementById('msgs');b.innerHTML+='<div class="m USER">'+esc(t)+'</div><div class="m STEP" id="wait">${BrandName.NAME} is working…</div>';b.scrollTop=b.scrollHeight;
  document.getElementById('btn').disabled=true;
  api('/api/send',{method:'POST',body:JSON.stringify({chat:chat,text:t})}).then(function(r){chat=r.chat;document.getElementById('btn').disabled=false;openChat(chat);stats()});return false}
 ${Bridge.SCRIPT}

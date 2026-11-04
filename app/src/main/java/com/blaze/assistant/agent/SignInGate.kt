@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.45.4: a chat message sent while signed out of Blaze Cloud, with no other model that could answer (the Offline
  * Brain only answers with no internet), no longer ends in an error. The turn stops at its first model call, the chat
@@ -12,7 +14,7 @@ package com.blaze.assistant.agent
 object SignInGate {
     /** The card's meta tag on its chat message (the chat draws a Sign in button for it). */
     const val CARD = "signin"
-    const val LINE = "Sign in to your Blaze account and I'll send this message as soon as you're in."
+    const val LINE = "Sign in to your ${BrandName.NAME} account and I'll send this message as soon as you're in."
     const val BUTTON = "Sign in"
 
     /** The model call failed only because there is no Blaze session (LlmClient: Cloud.SIGNED_OUT, 401). */

@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 /**
  * v0.26.2 Hark-style orchestration: `delegate` hands out specialist tasks without blocking the turn. Each task
  * becomes a background agent running as that specialist (BgAgents, its AgentCard with Steer / Stop / Open), the
@@ -148,7 +150,7 @@ object Dispatch {
         @Synchronized fun take(agent: String, live: (String) -> Boolean = { true }): String? {
             val h = holder
             if (h == null || h == agent || !live(h)) { holder = agent; return null }
-            return "Blaze's browser is in use by agent $h right now. Use web_search and fetch_page for this step instead (they work in parallel), or finish without the browser."
+            return "${BrandName.NAME}'s browser is in use by agent $h right now. Use web_search and fetch_page for this step instead (they work in parallel), or finish without the browser."
         }
 
         @Synchronized fun release(agent: String) { if (holder == agent) holder = null }

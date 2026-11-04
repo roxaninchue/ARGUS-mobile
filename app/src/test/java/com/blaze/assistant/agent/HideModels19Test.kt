@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -21,9 +23,9 @@ class HideModels19Test {
             "qwen|deepseek|claude|anthropic|openai|grok|kimi|moonshot|pollinations)\\b|z\\.ai|\\bgpt-?\\d|\\bgpt\\b")
 
     private val metas = listOf(
-        "\u2601 Blaze Cloud \u00b7 run \u00b7 mistral \u00b7 ministral-8b-latest \u00b7 cloud run",
+        "\u2601 ${BrandName.NAME} Cloud \u00b7 run \u00b7 mistral \u00b7 ministral-8b-latest \u00b7 cloud run",
         "\u2601 Free (Google Gemini \u00b7 gemini-3.5-flash) \u00b7 first word 1.2 s \u00b7 2.3 s",
-        "\u2601 Blaze Cloud / groq / llama-3.3-70b-versatile \u00b7 2.3 s \u00b7 Memory updated",
+        "\u2601 ${BrandName.NAME} Cloud / groq / llama-3.3-70b-versatile \u00b7 2.3 s \u00b7 Memory updated",
         "openrouter/free \u00b7 Skill saved", "cerebras \u00b7 qwen-3-32b \u00b7 fallback \u00b7 Memory updated",
         "via sambanova \u00b7 DeepSeek-V3.1", "z.ai \u00b7 glm-4.5-flash", "kilo-auto/free \u00b7 cohere command-r", "nvidia/nemotron-3-super",
     )
@@ -63,9 +65,9 @@ class HideModels19Test {
             assertFalse("$r -> $shown", names.containsMatchIn(shown))
             assertTrue(shown, shown.isNotBlank())
         }
-        assertEquals("Couldn't reach Blaze.", ModelHide.scrub("Couldn't reach Groq (llama-3.3-70b)."))
+        assertEquals("Couldn't reach ${BrandName.NAME}.", ModelHide.scrub("Couldn't reach Groq (llama-3.3-70b)."))
         assertEquals("Nothing to hide here.", ModelHide.scrub("Nothing to hide here."))
-        assertEquals("Blaze Cloud \u00b7 run \u00b7 Blaze \u00b7 cloud run", ModelHide.scrub("Blaze Cloud \u00b7 run \u00b7 mistral \u00b7 ministral-8b-latest \u00b7 cloud run"))
+        assertEquals("${BrandName.NAME} Cloud \u00b7 run \u00b7 ${BrandName.NAME} \u00b7 cloud run", ModelHide.scrub("${BrandName.NAME} Cloud \u00b7 run \u00b7 mistral \u00b7 ministral-8b-latest \u00b7 cloud run"))
     }
 
     @Test fun whatHappenedSheetIsDeveloperOnly() = fiveTimes {

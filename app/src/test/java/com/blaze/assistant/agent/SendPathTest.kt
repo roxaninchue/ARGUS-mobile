@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -135,7 +137,7 @@ class SendPathTest {
         val now = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString()
         fun row(name: String, r: Triple<Double, Double, Double>) = "%-56s working %7.1f ms   on the wire %7.1f ms (fake gateway got byte 1 at %7.1f ms)".format(java.util.Locale.US, name, r.first, r.second, r.third)
         val text = listOf(
-            "Blaze Android 0.45.8 start-of-reply bench (SendPathTest, JVM, $now)",
+            "${BrandName.NAME} Android 0.45.8 start-of-reply bench (SendPathTest, JVM, $now)",
             "Median of 5 typed Sends after one warm-up. Fake gateway on 127.0.0.1; fake slow prep: on-device model $FAKE_MODEL_MS ms, token decrypt $FAKE_DECRYPT_MS ms.",
             "Real code: RapidMessages.route/legacyRoute/burstWait, FastLane.useModel, QuickRules.parse, StartTrace, ReplyLanguage.header.",
             "Working = state set (a phone draws it on the next frame). Phone numbers come from the What-happened sheet, not from this bench.",
@@ -191,7 +193,7 @@ class SendPathTest {
         val nowIso = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString()
         fun row(name: String, r: Triple<Double, Double, Double>) = "%-50s working %6.2f ms   on the wire %6.2f ms (fake gateway got byte 1 at %6.2f ms)".format(java.util.Locale.US, name, r.first, r.second, r.third)
         val text = listOf(
-            "Blaze Android 0.45.9 send path with the [context] block (SendPathTest.contextBlockKeepsTheWireFast, JVM, $nowIso)",
+            "${BrandName.NAME} Android 0.45.9 send path with the [context] block (SendPathTest.contextBlockKeepsTheWireFast, JVM, $nowIso)",
             "Median of 7 typed Sends after one warm-up, new 0.45.8 path, no fast-lane model. Fake gateway on 127.0.0.1.",
             "Real code: TurnContext.block / Cache / key, ScheduleDay.itemsOn / datesAsked / line, StartTrace, RapidMessages, FastLane.useModel.",
             "",
@@ -238,7 +240,7 @@ class SendPathTest {
             t = 1_210_000_000; StartTrace.first()
             val m = StartTrace.take()!!
             assertEquals("Send \u2192 working 12 ms \u00b7 on the wire 140 ms \u00b7 headers 600 ms \u00b7 first word 1.21 s", StartTrace.line(m))
-            val tr = TurnTrace.build(emptyMap(), "Blaze Cloud", "agent", emptyList(), 900, 600, 2000, 1, emptyList(), emptyList(), 0, m)
+            val tr = TurnTrace.build(emptyMap(), "${BrandName.NAME} Cloud", "agent", emptyList(), 900, 600, 2000, 1, emptyList(), emptyList(), 0, m)
             val back = TurnTrace.fromJson(TurnTrace.toJson(tr))!!
             assertEquals(12L, back.sendVisibleMs); assertEquals(140L, back.sendWireMs); assertEquals(1210L, back.sendFirstMs)
             val rows = TurnTrace.rows(back).toMap()

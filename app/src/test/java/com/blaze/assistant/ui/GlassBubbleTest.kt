@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -19,7 +21,7 @@ class GlassBubbleTest {
         val user = src.substring(src.indexOf("fun UserBubble("), src.indexOf("fun BlazeBubble("))
         val blaze = src.substring(src.indexOf("fun BlazeBubble("), src.indexOf("fun BlazeReply("))
         assertTrue("your message is a bubble on the right", user.contains("ChatBubble(Side.ME"))
-        assertTrue("Blaze's message is a bubble on the left", blaze.contains("ChatBubble(Side.BLAZE"))
+        assertTrue("${BrandName.NAME}'s message is a bubble on the left", blaze.contains("ChatBubble(Side.BLAZE"))
         assertTrue("no old see-through glass around messages", !user.contains("chatGlass(") && !blaze.contains("chatGlass("))
         assertTrue("work card is glass", java.io.File("src/main/java/com/blaze/assistant/ui/Shell.kt").readText().contains("chatGlass(c, mine = false"))
     }

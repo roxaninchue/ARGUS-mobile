@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.movies.MovieInfo
 import com.blaze.assistant.movies.MoviePost
 import com.blaze.assistant.movies.Progress
@@ -118,7 +120,7 @@ object BrowseState {
         val m = msg.orEmpty()
         return when {
             m.contains("memory", true) || m.contains("too much data", true) -> "This title is too big for this source" to "The source used too much memory opening it. Try again, or open it from another source."
-            m.contains("stuck", true) -> "A source got stuck" to "Close and reopen Blaze to reset your sources."
+            m.contains("stuck", true) -> "A source got stuck" to "Close and reopen ${BrandName.NAME} to reset your sources."
             m.contains("busy", true) || m.contains("longer than", true) || m.contains("timeout", true) -> "This source is slow right now" to "It didn't answer in time. Try again in a moment."
             m.contains("no details", true) || m.contains("didn't return", true) || m.contains("has no ", true) -> "This source has no details for this title" to "Try another source for it."
             else -> "Couldn't open this right now" to "Check your connection and try again."

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,7 +58,7 @@ fun QuestionView(question: String, options: List<String>, chat: String = "", key
     // v0.31.0: a glass card (GlassCard) instead of a bubble.
     GlassCard(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 4.dp).appearIn(true), intensity = GlassIntensity.High) {
         Column {
-            Label(if (chat.isNotBlank()) "Question · ${chat.take(30)}" else "Blaze is asking", color = c.accent, size = 9.sp, maxLines = 1)
+            Label(if (chat.isNotBlank()) "Question · ${chat.take(30)}" else "${BrandName.NAME} is asking", color = c.accent, size = 9.sp, maxLines = 1)
             Spacer(Modifier.height(4.dp))
             Text(question, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 21.sp, color = c.ink))
         }

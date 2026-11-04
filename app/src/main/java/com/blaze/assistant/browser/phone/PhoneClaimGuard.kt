@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 /**
  * 0.45.19-speed (device test: mid-task, "what is Blaze Phone doing?" was answered "Booking confirmed!" with nothing
  * booked): while Blaze Phone is in play, a reply may say booked / ordered / paid / confirmed only when a phone_read in
@@ -37,7 +39,7 @@ object PhoneClaimGuard {
     fun backed(phoneDone: List<Pair<String, String>>): Boolean =
         phoneDone.lastOrNull { it.first == "phone_read" }?.second?.startsWith("page verified") == true
 
-    const val HONEST = "Not booked yet: Blaze Phone hasn't shown a confirmation page or number, so nothing is booked, ordered or paid as far as I can see."
+    const val HONEST = "Not booked yet: ${BrandName.NAME} Phone hasn't shown a confirmation page or number, so nothing is booked, ordered or paid as far as I can see."
 
     /**
      * The reply with any unbacked booked / paid / confirmed sentence replaced by [HONEST] (once, where the first was),

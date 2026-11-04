@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone.flash
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.view.accessibility.AccessibilityNodeInfo
 import com.blaze.assistant.agent.LlmClient
@@ -71,7 +73,7 @@ object FlashRunner {
     const val TOOL = "phone_task"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Do a multi-step task on the phone's screen inside apps (find a setting, fill a form, navigate an app), fast: Blaze's flash engine " +
+        .put("description", "Do a multi-step task on the phone's screen inside apps (find a setting, fill a form, navigate an app), fast: ${BrandName.NAME}'s flash engine " +
             "reads a compact numbered element list, does one step per look, checks each step worked, and switches to careful mode if a step fails. " +
             "Returns what was done, or exactly why it stopped. Use read_screen/tap only for a single quick action.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
@@ -86,8 +88,8 @@ object FlashRunner {
         if (svc == null) {
             val seen = com.blaze.assistant.agent.Settings.bool(PhoneExplainer.SEEN_KEY, false)
             val raised = PhoneExplainer.request(seen, false)
-            return "Phone control is off, so nothing on the screen was touched. " + (if (raised) "Blaze is showing the user a short explainer with an Open Settings button; ask them to switch Blaze on there, then try again."
-                else "The chat shows a one-tap 'Turn on' banner; ask the user to tap it, switch Blaze on, then try again.")
+            return "Phone control is off, so nothing on the screen was touched. " + (if (raised) "${BrandName.NAME} is showing the user a short explainer with an Open Settings button; ask them to switch ${BrandName.NAME} on there, then try again."
+                else "The chat shows a one-tap 'Turn on' banner; ask the user to tap it, switch ${BrandName.NAME} on, then try again.")
         }
         val steps = args.optInt("max_steps", 20).coerceIn(3, 40)
         val r = FlashLoop(A11yDevice(ctx, svc), RoutedPolicy(), steps).run(goal)

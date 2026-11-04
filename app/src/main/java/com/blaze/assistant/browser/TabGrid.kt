@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -171,7 +173,7 @@ private fun TabCard(t: BrowserEngine.Tab, selected: Boolean, g: GridColors, open
             val blank = t.url.isBlank() || t.url == "about:blank"
             when {
                 th != null && !blank -> Image(th, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alignment = Alignment.TopCenter)
-                blank -> T(if (t.isPrivate) "\uD83D\uDD76" else "Blaze", if (t.isPrivate) g.sub else Color(0xFF9AA0A6), if (t.isPrivate) 28 else 16, weight = FontWeight.Medium)
+                blank -> T(if (t.isPrivate) "\uD83D\uDD76" else "${BrandName.NAME}", if (t.isPrivate) g.sub else Color(0xFF9AA0A6), if (t.isPrivate) 28 else 16, weight = FontWeight.Medium)
                 else -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(10.dp)) {
                     val icon = t.icon
                     if (icon != null) Image(icon, null, Modifier.size(36.dp))

@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +65,7 @@ object MediaLib {
         val gallery = try {
             com.blaze.assistant.media.Media.init(c)
             com.blaze.assistant.media.Media.items.value.filter { it.kind == "audio" || it.kind == "video" }.map { m ->
-                Track(Uri.fromFile(m.file).toString(), Uri.fromFile(m.file).toString(), m.title, "Blaze", "Gallery", 0, "", "gallery", m.time, "", m.kind)
+                Track(Uri.fromFile(m.file).toString(), Uri.fromFile(m.file).toString(), m.title, "${BrandName.NAME}", "Gallery", 0, "", "gallery", m.time, "", m.kind)
             }
         } catch (_: Exception) { emptyList() }
         if (artOverride.isEmpty()) runCatching { val o = JSONObject(f(c, "art.json").readText()); o.keys().forEach { artOverride[it] = o.optString(it) } }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.browser.phone
 
+
+import com.blaze.assistant.BrandName
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -40,7 +42,7 @@ class PhoneUiFixesTest {
         assertFalse("no owner", PhonePip.working(PhonePolicy.Mode.AGENT, null, setOf(chat)))
         assertFalse("another chat is busy, not the driver", PhonePip.working(PhonePolicy.Mode.AGENT, chat, setOf("other")))
         assertTrue(PhonePip.wanted(true, true, 26 + run, locked = false))
-        assertFalse("never over a locked Blaze", PhonePip.wanted(true, true, 34, locked = true))
+        assertFalse("never over a locked ${BrandName.NAME}", PhonePip.wanted(true, true, 34, locked = true))
         assertFalse("no PiP feature", PhonePip.wanted(true, false, 34, false))
         assertFalse(PhonePip.wanted(false, true, 34, false))
     }
@@ -50,7 +52,7 @@ class PhoneUiFixesTest {
         for (sdk in 26..30) {
             assertFalse(PhonePip.autoEnter(sdk))
             assertTrue(PhonePip.enterOnLeaveHint(sdk, true, false))
-            assertFalse("opening Blaze's own screen is not leaving", PhonePip.enterOnLeaveHint(sdk, true, true))
+            assertFalse("opening ${BrandName.NAME}'s own screen is not leaving", PhonePip.enterOnLeaveHint(sdk, true, true))
             assertFalse(PhonePip.enterOnLeaveHint(sdk, false, false))
         }
         assertTrue(PhonePip.ownScreen("com.blaze.assistant", "com.blaze.assistant"))
@@ -65,11 +67,11 @@ class PhoneUiFixesTest {
         assertEquals(9 to 16, PhonePip.aspect(0, 0))
         assertEquals(listOf(PhonePip.ACTION_STOP, PhonePip.ACTION_OPEN), PhonePip.actions(true))
         assertEquals(listOf(PhonePip.ACTION_OPEN), PhonePip.actions(false))
-        assertEquals("Stop", PhonePip.title(PhonePip.ACTION_STOP)); assertEquals("Open Blaze", PhonePip.title(PhonePip.ACTION_OPEN))
-        assertNull("live view only while working", PhonePip.label(true, PhonePolicy.Mode.AGENT, "Typing on Blaze Phone"))
+        assertEquals("Stop", PhonePip.title(PhonePip.ACTION_STOP)); assertEquals("Open ${BrandName.NAME}", PhonePip.title(PhonePip.ACTION_OPEN))
+        assertNull("live view only while working", PhonePip.label(true, PhonePolicy.Mode.AGENT, "Typing on ${BrandName.NAME} Phone"))
         assertEquals("Stopped", PhonePip.label(false, PhonePolicy.Mode.AGENT, "Stopped"))
-        assertEquals("Blaze needs you", PhonePip.label(true, PhonePolicy.Mode.WAITING, ""))
-        assertEquals("Done", PhonePip.label(false, PhonePolicy.Mode.AGENT, "Reading Blaze Phone's page"))
+        assertEquals("${BrandName.NAME} needs you", PhonePip.label(true, PhonePolicy.Mode.WAITING, ""))
+        assertEquals("Done", PhonePip.label(false, PhonePolicy.Mode.AGENT, "Reading ${BrandName.NAME} Phone's page"))
     }
 
     @Test fun stopReallyCancelsTheDrivingTurn() = fiveTimes("pip stop") { run ->
@@ -102,7 +104,7 @@ class PhoneUiFixesTest {
         assertTrue(host.contains("a.enterPictureInPictureMode(params(a, w, false))"))
         assertTrue(host.contains("RemoteAction(") && host.contains("PendingIntent.FLAG_IMMUTABLE"))
         assertTrue("Stop cancels the turn and the agent", host.contains("Agent.stopChat(it)") && host.contains("BgAgents.cancel(it)"))
-        assertTrue("tapping Open returns to Blaze", host.contains("moveToFront()"))
+        assertTrue("tapping Open returns to ${BrandName.NAME}", host.contains("moveToFront()"))
         val main = src("MainActivity.kt")
         assertTrue(main.contains("override fun onUserLeaveHint()") && main.contains("PhonePipHost.enterOnLeave(this"))
         assertTrue(main.contains("override fun onPictureInPictureModeChanged"))
@@ -121,7 +123,7 @@ class PhoneUiFixesTest {
         assertEquals(listOf("Hand back"), PhoneUiRules.buttons(control = true))
         assertEquals(listOf("Take control"), PhoneUiRules.buttons(control = false))
         assertFalse(PhoneUiRules.buttons(true).contains("Done"))
-        assertEquals("Blaze paused, you're in control", PhoneUiRules.controlLine(true))
+        assertEquals("${BrandName.NAME} paused, you're in control", PhoneUiRules.controlLine(true))
         assertEquals("You're in control", PhoneUiRules.controlLine(false))
         val screen = src("browser/phone/PhoneBrowserActivity.kt")
         assertFalse("no Done button", screen.contains("\"Done\""))
@@ -138,12 +140,12 @@ class PhoneUiFixesTest {
         val now = 1_000_000L + run
         assertTrue(PhoneUiRules.showTile(PhonePolicy.Mode.AGENT, now - 1000, now, -1))
         assertFalse("leaves 2 minutes after the last step", PhoneUiRules.showTile(PhonePolicy.Mode.AGENT, now - PhoneUiRules.RECENT_MS - 1, now, -1))
-        assertTrue("always while Blaze needs the user, even if hidden", PhoneUiRules.showTile(PhonePolicy.Mode.WAITING, now - 999_999, now, now))
+        assertTrue("always while ${BrandName.NAME} needs the user, even if hidden", PhoneUiRules.showTile(PhonePolicy.Mode.WAITING, now - 999_999, now, now))
         assertFalse("hidden until the next step", PhoneUiRules.showTile(PhonePolicy.Mode.AGENT, now - 10, now, now))
         assertTrue(PhoneUiRules.showTile(PhonePolicy.Mode.AGENT, now, now, now - 1))
         assertFalse(PhoneUiRules.showTile(PhonePolicy.Mode.OFF, now, now, -1))
         assertEquals("automationintesting.online", PhoneUiRules.host("https://www.automationintesting.online/reservation/1?x"))
-        assertEquals("Blaze needs you: Solve the captcha", PhoneUiRules.pill(PhonePolicy.Mode.WAITING, "x", "Solve the captcha"))
+        assertEquals("${BrandName.NAME} needs you: Solve the captcha", PhoneUiRules.pill(PhonePolicy.Mode.WAITING, "x", "Solve the captcha"))
         // The tile said "Tapping e61": an element id is never shown as if it were a button's name.
         assertEquals("Tapping on the page", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "click").put("target", "e${run}1")))   // rel merge kept chat's readable() wording
         assertEquals("Tapping Reserve Now", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "click").put("target", "Reserve Now")))

@@ -1,5 +1,7 @@
 package com.blaze.assistant.media
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,7 +16,7 @@ object GalleryOps {
     const val TOOL = "gallery_ops"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Blaze Gallery tools. action: clean_up (finds near-duplicate and blurry photos and how much space they take; nothing is " +
+        .put("description", "${BrandName.NAME} Gallery tools. action: clean_up (finds near-duplicate and blurry photos and how much space they take; nothing is " +
             "deleted: tell the user to open Gallery and tap the Clean up (magic wand) button to review and move them to Trash), on_this_day (photos " +
             "from today's date in earlier years), trash (what's in the 30-day Trash), backup_plan (how much there is to back up and which cloud sizes fit).")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()

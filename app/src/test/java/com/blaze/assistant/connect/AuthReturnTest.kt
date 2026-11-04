@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -35,7 +37,7 @@ class AuthReturnTest {
 
     @Test fun onlyTheAuthCallbackCounts() {
         assertTrue(AuthReturn.isAuthLink("blaze://auth/cb?code=1&state=2"))
-        assertTrue(AuthReturn.isAuthLink("BLAZE://auth/cb"))
+        assertTrue(AuthReturn.isAuthLink("${BrandName.UPPER}://auth/cb"))
         assertFalse(AuthReturn.isAuthLink("blaze://auth/cbx?code=1&state=s1"))
         assertFalse(AuthReturn.isAuthLink("blaze://other/cb?code=1&state=s1"))
         assertFalse(AuthReturn.isAuthLink("https://evil.example/blaze://auth/cb?code=1&state=s1"))

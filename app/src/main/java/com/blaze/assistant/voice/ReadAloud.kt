@@ -1,5 +1,7 @@
 package com.blaze.assistant.voice
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.voice.myvoice.MyVoice
 import org.json.JSONArray
@@ -71,7 +73,7 @@ object ReadAloud {
             if (useMine) MyVoice.speak(p, "read-$i", flush = i == 0) else Voice.speak(p, queue = i > 0)
         }
         val mins = (parts.sumOf { it.length } / 900.0).let { if (it < 1) "under a minute" else "about ${it.toInt()} min" }
-        return "Reading ${parts.size} part${if (parts.size == 1) "" else "s"} ($mins) in " + (if (useMine) "your voice." else "Blaze's voice.") +
+        return "Reading ${parts.size} part${if (parts.size == 1) "" else "s"} ($mins) in " + (if (useMine) "your voice." else "${BrandName.NAME}'s voice.") +
             if (mine && !useMine) " (Your voice isn't set up yet: Settings › Voice › My voice.)" else ""
     }
 

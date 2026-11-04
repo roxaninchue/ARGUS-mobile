@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -51,7 +53,7 @@ class SimpleHomeTest {
         assertEquals(listOf("blaze", "halo"), SimpleHome.TALK_TO)
         // Asked for both: @all whoever is picked.
         assertEquals("@all what do you both think?", SimpleHome.tagged("what do you both think?", "blaze"))
-        assertEquals("@all Blaze and Halo, settle this", SimpleHome.tagged("Blaze and Halo, settle this", "halo"))
+        assertEquals("@all ${BrandName.NAME} and Halo, settle this", SimpleHome.tagged("${BrandName.NAME} and Halo, settle this", "halo"))
         // A creative multi-phase job goes untagged so the duo teams up on it (Duo TEAM), even with Halo picked.
         val story = "write a long story about a dragon"
         assertTrue(Duo.isTeamTask(story))
@@ -61,7 +63,7 @@ class SimpleHomeTest {
         assertEquals("@halo set an alarm for 6", SimpleHome.tagged("set an alarm for 6", "halo"))
         assertEquals(Duo.Mode.BLAZE, Duo.route(SimpleHome.tagged("set an alarm for 6", "all")).mode)
         assertFalse(Duo.wantsBoth("open twitter"))
-        assertTrue(Duo.wantsBoth("Halo x Blaze, help me"))
+        assertTrue(Duo.wantsBoth("Halo x ${BrandName.NAME}, help me"))
     }
 
     @Test fun draftsAndSees() {

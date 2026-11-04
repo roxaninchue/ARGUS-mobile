@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -16,7 +18,7 @@ import org.junit.Test
  */
 class FollowUpBindTest {
     private val now = 1_000_000_000L
-    private val unsubscribeOffer = FollowUpBind.Said("Blaze", "You get a lot of Shopify promo emails. Want me to unsubscribe you from them?", now - 6 * 60_000L)
+    private val unsubscribeOffer = FollowUpBind.Said("${BrandName.NAME}", "You get a lot of Shopify promo emails. Want me to unsubscribe you from them?", now - 6 * 60_000L)
     private val songOffer = FollowUpBind.Said("Halo", "That's \u201cMidnight City\u201d by M83. Want me to add it to your music?", now - 40_000L)
 
     @Test fun shortYesIsRecognised() {
@@ -89,7 +91,7 @@ class FollowUpBindTest {
             .put(JSONObject().put("role", "user").put("content", "[m3] what's this song?"))
             .put(JSONObject().put("role", "assistant").put("content", "Midnight City."))
             .put(JSONObject().put("role", "user").put("content", "[m5 \u00b7 sent while you were working] and who sings it"))
-            .put(JSONObject().put("role", "user").put("content", "[Blaze check] not a user request"))
+            .put(JSONObject().put("role", "user").put("content", "[${BrandName.NAME} check] not a user request"))
         assertEquals(listOf("what's this song?", "and who sings it"), GoalPin.userTexts(h))
     }
 

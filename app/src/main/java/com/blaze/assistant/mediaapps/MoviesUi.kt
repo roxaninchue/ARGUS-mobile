@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -455,7 +457,7 @@ internal fun JellyfinDialog(onDone: (String) -> Unit) {
     }
     var server by remember { mutableStateOf("") }; var user by remember { mutableStateOf("") }; var pass by remember { mutableStateOf("") }; var reveal by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf("") }; var busy by remember { mutableStateOf(false) }
-    BlazeDialog("Add your Jellyfin server", "Your own server only. The password is used once to sign in; Blaze keeps the sign-in encrypted on this phone.",
+    BlazeDialog("Add your Jellyfin server", "Your own server only. The password is used once to sign in; ${BrandName.NAME} keeps the sign-in encrypted on this phone.",
         confirm = if (busy) "Signing in\u2026" else "Sign in", onConfirm = {
             if (!busy) scope.launch { busy = true; err = ""
                 try { val n = Movies.addJellyfin(server, user, pass); pass = ""; onDone("Jellyfin: signed in to $n.") } catch (e: Exception) { err = e.message ?: "Couldn't sign in" }
@@ -518,7 +520,7 @@ internal fun ProvidersList(st: ProviderStore.State, busy: List<String>, msg: Str
         Text("Built in: Internet Archive, Blender open movies, your videos" + (if (Movies.jellyfinAccount() != null) ", Jellyfin" else "") + ".",
             color = c.sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp))
         if (msg.isNotBlank()) Text(msg, color = c.sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
-        if (st.installed.isEmpty()) { EmptyState("No added sources", "Add a source by its URL with the + button. Blaze doesn't suggest or check sources.", mark = false); return@Column }
+        if (st.installed.isEmpty()) { EmptyState("No added sources", "Add a source by its URL with the + button. ${BrandName.NAME} doesn't suggest or check sources.", mark = false); return@Column }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 10.dp, end = 6.dp, bottom = 90.dp)) {
             items(st.installed, key = { it.value }) { i ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -551,7 +553,7 @@ private fun StatusIcon(s: ProviderStore.Status) {
 internal fun AddSourceDialog(onCancel: () -> Unit, onAdd: (String) -> Unit) {
     var url by remember { mutableStateOf("") }
     // The field starts empty: the hint is Blaze's own example repo (what a link looks like), never a third-party one.
-    BlazeDialog("Add source", "Type or paste a source: owner/repo, a GitHub or GitLab link, or a folder with manifest.json. Blaze finds the manifest.",
+    BlazeDialog("Add source", "Type or paste a source: owner/repo, a GitHub or GitLab link, or a folder with manifest.json. ${BrandName.NAME} finds the manifest.",
         confirm = "Add", onConfirm = { if (url.isNotBlank()) onAdd(url.trim()) }, dismiss = "Cancel", onDismiss = onCancel) {
         BlazeTextField(url, { url = it }, ProviderRepo.EXAMPLE, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
         Text("Example: " + ProviderRepo.EXAMPLE, color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
@@ -695,7 +697,7 @@ private fun InstallDialog(entries: List<ProviderRepo.Entry>, have: Set<String>, 
 private fun ProviderSettingsDialog(i: ProviderStore.Installed, onDone: (Map<String, String>, Boolean) -> Unit, onCancel: () -> Unit) {
     var base by remember { mutableStateOf(i.settings["baseUrl"].orEmpty()) }
     var on by remember { mutableStateOf(i.enabled) }
-    BlazeDialog(i.entry.name, "Runs in Blaze's sandbox: web requests only, no files, no Blaze data.", confirm = "Save",
+    BlazeDialog(i.entry.name, "Runs in ${BrandName.NAME}'s sandbox: web requests only, no files, no ${BrandName.NAME} data.", confirm = "Save",
         onConfirm = { onDone(i.settings + ("baseUrl" to base.trim()), on) }, dismiss = "Cancel", onDismiss = onCancel) {
         BlazeTextField(base, { base = it }, "Site address the provider uses (optional)", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
         Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {

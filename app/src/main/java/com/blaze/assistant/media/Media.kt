@@ -1,5 +1,7 @@
 package com.blaze.assistant.media
 
+
+import com.blaze.assistant.BrandName
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -182,7 +184,7 @@ object Media {
         fn("generate_image", "Create an image from a description (free, no key). The picture appears in the chat and in the user's Gallery. Write a rich English prompt: subject, style, lighting, colours. For exact graphics (charts, text layouts, edits of an existing photo) use run_code with Python/Pillow instead.",
             JSONObject().put("prompt", s("Detailed description of the image")).put("width", i("Pixels, default 1024")).put("height", i("Pixels, default 1024 (use 1080x1920 for a phone wallpaper)"))
                 .put("seed", i("Optional, reuse to get the same image again")).put("model", s("Optional: flux (default), turbo")), listOf("prompt")),
-        fn("gallery", "The user's Blaze Gallery (images, beats/audio, video Blaze made). list = recent items; add = put a file you made in the terminal into the gallery and show it in chat; save = copy an item to the phone's Pictures/Music; share = open the share sheet; delete = remove (asks first).",
+        fn("gallery", "The user's ${BrandName.NAME} Gallery (images, beats/audio, video ${BrandName.NAME} made). list = recent items; add = put a file you made in the terminal into the gallery and show it in chat; save = copy an item to the phone's Pictures/Music; share = open the share sheet; delete = remove (asks first).",
             JSONObject().put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("list", "add", "save", "share", "delete"))))
                 .put("path", s("add: file path in the terminal (e.g. ~/beat.wav). save/share/delete: the gallery file name"))
                 .put("title", s("add: a short title")), listOf("action")),
@@ -204,7 +206,7 @@ object Media {
     // A stdlib-only drum machine + bass so beats work right after Linux installs (no numpy needed).
     private val BEATS_PY = """
 #!/usr/bin/env python3
-""${'"'}Blaze beat maker: pure Python (stdlib only).
+""${'"'}${BrandName.NAME} beat maker: pure Python (stdlib only).
 Usage: python3 /root/phone/blaze_lib/beats.py --style trap --bpm 140 --bars 8 --key A --out /root/phone/beat.wav
 Styles: trap, boombap, afro (amapiano-ish log drum), house, lofi. Use --seed for variations.
 In code: import sys; sys.path.insert(0, '/root/phone/blaze_lib'); from beats import make; make(style='afro', bpm=112, bars=8, out='/root/phone/beat.wav')

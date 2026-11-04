@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import kotlinx.coroutines.flow.first
 import android.Manifest
 import android.content.Context
@@ -557,7 +559,7 @@ fun TaskCard(onOpen: () -> Unit, onStop: () -> Unit, onMinimise: () -> Unit = {}
         DuoEmblem(40.dp, animate = true) // v0.32.0: new Blaze icon
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Text(if (tasks > 1) "Blaze \u00b7 $tasks tasks" else "Blaze is working", maxLines = 1,
+            Text(if (tasks > 1) "${BrandName.NAME} \u00b7 $tasks tasks" else "${BrandName.NAME} is working", maxLines = 1,
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
                     color = GlassTokens.sub))
             Text(step, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,

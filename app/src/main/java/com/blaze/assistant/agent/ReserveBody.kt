@@ -11,7 +11,8 @@ import org.json.JSONArray
 object ReserveBody {
     const val KEEP = 6
     const val MAX_TOOLS = 24
-    const val PAUSE_MS = 2_000L
+    /** 0.52.1 (gw061): a killed Worker is retried at once (the kill is CPU-probabilistic; a second, slimmer try usually passes). */
+    const val PAUSE_MS = 0L
 
     /** A Cloudflare Worker kill (1102 / "exceeded" / a non-JSON 503 or 0), not the gateway's own JSON "models busy". */
     fun looksLikeWorkerKill(code: Int, message: String): Boolean {
@@ -19,7 +20,9 @@ object ReserveBody {
         val t = message.trim()
         if (t.startsWith("{") && t.contains("\"error\"")) return t.contains("1102")
         val l = t.lowercase()
-        return "1102" in l || "exceeded" in l || "worker" in l || (t.isNotEmpty() && !t.startsWith("{") && code == 503 && "busy" !in l)
+        // 0.52.1 (gw061): Cloudflare 1101 (worker threw) and 1102 (CPU limit) and any HTML 503 page are a killed Worker.
+        return "1102" in l || "1101" in l || "exceeded" in l || "worker" in l || "<html" in l || "<!doctype" in l ||
+            (t.isNotEmpty() && !t.startsWith("{") && code == 503 && "busy" !in l)
     }
 
     /** The tools the last [KEEP] messages called, then others up to [max] in their original order. */

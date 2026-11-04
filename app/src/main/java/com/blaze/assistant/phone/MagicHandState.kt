@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.phone.MagicHandLogic.Action
 import com.blaze.assistant.phone.MagicHandLogic.Intent
 import com.blaze.assistant.phone.MagicHandLogic.Kind
@@ -56,11 +58,11 @@ object MagicHandState {
 
     const val HELLO = "Drag me. Double-tap for a menu, hold on a value to watch it, draw a circle to grab text."
     const val NOTHING = "Nothing readable here. Move me onto some text or a button."
-    const val NEEDS_A11Y = "Magic Hand needs phone control. Turn on Blaze in Settings \u203a Accessibility."
+    const val NEEDS_A11Y = "Magic Hand needs phone control. Turn on ${BrandName.NAME} in Settings \u203a Accessibility."
     const val TEACH_HELLO = "Teaching: do the task once in any app. I only watch your taps and typing. Tap \u2713 when done."
     const val TEACH_SHORT = "Tap Start, do the task once, then tap Done."
     const val TEACH_FULL = "That's the step limit (${MagicHandTeach.MAX_STEPS}). Tap \u2713 to save what I have."
-    const val BUSY = "Blaze is still answering. Try again in a moment."
+    const val BUSY = "${BrandName.NAME} is still answering. Try again in a moment."
 
     fun start(private: Boolean): Ui = Ui(on = true, private = private, note = if (private) MagicHandGuard.PRIVATE_NOTE else HELLO)
 
@@ -157,7 +159,7 @@ object MagicHandState {
 
     /** v0.25.0: the explainer before recording starts (full words the first time, short after). */
     fun intro(u: Ui, firstTime: Boolean): Ui = if (!MagicHandGuard.canTeach(u.private)) back(u, MagicHandGuard.PRIVATE_NOTE)
-        else u.copy(panel = Panel.TEACH_INTRO, menu = emptyList(), confirm = null, note = "Teach Blaze a routine",
+        else u.copy(panel = Panel.TEACH_INTRO, menu = emptyList(), confirm = null, note = "Teach ${BrandName.NAME} a routine",
             intro = if (firstTime) MagicHandSafety.TEACH_INTRO else TEACH_SHORT)
 
     fun teach(u: Ui): Ui = if (!MagicHandGuard.canTeach(u.private)) back(u, MagicHandGuard.PRIVATE_NOTE)
@@ -169,7 +171,7 @@ object MagicHandState {
     fun endTeach(u: Ui, note: String): Ui = u.copy(mode = MagicHandLogic.Mode.POINT, panel = Panel.STATUS, teachSteps = emptyList(), teachName = "", note = note)
 
     /** Dock header buttons for the current state (pure, tested). Close is always last and always there. */
-    enum class DockButton(val desc: String) { GRAB("Grab: circle or drag over text"), TEACH("Teach Blaze a task"), DONE("Done teaching"), DROP_CHAT("Drop in chat"), CAMERA("Open Blaze Camera"), CLOSE("Close Magic Hand") }
+    enum class DockButton(val desc: String) { GRAB("Grab: circle or drag over text"), TEACH("Teach ${BrandName.NAME} a task"), DONE("Done teaching"), DROP_CHAT("Drop in chat"), CAMERA("Open ${BrandName.NAME} Camera"), CLOSE("Close Magic Hand") }
     fun dockButtons(u: Ui): List<DockButton> = buildList {
         // v0.27.0: Grab is a visible button now, not only a hidden circle gesture.
         if (u.mode == MagicHandLogic.Mode.POINT && MagicHandGuard.canGrab(u.private) && u.panel != Panel.TEACH_INTRO && u.panel != Panel.TEACH_REVIEW) add(DockButton.GRAB)

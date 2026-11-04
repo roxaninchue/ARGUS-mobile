@@ -1,5 +1,7 @@
 package com.blaze.assistant.mediaapps
 
+
+import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.mediaapps.store.Choice
 import com.blaze.assistant.mediaapps.store.StoreItem
@@ -18,7 +20,7 @@ object MediaFetch {
     const val MAX = 25
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Download songs (into Blaze Music) or videos (into Blaze Video) from YouTube, many at once. Give every song/video the user " +
+        .put("description", "Download songs (into ${BrandName.NAME} Music) or videos (into ${BrandName.NAME} Video) from YouTube, many at once. Give every song/video the user " +
             "named as one item (\"Artist - Title\" when known). Clear matches are queued right away; for items the tool isn't sure about it returns " +
             "candidates: ask the user which one (or skip), then call again with items as {\"id\":\"<video id>\"}. quality: best, high (default), " +
             "small; or for video a height like 720 / 480 / 1080. Audio comes as m4a (plays everywhere) unless format=opus.")
@@ -68,7 +70,7 @@ object MediaFetch {
             } catch (e: Exception) { failed += "\u201c${q.ifBlank { id }}\u201d: ${e.message ?: "failed"}" }
         }
         return buildString {
-            if (queued.isNotEmpty()) append("Queued ${queued.size} in Blaze ${if (kind == "video") "Video" else "Music"} (downloading now): ${queued.joinToString("; ")}.")
+            if (queued.isNotEmpty()) append("Queued ${queued.size} in ${BrandName.NAME} ${if (kind == "video") "Video" else "Music"} (downloading now): ${queued.joinToString("; ")}.")
             if (unsure.isNotEmpty()) append("\nNot sure about ${unsure.size}; ask the user which one (or to skip), then call $TOOL again with {\"id\":...}:\n- " + unsure.joinToString("\n- "))
             if (failed.isNotEmpty()) append("\nCouldn't get: ${failed.joinToString("; ")}.")
             if (isEmpty()) append("Nothing to download.")

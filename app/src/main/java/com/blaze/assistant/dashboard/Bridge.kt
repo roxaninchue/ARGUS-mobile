@@ -1,5 +1,7 @@
 package com.blaze.assistant.dashboard
 
+
+import com.blaze.assistant.BrandName
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -80,7 +82,7 @@ object Bridge {
 <div id="files" style="max-height:260px;overflow:auto;margin-top:6px"></div></div>"""
 
     const val SCRIPT = """
-function getClip(){api('/api/clipboard').then(function(r){if(r.text==null){document.getElementById('clipn').textContent='Open Blaze on the phone, then try again (Android only shares the clipboard with the app on screen).'}else{document.getElementById('clip').value=r.text;document.getElementById('clipn').textContent='Copied from phone'}})}
+function getClip(){api('/api/clipboard').then(function(r){if(r.text==null){document.getElementById('clipn').textContent='Open ${BrandName.NAME} on the phone, then try again (Android only shares the clipboard with the app on screen).'}else{document.getElementById('clip').value=r.text;document.getElementById('clipn').textContent='Copied from phone'}})}
 function putClip(){api('/api/clipboard',{method:'POST',body:JSON.stringify({text:document.getElementById('clip').value})}).then(function(r){document.getElementById('clipn').textContent=r.ok?'On the phone clipboard':'Failed'})}
 function kb(n){return n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB'}
 function files(){api('/api/files').then(function(l){document.getElementById('files').innerHTML=l.map(function(f){return '<div class="row"><a style="color:var(--ink)" href="/api/file?t='+T+'&path='+encodeURIComponent(f.path)+'" download="'+esc(f.name)+'">'+esc(f.title||f.name)+'</a><small>'+f.kind+' · '+kb(f.size)+'</small></div>'}).join('')})}

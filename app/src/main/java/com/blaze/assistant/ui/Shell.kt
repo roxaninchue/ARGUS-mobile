@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
@@ -121,7 +123,7 @@ fun ShellTopBar(
             // v0.24.8: the mascot in a circle (was a square pixel "B").
             // v0.43.0: it shows who you're talking to (orb = Blaze, halo = Halo, orb in its halo = All); a tap opens the picker arc.
             Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onLogo)
-                .semantics { contentDescription = "Blaze" },   // 0.51.0 one persona: always Blaze's mark (no Halo picker)
+                .semantics { contentDescription = "${BrandName.NAME}" },   // 0.51.0 one persona: always Blaze's mark (no Halo picker)
                 contentAlignment = Alignment.Center) { BrandMark(mood, 34.dp) }
             Spacer(Modifier.width(6.dp))
             // v0.29.0: the pill gets the room left over, and shrinks (then turns into icons) on narrow screens / big fonts.
@@ -376,9 +378,9 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Label("Past conversations", size = 9.sp, modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 8.dp))
-            if (q.isNotBlank()) SoftPill("Ask Blaze what you said about \u201c${q.trim().take(40)}\u201d", lead = "↳") {
+            if (q.isNotBlank()) SoftPill("Ask ${BrandName.NAME} what you said about \u201c${q.trim().take(40)}\u201d", lead = "↳") {
                 onAsk("Search our past conversations for \u201c${q.trim()}\u201d and tell me what we said.")
-            } else Text("Type a word and Blaze looks through every conversation you've had, old ones included.",
+            } else Text("Type a word and ${BrandName.NAME} looks through every conversation you've had, old ones included.",
                 modifier = Modifier.padding(start = 4.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
             Label(if (q.isBlank()) "Views" else "Matching views", size = 9.sp, modifier = Modifier.padding(start = 4.dp, top = 22.dp, bottom = 6.dp))
             views.forEach { v ->
@@ -589,14 +591,14 @@ fun plusItems(work: String, approval: String, model: String, hasClipImage: Boole
     // v0.28.x: camera entries only when the phone really has a camera (PackageManager.FEATURE_CAMERA_ANY).
     if (hasCamera) {
         add(PlusItem("camera", "Camera", "Take a photo"))
-        add(PlusItem("blazecam", "Blaze Camera", "Ask, read text, translate, scan"))
+        add(PlusItem("blazecam", "${BrandName.NAME} Camera", "Ask, read text, translate, scan"))
     }
     add(PlusItem("photos", "Photos", "Pick pictures"))
     add(PlusItem("files", "Files", "Photos, PDFs, text"))
-    add(PlusItem("atfile", "@ files", "Mention a file from Blaze's home"))
+    add(PlusItem("atfile", "@ files", "Mention a file from ${BrandName.NAME}'s home"))
     if (hasClipImage) add(PlusItem("paste", "Paste image", "From the clipboard"))
     add(PlusItem("voice", "Voice", "Talk instead of typing"))
-    add(PlusItem("call", "Call Blaze", "Hands-free voice call"))
+    add(PlusItem("call", "Call ${BrandName.NAME}", "Hands-free voice call"))
     add(PlusItem("plan", if (work == "plan") "Plan mode" else "Build mode", if (work == "plan") "Read and look only · tap for Build" else "Full access · tap for Plan", on = work == "plan"))
     add(PlusItem("approval", if (approval == "autopilot") "Autopilot" else "Auto", if (approval == "autopilot") "Works on without asking · tap for Auto" else "Asks before risky steps · tap for Autopilot", on = approval == "autopilot"))
     // v0.25.0: no Model row; Blaze Cloud picks the model for every message.
@@ -652,6 +654,7 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
              onSkills: (() -> Unit)? = null, onCall: (() -> Unit)? = null, onSlash: (() -> Unit)? = null,
              onRouting: (() -> Unit)? = null, showModel: Boolean = true) {
     val c = LocalBlaze.current
+    ClearFocusOnLeave()   // 0.52.1: the keyboard only shows when you tap the box
     var focused by remember { mutableStateOf(false) }
     var hintIdx by remember(hints) { mutableStateOf(if (hints.isEmpty()) 0 else hintIndex0.mod(hints.size)) }
     val empty = value.text.isEmpty()
@@ -665,11 +668,11 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
         else -> hints[hintIdx.coerceIn(0, hints.size - 1)]
     }
     Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp)) {
-        if (chip.isNotBlank() || agents > 0) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (chip.isNotBlank()) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             if (chip.isNotBlank()) Box(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(horizontal = 10.dp, vertical = 4.dp)) {
                 ButtonText(chip, color = c.onAccent, size = 12.sp)
             }
-            if (agents > 0) Label((if (chip.isNotBlank()) "   " else "") + "$agents AGENT" + (if (agents > 1) "S" else "") + " WORKING", color = c.accent, size = 9.sp)
+            // 0.52.1 (owner): no "N AGENTS WORKING" label; agents show only as the one task pill in the chat.
         }
         val card = RoundedCornerShape(26.dp)
         Column(Modifier.fillMaxWidth()
@@ -694,7 +697,7 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
                         // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
                         keyboardOptions = ComposerKeys.Message,
                         modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused; if (it.isFocused) com.blaze.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
-                            .semantics { contentDescription = "Message Blaze" })
+                            .semantics { contentDescription = "Message ${BrandName.NAME}" })
                 }
                 if (onExpand != null) ComposerIcon(if (expanded) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
                     if (expanded) "Restore the chat" else "Maximise the chat", size = 36.dp, iconSize = 17.dp, onClick = onExpand)
@@ -708,7 +711,7 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
                 if (showModel) { Spacer(Modifier.width(4.dp)); ModelPill(onRouting) }
                 Spacer(Modifier.weight(1f))
                 if (onSkills != null) ComposerIcon(Icons.Rounded.AutoAwesome, "Skills", onClick = onSkills)
-                if (onCall != null) ComposerIcon(Icons.Rounded.RecordVoiceOver, "Voice chat with Blaze", onClick = onCall)
+                if (onCall != null) ComposerIcon(Icons.Rounded.RecordVoiceOver, "Voice chat with ${BrandName.NAME}", onClick = onCall)
                 if (onSlash != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSlash).semantics { contentDescription = "Commands" },
                     contentAlignment = Alignment.Center) { Text("/", style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = c.sub)) }
                 Spacer(Modifier.width(4.dp))
@@ -771,6 +774,7 @@ fun ModelPill(onRouting: (() -> Unit)? = null) {
                         Text(f.label, style = TextStyle(fontFamily = Type.Sans, fontWeight = if (f == fam) FontWeight.SemiBold else FontWeight.Medium, fontSize = 15.sp, color = c.ink))
                         Text(f.sub, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                     } },
+                    leadingIcon = com.blaze.assistant.ui.composer.tierIcon(f)?.let { ic -> { androidx.compose.material3.Icon(ic, contentDescription = null, tint = c.sub, modifier = Modifier.size(18.dp)) } },
                     trailingIcon = { if (f == fam) androidx.compose.material3.Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = c.ink, modifier = Modifier.size(18.dp)) },
                     onClick = { com.blaze.assistant.composer.ModelChoice.set(f); open = false })
             }
@@ -844,7 +848,7 @@ fun ProjectsPane(projects: List<Project>, chats: List<ChatMeta>, busy: Set<Strin
                     ThemeSwitch()
                 }
                 Spacer(Modifier.height(6.dp))
-                Text("Group chats around one goal, with instructions Blaze follows in every chat inside it.", modifier = Modifier.padding(horizontal = 20.dp),
+                Text("Group chats around one goal, with instructions ${BrandName.NAME} follows in every chat inside it.", modifier = Modifier.padding(horizontal = 20.dp),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.sub))
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.padding(horizontal = 16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -885,7 +889,7 @@ fun ProjectsPane(projects: List<Project>, chats: List<ChatMeta>, busy: Set<Strin
                 BackTitle(open.name, onBack = onBack, modifier = Modifier.padding(top = 4.dp), size = 22.sp)
                 BlazeButton("New chat in this project", lead = "+", modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(), height = 46.dp) { onNewChat(open.id) }
                 Label("Instructions", size = 9.sp, modifier = Modifier.padding(start = 20.dp, top = 10.dp, bottom = 6.dp))
-                BlazeTextField(ins, { ins = it; onInstructions(open.id, it) }, "What Blaze should know in every chat here",
+                BlazeTextField(ins, { ins = it; onInstructions(open.id, it) }, "What ${BrandName.NAME} should know in every chat here",
                     modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(), singleLine = false, minHeight = 72.dp)
                 Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Label("Brief", size = 9.sp, modifier = Modifier.weight(1f))
@@ -897,9 +901,9 @@ fun ProjectsPane(projects: List<Project>, chats: List<ChatMeta>, busy: Set<Strin
                 var cut by remember(open.id) { mutableStateOf(false) }
                 BlazeTextField(brief, { t -> val fit = com.blaze.assistant.agent.Projects.cutTokens(t, com.blaze.assistant.agent.Projects.BRIEF_TOKENS)
                         cut = fit.length < t.length; brief = fit; onBrief(open.id, fit) },
-                    "Pinned brief: purpose and rules first, then key files and what's in progress. Blaze keeps it up to date.",
+                    "Pinned brief: purpose and rules first, then key files and what's in progress. ${BrandName.NAME} keeps it up to date.",
                     modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(), singleLine = false, minHeight = 96.dp)
-                if (cut) Text("The brief is at its 600-token cap, so the rest was cut. Put longer details in Instructions: Blaze searches them when it needs them.",
+                if (cut) Text("The brief is at its 600-token cap, so the rest was cut. Put longer details in Instructions: ${BrandName.NAME} searches them when it needs them.",
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.accent), modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp))
                 Label("Chats", size = 9.sp, modifier = Modifier.padding(start = 20.dp, top = 18.dp, bottom = 6.dp))
                 val list = open.chats.mapNotNull { id -> chats.firstOrNull { it.id == id } }
@@ -952,7 +956,7 @@ fun ProjectChatEmpty(project: String, hasInstructions: Boolean) {
         Text("New chat in ${project.ifBlank { "this project" }}", maxLines = 2, overflow = TextOverflow.Ellipsis,
             style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 18.sp, color = c.ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center))
         Spacer(Modifier.height(6.dp))
-        Text(if (hasInstructions) "Blaze follows this project's instructions and brief here. Your main chat stays as it is."
+        Text(if (hasInstructions) "${BrandName.NAME} follows this project's instructions and brief here. Your main chat stays as it is."
             else "This thread stays in the project. Your main chat stays as it is.",
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub, textAlign = androidx.compose.ui.text.style.TextAlign.Center))
     }

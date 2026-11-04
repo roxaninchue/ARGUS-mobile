@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.hypot
@@ -41,7 +43,7 @@ object MagicHandLogic {
 
     /** The radial menu's actions. [label] is what the menu shows. */
     enum class Action(val label: String) {
-        ASK("Ask Blaze"), COPY("Copy"), EXPLAIN("Explain"), TRANSLATE("Translate"), SHARE("Share"), REMIND("Remind me"),
+        ASK("Ask ${BrandName.NAME}"), COPY("Copy"), EXPLAIN("Explain"), TRANSLATE("Translate"), SHARE("Share"), REMIND("Remind me"),
         SEARCH("Search"), OPEN_LINK("Open link"), COPY_LINK("Copy link"), SAVE_IMAGE("Save image"), DESCRIBE("Describe"),
         CARRY("Carry"), WATCH("Watch this"), DROP("Drop here"), DROP_IN_CHAT("Drop in chat")
     }

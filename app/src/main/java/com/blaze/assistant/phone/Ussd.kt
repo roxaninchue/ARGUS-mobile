@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -26,7 +28,7 @@ object Ussd {
         val c = code.trim().replace(" ", "")
         if (!Regex("^[*#][0-9*#]+#$").matches(c)) return "Error: '$code' isn't a USSD code (like *123#)."
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED)
-            return "Blaze needs the Calls permission for USSD (Settings → Phone control → Skills → Calls)."
+            return "${BrandName.NAME} needs the Calls permission for USSD (Settings → Phone control → Skills → Calls)."
         val tm = ctx.getSystemService(TelephonyManager::class.java) ?: return "No phone service on this device."
         val r = withTimeoutOrNull(30_000) {
             suspendCancellableCoroutine<String> { cont ->

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import android.Manifest
 import android.app.Activity
 import android.content.ClipData
@@ -198,7 +200,7 @@ private fun CameraScreen(start: Mode, origin: Origin, attachTo: File?, chat: Str
     val perm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         CameraSupport.askedBefore = true
         granted = ok; denied = !ok
-        if (!ok) CameraSupport.log("Blaze Camera: permission denied")
+        if (!ok) CameraSupport.log("${BrandName.NAME} Camera: permission denied")
     }
     LaunchedEffect(Unit) { if (!granted) perm.launch(Manifest.permission.CAMERA) }
     // Back from Settings with the permission switched on.
@@ -238,7 +240,7 @@ private fun PermissionNeeded(onAllow: () -> Unit, onClose: () -> Unit) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Camera access is off", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 20.sp, color = Color.White))
             Spacer(Modifier.height(10.dp))
-            Text("Blaze needs the Camera permission to take a picture. Nothing is recorded unless you press the shutter.",
+            Text("${BrandName.NAME} needs the Camera permission to take a picture. Nothing is recorded unless you press the shutter.",
                 textAlign = TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = Color.White.copy(alpha = 0.75f)))
             Spacer(Modifier.height(22.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -430,17 +432,17 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
                     backId = CameraZoom.pickBack(back)
                     val main = back.firstOrNull { it.id == backId } ?: CameraLenses.defaultBack(ctx, back)
                     ultra = CameraZoom.ultraWide(main, back)
-                    CameraSupport.log("Blaze Camera lenses: ${back.joinToString { "${it.id}${if (it.logical) "L" else ""} ${it.minZoom}-${it.maxZoom} eq=${"%.2f".format(it.eq)}" }} pick=$backId ultra=$ultra")
+                    CameraSupport.log("${BrandName.NAME} Camera lenses: ${back.joinToString { "${it.id}${if (it.logical) "L" else ""} ${it.minZoom}-${it.maxZoom} eq=${"%.2f".format(it.eq)}" }} pick=$backId ultra=$ultra")
                 } catch (e: Throwable) { CameraSupport.log("lens list failed", e); backId = null; ultra = null }
                 refreshLensInfo()
-                if (!applyLens(lens)) { CameraSupport.log("Blaze Camera: no lens"); onDone(false, "NoCamera|No available camera on this device"); return@addListener }
+                if (!applyLens(lens)) { CameraSupport.log("${BrandName.NAME} Camera: no lens"); onDone(false, "NoCamera|No available camera on this device"); return@addListener }
                 controller.bindToLifecycle(owner)
                 controller.imageCaptureFlashMode = flashMode(flash)
                 ready = true
-                CameraSupport.log("Blaze Camera ready: lens=$lens back=$hasBack front=$hasFront flash=$hasFlash mode=$mode origin=${origin.name} lowRam=$lowRam")
+                CameraSupport.log("${BrandName.NAME} Camera ready: lens=$lens back=$hasBack front=$hasFront flash=$hasFlash mode=$mode origin=${origin.name} lowRam=$lowRam")
             } catch (e: Throwable) {
                 val root = e.cause ?: e
-                CameraSupport.log("Blaze Camera failed to start", root)
+                CameraSupport.log("${BrandName.NAME} Camera failed to start", root)
                 onDone(false, "${root.javaClass.simpleName}|${root.message}")
             }
         }, ContextCompat.getMainExecutor(ctx))
@@ -565,7 +567,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
         controller.takePicture(ImageCapture.OutputFileOptions.Builder(out).build(), ContextCompat.getMainExecutor(ctx), object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(r: ImageCapture.OutputFileResults) { handlePhoto(out, digital) }
             override fun onError(e: ImageCaptureException) {
-                CameraSupport.log("Blaze Camera capture failed (code ${e.imageCaptureError})", e)
+                CameraSupport.log("${BrandName.NAME} Camera capture failed (code ${e.imageCaptureError})", e)
                 busy = false
                 note = "That shot didn't save (${e.message?.take(60) ?: "camera error"}). Try again."
             }
@@ -747,7 +749,7 @@ private fun saveToGallery(ctx: Context, f: File): String? = try {
     } else {
         val dir = File(ctx.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Blaze").apply { mkdirs() }
         f.copyTo(File(dir, f.name), overwrite = true); f.delete()
-        "Saved in Blaze's Pictures folder."
+        "Saved in ${BrandName.NAME}'s Pictures folder."
     }
 } catch (e: Exception) { CameraSupport.log("gallery save failed", e); null }
 
@@ -764,7 +766,7 @@ private fun saveText(ctx: Context, text: String): String? = try {
         "Saved to Downloads/Blaze."
     } else {
         val dir = File(ctx.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Blaze").apply { mkdirs() }
-        File(dir, name).writeText(text); "Saved in Blaze's Documents folder."
+        File(dir, name).writeText(text); "Saved in ${BrandName.NAME}'s Documents folder."
     }
 } catch (e: Exception) { CameraSupport.log("text save failed", e); null }
 
@@ -807,7 +809,7 @@ private fun TextCard(words: String, onTranslate: () -> Unit, onAsk: () -> Unit, 
     val ctx = LocalContext.current
     val c = LocalBlaze.current
     ResultSheet(if (words.isBlank()) "No text found" else "Text") {
-        if (words.isBlank()) Text("Blaze couldn't read any words. Move closer, hold steady and try again.",
+        if (words.isBlank()) Text("${BrandName.NAME} couldn't read any words. Move closer, hold steady and try again.",
             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.ink))
         else SelectionContainer(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
             Text(words, style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 21.sp, color = c.ink))
@@ -830,7 +832,7 @@ private fun TextCard(words: String, onTranslate: () -> Unit, onAsk: () -> Unit, 
             "Translate" to onTranslate,
             "Search" to { camStart(ctx, Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(words.take(300)))).setPackage(ctx.packageName)); Unit },
             "Save" to { Toast.makeText(ctx, saveText(ctx, words) ?: "Couldn't save the text.", Toast.LENGTH_SHORT).show() },
-            "Ask Blaze" to onAsk,
+            "Ask ${BrandName.NAME}" to onAsk,
             "Again" to onAgain))
     }
 }
@@ -856,7 +858,7 @@ private fun ScanCard(s: Scanned, onAsk: () -> Unit, onAgain: () -> Unit, onDone:
                 .putExtra(android.provider.ContactsContract.Intents.Insert.EMAIL, s.email)); onDone() }
             "Call" -> { camStart(ctx, Intent(Intent.ACTION_DIAL, Uri.parse(if (s.raw.startsWith("tel:", true)) s.raw else "tel:" + s.phone.ifBlank { s.raw }))); onDone() }
             "Email" -> { camStart(ctx, Intent(Intent.ACTION_SENDTO, Uri.parse(if (s.raw.startsWith("mailto:", true)) s.raw else "mailto:" + s.email))); onDone() }
-            "Ask Blaze" -> onAsk()
+            "Ask ${BrandName.NAME}" -> onAsk()
             else -> camCopy(ctx, "Code", s.raw)
         }
     }
@@ -932,7 +934,7 @@ fun CameraChrome(
             Row(Modifier.fillMaxWidth().padding(10.dp).align(Alignment.TopCenter), verticalAlignment = Alignment.CenterVertically) {
                 CamButton(Icons.Rounded.Close, "Close camera", onClose)
                 Spacer(Modifier.weight(1f))
-                if (modes.isNotEmpty()) Text("Blaze Camera", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.White))
+                if (modes.isNotEmpty()) Text("${BrandName.NAME} Camera", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.White))
                 Spacer(Modifier.weight(1f))
                 if (pro != null && pro.tools) {
                     CamTool(if (pro.grid) Icons.Rounded.GridOn else Icons.Rounded.GridOff, if (pro.grid) "Grid on" else "Grid off", pro.grid, proActions.onGrid)
@@ -984,7 +986,7 @@ fun CameraChrome(
 
 private fun hintFor(mode: Mode, withBar: Boolean): String = if (!withBar) "" else when (mode) {
     Mode.PHOTO -> ""
-    Mode.ASK -> "Snap it, then ask Blaze"
+    Mode.ASK -> "Snap it, then ask ${BrandName.NAME}"
     Mode.TEXT -> "Snap the words to read them"
     Mode.TRANSLATE -> "Snap the words to translate them"
     Mode.SCAN -> "Point at a QR code or barcode"
@@ -992,7 +994,7 @@ private fun hintFor(mode: Mode, withBar: Boolean): String = if (!withBar) "" els
 }
 
 private fun shutterLabel(mode: Mode) = when (mode) {
-    Mode.ASK -> "Take a photo and ask Blaze"; Mode.TEXT -> "Take a photo and read the text"; Mode.TRANSLATE -> "Take a photo and translate it"
+    Mode.ASK -> "Take a photo and ask ${BrandName.NAME}"; Mode.TEXT -> "Take a photo and read the text"; Mode.TRANSLATE -> "Take a photo and translate it"
     Mode.DOCUMENT -> "Scan the page"; else -> "Take photo"
 }
 

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+
+import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,12 +59,12 @@ fun SavedSecretsPage() {
         Spacer(Modifier.width(6.dp))
         Text(com.blaze.assistant.agent.SecretDesk.COPY, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
     }
-    Text("Keys, tokens, logins and cards you gave Blaze through the Secure Form. They're encrypted with this phone's Keystore and never go into the chat, memory or the AI.",
+    Text("Keys, tokens, logins and cards you gave ${BrandName.NAME} through the Secure Form. They're encrypted with this phone's Keystore and never go into the chat, memory or the AI.",
         modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
     if (note.isNotBlank()) Text(note, modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.accent))
     Spacer(Modifier.height(14.dp))
     if (items.isEmpty()) {
-        Text("Nothing saved yet. When Blaze needs a key, password or code, it asks with the Secure Form and keeps it here.",
+        Text("Nothing saved yet. When ${BrandName.NAME} needs a key, password or code, it asks with the Secure Form and keeps it here.",
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         return
     }
@@ -90,7 +92,7 @@ fun SavedSecretsPage() {
                     if (draft.isNotBlank()) {
                         if (m == "rename") SecretVault.rename(e.id, draft)
                         else SecretVault.replace(e.id, mapOf(SecretVault.primary(e.kind) to draft))
-                        note = if (m == "rename") "Renamed." else "Replaced. Blaze uses the new one from now on."
+                        note = if (m == "rename") "Renamed." else "Replaced. ${BrandName.NAME} uses the new one from now on."
                     }
                     draft = ""; mode = null; tick++ }.padding(10.dp))
                 ActionText("Cancel", size = 10.sp, modifier = Modifier.clickable { draft = ""; mode = null }.padding(10.dp))

@@ -1,5 +1,7 @@
 package com.blaze.assistant.terminal
 
+
+import com.blaze.assistant.BrandName
 import android.view.KeyEvent
 
 /**
@@ -270,17 +272,17 @@ object TermLogic {
 
     /** The first lines of a new tab, Termux-style. Lines stay under ~44 columns so a small phone doesn't wrap them. */
     fun welcome(env: Env, busybox: Boolean = true): String = buildString {
-        append("\r\n Welcome to Blaze Terminal!\r\n\r\n")
+        append("\r\n Welcome to ${BrandName.NAME} Terminal!\r\n\r\n")
         if (env.id != "phone") {
             append(" ${env.label}, running on this phone.\r\n\r\n Working with packages:\r\n\r\n")
             for (h in env.hint) append("  - $h\r\n")
-            append("\r\n Your Blaze files are in ~/phone, storage in /sdcard.\r\n")
+            append("\r\n Your ${BrandName.NAME} files are in ~/phone, storage in /sdcard.\r\n")
             append(" Something odd? Run blaze-doctor.\r\n")
             append(" Pinch to zoom · long-press to copy · ⋮ to paste.\r\n\r\n")
         } else {
             append(" This is the PHONE SHELL: a command line\r\n")
             append(" for this phone, using the tools built\r\n")
-            append(if (busybox) " into Android and Blaze (BusyBox).\r\n" else " into Android (toybox).\r\n")
+            append(if (busybox) " into Android and ${BrandName.NAME} (BusyBox).\r\n" else " into Android (toybox).\r\n")
             append(" Nothing to install.\r\n\r\n")
             append(" Not a full Linux: no apt, python or git.\r\n")
             append(" For those: + → Install a Linux…\r\n\r\n")
@@ -305,7 +307,7 @@ object TermLogic {
      * command that explains the shell and lists its tools, plus a short prompt. [busybox] = BusyBox ash is the shell.
      */
     fun phoneRc(busybox: Boolean): String = buildString {
-        append("# Blaze Terminal phone shell (written by Blaze on each start; put your own settings in ~/.profile)\n")
+        append("# ${BrandName.NAME} Terminal phone shell (written by ${BrandName.NAME} on each start; put your own settings in ~/.profile)\n")
         append(if (busybox) "PS1='phone:\\w \\$ '\n" else "PS1='phone:\${PWD##*/} \$ '\n")
         append("help() {\n  cat <<'BLAZE_HELP'\n")
         append(HELP_TEXT)
@@ -314,7 +316,7 @@ object TermLogic {
     }
 
     val HELP_TEXT = """
-Blaze phone shell: commands for this phone itself.
+${BrandName.NAME} phone shell: commands for this phone itself.
 Type one and press Enter. Ctrl-C stops a command.
 
 Files and folders

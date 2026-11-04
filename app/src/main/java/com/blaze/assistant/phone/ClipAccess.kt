@@ -1,5 +1,7 @@
 package com.blaze.assistant.phone
 
+
+import com.blaze.assistant.BrandName
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -77,7 +79,7 @@ object ClipAccess {
     }
 
     fun setText(ctx: Context, text: String) {
-        cm(ctx).setPrimaryClip(ClipData.newPlainText("Blaze", text))
+        cm(ctx).setPrimaryClip(ClipData.newPlainText("${BrandName.NAME}", text))
         remember(text)
     }
 

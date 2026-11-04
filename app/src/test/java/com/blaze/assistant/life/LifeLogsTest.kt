@@ -1,5 +1,7 @@
 package com.blaze.assistant.life
 
+
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.QuickRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -54,7 +56,7 @@ class LifeLogsTest {
 
     @Test fun spokenCommands() {
         assertEquals("stop", LogChunker.command("stop logs"))
-        assertEquals("stop", LogChunker.command("Hey Blaze, stop live logs"))
+        assertEquals("stop", LogChunker.command("Hey ${BrandName.NAME}, stop live logs"))
         assertEquals("stop", LogChunker.command("blaze end brainstorm"))
         assertEquals("pause", LogChunker.command("pause logging"))
         assertNull(LogChunker.command("we need to stop the logs from the server filling up"))
@@ -73,7 +75,7 @@ class LifeLogsTest {
     @Test fun quickRules() {
         fun a(s: String) = QuickRules.parse(s)?.let { (n, o) -> if (n == "life_logs") o.optString("action") else "other:$n" }
         assertEquals("start", a("start logs"))
-        assertEquals("start", a("Blaze, activate live logs"))
+        assertEquals("start", a("${BrandName.NAME}, activate live logs"))
         assertEquals("start", a("live logs"))
         assertEquals("start", a("turn on life logs please"))
         assertEquals("stop", a("stop logs"))

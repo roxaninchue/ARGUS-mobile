@@ -1,5 +1,7 @@
 package com.blaze.assistant.connect
 
+
+import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -12,7 +14,7 @@ class SyncMergeTest {
     private fun note(id: String, t: Long, text: String?) = SyncMerge.Item("memory", id, t, text?.let { JSONObject().put("text", it) })
 
     private fun msg(id: Long, role: String, text: String, at: Long) = JSONObject().put("id", id).put("role", role).put("text", text).put("at", at)
-    private fun chat(updated: Long, vararg m: JSONObject, title: String = "Blaze") =
+    private fun chat(updated: Long, vararg m: JSONObject, title: String = "${BrandName.NAME}") =
         JSONObject().put("id", "main").put("title", title).put("updated", updated).put("messages", JSONArray().apply { m.forEach { put(it) } })
     private fun texts(c: JSONObject): List<String> { val a = c.getJSONArray("messages"); return (0 until a.length()).map { a.getJSONObject(it).getString("text") } }
     private fun ids(c: JSONObject): List<Long> { val a = c.getJSONArray("messages"); return (0 until a.length()).map { a.getJSONObject(it).getLong("id") } }
@@ -49,9 +51,9 @@ class SyncMergeTest {
 
     @Test fun chatMessagesAreAUnion() {
         // Both phones started from the same two messages, then each added its own turn with the same local ids.
-        val base = arrayOf(msg(1, "USER", "hello", 100), msg(2, "BLAZE", "hi there", 110))
-        val a = chat(300, *base, msg(3, "USER", "from phone A", 200), msg(4, "BLAZE", "answer A", 210))
-        val b = chat(250, *base, msg(3, "USER", "from phone B", 220), msg(4, "BLAZE", "answer B", 230))
+        val base = arrayOf(msg(1, "USER", "hello", 100), msg(2, "${BrandName.UPPER}", "hi there", 110))
+        val a = chat(300, *base, msg(3, "USER", "from phone A", 200), msg(4, "${BrandName.UPPER}", "answer A", 210))
+        val b = chat(250, *base, msg(3, "USER", "from phone B", 220), msg(4, "${BrandName.UPPER}", "answer B", 230))
         val m = SyncMerge.mergeChat(a, b)
         assertEquals(listOf("hello", "hi there", "from phone A", "answer A", "from phone B", "answer B"), texts(m))
         assertEquals(ids(m).size, ids(m).toSet().size)   // colliding ids got fresh ones
@@ -61,8 +63,8 @@ class SyncMergeTest {
     }
 
     @Test fun chatKeepsTheFullerCopyOfAMessage() {
-        val a = chat(10, msg(1, "BLAZE", "Half a rep", 100))
-        val b = chat(20, msg(1, "BLAZE", "Half a reply that finished streaming.", 100))
+        val a = chat(10, msg(1, "${BrandName.UPPER}", "Half a rep", 100))
+        val b = chat(20, msg(1, "${BrandName.UPPER}", "Half a reply that finished streaming.", 100))
         assertEquals(listOf("Half a reply that finished streaming."), texts(SyncMerge.mergeChat(a, b)))
     }
 
@@ -76,7 +78,7 @@ class SyncMergeTest {
 
     @Test fun clearOnOnePhoneHidesOlderMessagesOnBoth() {
         val a = chat(20, msg(1, "USER", "old", 100), msg(2, "USER", "after clear", 300)).put(SyncMerge.CLEARED, 200L)
-        val b = chat(10, msg(1, "USER", "old", 100), msg(3, "BLAZE", "also old", 150))
+        val b = chat(10, msg(1, "USER", "old", 100), msg(3, "${BrandName.UPPER}", "also old", 150))
         val m = SyncMerge.mergeChat(b, a)
         assertEquals(listOf("after clear"), texts(m))
         assertEquals(200L, m.getLong(SyncMerge.CLEARED))
