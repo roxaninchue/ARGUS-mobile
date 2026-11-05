@@ -1,4 +1,5 @@
 <resources>
+    <string name="app_name">Argus</string>
     <string name="a11y_description">Lets Argus see what is on your screen and tap, type, scroll and open apps when you ask it to. Argus only acts while it is working on a request you gave it.</string>
     <string name="widget_desc">Ask Argus or talk to it from your home screen</string>
 </resources>

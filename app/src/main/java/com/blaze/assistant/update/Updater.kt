@@ -284,8 +284,8 @@ object Updater {
     private fun installedSigners(ctx: Context): Set<String> = try {
         fun sha(b: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
         if (Build.VERSION.SDK_INT >= 28)
-            ctx.packageManager.getPackageInfo(ctx.packageName, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners.map { sha(it.toByteArray()) }.toSet()
-        else ctx.packageManager.getPackageInfo(ctx.packageName, android.content.pm.PackageManager.GET_SIGNATURES).signatures.map { sha(it.toByteArray()) }.toSet()
+            ctx.packageManager.getPackageInfo(ctx.packageName, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES).signingInfo?.apkContentsSigners?.map { sha(it.toByteArray()) }?.toSet().orEmpty()
+        else ctx.packageManager.getPackageInfo(ctx.packageName, android.content.pm.PackageManager.GET_SIGNATURES).signatures?.map { sha(it.toByteArray()) }?.toSet().orEmpty()
     } catch (_: Throwable) { emptySet() }
 
     /** 0.45.18: the Android 7/8 old-key note ([UpdateKeys.legacyNote]) for this phone, or null. */
@@ -309,11 +309,11 @@ object Updater {
         val trusted: Set<String>; val offered: Set<String>
         if (Build.VERSION.SDK_INT >= 28) {
             val si = info.signingInfo ?: return "That download isn't signed, so I didn't install it."
-            trusted = mine.signingInfo.apkContentsSigners.map { sha(it.toByteArray()) }.toSet()
+            trusted = mine.signingInfo?.apkContentsSigners?.map { sha(it.toByteArray()) }?.toSet().orEmpty()
             // A build signed with a newer key in Blaze's key lineage lists the old key in its history.
             offered = (si.apkContentsSigners + (si.signingCertificateHistory ?: emptyArray())).map { sha(it.toByteArray()) }.toSet()
         } else {
-            trusted = mine.signatures.map { sha(it.toByteArray()) }.toSet()
+            trusted = mine.signatures?.map { sha(it.toByteArray()) }?.toSet().orEmpty()
             offered = (info.signatures ?: emptyArray()).map { sha(it.toByteArray()) }.toSet()
         }
         if (trusted.isEmpty() || !offered.containsAll(trusted)) return KEY_CHANGED
