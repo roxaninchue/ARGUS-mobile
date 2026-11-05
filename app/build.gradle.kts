@@ -8,9 +8,9 @@ plugins {
 
 android {
     namespace = "com.blaze.assistant"
-    compileSdk = 34
+    compileSdk = 36
     defaultConfig {
-        applicationId = "com.blaze.assistant"
+        applicationId = "com.aistudio.argusassistant.kxmpzq"
         minSdk = 26
         targetSdk = 34
         versionCode = 188
@@ -22,6 +22,14 @@ android {
         // 0.46.6: the low-RAM emulator release gate (src/androidTest/.../smoke, .github/workflows/lowram-smoke.yml)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("${rootDir}/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
     // 0.45.15 (key rotation, user-approved 22 Oct 08:32): no signing key or password lives in this repo. Gradle signs with the
     // SDK's own debug key (fine for local runs and CI test builds); a release APK is re-signed outside the repo with the
     // private Blaze release key and a v3 lineage from the old (burned, public) key, so existing installs still update.
@@ -31,6 +39,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -252,7 +263,6 @@ dependencies {
     implementation("androidx.media3:media3-transformer:$media3")   // v0.33.0 Clip Studio
     implementation("androidx.media3:media3-effect:$media3")
     implementation("com.google.mediapipe:tasks-genai:0.10.24")   // v0.33.0 Offline Brain
-    implementation(project(":storeapi"))
     // 0.46.2 Movies: user-added provider modules run in QuickJS (dokar3/quickjs-kt, Apache-2.0; 1.0.0-alpha13 is the last build on
     // Kotlin 2.0) with a Jsoup-backed cheerio shim (Jsoup, MIT). Unit tests swap in the JVM build (natives for linux x64/arm64).
     implementation("io.github.dokar3:quickjs-kt-android:1.0.0-alpha13")
