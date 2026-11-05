@@ -78,10 +78,10 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
           set -o pipefail
-          ./gradlew :storeapi:test :youtube:test :app:testReleaseUnitTest --tests 'com.blaze.assistant.mediaapps.*' :app:assembleRelease --stacktrace 2>&1 | tee build.log
+          ./gradlew :storeapi:test :youtube:test :app:testReleaseUnitTest --tests 'com.argus.assistant.mediaapps.*' :app:assembleRelease --stacktrace 2>&1 | tee build.log
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           mkdir -p /tmp/dex && unzip -o -q "$APK" 'classes*.dex' -d /tmp/dex
-          if ! grep -a -q "Lcom/blaze/assistant/mediaapps/youtube/YouTubeSource;" /tmp/dex/*.dex; then
+          if ! grep -a -q "Lcom/argus/assistant/mediaapps/youtube/YouTubeSource;" /tmp/dex/*.dex; then
             echo "::error::YouTubeSource is missing from the APK (R8 keep rule or wiring broken)"; exit 1
           fi
           echo "### OK: plug-in tests pass and YouTubeSource is in the release APK" >> "$GITHUB_STEP_SUMMARY"

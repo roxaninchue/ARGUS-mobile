@@ -3,7 +3,7 @@
 # installs the debug app + test APK, screen-records while HomeIntroCheck plays the Home entry sequence twice (warm-up with
 # screenshots every 0.5 s, then a measured run under the 50 ms main-thread monitor, limit 700 ms), pulls everything.
 set -uo pipefail
-OUT=intro-out; mkdir -p "$OUT"; PKG=com.blaze.assistant
+OUT=intro-out; mkdir -p "$OUT"; PKG=com.argus.assistant
 adb install -r -g app/build/outputs/apk/debug/app-debug.apk > "$OUT/install.txt" 2>&1
 adb install -r -g app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk >> "$OUT/install.txt" 2>&1
 adb logcat -c

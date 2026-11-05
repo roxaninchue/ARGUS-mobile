@@ -7,10 +7,10 @@ plugins {
 }
 
 android {
-    namespace = "com.blaze.assistant"
+    namespace = "com.argus.assistant"
     compileSdk = 34
     defaultConfig {
-        applicationId = "com.blaze.assistant"
+        applicationId = "com.argus.assistant"
         minSdk = 26
         targetSdk = 34
         versionCode = 188

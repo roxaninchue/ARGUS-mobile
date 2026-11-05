@@ -1,7 +1,7 @@
 # PLAN — a reliable Blaze agent (and Blaze that helps build Blaze)
 
 Written 2026-11-01 for 0.50.0. A plan only: nothing here is implemented yet. It is based on what the code has today
-(file names are under `app/src/main/java/com/blaze/assistant/` unless noted) and on the zero-budget rule: the brain
+(file names are under `app/src/main/java/com/argus/assistant/` unless noted) and on the zero-budget rule: the brain
 order stays **on-phone brain → Nous (:free) → Blaze cloud gateway**, never Jev, System One or NVIDIA models; no paid APIs.
 
 **Owner's priority:** Blaze should take part in its own development through a guarded self-improvement loop. That is

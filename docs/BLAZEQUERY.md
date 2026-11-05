@@ -5,7 +5,7 @@ reply model decides to call. It fetches high-accuracy information, hyper-summari
 them into the prompt through the tiered-memory cache tier (`cache.db`), so the model answers — and above all writes code
 and runs commands — from current, trustworthy sources without spending its context on pages.
 
-Code: `app/src/main/java/com/blaze/assistant/agent/query/` (pure, JVM-tested) + the glue in `QueryRuntime.kt` and
+Code: `app/src/main/java/com/argus/assistant/agent/query/` (pure, JVM-tested) + the glue in `QueryRuntime.kt` and
 `Agent.Session.runLoop`. Research mode and `/query` / `/research` are extras on the same machinery.
 
 ```

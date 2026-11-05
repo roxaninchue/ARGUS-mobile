@@ -4,7 +4,7 @@ Greyscale frosted glass on a near-black ground, taken from the app icon: translu
 a 1 dp rim bright at the top-left (white 30 % → 5 %), a faint specular sheen in the top-left corner, a soft shadow.
 Accents are white / greys. Colour only for errors / warnings, desaturated (`GlassTokens.error`, `.warning`, `.success`).
 
-Code: `app/src/main/java/com/blaze/assistant/ui/GlassKit.kt` (components), `Theme.kt` (palette + Material scheme),
+Code: `app/src/main/java/com/argus/assistant/ui/GlassKit.kt` (components), `Theme.kt` (palette + Material scheme),
 `BlazeGlass.kt` (`Glass` object + `GlassIconButton`), `StreamOrb.kt` (water droplet), `RichPreview.kt` (detached
 rich-block windows).
 

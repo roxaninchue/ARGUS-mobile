@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 0.52.1 Argus mark: the brushed-silver "A" of slanted bars (vector redraw of work/ref/argus/argus-logo-source.jpg). -->
+<!-- 0.52.1 Argus launcher foreground: the silver A from the brand board, lit by an electric-blue halo behind it and a
+     thin cobalt rim on every edge (the app-icon crop of the ARGUS key art). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Blue halo behind the mark: one radial fill, no blur filter (cheap on every launcher). -->
+    <path android:pathData="M0,0h108v108h-108z"><aapt:attr name="android:fillColor"><gradient android:type="radial"
+        android:centerX="54" android:centerY="52" android:gradientRadius="44">
+        <item android:offset="0" android:color="#D90056FF"/><item android:offset="0.45" android:color="#730056FF"/>
+        <item android:offset="1" android:color="#000056FF"/></gradient></aapt:attr></path>
     <path android:pathData="M49.68,34.99 L52.04,38.74 L30.06,78.15 L23.00,79.55 Z"><aapt:attr name="android:fillColor"><gradient android:type="linear" android:startX="23" android:startY="20" android:endX="85" android:endY="88">
         <item android:offset="0" android:color="#FFF7F9FB"/><item android:offset="0.45" android:color="#FFB9C1CA"/><item android:offset="0.6" android:color="#FFEDF0F3"/><item android:offset="1" android:color="#FF8E98A3"/></gradient></aapt:attr></path>
     <path android:pathData="M56.40,41.53 L58.40,44.84 L41.75,71.18 L36.52,73.62 Z"><aapt:attr name="android:fillColor"><gradient android:type="linear" android:startX="23" android:startY="20" android:endX="85" android:endY="88">
@@ -10,4 +16,6 @@
         <item android:offset="0" android:color="#FFF7F9FB"/><item android:offset="0.45" android:color="#FFB9C1CA"/><item android:offset="0.6" android:color="#FFEDF0F3"/><item android:offset="1" android:color="#FF8E98A3"/></gradient></aapt:attr></path>
     <path android:pathData="M53.96,28.10 L85.00,79.90 L79.51,78.68 L54.22,36.82 Z"><aapt:attr name="android:fillColor"><gradient android:type="linear" android:startX="23" android:startY="20" android:endX="85" android:endY="88">
         <item android:offset="0" android:color="#FFF7F9FB"/><item android:offset="0.45" android:color="#FFB9C1CA"/><item android:offset="0.6" android:color="#FFEDF0F3"/><item android:offset="1" android:color="#FF8E98A3"/></gradient></aapt:attr></path>
+    <!-- Cobalt rim light on the edges that face the halo (the bright blue outline of the key art). -->
+    <path android:strokeColor="#B30056FF" android:strokeWidth="0.7" android:pathData="M49.68,34.99 L52.04,38.74 L30.06,78.15 L23.00,79.55 Z M56.40,41.53 L58.40,44.84 L41.75,71.18 L36.52,73.62 Z M57.10,49.90 L61.89,50.77 L74.27,71.61 L69.30,71.18 Z M53.96,28.10 L85.00,79.90 L79.51,78.68 L54.22,36.82 Z"/>
 </vector>

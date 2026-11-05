@@ -10,7 +10,7 @@ Argus's own example of a provider repo in the Vega provider format: free, legal 
     dist/<value>/stream.js            exports getStream({link, type, providerContext}) -> [{server, link, type, quality, subtitles}]
     dist/<value>/episodes.js          optional: getEpisodes({url, providerContext}) -> [{title, link}]
 
-Public copy (what Blaze installs): https://blazeinchue.pages.dev/providers/blaze-official/
+Public copy (what Argus installs): https://blazeinchue.pages.dev/providers/blaze-official/
 Format docs: https://blazeinchue.pages.dev/providers/
 
 Code in this repository: MIT licence. The films belong to their owners; this repo only links to them on archive.org.

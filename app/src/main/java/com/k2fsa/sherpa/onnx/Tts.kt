@@ -272,5 +272,5 @@ class OfflineTts(
     ): GeneratedAudio
 
     // Blaze: no companion `System.loadLibrary` here. The library is downloaded on demand and loaded with
-    // System.load(path) by com.blaze.assistant.voice.myvoice.MyVoice before this class is used.
+    // System.load(path) by com.argus.assistant.voice.myvoice.MyVoice before this class is used.
 }

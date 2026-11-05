@@ -5,12 +5,12 @@
 -dontwarn java.awt.**
 -dontwarn com.sun.jna.**
 # Services, receivers and the widget are referenced from the manifest (kept by default).
--keep class com.blaze.assistant.** extends android.app.Service { *; }
+-keep class com.argus.assistant.** extends android.app.Service { *; }
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
--keep class com.blaze.assistant.agent.MindReviewWorker { <init>(...); }
+-keep class com.argus.assistant.agent.MindReviewWorker { <init>(...); }
 # v0.23.3: the Design view's JS bridge (BlazeDesign.gl / error / ready / fail) is called by name from the page.
 -keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }
--keep class com.blaze.assistant.ui.DesignBridge { *; }
+-keep class com.argus.assistant.ui.DesignBridge { *; }
 # v0.26.3 blaze.db: the bundled SQLite's native code throws androidx.sqlite.SQLiteException by class name.
 -keep class androidx.sqlite.SQLiteException { *; }
 -keep class androidx.sqlite.driver.bundled.** { *; }
@@ -25,7 +25,7 @@
 -dontwarn org.osgi.**
 -dontwarn javax.annotation.**
 # v0.30.1 Blaze Music / Video: the download worker is created by WorkManager by class name.
--keep class com.blaze.assistant.mediaapps.MediaDownloadWorker { <init>(...); }
+-keep class com.argus.assistant.mediaapps.MediaDownloadWorker { <init>(...); }
 
 # v0.33.0 Offline Brain (MediaPipe LLM Inference): JNI + protobuf-lite annotations.
 -keep class com.google.mediapipe.** { *; }

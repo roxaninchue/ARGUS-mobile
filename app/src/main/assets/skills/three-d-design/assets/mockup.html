@@ -32,7 +32,8 @@
   - nudge: how far one arrow-key press moves a part in Design.
   - Each part: id (kebab-case, unique), label, shape, its dimensions, position (the centre of the
     part, relative to its parent), rotation in degrees [x, y, z], color, and optional
-    material ("matte" | "wood" | "metal" | "plastic" | "glass"), parent, scale, visible.
+    material ("matte" | "wood" | "metal" | "plastic" | "glass"), parent, scale, visible, and an
+    optional animation { "kind": "spin" | "bob" | "pulse", "axis": "x"|"y"|"z", "speed", "amplitude" }.
   - Shapes and their dimensions: box size [w, h, d]; cylinder radius, height (radiusTop optional);
     cone radius, height; sphere radius; torus radius, tube; capsule radius, height; plane size [w, d];
     group (no geometry, holds children); custom (built in CUSTOM below, same id).
@@ -76,6 +77,14 @@ const num = (v, d) => (typeof v === "number" || typeof v === "string") && v !== 
 const vec = (v, d) => Array.isArray(v) ? d.map((x, i) => num(v[i], x)) : (typeof v === "number" ? d.map(() => v) : d);
 const U = num(spec.scale, 0.001) || 0.001;  // scene units per mockup unit
 const deg = d => num(d, 0) * Math.PI / 180;
+
+// ---- 1b. Motion ---------------------------------------------------------------------------
+// A part may carry an animation block (spin / bob / pulse). Everything here is skipped when the
+// phone asks for reduced motion, or when the host sets window.__blazeMotion = false (Blaze does
+// that when its own motion setting is off). No animation, no extra work: the loop below is the
+// only one this page runs either way.
+const MOTION = window.__blazeMotion !== false &&
+  !(typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 document.title = spec.name || document.title;
 document.getElementById("name").textContent = spec.name || "Mockup";
 
@@ -154,6 +163,7 @@ const CUSTOM = {
 // ---- 7. Build the scene from the parts ----------------------------------------------------
 // Each part gets a root Object3D tagged userData.part = id: that is what Design picks and edits.
 const parts = new Map();
+const animated = [];      // parts with an animation block (see 1b)
 function build(p) {
   let obj;
   const shape = shapeOf(p);
@@ -179,6 +189,17 @@ function build(p) {
   root.scale.set(sx, sy, sz);
   root.visible = p.visible !== false;
   parts.set(p.id, root);
+  const anim = p.animation;
+  if (MOTION && anim && typeof anim === "object") {
+    const kind = String(anim.kind || "spin").toLowerCase();
+    if (kind === "spin" || kind === "bob" || kind === "pulse") animated.push({
+      obj, kind,
+      axis: ["x", "y", "z"].includes(String(anim.axis)) ? String(anim.axis) : "y",
+      speed: Math.max(-4, Math.min(4, num(anim.speed, 0.4))),
+      amp: Math.max(0, Math.min(2, num(anim.amplitude, 0))),
+      base: obj.position.clone(), baseScale: obj.scale.clone(),
+    });
+  }
   return root;
 }
 const model = new THREE.Group();
@@ -229,11 +250,29 @@ document.getElementById("glb").onclick = () => new GLTFExporter().parse(model, g
 // ---- 11. Resize and render loop ----------------------------------------------------------
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
-renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+// v0.52.1: Design's motion control sets window.__blazeAnimSpeed (0 = paused, 0.35 = slow, 1 = play). The animation clock
+// is integrated from scaled frame time, so pausing holds the current pose instead of snapping back to rest.
+let lastFrame = 0, animTime = 0;
+renderer.setAnimationLoop(() => {
+  const now = performance.now();
+  const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.05) : 0;   // a slow frame never jumps
+  lastFrame = now;
+  if (animated.length) {
+    const raw = Number(window.__blazeAnimSpeed);
+    const rate = Number.isFinite(raw) ? Math.max(0, Math.min(raw, 1)) : 1;
+    animTime += dt * rate;
+    for (const a of animated) {
+      if (a.kind === "spin") a.obj.rotation[a.axis] += a.speed * dt * rate;
+      else if (a.kind === "bob") a.obj.position.y = a.base.y + Math.sin(animTime * a.speed * 6.283) * a.amp / U;
+      else a.obj.scale.copy(a.baseScale).multiplyScalar(Math.max(0.05, 1 + Math.sin(animTime * a.speed * 6.283) * a.amp * 0.5));
+    }
+  }
+  controls.update(); renderer.render(scene, camera);
+});
 
 // ---- 12. Hand the scene to Blaze's Design tab ---------------------------------------------
 // Design raycasts clicks with these to pick parts and reads each part's numbers from spec.
-window.__blazeScene = { THREE, scene, camera, renderer, controls, parts, spec };
+window.__blazeScene = { THREE, scene, camera, renderer, controls, parts, animated, spec };
 </script>
 </body>
 </html>

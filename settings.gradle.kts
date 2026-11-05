@@ -9,7 +9,7 @@ dependencyResolutionManagement {
         maven("https://jitpack.io") { content { includeGroup("com.github.termux.termux-app") } }
     }
 }
-rootProject.name = "Blaze"
+rootProject.name = "Argus"
 include(":app")
 // v0.30.1 Blaze Music / Video Stores: the source interface, and the optional YouTube plug-in (only when its folder is here).
 include(":storeapi")

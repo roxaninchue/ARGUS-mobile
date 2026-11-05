@@ -130,7 +130,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest*' --stacktrace 2>&1 | tee shots.log
+          BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests 'com.argus.assistant.ui.ShotsTest*' --stacktrace 2>&1 | tee shots.log
           ls -la app/build/shots
 
       - name: Publish screenshots
@@ -267,7 +267,7 @@ jobs:
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           ls -la "$APK"
           mkdir -p /tmp/dex && unzip -o -q "$APK" 'classes*.dex' -d /tmp/dex
-          if grep -a -l "Lcom/blaze/assistant/mediaapps/youtube/" /tmp/dex/*.dex; then echo "::error::YouTube classes found in the no-YouTube APK"; exit 1; fi
+          if grep -a -l "Lcom/argus/assistant/mediaapps/youtube/" /tmp/dex/*.dex; then echo "::error::YouTube classes found in the no-YouTube APK"; exit 1; fi
           echo "No YouTube code in the APK."
 
   # The android-app-builder skill's template must keep building: make a project from it exactly as
@@ -287,7 +287,7 @@ jobs:
         env:
           BUILD_NUMBER: '7'
         run: |
-          sh app/src/main/assets/skills/android-app-builder/setup.sh /tmp/demo com.blaze.demo "Blaze Demo's App"
+          sh app/src/main/assets/skills/android-app-builder/setup.sh /tmp/demo com.argus.demo "Blaze Demo's App"
           cd /tmp/demo
           test -f .github/workflows/build.yml && test -f .gitignore
           mkdir -p keystore

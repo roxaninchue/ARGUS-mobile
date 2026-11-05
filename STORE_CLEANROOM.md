@@ -1,6 +1,6 @@
 # Store tab: clean-room record
 
-Blaze's Store tab (app/src/main/java/com/blaze/assistant/appstore/) is an original implementation. It was written from a
+Blaze's Store tab (app/src/main/java/com/argus/assistant/appstore/) is an original implementation. It was written from a
 feature description only, without access to any other store client's source code.
 
 ## What was read (reference product: Orion Store, GPL-3.0)

@@ -142,7 +142,7 @@
             android:label="Argus Phone"
             android:supportsPictureInPicture="true"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.phonebrowser"
+            android:taskAffinity="com.argus.assistant.phonebrowser"
             android:theme="@style/Theme.Blaze"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize" />
@@ -152,7 +152,7 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:noHistory="true"
-            android:taskAffinity="com.blaze.assistant.perms"
+            android:taskAffinity="com.argus.assistant.perms"
             android:theme="@style/Theme.Blaze.Transparent" />
 
         <activity
@@ -160,7 +160,7 @@
             android:exported="false"
             android:label="Argus Terminal"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.terminal"
+            android:taskAffinity="com.argus.assistant.terminal"
             android:theme="@android:style/Theme.Black.NoTitleBar"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|navigation|uiMode"
             android:windowSoftInputMode="adjustResize|stateVisible" />
@@ -171,7 +171,7 @@
             android:exported="false"
             android:label="Argus Music"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.music"
+            android:taskAffinity="com.argus.assistant.music"
             android:theme="@style/Theme.Blaze"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize" />
@@ -222,7 +222,7 @@
             android:exported="false"
             android:label="Argus Video"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.video"
+            android:taskAffinity="com.argus.assistant.video"
             android:theme="@style/Theme.Blaze"
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
@@ -265,7 +265,7 @@
             android:supportsPictureInPicture="true"
             android:label="Argus browser"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.browser"
+            android:taskAffinity="com.argus.assistant.browser"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -389,8 +389,8 @@
         <receiver android:name=".widget.BlazeWidget" android:exported="false" android:label="Argus">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.blaze.assistant.WIDGET_ASK" />
-                <action android:name="com.blaze.assistant.WIDGET_MIC" />
+                <action android:name="com.argus.assistant.WIDGET_ASK" />
+                <action android:name="com.argus.assistant.WIDGET_MIC" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/blaze_widget" />
         </receiver>

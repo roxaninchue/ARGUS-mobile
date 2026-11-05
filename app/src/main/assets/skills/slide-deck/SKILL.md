@@ -33,7 +33,7 @@ onboarding v2"), not a topic ("Churn"). Reading only the titles should tell the 
 - One visual per slide: a chart, a screenshot, a diagram, a big number, or a quote.
 - Charts: one message, highlighted in the accent colour, everything else grey; label lines directly instead of a legend; start bars at zero; round numbers.
 - Consistent grid: same margins (≈ 6% of width), title in the same place on every slide.
-- Max 2 fonts, 1 accent colour. For Blaze-branded decks use `web-design-blaze-classic` tokens (paper/ink/#1f4bd8, square edges, mono uppercase labels).
+- Max 2 fonts, 1 accent colour. For Argus-branded decks use `web-design-blaze-classic` tokens (obsidian/white/#0056ff, square edges, mono uppercase labels).
 - Never invent data; mark placeholders `[number]` and list them for the user.
 
 ## 3. Build with the template

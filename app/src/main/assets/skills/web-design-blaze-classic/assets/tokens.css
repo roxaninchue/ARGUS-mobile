@@ -1,9 +1,9 @@
-/* Classic Blaze: tokens, themes and components (web-design-blaze-classic skill). */
+/* Argus classic: tokens, themes and components (web-design-blaze-classic skill). */
 :root {
-  --paper: #fcfcfc; --ink: #111110;
-  --ink-body: rgba(17,17,16,.82); --ink-sub: rgba(17,17,16,.56); --ink-weak: rgba(17,17,16,.34);
-  --ink-hair: rgba(17,17,16,.12); --ink-faint: rgba(17,17,16,.06);
-  --accent: #1f4bd8;
+  --paper: #ffffff; --ink: #000000;
+  --ink-body: rgba(0,0,0,.82); --ink-sub: rgba(0,0,0,.56); --ink-weak: rgba(0,0,0,.34);
+  --ink-hair: rgba(0,0,0,.12); --ink-faint: rgba(0,0,0,.06);
+  --accent: #0056ff;
   --sans: "Inter", system-ui, -apple-system, sans-serif;
   --display: "Inter Tight", "Inter", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -13,10 +13,10 @@
   --container-pad: 40px; --section-pad: 128px; --maxw: 1280px; --radius: 0;
 }
 :root[data-theme="dark"] {
-  --paper: #26262a; --ink: #f0f0ee;
-  --ink-body: rgba(240,240,238,.82); --ink-sub: rgba(240,240,238,.56); --ink-weak: rgba(240,240,238,.34);
-  --ink-hair: rgba(240,240,238,.15); --ink-faint: rgba(240,240,238,.07);
-  --accent: #6b8cff;
+  --paper: #0a0a0a; --ink: #ffffff;
+  --ink-body: rgba(255,255,255,.82); --ink-sub: rgba(255,255,255,.56); --ink-weak: rgba(255,255,255,.34);
+  --ink-hair: rgba(255,255,255,.15); --ink-faint: rgba(255,255,255,.07);
+  --accent: #2868ff;
 }
 * { box-sizing: border-box; border-radius: 0 !important; }
 html { scroll-behavior: smooth; scroll-padding-top: 24px; }

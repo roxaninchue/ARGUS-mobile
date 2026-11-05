@@ -1,5 +1,5 @@
 import re,sys,json
-src=open('app/src/main/java/com/blaze/assistant/browser/phone/PhoneScripts.kt').read()
+src=open('app/src/main/java/com/argus/assistant/browser/phone/PhoneScripts.kt').read()
 common=re.search(r'private const val COMMON = """(.*?)"""',src,re.S).group(1)
 def raw(name):
     m=re.search(r'(?:const val|fun) '+name+r'\b[^\n]*?= ?"""(.*?)"""',src,re.S); return m.group(1)

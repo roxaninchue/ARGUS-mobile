@@ -3,7 +3,7 @@
 Many tasks are faster and more reliable as a command in Blaze Terminal (BusyBox shell built in; Alpine/proot for curl,
 Python, git, the `blaze` CLI) than by opening apps and tapping, or driving the browser. 0.51.0 makes that the default.
 
-Code: `app/src/main/java/com/blaze/assistant/agent/ExecRoute.kt` (pure, `ExecRouteTest`), wired in `Agent.Session.runLoop`.
+Code: `app/src/main/java/com/argus/assistant/agent/ExecRoute.kt` (pure, `ExecRouteTest`), wired in `Agent.Session.runLoop`.
 
 | Route | When | Effect |
 |---|---|---|

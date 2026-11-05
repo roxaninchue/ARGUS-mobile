@@ -1,9 +1,15 @@
 # Blaze → Argus (0.52.1)
 
+> **Package rename (next build):** the Kotlin package, `namespace` and `applicationId` are `com.argus.assistant` (source moved to
+> `app/src/main/java/com/argus/assistant`, with `app/src/test`, `app/src/androidTest` and `storeapi`). A device has to
+> uninstall the old `com.blaze.assistant` build once; there is no update path across the application id. Everything under
+> "Deliberately kept" below still holds (blaze.db, the `blaze` prefs, the shared-storage folders, gateway hosts and
+> `X-Blaze-*` / `blaze_*` wire fields, the `blaze://` OAuth callback, repo names, log tags).
+
 Theme: omniscience (Argus Panoptes, the all-seeing). Brand tokens: docs/BRAND.md.
 
 ## One-line future rename
-`app/src/main/java/com/blaze/assistant/BrandName.kt`: `NAME = "Argus"`, `UPPER = "ARGUS"`. Every Kotlin user-facing string,
+`app/src/main/java/com/argus/assistant/BrandName.kt`: `NAME = "Argus"`, `UPPER = "ARGUS"`. Every Kotlin user-facing string,
 prompt and label uses `${BrandName.NAME}` / `${BrandName.UPPER}` (≈1,650 literals rewritten by `work/rename_argus.py`,
 which only touches the capitalised word inside string literals). Non-Kotlin places that can't read the constant, and must be
 changed by hand (or by re-running the script with a new name): `res/values/strings.xml`, `res/layout/widget_blaze.xml`, the
@@ -28,7 +34,7 @@ manifest `android:label`s, `assets/persona-v1.json`, `assets/skills/**/SKILL.md`
   `ModelChoice.of()` accepts ids, new labels and old labels. TiersTest.argusLabelsKeepIdsAndMigrateSavedPicks.
 
 ## Deliberately kept (changing them breaks installs, sync or sign-in)
-- applicationId and Kotlin package `com.blaze.assistant`; class names (BlazeApp, BlazeTopPill, Theme.Blaze…), resource
+- applicationId and Kotlin package `com.argus.assistant`; class names (BlazeApp, BlazeTopPill, Theme.Blaze…), resource
   names (ic_stat_blaze, widget_blaze, Theme.Blaze).
 - Database, file, pref and folder names: blaze.db, `blaze` prefs, bg_agents.json, task_records.json, and the shared-storage
   folders Music/Blaze, Movies/Blaze, Download/Blaze, Pictures/Blaze (`SaveFileAndroid.FOLDER` etc.): existing downloads stay

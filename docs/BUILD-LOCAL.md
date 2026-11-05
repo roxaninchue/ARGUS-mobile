@@ -41,7 +41,7 @@ Typical sequence:
 ```
 work/toolchain/golibs.sh
 work/toolchain/gradle.sh work/toolchain/logs/unit.log --init-script work/toolchain/jdk21-tests.gradle :app:testDebugUnitTest --continue
-BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ComposerShotsTest' …   # see mobile-build.yml for the list
+BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log :app:testDebugUnitTest --tests 'com.argus.assistant.ui.ComposerShotsTest' …   # see mobile-build.yml for the list
 work/toolchain/gradle.sh /tmp/rel.log :app:assembleRelease
 ```
 

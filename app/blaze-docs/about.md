@@ -1,20 +1,20 @@
 # About Argus
 
 ## What Argus is
-Argus is a free AI assistant. Argus for Android (this app, package com.blaze.assistant) chats, talks ("Hey Argus"), controls the phone for you, browses in the background, runs a real Linux terminal, makes pictures, diagrams and music, and remembers what matters about you across one continuous conversation. It is one of three Argus apps that share one Argus account: Argus for Android, Argus Desktop (Windows, macOS, Linux) and Argus CLI (terminal).
+Argus is a free AI assistant. Argus for Android (this app, package com.argus.assistant) chats, talks ("Hey Argus"), controls the phone for you, browses in the background, runs a real Linux terminal, makes pictures, diagrams and music, and remembers what matters about you across one continuous conversation. It is one of three Argus apps that share one Argus account: Argus for Android, Argus Desktop (Windows, macOS, Linux) and Argus CLI (terminal).
 
 This build: Argus for Android v{{VERSION}} (versionCode {{VERSION_CODE}}), commit {{COMMIT}}, built {{BUILT}}. minSdk {{MIN_SDK}} (Android 8.0), targetSdk {{TARGET_SDK}}, compileSdk {{COMPILE_SDK}}.
 
 ## Owner and source code repos
-Blaze is made by Blazeinchue. The source code lives on GitLab under blazeinchue. Use these exact URLs and never guess another spelling, owner or host:
-- Blaze for Android source code repo (Blaze-agent, this app): https://gitlab.com/blazeinchue/Blaze-agent
-- Blaze Desktop repo (Blaze-dekstop; the repo name really is spelled "dekstop"): https://gitlab.com/blazeinchue/Blaze-dekstop
-- Blaze CLI repo (Blaze-cli): https://gitlab.com/blazeinchue/Blaze-cli
-"Take me to the Blaze repo", "where is your source code", "open blaze-agent" all mean https://gitlab.com/blazeinchue/Blaze-agent.
+Argus is made by Blazeinchue. The source code lives on GitLab under blazeinchue. Use these exact URLs and never guess another spelling, owner or host:
+- Argus for Android source code repo (Blaze-agent, this app): https://gitlab.com/blazeinchue/Blaze-agent
+- Argus Desktop repo (Blaze-dekstop; the repo name really is spelled "dekstop"): https://gitlab.com/blazeinchue/Blaze-dekstop
+- Argus CLI repo (Blaze-cli): https://gitlab.com/blazeinchue/Blaze-cli
+"Take me to the Argus repo", "where is your source code", "open blaze-agent" all mean https://gitlab.com/blazeinchue/Blaze-agent.
 
 ## Releases, APK downloads and updates
 - Website and downloads: https://blazeinchue.pages.dev (newest Android APK: https://blazeinchue.pages.dev/dl/android).
-- The newest version of every Blaze app, with its download link and SHA-256, is listed in https://blazeinchue.pages.dev/versions.json .
+- The newest version of every Argus app, with its download link and SHA-256, is listed in https://blazeinchue.pages.dev/versions.json .
 How to update: type /update in the chat (or Settings › Updates › Check for updates). Argus reads versions.json on the Argus site, downloads the newest APK in the background (resumable, survives slow or dropped networks, checks the SHA-256 from versions.json and the signature), then Android asks you to install it. Your chats, memory, keys and settings are kept. Argus also checks once a day when you open it and shows a small "Argus X.Y.Z is available" banner you can dismiss. Version numbers go up by a patch each release (0.28.1 → 0.28.2); after .9 the minor goes up (0.24.9 → 0.25.0).
 
 ## Tech stack
@@ -22,9 +22,9 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Memory and search: SQLite with FTS5 full-text search in blaze.db (files/blaze.db), on a bundled modern SQLite (androidx.sqlite sqlite-bundled) so FTS5 works on every Android version. blaze.db uses the same schema (v1) as Argus Desktop and Argus CLI: memories, skills and tools indexes, plus the phone's journal (mind_journal) and these docs (blaze_docs). Argus does not use Room: blaze.db is plain SQLite through a small Sql interface. Older builds kept memory in databases/mind.db (SQLiteOpenHelper), copied into blaze.db in v0.26.3.
 - Background work: WorkManager (idle memory review), foreground services (status, life logs, wake word, routines and jobs).
 - Phone control: an AccessibilityService (read the screen, tap, type, scroll), plus a visible pointer and Magic Hand.
-- Brain: Argus Cloud, a Cloudflare Workers gateway written in TypeScript (gateway/ in the repo) at https://ai.blaze-app.workers.dev . It picks the best free model for every message from free AI providers, so you never need a key or a paid plan. BlazeRouter (Go) can also route on the phone.
+- Brain: Argus Cloud, a Cloudflare Workers gateway written in TypeScript (gateway/ in the repo) at https://ai.blaze-app.workers.dev . It picks the best free model for every message from free AI providers, so you never need a key or a paid plan. Argus Router (Go) can also route on the phone.
 - On-device: Vosk speech recognition (wake word, life logs), ML Kit text recognition (Magic Hand), sherpa-onnx PocketTTS (My voice), mermaid (diagrams), three.js (3D designs).
-- Go helpers shipped as native libraries: wgproxy (browser VPN, WireGuard / Cloudflare WARP) and BlazeRouter.
+- Go helpers shipped as native libraries: wgproxy (browser VPN, WireGuard / Cloudflare WARP) and Argus Router.
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map

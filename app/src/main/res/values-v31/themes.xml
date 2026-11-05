@@ -1,11 +1,11 @@
 <resources>
-    <!-- 0.52.1 Argus splash (Android 12+): Argus Black ground, the adaptive A icon on its cobalt gradient. Same style as values/ plus the splash items. -->
+    <!-- 0.52.1 Argus splash (Android 12+): Obsidian ground, the adaptive A icon on its cobalt gradient. Same style as values/ plus the splash items. -->
     <style name="Theme.Blaze" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">#F6F7F9</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowSplashScreenBackground">#0A0A0A</item>
+        <item name="android:windowSplashScreenBackground">#000000</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">#0A0A0A</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#000000</item>
     </style>
 </resources>
