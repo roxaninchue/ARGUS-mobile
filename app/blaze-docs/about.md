@@ -63,7 +63,7 @@ Views reachable from /views also open their settings pages: Memory, Schedule, Ag
 - Keys and tokens are encrypted with the Android Keystore. Saved logins from the secure form are encrypted on the phone and their values never reach the AI model; one-time codes are never saved.
 - Argus never keeps passwords, codes, card or account numbers in memory, even when asked.
 - Sending messages, calls, payments, deletes and posts ask first unless you clearly told Argus to do exactly that (Autopilot still asks for money, deletes and messages).
-- Official APKs are signed with a dedicated Argus release key kept private by the owner; it is not related to the legacy Blaze signing key; an APK built and signed elsewhere can't replace an official install.
+- Official APKs are signed with a dedicated Argus release key kept private by the owner, separate from the legacy Blaze signing key. An APK signed with another key cannot replace an official install.
 
 ## Known limits
 - Free models vary in speed and quality and can hit rate limits; the gateway retries on another model.
