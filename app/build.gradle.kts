@@ -10,7 +10,7 @@ android {
     namespace = "com.blaze.assistant"
     compileSdk = 34
     defaultConfig {
-        applicationId = "com.blaze.assistant"
+        applicationId = "com.argus.assistant"
         minSdk = 26
         targetSdk = 34
         versionCode = 188
