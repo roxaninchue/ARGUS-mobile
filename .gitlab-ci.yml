@@ -211,8 +211,8 @@ release-apk:
       # never read, and no password is stored anywhere.
       keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 \
         -storepass testonly -keypass testonly -alias test \
-        -keyalg RSA -keysize 2048 -validity 30 -dname "CN=Blaze test" 2>&1 | tail -2
-      APK="out/Blaze-v${VER}-vc${VC}-test-signed.apk"
+        -keyalg RSA -keysize 2048 -validity 30 -dname "CN=Argus test" 2>&1 | tail -2
+      APK="out/Argus-v${VER}-vc${VC}-test-signed.apk"
       java -jar "$BT/lib/apksigner.jar" sign --ks /tmp/test.p12 --ks-pass pass:testonly \
         --out "$APK" out/aligned.apk
       java -jar "$BT/lib/apksigner.jar" verify --print-certs "$APK" | head -8
@@ -230,12 +230,12 @@ release-apk:
       for f in out/*.apk out/SHA256SUMS; do
         code=$(curl -sS -o /tmp/up.txt -w '%{http_code}' --header "JOB-TOKEN: $CI_JOB_TOKEN" \
           --upload-file "$f" \
-          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/blaze-android/${VER}/$(basename "$f")")
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/argus-android/${VER}/$(basename "$f")")
         echo "upload $(basename "$f") -> HTTP $code"
         [ "$code" = "201" ] || [ "$code" = "200" ] || cat /tmp/up.txt
       done
   artifacts:
-    name: "blaze-release-apk-$CI_COMMIT_SHORT_SHA"
+    name: "argus-release-apk-$CI_COMMIT_SHORT_SHA"
     when: always
     paths: ["out/"]
     expire_in: 1 month

@@ -1,7 +1,7 @@
 # About Argus
 
 ## What Argus is
-Argus is a free AI assistant. Argus for Android (this app, package com.blaze.assistant) chats, talks ("Hey Argus"), controls the phone for you, browses in the background, runs a real Linux terminal, makes pictures, diagrams and music, and remembers what matters about you across one continuous conversation. It is one of three Argus apps that share one Argus account: Argus for Android, Argus Desktop (Windows, macOS, Linux) and Argus CLI (terminal).
+Argus is a free AI assistant. Argus for Android (this app, application ID com.blazeinchue.argus (Kotlin namespace com.blaze.assistant)) chats, talks ("Hey Argus"), controls the phone for you, browses in the background, runs a real Linux terminal, makes pictures, diagrams and music, and remembers what matters about you across one continuous conversation. It is one of three Argus apps that share one Argus account: Argus for Android, Argus Desktop (Windows, macOS, Linux) and Argus CLI (terminal).
 
 This build: Argus for Android v{{VERSION}} (versionCode {{VERSION_CODE}}), commit {{COMMIT}}, built {{BUILT}}. minSdk {{MIN_SDK}} (Android 8.0), targetSdk {{TARGET_SDK}}, compileSdk {{COMPILE_SDK}}.
 
@@ -63,7 +63,7 @@ Views reachable from /views also open their settings pages: Memory, Schedule, Ag
 - Keys and tokens are encrypted with the Android Keystore. Saved logins from the secure form are encrypted on the phone and their values never reach the AI model; one-time codes are never saved.
 - Argus never keeps passwords, codes, card or account numbers in memory, even when asked.
 - Sending messages, calls, payments, deletes and posts ask first unless you clearly told Argus to do exactly that (Autopilot still asks for money, deletes and messages).
-- Official APKs are signed with a rotated key kept private by the owner; an APK built and signed elsewhere can't replace an official install.
+- Official APKs are signed with a dedicated Argus release key kept private by the owner; it is not related to the legacy Blaze signing key; an APK built and signed elsewhere can't replace an official install.
 
 ## Known limits
 - Free models vary in speed and quality and can hit rate limits; the gateway retries on another model.

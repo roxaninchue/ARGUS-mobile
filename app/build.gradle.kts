@@ -6,11 +6,28 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Argus production signing is opt-in and environment-only. Never commit a keystore or credentials.
+val argusSigningNames = listOf("ARGUS_KEYSTORE_FILE", "ARGUS_KEYSTORE_PASSWORD", "ARGUS_KEY_ALIAS", "ARGUS_KEY_PASSWORD")
+val argusSigningValues = argusSigningNames.map { System.getenv(it).orEmpty() }
+val argusSigningConfigured = argusSigningValues.any { it.isNotBlank() }
+if (argusSigningConfigured && argusSigningValues.any { it.isBlank() }) {
+    throw GradleException("Argus signing requires all four environment variables: ${argusSigningNames.joinToString()}")
+}
 android {
     namespace = "com.blaze.assistant"
     compileSdk = 34
+    signingConfigs {
+        if (argusSigningConfigured) {
+            create("argusRelease") {
+                storeFile = file(argusSigningValues[0])
+                storePassword = argusSigningValues[1]
+                keyAlias = argusSigningValues[2]
+                keyPassword = argusSigningValues[3]
+            }
+        }
+    }
     defaultConfig {
-        applicationId = "com.blaze.assistant"
+        applicationId = "com.blazeinchue.argus"
         minSdk = 26
         targetSdk = 34
         versionCode = 188
@@ -22,12 +39,12 @@ android {
         // 0.46.6: the low-RAM emulator release gate (src/androidTest/.../smoke, .github/workflows/lowram-smoke.yml)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    // 0.45.15 (key rotation, user-approved 22 Oct 08:32): no signing key or password lives in this repo. Gradle signs with the
-    // SDK's own debug key (fine for local runs and CI test builds); a release APK is re-signed outside the repo with the
-    // private Blaze release key and a v3 lineage from the old (burned, public) key, so existing installs still update.
+    // Argus has a new application ID and a separate release identity. No legacy Blaze signing lineage is used.
+    // Production signing is configured only through ARGUS_* environment variables; without them, CI emits an unsigned APK.
     buildTypes {
         // Release = what you install: R8-optimised, not debuggable (Compose runs far smoother).
         release {
+            if (argusSigningConfigured) signingConfig = signingConfigs.getByName("argusRelease")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
