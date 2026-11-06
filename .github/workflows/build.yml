@@ -120,8 +120,9 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
           set -o pipefail
+          GRADLE_ARGS=(--no-daemon --max-workers=2 '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' '-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m')
           YT_TEST=""; if [ "${{ steps.yt.outputs.present }}" = "true" ]; then YT_TEST=":youtube:test"; fi
-          ./gradlew testReleaseUnitTest :storeapi:test $YT_TEST assembleRelease --stacktrace 2>&1 | tee build.log
+          ./gradlew testReleaseUnitTest :storeapi:test $YT_TEST assembleRelease "${GRADLE_ARGS[@]}" --stacktrace 2>&1 | tee build.log
           echo "YouTube plug-in in this build: ${{ steps.yt.outputs.present }}" | tee -a build.log
 
       # Preview screenshots (Robolectric, ui/ShotsTest). Never blocks a release; the PNGs and the log go to the `shots` branch.
@@ -130,7 +131,8 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest*' --stacktrace 2>&1 | tee shots.log
+          GRADLE_ARGS=(--no-daemon --max-workers=2 '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' '-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m')
+          BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest*' "${GRADLE_ARGS[@]}" --stacktrace 2>&1 | tee shots.log
           ls -la app/build/shots
 
       - name: Publish screenshots
@@ -263,7 +265,8 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
           set -o pipefail
-          ./gradlew testReleaseUnitTest :storeapi:test assembleRelease --stacktrace 2>&1 | tee build.log
+          GRADLE_ARGS=(--no-daemon --max-workers=2 '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' '-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m')
+          ./gradlew testReleaseUnitTest :storeapi:test assembleRelease "${GRADLE_ARGS[@]}" --stacktrace 2>&1 | tee build.log
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           ls -la "$APK"
           mkdir -p /tmp/dex && unzip -o -q "$APK" 'classes*.dex' -d /tmp/dex

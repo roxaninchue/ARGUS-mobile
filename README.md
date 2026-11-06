@@ -1,7 +1,7 @@
-# Blaze for Android
+# Argus for Android
 
-AI assistant app for Android (Kotlin + Jetpack Compose), package `com.blaze.assistant`.
-Chat, voice ("Hey Blaze"), floating orb, and phone control through an AccessibilityService.
+AI assistant app for Android (Kotlin + Jetpack Compose), application ID `com.blazeinchue.argus` (Kotlin namespace remains `com.blaze.assistant` for source compatibility).
+Chat, voice ("Hey Argus"), floating orb, and phone control through an AccessibilityService.
 
 ## Build
 1. Install Android Studio (or JDK 17 + Android SDK 34).

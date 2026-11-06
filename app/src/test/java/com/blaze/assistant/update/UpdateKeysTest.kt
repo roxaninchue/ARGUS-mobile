@@ -5,7 +5,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** 0.45.15 key rotation: updates pin the private release key; the old public key alone is refused; no key in the repo. */
+/** Argus release signing: production credentials stay outside the repo; the legacy public Blaze key is never used. */
 class UpdateKeysTest {
     @Test fun releaseKeyIsPinned() {
         assertTrue(UpdateKeys.pinned(setOf(UpdateKeys.RELEASE_CERT)))
@@ -14,11 +14,26 @@ class UpdateKeysTest {
         assertFalse(UpdateKeys.pinned(emptySet()))
     }
 
-    @Test fun noSigningKeyInTheRepo() {
+    @Test fun noProductionSigningKeyOrPasswordInTheRepo() {
         fun f(p: String) = listOf(File(p), File("../$p")).firstOrNull { it.exists() }
         val g = (f("app/build.gradle.kts") ?: f("build.gradle.kts"))!!.readText()
-        assertFalse(g.contains("storePassword"))
+
+        // Production signing is environment-only, and incomplete configuration must fail closed.
+        assertTrue(g.contains("ARGUS_KEYSTORE_FILE"))
+        assertTrue(g.contains("ARGUS_KEYSTORE_PASSWORD"))
+        assertTrue(g.contains("ARGUS_KEY_ALIAS"))
+        assertTrue(g.contains("ARGUS_KEY_PASSWORD"))
+        assertTrue(g.contains("argusSigningValues.any { it.isBlank() }"))
+        assertTrue(g.contains("storePassword = argusSigningValues[1]"))
+        assertTrue(g.contains("keyPassword = argusSigningValues[3]"))
+        assertFalse(g.contains("storePassword = \""))
+        assertFalse(g.contains("keyPassword = \""))
+
+        // The legacy Blaze keystore may remain as pre-existing public/burned material, but this build must not use it.
         assertFalse(g.contains("blaze.keystore"))
-        assertTrue(f("keystore/blaze.keystore") == null)
+
+        // The new private Argus keystore must never be checked into the repository.
+        assertTrue(f("keystore/argus-release.p12") == null)
+        assertTrue(f("argus-release.p12") == null)
     }
 }

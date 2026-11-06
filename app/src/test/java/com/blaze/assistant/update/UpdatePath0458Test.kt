@@ -38,7 +38,8 @@ class UpdatePath0458Test {
         assertTrue(code >= 156)
         // 0.52.1: pin the current release (188 / 0.52.1); the update path only needs it higher than every older one.
         assertTrue(code >= 188 && Regex("versionName = \"0\\.5\\d\\.\\d+\"").containsMatchIn(g))
-        assertTrue(g.contains("applicationId = \"com.blaze.assistant\""))
+        assertTrue(g.contains("applicationId = \"com.blazeinchue.argus\""))
+        assertTrue(g.contains("namespace = \"com.blaze.assistant\""))
         assertTrue(156 > 153)
     }
 
