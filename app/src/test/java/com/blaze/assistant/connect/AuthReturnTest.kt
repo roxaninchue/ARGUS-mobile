@@ -37,7 +37,7 @@ class AuthReturnTest {
 
     @Test fun onlyTheAuthCallbackCounts() {
         assertTrue(AuthReturn.isAuthLink("blaze://auth/cb?code=1&state=2"))
-        assertTrue(AuthReturn.isAuthLink("BLAZE://auth/cb")   // the deep-link scheme stays "blaze" (any case) after the Argus rename)
+        assertTrue(AuthReturn.isAuthLink("BLAZE://auth/cb"))   // the deep-link scheme stays "blaze" (any case) after the Argus rename
         assertFalse(AuthReturn.isAuthLink("blaze://auth/cbx?code=1&state=s1"))
         assertFalse(AuthReturn.isAuthLink("blaze://other/cb?code=1&state=s1"))
         assertFalse(AuthReturn.isAuthLink("https://evil.example/blaze://auth/cb?code=1&state=s1"))
