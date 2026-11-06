@@ -7,12 +7,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * v0.45.7 readability: every picker theme x its scene x light/dark x Background strength keeps body text at WCAG AA
- * 4.5:1 and secondary text / icons at 3:1 on the scene's darkest and brightest 1 % (ThemeScenes.TONE, measured from the
- * bundled pictures). Chips are opaque with a 3:1 border. The sheet veil fades out instead of ending in a hard band.
+ * v0.45.7 readability (0.52.2: the theme scenes and their veil went with the Living Themes): the ARGUS Home's text keeps
+ * WCAG AA on its grounds, chips are opaque with a 3:1 border, the sheet veil fades out instead of ending in a hard band.
  *
- * What this does NOT cover: real rendered pixels (ShotsTest can't render on Linux aarch64), particles drawn over the
- * veil, and user photos (Look & feel › Photo, not a theme scene).
+ * What this does NOT cover: real rendered pixels (the shots jobs do), and the live GL scene behind the Home's glass.
  */
 class ContrastTest {
     private val palettes = listOf("light" to LightColors, "dark" to DarkColors)
@@ -25,47 +23,17 @@ class ContrastTest {
         assertEquals(0.5f, half.red, 0.01f); assertEquals(1f, half.alpha, 0f)
     }
 
-    @Test fun everySceneIsMeasured() {
-        for (s in ThemeScenes.ALL) assertTrue("$s has no TONE", s in ThemeScenes.TONE)
-        for ((s, t) in ThemeScenes.TONE) assertTrue(s, t.first in 0f..1f && t.second in 0f..1f && t.first < t.second)
-    }
-
-    @Test fun everyThemeAndSceneKeepsTextAaAtEveryStrength() {
-        val scenes = (LivingThemes.PICKER.mapNotNull { ThemeScenes.of(it.id) } + WeatherLook.State.values().map { ThemeScenes.forWeather(it) } + ThemeScenes.ALL).distinct()
-        var checked = 0
-        for (scene in scenes) for ((name, c) in palettes) for (step in 0..10) {
-            val st = step / 10f
-            val a = SceneVeil.alpha(scene, c.paper, c.body, c.sub, c.dark, st)
-            val (lo, hi) = ThemeScenes.TONE.getValue(scene)
-            for (g in listOf(lo, hi)) {
-                val bg = Contrast.grey(g)
-                assertTrue("$scene/$name/st=$st body", Contrast.onScene(c.body, bg, c.paper, a) >= Contrast.AA_TEXT)
-                assertTrue("$scene/$name/st=$st ink", Contrast.onScene(c.ink, bg, c.paper, a) >= Contrast.AA_TEXT)
-                assertTrue("$scene/$name/st=$st sub", Contrast.onScene(c.sub, bg, c.paper, a) >= Contrast.AA_UI)
-            }
-            checked++
+    /** 0.52.2: the ARGUS Home's text on its own grounds (obsidian, the glass bubbles / bar / sheet, the answer card). */
+    @Test fun theArgusHomeTextReadsOnItsGrounds() {
+        val t = com.blaze.assistant.ui.argus.ArgusHomeTokens
+        val grounds = listOf(t.Obsidian, Contrast.over(t.Glass, Color.Black), Contrast.over(Color(0xF0050A16), Color.Black),
+            Contrast.over(Color(0xE6081A40), Color.Black), Contrast.over(Color(0xF2101830), Color.Black), Color(0xFF00133F))
+        for (g in grounds) {
+            assertTrue("white on $g", Contrast.ratio(Color.White, g) >= Contrast.AA_TEXT)
+            assertTrue("steel on $g", Contrast.ratio(t.Steel, g) >= Contrast.AA_TEXT)
+            assertTrue("electric text on $g", Contrast.ratio(t.ElectricText, g) >= Contrast.AA_TEXT)
+            assertTrue("electric (rings, cursor, borders) on $g", Contrast.ratio(t.Electric, g) >= Contrast.AA_UI)
         }
-        assertTrue(checked >= 13 * 2 * 11)
-    }
-
-    @Test fun theSliderOnlyAddsVeil() {
-        for ((_, c) in palettes) for (scene in ThemeScenes.ALL) {
-            val aa = SceneVeil.aa(scene, c.paper, c.body, c.sub, c.dark)
-            assertEquals(aa, SceneVeil.alpha(scene, c.paper, c.body, c.sub, c.dark, 1f), 0.0001f)
-            assertEquals(ThemeScenes.MAX_SCRIM, SceneVeil.alpha(scene, c.paper, c.body, c.sub, c.dark, 0f), 0.0001f)
-            assertEquals(aa, SceneVeil.alpha(scene, c.paper, c.body, c.sub, c.dark, 5f), 0.0001f)
-            var prev = 2f
-            for (s in 0..10) { val v = SceneVeil.alpha(scene, c.paper, c.body, c.sub, c.dark, s / 10f); assertTrue(v <= prev); prev = v }
-        }
-    }
-
-    @Test fun theOldFixedVeilFailedSomeScenes() {
-        // Before 0.45.7 the veil was 0.55 (dark) / 0.62 (light) for every scene; these fell below AA (e.g. lagoon in dark).
-        val c = DarkColors
-        val (lo, hi) = ThemeScenes.TONE.getValue("lagoon")
-        val worst = minOf(Contrast.onScene(c.body, Contrast.grey(lo), c.paper, 0.55f), Contrast.onScene(c.body, Contrast.grey(hi), c.paper, 0.55f))
-        val subWorst = minOf(Contrast.onScene(c.sub, Contrast.grey(lo), c.paper, 0.55f), Contrast.onScene(c.sub, Contrast.grey(hi), c.paper, 0.55f))
-        assertFalse(worst >= Contrast.AA_TEXT && subWorst >= Contrast.AA_UI)
     }
 
     @Test fun chipsAreSolidWithAVisibleBorder() {

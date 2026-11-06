@@ -60,16 +60,12 @@ scene, Argus Blue #0056FF / Electric #1286FF, white + Steel #9AA0B3 text.
   MainActivity: EXTRA_HOME always shows Home; notification / form intents show the chat.
 
 ## Left (file level)
-1. Text that still mentions living backgrounds / themes: `ui/Views.kt` (look view desc), `agent/Commands.kt` (look),
-   `composer/SelfMap.kt` (setting:wallpaper → remove, look desc), `agent/Awareness.kt` line ~170, `ui/SettingsSheet.kt`
-   page subtitle, `agent/SelfKnowledge.kt` ("Theme" in the avatar menu), `app/blaze-docs/about.md`.
-2. `ui/BackRule.kt`: drop `themePicker` from Shell + front().
-3. Tests to update: BackRuleTest (themePicker, backToChat needles), BubbleTonesTest, ChatUi20Test, ChatUi20ShotsTest,
-   StageShotsTest (`blazePalette(dark, null)`), ContrastTest (scene parts), PhoneContrastTest, ThemeEverywhereTest;
-   delete LivingThemesTest, LivingLogicTest, ThemeScenesTest; new ArgusLookTest, ArgusHomeLogicTest, SpotlightGroupsTest,
-   ArgusHomeShotsTest (Robolectric, Canvas mode), ArgusHomeWiringTest (source scans). Grep every test that scans an edited
-   source file for needles (WaveB4NoLinuxTest, HideModels19Test, ThinkingLabelTest, ChatUi20Test, DesignNavTest,
-   WaitRowTest, LazyStartTest, SpotlightSearchTest uses its own map).
+1. ~~Text mentions~~ done (Views, Commands, SelfMap — setting:wallpaper removed —, Awareness, SettingsSheet, SelfKnowledge, about.md).
+2. ~~BackRule themePicker~~ done.
+3. Tests: ~~BackRuleTest, BubbleTonesTest, ChatUi20Test, ChatUi20ShotsTest, StageShotsTest, ContrastTest, PhoneContrastTest,
+   ThemeEverywhereTest, MusicRevampTest, SpotlightSearchTest~~ updated; ~~LivingThemesTest, LivingLogicTest, ThemeScenesTest~~
+   deleted. TODO new: ArgusLookTest, ArgusHomeLogicTest (+ ArgusMesh), SpotlightGroupsTest, ArgusHomeShotsTest
+   (Robolectric, BLAZE_SHOTS, Canvas mode), ArgusHomeWiringTest (source scans of ChatScreen / MainActivity wiring).
 4. androidTest: ArgusHomeCheck (scene live through states, 50 ms monitor, 700 ms limit, screenshots), ArgusSpotlightCheck
    (pull open/close ×3); LowRamSmokeTest + `f_argusHome` (gate count 6 → 7 in tools/smoke/run-smoke.sh). Replace
    HomeFocusCheck / HomeIntroCheck / Rc4ShotsCheck (old Home).

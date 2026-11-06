@@ -8,53 +8,51 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 0.45.29 theme-tuned chat bubbles: every theme defines its bubble tones, each theme's user bubble is its own colour, and
- * every text in or on a bubble reads at WCAG AA (4.5:1) in light and dark over black, white, the page and the theme's own
- * ground, particle and accent colours.
+ * 0.52.2: one ARGUS look (the Living Themes and their twelve bubble tone sets are gone). The user's bubble takes the
+ * accent (ARGUS cobalt by default, or the one picked in Look & feel), ARGUS's a quiet steel blue, and every text in or on a
+ * bubble reads at WCAG AA (4.5:1) in light and dark over black, white, the page and the ARGUS Home's own grounds.
  */
 class BubbleTonesTest {
     private val modes = listOf(false, true)
+    /** null = the ARGUS accent; then every Look & feel preset, then a near-white one (the hardest case in dark). */
+    private val accents: List<Long?> = listOf<Long?>(null) + LookLogic.ACCENTS.mapNotNull { LookLogic.parseAccent(it.first) } + 0xFFF8F8F8
 
-    @Test fun everyThemeDefinesBubbleColours() {
-        for (t in LivingThemes.PICKER) assertTrue("theme '${t.id}' (${t.name}) has no bubble tones", BubbleTones.BY_THEME.containsKey(t.id))
-        assertEquals(LivingThemes.PICKER.map { it.id }.toSet(), BubbleTones.BY_THEME.keys)
-        for (dark in modes) for (t in LivingThemes.PICKER) {
-            val c = blazePalette(t.id, dark, null)
-            assertTrue("${t.id} dark=$dark: no user bubble colour", c.bubbleMe != Color.Unspecified)
-            assertTrue("${t.id} dark=$dark: no ${BrandName.NAME} bubble colour", c.bubbleBlaze != Color.Unspecified)
+    /** Everything that can sit behind a bubble now: the page extremes plus obsidian, cobalt night, Argus Blue, Electric, Steel. */
+    private fun backdrops(c: BlazeColors): List<Color> = listOf(Color.Black, Color.White, c.paper.copy(alpha = 1f),
+        Color(0xFF000000), Color(0xFF06103D), Color(0xFF0056FF), Color(0xFF1286FF), Color(0xFF9AA0B3), Color(0xFF5AA9FF), Color(0xFF0A1020))
+
+    @Test fun everyPaletteDefinesBubbleColours() {
+        for (dark in modes) for (a in accents) {
+            val c = blazePalette(dark, a)
+            assertTrue("dark=$dark accent=$a: no user bubble colour", c.bubbleMe != Color.Unspecified)
+            assertTrue("dark=$dark accent=$a: no ${BrandName.NAME} bubble colour", c.bubbleBlaze != Color.Unspecified)
+            assertEquals("opaque base", 1f, c.bubbleMe.alpha, 0f)
         }
     }
 
-    @Test fun eachThemeHasItsOwnUserBubble() {
-        val tones = BubbleTones.BY_THEME.values.map { it.mine }
-        assertEquals("two themes share a user bubble accent", tones.size, tones.toSet().size)
+    @Test fun theAccentTintsTheUserBubbleOnly() {
         for (dark in modes) {
-            val fills = LivingThemes.PICKER.map { BubblePalette.fill(blazePalette(it.id, dark, null), true) }
-            assertEquals("dark=$dark", fills.size, fills.toSet().size)
+            val fills = accents.map { BubblePalette.fill(blazePalette(dark, it), true) }
+            assertEquals("dark=$dark: two accents share a user bubble", fills.size, fills.toSet().size)
+            val blaze = accents.map { BubblePalette.fill(blazePalette(dark, it), false) }.toSet()
+            assertEquals("dark=$dark: ${BrandName.NAME}'s bubble never follows the accent", 1, blaze.size)
         }
-        // Blaze's (and Halo's) bubble is tinted to go with the theme, softer than the user's.
-        val ember = blazePalette("golden_ember", true, null); val deep = blazePalette("deep_sea", true, null)
-        assertTrue(ember.bubbleBlaze != deep.bubbleBlaze)
+        assertTrue(blazePalette(true).bubbleMe != blazePalette(false).bubbleMe)
     }
 
-    private fun backdrops(id: String, c: BlazeColors): List<Color> {
-        val t = LivingThemes.of(id)
-        return listOf(Color.Black, Color.White, c.paper.copy(alpha = 1f)) + t.ground.map { Color(it) } + t.particles.map { Color(it) } + Color(t.accent)
-    }
-
-    @Test fun everyThemeReadsAtAA_lightAndDark() {
+    @Test fun everyPaletteReadsAtAA_lightAndDark() {
         var checked = 0
-        for (t in LivingThemes.PICKER) for (dark in modes) {
-            val c = blazePalette(t.id, dark, null)
+        for (dark in modes) for (acc in accents) {
+            val c = blazePalette(dark, acc)
             for (mine in listOf(true, false)) {
                 val a = BubblePalette.fill(c, mine).alpha
-                assertTrue("${t.id} dark=$dark mine=$mine alpha $a", a >= BubblePalette.FROST && a < 1f)
-                for (g in backdrops(t.id, c)) {
+                assertTrue("dark=$dark accent=$acc mine=$mine alpha $a", a >= BubblePalette.FROST && a < 1f)
+                for (g in backdrops(c)) {
                     val fill = Contrast.over(BubblePalette.fill(c, mine), g)
                     val text = Contrast.ratio(Contrast.over(BubblePalette.text(c, mine), fill), fill)
                     val meta = Contrast.ratio(Contrast.over(BubblePalette.meta(c, mine), fill), fill)
-                    assertTrue("${t.id} dark=$dark mine=$mine on $g text $text", text >= Contrast.AA_TEXT)
-                    assertTrue("${t.id} dark=$dark mine=$mine on $g time $meta", meta >= Contrast.AA_TEXT)
+                    assertTrue("dark=$dark accent=$acc mine=$mine on $g text $text", text >= Contrast.AA_TEXT)
+                    assertTrue("dark=$dark accent=$acc mine=$mine on $g time $meta", meta >= Contrast.AA_TEXT)
                     checked += 2
                 }
             }
@@ -63,8 +61,8 @@ class BubbleTonesTest {
     }
 
     @Test fun aPaleCustomAccentStillReads() {
-        // Classic with a near-white Look & feel accent, dark mode: the tone is mixed in less until the text reads.
-        val c = blazePalette("", true, 0xFFF8F8F8)
+        // A near-white Look & feel accent in dark mode: the tone is mixed in less until the text reads.
+        val c = blazePalette(true, 0xFFF8F8F8)
         val solid = Contrast.over(c.bubbleMe, Color.Black)
         assertTrue(Contrast.ratio(c.ink, solid) >= BubbleTones.SOLID_MIN)
         for (g in listOf(Color.Black, Color.White, c.paper.copy(alpha = 1f))) {

@@ -17,17 +17,18 @@ import java.util.Calendar
 class ChatUi20Test {
     private fun five(f: () -> Unit) = repeat(5) { f() }
 
-    /** The three themes under test: Classic, a dark living theme and a light one. */
-    private val themes = listOf("", "golden_ember", "rose_dawn")
+    /** 0.52.2: one ARGUS look; the accents under test: ARGUS (none picked), Electric and Amber from Look & feel. */
+    private val themes: List<Long?> = listOf(null, 0xFF1286FF, 0xFFF59E0B)
 
-    /** The palette BlazeTheme builds for [id] in [dark] (same rule as Theme.kt). */
-    private fun palette(id: String, dark: Boolean): BlazeColors {
-        return blazePalette(id, dark, null)
+    /** The palette BlazeTheme builds for accent [id] in [dark] (same rule as Theme.kt). */
+    private fun palette(id: Long?, dark: Boolean): BlazeColors {
+        return blazePalette(dark, id)
     }
 
-    private fun backdrops(id: String, c: BlazeColors): List<Color> {
-        val t = LivingThemes.of(id)
-        return (listOf(Color.Black, Color.White, c.paper.copy(alpha = 1f)) + t.ground.map { Color(it) } + t.particles.map { Color(it) } + Color(t.accent))
+    /** Pure black, pure white, the page, and the ARGUS grounds (obsidian, cobalt night, Argus Blue, Electric, Steel). */
+    private fun backdrops(id: Long?, c: BlazeColors): List<Color> {
+        return listOf(Color.Black, Color.White, c.paper.copy(alpha = 1f), Color(0xFF06103D), Color(0xFF0056FF), Color(0xFF1286FF), Color(0xFF9AA0B3)) +
+            (id?.let { listOf(Color(it)) } ?: emptyList())
     }
 
     @Test fun contrast_everyText_3themes_lightAndDark() = five {
@@ -60,10 +61,10 @@ class ChatUi20Test {
                 assertTrue("$id $dark $mine alpha $a", a >= BubblePalette.FROST && a < 1f)
             }
         }
-        // 0.45.29: your bubble takes the theme's own accent and Blaze's a soft tint that goes with it; never WhatsApp green.
-        val ember = palette("golden_ember", true); val rose = palette("rose_dawn", true)
-        assertTrue(BubblePalette.fill(ember, true) != BubblePalette.fill(rose, true))
-        assertTrue(BubblePalette.fill(ember, false) != BubblePalette.fill(rose, false))
+        // 0.52.2: your bubble takes the accent; ARGUS's keeps its own steel tone; never WhatsApp green.
+        val electric = palette(0xFF1286FF, true); val amber = palette(0xFFF59E0B, true)
+        assertTrue(BubblePalette.fill(electric, true) != BubblePalette.fill(amber, true))
+        assertTrue(BubblePalette.fill(electric, false) == BubblePalette.fill(amber, false))
         // Blaze's own greys and the theme accent, never WhatsApp's green.
         for (id in themes) for (dark in listOf(false, true)) for (mine in listOf(true, false)) {
             val f = BubblePalette.fill(palette(id, dark), mine)

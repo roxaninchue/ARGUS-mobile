@@ -53,7 +53,7 @@ class BackRuleTest {
         val overlays = listOf(
             BackRule.Shell(viewsSheet = true), BackRule.Shell(plusMenu = true), BackRule.Shell(arc = true),
             BackRule.Shell(avatarMenu = true), BackRule.Shell(search = true), BackRule.Shell(gallery = true),
-            BackRule.Shell(room = true), BackRule.Shell(themePicker = true), BackRule.Shell(view = "design"),
+            BackRule.Shell(room = true), BackRule.Shell(view = "design"),
             BackRule.Shell(tab = ChatNav.PROJECTS), BackRule.Shell(tab = ChatNav.PROJECTS, inProjectChat = true),
             BackRule.Shell(tab = ChatNav.HOME), BackRule.Shell(swipeHome = true),
             // Stacked: a page over a sheet over Projects still goes straight to the chat in one press.
@@ -64,7 +64,7 @@ class BackRuleTest {
             assertEquals("$o", BackRule.Action.TO_CHAT, BackRule.action(o))
             fronts += BackRule.front(o)
         }
-        assertTrue("every overlay has its own front id", fronts.size >= 13)
+        assertTrue("every overlay has its own front id", fronts.size >= 12)
     }
 
     @Test fun theChatIsTheRootAndTheLockSetupAndCallKeepTheirBack() = fiveTimes("root") {
@@ -117,7 +117,9 @@ class BackRuleTest {
         // backToChat closes everything the Shell can name.
         val btc = chat.substringAfter("fun backToChat() {").substringBefore("\n    }\n")
         for (k in listOf("settingsPage = null", "showViews = false", "plusOpen = false", "arcOpen = false", "avatarMenu = false", "showSearch = false",
-            "GalleryUi.open.value = false", "Agent.roomOpen.value = -1L", "ThemePickerState.open.value = false", "Views.showing.value = \"\"",
+            "GalleryUi.open.value = false", "Agent.roomOpen.value = -1L", "Views.showing.value = \"\"",
+            // 0.52.2: Back lands on the ARGUS Home
+            "ArgusHomeBus.show()",
             // RC2: the sheet settles through HomeRoute (Home when the new Home is the root, the chat sheet otherwise)
             "switchTab(ChatNav.CHAT)", "HomeRoute.sheetAfterBack(")) assertTrue("backToChat: $k", btc.contains(k))
         // Back from Chat no longer drops to Home (that loop made Back unable to leave Blaze).

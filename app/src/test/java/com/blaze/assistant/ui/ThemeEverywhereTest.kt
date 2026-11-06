@@ -8,100 +8,75 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * v0.45.8 one theme everywhere (user screenshots 07:28: Projects flat dark, Home navy, Chat desert).
+ * One look everywhere. v0.45.8 made one picked Living Theme show on every screen; 0.52.2 removed the Living Themes with
+ * the ARGUS living 3D Home, so the rule is now: light / dark ([ThemeMode]) is the only switch, every screen follows it, every
+ * switcher writes through it, nothing reads a picked theme any more, and the theme scene pictures are gone from the APK.
  *
- * - One source of truth: [AppTheme] answers the same for every screen, and every screen's source reads it.
- * - Every switcher writes through [AppTheme.pick]; a pick is visible to every reader at once.
- * - The Terminal palette is derived from the theme with 4.5:1 or more for every text colour.
- * - Home: the strip sits on Home's ground; the ghost stack shows only strips below the main card.
- *
- * What this does NOT cover: rendered pixels (no ShotsTest on Linux aarch64) and two activities on screen at once.
+ * What this does NOT cover: rendered pixels (the shots jobs do) and two activities on screen at once.
  */
 class ThemeEverywhereTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
     private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private val assets = listOf(java.io.File("src/main/assets"), java.io.File("app/src/main/assets")).first { it.isDirectory }
 
-    /** Each screen in [AppTheme.SCREENS] -> the file that draws it and what in it must read the shared theme. */
-    private val readers = mapOf(
-        "home" to listOf("ui/HomeBoardUi.kt" to "themeOn()", "ui/SimpleUi.kt" to "bottom = {"),
-        "projects" to listOf("ui/Shell.kt" to "screenGround {"),
-        "chat" to listOf("ui/ChatScreen.kt" to "themeOn()"),
-        "settings" to listOf("ui/SettingsSheet.kt" to "ThemedScreen("),
-        "sheets" to listOf("mediaapps/MediaUi.kt" to "themeOn()", "terminal/TerminalSheet.kt" to "TermPalette"),
-        "music" to listOf("mediaapps/MusicActivity.kt" to "ThemedScreen("),
-        "video" to listOf("mediaapps/VideoActivity.kt" to "ThemedScreen("),
-        "design" to listOf("ui/DesignView.kt" to "screenGround {"),
-        "terminal" to listOf("terminal/BlazeTerminalActivity.kt" to "TermPalette.of(com.blaze.assistant.ui.Look.theme.value"),
-    )
+    /** What the Living Themes were made of: none of it may come back. */
+    private val gone = listOf("LivingThemes", "LivingLogic", "LivingBackground", "ThemeTint", "ThemeScenes", "WeatherLook", "ThemePicker",
+        "ThemeSceneImages", "SceneVeil", "themeOn()", "ThemedScreen(", "screenGround", "Look.theme", "Look.bg", "drawTheme(", "rememberScene(")
 
-    @Test fun oneRuleForEveryScreen() {
-        for (th in LivingThemes.PICKER) {
-            val grounds = AppTheme.SCREENS.map { AppTheme.ground(th.id, it) }.toSet()
-            assertEquals("${th.name}: every screen must agree", 1, grounds.size)
-            val want = if (th.id == LivingThemes.CLASSIC) AppTheme.Ground.OWN else AppTheme.Ground.SCENE
-            assertEquals(th.name, want, grounds.single())
-        }
-        // The user's case: desert on every screen, none keeping its own ground.
-        for (s in AppTheme.SCREENS) assertEquals(s, AppTheme.Ground.SCENE, AppTheme.ground("desert_dune", s))
-        assertEquals(AppTheme.Ground.OWN, AppTheme.ground("not-a-theme", "home"))
+    @Test fun theLivingThemesAreGone() {
+        val hits = root.walkTopDown().filter { it.isFile && it.extension == "kt" }.flatMap { f ->
+            val t = f.readText(); gone.filter { it in t }.map { "${f.name}: $it" }
+        }.toList()
+        assertTrue("Living Themes still referenced: $hits", hits.isEmpty())
+        for (f in listOf("LivingThemes.kt", "LivingLogic.kt", "LivingBackground.kt", "LivingThemesDraw.kt", "ThemePicker.kt", "ThemeSceneImages.kt"))
+            assertFalse("ui/$f still exists", java.io.File(root, "com/blaze/assistant/ui/$f").exists())
+        assertFalse("assets/theme-scenes still ships (~880 KB)", java.io.File(assets, "theme-scenes").exists())
+        // The avatar menu has no Themes item; Look & feel has no living backgrounds.
+        assertFalse("MenuItem(\"themes\"" in src("ui/ChatScreen.kt"))
+        assertFalse("Living backgrounds" in src("ui/SimplePages.kt") || "Move with music" in src("ui/SimplePages.kt"))
     }
 
-    @Test fun everyScreenReadsTheSharedTheme() {
-        assertEquals(AppTheme.SCREENS.toSet(), readers.keys)
-        for ((screen, files) in readers) for ((f, needle) in files) assertTrue("$screen: $f must use $needle", needle in src(f))
-        // The old fixed grounds are gone where the screenshots showed them.
-        val shell = src("ui/Shell.kt")
-        assertFalse("Projects still paints its own flat ground", "Column(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark)) {\n        if (open == null)" in shell)
-        assertFalse("Music still paints c.paper over the theme", "Box(Modifier.fillMaxSize().background(c.paper)) {\n        Column(Modifier.fillMaxSize().statusBarsPadding())" in src("mediaapps/MusicActivity.kt"))
-        assertFalse("Terminal colours still fixed", "private val accent = Color.parseColor" in src("terminal/BlazeTerminalActivity.kt"))
-        // Home draws its look only without a theme.
-        assertTrue("if (themed) Modifier else Modifier.homeBackground(" in src("ui/HomeBoardUi.kt"))
-    }
-
-    @Test fun everyScreenHasTheSwitcher() {
+    @Test fun everyScreenHasTheLightDarkSwitch() {
+        assertEquals(listOf("home", "projects", "chat", "settings", "sheets", "music", "video", "design", "terminal"), AppTheme.SCREENS)
         val switchers = mapOf(
             "home" to "ui/HomeBoardUi.kt", "projects" to "ui/Shell.kt", "settings" to "ui/SettingsSheet.kt",
             "music" to "mediaapps/MusicActivity.kt", "video" to "mediaapps/VideoActivity.kt", "design" to "ui/DesignView.kt")
         for ((s, f) in switchers) assertTrue("$s has no ThemeSwitch", "ThemeSwitch(" in src(f))
-        // Chat: the profile menu's Themes (the carousel, the same list); Terminal: ⋮ › Theme.
-        assertTrue("MenuItem(\"themes\", \"Themes\"" in src("ui/ChatScreen.kt"))
+        // Chat: the profile menu's Look & feel; Terminal: ⋮ › Light or dark.
+        assertTrue("MenuItem(\"look\", \"Look & feel\"" in src("ui/ChatScreen.kt"))
         assertTrue("themeMenu()" in src("terminal/BlazeTerminalActivity.kt"))
-        // Every switcher writes through the one path.
-        for (f in listOf("ui/AppTheme.kt", "ui/ThemePicker.kt", "terminal/BlazeTerminalActivity.kt")) assertTrue("$f bypasses AppTheme.pick", "AppTheme.pick(" in src(f))
-        assertEquals(LivingThemes.PICKER, AppTheme.options)
+        // Every switcher writes through ThemeMode.
+        assertTrue("AppTheme.toggle()" in src("ui/AppTheme.kt") && "ThemeMode.set(m)" in src("ui/AppTheme.kt"))
+        assertTrue("ThemeMode.set(item.id)" in src("terminal/BlazeTerminalActivity.kt"))
+        // The Terminal repaints when light / dark changes anywhere.
+        assertTrue("snapshotFlow { com.blaze.assistant.ui.ThemeMode.mode.value }" in src("terminal/BlazeTerminalActivity.kt"))
+        assertTrue("TermPalette.of(com.blaze.assistant.ui.AppTheme.darkNow())" in src("terminal/BlazeTerminalActivity.kt"))
     }
 
     @Test fun aSwitchAnywhereShowsEverywhere() {
-        val before = Look.theme.value to ThemeMode.mode.value
+        val before = ThemeMode.mode.value
         try {
-            // Start dark on a dark theme.
-            AppTheme.pick("deep_sea"); ThemeMode.set("dark")
-            // "From Music": a light theme. Every reader sees it: the flows Chat / Home / Video observe, the Terminal's palette.
-            AppTheme.pick("desert_dune")
-            assertEquals("desert_dune", Look.theme.value)
-            assertEquals("desert_dune", AppTheme.current())
+            ThemeMode.mode.value = "dark"
+            assertTrue(AppTheme.darkNow())
+            assertEquals("light", AppTheme.toggle())
             assertEquals("light", ThemeMode.mode.value)
-            assertEquals("Desert Dune", ThemeTint.current.value?.name)
-            assertTrue(AppTheme.themed(Look.theme.value))
             assertFalse(AppTheme.darkNow())
-            val term = TermPalette.of(Look.theme.value, AppTheme.darkNow())
-            assertFalse(term.dark)
-            // "From the Terminal": a dark theme flips back to dark.
-            AppTheme.pick("neon_rain")
-            assertEquals("neon_rain", Look.theme.value); assertEquals("dark", ThemeMode.mode.value)
-            assertTrue(TermPalette.of(Look.theme.value, AppTheme.darkNow()).dark)
-            // Classic: every screen gets its own ground back; the mode stays.
-            AppTheme.pick(LivingThemes.CLASSIC)
-            assertEquals(LivingThemes.CLASSIC, Look.theme.value); assertEquals("dark", ThemeMode.mode.value)
-            assertFalse(AppTheme.themed(Look.theme.value)); assertEquals(null, ThemeTint.current.value)
-        } finally { Look.theme.value = before.first; ThemeTint.set(before.first); ThemeMode.mode.value = before.second }
+            assertFalse(TermPalette.of(AppTheme.darkNow()).dark)
+            assertEquals("dark", AppTheme.toggle())
+            assertTrue(TermPalette.of(AppTheme.darkNow()).dark)
+            // Auto follows the clock (dark from 19:30 to 05:00); "system" is dark-first.
+            ThemeMode.mode.value = "auto"
+            assertTrue(AppTheme.darkNow(22)); assertFalse(AppTheme.darkNow(12)); assertTrue(AppTheme.darkNow(3))
+            ThemeMode.mode.value = "system"
+            assertTrue(AppTheme.darkNow(12))
+        } finally { ThemeMode.mode.value = before }
     }
 
     @Test fun terminalPaletteKeepsAa() {
         var checked = 0
-        for (th in LivingThemes.PICKER) for (dark in listOf(true, false)) {
-            val p = TermPalette.of(th.id, dark)
-            val tag = "${th.name} ${if (dark) "dark" else "light"}"
+        for (dark in listOf(true, false)) {
+            val p = TermPalette.of(dark)
+            val tag = if (dark) "dark" else "light"
             assertTrue("$tag text ${TermPalette.ratio(p.fg, p.bg)}", TermPalette.ratio(p.fg, p.bg) >= 7.0)
             for ((name, col) in listOf("cursor" to p.cursor, "accent" to p.accent, "dim" to p.dim))
                 assertTrue("$tag $name ${TermPalette.ratio(col, p.bg)}", TermPalette.ratio(col, p.bg) >= TermPalette.MIN)
@@ -116,18 +91,10 @@ class ThemeEverywhereTest {
             assertEquals(dark, p.dark)
             checked++
         }
-        assertEquals(LivingThemes.PICKER.size * 2, checked)
-    }
-
-    @Test fun terminalFollowsTheTheme() {
-        val desert = TermPalette.of("desert_dune", true)
-        val sea = TermPalette.of("deep_sea", true)
-        assertTrue("themes differ", desert.bg != sea.bg)
-        assertEquals(Color(LivingThemes.of("desert_dune").ground.first()).copy(alpha = 1f), Color(desert.bg))
-        // Classic keeps the near-black terminal it always had.
-        assertEquals(Color(0xFF0B0B0D), Color(TermPalette.of(LivingThemes.CLASSIC, true).bg))
-        // The accent stays the theme's hue where it already reads.
-        assertEquals(Color(LivingThemes.of("desert_dune").accent), Color(desert.accent))
+        assertEquals(2, checked)
+        // The near-black terminal it always had in dark; a soft paper in light.
+        assertEquals(Color(0xFF0B0B0D), Color(TermPalette.of(true).bg))
+        assertEquals(Color(0xFFF7F7F8), Color(TermPalette.of(false).bg))
     }
 
     @Test fun ghostStackShowsOnlyStrips() {

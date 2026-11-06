@@ -73,17 +73,20 @@ class ChatUi20ShotsTest {
         try { Settings.init(ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { }
     }
 
+    /** 0.52.2: one ARGUS look; [id] names the accent under test ("" = ARGUS, then Electric and Amber from Look & feel). */
+    private fun accentOf(id: String): Long? = when (id) { "electric" -> 0xFF1286FF; "amber" -> 0xFFF59E0B; else -> null }
+
     private fun palette(id: String, dark: Boolean): BlazeColors {
-        return blazePalette(id, dark, null)
+        return blazePalette(dark, accentOf(id))
     }
 
-    /** A still stand-in for the theme's scene: its ground gradient plus a few bright particles right behind the bubbles. */
+    /** A still stand-in for what can sit behind the thread: the ARGUS grounds plus a few bright Argus / Electric lights. */
     @Composable private fun Scene(id: String, c: BlazeColors) {
-        val t = LivingThemes.of(id)
-        val ground = t.ground.map { Color(it) }.let { g -> if (c.dark) g else g.map { lerp(c.paper.copy(alpha = 1f), it, 0.16f) } }
+        val ground = listOf(Color(0xFF000000), Color(0xFF06103D), Color(0xFF001A66)).let { g -> if (c.dark) g else g.map { lerp(c.paper.copy(alpha = 1f), it, 0.16f) } }
+        val lights = listOf(0xFF0056FF, 0xFF1286FF, 0xFF9AA0B3) + (accentOf(id)?.let { listOf(it) } ?: emptyList())
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(ground)))
         Canvas(Modifier.fillMaxSize()) {
-            t.particles.forEachIndexed { i, p ->
+            lights.forEachIndexed { i, p ->
                 for (k in 0 until 6) drawCircle(Color(p).copy(alpha = 0.85f), radius = 10f + 9f * ((i + k) % 3),
                     center = Offset(size.width * (0.12f + 0.15f * k), size.height * (0.08f + 0.14f * i + 0.11f * k) % size.height))
             }
@@ -137,7 +140,7 @@ class ChatUi20ShotsTest {
         return bmp
     }
 
-    private val themes = listOf("" to "classic", "golden_ember" to "ember", "rose_dawn" to "rose")
+    private val themes = listOf("" to "argus", "electric" to "electric", "amber" to "amber")
     private val which = mutableStateOf(Triple("", false, ""))
 
     /** One activity, six frames: theme x light / dark, each saved and sampled. */

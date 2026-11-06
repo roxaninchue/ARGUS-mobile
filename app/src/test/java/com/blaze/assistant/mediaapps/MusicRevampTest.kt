@@ -155,6 +155,7 @@ class MusicRevampTest {
             assertFalse("$f names OpenCode", Regex("(?i)open ?code").containsMatchIn(s))
         }
         // Themes and glass: the pages sit on the themed screen and use glass surfaces.
-        assertTrue("ThemedScreen(" in src("mediaapps/MusicActivity.kt") && ".glass(" in src("mediaapps/MusicShell.kt"))
+        // 0.52.2: one ARGUS look (no Living Theme scene behind Music); the glass shell and the light / dark switch stay.
+        assertTrue("ThemeSwitch(" in src("mediaapps/MusicActivity.kt") && ".glass(" in src("mediaapps/MusicShell.kt"))
     }
 }
