@@ -15,8 +15,8 @@ import com.blaze.assistant.BrandName
 object BusyRoute {
     enum class Kind { STOP, STEER, SIDE }
 
-    private val stop = Regex("""(?i)^\s*(?:@blaze\s+)?(?:stop|cancel|abort|halt|quit|never ?mind|forget it|leave it)(?:\s+(?:it|that|this|now|please|the task|everything))*\s*(?:please)?[.!]*\s*$""")
-    private val steer = Regex("""(?i)^\s*(?:also\b|and also\b|plus\b|actually\b|instead\b|rather\b|no[,.]\s|not that\b|wait[,.]?\s|oh and\b|and\s+(?:check|add|make|use|look|find|include)\b|change\b|make it\b|use\b|skip\b|don'?t\b|do not\b|only\b|add\b|include\b|exclude\b|but\b|correction\b|sorry,?\s+i meant\b|i meant\b|@blaze\b)""")
+    private val stop = Regex("""(?i)^\s*(?:@(?:argus|blaze)\s+)?(?:stop|cancel|abort|halt|quit|never ?mind|forget it|leave it)(?:\s+(?:it|that|this|now|please|the task|everything))*\s*(?:please)?[.!]*\s*$""")
+    private val steer = Regex("""(?i)^\s*(?:also\b|and also\b|plus\b|actually\b|instead\b|rather\b|no[,.]\s|not that\b|wait[,.]?\s|oh and\b|and\s+(?:check|add|make|use|look|find|include)\b|change\b|make it\b|use\b|skip\b|don'?t\b|do not\b|only\b|add\b|include\b|exclude\b|but\b|correction\b|sorry,?\s+i meant\b|i meant\b|@(?:argus|blaze)\b)""")
 
     fun route(text: String, toolShaped: Boolean = false): Kind {
         val t = text.trim()

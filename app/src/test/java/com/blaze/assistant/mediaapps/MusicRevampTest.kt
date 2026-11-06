@@ -34,7 +34,7 @@ class MusicRevampTest {
         assertTrue(Regex("""MediaTopBar\([^\n]*\n\s*onAccount = \{ account = true \}, onClose = onClose\)""").containsMatchIn(m))
         assertTrue("onClose = { a.leaveToChat() }" in src("mediaapps/VideoActivity.kt"))
         val shell = src("mediaapps/MusicShell.kt")
-        assertTrue("Close and go back to ${BrandName.NAME} chat" in shell)
+        assertTrue("Close and go back to \${BrandName.NAME} chat" in shell)
         // Account badge left, close right (badge is the first child, close the last).
         val bar = shell.substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
         assertTrue(bar.indexOf("AccountBadge(onAccount)") < bar.indexOf("actions()") && bar.indexOf("actions()") < bar.indexOf("Icons.Rounded.Close"))

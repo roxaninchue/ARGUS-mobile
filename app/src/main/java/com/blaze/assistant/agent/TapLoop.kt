@@ -141,7 +141,7 @@ object TapLoop {
     const val MAX_STEPS = 15
 
     private val stop = setOf("the", "a", "an", "to", "my", "me", "for", "please", "pls", "can", "you", "could", "would", "will", "in", "of", "it",
-        "its", "app", "blaze", "hey", "ok", "okay", "just", "now", "and", "from", "this", "that", "phone", "i", "want", "is", "be")
+        "its", "app", "blaze", "argus", "hey", "ok", "okay", "just", "now", "and", "from", "this", "that", "phone", "i", "want", "is", "be")
     /** Words that flip what a request means: two requests only match when these are the same. */
     private val polarity = setOf("on", "off", "enable", "disable", "allow", "block", "stop", "start", "mute", "unmute", "show", "hide",
         "open", "close", "turn", "dont", "not", "never", "always", "up", "down", "increase", "decrease", "lower", "raise", "connect", "disconnect",

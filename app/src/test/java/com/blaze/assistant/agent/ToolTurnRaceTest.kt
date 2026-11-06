@@ -64,7 +64,7 @@ class ToolTurnRaceTest {
         // Halo's side lane stays CHAT for its deadlines, but with tools it is still one brain at a time
         assertEquals(BrainRace.Kind.CHAT, BrainRace.kind(false, false, 5, false, 10, forced = BrainRace.Kind.CHAT))
         assertFalse(BrainRace.parallel(5))
-        assertEquals(45_000L, task.quietMs); assertEquals(20_000L, chat.quietMs)
+        assertEquals(60_000L, task.quietMs)   // 0.52.1 (gw061): 60 s for tool turns; assertEquals(20_000L, chat.quietMs)
     }
 
     @Test fun slowFirstBrainIsNotHedgedOnAToolTurn() = runTest {
@@ -97,8 +97,8 @@ class ToolTurnRaceTest {
         assertEquals(B.NOUS, o.step)
         assertEquals(1, most)
         val nousAt = started.first { it.first == B.NOUS }.second
-        assertTrue("Nous starts only after the phone was dropped (at ${nousAt})", nousAt in 45_000L..45_100L)
-        assertTrue(fails.single().contains("nothing in 45s"))
+        assertTrue("Nous starts only after the phone was dropped (at ${nousAt})", nousAt in 60_000L..60_100L)
+        assertTrue(fails.single().contains("nothing in 60s"))
     }
 
     @Test fun aThinkingBrainIsNotCutByTheQuietCap() = runTest {

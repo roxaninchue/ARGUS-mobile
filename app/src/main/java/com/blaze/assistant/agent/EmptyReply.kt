@@ -50,7 +50,7 @@ object EmptyReply {
     // ---------------- the agent loop's last line of defence ----------------
 
     private val question = Regex("^(what|what's|whats|which|who|whom|whose|when|where|why|how|is|am|are|was|were|do|does|did|can|could|will|would|should|have|has|tell me|show me what|any)\\b", RegexOption.IGNORE_CASE)
-    private val action = Regex("^(?:please |can you |could you |blaze,? )?(turn|switch|set|put|open|close|send|text|message|call|ring|dial|play|pause|stop|start|mute|unmute|silence|enable|disable|toggle|make|create|add|remove|delete|schedule|remind|book|save|share|install|clear|lock|raise|lower|increase|decrease)\\b", RegexOption.IGNORE_CASE)
+    private val action = Regex("^(?:please |can you |could you |(?:argus|blaze),? )?(turn|switch|set|put|open|close|send|text|message|call|ring|dial|play|pause|stop|start|mute|unmute|silence|enable|disable|toggle|make|create|add|remove|delete|schedule|remind|book|save|share|install|clear|lock|raise|lower|increase|decrease)\\b", RegexOption.IGNORE_CASE)
 
     /** An instruction to do something (not a question about something). */
     fun isAction(userText: String): Boolean {

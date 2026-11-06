@@ -45,7 +45,7 @@ object LookupLane {
     private val ask = Regex("""(?i)^\s*(?:what|who|whom|whose|when|where|which|why|how (?:much|many|old|long|tall|big|far|fast|do|does|did|is|are|to)|is|are|was|were|does|did|do|can|find(?: out)?|look up|lookup|search(?: for)?|google|check|tell me|latest|current|price of|cost of|news)\b""")
     private val personal = Regex("""(?i)\b(?:my (?:phone|files?|photos?|messages?|texts?|calendar|alarms?|contacts?|notes?|music|songs?|battery|storage|settings|apps?|email|inbox)|remind|alarm|timer|text (?:him|her|them|mom|dad)|call |open |play |turn (?:on|off)|set (?:a|an|the)|send |screenshot|on (?:my|this) phone|you (?:remember|know about me))\b""")
     /** Things Blaze answers without the web (itself, the clock, the weather card, sums, a chat), so they never take the lane. */
-    private val notWeb = Regex("""(?i)\b(?:you|your|yourself|blaze|halo|time is it|what time|today'?s date|what day is|weather|forecast|how are|joke|poem|story|translate|calculate|meaning of life)\b|^[\d\s+\-*/().x=?]+$|\bremember\b""")
+    private val notWeb = Regex("""(?i)\b(?:you|your|yourself|(?:argus|blaze)|halo|time is it|what time|today'?s date|what day is|weather|forecast|how are|joke|poem|story|translate|calculate|meaning of life)\b|^[\d\s+\-*/().x=?]+$|\bremember\b""")
     private val needsInteraction = Regex("""(?i)\b(?:book|buy|order|sign (?:me )?(?:in|up)|log ?in|fill (?:in|out)|apply|checkout|reserve|subscribe|my account|download)\b""")
 
     /**

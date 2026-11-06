@@ -20,10 +20,10 @@ object MemoryIntent {
         Regex("""\bwhat(?:'s| is| are| do you have| have you got)\b.{0,16}\b(?:your|my|in your|in my|saved|stored)\s+memor(?:y|ies)\b""", ic),
         // "what do you know about me", "what do you remember about me", "what have you saved about me"
         Regex("""\bwhat (?:do|did) you (?:know|remember|have saved|have stored|have) (?:about|on) me\b""", ic),
-        Regex("""\bwhat (?:have|has) (?:you|blaze) (?:saved|remembered|learned|learnt|stored|kept|got) (?:about|on) me\b""", ic),
+        Regex("""\bwhat (?:have|has) (?:you|(?:argus|blaze)) (?:saved|remembered|learned|learnt|stored|kept|got) (?:about|on) me\b""", ic),
         Regex("""\bwhat do you know of me\b|\beverything you (?:know|remember) about me\b""", ic),
         // a bare "memories?" / "my memories" / "your memory"
-        Regex("""^\s*(?:(?:your|my|all|blaze'?s)\s+)?memor(?:y|ies)\s*[?.!]*\s*$""", ic),
+        Regex("""^\s*(?:(?:your|my|all|(?:argus|blaze)'?s)\s+)?memor(?:y|ies)\s*[?.!]*\s*$""", ic),
     )
 
     // Phone storage and RAM, photo "memories", and requests to save or delete are something else.

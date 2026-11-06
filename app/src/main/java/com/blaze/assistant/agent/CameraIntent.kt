@@ -20,12 +20,12 @@ object CameraIntent {
     fun clean(text: String): String {
         var t = Normalizer.normalize(text, Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase()
         t = t.replace(Regex("[¿¡\"“”«»]"), " ").replace(Regex("\\s+"), " ").trim()
-        t = t.replace(Regex("^(hey|hi|ok|okay|yo|oye|ola|hola|salut|dis)?[ ,]*blaze[ ,!.]*"), "")
+        t = t.replace(Regex("^(hey|hi|ok|okay|yo|oye|ola|hola|salut|dis)?[ ,]*(?:argus|blaze)[ ,!.]*"), "")
         t = t.replace(Regex("[?!.,]+$"), "").trim()
         repeat(2) {
             t = t.replace(Regex("^(please|pls|plz|can you|could you|would you|will you|i want you to|i need you to|help me|" +
                 "s'il te plait|s'il vous plait|peux-tu|tu peux|pourrais-tu|por favor|puedes|podrias|pode|podes|voce pode)[ ,]+"), "")
-            t = t.replace(Regex("[ ,]+(please|pls|for me|real quick|quickly|now|blaze|pour moi|s'il te plait|s'il vous plait|por favor|para mi|pra mim|para mim)$"), "")
+            t = t.replace(Regex("[ ,]+(please|pls|for me|real quick|quickly|now|(?:argus|blaze)|pour moi|s'il te plait|s'il vous plait|por favor|para mi|pra mim|para mim)$"), "")
         }
         return t.trim()
     }

@@ -60,7 +60,12 @@ android {
             if (System.getProperty("os.arch").orEmpty().lowercase().let { a -> a.contains("aarch64") || a.contains("arm64") })
                 it.systemProperty("robolectric.conscryptMode", "OFF")
             // The compose test rule needs ui-test-manifest, which only the debug build has.
-            if (it.name.contains("Release")) it.exclude("**/*ShotsTest*")
+            if (it.name.contains("Release")) {
+                it.exclude("**/*ShotsTest*")
+                // 0.52.2: these launch ComponentActivity through the compose rule too (the merged release manifest has no
+                // ui-test-manifest activity, a testImplementation dependency doesn't add it); they run in testDebugUnitTest.
+                it.exclude("**/HomeFocusTest*", "**/HomeRedesignTest*", "**/InstallSheetTest*")
+            }
             // A failing test prints its real message and causes in the CI log (not just "SQLException at Foo.kt:143").
             it.testLogging {
                 events("failed")

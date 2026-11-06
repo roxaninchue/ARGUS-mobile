@@ -21,7 +21,7 @@ object IntentCache {
         } catch (_: Exception) { }
     }
 
-    private val filler = Regex("^(hey |ok |okay )?(blaze[, ]+)?(please |can you |could you )?|( please| now| for me)$")
+    private val filler = Regex("^(hey |ok |okay )?((?:argus|blaze)[, ]+)?(please |can you |could you )?|( please| now| for me)$")
     fun norm(text: String) = text.lowercase().replace(Regex("[^a-z0-9 :%]"), " ").replace(Regex("\\s+"), " ").trim()
         .replace(filler, "").trim()
 

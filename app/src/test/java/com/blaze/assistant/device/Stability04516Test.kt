@@ -67,7 +67,7 @@ class Stability04516Test {
 
     @Test fun keyChangeNoticeNamesTheFix() {
         val k = com.blaze.assistant.update.Updater.KEY_CHANGED
-        assertTrue(k.contains("Uninstall Blaze once") && k.contains("blazeinchue.pages.dev"))
+        assertTrue(k.contains("Uninstall ${com.blaze.assistant.BrandName.NAME} once") && k.contains("blazeinchue.pages.dev"))
         val u = src("update/Updater.kt").readText()
         assertTrue(u.contains("State.Failed(KEY_CHANGED)"))
     }

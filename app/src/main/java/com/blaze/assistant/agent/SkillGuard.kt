@@ -25,7 +25,7 @@ object SkillGuard {
     /** Distinct request words the skill's name / keywords / description share, and whether a name word is among them. */
     data class Overlap(val words: Int, val nameWord: Boolean, val named: Boolean)
 
-    private val weakName = setOf("phone", "task", "app", "skill", "flow", "speed", "general", "workflow", "blaze", "helper", "tool", "open")
+    private val weakName = setOf("phone", "task", "app", "skill", "flow", "speed", "general", "workflow", "blaze", "argus", "helper", "tool", "open")
 
     fun overlap(request: String, c: SkillMatch.Cand): Overlap {
         val q = SkillMatch.words(request)

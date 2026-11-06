@@ -109,7 +109,7 @@ object TurnContext {
         "anything else (?:to do|on|planned|scheduled|today|for today|left)|what else (?:is on|do i have|today|is there today)|anything other than (?:those|that|these)|what'?s left (?:today|for today|to do)|whats left|anything left (?:today|to do)|left to do today|to do today|rest of (?:the|my) day|what'?s next today)\\b", RegexOption.IGNORE_CASE)
 
     // v0.45.9: a short yes to an offer ("@halo Yes" after "I can check your Google Calendar, want me to?").
-    private val yesRe = Regex("^(?:@(?:halo|blaze|all)\\s+)?(?:yes|yeah|yea|yep|yup|ya|sure|ok|okay|alright|please|go ahead|do it|go for it|check it|please do|yes please|sure thing|of course|definitely)(?:[\\s,]+(?:please|thanks|thank you|go ahead|do it|check|check it|sure|ok|okay))*[\\s.!]*$", RegexOption.IGNORE_CASE)
+    private val yesRe = Regex("^(?:@(?:halo|(?:argus|blaze)|all)\\s+)?(?:yes|yeah|yea|yep|yup|ya|sure|ok|okay|alright|please|go ahead|do it|go for it|check it|please do|yes please|sure thing|of course|definitely)(?:[\\s,]+(?:please|thanks|thank you|go ahead|do it|check|check it|sure|ok|okay))*[\\s.!]*$", RegexOption.IGNORE_CASE)
     private val offerRe = Regex("\\b(calendars?|meetings?|events?|schedules?|agenda|appointments?|reminders?|routines?|classes|class|lectures?|what'?s on|your day|today'?s plan)\\b", RegexOption.IGNORE_CASE)
 
     /** A yes to the previous reply's calendar / schedule / reminder offer: the turn needs the same tools as the ask itself. */

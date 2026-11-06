@@ -137,7 +137,7 @@ MEMORY & SKILLS (learn as you go; nobody has to ask)
     private val secretRe = Regex("""(?i)(sk-[a-z0-9_-]{8,}|sk-ant-|aiza[0-9a-z_-]{20,}|gh[pousr]_[a-z0-9]{16,}|xox[abpr]-|AKIA[0-9A-Z]{12,}|-----BEGIN|\bpassword\s*(is|:|=)|\bpasscode\b|\bpin\s*(is|:|=)|\bcvv\b|\bseed phrase\b|\b(one[- ]time|otp|2fa|verification) code\b)""")
     private val longDigitRe = Regex("""\d[\d -]{11,}\d""")
     private val transientRe = Regex("""(?i)\b(right now|at the moment|just now|this time|this turn|this chat|this conversation|today|tonight|this morning|this afternoon|for now|currently (?:running|open|broken|failing))\b""")
-    private val taskRe = Regex("""(?i)^(the user (asked|wants|wanted|requested|is asking)|user asked|asked (me|blaze) to|blaze (ran|did|fixed|created))""")
+    private val taskRe = Regex("""(?i)^(the user (asked|wants|wanted|requested|is asking)|user asked|asked (me|(?:argus|blaze)) to|(?:argus|blaze) (ran|did|fixed|created))""")
 
     /** True when [s] looks like a key, password, code or card/account number. Never saved, even when asked. */
     fun secret(s: String) = secretRe.containsMatchIn(s) || longDigitRe.containsMatchIn(s)

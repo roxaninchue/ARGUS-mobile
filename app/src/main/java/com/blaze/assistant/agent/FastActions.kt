@@ -23,7 +23,7 @@ object FastActions {
 
     private fun r(p: String) = Regex(p, RegexOption.IGNORE_CASE)
 
-    private val verb = r("""^(?:hey blaze,?\s+|blaze,?\s+|ok(?:ay)?,?\s+)?(?:please\s+|pls\s+)?(?:can you\s+|could you\s+|would you\s+)?(?:please\s+)?""" +
+    private val verb = r("""^(?:hey (?:argus|blaze),?\s+|(?:argus|blaze),?\s+|ok(?:ay)?,?\s+)?(?:please\s+|pls\s+)?(?:can you\s+|could you\s+|would you\s+)?(?:please\s+)?""" +
         """(stop|turn|switch|set|change|make|disable|enable|allow|block|don'?t let|do not let|let|open|show|go to|take me to|clear|mute|unmute|""" +
         """toggle|prevent|keep|put|lower|raise|increase|decrease|reduce|remove (?:the )?(?:notification|permission)|give|revoke|grant|connect|disconnect|forget)\b""")
     private val noun = r("""\b(settings?|links?|default (?:apps?|browser)|by default|notifications?|wi-?fi|bluetooth|battery|brightness|location|gps|permissions?|""" +

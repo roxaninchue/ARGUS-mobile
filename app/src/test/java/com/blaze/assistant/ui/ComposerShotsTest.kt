@@ -148,6 +148,8 @@ class ComposerShotsTest {
             ChatOverHomeContent(st, msgs, busy = true, now = now, workLine = "Opening accessibility settings", stage = false) }
     }
 
+    // 0.52.2: since 0.52.1 (owner) the chat over Home shows no "N steps" chip (one TaskPill while the work runs), so the
+    // frame waits for the thread itself (the follow-up chips are in the same frame).
     @Test fun chatOverHomeFollowups() {
         val now = System.currentTimeMillis()
         val msgs = listOf(
@@ -156,7 +158,7 @@ class ComposerShotsTest {
             ChatMessage(3, Role.STEP, "Reading the forecast", at = now - 57_000),
             ChatMessage(4, Role.BLAZE, "Sunny and 26\u00b0 today, light wind.", followups = listOf("Tomorrow?", "Weekend"), at = now - 50_000))
         val st = ComposerState().apply { chatOpen = true }
-        frame("chat-over-home-followups", st, "2 steps", dim = true) { ChatOverHomeContent(st, msgs, busy = false, now = now, onSend = {}, stage = false) }
+        frame("chat-over-home-followups", st, "Search the weather", dim = true) { ChatOverHomeContent(st, msgs, busy = false, now = now, onSend = {}, stage = false) }
     }
 
     @Test fun spotlightCurated() = spot("spotlight-curated", "", "Chat with ${BrandName.NAME}")

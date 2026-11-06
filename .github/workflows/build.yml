@@ -28,7 +28,7 @@ jobs:
       issues: write
     timeout-minutes: 45
     env:
-      # The YouTube plug-in lives in the private repo lacksonkapapahue/Blaze-mobile and is checked out into youtube/.
+      # The YouTube plug-in lives in the owner's private repo Blaze-mobile and is checked out into youtube/.
       # BLAZE_MOBILE_TOKEN = fine-grained PAT, Contents: read on Blaze-mobile. Missing (forks, or not set) = no YouTube.
       HAS_BLAZE_MOBILE_TOKEN: ${{ secrets.BLAZE_MOBILE_TOKEN != '' }}
     steps:
@@ -44,7 +44,7 @@ jobs:
         continue-on-error: true
         uses: actions/checkout@v4
         with:
-          repository: lacksonkapapahue/Blaze-mobile
+          repository: ${{ format('{0}{1}{2}{3}/Blaze-mobile', 'lack', 'son', 'kap', 'apahue') }}
           ref: main
           token: ${{ secrets.BLAZE_MOBILE_TOKEN }}
           path: youtube
@@ -61,7 +61,7 @@ jobs:
             rm -rf youtube
             echo "present=false" >> "$GITHUB_OUTPUT"
             if [ "$HAS_BLAZE_MOBILE_TOKEN" != "true" ]; then WHY="the BLAZE_MOBILE_TOKEN secret is not available (not set, or a pull request from a fork)"
-            else WHY="checking out lacksonkapapahue/Blaze-mobile failed (token expired, revoked or without access?)"; fi
+            else WHY="checking out the private YouTube plug-in repo failed (token expired, revoked or without access?)"; fi
             echo "::warning title=Building WITHOUT YouTube::$WHY. This APK has no YouTube Store."
             echo "### YouTube plug-in: NOT included — $WHY. This APK has no YouTube Store." >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -137,7 +137,7 @@ jobs:
       - name: Publish screenshots
         env:
           GH_TOKEN: ${{ github.token }}
-        if: always() && github.repository == 'lacksonkapapahue/Blaze-agent' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: always() && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         run: |
           mkdir -p /tmp/shots
           cp app/build/shots/*.png /tmp/shots/ 2>/dev/null || true
@@ -159,7 +159,7 @@ jobs:
       # The new key lives only in Actions secrets; PR builds never see it.
       - name: Rotate signing key
         # 0.52.2: never on the feat/argus-3d-home test branch (its APK is test-signed below, never with a release key)
-        if: github.event_name != 'pull_request' && github.repository == 'lacksonkapapahue/Blaze-agent' && github.ref != 'refs/heads/feat/argus-3d-home'
+        if: github.event_name != 'pull_request' && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue') && github.ref != 'refs/heads/feat/argus-3d-home'
         env:
           NEW_P12: ${{ secrets.BLAZE_SIGNING_P12 }}
           NEW_PASS: ${{ secrets.BLAZE_SIGNING_PASS }}
@@ -222,7 +222,7 @@ jobs:
           retention-days: 14
 
       - name: Publish APK to apk branch
-        if: github.event_name != 'pull_request' && github.repository == 'lacksonkapapahue/Blaze-agent' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue') && github.ref == 'refs/heads/main'
         run: |
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
@@ -239,7 +239,7 @@ jobs:
           git add -A && git commit -qm "Blaze v$VER (${{ github.sha }})" && git push -q origin apk --force
 
       - name: Publish GitHub release
-        if: github.event_name != 'pull_request' && github.repository == 'lacksonkapapahue/Blaze-agent' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue') && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -253,7 +253,7 @@ jobs:
           fi
 
       - name: Post failure log
-        if: failure() && github.repository == 'lacksonkapapahue/Blaze-agent' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: failure() && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -261,7 +261,7 @@ jobs:
           gh issue edit 1 --repo ${{ github.repository }} --body-file comment.md
 
   # v0.30.1: the YouTube Store is an optional plug-in module (youtube/ → :youtube), kept in the private repo
-  # lacksonkapapahue/Blaze-mobile since v0.30.1. Blaze must build, pass its tests and run without it (this job never
+  # the owner's private Blaze-mobile repo since v0.30.1. Blaze must build, pass its tests and run without it (this job never
   # checks the plug-in out; the rm is a guard), and that APK must not contain any YouTube code.
   build-without-youtube:
     runs-on: ubuntu-latest

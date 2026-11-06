@@ -64,8 +64,8 @@ object Ack {
      */
     private val generic = Regex(
         "(\\bi'?m on it\\b|^\\s*((got it|ok(ay)?|sure|alright)[,.!\\s\u2014-]*)?on it\\b|\\bi'?ll (message|text|ping|update) you\\b|\\bi'?ll let you know\\b|" +
-            "\\bi'?ll get back to you\\b|\\bworking on it\\b|\\bpass(ing|ed)? (that|this|it) (straight |right )?(on |over )?to blaze\\b|" +
-            "\\bpassed to blaze\\b|\\bhanding (that|this|it) (over )?to blaze\\b|\\blet me know if you need anything\\b|\\b(one|a) (moment|sec|second)\\b|" +
+            "\\bi'?ll get back to you\\b|\\bworking on it\\b|\\bpass(ing|ed)? (that|this|it) (straight |right )?(on |over )?to (?:argus|blaze)\\b|" +
+            "\\bpassed to (?:argus|blaze)\\b|\\bhanding (that|this|it) (over )?to (?:argus|blaze)\\b|\\blet me know if you need anything\\b|\\b(one|a) (moment|sec|second)\\b|" +
             "\\bgive me a (moment|sec|second)\\b|^\\s*got it[.!]?\\s*$|^\\s*halo here\\b)",
         RegexOption.IGNORE_CASE)
 

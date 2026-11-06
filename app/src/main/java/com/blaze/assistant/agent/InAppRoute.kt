@@ -23,17 +23,17 @@ object InAppRoute {
     private fun r(p: String) = Regex(p, RegexOption.IGNORE_CASE)
     private val otherApp = r("""\b(spotify|youtube|yt music|apple music|deezer|boomplay|audiomack|soundcloud|tidal|amazon music|on my (?:pc|computer|laptop|tv))\b""")
 
-    private val play = r("""^(?:play|start|put on|turn on)(?: (?:some|the|my))? (?:music|songs?|tunes)(?: (?:in|on) blaze(?: music)?)?$|^play (?:something|a song)$|^(?:resume|continue|unpause)(?: (?:the|my))? (?:music|song|playback|track)$|^play blaze music$""")
+    private val play = r("""^(?:play|start|put on|turn on)(?: (?:some|the|my))? (?:music|songs?|tunes)(?: (?:in|on) (?:argus|blaze)(?: music)?)?$|^play (?:something|a song)$|^(?:resume|continue|unpause)(?: (?:the|my))? (?:music|song|playback|track)$|^play (?:argus|blaze) music$""")
     private val pause = r("""^(?:pause|stop|turn off)(?: (?:the|my))? (?:music|song|playback|track)$""")
     private val next = r("""^(?:next|skip)(?: (?:the|this))? (?:song|track)$|^(?:play )?(?:the )?next (?:song|track)$|^skip(?: it)?$""")
     private val prev = r("""^(?:play )?(?:the )?(?:previous|last) (?:song|track)$|^go back a (?:song|track)$""")
     private val now = r("""^(?:what'?s|what is) (?:playing|this song)(?: now)?$|^what song is (?:this|playing)$""")
-    private val view = r("""^(?:open|show|go to|take me to|switch to)(?: me)?(?: (?:the|my))? (blaze music|music player|music|projects|gallery|terminal|blaze settings|memory|schedule|design(?: studio)?|home)(?: (?:screen|page|tab|view))?(?: in blaze)?$""")
+    private val view = r("""^(?:open|show|go to|take me to|switch to)(?: me)?(?: (?:the|my))? ((?:argus|blaze) music|music player|music|projects|gallery|terminal|(?:argus|blaze) settings|memory|schedule|design(?: studio)?|home)(?: (?:screen|page|tab|view))?(?: in (?:argus|blaze))?$""")
 
     // 0.46.1 (report: "pull up browser card" opened the full-screen browser): the browser is a Stage card by default; the full
     // Browser screen only when they say full screen / full view.
-    private val browserCard = r("""^(?:(?:can you|could you|pls)\s+)?(?:pull up|bring up|open|show|put up|launch|start|give me|get|show me)(?: (?:up|me))?(?: (?:the|my|a|your))?(?: blaze)? (?:browser|web browser|browser card|browser widget|internet)(?: card| widget| here| on (?:the )?(?:stage|screen|chat))?(?: for me)?$|^browser(?: card)?$""")
-    private val browserFull = r("""^(?:pull up|bring up|open|show|launch|start|go to|switch to|take me to)(?: (?:the|my|a))?(?: blaze)? (?:web )?browser(?: card)? (?:in |on )?(?:full ?screen|full view|full page)$|^(?:open|show|make)(?: the)? browser (?:full ?screen|big|in full view)$|^full ?screen browser$""")
+    private val browserCard = r("""^(?:(?:can you|could you|pls)\s+)?(?:pull up|bring up|open|show|put up|launch|start|give me|get|show me)(?: (?:up|me))?(?: (?:the|my|a|your))?(?: (?:argus|blaze))? (?:browser|web browser|browser card|browser widget|internet)(?: card| widget| here| on (?:the )?(?:stage|screen|chat))?(?: for me)?$|^browser(?: card)?$""")
+    private val browserFull = r("""^(?:pull up|bring up|open|show|launch|start|go to|switch to|take me to)(?: (?:the|my|a))?(?: (?:argus|blaze))? (?:web )?browser(?: card)? (?:in |on )?(?:full ?screen|full view|full page)$|^(?:open|show|make)(?: the)? browser (?:full ?screen|big|in full view)$|^full ?screen browser$""")
 
     // 0.46.2 Movies ("play the movie Nosferatu", "watch Sintel", "search movies about trains", "continue watching").
     private val movieContinue = r("""^(?:continue|resume|keep) watching(?: (?:my|the))?(?: (?:movie|film|show|video))?$|^(?:continue|resume) (?:my|the) (?:movie|film)$|^pick up (?:my|the) (?:movie|film)$""")
@@ -42,7 +42,7 @@ object InAppRoute {
 
     fun clean(text: String): String = text.trim().lowercase()
         .replace(Regex("[?.!,]+"), " ").replace(Regex("\\s+"), " ").trim()
-        .removePrefix("hey blaze ").removePrefix("blaze ").removePrefix("please ").removeSuffix(" please").removeSuffix(" blaze").trim()
+        .removePrefix("hey argus ").removePrefix("argus ").removePrefix("hey blaze ").removePrefix("blaze ").removePrefix("please ").removeSuffix(" please").removeSuffix(" argus").removeSuffix(" blaze").trim()
 
     /** The in-app route for a request, or null (the normal turn handles it). */
     fun match(text: String): Route? {
@@ -62,7 +62,7 @@ object InAppRoute {
             else -> view.matchEntire(t)?.groupValues?.get(1)?.let { v ->
                 Route.View(when {
                     v.contains("music") -> "music"
-                    v == "blaze settings" -> "settings"
+                    v == "blaze settings" || v == "argus settings" -> "settings"
                     v.startsWith("design") -> "design"
                     else -> v
                 })

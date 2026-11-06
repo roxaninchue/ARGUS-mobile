@@ -103,11 +103,45 @@ class ArgusSpotlightCheck {
 
     private var scenario: ActivityScenario<ComponentActivity>? = null
 
-    /** Spotlight raises the keyboard; put it away so taps and Back reach the Home (the IME window is not ours to touch). */
+    /** True while the soft keyboard is on screen (the window's IME insets). */
+    private fun imeShown(): Boolean {
+        var shown = false
+        scenario?.onActivity { a -> shown = androidx.core.view.ViewCompat.getRootWindowInsets(a.window.decorView)
+            ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true }
+        return shown
+    }
+
+    /**
+     * Spotlight raises the keyboard; put it away so taps and Back reach the Home (the IME window is not ours to touch).
+     * 0.52.2: waits until the IME insets say it is really gone (on the cold low-RAM emulator 400 ms was not always enough
+     * and the first Back only closed the keyboard), then for the main thread to go idle.
+     */
     private fun hideKeyboard() {
         scenario?.onActivity { a -> runCatching { a.getSystemService(android.view.inputmethod.InputMethodManager::class.java)
             .hideSoftInputFromWindow(a.window.decorView.windowToken, 0) } }
-        SystemClock.sleep(400)
+        val end = SystemClock.uptimeMillis() + 2_000
+        SystemClock.sleep(150)
+        while (imeShown() && SystemClock.uptimeMillis() < end) SystemClock.sleep(50)
+        if (imeShown()) Log.i(tag, "SPOT keyboard still up after 2 s")
+        inst.waitForIdleSync()
+        SystemClock.sleep(150)
+    }
+
+    /**
+     * 0.52.2: one open / close gesture with up to [tries] attempts. Touch positions are computed from the window
+     * (notch under the status bar, scrim at the bottom), and on a cold low-RAM emulator a gesture can land while the
+     * panel is still animating or the keyboard is going away; a retry after the UI is idle is not a missed gesture.
+     * Only a gesture that never takes effect counts as a failure.
+     */
+    private fun attempt(what: String, tries: Int = 3, before: () -> Unit = {}, act: () -> Unit, done: () -> Boolean): Boolean {
+        for (i in 1..tries) {
+            before(); act()
+            if (waitFor(what) { done() }) { if (i > 1) Log.i(tag, "SPOT $what took effect on try $i"); return true }
+            inst.waitForIdleSync(); SystemClock.sleep(300)
+            var already = false; inst.runOnMainSync { already = done() }
+            if (already) { Log.i(tag, "SPOT $what took effect late (try $i)"); return true }
+        }
+        Log.i(tag, "SPOT $what did not take effect after $tries tries"); return false
     }
 
     @Test fun pullOpenAndCloseThreeTimesUnder700ms() {
@@ -140,32 +174,26 @@ class ArgusSpotlightCheck {
                 val measured = round > 0
                 val r = "round ${round + 1}"
                 // 1. pull the notch down with a finger
-                drag(w / 2f, notchY(), notchY() + 420 * density)
-                val opened = waitFor("open after the pull") { composer.spotlightOpen }
+                inst.waitForIdleSync()
+                val opened = attempt("open after the pull", act = { drag(w / 2f, notchY(), notchY() + 420 * density) }) { composer.spotlightOpen }
                 SystemClock.sleep(600); mark("$r pull open", measured); if (round == 1) shot("pulled-open")
                 if (!opened) failures++
                 main.post { composer.query = "set" }
                 SystemClock.sleep(900); mark("$r type", measured); if (round == 1) shot("query")
                 // tap the scrim near the bottom (the panel sits in the top two thirds)
-                hideKeyboard()
-                tap(w / 2f, h * 0.90f)
-                if (!waitFor("closed by the scrim") { !composer.spotlightOpen }) failures++
+                if (!attempt("closed by the scrim", before = { hideKeyboard() }, act = { tap(w / 2f, h * 0.90f) }) { !composer.spotlightOpen }) failures++
                 SystemClock.sleep(600); mark("$r scrim close", measured)
                 // 2. tap the notch, then Back
-                tap(w / 2f, notchY())
-                if (!waitFor("open after the tap") { composer.spotlightOpen }) failures++
+                if (!attempt("open after the tap", before = { inst.waitForIdleSync() }, act = { tap(w / 2f, notchY()) }) { composer.spotlightOpen }) failures++
                 SystemClock.sleep(600); mark("$r tap open", measured); if (round == 1) shot("tapped-open")
-                hideKeyboard()
-                inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
-                if (!waitFor("closed by Back") { !composer.spotlightOpen }) failures++
+                if (!attempt("closed by Back", before = { hideKeyboard() }, act = { inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK) }) { !composer.spotlightOpen }) failures++
                 SystemClock.sleep(600); mark("$r back close", measured)
                 // 3. pull down, then pull the panel back up by the field row (by its search icon, clear of the text field)
-                drag(w / 2f, notchY(), notchY() + 420 * density)
-                if (!waitFor("open for the pull-up") { composer.spotlightOpen }) failures++
-                SystemClock.sleep(600); hideKeyboard()
+                if (!attempt("open for the pull-up", before = { inst.waitForIdleSync() }, act = { drag(w / 2f, notchY(), notchY() + 420 * density) }) { composer.spotlightOpen }) failures++
+                SystemClock.sleep(600)
                 val fieldY = topInset + (8 + 30) * density
-                drag((10 + 18 + 12) * density, fieldY, fieldY - 360 * density, ms = 180)   // ends above the window: the gesture stays ours
-                if (!waitFor("closed by the pull-up") { !composer.spotlightOpen }) failures++
+                // ends above the window: the gesture stays ours
+                if (!attempt("closed by the pull-up", before = { hideKeyboard() }, act = { drag((10 + 18 + 12) * density, fieldY, fieldY - 360 * density, ms = 180) }) { !composer.spotlightOpen }) failures++
                 SystemClock.sleep(600); mark("$r pull-up close", measured); if (round == 1) shot("closed")
             }
         } finally { running = false; sc.close() }

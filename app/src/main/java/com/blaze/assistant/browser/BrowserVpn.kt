@@ -173,7 +173,7 @@ object BrowserVpn {
     /** Find a location by country name/code or location name; "free"/"warp"/blank mean Blaze Free when nothing else fits. */
     fun find(q: String): Location? {
         val t = q.trim()
-        if (t.isEmpty() || Regex("(?i)^(blaze ?free|free|warp|cloudflare|any|auto|default|on)$").matches(t) || t.contains("warp", true))
+        if (t.isEmpty() || Regex("(?i)^((?:argus|blaze) ?free|free|warp|cloudflare|any|auto|default|on)$").matches(t) || t.contains("warp", true))
             return if (t.isEmpty() && locations.isNotEmpty()) (current() ?: locations.first()) else free
         val c = Countries.find(q)
         return locations.firstOrNull { c != null && it.country == c.code }

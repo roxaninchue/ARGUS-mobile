@@ -35,7 +35,7 @@ object ModelHide {
         var t = paren.replace(text) { m -> if (mentions(m.groupValues[1])) "" else m.value }
         t = id.replace(t) { m -> if (mentions(m.value)) "" else m.value }
         t = word.replace(t, "${BrandName.NAME}")
-        t = t.replace(Regex("\\bBlaze(\\s*[\u00b7,/-]?\\s*${BrandName.NAME})+\\b"), "${BrandName.NAME}")
+        t = t.replace(Regex("\\b(?:${BrandName.NAME}|${BrandName.OLD})(\\s*[\u00b7,/-]?\\s*${BrandName.NAME})+\\b"), "${BrandName.NAME}")
             .replace(Regex("(\\s*\u00b7\\s*)+$"), "").replace(Regex("^(\\s*\u00b7\\s*)+"), "")
             .replace(Regex("\\s*\u00b7\\s*(\u00b7\\s*)+"), " \u00b7 ")
             .replace(Regex("[ \\t]{2,}"), " ").replace(Regex("\\s+([.,!?])"), "$1")

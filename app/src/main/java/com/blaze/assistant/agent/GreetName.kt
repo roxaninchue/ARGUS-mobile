@@ -6,7 +6,7 @@ import com.blaze.assistant.BrandName
 object GreetName {
     /** The user's own pick, else the account's first name, else null. Emails, handles and placeholders never count. */
     fun pick(setName: String?, accountName: String?): String? {
-        fun ok(n: String?): String? = n?.trim()?.takeIf { it.isNotEmpty() && '@' !in it && it.length <= 40 && !it.equals("user", true) && !it.equals("blaze", true) }
+        fun ok(n: String?): String? = n?.trim()?.takeIf { it.isNotEmpty() && '@' !in it && it.length <= 40 && !it.equals("user", true) && !it.equals("blaze", true) && !it.equals("argus", true) }
         return ok(setName) ?: ok(accountName)?.substringBefore(' ')
     }
 

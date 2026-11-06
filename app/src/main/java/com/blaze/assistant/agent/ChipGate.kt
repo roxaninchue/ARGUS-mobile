@@ -61,7 +61,7 @@ object ChipGate {
     /** Content words (4+ letters) of the user's earlier asks: "plan a 3 day trip" → trip (chip "set trip reminder"). */
     private fun topicWords(asks: List<String>): List<String> =
         asks.flatMap { a -> Regex("[\\p{L}'-]{4,}").findAll(a.lowercase()).map { it.value }.toList() }
-    private val COMMON = setOf("help", "make", "show", "tell", "give", "find", "need", "like", "just", "about", "could", "would", "should", "some", "more", "have", "know", "explain", "work", "works", "want", "what", "this", "that", "your", "with", "here", "sure", "okay", "done", "blaze", "today", "tomorrow", "then", "also", "next", "first", "please", "thanks", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "day")
+    private val COMMON = setOf("help", "make", "show", "tell", "give", "find", "need", "like", "just", "about", "could", "would", "should", "some", "more", "have", "know", "explain", "work", "works", "want", "what", "this", "that", "your", "with", "here", "sure", "okay", "done", "blaze", "argus", "today", "tomorrow", "then", "also", "next", "first", "please", "thanks", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "day")
 
     /** True when [chip] needs nothing this phone lacks (and names no stale topic, see [stale]). */
     fun allowed(chip: String, c: Caps = caps): Boolean = rules.all { (re, ok) -> !re.containsMatchIn(chip) || ok(c) } &&

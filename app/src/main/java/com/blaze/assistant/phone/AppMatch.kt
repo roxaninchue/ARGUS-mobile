@@ -65,14 +65,15 @@ object AppMatch {
     fun blazeView(name: String): String? {
         val q = name.lowercase().replace(Regex("[^a-z ]"), " ").replace(Regex("\\s+"), " ").trim().removeSuffix(" app").trim()
         return when (q) {
+            "argus music", "argus player", "argus music player", "music in argus",
             "blaze music", "blaze player", "blaze music player", "music in blaze" -> "music"
-            "blaze settings", "blaze s settings" -> "settings"
-            "blaze gallery" -> "gallery"
-            "blaze terminal" -> "terminal"
-            "blaze projects" -> "projects"
-            "blaze home" -> "home"
-            "blaze design", "blaze studio" -> "design"
-            "blaze", "blaze assistant" -> "home"
+            "argus settings", "argus s settings", "blaze settings", "blaze s settings" -> "settings"
+            "argus gallery", "blaze gallery" -> "gallery"
+            "argus terminal", "blaze terminal" -> "terminal"
+            "argus projects", "blaze projects" -> "projects"
+            "argus home", "blaze home" -> "home"
+            "argus design", "argus studio", "blaze design", "blaze studio" -> "design"
+            "argus", "argus assistant", "blaze", "blaze assistant" -> "home"
             else -> null
         }
     }

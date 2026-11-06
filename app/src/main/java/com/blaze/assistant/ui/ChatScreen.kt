@@ -1691,7 +1691,7 @@ private fun BrainSwitcher(spent: String, onPicked: () -> Unit) {
 
 /** "call blaze", "let's talk", "voice call"… opens the call screen. */
 // Also "let's get on a call", "can we have a call", "start a voice call with blaze". "call Sam" is NOT this.
-private val callWords = Regex("""^(?:(?:hey |ok )?(?:blaze[, ]+)?)(?:(?:can we|could we|can you|let['’]?s|lets|i want to|i wanna|wanna|please)\s+)?(?:(?:get|hop|jump|be)\s+on\s+(?:a\s+)?(?:voice\s+)?call|(?:start|have|do|make)\s+a\s+(?:voice\s+)?call|call(?:\s+(?:blaze|me))?|talk(?:\s+to\s+me)?|voice\s+(?:call|chat|mode))(?:\s+(?:with\s+(?:me|blaze|you)|blaze|now|please))*[.!?]*$""", RegexOption.IGNORE_CASE)
+private val callWords = Regex("""^(?:(?:hey |ok )?(?:(?:argus|blaze)[, ]+)?)(?:(?:can we|could we|can you|let['’]?s|lets|i want to|i wanna|wanna|please)\s+)?(?:(?:get|hop|jump|be)\s+on\s+(?:a\s+)?(?:voice\s+)?call|(?:start|have|do|make)\s+a\s+(?:voice\s+)?call|call(?:\s+(?:(?:argus|blaze)|me))?|talk(?:\s+to\s+me)?|voice\s+(?:call|chat|mode))(?:\s+(?:with\s+(?:me|(?:argus|blaze)|you)|(?:argus|blaze)|now|please))*[.!?]*$""", RegexOption.IGNORE_CASE)
 
 
 /** v0.31.2 Halo x Blaze: a small coloured name over a reply when it isn't plain Blaze talking alone. */

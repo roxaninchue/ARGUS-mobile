@@ -39,7 +39,7 @@ object ToolPick {
             r("""\b(earlier|before|last time|you said|i said|we (?:talked|discussed|said|did)|previous\w*|that (?:file|doc|table|list|code|report)|above|chats?|conversation|project|brief|notes|what did|remind me what|recall|again)\b""")),
         Cue("self", "${BrandName.NAME} itself: its docs, settings and self-test, BlazeRouter, Jarvis, follow-ups, running processes (alarms, routines, jobs by ID)",
             setOf("about_blaze", "blaze_self", "self_test", "blaze_docs_search", "blaze_docs_read", "blazerouter", "jarvis_mode", "follow_ups", "processes", "process"),
-            r("""\b(blaze|yourself|your (?:settings|docs|repo|version|features?)|update|what can you|can you|self.?test|router|jarvis|follow.?ups?|reach out|process(?:es)?|running|stop|cancel|delete|alarms?|timers?|routines?|jobs?|r\d+|version|halo)\b""")),
+            r("""\b((?:argus|blaze)|yourself|your (?:settings|docs|repo|version|features?)|update|what can you|can you|self.?test|router|jarvis|follow.?ups?|reach out|process(?:es)?|running|stop|cancel|delete|alarms?|timers?|routines?|jobs?|r\d+|version|halo)\b""")),
         Cue("skills", "skills, goals and saved workflows",
             setOf("use_skill", "find_skill", "run_skill", "goal"),
             r("""\b(skills?|workflows?|goals?|plan|step by step|checklist|recipe|how do i|guide)\b""")),

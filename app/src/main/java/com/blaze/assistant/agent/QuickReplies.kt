@@ -23,7 +23,7 @@ object QuickReplies {
         "never restate your answer, and leave the line out when nothing useful fits."
 
     private val STOP = setOf("a", "an", "the", "to", "of", "and", "or", "for", "in", "on", "at", "my", "me", "i", "you", "your",
-        "is", "are", "it", "this", "that", "with", "can", "could", "please", "pls", "blaze", "do", "be", "some", "about", "just")
+        "is", "are", "it", "this", "that", "with", "can", "could", "please", "pls", "blaze", "argus", "do", "be", "some", "about", "just")
 
     /** Lowercase words without punctuation, stop words and a trailing plural "s". */
     fun tokens(s: String): Set<String> =

@@ -760,7 +760,7 @@ object Mind {
     const val RELEVANT_MAX = 5
     private val relevantStop = setOf("the", "and", "for", "you", "your", "what", "whats", "who", "how", "can", "could", "would", "should",
         "please", "with", "that", "this", "about", "tell", "me", "my", "is", "are", "was", "do", "does", "did", "it", "to", "of", "in", "on",
-        "a", "an", "i", "im", "be", "have", "has", "just", "now", "again", "okay", "ok", "yes", "no", "hi", "hey", "blaze", "thanks", "thank",
+        "a", "an", "i", "im", "be", "have", "has", "just", "now", "again", "okay", "ok", "yes", "no", "hi", "hey", "blaze", "argus", "thanks", "thank",
         "doing", "going", "know", "want", "need", "get", "got", "any", "some", "there", "here", "from", "into")
 
     /** The words of [query] worth searching memory for ("" when there are none). */

@@ -229,8 +229,8 @@ object TaskMemory {
 
     /** Is this a request to change surface ("use Blaze Phone", "do it in the browser")? */
     fun asksSwitch(text: String, to: Surface): Boolean = when (to) {
-        Surface.PHONE -> Regex("""(?i)\b(blaze phone|use (?:the )?phone|on (?:the )?phone|phone browser)\b""").containsMatchIn(text)
-        Surface.BROWSER -> Regex("""(?i)\b(use (?:the )?browser|in (?:the )?browser|blaze browser|open (?:it )?in (?:a )?tab)\b""").containsMatchIn(text)
+        Surface.PHONE -> Regex("""(?i)\b((?:argus|blaze) phone|use (?:the )?phone|on (?:the )?phone|phone browser)\b""").containsMatchIn(text)
+        Surface.BROWSER -> Regex("""(?i)\b(use (?:the )?browser|in (?:the )?browser|(?:argus|blaze) browser|open (?:it )?in (?:a )?tab)\b""").containsMatchIn(text)
         else -> false
     }
 

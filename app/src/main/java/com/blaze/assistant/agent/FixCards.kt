@@ -35,7 +35,7 @@ object FixCards {
 
     private val rules = listOf(
         Regex("(?i)notification access (is )?(off|not (on|granted|enabled))|turn on notification access|needs notification access") to Kind.NOTIFICATIONS,
-        Regex("(?i)phone control is off|accessibility (service )?(is )?(off|not (on|enabled))|turn on .?blaze phone control") to Kind.PHONE_CONTROL,
+        Regex("(?i)phone control is off|accessibility (service )?(is )?(off|not (on|enabled))|turn on .?(?:argus|blaze) phone control") to Kind.PHONE_CONTROL,
         Regex("(?i)needs usage access|usage access (is )?(off|not granted)") to Kind.USAGE,
         Regex("(?i)(overlay|draw over other apps|display over other apps) (permission )?(is )?(off|not granted|needed)") to Kind.OVERLAY,
         Regex("(?i)\\b(permission (denied|not granted|is off|missing))|(needs the [a-z ]{3,30} permission)") to Kind.APP_PERMISSION,

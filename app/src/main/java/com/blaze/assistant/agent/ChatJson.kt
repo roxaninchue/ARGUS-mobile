@@ -74,7 +74,7 @@ object ChatJson {
             val media = m.optJSONArray("media")?.let { a -> (0 until a.length()).map { a.getString(it) } } ?: emptyList()
             // v0.30.6: "reply_to" is optional (chats saved before it load with none).
             val replyTo = m.optJSONArray("reply_to")?.let { a -> (0 until a.length()).map { a.optLong(it) } }?.filter { it > 0 } ?: emptyList()
-            list += ChatMessage(mid, Role.valueOf(m.getString("role")), m.getString("text"), files, m.optString("thinking"), fu, m.optString("meta"), media,
+            list += ChatMessage(mid, roleOf(m.getString("role")), m.getString("text"), files, m.optString("thinking"), fu, m.optString("meta"), media,
                 at = m.optLong("at"), thinkMs = m.optLong("think_ms"), startAt = m.optLong("start_at"), replyTo = replyTo, speaker = m.optString("speaker"),
                 receipt = m.optString("receipt"), gid = m.getString("gid"), reactions = Reaction.list(m.optJSONArray("reactions")), trace = m.optString("trace"),
                 sources = m.optString("sources"))
@@ -82,7 +82,7 @@ object ChatJson {
         }
         return ParsedChat(o, list, marks, maxId)
     }
-}
 
-/** v0.45.0 (#2): a chat file turned into messages, with no Session touched (so it can be built off the main thread). */
-internal class ParsedChat(val o: JSONObject, val msgs: List<ChatMessage>, val marks: Map<Long, Int>, val maxId: Long)
+    /** A saved role; "ARGUS" (a file written by a renamed build or tool) reads as the assistant, like "BLAZE". */
+    internal fun roleOf(name: String): Role = if (name.equals(com.blaze.assistant.BrandName.UPPER, true) || name.equals("ARGUS", true)) Role.BLAZE else Role.valueOf(name)
+}

@@ -263,8 +263,8 @@ object PhonePolicy {
 
     // ------------------------------------------------------------------ routing
     private val siteCue = """(?:\s+(?:at|on|with|from|via|through|in|into|to)\s+\S|\s+\S+\.(?:com|org|net|io|co|zm|app|dev|me|uk|za)\b)"""
-    private val ask = Regex("""(?i)\b(?:(?:book|reserve)\s+(?:me\s+)?(?:a|an|the|my|two|\d+)?\s*(?:table|room|hotel|flight|ticket|tickets|seat|seats|slot|stay|ride|car|class|session|spot|reservation|appointment)\b.{0,80}?$siteCue|(?:log|sign)\s*(?:me\s+)?(?:in|on)(?:to)?\s+(?:to\s+)?(?:my\s+)?\S+|sign\s+(?:me\s+)?up\s+(?:for|on|at)\s+\S+|(?:order|buy|purchase)\s+.{1,60}?\s+(?:on|from)\s+\S+\.(?:com|org|net|io|co|zm|app|shop|store)\b|fill\s+(?:out|in)\s+(?:the|a|this|that)\s+form\s+(?:on|at)\s+\S+|(?:check\s*out|checkout)\s+(?:on|at)\s+\S+|(?:use|on)\s+(?:your|blaze'?s?)\s+(?:own\s+)?phone\b|blaze phone\b)""")
-    private val notPhone = Regex("""(?i)\b(bank|banking|mobile money|momo|wire|transfer money|send money|crypto|wallet|game|gaming|play (?:a )?game|calendar|blaze account|wi-?fi|router|hotspot|the linux|linux desktop|my computer|my pc)\b""")
+    private val ask = Regex("""(?i)\b(?:(?:book|reserve)\s+(?:me\s+)?(?:a|an|the|my|two|\d+)?\s*(?:table|room|hotel|flight|ticket|tickets|seat|seats|slot|stay|ride|car|class|session|spot|reservation|appointment)\b.{0,80}?$siteCue|(?:log|sign)\s*(?:me\s+)?(?:in|on)(?:to)?\s+(?:to\s+)?(?:my\s+)?\S+|sign\s+(?:me\s+)?up\s+(?:for|on|at)\s+\S+|(?:order|buy|purchase)\s+.{1,60}?\s+(?:on|from)\s+\S+\.(?:com|org|net|io|co|zm|app|shop|store)\b|fill\s+(?:out|in)\s+(?:the|a|this|that)\s+form\s+(?:on|at)\s+\S+|(?:check\s*out|checkout)\s+(?:on|at)\s+\S+|(?:use|on)\s+(?:your|(?:argus|blaze)'?s?)\s+(?:own\s+)?phone\b|(?:argus|blaze) phone\b)""")
+    private val notPhone = Regex("""(?i)\b(bank|banking|mobile money|momo|wire|transfer money|send money|crypto|wallet|game|gaming|play (?:a )?game|calendar|(?:argus|blaze) account|wi-?fi|router|hotspot|the linux|linux desktop|my computer|my pc)\b""")
 
     /** "book a table at X", "log into Y", "sign up for Z", "order … from shop.com": a job for the Blaze Phone browser. */
     fun phoneAsk(text: String): Boolean {

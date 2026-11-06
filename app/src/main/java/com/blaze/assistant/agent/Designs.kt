@@ -197,7 +197,7 @@ object Designs {
      * are still the starter's empty example), so it can be re-made from the current starter without losing anything.
      */
     fun isStockStarter(html: String): Boolean =
-        html.contains("${BrandName.NAME} 3D mockup starter") && Regex("""const CUSTOM = \{\s*//[^\n]*\n\s*\};""").containsMatchIn(html)
+        (html.contains("${BrandName.NAME} 3D mockup starter") || html.contains("${BrandName.OLD} 3D mockup starter")) && Regex("""const CUSTOM = \{\s*//[^\n]*\n\s*\};""").containsMatchIn(html)
 
     /** v0.23.5: a stock starter page re-made from the current [template] (same parts, title and Blaze additions), else [html]. */
     fun upgradeStarter(html: String, template: String?): String {
