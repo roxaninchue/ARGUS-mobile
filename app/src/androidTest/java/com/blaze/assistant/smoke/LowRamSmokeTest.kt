@@ -6,6 +6,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -42,8 +43,8 @@ import java.util.concurrent.atomic.AtomicLong
  * with the real Android QuickJS engine, Media3 and ART regex. Cold start of the release APK is checked separately by
  * tools/smoke/run-smoke.sh.
  * The steps: Video browse (3 sources x 200 items + concurrent loads, with callers giving up), details while browsing, 10 s of
- * video playback, music playback, 30 mocked tool-chat turns with DSML, and (0.52.2) the ARGUS Home live through every orb
- * state with the result card and the pull-down Spotlight, in the renderer the device picks and in the Canvas orb. Throughout, a main-thread monitor samples every 50 ms
+ * video playback, music playback, 30 mocked tool-chat turns with DSML, and (0.52.3) the ARGUS x Hark shell (the space view,
+ * the Home's cards, Spotlight, the profile page and Projects) in dark and light. Throughout, a main-thread monitor samples every 50 ms
  * and the gate fails on any main stall over 700 ms. Crashes and ANRs fail the instrumentation or the logcat check in the script.
  */
 @RunWith(AndroidJUnit4::class)
@@ -58,32 +59,49 @@ class LowRamSmokeTest {
         @Volatile private var running = false
 
         /**
-         * 0.52.3: warms the emulator's software GL (SwiftShader) before the monitor starts. The first HWUI frame of a process
+         * Warms the emulator's software GL (SwiftShader) before the monitor starts. The first HWUI frame of a process
          * compiles Skia's programs on the RenderThread, and that first window draw holds the main thread until the frame
          * completes: on 2c7ef81d/d5ad8250 that wait was the whole "argus home (auto)" stall (878/1117 ms of RenderThread GL,
          * main's own work ~115-150 ms). A generic warm-up (10d5bd15) still left 644 ms of GL on the Home's first frame (its
-         * own gradients and text), so the warm-up now draws the ARGUS Home itself, auto renderer, idle then speaking with the
-         * result card. run-smoke.sh already excludes this same render wait from the cold-start gate, and the Home's real first
-         * frame stays gated there, since the Home is the app's root. f_argusHome keeps the 700 ms gate for everything after:
-         * every orb state, the card, Spotlight, both renderers.
+         * own gradients and text), so the warm-up draws the Home itself. 0.52.3: that Home is the ARGUS x Hark shell (the
+         * space view, the top bar, the Home's cards, then the answer card), dark, which also decodes the space image once.
+         * run-smoke.sh already excludes this same render wait from the cold-start gate, and the app's real first frame stays
+         * gated there. f_spaceHome keeps the 700 ms gate for everything after: both modes, the cards, Spotlight, profile, Projects.
          */
         private fun warmRenderer() {
-            val state = androidx.compose.runtime.mutableStateOf(com.blaze.assistant.ui.argus.ArgusScene.State.IDLE)
-            val card = androidx.compose.runtime.mutableStateOf<com.blaze.assistant.ui.argus.ArgusAnswer.Card?>(null)
-            val composer = com.blaze.assistant.ui.composer.ComposerState()
+            val home = androidx.compose.runtime.mutableStateOf(com.blaze.assistant.ui.space.SpaceHomeState(name = "Warm-up", hour = 9))
             val sc = androidx.test.core.app.ActivityScenario.launch(androidx.activity.ComponentActivity::class.java)
             sc.onActivity { a ->
-                a.setContent {
-                    com.blaze.assistant.ui.argus.ArgusHomeScreen(state.value, 0f, "Warm-up", composer, onSend = {}, onMic = {}, onOpenChat = {}, onProfile = {},
-                        answer = card.value, avatar = { _ -> }, hour = 9)
-                }
+                a.setContent { SpaceShell(dark = true, home = home.value, tab = com.blaze.assistant.ui.space.SpaceTabs.HOME, profile = false) }
             }
             SystemClock.sleep(2_500)
-            main.post { state.value = com.blaze.assistant.ui.argus.ArgusScene.State.SPEAKING
-                card.value = com.blaze.assistant.ui.argus.ArgusAnswer.Card("Warm-up ask", "Warm-up reply with a few words in it.", false) }
+            main.post { home.value = home.value.copy(answer = com.blaze.assistant.ui.space.SpaceAnswer.Card("Warm-up ask", "Warm-up reply with a few words in it.", false)) }
             SystemClock.sleep(1_500)
             sc.close()
             SystemClock.sleep(500)
+        }
+
+        /** The shell as ChatScreen draws it (space view, top bar, the tab), with Spotlight over it when [composer] opens it. */
+        @androidx.compose.runtime.Composable
+        fun SpaceShell(dark: Boolean, home: com.blaze.assistant.ui.space.SpaceHomeState, tab: String, profile: Boolean,
+                       composer: com.blaze.assistant.ui.composer.ComposerState? = null) {
+            androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.LocalBlaze provides if (dark) com.blaze.assistant.ui.DarkColors else com.blaze.assistant.ui.LightColors) {
+                com.blaze.assistant.ui.space.SpaceBackdrop {
+                    androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.statusBarsPadding()) {
+                        com.blaze.assistant.ui.space.SpaceTopBar(tab = if (profile) "" else tab, onTab = {}, onLeft = {}, initial = "S", onAvatar = {}, showLeft = !profile)
+                        when {
+                            profile -> com.blaze.assistant.ui.space.SpaceProfileScreen("Smoke Test", "smoke@example.com", signedIn = true, planLine = "Pro plan",
+                                onPage = {}, onSignOut = {}, onSearch = {})
+                            tab == com.blaze.assistant.ui.space.SpaceTabs.PROJECTS -> com.blaze.assistant.ui.space.SpaceProjectsScreen(
+                                listOf(com.blaze.assistant.agent.Project("p1", "Smoke project", chats = listOf("c1"))),
+                                listOf(com.blaze.assistant.agent.ChatMeta("c1", "Smoke chat", 0L, false, "")), busy = setOf("c1"), needsYou = emptySet(), openId = "",
+                                onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
+                            else -> com.blaze.assistant.ui.space.SpaceHomeScreen(home, onAsk = {}, onOpenChat = {}, onOpenProject = {}, onOpenProjects = {}, onSignIn = {}, onSetup = {})
+                        }
+                    }
+                    if (composer != null) com.blaze.assistant.ui.space.SpaceSpotlightLayer(composer, hour = 9)
+                }
+            }
         }
 
         /** Main-thread latency monitor: one ping in flight at a time, checked every 50 ms. */
@@ -237,40 +255,32 @@ class LowRamSmokeTest {
     }
 
     /**
-     * 0.52.2: the ARGUS Home, the app's root. On this 1.5 GB emulator with animations off the device itself picks the still
-     * frame (reduce motion); the Canvas orb (what < 2.5 GB phones and phones without GLES 3 get) is forced too. The orb goes
-     * through idle -> listening (mic level moving) -> thinking -> speaking with the result card, then Spotlight opens with a
-     * query and closes, twice per renderer. GL is exercised by the local ArgusHomeCheck, not here (stability first).
+     * 0.52.3: the ARGUS x Hark shell, the app's root (replaces the 3D Home's f_argusHome; still one scenario, so the gate
+     * stays at 7 tests). In dark (the space view) and light: the Home idle, working with the answer card, signed out with
+     * the setup card; Spotlight opens with a query and closes; the profile page; Projects; back Home. Twice per mode.
      */
-    @Test fun f_argusHome() {
-        phase = "argus home"
+    @Test fun f_spaceHome() {
         val inst = InstrumentationRegistry.getInstrumentation()
-        val d = com.blaze.assistant.ui.argus.ArgusDevice.read(inst.targetContext)
-        Log.i(TAG, "SMOKE argus device: gles3=${d.gles3} ram=${d.totalMb} MB lowRamFlag=${d.lowRamFlag}")
-        for (mode in listOf<com.blaze.assistant.ui.argus.ArgusFps.Mode?>(null, com.blaze.assistant.ui.argus.ArgusFps.Mode.CANVAS)) {
-            phase = "argus home (${mode ?: "auto"})"
-            val state = androidx.compose.runtime.mutableStateOf(com.blaze.assistant.ui.argus.ArgusScene.State.IDLE)
-            val level = androidx.compose.runtime.mutableFloatStateOf(0f)
-            val card = androidx.compose.runtime.mutableStateOf<com.blaze.assistant.ui.argus.ArgusAnswer.Card?>(null)
+        for (dark in listOf(true, false)) {
+            phase = "space home (${if (dark) "dark" else "light"})"
+            val calm = com.blaze.assistant.ui.space.SpaceHomeState(name = "Smoke", hour = 9, projects = listOf("p1" to "Smoke project"))
+            val home = androidx.compose.runtime.mutableStateOf(calm)
+            val tab = androidx.compose.runtime.mutableStateOf(com.blaze.assistant.ui.space.SpaceTabs.HOME)
+            val profile = androidx.compose.runtime.mutableStateOf(false)
             val composer = com.blaze.assistant.ui.composer.ComposerState()
             val sc = androidx.test.core.app.ActivityScenario.launch(androidx.activity.ComponentActivity::class.java)
-            sc.onActivity { a ->
-                a.setContent {
-                    com.blaze.assistant.ui.argus.ArgusHomeScreen(state.value, level.floatValue, "Smoke", composer, onSend = {}, onMic = {}, onOpenChat = {}, onProfile = {},
-                        answer = card.value, avatar = { _ -> }, forceMode = mode, hour = 9)
-                }
-            }
+            sc.onActivity { a -> a.setContent { SpaceShell(dark, home.value, tab.value, profile.value, composer) } }
             SystemClock.sleep(2_500)
             repeat(2) {
-                for (s in com.blaze.assistant.ui.argus.ArgusScene.State.values()) {
-                    main.post { state.value = s; card.value = if (s == com.blaze.assistant.ui.argus.ArgusScene.State.SPEAKING)
-                        com.blaze.assistant.ui.argus.ArgusAnswer.Card("Smoke ask", "Smoke reply with a few words in it.", false) else null }
-                    if (s == com.blaze.assistant.ui.argus.ArgusScene.State.LISTENING) for (i in 0 until 20) { val v = (i % 5) / 4f; main.post { level.floatValue = v }; SystemClock.sleep(50) }
-                    else SystemClock.sleep(1_000)
-                }
+                main.post { home.value = calm.copy(working = true, answer = com.blaze.assistant.ui.space.SpaceAnswer.Card("Smoke ask", "", true)) }; SystemClock.sleep(1_000)
+                main.post { home.value = calm.copy(answer = com.blaze.assistant.ui.space.SpaceAnswer.Card("Smoke ask", "Smoke reply with a few words in it.", false)) }; SystemClock.sleep(1_000)
+                main.post { home.value = calm.copy(signedIn = false, setupLeft = 3, setupPercent = 40) }; SystemClock.sleep(1_000)
                 main.post { composer.openSpotlight() }; SystemClock.sleep(1_000)
                 main.post { composer.query = "set" }; SystemClock.sleep(1_000)
                 main.post { composer.closeSpotlight() }; SystemClock.sleep(800)
+                main.post { profile.value = true }; SystemClock.sleep(1_000)
+                main.post { profile.value = false; tab.value = com.blaze.assistant.ui.space.SpaceTabs.PROJECTS }; SystemClock.sleep(1_000)
+                main.post { tab.value = com.blaze.assistant.ui.space.SpaceTabs.HOME; home.value = calm }; SystemClock.sleep(800)
             }
             var open = true
             inst.runOnMainSync { open = composer.spotlightOpen }
@@ -278,7 +288,7 @@ class LowRamSmokeTest {
             sc.close()
             SystemClock.sleep(500)
         }
-        assertNoStall("argus home")
+        assertNoStall("space home")
     }
 
     @Test fun z_noStallAnywhere() { assertNoStall("whole run") }

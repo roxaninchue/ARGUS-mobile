@@ -51,7 +51,6 @@ class SpotlightGroupsTest {
         assertEquals(Group.CHATS, SpotlightGroups.groupOf(row("chat:12", Act.RunAction("history"), Icon.CHAT)))
         assertEquals(Group.CHATS, SpotlightGroups.groupOf(row("mem:mum", Act.AskBlaze("x"), Icon.SEARCH)))
         assertEquals(Group.WEB, SpotlightGroups.groupOf(row("fb:browse", Act.Browse("x"), Icon.BROWSER)))
-        assertEquals(Group.SETTINGS, SpotlightGroups.groupOf(row("model:x", Act.PickModel("x"), Icon.MODEL)))
         assertEquals(Group.SETTINGS, SpotlightGroups.groupOf(row("setting:voice", Act.OpenView("voice"), Icon.SETTINGS)))
         // the Settings view (an OpenView with the settings icon) is a setting, not an app
         assertEquals(Group.SETTINGS, SpotlightGroups.groupOf(row("view:settings:full", Act.OpenView("settings"), Icon.SETTINGS)))

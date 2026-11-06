@@ -57,7 +57,7 @@ class Blaze050ShotsTest {
     private fun Card(text: String, busy: Boolean = false, expanded: Boolean = false) {
         Composer(TextFieldValue(text), {}, busy = busy, canSend = text.isNotEmpty(), plusOpen = false, chip = "", agents = 0,
             listening = false, speaking = false, onPlus = {}, onMic = {}, onSend = {}, onStop = {}, hints = listOf("Message ${BrandName.NAME}"),
-            animateHints = false, onExpand = {}, expanded = expanded, onSkills = {}, onCall = {}, onSlash = {}, onRouting = {})
+            animateHints = false, onExpand = {}, expanded = expanded, onSkills = {}, onCall = {}, onSlash = {})
     }
 
     private fun frame(name: String, dark: Boolean, expect: String, body: @Composable () -> Unit) {
@@ -78,7 +78,11 @@ class Blaze050ShotsTest {
     }
 
     @Test fun composerCardDark() {
-        frame("composer-card-dark", dark = true, expect = "Auto") { Card("") }
+        frame("composer-card-dark", dark = true, expect = "Message ${BrandName.NAME}") { Card("") }
+        // 0.52.3: no model / brain picker in the composer any more (ARGUS picks automatically)
+        assertTrue(rule.onAllNodes(hasContentDescription("Model", substring = true)).fetchSemanticsNodes().isEmpty())
+        assertTrue(rule.onAllNodes(hasText("Auto")).fetchSemanticsNodes().isEmpty())
+        assertTrue(rule.onAllNodes(hasContentDescription("Attach and tools")).fetchSemanticsNodes().isNotEmpty())
         assertTrue(rule.onAllNodes(hasContentDescription("Maximise the chat")).fetchSemanticsNodes().isNotEmpty())
         assertTrue(rule.onAllNodes(hasContentDescription("Talk")).fetchSemanticsNodes().isNotEmpty())
         assertTrue(rule.onAllNodes(hasContentDescription("Skills")).fetchSemanticsNodes().isNotEmpty())
@@ -91,7 +95,7 @@ class Blaze050ShotsTest {
     }
 
     @Test fun composerCardWorkingExpanded() {
-        frame("composer-card-working-expanded", dark = true, expect = "Auto") { Card("", busy = true, expanded = true) }
+        frame("composer-card-working-expanded", dark = true, expect = "Message ${BrandName.NAME}") { Card("", busy = true, expanded = true) }
         assertTrue(rule.onAllNodes(hasContentDescription("Stop")).fetchSemanticsNodes().isNotEmpty())
         assertTrue(rule.onAllNodes(hasContentDescription("Restore the chat")).fetchSemanticsNodes().isNotEmpty())
     }

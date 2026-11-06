@@ -163,6 +163,8 @@ object BackupBrain {
     /** Settings: on by default; "backup_brain_mobile_data" lets the one-time download use mobile data. */
     private val enabled get() = Settings.bool("backup_brain", true)
 
+    /** 0.52.3: init ran (it is queued after the first frame); the one-screen setup waits for it before asking [supported]. */
+    fun initialized(): Boolean = ::app.isInitialized
     fun supported(): Boolean = ::app.isInitialized && Build.SUPPORTED_ABIS.firstOrNull() == "arm64-v8a" && Linux.supported()
     private fun dir() = File(Linux.rootfs(), DIR)
     private fun bin() = File(dir(), "opencode")

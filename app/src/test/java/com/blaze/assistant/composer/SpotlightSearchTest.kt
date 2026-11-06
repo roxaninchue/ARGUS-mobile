@@ -12,7 +12,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.47 Spotlight v2: the self-map registry search (prefixes, fallbacks never empty, fuzzy library matches, models). */
+/** 0.47 Spotlight v2: the self-map registry search (prefixes, fallbacks never empty, fuzzy library matches; 0.52.3: no model rows). */
 class SpotlightSearchTest {
     private val views = listOf(
         SelfMap.ViewInfo("home", "Home", "The Home cards"),
@@ -36,13 +36,15 @@ class SpotlightSearchTest {
     @Test fun registryHasEveryKind() {
         for (k in SelfMap.Kind.values()) assertTrue("no $k in the map", map.any { it.kind == k })
         assertEquals(views.size, map.count { it.kind == SelfMap.Kind.VIEW })
-        assertEquals(4, map.count { it.kind == SelfMap.Kind.MODEL })
+        // 0.52.3: no model rows (ARGUS picks the brain automatically); the kinds are views, actions and settings
+        assertEquals(listOf("VIEW", "ACTION", "SETTING"), SelfMap.Kind.values().map { it.name })
+        assertTrue(map.none { it.id.startsWith("model:") })
         assertEquals(map.size, map.map { it.id }.toSet().size)
     }
 
     @Test fun describeIsForTheAgentAndHasNoForbiddenNames() {
         val d = SelfMap.describe(map)
-        assertTrue(d.contains("[view:terminal]") && d.contains("[model:inferno]") && d.contains("[action:chat]") && d.contains("[setting:theme]"))
+        assertTrue(d.contains("[view:terminal]") && !d.contains("[model:") && d.contains("[action:chat]") && d.contains("[setting:theme]"))
         assertFalse(Regex("(?i)\\b(hark|jarvis|open-?code|nvidia|nemotron)\\b").containsMatchIn(d))
     }
 
@@ -115,14 +117,10 @@ class SpotlightSearchTest {
 
     // ---------------------------------------------------------------- models
 
-    @Test fun modelsAreSearchable() {
-        val top = s("pan").rows.first()
-        assertEquals("${BrandName.NAME} Panoptes \u00b7 Deepest", top.title)
-        assertEquals(Act.PickModel("inferno"), top.act)
-        assertEquals(Act.PickModel("spark"), s("spark").rows.first().act)
-        assertTrue(s("fast").rows.any { it.act == Act.PickModel("spark") })
-        assertTrue(s("balanced").rows.any { it.act == Act.PickModel("flare") })
-        assertTrue(s("model").rows.count { it.act is Act.PickModel } == 4)
+    /** 0.52.3: the model / brain picker is gone from Spotlight too: searching a model's name or "model" offers no model row. */
+    @Test fun modelsAreNotPickable() {
+        for (q in listOf("pan", "panoptes", "spark", "insight", "oracle", "fast", "balanced", "model", "inferno"))
+            assertTrue("model row for \"$q\"", s(q).rows.none { it.id.startsWith("model:") || it.subtitle.startsWith("Model") })
     }
 
     // ---------------------------------------------------------------- fuzzy library

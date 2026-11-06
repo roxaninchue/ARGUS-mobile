@@ -190,7 +190,7 @@ open class ShotsTest {
     @Test fun projects() = shot("06-projects") {
         Column(Modifier.fillMaxSize()) {
             ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
-            ProjectsPane(listOf(Project("p1", "Northrise CS year 2", chats = listOf("c2")), Project("p2", "HomeGlow store", chats = listOf("c3", "c4")),
+            com.blaze.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p1", "Northrise CS year 2", chats = listOf("c2")), Project("p2", "HomeGlow store", chats = listOf("c3", "c4")),
                 Project("p3", "Portfolio", chats = listOf("c1"))), chats, busy = setOf("c3"), needsYou = setOf("c1"), openId = "",
                 onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
         }
@@ -269,7 +269,7 @@ open class ShotsTest {
     @Test fun projectBrief() = shot("10-project-brief") {
         Column(Modifier.fillMaxSize()) {
             ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
-            ProjectsPane(listOf(Project("p2", "HomeGlow store", "Friendly, short replies. Prices in USD.", chats = listOf("c3", "c4"),
+            com.blaze.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p2", "HomeGlow store", "Friendly, short replies. Prices in USD.", chats = listOf("c3", "c4"),
                 brief = "Purpose: grow the HomeGlow Shopify store to 20 orders a week.\nRules: free tools only; every customer message needs Sam's OK.\n" +
                     "Key files: ~/homeglow/products.csv, ~/homeglow/brand.md\nIn progress: 5 new lamp listings, TikTok week 3.")),
                 chats, busy = setOf("c3"), needsYou = emptySet(), openId = "p2",
@@ -454,9 +454,20 @@ open class ShotsTest {
         }
     }
 
-    @Test fun settingsList() = shot("20-settings") { SettingsFrame("Settings") { SettingsList {} } }
+    // 0.52.3: Settings opens on the profile page (Hark's grouped cards); the old list and Advanced are gone.
+    @Test fun settingsList() = shot("20-settings") {
+        com.blaze.assistant.ui.space.SpaceProfileScreen("Sam Banda", "sam@example.com", signedIn = true, planLine = "Pro plan",
+            onPage = {}, onSignOut = {}, onSearch = {}, version = "0.52.3")
+    }
 
-    @Test fun onboarding() = shot("22-onboarding") { SetupFlow(startPage = 1) {} }
+    // 0.52.3: first run is the welcome (logo + tagline) and one setup screen; this is the setup screen mid-download.
+    @Test fun onboarding() = shot("22-onboarding") {
+        com.blaze.assistant.ui.space.SpaceOnboardingScreen(com.blaze.assistant.ui.space.SpaceOnboarding.Step.SETUP, signedIn = true,
+            setup = mapOf("linux" to com.blaze.assistant.setup.SetupPlan.Status(com.blaze.assistant.setup.SetupPlan.Phase.DONE),
+                "tools" to com.blaze.assistant.setup.SetupPlan.Status(com.blaze.assistant.setup.SetupPlan.Phase.RUNNING, 55),
+                "brain" to com.blaze.assistant.setup.SetupPlan.Status(com.blaze.assistant.setup.SetupPlan.Phase.WAITING_WIFI)),
+            onNext = {}, onRetry = {}, accountCard = {})
+    }
 
     @Test fun accounts() = shot("23-accounts") {
         SettingsFrame("Connected accounts") { ConnectionsPage(connected0 = setOf("google", "github"), online0 = true, open0 = "spotify") }
@@ -897,7 +908,7 @@ open class ShotsTest {
     @Test fun projectPageBack() = shot("71-project-page-back", dark = true) {
         Column(Modifier.fillMaxSize()) {
             ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
-            ProjectsPane(listOf(Project("p9", "New project", chats = listOf("pc1", "pc2"))), pcChats, busy = emptySet(), needsYou = emptySet(), openId = "p9",
+            com.blaze.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p9", "New project", chats = listOf("pc1", "pc2"))), pcChats, busy = emptySet(), needsYou = emptySet(), openId = "p9",
                 onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
         }
     }

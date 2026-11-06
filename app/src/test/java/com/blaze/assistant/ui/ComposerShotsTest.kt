@@ -120,9 +120,12 @@ class ComposerShotsTest {
 
     @Test fun barEmpty() = frame("bar-empty", ComposerState(), "Message ${BrandName.NAME}")
 
-    @Test fun barTypingWithModelPicker() {
+    /** 0.52.3: the model chip and picker are gone (ARGUS picks automatically); even a stale pickerOpen draws no picker. */
+    @Test fun barTypingHasNoModelPicker() {
         val st = ComposerState().apply { text = "Plan my Saturday"; pickerOpen = true }
-        frame("bar-typing-model-picker", st, "Panoptes (Deepest)")
+        frame("bar-typing-no-model-picker", st, "Plan my Saturday")
+        for (label in listOf("Panoptes (Deepest)", "Oracle (Balanced)", "Insight (Fast)", "Auto"))
+            assertTrue("no model picker row \"$label\"", rule.onAllNodes(hasText(label)).fetchSemanticsNodes().isEmpty())
     }
 
     @Test fun chatOverHome() {

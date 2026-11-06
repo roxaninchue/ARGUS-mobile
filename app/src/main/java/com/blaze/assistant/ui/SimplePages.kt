@@ -99,8 +99,8 @@ fun DoingPage() {
 }
 
 /**
- * Settings › Look & feel: Light / Dark / Auto, the accent, the Home's tilt parallax and Stage. 0.52.2: the living
- * backgrounds and the Living Themes are gone (the ARGUS Home is the one living scene).
+ * Settings › System Preferences › Appearance: Light / Dark / Auto, the accent and Stage. 0.52.2: the living backgrounds
+ * and the Living Themes are gone. 0.52.3: the Home's tilt parallax left with the 3D Home (the Home follows Light / Dark).
  */
 @Composable
 fun LookPage() {
@@ -119,7 +119,7 @@ fun LookPage() {
             }
         }
     }
-    Text("Auto turns dark after sunset and light in the morning. The ${BrandName.UPPER} Home stays dark either way.", modifier = Modifier.padding(vertical = 6.dp),
+    Text("Auto turns dark after sunset and light in the morning.", modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
     Label("Accent")
@@ -133,11 +133,6 @@ fun LookPage() {
         }
     }
     Spacer(Modifier.height(14.dp))
-    // 0.52.2: the Home's scene follows the phone's tilt a little (off by default; never with reduce motion or battery saver).
-    var tilt by remember { mutableStateOf(com.blaze.assistant.agent.Settings.bool("argus_parallax", false)) }
-    ToggleRow("Tilt the Home scene", "The orb and its rings shift a little as you tilt the phone. Off in battery saver", tilt) {
-        tilt = !tilt; com.blaze.assistant.agent.Settings.setBool("argus_parallax", tilt)
-    }
     // 0.46.0 Blaze Stage: timers, music, quizzes and other live cards right on the chat (off = Blaze answers in chat / opens views).
     var stageOn by remember { mutableStateOf(com.blaze.assistant.stage.StageStore.enabled) }
     ToggleRow("${BrandName.NAME} Stage", "Live cards right on the chat: timers, music, quizzes. Drag to move; back or Reset layout restores the chat", stageOn) {

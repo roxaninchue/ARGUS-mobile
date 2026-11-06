@@ -89,7 +89,6 @@ import com.blaze.assistant.agent.Agent
 import com.blaze.assistant.agent.ChatMessage
 import com.blaze.assistant.agent.Role
 import com.blaze.assistant.composer.ChatOverlayLogic
-import com.blaze.assistant.composer.ModelChoice
 import com.blaze.assistant.ui.DuoColors
 import com.blaze.assistant.ui.GlassIntensity
 import com.blaze.assistant.ui.LocalBlaze
@@ -152,14 +151,13 @@ fun BlazeAvatar(size: Int = 30) {
 
 /**
  * The chat bar that replaces the bottom Blaze button: profile avatar LEFT, the "Message Blaze" pill, "+" RIGHT.
- * A send arrow shows inside the pill while there's text; "+" always opens Spotlight. The model chip (and attachment
- * chips) slide up above the pill on the first typed character or attachment.
+ * A send arrow shows inside the pill while there's text; "+" always opens Spotlight. The attachment
+ * chips slide up above the pill on the first typed character or attachment.
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile: () -> Unit = {}) {
     val c = LocalBlaze.current
-    val family by ModelChoice.current.collectAsState()
     // RC4: with the keyboard up the bar sits on its own ground, so the cards it floats over never read through it.
     val ime = WindowInsets.isImeVisible
     Column(modifier.fillMaxWidth()
@@ -169,9 +167,8 @@ fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile:
             enter = if (MotionTokens.enabled) slideInVertically(tween(MotionTokens.MEDIUM)) { it } + fadeIn(tween(MotionTokens.MEDIUM)) else fadeIn(tween(0)),
             exit = if (MotionTokens.enabled) slideOutVertically(tween(MotionTokens.SHORT)) { it } + fadeOut(tween(MotionTokens.SHORT)) else fadeOut(tween(0))) {
             Column(Modifier.padding(start = (ChatBarTokens.AVATAR_DP + 8).dp, bottom = 6.dp)) {
-                if (state.pickerOpen) ModelPicker(family) { ModelChoice.set(it); state.pickerOpen = false }
                 Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SmallChip(ModelChoice.chip(family), trailing = true, desc = "Model: ${family.label}. Tap to change") { state.pickerOpen = !state.pickerOpen }
+                    // 0.52.3: no model chip / picker (ARGUS picks the brain automatically)
                     state.attachments.forEach { a ->
                         SmallChip(a.name.take(22), desc = "Attachment ${a.name}. Tap to remove", close = true) { state.attachments.remove(a) }
                     }
@@ -223,34 +220,6 @@ private fun SmallChip(label: String, desc: String, trailing: Boolean = false, cl
         Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.ink))
         if (trailing) Icon(Icons.Rounded.ExpandMore, null, tint = c.sub, modifier = Modifier.padding(start = 2.dp).size(16.dp))
         if (close) Icon(Icons.Rounded.Close, null, tint = c.sub, modifier = Modifier.padding(start = 4.dp).size(14.dp))
-    }
-}
-
-/** 0.52.1 (Argus): the tier marks: Insight an eye, Oracle a spark of foresight, Panoptes the all-seeing (many eyes). */
-fun tierIcon(f: ModelChoice.Family): androidx.compose.ui.graphics.vector.ImageVector? = when (f) {
-    ModelChoice.Family.AUTO -> null
-    ModelChoice.Family.SPARK -> Icons.Rounded.Visibility
-    ModelChoice.Family.FLARE -> Icons.Rounded.AutoAwesome
-    ModelChoice.Family.INFERNO -> Icons.Rounded.Insights
-}
-
-/** Auto / Insight (Fast) / Oracle (Balanced) / Panoptes (Deepest). */
-@Composable
-fun ModelPicker(current: ModelChoice.Family, onPick: (ModelChoice.Family) -> Unit) {
-    val c = LocalBlaze.current
-    // RC4: opaque (the glass menu let the cards behind it read through) and lifted above them.
-    Column(Modifier.padding(bottom = 6.dp).widthIn(min = 200.dp).zIndex(10f)
-        .shadow(12.dp, RoundedCornerShape(18.dp), clip = false)
-        .clip(RoundedCornerShape(18.dp)).background(ComposerLook.menu(c)).border(1.dp, c.ink.copy(alpha = 0.10f), RoundedCornerShape(18.dp))
-        .padding(vertical = 6.dp)) {
-        ModelChoice.Family.values().forEach { f ->
-            Row(Modifier.fillMaxWidth().clickable { onPick(f) }.semantics { contentDescription = "Model ${f.pickerLabel}" }
-                .padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                tierIcon(f)?.let { Icon(it, null, tint = c.sub, modifier = Modifier.padding(end = 10.dp).size(18.dp)) }
-                Text(f.pickerLabel, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontWeight = if (f == current) FontWeight.SemiBold else FontWeight.Normal, fontSize = 15.sp, color = c.ink))
-                if (f == current) Icon(Icons.Rounded.Check, null, tint = DuoColors.blazeBlue, modifier = Modifier.size(18.dp))
-            }
-        }
     }
 }
 

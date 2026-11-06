@@ -14,7 +14,7 @@ import com.blaze.assistant.BrandName
  * Never an empty list (no "nothing found" row): every query ends with Browse, Music, Video and "Ask Blaze about '<q>'" (sends into chat).
  */
 object SpotlightSearch {
-    enum class Icon { VIEW, TERMINAL, MUSIC, VIDEO, BROWSER, SETTINGS, MODEL, ACTION, CHAT, SEARCH, PREVIEW }
+    enum class Icon { VIEW, TERMINAL, MUSIC, VIDEO, BROWSER, SETTINGS, ACTION, CHAT, SEARCH, PREVIEW }
     enum class Mode { CURATED, PLAIN, VIEWS, TERMINAL }
 
     sealed class Act {
@@ -23,7 +23,6 @@ object SpotlightSearch {
         /** Inline preview inside Spotlight (stays on Home). */
         data class Preview(val view: String, val arg: String = "") : Act()
         data class RunAction(val action: String) : Act()
-        data class PickModel(val family: String) : Act()
         data class PlaySong(val key: String) : Act()
         data class PlayVideo(val key: String) : Act()
         data class Browse(val query: String) : Act()
@@ -121,7 +120,6 @@ object SpotlightSearch {
                 }
                 SelfMap.Kind.ACTION -> hits += actionRow(e, s)
                 SelfMap.Kind.SETTING -> hits += Row(e.id, Icon.SETTINGS, "Settings > ${e.title}", e.subtitle, Act.OpenView(e.target), s - 2)
-                SelfMap.Kind.MODEL -> hits += Row(e.id, Icon.MODEL, e.title, "Model \u00b7 tap to use", Act.PickModel(e.target), s)
             }
         }
         hits += library(q, songs, "Music", Icon.MUSIC) { Act.PlaySong(it) }

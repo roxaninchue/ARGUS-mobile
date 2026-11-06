@@ -173,7 +173,6 @@ fun spotIcon(i: SpotlightSearch.Icon): ImageVector = when (i) {
     SpotlightSearch.Icon.VIDEO -> Icons.Rounded.Movie
     SpotlightSearch.Icon.BROWSER -> Icons.Rounded.Language
     SpotlightSearch.Icon.SETTINGS -> Icons.Rounded.Settings
-    SpotlightSearch.Icon.MODEL -> Icons.Rounded.AutoAwesome
     SpotlightSearch.Icon.ACTION -> Icons.Rounded.Bolt
     SpotlightSearch.Icon.CHAT -> Icons.Rounded.ChatBubbleOutline
     SpotlightSearch.Icon.SEARCH -> Icons.Rounded.Search
@@ -343,7 +342,6 @@ class SpotlightActions(private val ctx: android.content.Context, private val sta
                 "attach" -> { state.closeSpotlight(); if (state.hostAction?.invoke("files") != true) onAttach() }
                 else -> { state.closeSpotlight(); state.hostAction?.invoke(a.action) }
             }
-            is Act.PickModel -> { com.blaze.assistant.composer.ModelChoice.set(com.blaze.assistant.composer.ModelChoice.of(a.family)); state.closeSpotlight() }
             is Act.PlaySong -> { state.closeSpotlight(); playSong(a.key) }
             is Act.PlayVideo -> { state.closeSpotlight(); com.blaze.assistant.mediaapps.VideoActivity.openAndPlay(ctx, a.key) }
             is Act.Browse -> state.preview = Act.Preview("browser", a.query)

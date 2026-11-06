@@ -39,11 +39,19 @@ class ThemeEverywhereTest {
     @Test fun everyScreenHasTheLightDarkSwitch() {
         assertEquals(listOf("home", "projects", "chat", "settings", "sheets", "music", "video", "design", "terminal"), AppTheme.SCREENS)
         val switchers = mapOf(
-            "home" to "ui/HomeBoardUi.kt", "projects" to "ui/Shell.kt", "settings" to "ui/SettingsSheet.kt",
+            "home" to "ui/HomeBoardUi.kt", "projects" to "ui/space/SpaceProjects.kt", "settings" to "ui/SettingsSheet.kt",
             "music" to "mediaapps/MusicActivity.kt", "video" to "mediaapps/VideoActivity.kt", "design" to "ui/DesignView.kt")
         for ((s, f) in switchers) assertTrue("$s has no ThemeSwitch", "ThemeSwitch(" in src(f))
-        // Chat: the profile menu's Look & feel; Terminal: ⋮ › Light or dark.
-        assertTrue("MenuItem(\"look\", \"Look & feel\"" in src("ui/ChatScreen.kt"))
+        // 0.52.3 Chat: the avatar opens the profile, whose System Preferences row lists Appearance (light / dark); a
+        // long-press on the avatar switches light / dark at once. Terminal: ⋮ › Light or dark.
+        val sys = com.blaze.assistant.ui.space.SpaceProfile.row("system")!!
+        assertEquals("System Preferences", sys.label)
+        assertEquals(com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE, sys.page)
+        assertEquals("Appearance", com.blaze.assistant.ui.space.SpaceSettings.SYSTEM_ROWS.toMap()["look"])
+        assertEquals(com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE, com.blaze.assistant.ui.space.SpaceSettings.parentOf("look"))
+        assertTrue("\"look\" -> LookPage()" in src("ui/SettingsSheet.kt"))
+        assertTrue("onAvatar = { settingsPage = \"\" }" in src("ui/ChatScreen.kt"))
+        assertTrue("LightDark.toggle(c.dark)" in src("ui/ChatScreen.kt") && "onAvatarLong" in src("ui/space/SpaceTopBar.kt"))
         assertTrue("themeMenu()" in src("terminal/BlazeTerminalActivity.kt"))
         // Every switcher writes through ThemeMode.
         assertTrue("AppTheme.toggle()" in src("ui/AppTheme.kt") && "ThemeMode.set(m)" in src("ui/AppTheme.kt"))

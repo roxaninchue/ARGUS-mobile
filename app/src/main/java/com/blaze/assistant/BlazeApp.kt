@@ -114,6 +114,9 @@ class BlazeApp : Application() {
                 com.blaze.assistant.terminal.LinuxDesktopCleanup.runOnce(app)
             }
         }
+        // 0.52.3 one-screen setup: for people past onboarding, what is left (Linux, tools, skills, backup brain, voice, quick
+        // commands) downloads by itself about 30 s after the first frame (setup/SetupRunner.later). Never in safe start.
+        if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("setup.SetupRunner.later") { com.blaze.assistant.setup.SetupRunner.later(this) }
         com.blaze.assistant.device.StartGuard.step("agent.SkillLibrary.init") { com.blaze.assistant.agent.SkillLibrary.init(this) }
         // BlazeRouter: start when it's the brain or set to start with Blaze (after Terminal/Linux are ready).
         if (!com.blaze.assistant.device.StartGuard.safeStart && (com.blaze.assistant.agent.BlazeRouter.autostart || Settings.providerId == com.blaze.assistant.agent.BlazeRouter.ID)) {

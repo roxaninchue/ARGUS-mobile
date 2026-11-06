@@ -52,10 +52,13 @@ object ModelChoice {
         return if (k == f.id) null else f.id
     }
 
+    /**
+     * 0.52.3: there is no model / brain picker in the app any more (ARGUS picks automatically), so a tier saved by an
+     * older build is put back to Auto at start instead of steering every message from a setting nobody can see.
+     */
     private fun load(): Family {
-        val saved = runCatching { com.blaze.assistant.agent.Settings.str(PREF, "auto") }.getOrDefault("auto")
-        migrate(saved)?.let { id -> runCatching { com.blaze.assistant.agent.Settings.setStr(PREF, id) } }
-        return of(saved)
+        runCatching { if (com.blaze.assistant.agent.Settings.str(PREF, "auto") != Family.AUTO.id) com.blaze.assistant.agent.Settings.setStr(PREF, Family.AUTO.id) }
+        return Family.AUTO
     }
 
     fun set(f: Family) {

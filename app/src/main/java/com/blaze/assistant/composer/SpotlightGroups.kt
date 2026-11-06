@@ -41,7 +41,6 @@ object SpotlightGroups {
         r.id.startsWith(APP_PREFIX) -> Group.APPS
         r.id.startsWith("chat:") || r.id.startsWith("mem:") -> Group.CHATS
         r.act is Act.Browse -> Group.WEB
-        r.act is Act.PickModel -> Group.SETTINGS
         r.id.startsWith("setting:") || r.icon == Icon.SETTINGS -> Group.SETTINGS
         // ARGUS's own apps (Music, Video, Browser, Terminal, Gallery…) sit with the phone's apps.
         r.act is Act.OpenView || r.act is Act.Preview -> Group.APPS

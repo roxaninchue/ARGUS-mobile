@@ -7,10 +7,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * v0.45.7 readability (0.52.2: the theme scenes and their veil went with the Living Themes): the ARGUS Home's text keeps
- * WCAG AA on its grounds, chips are opaque with a 3:1 border, the sheet veil fades out instead of ending in a hard band.
+ * v0.45.7 readability (0.52.2: the theme scenes and their veil went with the Living Themes; 0.52.3: the space palette):
+ * the shell's text keeps WCAG AA on its grounds in both modes, chips are opaque with a 3:1 border, the sheet veil fades out instead of ending in a hard band.
  *
- * What this does NOT cover: real rendered pixels (the shots jobs do), and the live GL scene behind the Home's glass.
+ * What this does NOT cover: real rendered pixels (the shots jobs do), and the space photo itself (the dark checks lay the cards over white under the scrim, the worst case).
  */
 class ContrastTest {
     private val palettes = listOf("light" to LightColors, "dark" to DarkColors)
@@ -23,17 +23,44 @@ class ContrastTest {
         assertEquals(0.5f, half.red, 0.01f); assertEquals(1f, half.alpha, 0f)
     }
 
-    /** 0.52.2: the ARGUS Home's text on its own grounds (obsidian, the glass bubbles / bar / sheet, the answer card). */
-    @Test fun theArgusHomeTextReadsOnItsGrounds() {
-        val t = com.blaze.assistant.ui.argus.ArgusHomeTokens
-        val grounds = listOf(t.Obsidian, Contrast.over(t.Glass, Color.Black), Contrast.over(Color(0xF0050A16), Color.Black),
-            Contrast.over(Color(0xE6081A40), Color.Black), Contrast.over(Color(0xF2101830), Color.Black), Color(0xFF00133F))
-        for (g in grounds) {
-            assertTrue("white on $g", Contrast.ratio(Color.White, g) >= Contrast.AA_TEXT)
-            assertTrue("steel on $g", Contrast.ratio(t.Steel, g) >= Contrast.AA_TEXT)
-            assertTrue("electric text on $g", Contrast.ratio(t.ElectricText, g) >= Contrast.AA_TEXT)
-            assertTrue("electric (rings, cursor, borders) on $g", Contrast.ratio(t.Electric, g) >= Contrast.AA_UI)
+    /**
+     * 0.52.3 (ARGUS x Hark): the space palette in both modes. Dark: white, Steel and the lifted Electric text on obsidian
+     * and on every card / tile / track / profile group, laid over black and over the brightest the scrimmed space view gets
+     * (white under the scrim); Electric (rings, cursor) keeps 3:1. Light: ink, the deepened Steel and Argus Blue on the
+     * light ground, cards, tiles and the track. The selected segment and the primary buttons read in both modes.
+     */
+    @Test fun theSpacePaletteReadsInBothModes() {
+        val p = com.blaze.assistant.ui.space.SpacePalette
+        val black = Color(p.OBSIDIAN)
+        val brightest = Contrast.over(Color.Black.copy(alpha = p.scrimAlpha(true)), Color.White)
+        assertTrue("the dark scrim darkens the space view", p.scrimAlpha(true) >= 0.5f)
+        val surfaces = listOf(Color(p.CARD_DARK), Color(p.TILE_DARK), Color(p.TRACK_DARK), Color(0xF2080B12))
+        val darkGrounds = listOf(black) + surfaces.flatMap { listOf(Contrast.over(it, black), Contrast.over(it, brightest)) }
+        for (g in darkGrounds) {
+            assertTrue("white on $g", Contrast.ratio(Color(p.WHITE), g) >= Contrast.AA_TEXT)
+            assertTrue("steel on $g", Contrast.ratio(Color(p.STEEL), g) >= Contrast.AA_TEXT)
+            assertTrue("electric text on $g", Contrast.ratio(Color(p.ELECTRIC_TEXT), g) >= Contrast.AA_TEXT)
+            assertTrue("electric (rings, cursor) on $g", Contrast.ratio(Color(p.ELECTRIC), g) >= Contrast.AA_UI)
         }
+        val lightGrounds = listOf(Color(p.GROUND_LIGHT), Color(p.CARD_LIGHT), Color(p.TILE_LIGHT), Color(p.TRACK_LIGHT))
+        for (g in lightGrounds) {
+            assertEquals("light grounds are opaque", 1f, g.alpha, 0f)
+            assertTrue("ink on $g", Contrast.ratio(Color(p.INK_LIGHT), g) >= Contrast.AA_TEXT)
+            assertTrue("sub on $g", Contrast.ratio(Color(p.SUB_LIGHT), g) >= Contrast.AA_TEXT)
+            assertTrue("argus blue on $g", Contrast.ratio(Color(p.BLUE_LIGHT), g) >= Contrast.AA_TEXT)
+        }
+        for (dark in listOf(true, false)) {
+            val t = com.blaze.assistant.ui.space.SpaceTabs
+            assertTrue("selected segment ($dark)", Contrast.ratio(Color(t.selectedInk(dark)), Color(t.selectedFill(dark))) >= Contrast.AA_TEXT)
+            val look = com.blaze.assistant.ui.space.SpaceLook.of(dark)
+            assertEquals(dark, look.dark)
+            assertTrue("primary button ($dark)", Contrast.ratio(look.primaryInk, look.primaryFill) >= Contrast.AA_TEXT)
+            assertTrue("ink on the card ($dark)", Contrast.ratio(look.ink, Contrast.over(look.card, look.ground)) >= Contrast.AA_TEXT)
+            assertTrue("sub on the card ($dark)", Contrast.ratio(look.sub, Contrast.over(look.card, look.ground)) >= Contrast.AA_TEXT)
+            assertTrue("accent on the card ($dark)", Contrast.ratio(look.accent, Contrast.over(look.card, look.ground)) >= Contrast.AA_TEXT)
+        }
+        // the brand colours are the palette's (docs/BRAND.md)
+        assertEquals(listOf(0xFF000000L, 0xFF0056FFL, 0xFF1286FFL, 0xFF9AA0B3L, 0xFFFFFFFFL), listOf(p.OBSIDIAN, p.ARGUS_BLUE, p.ELECTRIC, p.STEEL, p.WHITE))
     }
 
     @Test fun chipsAreSolidWithAVisibleBorder() {

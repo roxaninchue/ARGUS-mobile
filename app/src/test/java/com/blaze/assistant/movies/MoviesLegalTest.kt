@@ -32,7 +32,13 @@ class MoviesLegalTest {
     }
 
     @Test fun wholeAppNamesNoThirdPartyProviderRepo() {
-        app.walkTopDown().filter { it.isFile && it.extension in setOf("kt", "json", "xml", "md") }.forEach { f ->
+        // 0.52.3: About › Licences ships THIRD_PARTY_NOTICES.md in assets/legal. That copy is the one place allowed to carry
+        // the vega-app attribution link, and only while it is byte-for-byte the repo root's notices (whose only Vega link is
+        // pinned by noticesHoldOnlyTheVegaAppLink below).
+        val notices = File(repoRoot, "THIRD_PARTY_NOTICES.md")
+        val shipped = File(app, "assets/legal/THIRD_PARTY_NOTICES.md")
+        assertTrue("the shipped notices match the repo root's", !shipped.exists() || shipped.readText() == notices.readText())
+        app.walkTopDown().filter { it.isFile && it.extension in setOf("kt", "json", "xml", "md") && it.absoluteFile != shipped.absoluteFile }.forEach { f ->
             assertTrue("${f.path} names a third-party provider repo", !Regex("""(?i)zenda-cross|vega-org|vega-providers""").containsMatchIn(f.readText()))
         }
     }

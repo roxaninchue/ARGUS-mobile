@@ -61,47 +61,41 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.clip
 
-/** Settings, grouped into pages. [page] null = the category list. */
+/** Settings, grouped into pages. [page] null = the profile page (the root). */
 data class SettingsPage(val id: String, val title: String, val sub: String)
 
 /**
- * v0.24.6: Settings is six rows: Voice, Permissions, Account, Updates, About, Advanced. Brain left the list (models are
- * managed on the Blaze Gateway dashboard; its page, prefs and keys stay, reachable from /views › Brain), and the
- * views (Memory, Learn, Seller, Schedule, Skills, Agents, Jobs, Dashboard) left Advanced: they open from the
- * composer's + menu, /views and Blaze's "Open in …?" chip. Their prefs are untouched.
- * v0.24.4: Settings is cut to seven rows: Brain, Voice, Permissions, Account, Updates, About, Advanced.
- * Every older page still exists (and keeps its prefs) behind Advanced; the BlazeRouter dashboard is gone
- * (its prefs stay; Brain picks Auto or a fixed model).
+ * 0.52.3 (ARGUS x Hark): the root of Settings is the profile page ([com.blaze.assistant.ui.space.SpaceProfileScreen]):
+ * Usage and plan; Profile, Scheduled Tasks, Accounts, Wallet; Security, System Preferences, Submit Feedback, About.
+ * System Preferences lists Appearance, Language, Voice, Permissions and Updates. Back follows
+ * [com.blaze.assistant.ui.space.SpaceSettings.PARENT] (everything else returns to the profile). The old Settings list,
+ * Advanced, the Brain page's switches and the backup / offline brain sections are gone: the brain is picked
+ * automatically. The pages below stay reachable by id (ARGUS's open_settings, /views, the + menu) and keep their prefs.
  */
-val essentialPages = listOf("look", "language", "doing", "bank", "voice", "permissions", "account", "updates", "about", "advanced")
-
-/** The top-level rows. */
 val topPages = listOf(
-    // v0.39.0 Simple mode: Look & feel and what Blaze does on its own.
-    SettingsPage("look", "Look & feel", "Light / Dark / Auto, accent colour, Home tilt"),
-    // v0.45.7: the reply language (Auto matches you; Kiswahili, ChiBemba, ChiNyanja, Hausa, Yorùbá, አማርኛ…).
+    SettingsPage("system", "System Preferences", "Appearance, language, voice, permissions, updates"),
+    SettingsPage("feedback", "Submit Feedback", "Tell the ${BrandName.NAME} team what works and what doesn't"),
+    SettingsPage("look", "Appearance", "Light, Dark or Auto, and the accent colour"),
     SettingsPage("language", "Language", "Which language ${BrandName.NAME} replies in. Auto matches yours"),
     SettingsPage("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders, on or off, and today's diary"),
-    // v0.43.0: Bank mode, where non-technical users look for it (not under Advanced).
     SettingsPage("bank", "Bank mode", "Use banking apps: ${BrandName.NAME} steps back while they're open"),
     SettingsPage("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, default assistant"),
     SettingsPage("permissions", "Permissions", "Phone control, notifications, mic, overlay"),
-    SettingsPage("account", "Account", "${BrandName.NAME} account and connected apps"),
+    SettingsPage("account", "Profile", "${BrandName.NAME} account and connected apps"),
     SettingsPage("updates", "Updates", "Check for a newer ${BrandName.NAME}; updates run in the background"),
-    SettingsPage("about", "About", "Version and what ${BrandName.NAME} keeps on this phone"),
-    SettingsPage("advanced", "Advanced", "Everything else, page by page"),
+    SettingsPage("about", "About", "Version, licences and what ${BrandName.NAME} keeps on this phone"),
 )
 
-/** Pages under Advanced (the old list without the router dashboard). */
+/** Pages that left the Settings UI in 0.52.3 but still open by id (their prefs keep working). */
 val advancedPages = listOf(
-    SettingsPage("connections", "Connected accounts", "Google, GitHub, Spotify, Notion, Slack"),
+    SettingsPage("connections", "Accounts", "Google, GitHub, Spotify, Notion, Slack"),
     SettingsPage("desktop", "${BrandName.NAME} Desktop", "Pair with ${BrandName.NAME} on your computer"),
     SettingsPage("control", "Phone control", "Accessibility, skills, the pointer"),
     SettingsPage("persona", "Personality", "How ${BrandName.NAME} talks"),
     SettingsPage("feel", "Taps, sounds & panel", "Tap highlights, sounds, compact panel"),
-    SettingsPage("privacy", "Privacy & safety", "App lock, approvals"),
+    SettingsPage("privacy", "Security", "App lock, approvals, bank mode"),
     SettingsPage("watches", "Watches", "Values Magic Hand is watching for you"),
-    SettingsPage("secrets", "Saved secrets", "Keys, tokens, logins and cards from the Secure Form, only on this phone"),
+    SettingsPage("secrets", "Wallet", "Keys, tokens, logins and cards from the Secure Form, only on this phone"),
     SettingsPage("logins", "Saved logins", "Sign-ins from ${BrandName.NAME}'s secure form, encrypted on this phone"),
     SettingsPage("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: sign out of sites, clear its data"),
     SettingsPage("proactive", "Proactive & triggers", "Speak up on its own, when-X-do-Y"),
@@ -112,181 +106,138 @@ val advancedPages = listOf(
     SettingsPage("usage", "Usage", "Tokens and estimated cost"),
     SettingsPage("device", "Device & diagnostics", "Phone health, self-check, crash report"),
     SettingsPage("backup", "Backup", "Export or import everything"),
-    // v0.45.28: the on-device backup brain (also on the Brain page).
-    SettingsPage("backup_brain", "Backup brain", "Answers on the phone when ${BrandName.NAME} Cloud is down: status, download, wait"),
 )
 
 /**
- * Pages that are views (v0.24.6): not listed in Settings any more, still opened by id from /views, the + menu,
- * open_view and the "Open in …?" chip. Brain stays here too (models live on the gateway dashboard).
+ * Pages that are views: opened by id from /views, the + menu, open_view and the "Open in …?" chip. "ai" (Brain) is
+ * only the status card now: ARGUS Cloud picks the model for every message, nobody picks one.
  */
 val viewPages = listOf(
-    SettingsPage("ai", "Brain", "${BrandName.NAME} Cloud picks the best free model for every message"),
+    SettingsPage("ai", "Brain", "${BrandName.NAME} Cloud picks the best model for every message"),
     SettingsPage("terminal", "Jobs", "A real shell, jobs, Linux, Termux"),
     SettingsPage("memory", "Memory", "What ${BrandName.NAME} remembers and has learned"),
-    SettingsPage("routines", "Schedule", "Things ${BrandName.NAME} does on a schedule"),
+    SettingsPage("routines", "Scheduled Tasks", "Things ${BrandName.NAME} does on a schedule"),
     SettingsPage("specialists", "Agents", "Sub-agents ${BrandName.NAME} can delegate to"),
     SettingsPage("skills", "Skills", "Research, email, plans, docs, code: on, off, restore"),
     SettingsPage("learn", "Learn", "Flashcards, Google Classroom, low-data mode"),
     SettingsPage("appstore", "App Store", "Free open-source apps from their developers' own releases"),
     SettingsPage("seller", "Seller", "Brand kit, weekly store digest, replies from your PC"),
     SettingsPage("dashboard", "Dashboard", "Local web dashboard and analytics"),
-    // v0.40.0: under Account (and /sync).
-    SettingsPage("plan", "Plan", "${BrandName.NAME} Cloud plans, monthly or yearly"),
+    SettingsPage("plan", "Usage and plan", "${BrandName.NAME} Cloud plans, monthly or yearly"),
     SettingsPage("sync", "Cloud sync", "Chats, memory, settings and designs on all your phones, end-to-end encrypted"),
 )
 
 val settingsPages = topPages + advancedPages + viewPages
 
+/** 0.52.3: page ids from before the declutter that now land on another page ("" = the profile). */
+internal val settingsAliases = mapOf("router" to "ai", "backup_brain" to "ai", "advanced" to "", "settings" to "")
+
+/** The page a start id opens: a known page, an alias, or what [com.blaze.assistant.agent.settingsPageFor] makes of it; null = the profile. */
+internal fun settingsStart(start: String?): String? {
+    val s = start?.trim().orEmpty()
+    if (s.isEmpty()) return null
+    settingsAliases[s]?.let { return it.ifEmpty { null } }
+    if (settingsPages.any { it.id == s }) return s
+    return com.blaze.assistant.agent.settingsPageFor(s).takeIf { it.isNotEmpty() }
+}
+
+/**
+ * Settings. [start] null / "" opens the profile page; a page id opens that page (Back then closes Settings when it was
+ * opened straight onto it). [onTab] switches the top bar's Home | Chat | Projects (and closes Settings); [onSearch]
+ * opens Spotlight from the profile's floating Search pill.
+ */
 @Composable
-fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> Unit, onDismiss: () -> Unit) {
+fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> Unit, onDismiss: () -> Unit,
+                   onTab: (String) -> Unit = {}, onSearch: () -> Unit = {}) {
     val c = LocalBlaze.current.mono
-    // An unknown page id falls back to the list instead of a blank screen.
-    var page by remember { mutableStateOf((if (start == "router") "ai" else start)?.takeIf { s -> settingsPages.any { it.id == s } }
-        ?: start?.let { com.blaze.assistant.agent.settingsPageFor(it) }?.takeIf { it.isNotEmpty() }) }
-    // Opened straight onto a page (from the sidebar or a /command): back closes settings.
-    val direct = remember { page != null }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val first = remember { settingsStart(start) }
+    var page by remember { mutableStateOf(first) }
+    // Opened straight onto a page (from a /command or ARGUS): Back from that page closes Settings.
     fun back() {
-        if ((page == "sync" || page == "plan") && !direct) page = "account"
-        else if (page != null && !direct) page = if (page in essentialPages || page == null) null else if (advancedPages.any { it.id == page }) "advanced" else null
-        else onDismiss()
+        val p = page
+        if (p == null || (first != null && p == first)) onDismiss()
+        else page = com.blaze.assistant.ui.space.SpaceSettings.parentOf(p)
     }
     BackHandler { back() }
     val current = settingsPages.firstOrNull { it.id == page }
+    val account by com.blaze.assistant.connect.BlazeAccount.view.collectAsState()
+    val ents by com.blaze.assistant.connect.Entitlements.snap.collectAsState()
+    val scope = rememberCoroutineScope()
+    val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty() }
 
-    // 0.52.2: one ARGUS look (the glass page); the top bar keeps the light / dark switch.
-    Box(Modifier.fillMaxSize().pageBackdrop(c)) {
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
-        // v0.28.3: the shared round BackButton (was a thin "←" glyph).
-        BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),
-            right = { ThemeSwitch() })
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
-            when (page) {
-                null -> SettingsList { page = it }
-                "permissions" -> { PermissionsPage { page = it }; ControlPage(a11yOn, onOpenAccessibility) }
-                "updates" -> UpdatesPage()
-                "about" -> AboutPage()
-                "advanced" -> AdvancedList { page = it }
-                // v0.25.0: one brain, Blaze Cloud. No providers, keys or models to pick.
-                // v0.45.28: the on-device backup brain's own section (status, Download now, switches, wait).
-                "ai" -> { BrainCard { page = "account" }; AiPage(); BackupBrainSection(); OfflineBrainSection() }
-                "backup_brain" -> BackupBrainSection()
-                "account" -> AccountPage(onOpen = { page = it })
-                "sync" -> CloudSyncPage(onSignIn = { page = "account" })
-                "plan" -> CheckoutPage()
-                "feel" -> FeelPage()
-                "look" -> LookPage()
-                "language" -> LanguagePage()
-                "doing" -> DoingPage()
-                "bank" -> BankModePage()
-                "connections" -> ConnectionsPage()
-                "desktop" -> DesktopPage()
-                "persona" -> PersonaSection()
-                "control" -> ControlPage(a11yOn, onOpenAccessibility)
-                "commands" -> CommandsSection()
-                "skills" -> SkillLibraryPage()
-                "voice" -> { VoiceSection(); MyVoiceSection(); VoiceTuning(); VoiceExtras() }
-                "orb" -> OrbSection()
-                "routines" -> SchedulePage()
-                "memory" -> { MemoryPage(); LearningSection() }
-                "usage" -> { UsageSection(); CostCap() }
-                "privacy" -> SecuritySection()
-                "device" -> DevicePage()
-                "proactive" -> ProactivePage()
-                "specialists" -> SpecialistsPage()
-                "terminal" -> TerminalPage()
-                "dashboard" -> DashboardPage()
-                "backup" -> BackupSection()
-                "learn" -> LearnPage()
-                "seller" -> SellerPage()
-                "appstore" -> AppStorePage()
-                "logs" -> LifeLogsPage()
-                "replies" -> RepliesPage()
-                "logins" -> SavedLoginsPage()
-                "secrets" -> SavedSecretsPage()
-                "phonebrowser" -> PhoneBrowserSettingsPage()
-                "watches" -> com.blaze.assistant.phone.MagicHandWatchesPage()
-            }
-            Spacer(Modifier.height(30.dp))
-        }
-    }
-    }
-}
-
-/** The settings list (v0.24.4): seven rows. Everything else is one tap away under Advanced. */
-@Composable
-fun SettingsList(advanced0: Boolean = false, onPage: (String) -> Unit) {
-    val c = LocalBlaze.current.mono
-    SimpleAdvancedSwitch()
-    Spacer(Modifier.height(10.dp))
-    Rows {
-        topPages.forEachIndexed { i, sp ->
-            KitRow(sp.title, sp.sub, n = i + 1, first = i == 0, onClick = { onPage(sp.id) }) {
-                Text("\u2192", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
-            }
-        }
-    }
-    if (advanced0) { Spacer(Modifier.height(18.dp)); AdvancedList(onPage) }
-    Spacer(Modifier.height(22.dp))
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    Label("${BrandName.NAME} " + runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault(""), color = c.weak, size = 10.sp)
-}
-
-/** Advanced: every other page, unchanged. */
-@Composable
-fun AdvancedList(onPage: (String) -> Unit) {
-    val c = LocalBlaze.current.mono
-    Spacer(Modifier.height(10.dp))
-    val simple by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
-    val shown = advancedPages.filter { com.blaze.assistant.agent.SimpleMode.pageVisible(it.id, simple) } +
-        (if (simple) emptyList() else viewPages.filter { it.id in com.blaze.assistant.agent.SimpleMode.TECH_PAGES })
-    GroupHead("Advanced \u00b7 %02d".format(shown.size), if (simple) "Everything else ${BrandName.NAME} can do. Switch to Advanced at the top of Settings for the technical tools." else "Everything else ${BrandName.NAME} can do, page by page.")
-    Rows {
-        shown.forEachIndexed { i, sp ->
-            KitRow(sp.title, sp.sub, n = i + 1, first = i == 0, onClick = { onPage(sp.id) }) {
-                Text("\u2192", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
+    com.blaze.assistant.ui.space.SpaceBackdrop {
+    Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+        if (page == null) {
+            // The profile page: Hark's top bar (no round button), then the grouped cards.
+            val me = account.user
+            com.blaze.assistant.ui.space.SpaceTopBar(tab = "", onTab = onTab, onLeft = {}, showLeft = false,
+                initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
+                onAvatar = { onDismiss() })
+            com.blaze.assistant.ui.space.SpaceProfileScreen(
+                name = com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName),
+                email = com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null),
+                signedIn = me != null,
+                planLine = ents?.let { com.blaze.assistant.connect.Billing.planName(it.plan) + " plan" }.orEmpty(),
+                onPage = { page = it },
+                onSignOut = { scope.launch { com.blaze.assistant.connect.BlazeAccount.signOut() } },
+                onSearch = onSearch,
+                modifier = Modifier.weight(1f),
+                version = version)
+        } else {
+            BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),
+                right = { ThemeSwitch() })
+            Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
+                when (page) {
+                    com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE -> com.blaze.assistant.ui.space.SpaceSystemPage { page = it }
+                    com.blaze.assistant.ui.space.SpaceProfile.FEEDBACK_PAGE -> com.blaze.assistant.ui.space.SpaceFeedbackPage(version)
+                    "permissions" -> { PermissionsPage { page = it }; ControlPage(a11yOn, onOpenAccessibility) }
+                    "updates" -> UpdatesPage()
+                    "about" -> AboutPage()
+                    // 0.52.3: one brain, picked automatically. The page is only its status (no switches, no model).
+                    "ai" -> BrainCard { page = "account" }
+                    "account" -> AccountPage(onOpen = { page = it })
+                    "sync" -> CloudSyncPage(onSignIn = { page = "account" })
+                    "plan" -> CheckoutPage()
+                    "feel" -> FeelPage()
+                    "look" -> LookPage()
+                    "language" -> LanguagePage()
+                    "doing" -> DoingPage()
+                    "bank" -> BankModePage()
+                    "connections" -> ConnectionsPage()
+                    "desktop" -> DesktopPage()
+                    "persona" -> PersonaSection()
+                    "control" -> ControlPage(a11yOn, onOpenAccessibility)
+                    "commands" -> CommandsSection()
+                    "skills" -> SkillLibraryPage()
+                    "voice" -> { VoiceSection(); MyVoiceSection(); VoiceTuning(); VoiceExtras() }
+                    "orb" -> OrbSection()
+                    "routines" -> SchedulePage()
+                    "memory" -> { MemoryPage(); LearningSection() }
+                    "usage" -> { UsageSection(); CostCap() }
+                    // 0.52.3 Security: app lock and approvals, then Bank mode (it left the top list).
+                    "privacy" -> { SecuritySection(); Spacer(Modifier.height(18.dp)); BankModePage() }
+                    "device" -> DevicePage()
+                    "proactive" -> ProactivePage()
+                    "specialists" -> SpecialistsPage()
+                    "terminal" -> TerminalPage()
+                    "dashboard" -> DashboardPage()
+                    "backup" -> BackupSection()
+                    "learn" -> LearnPage()
+                    "seller" -> SellerPage()
+                    "appstore" -> AppStorePage()
+                    "logs" -> LifeLogsPage()
+                    "replies" -> RepliesPage()
+                    "logins" -> SavedLoginsPage()
+                    "secrets" -> SavedSecretsPage()
+                    "phonebrowser" -> PhoneBrowserSettingsPage()
+                    "watches" -> com.blaze.assistant.phone.MagicHandWatchesPage()
+                }
+                Spacer(Modifier.height(30.dp))
             }
         }
     }
-}
-
-@Composable
-private fun AiPage() {
-    var name by remember { mutableStateOf(Settings.userName) }
-    var think by remember { mutableStateOf(Settings.showReasoning) }
-    var showSteps by remember { mutableStateOf(Settings.showSteps) }
-    var fold by remember { mutableStateOf(Settings.foldAnswers) }
-    var bgAgents by remember { mutableStateOf(Settings.bool("bg_agents", true)) }
-    var modeBar by remember { mutableStateOf(Settings.bool("mode_bar", true)) }
-    var fu by remember { mutableStateOf(Settings.followups) }
-    val c = LocalBlaze.current.mono
-
-    // Saved when you leave the page.
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { Settings.userName = name } }
-    Spacer(Modifier.height(12.dp))
-    Field("Your name", name, { name = it; Settings.userName = it }, "What should ${BrandName.NAME} call you?")
-    Spacer(Modifier.height(10.dp))
-    ToggleRow("Show thinking", "A quiet \u201cThinking it through\u2026\u201d line while the model thinks (its reasoning itself isn't shown)", think) { think = !think; Settings.showReasoning = think }
-    // v0.26.1: the rich_replies pref (default on) now covers diagrams, charts, buttons, forms and mini tools.
-    var visual by remember { mutableStateOf(Settings.bool("rich_replies", true)) }
-    ToggleRow("Visual answers", "${BrandName.NAME} picks diagrams, charts, compare cards, buttons, forms and little calculators when they explain better than text", visual) { visual = !visual; Settings.setBool("rich_replies", visual) }
-    var tech by remember { mutableStateOf(com.blaze.assistant.agent.ReplyChips.showTech()) }
-    ToggleRow("Show technical details", "Timings, data used and the token meter under replies (hidden by default)", tech) { tech = !tech; Settings.setBool(com.blaze.assistant.agent.ReplyChips.PREF, tech) }
-    // 0.45.19: which model replied is never shown to users; a debug build has a developer switch for it (off by default).
-    if (com.blaze.assistant.BuildConfig.DEBUG) {
-        var devInfo by remember { mutableStateOf(Settings.bool(com.blaze.assistant.agent.DevFlags.MODEL_INFO, false)) }
-        ToggleRow("Developer: reply details", "Debug builds only: route and timings under replies and the What happened sheet", devInfo) {
-            devInfo = !devInfo; Settings.setBool(com.blaze.assistant.agent.DevFlags.MODEL_INFO, devInfo) }
     }
-    ToggleRow("Show every step", "List each tool call as it happens, instead of one plain line and \"Worked for 12s\"", showSteps) { showSteps = !showSteps; Settings.showSteps = showSteps }
-    ToggleRow("Background agents", "${BrandName.NAME} can hand long work to an agent and keep chatting (${com.blaze.assistant.agent.BgAgents.cap()} at a time on this phone)", bgAgents) { bgAgents = !bgAgents; Settings.setBool("bg_agents", bgAgents) }
-    // v0.44.0: the cloud_runs pref (v0.42.0) had no switch. Brain is an Advanced-only page, so Simple never shows it.
-    var cloudRuns by remember { mutableStateOf(Settings.bool(com.blaze.assistant.agent.CloudRuns.PREF, true)) }
-    ToggleRow("Cloud runs", "Each message is answered in ${BrandName.NAME} Cloud and kept there, so a dropped connection or closing ${BrandName.NAME} never loses the reply. Off: the phone runs every step itself", cloudRuns) { cloudRuns = !cloudRuns; Settings.setBool(com.blaze.assistant.agent.CloudRuns.PREF, cloudRuns) }
-    ToggleRow("Mode switches", "Show Plan/Build and Auto/Autopilot above the message box", modeBar) { modeBar = !modeBar; Settings.setBool("mode_bar", modeBar) }
-    ToggleRow("Fold long answers", "Long tables, lists, code and reports open as cards you tap to expand", fold) { fold = !fold; Settings.foldAnswers = fold }
-    ToggleRow("Suggested follow-ups", "Three tap-to-send ideas under each answer", fu) { fu = !fu; Settings.followups = fu }
-    FastLaneSection()
 }
 
 @Composable
