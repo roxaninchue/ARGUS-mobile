@@ -127,7 +127,7 @@ class ArgusHomeLogicTest {
 
     @Test fun greetingUsesOnlyAFirstName() {
         assertEquals("Good evening, Gaby.", ArgusGreeting.hello(19, "Gaby"))
-        assertEquals("Good morning, Lukas.", ArgusGreeting.hello(8, "  Lukas Banda "))
+        assertEquals("Good morning, Ada.", ArgusGreeting.hello(8, "  Ada Lovelace "))
         assertEquals("Still up, Gaby?", ArgusGreeting.hello(2, "Gaby"))
         assertEquals("Good afternoon.", ArgusGreeting.hello(13, null))
         assertEquals("Good afternoon.", ArgusGreeting.hello(13, "   "))
