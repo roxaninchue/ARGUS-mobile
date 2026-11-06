@@ -62,28 +62,6 @@ fun SimpleAdvancedSwitch() {
     Text(if (simple) "Hidden in Advanced: ${SimpleMode.HIDDEN_LINE}. Everything still works, and ${BrandName.NAME} can still open any of it."
         else "Everything is showing, including ${SimpleMode.HIDDEN_LINE}.",
         modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
-    NavigationChoice()
-}
-
-/** Settings › Navigation: Swipe (Home first, swipe up for Chat; default) or Classic tabs. Independent of Simple / Advanced. */
-@Composable
-fun NavigationChoice() {
-    val c = LocalBlaze.current.mono
-    val swipe by com.blaze.assistant.agent.SwipeNav.swipeFlow.collectAsState()
-    Spacer(Modifier.height(8.dp))
-    Label("Navigation", modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).glass(RoundedCornerShape(26.dp), GlassIntensity.Low, shadow = false).padding(4.dp)) {
-        listOf(true to "Swipe", false to "Classic tabs").forEach { (v, label) ->
-            val on = swipe == v
-            Box(Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(22.dp)).let { if (on) it.background(c.ink) else it }
-                .clickable { com.blaze.assistant.agent.SwipeNav.setSwipe(v) }.semantics { contentDescription = "Navigation: $label" }, contentAlignment = Alignment.Center) {
-                Text(label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (on) c.paper else c.ink))
-            }
-        }
-    }
-    Text(if (swipe) "${BrandName.NAME} opens on Home. Swipe up from the handle for Chat; pull down from the top for Home."
-        else "The Chat | Projects | Home tabs, opening on Chat.",
-        modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
 }
 
 /** "Things Blaze is doing": routines and reminders with friendly names and an on/off switch, then "Today I…". */
@@ -120,47 +98,15 @@ fun DoingPage() {
     }
 }
 
-/** Settings › Look & feel: living backgrounds, Light / Dark / Auto, accent, Move with music, Save battery. */
+/**
+ * Settings › Look & feel: Light / Dark / Auto, the accent, the Home's tilt parallax and Stage. 0.52.2: the living
+ * backgrounds and the Living Themes are gone (the ARGUS Home is the one living scene).
+ */
 @Composable
 fun LookPage() {
     val c = LocalBlaze.current.mono
-    val ctx = LocalContext.current
-    val bg by Look.bg.collectAsState()
     val accent by Look.accent.collectAsState()
-    val music by Look.music.collectAsState()
-    val still by Look.still.collectAsState()
-    val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            try { ctx.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) { }
-            Look.setPhoto(uri.toString()); Look.setBg(LivingLogic.Bg.PHOTO)
-        }
-    }
     Spacer(Modifier.height(10.dp))
-    // v0.45.2: the Living Particles and Weather themes (the same picker as the profile menu's Themes).
-    val themeId by Look.theme.collectAsState()
-    BlazeButton("Themes · " + LivingThemes.of(themeId).name, Modifier.fillMaxWidth(), kind = BtnKind.SECONDARY) { ThemePickerState.open.value = true }
-    Spacer(Modifier.height(12.dp))
-    Text("Choose a background. Most of them move, gently." + if (themeId.isNotBlank()) " Picking one switches the theme back to Classic." else "",
-        style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.sub))
-    Spacer(Modifier.height(12.dp))
-    LivingLogic.Bg.values().toList().chunked(2).forEach { row ->
-        Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            row.forEach { b ->
-                val on = b == bg
-                Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).glass(RoundedCornerShape(20.dp), if (on) GlassIntensity.High else GlassIntensity.Low, shadow = false)
-                    .border(if (on) 2.dp else 0.dp, if (on) c.ink else Color.Transparent, RoundedCornerShape(20.dp))
-                    .clickable { if (b == LivingLogic.Bg.PHOTO && Look.photo.value.isBlank()) pick.launch(arrayOf("image/*")) else { Look.setBg(b); if (Look.theme.value.isNotBlank()) Look.setTheme(LivingThemes.CLASSIC) } }
-                    .semantics { contentDescription = "${b.title}: ${b.sub}" }.padding(10.dp)) {
-                    Swatch(b, Modifier.fillMaxWidth().height(64.dp))
-                    Spacer(Modifier.height(8.dp))
-                    Text(b.title, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.ink))
-                    Text(b.sub, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
-                }
-            }
-        }
-    }
-    if (bg == LivingLogic.Bg.PHOTO) ActionText("Pick another photo", modifier = Modifier.clickable { pick.launch(arrayOf("image/*")) }.padding(vertical = 10.dp))
-    Spacer(Modifier.height(18.dp))
     Label("Theme")
     Spacer(Modifier.height(8.dp))
     val mode = ThemeMode.mode.value
@@ -173,51 +119,29 @@ fun LookPage() {
             }
         }
     }
-    Text("Auto turns dark after sunset and light in the morning.", modifier = Modifier.padding(vertical = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
-    // v0.45.7: how strongly a theme's picture shows behind the chat. Text keeps AA contrast at every position.
-    Spacer(Modifier.height(14.dp))
-    Label("Background strength")
-    val strength by Look.strength.collectAsState()
-    androidx.compose.material3.Slider(strength, { Look.setStrength(it) }, valueRange = 0f..1f, modifier = Modifier.fillMaxWidth()
-        .semantics { contentDescription = "Background strength ${(strength * 100).toInt()} percent" })
-    Text("Fainter keeps the picture calm behind your messages; stronger shows more of it. Text stays readable either way.",
+    Text("Auto turns dark after sunset and light in the morning. The ${BrandName.UPPER} Home stays dark either way.", modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
     Label("Accent")
     Spacer(Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        LivingLogic.ACCENTS.forEach { (hex, name) ->
-            val col = LivingLogic.parseAccent(hex)?.let { Color(it) }
+        LookLogic.ACCENTS.forEach { (hex, name) ->
+            val col = LookLogic.parseAccent(hex)?.let { Color(it) }
             Box(Modifier.size(38.dp).clip(CircleShape).background(col ?: c.accent)
                 .border(if (accent == hex) 3.dp else 1.dp, if (accent == hex) c.ink else c.hair, CircleShape)
                 .clickable { Look.setAccent(hex) }.semantics { contentDescription = "Accent: $name" })
         }
     }
     Spacer(Modifier.height(14.dp))
-    ToggleRow("Move with music", "Pulses gently with what's playing in ${BrandName.NAME} Music", music) { Look.setMusic(!music) }
-    ToggleRow("Save battery: keep it still", "Also pauses by itself on low battery or in power saver", still) { Look.setStill(!still) }
+    // 0.52.2: the Home's scene follows the phone's tilt a little (off by default; never with reduce motion or battery saver).
+    var tilt by remember { mutableStateOf(com.blaze.assistant.agent.Settings.bool("argus_parallax", false)) }
+    ToggleRow("Tilt the Home scene", "The orb and its rings shift a little as you tilt the phone. Off in battery saver", tilt) {
+        tilt = !tilt; com.blaze.assistant.agent.Settings.setBool("argus_parallax", tilt)
+    }
     // 0.46.0 Blaze Stage: timers, music, quizzes and other live cards right on the chat (off = Blaze answers in chat / opens views).
     var stageOn by remember { mutableStateOf(com.blaze.assistant.stage.StageStore.enabled) }
     ToggleRow("${BrandName.NAME} Stage", "Live cards right on the chat: timers, music, quizzes. Drag to move; back or Reset layout restores the chat", stageOn) {
         stageOn = !stageOn; com.blaze.assistant.agent.Settings.setBool("stage_on", stageOn)
         if (!stageOn) com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.Reset)
-    }
-}
-
-/** A still preview of a background for its card. */
-@Composable
-private fun Swatch(b: LivingLogic.Bg, modifier: Modifier) {
-    val cal = remember { Calendar.getInstance() }
-    val cols = when (b) {
-        LivingLogic.Bg.SKY -> LivingLogic.sky(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)).map { Color(it) }
-        LivingLogic.Bg.AURORA -> listOf(Color(0xFF07101F), Color(0xFF2EE6A6), Color(0xFF3AA0FF), Color(0xFFB45CFF))
-        LivingLogic.Bg.OCEAN -> listOf(Color(0xFF0B3A5B), Color(0xFF0E5A7E), Color(0xFF0A2E48))
-        LivingLogic.Bg.PAPER -> listOf(LocalBlaze.current.paper, LocalBlaze.current.paper)
-        LivingLogic.Bg.MOSAIC -> listOf(Color(0xFF3B4C7A), Color(0xFF5A3B6E), Color(0xFF2F6061))
-        LivingLogic.Bg.PHOTO -> listOf(Color(0xFF2A2D36), Color(0xFF505664))
-    }
-    Canvas(modifier.clip(RoundedCornerShape(14.dp))) {
-        drawRect(Brush.linearGradient(cols))
-        if (b == LivingLogic.Bg.PAPER) drawRect(Color.White.copy(alpha = 0.04f))
     }
 }

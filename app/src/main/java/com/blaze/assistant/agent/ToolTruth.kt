@@ -97,12 +97,12 @@ object ToolTruth {
     private val calOffer = Regex("""(?i)\b(?:check|look at|open|view|see)\b[^.?!\n]{0,30}\bcalendar\b""")
 
     // Live 0.8.7, 5 runs: "open Settings" was refused 2 of 5 ("I don't have the capability to open settings").
-    private val viewAsk = Regex("""(?i)^\s*(?:@\w+\s+)?(?:please\s+)?(?:open|show|go to|switch to)\s+(?:me\s+)?(?:the\s+|my\s+)?(?:blaze\s+)?(?:settings|design|terminal|schedule|memory|projects|home)(?:\s+(?:view|page|screen|tab))?[\s.!]*$""")
+    private val viewAsk = Regex("""(?i)^\s*(?:@\w+\s+)?(?:please\s+)?(?:open|show|go to|switch to)\s+(?:me\s+)?(?:the\s+|my\s+)?(?:(?:argus|blaze)\s+)?(?:settings|design|terminal|schedule|memory|projects|home)(?:\s+(?:view|page|screen|tab))?[\s.!]*$""")
 
     // v0.45.13 round 2 (rpS terminal-ls 3/5: codestral wrote ```sh ls``` as text with no run_shell call): "run X in the
     // terminal", "run ls", a bare shell command ("ls", "pwd", "git status") names the terminal tool on the first step.
     private const val CMDS = "ls|pwd|whoami|uname|df|du|ps|htop|neofetch|ifconfig|uptime|git|python3?|pip3?|npm|npx|node|apt(?:-get)?|pkg|mkdir|chmod|grep|curl|wget"
-    private val inTerminal = Regex("""(?i)^\s*(?:@\w+\s+)?(?:please\s+|can you\s+|could you\s+)?(?:run|execute|exec|type)\s+\S.{0,80}?\s+(?:in|on|from)\s+(?:the\s+|my\s+|a\s+)?(?:blaze\s+)?(?:terminal|shell|console|command line)\b[\s.!?]*$""")
+    private val inTerminal = Regex("""(?i)^\s*(?:@\w+\s+)?(?:please\s+|can you\s+|could you\s+)?(?:run|execute|exec|type)\s+\S.{0,80}?\s+(?:in|on|from)\s+(?:the\s+|my\s+|a\s+)?(?:(?:argus|blaze)\s+)?(?:terminal|shell|console|command line)\b[\s.!?]*$""")
     private val runCmd = Regex("""(?i)^\s*(?:@\w+\s+)?(?:please\s+)?(?:run|execute)\s+(?:`[^`\n]+`|(?:$CMDS)(?:\s+[-\w./~=:@"']+){0,6})[\s.!?]*$""")
     private val bareCmd = Regex("""^\s*(?:@\w+\s+)?(?:$CMDS)(?:\s+[-\w./~=:@"']+){0,6}\s*$""")
 
@@ -128,7 +128,7 @@ object ToolTruth {
     private val contactAsk = Regex("""(?i)\b(?:add|save|create|new)\s+(?:a\s+|the\s+|this\s+)?(?:new\s+)?contact\b|\bsave\b[^.?!\n]{0,40}\bas a contact\b|\badd\b[^.?!\n]{0,40}\bto (?:my )?contacts\b""")
     private val mapsAsk = Regex("""(?i)\b(?:directions?|navigate|navigation|route)\s+(?:me\s+)?(?:to|for)\b|\bhow do i get to\b|\btake me to\b[^.?!\n]{0,40}\bmaps?\b""")
     /** 0.45.16 (design suite tool-media-play 1/5): "play X in Blaze Music" went to run_plan search_in_app on our own app. */
-    private val blazeMusicAsk = Regex("""(?i)\b(?:play|put on|start|queue|shuffle)\b[^.?!\n]{0,80}\b(?:on|in|from|with)\s+(?:blaze\s+music|my\s+(?:music\s+)?library|my\s+(?:songs|downloads))\b""")
+    private val blazeMusicAsk = Regex("""(?i)\b(?:play|put on|start|queue|shuffle)\b[^.?!\n]{0,80}\b(?:on|in|from|with)\s+(?:(?:argus|blaze)\s+music|my\s+(?:music\s+)?library|my\s+(?:songs|downloads))\b""")
     private val youtubeAsk = Regex("""(?i)\b(?:play|put on|watch|start)\b[^.?!\n]{0,80}\b(?:on|in|from)\s+(?:youtube(?:\s+music)?|yt)\b""")
     private val toggleAsk = Regex("""(?i)\b(?:turn|switch|put)\s+(?:on|off)\b[^.?!\n]{0,40}\b(?:wi-?fi|bluetooth|do not disturb|dnd|flashlight|torch|airplane|aeroplane|flight mode|mobile data)\b|\b(?:wi-?fi|bluetooth|do not disturb|dnd|flashlight|torch|airplane mode|mobile data)\b[^.?!\n]{0,40}\b(?:on|off)\b|\b(?:enable|disable)\b[^.?!\n]{0,20}\b(?:wi-?fi|bluetooth|do not disturb|dnd|flashlight|airplane mode|mobile data)\b""")
     private val settingsValue = Regex("""(?i)\b(?:open|go to)\b[^.?!\n]{0,20}\bsettings\b[^.?!\n]{0,40}\b(?:turn|switch|set|enable|disable|change)\b|\b(?:turn|switch|set)\s+(?:on\s+|off\s+)?(?:the\s+)?(?:dark (?:mode|theme)|night (?:mode|light)|eye comfort|auto[- ]?rotate|always on display)\b|\b(?:dark (?:mode|theme)|night mode)\s+(?:on|off)\b""")
@@ -322,7 +322,7 @@ object ToolTruth {
 
     private val word = Regex("[a-z][a-z0-9]{3,}")
     private val stop = setOf("this", "that", "with", "from", "your", "have", "what", "when", "where", "then", "them", "they", "into",
-        "only", "also", "just", "like", "please", "some", "about", "there", "here", "phone", "blaze", "user", "tool", "tools", "using")
+        "only", "also", "just", "like", "please", "some", "about", "there", "here", "phone", "blaze", "argus", "user", "tool", "tools", "using")
 
     fun cap(messages: JSONArray, tools: JSONArray, max: Int = MAX_TOOLS): JSONArray {
         if (tools.length() <= max) return tools

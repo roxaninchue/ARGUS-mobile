@@ -34,7 +34,7 @@ class MusicRevampTest {
         assertTrue(Regex("""MediaTopBar\([^\n]*\n\s*onAccount = \{ account = true \}, onClose = onClose\)""").containsMatchIn(m))
         assertTrue("onClose = { a.leaveToChat() }" in src("mediaapps/VideoActivity.kt"))
         val shell = src("mediaapps/MusicShell.kt")
-        assertTrue("Close and go back to ${BrandName.NAME} chat" in shell)
+        assertTrue("Close and go back to \${BrandName.NAME} chat" in shell)
         // Account badge left, close right (badge is the first child, close the last).
         val bar = shell.substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
         assertTrue(bar.indexOf("AccountBadge(onAccount)") < bar.indexOf("actions()") && bar.indexOf("actions()") < bar.indexOf("Icons.Rounded.Close"))
@@ -155,6 +155,7 @@ class MusicRevampTest {
             assertFalse("$f names OpenCode", Regex("(?i)open ?code").containsMatchIn(s))
         }
         // Themes and glass: the pages sit on the themed screen and use glass surfaces.
-        assertTrue("ThemedScreen(" in src("mediaapps/MusicActivity.kt") && ".glass(" in src("mediaapps/MusicShell.kt"))
+        // 0.52.2: one ARGUS look (no Living Theme scene behind Music); the glass shell and the light / dark switch stay.
+        assertTrue("ThemeSwitch(" in src("mediaapps/MusicActivity.kt") && ".glass(" in src("mediaapps/MusicShell.kt"))
     }
 }

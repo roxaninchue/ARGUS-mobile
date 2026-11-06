@@ -25,7 +25,7 @@ object SkillIntent {
         "proofread|outline|brainstorm|teach|tutor|solve|calculate|chart|graph|plot|diagram|mock ?up|prototype|scaffold|ship|publish|" +
         "upload|download|clone|commit|push|merge|update|upgrade|migrate|clean ?up|sort|format|style|animate|render|model|edit|cut|trim|mix|master"
 
-    private val lead = Regex("""(?i)^\s*(?:(?:hey|hi|ok(?:ay)?|so|yo|alright|right|now|then|and|also|but)[,!.\s]+)*(?:@?(?:blaze|halo)[,:!\s]+)?""")
+    private val lead = Regex("""(?i)^\s*(?:(?:hey|hi|ok(?:ay)?|so|yo|alright|right|now|then|and|also|but)[,!.\s]+)*(?:@?(?:(?:argus|blaze)|halo)[,:!\s]+)?""")
     private val polite = Regex("""(?i)^(?:please|pls|can you|could you|would you|will you|can u|could u|help me|i want you to|i need you to|i'?d like you to|let'?s|lets|go ahead and|try to|try and|how (?:do|can|should|would) (?:i|we|you)|how to|show me how|teach me|walk me through)\b""")
     private val imperative = Regex("""(?i)^(?:$VERBS)\b""")
     private val askAnywhere = Regex("""(?i)\b(?:help me|i need (?:you to|help|a hand)|i want you to|i'?d like you to|can you|could you|would you|please)\b""")

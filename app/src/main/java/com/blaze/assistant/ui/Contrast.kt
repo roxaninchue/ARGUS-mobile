@@ -55,27 +55,6 @@ object Contrast {
     }
 }
 
-/** v0.45.7: the veil over a theme's scene behind the chat, sized from the scene's measured brightness ([ThemeScenes.TONE]). */
-object SceneVeil {
-    private val memo = java.util.concurrent.ConcurrentHashMap<String, Float>()
-
-    /** The least veil (page colour [paper]) keeping [body] at 4.5:1 and [sub] at 3:1 on [scene]'s darkest and brightest 1 %. */
-    fun aa(scene: String?, paper: Color, body: Color, sub: Color, dark: Boolean): Float {
-        val t = scene?.let { ThemeScenes.TONE[it] } ?: return ThemeScenes.scrim(dark)
-        return memo.getOrPut("$scene|${paper.value}|${body.value}|${sub.value}") { Contrast.minScrim(t.first, t.second, paper, body, sub) }
-    }
-
-    /**
-     * [strength] 1 = the AA minimum (scene strongest), 0 = [ThemeScenes.MAX_SCRIM] (scene faint). Never below the AA
-     * minimum, whatever the slider says.
-     */
-    fun alpha(scene: String?, paper: Color, body: Color, sub: Color, dark: Boolean, strength: Float = ThemeScenes.DEFAULT_STRENGTH): Float {
-        val aa = aa(scene, paper, body, sub, dark)
-        val st = strength.coerceIn(0f, 1f)
-        return maxOf(aa, aa + (1f - st) * (ThemeScenes.MAX_SCRIM - aa))
-    }
-}
-
 /** v0.45.7: suggestion chips and pills are solid (no see-through glass over a busy scene) with a visible border. */
 object ChipStyle {
     /** An opaque fill a touch off the page colour. */

@@ -4,12 +4,12 @@
     {
       "name": "blaze-voice",
       "version": 1,
-      "sha256": "15f43fc690b216642c6de25ffe18e3fee31cc48367ae779e4e1c1e120e24f46c"
+      "sha256": "a65b70434c11ec5c91f9b4a0271205200884005cdcc60ede2c17928438152f8c"
     },
     {
       "name": "deep-research",
       "version": 1,
-      "sha256": "971702c8de39058dd31f9856b7912e0460e2ac85056a5e167e6a08d5e19e5c3e"
+      "sha256": "334655296b83f9fbc6354a7b544aa8c91994deda585469fa52db2788f2159114"
     },
     {
       "name": "email-drafting",
@@ -34,17 +34,17 @@
     {
       "name": "api-integration",
       "version": 1,
-      "sha256": "8cb0a2aa3574f4fa5dab33596e78a769da8ed81cc1a50c7c5c7513cf70a218e1"
+      "sha256": "a792a785e87abe8daa7230eb5352c0ae2daa6a29e7f9bcd1dfa87ced0a91064f"
     },
     {
       "name": "skill-creator",
       "version": 2,
-      "sha256": "4cd192c01bc1d7f581a4f48004e034c35adf295ffd73f18ca94d51de2e031f2d"
+      "sha256": "0d02bd7e76e19954f471d96a5ee7055a12641d2bf4faee23f99282bf1130db30"
     },
     {
       "name": "code-review",
       "version": 1,
-      "sha256": "3e37831937cc73e6b08d6db1ed0ed0a98b58d1e4b4c6032679731807be4f858b"
+      "sha256": "af6f5f1ac0df346a972ea75de99626ac80d960d5a75fec495f4322b9c9db51b8"
     },
     {
       "name": "debugging",
@@ -74,7 +74,7 @@
     {
       "name": "landing-page-builder",
       "version": 1,
-      "sha256": "be549b58047c72e84e8473908adb0a85a5f990a52a32f800a9e6bcca8f5519b0",
+      "sha256": "88a973c1a0446dc7dfffcaea940fa85655d7cd642fba78fa038aedc2232f18b3",
       "files": [
         "SKILL.md",
         "assets/template.html"
@@ -92,7 +92,7 @@
     {
       "name": "web-design-blaze-classic",
       "version": 1,
-      "sha256": "44a556c2ef45c15cc1b451ff03c01c80a2ab62dd36ec04674ad09fd98dec40ca",
+      "sha256": "23a1146a559241d0c9cb05ebc2dd9f9afaee1646e75afd88a057db6c66e44597",
       "files": [
         "SKILL.md",
         "assets/starter.html",
@@ -102,7 +102,7 @@
     {
       "name": "web-design-teamofkeys",
       "version": 1,
-      "sha256": "c829bb557cc9fb7adf56076d5fca52ba5ea23cc273bf35693e516540f3b4e6f2",
+      "sha256": "96f278b21a2801f606aebb8f6cac3636f487feff00e510c33481303ff8f3879d",
       "files": [
         "SKILL.md",
         "assets/starter.html",
@@ -112,7 +112,7 @@
     {
       "name": "image-assets",
       "version": 1,
-      "sha256": "b0875c97b485e2f5e5ddcde214442effb79c17fc6016b643f47a15dda2adc43e",
+      "sha256": "b4d5c238cf080db2b89d939397665a15ef88ea9ba60ebea178428b29d1973164",
       "files": [
         "SKILL.md"
       ]
@@ -120,32 +120,32 @@
     {
       "name": "browser-game",
       "version": 1,
-      "sha256": "090a818ce2a9b2b709d0f7b2a6f87a1f19781b6e906c6318206ccfcbee3f12e2"
+      "sha256": "c0f3d0819743b088eb3910f1255172e1d3a37efc9279a234a90761d97efb8e9f"
     },
     {
       "name": "diagrams",
       "version": 2,
-      "sha256": "76731602b7beb5675486672412c0c0415f82e2b0ea9f4b0917f719d449813c9a"
+      "sha256": "9a7b07f5eb7ad0265d248cb9f5988f27eb190faf8bfb96d7343b7d39aab5ff12"
     },
     {
       "name": "floor-plan",
       "version": 1,
-      "sha256": "a0798910f5e75ce622ec7762e5e2f95afb34e2da7acb9853c6b69df93eb32c40"
+      "sha256": "60f766dd62e5fd1f3601f7959761aeb37b3330d8e06fa88b688fad40e8260ba1"
     },
     {
       "name": "motion-graphics",
       "version": 1,
-      "sha256": "f8b9b468e7c17cfe224f2a0bf785dd285a33584eea9bdc88e2b4c9e9fd79b0f5"
+      "sha256": "6306e5ede160640324274029c3e08d7acf0a1c5f52bd505947265c77b3fd9045"
     },
     {
       "name": "music-audio",
       "version": 1,
-      "sha256": "9563032d9a2f158c40f0667d5e146eb7d4764c2faa97dfeee6735d6f20269a6f"
+      "sha256": "7ad6baca61036ad3681ac20982dcaf77bff18fe91e4332d4dc87ccc5e437d729"
     },
     {
       "name": "paper-sketch",
       "version": 1,
-      "sha256": "3c1657c78fff376043896e1d96e41e46d46d400a35d566f41a6c94d3e927a2b3",
+      "sha256": "01b2335f1dbe7795054bfea0d3d9eb423f4ff4d764a236f25d9b97579ad9f0fd",
       "files": [
         "SKILL.md",
         "assets/sketch.svg"
@@ -154,22 +154,22 @@
     {
       "name": "pixel-art",
       "version": 1,
-      "sha256": "8ea4e1e69421bc6775d24554bd174dfb313f36cf7c23b59c2e6a1c6ad4b4419d"
+      "sha256": "2a3bd18c10497d9b26ea16b1b8fb38c7ae8edd265e39fb9e2d7b9461b618993f"
     },
     {
       "name": "print-design",
       "version": 1,
-      "sha256": "ddeec053b0caa408449ec0be9d676e48d11fdf6fe6df4fa932352b2b0da7f59a"
+      "sha256": "2a08f6ca00a1deaf2efce7eb02adb4c0bdf9ad27147eb02cf892555686dd69c5"
     },
     {
       "name": "shell-sysadmin",
       "version": 2,
-      "sha256": "6afa9dfd74760e53e87827a60d96d2a116d9a73ba1a6232341849bd2e2108bd5"
+      "sha256": "ef485523a1bf3daaa6c8cf2ebb31b26196309ae38cb2a280e7ce85483a13a782"
     },
     {
       "name": "three-d-design",
       "version": 2,
-      "sha256": "72797b795022cb9bf917ded5b46d9f40039fd1ca7b6fd478f170b9ab3bee6f2f",
+      "sha256": "a234bab8066ff3b40701eb84a8cfb6e7dad899f37c4d66bc1b492fcb671499ec",
       "files": [
         "SKILL.md",
         "assets/mockup.html"
@@ -178,7 +178,7 @@
     {
       "name": "android-app-builder",
       "version": 1,
-      "sha256": "3602a1f21cb25cf50c62be856766ea90e81e9517a0cdb0b0a9b583927e1294c5",
+      "sha256": "f208c7c51d9819eddd600e330987471e2b816a45f5c68a9412b6da1a68c7a4de",
       "files": [
         "SKILL.md",
         "setup.sh",
@@ -200,7 +200,7 @@
     {
       "name": "study-planner",
       "version": 1,
-      "sha256": "d615cdba550c8264d37948ffe88a6d36feaddbc7cd24059bd6f36cdb82609407"
+      "sha256": "b05cdec9609e2cc8703a765785cb4d51183ebeb83d7bec571712154b9f745df4"
     },
     {
       "name": "tutor",
@@ -210,37 +210,37 @@
     {
       "name": "lecture-notes",
       "version": 1,
-      "sha256": "bfdaf64d055105c8c12968c9f27ffde41b05484cbae8ce54cdaaa6f2db85dec6"
+      "sha256": "f7cd2e2851f580be6643dad5823c6a24c35a8b95679f2dc1ea40e8435182b315"
     },
     {
       "name": "essay-coach",
       "version": 1,
-      "sha256": "26e857ecc5c61821ba14d7eaf7931972b2ac0dd2a0c79faeea1e43ef1361c3b7"
+      "sha256": "15023a0bb7b26827123987163544ac53ca6d280e742a0befb2a02e9ea382e8c4"
     },
     {
       "name": "group-project",
       "version": 1,
-      "sha256": "0baf1469600521603aabae128f63d4d47ff3496a9f3deda275a6304619a92c73"
+      "sha256": "af7b41e034e590ab622d6cb36556f275e6b931ba5c549cd3b3ffb3d37eb39010"
     },
     {
       "name": "classroom-sync",
       "version": 1,
-      "sha256": "d3d55933d903516abf50f75d0e21ecc10497182bc2452bc054c1a603e8bf62d6"
+      "sha256": "8088a8f798333fc82ca1e87247c5ce57d1b9e2dcf7024e6d341f70f7cb8346b1"
     },
     {
       "name": "content-calendar",
       "version": 1,
-      "sha256": "5975de2a84324cc7ede099aa07b7f6c468fd9c8d87f3cbc1e60976ba292519d4"
+      "sha256": "ae34380d7d26ebc9a6f820410323f3f4bc16d78858d29d751a6852875dd126ea"
     },
     {
       "name": "product-listing",
       "version": 1,
-      "sha256": "2335e7d37716fe5433ccdf35a59a59100bc33eb29f244c9fab3283a07344fdbe"
+      "sha256": "2c00f791dc43a0925ddc9e743cceed2dac6529d2bdc4abf0133835249cf1449d"
     },
     {
       "name": "ad-lab",
       "version": 1,
-      "sha256": "e5a81a677bfa52ae3a8b113b35a2fe3a7ae578a164bbb46c1fe2f8f55819e2d7"
+      "sha256": "f024bc13c41f79cd4d8dd19c9202e183d64d5aa7468fdbf92af1e387f8ec2b6a"
     },
     {
       "name": "research-brief",
@@ -250,77 +250,77 @@
     {
       "name": "whatsapp-replies",
       "version": 2,
-      "sha256": "46cf3a16c8f58ff1563d3682a2acf253c703a6f415f45c8c2ab632f965c21a40"
+      "sha256": "ee4b57210cdd362060f166c7714b98be02cce241fbd5726245c8df22ffb1e304"
     },
     {
       "name": "weekly-digest",
       "version": 1,
-      "sha256": "f8dc4f2fae09282dab6a2b275f35c5b9f7fd6356bb65de5eb161d7b1cf6b8e6f"
+      "sha256": "cdd34119fe53a5e10506f44c65a5af907558a34d3ec97a11a76bddf2f76e6b69"
     },
     {
       "name": "study-flashcards",
       "version": 1,
-      "sha256": "7a7b52116b49e230093c24192636f0d1aa405ab385c8fc67476b9038a2f8c4b7"
+      "sha256": "fc92c077bdd2ff246607a597ab286cac8c69135c5458bc3b5b28151e8ec42b5f"
     },
     {
       "name": "blaze-task-workflow",
       "version": 1,
-      "sha256": "9e786948eba2d9deed6308f8287902c44fd6702c63587eeb24301232a728cf71"
+      "sha256": "89a8221c620d3e5985b1e9e4163cb6287be449db9e7e952156a07cf820388788"
     },
     {
       "name": "blaze-coding-workflow",
       "version": 1,
-      "sha256": "759b8e19d982d2a97b008507e9a803563c868c298ee6ec414dcb64751c9ca712"
+      "sha256": "5e3c929b598907b08a55b374d780347f02adb45f7b8073cdbf1096efa2c59fe5"
     },
     {
       "name": "blaze-views",
       "version": 2,
-      "sha256": "a1b3351c8050e7100b9526c39d350fe58dc6a817ab013cbdbbec430e572aaa8d"
+      "sha256": "f265f5664ac13a81a4b1d4e458310d9ea8d9390a9f246f16dc3ed22597b79a13"
     },
     {
       "name": "blaze-workflow-builder",
       "version": 1,
-      "sha256": "85c424f987fd2a5c9d8f8ff7e8a3cb3858331379df149d03f299e771f5c3fd55"
+      "sha256": "6aa9df388df91d40b0f4214f16b877809f42b624dd23f66eb9412cd174776c61"
     },
     {
       "name": "blaze-specialists",
       "version": 2,
-      "sha256": "59481b5166a0d670170356dd839c5bf69b344b77b275ce66005be88822ea484d"
+      "sha256": "a0e9163b22770abe1edbeab5a3ca4d32638550de1f416224e6215e5eb3957f51"
     },
     {
       "name": "wf-send-to-person",
       "version": 2,
-      "sha256": "12c3ff7d919c9a89e4a983e29f01101fe86b3ee1e5b842bc06599c3ac9ee6914"
+      "sha256": "d49743b9db619e458375015b0e135e842c6ee71adb79b96ed10404af7e53cb9c"
     },
     {
       "name": "wf-find-a-person",
       "version": 1,
-      "sha256": "2e152e952653da844c2ef9c66d1bd3fddac75595a32df6d0949653a34df19b1f"
+      "sha256": "d0ef8622353ae0d585c9f93a259c58cab359ff85b0b0898a91a08f504e03d2dd"
     },
     {
       "name": "wf-call-someone",
       "version": 1,
-      "sha256": "bffc400480b3ac16380df5e554f606bb0857879f449ba60b8b4c185331198ea9"
+      "sha256": "1cfc073327243dacbae1c6db42a2198fd63757e73767e450d4fe03c6074df323"
     },
     {
       "name": "wf-reply-to-latest",
       "version": 2,
-      "sha256": "f4a5c00c0cc5dacc4d4dc3a3602b8290fca0b2556dbf0e2534965fab467c640f"
+      "sha256": "b14c645c0705c0329121f54f93505a519f0a3f92a383947fdd48bcb25da2d2f7"
     },
     {
       "name": "wf-make-and-share",
       "version": 1,
-      "sha256": "5c1f40fe28a813dd31a0419594b1d91be362ea3f7915cd75110aec047d2dbcdc"
+      "sha256": "8f7f5a5fee9ead6238c9c615c474ea3fb3605342e96e0070f83bd516da2b9a45"
     },
     {
       "name": "wf-do-it-on-screen",
       "version": 2,
-      "sha256": "f26e88bdfc5631bbf652c04ddbeaf5f64a0a3fc027489cd8ab7fc1f5631e1063"
+      "sha256": "26fb021d531d5ec99fd85eddacbb3a582d5bf1c3442f40b7b368a5dd49cd7680"
     },
     {
       "name": "paperwork-mode",
       "version": 1,
-      "sha256": "e12a80894708c282585575fbba6e37e97c7b5f10df8ba1034b3a384ddb22a1a2"
+      "sha256": "c44bd53f019a682345c8ebfc25a136426f651c86881b509a80a422ebb9d4b26c"
     },
     {
       "name": "price-scout",
@@ -330,7 +330,7 @@
     {
       "name": "reverse-engineer-anything",
       "version": 1,
-      "sha256": "2a1e90d2972aae31d49c294cc0d47a027d2c9b623f35d3fcbbea8d62241fac6a"
+      "sha256": "e186240dd3814745574dc529be8c4c9551fc8f4cada5c1ff3cc919f8be903c87"
     }
   ]
 }

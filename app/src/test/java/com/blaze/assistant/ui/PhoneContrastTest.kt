@@ -10,17 +10,18 @@ import java.io.File
 /**
  * 0.45.19 Blaze Phone UI fix 3 (contrast), strict 5/5. The tile's chip was white text on a white-ish chip ("Reading
  * Blaze Phone's page", 1.2:1). Every text / ground pair the Blaze Phone tile and screen draw now comes from
- * [PhoneColors] and must reach WCAG AA (4.5:1) for every picker theme x light / dark, computed here with the WCAG
+ * [PhoneColors] and must reach WCAG AA (4.5:1) for every Look & feel accent (0.52.2: one ARGUS look, no Living Themes)
+ * x light / dark plus random accents, computed here with the WCAG
  * formula (cross-checked against the app's own [Contrast]). Real pixels on a phone are a device check.
  */
 class PhoneContrastTest {
     private fun root(): File = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
     private fun src(p: String) = File(root(), "com/blaze/assistant/$p").readText()
 
-    /** The accent BlazeTheme hands the UI for [t] in [dark] (a pale accent is deepened on light grounds). */
-    private fun accentOf(t: LivingThemes.Theme, dark: Boolean, classicPick: Long?): Long? {
-        val a = LivingThemes.accentFor(t.id, classicPick) ?: return null
-        return if (dark) a else LivingThemes.onLight(a)
+    /** The accent BlazeTheme hands the UI for [pick] in [dark] (a pale accent is deepened on light grounds; null = none picked). */
+    private fun accentOf(dark: Boolean, pick: Long?): Long? {
+        val a = pick ?: return null
+        return if (dark) a else BubbleTones.onLight(a)
     }
 
     private fun fiveTimes(name: String, body: (Int) -> Unit) {
@@ -46,28 +47,28 @@ class PhoneContrastTest {
         assertTrue(PhoneColors.contrast(PhoneColors.STATUS_ON_CHIP, PhoneColors.STATUS_CHIP) >= PhoneColors.AA)
     }
 
-    @Test fun everyThemeTimesLightAndDarkMeetsAA() = fiveTimes("themes x modes") { run ->
+    @Test fun everyAccentTimesLightAndDarkMeetsAA() = fiveTimes("accents x modes") { run ->
         val r = java.util.Random(run * 7919L)
-        val classicPicks = listOf<Long?>(null, 0xFFFFFFFFL, 0xFF000000L, 0xFF777777L, 0xFFFFEB3BL) +
+        val picks = listOf<Long?>(null, 0xFFFFFFFFL, 0xFF000000L, 0xFF777777L, 0xFFFFEB3BL) +
+            LookLogic.ACCENTS.mapNotNull { LookLogic.parseAccent(it.first) } +
             (1..20).map { 0xFF000000L or r.nextInt(1 shl 24).toLong() }
         var checked = 0
-        for (t in LivingThemes.PICKER) for (dark in listOf(true, false)) {
-            val picks = if (t.id == LivingThemes.CLASSIC) classicPicks else listOf(null)
+        for (dark in listOf(true, false)) {
             for (pick in picks) {
-                val p = PhoneColors.of(accentOf(t, dark, pick), dark)
+                val p = PhoneColors.of(accentOf(dark, pick), dark)
                 assertEquals(dark, p.dark)
                 for ((name, pair) in p.pairs()) {
                     val ratio = PhoneColors.contrast(pair.first, pair.second)
-                    assertTrue("${t.name} ${if (dark) "dark" else "light"} accent=${pick?.toString(16)} $name: %.2f".format(ratio), ratio >= PhoneColors.AA)
+                    assertTrue("${if (dark) "dark" else "light"} accent=${pick?.toString(16)} $name: %.2f".format(ratio), ratio >= PhoneColors.AA)
                     assertEquals("$name fg opaque", 0xFFL, (pair.first ushr 24) and 0xFF)
                     assertEquals("$name bg opaque", 0xFFL, (pair.second ushr 24) and 0xFF)
                     checked++
                 }
                 // The chip still reads as a chip on the card (not the card's own colour).
-                assertTrue("${t.name} chip vs card", PhoneColors.contrast(p.chip, p.card) >= 1.3)
+                assertTrue("accent=${pick?.toString(16)} chip vs card", PhoneColors.contrast(p.chip, p.card) >= 1.3)
             }
         }
-        assertTrue(checked >= LivingThemes.PICKER.size * 2 * 14)
+        assertTrue(checked >= picks.size * 2 * 14)
     }
 
     @Test fun anyAccentAtAllStillMeetsAA() = fiveTimes("any accent") { run ->

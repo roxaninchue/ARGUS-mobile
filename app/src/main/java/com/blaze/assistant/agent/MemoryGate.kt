@@ -33,7 +33,7 @@ object MemoryGate {
         "how'?s it going|how have you been|what'?s up|wassup|whats good|you good|you ok(?:ay)?|and you|you|" +
         "(?:i'?m |im )?(?:doing |feeling )?(?:good|great|fine|well|ok(?:ay)?|alright|not bad|pretty good|so so|better)(?: too| as well)?|" +
         "same|me too|you too|no worries|np|all good|love (?:you|it)|you'?re (?:the best|awesome|great|amazing)|" +
-        "blaze|halo|all|buddy|mate|friend|man|bro" +
+        "argus|blaze|halo|all|buddy|mate|friend|man|bro" +
         ")"
 
     // A whole message made only of small-talk pieces ("ok cool thanks", "doing good thanks", "@halo hi").
@@ -41,7 +41,7 @@ object MemoryGate {
 
     // Read-only questions: schedule / time / date / weather / "what's on". Nothing to remember in the asking.
     private val readOnly = Regex(
-        "^(?:(?:halo|blaze|all) )?(?:so |and |ok |okay |well |hey |hi |blaze |halo |yea |yeah |ya |yes |yep |but |no |nah |alright |right |cool |um |uh |hmm |then |also )*(?:" +
+        "^(?:(?:halo|argus|blaze|all) )?(?:so |and |ok |okay |well |hey |hi |argus |blaze |halo |yea |yeah |ya |yes |yep |but |no |nah |alright |right |cool |um |uh |hmm |then |also )*(?:" +
             "(?:is there )?anything on|what'?s on|whats on|what is on|what do i have|do i have anything|have i got anything|what'?s happening|" +
             "what'?s (?:my )?(?:schedule|plan|agenda)|what are my (?:plans|reminders|alarms)|any (?:reminders|alarms|plans|meetings|classes)|" +
             "what time|what'?s the time|what day|what'?s the date|what is the date|what date|which day|" +

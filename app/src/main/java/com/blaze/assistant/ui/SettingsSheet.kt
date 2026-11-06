@@ -77,8 +77,8 @@ val essentialPages = listOf("look", "language", "doing", "bank", "voice", "permi
 
 /** The top-level rows. */
 val topPages = listOf(
-    // v0.39.0 Simple mode: Look & feel (living backgrounds) and what Blaze does on its own.
-    SettingsPage("look", "Look & feel", "Living backgrounds, Light / Dark / Auto, accent colour"),
+    // v0.39.0 Simple mode: Look & feel and what Blaze does on its own.
+    SettingsPage("look", "Look & feel", "Light / Dark / Auto, accent colour, Home tilt"),
     // v0.45.7: the reply language (Auto matches you; Kiswahili, ChiBemba, ChiNyanja, Hausa, Yorùbá, አማርኛ…).
     SettingsPage("language", "Language", "Which language ${BrandName.NAME} replies in. Auto matches yours"),
     SettingsPage("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders, on or off, and today's diary"),
@@ -154,8 +154,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
     BackHandler { back() }
     val current = settingsPages.firstOrNull { it.id == page }
 
-    // v0.45.8: Settings shows the picked theme (it covers the chat, so it draws the scene itself) and has the theme switcher.
-    ThemedScreen(Modifier.fillMaxSize(), own = { pageBackdrop(c) }) {
+    // 0.52.2: one ARGUS look (the glass page); the top bar keeps the light / dark switch.
+    Box(Modifier.fillMaxSize().pageBackdrop(c)) {
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
         // v0.28.3: the shared round BackButton (was a thin "←" glyph).
         BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),

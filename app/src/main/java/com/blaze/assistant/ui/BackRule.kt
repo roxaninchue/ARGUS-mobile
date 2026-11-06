@@ -40,8 +40,8 @@ object BackRule {
         val settingsPage: String? = null, val view: String = "",
         val viewsSheet: Boolean = false, val plusMenu: Boolean = false, val arc: Boolean = false,
         val avatarMenu: Boolean = false, val search: Boolean = false, val gallery: Boolean = false,
-        val room: Boolean = false, val themePicker: Boolean = false,
-        /** RC2 (HomeRoute): the new Home is the root, so the plain chat sheet goes back to Home and Home keeps its own Back. */
+        val room: Boolean = false,
+        /** The Home is the root (0.52.2: the ARGUS Home), so the plain chat goes back to Home and Home keeps its own Back. */
         val homeRoot: Boolean = false,
     )
 
@@ -52,7 +52,6 @@ object BackRule {
         s.onboarding -> "setup"
         s.gate -> "setup-gate"
         s.inCall -> "call"
-        s.themePicker -> "themes"
         s.settingsPage != null -> "page:" + s.settingsPage.ifBlank { "settings" }
         s.room -> "meeting-room"
         s.gallery -> "gallery"

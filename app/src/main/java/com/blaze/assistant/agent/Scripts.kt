@@ -51,8 +51,26 @@ object Scripts {
         it.setText(text)
         val out = ArrayList<Int>()
         var b = it.first()
-        while (b != BreakIterator.DONE) { out += b; b = it.next() }
+        while (b != BreakIterator.DONE) { if (!joins(text, b)) out += b; b = it.next() }
         return out.toIntArray()
+    }
+
+    /**
+     * 0.52.2: true when [i] sits inside an emoji ZWJ sequence, before a variation selector / skin-tone modifier / mark,
+     * or between the halves of a surrogate pair. The JDK's BreakIterator only knows extended grapheme clusters from
+     * JDK 20 on, so on older runtimes (CI's release unit tests) it cut a family emoji after its first person.
+     */
+    internal fun joins(text: String, i: Int): Boolean {
+        if (i <= 0 || i >= text.length) return false
+        val c = text[i]; val p = text[i - 1]
+        if (Character.isLowSurrogate(c) && Character.isHighSurrogate(p)) return true
+        if (c == '\u200d' || p == '\u200d') return true
+        val cp = text.codePointAt(i)
+        if (cp == 0xFE0F || cp == 0xFE0E || cp in 0x1F3FB..0x1F3FF || cp in 0xE0020..0xE007F || cp == 0x20E3) return true
+        return when (Character.getType(cp).toByte()) {
+            Character.NON_SPACING_MARK, Character.ENCLOSING_MARK, Character.COMBINING_SPACING_MARK -> true
+            else -> false
+        }
     }
 
     /** The nearest cluster boundary at or before [index] (never inside a letter, a tone mark sequence or an emoji). */
@@ -64,7 +82,9 @@ object Scripts {
         if (a.code < 0x80 && b.code < 0x80 && !(a == '\r' && b == '\n')) return index
         val it = BreakIterator.getCharacterInstance()
         it.setText(text)
-        return if (it.isBoundary(index)) index else it.preceding(index).coerceAtLeast(0)
+        var c = if (it.isBoundary(index)) index else it.preceding(index).coerceAtLeast(0)
+        while (c > 0 && joins(text, c)) c = it.preceding(c).coerceAtLeast(0)
+        return c
     }
 
     /** [text] cut to at most [max] chars on a cluster boundary, with "…" when something was cut. */

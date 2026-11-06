@@ -322,7 +322,7 @@ internal fun MovieDetails(info: MovieInfo, sourceName: String, saved: Boolean, m
         item {
             Box(Modifier.fillMaxWidth().height(230.dp)) {
                 NetThumb(info.image, Modifier.fillMaxSize())
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.15f), if (com.blaze.assistant.ui.themeOn()) Color.Transparent else c.paper))))
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.15f), c.paper))))
                 StageIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", size = 40.dp, modifier = Modifier.padding(6.dp)) { onBack() }
                 Row(Modifier.align(Alignment.BottomStart).padding(start = 16.dp, end = 16.dp), verticalAlignment = Alignment.Bottom) {
                     PosterArt(info.title, info.image, Modifier.width(96.dp).aspectRatio(2f / 3f).clip(RoundedCornerShape(10.dp)))

@@ -13,8 +13,8 @@ android {
         applicationId = "com.blaze.assistant"
         minSdk = 26
         targetSdk = 34
-        versionCode = 188
-        versionName = "0.52.1"
+        versionCode = 189
+        versionName = "0.52.2"
         // v0.30.1 Music Store: Jamendo client_id, from the environment or -Pjamendo.clientId at build time. Never hard-coded;
         // empty = "not configured" (the user can paste one in the Music Store instead).
         buildConfigField("String", "JAMENDO_CLIENT_ID", "\"" + (System.getenv("JAMENDO_CLIENT_ID") ?: (project.findProperty("jamendo.clientId") as String?) ?: "").replace("\"", "") + "\"")
@@ -60,7 +60,12 @@ android {
             if (System.getProperty("os.arch").orEmpty().lowercase().let { a -> a.contains("aarch64") || a.contains("arm64") })
                 it.systemProperty("robolectric.conscryptMode", "OFF")
             // The compose test rule needs ui-test-manifest, which only the debug build has.
-            if (it.name.contains("Release")) it.exclude("**/ShotsTest*")
+            if (it.name.contains("Release")) {
+                it.exclude("**/*ShotsTest*")
+                // 0.52.2: these launch ComponentActivity through the compose rule too (the merged release manifest has no
+                // ui-test-manifest activity, a testImplementation dependency doesn't add it); they run in testDebugUnitTest.
+                it.exclude("**/HomeFocusTest*", "**/HomeRedesignTest*", "**/InstallSheetTest*")
+            }
             // A failing test prints its real message and causes in the CI log (not just "SQLException at Foo.kt:143").
             it.testLogging {
                 events("failed")
@@ -271,6 +276,7 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("androidx.test.ext:junit:1.2.1")
+    testImplementation("androidx.compose.ui:ui-test-manifest")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     // 0.46.6: low-RAM emulator smoke gate (instrumented; runs only in .github/workflows/lowram-smoke.yml)
     androidTestImplementation("androidx.test:runner:1.6.2")

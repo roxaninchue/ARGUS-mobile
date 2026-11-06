@@ -20,7 +20,7 @@ data class BlazeView(val id: String, val name: String, val desc: String, val pag
 object Views {
     val all = listOf(
         // v0.39.0: Home (the Home cards). In Simple mode it sits under the chat: swipe up for Chat, pull down for Home.
-        BlazeView("home", "Home", "The Home cards: weather, news, heads-ups. In Simple mode ${BrandName.NAME} opens here; swipe up for Chat", special = "home", aliases = listOf("home screen", "board", "widgets", "heads-ups", "notifications page")),
+        BlazeView("home", "Home", "The ${BrandName.UPPER} Home: the living orb, the ask bar and Spotlight (pull the top notch down). ${BrandName.NAME} opens here", special = "home", aliases = listOf("home screen", "board", "widgets", "heads-ups", "notifications page")),
         BlazeView("projects", "Projects", "Ongoing efforts with their own threads, brief and instructions", special = "projects", aliases = listOf("project")),
         BlazeView("design", "Design", "Live preview of anything visual: 3D scenes, art, sites, UI mockups, diagrams, charts, posters, slides", special = "design", aliases = listOf("preview", "studio", "3d", "designs")),
         BlazeView("memory", "Memory", "What ${BrandName.NAME} remembers and has learned", page = "memory", aliases = listOf("learning")),
@@ -55,7 +55,7 @@ object Views {
         BlazeView("sync", "Cloud sync", "Keep chats, memory, settings and designs the same on all your phones: on/off, passphrase, what syncs, Sync now, delete the cloud copy", page = "sync", aliases = listOf("cloud sync", "sync", "backup to cloud", "other phone", "sync phones")),
         // v0.39.0 Simple mode: what Blaze is doing on its own, and the living backgrounds.
         BlazeView("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders with friendly names and on/off, and a \u201cToday I\u2026\u201d diary", page = "doing", aliases = listOf("things", "doing now", "diary", "activity", "today i")),
-        BlazeView("look", "Look & feel", "Living backgrounds (Your sky, Aurora, Ocean, Calm paper, Mosaic, Your photo), Light / Dark / Auto, accent colour, Move with music", page = "look", aliases = listOf("theme", "themes", "background", "backgrounds", "wallpaper", "look and feel", "look & feel")),
+        BlazeView("look", "Look & feel", "Light / Dark / Auto, accent colour, the Home's tilt effect", page = "look", aliases = listOf("theme", "themes", "background", "backgrounds", "wallpaper", "look and feel", "look & feel")),
         BlazeView("settings", "Settings", "Behaviour, voice, privacy, backup", page = ""),
     )
 

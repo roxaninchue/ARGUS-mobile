@@ -25,7 +25,7 @@ import java.io.File
 object CliAuthLogic {
     /** The CLI's session key in its private-file keychain fallback (blaze-cli account.go `sessionKey`). */
     const val SESSION_KEY = "blaze-account:session"
-    const val CLIENT = "Blaze CLI (this phone)"
+    const val CLIENT = "${com.blaze.assistant.BrandName.NAME} CLI (this phone)"
 
     fun secretsFile(rootfs: File) = File(rootfs, "root/.blaze/secrets.json")
     fun accountFile(rootfs: File) = File(rootfs, "root/.blaze/desktop/account.json")

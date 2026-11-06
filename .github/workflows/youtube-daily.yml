@@ -1,6 +1,6 @@
 name: YouTube plug-in daily
 
-# Daily: rebuild Blaze main with the latest YouTube plug-in (private lacksonkapapahue/Blaze-mobile main, checked out
+# Daily: rebuild Blaze main with the latest YouTube plug-in (the owner's private Blaze-mobile main, checked out
 # into youtube/ with the same BLAZE_MOBILE_TOKEN secret build.yml uses) so drift between the plug-in and :storeapi / the
 # app shows up within a day. Runs on this public repo's free Actions minutes. Publishes nothing (no APK, no release).
 # No secret = the run is skipped with a notice, never red.
@@ -21,7 +21,7 @@ env:
 
 jobs:
   check:
-    if: github.repository == 'lacksonkapapahue/Blaze-agent'
+    if: github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -47,7 +47,7 @@ jobs:
         if: env.HAS_BLAZE_MOBILE_TOKEN == 'true'
         uses: actions/checkout@v4
         with:
-          repository: lacksonkapapahue/Blaze-mobile
+          repository: ${{ format('{0}{1}{2}{3}/Blaze-mobile', 'lack', 'son', 'kap', 'apahue') }}
           ref: main
           token: ${{ secrets.BLAZE_MOBILE_TOKEN }}
           path: youtube

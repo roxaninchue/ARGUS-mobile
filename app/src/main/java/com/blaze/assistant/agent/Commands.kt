@@ -56,7 +56,7 @@ object Commands {
         Command("brainstorm", "", "Think out loud; get ideas, decisions and next steps when you stop"),
         Command("home", "", "Show Home: weather, news, heads-ups"),
         Command("doing", "", "Things ${BrandName.NAME} is doing: routines, reminders, today's diary"),
-        Command("look", "", "Look & feel: living backgrounds, theme, accent"),
+        Command("look", "", "Look & feel: light / dark, accent"),
         Command("sync", "", "Cloud sync: chats, memory, settings and designs on all your phones (end-to-end encrypted)"),
         Command("simple", "", "Simple mode: hide technical tools (nothing is removed)"),
         Command("advanced", "", "Advanced mode: show every tool and setting"),

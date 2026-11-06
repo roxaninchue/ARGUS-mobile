@@ -16,10 +16,10 @@ object QuickRules {
 
     private fun clean(s: String) = polite(s).lowercase()
         .replace(Regex("[?!.,]+$"), "").replace(Regex("\\s+"), " ")
-        .replace(Regex("^(hey blaze|ok blaze|okay blaze|blaze)[, ]+"), "")
+        .replace(Regex("^(hey (?:argus|blaze)|ok (?:argus|blaze)|okay (?:argus|blaze)|(?:argus|blaze))[, ]+"), "")
         .replace(Regex("^(please|can you|could you|would you|will you|i want you to|i need you to)[, ]+"), "")
         .replace(Regex("^(please)[, ]+"), "")
-        .replace(Regex("( for me| please| now| blaze)+$"), "").trim()
+        .replace(Regex("( for me| please| now| (?:argus|blaze))+$"), "").trim()
 
     private val words = mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8,
         "nine" to 9, "ten" to 10, "eleven" to 11, "twelve" to 12, "fifteen" to 15, "twenty" to 20, "thirty" to 30, "forty" to 40,
@@ -77,7 +77,7 @@ object QuickRules {
         }
 
         // Speed readout and the process registry work offline too.
-        if (Regex("^(?:show |give me |what are |check )?(?:my |your |the )?(?:speed|latency) ?(?:stats|statistics|report|numbers|test)?$|^how fast (?:are you|is blaze)$").matches(t))
+        if (Regex("^(?:show |give me |what are |check )?(?:my |your |the )?(?:speed|latency) ?(?:stats|statistics|report|numbers|test)?$|^how fast (?:are you|is (?:argus|blaze))$").matches(t))
             return "speed_stats" to JSONObject()
         if (Regex("^(?:show |give me |check )?(?:my |your |the )?tool ?(?:call )?(?:stats|statistics|report|errors|health)$").matches(t))
             return "tool_stats" to JSONObject()
@@ -101,7 +101,7 @@ object QuickRules {
         }
 
         // Blaze's own settings: "open your voice settings", "blaze brain settings", "voice settings again".
-        Regex("""^(?:(?:please |can you |could you )?(?:open|show|go to|take me to|bring up)?\s*)?(?:the |my )?(your |blaze'?s? )?([a-z &]{2,20}?) (?:settings|setting|page)(?: again| please)?$""").matchEntire(t)?.let { m ->
+        Regex("""^(?:(?:please |can you |could you )?(?:open|show|go to|take me to|bring up)?\s*)?(?:the |my )?(your |(?:argus|blaze)'?s? )?([a-z &]{2,20}?) (?:settings|setting|page)(?: again| please)?$""").matchEntire(t)?.let { m ->
             val own = m.groupValues[1].isNotBlank()
             val what = m.groupValues[2].trim()
             val blazeOnly = setOf("voice", "wake word", "brain", "ai", "terminal", "persona", "personality", "memory", "routines", "orb", "call", "calls", "speech")

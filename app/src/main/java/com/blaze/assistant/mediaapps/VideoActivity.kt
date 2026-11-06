@@ -838,8 +838,8 @@ private fun VideoApp(a: VideoActivity) {
     val resume: (com.blaze.assistant.movies.Progress) -> Unit = { pr -> scope.launch {
         try { a.playMovie(resumePlay(ctx, pr)) } catch (e: Exception) { note = e.message ?: "Couldn't continue" } } }
     val page = VideoNav.normalize(if (tab == "player") a.browse.value else tab)
-    // v0.45.8: Video shows the picked theme and has the shared theme switcher.
-    com.blaze.assistant.ui.ThemedScreen(Modifier.fillMaxSize(), own = { background(c.paper) }) {
+    // 0.52.2: one ARGUS look; the top bar keeps the light / dark switch.
+    Box(Modifier.fillMaxSize().background(c.paper)) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             if (detail == null) MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Library"; "sources" -> "Sources"; else -> "Video" },
                 onAccount = { account = true }, onClose = { a.leaveToChat() }) {

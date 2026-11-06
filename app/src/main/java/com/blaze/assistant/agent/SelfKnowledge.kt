@@ -54,7 +54,7 @@ object SelfKnowledge {
                 append("## This app\n")
                 append("${BrandName.NAME} for Android v").append(safe { version(ctx) }).append(", package ").append(ctx.packageName).append(".\n")
                 append("Mode: ").append(safe { Modes.work.value + " · " + Modes.approval.value }).append(". Personality: ").append(safe { Settings.personaId }).append(".\n")
-                append("Screen: Chat | Projects switch, Search, BlazeRouter dot, avatar menu (Account, Settings, Theme, Updates). Composer + menu: attach, @ files, voice, call, Plan/Build, Auto/Autopilot, views.\n")
+                append("Screen: Chat | Projects switch, Search, BlazeRouter dot, the ARGUS Home first (orb, profile top right, pull-down Spotlight from the top notch, ask bar), avatar menu (Account, Settings, Look & feel, Updates). Composer + menu: attach, @ files, voice, call, Plan/Build, Auto/Autopilot, views.\n")
                 append("Projects: ").append(safe { Projects.all.value.joinToString { "${it.name} (${it.chats.size} chats)" }.ifBlank { "none" } }).append(".\n\n")
             }
             if (on("phone")) { append("## Phone\n").append(safe { com.blaze.assistant.device.DeviceStatus.identity(ctx) }).append("\n\n") }

@@ -22,7 +22,7 @@ class LearnedRouter(private val maxWords: Int = 3000) {
             "what", "how", "when", "where", "who", "why", "are", "was", "were", "have", "has", "had", "not", "but", "from", "about",
             "into", "out", "just", "now", "then", "them", "they", "there", "here", "its", "it's", "my", "me", "him", "her", "our",
             "also", "some", "any", "all", "get", "got", "make", "let", "lets", "want", "need", "like", "know", "tell", "show", "give",
-            "blaze", "halo", "hey", "okay", "yes", "no", "thanks", "thank", "too", "very", "really", "one", "two", "time", "do", "did", "done")
+            "blaze", "argus", "halo", "hey", "okay", "yes", "no", "thanks", "thank", "too", "very", "really", "one", "two", "time", "do", "did", "done")
 
         /** Content words of a request: lower-case, ≥ 3 letters, stop words out, a light stem (plurals, -ing, -ed). */
         fun tokens(text: String): Set<String> = Regex("[\\p{L}\\p{N}]+").findAll(text.lowercase()).map { it.value }

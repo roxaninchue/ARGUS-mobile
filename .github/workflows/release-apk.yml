@@ -2,6 +2,9 @@ name: Release APK
 
 # Attaches the APK built by a Build APK run to a GitHub Release (created on the given commit when missing).
 # Run by hand (workflow_dispatch); uses only the workflow's own GITHUB_TOKEN.
+# 0.52.2: manual by design, so no branch trigger for feat/argus-3d-home; instead a run of that branch can hand over its
+# TEST-signed artifact (artifact: argus-3d-home-test-signed-<sha>, from build.yml) as a PRE-release (never "latest"),
+# so testers get an installable 0.52.2 build without the release key ever touching it.
 on:
   workflow_dispatch:
     inputs:
@@ -21,6 +24,15 @@ on:
         description: 'Release title'
         required: false
         default: ''
+      artifact:
+        description: 'Only this artifact of the run (e.g. argus-3d-home-test-signed-<sha>); empty = the first APK of any artifact'
+        required: false
+        default: ''
+      prerelease:
+        description: 'Publish as a pre-release (test builds, e.g. feat/argus-3d-home); never marked latest'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -36,7 +48,8 @@ jobs:
     steps:
       - name: Download the run's APK
         run: |
-          gh run download "${{ inputs.run_id }}" --repo "$REPO" --dir art
+          if [ -n "${{ inputs.artifact }}" ]; then gh run download "${{ inputs.run_id }}" --repo "$REPO" --dir art --name "${{ inputs.artifact }}"
+          else gh run download "${{ inputs.run_id }}" --repo "$REPO" --dir art; fi
           APK=$(find art -name '*.apk' | head -1)
           test -n "$APK"
           cp "$APK" "${{ inputs.asset }}"
@@ -48,7 +61,8 @@ jobs:
           if gh release view "${{ inputs.tag }}" --repo "$REPO" >/dev/null 2>&1; then
             gh release upload "${{ inputs.tag }}" "${{ inputs.asset }}" --clobber --repo "$REPO"
           else
+            if [ "${{ inputs.prerelease }}" = "true" ]; then FLAG="--prerelease --latest=false"; else FLAG="--latest"; fi
             gh release create "${{ inputs.tag }}" "${{ inputs.asset }}" --repo "$REPO" --target "${{ inputs.sha }}" --title "$T" \
-              --notes "Built by Build APK run ${{ inputs.run_id }} from ${{ inputs.sha }}." --latest
+              --notes "Built by Build APK run ${{ inputs.run_id }} from ${{ inputs.sha }}." $FLAG
           fi
           gh release view "${{ inputs.tag }}" --repo "$REPO" --json assets --jq '.assets[].url'

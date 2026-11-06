@@ -256,7 +256,7 @@ object FastLane {
     val FAIL_STARTS = listOf("Couldn't", "Could not", "Error", "Unknown", "No app", "No installed app", "Not done", "Failed", "Can't", "Cannot")
 
     private suspend fun execute(ctx: Context, name: String, a: JSONObject, confirm: suspend (String, String, String) -> Boolean): String? = when (name) {
-        "open_app" -> if (a.optString("name").lowercase().removePrefix("the ").trim() in setOf("browser", "blaze browser", "web browser", "your browser", "internet"))
+        "open_app" -> if (a.optString("name").lowercase().removePrefix("the ").trim() in setOf("browser", "blaze browser", "argus browser", "web browser", "your browser", "internet"))
             { // 0.46.1: the browser is a card on the chat Stage by default (the full screen only when the Stage is off).
               if (com.blaze.assistant.stage.StageStore.enabled) withContext(Dispatchers.Main) {
                   com.blaze.assistant.stage.StageStore.run(ctx, com.blaze.assistant.stage.StageTools.SHOW, JSONObject().put("kind", "browser")); "The browser card is on the chat." }

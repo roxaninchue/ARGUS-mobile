@@ -24,7 +24,7 @@ object PhoneState {
     fun kind(text: String): Kind? {
         val t = text.trim().replace(Regex("\\s+"), " ")
         if (t.isEmpty() || t.length > 90 || t.startsWith("/") || t.startsWith("[")) return null
-        val low = t.lowercase().removePrefix("hey blaze ").removePrefix("blaze ").removePrefix("blaze, ")
+        val low = t.lowercase().removePrefix("hey argus ").removePrefix("argus ").removePrefix("argus, ").removePrefix("hey blaze ").removePrefix("blaze ").removePrefix("blaze, ")
         if (change.containsMatchIn(low)) return null
         if (!ask.containsMatchIn(low)) return null
         if (other.containsMatchIn(low)) return null

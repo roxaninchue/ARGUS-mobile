@@ -303,7 +303,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
     /** "where is your repo", "what version are you", "how do I … in Blaze": a question about Blaze itself (a per-turn hint). */
     fun isAboutBlaze(text: String): Boolean {
         val l = text.lowercase()
-        if (Regex("\\bblaze\\b").containsMatchIn(l) && Regex("\\b(repo|repository|github|source|version|changelog|update|release|setting|settings|feature|features|built|language|stack|how do i|how to|where)\\b").containsMatchIn(l)) return true
+        if (Regex("\\b(?:argus|blaze)\\b").containsMatchIn(l) && Regex("\\b(repo|repository|github|source|version|changelog|update|release|setting|settings|feature|features|built|language|stack|how do i|how to|where)\\b").containsMatchIn(l)) return true
         return Regex("\\b(your (repo|repository|source code|code|github|version|changelog|settings?)|what version are you|are you open source|who (made|built|created) you|what (language|stack) are you)\\b").containsMatchIn(l)
     }
 

@@ -59,7 +59,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     // v0.45.8: every colour comes from the picked theme (TermPalette, 4.5:1 or more against the ground); set in applyTheme().
-    private var pal = com.blaze.assistant.ui.TermPalette.of(com.blaze.assistant.ui.LivingThemes.CLASSIC, true)
+    private var pal = com.blaze.assistant.ui.TermPalette.of(true)
     private var ink = pal.fg
     private var dim = pal.dim
     private var accent = pal.accent
@@ -130,17 +130,16 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         attach(tab)
         structure()
         term.requestFocus()
-        // v0.45.8: one shared theme state: a switch made here, in Chat, Music or anywhere else repaints the terminal.
+        // One shared light / dark state: a switch made here, in Chat, Music or anywhere else repaints the terminal.
         scope.launch {
-            kotlinx.coroutines.flow.combine(com.blaze.assistant.ui.Look.theme,
-                androidx.compose.runtime.snapshotFlow { com.blaze.assistant.ui.ThemeMode.mode.value }) { a, b -> a to b }
+            androidx.compose.runtime.snapshotFlow { com.blaze.assistant.ui.ThemeMode.mode.value }
                 .collect { applyTheme() }
         }
     }
 
     /** v0.45.8: paints the bars, keys, sheet and the emulator's colours (ANSI, text, ground, cursor) from the theme. */
     private fun applyTheme() {
-        val p = com.blaze.assistant.ui.TermPalette.of(com.blaze.assistant.ui.Look.theme.value, com.blaze.assistant.ui.AppTheme.darkNow())
+        val p = com.blaze.assistant.ui.TermPalette.of(com.blaze.assistant.ui.AppTheme.darkNow())
         pal = p; ink = p.fg; dim = p.dim; accent = p.accent; keyBg = p.keyBg; keyEdge = p.keyEdge; barBg = p.barBg
         TermSheet.Palette.set(p)
         TermColors.apply(p)
@@ -356,21 +355,21 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         }
     }
 
-    /** v0.45.8: the theme switcher (the same options as everywhere else; picking one changes every screen). */
+    /** Light / dark (the same switch as everywhere else; flipping it here changes every screen). */
     private fun themeMenu() {
-        val cur = com.blaze.assistant.ui.Look.theme.value
-        val items = com.blaze.assistant.ui.AppTheme.options.map { th ->
-            TermSheet.Item(th.id.ifEmpty { "classic" }, th.name + if (th.id == cur) "  \u2713" else "", th.sub, "theme")
-        }
-        sheet.show("Theme", "Changes ${BrandName.NAME} everywhere: chat, Home, Music, Video, Design and here", items) { item ->
-            com.blaze.assistant.ui.AppTheme.pick(if (item.id == "classic") com.blaze.assistant.ui.LivingThemes.CLASSIC else item.id)
+        val dark = com.blaze.assistant.ui.AppTheme.darkNow()
+        val items = listOf(
+            TermSheet.Item("dark", "Dark" + if (dark) "  \u2713" else "", "", "theme"),
+            TermSheet.Item("light", "Light" + if (!dark) "  \u2713" else "", "", "theme"))
+        sheet.show("Light or dark", "Changes ${BrandName.NAME} everywhere: chat, Home, Music, Video, Design and here", items) { item ->
+            com.blaze.assistant.ui.ThemeMode.set(item.id)
         }
     }
 
     private fun moreMenu() {
         val tab = TermSessions.active()
         val items = buildList {
-            add(TermSheet.Item("theme", "Theme", com.blaze.assistant.ui.LivingThemes.of(com.blaze.assistant.ui.Look.theme.value).name + " \u00b7 the same theme as the rest of ${BrandName.NAME}", "theme"))
+            add(TermSheet.Item("theme", "Light or dark", (if (com.blaze.assistant.ui.AppTheme.darkNow()) "Dark" else "Light") + " \u00b7 the same as the rest of ${BrandName.NAME}", "theme"))
             add(TermSheet.Item("paste", "Paste", "Type what's on the clipboard", "paste"))
             add(TermSheet.Item("copy", "Copy all text", "Everything in this tab, to the clipboard", "copy"))
             add(TermSheet.Item("keyboard", "Keyboard", "Show the on-screen keyboard", "keyboard"))

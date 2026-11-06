@@ -1,3 +1,12 @@
+## v0.52.2: the ARGUS living 3D Home, a pull-down Spotlight, and one look for the whole app (versionCode 189)
+- A new Home: a glossy black ARGUS orb with the "A", slow metal rings with blue light streaks and a glowing pedestal, in a dark scene. It breathes when idle, listens with your voice (the rings follow how loud you speak), spins while Argus works and pulses while it talks. Home is where Argus opens, and Back from the chat, /home, Music and Video bring you back to it.
+- Ask from the Home bar ("Try saying…") and the answer floats over the pedestal as a card; "Open in chat ›" (or the arrow on the bar) shows the whole chat. Questions, approvals, forms, secure fields, shares and notification taps still open the chat by themselves.
+- The greeting knows the time of day ("Good evening", with your first name) and changes on the hour by itself.
+- Pull down the little notch at the top (or tap it) for Spotlight: your phone's apps, Argus's actions, settings, things said in your chats and the web, in groups, as you type. Before you type it shows your recent searches and a few suggestions for the time of day. Pull it back up, tap outside it or press Back to close it.
+- Smooth on modest phones: the scene draws at 60 fps, 30 fps on phones with 4.5 GB of RAM or less and in battery saver, and stops completely when you can't see it. Phones without OpenGL ES 3 or with very little memory get a flat version of the same scene, and with "Remove animations" it is one still picture.
+- Optional: Settings › Look & feel › "Tilt the Home scene" moves the orb a little as you tilt the phone (off by default, never in battery saver).
+- One look: the Living Themes (the theme scenes, the 3D theme carousel and the theme switchers) are gone. The app has the ARGUS colours in light and dark, with an accent you can pick in Look & feel; the Home scene is always dark. "Themes" in the profile menu is now "Look & feel".
+
 ## v0.52.1: Blaze is now ARGUS, long tasks keep going in the background, and progress you can trust (versionCode 188)
 - Blaze is now **Argus**: a new name, a new silver "A" icon on Argus Black and cobalt, the ARGUS wordmark, Inter type from Light to Bold, and electric-blue accents. Argus Phone, Argus Music, Argus Terminal, Argus Store and the rest follow. Your chats, memories, settings, logins and downloads stay exactly where they were, and the app updates in place. "Hey Argus" wakes it (the old "Hey Blaze" still works).
 - The speed tiers are now Insight (fast), Oracle (balanced) and Panoptes (deepest); whatever you had picked stays picked.

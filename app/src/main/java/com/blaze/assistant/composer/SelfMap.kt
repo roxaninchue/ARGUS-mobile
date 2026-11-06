@@ -46,7 +46,6 @@ object SelfMap {
 
     /** Settings people look for by name (each opens its page). */
     val SETTINGS = listOf(
-        Entry("setting:wallpaper", Kind.SETTING, "Wallpaper", "Living backgrounds and your photo", "look", listOf("background", "backgrounds", "photo background")),
         Entry("setting:theme", Kind.SETTING, "Light or dark", "Light / Dark / Auto and accent colour", "look", listOf("dark mode", "light mode", "theme", "accent", "colour", "color")),
         Entry("setting:voice", Kind.SETTING, "Voice", "Hey ${BrandName.NAME}, spoken replies", "voice", listOf("wake word", "speech", "read aloud")),
         Entry("setting:brain", Kind.SETTING, "Brain", "On-phone brain and ${BrandName.NAME} Cloud", "brain", listOf("models", "ai", "on-phone brain")),
@@ -75,13 +74,13 @@ object SelfMap {
     }.getOrNull()?.takeIf { it.isNotEmpty() } ?: FALLBACK_VIEWS
 
     val FALLBACK_VIEWS = listOf(
-        ViewInfo("home", "Home", "The Home cards"),
+        ViewInfo("home", "Home", "The ARGUS orb Home"),
         ViewInfo("browser", "Browser", "${BrandName.NAME}'s own browser and tabs"),
         ViewInfo("music", "Music", "${BrandName.NAME} Music: your songs and playlists", listOf("songs", "player")),
         ViewInfo("video", "Video", "${BrandName.NAME} Video: your videos", listOf("videos", "movies")),
         ViewInfo("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell", listOf("shell", "console")),
         ViewInfo("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made"),
-        ViewInfo("look", "Look & feel", "Backgrounds and theme", listOf("wallpaper", "theme")),
+        ViewInfo("look", "Look & feel", "Light / dark and accent", listOf("theme", "dark mode")),
         ViewInfo("settings", "Settings", "Behaviour, voice, privacy, backup"),
     )
 

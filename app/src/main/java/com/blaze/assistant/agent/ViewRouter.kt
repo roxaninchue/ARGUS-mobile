@@ -98,7 +98,7 @@ object ViewRouter {
     }
 
     private val designStrong = r(DESIGN_STRONG)
-    private val editLead = r("""^(?:(?:ok(?:ay)?|now|and|also|please|pls|then|great|nice|cool|good|perfect|can you|could you|would you|will you|just|yeah|yes|hey blaze|blaze)[,!.]?\s+)*""" +
+    private val editLead = r("""^(?:(?:ok(?:ay)?|now|and|also|please|pls|then|great|nice|cool|good|perfect|can you|could you|would you|will you|just|yeah|yes|hey (?:argus|blaze)|(?:argus|blaze))[,!.]?\s+)*""" +
         """(?:show|hide|add|remove|delete|drop|make|change|turn|rotate|spin|move|put|give|use|swap|replace|resize|scale|zoom|colou?r|paint|fix|undo|redo|open|let me see|see|view|""" +
         """bigger|smaller|taller|shorter|wider|narrower|thinner|thicker|longer|more|less|darker|lighter|brighter|try|flip|mirror|cent(?:er|re)|align|increase|decrease|raise|lower|lift|""" +
         """extend|shrink|enlarge|attach|include|without|with|no|switch|set|label|animate|place)\b""")

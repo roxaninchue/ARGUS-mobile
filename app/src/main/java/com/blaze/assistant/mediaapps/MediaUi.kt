@@ -892,7 +892,6 @@ fun PlayerSheet(expanded: Boolean, onCollapse: () -> Unit, modifier: Modifier = 
         // v0.45.8: the player sheet shows the theme's scene too (opaque over the Library).
         Box(Modifier.fillMaxSize().offset { IntOffset(0, drag.value.roundToInt()) }.background(c.paper)
             .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }) {
-        if (com.blaze.assistant.ui.themeOn()) com.blaze.assistant.ui.LivingBackground()
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Box(Modifier.fillMaxWidth().height(28.dp)
                 .draggable(rememberDraggableState { d -> scope.launch { drag.snapTo((drag.value + d).coerceAtLeast(0f)) } }, Orientation.Vertical,

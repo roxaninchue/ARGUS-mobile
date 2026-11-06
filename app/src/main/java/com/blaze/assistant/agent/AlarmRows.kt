@@ -21,7 +21,7 @@ object AlarmRows {
         val on: Boolean? get() = toggle?.checked
     }
 
-    fun labelRe(pid: String) = Regex("(?i)\\bBlaze\\s+" + Regex.escape(pid) + "\\b")
+    fun labelRe(pid: String) = Regex("(?i)\\b(?:${com.blaze.assistant.BrandName.NAME}|${com.blaze.assistant.BrandName.OLD})\\s+" + Regex.escape(pid) + "\\b")
 
     /** "18:15" → the ways a clock shows it: "18:15", "6:15" (12 h, with or without am/pm). */
     fun timeForms(hhmm: String): List<String> {

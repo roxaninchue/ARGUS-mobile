@@ -33,7 +33,7 @@ object CoverArt {
             ?: if (kind == "video") "eye-catching video thumbnail, cinematic, high contrast" else "striking album cover art, artistic, cohesive palette"
         return buildString {
             append(if (kind == "video") "YouTube-style thumbnail for a video titled \"$t\"" else "Album cover for the song \"$t\"")
-            if (artist.isNotBlank() && !artist.equals("Blaze", true) && !artist.equals("unknown", true)) append(" by $artist")
+            if (artist.isNotBlank() && !artist.equals("Blaze", true) && !artist.equals(com.blaze.assistant.BrandName.NAME, true) && !artist.equals("unknown", true)) append(" by $artist")
             append(". ").append(style.ifBlank { hint })
             append(". No text, no letters, no watermark, no logos.")
         }

@@ -97,14 +97,16 @@ class StageShotsTest {
     private fun distinct(b: Bitmap): Int { val s = HashSet<Int>(); var y = 0
         while (y < b.height) { var x = 0; while (x < b.width) { s += b.getPixel(x, y); x += 7 }; y += 7 }; return s.size }
 
-    private val themes = listOf("" to "classic", "golden_ember" to "ember", "rose_dawn" to "rose")
+    // 0.52.2: one ARGUS look; the accents under test ("" = ARGUS, then Electric and Amber from Look & feel)
+    private val themes = listOf("" to "argus", "electric" to "electric", "amber" to "amber")
+    private fun accentOf(id: String): Long? = when (id) { "electric" -> 0xFF1286FF; "amber" -> 0xFFF59E0B; else -> null }
     private val which = mutableStateOf(Triple("", false, 0))
 
     @Test fun heroesAndWidgets_3themes_lightDark() {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             val (id, dark, k) = which.value
-            val c = blazePalette(id, dark, null)
+            val c = blazePalette(dark, accentOf(id))
             CompositionLocalProvider(LocalBlaze provides c) {
                 Column(Modifier.fillMaxSize().background(c.paper).padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val hero = items[k]

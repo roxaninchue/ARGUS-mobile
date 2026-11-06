@@ -507,8 +507,8 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
         }
     }
 
-    // v0.45.8: the theme's scene shows behind Design (Classic keeps the glass ground).
-    Box(Modifier.fillMaxSize().screenGround { background(c.paper).glassBackground(c.dark) }) {
+    // 0.52.2: one ARGUS look (the glass ground).
+    Box(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark)) {
         Column(Modifier.fillMaxSize()) {
             // Header: name, theme, open.
             Row(Modifier.fillMaxWidth().padding(start = if (onBack != null) 4.dp else 16.dp, end = 12.dp, top = 4.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {

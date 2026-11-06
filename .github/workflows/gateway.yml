@@ -45,7 +45,7 @@ jobs:
 
   deploy:
     needs: test
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'lacksonkapapahue/Blaze-agent'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:

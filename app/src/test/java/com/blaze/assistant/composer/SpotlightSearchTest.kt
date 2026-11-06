@@ -21,7 +21,7 @@ class SpotlightSearchTest {
         SelfMap.ViewInfo("video", "Video", "${BrandName.NAME} Video: your videos", listOf("videos", "movies")),
         SelfMap.ViewInfo("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell", listOf("shell", "console")),
         SelfMap.ViewInfo("memory", "Memory", "What ${BrandName.NAME} remembers"),
-        SelfMap.ViewInfo("look", "Look & feel", "Living backgrounds, theme", listOf("wallpaper", "theme")),
+        SelfMap.ViewInfo("look", "Look & feel", "Light / dark and accent", listOf("theme", "dark mode")),
         SelfMap.ViewInfo("settings", "Settings", "Behaviour, voice, privacy, backup"),
     )
     private val map = SelfMap.of(views)
@@ -42,7 +42,7 @@ class SpotlightSearchTest {
 
     @Test fun describeIsForTheAgentAndHasNoForbiddenNames() {
         val d = SelfMap.describe(map)
-        assertTrue(d.contains("[view:terminal]") && d.contains("[model:inferno]") && d.contains("[action:chat]") && d.contains("[setting:wallpaper]"))
+        assertTrue(d.contains("[view:terminal]") && d.contains("[model:inferno]") && d.contains("[action:chat]") && d.contains("[setting:theme]"))
         assertFalse(Regex("(?i)\\b(hark|jarvis|open-?code|nvidia|nemotron)\\b").containsMatchIn(d))
     }
 
@@ -102,13 +102,15 @@ class SpotlightSearchTest {
         assertEquals("Terminal", rows[1].title)
     }
 
-    @Test fun settingsWallpaperAndMusicAlsoShowBothForms() {
-        for ((q, name) in listOf("settings" to "Settings", "music" to "Music", "wallpaper" to "Look & feel")) {
+    @Test fun settingsThemeAndMusicAlsoShowBothForms() {
+        for ((q, name) in listOf("settings" to "Settings", "music" to "Music", "theme" to "Look & feel")) {
             val rows = s(q).rows
             assertTrue("$q full", rows.any { it.title == "Views > $name" && it.act is Act.OpenView })
             assertTrue("$q inline", rows.any { it.title == name && it.act is Act.Preview })
         }
-        assertTrue(s("wallpaper").rows.any { it.title == "Settings > Wallpaper" })
+        assertTrue(s("dark mode").rows.any { it.title == "Settings > Light or dark" })
+        // 0.52.2: the living backgrounds are gone, and so is their Wallpaper setting
+        assertFalse(s("wallpaper").rows.any { it.title == "Settings > Wallpaper" })
     }
 
     // ---------------------------------------------------------------- models

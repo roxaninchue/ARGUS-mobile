@@ -84,7 +84,7 @@ object SimpleHome {
 
     /** v0.45.28: the arc offers Blaze and Halo; Halo x Blaze ("all") is picked automatically per message, see [tagged]. */
     val TALK_TO = listOf("blaze", "halo")
-    private val anyTag = Regex("(?i)(^|\\s)@(all|both|everyone|duo|blaze|halo)\\b")
+    private val anyTag = Regex("(?i)(^|\\s)@(all|both|everyone|duo|(?:argus|blaze)|halo)\\b")
 
     /**
      * The message as sent. A message that already names someone (@blaze / @halo / @all) and commands are left alone.

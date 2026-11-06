@@ -19,7 +19,7 @@ object ReplyChips {
         Regex("^usedup:"),
         // v0.25.0: the route line ("\u2601 Free (Google Gemini \u00b7 gemini-3\u2026) \u00b7 2 steps") never shows by default.
         Regex("^[\u2601]"),
-        Regex("\\b(blaze cloud|free \\(|gemini|gemma|gpt|llama|qwen|mistral|deepseek|kimi|glm|claude|grok|nemotron|groq|cerebras|openrouter|nvidia|pollinations|keyless|workers-ai|healed|trimmed|tier)", RegexOption.IGNORE_CASE),
+        Regex("\\b((?:argus|blaze) cloud|free \\(|gemini|gemma|gpt|llama|qwen|mistral|deepseek|kimi|glm|claude|grok|nemotron|groq|cerebras|openrouter|nvidia|pollinations|keyless|workers-ai|healed|trimmed|tier)", RegexOption.IGNORE_CASE),
         Regex("^\\d+ steps$"),
         Regex("^[^(]*\\)$"),                                                // the tail of a "(provider \u00b7 model)" pair
     )
@@ -52,7 +52,7 @@ object ReplyChips {
 
     /** Route / lane words that only make sense with a model next to them ("Blaze Cloud", "cloud run", "fallback"). */
     private fun isRouteWord(p: String): Boolean =
-        Regex("^run$|\\b(blaze cloud|cloud run|via |model|provider|fallback|lane|keyless|free \\(|tier)\\b|^[\u2601]|[\\w.-]+/[\\w.:-]+|\\)$", RegexOption.IGNORE_CASE).containsMatchIn(p)
+        Regex("^run$|\\b((?:argus|blaze) cloud|cloud run|via |model|provider|fallback|lane|keyless|free \\(|tier)\\b|^[\u2601]|[\\w.-]+/[\\w.:-]+|\\)$", RegexOption.IGNORE_CASE).containsMatchIn(p)
 
     /**
      * v0.26.2: the old "Fresh start. Earlier turns are out of my context…" / "Fresh start. Here's where we were" bubble.

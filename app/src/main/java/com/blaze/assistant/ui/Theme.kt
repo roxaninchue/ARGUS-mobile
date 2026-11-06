@@ -95,15 +95,15 @@ val DarkColors = BlazeColors(
 val LocalBlaze = staticCompositionLocalOf { LightColors }
 
 /**
- * The colours for theme [themeId] in [dark] mode (Classic: [lookAccent] from Look & feel, if any). v0.45.2: the theme's
- * accent drives the app's accents (deepened on light grounds). 0.45.29: the chat bubbles take the theme's tones ([BubbleTones]).
+ * The colours in [dark] mode, with [lookAccent] from Look & feel when one is picked (deepened on light grounds so it
+ * still reads). 0.52.2: one ARGUS look (the Living Themes are gone); the chat bubbles take the ARGUS tones ([BubbleTones]).
  */
-fun blazePalette(themeId: String, dark: Boolean, lookAccent: Long?): BlazeColors {
+fun blazePalette(dark: Boolean, lookAccent: Long? = null): BlazeColors {
     val base = if (dark) DarkColors else LightColors
-    val c = LivingThemes.accentFor(themeId, lookAccent)?.let { a -> base.copy(accent = Color(if (dark) a else LivingThemes.onLight(a))) } ?: base
+    val c = lookAccent?.let { a -> base.copy(accent = Color(if (dark) a else BubbleTones.onLight(a))) } ?: base
     return c.copy(
-        bubbleMe = Color(BubbleTones.base(themeId, dark, mine = true, ink = c.ink.toArgb().toLong() and 0xFFFFFFFFL, lookAccent = lookAccent)),
-        bubbleBlaze = Color(BubbleTones.base(themeId, dark, mine = false, ink = c.body.toArgb().toLong() and 0xFFFFFFFFL)),
+        bubbleMe = Color(BubbleTones.base(dark, mine = true, ink = c.ink.toArgb().toLong() and 0xFFFFFFFFL, lookAccent = lookAccent)),
+        bubbleBlaze = Color(BubbleTones.base(dark, mine = false, ink = c.body.toArgb().toLong() and 0xFFFFFFFFL)),
     )
 }
 
@@ -169,12 +169,10 @@ fun BlazeTheme(content: @Composable () -> Unit) {
     // v0.31.0: the glass UI is dark-first: "system" means dark; light only when picked in the menu.
     // v0.39.0 Look & feel: "auto" follows the local time (dark after sunset); an accent picked there tints the accent only.
     val hour = androidx.compose.runtime.remember(ThemeMode.mode.value) { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
-    val dark = when (ThemeMode.mode.value) { "dark" -> true; "light" -> false; "auto" -> LivingLogic.darkFor("auto", hour); else -> true }
+    val dark = LookLogic.darkFor(ThemeMode.mode.value, hour, systemDark = true)
     val accentHex by Look.accent.collectAsState()
-    // v0.45.2: a picked theme's accent drives the app's accents (Classic: the Look & feel accent as before); on light grounds a
-    // pale accent is deepened so it still reads.
-    val themeId by Look.theme.collectAsState()
-    val c = androidx.compose.runtime.remember(themeId, dark, accentHex) { blazePalette(themeId, dark, LivingLogic.parseAccent(accentHex)) }
+    // An accent picked in Look & feel drives the app's accents; on light grounds a pale accent is deepened so it still reads.
+    val c = androidx.compose.runtime.remember(dark, accentHex) { blazePalette(dark, LookLogic.parseAccent(accentHex)) }
     // v0.24.5: Material's own colours mapped to Blaze, so no default purple / lavender can leak into anything Material draws.
     androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark), shapes = BlazeShapes.material, typography = Type.material()) {
         CompositionLocalProvider(LocalBlaze provides c, content = content)

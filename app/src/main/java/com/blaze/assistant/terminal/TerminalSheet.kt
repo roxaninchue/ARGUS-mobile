@@ -81,11 +81,11 @@ object TermSheet {
     }
 
     /**
-     * The terminal's palette. v0.45.8: derived from the picked theme ([com.blaze.assistant.ui.TermPalette]); the
-     * activity sets it on start and whenever the theme changes, and the sheet recomposes.
+     * The terminal's palette. derived from light / dark ([com.blaze.assistant.ui.TermPalette]); the
+     * activity sets it on start and whenever light / dark changes, and the sheet recomposes.
      */
     object Palette {
-        private var p by mutableStateOf(com.blaze.assistant.ui.TermPalette.of(com.blaze.assistant.ui.LivingThemes.CLASSIC, true))
+        private var p by mutableStateOf(com.blaze.assistant.ui.TermPalette.of(true))
         fun set(colors: com.blaze.assistant.ui.TermPalette.Colors) { p = colors }
         val bg: Color get() = Color(p.bg)
         val sheet: Color get() = Color(p.sheet)

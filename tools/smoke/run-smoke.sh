@@ -5,7 +5,7 @@
 # (tools/smoke/app_stall.py: Choreographer "Skipped N frames" per frame, minus only the main thread's wait on the emulator's
 # one-off swiftshader software first frame; approved gate change 2026-10-27; the raw number is still reported), after a
 # warm-up launch that primes shaders and caches, and the instrumented LowRamSmokeTest green (browse 200 x concurrent loads, details, 10 s video, music, 30 tool-chat
-# turns with DSML, main thread sampled every 50 ms) with zero crash / ANR in logcat.
+# turns with DSML, 0.52.2: the ARGUS Home + Spotlight (f_argusHome); main thread sampled every 50 ms) with zero crash / ANR in logcat.
 set -uo pipefail
 REL="$1"; DBG="$2"; TST="$3"; PKG=com.blaze.assistant; OUT=smoke-out; mkdir -p "$OUT"
 FAIL=(); note() { echo "$*" | tee -a "$OUT/SUMMARY.md"; }
@@ -70,7 +70,8 @@ timeout 1500 adb shell am instrument -w -r -e class com.blaze.assistant.smoke.Lo
 adb logcat -d -v threadtime > "$OUT/logcat-smoke.txt"; adb logcat -d -b crash > "$OUT/logcat-smoke-crash.txt" 2>/dev/null || true
 grep -E "INSTRUMENTATION_STATUS: (test|stack)=|INSTRUMENTATION_STATUS_CODE: -2|OK \(|FAILURES|Tests run|Process crashed|INSTRUMENTATION_RESULT|shortMsg" "$OUT/instrument.txt" | grep -v "INSTRUMENTATION_STATUS: test=" | head -40 >> "$OUT/SUMMARY.md"
 grep "BlazeSmoke" "$OUT/logcat-smoke.txt" | sed 's/^.*BlazeSmoke: /  /' >> "$OUT/SUMMARY.md"
-grep -q "^OK (6 tests)" "$OUT/instrument.txt" || FAIL+=("instrumented smoke test not green")
+# 0.52.2: 7 tests (f_argusHome added: the ARGUS Home is the root)
+grep -q "^OK (7 tests)" "$OUT/instrument.txt" || FAIL+=("instrumented smoke test not green")
 C=$(crashes "$OUT/logcat-smoke.txt"; crashes "$OUT/logcat-smoke-crash.txt")
 [ -n "$C" ] && { FAIL+=("crash/ANR during instrumented smoke"); echo "$C" | head -20 | tee -a "$OUT/SUMMARY.md"; }
 

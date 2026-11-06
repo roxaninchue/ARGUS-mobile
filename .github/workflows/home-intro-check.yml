@@ -1,12 +1,13 @@
-# 0.48.0 RC3 local check (not the release gate): the Home entry sequence played live on the same low-RAM emulator as
-# lowram-smoke.yml, with animations ON (the gate disables them, so it only sees the reduce-motion path), same 700 ms
-# main-stall limit; screen-recorded and screenshotted every 0.5 s for comparison with the approved video. The official
-# gate (six LowRamSmokeTest scenarios) is untouched; this only runs HomeIntroCheck.
-name: Home intro check
+# Local check (not the release gate) on the same low-RAM emulator as lowram-smoke.yml, with animations ON (the gate disables
+# them, so it only sees the reduce-motion path), same 700 ms main-stall limit. 0.52.2: the old Home's entry sequence
+# (HomeIntroCheck) is gone with the old Home; this now runs ArgusSpotlightCheck: the ARGUS Home's pull-down Spotlight opened
+# and closed three times with real touches (pull the notch, tap the scrim, tap + Back, pull the handle up), screenshots in
+# argus-spotlight/. The official gate (LowRamSmokeTest, 7 scenarios) is separate. File name kept for existing links.
+name: Home intro check (ARGUS Spotlight)
 
 on:
   push:
-    branches: [ "check/**" ]
+    branches: [ "check/**", "feat/argus-3d-home" ]
   workflow_dispatch:
 
 permissions:
@@ -55,15 +56,15 @@ jobs:
           disk-size: 6G
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-snapshot
           disable-animations: false
-          script: bash tools/smoke/run-intro.sh
+          script: bash tools/smoke/run-argus-spotlight.sh
       - name: Summary
         if: always()
-        run: cat intro-out/SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
+        run: cat spot-out/SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: intro-out
+          name: spot-out
           retention-days: 7
           path: |
-            intro-out/
+            spot-out/
             app/build/outputs/apk/debug/app-debug.apk

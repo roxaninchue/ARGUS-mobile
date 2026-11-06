@@ -104,7 +104,7 @@ object Media {
         Result.failure(last ?: Exception("unknown error"))
     }
 
-    private val directRe = Regex("""^(?:please\s+|can you\s+|could you\s+|blaze,?\s+)?(?:(draw|paint|sketch|illustrate)\s+(?:me\s+)?(?:an?\s+)?(?:(?:image|picture|pic|drawing|painting|sketch|illustration)\s+of\s+)?|(?:generate|create|make|design)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|pic|photo|drawing|painting|illustration|wallpaper|poster|artwork|art)\s+(?:of|showing|with)\s+)(.{3,400}?)[\s.!?]*$""", RegexOption.IGNORE_CASE)
+    private val directRe = Regex("""^(?:please\s+|can you\s+|could you\s+|(?:argus|blaze),?\s+)?(?:(draw|paint|sketch|illustrate)\s+(?:me\s+)?(?:an?\s+)?(?:(?:image|picture|pic|drawing|painting|sketch|illustration)\s+of\s+)?|(?:generate|create|make|design)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|pic|photo|drawing|painting|illustration|wallpaper|poster|artwork|art)\s+(?:of|showing|with)\s+)(.{3,400}?)[\s.!?]*$""", RegexOption.IGNORE_CASE)
 
     /** The subject when [text] is a plain "draw X" / "make an image of X" request, else null. */
     fun directPrompt(text: String): String? {

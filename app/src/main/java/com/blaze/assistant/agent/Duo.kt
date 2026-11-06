@@ -30,14 +30,14 @@ object Duo {
     /** [text] = the message with the @tags taken out; [explicit] = the user wrote a tag. */
     data class Route(val mode: Mode, val text: String, val explicit: Boolean)
 
-    private val tagRe = Regex("(?i)(^|\\s)@(all|both|everyone|duo|blaze|halo)\\b[,:]?")
+    private val tagRe = Regex("(?i)(^|\\s)@(all|both|everyone|duo|(?:argus|blaze)|halo)\\b[,:]?")
 
     /**
      * Where a message goes. Tags can sit anywhere ("hey @halo what do you think"); @all wins over a single name, and
      * "@blaze … @halo" (both named) means both. No tag: TEAM for a creative, multi-phase job when [teamOn], else Blaze.
      */
     fun route(text: String, teamOn: Boolean = true): Route {
-        val tags = tagRe.findAll(text).map { it.groupValues[2].lowercase() }.toSet()
+        val tags = tagRe.findAll(text).map { it.groupValues[2].lowercase().let { t -> if (t == "argus") "blaze" else t } }.toSet()
         val stripped = tagRe.replace(text) { m -> m.groupValues[1] }.replace(Regex("\\s{2,}"), " ").trim()
         val body = stripped.ifBlank { if (tags.isEmpty()) text.trim() else "Hi!" }
         return when {
@@ -54,7 +54,7 @@ object Duo {
     private val longHint = Regex("(?i)\\b(long|detailed|full|complete|epic|in depth|in-depth|multi[- ]part|series|step by step)\\b")
     private val phoneish = Regex("(?i)\\b(open|turn on|turn off|switch on|switch off|call|text|send|message|whatsapp|alarm|timer|wifi|wi-fi|bluetooth|flashlight|torch|volume|brightness|settings|install|uninstall|screenshot|play|pause|skip)\\b")
 
-    private val bothCue = Regex("(?i)\\b(both of you|you both|you two|the two of you|blaze (and|&|x|×) halo|halo (and|&|x|×) blaze)\\b")
+    private val bothCue = Regex("(?i)\\b(both of you|you both|you two|the two of you|(?:argus|blaze) (and|&|x|×) halo|halo (and|&|x|×) (?:argus|blaze))\\b")
 
     /** v0.45.28: the message asks for Blaze and Halo together (what the old "Halo x Blaze" arc choice did for every message). */
     fun wantsBoth(text: String): Boolean = bothCue.containsMatchIn(text)
@@ -135,7 +135,7 @@ object Duo {
     /** The prefix a duo reply carries in the model history (never shown). */
     fun tag(who: Who): String = "[${who.display}] "
 
-    private val leadTagRe = Regex("^\\s*(\\[(blaze|halo)\\]|\\*{0,2}(blaze|halo)(\\s*:\\*{0,2}|\\*{0,2}\\s*:))\\s*", RegexOption.IGNORE_CASE)
+    private val leadTagRe = Regex("^\\s*(\\[(argus|blaze|halo)\\]|\\*{0,2}(argus|blaze|halo)(\\s*:\\*{0,2}|\\*{0,2}\\s*:))\\s*", RegexOption.IGNORE_CASE)
 
     /** Drops a speaker tag the model wrote anyway, and a PASS. */
     fun clean(text: String): String {

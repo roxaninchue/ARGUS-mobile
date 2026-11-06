@@ -41,12 +41,12 @@ object SearchRoute {
         if (!commandsAsk.containsMatchIn(t)) return false
         if (slashWords.containsMatchIn(t)) return true
         // "what commands do you have / does blaze support", "which commands can I use here"
-        return listAsk.containsMatchIn(t) && Regex("""(?i)\b(?:you|your|blaze|halo|here|this app|the app|i have|can i|do i|i can|available|support)\b""").containsMatchIn(t)
+        return listAsk.containsMatchIn(t) && Regex("""(?i)\b(?:you|your|(?:argus|blaze)|halo|here|this app|the app|i have|can i|do i|i can|available|support)\b""").containsMatchIn(t)
     }
 
     /** About Blaze, the app, its features, settings, commands or views. */
-    private val aboutBlaze = Regex("""(?i)\b(?:blaze|halo|you|your|yourself|this app|the app|this chat|this conversation|our (?:chat|conversation)|earlier (?:in|today)|you said|i (?:said|told you|asked)|we (?:talked|discussed|said)|(?:spotlight|composer|chat box|home screen|on-phone brain|terminal|skills?|views?|projects?|routines?|settings?|stage|halo) in blaze)\b""")
-    private val aboutBlazeTopic = Regex("""(?i)\b(?:feature|features|setting|settings|command|commands|view|views|skill|skills|mode|modes|version|update|changelog|memory|remember|forget|can (?:you|blaze) (?:do|see|read|control|open)|how do (?:i|you) (?:use|turn|switch|open|set)|work|works|support|supports|able)\b""")
+    private val aboutBlaze = Regex("""(?i)\b(?:(?:argus|blaze)|halo|you|your|yourself|this app|the app|this chat|this conversation|our (?:chat|conversation)|earlier (?:in|today)|you said|i (?:said|told you|asked)|we (?:talked|discussed|said)|(?:spotlight|composer|chat box|home screen|on-phone brain|terminal|skills?|views?|projects?|routines?|settings?|stage|halo) in (?:argus|blaze))\b""")
+    private val aboutBlazeTopic = Regex("""(?i)\b(?:feature|features|setting|settings|command|commands|view|views|skill|skills|mode|modes|version|update|changelog|memory|remember|forget|can (?:you|(?:argus|blaze)) (?:do|see|read|control|open)|how do (?:i|you) (?:use|turn|switch|open|set)|work|works|support|supports|able)\b""")
     /** The user's own data on this phone or in their connected accounts. */
     private val ownData = Regex("""(?i)\b(?:my|mine|i have|do i have|did i|have i|am i)\b.{0,40}\b(?:phone|files?|photos?|pictures?|gallery|messages?|texts?|sms|whatsapp|calendar|events?|meetings?|alarms?|reminders?|timers?|contacts?|notes?|music|songs?|playlists?|battery|storage|settings?|apps?|email|emails|inbox|mail|memory|memories|tasks?|to-?dos?|routines?|projects?|chats?|downloads?|documents?|skills?|secrets?|keys?|accounts?|budget|spending|balance|schedule|agenda)\b""")
     private val ownDataAfter = Regex("""(?i)\b(?:photos?|pictures?|files?|messages?|texts?|alarms?|reminders?|contacts?|notes?|songs?|apps?|emails?|tasks?|to-?dos?|routines?|projects?|chats?|downloads?|documents?|skills?|secrets?|accounts?|events?|meetings?)\b.{0,30}\b(?:do i have|have i got|i have|i'?ve got|did i)\b""")
@@ -70,7 +70,7 @@ object SearchRoute {
     fun isWeather(text: String): Boolean = weather.containsMatchIn(text) && weatherQ.containsMatchIn(text) && !ownData.containsMatchIn(text)
 
     /** Only an explicit request to search the web (the user's words, not a guess from "what" or "how"). */
-    private val explicit = Regex("""(?i)^\s*(?:(?:please|can you|could you|would you|pls|hey blaze,?|blaze,?)\s+)*(?:search(?: the web| online| the internet| google)?(?: for)?|google|look up|lookup|web search|find (?:online|on the web)|check online|browse for)\b\s*(.+)$""")
+    private val explicit = Regex("""(?i)^\s*(?:(?:please|can you|could you|would you|pls|hey (?:argus|blaze),?|(?:argus|blaze),?)\s+)*(?:search(?: the web| online| the internet| google)?(?: for)?|google|look up|lookup|web search|find (?:online|on the web)|check online|browse for)\b\s*(.+)$""")
     private val explicitTail = Regex("""(?i)^(.+?)\s*[,-]?\s*(?:search (?:it |that )?(?:online|on the web|the web)|look (?:it |that )?up online|google (?:it|that))\s*[.!?]*$""")
 
     /** The thing to search for, or null when the message is not an explicit search request. */
@@ -115,7 +115,7 @@ object SearchRoute {
 
     // ---------------- the search query, from the conversation ----------------
 
-    private val filler = Regex("""(?i)\b(?:please|can you|could you|would you|pls|for me|real quick|quickly|hey|blaze|halo|i want to know|tell me|do you know|i wonder|search(?: the web| online| google)?(?: for)?|google|look up|lookup|online|on the web|on google)\b""")
+    private val filler = Regex("""(?i)\b(?:please|can you|could you|would you|pls|for me|real quick|quickly|hey|(?:argus|blaze)|halo|i want to know|tell me|do you know|i wonder|search(?: the web| online| google)?(?: for)?|google|look up|lookup|online|on the web|on google)\b""")
     private val pronoun = Regex("""(?i)\b(?:it|its|it's|that|this|those|these|they|them|there|he|she|him|her|the same|that one|this one)\b""")
     private val stop = setOf("the", "and", "for", "with", "from", "that", "this", "what", "how", "who", "when", "where", "why", "which", "are", "is",
         "was", "can", "does", "did", "get", "use", "about", "you", "your", "me", "my", "i", "a", "an", "of", "to", "in", "on", "at", "it", "its",
