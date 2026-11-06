@@ -86,3 +86,6 @@ object ChatJson {
     /** A saved role; "ARGUS" (a file written by a renamed build or tool) reads as the assistant, like "BLAZE". */
     internal fun roleOf(name: String): Role = if (name.equals(com.blaze.assistant.BrandName.UPPER, true) || name.equals("ARGUS", true)) Role.BLAZE else Role.valueOf(name)
 }
+
+/** v0.45.0 (#2): a chat file turned into messages, with no Session touched (so it can be built off the main thread). */
+internal class ParsedChat(val o: JSONObject, val msgs: List<ChatMessage>, val marks: Map<Long, Int>, val maxId: Long)
