@@ -9,8 +9,8 @@ import kotlin.math.sqrt
 /**
  * 0.52.2 ARGUS living 3D Home, pure part (ArgusHomeLogicTest). No Android or Compose here: the scene's state machine and
  * the look each state draws with, the greeting, the frame-rate / renderer policy, the pull-down notch's drag and spring
- * maths, and the gyroscope parallax. The GL renderer (ArgusGl.kt), the Canvas fallback (ArgusOrbCanvas.kt) and the screen
- * (ArgusHome.kt) only read these numbers.
+ * maths, and the gyroscope parallax. The GL renderer (ArgusGl.kt), the Canvas fallback (ArgusOrbCanvas in ArgusSceneView.kt) and the
+ * screen (ArgusHome.kt) only read these numbers. [ArgusHomeTags] are the screen's test tags (shots, wiring and device checks).
  */
 object ArgusScene {
     /** What the orb shows. Listening and speaking (voice) win over thinking (the agent working). */
@@ -98,6 +98,23 @@ object ArgusGreeting {
         val h = hello(hour)
         return if (first == null) h else h.removeSuffix(".").removeSuffix("?") + ", " + first + (if (h.endsWith("?")) "?" else ".")
     }
+
+    /** The local hour (0..23) at [epochMs] in [zone]: the greeting's clock, kept out of the composable so tests can pin it. */
+    fun hourOf(epochMs: Long, zone: java.util.TimeZone = java.util.TimeZone.getDefault()): Int =
+        java.util.Calendar.getInstance(zone).apply { timeInMillis = epochMs }.get(java.util.Calendar.HOUR_OF_DAY)
+
+    fun hourNow(): Int = hourOf(System.currentTimeMillis())
+
+    /**
+     * Milliseconds from [epochMs] to the next full local hour in [zone] (at least 1 s), so the Home re-reads the hour then
+     * and the greeting turns from "Good morning." to "Good afternoon." without a restart. Half-hour zones included.
+     */
+    fun msToNextHour(epochMs: Long, zone: java.util.TimeZone = java.util.TimeZone.getDefault()): Long {
+        val local = epochMs + zone.getOffset(epochMs)
+        return (HOUR_MS - Math.floorMod(local, HOUR_MS)).coerceAtLeast(1_000L)
+    }
+
+    const val HOUR_MS = 3_600_000L
 
     fun ask(state: ArgusScene.State): String = when (state) {
         ArgusScene.State.IDLE -> "What would you like to do?"
@@ -265,4 +282,29 @@ object ArgusAnswer {
         }
         return t
     }
+}
+
+/**
+ * Test tags of the ARGUS Home (Modifier.testTag). Robolectric shots (ArgusHomeShotsTest), the wiring test and the device
+ * checks (ArgusHomeCheck, ArgusSpotlightCheck) find the Home's parts by these, never by on-screen text that can change.
+ */
+object ArgusHomeTags {
+    const val ROOT = "argus_home"
+    const val SCENE = "argus_home_scene"
+    const val MARK = "argus_home_mark"
+    const val AVATAR = "argus_home_avatar"
+    const val NOTCH = "argus_home_notch"
+    const val GREETING = "argus_home_greeting"
+    const val ANSWER = "argus_home_answer"
+    const val ANSWER_DISMISS = "argus_home_answer_dismiss"
+    const val PROMPT = "argus_home_prompt"
+    const val PROMPT_FIELD = "argus_home_prompt_field"
+    const val MIC = "argus_home_mic"
+    const val SEND = "argus_home_send"
+    const val SCRIM = "argus_home_spotlight_scrim"
+    const val SPOTLIGHT = "argus_home_spotlight"
+    const val SPOTLIGHT_FIELD = "argus_home_spotlight_field"
+    const val SPOTLIGHT_HANDLE = "argus_home_spotlight_handle"
+
+    val ALL = listOf(ROOT, SCENE, MARK, AVATAR, NOTCH, GREETING, ANSWER, ANSWER_DISMISS, PROMPT, PROMPT_FIELD, MIC, SEND, SCRIM, SPOTLIGHT, SPOTLIGHT_FIELD, SPOTLIGHT_HANDLE)
 }

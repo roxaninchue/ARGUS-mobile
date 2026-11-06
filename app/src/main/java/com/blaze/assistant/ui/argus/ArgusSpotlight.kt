@@ -37,6 +37,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -124,7 +125,7 @@ fun ArgusSpotlightPanel(
                     cursorBrush = SolidColor(ArgusHomeTokens.Electric),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { top?.let(onRow) }),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus).semantics { contentDescription = "Spotlight search" })
+                    modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(ArgusHomeTags.SPOTLIGHT_FIELD).semantics { contentDescription = "Spotlight search" })
             }
             if (composer.query.isNotEmpty()) Box(Modifier.size(40.dp).clip(CircleShape).clickable { composer.query = "" }
                 .semantics { contentDescription = "Clear the search"; role = Role.Button }, contentAlignment = Alignment.Center) {
@@ -142,7 +143,7 @@ fun ArgusSpotlightPanel(
             }
         }
         // the handle: pull up (or tap) to put Spotlight away
-        Box(Modifier.fillMaxWidth().height(28.dp).draggable(drag, Orientation.Vertical, onDragStopped = { v -> onDragStopped(v) })
+        Box(Modifier.fillMaxWidth().height(28.dp).testTag(ArgusHomeTags.SPOTLIGHT_HANDLE).draggable(drag, Orientation.Vertical, onDragStopped = { v -> onDragStopped(v) })
             .clickable(onClickLabel = "Close Spotlight") { onClose() }
             .semantics { contentDescription = "Close Spotlight"; role = Role.Button }, contentAlignment = Alignment.Center) {
             Box(Modifier.size(width = 40.dp, height = 4.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.35f)))

@@ -76,6 +76,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -149,7 +150,9 @@ data class ArgusDevice(val gles3: Boolean, val totalMb: Long, val lowRamFlag: Bo
  * bar (mic, "Try saying …", send chevron) wired to the chat's own send path. No left rail.
  *
  * [state] / [level] drive the orb (idle, listening with the mic level, thinking, speaking). [covered]: something is
- * drawn over the Home, so the scene stops drawing. [forceMode] pins the renderer (screenshot tests use the Canvas orb).
+ * drawn over the Home, so the scene stops drawing. [forceMode] pins the renderer (screenshot tests use the Canvas orb);
+ * [hour] pins the greeting's and Spotlight's local hour (tests), else the phone's clock is read and re-read on the hour
+ * ([ArgusGreeting.msToNextHour]). Every part carries an [ArgusHomeTags] test tag.
  */
 @Composable
 fun ArgusHomeScreen(
@@ -169,6 +172,7 @@ fun ArgusHomeScreen(
     said: () -> List<SpotlightGroups.Said> = { emptyList() },
     avatar: @Composable (onClick: () -> Unit) -> Unit = { click -> MeAvatar(40, click) },
     forceMode: ArgusFps.Mode? = null,
+    hour: Int? = null,
     resultSlot: (@Composable () -> Unit)? = null,
 ) {
     val ctx = LocalContext.current
@@ -180,7 +184,12 @@ fun ArgusHomeScreen(
     }
     val mode = forceMode ?: ArgusFps.mode(device.gles3, device.totalMb, device.lowRamFlag, MotionTokens.enabled)
     val fps = ArgusFps.cap(device.totalMb, device.lowRamFlag, powerSave)
-    val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+    // the greeting's hour: pinned by [hour], else the clock, re-read at every full hour while the Home is composed
+    var clockHour by remember { mutableIntStateOf(ArgusGreeting.hourNow()) }
+    LaunchedEffect(hour) {
+        if (hour == null) while (isActive) { delay(ArgusGreeting.msToNextHour(System.currentTimeMillis())); clockHour = ArgusGreeting.hourNow() }
+    }
+    val greetHour = hour ?: clockHour
 
     // ---- pull-down Spotlight: progress 0 (closed) .. 1 (open), a spring between, a rubber band past 1
     val pull = remember { Animatable(if (composer.spotlightOpen) 1f else 0f) }
@@ -257,23 +266,24 @@ fun ArgusHomeScreen(
 
     CompositionLocalProvider(LocalBlaze provides DarkColors) {
         // the Home takes every touch on it, so nothing under it (the chat shell) is hit through the scene
-        BoxWithConstraints(modifier.fillMaxSize().background(ArgusHomeTokens.Obsidian)
+        BoxWithConstraints(modifier.fillMaxSize().testTag(ArgusHomeTags.ROOT).background(ArgusHomeTokens.Obsidian)
             .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }) {
             val h = maxHeight
             // 1. the scene (stops drawing when covered or when Spotlight is all the way down)
-            ArgusSceneView(state, level, mode, fps, visible = !covered && pull.value < 0.98f, orbAt = ArgusHomeTokens.ORB_AT, parallax = tilt)
+            ArgusSceneView(state, level, mode, fps, visible = !covered && pull.value < 0.98f, orbAt = ArgusHomeTokens.ORB_AT, parallax = tilt,
+                modifier = Modifier.fillMaxSize().testTag(ArgusHomeTags.SCENE))
 
             // 2. top: the mark + wordmark (left), the avatar (right)
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 18.dp, end = 14.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Canvas(Modifier.size(26.dp).semantics { contentDescription = BrandName.UPPER }) { drawArgusMark(Offset(size.width / 2f, size.height / 2f), size.width) }
+                Canvas(Modifier.size(26.dp).testTag(ArgusHomeTags.MARK).semantics { contentDescription = BrandName.UPPER }) { drawArgusMark(Offset(size.width / 2f, size.height / 2f), size.width) }
                 Spacer(Modifier.width(8.dp))
                 Text(BrandName.UPPER, style = ArgusBrand.wordmark(13.sp, Color.White))
                 Spacer(Modifier.weight(1f))
-                avatar(onProfile)
+                Box(Modifier.testTag(ArgusHomeTags.AVATAR)) { avatar(onProfile) }
             }
 
             // 3. the notch: pull it down (spring) or tap it for Spotlight
-            Box(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp).size(width = 88.dp, height = 30.dp)
+            Box(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp).size(width = 88.dp, height = 30.dp).testTag(ArgusHomeTags.NOTCH)
                 .clip(RoundedCornerShape(15.dp))
                 .draggable(pullDrag, Orientation.Vertical, onDragStopped = { v -> release(v) })
                 .clickable(onClickLabel = "Open Spotlight") { composer.openSpotlight() }
@@ -286,8 +296,8 @@ fun ArgusHomeScreen(
             }
 
             // 4. the greeting bubble beside the orb
-            val hello = remember(hour, name) { ArgusGreeting.hello(hour, name) }
-            Row(Modifier.align(Alignment.TopEnd).padding(top = h * 0.15f, end = 18.dp).widthIn(max = 240.dp)
+            val hello = remember(greetHour, name) { ArgusGreeting.hello(greetHour, name) }
+            Row(Modifier.align(Alignment.TopEnd).padding(top = h * 0.15f, end = 18.dp).widthIn(max = 240.dp).testTag(ArgusHomeTags.GREETING)
                 .clip(RoundedCornerShape(18.dp)).background(ArgusHomeTokens.Glass)
                 .border(1.dp, ArgusHomeTokens.Electric.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
                 .padding(horizontal = 14.dp, vertical = 10.dp)
@@ -308,17 +318,17 @@ fun ArgusHomeScreen(
             }
 
             // 6. the prompt bar
-            PromptBar(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().imePadding().padding(horizontal = 16.dp, vertical = 14.dp),
+            PromptBar(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().imePadding().padding(horizontal = 16.dp, vertical = 14.dp).testTag(ArgusHomeTags.PROMPT),
                 listening = state == ArgusScene.State.LISTENING, onSend = onSend, onMic = onMic, onOpenChat = onOpenChat)
 
             // 7. Spotlight, pulled down from the notch
             val p = pull.value
             if (p > 0.001f || composer.spotlightOpen) {
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = ArgusPull.scrim(p)))
+                Box(Modifier.fillMaxSize().testTag(ArgusHomeTags.SCRIM).background(Color.Black.copy(alpha = ArgusPull.scrim(p)))
                     .clickable(remember { MutableInteractionSource() }, indication = null, onClickLabel = "Close Spotlight") { composer.closeSpotlight() })
-                ArgusSpotlightPanel(composer, appList, saidList, recent, hour, focus, pullDrag, onDragStopped = { v -> release(v) },
+                ArgusSpotlightPanel(composer, appList, saidList, recent, greetHour, focus, pullDrag, onDragStopped = { v -> release(v) },
                     onRow = { r -> runRow(r) }, onClose = { composer.closeSpotlight() },
-                    modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp)
+                    modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp).testTag(ArgusHomeTags.SPOTLIGHT)
                         .onSizeChanged { sheetPx = it.height.toFloat().coerceAtLeast(1f) }
                         .graphicsLayer {
                             translationY = (p.coerceAtMost(1f) - 1f) * (sheetPx + 48f * density) + (p - 1f).coerceAtLeast(0f) * sheetPx * 0.5f
@@ -333,7 +343,7 @@ fun ArgusHomeScreen(
 @Composable
 private fun AnswerCard(card: ArgusAnswer.Card, onOpen: () -> Unit, onDismiss: () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
-    Column(Modifier.fillMaxWidth().clip(shape)
+    Column(Modifier.fillMaxWidth().testTag(ArgusHomeTags.ANSWER).clip(shape)
         .background(Brush.verticalGradient(listOf(Color(0xE6081A40), Color(0xF0050A16))))
         .border(1.dp, ArgusHomeTokens.Electric.copy(alpha = 0.55f), shape)
         .clickable(onClickLabel = "Open the answer in the chat") { onOpen() }
@@ -342,7 +352,7 @@ private fun AnswerCard(card: ArgusAnswer.Card, onOpen: () -> Unit, onDismiss: ()
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(card.ask, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = ArgusHomeTokens.Steel))
-            Box(Modifier.size(32.dp).clip(CircleShape).clickable(onClick = onDismiss).semantics { contentDescription = "Dismiss the answer"; role = Role.Button },
+            Box(Modifier.size(32.dp).testTag(ArgusHomeTags.ANSWER_DISMISS).clip(CircleShape).clickable(onClick = onDismiss).semantics { contentDescription = "Dismiss the answer"; role = Role.Button },
                 contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Close, null, tint = ArgusHomeTokens.Steel, modifier = Modifier.size(16.dp)) }
         }
         Spacer(Modifier.height(4.dp))
@@ -363,7 +373,7 @@ private fun PromptBar(modifier: Modifier, listening: Boolean, onSend: (String) -
     Row(modifier.fillMaxWidth().height(56.dp).clip(shape).background(ArgusHomeTokens.Glass)
         .border(1.dp, Brush.horizontalGradient(listOf(ArgusHomeTokens.ArgusBlue.copy(alpha = 0.9f), ArgusHomeTokens.Electric.copy(alpha = 0.35f))), shape)
         .padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp).clip(CircleShape)
+        Box(Modifier.size(40.dp).testTag(ArgusHomeTags.MIC).clip(CircleShape)
             .background(if (listening) Brush.linearGradient(listOf(ArgusHomeTokens.ArgusBlue, ArgusHomeTokens.Electric)) else SolidColor(Color.White.copy(alpha = 0.08f)))
             .clickable(onClick = onMic).semantics { contentDescription = if (listening) "Stop listening" else "Talk"; role = Role.Button },
             contentAlignment = Alignment.Center) {
@@ -378,11 +388,11 @@ private fun PromptBar(modifier: Modifier, listening: Boolean, onSend: (String) -
                 cursorBrush = SolidColor(ArgusHomeTokens.Electric),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { send() }),
-                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Message ${BrandName.NAME}" })
+                modifier = Modifier.fillMaxWidth().testTag(ArgusHomeTags.PROMPT_FIELD).semantics { contentDescription = "Message ${BrandName.NAME}" })
         }
         Spacer(Modifier.width(6.dp))
         val canSend = text.isNotBlank()
-        Box(Modifier.size(40.dp).clip(CircleShape)
+        Box(Modifier.size(40.dp).testTag(ArgusHomeTags.SEND).clip(CircleShape)
             .background(if (canSend) Brush.linearGradient(listOf(ArgusHomeTokens.ArgusBlue, ArgusHomeTokens.Electric)) else SolidColor(Color.Transparent))
             .clickable { if (canSend) send() else onOpenChat() }
             .semantics { contentDescription = if (canSend) "Send" else "Open the chat"; role = Role.Button },
