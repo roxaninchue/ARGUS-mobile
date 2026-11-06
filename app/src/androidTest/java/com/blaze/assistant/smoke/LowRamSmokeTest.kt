@@ -6,14 +6,6 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -67,38 +59,31 @@ class LowRamSmokeTest {
 
         /**
          * 0.52.3: warms the emulator's software GL (SwiftShader) before the monitor starts. The first HWUI frame of a process
-         * compiles Skia's gradient, text and round-rect programs on the RenderThread (878 ms of GL on 2c7ef81d), and that first
-         * window draw holds the main thread until the frame completes: that wait was the whole 903 ms "argus home (auto)" stall
-         * (main's own work in that frame was ~115 ms, and the forced Canvas pass right after, same primitives, stayed clean).
-         * run-smoke.sh already excludes this same wait from the cold-start gate ("render wait excluded"), and the ARGUS Home's
-         * real first frame stays gated there, since the Home is the app's root. Only generic primitives are drawn here, no Argus
-         * classes, so class loading/verification and composition of the Home's own code are still measured in f_argusHome.
+         * compiles Skia's programs on the RenderThread, and that first window draw holds the main thread until the frame
+         * completes: on 2c7ef81d/d5ad8250 that wait was the whole "argus home (auto)" stall (878/1117 ms of RenderThread GL,
+         * main's own work ~115-150 ms). A generic warm-up (10d5bd15) still left 644 ms of GL on the Home's first frame (its
+         * own gradients and text), so the warm-up now draws the ARGUS Home itself, auto renderer, idle then speaking with the
+         * result card. run-smoke.sh already excludes this same render wait from the cold-start gate, and the Home's real first
+         * frame stays gated there, since the Home is the app's root. f_argusHome keeps the 700 ms gate for everything after:
+         * every orb state, the card, Spotlight, both renderers.
          */
         private fun warmRenderer() {
+            val state = androidx.compose.runtime.mutableStateOf(com.blaze.assistant.ui.argus.ArgusScene.State.IDLE)
+            val card = androidx.compose.runtime.mutableStateOf<com.blaze.assistant.ui.argus.ArgusAnswer.Card?>(null)
+            val composer = com.blaze.assistant.ui.composer.ComposerState()
             val sc = androidx.test.core.app.ActivityScenario.launch(androidx.activity.ComponentActivity::class.java)
             sc.onActivity { a ->
                 a.setContent {
-                    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()
-                        .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color(0xE6081A40), androidx.compose.ui.graphics.Color(0xF0050A16))))) {
-                        androidx.compose.foundation.Canvas(androidx.compose.ui.Modifier.fillMaxSize()) {
-                            val c = center; val r = size.minDimension / 4f
-                            drawRect(androidx.compose.ui.graphics.Brush.radialGradient(listOf(androidx.compose.ui.graphics.Color(0xFF00133F), androidx.compose.ui.graphics.Color(0xFF000814), androidx.compose.ui.graphics.Color.Black), center = c, radius = size.width))
-                            drawCircle(androidx.compose.ui.graphics.Brush.radialGradient(listOf(androidx.compose.ui.graphics.Color(0x6B1286FF), androidx.compose.ui.graphics.Color.Transparent), center = c, radius = r * 2f), r * 2f, c)
-                            drawCircle(androidx.compose.ui.graphics.Brush.radialGradient(0.72f to androidx.compose.ui.graphics.Color.Transparent, 1f to androidx.compose.ui.graphics.Color(0x8C1286FF), center = c, radius = r), r, c)
-                            drawOval(androidx.compose.ui.graphics.Brush.radialGradient(listOf(androidx.compose.ui.graphics.Color(0x8CFFFFFF), androidx.compose.ui.graphics.Color.Transparent), center = c, radius = r / 3f))
-                        }
-                        androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter).padding(24.dp).fillMaxWidth().height(52.dp)
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(26.dp))
-                            .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(androidx.compose.ui.graphics.Color(0xFF1286FF), androidx.compose.ui.graphics.Color(0xFF6FA8FF))))
-                            .border(1.dp, androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(androidx.compose.ui.graphics.Color(0xE61286FF), androidx.compose.ui.graphics.Color(0x596FA8FF))), androidx.compose.foundation.shape.RoundedCornerShape(26.dp))) {
-                            androidx.compose.material3.Text("Warm-up 0123456789", color = androidx.compose.ui.graphics.Color.White, modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.Center))
-                        }
-                    }
+                    com.blaze.assistant.ui.argus.ArgusHomeScreen(state.value, 0f, "Warm-up", composer, onSend = {}, onMic = {}, onOpenChat = {}, onProfile = {},
+                        answer = card.value, avatar = { _ -> }, hour = 9)
                 }
             }
             SystemClock.sleep(2_500)
+            main.post { state.value = com.blaze.assistant.ui.argus.ArgusScene.State.SPEAKING
+                card.value = com.blaze.assistant.ui.argus.ArgusAnswer.Card("Warm-up ask", "Warm-up reply with a few words in it.", false) }
+            SystemClock.sleep(1_500)
             sc.close()
-            SystemClock.sleep(300)
+            SystemClock.sleep(500)
         }
 
         /** Main-thread latency monitor: one ping in flight at a time, checked every 50 ms. */
