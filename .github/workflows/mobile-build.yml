@@ -8,7 +8,8 @@ name: Mobile build
 # Also runs the JVM unit tests and the 360/375 dp screenshot tests (ShotsTest / Shots375Test) on x86.
 on:
   push:
-    branches: [ "app/mobile", "app/mobile-revamp", "app/brain-routing" ]
+    # 0.52.2: + the ARGUS living 3D Home branch (unit tests, shots incl. ArgusHomeShotsTest, unsigned + test-signed APK)
+    branches: [ "app/mobile", "app/mobile-revamp", "app/brain-routing", "feat/argus-3d-home" ]
   workflow_dispatch:
 
 permissions:
@@ -63,6 +64,23 @@ jobs:
           echo "zipalign -p 4: ok (aligned copy)" | tee -a "$GITHUB_STEP_SUMMARY"
           (cd out && sha256sum *.apk | tee SHA256SUMS)
           echo "${GITHUB_SHA}" > out/COMMIT
+      # 0.52.2: a TEST-signed copy for phones (throwaway key generated here, like lowram-smoke.yml's smoke-signed.apk). Never
+      # published; a phone with the real ARGUS must uninstall it first (the signatures differ). No release key is ever used here.
+      - name: Test-signed APK (throwaway key, install only)
+        run: |
+          VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          BT="$ANDROID_HOME/build-tools/34.0.0"
+          mkdir -p test-signed
+          keytool -genkeypair -keystore ci-test.p12 -storetype PKCS12 -storepass testonly -keypass testonly -alias test -keyalg RSA -keysize 2048 -validity 7 -dname "CN=ARGUS test build"
+          "$BT/apksigner" sign --ks ci-test.p12 --ks-pass pass:testonly --out "test-signed/ARGUS-v${VER}-test-signed.apk" "out/Blaze-v${VER}-release-unsigned-aligned.apk"
+          "$BT/apksigner" verify --print-certs "test-signed/ARGUS-v${VER}-test-signed.apk" | head -3 | tee -a "$GITHUB_STEP_SUMMARY"
+          rm -f ci-test.p12
+          (cd test-signed && sha256sum *.apk | tee SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-test-signed
+          retention-days: 7
+          path: test-signed/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -146,7 +164,7 @@ jobs:
           BLAZE_SHOTS: "1"
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest' --tests 'com.blaze.assistant.ui.Shots375Test' --tests 'com.blaze.assistant.ui.StageShotsTest' --tests 'com.blaze.assistant.ui.MoviesShotsTest' --tests 'com.blaze.assistant.ui.MediaRevampShotsTest' --tests 'com.blaze.assistant.ui.SecretCardsShotsTest' --tests 'com.blaze.assistant.ui.HomeRedesignShotsTest' --tests 'com.blaze.assistant.ui.ComposerShotsTest' --tests 'com.blaze.assistant.ui.Blaze050ShotsTest' \
+          ./gradlew :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest' --tests 'com.blaze.assistant.ui.Shots375Test' --tests 'com.blaze.assistant.ui.StageShotsTest' --tests 'com.blaze.assistant.ui.MoviesShotsTest' --tests 'com.blaze.assistant.ui.MediaRevampShotsTest' --tests 'com.blaze.assistant.ui.SecretCardsShotsTest' --tests 'com.blaze.assistant.ui.HomeRedesignShotsTest' --tests 'com.blaze.assistant.ui.ComposerShotsTest' --tests 'com.blaze.assistant.ui.Blaze050ShotsTest' --tests 'com.blaze.assistant.ui.ArgusHomeShotsTest' \
             --continue --console=plain "-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspaceSize=1g" \
             -Pkotlin.compiler.execution.strategy=in-process -Pkotlin.jvm.target.validation.mode=warning 2>&1 | tee shots.log
       - name: shots.zip

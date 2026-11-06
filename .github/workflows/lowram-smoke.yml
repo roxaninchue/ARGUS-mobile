@@ -9,7 +9,8 @@ name: Low-RAM smoke gate
 
 on:
   push:
-    branches: [ "smoke/**" ]
+    # 0.52.2: + the ARGUS living 3D Home branch (the gate now has 7 scenarios: f_argusHome added)
+    branches: [ "smoke/**", "feat/argus-3d-home" ]
   workflow_dispatch:
 
 permissions:
