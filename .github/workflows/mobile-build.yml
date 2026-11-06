@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
       - uses: actions/setup-go@v5
-        with: { go-version: "1.26.x", cache: false }
+        with: { go-version: "1.26.x", cache-dependency-path: "**/go.sum" }
       - uses: gradle/actions/setup-gradle@v4
       - name: SDK
         run: |
