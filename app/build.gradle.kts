@@ -60,7 +60,7 @@ android {
             if (System.getProperty("os.arch").orEmpty().lowercase().let { a -> a.contains("aarch64") || a.contains("arm64") })
                 it.systemProperty("robolectric.conscryptMode", "OFF")
             // The compose test rule needs ui-test-manifest, which only the debug build has.
-            if (it.name.contains("Release")) it.exclude("**/ShotsTest*")
+            if (it.name.contains("Release")) it.exclude("**/*ShotsTest*")
             // A failing test prints its real message and causes in the CI log (not just "SQLException at Foo.kt:143").
             it.testLogging {
                 events("failed")
@@ -271,6 +271,7 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("androidx.test.ext:junit:1.2.1")
+    testImplementation("androidx.compose.ui:ui-test-manifest")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     // 0.46.6: low-RAM emulator smoke gate (instrumented; runs only in .github/workflows/lowram-smoke.yml)
     androidTestImplementation("androidx.test:runner:1.6.2")
