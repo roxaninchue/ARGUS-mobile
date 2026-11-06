@@ -79,6 +79,7 @@ the rest are usually cascades (one bad paren produced "Unresolved reference 'ass
 | 2c7ef81d | `Halo0459Test.memoryGateStopsSmallTalk…` ("hi Argus") | `BrandName.NAME` became "Argus" but `MemoryGate`'s small-talk regexes only knew `blaze`/`halo` | Regexes and word lists that match the assistant's name must include `argus` (grep `blaze\|` in `app/src/main`) |
 | 2c7ef81d | `PhonePerfTest.perfAfterIsFasterAndAlwaysVerified` (Release) | Wall-clock p50 bar too tight for the shared runner (7.7 ms vs 7.0 ms) | Timing asserts in unit tests need headroom for noisy runners; prefer ratios with slack |
 | 4ad444cc | `ArgusSpotlightCheck` gesture didn't take | Emulator under load drops a swipe | The check retries gestures; don't make on-device checks depend on one gesture |
+| 2c7ef81d | `LowRamSmokeTest.f_argusHome` / `z_noStallAnywhere`: main stalled 903 ms in "argus home (auto)" | First HWUI frame of the test process: SwiftShader compiled Skia's programs on the RenderThread (878 ms GL, Davey 1191 ms) and the first window draw held main until it completed; main's own work was ~115 ms. Not ART verification (that sampled stack was from cold start) | The in-process gate warms the renderer with generic primitives before its monitor starts (same exclusion run-smoke.sh makes for cold start). Read the Davey line's `IssueDrawCommandsStart`→`SwapBuffers` before blaming main-thread code |
 
 The deep-link scheme stays `blaze://` (any case) after the rename; don't rename it.
 
@@ -107,9 +108,12 @@ The deep-link scheme stays `blaze://` (any case) after the rename; don't rename 
 
 On this branch, don't. Let CI compile.
 
-## Open: low-RAM smoke stall on the ARGUS Home
+## Low-RAM smoke stall on the ARGUS Home (fix in 0.52.3, check CI)
 
-`LowRamSmokeTest.f_argusHome` (and `z_noStallAnywhere`) fail on 2c7ef81d: main thread stalled 903 ms during
-"argus home (auto)" against the 700 ms gate (every other phase stays under 75 ms). The sampled main stack shows ART
-class verification at the time. This is a real regression in the new Home's first composition on a 1.5 GB device,
-not a flaky test: don't raise the limit; profile the first frame (class loading / verification, mesh building on the main thread).
+On 2c7ef81d `f_argusHome` failed at 903 ms against the 700 ms gate. The logcat shows `Skipped 56 frames` right after the
+Home's first frame, and that frame's Davey line puts 878 ms between `IssueDrawCommandsStart` and `SwapBuffers` (RenderThread,
+software GL) while main's part (`HandleInputStart`→`SyncQueued`) is ~115 ms; main's next frame starts 3 ms after
+`FrameCompleted`. It was the first HWUI frame in the test process (steps a–e draw no UI), and the forced Canvas pass right
+after it, same primitives, stayed clean. The fix warms the renderer before the monitor starts, drawing generic gradients,
+round rects and text but no Argus classes. The 700 ms gate is unchanged, and the Home's real first frame stays gated by the
+cold-start check in run-smoke.sh.
