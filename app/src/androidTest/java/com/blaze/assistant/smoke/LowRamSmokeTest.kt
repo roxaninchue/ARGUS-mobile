@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import androidx.activity.compose.setContent
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -41,7 +42,8 @@ import java.util.concurrent.atomic.AtomicLong
  * with the real Android QuickJS engine, Media3 and ART regex. Cold start of the release APK is checked separately by
  * tools/smoke/run-smoke.sh.
  * The steps: Video browse (3 sources x 200 items + concurrent loads, with callers giving up), details while browsing, 10 s of
- * video playback, music playback, and 30 mocked tool-chat turns with DSML. Throughout, a main-thread monitor samples every 50 ms
+ * video playback, music playback, 30 mocked tool-chat turns with DSML, and (0.52.2) the ARGUS Home live through every orb
+ * state with the result card and the pull-down Spotlight, in the renderer the device picks and in the Canvas orb. Throughout, a main-thread monitor samples every 50 ms
  * and the gate fails on any main stall over 700 ms. Crashes and ANRs fail the instrumentation or the logcat check in the script.
  */
 @RunWith(AndroidJUnit4::class)
@@ -202,6 +204,51 @@ class LowRamSmokeTest {
         Log.i(TAG, "SMOKE 30 tool-chat turns: $calls calls, worst turn $worstTurn ms")
         assertEquals(23, calls)
         assertNoStall("tool chat")
+    }
+
+    /**
+     * 0.52.2: the ARGUS Home, the app's root. On this 1.5 GB emulator with animations off the device itself picks the still
+     * frame (reduce motion); the Canvas orb (what < 2.5 GB phones and phones without GLES 3 get) is forced too. The orb goes
+     * through idle -> listening (mic level moving) -> thinking -> speaking with the result card, then Spotlight opens with a
+     * query and closes, twice per renderer. GL is exercised by the local ArgusHomeCheck, not here (stability first).
+     */
+    @Test fun f_argusHome() {
+        phase = "argus home"
+        val inst = InstrumentationRegistry.getInstrumentation()
+        val d = com.blaze.assistant.ui.argus.ArgusDevice.read(inst.targetContext)
+        Log.i(TAG, "SMOKE argus device: gles3=${d.gles3} ram=${d.totalMb} MB lowRamFlag=${d.lowRamFlag}")
+        for (mode in listOf<com.blaze.assistant.ui.argus.ArgusFps.Mode?>(null, com.blaze.assistant.ui.argus.ArgusFps.Mode.CANVAS)) {
+            phase = "argus home (${mode ?: "auto"})"
+            val state = androidx.compose.runtime.mutableStateOf(com.blaze.assistant.ui.argus.ArgusScene.State.IDLE)
+            val level = androidx.compose.runtime.mutableFloatStateOf(0f)
+            val card = androidx.compose.runtime.mutableStateOf<com.blaze.assistant.ui.argus.ArgusAnswer.Card?>(null)
+            val composer = com.blaze.assistant.ui.composer.ComposerState()
+            val sc = androidx.test.core.app.ActivityScenario.launch(androidx.activity.ComponentActivity::class.java)
+            sc.onActivity { a ->
+                a.setContent {
+                    com.blaze.assistant.ui.argus.ArgusHomeScreen(state.value, level.floatValue, "Smoke", composer, onSend = {}, onMic = {}, onOpenChat = {}, onProfile = {},
+                        answer = card.value, avatar = { _ -> }, forceMode = mode, hour = 9)
+                }
+            }
+            SystemClock.sleep(2_500)
+            repeat(2) {
+                for (s in com.blaze.assistant.ui.argus.ArgusScene.State.values()) {
+                    main.post { state.value = s; card.value = if (s == com.blaze.assistant.ui.argus.ArgusScene.State.SPEAKING)
+                        com.blaze.assistant.ui.argus.ArgusAnswer.Card("Smoke ask", "Smoke reply with a few words in it.", false) else null }
+                    if (s == com.blaze.assistant.ui.argus.ArgusScene.State.LISTENING) for (i in 0 until 20) { val v = (i % 5) / 4f; main.post { level.floatValue = v }; SystemClock.sleep(50) }
+                    else SystemClock.sleep(1_000)
+                }
+                main.post { composer.openSpotlight() }; SystemClock.sleep(1_000)
+                main.post { composer.query = "set" }; SystemClock.sleep(1_000)
+                main.post { composer.closeSpotlight() }; SystemClock.sleep(800)
+            }
+            var open = true
+            inst.runOnMainSync { open = composer.spotlightOpen }
+            assertTrue("Spotlight closed", !open)
+            sc.close()
+            SystemClock.sleep(500)
+        }
+        assertNoStall("argus home")
     }
 
     @Test fun z_noStallAnywhere() { assertNoStall("whole run") }
