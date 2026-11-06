@@ -4,11 +4,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 
 /**
- * v0.45.8: the Terminal's colours, derived from the picked theme ([AppTheme]) with readable contrast (WCAG math from
- * [Contrast], 0.45.7). Pure, so ThemeEverywhereTest checks every theme x light/dark.
+ * The Terminal's colours in light or dark (0.52.2: one ARGUS look; it used to follow the picked Living Theme) with readable
+ * contrast (WCAG math from [Contrast]). Pure, so ThemeEverywhereTest checks light and dark.
  *
- * - Ground: the theme's darkest ground colour in dark mode, a paper tinted with the theme's accent in light mode.
- *   Classic keeps the near-black terminal it always had.
+ * - Ground: the near-black terminal in dark mode, a soft paper in light mode.
  * - Text, cursor, the accent (selected tab, Ctrl/Alt on) and ANSI colours 1 to 15 are each pushed toward white (dark)
  *   or black (light) until they reach [MIN] (4.5:1) against the ground.
  * - ANSI 0 ("black") is a background colour in practice (`ls` highlights, prompts), so it is checked the other way:
@@ -32,19 +31,11 @@ object TermPalette {
         0xFF5C5C63, 0xFFFF6F66, 0xFF7EE08F, 0xFFF4CE6A, 0xFF86A9FF, 0xFFDB93F0, 0xFF6EDDE4, 0xFFFFFFFF,
     )
 
-    fun of(themeId: String?, dark: Boolean): Colors {
-        val th = LivingThemes.of(themeId)
-        val classic = th.motion == LivingThemes.Motion.NONE
-        val accent0 = Color(th.accent)
-        val bg = when {
-            dark && classic -> Color(0xFF0B0B0D)
-            dark -> Color(th.ground.first()).copy(alpha = 1f)
-            classic -> Color(0xFFF7F7F8)
-            else -> Contrast.over(accent0.copy(alpha = 0.08f), Color(0xFFFAF8F5))
-        }
+    fun of(dark: Boolean): Colors {
+        val bg = if (dark) Color(0xFF0B0B0D) else Color(0xFFF7F7F8)
         val towards = if (dark) Color.White else Color.Black
-        val fg = ensure(if (dark) Contrast.over(accent0.copy(alpha = 0.06f), Color(0xFFF0F0EE)) else Color(0xFF16161A), bg, towards, 7.0)
-        val accent = ensure(if (classic) (if (dark) Color(0xFF6B8CFF) else Color(0xFF3355CC)) else accent0, bg, towards, MIN)
+        val fg = ensure(if (dark) Color(0xFFF0F0EE) else Color(0xFF16161A), bg, towards, 7.0)
+        val accent = ensure(if (dark) Color(0xFF6B8CFF) else Color(0xFF3355CC), bg, towards, MIN)
         val dim = ensure(Contrast.over(fg.copy(alpha = 0.55f), bg), bg, towards, MIN)
         val ansi = IntArray(16)
         for (i in 0 until 16) {

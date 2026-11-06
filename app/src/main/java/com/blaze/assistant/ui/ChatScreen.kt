@@ -90,6 +90,7 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.gestures.scrollBy
@@ -294,6 +295,7 @@ fun ChatScreen() {
     LaunchedEffect(shared) {
         val d = shared ?: return@LaunchedEffect
         Agent.sharedDraft.value = null
+        com.blaze.assistant.ui.argus.ArgusHomeBus.hide()   // 0.52.2: it waits in the chat's message box
         if (newLook) { if (d.text.isNotBlank()) composer.text = d.text; d.attachment?.let { composer.attachments.add(it) }; return@LaunchedEffect }
         if (d.text.isNotBlank()) input = TextFieldValue(d.text, androidx.compose.ui.text.TextRange(d.text.length))
         d.attachment?.let { pending = pending + it }
@@ -346,9 +348,9 @@ fun ChatScreen() {
     var showSearch by remember { mutableStateOf(false) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all) and whether the keyboard composer is out.
     val simpleMode by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
-    val swipeSetting by com.blaze.assistant.agent.SwipeNav.swipeFlow.collectAsState()
-    // RC2 (HomeRoute): with the new Home on, navigation is Swipe and Home is the root
-    val swipeMode = HomeRoute.swipe(swipeSetting, HomeRedesign.enabled)
+    // 0.52.2: the ARGUS Home (argus/ArgusHome.kt, ArgusHomeBus) is the root; the old Home under a swipe-up chat sheet is
+    // gone, so the Swipe setting no longer applies (HomeRoute keeps its rule for the RC2 redesign behind HomeRedesign).
+    val swipeMode = HomeRoute.swipe(false, HomeRedesign.enabled)
     var typing by rememberSaveable { mutableStateOf(false) }
     var avatarMenu by remember { mutableStateOf(false) }
     var topMenu by remember { mutableStateOf(false) }   // 0.52.1: the Blaze pill's views overlay
@@ -374,7 +376,7 @@ fun ChatScreen() {
         when (v.special) {
             "gallery" -> GalleryUi.open.value = true
             "home" -> homeRequests.value++
-            "projects" -> go(navNow().projectsList())
+            "projects" -> { com.blaze.assistant.ui.argus.ArgusHomeBus.hide(); go(navNow().projectsList()) }
             "browser" -> com.blaze.assistant.browser.BrowserTools.show(ctx)
             "phonebrowser" -> com.blaze.assistant.browser.phone.PhoneBrowserActivity.open(ctx, control = false)
             "terminal" -> com.blaze.assistant.terminal.BlazeTerminalActivity.open(ctx)
@@ -383,7 +385,7 @@ fun ChatScreen() {
             "design" -> {
                 if (target.isNotBlank()) Views.designTarget.value = target
                 else if (Views.designTarget.value.isBlank()) try { com.blaze.assistant.agent.Designs.current()?.path?.let { Views.designTarget.value = it } } catch (_: Exception) { }
-                go(navNow().switchTab(ChatNav.CHAT)); Views.showing.value = "design"
+                go(navNow().switchTab(ChatNav.CHAT)); Views.showing.value = "design"; com.blaze.assistant.ui.argus.ArgusHomeBus.hide()
             }
             else -> settingsPage = v.page ?: ""
         }
@@ -530,6 +532,10 @@ fun ChatScreen() {
     LaunchedEffect(composer.chatOpen) { if (newLook && !composer.chatOpen && navNow().inProjectChat) navNow().back()?.let { go(it) } }
     // A private chat shows over Home too.
     LaunchedEffect(isPrivate) { if (newLook && isPrivate) composer.openChat(full = true) }
+    // 0.52.2: asking for the chat from the ARGUS Home (Spotlight's Chat / history / an ask, the bar's up chevron) shows the
+    // chat; a private chat, a question, an approval, a fix, a form or a secure field brings the chat up too.
+    LaunchedEffect(composer.chatOpen) { if (!newLook && composer.chatOpen) { com.blaze.assistant.ui.argus.ArgusHomeBus.hide(); composer.dismissChat() } }
+    LaunchedEffect(isPrivate) { if (isPrivate) com.blaze.assistant.ui.argus.ArgusHomeBus.hide() }
     // v0.28.3: the thread + composer show on main Chat and on a project chat screen; views (Design…) belong to main Chat.
     val chatBody = nav.tab == ChatNav.CHAT || nav.inProjectChat
     // 0.46.0 Blaze Stage: the main chat is one playground (heroes, widgets, a movable chat, top / reply bars that can hide).
@@ -568,10 +574,15 @@ fun ChatScreen() {
         // RC4: what Blaze waits on opens the chat over Home, where its card shows under the messages
         if (newLook) { if (question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null || listenReq > 0) composer.openChat() }
         else if (swipeMode && (question != null || pendingConfirmNow != null || fixNow != null || listenReq > 0) && sheetP < 1f) settleTo(1f)
+        // 0.52.2: what ARGUS waits on is answered in the chat (the mic alone keeps the Home: the orb listens)
+        if (question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null) com.blaze.assistant.ui.argus.ArgusHomeBus.hide()
     }
     val homeReq by homeRequests.collectAsState()
     LaunchedEffect(homeReq) {
         if (homeReq > 0) {
+            // 0.52.2: every route home (open_view home, /home, the Home tab, Back out of Music / Video / Browser...) shows the ARGUS Home
+            settingsPage = null; showViews = false; plusOpen = false; avatarMenu = false; showSearch = false; Views.showing.value = ""
+            com.blaze.assistant.ui.argus.ArgusHomeBus.show()
             if (swipeMode) {
                 // RC2: every route home (open_view home, /home, Back out of Music / Video / Browser...) lands on the new Home, views closed
                 settingsPage = null; showViews = false; plusOpen = false; arcOpen = false; avatarMenu = false; showSearch = false
@@ -579,7 +590,7 @@ fun ChatScreen() {
                 val n = navNow(); if (n.tab != ChatNav.CHAT || n.inProjectChat) go(n.switchTab(ChatNav.CHAT))
                 composer.closeSpotlight()
                 settleTo(0f)
-            } else go(navNow().switchTab(ChatNav.HOME))
+            } else { val n = navNow(); if (n.tab != ChatNav.CHAT || n.inProjectChat) go(n.switchTab(ChatNav.CHAT)) }
         }
     }
     // Awareness: which surface is in front (Home or Chat).
@@ -592,23 +603,25 @@ fun ChatScreen() {
         // RC4: Back from a project chat over Home closes it (it showed that chat); the main chat over Home stays as it was.
         if (newLook) { composer.closeSpotlight(); if (navNow().inProjectChat) composer.dismissChat() }
         settingsPage = null; showViews = false; plusOpen = false; arcOpen = false; avatarMenu = false; showSearch = false
-        GalleryUi.open.value = false; Agent.roomOpen.value = -1L; ThemePickerState.open.value = false
+        GalleryUi.open.value = false; Agent.roomOpen.value = -1L
         Views.showing.value = ""
         val n = navNow(); if (n.tab != ChatNav.CHAT || n.inProjectChat) go(n.switchTab(ChatNav.CHAT))
         // RC2 (HomeRoute): with the new Home as root, Back lands on Home (sheet down), never on the old chat screen
         HomeRoute.sheetAfterBack(swipeMode, HomeRoute.homeRoot(swipeMode, HomeRedesign.enabled, Agent.privateChat.value), sheetP)?.let { settleTo(it) }
+        // 0.52.2: the ARGUS Home is the root: Back from the chat (or anything over it) lands there (a private chat asks first).
+        if (!Agent.privateChat.value) com.blaze.assistant.ui.argus.ArgusHomeBus.show()
     }
     SideEffect {
         // Read when Back is pressed (State reads, never a stale snapshot of this composition).
         BackRule.shellNow = {
-            val n = navNow(); val swipe = HomeRoute.swipe(com.blaze.assistant.agent.SwipeNav.swipeFlow.value, HomeRedesign.enabled)
+            val n = navNow(); val swipe = HomeRoute.swipe(false, HomeRedesign.enabled)
             BackRule.Shell(onboarding = onboard, gate = !onboard && gate, inCall = false,
-                tab = n.tab, inProjectChat = n.inProjectChat, swipeHome = swipe && sheetP < 0.5f,
+                tab = n.tab, inProjectChat = n.inProjectChat, swipeHome = (swipe && sheetP < 0.5f) || com.blaze.assistant.ui.argus.ArgusHomeBus.visible.value,
                 settingsPage = settingsPage, view = if (n.inProjectChat) "" else Views.showing.value,
                 viewsSheet = showViews, plusMenu = plusOpen, arc = arcOpen, avatarMenu = avatarMenu, search = showSearch,
-                gallery = GalleryUi.open.value, room = Agent.roomOpen.value >= 0, themePicker = ThemePickerState.open.value,
-                // RC4: with the new look Home is always where Back stops (a private chat over Home asks before leaving itself)
-                homeRoot = newLook || HomeRoute.homeRoot(swipe, HomeRedesign.enabled, Agent.privateChat.value))
+                gallery = GalleryUi.open.value, room = Agent.roomOpen.value >= 0,
+                // 0.52.2: the ARGUS Home is where Back stops (a private chat asks before leaving itself)
+                homeRoot = !Agent.privateChat.value || newLook || HomeRoute.homeRoot(swipe, HomeRedesign.enabled, Agent.privateChat.value))
         }
         BackRule.toChat = { backToChat() }
     }
@@ -618,8 +631,6 @@ fun ChatScreen() {
     Box(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark).onSizeChanged { sheetH = it.height.toFloat() }) {
         // v0.39.0 Simple mode: Home (the Home cards) underneath, with the grab handle; Chat slides over it.
         if (swipeMode && p < 1f) {
-            // RC4: one Blaze look: the new Home's own sky, never the living themes' scenes behind it.
-            if (!newLook) LivingBackground()
             CompositionLocalProvider(LocalOpenLink provides openLink) {
             HomeSurface(progress = p, onAsk = { t -> Agent.send(t); settleTo(1f) }, onQuote = { t -> quote = t; settleTo(1f) },
                 onOpen = { settleTo(1f) }, drag = sheetDrag, onDragStart = onSheetStart, onDragStop = onSheetStop,
@@ -630,12 +641,10 @@ fun ChatScreen() {
             }
         }
         // RC4: the old full chat sheet (top pills, themed scene, thread, Hold to talk / Type / Photo) only without the new look.
-        if (!newLook) Box(Modifier.fillMaxSize().graphicsLayer { translationY = (1f - p) * sheetH }
+        if (!newLook) Box(Modifier.fillMaxSize().graphicsLayer { translationY = (1f - p) * sheetH
+                // 0.52.2: under the ARGUS Home the chat keeps its state but isn't drawn
+                alpha = if (com.blaze.assistant.ui.argus.ArgusHomeBus.visible.value) 0f else 1f }
             .then(if (swipeMode && p < 1f) Modifier.background(c.paper).glassBackground(c.dark) else Modifier)) {
-        // v0.39.0 Look & feel: the living background (nothing is drawn for Calm paper, the default).
-        // v0.45.8: with a theme picked it is behind every pane, Home included (one theme everywhere).
-        val themedNow = themeOn()
-        if (nav.tab != ChatNav.HOME || nav.inProjectChat || themedNow) LivingBackground()
         // v0.45.8: Design is its own full-screen view: no chat top bar over its canvas.
         val designFull = DesignNav.fullScreen(showing, nav)
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
@@ -681,9 +690,8 @@ fun ChatScreen() {
                 androidx.compose.animation.Crossfade(pane, modifier = Modifier.fillMaxSize(),
                     animationSpec = MotionTokens.medium(), label = "tab") { paneNow ->
                 if (paneNow == "home") {
-                    // v0.29.0 Home board: plain-words asks go to Blaze in the main chat (home_widget_* tools).
-                    // 0.45.29: BlazeOS ("Blaze Phone", the virtual phone that v0.33.2 put on Home) was removed; Home is the board.
-                    HomePane(onAsk = { t -> Agent.send(t) }, onQuote = { t -> quote = t; go(navNow().switchTab(ChatNav.CHAT)) })
+                    // 0.52.2: Home is the ARGUS Home (drawn over the shell); the Home tab just brings it up.
+                    LaunchedEffect(Unit) { com.blaze.assistant.ui.argus.ArgusHomeBus.show(); go(navNow().switchTab(ChatNav.CHAT)) }
                 } else if (paneNow == "projects") {
                     val needs = remember(question, allChats) { question?.let { q -> allChats.filter { it.title == q.chat }.map { it.id }.toSet() } ?: emptySet() }
                     ProjectsPane(projects, allChats, busyChats, needs, nav.project,
@@ -934,6 +942,15 @@ fun ChatScreen() {
             SelectionPill(r, acts, ink = c.ink, paper = c.paper) { a -> onSelection(a) }
         }
 
+        // 0.52.2: the ARGUS living 3D Home, over the chat shell (menus, pages, dialogs, setup and the gate draw over it).
+        val argusUp by com.blaze.assistant.ui.argus.ArgusHomeBus.visible
+        if (argusUp && !newLook) {
+            val roomNow by Agent.roomOpen.collectAsState()
+            ArgusHomeLayer(composer, name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null },
+                covered = settingsPage != null || galleryOpen || showSearch || onboard || gate || roomNow >= 0,
+                voiceState = voiceState, mood = mood,
+                onSend = { t -> send(t) }, onMic = { onMic() }, onProfile = { avatarMenu = true })
+        }
         BlazeTopOverlay(topMenu, current = if (showing.isNotEmpty()) showing else nav.tab, options = BlazeTopPillModel.options(homeTab = !swipeMode),
             onPick = { id -> topMenu = false; plusOpen = false; showViews = false
                 when (id) {
@@ -944,15 +961,14 @@ fun ChatScreen() {
         if (topMenu) BackHandler { topMenu = false }
         if (avatarMenu) {
             val dark = c.dark
-            val themeName = LivingThemes.of(Look.theme.value).name
             val items = buildList {
                 add(MenuItem("account", "Account", if (me != null) "Signed in" else "Sign in"))
                 add(MenuItem("settings", "Settings"))
                 add(MenuItem("views", "All views", if (newLook) "@" else "/VIEWS"))
                 if (newLook) add(MenuItem("projects", "Projects"))
                 add(MenuItem("control", "Phone control", if (Settings.phoneControl && a11yOn) "ON" else "OFF"))
-                // v0.45.2: "Themes" opens the theme picker; light / dark moved to a long-press on the profile icon (and Settings › Look & feel).
-                if (!newLook) add(MenuItem("themes", "Themes", themeName))   // RC4: one Blaze look
+                // 0.52.2: one ARGUS look (the Living Themes are gone); light / dark is in Settings › Look & feel.
+                add(MenuItem("look", "Look & feel", if (dark) "DARK" else "LIGHT"))
                 // 0.46.0: one tap back to the plain chat layout (cards stay as small widgets).
                 if (!stage.isNormal) add(MenuItem("stage_reset", "Reset layout", "STAGE"))
                 add(MenuItem("update", "Check for updates", "v" + runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault("")))
@@ -968,7 +984,7 @@ fun ChatScreen() {
                         "views" -> if (newLook) { composer.openSpotlight(); composer.query = "@" } else showViews = true
                         "projects" -> go(navNow().projectsList())
                         "control" -> settingsPage = "control"
-                        "themes" -> ThemePickerState.open.value = true
+                        "look" -> settingsPage = "look"
                         "stage_reset" -> com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.Reset)
                         "update" -> com.blaze.assistant.update.Updater.start(ctx)
                         "signout" -> scope.launch { com.blaze.assistant.connect.BlazeAccount.signOut() }
@@ -1011,8 +1027,6 @@ fun ChatScreen() {
                     onDismiss = { settingsPage = null })
             }
         }
-        // v0.45.2: the full-screen theme picker stays up until a theme is tapped (or back).
-        if (ThemePickerState.open.value) ThemePicker(onClose = { ThemePickerState.open.value = false })
     }
 }
 
@@ -1727,4 +1741,30 @@ private fun WaitingCards(listening: Boolean, clearedAt: Long, onUndoClear: () ->
         Box(Modifier.fillMaxWidth().height(72.dp)) { UndoBar("Chat cleared \u00b7 nothing is forgotten", onUndo = onUndoClear, onDismiss = onClearedGone) }
     }
     Box(Modifier.fillMaxWidth()) { UndoCountdownBar(onUndone = { line -> Agent.note(line) }) }
+}
+
+/**
+ * 0.52.2: the ARGUS Home as the chat shell shows it ([com.blaze.assistant.ui.argus.ArgusHomeBus]). The chat's messages are
+ * collected here, not in ChatScreen, so a streaming reply only recomposes the Home's result card.
+ */
+@Composable
+private fun ArgusHomeLayer(composer: com.blaze.assistant.ui.composer.ComposerState, name: String?, covered: Boolean,
+                           voiceState: Voice.State, mood: Mood, onSend: (String) -> Unit, onMic: () -> Unit, onProfile: () -> Unit) {
+    val ctx = LocalContext.current
+    val messages by Agent.messages.collectAsState()
+    val level by Voice.level.collectAsState()
+    // Asks made while the Home is up (typed or spoken) get their answer card; older chat doesn't.
+    var from by remember { mutableLongStateOf(Agent.messages.value.maxOfOrNull { it.id } ?: 0L) }
+    val card = remember(messages, mood, from) {
+        com.blaze.assistant.ui.argus.ArgusAnswer.card(from, messages.filter { it.id > from && (it.role == Role.USER || it.role == Role.BLAZE) }
+            .map { com.blaze.assistant.ui.argus.ArgusAnswer.Msg(it.id, it.role == Role.BLAZE, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text)) }, mood != Mood.IDLE)
+    }
+    val state = com.blaze.assistant.ui.argus.ArgusScene.stateOf(listening = voiceState == Voice.State.LISTENING,
+        speaking = voiceState == Voice.State.SPEAKING, working = mood != Mood.IDLE)
+    com.blaze.assistant.ui.argus.ArgusHomeScreen(state, level, name, composer,
+        onSend = onSend, onMic = onMic, onOpenChat = { com.blaze.assistant.ui.argus.ArgusHomeBus.hide() }, onProfile = onProfile,
+        covered = covered, answer = card, onDismissAnswer = { from = messages.maxOfOrNull { it.id } ?: from },
+        apps = { com.blaze.assistant.phone.InstalledApps.all(ctx).map { com.blaze.assistant.composer.SpotlightGroups.App(it.label, it.pkg) } },
+        said = { Agent.messages.value.takeLast(300).filter { it.role == Role.USER || it.role == Role.BLAZE }
+            .map { com.blaze.assistant.composer.SpotlightGroups.Said(it.id, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text), it.role == Role.USER) } })
 }

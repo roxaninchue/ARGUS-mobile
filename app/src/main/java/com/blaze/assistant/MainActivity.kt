@@ -161,7 +161,8 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         // RC2 (HomeRoute): Back out of Music / Video / Browser / Terminal / Blaze Phone lands on the new Home
         if (i.getBooleanExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME, false)) {
             i.removeExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME)
-            if (com.blaze.assistant.ui.HomeRedesign.enabled) com.blaze.assistant.ui.homeRequests.value = com.blaze.assistant.ui.homeRequests.value + 1
+            // 0.52.2: lands on the ARGUS Home
+            com.blaze.assistant.ui.homeRequests.value = com.blaze.assistant.ui.homeRequests.value + 1
         }
         // v0.45.0: internal extras only count when Blaze itself sent the intent (IntentKey); another app can still open
         // Blaze, use the assistant button / voice command, or share into the message box.
@@ -172,9 +173,9 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         i.removeExtra(Notifier.EXTRA_OPEN_FORM); i.removeExtra(Notifier.EXTRA_OPEN_CHAT); i.removeExtra(EXTRA_LISTEN); i.removeExtra(IntentKey.EXTRA)
         if (askedListen && !ok.listen && !ok.call) com.blaze.assistant.device.CrashLog.write("Ignored a listen/call request from outside ${BrandName.NAME}")
         // "Action required" notification: open the chat that's waiting on the secure form (the card shows there).
-        if (ok.openForm) { Agent.showFormChat(); Notifier.clearAction() }
+        if (ok.openForm) { Agent.showFormChat(); Notifier.clearAction(); com.blaze.assistant.ui.argus.ArgusHomeBus.hide() }
         // v0.28.3: a reply notification from a project chat opens that chat in Projects (the shell follows Agent's chat).
-        if (ok.openChat && chatId != null) Agent.openFromLink(chatId)
+        if (ok.openChat && chatId != null) { Agent.openFromLink(chatId); com.blaze.assistant.ui.argus.ArgusHomeBus.hide() }
         if (i.action == ACTION_CALL) { i.action = null; if (ok.call) Voice.callRequests.value = Voice.callRequests.value + 1; return }
         if (ok.listen) {
             i.action = null

@@ -358,8 +358,8 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
     val focus = remember { FocusRequester() }
     if (autoFocus) LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     val views = remember(q) { if (q.isBlank()) Views.all.take(6) else Views.filter(q).take(8) }
-    // v0.45.8: Search shows the picked theme (it covers the chat, so it draws the scene itself).
-    ThemedScreen(Modifier.fillMaxSize(), own = { background(c.paper).glassBackground(c.dark) }) {
+    // 0.52.2: one ARGUS look (it covers the chat, so it draws its own ground).
+    Box(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark)) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             // v0.28.3: the shared round BackButton.
@@ -835,8 +835,8 @@ fun ProjectsPane(projects: List<Project>, chats: List<ChatMeta>, busy: Set<Strin
                  onRenameChat: (String, String) -> Unit = { _, _ -> }, onDeleteChat: (String) -> Unit = {}) {
     val c = LocalBlaze.current
     val open = projects.firstOrNull { it.id == openId }
-    // v0.45.8: no ground of its own with a theme: the chat screen's theme scene shows through (was flat dark).
-    Column(Modifier.fillMaxSize().screenGround { background(c.paper).glassBackground(c.dark) }) {
+    // 0.52.2: one ARGUS look (the glass ground).
+    Column(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark)) {
         if (open == null) {
             var name by remember { mutableStateOf("") }
             // v0.24.8: rounded everything: a filled pill field, a gradient pill button, projects as separate rounded cards.

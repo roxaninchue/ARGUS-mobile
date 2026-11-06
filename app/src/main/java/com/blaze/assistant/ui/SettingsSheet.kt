@@ -154,8 +154,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
     BackHandler { back() }
     val current = settingsPages.firstOrNull { it.id == page }
 
-    // v0.45.8: Settings shows the picked theme (it covers the chat, so it draws the scene itself) and has the theme switcher.
-    ThemedScreen(Modifier.fillMaxSize(), own = { pageBackdrop(c) }) {
+    // 0.52.2: one ARGUS look (the glass page); the top bar keeps the light / dark switch.
+    Box(Modifier.fillMaxSize().pageBackdrop(c)) {
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
         // v0.28.3: the shared round BackButton (was a thin "←" glyph).
         BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),

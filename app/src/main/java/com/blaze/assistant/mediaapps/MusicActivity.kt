@@ -303,8 +303,8 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
         onClose()
     }
 
-    // v0.45.8: Music shows the picked theme (its scene behind everything) and has the shared theme switcher.
-    com.blaze.assistant.ui.ThemedScreen(Modifier.fillMaxSize(), own = { background(c.paper) }) {
+    // 0.52.2: one ARGUS look; the top bar keeps the light / dark switch.
+    Box(Modifier.fillMaxSize().background(c.paper)) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             val page = if (tab == "player") under else MusicNav.normalize(tab)
             MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Your library"; "create" -> "Create"; else -> "Music" },
@@ -457,7 +457,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
     Box(Modifier.fillMaxSize()) {
         // 0.46.4: the cover, tiny and stretched (reads as a blur, costs one 64 px bitmap), faint over the theme; then the colour tint.
         ArtBackdrop(t, Modifier.fillMaxSize())
-        Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(glow.copy(alpha = if (c.dark) 0.45f else 0.30f), if (com.blaze.assistant.ui.themeOn()) Color.Transparent else c.paper.copy(alpha = 0.85f))))
+        Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(glow.copy(alpha = if (c.dark) 0.45f else 0.30f), c.paper.copy(alpha = 0.85f))))
             .navigationBarsPadding().padding(horizontal = 22.dp).verticalScroll(rememberScrollState())) {
             // Header: down chevron · Playing from <playlist> · ⋮
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
