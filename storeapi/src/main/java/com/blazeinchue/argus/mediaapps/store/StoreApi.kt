@@ -1,8 +1,8 @@
-package com.blaze.assistant.mediaapps.store
+package com.blazeinchue.argus.mediaapps.store
 
 
 /**
- * v0.30.1: the Store tabs of Blaze Music and Blaze Video show results from several sources behind one interface,
+ * v0.30.1: the Store tabs of Argus Music and Argus Video show results from several sources behind one interface,
  * [StoreSource]. Every source turns a search into [StoreItem]s (picture, title, author, length, licence) and an item
  * into downloadable [StoreFormat]s / [Choice]s; the download queue (Downloads.kt) and the screens only ever see these
  * types. Registered in the app's StoreSources.all.
@@ -96,7 +96,7 @@ interface StoreSource {
     /** Whether a blank search lists something (popular / the whole catalogue). */
     val browsable: Boolean get() = false
     /** User-agent for the stream urls this source hands out. */
-    val userAgent: String get() = "Blaze/1 (Android)"
+    val userAgent: String get() = "Argus/1 (Android)"
     suspend fun search(kind: String, query: String, next: String = ""): StorePage
     suspend fun detail(item: StoreItem, kind: String): StoreDetail
     fun choices(kind: String, d: StoreDetail): List<Choice>

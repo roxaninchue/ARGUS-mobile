@@ -1,10 +1,10 @@
 // wgproxy runs a WireGuard tunnel entirely in user space (no TUN device, no VPN permission) and
-// serves it as an HTTP proxy on 127.0.0.1. Blaze's browser points its WebViews at that proxy, so
+// serves it as an HTTP proxy on 127.0.0.1. Argus's browser points its WebViews at that proxy, so
 // only browser traffic goes through the tunnel.
 //
 // Protocol with the app: one JSON config line on stdin; wgproxy answers "READY <port>" on stdout
 // once the proxy is listening (or "ERROR <message>" and exits). It shuts down when stdin closes,
-// so it never outlives Blaze.
+// so it never outlives Argus.
 package main
 
 import (
@@ -37,7 +37,7 @@ func main() {
 		fail(err.Error())
 	}
 	fmt.Printf("READY %d\n", p.Port())
-	// Keep running until Blaze closes our stdin (or dies).
+	// Keep running until Argus closes our stdin (or dies).
 	_, _ = io.Copy(io.Discard, in)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

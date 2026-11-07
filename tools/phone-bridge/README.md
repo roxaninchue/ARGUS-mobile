@@ -1,4 +1,4 @@
-# Blaze Phone DOM bridge: page-side checks (jsdom)
+# Argus Phone DOM bridge: page-side checks (jsdom)
 
 The bridge script (`PhoneScripts.bridge`) is JavaScript, so the JVM tests can't run it. These checks run it on jsdom:
 first message is a full model with the token; value / added / removed / cloned-node diffs; secrets masked (length only);

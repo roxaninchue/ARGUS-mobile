@@ -20,7 +20,7 @@ proot finds `libtalloc.so.2` and `libandroid-shmem.so` by name: `Linux.prepare()
 
 ## Why v0.30.2 replaced the old build: `cd phone/` → "Function not implemented"
 
-Up to v0.30.1 Blaze shipped a different PRoot build (a fork with `--droid_files`, `--fix-selinux-xattr`, `--kill-report`,
+Up to v0.30.1 Argus shipped a different PRoot build (a fork with `--droid_files`, `--fix-selinux-xattr`, `--kill-report`,
 older than Termux's July 2026 releases). In Alpine every `cd` failed with ENOSYS and `pwd` printed nothing:
 
     /bin/sh: cd: can't cd to phone/: Function not implemented
@@ -32,10 +32,10 @@ SIGSYS. With the old build the cancelled call reached that filter, PRoot's SIGSY
 and the guest got ENOSYS. `PROOT_NO_SECCOMP=1` did not help.
 
 Reproduced off-phone (2026-10-16): Termux's Docker image (bionic `linker64` + libc) in a chroot on an arm64 Linux 6.12
-box, Alpine 3.22 minirootfs, Blaze's exact proot arguments, and a seccomp filter built from Android 11's and 12's bionic
+box, Alpine 3.22 minirootfs, Argus's exact proot arguments, and a seccomp filter built from Android 11's and 12's bionic
 allowlists (`SYSCALLS.TXT` + `SECCOMP_ALLOWLIST_*` − `SECCOMP_BLOCKLIST_*`, everything else `SECCOMP_RET_TRAP`):
 
-| | `cd /root/phone`, `cd /sdcard`, `cd /`, `getcwd` | blaze-doctor |
+| | `cd /root/phone`, `cd /sdcard`, `cd /`, `getcwd` | argus-doctor |
 |---|---|---|
 | old libproot, no Android filter | ok | |
 | old libproot, Android filter (PROOT_NO_SECCOMP=0 or 1) | ENOSYS | 4 ok, 6 failed |
@@ -45,5 +45,5 @@ With 5.1.107.96 under the Android filter: getcwd, chdir, fchdir, statx, faccessa
 faccessat2, clone3 and close_range return a clean ENOSYS (Android 11/12's filter doesn't allow them; musl and glibc
 fall back to faccessat / clone / a close loop on ENOSYS, which is what happens in Termux too). Not reproducible off-phone:
 arm64 kernels before 5.3 (the test phone's 4.19) run seccomp before the ptrace syscall-enter stop; Termux's v5.1.107.91–.95
-fixes cover that order. If a phone still fails, Blaze's per-build self-test turns seccomp acceleration off when that
-helps (`Linux.selfTest`, `LinuxDoctor.noSeccomp`) and `blaze-doctor` in the Linux shows what fails.
+fixes cover that order. If a phone still fails, Argus's per-build self-test turns seccomp acceleration off when that
+helps (`Linux.selfTest`, `LinuxDoctor.noSeccomp`) and `argus-doctor` in the Linux shows what fails.

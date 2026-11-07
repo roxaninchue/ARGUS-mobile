@@ -7,9 +7,9 @@
 # warm-up launch that primes shaders and caches, and the instrumented LowRamSmokeTest green (browse 200 x concurrent loads, details, 10 s video, music, 30 tool-chat
 # turns with DSML, 0.52.3: the ARGUS x Hark shell + Spotlight (f_spaceHome); main thread sampled every 50 ms) with zero crash / ANR in logcat.
 set -uo pipefail
-REL="$1"; DBG="$2"; TST="$3"; PKG=com.blaze.assistant; OUT=smoke-out; mkdir -p "$OUT"
+REL="$1"; DBG="$2"; TST="$3"; PKG=com.blazeinchue.argus; OUT=smoke-out; mkdir -p "$OUT"
 FAIL=(); note() { echo "$*" | tee -a "$OUT/SUMMARY.md"; }
-echo "# Blaze low-RAM smoke gate" > "$OUT/SUMMARY.md"
+echo "# Argus low-RAM smoke gate" > "$OUT/SUMMARY.md"
 note "- emulator: $(adb shell getprop ro.product.model | tr -d '\r') API $(adb shell getprop ro.build.version.sdk | tr -d '\r'), abis $(adb shell getprop ro.product.cpu.abilist | tr -d '\r'), RAM $(adb shell cat /proc/meminfo | head -1 | tr -s ' ' | cut -d' ' -f2) kB, heap $(adb shell getprop dalvik.vm.heapgrowthlimit | tr -d '\r')"
 
 crashes() {   # $1 = logcat file; prints crash / ANR lines of our package
@@ -35,17 +35,17 @@ N=$(stall_frames "$OUT/logcat-release.txt" "$PID"); MS=$(( N * 1000 / 60 ))
 python3 tools/smoke/app_stall.py "$OUT/logcat-release.txt" "$PID" > "$OUT/app-stall.json" 2> "$OUT/app-stall.err" || echo '{"app_ms": -1}' > "$OUT/app-stall.json"
 APP=$(python3 -c "import json;print(json.load(open('$OUT/app-stall.json'))['app_ms'])")
 EXCL=$(python3 -c "import json;print(json.load(open('$OUT/app-stall.json')).get('excluded_ms',0))")
-OC=$(grep -E " $PID .*BlazeStart: onCreate " "$OUT/logcat-release.txt" | grep -oE "onCreate [0-9]+" | tail -1 | grep -oE "[0-9]+" || echo "?")
+OC=$(grep -E " $PID .*ArgusStart: onCreate " "$OUT/logcat-release.txt" | grep -oE "onCreate [0-9]+" | tail -1 | grep -oE "[0-9]+" || echo "?")
 C=$(crashes "$OUT/logcat-release.txt"; crashes "$OUT/logcat-release-crash.txt")
 STILL=$(adb shell pidof $PKG | tr -d '\r')
-note "- release cold start: TotalTime ${TT} ms, BlazeApp.onCreate ${OC} ms, worst app-attributable main stall ${APP} ms (raw Choreographer ~${MS} ms, ${N} frames; ${EXCL} ms excluded = main thread waiting on the emulator's software first frame), process alive after 20 s: $([ -n "$STILL" ] && echo yes || echo NO)"
+note "- release cold start: TotalTime ${TT} ms, ArgusApp.onCreate ${OC} ms, worst app-attributable main stall ${APP} ms (raw Choreographer ~${MS} ms, ${N} frames; ${EXCL} ms excluded = main thread waiting on the emulator's software first frame), process alive after 20 s: $([ -n "$STILL" ] && echo yes || echo NO)"
 python3 -c "import json;[print('  frame %(frame)s: delay %(delay_ms)s ms, render wait excluded %(render_wait_excluded_ms)s ms, own work %(own_work_ms)s ms -> app %(app_ms)s ms' % f + (' (first frame GL %s ms)' % f['first_frame_gl_ms'] if f.get('first_frame_gl_ms') else '')) for f in json.load(open('$OUT/app-stall.json')).get('frames', [])]" >> "$OUT/SUMMARY.md" 2>/dev/null || true
 [ -n "$C" ] && { FAIL+=("crash/ANR during release cold start"); echo "$C" | head -20 | tee -a "$OUT/SUMMARY.md"; }
 [ -z "$STILL" ] && FAIL+=("release process died after cold start")
 if [ "$APP" -lt 0 ] 2>/dev/null; then FAIL+=("app stall analysis failed"); elif [ "$APP" -ge 700 ]; then FAIL+=("release cold start app-attributable main stall ${APP} ms > 700 ms"); fi
 grep -E "$PID .*Choreographer.*Skipped" "$OUT/logcat-release.txt" | head -5 >> "$OUT/SUMMARY.md" || true
-# diagnosis only: start steps of 20 ms+ (BlazeStart) and the first frames' timeline (Davey) of the measured cold start
-grep -E "^\S+ \S+ +$PID .*(BlazeStart|Verification of)" "$OUT/logcat-release.txt" | sed -E 's/^\S+ (\S+) .*(BlazeStart|blaze[^:]*): /  \1 /' | head -40 >> "$OUT/SUMMARY.md" || true
+# diagnosis only: start steps of 20 ms+ (ArgusStart) and the first frames' timeline (Davey) of the measured cold start
+grep -E "^\S+ \S+ +$PID .*(ArgusStart|Verification of)" "$OUT/logcat-release.txt" | sed -E 's/^\S+ (\S+) .*(ArgusStart|argus[^:]*): /  \1 /' | head -40 >> "$OUT/SUMMARY.md" || true
 grep -E "^\S+ \S+ +$PID .*Davey!" "$OUT/logcat-release.txt" | head -3 | sed -E 's/^.*(duration=[0-9]+ms).*IntendedVsync=([0-9]+).*HandleInputStart=([0-9]+).*PerformTraversalsStart=([0-9]+).*DrawStart=([0-9]+).*SyncQueued=([0-9]+).*IssueDrawCommandsStart=([0-9]+).*SwapBuffers=([0-9]+).*FrameCompleted=([0-9]+).*/\1 \2 \3 \4 \5 \6 \7 \8 \9/' \
   | awk '{ printf "  frame %s: vsync to main start %d ms, layout %d ms, record %d ms, RenderThread GL %d ms, swap %d ms\n", $1, ($3-$2)/1e6, ($5-$4)/1e6, ($6-$5)/1e6, ($8-$7)/1e6, ($9-$8)/1e6 }' >> "$OUT/SUMMARY.md" || true
 # diagnosis only (not part of the verdict): a third cold start with the main thread's stack sampled every ~0.7 s
@@ -66,10 +66,10 @@ adb uninstall $PKG > /dev/null 2>&1 || true
 adb logcat -c
 adb install -r -g "$DBG" > "$OUT/install-debug.txt" 2>&1 || FAIL+=("debug install failed")
 adb install -r -g "$TST" > "$OUT/install-test.txt" 2>&1 || FAIL+=("test install failed")
-timeout 1500 adb shell am instrument -w -r -e class com.blaze.assistant.smoke.LowRamSmokeTest $PKG.test/androidx.test.runner.AndroidJUnitRunner > "$OUT/instrument.txt" 2>&1
+timeout 1500 adb shell am instrument -w -r -e class com.blazeinchue.argus.smoke.LowRamSmokeTest $PKG.test/androidx.test.runner.AndroidJUnitRunner > "$OUT/instrument.txt" 2>&1
 adb logcat -d -v threadtime > "$OUT/logcat-smoke.txt"; adb logcat -d -b crash > "$OUT/logcat-smoke-crash.txt" 2>/dev/null || true
 grep -E "INSTRUMENTATION_STATUS: (test|stack)=|INSTRUMENTATION_STATUS_CODE: -2|OK \(|FAILURES|Tests run|Process crashed|INSTRUMENTATION_RESULT|shortMsg" "$OUT/instrument.txt" | grep -v "INSTRUMENTATION_STATUS: test=" | head -40 >> "$OUT/SUMMARY.md"
-grep "BlazeSmoke" "$OUT/logcat-smoke.txt" | sed 's/^.*BlazeSmoke: /  /' >> "$OUT/SUMMARY.md"
+grep "ArgusSmoke" "$OUT/logcat-smoke.txt" | sed 's/^.*ArgusSmoke: /  /' >> "$OUT/SUMMARY.md"
 # 0.52.2: 7 tests (f_argusHome added: the ARGUS Home is the root); 0.52.3: still 7 (f_argusHome became f_spaceHome)
 grep -q "^OK (7 tests)" "$OUT/instrument.txt" || FAIL+=("instrumented smoke test not green")
 C=$(crashes "$OUT/logcat-smoke.txt"; crashes "$OUT/logcat-smoke-crash.txt")

@@ -1,10 +1,10 @@
 import re,sys,json
-src=open('app/src/main/java/com/blaze/assistant/browser/phone/PhoneScripts.kt').read()
+src=open('app/src/main/java/com/blazeinchue/argus/browser/phone/PhoneScripts.kt').read()
 common=re.search(r'private const val COMMON = """(.*?)"""',src,re.S).group(1)
 def raw(name):
     m=re.search(r'(?:const val|fun) '+name+r'\b[^\n]*?= ?"""(.*?)"""',src,re.S); return m.group(1)
 def sub(s, env):
-    s=s.replace('$COMMON',common).replace('$BRIDGE_WM','blazePhoneBridge').replace('$BRIDGE_JI','BlazePhoneBridge')
+    s=s.replace('$COMMON',common).replace('$BRIDGE_WM','argusPhoneBridge').replace('$BRIDGE_JI','ArgusPhoneBridge')
     s=re.sub(r'\$\{JSONObject\.quote\((\w+)\)\}', lambda m: json.dumps(env[m.group(1)]), s)
     s=re.sub(r'\$(\w+)', lambda m: json.dumps(env[m.group(1)]) if m.group(1) in env else m.group(0), s)
     return s

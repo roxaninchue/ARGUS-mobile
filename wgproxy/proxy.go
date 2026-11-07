@@ -47,7 +47,7 @@ func ServeProxy(d Dialer, listen string) (*Proxy, error) {
 			return
 		}
 		if !r.URL.IsAbs() {
-			http.Error(w, "Blaze VPN proxy", http.StatusBadRequest)
+			http.Error(w, "Argus VPN proxy", http.StatusBadRequest)
 			return
 		}
 		out := r.Clone(r.Context())

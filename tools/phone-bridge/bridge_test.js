@@ -6,7 +6,7 @@ w.Element.prototype.getBoundingClientRect=function(){return {left:10,top:10,widt
 Object.defineProperty(w.HTMLElement.prototype,'innerText',{get(){return this.textContent;},set(v){this.textContent=v;}});
 w.document.elementFromPoint=()=>null; w.innerHeight=800; w.innerWidth=400;
 let resolveFetch; w.fetch=function(){return new Promise(r=>{resolveFetch=r;});};
-w.blazePhoneBridge={postMessage:s=>posts.push(JSON.parse(s))};
+w.argusPhoneBridge={postMessage:s=>posts.push(JSON.parse(s))};
 w.eval(S.bridge);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 function ok(c,m){ if(!c){console.log('FAIL',m); process.exitCode=1;} else console.log('ok',m); }
