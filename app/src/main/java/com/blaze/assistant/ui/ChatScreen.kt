@@ -644,6 +644,10 @@ fun ChatScreen() {
         // it draws its own opaque space view over everything, so a second full-screen backdrop (and image draw) under it
         // only added first-frame work (CI fix, low-RAM smoke cold start).
         if (!onboard) com.blaze.assistant.ui.space.SpaceBackdrop()
+        // 0.52.3 CI fix (low-RAM smoke): while the first-run onboarding is up it covers everything with its own opaque space
+        // view, so the shell under it (Home, top bar, chat, Projects, Spotlight) is not composed at all. Composing it anyway
+        // cost ~636 ms of first-frame layout on the low-RAM emulator. It composes the moment onboarding ends.
+        if (!onboard) {
         // v0.39.0 Simple mode: Home (the Home cards) underneath, with the grab handle; Chat slides over it.
         if (swipeMode && p < 1f) {
             CompositionLocalProvider(LocalOpenLink provides openLink) {
@@ -988,6 +992,7 @@ fun ChatScreen() {
             apps = { com.blaze.assistant.phone.InstalledApps.all(ctx).map { com.blaze.assistant.composer.SpotlightGroups.App(it.label, it.pkg) } },
             said = { Agent.messages.value.takeLast(300).filter { it.role == Role.USER || it.role == Role.BLAZE }
                 .map { com.blaze.assistant.composer.SpotlightGroups.Said(it.id, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text), it.role == Role.USER) } })
+        } // !onboard
         // 0.52.3 first run: logo + tagline, sign-in when needed, then the one setup screen (everything downloads by itself).
         if (onboard) {
             val step = com.blaze.assistant.ui.space.SpaceOnboarding.Step.valueOf(obStep)
