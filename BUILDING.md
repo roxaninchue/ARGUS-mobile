@@ -106,6 +106,7 @@ The deep-link scheme stays `blaze://` (any case) after the rename; don't rename 
 10. Smoke used to cancel on a new push (66ed074d cancelled 21e7f293's smoke, so that fix was never judged). It now queues instead, but still batch fixes into one push.
 11. Docs-only pushes (`*.md`, `docs/`) start no build: all app workflows have `paths-ignore` for them. A commit message with `[skip ci]` skips every workflow (use it for workflow/tooling edits that need no app round).
 12. Changing `tools/smoke/app_stall.py`? Run `python3 tools/smoke/test_app_stall.py` first (seconds, no emulator; the smoke job also runs it first). Add a case with the new run's numbers.
+13. Releasing a feature-branch build: Actions, Release APK (`release-apk.yml`), Run workflow with the Build APK run id, tag, sha, asset, the `argus-hark-design-test-signed-<sha>` artifact and pre-release checked. A `HTTP 403: Resource not accessible by integration` on "Create or update the release" means the repo's Settings, Actions, General, Workflow permissions is read-only: set Read and write and re-run the job (no build needed).
 
 ## When the low-RAM smoke gate fails (fast path, one fix round)
 
