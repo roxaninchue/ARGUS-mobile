@@ -1,13 +1,15 @@
 # Local check (not the release gate) on the same low-RAM emulator as lowram-smoke.yml, with animations ON (the gate disables
 # them, so it only sees the reduce-motion path), same 700 ms main-stall limit. 0.52.2: the old Home's entry sequence
-# (HomeIntroCheck) is gone with the old Home; this now runs ArgusSpotlightCheck: the ARGUS Home's pull-down Spotlight opened
-# and closed three times with real touches (pull the notch, tap the scrim, tap + Back, pull the handle up), screenshots in
-# argus-spotlight/. The official gate (LowRamSmokeTest, 7 scenarios) is separate. File name kept for existing links.
-name: Home intro check (ARGUS Spotlight)
+# (HomeIntroCheck) is gone with the old Home. 0.52.3: this runs SpaceOnboardingCheck (ArgusSpotlightCheck left with the 3D
+# Home): the new first run, welcome -> one setup screen -> Continue, three times with real taps, screenshots in
+# space-onboarding/. The official gate (LowRamSmokeTest, 7 scenarios) is separate. File name kept for existing links.
+name: Home intro check (ARGUS onboarding)
 
 on:
   push:
-    branches: [ "check/**", "feat/argus-3d-home" ]
+    branches: [ "check/**", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
+    paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
 
 permissions:
@@ -79,15 +81,15 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-snapshot-save
           force-avd-creation: false
           disable-animations: false
-          script: bash tools/smoke/run-argus-spotlight.sh
+          script: bash tools/smoke/run-space-onboarding.sh
       - name: Summary
         if: always()
-        run: cat spot-out/SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
+        run: cat onboarding-out/SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: spot-out
+          name: onboarding-out
           retention-days: 7
           path: |
-            spot-out/
+            onboarding-out/
             app/build/outputs/apk/debug/app-debug.apk

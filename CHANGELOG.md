@@ -1,3 +1,13 @@
+## v0.52.3: ARGUS takes the Hark design, over a view of the Earth from space, with a one-screen setup (versionCode 190)
+- A new look everywhere: a round button, a Home | Chat | Projects switch and your avatar at the top; big rounded cards with serif headlines; a floating "Message" box at the bottom. It all sits on a view of the Earth from space in the ARGUS colours (black, Argus Blue, Electric Blue, Steel), dark or light.
+- Home is a stack of cards: a greeting for the time of day, what needs you (sign in, the rest of setup), the latest answer, your recent projects and a few things to ask. Back, /home, Music and Video bring you back to it; questions, approvals and forms still open the chat by themselves.
+- Projects has the same card look: one card per project with what's working or needs you, and each project's chats, instructions and brief.
+- Your avatar opens your profile: Usage and plan; Profile, Scheduled Tasks, Accounts, Wallet; Security, System Preferences, Submit Feedback, About. System Preferences holds Appearance, Language, Voice, Permissions and Updates. Long-press the avatar to switch light and dark. Security now includes Bank mode, and About lists the licences.
+- No more picking a model: ARGUS chooses the right brain for every message by itself. A speed picked in an older version goes back to Auto.
+- A new first run: the ARGUS logo with "Intelligence beyond the interface", then one screen where everything ARGUS needs downloads by itself with one progress bar (big downloads wait for Wi-Fi). You can carry on at any time and it finishes in the background. If you already use ARGUS, what is missing finishes by itself shortly after you open the app.
+- The metallic ARGUS mark is the app icon (with a themed-icon version on Android 13 and later).
+- Gone: the 3D orb Home and its pull-down Spotlight (Spotlight now opens from the top bar's round button), the "Tilt the Home scene" switch, the old Settings list and Advanced page, and the old three-step setup.
+
 ## v0.52.2: the ARGUS living 3D Home, a pull-down Spotlight, and one look for the whole app (versionCode 189)
 - A new Home: a glossy black ARGUS orb with the "A", slow metal rings with blue light streaks and a glowing pedestal, in a dark scene. It breathes when idle, listens with your voice (the rings follow how loud you speak), spins while Argus works and pulses while it talks. Home is where Argus opens, and Back from the chat, /home, Music and Video bring you back to it.
 - Ask from the Home bar ("Try saying…") and the answer floats over the pedestal as a card; "Open in chat ›" (or the arrow on the bar) shows the whole chat. Questions, approvals, forms, secure fields, shares and notification taps still open the chat by themselves.

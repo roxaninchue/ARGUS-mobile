@@ -69,6 +69,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
@@ -635,15 +636,13 @@ fun modeChip(work: String, approval: String): String {
 }
 
 /**
- * 0.50.0 composer (owner's target: a Teamily-style card). A rounded, raised card at the bottom of the chat:
- *  - top row: the message field (rotating hints as before) and, at its top right, the expand arrows that maximise the chat
- *    to full screen and restore it ([onExpand], [expanded]);
- *  - bottom row: + (attach and tools), the model pill ("Auto ⌄": the model / route picker, ModelChoice, with a link to
- *    Brains & routing), small icon buttons (Skills, a voice call with Blaze, / commands) and, at the right, one large round
- *    button: the mic when the box is empty, Send once there is text (it wins even while Blaze works), Stop while Blaze works.
- * Older call sites keep working: every new action is optional and its button only shows when given.
- * v0.24.1-0.49 behaviour kept: Enter is a new line (ComposerKeys), the hint rotation stops while focused or with reduced motion,
- * the connection is pre-warmed on focus.
+ * 0.52.3 composer: Hark's floating "Message ARGUS" pill (owner: the Hark design in the ARGUS theme). One rounded pill at
+ * the bottom of Home and the chat: the message field (rotating hints as before), then + (attach and tools) and, at the
+ * right, the mic when the box is empty, Send once there is text (it wins even while ARGUS works), Stop while ARGUS works.
+ * There is no model or brain picker (ARGUS picks automatically). The optional actions (expand, Skills, a voice call,
+ * / commands) still show as small icons when a caller passes them; the shell passes none.
+ * Kept: Enter is a new line (ComposerKeys), the hint rotation stops while focused or with reduced motion, the connection
+ * is pre-warmed on focus.
  */
 @Composable
 fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boolean, canSend: Boolean, plusOpen: Boolean,
@@ -651,8 +650,7 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
              onPlus: () -> Unit, onMic: () -> Unit, onSend: () -> Unit, onStop: () -> Unit, onChip: () -> Unit = {},
              hints: List<String> = emptyList(), animateHints: Boolean = true, hintIndex0: Int = 0,
              onExpand: (() -> Unit)? = null, expanded: Boolean = false,
-             onSkills: (() -> Unit)? = null, onCall: (() -> Unit)? = null, onSlash: (() -> Unit)? = null,
-             onRouting: (() -> Unit)? = null, showModel: Boolean = true) {
+             onSkills: (() -> Unit)? = null, onCall: (() -> Unit)? = null, onSlash: (() -> Unit)? = null) {
     val c = LocalBlaze.current
     ClearFocusOnLeave()   // 0.52.1: the keyboard only shows when you tap the box
     var focused by remember { mutableStateOf(false) }
@@ -667,67 +665,61 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
         hints.isEmpty() -> com.blaze.assistant.agent.ComposerHints.DEFAULT
         else -> hints[hintIdx.coerceIn(0, hints.size - 1)]
     }
-    Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 10.dp)) {
         if (chip.isNotBlank()) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (chip.isNotBlank()) Box(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(horizontal = 10.dp, vertical = 4.dp)) {
+            Box(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(horizontal = 10.dp, vertical = 4.dp)) {
                 ButtonText(chip, color = c.onAccent, size = 12.sp)
             }
-            // 0.52.1 (owner): no "N AGENTS WORKING" label; agents show only as the one task pill in the chat.
         }
-        val card = RoundedCornerShape(26.dp)
-        Column(Modifier.fillMaxWidth()
-            .shadow(10.dp, card, clip = false, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
-            .clip(card).background(ComposerCard.fill(c)).border(1.dp, ComposerCard.rim(c), card)
+        val pill = RoundedCornerShape(32.dp)
+        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp)
+            .shadow(12.dp, pill, clip = false, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
+            .clip(pill).background(ComposerCard.fill(c)).border(1.dp, ComposerCard.rim(c), pill)
+            .testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER)
             .semantics { contentDescription = "Message box" }
-            .padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 6.dp)) {
-            // top row: the field, and the expand arrows at the top right
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                Box(Modifier.weight(1f).padding(start = 12.dp, end = 6.dp, top = 12.dp, bottom = 10.dp)) {
-                    if (empty) androidx.compose.animation.AnimatedContent(targetState = placeholder, label = "hint",
-                        transitionSpec = {
-                            (fadeIn(tween(420)) + androidx.compose.animation.slideInVertically(tween(420)) { it / 3 }) togetherWith
-                                (fadeOut(tween(300)) + androidx.compose.animation.slideOutVertically(tween(300)) { -it / 3 })
-                        }) { t ->
-                        Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp, color = c.sub))
-                    }
-                    BasicTextField(value = value, onValueChange = onValue,
-                        textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, lineHeight = 22.sp, color = c.ink),
-                        cursorBrush = SolidColor(c.accent), maxLines = if (expanded) 14 else 6,
-                        // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
-                        keyboardOptions = ComposerKeys.Message,
-                        modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused; if (it.isFocused) com.blaze.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
-                            .semantics { contentDescription = "Message ${BrandName.NAME}" })
+            .padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f).padding(start = 16.dp, end = 6.dp, top = 10.dp, bottom = 10.dp)) {
+                if (empty) androidx.compose.animation.AnimatedContent(targetState = placeholder, label = "hint",
+                    transitionSpec = {
+                        (fadeIn(tween(420)) + androidx.compose.animation.slideInVertically(tween(420)) { it / 3 }) togetherWith
+                            (fadeOut(tween(300)) + androidx.compose.animation.slideOutVertically(tween(300)) { -it / 3 })
+                    }) { t ->
+                    Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = 18.sp, lineHeight = 24.sp, color = c.sub))
                 }
-                if (onExpand != null) ComposerIcon(if (expanded) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
-                    if (expanded) "Restore the chat" else "Maximise the chat", size = 36.dp, iconSize = 17.dp, onClick = onExpand)
+                BasicTextField(value = value, onValueChange = onValue,
+                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 18.sp, lineHeight = 24.sp, color = c.ink),
+                    cursorBrush = SolidColor(c.accent), maxLines = if (expanded) 14 else 6,
+                    // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
+                    keyboardOptions = ComposerKeys.Message,
+                    modifier = Modifier.fillMaxWidth().testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_FIELD)
+                        .onFocusChanged { focused = it.isFocused; if (it.isFocused) com.blaze.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
+                        .semantics { contentDescription = "Message ${BrandName.NAME}" })
             }
-            // bottom row: + · model pill · small actions · the big mic / send / stop
-            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).clip(CircleShape).background(if (plusOpen) c.ink else Color.Transparent).clickable(onClick = onPlus)
-                    .semantics { contentDescription = if (plusOpen) "Close menu" else "Attach and tools" }, contentAlignment = Alignment.Center) {
-                    PlusIcon(if (plusOpen) c.paper else c.ink, open = plusOpen)
-                }
-                if (showModel) { Spacer(Modifier.width(4.dp)); ModelPill(onRouting) }
-                Spacer(Modifier.weight(1f))
-                if (onSkills != null) ComposerIcon(Icons.Rounded.AutoAwesome, "Skills", onClick = onSkills)
-                if (onCall != null) ComposerIcon(Icons.Rounded.RecordVoiceOver, "Voice chat with ${BrandName.NAME}", onClick = onCall)
-                if (onSlash != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSlash).semantics { contentDescription = "Commands" },
-                    contentAlignment = Alignment.Center) { Text("/", style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = c.sub)) }
-                Spacer(Modifier.width(4.dp))
-                // v0.30.6 rapid messages: with text in the box, Send wins even while Blaze works (the message joins the turn); Stop otherwise.
-                val big = 46.dp
-                when {
-                    canSend -> Box(Modifier.size(big).glassPrimary(CircleShape).clickable(onClick = onSend)
-                        .semantics { contentDescription = "Send" }, contentAlignment = Alignment.Center) { SendMark(GlassTokens.onPrimary(c.dark), stop = false) }
-                    busy -> Box(Modifier.size(big).clip(CircleShape).background(c.accent).clickable(onClick = onStop)
-                        .semantics { contentDescription = "Stop" }, contentAlignment = Alignment.Center) { SendMark(c.onAccent, stop = true) }
-                    else -> {
-                        val micOn = listening || speaking
-                        Box(Modifier.size(big).then(if (micOn) Modifier.clip(CircleShape).background(c.accent) else Modifier.glassPrimary(CircleShape)).clickable(onClick = onMic)
-                            .semantics { contentDescription = if (speaking) "Stop speaking" else if (listening) "Stop listening" else "Talk" }, contentAlignment = Alignment.Center) {
-                            if (speaking) SendMark(c.onAccent, stop = true) else MicIcon(if (micOn) c.onAccent else GlassTokens.onPrimary(c.dark))
-                        }
+            if (onExpand != null) ComposerIcon(if (expanded) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
+                if (expanded) "Restore the chat" else "Maximise the chat", size = 36.dp, iconSize = 17.dp, onClick = onExpand)
+            if (onSkills != null) ComposerIcon(Icons.Rounded.AutoAwesome, "Skills", onClick = onSkills)
+            if (onCall != null) ComposerIcon(Icons.Rounded.RecordVoiceOver, "Voice chat with ${BrandName.NAME}", onClick = onCall)
+            if (onSlash != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSlash).semantics { contentDescription = "Commands" },
+                contentAlignment = Alignment.Center) { Text("/", style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = c.sub)) }
+            Box(Modifier.size(44.dp).clip(CircleShape).background(if (plusOpen) c.ink else Color.Transparent)
+                .testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_PLUS).clickable(onClick = onPlus)
+                .semantics { contentDescription = if (plusOpen) "Close menu" else "Attach and tools" }, contentAlignment = Alignment.Center) {
+                PlusIcon(if (plusOpen) c.paper else c.sub, open = plusOpen, size = 22.dp)
+            }
+            // v0.30.6 rapid messages: with text in the box, Send wins even while ARGUS works (the message joins the turn); Stop otherwise.
+            val big = 46.dp
+            when {
+                canSend -> Box(Modifier.size(big).clip(CircleShape).background(ComposerCard.send(c)).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_SEND)
+                    .clickable(onClick = onSend).semantics { contentDescription = "Send" }, contentAlignment = Alignment.Center) { SendMark(ComposerCard.sendInk(c), stop = false) }
+                busy -> Box(Modifier.size(big).clip(CircleShape).background(c.accent).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_SEND)
+                    .clickable(onClick = onStop).semantics { contentDescription = "Stop" }, contentAlignment = Alignment.Center) { SendMark(c.onAccent, stop = true) }
+                else -> {
+                    val micOn = listening || speaking
+                    Box(Modifier.size(big).clip(CircleShape).background(if (micOn) c.accent else Color.Transparent).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_MIC)
+                        .clickable(onClick = onMic)
+                        .semantics { contentDescription = if (speaking) "Stop speaking" else if (listening) "Stop listening" else "Talk" }, contentAlignment = Alignment.Center) {
+                        if (speaking) SendMark(c.onAccent, stop = true) else MicIcon(if (micOn) c.onAccent else c.sub, size = 24.dp)
                     }
                 }
             }
@@ -735,10 +727,12 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
     }
 }
 
-/** 0.50.0: the composer card's raised fill and rim (a step lighter than the chat in dark mode, white on light). */
+/** 0.52.3: the composer pill's fill and rim (Hark's floating pill: a dark glassy step over the space view, white on light) and the Send button. */
 object ComposerCard {
-    fun fill(c: BlazeColors): Color = if (c.dark) Color(0xFF1C1D22) else Color(0xFFFFFFFF)
-    fun rim(c: BlazeColors): Color = if (c.dark) Color(0x24FFFFFF) else Color(0x14111112)
+    fun fill(c: BlazeColors): Color = if (c.dark) Color(0xF01A1E28) else Color(0xFFFFFFFF)
+    fun rim(c: BlazeColors): Color = if (c.dark) Color(0x24FFFFFF) else Color(0x1A0A1020)
+    fun send(c: BlazeColors): Color = if (c.dark) Color(0xFFFFFFFF) else Color(0xFF0056FF)
+    fun sendInk(c: BlazeColors): Color = if (c.dark) Color(0xFF0A0F1A) else Color(0xFFFFFFFF)
 }
 
 @Composable
@@ -747,41 +741,6 @@ private fun ComposerIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, 
     val c = LocalBlaze.current
     Box(Modifier.size(size).clip(CircleShape).clickable(onClick = onClick).semantics { contentDescription = desc }, contentAlignment = Alignment.Center) {
         androidx.compose.material3.Icon(icon, contentDescription = null, tint = c.sub, modifier = Modifier.size(iconSize))
-    }
-}
-
-/**
- * 0.50.0: the model / route picker as the composer's dropdown pill ("Auto ⌄"): Auto, Spark (fast), Flare (balanced),
- * Inferno (smartest) from [com.blaze.assistant.composer.ModelChoice] (it only hints the gateway; the brain order never
- * changes), and "Brains & routing…" ([onRouting]).
- */
-@Composable
-fun ModelPill(onRouting: (() -> Unit)? = null) {
-    val c = LocalBlaze.current
-    val fam by com.blaze.assistant.composer.ModelChoice.current.collectAsState()
-    var open by remember { mutableStateOf(false) }
-    Box {
-        Row(Modifier.clip(RoundedCornerShape(50)).clickable { open = true }.padding(horizontal = 10.dp, vertical = 8.dp)
-            .semantics { contentDescription = "Model: ${fam.label}. Tap to change" }, verticalAlignment = Alignment.CenterVertically) {
-            Text(fam.label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
-            Spacer(Modifier.width(3.dp))
-            androidx.compose.material3.Icon(Icons.Rounded.ExpandMore, contentDescription = null, tint = c.sub, modifier = Modifier.size(18.dp))
-        }
-        androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.background(c.menuSurface)) {
-            com.blaze.assistant.composer.ModelChoice.Family.values().forEach { f ->
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Column {
-                        Text(f.label, style = TextStyle(fontFamily = Type.Sans, fontWeight = if (f == fam) FontWeight.SemiBold else FontWeight.Medium, fontSize = 15.sp, color = c.ink))
-                        Text(f.sub, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
-                    } },
-                    leadingIcon = com.blaze.assistant.ui.composer.tierIcon(f)?.let { ic -> { androidx.compose.material3.Icon(ic, contentDescription = null, tint = c.sub, modifier = Modifier.size(18.dp)) } },
-                    trailingIcon = { if (f == fam) androidx.compose.material3.Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = c.ink, modifier = Modifier.size(18.dp)) },
-                    onClick = { com.blaze.assistant.composer.ModelChoice.set(f); open = false })
-            }
-            if (onRouting != null) androidx.compose.material3.DropdownMenuItem(
-                text = { Text("Brains & routing\u2026", style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub)) },
-                onClick = { open = false; onRouting() })
-        }
     }
 }
 
@@ -826,108 +785,7 @@ fun MicMark(color: Color, speaking: Boolean) {
 
 // ---------------------------------------------------------------- projects
 
-@Composable
-fun ProjectsPane(projects: List<Project>, chats: List<ChatMeta>, busy: Set<String>, needsYou: Set<String>, openId: String,
-                 onOpen: (String) -> Unit, onBack: () -> Unit, onCreate: (String) -> Unit, onChat: (String) -> Unit,
-                 onNewChat: (String) -> Unit, onInstructions: (String, String) -> Unit, onDelete: (String) -> Unit,
-                 onBrief: (String, String) -> Unit = { _, _ -> },
-                 /** v0.28.3: rename / delete one of the project's chats. */
-                 onRenameChat: (String, String) -> Unit = { _, _ -> }, onDeleteChat: (String) -> Unit = {}) {
-    val c = LocalBlaze.current
-    val open = projects.firstOrNull { it.id == openId }
-    // 0.52.2: one ARGUS look (the glass ground).
-    Column(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark)) {
-        if (open == null) {
-            var name by remember { mutableStateOf("") }
-            // v0.24.8: rounded everything: a filled pill field, a gradient pill button, projects as separate rounded cards.
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 18.dp)) {
-                Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Projects", modifier = Modifier.weight(1f),
-                        style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, letterSpacing = (-0.02).em, color = c.ink))
-                    // v0.45.8: the shared theme switcher.
-                    ThemeSwitch()
-                }
-                Spacer(Modifier.height(6.dp))
-                Text("Group chats around one goal, with instructions ${BrandName.NAME} follows in every chat inside it.", modifier = Modifier.padding(horizontal = 20.dp),
-                    style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.sub))
-                Spacer(Modifier.height(16.dp))
-                Row(Modifier.padding(horizontal = 16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    BlazeTextField(name, { name = it }, "New project name", modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { if (name.isNotBlank()) { onCreate(name); name = "" } }))
-                    Spacer(Modifier.width(8.dp))
-                    BlazeButton("Create", lead = "+", height = 46.dp) { onCreate(name); name = "" }
-                }
-                Spacer(Modifier.height(18.dp))
-                projects.forEach { p ->
-                    val working = p.chats.any { it in busy }
-                    val needs = p.chats.any { it in needsYou }
-                    Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth().glass(GlassTokens.tileShape, GlassIntensity.Medium, shadow = false).clickable { onOpen(p.id) }.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        ProjectBadge(p.name)
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(p.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 16.sp, color = c.ink))
-                            // v0.28.3: count the chats that exist (an id whose file is gone isn't a chat).
-                            val n = p.chats.count { id -> chats.any { it.id == id } }
-                            Text(if (n == 1) "1 chat" else "$n chats", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
-                        }
-                        when {
-                            needs -> StatusChip("Needs you", c.accent, filled = true)
-                            working -> StatusChip("Working", c.accent, filled = false)
-                            else -> Text("›", style = TextStyle(fontFamily = Type.Display, fontSize = 20.sp, color = c.weak))
-                        }
-                    }
-                }
-                if (projects.isEmpty()) Box(Modifier.padding(16.dp)) { Rows { EmptyState("No projects yet", "Name one above to start. Each project keeps its own chats, instructions and brief.") } }
-            }
-        } else {
-            var ins by remember(open.id) { mutableStateOf(open.instructions) }
-            var brief by remember(open.id, open.brief) { mutableStateOf(open.brief) }
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                // v0.28.3: the shared round BackButton (was a thin "←" glyph); back goes to the projects list.
-                BackTitle(open.name, onBack = onBack, modifier = Modifier.padding(top = 4.dp), size = 22.sp)
-                BlazeButton("New chat in this project", lead = "+", modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(), height = 46.dp) { onNewChat(open.id) }
-                Label("Instructions", size = 9.sp, modifier = Modifier.padding(start = 20.dp, top = 10.dp, bottom = 6.dp))
-                BlazeTextField(ins, { ins = it; onInstructions(open.id, it) }, "What ${BrandName.NAME} should know in every chat here",
-                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(), singleLine = false, minHeight = 72.dp)
-                Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Label("Brief", size = 9.sp, modifier = Modifier.weight(1f))
-                    // v0.28.5: the real count (BlazeDb.tokens) against the hard cap; typing or pasting past it is cut at the cap.
-                    val P = com.blaze.assistant.agent.Projects
-                    val used = P.tokens(brief)
-                    Label("$used / ${P.BRIEF_TOKENS} tokens", color = if (used >= P.BRIEF_TOKENS * 9 / 10) c.accent else c.weak, size = 9.sp)
-                }
-                var cut by remember(open.id) { mutableStateOf(false) }
-                BlazeTextField(brief, { t -> val fit = com.blaze.assistant.agent.Projects.cutTokens(t, com.blaze.assistant.agent.Projects.BRIEF_TOKENS)
-                        cut = fit.length < t.length; brief = fit; onBrief(open.id, fit) },
-                    "Pinned brief: purpose and rules first, then key files and what's in progress. ${BrandName.NAME} keeps it up to date.",
-                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(), singleLine = false, minHeight = 96.dp)
-                if (cut) Text("The brief is at its 600-token cap, so the rest was cut. Put longer details in Instructions: ${BrandName.NAME} searches them when it needs them.",
-                    style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.accent), modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp))
-                Label("Chats", size = 9.sp, modifier = Modifier.padding(start = 20.dp, top = 18.dp, bottom = 6.dp))
-                val list = open.chats.mapNotNull { id -> chats.firstOrNull { it.id == id } }
-                // v0.28.3: each chat opens inside Projects; ⋯ (or a long-press) renames or deletes it.
-                var menuFor by remember { mutableStateOf("") }
-                var renaming by remember { mutableStateOf<ChatMeta?>(null) }
-                var deleting by remember { mutableStateOf<ChatMeta?>(null) }
-                list.forEach { ch ->
-                    Box {
-                        ChatRow(ch, ch.id in busy, chip = if (ch.id in needsYou) "Needs you" else "", onMore = { menuFor = ch.id }) { onChat(ch.id) }
-                        if (menuFor == ch.id) BlazeMenu(true, onDismiss = { menuFor = "" },
-                            items = listOf("Rename" to { renaming = ch }, "Delete chat" to { deleting = ch }))
-                    }
-                }
-                renaming?.let { ch -> RenameChatDialog(ch.title, onDone = { t -> renaming = null; if (t.isNotBlank()) onRenameChat(ch.id, t) }, onDismiss = { renaming = null }) }
-                deleting?.let { ch -> BlazeDialog(title = "Delete \u201c${ch.title.ifBlank { "this chat" }.take(40)}\u201d?",
-                    body = "Its messages are removed from this phone. The project, its instructions and its other chats stay.",
-                    confirm = "Delete", onConfirm = { deleting = null; onDeleteChat(ch.id) }, warm = true, dismiss = "Keep", onDismiss = { deleting = null }) }
-                if (list.isEmpty()) Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { Rows { EmptyState("No chats yet", "Start one with + New chat. It keeps this project's instructions and brief.", mark = false) } }
-                BlazeButton("Delete project (chats stay)", kind = BtnKind.DANGER, modifier = Modifier.padding(20.dp), height = 40.dp) { onDelete(open.id) }
-            }
-        }
-    }
-}
+/* 0.52.3: the glass ProjectsPane gave way to space/SpaceProjects.kt (SpaceProjectsScreen, the Hark look). */
 
 @Composable
 fun StatusChip(text: String, color: Color, filled: Boolean) {

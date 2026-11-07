@@ -68,6 +68,16 @@ def analyse(davey, skips):
             if j not in matched and abs(n * FRAME_MS - delay) <= 2 * FRAME_MS:
                 matched.add(j); break
     unmatched = [n * FRAME_MS for j, n in enumerate(skips) if j not in matched]
+    # 0.52.3: the frame after the software first frame is often fast (< 700 ms, so HWUI logs no Davey line for it), yet
+    # Choreographer still reports the main thread's wait on that first frame as one "Skipped N frames". Without a Davey
+    # line to cut it from, it went unmatched and counted whole (66ed074d: 2150 ms = ~670 ms main work + ~1440 ms waiting
+    # on 1441 ms of RenderThread GL). Apply the same one-time cut to the first unmatched skip instead: remove at most the
+    # first frame's GL time, and only when no Davey frame already took the cut. Nothing else changes; the gate stays 700 ms.
+    if soft and len(davey) < 2 and unmatched:
+        k = max(range(len(unmatched)), key=lambda x: unmatched[x])
+        cut = min(unmatched[k], soft[2])
+        unmatched[k] -= cut
+        excluded += cut
     raw = max([n * FRAME_MS for n in skips] + [0])
     app = max([f["app_ms"] for f in frames] + unmatched + [0])
     return {"raw_ms": round(raw), "app_ms": round(app), "excluded_ms": round(excluded), "unmatched_skips_ms": [round(x) for x in unmatched],

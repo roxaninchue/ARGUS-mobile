@@ -8,8 +8,11 @@ name: Mobile build
 # Also runs the JVM unit tests and the 360/375 dp screenshot tests (ShotsTest / Shots375Test) on x86.
 on:
   push:
-    # 0.52.2: + the ARGUS living 3D Home branch (unit tests, shots incl. ArgusHomeShotsTest, unsigned + test-signed APK)
-    branches: [ "app/mobile", "app/mobile-revamp", "app/brain-routing", "feat/argus-3d-home" ]
+    # 0.52.2: + the ARGUS living 3D Home branch (unit tests, shots, unsigned + test-signed APK)
+    # 0.52.3: + the ARGUS x Hark design branch (shots incl. SpaceShotsTest, which replaced ArgusHomeShotsTest)
+    branches: [ "app/mobile", "app/mobile-revamp", "app/brain-routing", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
+    paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
 
 permissions:
@@ -164,7 +167,7 @@ jobs:
           BLAZE_SHOTS: "1"
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest' --tests 'com.blaze.assistant.ui.Shots375Test' --tests 'com.blaze.assistant.ui.StageShotsTest' --tests 'com.blaze.assistant.ui.MoviesShotsTest' --tests 'com.blaze.assistant.ui.MediaRevampShotsTest' --tests 'com.blaze.assistant.ui.SecretCardsShotsTest' --tests 'com.blaze.assistant.ui.HomeRedesignShotsTest' --tests 'com.blaze.assistant.ui.ComposerShotsTest' --tests 'com.blaze.assistant.ui.Blaze050ShotsTest' --tests 'com.blaze.assistant.ui.ArgusHomeShotsTest' \
+          ./gradlew :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest' --tests 'com.blaze.assistant.ui.Shots375Test' --tests 'com.blaze.assistant.ui.StageShotsTest' --tests 'com.blaze.assistant.ui.MoviesShotsTest' --tests 'com.blaze.assistant.ui.MediaRevampShotsTest' --tests 'com.blaze.assistant.ui.SecretCardsShotsTest' --tests 'com.blaze.assistant.ui.HomeRedesignShotsTest' --tests 'com.blaze.assistant.ui.ComposerShotsTest' --tests 'com.blaze.assistant.ui.Blaze050ShotsTest' --tests 'com.blaze.assistant.ui.SpaceShotsTest' \
             --continue --console=plain "-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspaceSize=1g" \
             -Pkotlin.compiler.execution.strategy=in-process -Pkotlin.jvm.target.validation.mode=warning 2>&1 | tee shots.log
       - name: shots.zip

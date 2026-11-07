@@ -118,10 +118,8 @@ class BackRuleTest {
         val btc = chat.substringAfter("fun backToChat() {").substringBefore("\n    }\n")
         for (k in listOf("settingsPage = null", "showViews = false", "plusOpen = false", "arcOpen = false", "avatarMenu = false", "showSearch = false",
             "GalleryUi.open.value = false", "Agent.roomOpen.value = -1L", "Views.showing.value = \"\"",
-            // 0.52.2: Back lands on the ARGUS Home
-            "ArgusHomeBus.show()",
-            // RC2: the sheet settles through HomeRoute (Home when the new Home is the root, the chat sheet otherwise)
-            "switchTab(ChatNav.CHAT)", "HomeRoute.sheetAfterBack(")) assertTrue("backToChat: $k", btc.contains(k))
+            // 0.52.3: Spotlight closes too, and with nothing over the tab Back lands on the Home tab (Home is the root)
+            "composer.closeSpotlight()", "switchTab(ChatNav.HOME)")) assertTrue("backToChat: $k", btc.contains(k))
         // Back from Chat no longer drops to Home (that loop made Back unable to leave Blaze).
         assertFalse(chat.contains("BackHandler(enabled = swipeMode && sheetP > 0.5f && nav.tab == ChatNav.CHAT && !nav.inProjectChat) { settleTo(0f) }"))
         // openView handles exactly the specials BackRule knows.

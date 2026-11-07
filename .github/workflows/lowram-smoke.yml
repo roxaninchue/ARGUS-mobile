@@ -10,7 +10,10 @@ name: Low-RAM smoke gate
 on:
   push:
     # 0.52.2: + the ARGUS living 3D Home branch (the gate now has 7 scenarios: f_argusHome added)
-    branches: [ "smoke/**", "feat/argus-3d-home" ]
+    # 0.52.3: + the ARGUS x Hark design branch (still 7 scenarios: f_argusHome became f_spaceHome)
+    branches: [ "smoke/**", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
+    paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
 
 permissions:
@@ -18,7 +21,9 @@ permissions:
 
 concurrency:
   group: lowram-smoke-${{ github.ref }}
-  cancel-in-progress: true
+  # 0.52.3: a new push no longer cancels a running smoke round (66ed074d cancelled 21e7f293's, so that fix was never judged).
+  # The running round finishes; only the newest pending push waits behind it.
+  cancel-in-progress: false
 
 env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -29,6 +34,9 @@ jobs:
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
+      # Seconds, before the 25-minute emulator round: a broken gate script fails here, not at the end.
+      - name: Gate script self-test
+        run: python3 tools/smoke/test_app_stall.py
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
       - uses: actions/setup-go@v5

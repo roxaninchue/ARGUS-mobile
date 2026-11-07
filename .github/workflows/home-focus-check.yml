@@ -1,13 +1,15 @@
 # Local check (not the release gate) on the same low-RAM emulator as lowram-smoke.yml, with animations ON (the gate disables
 # them), same 700 ms main-stall limit. 0.52.2: the old Home's card focus (HomeFocusCheck) and screenshots (Rc4ShotsCheck)
-# are gone with the old Home; this now runs ArgusHomeCheck: the ARGUS living 3D Home through every orb state with the
-# result card, GL forced, Canvas forced and the device's own pick, with a screenshot of each state. The official gate
+# are gone with the old Home. 0.52.3: this runs SpaceHomeCheck: the ARGUS x Hark shell (space view, top bar, the Home's
+# cards, the profile page, Projects) in dark and light, with a screenshot of each screen (ArgusHomeCheck left with the 3D Home). The official gate
 # (LowRamSmokeTest, 7 scenarios) is separate. File name kept so existing links / required checks still match.
-name: Home focus check (ARGUS Home)
+name: Home focus check (ARGUS Home, space shell)
 
 on:
   push:
-    branches: [ "check/**", "feat/argus-3d-home" ]
+    branches: [ "check/**", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
+    paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
 
 permissions:
@@ -84,14 +86,14 @@ jobs:
             adb install -r -g app/build/outputs/apk/debug/app-debug.apk > focus-out/install.txt 2>&1
             adb install -r -g app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk >> focus-out/install.txt 2>&1
             adb logcat -c
-            timeout 1500 adb shell am instrument -w -r -e class com.blaze.assistant.smoke.ArgusHomeCheck com.blaze.assistant.test/androidx.test.runner.AndroidJUnitRunner > focus-out/instrument.txt 2>&1 || true
+            timeout 1500 adb shell am instrument -w -r -e class com.blaze.assistant.smoke.SpaceHomeCheck com.blaze.assistant.test/androidx.test.runner.AndroidJUnitRunner > focus-out/instrument.txt 2>&1 || true
             adb logcat -d -v threadtime > focus-out/logcat.txt
-            echo "# ARGUS Home check" > focus-out/SUMMARY.md
+            echo "# ARGUS Home check (space shell)" > focus-out/SUMMARY.md
             grep -E "OK \(|FAILURES|Tests run|shortMsg|stack=" focus-out/instrument.txt | head -20 | tee -a focus-out/SUMMARY.md
-            grep -E "BlazeArgusHome|ArgusGl" focus-out/logcat.txt | sed -E 's/^.*(BlazeArgusHome|ArgusGl): /  /' | tee -a focus-out/SUMMARY.md
-            # a screenshot of every state, per renderer
-            adb pull /sdcard/Android/data/com.blaze.assistant/files/argus focus-out/argus > /dev/null 2>&1 || echo "no ARGUS screenshots" >> focus-out/SUMMARY.md
-            echo "- screenshots: $(ls focus-out/argus 2>/dev/null | wc -l)" | tee -a focus-out/SUMMARY.md
+            grep -E "BlazeSpaceHome" focus-out/logcat.txt | sed -E 's/^.*(BlazeSpaceHome): /  /' | tee -a focus-out/SUMMARY.md
+            # a screenshot of every screen, dark and light
+            adb pull /sdcard/Android/data/com.blaze.assistant/files/space focus-out/space > /dev/null 2>&1 || echo "no ARGUS screenshots" >> focus-out/SUMMARY.md
+            echo "- screenshots: $(ls focus-out/space 2>/dev/null | wc -l)" | tee -a focus-out/SUMMARY.md
             grep -q "^OK (1 test)" focus-out/instrument.txt
       - name: Summary
         if: always()

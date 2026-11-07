@@ -103,6 +103,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalTextToolbar
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -193,13 +194,16 @@ fun ChatScreen() {
     val composer = com.blaze.assistant.ui.composer.rememberComposerState()
 
     var settingsPage by rememberSaveable { mutableStateOf<String?>(null) }
-    // First run only: people who already set Blaze up never see it.
-    var onboard by rememberSaveable { mutableStateOf(!Settings.bool("onboarded", false) && !Settings.ready && !hasMessages) }
-    var setupPage by rememberSaveable { mutableStateOf(0) }
+    // 0.52.3 first run (space/SpaceOnboarding): logo + tagline, sign-in when needed, then the one setup screen. People who
+    // already set ARGUS up never see it.
+    var onboard by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.show(Settings.bool("onboarded", false), Settings.ready, hasMessages)) }
+    var obStep by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.first().name) }
     val galleryOpen by GalleryUi.open.collectAsState()
     LaunchedEffect(Unit) { if (!onboard) Settings.setBool("onboarded", true) }
-    // v0.24.4: the dependency gate. Upgraded (and new) users finish whatever required setup is missing; never again once done.
-    var gate by remember { mutableStateOf(!onboard && com.blaze.assistant.setup.SetupGate.shouldGate(ctx)) }
+    // 0.52.3: no dependency gate any more; what has to be downloaded is set up by itself (setup/SetupRunner) and the
+    // Home's "Finishing setup" card shows what is left.
+    val setupState by com.blaze.assistant.setup.SetupRunner.state.collectAsState()
+    var setupSheet by rememberSaveable { mutableStateOf(false) }
     // Blaze opening one of its own settings pages (setup help).
     val askedPage by com.blaze.assistant.agent.SelfSetup.openPage.collectAsState()
     LaunchedEffect(askedPage) { askedPage?.let { settingsPage = it; com.blaze.assistant.agent.SelfSetup.openPage.value = null } }
@@ -295,7 +299,7 @@ fun ChatScreen() {
     LaunchedEffect(shared) {
         val d = shared ?: return@LaunchedEffect
         Agent.sharedDraft.value = null
-        com.blaze.assistant.ui.argus.ArgusHomeBus.hide()   // 0.52.2: it waits in the chat's message box
+        com.blaze.assistant.ui.space.SpaceNav.showChat()   // 0.52.3: it waits in the chat's message box (the shell switches to Chat)
         if (newLook) { if (d.text.isNotBlank()) composer.text = d.text; d.attachment?.let { composer.attachments.add(it) }; return@LaunchedEffect }
         if (d.text.isNotBlank()) input = TextFieldValue(d.text, androidx.compose.ui.text.TextRange(d.text.length))
         d.attachment?.let { pending = pending + it }
@@ -338,7 +342,8 @@ fun ChatScreen() {
     // v0.28.3: Chat | Projects and where you are in Projects (list → project → project chat), as one ChatNav.
     // Main Chat always shows the main thread; project chats open inside Projects and never replace it.
     // v0.29.0: Home joins the pill; the last tab (Home or Chat) is remembered, Chat on first run.
-    var navS by rememberSaveable { mutableStateOf(ChatNav(tab = ChatNav.startTab(Settings.str("shell_tab", ChatNav.CHAT))).encode()) }
+    // 0.52.3 (Hark design): the app opens on Home (Home | Chat | Projects in the top bar's pill).
+    var navS by rememberSaveable { mutableStateOf(ChatNav(tab = ChatNav.HOME).encode()) }
     val nav = ChatNav.decode(navS)
     fun navNow(): ChatNav = ChatNav.decode(navS)
     fun go(n: ChatNav) { navS = n.encode() }
@@ -348,12 +353,11 @@ fun ChatScreen() {
     var showSearch by remember { mutableStateOf(false) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all) and whether the keyboard composer is out.
     val simpleMode by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
-    // 0.52.2: the ARGUS Home (argus/ArgusHome.kt, ArgusHomeBus) is the root; the old Home under a swipe-up chat sheet is
+    // 0.52.3: Home (space/SpaceHome.kt) is the root tab; the old Home under a swipe-up chat sheet is
     // gone, so the Swipe setting no longer applies (HomeRoute keeps its rule for the RC2 redesign behind HomeRedesign).
     val swipeMode = HomeRoute.swipe(false, HomeRedesign.enabled)
     var typing by rememberSaveable { mutableStateOf(false) }
     var avatarMenu by remember { mutableStateOf(false) }
-    var topMenu by remember { mutableStateOf(false) }   // 0.52.1: the Blaze pill's views overlay
     var plusOpen by remember { mutableStateOf(false) }
     val showing by Views.showing.collectAsState()
     val designTarget by Views.designTarget.collectAsState()
@@ -376,7 +380,7 @@ fun ChatScreen() {
         when (v.special) {
             "gallery" -> GalleryUi.open.value = true
             "home" -> homeRequests.value++
-            "projects" -> { com.blaze.assistant.ui.argus.ArgusHomeBus.hide(); go(navNow().projectsList()) }
+            "projects" -> go(navNow().projectsList())
             "browser" -> com.blaze.assistant.browser.BrowserTools.show(ctx)
             "phonebrowser" -> com.blaze.assistant.browser.phone.PhoneBrowserActivity.open(ctx, control = false)
             "terminal" -> com.blaze.assistant.terminal.BlazeTerminalActivity.open(ctx)
@@ -385,7 +389,7 @@ fun ChatScreen() {
             "design" -> {
                 if (target.isNotBlank()) Views.designTarget.value = target
                 else if (Views.designTarget.value.isBlank()) try { com.blaze.assistant.agent.Designs.current()?.path?.let { Views.designTarget.value = it } } catch (_: Exception) { }
-                go(navNow().switchTab(ChatNav.CHAT)); Views.showing.value = "design"; com.blaze.assistant.ui.argus.ArgusHomeBus.hide()
+                go(navNow().switchTab(ChatNav.CHAT)); Views.showing.value = "design"
             }
             else -> settingsPage = v.page ?: ""
         }
@@ -523,7 +527,7 @@ fun ChatScreen() {
                 Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.autopilot) "Autopilot: ${BrandName.NAME} acts, you can undo" else "${BrandName.NAME} asks before it acts", Toast.LENGTH_SHORT).show(); true }
             "clear" -> { clearScreen(); true }
             "views" -> { composer.openSpotlight(); composer.query = "@"; true }
-            "profile" -> { avatarMenu = true; true }
+            "profile" -> { settingsPage = ""; true }
             else -> false
         }
     }
@@ -532,12 +536,15 @@ fun ChatScreen() {
     LaunchedEffect(composer.chatOpen) { if (newLook && !composer.chatOpen && navNow().inProjectChat) navNow().back()?.let { go(it) } }
     // A private chat shows over Home too.
     LaunchedEffect(isPrivate) { if (newLook && isPrivate) composer.openChat(full = true) }
-    // 0.52.2: asking for the chat from the ARGUS Home (Spotlight's Chat / history / an ask, the bar's up chevron) shows the
-    // chat; a private chat, a question, an approval, a fix, a form or a secure field brings the chat up too.
-    LaunchedEffect(composer.chatOpen) { if (!newLook && composer.chatOpen) { com.blaze.assistant.ui.argus.ArgusHomeBus.hide(); composer.dismissChat() } }
-    LaunchedEffect(isPrivate) { if (isPrivate) com.blaze.assistant.ui.argus.ArgusHomeBus.hide() }
+    // 0.52.3: asking for the chat (Spotlight's Chat / history / an ask) or a private chat shows the Chat tab.
+    LaunchedEffect(composer.chatOpen) { if (!newLook && composer.chatOpen) { composer.dismissChat(); if (!navNow().inProjectChat) go(navNow().switchTab(ChatNav.CHAT)) } }
+    LaunchedEffect(isPrivate) { if (isPrivate && !navNow().inProjectChat) go(navNow().switchTab(ChatNav.CHAT)) }
+    val chatAsk by com.blaze.assistant.ui.space.SpaceNav.chatRequests.collectAsState()
+    LaunchedEffect(chatAsk) { if (chatAsk > 0 && !navNow().inProjectChat) go(navNow().switchTab(ChatNav.CHAT)) }
     // v0.28.3: the thread + composer show on main Chat and on a project chat screen; views (Design…) belong to main Chat.
     val chatBody = nav.tab == ChatNav.CHAT || nav.inProjectChat
+    // 0.52.3: the floating composer is on Home too (Hark's "Message ARGUS"); a message from Home opens the Chat tab.
+    val composerShown = chatBody || nav.tab == ChatNav.HOME
     // 0.46.0 Blaze Stage: the main chat is one playground (heroes, widgets, a movable chat, top / reply bars that can hide).
     val stage by com.blaze.assistant.stage.StageStore.state.collectAsState()
     val stageActive = com.blaze.assistant.stage.StageStore.enabled && nav.tab == ChatNav.CHAT && !nav.inProjectChat && showing.isEmpty()
@@ -574,23 +581,24 @@ fun ChatScreen() {
         // RC4: what Blaze waits on opens the chat over Home, where its card shows under the messages
         if (newLook) { if (question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null || listenReq > 0) composer.openChat() }
         else if (swipeMode && (question != null || pendingConfirmNow != null || fixNow != null || listenReq > 0) && sheetP < 1f) settleTo(1f)
-        // 0.52.2: what ARGUS waits on is answered in the chat (the mic alone keeps the Home: the orb listens)
-        if (question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null) com.blaze.assistant.ui.argus.ArgusHomeBus.hide()
+        // 0.52.3: what ARGUS waits on is answered in the chat, so Home (or Projects) gives way to it
+        if ((question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null) && !navNow().inProjectChat && navNow().tab != ChatNav.CHAT)
+            go(navNow().switchTab(ChatNav.CHAT))
     }
     val homeReq by homeRequests.collectAsState()
     LaunchedEffect(homeReq) {
         if (homeReq > 0) {
-            // 0.52.2: every route home (open_view home, /home, the Home tab, Back out of Music / Video / Browser...) shows the ARGUS Home
+            // 0.52.3: every route home (open_view home, /home, the Home tab, Back out of Music / Video / Browser...) shows Home
             settingsPage = null; showViews = false; plusOpen = false; avatarMenu = false; showSearch = false; Views.showing.value = ""
-            com.blaze.assistant.ui.argus.ArgusHomeBus.show()
-            if (swipeMode) {
+            composer.closeSpotlight()
+            if (!swipeMode) go(navNow().switchTab(ChatNav.HOME)) else {
                 // RC2: every route home (open_view home, /home, Back out of Music / Video / Browser...) lands on the new Home, views closed
                 settingsPage = null; showViews = false; plusOpen = false; arcOpen = false; avatarMenu = false; showSearch = false
                 GalleryUi.open.value = false; Views.showing.value = ""
                 val n = navNow(); if (n.tab != ChatNav.CHAT || n.inProjectChat) go(n.switchTab(ChatNav.CHAT))
                 composer.closeSpotlight()
                 settleTo(0f)
-            } else { val n = navNow(); if (n.tab != ChatNav.CHAT || n.inProjectChat) go(n.switchTab(ChatNav.CHAT)) }
+            }
         }
     }
     // Awareness: which surface is in front (Home or Chat).
@@ -600,35 +608,46 @@ fun ChatScreen() {
     // longer goes down to Home (that made Home and Chat a loop Back could never leave). The shell publishes what is
     // in front and how to close it; BackRule's window interceptor acts on it before any nested BackHandler.
     fun backToChat() {
-        // RC4: Back from a project chat over Home closes it (it showed that chat); the main chat over Home stays as it was.
-        if (newLook) { composer.closeSpotlight(); if (navNow().inProjectChat) composer.dismissChat() }
+        // 0.52.3: Home is the root. Back closes what is over the current tab (a page, a sheet, Spotlight, a view); with
+        // nothing over it, a project chat goes to its project, Projects to its list, and Chat / Projects to Home.
+        val over = settingsPage != null || showViews || plusOpen || arcOpen || avatarMenu || showSearch || GalleryUi.open.value ||
+            Agent.roomOpen.value >= 0L || Views.showing.value.isNotEmpty() || composer.spotlightOpen
+        composer.closeSpotlight()
         settingsPage = null; showViews = false; plusOpen = false; arcOpen = false; avatarMenu = false; showSearch = false
         GalleryUi.open.value = false; Agent.roomOpen.value = -1L
         Views.showing.value = ""
-        val n = navNow(); if (n.tab != ChatNav.CHAT || n.inProjectChat) go(n.switchTab(ChatNav.CHAT))
-        // RC2 (HomeRoute): with the new Home as root, Back lands on Home (sheet down), never on the old chat screen
-        HomeRoute.sheetAfterBack(swipeMode, HomeRoute.homeRoot(swipeMode, HomeRedesign.enabled, Agent.privateChat.value), sheetP)?.let { settleTo(it) }
-        // 0.52.2: the ARGUS Home is the root: Back from the chat (or anything over it) lands there (a private chat asks first).
-        if (!Agent.privateChat.value) com.blaze.assistant.ui.argus.ArgusHomeBus.show()
+        if (over) return
+        val n = navNow()
+        val up = n.back()
+        if ((n.inProjectChat || n.tab == ChatNav.PROJECTS) && up != null && up.tab == ChatNav.PROJECTS) go(up)
+        else if (!Agent.privateChat.value) go(n.switchTab(ChatNav.HOME))
     }
     SideEffect {
         // Read when Back is pressed (State reads, never a stale snapshot of this composition).
         BackRule.shellNow = {
             val n = navNow(); val swipe = HomeRoute.swipe(false, HomeRedesign.enabled)
-            BackRule.Shell(onboarding = onboard, gate = !onboard && gate, inCall = false,
-                tab = n.tab, inProjectChat = n.inProjectChat, swipeHome = (swipe && sheetP < 0.5f) || com.blaze.assistant.ui.argus.ArgusHomeBus.visible.value,
+            BackRule.Shell(onboarding = onboard, gate = setupSheet, inCall = false,
+                tab = n.tab, inProjectChat = n.inProjectChat, swipeHome = swipe && sheetP < 0.5f,
                 settingsPage = settingsPage, view = if (n.inProjectChat) "" else Views.showing.value,
-                viewsSheet = showViews, plusMenu = plusOpen, arc = arcOpen, avatarMenu = avatarMenu, search = showSearch,
+                viewsSheet = showViews, plusMenu = plusOpen || composer.spotlightOpen, arc = arcOpen, avatarMenu = avatarMenu, search = showSearch,
                 gallery = GalleryUi.open.value, room = Agent.roomOpen.value >= 0,
-                // 0.52.2: the ARGUS Home is where Back stops (a private chat asks before leaving itself)
-                homeRoot = !Agent.privateChat.value || newLook || HomeRoute.homeRoot(swipe, HomeRedesign.enabled, Agent.privateChat.value))
+                // 0.52.3: Home is where Back stops (a private chat asks before leaving itself)
+                homeRoot = !Agent.privateChat.value)
         }
         BackRule.toChat = { backToChat() }
     }
     BackHandler(enabled = isPrivate && !confirmLeavePrivate) { confirmLeavePrivate = true }
     // v0.28.3: back inside Projects: project chat → project page → projects list (then the system's back).
     BackHandler(enabled = !isPrivate && nav.back() != null) { navNow().back()?.let { go(it) } }
-    Box(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark).onSizeChanged { sheetH = it.height.toFloat() }) {
+    Box(Modifier.fillMaxSize().testTag(com.blaze.assistant.ui.space.SpaceTags.ROOT).onSizeChanged { sheetH = it.height.toFloat() }) {
+        // 0.52.3: the space view (dark) or the light ARGUS ground behind every tab. Not while the first-run onboarding is up:
+        // it draws its own opaque space view over everything, so a second full-screen backdrop (and image draw) under it
+        // only added first-frame work (CI fix, low-RAM smoke cold start).
+        if (!onboard) com.blaze.assistant.ui.space.SpaceBackdrop()
+        // 0.52.3 CI fix (low-RAM smoke): while the first-run onboarding is up it covers everything with its own opaque space
+        // view, so the shell under it (Home, top bar, chat, Projects, Spotlight) is not composed at all. Composing it anyway
+        // cost ~636 ms of first-frame layout on the low-RAM emulator. It composes the moment onboarding ends.
+        if (!onboard) {
         // v0.39.0 Simple mode: Home (the Home cards) underneath, with the grab handle; Chat slides over it.
         if (swipeMode && p < 1f) {
             CompositionLocalProvider(LocalOpenLink provides openLink) {
@@ -642,8 +661,7 @@ fun ChatScreen() {
         }
         // RC4: the old full chat sheet (top pills, themed scene, thread, Hold to talk / Type / Photo) only without the new look.
         if (!newLook) Box(Modifier.fillMaxSize().graphicsLayer { translationY = (1f - p) * sheetH
-                // 0.52.2: under the ARGUS Home the chat keeps its state but isn't drawn
-                alpha = if (com.blaze.assistant.ui.argus.ArgusHomeBus.visible.value) 0f else 1f }
+                }
             .then(if (swipeMode && p < 1f) Modifier.background(c.paper).glassBackground(c.dark) else Modifier)) {
         // v0.45.8: Design is its own full-screen view: no chat top bar over its canvas.
         val designFull = DesignNav.fullScreen(showing, nav)
@@ -657,17 +675,18 @@ fun ChatScreen() {
                 Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.hair))
             }
             if (!designFull && !maxed && (stage.topBar || !stageActive)) Box(if (swipeMode) Modifier.draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop) else Modifier) {
-            ShellTopBar(mode = shellMode, homeTab = !swipeMode,
-                // v0.24.0: the toggle only switches tabs; there is no conversation list behind it.
-                // v0.28.3: switching tabs keeps your place in Projects; Chat is always the main thread.
-                onMode = { m -> plusOpen = false; showViews = false; go(navNow().switchTab(m)) },
-                onLogo = { exitView(); go(navNow().switchTab(ChatNav.CHAT)); showViews = false; plusOpen = false; arcOpen = false },
-                talkTo = talkTo,
-                onSearch = { showSearch = true },
-                routerOk = Settings.ready,
-                onRouter = { settingsPage = "ai" },
-                avatar = me?.name?.ifBlank { me.email }?.ifBlank { null } ?: Settings.userName.ifBlank { "B" },
-                onAvatar = { avatarMenu = true }, mood = mood,
+            // 0.52.3 (Hark design): round button (+ on Home, search in Chat, the menu in Projects), the Home | Chat | Projects
+            // pill, the avatar (profile and settings; long-press = light / dark). A view (Gallery, Design…) shows an Exit chip.
+            com.blaze.assistant.ui.space.SpaceTopBar(tab = shellMode,
+                onTab = { m -> plusOpen = false; showViews = false; exitView(); composer.closeSpotlight(); go(navNow().switchTab(m)) },
+                onLeft = {
+                    when (com.blaze.assistant.ui.space.SpaceTabs.leftButton(shellMode)) {
+                        com.blaze.assistant.ui.space.SpaceTabs.Left.MENU -> go(navNow().projectsList())
+                        else -> { composer.query = ""; composer.openSpotlight() }
+                    }
+                },
+                initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
+                onAvatar = { settingsPage = "" },
                 // v0.45.2: long-press the profile icon = light / dark, with a haptic tick and a short note.
                 onAvatarLong = {
                     val (m, note) = LightDark.toggle(c.dark)
@@ -675,14 +694,11 @@ fun ChatScreen() {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                     Toast.makeText(ctx, note, Toast.LENGTH_SHORT).show()
                 },
-                viewChip = if (showing.isNotEmpty() && nav.tab == ChatNav.CHAT) (Views.find(showing)?.name ?: showing) + (if (showing == "design") " \u00b7 $DESIGN_BETA" else "") else "",
-                onExit = { exitView() },
-                isPrivate = isPrivate,
-                onGhost = { if (isPrivate) confirmLeavePrivate = true else { exitView(); go(navNow().switchTab(ChatNav.CHAT)); Agent.enterPrivate() } })
+                privateChat = isPrivate, onLeavePrivate = { confirmLeavePrivate = true })
             }
-            // 0.52.1 (owner): the small Blaze pill under the top bar (the project's name inside a project); tap = views overlay.
-            if (!designFull && !maxed) BlazeTopPill(BlazeTopPillModel.label(if (nav.tab == ChatNav.PROJECTS && nav.project.isNotBlank())
-                com.blaze.assistant.agent.Projects.get(nav.project)?.name.orEmpty() else ""), mood, onClick = { topMenu = true })
+            if (!designFull && !maxed && showing.isNotEmpty() && nav.tab == ChatNav.CHAT) com.blaze.assistant.ui.space.SpaceChip(
+                (Views.find(showing)?.name ?: showing) + (if (showing == "design") " \u00b7 $DESIGN_BETA" else "") + "  \u2715", { exitView() },
+                modifier = Modifier.padding(start = 16.dp, bottom = 6.dp))
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 // v0.27.0: Chat and Projects cross-fade when you switch tabs.
                 // v0.28.3: three panes: main Chat, the Projects list / a project page, and a project chat screen.
@@ -690,11 +706,18 @@ fun ChatScreen() {
                 androidx.compose.animation.Crossfade(pane, modifier = Modifier.fillMaxSize(),
                     animationSpec = MotionTokens.medium(), label = "tab") { paneNow ->
                 if (paneNow == "home") {
-                    // 0.52.2: Home is the ARGUS Home (drawn over the shell); the Home tab just brings it up.
-                    LaunchedEffect(Unit) { com.blaze.assistant.ui.argus.ArgusHomeBus.show(); go(navNow().switchTab(ChatNav.CHAT)) }
+                    // 0.52.3: the Hark-style Home (space/SpaceHome.kt): cards over the space view.
+                    SpaceHomeLayer(name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null }, signedIn = me != null || Settings.ready,
+                        mood = mood, projects = projects, setup = setupState,
+                        onAsk = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) },
+                        onOpenChat = { go(navNow().switchTab(ChatNav.CHAT)) },
+                        onOpenProject = { go(navNow().openProject(it)) },
+                        onOpenProjects = { go(navNow().projectsList()) },
+                        onSignIn = { settingsPage = "account" },
+                        onSetup = { setupSheet = true })
                 } else if (paneNow == "projects") {
                     val needs = remember(question, allChats) { question?.let { q -> allChats.filter { it.title == q.chat }.map { it.id }.toSet() } ?: emptySet() }
-                    ProjectsPane(projects, allChats, busyChats, needs, nav.project,
+                    com.blaze.assistant.ui.space.SpaceProjectsScreen(projects, allChats, busyChats, needs, nav.project,
                         onOpen = { go(navNow().openProject(it)) }, onBack = { navNow().back()?.let { go(it) } },
                         onCreate = { go(navNow().openProject(com.blaze.assistant.agent.Projects.create(it).id)) },
                         onChat = { openProjectChat(it) }, onNewChat = { newProjectChat(it) },
@@ -741,8 +764,8 @@ fun ChatScreen() {
                         onBack = { Views.showing.value = DesignNav.back(Views.showing.value) })
                     BackHandler { Views.showing.value = DesignNav.back(Views.showing.value) }
                 } else if (!hasMessages && !(stageActive && stage.items.isNotEmpty())) {
-                    if (simpleMode && Settings.ready) SimpleWelcome(me?.name.orEmpty().ifBlank { Settings.userName }) { send(it) }
-                    else Welcome(needsSetup = !Settings.ready, onSetup = { setupPage = 0; onboard = true }) { Agent.send(it) }
+                    // 0.52.3: the empty chat in the Hark look (greeting card + suggested asks)
+                    Welcome(needsSetup = !Settings.ready, onSetup = { settingsPage = "account" }) { send(it) }
                 } else {
                     val dens = LocalDensity.current
                     CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip, LocalOpenLink provides openLink,
@@ -805,7 +828,7 @@ fun ChatScreen() {
             // v0.24.6: "Open in Design?" instead of switching views on its own.
             if (nav.tab == ChatNav.CHAT) viewOffer?.let { o -> if (showing != o.id) ViewOfferChip(Views.offerLabel(o.id),
                 onOpen = { Views.offer.value = null; Views.find(o.id)?.let { openView(it, o.target) } }, onDismiss = { Views.offer.value = null }) }
-            if (chatBody && viewShowing.isEmpty()) {
+            if (composerShown && viewShowing.isEmpty()) {
                 val sugg = remember(input.text) { fileSuggestions(input.text).ifEmpty { CommandRunner.suggest(input.text) } }
                 if (sugg.isNotEmpty() && !showViews) SuggestionList(sugg) { s ->
                     if (s.runNow) send(s.fill) else input = TextFieldValue(s.fill, TextRange(s.fill.length))
@@ -849,8 +872,7 @@ fun ChatScreen() {
                     }
                 }
                 // v0.24.6: pictures straight from the keyboard (Samsung clipboard, GIFs, stickers) attach like picked photos.
-                // v0.39.0 Simple mode: the big hold-to-talk mic until you tap Type.
-                val bigMic = simpleMode && !typing && input.text.isEmpty() && pending.isEmpty() && quote.isBlank() && !plusOpen
+                // 0.52.3: always the composer pill (Simple mode's big hold-to-talk bar is gone with the old chat look).
                 // v0.43.0: who the next message goes to (@blaze / @halo / @all), picked on the arc from the header orb.
                 // 0.51.0 one persona: the Blaze / Halo arc is gone (there is only Blaze).
                 if (arcOpen) BackHandler { arcOpen = false }
@@ -858,30 +880,19 @@ fun ChatScreen() {
                 if (stageActive && stage.reply == com.blaze.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     StageReplyPill { com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.SetChrome(reply = com.blaze.assistant.stage.ReplyBar.FULL)) }
                 }
-                else if (bigMic) HoldToTalkBar(listening = voiceState == Voice.State.LISTENING, busy = mood != Mood.IDLE,
-                    onHold = { if (voiceState != Voice.State.LISTENING) onMic() }, onRelease = { Voice.stopListening() },
-                    onType = { typing = true }, onPhoto = { plusOpen = true }, onStop = { Agent.stop() })
                 else AcceptImages(onImage = { uri, mime -> addUris(listOf(uri), mime) }) {
                 Composer(input, { input = it; Agent.typing(it.text.isNotEmpty()) }, busy = mood != Mood.IDLE, canSend = input.text.isNotBlank() || pending.isNotEmpty(),
                     plusOpen = plusOpen, chip = modeChip(work, approval), agents = bgAgents.count { it.live },
                     listening = voiceState == Voice.State.LISTENING, speaking = voiceState == Voice.State.SPEAKING,
-                    onPlus = { plusOpen = !plusOpen; showViews = false }, onMic = { if (simpleMode && input.text.isEmpty()) typing = false; onMic() }, onSend = { send(input.text) }, onStop = { Agent.stop() },
-                    onChip = { plusOpen = true }, hints = hints, animateHints = !reducedMotion,
-                    // 0.50.0 Teamily-style card: expand arrows, model pill (→ Brains & routing), Skills, voice chat, / commands
-                    onExpand = { ChatExpand.toggle() }, expanded = ChatExpand.on,
-                    onSkills = { Views.find("skills")?.let { openView(it) } }, onCall = { startCall() },
-                    onSlash = { if (!input.text.startsWith("/")) input = TextFieldValue("/", TextRange(1)) },
-                    onRouting = { settingsPage = "ai" })
+                    onPlus = { plusOpen = !plusOpen; showViews = false }, onMic = { onMic() },
+                    onSend = { val t = input.text; send(t); if (navNow().tab == ChatNav.HOME && t.isNotBlank()) go(navNow().switchTab(ChatNav.CHAT)) },
+                    onStop = { Agent.stop() },
+                    // 0.52.3 Hark pill: + and the mic / send / stop only (no model picker, no extra icons)
+                    onChip = { plusOpen = true }, hints = hints, animateHints = !reducedMotion)
                 }
             }
         }
-        // v0.29.5: the particles drift OVER the thread now, so they visibly pass through the see-through bubbles and text.
-        // v0.29.9: not on Home (they'd float over the glass page window and the board).
-        if ((nav.tab != ChatNav.HOME || nav.inProjectChat) && !designFull) {
-            // v0.31.1 jank fix: the particle clock stops while a reply streams (the frames go to the text).
-            val streamingNow by Agent.streamingId.collectAsState()
-            ParticleField(mood, overlay = true, paused = streamingNow >= 0)
-        }
+        // 0.52.3: no particles over the thread (the space view is the backdrop now).
         }   // v0.39.0: end of the Chat sheet
 
         // RC4: Projects and Design open over Home (they used to live in the chat sheet).
@@ -893,7 +904,7 @@ fun ChatScreen() {
                         contentAlignment = Alignment.Center) { Text("\u2715", style = TextStyle(fontFamily = Type.Sans, fontSize = 18.sp, color = c.ink)) }
                 }
                 Box(Modifier.weight(1f).fillMaxWidth()) {
-                    ProjectsPane(projects, allChats, busyChats, needs, nav.project,
+                    com.blaze.assistant.ui.space.SpaceProjectsScreen(projects, allChats, busyChats, needs, nav.project,
                         onOpen = { go(navNow().openProject(it)) }, onBack = { navNow().back()?.let { go(it) } },
                         onCreate = { go(navNow().openProject(com.blaze.assistant.agent.Projects.create(it).id)) },
                         onChat = { openProjectChat(it) }, onNewChat = { newProjectChat(it) },
@@ -942,58 +953,6 @@ fun ChatScreen() {
             SelectionPill(r, acts, ink = c.ink, paper = c.paper) { a -> onSelection(a) }
         }
 
-        // 0.52.2: the ARGUS living 3D Home, over the chat shell (menus, pages, dialogs, setup and the gate draw over it).
-        val argusUp by com.blaze.assistant.ui.argus.ArgusHomeBus.visible
-        if (argusUp && !newLook) {
-            val roomNow by Agent.roomOpen.collectAsState()
-            ArgusHomeLayer(composer, name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null },
-                covered = settingsPage != null || galleryOpen || showSearch || onboard || gate || roomNow >= 0,
-                voiceState = voiceState, mood = mood,
-                onSend = { t -> send(t) }, onMic = { onMic() }, onProfile = { avatarMenu = true })
-        }
-        BlazeTopOverlay(topMenu, current = if (showing.isNotEmpty()) showing else nav.tab, options = BlazeTopPillModel.options(homeTab = !swipeMode),
-            onPick = { id -> topMenu = false; plusOpen = false; showViews = false
-                when (id) {
-                    "chat", "projects", "home" -> { exitView(); go(navNow().switchTab(id)) }
-                    else -> Views.find(id)?.let { v -> go(navNow().switchTab(ChatNav.CHAT)); openView(v) }
-                } },
-            onDismiss = { topMenu = false })
-        if (topMenu) BackHandler { topMenu = false }
-        if (avatarMenu) {
-            val dark = c.dark
-            val items = buildList {
-                add(MenuItem("account", "Account", if (me != null) "Signed in" else "Sign in"))
-                add(MenuItem("settings", "Settings"))
-                add(MenuItem("views", "All views", if (newLook) "@" else "/VIEWS"))
-                if (newLook) add(MenuItem("projects", "Projects"))
-                add(MenuItem("control", "Phone control", if (Settings.phoneControl && a11yOn) "ON" else "OFF"))
-                // 0.52.2: one ARGUS look (the Living Themes are gone); light / dark is in Settings › Look & feel.
-                add(MenuItem("look", "Look & feel", if (dark) "DARK" else "LIGHT"))
-                // 0.46.0: one tap back to the plain chat layout (cards stay as small widgets).
-                if (!stage.isNormal) add(MenuItem("stage_reset", "Reset layout", "STAGE"))
-                add(MenuItem("update", "Check for updates", "v" + runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault("")))
-                if (me != null) add(MenuItem("signout", "Sign out"))
-            }
-            AvatarMenu(me?.name.orEmpty().ifBlank { Settings.userName }, me?.email.orEmpty(), items,
-                onPick = { id ->
-                    avatarMenu = false
-                    when (id) {
-                        "account" -> settingsPage = "account"
-                        "settings" -> settingsPage = ""
-                        "router" -> settingsPage = "ai"
-                        "views" -> if (newLook) { composer.openSpotlight(); composer.query = "@" } else showViews = true
-                        "projects" -> go(navNow().projectsList())
-                        "control" -> settingsPage = "control"
-                        "look" -> settingsPage = "look"
-                        "stage_reset" -> com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.Reset)
-                        "update" -> com.blaze.assistant.update.Updater.start(ctx)
-                        "signout" -> scope.launch { com.blaze.assistant.connect.BlazeAccount.signOut() }
-                    }
-                },
-                onLongPick = { _ -> },
-                onDismiss = { avatarMenu = false })
-            BackHandler { avatarMenu = false }
-        }
         if (showSearch) {
             SearchScreen(onView = { openView(it) }, onAsk = { showSearch = false; send(it) }, onDismiss = { showSearch = false })
             BackHandler { showSearch = false }
@@ -1009,22 +968,46 @@ fun ChatScreen() {
             title = com.blaze.assistant.agent.PrivateChat.LEAVE_TITLE, body = com.blaze.assistant.agent.PrivateChat.LEAVE_TEXT,
             confirm = "Leave", onConfirm = { confirmLeavePrivate = false; Agent.leavePrivate(); composer.dismissChat() }, warm = true,
             dismiss = "Stay", onDismiss = { confirmLeavePrivate = false })
-        if (!onboard && gate) SetupGateScreen(onOpenPage = { settingsPage = it }, onDone = { gate = false })
-        if (onboard) SetupFlow(setupPage) { prompt ->
-            onboard = false; setupPage = 0
-            gate = com.blaze.assistant.setup.SetupGate.shouldGate(ctx)
-            when {
-                prompt == null -> { if (swipeMode) settleTo(0f) }
-                prompt.startsWith("/settings") -> settingsPage = "ai"
-                newLook -> composer.send(prompt)
-                else -> Agent.send(prompt)
-            }
-        }
         settingsPage?.let { start ->
             androidx.compose.runtime.key(start) {
                 SettingsScreen(start, a11yOn,
                     onOpenAccessibility = { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
-                    onDismiss = { settingsPage = null })
+                    onDismiss = { settingsPage = null },
+                    onTab = { t -> settingsPage = null; exitView(); go(navNow().switchTab(t)) },
+                    onSearch = { settingsPage = null; composer.query = ""; composer.openSpotlight() })
+            }
+        }
+        // 0.52.3: what is left of setup (the Home's "Finishing setup" card), as the same one-screen progress view.
+        if (setupSheet && !onboard) {
+            CompositionLocalProvider(LocalBlaze provides DarkColors) {
+                com.blaze.assistant.ui.space.SpaceBackdrop(forceDark = true) {
+                    com.blaze.assistant.ui.space.SpaceSetupScreen(setupState, onContinue = { setupSheet = false },
+                        onRetry = { com.blaze.assistant.setup.SetupRunner.retry(ctx) })
+                }
+            }
+            BackHandler { setupSheet = false }
+        }
+        // 0.52.3: Spotlight, from the top bar's round button (+ / search) or the profile's Search pill, over everything.
+        com.blaze.assistant.ui.space.SpaceSpotlightLayer(composer, hour = com.blaze.assistant.ui.space.SpaceGreeting.hourNow(),
+            apps = { com.blaze.assistant.phone.InstalledApps.all(ctx).map { com.blaze.assistant.composer.SpotlightGroups.App(it.label, it.pkg) } },
+            said = { Agent.messages.value.takeLast(300).filter { it.role == Role.USER || it.role == Role.BLAZE }
+                .map { com.blaze.assistant.composer.SpotlightGroups.Said(it.id, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text), it.role == Role.USER) } })
+        } // !onboard
+        // 0.52.3 first run: logo + tagline, sign-in when needed, then the one setup screen (everything downloads by itself).
+        if (onboard) {
+            val step = com.blaze.assistant.ui.space.SpaceOnboarding.Step.valueOf(obStep)
+            LaunchedEffect(step) { if (step == com.blaze.assistant.ui.space.SpaceOnboarding.Step.SETUP) com.blaze.assistant.setup.SetupRunner.start(ctx) }
+            com.blaze.assistant.ui.space.SpaceOnboardingScreen(step, signedIn = me != null || Settings.ready, setup = setupState,
+                onNext = {
+                    val nx = com.blaze.assistant.ui.space.SpaceOnboarding.next(step, me != null || Settings.ready)
+                    if (nx != null) obStep = nx.name
+                    else { Settings.setBool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME)) }
+                },
+                onRetry = { com.blaze.assistant.setup.SetupRunner.retry(ctx) },
+                accountCard = { AccountPage() })
+            BackHandler(enabled = step != com.blaze.assistant.ui.space.SpaceOnboarding.Step.WELCOME) {
+                obStep = if (step == com.blaze.assistant.ui.space.SpaceOnboarding.Step.SETUP && me == null && !Settings.ready)
+                    com.blaze.assistant.ui.space.SpaceOnboarding.Step.SIGN_IN.name else com.blaze.assistant.ui.space.SpaceOnboarding.Step.WELCOME.name
             }
         }
     }
@@ -1530,53 +1513,37 @@ internal fun SuggestionList(list: List<Suggestion>, onPick: (Suggestion) -> Unit
     }
 }
 
-private fun greeting(): String = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-    in 5..11 -> "Good morning"
-    in 12..16 -> "Good afternoon"
-    else -> "Good evening"
-}
-
+/**
+ * The empty chat (0.52.3, the Hark look): a card with the serif greeting and a line on what ARGUS does, a sign-in card
+ * while not signed in, and suggested asks as white pill chips (tapped = sent).
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun Welcome(needsSetup: Boolean, onSetup: () -> Unit, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
-    val name = Settings.userName
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 28.dp)
-    ) {
-        Label("AI assistant · On your phone")
-        Spacer(Modifier.height(14.dp))
-        Text(
-            greeting() + if (name.isNotBlank()) ",\n$name." else ".",
-            style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 46.sp,
-                lineHeight = 48.sp, letterSpacing = (-0.045).em, color = c.ink)
-        )
-        Spacer(Modifier.height(14.dp))
-        Text(
-            "Ask anything. ${BrandName.NAME} answers, opens apps, taps and types for you, and checks with you before anything that matters.",
-            style = TextStyle(fontFamily = Type.Sans, fontSize = 17.sp, lineHeight = 26.sp, color = c.body)
-        )
-        Spacer(Modifier.height(32.dp))
-
-        if (needsSetup) {
-            GlassCard(Modifier.fillMaxWidth(), intensity = GlassIntensity.High, onClick = onSetup) {
-                ButtonText("Make me smarter · one tap  →", color = c.ink)
-                Spacer(Modifier.height(4.dp))
-                Text("I already work. Signing in makes me faster and smarter.", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-        run {
-            Label("Try")
+    val look = com.blaze.assistant.ui.space.spaceLook()
+    val hour = remember { com.blaze.assistant.ui.space.SpaceGreeting.hourNow() }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        com.blaze.assistant.ui.space.SpaceCard {
+            com.blaze.assistant.ui.space.SpaceHeadline(com.blaze.assistant.ui.space.SpaceGreeting.hello(hour, Settings.userName.ifBlank { null }), size = 32.sp)
             Spacer(Modifier.height(10.dp))
-            val items = listOf(
-                "Set an alarm for 6:30",
-                "Draw a lion wearing sunglasses",
-                "Make me an afro beat",
-                "Open YouTube and play lo-fi music"
-            )
-            // v0.24.0: quick replies, as bubbles you could send.
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items.forEach { s -> SoftPill(s, fill = c.bubble, ink = c.ink) { onPick(s) } }
+            Text("Ask anything. ${BrandName.NAME} answers, opens apps, taps and types for you, and checks with you before anything that matters.",
+                style = com.blaze.assistant.ui.space.SpaceType.body(17.sp, look.sub))
+        }
+        if (needsSetup) com.blaze.assistant.ui.space.SpaceCard {
+            com.blaze.assistant.ui.space.SpaceHeadline("${BrandName.UPPER} can do more", size = 26.sp)
+            Spacer(Modifier.height(8.dp))
+            Text("Sign in to your ${BrandName.NAME} account for the best answers, synced across your devices.",
+                style = com.blaze.assistant.ui.space.SpaceType.body(16.sp, look.ink))
+            Spacer(Modifier.height(14.dp))
+            com.blaze.assistant.ui.space.SpacePillButton("Sign in", onSetup, primary = true)
+        }
+        com.blaze.assistant.ui.space.SpaceCard {
+            Text("Try", style = com.blaze.assistant.ui.space.SpaceType.body(15.sp, look.sub))
+            Spacer(Modifier.height(12.dp))
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf("Set an alarm for 6:30", "Draw a lion wearing sunglasses", "Make me an afro beat", "Open YouTube and play lo-fi music")
+                    .forEach { s -> com.blaze.assistant.ui.space.SpaceChip(s, { onPick(s) }) }
             }
         }
     }
@@ -1627,70 +1594,6 @@ private fun AttachmentStrip(files: List<com.blaze.assistant.agent.Attachment>, l
     }
 }
 
-/**
- * Shown under "credits used up": pick another provider + model in two taps, then Blaze carries on.
- * The model that just ran out (and any model whose keys are all resting) is left out of the list.
- */
-@Composable
-private fun BrainSwitcher(spent: String, onPicked: () -> Unit) {
-    val c = LocalBlaze.current
-    val (spentPid, spentModel) = spent.substringBefore('|') to spent.substringAfter('|')
-    val P = com.blaze.assistant.agent.Providers
-    val R = com.blaze.assistant.agent.KeyRing
-    val providers = remember { P.all.filter { it.id != P.AUTO && R.all(it.id).isNotEmpty() } }
-    var open by remember { mutableStateOf(false) }
-    var pid by remember { mutableStateOf(spentPid.takeIf { s -> providers.any { it.id == s } } ?: providers.firstOrNull()?.id.orEmpty()) }
-    var models by remember { mutableStateOf<List<String>?>(null) }
-    LaunchedEffect(pid, open) {
-        if (!open || pid.isBlank()) return@LaunchedEffect
-        models = null
-        val l = com.blaze.assistant.agent.ModelCatalog.modelsFor(pid)
-        models = l.filter { !(pid == spentPid && it == spentModel) && !R.usedUp(pid, it) }
-    }
-    Column(Modifier.padding(top = 8.dp).widthIn(max = 330.dp).fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.ink).clickable { open = !open }.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            Label("Switch brain and continue", color = c.paper, size = 10.sp, modifier = Modifier.weight(1f))
-            ButtonText(if (open) "\u25B2" else "\u25BC", color = c.paper)
-        }
-        if (open) Column(Modifier.padding(top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.bubble).padding(12.dp)) {
-            // Fastest option: hand it to the free brains.
-            ActionText("Auto \u00b7 free brains", color = c.accent, size = 10.sp, modifier = Modifier.fillMaxWidth().clickable {
-                Settings.providerId = P.AUTO; open = false; onPicked() }.padding(vertical = 10.dp))
-            if (providers.isNotEmpty()) {
-                Label("Provider", size = 9.sp, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
-                Row(Modifier.horizontalScroll(rememberScrollState())) {
-                    providers.forEach { p ->
-                        val on = p.id == pid
-                        Box(Modifier.padding(end = 6.dp).clip(RoundedCornerShape(14.dp)).background(if (on) c.ink else c.paper).clickable { pid = p.id }
-                            .padding(horizontal = 10.dp, vertical = 8.dp)) {
-                            ButtonText(p.name.substringBefore(" ("), color = if (on) c.paper else c.ink, size = 13.sp)
-                        }
-                    }
-                }
-                Label("Model", size = 9.sp, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
-                val l = models
-                when {
-                    l == null -> Label("Loading models\u2026", size = 9.sp, modifier = Modifier.padding(vertical = 8.dp))
-                    l.isEmpty() -> Label("No other models on this provider. Pick another provider or Auto.", size = 9.sp, modifier = Modifier.padding(vertical = 8.dp))
-                    else -> Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
-                        l.forEach { id ->
-                            Text(id, modifier = Modifier.fillMaxWidth().clickable {
-                                Settings.providerId = pid
-                                Settings.setStr("model_$pid", id)
-                                open = false; onPicked()
-                            }.padding(vertical = 9.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.ink))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-/** "call blaze", "let's talk", "voice call"… opens the call screen. */
-// Also "let's get on a call", "can we have a call", "start a voice call with blaze". "call Sam" is NOT this.
 private val callWords = Regex("""^(?:(?:hey |ok )?(?:(?:argus|blaze)[, ]+)?)(?:(?:can we|could we|can you|let['’]?s|lets|i want to|i wanna|wanna|please)\s+)?(?:(?:get|hop|jump|be)\s+on\s+(?:a\s+)?(?:voice\s+)?call|(?:start|have|do|make)\s+a\s+(?:voice\s+)?call|call(?:\s+(?:(?:argus|blaze)|me))?|talk(?:\s+to\s+me)?|voice\s+(?:call|chat|mode))(?:\s+(?:with\s+(?:me|(?:argus|blaze)|you)|(?:argus|blaze)|now|please))*[.!?]*$""", RegexOption.IGNORE_CASE)
 
 
@@ -1744,27 +1647,26 @@ private fun WaitingCards(listening: Boolean, clearedAt: Long, onUndoClear: () ->
 }
 
 /**
- * 0.52.2: the ARGUS Home as the chat shell shows it ([com.blaze.assistant.ui.argus.ArgusHomeBus]). The chat's messages are
- * collected here, not in ChatScreen, so a streaming reply only recomposes the Home's result card.
+ * 0.52.3: the Home as the chat shell shows it (space/SpaceHome.kt). The chat's messages are collected here, not in
+ * ChatScreen, so a streaming reply only recomposes the Home's answer card.
  */
 @Composable
-private fun ArgusHomeLayer(composer: com.blaze.assistant.ui.composer.ComposerState, name: String?, covered: Boolean,
-                           voiceState: Voice.State, mood: Mood, onSend: (String) -> Unit, onMic: () -> Unit, onProfile: () -> Unit) {
-    val ctx = LocalContext.current
+private fun SpaceHomeLayer(name: String?, signedIn: Boolean, mood: Mood, projects: List<com.blaze.assistant.agent.Project>,
+                           setup: Map<String, com.blaze.assistant.setup.SetupPlan.Status>,
+                           onAsk: (String) -> Unit, onOpenChat: () -> Unit, onOpenProject: (String) -> Unit, onOpenProjects: () -> Unit,
+                           onSignIn: () -> Unit, onSetup: () -> Unit) {
     val messages by Agent.messages.collectAsState()
-    val level by Voice.level.collectAsState()
-    // Asks made while the Home is up (typed or spoken) get their answer card; older chat doesn't.
-    var from by remember { mutableLongStateOf(Agent.messages.value.maxOfOrNull { it.id } ?: 0L) }
-    val card = remember(messages, mood, from) {
-        com.blaze.assistant.ui.argus.ArgusAnswer.card(from, messages.filter { it.id > from && (it.role == Role.USER || it.role == Role.BLAZE) }
-            .map { com.blaze.assistant.ui.argus.ArgusAnswer.Msg(it.id, it.role == Role.BLAZE, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text)) }, mood != Mood.IDLE)
+    // the hour, re-read at every full hour while Home is composed
+    var hour by remember { androidx.compose.runtime.mutableIntStateOf(com.blaze.assistant.ui.space.SpaceGreeting.hourNow()) }
+    LaunchedEffect(Unit) { while (true) { delay(com.blaze.assistant.ui.space.SpaceGreeting.msToNextHour(System.currentTimeMillis())); hour = com.blaze.assistant.ui.space.SpaceGreeting.hourNow() } }
+    val card = remember(messages, mood) {
+        com.blaze.assistant.ui.space.SpaceAnswer.card(0L, messages.takeLast(40).filter { it.role == Role.USER || it.role == Role.BLAZE }
+            .map { com.blaze.assistant.ui.space.SpaceAnswer.Msg(it.id, it.role == Role.BLAZE, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text)) }, mood != Mood.IDLE)
     }
-    val state = com.blaze.assistant.ui.argus.ArgusScene.stateOf(listening = voiceState == Voice.State.LISTENING,
-        speaking = voiceState == Voice.State.SPEAKING, working = mood != Mood.IDLE)
-    com.blaze.assistant.ui.argus.ArgusHomeScreen(state, level, name, composer,
-        onSend = onSend, onMic = onMic, onOpenChat = { com.blaze.assistant.ui.argus.ArgusHomeBus.hide() }, onProfile = onProfile,
-        covered = covered, answer = card, onDismissAnswer = { from = messages.maxOfOrNull { it.id } ?: from },
-        apps = { com.blaze.assistant.phone.InstalledApps.all(ctx).map { com.blaze.assistant.composer.SpotlightGroups.App(it.label, it.pkg) } },
-        said = { Agent.messages.value.takeLast(300).filter { it.role == Role.USER || it.role == Role.BLAZE }
-            .map { com.blaze.assistant.composer.SpotlightGroups.Said(it.id, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text), it.role == Role.USER) } })
+    val state = com.blaze.assistant.ui.space.SpaceHomeState(name = name, hour = hour, signedIn = signedIn, answer = card, working = mood != Mood.IDLE,
+        projects = projects.sortedByDescending { it.updated }.take(com.blaze.assistant.ui.space.SpaceHomeCards.MAX_PROJECTS).map { it.id to it.name },
+        setupLeft = if (com.blaze.assistant.setup.SetupRunner.started()) com.blaze.assistant.setup.SetupPlan.left(setup).size else 0,
+        setupPercent = com.blaze.assistant.setup.SetupPlan.percent(setup))
+    com.blaze.assistant.ui.space.SpaceHomeScreen(state, onAsk = onAsk, onOpenChat = onOpenChat, onOpenProject = onOpenProject,
+        onOpenProjects = onOpenProjects, onSignIn = onSignIn, onSetup = onSetup, bottomPad = 16.dp)
 }

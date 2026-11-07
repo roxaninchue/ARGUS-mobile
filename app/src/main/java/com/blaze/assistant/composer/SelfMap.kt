@@ -10,7 +10,7 @@ import com.blaze.assistant.BrandName
  * declared here. Pure apart from [default] reading Views (SelfMapTest builds maps from plain lists with [of]).
  */
 object SelfMap {
-    enum class Kind { VIEW, ACTION, SETTING, MODEL }
+    enum class Kind { VIEW, ACTION, SETTING }
 
     /**
      * One thing Blaze can open or do. [target]: the view id a VIEW / SETTING opens, the action id, or the model family id.
@@ -55,18 +55,12 @@ object SelfMap {
         Entry("setting:proactive", Kind.SETTING, "Proactive", "When ${BrandName.NAME} speaks up on its own", "proactive", listOf("notifications", "triggers")),
     )
 
-    /** The model families, searchable by name and speed ("pan" → Argus Panoptes · Deepest; old names like "inferno" still find it). */
-    val MODELS: List<Entry> = ModelChoice.Family.values().map { f ->
-        Entry("model:${f.id}", Kind.MODEL, "${f.blazeName} \u00b7 ${f.sub}", "Model", f.id,
-            listOf(f.label.lowercase(), f.sub.lowercase(), "model", "brain") + f.aliases)
-    }
-
     fun of(views: List<ViewInfo>): List<Entry> {
         val v = views.map { Entry("view:${it.id}", Kind.VIEW, it.name, it.desc, it.id, it.aliases + it.id, preview = it.id in PREVIEWABLE) }
-        return v + ACTIONS + SETTINGS + MODELS
+        return v + ACTIONS + SETTINGS   // 0.52.3: no model rows (ARGUS picks the brain automatically)
     }
 
-    /** The live map: Views.all + actions + settings + models. Never throws (falls back to a small built-in view list). */
+    /** The live map: Views.all + actions + settings. Never throws (falls back to a small built-in view list). */
     val default: List<Entry> by lazy { of(liveViews()) }
 
     private fun liveViews(): List<ViewInfo> = runCatching {

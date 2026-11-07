@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 0.52.1 Argus adaptive icon: Argus Black → cobalt background, the silver A, a monochrome layer for themed icons. -->
+<!-- 0.52.3 ARGUS adaptive icon: black + Argus Blue glow background, the metallic ARGUS mark (safe zone), a monochrome mark for themed icons. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/ic_launcher_background" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />

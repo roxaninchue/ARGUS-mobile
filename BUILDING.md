@@ -1,13 +1,14 @@
 # Building ARGUS mobile (and not breaking CI)
 
-This branch is built **only by CI** (owner rule: no local Gradle or kotlinc on `feat/argus-3d-home`).
+This branch is built **only by CI** (owner rule: no local Gradle on `feat/argus-3d-home` / `feat/argus-hark-design`; on
+`feat/argus-hark-design` a standalone kotlinc type-check and the pure tests are allowed, see the 0.52.3 notes at the end).
 Every push costs a 15–25 minute CI round, so the cheapest build is the one you check before you push.
 
 ## Where builds run
 
 | What | Where |
 |---|---|
-| Source of truth | GitLab `blazeinchue/BlazeMobile`, branch `feat/argus-3d-home` (push here only) |
+| Source of truth | GitLab `blazeinchue/BlazeMobile`, branch `feat/argus-hark-design` (0.52.3; `feat/argus-3d-home` was 0.52.2) |
 | CI | GitHub Actions on the mirror `roxaninchue/ARGUS-mobile` (GitLab mirrors every branch within minutes) |
 | GitLab CI | Not used (credits exhausted). `.gitlab-ci.yml` is left alone. |
 
@@ -43,14 +44,14 @@ The other workflows also pass `-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspa
 
 | Check run | Workflow | Command (abridged) |
 |---|---|---|
-| `apk` | Build APK (`build.yml`) | `./gradlew testReleaseUnitTest :storeapi:test assembleRelease`, then screenshots with `BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests '…ShotsTest*' --tests '…ArgusHomeShotsTest'` |
+| `apk` | Build APK (`build.yml`) | `./gradlew testReleaseUnitTest :storeapi:test assembleRelease`, then screenshots with `BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests '…ShotsTest*' --tests '…SpaceShotsTest'` |
 | `build`, `build-without-youtube` | Mobile build | `./gradlew :app:assembleRelease` (+ release unit tests); the no-YouTube APK must contain no `mediaapps/youtube` classes |
 | `unit-tests` | Mobile build | `./gradlew :app:testDebugUnitTest --continue` |
-| `shots` | Mobile build | `./gradlew :app:testDebugUnitTest --tests` ShotsTest, Shots375Test, StageShotsTest, MoviesShotsTest, MediaRevampShotsTest, SecretCardsShotsTest, HomeRedesignShotsTest, ComposerShotsTest, Blaze050ShotsTest, ArgusHomeShotsTest |
+| `shots` | Mobile build | `./gradlew :app:testDebugUnitTest --tests` ShotsTest, Shots375Test, StageShotsTest, MoviesShotsTest, MediaRevampShotsTest, SecretCardsShotsTest, HomeRedesignShotsTest, ComposerShotsTest, Blaze050ShotsTest, SpaceShotsTest |
 | `app-template` | Mobile build | builds the android-app-builder skill template |
 | `smoke` | Low-RAM smoke gate | `assembleRelease assembleDebug assembleDebugAndroidTest`, then API 31 emulator, 1.5 GB RAM, 192 MB heap |
-| `focus` | Home focus check | `assembleDebug assembleDebugAndroidTest`, `ArgusHomeCheck` on the low-RAM emulator |
-| `intro` | Home intro check | same, `ArgusSpotlightCheck` |
+| `focus` | Home focus check | `assembleDebug assembleDebugAndroidTest`, `SpaceHomeCheck` on the low-RAM emulator (0.52.2: ArgusHomeCheck) |
+| `intro` | Home intro check | same, `SpaceOnboardingCheck` via tools/smoke/run-space-onboarding.sh (0.52.2: ArgusSpotlightCheck) |
 
 Note: **any** test source that fails to compile fails `unit-tests`, `shots`, `build` and `build-without-youtube`
 together, because they all compile the unit-test source set.
@@ -71,7 +72,7 @@ the rest are usually cascades (one bad paren produced "Unresolved reference 'ass
 | Commit | What broke | Cause | Avoid it by |
 |---|---|---|---|
 | before d12934f8 | `compileReleaseKotlin` OOM | Gradle daemon + Kotlin daemon both on a 7 GB runner | Keep the memory settings above |
-| before 4ad444cc | Release unit tests couldn't start Compose tests | `ui-test-manifest` missing on the release test classpath | Keep `ui-test-manifest` on the test classpath; Compose-only tests (`ArgusHomeShotsTest`, `ShotsTest`) are skipped in Release |
+| before 4ad444cc | Release unit tests couldn't start Compose tests | `ui-test-manifest` missing on the release test classpath | Keep `ui-test-manifest` on the test classpath; Compose-only tests (`*ShotsTest*`, e.g. `SpaceShotsTest`, `ShotsTest`) are skipped in Release |
 | 4ad444cc | 35 unit-test failures | Blaze → Argus rename: tests expecting old strings/commands | Commands accept both `Argus` and `Blaze`; when renaming, grep `app/src/test` and `app/src/androidTest` for the old string in the same commit |
 | 4ad444cc | Skill hash / store catalog tests | `assets/skills/**` edited without resyncing hashes and `store/catalog.json` | Any change under `assets/skills/` → regenerate the hashes and catalog in the same commit |
 | 93b65e51 | `compileDebugKotlin`: `ParsedChat` unresolved | A sweeping edit to `ChatJson.kt` deleted a class that was still used | Before deleting a symbol, `git grep -n '\bName\b'` across `app/src` (main, test, androidTest) |
@@ -81,6 +82,11 @@ the rest are usually cascades (one bad paren produced "Unresolved reference 'ass
 | 4ad444cc | `ArgusSpotlightCheck` gesture didn't take | Emulator under load drops a swipe | The check retries gestures; don't make on-device checks depend on one gesture |
 | 10d5bd15 | Release cold start 706 ms app-attributable (373 ms the round before) | Slow runner (TotalTime 3633 vs 2230 ms) | Watch it; if it repeats, profile `BlazeApp.onCreate` and the first composition of the release build |
 | 2c7ef81d | `LowRamSmokeTest.f_argusHome` / `z_noStallAnywhere`: main stalled 903 ms in "argus home (auto)" | First HWUI frame of the test process: SwiftShader compiled Skia's programs on the RenderThread (878 ms GL, Davey 1191 ms) and the first window draw held main until it completed; main's own work was ~115 ms. Not ART verification (that sampled stack was from cold start) | The in-process gate warms the renderer with the ARGUS Home itself before its monitor starts (same exclusion run-smoke.sh makes for cold start). A generic warm-up (10d5bd15) was not enough: 706 ms, the Home frame still spent 644 ms in GL. Read the Davey line's `IssueDrawCommandsStart`→`SwapBuffers` before blaming main-thread code |
+| b5f84b74 | shots: `ComposerShotsTest.spotlightModels` timed out | 0.52.3 removed the model picker rows; the shots-only test still waited for "ARGUS Panoptes" (only `mobile-build.yml`'s shots job runs `ComposerShotsTest`, with `BLAZE_SHOTS=1`, so unit-tests stayed green) | When removing UI, grep `app/src/test` for its strings including `*ShotsTest*` files, not just the plain unit tests |
+| 21e7f293 | shots: `SpaceShotsTest.profileLight` "component is not displayed" | `SpaceProfileScreen` draws the line it is given; the caller (`SettingsSheet`) passes `SpaceProfile.subtitle(...)`. The test passed the raw e-mail signed-out, then asserted the "Not signed in" subtitle | Tests should call a screen the way its real caller does; check the call site before asserting derived text |
+| b5f84b74 | smoke: release cold start app-attributable main stall 1850 ms | 0.52.3 onboarding/space view (open; see below) | Read SUMMARY.md's cold-start line, the Davey timeline and the main-stack samples before changing code |
+| 21e7f293/66ed074d | smoke: 2150 ms (worse) | Guess without the per-frame data: prefetching the space image + logo in `StartWarm` (before `warmClasses`) and skipping the root backdrop under onboarding. Made it worse | Avoid: blind prefetch on StartWarm's thread; it delays class warm-up and competes for the emulator's CPU. Get the frame data first |
+| 2b84a204 (PASS, 559 ms) | smoke fix after 66ed074d | Per-frame data: first frame = ~670 ms main (636 ms layout: the hidden Home, top bar, chat and Spotlight composed under the opaque onboarding) + ~1440 ms waiting on software-GL. `app_stall.py` only cut that wait when frame 2 had a Davey line | Don't compose UI that a full-screen layer hides on first run; `app_stall.py` now cuts the soft-first-frame wait from the first unmatched skip (gate stays 700 ms). StartWarm prefetch removed |
 
 The deep-link scheme stays `blaze://` (any case) after the rename; don't rename it.
 
@@ -97,6 +103,20 @@ The deep-link scheme stays `blaze://` (any case) after the rename; don't rename 
 7. **Don't touch**: `applicationId`; old Home board code (`HomeBoardUi`, `HomeGridUi`, `HomeIntro`, `HomeRedesign`).
 8. Push, then wait for **all nine** check runs before the next push (a new push cancels the running round).
 9. A failure that survives two fix attempts: stop and report instead of guessing a third time.
+10. Smoke used to cancel on a new push (66ed074d cancelled 21e7f293's smoke, so that fix was never judged). It now queues instead, but still batch fixes into one push.
+11. Docs-only pushes (`*.md`, `docs/`) start no build: all app workflows have `paths-ignore` for them. A commit message with `[skip ci]` skips every workflow (use it for workflow/tooling edits that need no app round).
+12. Changing `tools/smoke/app_stall.py`? Run `python3 tools/smoke/test_app_stall.py` first (seconds, no emulator; the smoke job also runs it first). Add a case with the new run's numbers.
+13. Releasing a feature-branch build: `release-apk.yml` failed twice on v0.52.3 with `HTTP 403: Resource not accessible by integration` in "Create or update the release" (the repo's Workflow permissions setting is not the cause: the workflow sets `contents: write` itself). Until that is understood, publish by hand: download the `argus-hark-design-test-signed-<sha>` artifact from the Build APK run, then Releases, Draft a new release, the tag, attach the APK, pre-release, Publish.
+
+## When the low-RAM smoke gate fails (fast path, one fix round)
+
+0.52.3 took four rounds (~2 hours) because the first two fixes were guesses. Do this instead:
+
+1. Read the cold-start lines of SUMMARY (GitHub step summary, also `smoke-out/SUMMARY.md` in the artifact): `app-attributable`, `excluded`, `frame 1: delay / own work / first frame GL`, and the Davey line (`vsync to main start, layout, record, RenderThread GL`).
+2. Split the number: **app_ms = main work (layout + record + vsync-to-start) + whatever render wait was not excluded.** If `excluded` is 0 while `first frame GL` is over 700 ms, the script missed the software first frame (that was 66ed074d); if `layout` is large, it is first composition.
+3. Replay before pushing: download `smoke-out`, run `python3 tools/smoke/app_stall.py smoke-out/logcat-release.txt <pid>` with your script change, and estimate the code change from the layout ms it removes. Only push when the estimate is under 700 ms with margin.
+4. Usual cause of big first-frame layout: composing UI hidden under a full-screen layer (onboarding, a sheet). Don't compose it. Don't prefetch on `StartWarm`'s thread: it delays class warm-up (21e7f293 made it worse).
+5. Batch every fix into one push, then let all checks finish (smoke no longer cancels on a new push, so a second push just queues).
 
 ## If you can build locally (other branches)
 
@@ -118,3 +138,21 @@ software GL) while main's part (`HandleInputStart`→`SyncQueued`) is ~115 ms; m
 after it, same primitives, stayed clean. Fix-up 5 (10d5bd15) warmed with generic gradients and text: 706 ms, since the Home's first frame still
 spent 644 ms in GL on its own programs. Fix-up 6 warms with the ARGUS Home itself (auto renderer, idle then the result card). The 700 ms gate is unchanged, and the Home's real first frame stays gated by the
 cold-start check in run-smoke.sh.
+
+## 0.52.3 (`feat/argus-hark-design`): what was checked before the first push
+
+- **Local type-check (allowed on this branch):** kotlinc 2.0.20 / JDK 17 over `app/src/main` + `storeapi` + `app/src/test` +
+  `app/src/androidTest` with android.jar and the Compose 1.7 jars, stub `R` / `BuildConfig`, no Compose plugin. Missing
+  libraries (media3, work, lifecycle, robolectric, androidx.test …) give ~5,400 errors on `main` itself, so compare the
+  error set with the same run on `main` (file + message, line numbers stripped); only new errors matter. It caught a
+  local function used before its declaration in ChatScreen (`navNow()` / `go()` in the shared-text effect).
+- **Pure tests run locally:** SpaceLogicTest, SetupPlanTest, LegalAssetsTest, SpaceWiringTest, the space-palette case of
+  ContrastTest, and the source-scan tests (BackButtonTest, IconOnlyTest, NoSquareTest, NoDeviceModelTest, MoviesLegalTest)
+  with stubs for the Compose-only pieces.
+- **assets/legal/THIRD_PARTY_NOTICES.md** carries the vega-app attribution link, which `MoviesLegalTest` bans anywhere in
+  `app/src/main`. The test allows exactly that file, and only while it is byte-for-byte the repo root's notices
+  (LegalAssetsTest pins the copy too). When the root LICENSE.md or THIRD_PARTY_NOTICES.md changes, copy both again.
+- **Renames:** ArgusHome* / ArgusSpotlight* tests and checks were replaced, not kept; `run-smoke.sh` still expects
+  `OK (7 tests)` (`f_argusHome` became `f_spaceHome`), and the warm-up draws the space shell (same SwiftShader reason as above).
+- **Setup downloads on CI:** SetupRunner only starts from the onboarding's setup step or (BlazeApp, 30 s after the first
+  frame) for people already onboarded. A fresh emulator install is neither, so no smoke or device check downloads anything.
