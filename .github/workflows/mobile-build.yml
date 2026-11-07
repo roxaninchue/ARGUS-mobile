@@ -11,6 +11,8 @@ on:
     # 0.52.2: + the ARGUS living 3D Home branch (unit tests, shots, unsigned + test-signed APK)
     # 0.52.3: + the ARGUS x Hark design branch (shots incl. SpaceShotsTest, which replaced ArgusHomeShotsTest)
     branches: [ "app/mobile", "app/mobile-revamp", "app/brain-routing", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
+    paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
 
 permissions:

@@ -8,6 +8,8 @@ name: Home focus check (ARGUS Home, space shell)
 on:
   push:
     branches: [ "check/**", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
+    paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
 
 permissions:

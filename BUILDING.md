@@ -86,7 +86,7 @@ the rest are usually cascades (one bad paren produced "Unresolved reference 'ass
 | 21e7f293 | shots: `SpaceShotsTest.profileLight` "component is not displayed" | `SpaceProfileScreen` draws the line it is given; the caller (`SettingsSheet`) passes `SpaceProfile.subtitle(...)`. The test passed the raw e-mail signed-out, then asserted the "Not signed in" subtitle | Tests should call a screen the way its real caller does; check the call site before asserting derived text |
 | b5f84b74 | smoke: release cold start app-attributable main stall 1850 ms | 0.52.3 onboarding/space view (open; see below) | Read SUMMARY.md's cold-start line, the Davey timeline and the main-stack samples before changing code |
 | 21e7f293/66ed074d | smoke: 2150 ms (worse) | Guess without the per-frame data: prefetching the space image + logo in `StartWarm` (before `warmClasses`) and skipping the root backdrop under onboarding. Made it worse | Avoid: blind prefetch on StartWarm's thread; it delays class warm-up and competes for the emulator's CPU. Get the frame data first |
-| (this push) | smoke fix after 66ed074d | Per-frame data: first frame = ~670 ms main (636 ms layout: the hidden Home, top bar, chat and Spotlight composed under the opaque onboarding) + ~1440 ms waiting on software-GL. `app_stall.py` only cut that wait when frame 2 had a Davey line | Don't compose UI that a full-screen layer hides on first run; `app_stall.py` now cuts the soft-first-frame wait from the first unmatched skip (gate stays 700 ms). StartWarm prefetch removed |
+| 2b84a204 (PASS, 559 ms) | smoke fix after 66ed074d | Per-frame data: first frame = ~670 ms main (636 ms layout: the hidden Home, top bar, chat and Spotlight composed under the opaque onboarding) + ~1440 ms waiting on software-GL. `app_stall.py` only cut that wait when frame 2 had a Davey line | Don't compose UI that a full-screen layer hides on first run; `app_stall.py` now cuts the soft-first-frame wait from the first unmatched skip (gate stays 700 ms). StartWarm prefetch removed |
 
 The deep-link scheme stays `blaze://` (any case) after the rename; don't rename it.
 
@@ -103,7 +103,19 @@ The deep-link scheme stays `blaze://` (any case) after the rename; don't rename 
 7. **Don't touch**: `applicationId`; old Home board code (`HomeBoardUi`, `HomeGridUi`, `HomeIntro`, `HomeRedesign`).
 8. Push, then wait for **all nine** check runs before the next push (a new push cancels the running round).
 9. A failure that survives two fix attempts: stop and report instead of guessing a third time.
-10. Pushing a second fix while a round runs cancels it (66ed074d cancelled 21e7f293's smoke, so that fix was never judged). Batch fixes; let smoke finish.
+10. Smoke used to cancel on a new push (66ed074d cancelled 21e7f293's smoke, so that fix was never judged). It now queues instead, but still batch fixes into one push.
+11. Docs-only pushes (`*.md`, `docs/`) start no build: all app workflows have `paths-ignore` for them. A commit message with `[skip ci]` skips every workflow (use it for workflow/tooling edits that need no app round).
+12. Changing `tools/smoke/app_stall.py`? Run `python3 tools/smoke/test_app_stall.py` first (seconds, no emulator; the smoke job also runs it first). Add a case with the new run's numbers.
+
+## When the low-RAM smoke gate fails (fast path, one fix round)
+
+0.52.3 took four rounds (~2 hours) because the first two fixes were guesses. Do this instead:
+
+1. Read the cold-start lines of SUMMARY (GitHub step summary, also `smoke-out/SUMMARY.md` in the artifact): `app-attributable`, `excluded`, `frame 1: delay / own work / first frame GL`, and the Davey line (`vsync to main start, layout, record, RenderThread GL`).
+2. Split the number: **app_ms = main work (layout + record + vsync-to-start) + whatever render wait was not excluded.** If `excluded` is 0 while `first frame GL` is over 700 ms, the script missed the software first frame (that was 66ed074d); if `layout` is large, it is first composition.
+3. Replay before pushing: download `smoke-out`, run `python3 tools/smoke/app_stall.py smoke-out/logcat-release.txt <pid>` with your script change, and estimate the code change from the layout ms it removes. Only push when the estimate is under 700 ms with margin.
+4. Usual cause of big first-frame layout: composing UI hidden under a full-screen layer (onboarding, a sheet). Don't compose it. Don't prefetch on `StartWarm`'s thread: it delays class warm-up (21e7f293 made it worse).
+5. Batch every fix into one push, then let all checks finish (smoke no longer cancels on a new push, so a second push just queues).
 
 ## If you can build locally (other branches)
 

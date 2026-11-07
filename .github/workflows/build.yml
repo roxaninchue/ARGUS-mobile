@@ -6,7 +6,7 @@ on:
     # 0.52.3: + the ARGUS x Hark design branch (same rules: tests, shots, a test-signed APK, never published).
     branches: [main, feat/argus-3d-home, feat/argus-hark-design]
     # The Blaze Gateway Worker (gateway/) has its own workflow; changes only there don't rebuild the app.
-    paths-ignore: ['gateway/**', '.github/workflows/gateway.yml']
+    paths-ignore: ['gateway/**', '.github/workflows/gateway.yml', '**/*.md', 'docs/**']
   # Pull requests (including from forks) only build; they never publish, sign a release or edit issues.
   pull_request:
     branches: [main]
