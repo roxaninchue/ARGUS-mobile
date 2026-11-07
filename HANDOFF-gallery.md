@@ -6,7 +6,7 @@ Only CI has compiled this. Nobody has run it on a phone yet.
 
 ## Test on the Galaxy A12 first
 1. Gallery opens with **All** and day headers (Today / Yesterday / date). Generated pictures, beats and anything in
-   Music/Blaze, Movies/Blaze and Download/Blaze all show. Songs have cover art or a coloured note tile, and songs and videos show their length.
+   Music/Argus, Movies/Argus and Download/Argus all show. Songs have cover art or a coloured note tile, and songs and videos show their length.
 2. Fling quickly through a few hundred items. Tiles fade in with no stutter. Go back up and they're already there (memory cache).
 3. Pills: Images / Music / Videos filter. Albums shows Generated images, Music, Videos, Downloads, and "+ New album".
 4. "Show Screenshots and Camera": grant → Screenshots and Camera albums appear. Deny → nothing breaks.
@@ -29,6 +29,6 @@ Only CI has compiled this. Nobody has run it on a phone yet.
 - **Media3/ExoPlayer** for video and audio: background playback, MediaSession and notification controls, gapless audio, and more
   codecs than VideoView/MediaPlayer. Hand off to the Music/Video player apps via intents once they exist.
 - Trash/recycle bin (Android 11+ `createTrashRequest`), favourites, edit/crop/rotate, slideshow, "Free up space".
-- Rename of shared-storage files Blaze doesn't own (needs `createWriteRequest`). Today it shows a clear message.
+- Rename of shared-storage files Argus doesn't own (needs `createWriteRequest`). Today it shows a clear message.
 - Video thumbnails on Android 8–9 for content URIs use a 1 s frame (MediaMetadataRetriever), which is slower than on 10+.
 - Robolectric screenshot of the new Gallery in `ShotsTest`.

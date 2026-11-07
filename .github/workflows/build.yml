@@ -4,8 +4,9 @@ on:
   push:
     # 0.52.2: the ARGUS living 3D Home branch builds and tests here too (it never publishes: the publish steps are main-only).
     # 0.52.3: + the ARGUS x Hark design branch (same rules: tests, shots, a test-signed APK, never published).
-    branches: [main, feat/argus-3d-home, feat/argus-hark-design]
-    # The Blaze Gateway Worker (gateway/) has its own workflow; changes only there don't rebuild the app.
+    branches: [main, feat/argus-3d-home, feat/argus-hark-design, 'chore/**']
+    # 0.52.4: + chore/** (the rename branch; tests, shots and a test-signed APK, never published).
+    # The Argus Gateway Worker (gateway/) has its own workflow; changes only there don't rebuild the app.
     paths-ignore: ['gateway/**', '.github/workflows/gateway.yml', '**/*.md', 'docs/**']
   # Pull requests (including from forks) only build; they never publish, sign a release or edit issues.
   pull_request:
@@ -31,17 +32,17 @@ jobs:
     env:
       # The YouTube plug-in lives in the owner's private repo Blaze-mobile and is checked out into youtube/.
       # BLAZE_MOBILE_TOKEN = fine-grained PAT, Contents: read on Blaze-mobile. Missing (forks, or not set) = no YouTube.
-      HAS_BLAZE_MOBILE_TOKEN: ${{ secrets.BLAZE_MOBILE_TOKEN != '' }}
+      HAS_YOUTUBE_TOKEN: ${{ secrets.BLAZE_MOBILE_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
       # YouTube Store plug-in (Gradle :youtube, only built when youtube/build.gradle.kts exists). Never fails the build:
-      # without the secret, or if the checkout fails, Blaze builds WITHOUT YouTube and the next step says so.
+      # without the secret, or if the checkout fails, Argus builds WITHOUT YouTube and the next step says so.
       - name: Check out the YouTube plug-in (Blaze-mobile → youtube/)
         id: yt_checkout
-        if: env.HAS_BLAZE_MOBILE_TOKEN == 'true'
+        if: env.HAS_YOUTUBE_TOKEN == 'true'
         continue-on-error: true
         uses: actions/checkout@v4
         with:
@@ -61,7 +62,7 @@ jobs:
           else
             rm -rf youtube
             echo "present=false" >> "$GITHUB_OUTPUT"
-            if [ "$HAS_BLAZE_MOBILE_TOKEN" != "true" ]; then WHY="the BLAZE_MOBILE_TOKEN secret is not available (not set, or a pull request from a fork)"
+            if [ "$HAS_YOUTUBE_TOKEN" != "true" ]; then WHY="the BLAZE_MOBILE_TOKEN secret is not available (not set, or a pull request from a fork)"
             else WHY="checking out the private YouTube plug-in repo failed (token expired, revoked or without access?)"; fi
             echo "::warning title=Building WITHOUT YouTube::$WHY. This APK has no YouTube Store."
             echo "### YouTube plug-in: NOT included — $WHY. This APK has no YouTube Store." >> "$GITHUB_STEP_SUMMARY"
@@ -79,10 +80,10 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: blazerouter/go.mod
+          go-version-file: argusrouter/go.mod
           cache-dependency-path: |
             wgproxy/go.sum
-            blazerouter/go.sum
+            argusrouter/go.sum
 
       # The browser VPN engine: user-space WireGuard + local HTTP proxy, shipped as an executable lib*.so
       # (like the Needle runner) so Android unpacks it into nativeLibraryDir.
@@ -95,16 +96,16 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/armeabi-v7a/libwgproxy.so .
           ls -la ../app/src/main/jniLibs/*/libwgproxy.so
 
-      # BlazeRouter (Desktop's router, Go port of OmniRoute, MIT): same trick, libblazerouter.so,
-      # started by Blaze in Alpine, Termux or directly (agent/BlazeRouter.kt).
-      - name: Build BlazeRouter
-        working-directory: blazerouter
+      # ArgusRouter (Desktop's router, Go port of OmniRoute, MIT): same trick, libargusrouter.so,
+      # started by Argus in Alpine, Termux or directly (agent/ArgusRouter.kt).
+      - name: Build ArgusRouter
+        working-directory: argusrouter
         run: |
           go vet .
           go test -count=1 ./internal/router/
-          CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$(grep -oP 'versionName = "\K[^"]+' ../app/build.gradle.kts)" -o ../app/src/main/jniLibs/arm64-v8a/libblazerouter.so .
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$(grep -oP 'versionName = "\K[^"]+' ../app/build.gradle.kts)" -o ../app/src/main/jniLibs/armeabi-v7a/libblazerouter.so .
-          ls -la ../app/src/main/jniLibs/*/libblazerouter.so
+          CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$(grep -oP 'versionName = "\K[^"]+' ../app/build.gradle.kts)" -o ../app/src/main/jniLibs/arm64-v8a/libargusrouter.so .
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$(grep -oP 'versionName = "\K[^"]+' ../app/build.gradle.kts)" -o ../app/src/main/jniLibs/armeabi-v7a/libargusrouter.so .
+          ls -la ../app/src/main/jniLibs/*/libargusrouter.so
 
       # v0.23.5: the three.js safety net and the 3D starter survive bad objects (node is preinstalled on ubuntu-latest).
       - name: Design JS tests
@@ -129,7 +130,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest*' --tests 'com.blaze.assistant.ui.SpaceShotsTest' --stacktrace 2>&1 | tee shots.log
+          ARGUS_SHOTS=1 ./gradlew testDebugUnitTest --tests 'com.blazeinchue.argus.ui.ShotsTest*' --tests 'com.blazeinchue.argus.ui.SpaceShotsTest' --stacktrace 2>&1 | tee shots.log
           ls -la app/build/shots
 
       - name: Publish screenshots
@@ -143,7 +144,7 @@ jobs:
           { echo "outcome: ${{ steps.shots.outcome }}  sha: ${{ github.sha }}  ref: ${{ github.head_ref || github.ref_name }}"; grep -E "^e: |FAILED|Exception|What went wrong" -A4 shots.log 2>/dev/null | head -80; echo '----- tail -----'; tail -60 shots.log 2>/dev/null; } > /tmp/shots/shots.log
           cd /tmp/shots
           git init -q -b shots
-          git config user.name "Blaze CI"; git config user.email "ci@users.noreply.github.com"
+          git config user.name "Argus CI"; git config user.email "ci@users.noreply.github.com"
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git add -A && git commit -qm "Screenshots ${{ github.sha }}"
           if ! git push origin shots --force > /tmp/push.log 2>&1; then
@@ -169,20 +170,20 @@ jobs:
           if [ -z "$NEW_P12" ] || [ -z "$NEW_PASS" ]; then
             echo "::warning::BLAZE_SIGNING_P12 / BLAZE_SIGNING_PASS not set; this build stays on the old key. Dry-running the rotation with a throwaway key."
             DRY=1; NEW_PASS=dryrunpass; export NEW_PASS
-            keytool -genkeypair -keystore "$K/new.p12" -storetype PKCS12 -alias blaze -keyalg RSA -keysize 2048 -validity 1 \
+            keytool -genkeypair -keystore "$K/new.p12" -storetype PKCS12 -alias argus -keyalg RSA -keysize 2048 -validity 1 \
               -dname "CN=dry" -storepass "$NEW_PASS" -keypass "$NEW_PASS" >/dev/null
           else
             echo "$NEW_P12" | base64 -d > "$K/new.p12"
           fi
           export OLD_PASS=android
           "$SIGNER" rotate --out "$K/lineage" \
-            --old-signer --ks keystore/blaze.keystore --ks-key-alias androiddebugkey --ks-pass env:OLD_PASS --key-pass env:OLD_PASS \
+            --old-signer --ks keystore/argus.keystore --ks-key-alias androiddebugkey --ks-pass env:OLD_PASS --key-pass env:OLD_PASS \
               --set-installed-data true --set-rollback false --set-permission false --set-shared-uid false --set-auth false \
-            --new-signer --ks "$K/new.p12" --ks-type PKCS12 --ks-key-alias blaze --ks-pass env:NEW_PASS --key-pass env:NEW_PASS
+            --new-signer --ks "$K/new.p12" --ks-type PKCS12 --ks-key-alias argus --ks-pass env:NEW_PASS --key-pass env:NEW_PASS
           for APK in app/build/outputs/apk/release/*.apk; do
             if [ -n "$DRY" ]; then cp "$APK" "$K/dry.apk"; APK="$K/dry.apk"; fi
-            "$SIGNER" sign --ks keystore/blaze.keystore --ks-key-alias androiddebugkey --ks-pass env:OLD_PASS --key-pass env:OLD_PASS \
-              --next-signer --ks "$K/new.p12" --ks-type PKCS12 --ks-key-alias blaze --ks-pass env:NEW_PASS --key-pass env:NEW_PASS \
+            "$SIGNER" sign --ks keystore/argus.keystore --ks-key-alias androiddebugkey --ks-pass env:OLD_PASS --key-pass env:OLD_PASS \
+              --next-signer --ks "$K/new.p12" --ks-type PKCS12 --ks-key-alias argus --ks-pass env:NEW_PASS --key-pass env:NEW_PASS \
               --lineage "$K/lineage" --rotation-min-sdk-version 28 "$APK"
             "$SIGNER" verify --print-certs -v "$APK" | grep -E "Verified using|Signer|SHA-256" | head -20
           done
@@ -191,14 +192,14 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: blaze-${{ github.sha }}
+          name: argus-${{ github.sha }}
           path: app/build/outputs/apk/release/*.apk
           retention-days: 14
 
       # 0.52.2: a TEST-signed copy of this build for phones (throwaway key made here, like lowram-smoke.yml). Never published:
       # a phone with the real ARGUS must uninstall it first (the signatures differ). The release key is never used here.
       - name: Test-signed APK (throwaway key, install only)
-        if: github.ref == 'refs/heads/feat/argus-3d-home' || github.head_ref == 'feat/argus-3d-home' || github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design'
+        if: github.ref == 'refs/heads/feat/argus-3d-home' || github.head_ref == 'feat/argus-3d-home' || github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design' || startsWith(github.ref, 'refs/heads/chore/')
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
@@ -212,11 +213,11 @@ jobs:
           (cd test-signed && sha256sum *.apk | tee SHA256SUMS)
 
       - name: Upload test-signed APK
-        if: github.ref == 'refs/heads/feat/argus-3d-home' || github.head_ref == 'feat/argus-3d-home' || github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design'
+        if: github.ref == 'refs/heads/feat/argus-3d-home' || github.head_ref == 'feat/argus-3d-home' || github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design' || startsWith(github.ref, 'refs/heads/chore/')
         uses: actions/upload-artifact@v4
         with:
           # 0.52.3: argus-hark-design-test-signed-<sha> on feat/argus-hark-design
-          name: ${{ (github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design') && 'argus-hark-design' || 'argus-3d-home' }}-test-signed-${{ github.sha }}
+          name: ${{ (github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design') && 'argus-hark-design' || startsWith(github.ref, 'refs/heads/chore/') && 'argus-chore' || 'argus-3d-home' }}-test-signed-${{ github.sha }}
           path: test-signed/
           retention-days: 14
 
@@ -226,16 +227,16 @@ jobs:
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
-          mkdir -p /tmp/out && cp "$APK" "/tmp/out/Blaze-v$VER.apk"
-          # Bridge copy (v0.8.0 renumbered 1.x -> 0.x): older Blazes compare names and need one that sorts
+          mkdir -p /tmp/out && cp "$APK" "/tmp/out/Argus-v$VER.apk"
+          # Bridge copy (v0.8.0 renumbered 1.x -> 0.x): older builds compare names and need one that sorts
           # above 1.17.0; v0.8.0+ reads the build number from it. Same APK, same signature.
-          cp "$APK" "/tmp/out/Blaze-v1.999.$CODE.apk"
+          cp "$APK" "/tmp/out/Argus-v1.999.$CODE.apk"
           cd /tmp/out
           git init -q -b apk
-          git config user.name "Blaze CI"; git config user.email "ci@users.noreply.github.com"
+          git config user.name "Argus CI"; git config user.email "ci@users.noreply.github.com"
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           echo "$VER ${{ github.sha }} $CODE" > LATEST
-          git add -A && git commit -qm "Blaze v$VER (${{ github.sha }})" && git push -q origin apk --force
+          git add -A && git commit -qm "Argus v$VER (${{ github.sha }})" && git push -q origin apk --force
 
       - name: Publish GitHub release
         if: github.event_name != 'pull_request' && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue') && github.ref == 'refs/heads/main'
@@ -243,12 +244,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          F="/tmp/out/Blaze-v$VER.apk"
+          F="/tmp/out/Argus-v$VER.apk"
           NOTES=$(git log -1 --format=%s ${{ github.sha }})
           if gh release view "v$VER" --repo ${{ github.repository }} >/dev/null 2>&1; then
             gh release upload "v$VER" "$F" --clobber --repo ${{ github.repository }}
           else
-            gh release create "v$VER" "$F" --repo ${{ github.repository }} --target ${{ github.sha }} --title "Blaze v$VER" --notes "$NOTES" --latest
+            gh release create "v$VER" "$F" --repo ${{ github.repository }} --target ${{ github.sha }} --title "Argus v$VER" --notes "$NOTES" --latest
           fi
 
       - name: Post failure log
@@ -260,7 +261,7 @@ jobs:
           gh issue edit 1 --repo ${{ github.repository }} --body-file comment.md
 
   # v0.30.1: the YouTube Store is an optional plug-in module (youtube/ → :youtube), kept in the private repo
-  # the owner's private Blaze-mobile repo since v0.30.1. Blaze must build, pass its tests and run without it (this job never
+  # the owner's private Blaze-mobile repo since v0.30.1. Argus must build, pass its tests and run without it (this job never
   # checks the plug-in out; the rm is a guard), and that APK must not contain any YouTube code.
   build-without-youtube:
     runs-on: ubuntu-latest
@@ -288,11 +289,11 @@ jobs:
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           ls -la "$APK"
           mkdir -p /tmp/dex && unzip -o -q "$APK" 'classes*.dex' -d /tmp/dex
-          if grep -a -l "Lcom/blaze/assistant/mediaapps/youtube/" /tmp/dex/*.dex; then echo "::error::YouTube classes found in the no-YouTube APK"; exit 1; fi
+          if grep -a -l "Lcom/blazeinchue/argus/mediaapps/youtube/" /tmp/dex/*.dex; then echo "::error::YouTube classes found in the no-YouTube APK"; exit 1; fi
           echo "No YouTube code in the APK."
 
   # The android-app-builder skill's template must keep building: make a project from it exactly as
-  # Blaze does on the phone (setup.sh), then build it like its own workflow would.
+  # Argus does on the phone (setup.sh), then build it like its own workflow would.
   app-template:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -308,10 +309,10 @@ jobs:
         env:
           BUILD_NUMBER: '7'
         run: |
-          sh app/src/main/assets/skills/android-app-builder/setup.sh /tmp/demo com.blaze.demo "Blaze Demo's App"
+          sh app/src/main/assets/skills/android-app-builder/setup.sh /tmp/demo com.blazeinchue.argus.demo "Argus Demo's App"
           cd /tmp/demo
           test -f .github/workflows/build.yml && test -f .gitignore
           mkdir -p keystore
-          keytool -genkeypair -keystore keystore/release.jks -alias app -keyalg RSA -keysize 2048 -validity 1 -dname "CN=ci" -storepass blazeapp -keypass blazeapp
+          keytool -genkeypair -keystore keystore/release.jks -alias app -keyalg RSA -keysize 2048 -validity 1 -dname "CN=ci" -storepass argusapp -keypass argusapp
           ./gradlew assembleRelease --stacktrace
           ls -la app/build/outputs/apk/release/

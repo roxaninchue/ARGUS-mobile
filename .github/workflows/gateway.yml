@@ -1,6 +1,6 @@
 name: Gateway
 
-# Blaze Gateway (gateway/): type check + tests on every change; deploy to Cloudflare from main
+# Argus Gateway (gateway/): type check + tests on every change; deploy to Cloudflare from main
 # when the CLOUDFLARE_API_TOKEN secret exists (skipped cleanly otherwise). Never touches the app.
 on:
   push:

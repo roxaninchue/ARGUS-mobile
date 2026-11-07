@@ -1,3 +1,8 @@
+## v0.52.4: Argus everywhere: the old name is gone, and a new app id (versionCode 191)
+- The app is now `com.blazeinchue.argus`. Android treats it as a new app: a phone with an older build can't update in place. Uninstall the old app, then install this one (what you synced to your account comes back after you sign in).
+- Everything says Argus: the wake word is "Hey Argus" (the old name no longer wakes it or works in commands), and every file, folder, notification channel, deep link (`argus://`), widget and shortcut uses the new name.
+- Under the hood: Kotlin packages `com.blazeinchue.argus`, the on-phone router is ArgusRouter (`libargusrouter.so`), the request headers are `X-Argus-*` (the gateway in `gateway/` matches; the deployed gateway needs a redeploy), skills `argus-*`. Names of things outside the app keep theirs for now (Blazeinchue repos and site, the Cloudflare hosts, the CLI's files and sync formats); docs/RENAME-ARGUS.md lists them.
+
 ## v0.52.3: ARGUS takes the Hark design, over a view of the Earth from space, with a one-screen setup (versionCode 190)
 - A new look everywhere: a round button, a Home | Chat | Projects switch and your avatar at the top; big rounded cards with serif headlines; a floating "Message" box at the bottom. It all sits on a view of the Earth from space in the ARGUS colours (black, Argus Blue, Electric Blue, Steel), dark or light.
 - Home is a stack of cards: a greeting for the time of day, what needs you (sign in, the rest of setup), the latest answer, your recent projects and a few things to ask. Back, /home, Music and Video bring you back to it; questions, approvals and forms still open the chat by themselves.

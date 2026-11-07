@@ -1,8 +1,8 @@
 <!doctype html>
 <!--
-  Blaze 3D mockup starter (three-d-design skill).
+  Argus 3D mockup starter (three-d-design skill).
   Copy this file, rename it (design/<thing>-3d.html), set the title, then describe the object
-  in the blaze-parts JSON below. The scene is built from that JSON, so the Design tab can pick a
+  in the argus-parts JSON below. The scene is built from that JSON, so the Design tab can pick a
   part, show its numbers, and write colour, size, position and rotation back to it exactly.
 -->
 <html lang="en">
@@ -37,7 +37,7 @@
     cone radius, height; sphere radius; torus radius, tube; capsule radius, height; plane size [w, d];
     group (no geometry, holds children); custom (built in CUSTOM below, same id).
 -->
-<script type="application/json" id="blaze-parts">
+<script type="application/json" id="argus-parts">
 {
   "name": "Example stool",
   "units": "mm",
@@ -70,7 +70,7 @@ import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 // Everything below is driven by this object; change the JSON, not the code, to change a part.
 // v0.23.5: a bad part (unknown shape, missing numbers, not an object) never stops the scene.
 let spec = {};
-try { spec = JSON.parse(document.getElementById("blaze-parts").textContent) || {}; } catch (e) { console.warn("blaze-parts: " + e.message); }
+try { spec = JSON.parse(document.getElementById("argus-parts").textContent) || {}; } catch (e) { console.warn("argus-parts: " + e.message); }
 spec.parts = (Array.isArray(spec.parts) ? spec.parts : []).filter(p => p && typeof p === "object");
 const num = (v, d) => (typeof v === "number" || typeof v === "string") && v !== "" && Number.isFinite(+v) ? +v : d;
 const vec = (v, d) => Array.isArray(v) ? d.map((x, i) => num(v[i], x)) : (typeof v === "number" ? d.map(() => v) : d);
@@ -116,7 +116,7 @@ function material(p) {
 
 // ---- 5. Geometry per shape ---------------------------------------------------------------
 // Dimensions are in mockup units; the part's root is scaled by U, so geometry stays in units.
-// Shape names the model sometimes uses for the presets (Blaze also normalises them before serving).
+// Shape names the model sometimes uses for the presets (Argus also normalises them before serving).
 const ALIAS = { cube: "box", cuboid: "box", rect: "box", rectangle: "box", block: "box", wedge: "box", fin: "box", panel: "box",
   cylinder: "cylinder", tube: "cylinder", pipe: "cylinder", disc: "cylinder", disk: "cylinder", frustum: "cylinder", rod: "cylinder",
   cone: "cone", pyramid: "cone", nose: "cone", nosecone: "cone", sphere: "sphere", ball: "sphere", ellipsoid: "sphere", dome: "sphere",
@@ -231,9 +231,9 @@ function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.asp
 addEventListener("resize", resize); resize();
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 
-// ---- 12. Hand the scene to Blaze's Design tab ---------------------------------------------
+// ---- 12. Hand the scene to Argus's Design tab ---------------------------------------------
 // Design raycasts clicks with these to pick parts and reads each part's numbers from spec.
-window.__blazeScene = { THREE, scene, camera, renderer, controls, parts, spec };
+window.__argusScene = { THREE, scene, camera, renderer, controls, parts, spec };
 </script>
 </body>
 </html>

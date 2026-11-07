@@ -41,7 +41,7 @@ The ARGUS app takes the **Hark app's design** with ARGUS's own palette, backgrou
 
 ## What was built (file level)
 
-### New: `app/src/main/java/com/blaze/assistant/ui/space/`
+### New: `app/src/main/java/com/blazeinchue/argus/ui/space/`
 - `SpaceLogic.kt` (pure): `SpacePalette`, `SpaceTabs` (tabs, round button per tab, avatar initial, selected colours),
   `SpacePillFit`, `SpaceGreeting` (time-aware serif headline, next-hour refresh), `SpaceAnswer` (latest answer card),
   `SpaceHomeCards` (card order), `SpaceProfile` (rows → settings page ids), `SpaceSettings` (System Preferences rows,
@@ -61,7 +61,7 @@ The ARGUS app takes the **Hark app's design** with ARGUS's own palette, backgrou
 ### New: `setup/SetupPlan.kt` (pure) + `setup/SetupRunner.kt`
 Everything that downloads (Linux, its tools, skills, backup brain, voice model, quick commands) as one weighted list;
 order, Wi-Fi rules, back-off, retry, resume (only settled results are saved). `SetupRunner.start` from the onboarding's
-setup step; **`SetupRunner.later`** (this session) is queued by `BlazeApp` after the first frame and starts what is left
+setup step; **`SetupRunner.later`** (this session) is queued by `ArgusApp` after the first frame and starts what is left
 30 s later (`SetupPlan.LATER_MS`) for people past onboarding (`SetupPlan.startLater`).
 
 ### Changed
@@ -78,11 +78,11 @@ setup step; **`SetupRunner.later`** (this session) is queued by `BlazeApp` after
   removed; ComeBack, BrainCard, BrainStatus, PermissionsPage, UpdatesPage, AboutPage kept; About gets `LicencesSection`.
 - `ui/SimplePages.kt` (this session): LookPage without the tilt switch and the "Home stays dark" sentence.
 - `ui/Shell.kt` (this session): ProjectsPane removed (StatusChip, ProjectBadge, ProjectChatEmpty, ChatRow stay).
-- `BlazeApp.kt` (this session): `StartLater.add("setup.SetupRunner.later")` (guarded by safe start).
+- `ArgusApp.kt` (this session): `StartLater.add("setup.SetupRunner.later")` (guarded by safe start).
 - `MainActivity.kt`: notification / form taps → `SpaceNav.showChat()`.
 - `agent/BackupBrain.kt`: `initialized()`. `composer/ModelChoice.kt`: always Auto. `composer/SelfMap.kt`,
   `SpotlightSearch.kt`, `SpotlightGroups.kt`, `ui/composer/ChatComposer.kt`, `SpotlightPanel.kt`: model picker gone.
-- `app/build.gradle.kts`: 0.52.3 / 190. `app/blaze-docs/about.md`: Home and Settings map rewritten for the new UI.
+- `app/build.gradle.kts`: 0.52.3 / 190. `app/argus-docs/about.md`: Home and Settings map rewritten for the new UI.
 - Resources: `drawable-nodpi/argus_space.webp`, `argus_logo.webp`, `ic_launcher_foreground.png`,
   `ic_launcher_monochrome.png`; `mipmap-*/ic_launcher(.round).webp`; adaptive XML updated; `ic_launcher-playstore.png`;
   `drawable/ic_launcher_background.xml` updated; `assets/legal/LICENSE.md` + `THIRD_PARTY_NOTICES.md` (copies of the root).
@@ -112,7 +112,7 @@ setup step; **`SetupRunner.later`** (this session) is queued by `BlazeApp` after
   the avatar long-press), `ShotsTest` (settingsList = the profile page, onboarding = the setup screen, ProjectsPane →
   SpaceProjectsScreen), `MoviesLegalTest` (allows `assets/legal/THIRD_PARTY_NOTICES.md` only while it is identical to the
   root notices), `LowRamSmokeTest` (warm-up draws the space shell; `f_argusHome` → `f_spaceHome`; still 7 tests).
-- Earlier in this branch: Blaze050ShotsTest, ComposerShotsTest, SpotlightSearchTest, SpotlightGroupsTest.
+- Earlier in this branch: Argus050ShotsTest, ComposerShotsTest, SpotlightSearchTest, SpotlightGroupsTest.
 - No `@Ignore`, no skips, no `allow_failure`, no thresholds or gates changed (700 ms stall gate, 7 smoke tests, PhonePerfTest).
 
 ## CI (GitHub mirror `roxaninchue/ARGUS-mobile`, all workflows trigger on `feat/argus-hark-design`)

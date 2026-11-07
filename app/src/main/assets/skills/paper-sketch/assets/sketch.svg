@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 850" width="1100" height="850">
   <!--
-    Blaze paper sketch starter (paper-sketch skill).
+    Argus paper sketch starter (paper-sketch skill).
     Layers, bottom to top: paper, rules, doodle groups, lettering. Every doodle part is its own
     <g id="…"> so the Design tab can pick it and retype, recolour or move it.
     Wobble comes from the filters, not from messy paths: draw clean shapes, let #pencil / #ink roughen them.

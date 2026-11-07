@@ -54,6 +54,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VER=${{ steps.v.outputs.ver }}
-          cp "$(ls app/build/outputs/apk/release/*.apk | head -1)" "Blaze-v$VER.apk"
-          gh release create "v$VER" "Blaze-v$VER.apk" --repo ${{ github.repository }} --target ${{ matrix.sha }} \
-            --title "Blaze v$VER" --notes "$(git log -1 --format=%s)" --latest=false
+          cp "$(ls app/build/outputs/apk/release/*.apk | head -1)" "Argus-v$VER.apk"
+          gh release create "v$VER" "Argus-v$VER.apk" --repo ${{ github.repository }} --target ${{ matrix.sha }} \
+            --title "Argus v$VER" --notes "$(git log -1 --format=%s)" --latest=false

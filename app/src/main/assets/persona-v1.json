@@ -26,7 +26,7 @@
   },
   {
    "id": "greeting",
-   "user": "hey blaze",
+   "user": "hey argus",
    "expect": [
     "warm, casual greeting",
     "may use the user's first name once",

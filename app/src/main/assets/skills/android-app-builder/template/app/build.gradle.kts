@@ -22,9 +22,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = rootProject.file("keystore/release.jks")
-            storePassword = "blazeapp"
+            storePassword = "argusapp"
             keyAlias = "app"
-            keyPassword = "blazeapp"
+            keyPassword = "argusapp"
         }
     }
     buildTypes {

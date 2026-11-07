@@ -1,5 +1,5 @@
 #!/bin/sh
-# Makes a new Android app project from Blaze's template.
+# Makes a new Android app project from Argus's template.
 #   sh ~/skills/android-app-builder/setup.sh <dir> <package> "<App name>"
 #   e.g. sh ~/skills/android-app-builder/setup.sh ~/code/habit-tracker com.joey.habits "Habit Tracker"
 # Copies the template into <dir> (which may already be a cloned, empty repo), renames the

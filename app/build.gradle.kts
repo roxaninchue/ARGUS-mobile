@@ -7,14 +7,14 @@ plugins {
 }
 
 android {
-    namespace = "com.blaze.assistant"
+    namespace = "com.blazeinchue.argus"
     compileSdk = 34
     defaultConfig {
-        applicationId = "com.blaze.assistant"
+        applicationId = "com.blazeinchue.argus"
         minSdk = 26
         targetSdk = 34
-        versionCode = 190
-        versionName = "0.52.3"
+        versionCode = 191
+        versionName = "0.52.4"
         // v0.30.1 Music Store: Jamendo client_id, from the environment or -Pjamendo.clientId at build time. Never hard-coded;
         // empty = "not configured" (the user can paste one in the Music Store instead).
         buildConfigField("String", "JAMENDO_CLIENT_ID", "\"" + (System.getenv("JAMENDO_CLIENT_ID") ?: (project.findProperty("jamendo.clientId") as String?) ?: "").replace("\"", "") + "\"")
@@ -24,7 +24,7 @@ android {
     }
     // 0.45.15 (key rotation, user-approved 22 Oct 08:32): no signing key or password lives in this repo. Gradle signs with the
     // SDK's own debug key (fine for local runs and CI test builds); a release APK is re-signed outside the repo with the
-    // private Blaze release key and a v3 lineage from the old (burned, public) key, so existing installs still update.
+    // private Argus release key and a v3 lineage from the old (burned, public) key, so existing installs still update.
     buildTypes {
         // Release = what you install: R8-optimised, not debuggable (Compose runs far smoother).
         release {
@@ -43,17 +43,17 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
-            keepDebugSymbols += listOf("**/libneedle.so", "**/libbusybox.so", "**/libproot.so", "**/libproot_loader.so", "**/libproot_loader32.so", "**/libtalloc.so", "**/libandroid-shmem.so", "**/libwgproxy.so", "**/libblazerouter.so")
+            keepDebugSymbols += listOf("**/libneedle.so", "**/libbusybox.so", "**/libproot.so", "**/libproot_loader.so", "**/libproot_loader32.so", "**/libtalloc.so", "**/libandroid-shmem.so", "**/libwgproxy.so", "**/libargusrouter.so")
         }
     }
     // v0.45.0 (#34): lint fails on NEW errors only; existing ones live in app/lint-baseline.xml (written by the first run).
     lint { checkReleaseBuilds = false; abortOnError = true; baseline = file("lint-baseline.xml") }
     testOptions {
         unitTests.isReturnDefaultValues = true
-        // Robolectric screenshot tests (ui/ShotsTest) need the app's resources (fonts) and only run with BLAZE_SHOTS=1.
+        // Robolectric screenshot tests (ui/ShotsTest) need the app's resources (fonts) and only run with ARGUS_SHOTS=1.
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
-            it.systemProperty("blaze.shots", System.getenv("BLAZE_SHOTS") ?: "0")
+            it.systemProperty("argus.shots", System.getenv("ARGUS_SHOTS") ?: "0")
             it.systemProperty("robolectric.graphicsMode", "NATIVE")
             // v0.45.0 (#28): Robolectric ships no Conscrypt JNI for linux-aarch64 (it only turns Conscrypt off by itself on
             // arm Macs), so on ARM Linux boxes every Robolectric test died with UnsatisfiedLinkError. Off there; x86 CI unchanged.
@@ -77,13 +77,13 @@ android {
     }
 }
 
-// ---------------------------------------------------------------- v0.28.4 blaze-docs
-// Blaze's knowledge about itself, generated from this repo at build time into assets/blaze-docs/ (README, CHANGELOG split
-// per version, STATUS, docs/, the hand-written app/blaze-docs/about.md with the build's version, commit and SDK levels, and
-// a manifest). On the first launch after an update the app chunks it into blaze.db (blaze_docs + blaze_docs_fts) and the
-// model looks it up with blaze_docs_search / blaze_docs_read; none of it goes into the prompt. Secrets, account IDs and
-// e-mail addresses are scrubbed here and again when indexing (agent/BlazeDocs.kt, BlazeDocsTest).
-abstract class BlazeDocsTask : DefaultTask() {
+// ---------------------------------------------------------------- v0.28.4 argus-docs
+// Argus's knowledge about itself, generated from this repo at build time into assets/argus-docs/ (README, CHANGELOG split
+// per version, STATUS, docs/, the hand-written app/argus-docs/about.md with the build's version, commit and SDK levels, and
+// a manifest). On the first launch after an update the app chunks it into argus.db (argus_docs + argus_docs_fts) and the
+// model looks it up with argus_docs_search / argus_docs_read; none of it goes into the prompt. Secrets, account IDs and
+// e-mail addresses are scrubbed here and again when indexing (agent/ArgusDocs.kt, ArgusDocsTest).
+abstract class ArgusDocsTask : DefaultTask() {
     @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sources: ConfigurableFileCollection
     @get:Input abstract val versionName: Property<String>
     @get:Input abstract val versionCode: Property<Int>
@@ -113,11 +113,11 @@ abstract class BlazeDocsTask : DefaultTask() {
 
     @TaskAction fun run() {
         val root = repoDir.get().asFile
-        val out = outputDir.get().asFile.resolve("blaze-docs")
+        val out = outputDir.get().asFile.resolve("argus-docs")
         out.deleteRecursively(); out.mkdirs()
         val files = LinkedHashMap<String, String>()
         fun put(name: String, text: String) { if (text.isNotBlank()) files[name] = scrub(text.replace("\r\n", "\n")) }
-        val about = root.resolve("app/blaze-docs/about.md")
+        val about = root.resolve("app/argus-docs/about.md")
         if (about.isFile) put("about.md", about.readText()
             .replace("{{VERSION}}", versionName.get()).replace("{{VERSION_CODE}}", versionCode.get().toString())
             .replace("{{COMMIT}}", commit.get()).replace("{{BUILT}}", built.get())
@@ -176,9 +176,9 @@ val docCompileSdk = android.compileSdk ?: 0
 val docCommit = (System.getenv("GITHUB_SHA") ?: "").ifBlank { gitOut(listOf("rev-parse", "HEAD")) }.take(12).ifBlank { "unknown" }
 val docBuilt = gitOut(listOf("log", "-1", "--format=%cs")).ifBlank { "unknown" }
 val docSources = listOf(rootProject.file("README.md"), rootProject.file("CHANGELOG.md"), rootProject.file("STATUS.md"),
-    rootProject.fileTree("docs") { include("**/*.md") }, file("blaze-docs"))
+    rootProject.fileTree("docs") { include("**/*.md") }, file("argus-docs"))
 val repoDirectory = rootProject.layout.projectDirectory
-val fromRepo: BlazeDocsTask.() -> Unit = {
+val fromRepo: ArgusDocsTask.() -> Unit = {
     sources.from(docSources)
     versionName.set(docVersionName)
     versionCode.set(docVersionCode)
@@ -193,26 +193,26 @@ val fromRepo: BlazeDocsTask.() -> Unit = {
 // One generator per variant, wired as a generated assets folder (AGP owns its output path).
 androidComponents {
     onVariants { v ->
-        val t = tasks.register<BlazeDocsTask>("generate" + v.name.replaceFirstChar { it.uppercase() } + "BlazeDocs") { fromRepo() }
-        v.sources.assets?.addGeneratedSourceDirectory(t, BlazeDocsTask::outputDir)
+        val t = tasks.register<ArgusDocsTask>("generate" + v.name.replaceFirstChar { it.uppercase() } + "ArgusDocs") { fromRepo() }
+        v.sources.assets?.addGeneratedSourceDirectory(t, ArgusDocsTask::outputDir)
     }
 }
 
-// BlazeDocsTest reads the generated docs exactly as they ship (same generator, its own output folder).
-val blazeDocsForTests = tasks.register<BlazeDocsTask>("generateBlazeDocsForTests") {
+// ArgusDocsTest reads the generated docs exactly as they ship (same generator, its own output folder).
+val argusDocsForTests = tasks.register<ArgusDocsTask>("generateArgusDocsForTests") {
     fromRepo()
-    outputDir.set(layout.buildDirectory.dir("generated/blazeDocsTest"))
+    outputDir.set(layout.buildDirectory.dir("generated/argusDocsTest"))
 }
 tasks.withType<Test>().configureEach {
-    dependsOn(blazeDocsForTests)
-    systemProperty("blaze.docs.dir", layout.buildDirectory.dir("generated/blazeDocsTest/blaze-docs").get().asFile.path)
+    dependsOn(argusDocsForTests)
+    systemProperty("argus.docs.dir", layout.buildDirectory.dir("generated/argusDocsTest/argus-docs").get().asFile.path)
 }
 
 dependencies {
     val bom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(bom)
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0") // QR scan for Blaze Desktop pairing
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0") // QR scan for Argus Desktop pairing
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.webkit:webkit:1.11.0")   // browser VPN proxy, private-tab profiles, location-mask scripts
     implementation("androidx.fragment:fragment-ktx:1.8.3")
@@ -222,16 +222,16 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("com.github.termux.termux-app:terminal-view:v0.118.0")
-    implementation("org.tukaani:xz:1.10")   // v0.29.2 .tar.xz rootfs for Ubuntu/Debian/Arch/Fedora   // v0.29.2 Blaze Terminal (pulls terminal-emulator + libtermux.so)
+    implementation("org.tukaani:xz:1.10")   // v0.29.2 .tar.xz rootfs for Ubuntu/Debian/Arch/Fedora   // v0.29.2 Argus Terminal (pulls terminal-emulator + libtermux.so)
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")   // v0.24.6: rounded icon buttons (browser, pointer menu, overlay)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")   // one mind: idle memory review (MindReviewWorker)
-    // v0.26.3 one memory store: blaze.db (Desktop / CLI schema v1, FTS5) on a bundled modern SQLite, the same on every Android.
+    // v0.26.3 one memory store: argus.db (Desktop / CLI schema v1, FTS5) on a bundled modern SQLite, the same on every Android.
     implementation("androidx.sqlite:sqlite-bundled:2.5.2")
     implementation("com.google.mlkit:text-recognition:16.0.1")
-    // v0.28.x Blaze Camera: CameraX (works with no camera app, on low-end phones), ML Kit barcode scanning (bundled model,
+    // v0.28.x Argus Camera: CameraX (works with no camera app, on low-end phones), ML Kit barcode scanning (bundled model,
     // offline), and Google's document scanner (Play services; used only when present, else a framed photo).
     val camerax = "1.3.4"
     implementation("androidx.camera:camera-core:$camerax")
@@ -246,7 +246,7 @@ dependencies {
     // The sherpa-onnx runtime itself is NOT a dependency: its Kotlin API is vendored (com.k2fsa.sherpa.onnx) and the
     // native library is downloaded on demand, so the APK only grows by a few hundred KB.
     implementation("org.apache.commons:commons-compress:1.21")
-    // v0.30.1 Blaze Music / Blaze Video: media3 (ExoPlayer, MediaSession, PlayerView), Apache-2.0.
+    // v0.30.1 Argus Music / Argus Video: media3 (ExoPlayer, MediaSession, PlayerView), Apache-2.0.
     val media3 = "1.4.1"
     implementation("androidx.media3:media3-exoplayer:$media3")
     implementation("androidx.media3:media3-session:$media3")
@@ -269,7 +269,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")   // 0.45.20: runTest / virtual time (PermissionGateTest)
     testImplementation("org.hamcrest:hamcrest-core:1.3")   // 0.45.18: was a root hamcrest.jar; now a normal test dependency
     testImplementation("org.json:json:20240303")   // the real org.json (android.jar only has stubs)
-    testImplementation("org.xerial:sqlite-jdbc:3.46.1.3")   // v0.26.3: blaze.db tests on a JVM SQLite with FTS5 (store/JdbcSql)
+    testImplementation("org.xerial:sqlite-jdbc:3.46.1.3")   // v0.26.3: argus.db tests on a JVM SQLite with FTS5 (store/JdbcSql)
     // Screenshot tests: Compose UI test on Robolectric's native graphics.
     testImplementation(bom)
     testImplementation("androidx.compose.ui:ui-test-junit4")

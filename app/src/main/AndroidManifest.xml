@@ -26,16 +26,16 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <!-- v0.30.1 Blaze Music: background playback (media session foreground service). -->
+    <!-- v0.30.1 Argus Music: background playback (media session foreground service). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <!-- v0.30.1 Music / Video downloads into Music/Blaze/Music and Movies/Blaze/Videos: only Android 8–9 need this. -->
+    <!-- v0.30.1 Music / Video downloads into Music/Argus/Music and Movies/Argus/Videos: only Android 8–9 need this. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
-    <!-- CAMERA itself comes from zxing-android-embedded's manifest (merged); it is kept on purpose: Blaze Camera, the
-         Desktop pairing scanner and ACTION_IMAGE_CAPTURE all need it. No camera is required to install Blaze. -->
+    <!-- CAMERA itself comes from zxing-android-embedded's manifest (merged); it is kept on purpose: Argus Camera, the
+         Desktop pairing scanner and ACTION_IMAGE_CAPTURE all need it. No camera is required to install Argus. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -45,8 +45,8 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- v0.30.0 Gallery: Screenshots and Camera albums (asked for only from Gallery → Albums). Blaze's own files in shared
-         storage (Music/Blaze, Movies/Blaze, Download/Blaze, Pictures/Blaze) show without these. -->
+    <!-- v0.30.0 Gallery: Screenshots and Camera albums (asked for only from Gallery → Albums). Argus's own files in shared
+         storage (Music/Argus, Movies/Argus, Download/Argus, Pictures/Argus) show without these. -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
@@ -57,7 +57,7 @@
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <!-- v0.43.0 Bank mode: optional, granted only by the user with adb; lets Blaze switch phone control back on by itself. -->
+    <!-- v0.43.0 Bank mode: optional, granted only by the user with adb; lets Argus switch phone control back on by itself. -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
 
     <queries>
@@ -105,7 +105,7 @@
     </queries>
 
     <application
-        android:name=".BlazeApp"
+        android:name=".ArgusApp"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_rules"
@@ -115,35 +115,35 @@
         android:supportsRtl="true"
         android:extractNativeLibs="true"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:theme="@style/Theme.Blaze">
-        <!-- v0.34.0: Blaze Music in Android Auto (MusicService is a media library service). -->
+        android:theme="@style/Theme.Argus">
+        <!-- v0.34.0: Argus Music in Android Auto (MusicService is a media library service). -->
         <meta-data android:name="com.google.android.gms.car.application" android:resource="@xml/automotive_app_desc" />
 
-        <!-- QR scanner for Blaze Desktop pairing: follow the phone's rotation instead of forcing landscape. -->
+        <!-- QR scanner for Argus Desktop pairing: follow the phone's rotation instead of forcing landscape. -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="fullSensor"
             tools:replace="screenOrientation" />
 
-        <!-- v0.28.x Blaze Camera (CameraX): fallback for + → Camera and the multi-mode camera. Keeps running through
+        <!-- v0.28.x Argus Camera (CameraX): fallback for + → Camera and the multi-mode camera. Keeps running through
              rotation (no restart on low-end phones). -->
         <activity
             android:name=".ui.CameraActivity"
             android:exported="false"
             android:label="Argus Camera"
-            android:theme="@style/Theme.Blaze"
+            android:theme="@style/Theme.Argus"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:screenOrientation="unspecified" />
 
-        <!-- 0.45.19 Blaze Phone full screen: watch Blaze's own phone, take control, hand back. -->
+        <!-- 0.45.19 Argus Phone full screen: watch Argus's own phone, take control, hand back. -->
         <activity
             android:name=".browser.phone.PhoneBrowserActivity"
             android:exported="false"
             android:label="Argus Phone"
             android:supportsPictureInPicture="true"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.phonebrowser"
-            android:theme="@style/Theme.Blaze"
+            android:taskAffinity="com.blazeinchue.argus.phonebrowser"
+            android:theme="@style/Theme.Argus"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize" />
 
@@ -152,27 +152,27 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:noHistory="true"
-            android:taskAffinity="com.blaze.assistant.perms"
-            android:theme="@style/Theme.Blaze.Transparent" />
+            android:taskAffinity="com.blazeinchue.argus.perms"
+            android:theme="@style/Theme.Argus.Transparent" />
 
         <activity
-            android:name=".terminal.BlazeTerminalActivity"
+            android:name=".terminal.ArgusTerminalActivity"
             android:exported="false"
             android:label="Argus Terminal"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.terminal"
+            android:taskAffinity="com.blazeinchue.argus.terminal"
             android:theme="@android:style/Theme.Black.NoTitleBar"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|navigation|uiMode"
             android:windowSoftInputMode="adjustResize|stateVisible" />
 
-        <!-- v0.30.1 Blaze Music and Blaze Video: their own apps inside Blaze (own task, like Terminal and Browser). -->
+        <!-- v0.30.1 Argus Music and Argus Video: their own apps inside Argus (own task, like Terminal and Browser). -->
         <activity
             android:name=".mediaapps.MusicActivity"
             android:exported="false"
             android:label="Argus Music"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.music"
-            android:theme="@style/Theme.Blaze"
+            android:taskAffinity="com.blazeinchue.argus.music"
+            android:theme="@style/Theme.Argus"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize" />
         <!-- 0.46.2 Movies: one-tap add-source links (only the url parameter is read; the user still taps Install). -->
@@ -186,7 +186,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="blaze" android:host="add-source" />
+                <data android:scheme="argus" android:host="add-source" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -196,7 +196,7 @@
                 <data android:scheme="https" android:host="blazeinchue.pages.dev" android:path="/add-source/" />
             </intent-filter>
         </activity>
-        <!-- 0.46.2 Movies: "Open with Blaze" for video files from other apps (only the URI is read; plays in Blaze Video). -->
+        <!-- 0.46.2 Movies: "Open with Argus" for video files from other apps (only the URI is read; plays in Argus Video). -->
         <activity
             android:name=".movies.MovieOpenActivity"
             android:exported="true"
@@ -222,8 +222,8 @@
             android:exported="false"
             android:label="Argus Video"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.video"
-            android:theme="@style/Theme.Blaze"
+            android:taskAffinity="com.blazeinchue.argus.video"
+            android:theme="@style/Theme.Argus"
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
@@ -244,7 +244,7 @@
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
 
-        <!-- 0.45.19: Blaze Phone's picture-in-picture Stop / Open Blaze buttons (RemoteAction broadcasts). -->
+        <!-- 0.45.19: Argus Phone's picture-in-picture Stop / Open Argus buttons (RemoteAction broadcasts). -->
         <receiver android:name=".browser.phone.PhonePipReceiver" android:exported="false" />
 
         <!-- v0.33.2 an installed website as its own app: one document task per site (its own Recents entry). -->
@@ -255,7 +255,7 @@
             android:launchMode="standard"
             android:documentLaunchMode="intoExisting"
             android:autoRemoveFromRecents="false"
-            android:theme="@style/Theme.Blaze"
+            android:theme="@style/Theme.Argus"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize" />
 
@@ -265,7 +265,7 @@
             android:supportsPictureInPicture="true"
             android:label="Argus browser"
             android:launchMode="singleTask"
-            android:taskAffinity="com.blaze.assistant.browser"
+            android:taskAffinity="com.blazeinchue.argus.browser"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -288,12 +288,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- v0.45.4: Google / GitHub sign-in comes back here (blaze://auth/cb?code=..&state=..), bound by state + PKCE. -->
+            <!-- v0.45.4: Google / GitHub sign-in comes back here (argus://auth/cb?code=..&state=..), bound by state + PKCE. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="blaze" android:host="auth" android:path="/cb" />
+                <data android:scheme="argus" android:host="auth" android:path="/cb" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST" />
@@ -321,23 +321,23 @@
         </activity>
 
         <service
-            android:name=".assist.BlazeInteractionService"
+            android:name=".assist.ArgusInteractionService"
             android:exported="true"
             android:label="Argus"
             android:permission="android.permission.BIND_VOICE_INTERACTION">
-            <meta-data android:name="android.voice_interaction" android:resource="@xml/blaze_interaction" />
+            <meta-data android:name="android.voice_interaction" android:resource="@xml/argus_interaction" />
             <intent-filter><action android:name="android.service.voice.VoiceInteractionService" /></intent-filter>
         </service>
         <service
-            android:name=".assist.BlazeSessionService"
+            android:name=".assist.ArgusSessionService"
             android:exported="true"
             android:permission="android.permission.BIND_VOICE_INTERACTION" />
         <service
-            android:name=".assist.BlazeRecognitionService"
+            android:name=".assist.ArgusRecognitionService"
             android:exported="true"
             android:label="Argus">
             <intent-filter><action android:name="android.speech.RecognitionService" /></intent-filter>
-            <meta-data android:name="android.speech" android:resource="@xml/blaze_recognizer" />
+            <meta-data android:name="android.speech" android:resource="@xml/argus_recognizer" />
         </service>
         <service
             android:name=".voice.WakeWordService"
@@ -349,9 +349,9 @@
             android:exported="false"
             android:foregroundServiceType="microphone" />
         <service
-            android:name=".assist.BlazeTile"
+            android:name=".assist.ArgusTile"
             android:exported="true"
-            android:icon="@drawable/ic_stat_blaze"
+            android:icon="@drawable/ic_stat_argus"
             android:label="Ask Argus"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
@@ -386,17 +386,17 @@
         <service android:name=".bank.BankModeService" android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <receiver android:name=".widget.BlazeWidget" android:exported="false" android:label="Argus">
+        <receiver android:name=".widget.ArgusWidget" android:exported="false" android:label="Argus">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.blaze.assistant.WIDGET_ASK" />
-                <action android:name="com.blaze.assistant.WIDGET_MIC" />
+                <action android:name="com.blazeinchue.argus.WIDGET_ASK" />
+                <action android:name="com.blazeinchue.argus.WIDGET_MIC" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/blaze_widget" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/argus_widget" />
         </receiver>
 
         <service
-            android:name=".phone.BlazeAccessibilityService"
+            android:name=".phone.ArgusAccessibilityService"
             android:exported="false"
             android:label="Argus phone control"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

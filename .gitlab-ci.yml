@@ -46,7 +46,7 @@ variables:
       echo "--- memory ---"; free -h || true; nproc || true
     - |
       set -e
-      # Go builds the two jniLibs the repo gitignores (libwgproxy.so, libblazerouter.so).
+      # Go builds the two jniLibs the repo gitignores (libwgproxy.so, libargusrouter.so).
       if ! command -v go >/dev/null 2>&1; then
         echo "Installing Go $GO_VERSION"
         wget -q "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -O /tmp/go.tgz
@@ -57,8 +57,8 @@ variables:
       VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
       (cd wgproxy && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/arm64-v8a/libwgproxy.so . \
         && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/armeabi-v7a/libwgproxy.so .) || echo "wgproxy build skipped"
-      (cd blazerouter && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/arm64-v8a/libblazerouter.so . \
-        && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libblazerouter.so .) || echo "blazerouter build skipped"
+      (cd argusrouter && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/arm64-v8a/libargusrouter.so . \
+        && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libargusrouter.so .) || echo "argusrouter build skipped"
       ls -la app/src/main/jniLibs/arm64-v8a/ || true
 
 # ---------------------------------------------------------------- unit suite
@@ -67,8 +67,8 @@ unit-tests:
   stage: test
   timeout: 2h
   rules:
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
+    - if: $CI_COMMIT_BRANCH == "feat/argus-0.51"
+    - if: $CI_COMMIT_BRANCH == "feat/argus-0.52"
   script:
     - |
       set +e
@@ -112,7 +112,7 @@ unit-tests:
       cp test.log "$CI_PROJECT_DIR/out/" 2>/dev/null || true
       cp -r app/build/test-results/testDebugUnitTest "$CI_PROJECT_DIR/out/xml" 2>/dev/null || true
   artifacts:
-    name: "blaze-units-$CI_COMMIT_SHORT_SHA"
+    name: "argus-units-$CI_COMMIT_SHORT_SHA"
     when: always
     paths: ["out/"]
     expire_in: 1 week
@@ -123,26 +123,26 @@ shots:
   stage: test
   timeout: 2h
   rules:
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
+    - if: $CI_COMMIT_BRANCH == "feat/argus-0.51"
+    - if: $CI_COMMIT_BRANCH == "feat/argus-0.52"
   variables:
-    BLAZE_SHOTS: "1"
+    ARGUS_SHOTS: "1"
   script:
     - |
       set +e
       # The runner is x86-64, so Robolectric 4.13's NATIVE graphics runtime is available directly.
       # No qemu-user and no aarch64 workaround: the drawing tests run natively here.
       ./gradlew :app:testDebugUnitTest \
-        --tests 'com.blaze.assistant.ui.ShotsTest' \
-        --tests 'com.blaze.assistant.ui.Shots375Test' \
-        --tests 'com.blaze.assistant.ui.StageShotsTest' \
-        --tests 'com.blaze.assistant.ui.MoviesShotsTest' \
-        --tests 'com.blaze.assistant.ui.MediaRevampShotsTest' \
-        --tests 'com.blaze.assistant.ui.SecretCardsShotsTest' \
-        --tests 'com.blaze.assistant.ui.HomeRedesignShotsTest' \
-        --tests 'com.blaze.assistant.ui.ComposerShotsTest' \
-        --tests 'com.blaze.assistant.ui.Blaze050ShotsTest' \
-        --tests 'com.blaze.assistant.ui.RichMediaShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.ShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.Shots375Test' \
+        --tests 'com.blazeinchue.argus.ui.StageShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.MoviesShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.MediaRevampShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.SecretCardsShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.HomeRedesignShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.ComposerShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.Argus050ShotsTest' \
+        --tests 'com.blazeinchue.argus.ui.RichMediaShotsTest' \
         --continue $GRADLE_FLAGS \
         -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" > shots.log 2>&1
       STATUS=$?
@@ -171,7 +171,7 @@ shots:
       (cd app/build && zip -qr "$CI_PROJECT_DIR/out/shots.zip" shots) 2>/dev/null || true
       ls -la "$CI_PROJECT_DIR/out" || true
   artifacts:
-    name: "blaze-shots-$CI_COMMIT_SHORT_SHA"
+    name: "argus-shots-$CI_COMMIT_SHORT_SHA"
     when: always
     paths: ["out/"]
     expire_in: 1 week
@@ -184,8 +184,8 @@ release-apk:
   # Built regardless of the test stage: a red unit suite must not hide the APK.
   needs: []
   rules:
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
+    - if: $CI_COMMIT_BRANCH == "feat/argus-0.51"
+    - if: $CI_COMMIT_BRANCH == "feat/argus-0.52"
   script:
     - |
       set +e
@@ -211,8 +211,8 @@ release-apk:
       # never read, and no password is stored anywhere.
       keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 \
         -storepass testonly -keypass testonly -alias test \
-        -keyalg RSA -keysize 2048 -validity 30 -dname "CN=Blaze test" 2>&1 | tail -2
-      APK="out/Blaze-v${VER}-vc${VC}-test-signed.apk"
+        -keyalg RSA -keysize 2048 -validity 30 -dname "CN=Argus test" 2>&1 | tail -2
+      APK="out/Argus-v${VER}-vc${VC}-test-signed.apk"
       java -jar "$BT/lib/apksigner.jar" sign --ks /tmp/test.p12 --ks-pass pass:testonly \
         --out "$APK" out/aligned.apk
       java -jar "$BT/lib/apksigner.jar" verify --print-certs "$APK" | head -8
@@ -230,12 +230,12 @@ release-apk:
       for f in out/*.apk out/SHA256SUMS; do
         code=$(curl -sS -o /tmp/up.txt -w '%{http_code}' --header "JOB-TOKEN: $CI_JOB_TOKEN" \
           --upload-file "$f" \
-          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/blaze-android/${VER}/$(basename "$f")")
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/argus-android/${VER}/$(basename "$f")")
         echo "upload $(basename "$f") -> HTTP $code"
         [ "$code" = "201" ] || [ "$code" = "200" ] || cat /tmp/up.txt
       done
   artifacts:
-    name: "blaze-release-apk-$CI_COMMIT_SHORT_SHA"
+    name: "argus-release-apk-$CI_COMMIT_SHORT_SHA"
     when: always
     paths: ["out/"]
     expire_in: 1 month

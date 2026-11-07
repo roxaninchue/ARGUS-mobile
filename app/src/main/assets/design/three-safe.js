@@ -1,12 +1,12 @@
 /*
- * Blaze v0.23.5: three.js with a safety net (served as /three/three.safe.js and /three/r162/three.safe.js).
+ * Argus v0.23.5: three.js with a safety net (served as /three/three.safe.js and /three/r162/three.safe.js).
  * The Design view's importmap points "three" here; this re-exports the bundled build next to it and:
  *  - lets a Mesh / Line / Points be built with a null or missing geometry or material (three.js throws
  *    "Cannot read properties of null (reading 'morphAttributes')" in the constructor): it gets an empty
  *    geometry / grey material and is hidden, so one bad object doesn't stop the whole scene;
  *  - sanitizes the scene before every render (objects whose geometry or material was nulled or disposed
  *    later are hidden the same way), and Box3.setFromObject skips them;
- *  - reports what it fixed once (console.warn "Blaze fixed …") and a render error only once, not every frame.
+ *  - reports what it fixed once (console.warn "Argus fixed …") and a render error only once, not every frame.
  */
 import * as T from "./three.module.min.js";
 export * from "./three.module.min.js";
@@ -17,7 +17,7 @@ const mat = () => fallbackMat || (fallbackMat = new T.MeshStandardMaterial({ col
 const fixed = [];
 function note(o, what) {
   if (fixed.length < 50) fixed.push((o && (o.name || o.type)) + ": " + what);
-  if (fixed.length === 1) setTimeout(() => console.warn("Blaze fixed " + fixed.length + " object(s) in this scene: " + fixed.slice(0, 5).join("; ")), 0);
+  if (fixed.length === 1) setTimeout(() => console.warn("Argus fixed " + fixed.length + " object(s) in this scene: " + fixed.slice(0, 5).join("; ")), 0);
 }
 function badGeometry(g) { return !g || typeof g !== "object" || !g.isBufferGeometry || !g.attributes; }
 function badMaterial(m) { return !m || (Array.isArray(m) ? m.length === 0 || m.some(x => !x || !x.isMaterial) : !m.isMaterial); }
@@ -55,7 +55,7 @@ export function sanitizeScene(root) {
   }
   return n;
 }
-export const blazeFixed = fixed;
+export const argusFixed = fixed;
 
 // Construction: three.js calls updateMorphTargets() in the constructor, right after setting geometry.
 for (const C of [T.Mesh, T.Line, T.Points]) {

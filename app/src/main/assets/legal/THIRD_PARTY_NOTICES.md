@@ -1,10 +1,10 @@
 # Third-party notices
 
-Copied from Blaze Desktop. On the phone the router is built from blazerouter/ and shipped as libblazerouter.so.
+Copied from Argus Desktop. On the phone the router is built from argusrouter/ and shipped as libargusrouter.so.
 
 ## OmniRoute
 
-BlazeRouter (`internal/router`, its dashboard in `internal/router/web` and the model catalog `internal/router/omniroute_catalog.json`) is a Go port of the routing core of OmniRoute: the auto/* presets and their category:tier ranking, combos and strategies, last-known-good preference, chaos fan-out and the provider catalog.
+ArgusRouter (`internal/router`, its dashboard in `internal/router/web` and the model catalog `internal/router/omniroute_catalog.json`) is a Go port of the routing core of OmniRoute: the auto/* presets and their category:tier ranking, combos and strategies, last-known-good preference, chaos fan-out and the provider catalog.
 
 Source: https://github.com/diegosouzapw/OmniRoute
 
@@ -85,7 +85,7 @@ ANY EXPRESS OR IMPLIED WARRANTIES ARE DISCLAIMED; IN NO EVENT SHALL THE COPYRIGH
 DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE.
 
 ## Linux desktop (v0.25.1), downloaded on first Start, not bundled
-The Desktop view installs these free and open-source packages from Alpine Linux's official repositories into Blaze's
+The Desktop view installs these free and open-source packages from Alpine Linux's official repositories into Argus's
 Alpine Linux on the phone, only when the user taps Start (or approves the agent's `desktop` start). None of them is
 shipped inside the APK. Each keeps its own licence (as packaged by Alpine; `apk info -L <pkg>` lists its files):
 
@@ -100,12 +100,12 @@ shipped inside the APK. Each keeps its own licence (as packaged by Alpine; `apk 
 | font-dejavu | DejaVu Fonts | Bitstream Vera Fonts License (free) |
 | adwaita-icon-theme | GNOME | LGPL-3.0-or-later OR CC-BY-SA-3.0 |
 
-Blaze's VNC viewer (`desktop/Rfb.kt`) is Blaze's own code, written from the public RFB protocol specification (RFC 6143).
+Argus's VNC viewer (`desktop/Rfb.kt`) is Argus's own code, written from the public RFB protocol specification (RFC 6143).
 
 ## OpenCode (v0.45.26 backup brain), downloaded in the background, not bundled
 The on-device backup brain (`agent/BackupBrain.kt`) downloads OpenCode's official linux-arm64 musl release
 (`opencode-linux-arm64-musl.tar.gz`, v1.19.4, SHA-256 pinned) from https://github.com/anomalyco/opencode/releases into
-Blaze's Alpine Linux and runs it headless (`opencode serve` on 127.0.0.1). It is not shipped inside the APK.
+Argus's Alpine Linux and runs it headless (`opencode serve` on 127.0.0.1). It is not shipped inside the APK.
 Licence: MIT, Copyright (c) 2025 opencode (https://github.com/anomalyco/opencode/blob/dev/LICENSE). Its hosted free
 models are OpenCode's service, used under OpenCode's own terms (https://opencode.ai).
 
@@ -166,13 +166,13 @@ The PocketTTS voice model is downloaded from the sherpa-onnx `tts-models` releas
 
 `org.apache.commons:commons-compress:1.21` (bzip2 reader for the voice model archive), Apache License 2.0, Copyright The Apache Software Foundation.
 
-## AndroidX Media3 (Blaze Music / Video, v0.30.1)
+## AndroidX Media3 (Argus Music / Video, v0.30.1)
 
 ExoPlayer, MediaSession and PlayerView (`androidx.media3:media3-exoplayer`, `media3-session`, `media3-ui` 1.4.1), Apache License 2.0, Copyright The Android Open Source Project. Source: https://github.com/androidx/media
 
 ## Store sources and data (v0.30.1)
 
-No third-party code is bundled for these; Blaze calls their public APIs. Content keeps its own licence, shown on every item.
+No third-party code is bundled for these; Argus calls their public APIs. Content keeps its own licence, shown on every item.
 
 - **Jamendo** (https://developer.jamendo.com/v3.0): Creative Commons music. Needs a client_id from https://devportal.jamendo.com (Jamendo API terms: non-commercial use of the free tier; attribution). No key is shipped.
 - **Internet Archive** (https://archive.org/advancedsearch.php, https://archive.org/metadata): only items whose licence url is Creative Commons or public domain (audio), the Feature Films collection (public-domain films) and the Blender open movies.
@@ -181,14 +181,14 @@ No third-party code is bundled for these; Blaze calls their public APIs. Content
 
 ## YouTube plug-in (v0.30.1, optional module `youtube/`)
 
-Blaze's own code (InnerTube JSON client); no third-party extractor. **NewPipeExtractor was not used:** it is GPL-3.0. Blaze-agent is licensed PolyForm Noncommercial 1.0.0 (LICENSE.md), which adds a non-commercial restriction GPL-3.0 forbids, and the APK bundles proprietary Google Play services / ML Kit libraries; a GPL-3.0 dependency would require the whole APK to be GPL-3.0. If the YouTube module moves to a private repo, it still must not pull in GPL code while it ships inside Blaze. Downloading from YouTube may breach YouTube's Terms of Service; the module is isolated so builds can leave it out (delete `youtube/`). Its source now lives in the private repo blazeinchue/Blaze-mobile and is only checked out into `youtube/` at build time; this public repo no longer contains it.
+Argus's own code (InnerTube JSON client); no third-party extractor. **NewPipeExtractor was not used:** it is GPL-3.0. Blaze-agent is licensed PolyForm Noncommercial 1.0.0 (LICENSE.md), which adds a non-commercial restriction GPL-3.0 forbids, and the APK bundles proprietary Google Play services / ML Kit libraries; a GPL-3.0 dependency would require the whole APK to be GPL-3.0. If the YouTube module moves to a private repo, it still must not pull in GPL code while it ships inside Argus. Downloading from YouTube may breach YouTube's Terms of Service; the module is isolated so builds can leave it out (delete `youtube/`). Its source now lives in the private repo blazeinchue/Blaze-mobile and is only checked out into `youtube/` at build time; this public repo no longer contains it.
 
 ## Movies (v0.46.2)
 
-- **Vega** (vega-app), Apache License 2.0. Blaze's Movies follows the provider interface and module layout (manifest.json + dist/<id>/{posts,meta,stream,catalog,episodes}.js) and the sandbox idea of the Vega app, as of commit 9ccc0c8 (the LICENSE at that commit is Apache-2.0; there is no NOTICE file). No Vega code after that commit is used, and Blaze bundles, suggests and links no third-party provider repo: users add their own sources. Source: https://github.com/Zenda-Cross/vega-app
+- **Vega** (vega-app), Apache License 2.0. Argus's Movies follows the provider interface and module layout (manifest.json + dist/<id>/{posts,meta,stream,catalog,episodes}.js) and the sandbox idea of the Vega app, as of commit 9ccc0c8 (the LICENSE at that commit is Apache-2.0; there is no NOTICE file). No Vega code after that commit is used, and Argus bundles, suggests and links no third-party provider repo: users add their own sources. Source: https://github.com/Zenda-Cross/vega-app
 - **quickjs-kt** (io.github.dokar3:quickjs-kt 1.0.0-alpha13), Apache License 2.0, Copyright dokar3. Runs user-added provider modules in a QuickJS sandbox (QuickJS itself: MIT, Copyright Fabrice Bellard and Charlie Gordon). Source: https://github.com/dokar3/quickjs-kt
 - **Jsoup** (org.jsoup:jsoup 1.17.2), MIT License, Copyright Jonathan Hedley. HTML parsing for the provider sandbox's cheerio-style helper and Internet Archive descriptions. Source: https://github.com/jhy/jsoup
-- **Blaze Official** example provider repo (Internet Archive films, Blender open movies): Blaze's own code, under Blaze's licence.
+- **Argus Official** example provider repo (Internet Archive films, Blender open movies): Argus's own code, under Argus's licence.
 
 ## REA: Reverse Engineer Anything skill (v0.46.2)
 
@@ -198,7 +198,7 @@ MIT License text (applies to REA and Jsoup as named above): Permission is hereby
 
 ## Phone control flash engine (v0.46.3)
 
-- **ARTEMIS** (google/artemis), Apache License 2.0, Copyright 2026 Google LLC. Blaze's flash engine (`app/src/main/java/com/blaze/assistant/phone/flash/`) is a Kotlin rewrite, changed for Blaze, of ideas and code from ARTEMIS as of commit 351ca8422f7b5b54e80a9c1ce03a222e02415b6b: the compact indexed element list with 0-1000 bounds and duplicate suppression (artemis/utils/visualization.py), the UI filter's screen clipping, minimum size, merging of a clickable row's text children and parent/child redundancy (artemis/utils/ui_filter.py), the smallest-covering-element hit test (artemis/utils/element_hit_test.py), the dHash screen signature (artemis/utils/image_hash.py), the reactive flash observe-act loop with pro escalation and the stagnation rule (artemis/agents/flash). Modified files carry a notice saying so. ARTEMIS has no NOTICE file. Source: https://github.com/google/artemis
-- **mobile-use** (Minitap, Inc.), Apache License 2.0, Copyright 2025-2026 Minitap, Inc. (modifications Copyright 2026 Google LLC), as included in ARTEMIS under third_party/mobile_use (upstream https://github.com/minitap-ai/mobile-use v3.6.3). The flash engine's percentage / 0-1000 normalized coordinate tap follows its `tap_percentage` (controllers/unified_controller.py). Its NOTICE reads: "Mobile-Use. Copyright 2025-2026 Minitap, Inc. This product includes software and architectural methodologies developed by Minitap, Inc. (https://github.com/minitap-ai/mobile-use)". As Minitap requests, Blaze credits Minitap, Inc. here.
+- **ARTEMIS** (google/artemis), Apache License 2.0, Copyright 2026 Google LLC. Argus's flash engine (`app/src/main/java/com/blazeinchue/argus/phone/flash/`) is a Kotlin rewrite, changed for Argus, of ideas and code from ARTEMIS as of commit 351ca8422f7b5b54e80a9c1ce03a222e02415b6b: the compact indexed element list with 0-1000 bounds and duplicate suppression (artemis/utils/visualization.py), the UI filter's screen clipping, minimum size, merging of a clickable row's text children and parent/child redundancy (artemis/utils/ui_filter.py), the smallest-covering-element hit test (artemis/utils/element_hit_test.py), the dHash screen signature (artemis/utils/image_hash.py), the reactive flash observe-act loop with pro escalation and the stagnation rule (artemis/agents/flash). Modified files carry a notice saying so. ARTEMIS has no NOTICE file. Source: https://github.com/google/artemis
+- **mobile-use** (Minitap, Inc.), Apache License 2.0, Copyright 2025-2026 Minitap, Inc. (modifications Copyright 2026 Google LLC), as included in ARTEMIS under third_party/mobile_use (upstream https://github.com/minitap-ai/mobile-use v3.6.3). The flash engine's percentage / 0-1000 normalized coordinate tap follows its `tap_percentage` (controllers/unified_controller.py). Its NOTICE reads: "Mobile-Use. Copyright 2025-2026 Minitap, Inc. This product includes software and architectural methodologies developed by Minitap, Inc. (https://github.com/minitap-ai/mobile-use)". As Minitap requests, Argus credits Minitap, Inc. here.
 
 Apache License 2.0 (applies to ARTEMIS and mobile-use as named above): Licensed under the Apache License, Version 2.0 (the "License"); you may not use these files except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.

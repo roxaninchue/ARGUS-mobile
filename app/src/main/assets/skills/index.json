@@ -2,9 +2,9 @@
   "format": 1,
   "skills": [
     {
-      "name": "blaze-voice",
+      "name": "argus-voice",
       "version": 1,
-      "sha256": "a65b70434c11ec5c91f9b4a0271205200884005cdcc60ede2c17928438152f8c"
+      "sha256": "25d4fbcd9862c3b32bbbdb01c69c34223fd0fb2df0fdbdbc27e0b7f796a4899c"
     },
     {
       "name": "deep-research",
@@ -74,7 +74,7 @@
     {
       "name": "landing-page-builder",
       "version": 1,
-      "sha256": "88a973c1a0446dc7dfffcaea940fa85655d7cd642fba78fa038aedc2232f18b3",
+      "sha256": "e4bff3047436d78031d38b85f5fc3fdaa834b329a7a5f1822877d942874211f4",
       "files": [
         "SKILL.md",
         "assets/template.html"
@@ -83,16 +83,16 @@
     {
       "name": "slide-deck",
       "version": 1,
-      "sha256": "fa798a752428edfe54d5e7eb671a933711e78091699bab862ed1484d62c086a1",
+      "sha256": "070e1b0b1ac5e936b2428b94cebb57e87c2a147b7ab4a15d72282ccfa003db0b",
       "files": [
         "SKILL.md",
         "assets/deck.html"
       ]
     },
     {
-      "name": "web-design-blaze-classic",
+      "name": "web-design-argus-classic",
       "version": 1,
-      "sha256": "23a1146a559241d0c9cb05ebc2dd9f9afaee1646e75afd88a057db6c66e44597",
+      "sha256": "f272fc06ccfa1a6ecedf0721010382d5b6332a74e66948c71ea8ba522d02c472",
       "files": [
         "SKILL.md",
         "assets/starter.html",
@@ -102,7 +102,7 @@
     {
       "name": "web-design-teamofkeys",
       "version": 1,
-      "sha256": "96f278b21a2801f606aebb8f6cac3636f487feff00e510c33481303ff8f3879d",
+      "sha256": "aab7527479a06773fe3e12a71e3cdceb358262d42a9beb889e05e8b08c5e27a1",
       "files": [
         "SKILL.md",
         "assets/starter.html",
@@ -169,7 +169,7 @@
     {
       "name": "three-d-design",
       "version": 2,
-      "sha256": "a234bab8066ff3b40701eb84a8cfb6e7dad899f37c4d66bc1b492fcb671499ec",
+      "sha256": "55e1b0d5a9c0aa687719eb8f81d5d3b54fff416d3189160ae419cdc11050d760",
       "files": [
         "SKILL.md",
         "assets/mockup.html"
@@ -263,29 +263,29 @@
       "sha256": "fc92c077bdd2ff246607a597ab286cac8c69135c5458bc3b5b28151e8ec42b5f"
     },
     {
-      "name": "blaze-task-workflow",
+      "name": "argus-task-workflow",
       "version": 1,
-      "sha256": "89a8221c620d3e5985b1e9e4163cb6287be449db9e7e952156a07cf820388788"
+      "sha256": "84eb52bdd3c6dd517bbe76b41dde1c6e78b218da6e1c3c559eecba64408af921"
     },
     {
-      "name": "blaze-coding-workflow",
+      "name": "argus-coding-workflow",
       "version": 1,
-      "sha256": "5e3c929b598907b08a55b374d780347f02adb45f7b8073cdbf1096efa2c59fe5"
+      "sha256": "81b9e10873c866155cc02abbbb8bd5291ab18f16501d05f175019a757a74ef5e"
     },
     {
-      "name": "blaze-views",
+      "name": "argus-views",
       "version": 2,
-      "sha256": "f265f5664ac13a81a4b1d4e458310d9ea8d9390a9f246f16dc3ed22597b79a13"
+      "sha256": "c6bcc9cce9e465f9d3ef4caa8b1631014eec1a6aa57c8f27cb17f5edd98b59e0"
     },
     {
-      "name": "blaze-workflow-builder",
+      "name": "argus-workflow-builder",
       "version": 1,
-      "sha256": "6aa9df388df91d40b0f4214f16b877809f42b624dd23f66eb9412cd174776c61"
+      "sha256": "61a1a8ce5f7126f9dc8fa396c7bfe092ba9eb5956da5bf405404ae198b78612a"
     },
     {
-      "name": "blaze-specialists",
+      "name": "argus-specialists",
       "version": 2,
-      "sha256": "a0e9163b22770abe1edbeab5a3ca4d32638550de1f416224e6215e5eb3957f51"
+      "sha256": "d7cafe173b8f64901a77293dbefd1933beefa67faa74fdca8bd41de1acc2d145"
     },
     {
       "name": "wf-send-to-person",

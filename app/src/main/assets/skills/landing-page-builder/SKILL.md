@@ -16,7 +16,7 @@ reveal-on-scroll, reduced motion, dark mode). Copy it, then fill it.
 
 Answer these from the request and memory; ask the user only what you can't infer:
 - **Who** is it for, and the **one action** the page wants (buy, join waitlist, book, email).
-- **Brand**: existing colours/fonts/logo? If none and the page is Argus's, load `web-design-blaze-classic`; if the user named a style (e.g. Team of Keys), load that skill.
+- **Brand**: existing colours/fonts/logo? If none and the page is Argus's, load `web-design-argus-classic`; if the user named a style (e.g. Team of Keys), load that skill.
 - **Content** they already have: product name, one-line promise, 3 benefits, proof (numbers, logos, quotes), price, FAQ, contact.
 Never invent testimonials, client logos, prices or statistics. Use clearly marked placeholders (`[Quote from a customer]`) and list them in your reply.
 

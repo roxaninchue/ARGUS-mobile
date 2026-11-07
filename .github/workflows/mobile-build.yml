@@ -2,7 +2,7 @@
 # .github/workflows/mobile-build.yml). It never runs from this GitLab repo. Releases: builds repo -> sandbox signing -> Site /dl.
 name: Mobile build
 
-# Blaze Android on the temporary public build repo (branch app/mobile).
+# Argus Android on the temporary public build repo (branch app/mobile).
 # Builds the release APK UNSIGNED (R8, not debuggable). Signing happens outside GitHub with the private release key:
 # no key, keystore or password is ever in this repo or in Actions.
 # Also runs the JVM unit tests and the 360/375 dp screenshot tests (ShotsTest / Shots375Test) on x86.
@@ -10,7 +10,7 @@ on:
   push:
     # 0.52.2: + the ARGUS living 3D Home branch (unit tests, shots, unsigned + test-signed APK)
     # 0.52.3: + the ARGUS x Hark design branch (shots incl. SpaceShotsTest, which replaced ArgusHomeShotsTest)
-    branches: [ "app/mobile", "app/mobile-revamp", "app/brain-routing", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    branches: [ "app/mobile", "app/mobile-revamp", "app/brain-routing", "feat/argus-3d-home", "feat/argus-hark-design", "chore/**" ]
     # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
     paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
@@ -43,25 +43,25 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;34.0.0" > /dev/null
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
-      - name: Go libraries (browser VPN, BlazeRouter)
+      - name: Go libraries (browser VPN, ArgusRouter)
         run: |
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           (cd wgproxy && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/arm64-v8a/libwgproxy.so . \
             && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/armeabi-v7a/libwgproxy.so .) || echo "wgproxy build skipped"
-          (cd blazerouter && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/arm64-v8a/libblazerouter.so . \
-            && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libblazerouter.so .) || echo "blazerouter build skipped"
+          (cd argusrouter && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/arm64-v8a/libargusrouter.so . \
+            && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libargusrouter.so .) || echo "argusrouter build skipped"
       - name: Build unsigned release APK
         run: |
           set -o pipefail
           ./gradlew :app:assembleRelease --stacktrace --console=plain "-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspaceSize=1g" -Pkotlin.compiler.execution.strategy=in-process -Pkotlin.jvm.target.validation.mode=warning 2>&1 | tee build.log
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           mkdir -p out
-          cp app/build/outputs/apk/release/*-unsigned.apk "out/Blaze-v${VER}-release-unsigned.apk"
+          cp app/build/outputs/apk/release/*-unsigned.apk "out/Argus-v${VER}-release-unsigned.apk"
           # Aligned copy for signing outside GitHub (apksigner keeps the alignment; the signing sandbox is aarch64, so align here).
           BT="$ANDROID_HOME/build-tools/34.0.0"
-          "$BT/zipalign" -f -p 4 "out/Blaze-v${VER}-release-unsigned.apk" "out/Blaze-v${VER}-release-unsigned-aligned.apk"
-          "$BT/zipalign" -c -p 4 "out/Blaze-v${VER}-release-unsigned-aligned.apk"
-          "$BT/aapt2" dump badging "out/Blaze-v${VER}-release-unsigned-aligned.apk" > out/badging.txt
+          "$BT/zipalign" -f -p 4 "out/Argus-v${VER}-release-unsigned.apk" "out/Argus-v${VER}-release-unsigned-aligned.apk"
+          "$BT/zipalign" -c -p 4 "out/Argus-v${VER}-release-unsigned-aligned.apk"
+          "$BT/aapt2" dump badging "out/Argus-v${VER}-release-unsigned-aligned.apk" > out/badging.txt
           if grep -q "application-debuggable" out/badging.txt; then echo "::error::debuggable"; exit 1; fi
           grep -E "package:|sdkVersion|targetSdkVersion" out/badging.txt | tee -a "$GITHUB_STEP_SUMMARY"
           echo "zipalign -p 4: ok (aligned copy)" | tee -a "$GITHUB_STEP_SUMMARY"
@@ -75,7 +75,7 @@ jobs:
           BT="$ANDROID_HOME/build-tools/34.0.0"
           mkdir -p test-signed
           keytool -genkeypair -keystore ci-test.p12 -storetype PKCS12 -storepass testonly -keypass testonly -alias test -keyalg RSA -keysize 2048 -validity 7 -dname "CN=ARGUS test build"
-          "$BT/apksigner" sign --ks ci-test.p12 --ks-pass pass:testonly --out "test-signed/ARGUS-v${VER}-test-signed.apk" "out/Blaze-v${VER}-release-unsigned-aligned.apk"
+          "$BT/apksigner" sign --ks ci-test.p12 --ks-pass pass:testonly --out "test-signed/ARGUS-v${VER}-test-signed.apk" "out/Argus-v${VER}-release-unsigned-aligned.apk"
           "$BT/apksigner" verify --print-certs "test-signed/ARGUS-v${VER}-test-signed.apk" | head -3 | tee -a "$GITHUB_STEP_SUMMARY"
           rm -f ci-test.p12
           (cd test-signed && sha256sum *.apk | tee SHA256SUMS)
@@ -164,10 +164,10 @@ jobs:
           chmod +x gradlew
       - name: Screenshots 360 dp and 375 dp
         env:
-          BLAZE_SHOTS: "1"
+          ARGUS_SHOTS: "1"
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest' --tests 'com.blaze.assistant.ui.Shots375Test' --tests 'com.blaze.assistant.ui.StageShotsTest' --tests 'com.blaze.assistant.ui.MoviesShotsTest' --tests 'com.blaze.assistant.ui.MediaRevampShotsTest' --tests 'com.blaze.assistant.ui.SecretCardsShotsTest' --tests 'com.blaze.assistant.ui.HomeRedesignShotsTest' --tests 'com.blaze.assistant.ui.ComposerShotsTest' --tests 'com.blaze.assistant.ui.Blaze050ShotsTest' --tests 'com.blaze.assistant.ui.SpaceShotsTest' \
+          ./gradlew :app:testDebugUnitTest --tests 'com.blazeinchue.argus.ui.ShotsTest' --tests 'com.blazeinchue.argus.ui.Shots375Test' --tests 'com.blazeinchue.argus.ui.StageShotsTest' --tests 'com.blazeinchue.argus.ui.MoviesShotsTest' --tests 'com.blazeinchue.argus.ui.MediaRevampShotsTest' --tests 'com.blazeinchue.argus.ui.SecretCardsShotsTest' --tests 'com.blazeinchue.argus.ui.HomeRedesignShotsTest' --tests 'com.blazeinchue.argus.ui.ComposerShotsTest' --tests 'com.blazeinchue.argus.ui.Argus050ShotsTest' --tests 'com.blazeinchue.argus.ui.SpaceShotsTest' \
             --continue --console=plain "-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspaceSize=1g" \
             -Pkotlin.compiler.execution.strategy=in-process -Pkotlin.jvm.target.validation.mode=warning 2>&1 | tee shots.log
       - name: shots.zip

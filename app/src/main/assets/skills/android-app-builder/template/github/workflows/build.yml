@@ -1,8 +1,8 @@
 name: Build APK
 
-# Made from Blaze's Android template. Every push to main builds a signed APK and publishes it
-# as the latest GitHub release (asset app.apk), which Blaze downloads and installs on the phone.
-# Blaze never edits this file (that needs GitHub's "workflow" permission); it only changes the app.
+# Made from Argus's Android template. Every push to main builds a signed APK and publishes it
+# as the latest GitHub release (asset app.apk), which Argus downloads and installs on the phone.
+# Argus never edits this file (that needs GitHub's "workflow" permission); it only changes the app.
 on:
   push:
     branches: [main]
@@ -34,8 +34,8 @@ jobs:
           if [ ! -f keystore/release.jks ]; then
             mkdir -p keystore
             keytool -genkeypair -keystore keystore/release.jks -alias app -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=${{ github.repository_owner }}" -storepass blazeapp -keypass blazeapp
-            git config user.name "Blaze CI"; git config user.email "ci@users.noreply.github.com"
+              -dname "CN=${{ github.repository_owner }}" -storepass argusapp -keypass argusapp
+            git config user.name "Argus CI"; git config user.email "ci@users.noreply.github.com"
             git add keystore/release.jks
             git commit -m "Add signing key [skip ci]"
             git push
@@ -49,10 +49,10 @@ jobs:
           set -o pipefail
           ./gradlew assembleRelease --stacktrace 2>&1 | tee build.log
 
-      - name: Errors (for Blaze)
+      - name: Errors (for Argus)
         if: failure()
         run: |
-          echo "::group::BLAZE_ERRORS"
+          echo "::group::ARGUS_ERRORS"
           grep -E "^e: |error:|What went wrong|FAILURE|Unresolved reference|AAPT|Manifest merger" -A4 build.log | head -150 || true
           echo "::endgroup::"
 

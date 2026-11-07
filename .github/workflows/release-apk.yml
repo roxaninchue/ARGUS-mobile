@@ -57,7 +57,7 @@ jobs:
           sha256sum "${{ inputs.asset }}"
       - name: Create or update the release
         run: |
-          T="${{ inputs.title }}"; [ -n "$T" ] || T="Blaze ${{ inputs.tag }}"
+          T="${{ inputs.title }}"; [ -n "$T" ] || T="Argus ${{ inputs.tag }}"
           if gh release view "${{ inputs.tag }}" --repo "$REPO" >/dev/null 2>&1; then
             gh release upload "${{ inputs.tag }}" "${{ inputs.asset }}" --clobber --repo "$REPO"
           else

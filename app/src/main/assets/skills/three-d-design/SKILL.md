@@ -5,7 +5,7 @@ tags: [3d, design, threejs, cad, blender, modeling, mockup]
 version: 1
 ---
 
-> **On the phone:** make the mockup with the `design` tool: `design action=create kind=3d title=… units=… parts=[…]` (the same part entries as the blaze-parts JSON below). Argus generates this starter page from the parts, opens it in the Design view (orbit with one finger, zoom with two) and makes it the current design. Every follow-on ("show the engine", "make it taller") is `design action=update` with `set_parts` (by id, only the keys that change) / `remove_parts` on that same design; `design action=read` shows the current parts. Part picking and write-back are Desktop-only: the user names the part to change in chat. Building in Blender/FreeCAD needs a PC (`ask_pc` if paired); OpenSCAD and Python exports can run in Argus's Alpine Linux (`apk add openscad`).
+> **On the phone:** make the mockup with the `design` tool: `design action=create kind=3d title=… units=… parts=[…]` (the same part entries as the argus-parts JSON below). Argus generates this starter page from the parts, opens it in the Design view (orbit with one finger, zoom with two) and makes it the current design. Every follow-on ("show the engine", "make it taller") is `design action=update` with `set_parts` (by id, only the keys that change) / `remove_parts` on that same design; `design action=read` shows the current parts. Part picking and write-back are Desktop-only: the user names the part to change in chat. Building in Blender/FreeCAD needs a PC (`ask_pc` if paired); OpenSCAD and Python exports can run in Argus's Alpine Linux (`apk add openscad`).
 
 # 3D design: mockup first, then the real program
 
@@ -30,7 +30,7 @@ structure, and replace the example parts.
 ## 2. Build the mockup in Design
 
 1. Copy the starter to `design/<thing>-3d.html` in the project folder (no project: the current folder).
-2. Fill the `blaze-parts` JSON: `name`, `units`, `scale` (scene units per unit: 0.001 for mm, 1 for m),
+2. Fill the `argus-parts` JSON: `name`, `units`, `scale` (scene units per unit: 0.001 for mm, 1 for m),
    `nudge` (arrow-key step: 10 for mm objects, 0.1 for rooms in m), then one entry per part:
    - `id` kebab-case and unique, `label` in plain words.
    - `shape`: `box` (size [w, h, d]), `cylinder` (radius, height, optional radiusTop), `cone`, `sphere`,
@@ -47,7 +47,7 @@ structure, and replace the example parts.
    a line on why, like the starter. When you add custom builders, comment what each one makes and
    which JSON keys drive it.
 6. Keep the contract the Design view relies on: each part's root `Object3D` has `userData.part = id`,
-   and the page sets `window.__blazeScene = { THREE, scene, camera, renderer, controls, parts, spec }`.
+   and the page sets `window.__argusScene = { THREE, scene, camera, renderer, controls, parts, spec }`.
 7. Save. The app sees a 3D mockup and opens it in Design. Say in one or two lines what you built,
    the overall size, and how to edit: click a part, then Adjust (colour, scale, turn), arrow keys to
    move it, or Change to describe anything else.
@@ -64,7 +64,7 @@ structure, and replace the example parts.
 ## 4. Build it in the target program (only after the mockup)
 
 Ask "Happy with the mockup? I'll build it in <program> next" unless the user already said to go
-straight on. Then generate the model from the same `blaze-parts` JSON, so both match exactly:
+straight on. Then generate the model from the same `argus-parts` JSON, so both match exactly:
 
 | Program | How |
 | --- | --- |
@@ -84,11 +84,11 @@ differs from the mockup (for example, fillets added in CAD that the mockup only 
 
 ## Checklist before you hand it over
 
-- [ ] Every part is in the blaze-parts JSON with a unique id, a label and real dimensions.
+- [ ] Every part is in the argus-parts JSON with a unique id, a label and real dimensions.
 - [ ] No part numbers are hard-coded in the script; custom builders read them from the part.
 - [ ] Each code block has its annotation comment.
 - [ ] Parts that should touch do, nothing floats, and the overall size matches the brief.
-- [ ] `window.__blazeScene` is set and each part root carries `userData.part`.
+- [ ] `window.__argusScene` is set and each part root carries `userData.part`.
 - [ ] If a program was named: the mockup came first, and the program's file is built from the same JSON.
 
 ## Don'ts

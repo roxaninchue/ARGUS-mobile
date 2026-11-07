@@ -4,14 +4,14 @@
 # prints the dex hashes to compare) plus the debug app and the instrumented smoke test. No key, keystore or password is ever used
 # here: the release APK is signed with a throwaway key generated in the job, only so the emulator can install it.
 # 0.48.0 RC3: that throwaway-signed APK (rel/smoke-signed.apk) is kept in the artifact as the TEST build for the phone; it is
-# never published (a phone with the real Blaze must uninstall it first: the signatures differ).
+# never published (a phone with the real Argus must uninstall it first: the signatures differ).
 name: Low-RAM smoke gate
 
 on:
   push:
     # 0.52.2: + the ARGUS living 3D Home branch (the gate now has 7 scenarios: f_argusHome added)
     # 0.52.3: + the ARGUS x Hark design branch (still 7 scenarios: f_argusHome became f_spaceHome)
-    branches: [ "smoke/**", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    branches: [ "smoke/**", "feat/argus-3d-home", "feat/argus-hark-design", "chore/**" ]
     # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
     paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
@@ -55,8 +55,8 @@ jobs:
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           (cd wgproxy && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/arm64-v8a/libwgproxy.so . \
             && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/armeabi-v7a/libwgproxy.so .) || echo "wgproxy build skipped"
-          (cd blazerouter && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/arm64-v8a/libblazerouter.so . \
-            && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libblazerouter.so .) || echo "blazerouter build skipped"
+          (cd argusrouter && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/arm64-v8a/libargusrouter.so . \
+            && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libargusrouter.so .) || echo "argusrouter build skipped"
       - name: Build release APK + debug app + smoke test APK (same commit)
         run: |
           set -o pipefail
@@ -69,7 +69,7 @@ jobs:
           "$BT/zipalign" -f -p 4 app/build/outputs/apk/release/*-unsigned.apk rel/candidate-aligned.apk
           APK=rel/candidate-aligned.apk
           for d in $(unzip -Z1 "$APK" | grep -E '^classes[0-9]*\.dex$'); do echo "$d $(unzip -p "$APK" "$d" | sha256sum | cut -c1-64)"; done | tee rel/DEX-SHA256 | tee -a "$GITHUB_STEP_SUMMARY"
-          keytool -genkeypair -keystore ci-smoke.p12 -storetype PKCS12 -storepass smokeonly -keypass smokeonly -alias smoke -keyalg RSA -keysize 2048 -validity 2 -dname "CN=Blaze smoke"
+          keytool -genkeypair -keystore ci-smoke.p12 -storetype PKCS12 -storepass smokeonly -keypass smokeonly -alias smoke -keyalg RSA -keysize 2048 -validity 2 -dname "CN=Argus smoke"
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" sign --ks ci-smoke.p12 --ks-pass pass:smokeonly --out rel/smoke-signed.apk "$APK"
       - name: Enable KVM
         run: |

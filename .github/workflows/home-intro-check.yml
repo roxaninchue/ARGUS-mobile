@@ -7,7 +7,7 @@ name: Home intro check (ARGUS onboarding)
 
 on:
   push:
-    branches: [ "check/**", "feat/argus-3d-home", "feat/argus-hark-design" ]
+    branches: [ "check/**", "feat/argus-3d-home", "feat/argus-hark-design", "chore/**" ]
     # Docs-only pushes (BUILDING.md, notes) don't start a 25-minute round.
     paths-ignore: ['**/*.md', 'docs/**']
   workflow_dispatch:
