@@ -640,8 +640,10 @@ fun ChatScreen() {
     // v0.28.3: back inside Projects: project chat → project page → projects list (then the system's back).
     BackHandler(enabled = !isPrivate && nav.back() != null) { navNow().back()?.let { go(it) } }
     Box(Modifier.fillMaxSize().testTag(com.blaze.assistant.ui.space.SpaceTags.ROOT).onSizeChanged { sheetH = it.height.toFloat() }) {
-        // 0.52.3: the space view (dark) or the light ARGUS ground behind every tab
-        com.blaze.assistant.ui.space.SpaceBackdrop()
+        // 0.52.3: the space view (dark) or the light ARGUS ground behind every tab. Not while the first-run onboarding is up:
+        // it draws its own opaque space view over everything, so a second full-screen backdrop (and image draw) under it
+        // only added first-frame work (CI fix, low-RAM smoke cold start).
+        if (!onboard) com.blaze.assistant.ui.space.SpaceBackdrop()
         // v0.39.0 Simple mode: Home (the Home cards) underneath, with the grab handle; Chat slides over it.
         if (swipeMode && p < 1f) {
             CompositionLocalProvider(LocalOpenLink provides openLink) {

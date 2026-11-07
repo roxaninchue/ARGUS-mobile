@@ -30,6 +30,14 @@ object StartWarm {
     fun run(app: Context?) {
         val t0 = android.os.SystemClock.elapsedRealtime()
         if (app != null) try { com.blaze.assistant.agent.Mind.openLater(app) } catch (e: Throwable) { CrashLog.quiet("StartWarm: Mind.openLater", e) }
+        // 0.52.3 CI fix (low-RAM smoke, release cold start 1850 ms > 700 ms): decode the space view and the ARGUS logo here,
+        // off the main thread and before the first Activity exists, so the first frame already draws them. Decoded later
+        // (by the backdrop's own produceState), they landed on a later frame, whose texture upload + new SwiftShader
+        // pipeline held the main thread outside the one first-frame render wait tools/smoke/app_stall.py excludes.
+        if (app != null) {
+            try { com.blaze.assistant.ui.space.SpaceImageCache.prefetch(app) } catch (e: Throwable) { CrashLog.quiet("StartWarm: space image", e) }
+            try { com.blaze.assistant.ui.space.ArgusLogoCache.get(app) } catch (e: Throwable) { CrashLog.quiet("StartWarm: ARGUS logo", e) }
+        }
         warmClasses(classes)
         try { android.util.Log.i("BlazeStart", "warm (off main) ${android.os.SystemClock.elapsedRealtime() - t0} ms") } catch (_: Throwable) { Unit }   // no logcat (JVM tests)
     }

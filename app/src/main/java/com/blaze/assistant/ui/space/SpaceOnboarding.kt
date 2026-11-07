@@ -62,10 +62,21 @@ import kotlinx.coroutines.withContext
 /** The metallic ARGUS logo (res/drawable-nodpi/argus_logo.webp), decoded off the main thread once. */
 object ArgusLogoCache {
     @Volatile private var cached: ImageBitmap? = null
+    private val lock = Any()
     fun get0(): ImageBitmap? = cached
-    fun get(ctx: android.content.Context): ImageBitmap? = cached ?: try {
-        BitmapFactory.decodeResource(ctx.resources, com.blaze.assistant.R.drawable.argus_logo)?.asImageBitmap()?.also { cached = it }
-    } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ArgusLogoCache", t); null }
+    /**
+     * 0.52.3 CI fix: decoded at the size the welcome draws it (260 dp wide, power-of-two sampling of the 720 px source)
+     * instead of full size, once (synchronized), and prefetched by StartWarm before the first frame like [SpaceImageCache].
+     */
+    fun get(ctx: android.content.Context): ImageBitmap? = cached ?: synchronized(lock) {
+        cached ?: try {
+            val targetPx = (260f * ctx.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+            var s = 1; while (720 / (s * 2) >= targetPx) s *= 2
+            val o = BitmapFactory.Options().apply { inSampleSize = s }
+            BitmapFactory.decodeResource(ctx.resources, com.blaze.assistant.R.drawable.argus_logo, o)
+                ?.also { it.prepareToDraw() }?.asImageBitmap()?.also { cached = it }
+        } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ArgusLogoCache", t); null }
+    }
 }
 
 /** The logo at [width]; until it is decoded (or if it can't be) the vector ARGUS mark stands in, so the layout never jumps. */

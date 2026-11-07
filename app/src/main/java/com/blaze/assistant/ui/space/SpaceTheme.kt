@@ -110,14 +110,33 @@ object SpaceImageCache {
     /** The image if it was decoded already (the first frame after that draws it at once). */
     fun get0(): ImageBitmap? = cached?.second
 
+    // 0.52.3 CI fix: one decode at a time. The root backdrop and the onboarding's (forceDark) backdrop used to start two
+    // decodes of the same 1080 x 2400 image at once, giving two bitmaps (two texture uploads) on two later frames.
+    private val lock = Any()
+
     fun get(ctx: Context, screenW: Int, screenH: Int): ImageBitmap? {
         val lowRam = try { ctx.getSystemService(android.app.ActivityManager::class.java)?.isLowRamDevice == true } catch (_: Throwable) { false }
         val sample = SpaceImage.sample(screenW, screenH, lowRam)
         cached?.let { (s, b) -> if (s <= sample) return b }
-        return try {
-            val o = BitmapFactory.Options().apply { inSampleSize = sample; inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 }
-            BitmapFactory.decodeResource(ctx.resources, com.blaze.assistant.R.drawable.argus_space, o)?.asImageBitmap()?.also { cached = sample to it }
-        } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("SpaceImageCache", t); null }
+        synchronized(lock) {
+            cached?.let { (s, b) -> if (s <= sample) return b }
+            return try {
+                val o = BitmapFactory.Options().apply { inSampleSize = sample; inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 }
+                BitmapFactory.decodeResource(ctx.resources, com.blaze.assistant.R.drawable.argus_space, o)
+                    ?.also { it.prepareToDraw() }?.asImageBitmap()?.also { cached = sample to it }
+            } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("SpaceImageCache", t); null }
+        }
+    }
+
+    /**
+     * 0.52.3 CI fix (low-RAM smoke, release cold start 1850 ms): StartWarm calls this on its background thread before the
+     * first Activity exists, so the space view is already decoded when the first frame is composed ([get0] is non-null)
+     * and the bitmap is drawn IN the first frame. Before, it arrived one or more frames later, and that later frame's
+     * texture upload + new SwiftShader pipeline held the main thread outside the one first-frame render wait the gate excludes.
+     */
+    fun prefetch(ctx: Context) {
+        val m = ctx.resources.displayMetrics
+        get(ctx, m.widthPixels, m.heightPixels)
     }
 }
 

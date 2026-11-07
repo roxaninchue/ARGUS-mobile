@@ -167,7 +167,12 @@ class ComposerShotsTest {
     @Test fun spotlightCurated() = spot("spotlight-curated", "", "Chat with ${BrandName.NAME}")
     @Test fun spotlightBothForms() = spot("spotlight-terminal-both-forms", "terminal", "Views > Terminal")
     @Test fun spotlightBang() = spot("spotlight-bang-distro", "!ls -la", "! ls -la")
-    @Test fun spotlightModels() = spot("spotlight-model-inf", "pan", "${BrandName.NAME} Panoptes")
+    /** 0.52.3: no model rows in Spotlight any more (SelfMap.MODELS / Kind.MODEL removed): "pan" ends in the fallbacks only. */
+    @Test fun spotlightNoModels() {
+        spot("spotlight-no-model", "pan", "Ask ${BrandName.NAME} about")
+        for (label in listOf("${BrandName.NAME} Panoptes", "Model \u00b7 tap to use"))
+            assertTrue("no model row \"$label\"", rule.onAllNodes(hasText(label, substring = true)).fetchSemanticsNodes().isEmpty())
+    }
     @Test fun spotlightLibrary() = spot("spotlight-library-fuzzy", "bohemain", "Music > Library > Bohemian Rhapsody")
     @Test fun spotlightFallbacks() = spot("spotlight-fallbacks", "zqxj food", "Ask ${BrandName.NAME} about")
     @Test fun spotlightViews() = spot("spotlight-at-views", "@", "@browser")
