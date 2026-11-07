@@ -158,7 +158,8 @@ class SpaceShotsTest {
         capture("space-profile-light") {
             CompositionLocalProvider(LocalBlaze provides LightColors) {
                 SpaceBackdrop {
-                    SpaceProfileScreen("Gaby Alarcon", "gaby@example.com", signedIn = false, planLine = "", onPage = {}, onSignOut = {}, onSearch = {})
+                    // the caller (SettingsSheet) passes SpaceProfile.subtitle(...) as the line under the name, as here
+                    SpaceProfileScreen("Gaby Alarcon", SpaceProfile.subtitle("gaby@example.com", false), signedIn = false, planLine = "", onPage = {}, onSignOut = {}, onSearch = {})
                 }
             }
         }
