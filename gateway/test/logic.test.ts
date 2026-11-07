@@ -40,9 +40,9 @@ describe("task tags", () => {
     expect(normalizeTask("nope")).toBeNull();
     expect(normalizeTask(5)).toBeNull();
   });
-  it("reads blaze-<task> model names", () => {
-    expect(taskFromModel("blaze-code")).toBe("code");
-    expect(taskFromModel("blaze-auto")).toBeNull();
+  it("reads argus-<task> model names", () => {
+    expect(taskFromModel("argus-code")).toBe("code");
+    expect(taskFromModel("argus-auto")).toBeNull();
     expect(taskFromModel("gpt-4o")).toBeNull();
   });
   it("infers: images → vision, tools → agent, long → long, code → code, else chat", () => {
@@ -55,9 +55,9 @@ describe("task tags", () => {
     expect(inferTask({})).toBe("chat");
   });
   it("tag beats model beats inference", () => {
-    expect(pickTask({ blaze_task: "quick", model: "blaze-code", messages: [] })).toEqual({ task: "quick", source: "tag" });
-    expect(pickTask({ model: "blaze-code", messages: [] })).toEqual({ task: "code", source: "model" });
-    expect(pickTask({ blaze_task: "bogus", messages: [{ role: "user", content: "hi" }] })).toEqual({ task: "chat", source: "inferred" });
+    expect(pickTask({ argus_task: "quick", model: "argus-code", messages: [] })).toEqual({ task: "quick", source: "tag" });
+    expect(pickTask({ model: "argus-code", messages: [] })).toEqual({ task: "code", source: "model" });
+    expect(pickTask({ argus_task: "bogus", messages: [{ role: "user", content: "hi" }] })).toEqual({ task: "chat", source: "inferred" });
   });
 });
 

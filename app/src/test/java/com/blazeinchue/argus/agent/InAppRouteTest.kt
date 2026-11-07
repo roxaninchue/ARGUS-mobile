@@ -1,0 +1,72 @@
+package com.blazeinchue.argus.agent
+
+
+import com.blazeinchue.argus.BrandName
+import com.blazeinchue.argus.agent.InAppRoute.Route
+import com.blazeinchue.argus.phone.AppMatch
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/** v0.45.6 P1 music: in-app tools before screen control; exact app launches only; music_ops never needs a card. */
+class InAppRouteTest {
+    @Test fun musicRequestsRouteToArgusMusic() {
+        for (t in listOf("play music", "Play music.", "please play some music", "play my music", "resume the music", "continue music", "Hey ${BrandName.NAME} play music", "play argus music"))
+            assertEquals(t, Route.Music("play"), InAppRoute.match(t))
+        for (t in listOf("pause music", "pause the music", "stop the music", "stop music")) assertEquals(t, Route.Music("pause"), InAppRoute.match(t))
+        for (t in listOf("next song", "skip this song", "skip song", "play the next track", "skip")) assertEquals(t, Route.Music("next"), InAppRoute.match(t))
+        for (t in listOf("previous song", "last track", "play the previous song")) assertEquals(t, Route.Music("previous"), InAppRoute.match(t))
+        assertEquals(Route.Music("now"), InAppRoute.match("what's playing?"))
+    }
+
+    @Test fun otherAppsAndRealQuestionsStayWithTheModel() {
+        for (t in listOf("play music on spotify", "play some music on YouTube", "play Despacito", "make me a song", "write music for my video",
+                "pause", "stop", "what is music theory", "play music on my pc"))
+            assertNull(t, InAppRoute.match(t))
+    }
+
+    @Test fun argusScreensOpenAsViews() {
+        assertEquals(Route.View("music"), InAppRoute.match("open ${BrandName.NAME} Music"))
+        assertEquals(Route.View("music"), InAppRoute.match("open music"))
+        assertEquals(Route.View("projects"), InAppRoute.match("show my projects"))
+        assertEquals(Route.View("settings"), InAppRoute.match("open argus settings"))
+        assertEquals(Route.View("design"), InAppRoute.match("open the design studio"))
+        assertNull("phone settings stay a device action", InAppRoute.match("open settings"))
+        assertNull(InAppRoute.match("open whatsapp"))
+    }
+
+    @Test fun shellLinesThatAreInAppToolsRunAsTools() {
+        assertEquals("music_ops" to mapOf("action" to "play"), InAppRoute.toolFor("music_ops play"))
+        assertEquals("music_ops" to mapOf("action" to "next"), InAppRoute.toolFor("music_ops --action=next"))
+        assertEquals("open_view" to mapOf("view" to "music"), InAppRoute.toolFor("open_view music"))
+        assertNull(InAppRoute.toolFor("ls -la"))
+        assertNull(InAppRoute.toolFor("music_ops play; rm -rf ~"))
+        assertNull(InAppRoute.toolFor("music_ops"))
+    }
+
+    @Test fun musicOpsTransportIsSafeInNormalMode() {
+        for (c in listOf("music_ops play", "music_ops pause", "music_ops next", "music_ops previous", "music_ops resume"))
+            assertEquals(c, CommandPolicy.Level.SAFE, CommandPolicy.shell(c))
+        assertEquals(CommandPolicy.Decision.RUN, CommandPolicy.decide(CommandPolicy.shell("music_ops play"), CommandPolicy.key(CommandPolicy.Kind.SHELL, "music_ops play"), emptySet(), emptySet()))
+        assertEquals(CommandPolicy.Level.ASK, CommandPolicy.shell("music_ops import https://x"))
+    }
+
+    private val apps = listOf("ArgusFX" to "com.argusfx.app", "WhatsApp" to "com.whatsapp", "Maps" to "com.google.android.apps.maps",
+        "${BrandName.NAME}" to "com.blazeinchue.argus", "Spotify" to "com.spotify.music", "Settings" to "com.android.settings")
+
+    @Test fun appsLaunchOnlyOnAnExactMatch() {
+        assertNull("never a fuzzy ${BrandName.NAME}* match", AppMatch.exact("${BrandName.NAME}", apps, self = "com.blazeinchue.argus"))
+        assertNull(AppMatch.exact("${BrandName.NAME} Music", apps, self = "com.blazeinchue.argus"))
+        assertNull(AppMatch.exact("argus f", apps))
+        assertEquals("com.whatsapp" to "WhatsApp", AppMatch.exact("whatsapp", apps))
+        assertEquals("com.whatsapp" to "WhatsApp", AppMatch.exact("WhatsApp app", apps))
+        assertEquals("com.argusfx.app" to "ArgusFX", AppMatch.exact("ArgusFX", apps))
+        assertEquals("com.spotify.music" to "Spotify", AppMatch.exact("com.spotify.music", apps))
+        assertNull("no partial label", AppMatch.exact("google maps", apps))
+        assertTrue(AppMatch.near("google maps", apps).contains("Maps"))
+        assertEquals("music", AppMatch.argusView("${BrandName.NAME} Music"))
+        assertEquals("settings", AppMatch.argusView("argus settings"))
+        assertNull(AppMatch.argusView("ArgusFX"))
+    }
+}

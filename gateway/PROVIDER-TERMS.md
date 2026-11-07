@@ -16,12 +16,12 @@ confirmed from the provider's own page this time.
 | **Nous Research** (Nous Portal, free models) | Unverified (added 2026-10-16, terms not checked). Only models priced 0 are used; the free list rotates. | Unverified. | Unverified (free-plan rate limits not documented where checked). | https://portal.nousresearch.com |
 | **Cloudflare Workers AI** | Yes: it's part of Workers Free/Paid; your Worker serving users is the intended use. | See Cloudflare's Workers AI data-usage page (not re-checked for 0.1.0). | **10,000 Neurons/day** free, resets 00:00 UTC; more needs Workers Paid. A few big models (Kimi K2.6/K2.7, GLM 5.x, DeepSeek V4) need a paid plan. | https://developers.cloudflare.com/workers-ai/platform/pricing/ |
 
-## What this means for Blaze
+## What this means for Argus
 
 - Users must be told their messages go to third-party AI providers, some of which (Gemini free,
   Mistral free, some OpenRouter free models) may use them for training or human review. Put that
-  in Blaze's privacy policy and sign-up.
-- Gemini's free tier forbids serving EEA/UK/Swiss users and anyone under 18. Before Blaze has
+  in Argus's privacy policy and sign-up.
+- Gemini's free tier forbids serving EEA/UK/Swiss users and anyone under 18. Before Argus has
   users there, either use paid Gemini or route those users elsewhere (the gateway doesn't
   geo-route yet).
 - Cerebras free is development-only by its own terms; GitHub Models is gone. For a real launch,

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="com.blazeinchue.argus.assist.ArgusSessionService"
+    android:recognitionService="com.blazeinchue.argus.assist.ArgusRecognitionService"
+    android:settingsActivity="com.blazeinchue.argus.MainActivity"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="true" />

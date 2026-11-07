@@ -1,8 +1,8 @@
 // Copyright (c)  2023  Xiaomi Corporation
 // Vendored from sherpa-onnx v1.13.8 (Apache-2.0): sherpa-onnx/kotlin-api/Tts.kt
 // https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.8/sherpa-onnx/kotlin-api/Tts.kt
-// Changes for Blaze: the getOfflineTtsConfig() helper is removed, and the native library is not loaded from the
-// class (it isn't in the APK; Blaze downloads it and loads it by path). Class, field and method names must stay
+// Changes for Argus: the getOfflineTtsConfig() helper is removed, and the native library is not loaded from the
+// class (it isn't in the APK; Argus downloads it and loads it by path). Class, field and method names must stay
 // exactly as upstream: libsherpa-onnx-jni.so finds them by name over JNI (see proguard-rules.pro).
 package com.k2fsa.sherpa.onnx
 
@@ -271,6 +271,6 @@ class OfflineTts(
         callback: ((samples: FloatArray) -> Int)?
     ): GeneratedAudio
 
-    // Blaze: no companion `System.loadLibrary` here. The library is downloaded on demand and loaded with
-    // System.load(path) by com.blaze.assistant.voice.myvoice.MyVoice before this class is used.
+    // Argus: no companion `System.loadLibrary` here. The library is downloaded on demand and loaded with
+    // System.load(path) by com.blazeinchue.argus.voice.myvoice.MyVoice before this class is used.
 }

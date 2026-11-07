@@ -1,4 +1,4 @@
-// POST /v1/chat/completions: Blaze account → waiting list → quota → task → ordered models → failover.
+// POST /v1/chat/completions: Argus account → waiting list → quota → task → ordered models → failover.
 
 import { checkAccess } from "./access";
 import { requireUser } from "./auth";
@@ -66,7 +66,7 @@ export interface RouteResult {
   clientError?: { status: number; message: string };
 }
 
-/** blaze_avoid from the app: at most 8 "provider/model" strings. */
+/** argus_avoid from the app: at most 8 "provider/model" strings. */
 export function avoidSet(v: unknown): Set<string> {
   return new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0 && x.length < 200).slice(0, 8) : []);
 }
@@ -84,7 +84,7 @@ export async function route(
   const start = now();
   // App v0.26.2: routes ("provider/model") that just came back empty (reasoning only) or broke mid-stream for this
   // request; they go last so the next model in the lineup answers. Never empties the lineup.
-  const avoid = avoidSet(body.blaze_avoid);
+  const avoid = avoidSet(body.argus_avoid);
   const lineup = (cfg.routes[task] ?? []).filter(c => isRoutable(c, cfg.paid ?? new Set(), cfg));
   const preferred = lineup.filter(c => !avoid.has(`${c.provider}/${c.model}`));
   const plan = planCandidates(preferred.length ? [...preferred, ...lineup.filter(c => avoid.has(`${c.provider}/${c.model}`))] : lineup, p => isUsable(cfg, env, p, start), marks, start);
@@ -185,7 +185,7 @@ export async function chatCompletions(req: Request, env: Env, ctx: ExecutionCont
     ctx.waitUntil(refundRequest(env.DB, user.id).catch(() => undefined));
     if (r.clientError) return apiError(r.clientError.status || 400, "invalid_request_error", `The model rejected the request: ${r.clientError.message || "bad request"}`, rlHeaders);
     const wait = r.retryAt ? Math.max(1, Math.ceil((r.retryAt - Date.now()) / 1000)) : 30;
-    return apiError(503, "blaze_models_busy", `Every model for '${task}' is busy right now. The next one frees up in about ${wait}s.`, { ...rlHeaders, "Retry-After": String(wait) });
+    return apiError(503, "argus_models_busy", `Every model for '${task}' is busy right now. The next one frees up in about ${wait}s.`, { ...rlHeaders, "Retry-After": String(wait) });
   }
 
   const headers = new Headers({
@@ -193,9 +193,9 @@ export async function chatCompletions(req: Request, env: Env, ctx: ExecutionCont
     ...rlHeaders,
     "Content-Type": r.upstream.headers.get("Content-Type") || (body.stream ? "text/event-stream" : "application/json"),
     "Cache-Control": "no-store",
-    "X-Blaze-Task": `${task}${source === "inferred" ? ";inferred" : ""}`,
-    "X-Blaze-Provider": r.candidate.provider,
-    "X-Blaze-Model": r.candidate.model,
+    "X-Argus-Task": `${task}${source === "inferred" ? ";inferred" : ""}`,
+    "X-Argus-Provider": r.candidate.provider,
+    "X-Argus-Model": r.candidate.model,
   });
   const out = usageTap(r.upstream.body!, n => ctx.waitUntil(addTokens(env.DB, user.id, n).catch(() => undefined)));
   return new Response(out, { status: 200, headers });

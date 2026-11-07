@@ -46,5 +46,5 @@ for a in d['apps']:
   a['asset']=asset; apps.append(a)
 [x.pop('_hits',None) for x in apps]; d['apps']=apps; s=json.dumps(d,ensure_ascii=False,separators=(',',':')); open('catalog-final.json','w').write(s)
 print(c,len(apps),len(s))
-open('APP_LIST.md','w').write('# Blaze Store app list (2026-10-23)\n\n| # | App | License | Source repo | Stars |\n|---|---|---|---|---|\n'+''.join(f"| {i+1} | {x['name']} | {x['license']} | {x['repo_url']} | {x['stars']} |\n" for i,x in enumerate(apps)))
+open('APP_LIST.md','w').write('# Argus Store app list (2026-10-23)\n\n| # | App | License | Source repo | Stars |\n|---|---|---|---|---|\n'+''.join(f"| {i+1} | {x['name']} | {x['license']} | {x['repo_url']} | {x['stars']} |\n" for i,x in enumerate(apps)))
 for x in apps[:6]: print(x['id'],x['asset'])

@@ -1,46 +1,50 @@
-# Blaze → Argus (0.52.1)
+# Renaming to Argus (0.52.1 user-facing, 0.52.4 everything)
 
 Theme: omniscience (Argus Panoptes, the all-seeing). Brand tokens: docs/BRAND.md.
 
 ## One-line future rename
-`app/src/main/java/com/blaze/assistant/BrandName.kt`: `NAME = "Argus"`, `UPPER = "ARGUS"`. Every Kotlin user-facing string,
-prompt and label uses `${BrandName.NAME}` / `${BrandName.UPPER}` (≈1,650 literals rewritten by `work/rename_argus.py`,
-which only touches the capitalised word inside string literals). Non-Kotlin places that can't read the constant, and must be
-changed by hand (or by re-running the script with a new name): `res/values/strings.xml`, `res/layout/widget_blaze.xml`, the
-manifest `android:label`s, `assets/persona-v1.json`, `assets/skills/**/SKILL.md`, `assets/specialists/*.md`,
-`assets/store/catalog.json`, `app/blaze-docs/about.md`.
+`app/src/main/java/com/blazeinchue/argus/BrandName.kt`: `NAME = "Argus"`, `UPPER = "ARGUS"`. Every Kotlin user-facing string,
+prompt and label uses `${BrandName.NAME}` / `${BrandName.UPPER}`. Non-Kotlin places that can't read the constant, and must be
+changed by hand: `res/values/strings.xml`, `res/layout/widget_argus.xml`, the manifest `android:label`s,
+`assets/persona-v1.json`, `assets/skills/**/SKILL.md` (then the hashes in `assets/skills/index.json`),
+`assets/specialists/*.md`, `assets/store/catalog.json` (= `store/catalog.json`), `app/argus-docs/about.md`.
 
-## What changed (user-facing)
+## 0.52.1: what users saw change
 - App / launcher label, activity labels (Argus Camera, Argus Phone, Argus Terminal, Argus Music, Argus Video…), strings,
-  notifications (the conversation Person is "Argus"), onboarding ("Welcome to ARGUS"), About (wordmark), the top pill
-  (wordmark outside a project), Spotlight, the Terminal banner ("Welcome to Argus Terminal!"), the persona name and every
-  system prompt ("You are Argus"), the built-in docs (blaze-docs/about.md), skills and specialist briefs.
-- "Blaze X" product names → "Argus X": Phone, Music, Terminal, Store, Cloud, Camera, Video, Stage, Link, Desktop, Gallery,
-  Browser, Free… (all via the constant).
-- Wake word: "Hey Argus" / "OK Argus" / "Wake up Argus" (the old "Hey Blaze" phrases still wake it).
-- Logo, avatars and icons: the silver Argus A (`ui/ArgusMark.kt`) replaces the mascot drop in BrandMark / BlazeAvatar /
-  DuoEmblem; new adaptive launcher icon (background, foreground, monochrome), round icon, PNG mipmaps for every density,
-  notification icon `ic_stat_blaze.xml`, Android 12+ splash (`values-v31`, `values-night-v31`).
-- Theme and type: see docs/BRAND.md (Argus Black / Cobalt / Electric / Silver / White, Inter Light → Bold).
-- Tiers: Spark → **Insight**, Flare → **Oracle**, Inferno → **Panoptes** (fast → balanced → deepest), with an icon each.
-  Ids and the `blaze_family` wire values stay spark / flare / inferno (the gateway's tiers.ts is unchanged).
-  Migration: `ModelChoice.migrate()` rewrites a pick saved as a label ("Spark", "Insight", "Panoptes"…) to its id on load;
-  `ModelChoice.of()` accepts ids, new labels and old labels. TiersTest.argusLabelsKeepIdsAndMigrateSavedPicks.
+  notifications, onboarding, About, Spotlight, the Terminal banner, the persona name and every system prompt ("You are
+  Argus"), the built-in docs, skills and specialist briefs.
+- Logo, avatars and icons: the silver Argus A (`ui/ArgusMark.kt`), adaptive launcher icon, notification icon
+  `ic_stat_argus.xml`, Android 12+ splash.
+- Tiers: Insight / Oracle / Panoptes (ids and the `argus_family` wire values stay spark / flare / inferno).
 
-## Deliberately kept (changing them breaks installs, sync or sign-in)
-- applicationId and Kotlin package `com.blaze.assistant`; class names (BlazeApp, BlazeTopPill, Theme.Blaze…), resource
-  names (ic_stat_blaze, widget_blaze, Theme.Blaze).
-- Database, file, pref and folder names: blaze.db, `blaze` prefs, bg_agents.json, task_records.json, and the shared-storage
-  folders Music/Blaze, Movies/Blaze, Download/Blaze, Pictures/Blaze (`SaveFileAndroid.FOLDER` etc.): existing downloads stay
-  findable.
-- Gateway URLs and hosts (blaze-gateway…, blazeinchue.pages.dev), the `X-Blaze-*` headers, `blaze_*` request fields
-  (`blaze_family`), User-Agent strings (Blaze-Android, Blaze-Store), the Jellyfin client id ("Blaze" / "Blaze Android").
-- Repo names (Blazeinchue/BlazeMobile, Blaze-agent), the CLI binary name, log tags, the lowercase id `blaze` (persona id,
-  Duo.Who id, deep links).
-- Spark / Flare / Inferno ids (see Tiers).
-- The on-screen pointer (phone/Mascot.kt geometry) is still the old drop shape; it is a cursor, not the logo. Follow-up if wanted.
+## 0.52.4: the old name is gone from the code
+- **New app identity.** `applicationId` and `namespace` are `com.blazeinchue.argus` (the id chosen by the archived
+  identity work, tag `archive/feat-argus-identity-signing`). The Kotlin packages moved from the old `com.<old>.assistant`
+  to `com.blazeinchue.argus` (app main / test / androidTest and `:storeapi`). It is a different Android app: an existing
+  install of the old package can't update in place; uninstall it and install Argus fresh (chats, keys and settings don't
+  carry over on the phone; synced data comes back from the account).
+- **Everything inside the repo is renamed:** classes, files, resources (`Theme.Argus`, `@xml/argus_widget` …), databases
+  and prefs (`argus.db`, `argus` prefs), folders (Music/Argus, Download/Argus …), intent actions
+  (`com.blazeinchue.argus.WIDGET_ASK` …), task affinities, the FileProvider authority (`${applicationId}.files`), deep links
+  (`argus://auth/cb`, `argus://add-source`, `argus://pair`), the `X-Argus-*` headers (app, on-phone router and
+  `gateway/`), `argus_*` request fields, user agents, the skill folders (`argus-*`), `app/argus-docs`, the Go router
+  (`argusrouter/`, module `github.com/blazeinchue/argusrouter`, `libargusrouter.so`, `ARGUS_HOME`, `ARGUS_KEYS`), the
+  `ARGUS_SHOTS` switch, and the CLI's install path in the phone's Linux (`/usr/local/bin/argus`).
+- The wake word is "Hey Argus" / "OK Argus" / "Wake up Argus" only; commands no longer accept the old name.
 
-## Not verified
-- Not run on a device. Whether "argus" is in the offline wake-word model's vocabulary is unverified (a missing word is
-  ignored by the grammar; "Hey Blaze" keeps working either way).
-- Old chats keep "Blaze" where it was saved in their text; new messages say Argus.
+## Kept on purpose (they name things outside this repo)
+- The company / account name **Blazeinchue** and everything under it: `blazeinchue.pages.dev`, the GitLab path
+  `blazeinchue/BlazeMobile` and the other repos' names (`Blaze-agent`, `Blaze-dekstop`, `Blaze-cli`, `Blaze-mobile`,
+  `Blaze-mobile-builds`).
+- Deployed Cloudflare names: the hosts `ai.blaze-app.workers.dev`, `blaze-gateway.blaze-app.workers.dev`,
+  `blaze-auth.blaze-app.workers.dev`; the gateway Worker / D1 database name `blaze-gateway` and the `blaze-auth` service
+  binding in `gateway/wrangler.toml` and its scripts.
+- GitHub Actions secret names `BLAZE_MOBILE_TOKEN`, `BLAZE_SIGNING_P12`, `BLAZE_SIGNING_PASS` (repo settings, not code).
+- What Desktop and the CLI share with the phone: the AES-GCM associated data `blaze-keys-v1`, `blaze-skills-v1`,
+  `blaze-sync-v1` (changing them makes synced keys / skills / data unreadable on the other side), the published CLI build
+  name `blaze-linux-arm64`, and the CLI's own files in the phone's Linux (`~/.blaze/secrets.json` with the
+  `blaze-account:session` key, `~/.blaze/desktop/account.json`, `~/.blaze/skills`).
+- CHANGELOG history entries keep the wording of their time.
+
+When those are renamed outside the repo (new Worker hosts, new repo names, new secrets, new CLI release), change the
+matching constants here in the same release.

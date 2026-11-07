@@ -25,7 +25,7 @@ async function admin(method: string, path: string, body?: unknown) {
   const r = await call(method, "/admin/api/" + path, body, ADMIN);
   return { status: r.status, body: await r.json<any>() };
 }
-const chat = (token: string) => call("POST", "/v1/chat/completions", { model: "blaze-auto", messages: [{ role: "user", content: "hello" }] }, token);
+const chat = (token: string) => call("POST", "/v1/chat/completions", { model: "argus-auto", messages: [{ role: "user", content: "hello" }] }, token);
 async function errCode(r: Response) { return (await r.json<any>()).error.code; }
 async function accounts() { return (await admin("GET", "state")).body.accounts as any[]; }
 /** A fresh isolate: other isolates' caches don't know about this one's admin changes. */
@@ -133,7 +133,7 @@ describe("waiting list", () => {
 });
 
 describe("grandfathering (migration 0003)", () => {
-  it("accounts with a plan or with usage are approved; nobody using Blaze today is locked out", async () => {
+  it("accounts with a plan or with usage are approved; nobody using Argus today is locked out", async () => {
     db = new FakeD1((file, sqlite) => {
       if (file !== "0003_access.sql") return;
       sqlite.exec("INSERT INTO plan_assignments (email, plan) VALUES ('paying@example.com', 'pro')");

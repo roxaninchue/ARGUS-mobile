@@ -1,4 +1,4 @@
-# Blaze Gateway status
+# Argus Gateway status
 
 - **2026-10-16, v0.3.1 (branch `gateway-nous`):** Nous Research (Nous Portal) provider `nous`
   (migration 0004 adds the provider row + `model_tests`). Free models only (price 0 on the public
@@ -16,7 +16,7 @@
   and the plan-assignment fix (default plan now stored and shown; dropdown rebuilt every render;
   in-card errors). App side: `Cloud.access` turns the two 403 codes into plain lines (no version
   bump). **Deploy (Joey, needs his Cloudflare login), in this order:**
-  `cd gateway && npx wrangler login && ./scripts/ensure-d1.sh && npx wrangler d1 migrations apply blaze-gateway --remote && npm run deploy && git checkout wrangler.toml`
+  `cd gateway && npx wrangler login && ./scripts/ensure-d1.sh && npx wrangler d1 migrations apply argus-gateway --remote && npm run deploy && git checkout wrangler.toml`
   (`ensure-d1.sh` writes the real D1 id `f27cf26b-799b-418b-8298-913c7515fe7e` into wrangler.toml,
   which holds a placeholder in git).
   Note: merging to `main` also runs the Gateway workflow's deploy job (migrations apply + deploy)
@@ -46,17 +46,17 @@
   so it lives here; it has its own workflow `.github/workflows/gateway.yml`, and the Android
   `build.yml` ignores `gateway/**`).
 - **Deployed:** 2026-10-13 (v0.1.0, Worker version 193d76d6-42ee-4ebe-87ca-cbf1634b8448), from the
-  sandbox with wrangler using a Cloudflare API token "blaze-gateway-deploy" (Workers Scripts Edit,
+  sandbox with wrangler using a Cloudflare API token "argus-gateway-deploy" (Workers Scripts Edit,
   D1 Edit, Workers AI Read, Workers KV Storage Read, Account Settings Read; on the Cloudflare
   account).
   - URL: `https://blaze-gateway.blaze-app.workers.dev` · health `/health` → `{"ok":true,...}` ·
     admin `/admin` (renders; HEALTH / ROUTES / PROVIDERS / PLANS).
-  - D1 `blaze-gateway` = `f27cf26b-799b-418b-8298-913c7515fe7e`, migration 0001 applied.
-  - Worker secrets set: `KEY_ENCRYPTION_SECRET`, `ADMIN_EMAILS` (the owner's Blaze account email),
+  - D1 `argus-gateway` = `f27cf26b-799b-418b-8298-913c7515fe7e`, migration 0001 applied.
+  - Worker secrets set: `KEY_ENCRYPTION_SECRET`, `ADMIN_EMAILS` (the owner's Argus account email),
     `ADMIN_TOKEN`. KEY_ENCRYPTION_SECRET and ADMIN_TOKEN are saved in Luke's Hark vault.
   - Workers AI (keyless) tested OK from /admin (llama-3.3-70b fp8-fast, llama-3.1-8b fast).
-    `/v1` answers 401 without a Blaze `bz_` token, as intended; an end-to-end `/v1` chat still
-    needs a Blaze session token.
+    `/v1` answers 401 without a Argus `bz_` token, as intended; an end-to-end `/v1` chat still
+    needs a Argus session token.
 - **CI auto-deploy is still off:** the GitHub Actions secrets aren't set, so the Gateway
   workflow's deploy job skips. If they are added later, `KEY_ENCRYPTION_SECRET` in GitHub MUST be
   the same value as the one in the Worker (from the vault), or CI would overwrite it and saved
@@ -66,8 +66,8 @@
 - **Next steps (in order):**
   1. Add keys, test every model in /admin › Health, fix model ids that 404
      (ids follow each provider's catalogue and drift).
-  2. Android: point "Auto" at the gateway when signed in to Blaze (base URL
-     `https://blaze-gateway.blaze-app.workers.dev/v1`, key = Blaze session, send `blaze_task`
+  2. Android: point "Auto" at the gateway when signed in to Argus (base URL
+     `https://blaze-gateway.blaze-app.workers.dev/v1`, key = Argus session, send `argus_task`
      from `ViewRouter`). Separate PR, after the chat-UI work lands.
   3. Desktop / CLI: same switch in the Go core.
   4. Gateway: per-user requests/minute burst limit; geo rule for Gemini free (no EEA/UK/CH);

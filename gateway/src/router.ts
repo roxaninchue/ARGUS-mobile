@@ -1,5 +1,5 @@
 // Task routing and failover rules. Pure functions, no I/O, so they're unit-tested directly.
-// Mirrors Blaze Android v0.23.4 Auto (agent/ModelMemory.kt + RoutePlan): models that are cooling
+// Mirrors Argus Android v0.23.4 Auto (agent/ModelMemory.kt + RoutePlan): models that are cooling
 // are never tried, a hard failure that has cooled down goes to the back until it works again, and
 // a rejected key or provider-wide cap rests the whole provider ("<provider>|*").
 
@@ -18,10 +18,10 @@ export function normalizeTask(v: unknown): Task | null {
   return ALIASES[v.trim().toLowerCase()] ?? null;
 }
 
-/** "blaze-code" → code. "blaze-auto", "auto", anything else → null (infer). */
+/** "argus-code" → code. "argus-auto", "auto", anything else → null (infer). */
 export function taskFromModel(model: unknown): Task | null {
   if (typeof model !== "string") return null;
-  const m = /^blaze[-/](\w+)$/i.exec(model.trim());
+  const m = /^argus[-/](\w+)$/i.exec(model.trim());
   return m ? normalizeTask(m[1]) : null;
 }
 
@@ -76,8 +76,8 @@ export function inferTask(body: { messages?: unknown; tools?: unknown; functions
   return "chat";
 }
 
-export function pickTask(body: { blaze_task?: unknown; model?: unknown; messages?: unknown; tools?: unknown }): { task: Task; source: "tag" | "model" | "inferred" } {
-  const t = normalizeTask(body.blaze_task);
+export function pickTask(body: { argus_task?: unknown; model?: unknown; messages?: unknown; tools?: unknown }): { task: Task; source: "tag" | "model" | "inferred" } {
+  const t = normalizeTask(body.argus_task);
   if (t) return { task: t, source: "tag" };
   const m = taskFromModel(body.model);
   if (m) return { task: m, source: "model" };

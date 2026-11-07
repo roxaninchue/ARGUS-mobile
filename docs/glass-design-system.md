@@ -1,11 +1,11 @@
-# Blaze glass design system (v0.31.0, phase 1)
+# Argus glass design system (v0.31.0, phase 1)
 
 Greyscale frosted glass on a near-black ground, taken from the app icon: translucent white fill (6–14 % alpha),
 a 1 dp rim bright at the top-left (white 30 % → 5 %), a faint specular sheen in the top-left corner, a soft shadow.
 Accents are white / greys. Colour only for errors / warnings, desaturated (`GlassTokens.error`, `.warning`, `.success`).
 
-Code: `app/src/main/java/com/blaze/assistant/ui/GlassKit.kt` (components), `Theme.kt` (palette + Material scheme),
-`BlazeGlass.kt` (`Glass` object + `GlassIconButton`), `StreamOrb.kt` (water droplet), `RichPreview.kt` (detached
+Code: `app/src/main/java/com/blazeinchue/argus/ui/GlassKit.kt` (components), `Theme.kt` (palette + Material scheme),
+`ArgusGlass.kt` (`Glass` object + `GlassIconButton`), `StreamOrb.kt` (water droplet), `RichPreview.kt` (detached
 rich-block windows).
 
 ## Tokens
@@ -17,7 +17,7 @@ rich-block windows).
 | `GlassTokens.error / warning / success` | desaturated semantic colours |
 | `GlassTokens.cardShape (22dp) / tileShape (16dp) / sheetShape / pillShape` | shapes |
 | `GlassIntensity.Low / Medium / High` | frost strength: rows & inputs / cards / sheets, dialogs, primary buttons |
-| `LocalBlaze.current` (`BlazeColors`) | unchanged API; dark palette now = glass palette |
+| `LocalArgus.current` (`ArgusColors`) | unchanged API; dark palette now = glass palette |
 
 `ThemeMode` "system" now means dark (the look is dark-first); light still works when picked. Material3's
 `colorScheme` maps to the same greys, so stock Material components pick the look up automatically.
@@ -38,10 +38,10 @@ GlassSheet { … }                                            // bottom sheet su
 GlassViewer(title, onDismiss, subtitle) { /* BoxScope */ }  // full-screen glass window (Dialog) with ×
 GlassDivider()
 ```
-Existing kit pieces were restyled in place and keep their names: `BlazeButton` / `KitButton` (glass pills),
-`BlazeCard`, `Rows`, `BlazeDialog(Card)`, `BlazeMenu(Card)`, `PillButton`, `DialogColors`, `BlazeColors.raised /
-hair2 / field / fieldLine / backFill` (translucent white on dark). `BlazeBrush.primary` is now a bright frost
-that white text reads on; `BlazeBrush.blue / orange` are greys / a desaturated warm.
+Existing kit pieces were restyled in place and keep their names: `ArgusButton` / `KitButton` (glass pills),
+`ArgusCard`, `Rows`, `ArgusDialog(Card)`, `ArgusMenu(Card)`, `PillButton`, `DialogColors`, `ArgusColors.raised /
+hair2 / field / fieldLine / backFill` (translucent white on dark). `ArgusBrush.primary` is now a bright frost
+that white text reads on; `ArgusBrush.blue / orange` are greys / a desaturated warm.
 
 Rules for phase 2: no raw `background(Color(0xFF…))` slabs; put surfaces on `Modifier.glass`; no blue; inside
 another glass surface pass `shadow = false`; dialogs and menus over content add `background(DialogColors.surface)`
@@ -55,7 +55,7 @@ Blur note: Compose can't blur what is *behind* a layer, only a layer's own conte
 everything snaps / fades only when the phone's animator scale is 0.
 
 ## Chat (phase 1)
-* Borderless thread: Blaze's text full width on the ground; your text right-aligned, medium weight, 78 % ink. No bubbles.
+* Borderless thread: Argus's text full width on the ground; your text right-aligned, medium weight, 78 % ink. No bubbles.
 * Composer: glass pill. Work / confirm / question / secure-form cards: glass.
 * Streaming: `LlmClient.readStream` emits ~every 16 ms → `StreamGate` (agent) applies the newest snapshot at most once
   per frame on Main → `Session.msgs` / `Agent.messages` + `Agent.streamingId` → `MessageList` → `AnswerBody(live)`.
@@ -72,7 +72,7 @@ everything snaps / fades only when the phone's animator scale is 0.
   Cards, stacks, chips, top buttons, add button (High glass), sheets (`homeSheet`), menu and toast are GlassKit glass.
 * Light theme = the same glass inverted: fills are near-black ink 6–10 % (`GlassTokens.lightInk`), rim ink 15 % → 5 %,
   primary actions solid ink with white text (`Modifier.glassPrimary`, `GlassTokens.primaryFill / onPrimary`; disabled =
-  ink 25 % fill, ink 50 % text). `BlazeButton(PRIMARY)`, `GlassButton(primary)`, Confirm, Send use it.
+  ink 25 % fill, ink 50 % text). `ArgusButton(PRIMARY)`, `GlassButton(primary)`, Confirm, Send use it.
 * Charts / mini tools: `chartColors` is monochrome first then desaturated tints; control accent is theme-aware.
 
 ## v0.31.1: smooth streaming, floating windows, HTML

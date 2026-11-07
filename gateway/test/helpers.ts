@@ -116,7 +116,7 @@ export class FakeCtx {
 
 export const SECRET = "test-secret-0123456789abcdefghijklmnopqrstuvwxyz";
 
-/** base64url(SHA-256(s)), like blaze-auth. */
+/** base64url(SHA-256(s)), like argus-auth. */
 export async function sessHash(token: string): Promise<string> {
   const d = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
   let s = "";
@@ -124,7 +124,7 @@ export async function sessHash(token: string): Promise<string> {
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-/** Puts a blaze-auth session for [email] into [kv]; returns its token. */
+/** Puts a argus-auth session for [email] into [kv]; returns its token. */
 export async function makeSession(kv: FakeKV, id: string, email: string): Promise<string> {
   const token = "bz_" + id.padEnd(43, "x").replace(/[^A-Za-z0-9_-]/g, "x");
   const h = await sessHash(token);

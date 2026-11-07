@@ -34,7 +34,7 @@ function checkBaseUrl(u: string, type: string): string {
   return url.toString().replace(/\/+$/, "");
 }
 
-/** POST /admin/api/login: Blaze email + password (through blaze-auth), or the ADMIN_TOKEN. */
+/** POST /admin/api/login: Argus email + password (through argus-auth), or the ADMIN_TOKEN. */
 async function login(req: Request, env: Env): Promise<Response> {
   const b = await readJSON(req, 16_384);
   const token = str(b.token, 500);
@@ -44,10 +44,10 @@ async function login(req: Request, env: Env): Promise<Response> {
   if (!email || !password) throw new HttpError(400, "missing", "Email and password");
   if (!adminEmails(env).includes(email)) throw new HttpError(403, "not_admin", "That account isn't an admin of this gateway");
   if (!env.AUTH) throw new HttpError(503, "auth_not_bound", "Account sign-in needs the AUTH service binding; use the admin token instead");
-  const res = await env.AUTH.fetch("https://blaze-auth/v1/auth/login", {
+  const res = await env.AUTH.fetch("https://argus-auth/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json", "CF-Connecting-IP": req.headers.get("CF-Connecting-IP") || "" },
-    body: JSON.stringify({ email, password, client: "Blaze Gateway admin" }),
+    body: JSON.stringify({ email, password, client: "Argus Gateway admin" }),
   });
   const out = await res.json<{ token?: string; error?: string }>().catch(() => ({} as { token?: string; error?: string }));
   if (!res.ok || !out.token) throw new HttpError(res.status === 429 ? 429 : 401, out.error || "invalid_credentials", res.status === 429 ? "Too many tries, wait a few minutes" : "Wrong email or password");
@@ -56,7 +56,7 @@ async function login(req: Request, env: Env): Promise<Response> {
 
 async function logout(req: Request, env: Env): Promise<Response> {
   const auth = req.headers.get("Authorization") || "";
-  if (env.AUTH && auth.includes("bz_")) await env.AUTH.fetch("https://blaze-auth/v1/logout", { method: "POST", headers: { Authorization: auth } }).catch(() => undefined);
+  if (env.AUTH && auth.includes("bz_")) await env.AUTH.fetch("https://argus-auth/v1/logout", { method: "POST", headers: { Authorization: auth } }).catch(() => undefined);
   return json({ ok: true });
 }
 
@@ -108,7 +108,7 @@ async function state(env: Env): Promise<Response> {
   const warnings: string[] = [];
   if (!env.KEY_ENCRYPTION_SECRET || env.KEY_ENCRYPTION_SECRET.length < MIN_SECRET_LEN) warnings.push(`KEY_ENCRYPTION_SECRET is missing or shorter than ${MIN_SECRET_LEN} characters: keys can't be saved and chat is off.`);
   if (!env.AI) warnings.push("No AI binding: the Workers AI fallback is off.");
-  if (!env.AUTH_KV && !env.AUTH && !env.BLAZE_AUTH_URL) warnings.push("No way to check Blaze accounts (AUTH_KV / AUTH): every app request will fail.");
+  if (!env.AUTH_KV && !env.AUTH && !env.ARGUS_AUTH_URL) warnings.push("No way to check Argus accounts (AUTH_KV / AUTH): every app request will fail.");
   if (!adminEmails(env).length) warnings.push("ADMIN_EMAILS is empty: only the admin token can sign in.");
   void marks;
   return json({

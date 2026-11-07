@@ -1,4 +1,4 @@
--- Blaze Gateway 0.2.0: model catalogue, filled by discovery (each provider's own model-list API).
+-- Argus Gateway 0.2.0: model catalogue, filled by discovery (each provider's own model-list API).
 -- Additive only: task_routes keep their JSON [{provider, model}] lists and work without this table.
 
 CREATE TABLE IF NOT EXISTS models (

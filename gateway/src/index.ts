@@ -1,7 +1,7 @@
-// Blaze Gateway: the Worker entry point.
-//   GET  /health                    {"ok":true,"service":"blaze-gateway","version":"0.3.1"}
-//   GET  /v1/models                 the task-tagged virtual models (Blaze account token)
-//   POST /v1/chat/completions       OpenAI-compatible, streaming or not (Blaze account token)
+// Argus Gateway: the Worker entry point.
+//   GET  /health                    {"ok":true,"service":"argus-gateway","version":"0.3.1"}
+//   GET  /v1/models                 the task-tagged virtual models (Argus account token)
+//   POST /v1/chat/completions       OpenAI-compatible, streaming or not (Argus account token)
 //   GET  /admin                     the admin dashboard; /admin/api/* behind ADMIN_EMAILS / ADMIN_TOKEN
 
 import { checkAccess } from "./access";
@@ -16,7 +16,7 @@ import { TASKS } from "./router";
 import { CORS, HttpError, apiError, json, withCors } from "./util";
 
 const MODEL_INFO: Record<string, string> = {
-  auto: "Blaze picks the task from the request",
+  auto: "Argus picks the task from the request",
   chat: "Everyday conversation",
   quick: "Short, fast answers",
   code: "Programming",
@@ -27,7 +27,7 @@ const MODEL_INFO: Record<string, string> = {
 
 function models(): Response {
   const created = 1760313600; // 2025-10-13, fixed so the list is stable
-  const data = ["auto", ...TASKS].map(t => ({ id: `blaze-${t}`, object: "model", created, owned_by: "blaze", description: MODEL_INFO[t] }));
+  const data = ["auto", ...TASKS].map(t => ({ id: `argus-${t}`, object: "model", created, owned_by: "argus", description: MODEL_INFO[t] }));
   return json({ object: "list", data }, 200, CORS);
 }
 
@@ -42,7 +42,7 @@ async function handle(req: Request, env: Env, ctx: ExecutionContext): Promise<Re
   const m = req.method;
 
   if (m === "OPTIONS" && (path.startsWith("/v1/") || path === "/v1")) return new Response(null, { status: 204, headers: { ...CORS, "Access-Control-Max-Age": "86400" } });
-  if (path === "/" || path === "/health") return json({ ok: true, service: "blaze-gateway", version: VERSION });
+  if (path === "/" || path === "/health") return json({ ok: true, service: "argus-gateway", version: VERSION });
   if (path === "/v1/models" && m === "GET") {
     // Signing in records the account (pending when it isn't approved yet); the list itself is static.
     const user = await requireUser(env, req);

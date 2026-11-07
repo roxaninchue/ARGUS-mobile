@@ -18,7 +18,7 @@ npx wrangler deploy
 echo
 echo "Now set the secrets (each prompts for the value; nothing is written to disk):"
 echo "  npx wrangler secret put KEY_ENCRYPTION_SECRET   # e.g. the output of: openssl rand -base64 48"
-echo "  npx wrangler secret put ADMIN_EMAILS            # your Blaze account email"
+echo "  npx wrangler secret put ADMIN_EMAILS            # your Argus account email"
 echo "  npx wrangler secret put ADMIN_TOKEN             # optional fallback, 24+ characters"
 echo
 echo "Then open https://blaze-gateway.blaze-app.workers.dev/admin and add provider keys."

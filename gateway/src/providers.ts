@@ -15,12 +15,12 @@ export interface Upstream {
 }
 
 /** Fields only the gateway understands; never sent upstream. */
-const PRIVATE_FIELDS = ["blaze_task", "user"];
+const PRIVATE_FIELDS = ["argus_task", "user"];
 
 export function upstreamBody(body: Record<string, unknown>, model: string): Record<string, unknown> {
   const out: Record<string, unknown> = { ...body, model };
   for (const f of PRIVATE_FIELDS) delete out[f];
-  for (const k of Object.keys(out)) if (k.startsWith("blaze_")) delete out[k];
+  for (const k of Object.keys(out)) if (k.startsWith("argus_")) delete out[k];
   return out;
 }
 
@@ -36,7 +36,7 @@ function providerHeaders(provider: string, key: string): Record<string, string> 
   const h: Record<string, string> = { "Content-Type": "application/json", Authorization: `Bearer ${key}` };
   if (provider === "openrouter") {
     h["HTTP-Referer"] = "https://github.com/lacksonkapapahue/Blaze-agent";
-    h["X-Title"] = "Blaze";
+    h["X-Title"] = "Argus";
   }
   return h;
 }

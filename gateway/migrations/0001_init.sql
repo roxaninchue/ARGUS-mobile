@@ -1,4 +1,4 @@
--- Blaze Gateway 0.1.0 schema (Cloudflare D1, free tier).
+-- Argus Gateway 0.1.0 schema (Cloudflare D1, free tier).
 -- No table ever holds message content. Provider keys are AES-GCM ciphertext (see src/crypto.ts).
 
 CREATE TABLE IF NOT EXISTS providers (
@@ -44,13 +44,13 @@ CREATE TABLE IF NOT EXISTS plans (
 
 -- Accounts not listed here are on the default plan (basic).
 CREATE TABLE IF NOT EXISTS plan_assignments (
-  email TEXT PRIMARY KEY,                       -- lower-case Blaze account email
+  email TEXT PRIMARY KEY,                       -- lower-case Argus account email
   plan TEXT NOT NULL,
   updated_at INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS usage (
-  uid TEXT NOT NULL,                            -- Blaze user id (u_…), never the email
+  uid TEXT NOT NULL,                            -- Argus user id (u_…), never the email
   day TEXT NOT NULL,                            -- UTC YYYY-MM-DD
   requests INTEGER NOT NULL DEFAULT 0,
   tokens INTEGER NOT NULL DEFAULT 0,

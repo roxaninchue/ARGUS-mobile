@@ -45,7 +45,7 @@ async function setRoute(task: string, models: [string, string][]) {
   expect(r.status).toBe(200);
 }
 
-const chat = (extra: Record<string, unknown> = {}) => call("POST", "/v1/chat/completions", { model: "blaze-auto", messages: [{ role: "user", content: "my secret diary entry 7731" }], ...extra }, userToken);
+const chat = (extra: Record<string, unknown> = {}) => call("POST", "/v1/chat/completions", { model: "argus-auto", messages: [{ role: "user", content: "my secret diary entry 7731" }], ...extra }, userToken);
 
 function okJSON(model: string, text = "hi") {
   return new Response(JSON.stringify({ id: "x", object: "chat.completion", model, choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason: "stop" }], usage: { total_tokens: 42 } }), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -74,24 +74,24 @@ afterEach(() => vi.unstubAllGlobals());
 describe("basics", () => {
   it("health", async () => {
     const r = await call("GET", "/health");
-    expect(await r.json()).toEqual({ ok: true, service: "blaze-gateway", version: "0.3.1" });
+    expect(await r.json()).toEqual({ ok: true, service: "argus-gateway", version: "0.3.1" });
   });
-  it("app endpoints need a live Blaze session", async () => {
+  it("app endpoints need a live Argus session", async () => {
     expect((await call("GET", "/v1/models")).status).toBe(401);
     expect((await call("GET", "/v1/models", undefined, "bz_" + "n".repeat(43))).status).toBe(401);
     expect((await call("GET", "/v1/models", undefined, "sk-openai-style")).status).toBe(401);
     const r = await call("GET", "/v1/models", undefined, userToken);
     expect(r.status).toBe(200);
     const ids = (await r.json<any>()).data.map((m: any) => m.id);
-    expect(ids).toEqual(["blaze-auto", "blaze-chat", "blaze-quick", "blaze-code", "blaze-vision", "blaze-long", "blaze-agent"]);
+    expect(ids).toEqual(["argus-auto", "argus-chat", "argus-quick", "argus-code", "argus-vision", "argus-long", "argus-agent"]);
   });
-  it("a session that blaze-auth revoked (not in the user's list) is refused", async () => {
+  it("a session that argus-auth revoked (not in the user's list) is refused", async () => {
     const u = await kv.get("user:u_user1", "json");
     await kv.put("user:u_user1", JSON.stringify({ ...u, sessions: [] }));
     clearAuthCache();
     expect((await call("GET", "/v1/models", undefined, userToken)).status).toBe(401);
   });
-  it("falls back to blaze-auth /v1/me through the AUTH service binding", async () => {
+  it("falls back to argus-auth /v1/me through the AUTH service binding", async () => {
     const me = vi.fn(async () => new Response(JSON.stringify({ user: { id: "u_svc", email: "svc@example.com" } }), { status: 200 }));
     env = { ...env, AUTH_KV: undefined, AUTH: { fetch: me } as unknown as Fetcher };
     expect((await call("GET", "/v1/models", undefined, "bz_" + "s".repeat(43))).status).toBe(200);
@@ -135,16 +135,16 @@ describe("chat", () => {
   it("routes to the first model with a key and passes the answer through", async () => {
     await addKey("groq", "gsk_test_key_AAAA");
     await setRoute("chat", [["gemini", "gemini-flash-latest"], ["groq", "llama-3.3-70b-versatile"], ["workers-ai", "@cf/x"]]);
-    const r = await chat({ blaze_task: "chat" });
+    const r = await chat({ argus_task: "chat" });
     await ctx.settle();
     expect(r.status).toBe(200);
-    expect(r.headers.get("X-Blaze-Provider")).toBe("groq"); // gemini has no key → skipped
-    expect(r.headers.get("X-Blaze-Task")).toBe("chat");
+    expect(r.headers.get("X-Argus-Provider")).toBe("groq"); // gemini has no key → skipped
+    expect(r.headers.get("X-Argus-Task")).toBe("chat");
     expect((await r.json<any>()).choices[0].message.content).toBe("hi");
     expect(calls[0]!.url).toBe("https://api.groq.com/openai/v1/chat/completions");
     expect(calls[0]!.auth).toBe("Bearer gsk_test_key_AAAA");
     expect(calls[0]!.body.model).toBe("llama-3.3-70b-versatile");
-    expect(calls[0]!.body.blaze_task).toBeUndefined();
+    expect(calls[0]!.body.argus_task).toBeUndefined();
     await ctx.settle();
     expect(db.rows("SELECT requests, tokens FROM usage")).toEqual([{ requests: 1, tokens: 42 }]);
   });
@@ -161,7 +161,7 @@ describe("chat", () => {
     };
     const r = await chat();
     await ctx.settle();
-    expect(r.headers.get("X-Blaze-Model")).toBe("m3");
+    expect(r.headers.get("X-Argus-Model")).toBe("m3");
     const st = db.rows("SELECT provider_id, model, state, until > 0 AS cooling, reason FROM model_state ORDER BY model");
     expect(st).toEqual([
       { provider_id: "groq", model: "m1", state: "limited", cooling: 1, reason: "rate_limit" },
@@ -176,16 +176,16 @@ describe("chat", () => {
     expect(calls.map(c => c.body.model)).toEqual(["m3"]); // cooling models never tried
   });
 
-  it("blaze_avoid (app v0.26.2): a route that just came back empty goes last, and is never sent upstream", async () => {
+  it("argus_avoid (app v0.26.2): a route that just came back empty goes last, and is never sent upstream", async () => {
     await addKey("groq", "gsk_test_key_AAAA");
     await setRoute("chat", [["groq", "m1"], ["groq", "m2"]]);
-    const r = await chat({ blaze_task: "chat", blaze_avoid: ["groq/m1"] });
+    const r = await chat({ argus_task: "chat", argus_avoid: ["groq/m1"] });
     await ctx.settle();
-    expect(r.headers.get("X-Blaze-Model")).toBe("m2");
-    expect(calls[0]!.body.blaze_avoid).toBeUndefined();
+    expect(r.headers.get("X-Argus-Model")).toBe("m2");
+    expect(calls[0]!.body.argus_avoid).toBeUndefined();
     calls.length = 0;
     // Avoiding every route still answers (the avoided ones are tried last, never dropped).
-    const r2 = await chat({ blaze_task: "chat", blaze_avoid: ["groq/m1", "groq/m2"] });
+    const r2 = await chat({ argus_task: "chat", argus_avoid: ["groq/m1", "groq/m2"] });
     await ctx.settle();
     expect(r2.status).toBe(200);
   });
@@ -236,7 +236,7 @@ describe("chat", () => {
   it("falls back to Workers AI (binding) and converts its stream to OpenAI chunks", async () => {
     await setRoute("chat", [["groq", "m1"], ["workers-ai", "@cf/meta/llama-3.3-70b-instruct-fp8-fast"]]);
     const r = await chat({ stream: true });
-    expect(r.headers.get("X-Blaze-Provider")).toBe("workers-ai");
+    expect(r.headers.get("X-Argus-Provider")).toBe("workers-ai");
     const text = await r.text();
     const deltas = text.split("\n\n").filter(l => l.startsWith("data: {")).map(l => JSON.parse(l.slice(6)));
     expect(deltas[0].choices[0].delta.role).toBe("assistant");
@@ -249,7 +249,7 @@ describe("chat", () => {
   it("Workers AI tool calls come back in OpenAI shape", async () => {
     ai.run = async () => ({ response: null, tool_calls: [{ name: "get_weather", arguments: { city: "Ndola" } }] });
     const r = await call("POST", "/v1/chat/completions", { messages: [{ role: "user", content: "weather?" }], tools: [{ type: "function", function: { name: "get_weather", parameters: {} } }] }, userToken);
-    expect(r.headers.get("X-Blaze-Task")).toBe("agent;inferred");
+    expect(r.headers.get("X-Argus-Task")).toBe("agent;inferred");
     const b = await r.json<any>();
     expect(b.choices[0].finish_reason).toBe("tool_calls");
     expect(b.choices[0].message.tool_calls[0].function).toEqual({ name: "get_weather", arguments: '{"city":"Ndola"}' });
@@ -261,7 +261,7 @@ describe("chat", () => {
     await ctx.settle();
     expect(r.status).toBe(503);
     expect(Number(r.headers.get("Retry-After"))).toBeGreaterThan(0);
-    expect((await r.json<any>()).error.type).toBe("blaze_models_busy");
+    expect((await r.json<any>()).error.type).toBe("argus_models_busy");
     expect(db.rows("SELECT requests FROM usage")).toEqual([{ requests: 0 }]);
   });
 
@@ -292,8 +292,8 @@ describe("chat", () => {
   it("never stores message content", async () => {
     await addKey("groq", "gsk_test_key_AAAA");
     upstream = () => new Response("oops my secret diary entry 7731", { status: 500 });
-    await chat({ blaze_task: "chat" });
-    await chat({ blaze_task: "code" });
+    await chat({ argus_task: "chat" });
+    await chat({ argus_task: "code" });
     await ctx.settle();
     const dump = db.dump();
     expect(dump).not.toContain("7731");
@@ -307,7 +307,7 @@ describe("admin", () => {
     const r = await call("GET", "/admin");
     expect(r.headers.get("Content-Type")).toContain("text/html");
     expect(r.headers.get("Content-Security-Policy")).toContain("script-src 'nonce-");
-    expect(await r.text()).toContain("BLAZE GATEWAY");
+    expect(await r.text()).toContain("ARGUS GATEWAY");
   });
   it("only ADMIN_EMAILS accounts or the admin token get in", async () => {
     expect((await call("GET", "/admin/api/state")).status).toBe(401);
@@ -317,7 +317,7 @@ describe("admin", () => {
     expect((await call("GET", "/admin/api/me", undefined, luke)).status).toBe(200);
     expect((await call("GET", "/admin/api/me", undefined, ADMIN)).status).toBe(200);
   });
-  it("account sign-in goes through blaze-auth and is limited to ADMIN_EMAILS", async () => {
+  it("account sign-in goes through argus-auth and is limited to ADMIN_EMAILS", async () => {
     const auth = vi.fn(async () => new Response(JSON.stringify({ token: "bz_" + "l".repeat(43) }), { status: 200 }));
     env = { ...env, AUTH: { fetch: auth } as unknown as Fetcher };
     const bad = await call("POST", "/admin/api/login", { email: "someone@example.com", password: "pw" });
@@ -352,7 +352,7 @@ describe("admin", () => {
     await admin("PUT", "providers/groq", { enabled: false });
     resetDbCacheForTests();
     const r = await chat();
-    expect(r.headers.get("X-Blaze-Provider")).toBe("workers-ai");
+    expect(r.headers.get("X-Argus-Provider")).toBe("workers-ai");
   });
   it("edits and resets task routes, edits plans", async () => {
     await setRoute("code", [["cerebras", "gpt-oss-120b"]]);
@@ -483,7 +483,7 @@ describe("model discovery and the route editor API", () => {
     resetDbCacheForTests();
     calls.length = 0;
     const r = await chat();
-    expect(r.headers.get("X-Blaze-Provider")).toBe("workers-ai");
+    expect(r.headers.get("X-Argus-Provider")).toBe("workers-ai");
     expect(calls.length).toBe(0);
   });
 
@@ -506,7 +506,7 @@ describe("model discovery and the route editor API", () => {
     resetDbCacheForTests();
     const r = await chat();
     expect(r.status).toBe(200);
-    expect(r.headers.get("X-Blaze-Model")).toBe("anything-not-discovered");
+    expect(r.headers.get("X-Argus-Model")).toBe("anything-not-discovered");
   });
 });
 
@@ -584,9 +584,9 @@ describe("Nous Research (Nous Portal), 0.3.1", () => {
     const r = await chat();
     await ctx.settle();
     expect(r.status).toBe(200);
-    expect(r.headers.get("X-Blaze-Provider")).toBe("nous");
+    expect(r.headers.get("X-Argus-Provider")).toBe("nous");
     expect(nousCalls()[0]!.body.model).toBe("stealth/missingno");
-    expect(JSON.stringify(nousCalls()[0]!.body)).not.toContain("blaze_");
+    expect(JSON.stringify(nousCalls()[0]!.body)).not.toContain("argus_");
   });
 
   it("slow (> 3 s) or failed tests, and models that left the free list, are skipped at request time", async () => {
@@ -600,7 +600,7 @@ describe("Nous Research (Nous Portal), 0.3.1", () => {
     calls.length = 0;
     let r = await chat();
     await ctx.settle();
-    expect(r.headers.get("X-Blaze-Provider")).toBe("workers-ai");
+    expect(r.headers.get("X-Argus-Provider")).toBe("workers-ai");
     expect(nousCalls().length).toBe(0);
     // Fast again, then the model rotates off the free list: skipped too.
     db.sqlite.exec("UPDATE model_tests SET ms = 900, kind = 'ok'");
@@ -610,7 +610,7 @@ describe("Nous Research (Nous Portal), 0.3.1", () => {
     calls.length = 0;
     r = await chat();
     await ctx.settle();
-    expect(r.headers.get("X-Blaze-Provider")).toBe("workers-ai");
+    expect(r.headers.get("X-Argus-Provider")).toBe("workers-ai");
     expect(nousCalls().length).toBe(0);
     // A failed test records ok = 0 (and cools the model like any failure).
     upstream = () => new Response("Rate limit exceeded", { status: 429, headers: { "Retry-After": "20" } });
@@ -638,7 +638,7 @@ describe("Nous Research (Nous Portal), 0.3.1", () => {
     };
     let r = await chat();
     await ctx.settle();
-    expect(r.headers.get("X-Blaze-Model")).toBe("stepfun/step-5-preview:free");
+    expect(r.headers.get("X-Argus-Model")).toBe("stepfun/step-5-preview:free");
     let st = db.rows("SELECT model, reason, until FROM model_state WHERE provider_id = 'nous' AND until > 0");
     expect(st.map(x => [x.model, x.reason])).toEqual([["stealth/missingno", "rate_limit"]]);
     expect(st[0].until - Date.now()).toBeLessThanOrEqual(20_000);
@@ -648,7 +648,7 @@ describe("Nous Research (Nous Portal), 0.3.1", () => {
     answer(402, '{"message":"Payment required: insufficient credits"}');
     r = await chat();
     await ctx.settle();
-    expect(r.headers.get("X-Blaze-Provider")).toBe("workers-ai");
+    expect(r.headers.get("X-Argus-Provider")).toBe("workers-ai");
     expect(db.rows("SELECT model, reason FROM model_state WHERE provider_id = 'nous' AND until > 0")).toEqual([{ model: "*", reason: "provider_limit" }]);
     await admin("POST", "cooldowns/clear", { provider: "nous" });
 
@@ -656,7 +656,7 @@ describe("Nous Research (Nous Portal), 0.3.1", () => {
     answer(401, '{"status":401,"message":"Your API key is invalid, blocked or out of funds. Please go visit the portal to sort that out: https://portal.nousresearch.com "}');
     r = await chat();
     await ctx.settle();
-    expect(r.headers.get("X-Blaze-Provider")).toBe("workers-ai");
+    expect(r.headers.get("X-Argus-Provider")).toBe("workers-ai");
     expect(db.rows("SELECT cooling_until > 0 AS cooling, last_error FROM provider_keys WHERE provider_id = 'nous'")).toEqual([{ cooling: 1, last_error: "401 key" }]);
     expect(db.rows("SELECT * FROM model_state WHERE provider_id = 'nous' AND until > 0")).toEqual([]);
     // With its only key cooling, Nous is skipped without a call.

@@ -26,7 +26,7 @@ export function b64url(bytes: ArrayBuffer | Uint8Array): string {
   return b64(b).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-/** Same encoding blaze-auth uses for session hashes: base64url(SHA-256(s)). */
+/** Same encoding argus-auth uses for session hashes: base64url(SHA-256(s)). */
 export async function sha256(s: string): Promise<string> {
   return b64url(await crypto.subtle.digest("SHA-256", enc.encode(s)));
 }
@@ -40,14 +40,14 @@ export function safeEqual(a: string, b: string): boolean {
 }
 
 /**
- * CORS headers for /v1. No Access-Control-Allow-Origin here: Blaze's apps are native and need no CORS, and the
+ * CORS headers for /v1. No Access-Control-Allow-Origin here: Argus's apps are native and need no CORS, and the
  * admin page is same-origin, so by default no other website may read the gateway's answers. [withCors] adds
  * Allow-Origin only for an Origin listed in the optional ALLOWED_ORIGINS env var, and strips these headers otherwise.
  */
 export const CORS: Record<string, string> = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
-  "Access-Control-Expose-Headers": "X-Blaze-Task, X-Blaze-Provider, X-Blaze-Model, X-RateLimit-Remaining-Requests, Retry-After",
+  "Access-Control-Expose-Headers": "X-Argus-Task, X-Argus-Provider, X-Argus-Model, X-RateLimit-Remaining-Requests, Retry-After",
 };
 
 export function json(data: unknown, status = 200, headers: Record<string, string> = {}): Response {

@@ -1,24 +1,24 @@
-# PLAN — a reliable Blaze agent (and Blaze that helps build Blaze)
+# PLAN — a reliable Argus agent (and Argus that helps build Argus)
 
 Written 2026-11-01 for 0.50.0. A plan only: nothing here is implemented yet. It is based on what the code has today
-(file names are under `app/src/main/java/com/blaze/assistant/` unless noted) and on the zero-budget rule: the brain
-order stays **on-phone brain → Nous (:free) → Blaze cloud gateway**, never Jev, System One or NVIDIA models; no paid APIs.
+(file names are under `app/src/main/java/com/blazeinchue/argus/` unless noted) and on the zero-budget rule: the brain
+order stays **on-phone brain → Nous (:free) → Argus cloud gateway**, never Jev, System One or NVIDIA models; no paid APIs.
 
-**Owner's priority:** Blaze should take part in its own development through a guarded self-improvement loop. That is
+**Owner's priority:** Argus should take part in its own development through a guarded self-improvement loop. That is
 section 1 and phase P0–P3 of the roadmap. Everything after it (real-time browsing, on-screen navigation, recovery,
 approvals, the vault, evaluation) is what makes that loop, and the tasks the owner hands a capable cloud agent, trustworthy.
 
 ---
 
-## 1. "Blaze builds Blaze" (lead section)
+## 1. "Argus builds Argus" (lead section)
 
 ### 1.1 The loop
 
 ```
-GitLab issue ──► Blaze reads it ──► branch (never main / protected / feat/tiered-memory / release/*)
+GitLab issue ──► Argus reads it ──► branch (never main / protected / feat/tiered-memory / release/*)
      ▲                                   │
      │                                   ▼
- owner approves MR,             edit code (GitLab API commits, or a clone in Blaze Terminal's Alpine)
+ owner approves MR,             edit code (GitLab API commits, or a clone in Argus Terminal's Alpine)
  installs test APK                       │
      ▲                                   ▼
  MR opened with results ◄── read test results ◄── build + tests (GitHub-mirror Actions or a free runner)
@@ -28,39 +28,39 @@ GitLab issue ──► Blaze reads it ──► branch (never main / protected /
 ```
 
 1. **Read the issue.** A new `dev` tool group (ToolRouter group "dev", loaded only on request) with
-   `gitlab_issue_read`, `gitlab_issue_list(label=blaze-can-do)`. Only issues the owner labelled `blaze-can-do` are eligible.
+   `gitlab_issue_read`, `gitlab_issue_list(label=argus-can-do)`. Only issues the owner labelled `argus-can-do` are eligible.
    The issue body becomes the run's pinned goal (`GoalPin`) and its acceptance criteria the run's checklist (`Autonomy` goals).
-2. **Branch.** `gitlab_branch_create(name)` — the tool itself enforces the prefix `blaze/<issue-id>-<slug>` and refuses
+2. **Branch.** `gitlab_branch_create(name)` — the tool itself enforces the prefix `argus/<issue-id>-<slug>` and refuses
    `main`, `master`, `release/*`, `hotfix/*`, `feat/tiered-memory`, any protected branch (read from
-   `GET /projects/:id/protected_branches`), and any branch Blaze did not create. Enforced in code (like `ConfirmGate`), not
+   `GET /projects/:id/protected_branches`), and any branch Argus did not create. Enforced in code (like `ConfirmGate`), not
    in the prompt.
 3. **Edit.** Two engines, same rules:
    - *API mode (P0, works today on any phone):* read files with `GET /repository/files/:path/raw`, write with one
      `POST /repository/commits` per logical change (the same call `work/gl_push.py` uses). Text-only; no build on the phone.
-   - *Clone mode (P1+):* `git clone` in Blaze Terminal's Alpine (proot, `terminal/`), edit with the existing file tools,
+   - *Clone mode (P1+):* `git clone` in Argus Terminal's Alpine (proot, `terminal/`), edit with the existing file tools,
      `git push` over HTTPS with the token injected by `SecretUse` (the model only sees `{{secret:gitlab}}`). Needs ~400 MB
      free; refused on low-RAM phones (the low-RAM rule wins).
 4. **Build + test.** GitLab CI is out of quota, so: push the branch to the GitHub mirror (the `work/gh_push.py` git-data
    flow becomes a gateway endpoint `POST /v1/dev/mirror`, so the GitHub token never reaches the phone) and dispatch
    `mobile-build.yml` (APK + unit tests + shots) and, when asked, `lowram-smoke.yml`. Alternative free runners in order:
    GitHub Actions on the public mirror (standard runners are free for public repositories), a self-hosted runner on the
-   owner's PC via Blaze Desktop (`link/DesktopLink`), then Codeberg/Woodpecker. The phone itself never runs Gradle.
+   owner's PC via Argus Desktop (`link/DesktopLink`), then Codeberg/Woodpecker. The phone itself never runs Gradle.
 5. **Read results.** `ci_status(run)` returns a compact verdict: jobs, failing test names with the first 30 lines of each
    failure (JUnit XML parsed on the gateway, `work/toolchain/units.py` logic), the APK artifact URL. Never whole logs into
    the prompt (context budget, `PromptParts`).
 6. **Iterate**, bounded (section 1.3). Each iteration is one commit with a message that cites the failing test it fixes.
 7. **Open the MR.** `gitlab_mr_create` (draft) with: the issue link, what changed, test counts before/after, the benchmark
    delta (section 7), the low-RAM gate result, and the test-signed APK link (generic package registry, throwaway key).
-8. **Owner approves.** Blaze never merges, never tags, never publishes, never touches `blazeinchue.pages.dev`,
-   `blaze-site` or `blaze-releases`, never uses the production signing key. Merge = an owner tap on GitLab. The owner installs
+8. **Owner approves.** Argus never merges, never tags, never publishes, never touches `blazeinchue.pages.dev`,
+   `argus-site` or `argus-releases`, never uses the production signing key. Merge = an owner tap on GitLab. The owner installs
    the test APK and says "ship it" or comments; comments re-open the loop on the same branch.
 
-### 1.2 Gates an MR must pass before Blaze marks it ready
+### 1.2 Gates an MR must pass before Argus marks it ready
 - Unit suite green (today 2,9k tests) and screenshot tests green (qemu/x86 runner).
 - **Regression benchmark** (section 7) not worse than `main` on success rate, median steps, or median time (±5 % noise band).
 - **Low-RAM gate** (`tools/smoke/run-smoke.sh`): zero crash/ANR, no app-attributable main stall > 700 ms, LowRamSmokeTest 6/6.
 - Diff rules: no new permission in `AndroidManifest.xml`, no new network host, no change under `gateway/`, `keystore/`,
-  `.github/workflows/release-*`, signing configs or `SecretVault` without an explicit owner label `blaze-may-touch-security`.
+  `.github/workflows/release-*`, signing configs or `SecretVault` without an explicit owner label `argus-may-touch-security`.
 - Repo-hygiene tests (`OwnerName19Test`, `UpdateKeysTest`, `SecurityP4Test`) unchanged and green.
 
 ### 1.3 Limits (hard, in code)
@@ -71,29 +71,29 @@ GitLab issue ──► Blaze reads it ──► branch (never main / protected /
 | Model calls per issue | 300 (free tier) | `Budget` / `TokenLedger` |
 | Files changed per MR | 25, lines 1,500 | tool refuses bigger commits; split into issues |
 | Same failure twice with no diff in between | stop and report | `LoopGuard` (same call, same answer rule) |
-| Open Blaze MRs at once | 2 | gateway |
+| Open Argus MRs at once | 2 | gateway |
 
 ### 1.4 Secrets
 - GitLab / GitHub tokens live in `SecretVault` (Android Keystore) or only on the gateway. The model sees placeholders
   (`SecretUse`, 0.48 Secure Form); `SecretGuards` redacts any echo in tool results, CI logs and diffs before they reach the
-  prompt, memory, crash logs or Blaze Cloud.
+  prompt, memory, crash logs or Argus Cloud.
 - A pre-commit scan (the same rules as `SecretPasteCard`'s detector) refuses a commit containing anything token-shaped.
 - CI logs are fetched through the gateway, which masks secrets before the phone sees them.
 
 ### 1.5 What "self-graded" means (P2) and where it stops
-Blaze runs the benchmark tasks (section 7) on itself in a sandbox profile (fake contacts, a test Google account, mocked
+Argus runs the benchmark tasks (section 7) on itself in a sandbox profile (fake contacts, a test Google account, mocked
 payments), scores each run with deterministic checkers (end state of the phone / page, not the model's own opinion), and
 writes the results to the MR. The model may *propose* a grader for a new task, but a grader only counts after the owner
-merges it. Blaze never edits a grader and the code it grades in the same MR.
+merges it. Argus never edits a grader and the code it grades in the same MR.
 
-### 1.6 P3: Blaze proposes its own issues
+### 1.6 P3: Argus proposes its own issues
 From failure telemetry (section 8): a cluster of the same failure signature (tool, error class, screen/app, step) seen
-≥ 3 times in a week becomes a *draft* issue (`gitlab_issue_create`, label `proposed-by-blaze`, confidential) with the
-anonymised traces. The owner promotes it to `blaze-can-do` or closes it. Rate limit: 3 proposals a week.
+≥ 3 times in a week becomes a *draft* issue (`gitlab_issue_create`, label `proposed-by-argus`, confidential) with the
+anonymised traces. The owner promotes it to `argus-can-do` or closes it. Rate limit: 3 proposals a week.
 
 ---
 
-## 2. Where Blaze is today (what the plan builds on)
+## 2. Where Argus is today (what the plan builds on)
 
 | Area | Today | Gap for real tasks |
 |---|---|---|
@@ -148,10 +148,10 @@ anonymised traces. The owner promotes it to `blaze-can-do` or closes it. Rate li
 |---|---|---|---|
 | On-phone **WebView** (today, `BrowserEngine`) | free, private, user's cookies/logins, works offline-ish, can hand over to the user | memory on 3–4 GB phones, some sites block WebView UA, background throttling | **Default** |
 | Headless WebView (offscreen, no UI) | no screen use | same engine limits; Android kills offscreen renderers under memory pressure | use for read-only fetches only |
-| **Remote browser via the gateway** (Playwright/Chromium on a free runner or the owner's PC through Blaze Desktop) | real Chrome, robust DOM tools, can run while the phone sleeps | not free at scale; logins live off-phone (privacy); latency | **Fallback** for long research/booking flows, opt-in per task, owner's PC first (free) |
+| **Remote browser via the gateway** (Playwright/Chromium on a free runner or the owner's PC through Argus Desktop) | real Chrome, robust DOM tools, can run while the phone sleeps | not free at scale; logins live off-phone (privacy); latency | **Fallback** for long research/booking flows, opt-in per task, owner's PC first (free) |
 
 For both: a **DOM snapshot tool** (`browser_snapshot`): injected script returns a compact list of interactive elements
-(role, name, value, state, `data-blaze-id` stamped on the node), visible text chunks with IDs, the URL and title; actions
+(role, name, value, state, `data-argus-id` stamped on the node), visible text chunks with IDs, the URL and title; actions
 take those IDs (`browser_click id=…`). Same shape as the phone list, so one executor prompt fits both. Optional
 set-of-marks screenshot of the WebView for vision fallback.
 
@@ -173,7 +173,7 @@ set-of-marks screenshot of the WebView for vision fallback.
 - **Approvals** (existing `ConfirmGate` card) become *consequence previews*: "Pay K450 to Mazhandu Family Bus for 1 seat
   Fri 06:00 — card ••42". Always asked for: payments, sending messages/emails to new recipients, deleting, posting
   publicly, accepting terms, sharing personal data. Autopilot never skips these (as today).
-- **Code / OTP handoff**: when a flow needs a one-time code, Blaze shows the secure form (`browser_secure_input`) *or*,
+- **Code / OTP handoff**: when a flow needs a one-time code, Argus shows the secure form (`browser_secure_input`) *or*,
   with a per-task consent, reads the code from the SMS/notification that arrives within 2 minutes (`recent_notifications`),
   fills it, and says so. Never stores OTPs.
 - **Take-over**: the user can take the screen or the browser (`browser_show`, `Pointer`) at any step; the run pauses
@@ -184,7 +184,7 @@ set-of-marks screenshot of the WebView for vision fallback.
 Already: `SecretVault` (Keystore, biometric reveal), placeholders (`SecretUse`), per-site scoping (a Cloudflare token only
 goes to Cloudflare), saved browser logins (`BrowserLogins`). Add: (1) passkey/Google sign-in hand-off to the user;
 (2) a per-task grant ("use my Booking.com login for this task only"); (3) an audit list (Settings › Saved secrets › used
-by which task, when). Secrets never enter prompts, memory, telemetry, crash logs or Blaze Cloud.
+by which task, when). Secrets never enter prompts, memory, telemetry, crash logs or Argus Cloud.
 
 ## 7. Evaluation: the 20-task benchmark
 A `bench/` folder with 20 real tasks, each with setup, a deterministic grader and a budget. Run nightly (owner's PC or a
@@ -210,7 +210,7 @@ free runner with an emulator; real device weekly). Track success rate, steps, wa
 | 16 | Multi-app: copy an address from Messages into Maps and start navigation | phone | Maps intent/state |
 | 17 | "What / commands do I have?" | local | answer matches registry, no web call |
 | 18 | Weather in Ndola tomorrow | tool | get_weather called, no web search |
-| 19 | Fix a failing unit test in a sandbox repo (Blaze-builds-Blaze P1) | dev | CI green |
+| 19 | Fix a failing unit test in a sandbox repo (Argus-builds-Argus P1) | dev | CI green |
 | 20 | Triage a GitLab issue and open a draft MR with a one-line fix | dev | MR exists, branch rules respected |
 
 Pass bar for "reliable": ≥ 80 % on phone/browser tasks, 100 % on 17–18, zero safety violations (an unapproved risky
@@ -229,22 +229,22 @@ action = automatic fail of the whole run).
 | Executor (phone/browser step) | Spark (fastest free tool-caller); the flash loop's own prompts | many calls; short prompts |
 | Verifier | rules first; Spark yes/no second | cheap and deterministic |
 | Vision grounding | free vision model via the gateway (`Vision`/`VisionFast`), only on fallback | rate-limited |
-| Coding (Blaze builds Blaze) | strongest free coder on the gateway (`BrainOrder` coding lane) | correctness |
+| Coding (Argus builds Argus) | strongest free coder on the gateway (`BrainOrder` coding lane) | correctness |
 The order stays on-phone → Nous → gateway; `HedgeRace` keeps "one brain at a time on tool turns" (0.48).
 
 ## 10. Roadmap
 
-| Phase | What | Effort (1 dev + Blaze) | Exit criteria |
+| Phase | What | Effort (1 dev + Argus) | Exit criteria |
 |---|---|---|---|
-| **P0 Blaze builds Blaze: text-only** | `dev` tool group (issue read/list, branch create with guards, file read, commit via API, draft MR), secrets via vault/gateway, limits in code | 1.5 weeks | Blaze turns 3 labelled doc/typo/copy issues into correct draft MRs |
-| **P1 build + test feedback** | gateway `/v1/dev/mirror` + Actions dispatch + `ci_status` with parsed JUnit; iterate loop with limits; test-signed APK to the package registry; clone mode in Terminal (high-RAM phones) | 2 weeks | Blaze fixes 3 seeded failing tests end to end, MR has green CI and APK link |
+| **P0 Argus builds Argus: text-only** | `dev` tool group (issue read/list, branch create with guards, file read, commit via API, draft MR), secrets via vault/gateway, limits in code | 1.5 weeks | Argus turns 3 labelled doc/typo/copy issues into correct draft MRs |
+| **P1 build + test feedback** | gateway `/v1/dev/mirror` + Actions dispatch + `ci_status` with parsed JUnit; iterate loop with limits; test-signed APK to the package registry; clone mode in Terminal (high-RAM phones) | 2 weeks | Argus fixes 3 seeded failing tests end to end, MR has green CI and APK link |
 | **P2 self-graded benchmark** | `bench/` 20 tasks + graders + nightly runner; benchmark delta in every MR; gate | 2–3 weeks | nightly dashboard; MR blocked on regression |
-| **P3 Blaze proposes issues** | failure signatures → draft confidential issues, weekly cap | 1 week | first 3 useful proposals promoted by the owner |
+| **P3 Argus proposes issues** | failure signatures → draft confidential issues, weekly cap | 1 week | first 3 useful proposals promoted by the owner |
 | R1 TaskRun + checkpoints | planner/executor/verifier, TaskRun persistence, resume | 2 weeks | tasks 1–3, 9–11 ≥ 80 % |
 | R2 Browser snapshot + IDs | `browser_snapshot`, ID-based actions, set-of-marks fallback | 2 weeks | tasks 4–8, 13–14 ≥ 70 % |
 | R3 Stable phone element IDs + vision fallback | hashed IDs, plan replay on IDs, SoM screenshots | 1.5 weeks | task 16 passes, replay success ↑ |
 | R4 Human-in-the-loop polish | consequence previews, OTP consent handoff, take-over/resume | 1 week | zero unapproved risky actions in 100 runs |
-| R5 Remote browser (opt-in) | Playwright on the owner's PC via Blaze Desktop | 2 weeks | long research/booking flows run while the phone sleeps |
+| R5 Remote browser (opt-in) | Playwright on the owner's PC via Argus Desktop | 2 weeks | long research/booking flows run while the phone sleeps |
 
 Order: P0 → P1 → R1 → P2 → R2 → R3 → R4 → P3 → R5. Every phase ships behind a setting, passes the low-RAM gate, and keeps
 the main-thread rule (no I/O on main, no stall > 700 ms).

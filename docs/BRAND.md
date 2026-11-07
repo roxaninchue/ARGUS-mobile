@@ -22,7 +22,7 @@ Code: `ui/ArgusBrand.kt` (tokens), `ui/ArgusMark.kt` (the A), `BrandName.kt` (th
 
 ## Logo
 - The A: four slanted brushed-silver bars, redrawn as vectors from the source (`work/ref/argus/mk.py` generates
-  `res/drawable/ic_launcher_{foreground,background,monochrome}.xml`, `ic_stat_blaze.xml`; `render.py` the PNGs in every
+  `res/drawable/ic_launcher_{foreground,background,monochrome}.xml`, `ic_stat_argus.xml`; `render.py` the PNGs in every
   `mipmap-*dpi`). Silver gradient `#F7F9FB → #B9C1CA → #EDF0F3 → #8E98A3` along the top-left → bottom-right diagonal.
 - Launcher: adaptive icon (Argus Black → cobalt radial background with faint constellation dots, silver A in the 66 dp safe
   zone, white monochrome layer for themed icons), `ic_launcher_round`, Android 12+ splash on Argus Black (`values-v31`).
@@ -39,4 +39,4 @@ Code: `ui/ArgusBrand.kt` (tokens), `ui/ArgusMark.kt` (the A), `BrandName.kt` (th
 
 ## Tiers
 - Insight (fast) / Oracle (balanced) / Panoptes (deepest): labels and icons (eye / sparkle / insights) only; ids and the
-  `blaze_family` values stay `spark` / `flare` / `inferno`.
+  `argus_family` values stay `spark` / `flare` / `inferno`.

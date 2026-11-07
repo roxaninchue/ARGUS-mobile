@@ -1,6 +1,6 @@
 // Provider keys at rest: AES-256-GCM. The AES key is derived with HKDF-SHA256 from the
 // KEY_ENCRYPTION_SECRET Worker secret, so D1 only ever holds ciphertext. Format:
-//   "v1." + base64(nonce[12] || ciphertext || tag[16]), AAD "blaze-gateway-key-v1:<provider>"
+//   "v1." + base64(nonce[12] || ciphertext || tag[16]), AAD "argus-gateway-key-v1:<provider>"
 // Binding the provider id into the AAD means a ciphertext can't be moved to another provider.
 
 import { b64, fromB64 } from "./util";
@@ -20,7 +20,7 @@ function aesKey(secret: string | undefined): Promise<CryptoKey> {
     k = (async () => {
       const raw = await crypto.subtle.importKey("raw", enc.encode(secret), "HKDF", false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
-        { name: "HKDF", hash: "SHA-256", salt: enc.encode("blaze-gateway"), info: enc.encode("provider-keys-v1") },
+        { name: "HKDF", hash: "SHA-256", salt: enc.encode("argus-gateway"), info: enc.encode("provider-keys-v1") },
         raw,
         { name: "AES-GCM", length: 256 },
         false,
@@ -32,7 +32,7 @@ function aesKey(secret: string | undefined): Promise<CryptoKey> {
   return k;
 }
 
-const aad = (provider: string) => enc.encode(`blaze-gateway-key-v1:${provider}`);
+const aad = (provider: string) => enc.encode(`argus-gateway-key-v1:${provider}`);
 
 export async function encryptKey(secret: string | undefined, provider: string, plain: string): Promise<string> {
   const key = await aesKey(secret);

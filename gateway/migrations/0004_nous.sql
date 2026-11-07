@@ -1,4 +1,4 @@
--- Blaze Gateway 0.3.1: Nous Research (Nous Portal) as a provider, and the model test log.
+-- Argus Gateway 0.3.1: Nous Research (Nous Portal) as a provider, and the model test log.
 -- Additive only. The provider row is INSERT OR IGNORE, so an admin's edits are never overwritten
 -- (fresh databases also get it from src/defaults.ts on first seed).
 

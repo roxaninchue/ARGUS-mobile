@@ -4,7 +4,7 @@ OSI={'MIT','Apache-2.0','GPL-2.0','GPL-3.0','AGPL-3.0','LGPL-2.1','LGPL-3.0','MP
 def get(u):
   for i in range(3):
     try:
-      r=urllib.request.Request(u,headers={'Accept':'application/vnd.github+json','User-Agent':'blaze-store'})
+      r=urllib.request.Request(u,headers={'Accept':'application/vnd.github+json','User-Agent':'argus-store'})
       return json.load(urllib.request.urlopen(r,timeout=30))
     except urllib.error.HTTPError as e:
       if e.code in (404,451): return None

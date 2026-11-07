@@ -1,10 +1,10 @@
-// Waiting list (0.3.0). Every Blaze account the gateway sees gets a row in `accounts`.
+// Waiting list (0.3.0). Every Argus account the gateway sees gets a row in `accounts`.
 // With "Require approval for new accounts" on (the default), an account that isn't approved yet is
 // recorded as pending and its model calls get 403 `waitlisted`; a rejected one gets 403
 // `access_rejected` (whatever the switch says). Admins (ADMIN_EMAILS) are always allowed.
 // Approved verdicts are cached per isolate for a minute; anything else is re-read every request.
 
-import { adminEmails, type BlazeUser } from "./auth";
+import { adminEmails, type ArgusUser } from "./auth";
 import { loadConfig } from "./db";
 import type { Env } from "./env";
 import { HttpError } from "./util";
@@ -24,8 +24,8 @@ export interface AccountRow {
   decided_by: string;
 }
 
-export const WAITLISTED_MESSAGE = "You're on the Blaze waiting list. You'll get access as soon as you're approved.";
-export const REJECTED_MESSAGE = "Your Blaze account doesn't have access to Blaze AI. If you think this is a mistake, contact the Blaze team.";
+export const WAITLISTED_MESSAGE = "You're on the Argus waiting list. You'll get access as soon as you're approved.";
+export const REJECTED_MESSAGE = "Your Argus account doesn't have access to Argus AI. If you think this is a mistake, contact the Argus team.";
 
 const APPROVED_TTL_MS = 60_000;
 const approvedCache = new Map<string, number>(); // uid → cached until
@@ -41,7 +41,7 @@ const COLS = "id, email, uid, name, status, first_seen, last_seen, requests, dec
  * uid-only row (grandfathered from usage) into one, and records this request on it.
  * Returns the row after the update, or null when there is none yet.
  */
-async function touch(db: D1Database, user: BlazeUser, now: number): Promise<AccountRow | null> {
+async function touch(db: D1Database, user: ArgusUser, now: number): Promise<AccountRow | null> {
   const email = user.email || null;
   const rows = (await db.prepare(`SELECT ${COLS} FROM accounts WHERE uid = ?1 OR (?2 IS NOT NULL AND email = ?2)`).bind(user.id, email).all<AccountRow>()).results;
   if (!rows.length) return null;
@@ -67,7 +67,7 @@ async function touch(db: D1Database, user: BlazeUser, now: number): Promise<Acco
   return keep;
 }
 
-async function insertNew(db: D1Database, user: BlazeUser, status: AccessStatus, now: number, decidedBy = ""): Promise<void> {
+async function insertNew(db: D1Database, user: ArgusUser, status: AccessStatus, now: number, decidedBy = ""): Promise<void> {
   await db.prepare(
     "INSERT INTO accounts (email, uid, name, status, first_seen, last_seen, requests, decided_at, decided_by) VALUES (?1, ?2, ?3, ?4, ?5, ?5, 1, ?6, ?7) " +
     "ON CONFLICT DO NOTHING",
@@ -78,7 +78,7 @@ async function insertNew(db: D1Database, user: BlazeUser, status: AccessStatus, 
  * Records [user] and decides whether it may use models.
  * enforce = false (e.g. GET /v1/models) only records; chat completions pass true and get the 403.
  */
-export async function checkAccess(env: Env, user: BlazeUser, ctx: ExecutionContext, enforce: boolean, now = Date.now()): Promise<AccessStatus> {
+export async function checkAccess(env: Env, user: ArgusUser, ctx: ExecutionContext, enforce: boolean, now = Date.now()): Promise<AccessStatus> {
   const cached = approvedCache.get(user.id);
   if (cached && cached > now) {
     // Approved: keep last seen / request count fresh without holding up the answer.

@@ -1,12 +1,12 @@
-# Blaze tiered memory (0.49.0)
+# Argus tiered memory (0.49.0)
 
-Blaze keeps three tiers of memory so a turn never has to send everything, and a small free route
+Argus keeps three tiers of memory so a turn never has to send everything, and a small free route
 (Groq 8B at 6–8k tokens a minute) still fits, while nothing the user said or shared is lost.
 
 ```
             ┌───────────────────────────── one request ─────────────────────────────┐
             │ system prompt                                                         │
-            │   WHAT YOU KNOW (pinned core + index)   ← LONG tier (Mind, blaze.db)   │
+            │   WHAT YOU KNOW (pinned core + index)   ← LONG tier (Mind, argus.db)   │
             │   RELEVANT NOTES (top FTS hits, ≤800ch) ← LONG tier, per turn          │
             │   EARLIER IN THIS CHAT (rolling summary)← CHAT tier                    │
             │   CACHED DOCUMENTS (TOCs only, ≤2.4kch) ← CACHE tier                   │
@@ -33,9 +33,9 @@ Code: `memory/ChatTier.kt`, `agent/AutoCompact.kt`, `agent/LongChat.kt`, `Agent.
 
 ## 2. Long tier — durable memory (reused, not rebuilt)
 
-Code: `agent/Mind.kt`, `agent/MindStore.kt`, `store/BlazeDb.kt`, `agent/Memory.kt`.
+Code: `agent/Mind.kt`, `agent/MindStore.kt`, `store/ArgusDb.kt`, `agent/Memory.kt`.
 
-The existing One Mind store is the long tier: `memories` in `filesDir/blaze.db` (the schema shared with Blaze
+The existing One Mind store is the long tier: `memories` in `filesDir/argus.db` (the schema shared with Argus
 Desktop / CLI, bundled SQLite with **FTS5** on every Android version), the `memory_save / memory_search / memory_update
 / memory_delete / memory_merge` tools, the idle review that extracts facts, and the existing cloud sync. Nothing about
 its schema or sync changed.
@@ -49,7 +49,7 @@ injects at most 5 lines / 800 characters (`Mind.RELEVANT_*`). It is built inside
 
 Code: `memory/Chunker.kt`, `memory/CacheStore.kt`, `memory/CacheToc.kt`, `memory/MapReduce.kt`, `memory/CacheTier.kt`.
 
-Storage: `filesDir/cache/` — `cache.db` (its own SQLite file, **not** blaze.db: that schema is shared with other
+Storage: `filesDir/cache/` — `cache.db` (its own SQLite file, **not** argus.db: that schema is shared with other
 apps) and `docs/<id>.txt` (the original text, verbatim).
 
 - **What goes in**:
@@ -84,8 +84,8 @@ apps) and `docs/<id>.txt` (the original text, verbatim).
   (`Agent.deleteChat` → `CacheTier.deleteChat`).
 - **Threads**: every cache call runs on `Dispatchers.IO`; the history is edited back on the loop's thread.
 
-## 0.51.0: BlazeQuery documents
-BlazeQuery (docs/BLAZEQUERY.md) stores what it fetches in this same cache: one document per topic (kind `blazequery`, in the
+## 0.51.0: ArgusQuery documents
+ArgusQuery (docs/ARGUSQUERY.md) stores what it fetches in this same cache: one document per topic (kind `argusquery`, in the
 chat that asked) plus a `bq` row in cache.db (topic key, doc id, expiry, the judged evidence as JSON). Topics expire after
 1 h (news) / 3 h (versions) / 6 h; storing a topic again replaces its document. The prompt gets only the compact evidence
 pack; cache_search / cache_read reach the full text.
@@ -101,7 +101,7 @@ pack; cache_search / cache_read reach the full text.
 | `ChunkerTest` (9) | headings / chapters, code fences, a huge single paragraph cut at sentences under the hard max, no-space text, Unicode + surrogate pairs, tiny-section merging, streaming 8 KB reads, pieces == input |
 | `CacheStoreTest` (8) | contentless FTS5 ingest + read-back, BM25 picks the right chapter, chat-scoped search, history append, per-doc cap, LRU eviction keeps the cap and the newest, chat delete removes files/rows/index, gists + claims |
 | `TieredMemoryTest` (16) | 6k default budget + route scaling, token-capped tail keeps the newest user turn, AutoCompact folds by tokens, paged-out turns verbatim + searchable, big paste → reference, tool output → cache, flat / chapter / run TOCs + TOC char budget, cache tools, model gists in batches + offline stop, map-reduce batching + summarize, RELEVANT NOTES |
-| `HomeChatToolLoopTest` (7) | the Home-chat tool loop with a scripted model: go-ahead → tool lane, chat-lane rerun, one re-ask then the honest line, `blaze_self` → `SelfSetup.open` → `ActivityStart` firing `ACTION_ACCESSIBILITY_SETTINGS` (from the Activity, no NEW_TASK), and `cache_search` / `cache_read` calls |
+| `HomeChatToolLoopTest` (7) | the Home-chat tool loop with a scripted model: go-ahead → tool lane, chat-lane rerun, one re-ask then the honest line, `argus_self` → `SelfSetup.open` → `ActivityStart` firing `ACTION_ACCESSIBILITY_SETTINGS` (from the Activity, no NEW_TASK), and `cache_search` / `cache_read` calls |
 
 All green locally on 2026-11-01 (see `docs/BUILD-LOCAL.md`).
 

@@ -1,11 +1,11 @@
-// The /admin page: one static HTML document, no external assets. Blaze look: dark, rounded
+// The /admin page: one static HTML document, no external assets. Argus look: dark, rounded
 // (no square corners), orange + blue accents, mono labels. All dynamic text goes through
 // textContent (no innerHTML with data).
 
 export function adminPage(nonce: string): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>Blaze Gateway · admin</title>
+<meta name="robots" content="noindex"><title>Argus Gateway · admin</title>
 <style nonce="${nonce}">
 :root{--bg:#1c1c1f;--raised:#26262a;--raised2:#2e2e33;--hair:#3a3a40;--text:#ececea;--muted:#aeaea8;--accent:#7b98ff;--fire:#ff8a3d;--ok:#5fd38d;--warn:#f0b35a;--bad:#ff6b6b;
 --r:14px;--r-s:10px;--mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;--sans:-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
@@ -55,9 +55,9 @@ input::placeholder{color:#8e8e88}.task{scroll-margin-top:70px}
 .dirty{color:var(--fire);font:11px var(--mono)}
 </style></head><body>
 <div id="login" class="login hidden">
-  <div class="lbl">Blaze Gateway</div><h2 style="margin:6px 0 18px;font-weight:600">Admin sign-in</h2>
+  <div class="lbl">Argus Gateway</div><h2 style="margin:6px 0 18px;font-weight:600">Admin sign-in</h2>
   <div class="card">
-    <div class="lbl">Blaze account</div>
+    <div class="lbl">Argus account</div>
     <input id="em" type="email" placeholder="email" autocomplete="username">
     <input id="pw" type="password" placeholder="password" autocomplete="current-password">
     <button class="b p" id="go" style="width:100%;margin-top:6px">Sign in</button>
@@ -66,7 +66,7 @@ input::placeholder{color:#8e8e88}.task{scroll-margin-top:70px}
   <div id="lerr" class="muted" style="font:12px var(--mono)"></div>
 </div>
 <div id="app" class="hidden">
-<header><b>BLAZE GATEWAY</b><span class="v" id="ver"></span><nav id="nav">
+<header><b>ARGUS GATEWAY</b><span class="v" id="ver"></span><nav id="nav">
 <button data-t="health" class="on">Health</button><button data-t="routes">Routes</button><button data-t="providers">Providers</button><button data-t="plans">Plans</button><button data-t="access" id="nav-access">Waiting list</button></nav>
 <span class="sp"></span><span class="v" id="who"></span><button class="b" id="out">Sign out</button></header>
 <main>
@@ -104,7 +104,7 @@ input::placeholder{color:#8e8e88}.task{scroll-margin-top:70px}
   <div id="assign" style="margin-top:10px"></div></div>
 </section>
 <section id="t-access" class="hidden">
-  <div class="card"><div class="row"><div class="grow"><div class="lbl">Waiting list</div><div class="muted" style="font-size:13px;margin-top:4px">With approval on, anyone who signs in to Blaze and isn't approved yet lands here and is told they're on the waiting list; they get no model answers until you approve them. Rejected accounts are refused even when approval is off. Admins are always allowed.</div></div>
+  <div class="card"><div class="row"><div class="grow"><div class="lbl">Waiting list</div><div class="muted" style="font-size:13px;margin-top:4px">With approval on, anyone who signs in to Argus and isn't approved yet lands here and is told they're on the waiting list; they get no model answers until you approve them. Rejected accounts are refused even when approval is off. Admins are always allowed.</div></div>
   <label class="muted" style="font-size:13px"><input type="checkbox" id="req-appr"> Require approval for new accounts</label></div><div id="acc-note"></div></div>
   <div class="card"><div class="lbl" style="margin-bottom:8px">Waiting · <span id="n-pending">0</span></div><table><thead><tr><th>Account</th><th>First seen</th><th>Last seen</th><th>Requests</th><th>Plan</th><th></th></tr></thead><tbody id="acc-pending"></tbody></table></div>
   <div class="card"><div class="lbl" style="margin-bottom:8px">Approved · <span id="n-approved">0</span></div><table><thead><tr><th>Account</th><th>Plan</th><th>Last seen</th><th>Requests</th><th>Approved by</th><th></th></tr></thead><tbody id="acc-approved"></tbody></table></div>

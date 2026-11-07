@@ -1,6 +1,6 @@
-# Blaze Store catalog: schema v1
+# Argus Store catalog: schema v1
 
-Served at **https://blazeinchue.pages.dev/store/catalog.json** (Blaze Site hosts it; seed copy in `store/catalog.json`,
+Served at **https://blazeinchue.pages.dev/store/catalog.json** (Argus Site hosts it; seed copy in `store/catalog.json`,
 bundled into the app as `app/src/main/assets/store/catalog.json` for first run / offline).
 
 The app fetches it with `If-None-Match` (ETag) and keeps the last good copy on the phone: `304` keeps the cache, a
@@ -16,7 +16,7 @@ CORS not needed. Keep the body under 1 MB (the app refuses bigger). Bump `update
 | field | type | required | meaning |
 |---|---|---|---|
 | `schema` | int | yes | `1`. The app ignores catalogs with a higher major schema (keeps its cache) |
-| `name` | string | no | display name ("Blaze Store") |
+| `name` | string | no | display name ("Argus Store") |
 | `updated` | string | no | ISO date of the last edit |
 | `categories` | array of `{id, name}` | no | order = chip order. Apps with an unknown category go under "Other" |
 | `apps` | array of App | yes | the catalog |

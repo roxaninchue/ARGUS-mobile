@@ -1,7 +1,7 @@
 # Biometric login, keys and reinstall: what survives what (0.52.1)
 
 Why this doc: testers reinstalled test APKs signed with a new throwaway key every build, so every install wiped the
-app's data and every "Unlock with fingerprint/face" key. This is what Android actually guarantees, and what Blaze does.
+app's data and every "Unlock with fingerprint/face" key. This is what Android actually guarantees, and what Argus does.
 
 ## 1. BiometricPrompt: STRONG vs WEAK
 
@@ -26,7 +26,7 @@ Consequences:
 - Keys in the Android Keystore belong to the app's UID. **Uninstall deletes them**; "Clear storage" deletes them too.
 - Auto Backup / device-to-device restore brings back files and SharedPreferences, **never Keystore keys**. Data encrypted with a
   Keystore key is restored as unreadable bytes: treat a decrypt failure after restore as "signed out", wipe that blob, and re-ask.
-  (Blaze: backup_rules.xml keeps the "blaze" prefs, which hold the Keystore-sealed account / gateway tokens, out of cloud backup; data_rules.xml device transfer copies everything except saved logins.)
+  (Argus: backup_rules.xml keeps the "argus" prefs, which hold the Keystore-sealed account / gateway tokens, out of cloud backup; data_rules.xml device transfer copies everything except saved logins.)
 - So a biometric unlock built on a Keystore key can never survive a reinstall. That is by design.
 
 ## 3. Credential Manager passkeys survive reinstall
@@ -38,7 +38,7 @@ Consequences:
   signing certificate that should be allowed** (production key AND the test key below if test builds should use passkeys), and the
   server (gateway) verifies WebAuthn assertions for that RP ID.
 - Saved passwords via Credential Manager (`CreatePasswordRequest`) also live in the provider and survive reinstall.
-- Recommended Blaze flow: passkey (or Google sign-in via Credential Manager) to get the account back after a reinstall; a STRONG-bound
+- Recommended Argus flow: passkey (or Google sign-in via Credential Manager) to get the account back after a reinstall; a STRONG-bound
   Keystore key only as the fast local unlock for this install.
 
 ## 4. Upgrade in place (no uninstall, data kept)
@@ -52,7 +52,7 @@ wipes the Keystore keys and all app data (section 2).
 
 ### The persistent test key (0.52.1)
 - `work/toolchain/sign-test.sh <out.apk> [in.apk]` now signs every test APK with **one** throwaway key, created once at
-  `work/toolchain/blaze-test-upgrade.p12` (alias `blaze-test`, store/key password `testonly`, RSA 3072, valid to 2054) and reused.
+  `work/toolchain/argus-test-upgrade.p12` (alias `argus-test`, store/key password `testonly`, RSA 3072, valid to 2054) and reused.
 - Cert SHA-256: `99:E1:B0:AD:D5:F1:0F:C9:24:6B:78:3D:6E:9A:C1:BC:BE:57:35:DC:91:55:D3:5A:D7:50:78:85:58:AD:37:6E`
   (add it to assetlinks.json only if test builds should use passkeys; owner's call, not done).
 - It is a TEST key: not secret, never used for production/Play builds, never committed to the repo. Don't delete it: a new key means

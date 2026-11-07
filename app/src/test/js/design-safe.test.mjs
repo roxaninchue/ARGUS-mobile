@@ -78,7 +78,7 @@ function runStarter(spec) {
     .replace(/import \{ OrbitControls \}[^\n]*\n/, "const OrbitControls = globalThis.__Stub;\n")
     .replace(/import \{ GLTFExporter \}[^\n]*\n/, "const GLTFExporter = globalThis.__Stub;\n");
   const els = {};
-  const el = id => els[id] || (els[id] = { id, textContent: id === "blaze-parts" ? JSON.stringify(spec) : "", innerHTML: "", style: {} });
+  const el = id => els[id] || (els[id] = { id, textContent: id === "argus-parts" ? JSON.stringify(spec) : "", innerHTML: "", style: {} });
   globalThis.window = globalThis;
   globalThis.document = { title: "", getElementById: el, body: { prepend() {} }, createElement: () => ({ click() {} }) };
   globalThis.matchMedia = () => ({ matches: false });
@@ -106,10 +106,10 @@ function runStarter(spec) {
     }
     setPixelRatio() {} setSize() {} setAnimationLoop(cb) { frames.push(cb); }
   };
-  delete globalThis.__blazeScene;
+  delete globalThis.__argusScene;
   const file = path.join(tmp, "starter-" + Math.random().toString(36).slice(2) + ".js");
   fs.writeFileSync(file, code);
-  return import(pathToFileURL(file)).then(() => ({ s: globalThis.__blazeScene, frames, els }));
+  return import(pathToFileURL(file)).then(() => ({ s: globalThis.__argusScene, frames, els }));
 }
 
 const BAD_ROCKET = {
@@ -128,7 +128,7 @@ const BAD_ROCKET = {
 
 await test("starter builds and renders a rocket full of bad parts (null-geometry repro)", async () => {
   const { s, frames } = await runStarter(BAD_ROCKET);
-  assert.ok(s, "window.__blazeScene was set");
+  assert.ok(s, "window.__argusScene was set");
   assert.equal(s.parts.size, 7);
   let meshes = 0;
   s.scene.traverse(o => { if (o.isMesh) { meshes++; assert.ok(o.geometry && o.geometry.attributes, "mesh " + o.name + " has geometry"); assert.ok(o.material && o.material.isMaterial); } });

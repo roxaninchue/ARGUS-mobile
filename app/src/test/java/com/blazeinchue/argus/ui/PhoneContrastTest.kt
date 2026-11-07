@@ -1,0 +1,103 @@
+package com.blazeinchue.argus.ui
+
+import androidx.compose.ui.graphics.Color
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.io.File
+
+/**
+ * 0.45.19 Argus Phone UI fix 3 (contrast), strict 5/5. The tile's chip was white text on a white-ish chip ("Reading
+ * Argus Phone's page", 1.2:1). Every text / ground pair the Argus Phone tile and screen draw now comes from
+ * [PhoneColors] and must reach WCAG AA (4.5:1) for every Look & feel accent (0.52.2: one ARGUS look, no Living Themes)
+ * x light / dark plus random accents, computed here with the WCAG
+ * formula (cross-checked against the app's own [Contrast]). Real pixels on a phone are a device check.
+ */
+class PhoneContrastTest {
+    private fun root(): File = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
+    private fun src(p: String) = File(root(), "com/blazeinchue/argus/$p").readText()
+
+    /** The accent ArgusTheme hands the UI for [pick] in [dark] (a pale accent is deepened on light grounds; null = none picked). */
+    private fun accentOf(dark: Boolean, pick: Long?): Long? {
+        val a = pick ?: return null
+        return if (dark) a else BubbleTones.onLight(a)
+    }
+
+    private fun fiveTimes(name: String, body: (Int) -> Unit) {
+        var pass = 0
+        for (i in 1..5) { body(i); pass++ }
+        assertEquals("$name strict 5/5", 5, pass)
+    }
+
+    @Test fun wcagMathMatchesTheAppsContrastHelper() = fiveTimes("wcag math") { i ->
+        assertEquals(21.0, PhoneColors.contrast(0xFF000000L, 0xFFFFFFFFL), 0.01)
+        assertEquals(1.0, PhoneColors.contrast(0xFF336699L, 0xFF336699L), 0.0001)
+        val r = java.util.Random(i.toLong())
+        repeat(200) {
+            val a = 0xFF000000L or r.nextInt(1 shl 24).toLong(); val b = 0xFF000000L or r.nextInt(1 shl 24).toLong()
+            assertEquals(Contrast.ratio(Color(a), Color(b)).toDouble(), PhoneColors.contrast(a, b), 0.05)
+        }
+    }
+
+    @Test fun theOldChipFailedAndTheNewOnesPass() = fiveTimes("regression") {
+        // What the screenshots showed: white on Glass.blue (#E6E6EA).
+        assertTrue(PhoneColors.contrast(0xFFFFFFFFL, 0xFFE6E6EAL) < 1.5)
+        // StatusPill's default pair (Argus Phone surfaces that pass no palette).
+        assertTrue(PhoneColors.contrast(PhoneColors.STATUS_ON_CHIP, PhoneColors.STATUS_CHIP) >= PhoneColors.AA)
+    }
+
+    @Test fun everyAccentTimesLightAndDarkMeetsAA() = fiveTimes("accents x modes") { run ->
+        val r = java.util.Random(run * 7919L)
+        val picks = listOf<Long?>(null, 0xFFFFFFFFL, 0xFF000000L, 0xFF777777L, 0xFFFFEB3BL) +
+            LookLogic.ACCENTS.mapNotNull { LookLogic.parseAccent(it.first) } +
+            (1..20).map { 0xFF000000L or r.nextInt(1 shl 24).toLong() }
+        var checked = 0
+        for (dark in listOf(true, false)) {
+            for (pick in picks) {
+                val p = PhoneColors.of(accentOf(dark, pick), dark)
+                assertEquals(dark, p.dark)
+                for ((name, pair) in p.pairs()) {
+                    val ratio = PhoneColors.contrast(pair.first, pair.second)
+                    assertTrue("${if (dark) "dark" else "light"} accent=${pick?.toString(16)} $name: %.2f".format(ratio), ratio >= PhoneColors.AA)
+                    assertEquals("$name fg opaque", 0xFFL, (pair.first ushr 24) and 0xFF)
+                    assertEquals("$name bg opaque", 0xFFL, (pair.second ushr 24) and 0xFF)
+                    checked++
+                }
+                // The chip still reads as a chip on the card (not the card's own colour).
+                assertTrue("accent=${pick?.toString(16)} chip vs card", PhoneColors.contrast(p.chip, p.card) >= 1.3)
+            }
+        }
+        assertTrue(checked >= picks.size * 2 * 14)
+    }
+
+    @Test fun anyAccentAtAllStillMeetsAA() = fiveTimes("any accent") { run ->
+        val r = java.util.Random(run.toLong())
+        repeat(400) {
+            val a = 0xFF000000L or r.nextInt(1 shl 24).toLong()
+            for (dark in listOf(true, false)) {
+                val p = PhoneColors.of(a, dark)
+                assertTrue(PhoneColors.contrast(p.onChip, p.chip) >= PhoneColors.AA)
+            }
+        }
+    }
+
+    @Test fun theTileAndScreenDrawOnlyWithThePalette() = fiveTimes("sources") {
+        val tile = src("ui/PhoneLiveCard.kt")
+        val screen = src("browser/phone/PhoneBrowserActivity.kt")
+        for ((n, s) in listOf("PhoneLiveCard" to tile, "PhoneBrowserActivity" to screen)) {
+            assertFalse("$n: Glass.blue", s.contains("Glass.blue"))
+            assertFalse("$n: Glass.text", s.contains("Glass.text"))
+            assertFalse("$n: Glass.sub", s.contains("Glass.sub"))
+            assertFalse("$n: Glass.surface", s.contains("Glass.surface"))
+            assertFalse("$n: LightColors", s.contains("LightColors"))
+            assertFalse("$n: hard-coded white / black text", Regex("""color = Color\.(White|Black)""").containsMatchIn(s))
+            assertTrue("$n uses the palette", s.contains("phonePalette()"))
+        }
+        assertTrue(tile.contains("StatusPill(pill, working = live.mode == PhonePolicy.Mode.AGENT, chip = Color(pal.chip), onChip = Color(pal.onChip))"))
+        assertTrue(screen.contains("chip = Color(pal.chip), onChip = Color(pal.onChip)"))
+        val pill = src("ui/StatusPill.kt").substringAfter("fun StatusPill(").substringBefore("\n}\n")
+        assertFalse("StatusPill text is no longer white", pill.contains("color = Color.White"))
+        assertTrue(pill.contains("color = onChip"))
+    }
+}
