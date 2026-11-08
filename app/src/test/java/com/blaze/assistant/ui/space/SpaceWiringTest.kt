@@ -81,7 +81,7 @@ class SpaceWiringTest {
     }
 
     @Test fun projectsIsTheHarkStyleList() {
-        assertEquals("both Projects panes use it", 2, Regex(Regex.escape("${S}SpaceProjectsScreen(projects, allChats, busyChats, needs, nav.project,")).findAll(chat).count())
+        assertEquals("the Projects pane uses it (the dead newLook pane is gone)", 1, Regex(Regex.escape("${S}SpaceProjectsScreen(projects, allChats, busyChats, needs, nav.project,")).findAll(chat).count())
         val p = src("ui/space/SpaceProjects.kt")
         for (k in listOf("onCreate(", "onNewChat(open.id)", "onInstructions(open.id, it)", "onBrief(open.id, fit)", "onRenameChat(ch.id, t)", "onDeleteChat(ch.id)", "onDelete(open.id)"))
             assertTrue("the projects screen keeps $k", k in p)
