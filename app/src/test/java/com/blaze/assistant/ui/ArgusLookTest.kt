@@ -92,16 +92,21 @@ class ArgusLookTest {
     }
 
     @Test fun appSizeSnapsToItsSteps() {
-        assertEquals(1.00f, LookLogic.parseScale(null), 0.001f)
-        assertEquals(1.00f, LookLogic.parseScale(""), 0.001f)
-        assertEquals(1.00f, LookLogic.parseScale("abc"), 0.001f)
-        assertEquals(0.90f, LookLogic.parseScale("0.9"), 0.001f)
+        // 0.52.4: nothing stored (a new install) or garbage reads as the 90 % default
+        assertEquals(0.90f, LookLogic.SCALE_DEFAULT, 0.001f)
+        assertEquals(0.90f, LookLogic.parseScale(null), 0.001f)
+        assertEquals(0.90f, LookLogic.parseScale(""), 0.001f)
+        assertEquals(0.90f, LookLogic.parseScale("abc"), 0.001f)
+        assertEquals(1.00f, LookLogic.parseScale("1.0"), 0.001f)   // someone who picked 100 % keeps it
         assertEquals(0.80f, LookLogic.parseScale("0.2"), 0.001f)   // below the range: the smallest step
         assertEquals(1.20f, LookLogic.parseScale("3"), 0.001f)     // above it: the largest
         assertEquals(0.85f, LookLogic.snapScale(0.86f), 0.001f)
+        assertEquals(2, LookLogic.scaleIndex(0.9f))
         assertEquals(4, LookLogic.scaleIndex(1f))
-        assertEquals("Default", LookLogic.scaleLabel(1f))
-        assertEquals("90%", LookLogic.scaleLabel(0.9f))
+        assertEquals("Default", LookLogic.scaleLabel(0.9f))
+        assertEquals("Default", LookLogic.scaleLabel(LookLogic.SCALE_DEFAULT))
+        assertEquals("100%", LookLogic.scaleLabel(1f))
+        assertEquals("80%", LookLogic.scaleLabel(0.8f))
         assertEquals("120%", LookLogic.scaleLabel(1.2f))
         // smaller steps first, so the slider runs small to large
         assertEquals(LookLogic.SCALES.sorted(), LookLogic.SCALES)

@@ -25,6 +25,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Psychology
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.SignalCellularAlt
+import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -40,6 +50,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -53,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blaze.assistant.BrandName
 import com.blaze.assistant.setup.SetupPlan
+import com.blaze.assistant.ui.BlazeIconStyle
+import com.blaze.assistant.ui.IconTile
 import com.blaze.assistant.ui.DarkColors
 import com.blaze.assistant.ui.LocalBlaze
 import com.blaze.assistant.ui.drawArgusMark
@@ -187,14 +200,18 @@ fun SpaceSetupScreen(setup: Map<String, SetupPlan.Status>, onContinue: () -> Uni
                     val st = setup[item.id]
                     Row(Modifier.fillMaxWidth().testTag(SpaceTags.setupRow(item.id)).padding(vertical = 12.dp).semantics(mergeDescendants = true) { },
                         verticalAlignment = Alignment.CenterVertically) {
-                        SetupDot(st?.phase ?: SetupPlan.Phase.PENDING, (st?.progress ?: -1))
-                        Spacer(Modifier.width(14.dp))
+                        // 0.52.4: a round tinted icon tile per item (the reference's result rows), the status mark on the right
+                        IconTile(setupIcon(item.id), tint = look.accent)
+                        Spacer(Modifier.width(BlazeIconStyle.gap))
                         Column(Modifier.weight(1f)) {
                             Text(item.title, style = SpaceType.body(16.sp, look.ink, FontWeight.Medium))
                             Text(item.sub, style = SpaceType.body(13.sp, look.sub))
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text(SetupPlan.line(item, st), style = SpaceType.body(13.sp, if (st?.phase == SetupPlan.Phase.DONE) look.accent else look.sub))
+                        Text(SetupPlan.line(item, st), modifier = Modifier.widthIn(max = 104.dp), maxLines = 2, textAlign = TextAlign.End,
+                            style = SpaceType.body(13.sp, if (st?.phase == SetupPlan.Phase.DONE) look.accent else look.sub))
+                        Spacer(Modifier.width(10.dp))
+                        SetupDot(st?.phase ?: SetupPlan.Phase.PENDING, (st?.progress ?: -1), size = 22.dp)
                     }
                 }
                 // 0.52.4: no need to wait for Wi-Fi; the user can finish now on mobile data (the size is on the button)
@@ -202,17 +219,28 @@ fun SpaceSetupScreen(setup: Map<String, SetupPlan.Status>, onContinue: () -> Uni
                 if (wifiMb > 0) {
                     val ctx = androidx.compose.ui.platform.LocalContext.current
                     Spacer(Modifier.height(8.dp))
-                    SpaceChip(SetupPlan.mobileDataButton(wifiMb), { com.blaze.assistant.setup.SetupRunner.useMobileData(ctx) })
+                    SpaceChip(SetupPlan.mobileDataButton(wifiMb), { com.blaze.assistant.setup.SetupRunner.useMobileData(ctx) }, icon = Icons.Rounded.SignalCellularAlt)
                 }
                 if (setup.values.any { it.phase == SetupPlan.Phase.FAILED }) {
                     Spacer(Modifier.height(8.dp))
-                    SpaceChip("Retry now", onRetry)
+                    SpaceChip("Retry now", onRetry, icon = Icons.Rounded.Refresh)
                 }
             }
         }
         Spacer(Modifier.height(12.dp))
         SpacePillButton(SpaceOnboarding.setupButton(done), onContinue, primary = true, tag = SpaceTags.SETUP_CONTINUE)
     }
+}
+
+/** Each setup item's icon (SetupPlan.ITEMS ids); an unknown id gets the download mark. */
+internal fun setupIcon(id: String): ImageVector = when (id) {
+    "linux" -> Icons.Rounded.Terminal
+    "tools" -> Icons.Rounded.Build
+    "skills" -> Icons.Rounded.AutoAwesome
+    "brain" -> Icons.Rounded.Psychology
+    "voice" -> Icons.Rounded.RecordVoiceOver
+    "quick" -> Icons.Rounded.Bolt
+    else -> Icons.Rounded.Download
 }
 
 /** A row's status mark: a hollow ring (waiting), an arc that fills (running), a filled check (ready), a dash (not needed). */

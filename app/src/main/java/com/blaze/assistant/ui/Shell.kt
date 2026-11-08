@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -405,6 +406,9 @@ fun ChatRow(ch: ChatMeta, busy: Boolean, current: Boolean = false, chip: String 
     Row(Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth().glass(GlassTokens.tileShape, if (current) GlassIntensity.High else GlassIntensity.Low, shadow = false)
         .combinedClickable(onClick = onClick, onLongClick = onMore).padding(start = 14.dp, end = if (onMore != null) 4.dp else 14.dp, top = 11.dp, bottom = 11.dp),
         verticalAlignment = Alignment.CenterVertically) {
+        // 0.52.4: a small chat tile leads each row, in the shared icon-tile style
+        IconTile(Icons.Rounded.ChatBubbleOutline, small = true, filled = current)
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(ch.title.ifBlank { "Untitled" }, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink))
             // v0.28.3: a preview saved before the leak fix can hold raw tool syntax ("[github_open repo=…]"); never show it.
@@ -412,7 +416,7 @@ fun ChatRow(ch: ChatMeta, busy: Boolean, current: Boolean = false, chip: String 
             if (preview.isNotBlank()) Text(preview, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
         }
         // Pinned mark sits on the right so every title lines up (v0.15.0).
-        if (ch.pinned) { Spacer(Modifier.width(8.dp)); Box(Modifier.size(6.dp).clip(CircleShape).background(c.accent)); Spacer(Modifier.width(8.dp)) }
+        if (ch.pinned) { Spacer(Modifier.width(8.dp)); LeadIcon(Icons.Rounded.PushPin, c.accent, size = 14.dp); Spacer(Modifier.width(8.dp)) }
         if (busy) Label("Working", color = c.accent, size = 9.sp)
         else if (chip.isNotBlank()) Label(chip, color = c.sub, size = 9.sp)
         if (onMore != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = "Chat options", onClick = onMore)
@@ -617,9 +621,10 @@ fun PlusMenu(items: List<PlusItem>, onPick: (String) -> Unit) {
         .heightIn(max = 480.dp).verticalScroll(rememberScrollState()).padding(top = 8.dp)) {
         Box(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 4.dp).size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.hair))
         items.forEach { it ->
-            Row(Modifier.fillMaxWidth().clickable { onPick(it.id) }.padding(horizontal = 18.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(7.dp).clip(CircleShape).background(if (it.on) c.accent else c.weak))
-                Spacer(Modifier.width(14.dp))
+            Row(Modifier.fillMaxWidth().clickable { onPick(it.id) }.padding(horizontal = 18.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // 0.52.4: an icon tile instead of a dot; a mode that is on (Plan, Autopilot) gets the solid tile
+                IconTile(plusIcon(it.id, it.on).vector(), small = true, filled = it.on)
+                Spacer(Modifier.width(BlazeIconStyle.gap))
                 Text(it.label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
                 Spacer(Modifier.width(10.dp))
                 Text(it.sub, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
@@ -634,6 +639,9 @@ fun modeChip(work: String, approval: String): String {
     val parts = buildList { if (work == "plan") add("PLAN"); if (approval == "autopilot") add("AUTOPILOT") }
     return parts.joinToString(" · ")
 }
+
+/** 0.52.4: the mode chip's icon, the same one the + menu shows for that mode (Autopilot wins when both are on). */
+fun modeChipIcon(chip: String): MenuIcon = if ("AUTOPILOT" in chip.uppercase()) plusIcon("approval", on = true) else plusIcon("plan", on = true)
 
 /**
  * 0.52.3 composer: Hark's floating "Message ARGUS" pill (owner: the Hark design in the ARGUS theme). One rounded pill at
@@ -667,7 +675,11 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
     }
     Column(Modifier.fillMaxWidth().padding(start = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, end = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, top = 6.dp, bottom = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_BOTTOM_DP.dp)) {
         if (chip.isNotBlank()) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(horizontal = 10.dp, vertical = 4.dp)) {
+            // 0.52.4: the mode chip leads with its mode's icon (Autopilot, Plan), as the + menu shows it
+            Row(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(start = 8.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                LeadIcon(modeChipIcon(chip).vector(), c.onAccent, size = 14.dp)
+                Spacer(Modifier.width(5.dp))
                 ButtonText(chip, color = c.onAccent, size = 12.sp)
             }
         }

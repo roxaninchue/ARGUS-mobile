@@ -143,9 +143,10 @@ enum class Btn { ACCENT, INK, LINE, GHOST }
  * LINE a raised outlined pill, GHOST plain text in a pill-shaped touch area.
  */
 @Composable
-fun KitButton(text: String, kind: Btn = Btn.LINE, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+fun KitButton(text: String, kind: Btn = Btn.LINE, modifier: Modifier = Modifier, enabled: Boolean = true,
+              icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit) {
     BlazeButton(text, modifier = modifier, kind = when (kind) { Btn.ACCENT, Btn.INK -> BtnKind.PRIMARY; Btn.LINE -> BtnKind.SECONDARY; Btn.GHOST -> BtnKind.GHOST },
-        enabled = enabled, height = 40.dp, onClick = onClick)
+        enabled = enabled, height = 40.dp, icon = icon, onClick = onClick)
 }
 
 enum class BtnKind { PRIMARY, SECONDARY, GHOST, DANGER }
@@ -156,7 +157,8 @@ enum class BtnKind { PRIMARY, SECONDARY, GHOST, DANGER }
  */
 @Composable
 fun BlazeButton(text: String, modifier: Modifier = Modifier, kind: BtnKind = BtnKind.PRIMARY, enabled: Boolean = true,
-                height: androidx.compose.ui.unit.Dp = 44.dp, lead: String = "", onClick: () -> Unit) {
+                height: androidx.compose.ui.unit.Dp = 44.dp, lead: String = "", icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+                onClick: () -> Unit) {
     val c = LocalBlaze.current
     val shape = BlazeShapes.pill
     // v0.27.0: shrinks slightly while pressed (MotionTokens; none with Remove animations on).
@@ -179,8 +181,12 @@ fun BlazeButton(text: String, modifier: Modifier = Modifier, kind: BtnKind = Btn
     }
     Box(filled.clickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current, enabled = enabled, onClick = onClick)
         .padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
-        Text((if (lead.isNotBlank()) "$lead  " else "") + text.sentence(), maxLines = 1, overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = fg))
+        // 0.52.4: [icon] leads the label, like the reference's "Quick Scan" buttons
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) { LeadIcon(icon, fg, size = BlazeIconStyle.buttonIcon); Spacer(Modifier.width(8.dp)) }
+            Text((if (lead.isNotBlank()) "$lead  " else "") + text.sentence(), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = fg))
+        }
     }
 }
 
@@ -394,16 +400,21 @@ fun BlazeDialogCard(
 
 /** Rounded pill button for dialogs, menus and overlays: filled brand blue / orange, or a ghost. */
 @Composable
-fun PillButton(text: String, primary: Boolean, warm: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun PillButton(text: String, primary: Boolean, warm: Boolean = false, modifier: Modifier = Modifier,
+               icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit) {
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
     val bg = if (!primary) androidx.compose.ui.graphics.SolidColor(Color.Transparent) else if (warm) androidx.compose.ui.graphics.SolidColor(DialogColors.primaryWarm.copy(alpha = 0.55f)) else BlazeBrush.primary
     val press = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(modifier.pressScale(press).height(40.dp).widthIn(min = 72.dp).clip(shape).background(bg, shape)
         .let { if (!primary) it.border(1.dp, DialogColors.border, shape) else it }
         .clickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current, onClick = onClick)
-        .padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
-        Text(text, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp,
-            color = if (primary) DialogColors.onPrimary else DialogColors.ghost))
+        .padding(start = if (icon != null) 14.dp else 18.dp, end = 18.dp), contentAlignment = Alignment.Center) {
+        val fg = if (primary) DialogColors.onPrimary else DialogColors.ghost
+        // 0.52.4: an optional leading icon (Play, Shuffle, Retry…), the shared button-icon size
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) { LeadIcon(icon, fg, size = BlazeIconStyle.buttonIcon); Spacer(Modifier.width(8.dp)) }
+            Text(text, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = fg))
+        }
     }
 }
 
@@ -417,13 +428,25 @@ fun BlazeMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<Pair<String,
     }
 }
 
+/**
+ * The menu's card. 0.52.4: each row leads with the icon its label maps to ([MenuIcons.forLabel]), so every menu in the
+ * app gets icons without its call site naming one; a row with no match is indented to the same text line, and a menu
+ * where nothing matches stays text only.
+ */
 @Composable
 fun BlazeMenuCard(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit = {}) {
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+    val icons = remember(items.map { it.first }) { items.map { MenuIcons.forLabel(it.first) } }
+    val anyIcon = icons.any { it != null }
     Column(Modifier.widthIn(min = 200.dp, max = 280.dp).shadow(12.dp, shape).background(DialogColors.surface, shape)
         .glass(shape, GlassIntensity.High, shadow = false).padding(vertical = 6.dp)) {
-        items.forEach { (label, act) ->
-            Box(Modifier.fillMaxWidth().padding(horizontal = 6.dp).clip(BlazeShapes.small).clickable { onDismiss(); act() }.padding(horizontal = 12.dp, vertical = 12.dp)) {
+        items.forEachIndexed { i, (label, act) ->
+            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp).clip(BlazeShapes.small).clickable { onDismiss(); act() }.padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                val icon = icons.getOrNull(i)
+                if (icon != null) LeadIcon(icon.vector(), DialogColors.title)
+                else if (anyIcon) Spacer(Modifier.width(BlazeIconStyle.rowIcon))
+                if (anyIcon) Spacer(Modifier.width(BlazeIconStyle.gap))
                 Text(label, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = DialogColors.title))
             }
         }

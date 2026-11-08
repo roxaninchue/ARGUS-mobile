@@ -202,6 +202,24 @@ object BlazeShapes {
         extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp))
 }
 
+/**
+ * 0.52.4 icons everywhere: the one icon style every screen uses (owner: "icons rather than text everywhere"). List rows
+ * lead with a round tinted tile ([tile] across, the icon [tileIcon], the tint at [fillAlpha] behind it); compact rows
+ * (menus, the + menu) use the [small] tile or a bare [rowIcon]; buttons and chips lead with a [buttonIcon]. Drawn by
+ * IconTile in IconKit.kt, so no screen picks its own sizes.
+ */
+object BlazeIconStyle {
+    val tile = 40.dp
+    val tileIcon = 20.dp
+    val small = 32.dp
+    val smallIcon = 17.dp
+    val rowIcon = 20.dp
+    val buttonIcon = 18.dp
+    val gap = 14.dp
+    val shape = androidx.compose.foundation.shape.CircleShape
+    fun fillAlpha(dark: Boolean): Float = if (dark) 0.18f else 0.12f
+}
+
 /** Primary buttons: the classic Blaze blue, solid (v0.25.2; the v0.24.8 orange-to-blue gradient is gone). */
 /**
  * v0.31.0: monochrome. [primary] is a bright frosted-glass fill that white text reads on (every existing caller draws

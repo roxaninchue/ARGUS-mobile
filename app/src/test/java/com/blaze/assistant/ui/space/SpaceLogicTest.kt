@@ -77,7 +77,11 @@ class SpaceLogicTest {
         for (w in 150..420 step 10) for (s in listOf(0.85f, 1f, 1.3f, 2f)) {
             val f = SpacePillFit.pick(w.toFloat(), s)
             if (f != SpacePillFit.Fit(6, 12f)) assertTrue("w=$w s=$s", SpacePillFit.need(f.padDp, f.fontSp, s) <= w)
+            // 0.52.4: the selected segment's icon shows whenever the picked step fits, and only then
+            if (f != SpacePillFit.Fit(6, 12f)) assertTrue("icon w=$w s=$s", SpacePillFit.showIcon(f, w.toFloat(), s))
         }
+        assertTrue(SpacePillFit.showIcon(SpacePillFit.pick(400f, 1f), 400f, 1f))
+        assertFalse("no room: the icon goes first", SpacePillFit.showIcon(SpacePillFit.pick(50f, 2f), 50f, 2f))
     }
 
     @Test fun greetingFollowsTheHour() {

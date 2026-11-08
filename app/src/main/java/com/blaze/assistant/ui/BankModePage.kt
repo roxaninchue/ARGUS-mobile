@@ -63,12 +63,12 @@ fun BankModePage() {
     Spacer(Modifier.height(18.dp))
     GroupHead("Banking apps", if (list.isEmpty()) "No banking apps found yet. Add yours below." else "Bank mode turns on for the ones that are switched on.")
     list.forEach { (pkg, name, on) ->
-        ToggleRow(name, if (simple) "" else pkg, on) { BankMode.setBank(pkg, !on); rev++ }
+        ToggleRow(name, if (simple) "" else pkg, on, icon = MenuIcon.BANK.vector()) { BankMode.setBank(pkg, !on); rev++ }
     }
     Spacer(Modifier.height(10.dp))
     BlazeButton(if (adding) "Done adding" else "Add an app", Modifier.fillMaxWidth(), kind = BtnKind.GHOST) { adding = !adding }
     if (adding) others.take(80).forEach { (pkg, name) ->
-        ToggleRow(name, if (simple) "" else pkg, false) { BankMode.setBank(pkg, true); rev++ }
+        ToggleRow(name, if (simple) "" else pkg, false, icon = MenuIcon.BANK.vector()) { BankMode.setBank(pkg, true); rev++ }
     }
     Spacer(Modifier.height(18.dp))
     GroupHead("If a bank still says no", "")

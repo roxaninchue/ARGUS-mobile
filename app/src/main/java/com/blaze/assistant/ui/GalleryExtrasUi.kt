@@ -59,6 +59,11 @@ import com.blaze.assistant.media.GalleryTools
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.RotateRight
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.Restore
 
 /** v0.34.0 Gallery extras: Clean up (duplicates + blurry), Trash, Backup plan, On this day and the basic editor. */
 
@@ -133,7 +138,7 @@ fun CleanUpDialog(all: List<Entry>, onTrash: (List<Entry>) -> Unit, onDismiss: (
             }
             if (groups.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
-                PillButton("Move ${groups.sumOf { it.size - 1 }} extra copies to Trash (${GalleryModel.size(GalleryTools.savings(groups))})", primary = true) {
+                PillButton("Move ${groups.sumOf { it.size - 1 }} extra copies to Trash (${GalleryModel.size(GalleryTools.savings(groups))})", primary = true, icon = Icons.Rounded.Delete) {
                     onTrash(groups.flatMap { it.drop(1) }.mapNotNull { byId[it.id] })
                 }
             }
@@ -146,7 +151,7 @@ fun CleanUpDialog(all: List<Entry>, onTrash: (List<Entry>) -> Unit, onDismiss: (
                 } }
             }
             val pick = blur.filter { it.id !in skipBlur }
-            if (pick.isNotEmpty()) PillButton("Move ${pick.size} blurry to Trash", primary = false) { onTrash(pick.mapNotNull { byId[it.id] }) }
+            if (pick.isNotEmpty()) PillButton("Move ${pick.size} blurry to Trash", primary = false, icon = Icons.Rounded.Delete) { onTrash(pick.mapNotNull { byId[it.id] }) }
             }
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PillButton("Close", primary = false, onClick = onDismiss) }
@@ -172,15 +177,15 @@ fun TrashDialog(onRestorePhone: (android.content.IntentSender) -> Unit, onDismis
                         DText(t.title.ifBlank { t.original.substringAfterLast('/') }, 13.5f, DialogColors.title)
                         DText("${GalleryTools.daysLeft(t, now)} days left", 11.5f)
                     }
-                    PillButton("Restore", primary = false) { scope.launch { GalleryClean.restore(ctx, t); items = GalleryClean.trashed(ctx); GalleryRepo.refresh() } }
+                    PillButton("Restore", primary = false, icon = Icons.Rounded.Restore) { scope.launch { GalleryClean.restore(ctx, t); items = GalleryClean.trashed(ctx); GalleryRepo.refresh() } }
                     Spacer(Modifier.width(4.dp))
-                    PillButton("Delete", primary = false, warm = true) { GalleryClean.deleteForever(ctx, t); items = GalleryClean.trashed(ctx) }
+                    PillButton("Delete", primary = false, warm = true, icon = Icons.Rounded.Delete) { GalleryClean.deleteForever(ctx, t); items = GalleryClean.trashed(ctx) }
                 }
             }
             if (phone.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
                 DText("${phone.size} phone photos are in Android's trash.", 13f, DialogColors.title)
-                PillButton("Restore them", primary = false) { GalleryClean.restorePhoneTrash(ctx, phone)?.let(onRestorePhone) }
+                PillButton("Restore them", primary = false, icon = Icons.Rounded.Restore) { GalleryClean.restorePhoneTrash(ctx, phone)?.let(onRestorePhone) }
             }
         }
     }
@@ -237,11 +242,11 @@ fun PhotoEditor(e: Entry, onDone: () -> Unit) {
                 else Image(p, "Preview", Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
             }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                PillButton("Rotate", primary = false) { rotate = (rotate + 90) % 360 }
+                PillButton("Rotate", primary = false, icon = Icons.AutoMirrored.Rounded.RotateRight) { rotate = (rotate + 90) % 360 }
                 listOf("Original" to 0f, "Square" to 1f, "4:3" to 4f / 3f, "16:9" to 16f / 9f, "9:16" to 9f / 16f).forEach { (n, r) ->
                     PillButton(n, primary = aspect == r) { aspect = r }
                 }
-                PillButton("Reset", primary = false) { rotate = 0; aspect = 0f; bright = 0f; contrast = 1f; sat = 1f }
+                PillButton("Reset", primary = false, icon = Icons.Rounded.RestartAlt) { rotate = 0; aspect = 0f; bright = 0f; contrast = 1f; sat = 1f }
             }
             @Composable fun Knob(label: String, v: Float, range: ClosedFloatingPointRange<Float>, set: (Float) -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

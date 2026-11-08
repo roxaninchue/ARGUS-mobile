@@ -186,7 +186,7 @@ internal fun RepliesPage(previewAccess: Boolean? = null) {
     V18Note("Every reply shows a card with the text first. Switch on auto-reply only for a conversation where you want ${BrandName.NAME} to send without asking.")
     if (convs.isEmpty()) V18Note("Conversations show up here after their next message arrives.")
     convs.forEach { cv ->
-        ToggleRow(cv.title, "${cv.app}${if (cv.group) " · group" else ""} · ${if (cv.key in auto) "sends without asking" else "asks first"}", cv.key in auto) {
+        ToggleRow(cv.title, "${cv.app}${if (cv.group) " · group" else ""} · ${if (cv.key in auto) "sends without asking" else "asks first"}", cv.key in auto, icon = MenuIcon.CHAT.vector()) {
             val on = cv.key !in auto; Conversations.setAuto(cv.key, on); auto = Conversations.auto() }
     }
 

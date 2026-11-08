@@ -28,6 +28,9 @@ import com.blaze.assistant.ui.BlazeShapes
 import com.blaze.assistant.ui.LocalBlaze
 import com.blaze.assistant.ui.PillButton
 import kotlinx.coroutines.delay
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Refresh
 
 /** 0.45.20: how long [stalled] has been true, in ms (0 when not), ticking twice a second only while it is. */
 @Composable
@@ -74,8 +77,8 @@ fun SearchErrorCard(title: String, detail: String, canShowSaved: Boolean, onRetr
         if (detail.isNotBlank()) { Spacer(Modifier.height(4.dp)); MText(detail, 13.sp, c.sub, maxLines = 3) }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            PillButton("Retry", primary = true, onClick = onRetry)
-            if (canShowSaved) PillButton("Show saved results", primary = false, onClick = onSaved)
+            PillButton("Retry", primary = true, icon = Icons.Rounded.Refresh, onClick = onRetry)
+            if (canShowSaved) PillButton("Show saved results", primary = false, icon = Icons.Rounded.History, onClick = onSaved)
         }
     }
 }

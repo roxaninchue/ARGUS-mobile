@@ -20,16 +20,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Logout
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.WorkspacePremium
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.CreditCard
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PrivacyTip
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,19 +57,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blaze.assistant.BrandName
+import com.blaze.assistant.ui.BlazeIconStyle
+import com.blaze.assistant.ui.IconTile
 import com.blaze.assistant.ui.SearchGlyph
 
 fun SpaceProfile.Icon.vector(): ImageVector = when (this) {
-    SpaceProfile.Icon.PROFILE -> Icons.Outlined.Person
-    SpaceProfile.Icon.SCHEDULE -> Icons.Outlined.Schedule
-    SpaceProfile.Icon.ACCOUNTS -> Icons.Outlined.Link
-    SpaceProfile.Icon.WALLET -> Icons.Outlined.CreditCard
-    SpaceProfile.Icon.SECURITY -> Icons.Outlined.Shield
-    SpaceProfile.Icon.SYSTEM -> Icons.Outlined.Settings
-    SpaceProfile.Icon.FEEDBACK -> Icons.Outlined.ChatBubbleOutline
-    SpaceProfile.Icon.ABOUT -> Icons.Outlined.Info
-    SpaceProfile.Icon.PLAN -> Icons.Outlined.WorkspacePremium
-    SpaceProfile.Icon.SIGN_OUT -> Icons.AutoMirrored.Outlined.Logout
+    // 0.52.4: Rounded, like every other icon in the app; these were Outlined
+    SpaceProfile.Icon.PROFILE -> Icons.Rounded.Person
+    SpaceProfile.Icon.SCHEDULE -> Icons.Rounded.Schedule
+    SpaceProfile.Icon.ACCOUNTS -> Icons.Rounded.Link
+    SpaceProfile.Icon.WALLET -> Icons.Rounded.CreditCard
+    SpaceProfile.Icon.SECURITY -> Icons.Rounded.Shield
+    SpaceProfile.Icon.SYSTEM -> Icons.Rounded.Settings
+    SpaceProfile.Icon.FEEDBACK -> Icons.Rounded.ChatBubbleOutline
+    SpaceProfile.Icon.ABOUT -> Icons.Rounded.Info
+    SpaceProfile.Icon.PLAN -> Icons.Rounded.WorkspacePremium
+    SpaceProfile.Icon.SIGN_OUT -> Icons.AutoMirrored.Rounded.Logout
+}
+
+/** System Preferences' rows (SpaceSettings.SYSTEM_ROWS ids) get their own icons. */
+internal fun systemRowIcon(page: String): ImageVector = when (page) {
+    "look" -> Icons.Rounded.Palette
+    "language" -> Icons.Rounded.Language
+    "voice" -> Icons.Rounded.RecordVoiceOver
+    "permissions" -> Icons.Rounded.PrivacyTip
+    "updates" -> Icons.Rounded.SystemUpdate
+    else -> Icons.Rounded.Settings
 }
 
 /**
@@ -143,11 +161,12 @@ private fun Hairline() {
 }
 
 @Composable
-private fun ProfileRow(r: SpaceProfile.Row, showIcon: Boolean = true, chevron: Boolean = true, onClick: () -> Unit) {
+private fun ProfileRow(r: SpaceProfile.Row, showIcon: Boolean = true, chevron: Boolean = true, icon: ImageVector? = null, onClick: () -> Unit) {
     val look = spaceLook()
     Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).testTag(SpaceTags.profileRow(r.id)).clickable(onClickLabel = r.label, onClick = onClick)
-        .semantics { role = Role.Button }.padding(horizontal = 22.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (showIcon) { Icon(r.icon.vector(), contentDescription = null, tint = look.ink, modifier = Modifier.size(26.dp)); Spacer(Modifier.width(18.dp)) }
+        .semantics { role = Role.Button }.padding(horizontal = 22.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        // 0.52.4: the shared round icon tile (the reference's rows) instead of a bare icon
+        if (showIcon) { IconTile(icon ?: r.icon.vector(), tint = look.accent); Spacer(Modifier.width(BlazeIconStyle.gap)) }
         Text(r.label, modifier = Modifier.weight(1f), style = SpaceType.body(18.sp, look.ink, FontWeight.Medium))
         if (chevron) ChevronMark(look.ink)
     }
@@ -160,7 +179,7 @@ fun SpaceSystemPage(onPage: (String) -> Unit) {
         ProfileGroup {
             SpaceSettings.SYSTEM_ROWS.forEachIndexed { i, (page, label) ->
                 if (i > 0) Hairline()
-                ProfileRow(SpaceProfile.Row(page, label, SpaceProfile.Icon.SYSTEM, page), showIcon = false) { onPage(page) }
+                ProfileRow(SpaceProfile.Row(page, label, SpaceProfile.Icon.SYSTEM, page), icon = systemRowIcon(page)) { onPage(page) }
             }
         }
     }

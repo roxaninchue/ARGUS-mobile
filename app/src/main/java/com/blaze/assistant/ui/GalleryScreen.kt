@@ -124,6 +124,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Lock
 
 /**
  * v0.30.0 Gallery: All / Albums / Images / Music / Videos, automatic and user albums, search, sort, multi-select, and a
@@ -462,8 +464,8 @@ fun GalleryScreen(onDismiss: () -> Unit) {
             onDismiss = { dialog = null },
             onConfirm = { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK) }) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PillButton("Home screen", primary = false) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM) }
-                PillButton("Lock screen", primary = false) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_LOCK) }
+                PillButton("Home screen", primary = false, icon = Icons.Rounded.Home) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM) }
+                PillButton("Lock screen", primary = false, icon = Icons.Rounded.Lock) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_LOCK) }
             }
         }
         is GDialog.PickAlbum -> AlbumPicker(d, albums.filter { it.id != d.moveFrom }, onDismiss = { dialog = null }) { target, newName ->

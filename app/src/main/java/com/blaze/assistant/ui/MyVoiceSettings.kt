@@ -262,7 +262,7 @@ fun MyVoiceCard(
             }
         }
         Body("Fast is slightly quicker; Best sounds a little smoother.", modifier = Modifier.padding(top = 4.dp))
-        ToggleRow("Keep my voice when it's slow", "Off: if your phone can't keep up, ${BrandName.NAME} switches to the phone voice and tells you", keepSlow, onKeepSlow)
+        ToggleRow("Keep my voice when it's slow", "Off: if your phone can't keep up, ${BrandName.NAME} switches to the phone voice and tells you", keepSlow, onToggle = onKeepSlow)
         Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
             if (ui.hasVoice && !setupOpen) ActionText("Re-record", color = c.accent, size = 10.sp, modifier = Modifier.clickable(onClick = onRerecord).padding(vertical = 10.dp).padding(end = 14.dp))
             if (ui.hasVoice) ActionText("Delete my voice", color = c.accent, size = 10.sp, modifier = Modifier.clickable(onClick = onDeleteVoice).padding(vertical = 10.dp).padding(end = 14.dp))

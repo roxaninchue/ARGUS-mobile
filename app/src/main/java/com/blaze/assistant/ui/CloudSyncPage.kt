@@ -77,7 +77,7 @@ fun CloudSyncPage(onSignIn: () -> Unit = {}) {
     Spacer(Modifier.height(4.dp))
     for (k in SyncKinds.ALL) {
         val on = k !in v.off
-        ToggleRow(SyncKinds.label(k), SyncKinds.detail(k), on) { CloudSync.setKind(k, !on) }
+        ToggleRow(SyncKinds.label(k), SyncKinds.detail(k), on, icon = MenuIcon.SYNC.vector()) { CloudSync.setKind(k, !on) }
     }
     SyncNote("Never synced: your ${BrandName.NAME} sign-in, connected accounts, API keys, PC pairing and phone permissions.", top = 12)
     if (!simple && v.skipped.isNotEmpty()) SyncNote("Too big to sync, kept on this phone: " + v.skipped.take(8).joinToString(", ") +

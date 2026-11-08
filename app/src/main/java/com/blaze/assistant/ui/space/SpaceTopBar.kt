@@ -16,6 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -40,7 +47,8 @@ import com.blaze.assistant.ui.SearchGlyph
  * Hark's top bar: a round button on the left (+ on Home, search in Chat, the menu in Projects), the centred segmented
  * pill Home | Chat | Projects (the selected segment a white pill with dark text), and the round avatar with the initial
  * on the right (tap = the profile page, long-press = light / dark). [privateChat]: the pill shows "Private" instead
- * (tap = leave). On narrow screens or large fonts the pill's labels shrink ([SpacePillFit]).
+ * (tap = leave). On narrow screens or large fonts the pill's labels shrink ([SpacePillFit]). 0.52.4: the selected
+ * segment shows its icon with the label (Home, chat bubble, folder), like the reference's "Scan" segment.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -85,7 +93,9 @@ fun SpaceTopBar(
 private fun SegmentedPill(tab: String, onTab: (String) -> Unit) {
     val look = spaceLook()
     BoxWithConstraints {
-        val fit = SpacePillFit.pick(maxWidth.value, LocalDensity.current.fontScale)
+        val fontScale = LocalDensity.current.fontScale
+        val fit = SpacePillFit.pick(maxWidth.value, fontScale)
+        val icons = SpacePillFit.showIcon(fit, maxWidth.value, fontScale)
         Row(Modifier.clip(SpaceShapes.pill).background(look.track).testTag(SpaceTags.PILL).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
             for ((id, label) in SpaceTabs.ALL) {
                 val on = id == tab
@@ -95,11 +105,25 @@ private fun SegmentedPill(tab: String, onTab: (String) -> Unit) {
                     .clickable(onClickLabel = "Show $label") { onTab(id) }
                     .semantics { selected = on; role = Role.Tab }
                     .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = fit.padDp.dp), contentAlignment = Alignment.Center) {
-                    Text(label, maxLines = 1, softWrap = false, style = SpaceType.body(fit.fontSp.sp, ink, FontWeight.Medium))
+                    // 0.52.4: the selected segment shows its icon with the label; the others stay text, as before
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (on && icons) {
+                            Icon(tabIcon(id), contentDescription = null, tint = ink, modifier = Modifier.size(SpacePillFit.iconDp(fit.fontSp).dp))
+                            Spacer(Modifier.width(SpacePillFit.ICON_GAP_DP.dp))
+                        }
+                        Text(label, maxLines = 1, softWrap = false, style = SpaceType.body(fit.fontSp.sp, ink, FontWeight.Medium))
+                    }
                 }
             }
         }
     }
+}
+
+/** The top bar's tab icons (Home, Chat, Projects). */
+internal fun tabIcon(tab: String): ImageVector = when (tab) {
+    SpaceTabs.CHAT -> Icons.Rounded.ChatBubbleOutline
+    SpaceTabs.PROJECTS -> Icons.Rounded.Folder
+    else -> Icons.Rounded.Home
 }
 
 @Composable
@@ -107,6 +131,10 @@ private fun PrivatePill(onLeave: () -> Unit) {
     val look = spaceLook()
     Box(Modifier.clip(SpaceShapes.pill).background(look.selectedFill).clickable(onClickLabel = "Leave private chat", onClick = onLeave)
         .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
-        Text("Private chat", style = SpaceType.body(15.sp, look.selectedInk, FontWeight.Medium))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Lock, contentDescription = null, tint = look.selectedInk, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(SpacePillFit.ICON_GAP_DP.dp))
+            Text("Private chat", style = SpaceType.body(15.sp, look.selectedInk, FontWeight.Medium))
+        }
     }
 }

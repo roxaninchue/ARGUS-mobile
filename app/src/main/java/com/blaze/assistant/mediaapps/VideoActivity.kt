@@ -137,6 +137,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.Refresh
 
 /**
  * v0.30.1 Blaze Video: its own full-screen app inside Blaze with the Library | Store pill (v0.34.1: the player is a
@@ -1081,12 +1083,12 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
             horizontalAlignment = Alignment.CenterHorizontally) {
             MText(error, 13.5.sp, Color.White, maxLines = 4)
             Spacer(Modifier.height(10.dp))
-            PillButton("Try again", primary = true) { p.prepare(); p.play() }
+            PillButton("Try again", primary = true, icon = Icons.Rounded.Refresh) { p.prepare(); p.play() }
         }
         // v0.34.0: Skip intro (learned per series), Up next countdown, recap / translation progress.
         val introAt = a.introEnd(cur)
         if (controls && VideoSmart.showSkip(pos, introAt)) Box(Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp)) {
-            PillButton("Skip intro", primary = true) { a.skipIntro() }
+            PillButton("Skip intro", primary = true, icon = Icons.Rounded.FastForward) { a.skipIntro() }
         }
         nextUp?.let { nx ->
             var left by remember(nx.key) { mutableStateOf(5) }
@@ -1100,7 +1102,7 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PillButton("Cancel", primary = false) { a.cancelUpNext() }
-                    PillButton("Play now", primary = true) { a.play(nx) }
+                    PillButton("Play now", primary = true, icon = Icons.Rounded.PlayArrow) { a.play(nx) }
                 }
             }
         }

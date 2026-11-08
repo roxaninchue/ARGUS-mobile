@@ -19,7 +19,10 @@ fun BubbleMenu(open: Boolean, items: List<Pair<String, (() -> Unit)?>>, onDismis
     val c = LocalBlaze.current
     DropdownMenu(open, onDismissRequest = onDismiss) {
         items.forEach { (label, act) ->
+            // 0.52.4: a leading icon from the label (Copy, Quote, Retry, React…), as in every other menu
+            val icon = MenuIcons.forLabel(label)
             DropdownMenuItem(text = { Text(label, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = if (act != null) c.ink else c.weak)) },
+                leadingIcon = if (icon != null) { { LeadIcon(icon.vector(), if (act != null) c.ink else c.weak) } } else null,
                 enabled = act != null, onClick = { onDismiss(); act?.invoke() }, modifier = Modifier.semantics { contentDescription = label })
         }
     }

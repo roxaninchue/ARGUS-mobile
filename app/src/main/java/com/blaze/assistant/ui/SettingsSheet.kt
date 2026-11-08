@@ -454,13 +454,19 @@ private fun QuotaPanel(key: String, pid: String, model: String, base: String) {
 }
 
 
+/**
+ * A settings switch row. 0.52.4: it leads with a round icon tile ([icon]; by default the one its title maps to,
+ * [MenuIcons.forSetting], so every settings page gets icons without each caller naming one). Pass null for none.
+ */
 @Composable
-internal fun ToggleRow(title: String, sub: String, on: Boolean, onToggle: () -> Unit) {
+internal fun ToggleRow(title: String, sub: String, on: Boolean, icon: androidx.compose.ui.graphics.vector.ImageVector? = MenuIcons.forSetting(title).vector(),
+                       onToggle: () -> Unit) {
     val c = LocalBlaze.current.mono
     Row(
-        Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClick = onToggle).padding(vertical = 16.dp),
+        Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClick = onToggle).padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (icon != null) { IconTile(icon, tint = LocalBlaze.current.accent); Spacer(Modifier.width(BlazeIconStyle.gap)) }
         Column(Modifier.weight(1f)) {
             Text(title, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
             Text(sub, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))

@@ -17,6 +17,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -38,7 +45,9 @@ import com.blaze.assistant.agent.ChatMeta
 import com.blaze.assistant.agent.Project
 import com.blaze.assistant.ui.BackTitle
 import com.blaze.assistant.ui.BlazeDialog
+import com.blaze.assistant.ui.BlazeIconStyle
 import com.blaze.assistant.ui.BlazeMenu
+import com.blaze.assistant.ui.IconTile
 import com.blaze.assistant.ui.BlazeTextField
 import com.blaze.assistant.ui.ChatRow
 import com.blaze.assistant.ui.RenameChatDialog
@@ -91,10 +100,9 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
             Spacer(Modifier.height(12.dp))
             SpaceCard(tag = SpaceTags.projectRow(p.id), onClick = { onOpen(p.id) }, onClickLabel = "Open ${p.name}") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(44.dp).clip(CircleShape).background(look.tile), contentAlignment = Alignment.Center) {
-                        Text(SpaceProjectRows.initial(p.name), style = SpaceType.headline(20.sp, look.ink))
-                    }
-                    Spacer(Modifier.width(14.dp))
+                    // 0.52.4: the shared round icon tile (a folder) instead of the name's initial
+                    IconTile(Icons.Rounded.Folder, tint = look.accent)
+                    Spacer(Modifier.width(BlazeIconStyle.gap))
                     Column(Modifier.weight(1f)) {
                         Text(p.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.headline(22.sp, look.ink))
                         Text(SpaceProjectRows.countLabel(SpaceProjectRows.count(p.chats, existing)), style = SpaceType.body(14.sp, look.sub))
@@ -136,7 +144,7 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
         SpacePillButton("New chat in this project", { onNewChat(open.id) }, primary = true, plus = true)
         Spacer(Modifier.height(12.dp))
         SpaceCard {
-            SpaceHeadline("Instructions", size = 22.sp)
+            CardHead(Icons.Rounded.EditNote) { SpaceHeadline("Instructions", size = 22.sp) }
             Spacer(Modifier.height(8.dp))
             BlazeTextField(ins, { ins = it; onInstructions(open.id, it) }, "What ${BrandName.NAME} should know in every chat here",
                 modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 72.dp)
@@ -144,6 +152,8 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
         Spacer(Modifier.height(12.dp))
         SpaceCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(Icons.Rounded.PushPin, tint = look.accent, small = true)
+                Spacer(Modifier.width(10.dp))
                 SpaceHeadline("Brief", Modifier.weight(1f), size = 22.sp)
                 // The real count (BlazeDb.tokens) against the hard cap; typing or pasting past it is cut at the cap.
                 val used = P.tokens(brief)
@@ -159,7 +169,7 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
         Spacer(Modifier.height(12.dp))
         val list = open.chats.mapNotNull { id -> chats.firstOrNull { it.id == id } }
         SpaceCard {
-            SpaceHeadline("Chats", size = 22.sp)
+            CardHead(Icons.Rounded.ChatBubbleOutline) { SpaceHeadline("Chats", size = 22.sp) }
             Spacer(Modifier.height(6.dp))
             list.forEach { ch ->
                 Box {
@@ -171,13 +181,23 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
             if (list.isEmpty()) Text("No chats yet. Start one with New chat: it keeps this project's instructions and brief.", style = SpaceType.body(15.sp, look.sub))
         }
         Spacer(Modifier.height(12.dp))
-        SpacePillButton("Delete project (chats stay)", { onDelete(open.id) })
+        SpacePillButton("Delete project (chats stay)", { onDelete(open.id) }, icon = Icons.Rounded.Delete)
         Spacer(Modifier.height(110.dp))
     }
     renaming?.let { ch -> RenameChatDialog(ch.title, onDone = { t -> renaming = null; if (t.isNotBlank()) onRenameChat(ch.id, t) }, onDismiss = { renaming = null }) }
     deleting?.let { ch -> BlazeDialog(title = "Delete \u201c${ch.title.ifBlank { "this chat" }.take(40)}\u201d?",
         body = "Its messages are removed from this phone. The project, its instructions and its other chats stay.",
         confirm = "Delete", onConfirm = { deleting = null; onDeleteChat(ch.id) }, warm = true, dismiss = "Keep", onDismiss = { deleting = null }) }
+}
+
+/** A project page card's heading with its small icon tile on the left. */
+@Composable
+private fun CardHead(icon: ImageVector, title: @Composable () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconTile(icon, tint = spaceLook().accent, small = true)
+        Spacer(Modifier.width(10.dp))
+        title()
+    }
 }
 
 /** The Needs you (filled) / Working (outlined) chip on a project card. */

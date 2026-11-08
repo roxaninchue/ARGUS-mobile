@@ -95,8 +95,18 @@ object SpaceInsets {
 object SpacePillFit {
     data class Fit(val padDp: Int, val fontSp: Float)
 
-    /** ~0.58 em per character of "HomeChatProjects" (16 chars) + padding per segment + the 8 dp frame. */
-    fun need(padDp: Int, fontSp: Float, fontScale: Float): Float = 16 * fontSp * fontScale * 0.58f + 3 * 2 * padDp + 8
+    /**
+     * ~0.58 em per character of "HomeChatProjects" (16 chars) + padding per segment + the 8 dp frame + the selected
+     * segment's icon and its gap ([iconDp], 0.52.4).
+     */
+    fun need(padDp: Int, fontSp: Float, fontScale: Float): Float = 16 * fontSp * fontScale * 0.58f + 3 * 2 * padDp + 8 + iconDp(fontSp) + ICON_GAP_DP
+
+    /** The selected segment's icon: a little larger than its label's cap height. */
+    fun iconDp(fontSp: Float): Float = fontSp + 3f
+    const val ICON_GAP_DP = 6f
+
+    /** The selected segment's icon shows only when the picked step really fits (the last-resort step drops it). */
+    fun showIcon(fit: Fit, width: Float, fontScale: Float): Boolean = need(fit.padDp, fit.fontSp, fontScale) <= width
 
     fun pick(width: Float, fontScale: Float): Fit = when {
         need(18, 15f, fontScale) <= width -> Fit(18, 15f)

@@ -133,6 +133,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 
 /**
  * v0.30.1 Blaze Music: its own full-screen app inside Blaze (like Blaze Browser and Terminal), with the
@@ -520,7 +521,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     MText(np.error, 12.5.sp, com.blaze.assistant.ui.BlazeBrush.orange, maxLines = 3, modifier = Modifier.weight(1f))
-                    PillButton("Skip", primary = false) { ctl?.let { it.seekToNext(); it.prepare(); it.play() } }
+                    PillButton("Skip", primary = false, icon = Icons.Rounded.SkipNext) { ctl?.let { it.seekToNext(); it.prepare(); it.play() } }
                 }
             }
             // 0.45.20: honest network line (weak network / retrying with Retry / offline from saved) and the offline skip chip.
@@ -676,7 +677,7 @@ private fun LyricsView(t: Track, pos: Long, karaoke: Boolean = false) {
     val r = res
     when {
         err.isNotBlank() -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            MText(err, 13.sp, c.sub, maxLines = 3); Spacer(Modifier.height(8.dp)); PillButton("Try again", primary = false) { tries++ }
+            MText(err, 13.sp, c.sub, maxLines = 3); Spacer(Modifier.height(8.dp)); PillButton("Try again", primary = false, icon = Icons.Rounded.Refresh) { tries++ }
         }
         r == null -> MText("Looking for lyrics\u2026", 14.sp, c.sub)
         r.instrumental -> MText("Instrumental", 16.sp, c.sub)
@@ -863,7 +864,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                     item {
                         Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             MText("All songs \u00b7 ${songs.size}", 15.sp, c.ink, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                            if (songs.isNotEmpty()) { PillButton("Shuffle", primary = false) { playList(songs, (songs.indices).random(), true) } }
+                            if (songs.isNotEmpty()) { PillButton("Shuffle", primary = false, icon = Icons.Rounded.Shuffle) { playList(songs, (songs.indices).random(), true) } }
                         }
                     }
                     if (songs.isEmpty()) item {
@@ -875,7 +876,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                     val l = liked.mapNotNull { byKey[it] }
                     if (l.isEmpty()) item { EmptyState("No liked songs", "Tap the heart on the player to keep a song here.") }
                     else item { Row(Modifier.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PillButton("Play", primary = true) { playList(l, 0, false) }; PillButton("Shuffle", primary = false) { playList(l, l.indices.random(), true) } } }
+                        PillButton("Play", primary = true, icon = Icons.Rounded.PlayArrow) { playList(l, 0, false) }; PillButton("Shuffle", primary = false, icon = Icons.Rounded.Shuffle) { playList(l, l.indices.random(), true) } } }
                     itemsIndexed(l, key = { _, t -> "l" + t.key }) { i, t -> SongRow(t, l, i) }
                 }
                 section == "artists" || section == "albums" -> {
@@ -898,7 +899,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         item {
                             Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                 BackButton({ group = null }); MText(g, 17.sp, c.ink, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                                PillButton("Play", primary = true) { playList(list, 0, false) }
+                                PillButton("Play", primary = true, icon = Icons.Rounded.PlayArrow) { playList(list, 0, false) }
                             }
                         }
                         itemsIndexed(list, key = { _, t -> "g" + t.key }) { i, t -> SongRow(t, list, i) }
@@ -945,7 +946,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         }
                         if (tracks.isEmpty()) item { EmptyState("Empty playlist", "Use \u22ee \u2192 Add to playlist on any song.") }
                         else item { Row(Modifier.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            PillButton("Play", primary = true) { playList(tracks, 0, false) }; PillButton("Shuffle", primary = false) { playList(tracks, tracks.indices.random(), true) } } }
+                            PillButton("Play", primary = true, icon = Icons.Rounded.PlayArrow) { playList(tracks, 0, false) }; PillButton("Shuffle", primary = false, icon = Icons.Rounded.Shuffle) { playList(tracks, tracks.indices.random(), true) } } }
                         // Indices into open.keys (a missing song keeps its slot so moves stay right).
                         open.keys.forEachIndexed { pi, k ->
                             val t = byKey[k] ?: return@forEachIndexed
@@ -1044,13 +1045,13 @@ private fun ForYou(songs: List<Track>, liked: List<String>, playList: (List<Trac
     var busy by remember { mutableStateOf("") }
     Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("${BrandName.NAME} DJ", primary = true) {
+            PillButton("${BrandName.NAME} DJ", primary = true, icon = Icons.Rounded.Headphones) {
                 val svc = MusicService.current
                 if (svc == null) android.widget.Toast.makeText(ctx, "Play any song first, then start ${BrandName.NAME} DJ.", android.widget.Toast.LENGTH_SHORT).show()
                 else { svc.startDj(true); android.widget.Toast.makeText(ctx, "${BrandName.NAME} DJ is on: it keeps the music going with songs you love.", android.widget.Toast.LENGTH_SHORT).show() }
             }
-            PillButton("Wrapped", primary = false) { wrapped = MusicExtras.wrappedText(MusicExtras.wrapped("year")) }
-            PillButton("Import playlist", primary = false) { importing = true }
+            PillButton("Wrapped", primary = false, icon = Icons.Rounded.AutoAwesome) { wrapped = MusicExtras.wrappedText(MusicExtras.wrapped("year")) }
+            PillButton("Import playlist", primary = false, icon = Icons.AutoMirrored.Rounded.PlaylistAdd) { importing = true }
             PillButton(if (busy.isNotBlank()) busy else "Fix tags & covers", primary = false) {
                 if (busy.isNotBlank()) return@PillButton
                 busy = "Fixing\u2026"

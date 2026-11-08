@@ -31,6 +31,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -182,7 +185,7 @@ fun SpaceSpotlightPanel(
             }
             if (composer.query.isNotEmpty()) Box(Modifier.size(40.dp).clip(CircleShape).clickable { composer.query = "" }
                 .semantics { contentDescription = "Clear the search"; role = Role.Button }, contentAlignment = Alignment.Center) {
-                Text("\u2715", style = SpaceType.body(15.sp, look.sub))
+                Icon(Icons.Rounded.Close, contentDescription = null, tint = look.sub, modifier = Modifier.size(18.dp))
             }
         }
         Box(Modifier.fillMaxWidth().padding(horizontal = 18.dp).height(1.dp).background(look.hair))

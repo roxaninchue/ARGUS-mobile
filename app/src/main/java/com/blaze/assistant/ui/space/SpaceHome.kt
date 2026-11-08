@@ -19,6 +19,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Login
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.Downloading
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -35,6 +42,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blaze.assistant.BrandName
+import com.blaze.assistant.ui.BlazeIconStyle
+import com.blaze.assistant.ui.IconTile
 
 /**
  * The shell's tab requests from outside the composition (MainActivity: a notification, a secure form or a shared text
@@ -97,10 +106,12 @@ fun SpaceHomeScreen(
                     Text("Sign in to your ${BrandName.NAME} account and it starts working for you right away. No keys, no settings.",
                         style = SpaceType.body(17.sp, look.ink))
                     Spacer(Modifier.height(16.dp))
-                    SpacePillButton("Sign in", onSignIn, primary = true)
+                    SpacePillButton("Sign in", onSignIn, primary = true, icon = Icons.AutoMirrored.Rounded.Login)
                 }
                 SpaceHomeCards.Card.SETUP -> SpaceCard(tag = SpaceTags.SETUP_CARD, onClick = onSetup, onClickLabel = "Show setup") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconTile(Icons.Rounded.Downloading, tint = look.accent)
+                        Spacer(Modifier.width(BlazeIconStyle.gap))
                         Text("Finishing setup", modifier = Modifier.weight(1f), style = SpaceType.body(18.sp, look.ink, FontWeight.Medium))
                         Text("${state.setupPercent}%", style = SpaceType.body(16.sp, look.accent, FontWeight.Medium))
                     }
@@ -119,7 +130,7 @@ fun SpaceHomeScreen(
                                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = SpaceType.body(17.sp, look.ink))
                         }
                         Spacer(Modifier.height(14.dp))
-                        SpaceChip("Open in chat", onOpenChat)
+                        SpaceChip("Open in chat", onOpenChat, icon = Icons.Rounded.ChatBubbleOutline)
                     }
                 }
                 SpaceHomeCards.Card.PROJECTS -> SpaceCard(tag = SpaceTags.PROJECTS_CARD) {
@@ -129,8 +140,9 @@ fun SpaceHomeScreen(
                         if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(look.hair))
                         Row(Modifier.fillMaxWidth().clickable(onClickLabel = "Open $name") { onOpenProject(id) }.padding(vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(10.dp).clip(CircleShape).background(androidx.compose.ui.graphics.Color(SpacePalette.ELECTRIC)))
-                            Spacer(Modifier.width(14.dp))
+                            // 0.52.4: a folder tile instead of a dot, in the shared icon-tile style
+                            IconTile(Icons.Rounded.Folder, tint = look.accent)
+                            Spacer(Modifier.width(BlazeIconStyle.gap))
                             Text(name.ifBlank { "Untitled project" }, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 style = SpaceType.body(17.sp, look.ink))
                             ChevronMark(look.sub)
@@ -141,7 +153,11 @@ fun SpaceHomeScreen(
                         style = SpaceType.body(15.sp, look.accent, FontWeight.Medium))
                 }
                 SpaceHomeCards.Card.SUGGESTIONS -> SpaceCard(tag = SpaceTags.SUGGESTIONS) {
-                    Text("Try asking", style = SpaceType.body(15.sp, look.sub))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = look.sub, modifier = Modifier.size(BlazeIconStyle.buttonIcon))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Try asking", style = SpaceType.body(15.sp, look.sub))
+                    }
                     Spacer(Modifier.height(12.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         SpaceGreeting.SUGGESTIONS.forEach { s -> SpaceChip(s, { onAsk(s) }) }

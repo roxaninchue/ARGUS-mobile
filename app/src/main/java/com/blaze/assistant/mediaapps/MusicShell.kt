@@ -311,7 +311,7 @@ internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, open
                 Column(Modifier.padding(16.dp)) {
                     Text("Nothing in your library", color = c.sub, fontSize = 13.sp)
                     Spacer(Modifier.height(8.dp))
-                    PillButton("Search online", primary = true) { onStore() }
+                    PillButton("Search online", primary = true, icon = Icons.Rounded.Search) { onStore() }
                 }
             }
             if (cat in listOf("all", "artists")) items(artists.take(if (cat == "all") 3 else 20), key = { it.id }) { t -> ResultRow(t, byKey, round = true) { openTile(t) } }
@@ -507,7 +507,7 @@ internal fun MusicCreatePage(onCreated: (MusicHome.Tile) -> Unit, onAskBlaze: (S
             BlazeTextField(name, { name = it }, "Name", Modifier.weight(1f))
         }
         Spacer(Modifier.height(12.dp))
-        PillButton("Create", primary = true) {
+        PillButton("Create", primary = true, icon = Icons.Rounded.Add) {
             val lists = MediaLib.playlists.value
             val n = PlaylistOps.uniqueName(lists, PlaylistOps.cleanName(name).ifBlank { "My playlist" })
             val id = MediaLib.newPlaylistId()
@@ -526,7 +526,7 @@ internal fun MusicCreatePage(onCreated: (MusicHome.Tile) -> Unit, onAskBlaze: (S
             listOf("Make a chill playlist", "Songs for a workout", "Focus music for studying").forEach { s -> SmallChip(s, Icons.Rounded.AutoAwesome) { onAskBlaze(s) } }
         }
         Spacer(Modifier.height(10.dp))
-        PillButton("Ask ${BrandName.NAME}", primary = false) { onAskBlaze(ask.ifBlank { "Make a chill playlist" }) }
+        PillButton("Ask ${BrandName.NAME}", primary = false, icon = Icons.Rounded.AutoAwesome) { onAskBlaze(ask.ifBlank { "Make a chill playlist" }) }
         Spacer(Modifier.height(150.dp))
     }
 }
@@ -594,7 +594,11 @@ internal fun LyricsCard(t: Track, pos: Long, onOpen: () -> Unit) {
     } else r.plain.lines().filter { it.isNotBlank() }.take(4)
     Column(Modifier.fillMaxWidth().padding(vertical = 10.dp).clip(BlazeShapes.medium).glass(BlazeShapes.medium, GlassIntensity.Medium, shadow = false)
         .clickable(role = Role.Button, onClickLabel = "Open lyrics") { onOpen() }.padding(16.dp)) {
-        Text("Lyrics", color = c.sub, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Lyrics, contentDescription = null, tint = c.sub, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Lyrics", color = c.sub, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        }
         Spacer(Modifier.height(6.dp))
         lines.forEachIndexed { i, l -> Text(l, color = if (i == 0) c.ink else c.sub, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2) }
     }

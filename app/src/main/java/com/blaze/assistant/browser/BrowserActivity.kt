@@ -589,7 +589,11 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
 
 @Composable
 private fun VpnBadge(text: String, color: Color, onClick: () -> Unit) {
-    Box(Modifier.padding(end = 4.dp).clip(Sky.pill).background(color.copy(alpha = 0.18f)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 3.dp)) {
+    Row(Modifier.padding(end = 4.dp).clip(Sky.pill).background(color.copy(alpha = 0.18f)).clickable(onClick = onClick).padding(start = 6.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        // 0.52.4: a shield leads the VPN state, so it reads as an icon + word like the rest of the bar
+        Icon(Icons.Rounded.Shield, contentDescription = null, tint = color, modifier = Modifier.size(12.dp))
+        Spacer(Modifier.width(3.dp))
         Text(text, color, 11, weight = FontWeight.SemiBold) }
 }
 
@@ -647,14 +651,15 @@ private fun display(u: String) = if (u == "about:blank") "" else if (SavedPages.
 @Composable private fun EntryList(title: String, l: List<BrowserData.Entry>, empty: String, open: (String) -> Unit) {
     Text(title, Glass.text, 16, weight = FontWeight.SemiBold, modifier = Modifier.padding(start = 18.dp, top = 6.dp, bottom = 8.dp))
     if (l.isEmpty()) Text(empty, Glass.sub, 13, modifier = Modifier.padding(start = 18.dp, bottom = 16.dp))
-    LazyColumn(Modifier.heightIn(max = 420.dp).padding(horizontal = 8.dp)) { items(l.take(150)) { e -> EntryRow(e) { open(e.url) } } }
+    // 0.52.4: each row leads with the list's icon (a bookmark or the history clock) in the shared round tile
+    val icon = if (title == "Bookmarks") Icons.Rounded.Bookmark else Icons.Rounded.History
+    LazyColumn(Modifier.heightIn(max = 420.dp).padding(horizontal = 8.dp)) { items(l.take(150)) { e -> EntryRow(e, icon) { open(e.url) } } }
 }
 
-@Composable private fun EntryRow(e: BrowserData.Entry, onClick: () -> Unit) {
+@Composable private fun EntryRow(e: BrowserData.Entry, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(32.dp).clip(CircleShape).background(Glass.raised2), contentAlignment = Alignment.Center) {
-            Text(display(e.url).take(1).uppercase().ifBlank { "\u2022" }, Glass.text, 13, weight = FontWeight.SemiBold) }
+        com.blaze.assistant.ui.IconTile(icon, tint = Glass.text, small = true)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Text(e.title.ifBlank { e.url }, Glass.text, 14, maxLines = 1)

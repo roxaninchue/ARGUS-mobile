@@ -1,3 +1,9 @@
+## Unreleased (after v0.52.3, version not bumped): icons everywhere, and the app is a size smaller by default
+- Icons instead of plain text across the app: the selected Home / Chat / Projects segment shows its icon with its name, every menu row (chat and project menus, the message menu, music, video, movies, gallery, the browser) has a leading icon, and the + menu and the Autopilot / Plan chip use icons instead of dots.
+- List rows lead with a round tinted icon tile: the setup screen's items, the profile and System Preferences rows, settings switches, projects, recent projects on Home, project chats, Spotlight results and browser bookmarks and history. One shared style (size, shape, tint) everywhere.
+- Buttons with icons: Play, Shuffle, Skip, Try again, Download, Skip intro, Play now, Restore, Delete, Rotate, Reset, Sign in, Retry and more.
+- The app now draws at 90 % by default (Settings › Appearance › Size calls 90 % "Default"; 100 % is the phone's own size). A size you picked before stays as it is.
+
 ## v0.52.3: ARGUS takes the Hark design, over a view of the Earth from space, with a one-screen setup (versionCode 190)
 - A new look everywhere: a round button, a Home | Chat | Projects switch and your avatar at the top; big rounded cards with serif headlines; a floating "Message" box at the bottom. It all sits on a view of the Earth from space in the ARGUS colours (black, Argus Blue, Electric Blue, Steel), dark or light.
 - Home is a stack of cards: a greeting for the time of day, what needs you (sign in, the rest of setup), the latest answer, your recent projects and a few things to ask. Back, /home, Music and Video bring you back to it; questions, approvals and forms still open the chat by themselves.

@@ -79,7 +79,7 @@ fun DoingPage() {
     if (routines.isEmpty()) Text("Nothing scheduled yet. Ask me, for example \u201cevery weekday at 7, read me the morning brief\u201d.",
         modifier = Modifier.padding(vertical = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
     routines.sortedByDescending { it.enabled }.forEach { r ->
-        ToggleRow(DoingLogic.friendlyName(r.name), DoingLogic.whenLine(r.days, r.hour, r.minute, r.at, r.everyMinutes), r.enabled) {
+        ToggleRow(DoingLogic.friendlyName(r.name), DoingLogic.whenLine(r.days, r.hour, r.minute, r.at, r.everyMinutes), r.enabled, icon = MenuIcon.TIMER.vector()) {
             com.blaze.assistant.routine.Routines.setEnabled(r.id, !r.enabled)
         }
     }

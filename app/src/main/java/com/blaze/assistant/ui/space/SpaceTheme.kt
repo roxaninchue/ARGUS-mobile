@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -223,7 +225,7 @@ fun SpaceHeadline(text: String, modifier: Modifier = Modifier, size: TextUnit = 
 /** Hark's full-width pill button ("+ Create a new panel"). [primary] = white (dark) / Argus Blue (light), else the card fill. */
 @Composable
 fun SpacePillButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, primary: Boolean = false, plus: Boolean = false,
-                    tag: String? = null, enabled: Boolean = true) {
+                    tag: String? = null, enabled: Boolean = true, icon: ImageVector? = null) {
     val look = spaceLook()
     val fill = if (primary) look.primaryFill else look.card
     val ink = if (primary) look.primaryInk else look.ink
@@ -234,16 +236,22 @@ fun SpacePillButton(label: String, onClick: () -> Unit, modifier: Modifier = Mod
         .padding(horizontal = 20.dp, vertical = 14.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically) {
         if (plus) { PlusMark(ink, 20.dp); Spacer(Modifier.width(10.dp)) }
+        else if (icon != null) { Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(com.blaze.assistant.ui.BlazeIconStyle.tileIcon)); Spacer(Modifier.width(10.dp)) }
         Text(label, style = SpaceType.body(17.sp, ink, FontWeight.Medium))
     }
 }
 
-/** Hark's white action chip under a message ("Connect Google"). */
+/** Hark's white action chip under a message ("Connect Google"). 0.52.4: [icon] leads the label when given. */
 @Composable
-fun SpaceChip(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SpaceChip(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
     val look = spaceLook()
-    Box(modifier.clip(SpaceShapes.pill).background(look.primaryFill).clickable(onClickLabel = label, onClick = onClick)
-        .semantics { role = Role.Button }.padding(horizontal = 18.dp, vertical = 11.dp)) {
+    Row(modifier.clip(SpaceShapes.pill).background(look.primaryFill).clickable(onClickLabel = label, onClick = onClick)
+        .semantics { role = Role.Button }.padding(start = if (icon != null) 14.dp else 18.dp, end = 18.dp, top = 11.dp, bottom = 11.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = look.primaryInk, modifier = Modifier.size(com.blaze.assistant.ui.BlazeIconStyle.buttonIcon))
+            Spacer(Modifier.width(8.dp))
+        }
         Text(label, style = SpaceType.body(15.sp, look.primaryInk, FontWeight.Medium))
     }
 }

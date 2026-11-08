@@ -37,14 +37,15 @@ object LookLogic {
     /**
      * 0.52.4 Settings › Appearance › Size: how big the whole app draws, as a factor on the phone's own density and font
      * scale (1.0 = as the phone sets it). Steps from 80 % to 120 %; anything stored outside them (an old or synced value,
-     * a typo) snaps to the nearest step.
+     * a typo) snaps to the nearest step. 0.52.4: the default is 90 % (the app read too large at the phone's own size);
+     * the slider calls 90 % "Default" and shows 100 % as "100%".
      */
     val SCALES = listOf(0.80f, 0.85f, 0.90f, 0.95f, 1.00f, 1.10f, 1.20f)
-    const val SCALE_DEFAULT = 1.00f
+    const val SCALE_DEFAULT = 0.90f
     fun snapScale(v: Float?): Float = if (v == null || v.isNaN()) SCALE_DEFAULT else SCALES.minBy { kotlin.math.abs(it - v) }
     fun parseScale(s: String?): Float = snapScale(s?.trim()?.toFloatOrNull())
     fun scaleIndex(v: Float): Int = SCALES.indexOf(snapScale(v))
-    fun scaleLabel(v: Float): String = when (val k = snapScale(v)) { 1.00f -> "Default"; else -> "${Math.round(k * 100)}%" }
+    fun scaleLabel(v: Float): String = snapScale(v).let { k -> if (k == SCALE_DEFAULT) "Default" else "${Math.round(k * 100)}%" }
 }
 
 /** Look & feel prefs as live state: the accent (and the reload cloud sync calls). */

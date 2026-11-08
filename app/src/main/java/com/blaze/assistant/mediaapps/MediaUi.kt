@@ -130,6 +130,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.VpnKey
 
 /**
  * v0.30.1: pieces shared by Blaze Music and Blaze Video: the Library | Store pill (the same look as the
@@ -639,13 +641,13 @@ fun JamendoSetup(text: String, onSaved: () -> Unit) {
         // v0.30.5 (Blazeinchue: "a simple button to take them where they have to go, or simply asking Blaze to get it"):
         // Blaze can do it (its browser + the jamendo_setup tool), or the dev portal opens in the browser.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Ask ${BrandName.NAME} to set it up", primary = true) {
+            PillButton("Ask ${BrandName.NAME} to set it up", primary = true, icon = Icons.Rounded.AutoAwesome) {
                 com.blaze.assistant.agent.Agent.send("Set up the Jamendo Store in ${BrandName.NAME} Music for me: get a free Jamendo API client_id on " +
                     JamendoSource.DEVPORTAL + " (ask me before creating an account) and save it with " + JamendoSource.TOOL + ".")
                 runCatching { ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java)
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
             }
-            PillButton("Get a free ID", primary = false) {
+            PillButton("Get a free ID", primary = false, icon = Icons.Rounded.VpnKey) {
                 runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(JamendoSource.DEVPORTAL))
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
             }
@@ -784,7 +786,7 @@ fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: 
                     err.isNotBlank() -> {
                         MText(err, 13.sp, BlazeBrush.orange, maxLines = 5)
                         Spacer(Modifier.height(10.dp))
-                        PillButton("Try again", primary = false) { tries++ }
+                        PillButton("Try again", primary = false, icon = Icons.Rounded.Refresh) { tries++ }
                     }
                     d == null -> MText("Getting qualities\u2026", 13.sp, DialogColors.body)
                     choices.isEmpty() -> MText("No downloadable " + (if (kind == "video") "video" else "audio") + " file is offered for this one.", 13.sp, DialogColors.body, maxLines = 3)
@@ -838,7 +840,7 @@ fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: 
                     PillButton("Close", primary = false, onClick = onDismiss)
                     if (d != null && choices.isNotEmpty()) {
                         PillButton(if (kind == "video") "Watch" else "Play", primary = false) { if (VideoSmart.warnFirst(streamBytes, metered)) confirmWatch = true else onPlay(d) }
-                        PillButton("Download", primary = true) { choices.firstOrNull { it.id == pick }?.let { onDownload(d, it) } }
+                        PillButton("Download", primary = true, icon = Icons.Rounded.Download) { choices.firstOrNull { it.id == pick }?.let { onDownload(d, it) } }
                     }
                 }
             }
