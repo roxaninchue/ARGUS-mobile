@@ -67,7 +67,7 @@ class SpaceLogicTest {
     }
 
     @Test fun thePillShrinksToFit() {
-        assertEquals(SpacePillFit.Fit(20, 17f), SpacePillFit.pick(400f, 1f))
+        assertEquals(SpacePillFit.Fit(18, 15f), SpacePillFit.pick(400f, 1f))
         // narrower rooms and bigger fonts step down, never up
         val widths = listOf(400f, 300f, 240f, 200f, 120f)
         val picks = widths.map { SpacePillFit.pick(it, 1.3f) }

@@ -665,30 +665,30 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
         hints.isEmpty() -> com.blaze.assistant.agent.ComposerHints.DEFAULT
         else -> hints[hintIdx.coerceIn(0, hints.size - 1)]
     }
-    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 10.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, end = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, top = 6.dp, bottom = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_BOTTOM_DP.dp)) {
         if (chip.isNotBlank()) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(horizontal = 10.dp, vertical = 4.dp)) {
                 ButtonText(chip, color = c.onAccent, size = 12.sp)
             }
         }
-        val pill = RoundedCornerShape(32.dp)
-        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp)
+        val pill = RoundedCornerShape(28.dp)
+        Row(Modifier.fillMaxWidth().heightIn(min = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_MIN_DP.dp)
             .shadow(12.dp, pill, clip = false, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
             .clip(pill).background(ComposerCard.fill(c)).border(1.dp, ComposerCard.rim(c), pill)
             .testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER)
             .semantics { contentDescription = "Message box" }
-            .padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f).padding(start = 16.dp, end = 6.dp, top = 10.dp, bottom = 10.dp)) {
+            .padding(start = 6.dp, end = 6.dp, top = 3.dp, bottom = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f).padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp)) {
                 if (empty) androidx.compose.animation.AnimatedContent(targetState = placeholder, label = "hint",
                     transitionSpec = {
                         (fadeIn(tween(420)) + androidx.compose.animation.slideInVertically(tween(420)) { it / 3 }) togetherWith
                             (fadeOut(tween(300)) + androidx.compose.animation.slideOutVertically(tween(300)) { -it / 3 })
                     }) { t ->
                     Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = 18.sp, lineHeight = 24.sp, color = c.sub))
+                        style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp, color = c.sub))
                 }
                 BasicTextField(value = value, onValueChange = onValue,
-                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 18.sp, lineHeight = 24.sp, color = c.ink),
+                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, lineHeight = 22.sp, color = c.ink),
                     cursorBrush = SolidColor(c.accent), maxLines = if (expanded) 14 else 6,
                     // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
                     keyboardOptions = ComposerKeys.Message,
@@ -702,13 +702,13 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
             if (onCall != null) ComposerIcon(Icons.Rounded.RecordVoiceOver, "Voice chat with ${BrandName.NAME}", onClick = onCall)
             if (onSlash != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSlash).semantics { contentDescription = "Commands" },
                 contentAlignment = Alignment.Center) { Text("/", style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = c.sub)) }
-            Box(Modifier.size(44.dp).clip(CircleShape).background(if (plusOpen) c.ink else Color.Transparent)
+            Box(Modifier.size(38.dp).clip(CircleShape).background(if (plusOpen) c.ink else Color.Transparent)
                 .testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_PLUS).clickable(onClick = onPlus)
                 .semantics { contentDescription = if (plusOpen) "Close menu" else "Attach and tools" }, contentAlignment = Alignment.Center) {
-                PlusIcon(if (plusOpen) c.paper else c.sub, open = plusOpen, size = 22.dp)
+                PlusIcon(if (plusOpen) c.paper else c.sub, open = plusOpen, size = 19.dp)
             }
             // v0.30.6 rapid messages: with text in the box, Send wins even while ARGUS works (the message joins the turn); Stop otherwise.
-            val big = 46.dp
+            val big = 40.dp
             when {
                 canSend -> Box(Modifier.size(big).clip(CircleShape).background(ComposerCard.send(c)).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_SEND)
                     .clickable(onClick = onSend).semantics { contentDescription = "Send" }, contentAlignment = Alignment.Center) { SendMark(ComposerCard.sendInk(c), stop = false) }
@@ -719,7 +719,7 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
                     Box(Modifier.size(big).clip(CircleShape).background(if (micOn) c.accent else Color.Transparent).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_MIC)
                         .clickable(onClick = onMic)
                         .semantics { contentDescription = if (speaking) "Stop speaking" else if (listening) "Stop listening" else "Talk" }, contentAlignment = Alignment.Center) {
-                        if (speaking) SendMark(c.onAccent, stop = true) else MicIcon(if (micOn) c.onAccent else c.sub, size = 24.dp)
+                        if (speaking) SendMark(c.onAccent, stop = true) else MicIcon(if (micOn) c.onAccent else c.sub, size = 21.dp)
                     }
                 }
             }

@@ -78,6 +78,20 @@ object SpaceTabs {
 }
 
 /** How the pill fits the room it has (dp) at the phone's font scale: Hark's 17 sp labels, smaller on narrow screens. */
+/**
+ * 0.52.4 Hark-sized chrome: nothing touches the screen's sides, top or bottom. The top bar and the composer sit
+ * [EDGE_DP] / [COMPOSER_EDGE_DP] in from the sides; the round button and avatar are [ROUND_DP]; the pill's segments
+ * [SEGMENT_DP] tall (48 dp with the pill's 4 dp frame); the composer pill at least [COMPOSER_MIN_DP] tall.
+ */
+object SpaceInsets {
+    const val EDGE_DP = 20
+    const val ROUND_DP = 44
+    const val SEGMENT_DP = 40
+    const val COMPOSER_EDGE_DP = 28
+    const val COMPOSER_MIN_DP = 50
+    const val COMPOSER_BOTTOM_DP = 12
+}
+
 object SpacePillFit {
     data class Fit(val padDp: Int, val fontSp: Float)
 
@@ -85,9 +99,9 @@ object SpacePillFit {
     fun need(padDp: Int, fontSp: Float, fontScale: Float): Float = 16 * fontSp * fontScale * 0.58f + 3 * 2 * padDp + 8
 
     fun pick(width: Float, fontScale: Float): Fit = when {
-        need(20, 17f, fontScale) <= width -> Fit(20, 17f)
-        need(14, 15f, fontScale) <= width -> Fit(14, 15f)
-        need(9, 13f, fontScale) <= width -> Fit(9, 13f)
+        need(18, 15f, fontScale) <= width -> Fit(18, 15f)
+        need(12, 14f, fontScale) <= width -> Fit(12, 14f)
+        need(8, 13f, fontScale) <= width -> Fit(8, 13f)
         else -> Fit(6, 12f)
     }
 }

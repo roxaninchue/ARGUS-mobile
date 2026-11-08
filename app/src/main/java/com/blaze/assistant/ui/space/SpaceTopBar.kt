@@ -57,26 +57,26 @@ fun SpaceTopBar(
     showLeft: Boolean = true,
 ) {
     val look = spaceLook()
-    Row(modifier.fillMaxWidth().testTag(SpaceTags.TOP_BAR).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.fillMaxWidth().testTag(SpaceTags.TOP_BAR).padding(horizontal = SpaceInsets.EDGE_DP.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         val left = SpaceTabs.leftButton(tab)
-        if (showLeft) SpaceRoundButton(SpaceTabs.leftLabel(left), onLeft, tag = SpaceTags.LEFT_BUTTON) {
+        if (showLeft) SpaceRoundButton(SpaceTabs.leftLabel(left), onLeft, tag = SpaceTags.LEFT_BUTTON, size = SpaceInsets.ROUND_DP.dp) {
             when (left) {
-                SpaceTabs.Left.PLUS -> PlusMark(look.ink, 24.dp)
-                SpaceTabs.Left.SEARCH -> SearchGlyph(look.ink, 22.dp)
-                SpaceTabs.Left.MENU -> MenuMark(look.ink, 24.dp)
+                SpaceTabs.Left.PLUS -> PlusMark(look.ink, 20.dp)
+                SpaceTabs.Left.SEARCH -> SearchGlyph(look.ink, 19.dp)
+                SpaceTabs.Left.MENU -> MenuMark(look.ink, 20.dp)
             }
-        } else Spacer(Modifier.size(52.dp))
+        } else Spacer(Modifier.size(SpaceInsets.ROUND_DP.dp))
         Spacer(Modifier.width(8.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             if (privateChat) PrivatePill(onLeavePrivate) else SegmentedPill(tab, onTab)
         }
         Spacer(Modifier.width(8.dp))
-        Box(Modifier.size(52.dp).clip(CircleShape).background(Color(SpacePalette.ARGUS_BLUE)).testTag(SpaceTags.AVATAR)
+        Box(Modifier.size(SpaceInsets.ROUND_DP.dp).clip(CircleShape).background(Color(SpacePalette.ARGUS_BLUE)).testTag(SpaceTags.AVATAR)
             .combinedClickable(onClickLabel = "Profile and settings", onClick = onAvatar, onLongClick = onAvatarLong,
                 onLongClickLabel = if (look.dark) "Switch to light mode" else "Switch to dark mode")
             .semantics { contentDescription = "Profile and settings. Long-press to switch light or dark"; role = Role.Button },
             contentAlignment = Alignment.Center) {
-            Text(initial.take(1), style = SpaceType.body(22.sp, Color.White, FontWeight.Medium))
+            Text(initial.take(1), style = SpaceType.body(18.sp, Color.White, FontWeight.Medium))
         }
     }
 }
@@ -94,7 +94,7 @@ private fun SegmentedPill(tab: String, onTab: (String) -> Unit) {
                 Box(Modifier.clip(SpaceShapes.pill).background(fill).testTag(SpaceTags.tab(id))
                     .clickable(onClickLabel = "Show $label") { onTab(id) }
                     .semantics { selected = on; role = Role.Tab }
-                    .heightIn(min = 44.dp).padding(horizontal = fit.padDp.dp), contentAlignment = Alignment.Center) {
+                    .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = fit.padDp.dp), contentAlignment = Alignment.Center) {
                     Text(label, maxLines = 1, softWrap = false, style = SpaceType.body(fit.fontSp.sp, ink, FontWeight.Medium))
                 }
             }
@@ -106,7 +106,7 @@ private fun SegmentedPill(tab: String, onTab: (String) -> Unit) {
 private fun PrivatePill(onLeave: () -> Unit) {
     val look = spaceLook()
     Box(Modifier.clip(SpaceShapes.pill).background(look.selectedFill).clickable(onClickLabel = "Leave private chat", onClick = onLeave)
-        .heightIn(min = 44.dp).padding(horizontal = 22.dp), contentAlignment = Alignment.Center) {
-        Text("Private chat", style = SpaceType.body(16.sp, look.selectedInk, FontWeight.Medium))
+        .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
+        Text("Private chat", style = SpaceType.body(15.sp, look.selectedInk, FontWeight.Medium))
     }
 }
