@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import kotlin.math.roundToInt
 import com.blaze.assistant.BrandName
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -120,6 +121,27 @@ fun LookPage() {
         }
     }
     Text("Auto turns dark after sunset and light in the morning.", modifier = Modifier.padding(vertical = 6.dp),
+        style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+    Spacer(Modifier.height(14.dp))
+    // 0.52.4: how big the app draws, for people who find the default too large (or too small).
+    val scale by Look.scale.collectAsState()
+    var idx by remember(scale) { mutableStateOf(LookLogic.scaleIndex(scale).toFloat()) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Label("Size")
+        Spacer(Modifier.weight(1f))
+        Text(LookLogic.scaleLabel(LookLogic.SCALES[idx.roundToInt().coerceIn(0, LookLogic.SCALES.lastIndex)]),
+            style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
+    }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text("A", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+        androidx.compose.material3.Slider(idx, { idx = it }, valueRange = 0f..LookLogic.SCALES.lastIndex.toFloat(),
+            steps = LookLogic.SCALES.size - 2,
+            // applied on release, so the page doesn't resize under the finger mid-drag
+            onValueChangeFinished = { Look.setScale(LookLogic.SCALES[idx.roundToInt().coerceIn(0, LookLogic.SCALES.lastIndex)]) },
+            modifier = Modifier.weight(1f).padding(horizontal = 10.dp).semantics { contentDescription = "App size" })
+        Text("A", style = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.sub))
+    }
+    Text("Makes everything in ${BrandName.NAME} smaller or bigger, text included.", modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
     Label("Accent")

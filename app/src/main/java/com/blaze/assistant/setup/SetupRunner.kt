@@ -28,6 +28,21 @@ object SetupRunner {
     @Volatile private var loop: Job? = null
     private val running = java.util.concurrent.ConcurrentHashMap<String, Job>()
     private lateinit var app: Context
+    /** 0.52.4: wakes the loop at once (the user chose mobile data) instead of after its 10 s nap. */
+    private val kick = kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED)
+
+    /** The user chose to finish on mobile data (kept, so later starts and the Home's card don't wait for Wi-Fi either). */
+    fun useData(): Boolean = try { Settings.bool(SetupPlan.PREF_MOBILE_DATA, false) } catch (_: Throwable) { false }
+
+    /**
+     * 0.52.4 "Download now on mobile data": the Wi-Fi items start on the current network. The backup brain's own
+     * mobile-data switch is turned on too, since its installer checks that, not this.
+     */
+    fun useMobileData(ctx: Context) {
+        try { Settings.setBool(SetupPlan.PREF_MOBILE_DATA, true); Settings.setBool("backup_brain_mobile_data", true); Settings.setBool("backup_mobile_asked", true) } catch (_: Throwable) { }
+        start(ctx)
+        kick.trySend(Unit)
+    }
 
     private fun load(): Map<String, Status> = try { SetupPlan.decode(Settings.str(SetupPlan.PREF, "")) } catch (_: Throwable) { emptyMap() }
 
@@ -48,12 +63,18 @@ object SetupRunner {
             while (isActive && !SetupPlan.complete(_state.value)) {
                 val online = net(unmeteredOnly = false); val wifi = net(unmeteredOnly = true)
                 val now = System.currentTimeMillis()
-                for (i in SetupPlan.ITEMS) SetupPlan.waiting(i, _state.value[i.id], online, wifi)?.let { if (it != _state.value[i.id]) set(i.id, it) }
-                for (i in SetupPlan.runnable(_state.value, online, wifi, now)) if (running[i.id]?.isActive != true) running[i.id] = launch { run(i) }
+                val data = useData()
+                for (i in SetupPlan.ITEMS) {
+                    val w = SetupPlan.waiting(i, _state.value[i.id], online, wifi, data)
+                    if (w != null) { if (w != _state.value[i.id]) set(i.id, w) }
+                    // a row that waited for Wi-Fi and may now run (mobile data chosen, or Wi-Fi came back) goes back to waiting its turn
+                    else if (_state.value[i.id]?.phase == Phase.WAITING_WIFI || _state.value[i.id]?.phase == Phase.OFFLINE) set(i.id, Status(tries = _state.value[i.id]?.tries ?: 0))
+                }
+                for (i in SetupPlan.runnable(_state.value, online, wifi, now, data)) if (running[i.id]?.isActive != true) running[i.id] = launch { run(i) }
                 val busy = running.values.any { it.isActive }
                 // nothing running and only items that used up their automatic tries: stop (Retry or the next start goes on)
                 if (!busy && SetupPlan.left(_state.value).all { (_state.value[it.id]?.tries ?: 0) >= SetupPlan.MAX_AUTO_TRIES }) break
-                delay(if (busy) 2_000 else 10_000)
+                kotlinx.coroutines.withTimeoutOrNull(if (busy) 2_000L else 10_000L) { kick.receive() }
             }
         }
     }

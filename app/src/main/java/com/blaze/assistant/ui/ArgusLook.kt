@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 /**
  * 0.52.2: ONE look. The Living Themes (twelve particle themes + Weather, their scene pictures, the 3D theme carousel, the
  * Look & feel living backgrounds and the theme switchers on every screen) were removed with the ARGUS living 3D Home;
- * the app has the ARGUS palette in light and dark (docs/BRAND.md) and an optional accent. What stays is here (pure parts
+ * the app has the ARGUS palette in light and dark (docs/BRAND.md), an optional accent and (0.52.4) a size. What stays is here (pure parts
  * tested by ArgusLookTest): colour maths, light / dark / auto, the accent presets, the chat bubbles' tones and the
  * long-press light / dark toggle.
  *
@@ -33,6 +33,18 @@ object LookLogic {
     val ACCENTS = listOf("" to "ARGUS", "FF0056FF" to "Argus Blue", "FF1286FF" to "Electric", "FF14B8A6" to "Teal", "FFF59E0B" to "Amber", "FF8B5CF6" to "Violet")
 
     fun parseAccent(hex: String?): Long? = hex?.trim()?.removePrefix("#")?.takeIf { it.length == 8 }?.toLongOrNull(16)
+
+    /**
+     * 0.52.4 Settings › Appearance › Size: how big the whole app draws, as a factor on the phone's own density and font
+     * scale (1.0 = as the phone sets it). Steps from 80 % to 120 %; anything stored outside them (an old or synced value,
+     * a typo) snaps to the nearest step.
+     */
+    val SCALES = listOf(0.80f, 0.85f, 0.90f, 0.95f, 1.00f, 1.10f, 1.20f)
+    const val SCALE_DEFAULT = 1.00f
+    fun snapScale(v: Float?): Float = if (v == null || v.isNaN()) SCALE_DEFAULT else SCALES.minBy { kotlin.math.abs(it - v) }
+    fun parseScale(s: String?): Float = snapScale(s?.trim()?.toFloatOrNull())
+    fun scaleIndex(v: Float): Int = SCALES.indexOf(snapScale(v))
+    fun scaleLabel(v: Float): String = when (val k = snapScale(v)) { 1.00f -> "Default"; else -> "${Math.round(k * 100)}%" }
 }
 
 /** Look & feel prefs as live state: the accent (and the reload cloud sync calls). */
@@ -40,8 +52,11 @@ object Look {
     private fun s(k: String, d: String) = try { com.blaze.assistant.agent.Settings.str(k, d) } catch (_: Throwable) { d }
     val accent = MutableStateFlow(s("look_accent", ""))
     fun setAccent(v: String) { accent.value = v; try { com.blaze.assistant.agent.Settings.setStr("look_accent", v) } catch (_: Throwable) { } }
+    /** 0.52.4: the app's size factor (Settings › Appearance › Size); BlazeTheme scales density and fonts by it. */
+    val scale = MutableStateFlow(LookLogic.parseScale(s("look_scale", "")))
+    fun setScale(v: Float) { val k = LookLogic.snapScale(v); scale.value = k; try { com.blaze.assistant.agent.Settings.setStr("look_scale", k.toString()) } catch (_: Throwable) { } }
     /** Cloud sync brought Look & feel from another phone. */
-    fun reload() { accent.value = s("look_accent", "") }
+    fun reload() { accent.value = s("look_accent", ""); scale.value = LookLogic.parseScale(s("look_scale", "")) }
 }
 
 /**

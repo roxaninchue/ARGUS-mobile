@@ -91,6 +91,22 @@ class ArgusLookTest {
         assertEquals(0xFF0056FF, BubbleTones.onLight(0xFF0056FF))
     }
 
+    @Test fun appSizeSnapsToItsSteps() {
+        assertEquals(1.00f, LookLogic.parseScale(null), 0.001f)
+        assertEquals(1.00f, LookLogic.parseScale(""), 0.001f)
+        assertEquals(1.00f, LookLogic.parseScale("abc"), 0.001f)
+        assertEquals(0.90f, LookLogic.parseScale("0.9"), 0.001f)
+        assertEquals(0.80f, LookLogic.parseScale("0.2"), 0.001f)   // below the range: the smallest step
+        assertEquals(1.20f, LookLogic.parseScale("3"), 0.001f)     // above it: the largest
+        assertEquals(0.85f, LookLogic.snapScale(0.86f), 0.001f)
+        assertEquals(4, LookLogic.scaleIndex(1f))
+        assertEquals("Default", LookLogic.scaleLabel(1f))
+        assertEquals("90%", LookLogic.scaleLabel(0.9f))
+        assertEquals("120%", LookLogic.scaleLabel(1.2f))
+        // smaller steps first, so the slider runs small to large
+        assertEquals(LookLogic.SCALES.sorted(), LookLogic.SCALES)
+    }
+
     @Test fun theLookFileHasNoThemeMachinery() {
         val t = src("ui/ArgusLook.kt")
         for (gone in listOf("LivingThemes", "ThemeScenes", "WeatherLook", "Look.theme", "look_theme\")", "screenGround", "ThemePicker"))

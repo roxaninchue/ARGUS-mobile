@@ -146,4 +146,21 @@ class SetupPlanTest {
         assertFalse("first run waits for the onboarding's setup screen", SetupPlan.startLater(onboarded = false, started = false, st = emptyMap()))
         assertFalse("nothing left", SetupPlan.startLater(onboarded = true, started = true, st = all(Phase.DONE)))
     }
+
+    @Test fun mobileDataLetsTheWifiItemsFinish() {
+        val left = st("linux" to Phase.DONE, "tools" to Phase.DONE, "skills" to Phase.DONE, "brain" to Phase.DONE,
+            "voice" to Phase.WAITING_WIFI, "quick" to Phase.WAITING_WIFI)
+        // on mobile data the Wi-Fi items wait...
+        assertTrue(SetupPlan.runnable(left, online = true, unmetered = false, now = 0L).isEmpty())
+        assertEquals(Phase.WAITING_WIFI, SetupPlan.waiting(SetupPlan.item("voice")!!, left["voice"], true, false)?.phase)
+        // ...until the user chooses mobile data
+        assertEquals(listOf("voice", "quick"), SetupPlan.runnable(left, true, false, 0L, useData = true).map { it.id })
+        assertNull(SetupPlan.waiting(SetupPlan.item("voice")!!, left["voice"], true, false, useData = true))
+        // still nothing without a connection
+        assertTrue(SetupPlan.runnable(left, false, false, 0L, useData = true).isEmpty())
+        // the button says how much it will use, and only shows while something waits for Wi-Fi
+        assertEquals(75, SetupPlan.waitingWifiMb(left))
+        assertEquals("Download now on mobile data \u00b7 75 MB", SetupPlan.mobileDataButton(75))
+        assertEquals(0, SetupPlan.waitingWifiMb(all(Phase.DONE)))
+    }
 }

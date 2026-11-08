@@ -197,6 +197,13 @@ fun SpaceSetupScreen(setup: Map<String, SetupPlan.Status>, onContinue: () -> Uni
                         Text(SetupPlan.line(item, st), style = SpaceType.body(13.sp, if (st?.phase == SetupPlan.Phase.DONE) look.accent else look.sub))
                     }
                 }
+                // 0.52.4: no need to wait for Wi-Fi; the user can finish now on mobile data (the size is on the button)
+                val wifiMb = SetupPlan.waitingWifiMb(setup)
+                if (wifiMb > 0) {
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                    Spacer(Modifier.height(8.dp))
+                    SpaceChip(SetupPlan.mobileDataButton(wifiMb), { com.blaze.assistant.setup.SetupRunner.useMobileData(ctx) })
+                }
                 if (setup.values.any { it.phase == SetupPlan.Phase.FAILED }) {
                     Spacer(Modifier.height(8.dp))
                     SpaceChip("Retry now", onRetry)

@@ -175,7 +175,13 @@ fun BlazeTheme(content: @Composable () -> Unit) {
     val c = androidx.compose.runtime.remember(dark, accentHex) { blazePalette(dark, LookLogic.parseAccent(accentHex)) }
     // v0.24.5: Material's own colours mapped to Blaze, so no default purple / lavender can leak into anything Material draws.
     androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark), shapes = BlazeShapes.material, typography = Type.material()) {
-        CompositionLocalProvider(LocalBlaze provides c, content = content)
+        // 0.52.4: Settings › Appearance › Size scales every dp and sp by one factor (1.0 leaves the phone's own density).
+        val scale by Look.scale.collectAsState()
+        val base = androidx.compose.ui.platform.LocalDensity.current
+        val density = androidx.compose.runtime.remember(base, scale) {
+            if (scale == 1f) base else androidx.compose.ui.unit.Density(base.density * scale, base.fontScale * scale)
+        }
+        CompositionLocalProvider(LocalBlaze provides c, androidx.compose.ui.platform.LocalDensity provides density, content = content)
     }
 }
 

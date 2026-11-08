@@ -94,28 +94,39 @@ object SetupPlan {
      * Items that may start now: not settled, not running, their [Item.after] settled, Wi-Fi items only on an unmetered
      * network, nothing without a connection, and a failed item only once its back-off is over and under [MAX_AUTO_TRIES].
      */
-    fun runnable(st: Map<String, Status>, online: Boolean, unmetered: Boolean, now: Long): List<Item> = ITEMS.filter { i ->
+    fun runnable(st: Map<String, Status>, online: Boolean, unmetered: Boolean, now: Long, useData: Boolean = false): List<Item> = ITEMS.filter { i ->
         val s = st[i.id] ?: Status()
         when {
             settled(s) || s.phase == Phase.RUNNING -> false
             i.after != null && !settled(st[i.after]) -> false
             !online -> false
-            i.wifi && !unmetered -> false
+            i.wifi && !unmetered && !useData -> false
             s.phase == Phase.FAILED -> s.tries < MAX_AUTO_TRIES && now >= s.retryAt
             else -> true
         }
     }
 
     /** What a waiting item shows while it can't start (no connection, or on mobile data for a Wi-Fi item). */
-    fun waiting(i: Item, s: Status?, online: Boolean, unmetered: Boolean): Status? {
+    fun waiting(i: Item, s: Status?, online: Boolean, unmetered: Boolean, useData: Boolean = false): Status? {
         val cur = s ?: Status()
         if (settled(cur) || cur.phase == Phase.RUNNING || cur.phase == Phase.FAILED) return null
         return when {
             !online -> cur.copy(phase = Phase.OFFLINE)
-            i.wifi && !unmetered -> cur.copy(phase = Phase.WAITING_WIFI)
+            i.wifi && !unmetered && !useData -> cur.copy(phase = Phase.WAITING_WIFI)
             else -> null
         }
     }
+
+    // ---------- 0.52.4: finish on mobile data
+
+    /** The pref set by "Download on mobile data": Wi-Fi items then also run on a metered network. */
+    const val PREF_MOBILE_DATA = "setup_mobile_data"
+
+    /** Megabytes still waiting for Wi-Fi (0 = nothing waits, so no mobile-data button). */
+    fun waitingWifiMb(st: Map<String, Status>): Int = ITEMS.filter { st[it.id]?.phase == Phase.WAITING_WIFI }.sumOf { it.mb }
+
+    /** The button that lets the user finish now on mobile data, with how much it will use. */
+    fun mobileDataButton(mb: Int): String = "Download now on mobile data · $mb MB"
 
     /** After a failed attempt. */
     fun failed(s: Status?, note: String, now: Long): Status {
