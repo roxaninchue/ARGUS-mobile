@@ -142,7 +142,7 @@ object SpaceImageCache {
 
 /**
  * The app's background. Dark: the space view (the Earth's blue limb on a black sky) cropped to fill, under a scrim so
- * text on the cards keeps its contrast. Light: the light ARGUS ground with a soft Argus Blue limb at the bottom.
+ * text on the cards keeps its contrast. Light: the light ARGUS ground with a pale daylit Earth low on the screen (0.52.4).
  * [forceDark] keeps the space view in light mode too (the onboarding).
  */
 @Composable
@@ -170,7 +170,7 @@ fun SpaceBackdrop(modifier: Modifier = Modifier, forceDark: Boolean = false, con
                 drawRect(Brush.verticalGradient(listOf(Color.Black.copy(alpha = SpacePalette.scrimAlpha(true)), Color.Black.copy(alpha = SpacePalette.scrimAlpha(true) * 0.6f))))
             } else {
                 drawRect(Brush.verticalGradient(listOf(Color(SpacePalette.GROUND_LIGHT), Color(0xFFE7EDF8))))
-                drawLimb(Color(SpacePalette.ARGUS_BLUE), 0.35f)
+                drawDayPlanet()
             }
         }
         content()
@@ -184,6 +184,23 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawLimb(color: Col
     drawCircle(Brush.radialGradient(listOf(color.copy(alpha = 0.28f * strength), Color.Transparent), center = Offset(c.x, c.y - r), radius = size.width * 0.9f),
         radius = size.width * 0.9f, center = Offset(c.x, c.y - r))
     drawArc(color.copy(alpha = 0.9f * strength), 200f, 140f, false, Offset(c.x - r, c.y - r), Size(r * 2, r * 2), style = Stroke(width = 2.2f * density))
+}
+
+/**
+ * 0.52.4 light mode: the Earth as seen by day, not a lone line. A filled planet low on the screen (a pale sky-blue face
+ * deepening toward the bottom), a soft atmosphere glow over its edge (no drawn outline), all pale enough that the
+ * dark text, icons and the white composer over it keep their contrast.
+ */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDayPlanet() {
+    val r = size.width * 1.35f
+    val top = size.height * 0.82f
+    val c = Offset(size.width / 2f, top + r)
+    // atmosphere: a wide glow centred on the horizon
+    drawCircle(Brush.radialGradient(listOf(Color(0x405A8DFF), Color(0x1A5A8DFF), Color.Transparent), center = Offset(c.x, top), radius = size.width * 0.95f),
+        radius = size.width * 0.95f, center = Offset(c.x, top))
+    // the planet's face
+    drawCircle(Brush.verticalGradient(listOf(Color(0xFFDDE8FF), Color(0xFFC3D5FA), Color(0xFFA9C2F2)), startY = top, endY = size.height),
+        radius = r, center = c)
 }
 
 /** Hark's large rounded card. */
