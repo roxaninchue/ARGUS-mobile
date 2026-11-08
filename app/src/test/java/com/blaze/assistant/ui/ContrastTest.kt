@@ -35,7 +35,7 @@ class ContrastTest {
         val black = Color(p.OBSIDIAN)
         val brightest = Contrast.over(Color.Black.copy(alpha = p.scrimAlpha(true)), Color.White)
         assertTrue("the dark scrim darkens the space view", p.scrimAlpha(true) >= 0.5f)
-        val surfaces = listOf(Color(p.CARD_DARK), Color(p.TILE_DARK), Color(p.TRACK_DARK), Color(0xF2080B12), Color(p.CARD_SOLID_DARK), Color(p.MENU_DARK))
+        val surfaces = listOf(Color(p.CARD_DARK), Color(p.TILE_DARK), Color(p.TRACK_DARK), Color(p.CARD_SOLID_DARK), Color(p.MENU_DARK))
         val darkGrounds = listOf(black) + surfaces.flatMap { listOf(Contrast.over(it, black), Contrast.over(it, brightest)) }
         for (g in darkGrounds) {
             assertTrue("white on $g", Contrast.ratio(Color(p.WHITE), g) >= Contrast.AA_TEXT)

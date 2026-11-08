@@ -399,31 +399,35 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
     }
 }
 
+/**
+ * A chat in a list (a project's Chats card). Unification 5/9: drawn by the shell's shared row (SpaceRows.kt) at its
+ * compact size, on a tile-radius tile (the track colour when it is the open chat). It used to pad 16 dp on each side
+ * inside a card that already pads 22; now the card's padding is the only side inset. Long-press opens [onMore].
+ */
 @Composable
-@OptIn(ExperimentalFoundationApi::class)
 fun ChatRow(ch: ChatMeta, busy: Boolean, current: Boolean = false, chip: String = "", onMore: (() -> Unit)? = null, onClick: () -> Unit) {
     val c = LocalBlaze.current
-    Row(Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth().glass(GlassTokens.tileShape, if (current) GlassIntensity.High else GlassIntensity.Low, shadow = false)
-        .combinedClickable(onClick = onClick, onLongClick = onMore).padding(start = 14.dp, end = if (onMore != null) 4.dp else 14.dp, top = 11.dp, bottom = 11.dp),
-        verticalAlignment = Alignment.CenterVertically) {
+    val look = com.blaze.assistant.ui.space.spaceLook()
+    // v0.28.3: a preview saved before the leak fix can hold raw tool syntax ("[github_open repo=…]"); never show it.
+    val preview = remember(ch.preview) { com.blaze.assistant.agent.ToolLeak.forDisplay(ch.preview) }
+    com.blaze.assistant.ui.space.SpaceRow(ch.title.ifBlank { "Untitled" },
+        Modifier.padding(vertical = 3.dp).clip(com.blaze.assistant.ui.space.SpaceShapes.tile).background(if (current) look.track else look.tile),
+        sub = preview, subLines = 1,
         // 0.52.4: a small chat tile leads each row, in the shared icon-tile style
-        IconTile(Icons.Rounded.ChatBubbleOutline, small = true, filled = current)
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(ch.title.ifBlank { "Untitled" }, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink))
-            // v0.28.3: a preview saved before the leak fix can hold raw tool syntax ("[github_open repo=…]"); never show it.
-            val preview = remember(ch.preview) { com.blaze.assistant.agent.ToolLeak.forDisplay(ch.preview) }
-            if (preview.isNotBlank()) Text(preview, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
-        }
-        // Pinned mark sits on the right so every title lines up (v0.15.0).
-        if (ch.pinned) { Spacer(Modifier.width(8.dp)); LeadIcon(Icons.Rounded.PushPin, c.accent, size = 14.dp); Spacer(Modifier.width(8.dp)) }
-        if (busy) Label("Working", color = c.accent, size = 9.sp)
-        else if (chip.isNotBlank()) Label(chip, color = c.sub, size = 9.sp)
-        if (onMore != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = "Chat options", onClick = onMore)
-            .semantics { contentDescription = "Options for ${ch.title.ifBlank { "this chat" }}" }, contentAlignment = Alignment.Center) {
-            MoreDots(c.sub)
-        }
-    }
+        icon = Icons.Rounded.ChatBubbleOutline, iconFilled = current,
+        size = com.blaze.assistant.ui.space.SpaceRowSize.COMPACT,
+        padStart = 14.dp, padEnd = if (onMore != null) 4.dp else 14.dp, onLongClick = onMore,
+        trailing = {
+            // Pinned mark sits on the right so every title lines up (v0.15.0).
+            if (ch.pinned) { LeadIcon(Icons.Rounded.PushPin, c.accent, size = 14.dp); Spacer(Modifier.width(8.dp)) }
+            if (busy) Label("Working", color = c.accent, size = 9.sp)
+            else if (chip.isNotBlank()) Label(chip, color = c.sub, size = 9.sp)
+            if (onMore != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = "Chat options", onClick = onMore)
+                .semantics { contentDescription = "Options for ${ch.title.ifBlank { "this chat" }}" }, contentAlignment = Alignment.Center) {
+                MoreDots(c.sub)
+            }
+        },
+        onClick = onClick)
 }
 
 /** v0.28.3: three round dots (the ⋯ menu). */

@@ -39,7 +39,7 @@ class SpaceWiringTest {
     }
 
     @Test fun theSpaceFilesAreThereAndTheArgusHomeIsGone() {
-        for (f in listOf("SpaceLogic", "SpaceTheme", "SpaceTopBar", "SpaceHome", "SpaceSpotlight", "SpaceProfile", "SpaceOnboarding", "SpaceProjects", "SpaceLegal")) {
+        for (f in listOf("SpaceLogic", "SpaceTheme", "SpaceTopBar", "SpaceHome", "SpaceSpotlight", "SpaceProfile", "SpaceOnboarding", "SpaceProjects", "SpaceLegal", "SpaceRows")) {
             val file = File(root, "com/blaze/assistant/ui/space/$f.kt")
             assertTrue(f, file.isFile)
             assertTrue("$f package", file.readText().startsWith("package com.blaze.assistant.ui.space\n"))
@@ -135,6 +135,27 @@ class SpaceWiringTest {
         for (gone in listOf("SettingsList(", "AdvancedList(", "AiPage(", "BackupBrainSection(", "OfflineBrainSection(", "SimpleAdvancedSwitch()")) assertFalse("$gone in Settings", gone in s)
         for (f in listOf("OfflineBrainSection.kt", "BackupBrainSection.kt")) assertFalse(f, File(root, "com/blaze/assistant/ui/$f").exists())
         nowhere("BackupBrainSection("); nowhere("OfflineBrainSection(")
+    }
+
+    @Test fun theListPartsAreShared() {
+        // Unification 5/9: one group, row, toggle row, field, segmented pill, menu and sub-page (SpaceRows.kt), grown out of
+        // the profile page's own; the profile, the settings switch rows, KitRow and the chat rows all draw through them.
+        val rows = src("ui/space/SpaceRows.kt")
+        for (f in listOf("fun SpaceGroup(", "fun SpaceHairline(", "fun SpaceRow(", "fun SpaceToggleRow(", "fun SpaceField(", "fun SpaceSegmented(",
+            "fun SpaceMenuCard(", "fun SpaceMenu(", "fun SpaceSubPage(")) assertTrue("SpaceRows.kt has $f", f in rows)
+        assertTrue("groups are the solid card", "background(look.cardSolid)" in rows)
+        assertTrue("the one switch", "BlazeSwitchTrack(on)" in rows)
+        val profile = src("ui/space/SpaceProfile.kt")
+        assertFalse("no private group or hairline left", "fun ProfileGroup(" in profile || "private fun Hairline(" in profile)
+        assertFalse("no hard-coded card colour", "0xF2080B12" in profile)
+        assertTrue("SpaceGroup {" in profile && "SpaceHairline()" in profile && "SpaceRow(" in profile && "SpaceField(" in profile)
+        val toggle = src("ui/SettingsSheet.kt").substringAfter("internal fun ToggleRow(").substringBefore("\n}\n")
+        assertTrue("ToggleRow draws through SpaceToggleRow", "SpaceToggleRow(" in toggle && "icon = icon" in toggle)
+        val kit = src("ui/Kit.kt").substringAfter("fun KitRow(").substringBefore("\n}\n")
+        assertTrue("KitRow draws through SpaceRow", "SpaceRow(" in kit && "lead = lead" in kit)
+        val chatRow = src("ui/Shell.kt").substringAfter("fun ChatRow(").substringBefore("\n}\n")
+        assertTrue("ChatRow draws through SpaceRow", "SpaceRow(" in chatRow && "Icons.Rounded.ChatBubbleOutline" in chatRow)
+        assertFalse("ChatRow has no side padding of its own", "padding(horizontal = 16.dp" in chatRow)
     }
 
     @Test fun thereIsNoModelPicker() {

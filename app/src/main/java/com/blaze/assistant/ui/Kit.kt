@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.blaze.assistant.ui.space.SpaceInsets
 import com.blaze.assistant.ui.space.SpaceLook
+import com.blaze.assistant.ui.space.SpaceRow
+import com.blaze.assistant.ui.space.SpaceRowSize
 import com.blaze.assistant.ui.space.SpacePalette
 import com.blaze.assistant.ui.space.SpaceShapes
 import com.blaze.assistant.ui.space.SpaceType
@@ -111,28 +113,27 @@ fun Rows(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> U
 /**
  * One row: number, title (+ pill), sub line, trailing actions. [first] skips the top hairline.
  * Titles get one line, subs two, so nothing wraps into a wall on a 360dp phone.
+ * Unification 5/9: drawn by the shell's shared row (SpaceRows.kt) at its compact size, so its type and colours are the
+ * shell's; the insets, the hairline and the [lead] slot (an IconTile or a LeadIcon) are unchanged.
  */
 @Composable
 fun KitRow(title: String, sub: String = "", n: Int = 0, first: Boolean = false, pill: String = "", pillOn: Boolean = false,
            dim: Boolean = false, mono: Boolean = false, onClick: (() -> Unit)? = null, lead: (@Composable () -> Unit)? = null,
            trailing: (@Composable RowScope.() -> Unit)? = null) {
     val c = LocalBlaze.current
-    Row(Modifier.fillMaxWidth().let { if (first) it else it.hairlineTopInset(c.hair) }.let { if (onClick != null) it.clickable(onClick = onClick) else it }
-        .heightIn(min = 52.dp).padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        // v0.24.8: no "01 / 02" row numbers (they were part of the old square desktop look); [n] is kept for callers.
-        if (lead != null) { lead(); Spacer(Modifier.width(12.dp)) }
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title, modifier = Modifier.weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = if (mono) Type.Mono else Type.Sans, fontWeight = FontWeight.Medium,
-                        fontSize = if (mono) 13.sp else 14.sp, color = if (dim) c.weak else c.ink))
-                if (pill.isNotBlank()) { Spacer(Modifier.width(8.dp)); Tag(pill, on = pillOn) }
-            }
-            if (sub.isNotBlank()) Text(sub, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp),
-                style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.sub))
-        }
-        if (trailing != null) { Spacer(Modifier.width(8.dp)); Row(verticalAlignment = Alignment.CenterVertically, content = trailing) }
+    val look = spaceLook()
+    // v0.24.8: no "01 / 02" row numbers (they were part of the old square desktop look); [n] is kept for callers.
+    val ink = if (dim) c.weak else look.ink
+    val titleStyle = when {
+        mono -> SpaceType.body(13.sp, ink, FontWeight.Medium).copy(fontFamily = Type.Mono)
+        dim -> SpaceRowSize.COMPACT.title(ink)
+        else -> null
     }
+    val tag: (@Composable RowScope.() -> Unit)? = if (pill.isBlank()) null else {
+        { Spacer(Modifier.width(8.dp)); Tag(pill, on = pillOn) }
+    }
+    SpaceRow(title, Modifier.let { if (first) it else it.hairlineTopInset(look.hair) }, sub = sub, lead = lead, size = SpaceRowSize.COMPACT,
+        titleStyle = titleStyle, padStart = 14.dp, padEnd = 10.dp, titleEnd = tag, trailing = trailing, onClick = onClick)
 }
 
 /** Small pill tag: accent-soft when [on], faint otherwise. */

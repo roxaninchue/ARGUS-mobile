@@ -306,13 +306,6 @@ private fun CommandsSection() {
 }
 
 @Composable
-private fun SquareToggle(on: Boolean) {
-    val c = LocalBlaze.current.mono
-    // v0.24.8: round (pill track, round knob, blue when on); the name stays so callers don't change. Unification: the one switch size.
-    BlazeSwitchTrack(on)
-}
-
-@Composable
 internal fun Field(label: String, value: String, onChange: (String) -> Unit, placeholder: String, secret: Boolean = false) {
     val c = LocalBlaze.current.mono
     // v0.45.7: every password / passphrase field gets a show/hide eye (sign-in, create account, reset, cloud sync).
@@ -457,22 +450,15 @@ private fun QuotaPanel(key: String, pid: String, model: String, base: String) {
 /**
  * A settings switch row. 0.52.4: it leads with a round icon tile ([icon]; by default the one its title maps to,
  * [MenuIcons.forSetting], so every settings page gets icons without each caller naming one). Pass null for none.
+ * Unification 5/9: drawn by the shell's shared toggle row (SpaceRows.kt: its type, tile and the one switch). It sits
+ * straight on the padded page, so no side insets, with a hairline under it as before.
  */
 @Composable
 internal fun ToggleRow(title: String, sub: String, on: Boolean, icon: androidx.compose.ui.graphics.vector.ImageVector? = MenuIcons.forSetting(title).vector(),
                        onToggle: () -> Unit) {
-    val c = LocalBlaze.current.mono
-    Row(
-        Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClick = onToggle).padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (icon != null) { IconTile(icon, tint = LocalBlaze.current.accent); Spacer(Modifier.width(BlazeIconStyle.gap)) }
-        Column(Modifier.weight(1f)) {
-            Text(title, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
-            Text(sub, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
-        }
-        SquareToggle(on)
-    }
+    val look = com.blaze.assistant.ui.space.spaceLook()
+    com.blaze.assistant.ui.space.SpaceToggleRow(title, on, Modifier.hairlineBottom(look.hair), sub = sub, icon = icon,
+        padStart = 0.dp, padEnd = 0.dp, onToggle = onToggle)
 }
 
 @Composable

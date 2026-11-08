@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
@@ -45,20 +44,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blaze.assistant.BrandName
-import com.blaze.assistant.ui.BlazeIconStyle
-import com.blaze.assistant.ui.IconTile
 import com.blaze.assistant.ui.SearchGlyph
 
 fun SpaceProfile.Icon.vector(): ImageVector = when (this) {
@@ -110,29 +105,29 @@ fun SpaceProfileScreen(
             Text(email, modifier = Modifier.padding(start = 6.dp, top = 2.dp), style = SpaceType.body(17.sp, look.sub))
             Spacer(Modifier.height(18.dp))
             // the plan card
-            ProfileGroup {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            SpaceGroup {
+                Row(Modifier.fillMaxWidth().padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = SpaceInsets.CARD_PAD_V_DP.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(BrandName.UPPER, style = SpaceType.headline(28.sp, look.ink))
                     Spacer(Modifier.width(8.dp))
                     Text("cloud", style = SpaceType.headline(28.sp, look.sub).copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic))
                     Spacer(Modifier.weight(1f))
                     Text(planLine, style = SpaceType.body(14.sp, look.sub))
                 }
-                Hairline()
+                SpaceHairline()
                 ProfileRow(SpaceProfile.PLAN, showIcon = false) { onPage(SpaceProfile.PLAN.page) }
             }
             for (group in SpaceProfile.GROUPS) {
                 Spacer(Modifier.height(16.dp))
-                ProfileGroup {
+                SpaceGroup {
                     group.forEachIndexed { i, r ->
-                        if (i > 0) Hairline()
+                        if (i > 0) SpaceHairline()
                         ProfileRow(r) { onPage(r.page) }
                     }
                 }
             }
             if (signedIn) {
                 Spacer(Modifier.height(16.dp))
-                ProfileGroup { ProfileRow(SpaceProfile.Row("signout", "Sign out", SpaceProfile.Icon.SIGN_OUT, ""), chevron = false) { onSignOut() } }
+                SpaceGroup { ProfileRow(SpaceProfile.Row("signout", "Sign out", SpaceProfile.Icon.SIGN_OUT, ""), chevron = false) { onSignOut() } }
             }
             if (version.isNotBlank()) Text("${BrandName.UPPER} $version", modifier = Modifier.padding(start = 6.dp, top = 18.dp), style = SpaceType.body(13.sp, look.sub))
         }
@@ -148,37 +143,23 @@ fun SpaceProfileScreen(
     }
 }
 
-@Composable
-private fun ProfileGroup(content: @Composable () -> Unit) {
-    val look = spaceLook()
-    Column(Modifier.fillMaxWidth().clip(SpaceShapes.card).background(if (look.dark) androidx.compose.ui.graphics.Color(0xF2080B12) else look.card)) { content() }
-}
-
-@Composable
-private fun Hairline() {
-    val look = spaceLook()
-    Box(Modifier.padding(horizontal = 22.dp).fillMaxWidth().height(1.dp).background(look.hair))
-}
-
+/**
+ * A profile row: [SpaceRow] at the large size with its tag, icon and chevron. Unification 5/9: the group, the row and
+ * the hairline are the shared ones in SpaceRows.kt (this page is where they came from).
+ */
 @Composable
 private fun ProfileRow(r: SpaceProfile.Row, showIcon: Boolean = true, chevron: Boolean = true, icon: ImageVector? = null, onClick: () -> Unit) {
-    val look = spaceLook()
-    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).testTag(SpaceTags.profileRow(r.id)).clickable(onClickLabel = r.label, onClick = onClick)
-        .semantics { role = Role.Button }.padding(horizontal = 22.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        // 0.52.4: the shared round icon tile (the reference's rows) instead of a bare icon
-        if (showIcon) { IconTile(icon ?: r.icon.vector(), tint = look.accent); Spacer(Modifier.width(BlazeIconStyle.gap)) }
-        Text(r.label, modifier = Modifier.weight(1f), style = SpaceType.body(18.sp, look.ink, FontWeight.Medium))
-        if (chevron) ChevronMark(look.ink)
-    }
+    SpaceRow(r.label, icon = if (showIcon) icon ?: r.icon.vector() else null, size = SpaceRowSize.LARGE, chevron = chevron,
+        tag = SpaceTags.profileRow(r.id), onClickLabel = r.label, onClick = onClick)
 }
 
 /** System Preferences: one grouped card of the pages it holds (appearance, language, voice, permissions, updates). */
 @Composable
 fun SpaceSystemPage(onPage: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        ProfileGroup {
+        SpaceGroup {
             SpaceSettings.SYSTEM_ROWS.forEachIndexed { i, (page, label) ->
-                if (i > 0) Hairline()
+                if (i > 0) SpaceHairline()
                 ProfileRow(SpaceProfile.Row(page, label, SpaceProfile.Icon.SYSTEM, page), icon = systemRowIcon(page)) { onPage(page) }
             }
         }
@@ -197,11 +178,8 @@ fun SpaceFeedbackPage(version: String) {
     Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
         Text("Tell the ${BrandName.NAME} team what works, what doesn't, or what you'd love next.", style = SpaceType.body(16.sp, look.sub))
         Spacer(Modifier.height(14.dp))
-        Box(Modifier.fillMaxWidth().heightIn(min = 160.dp).clip(SpaceShapes.tile).background(look.card).border(1.dp, look.hair, SpaceShapes.tile).padding(16.dp)) {
-            if (text.isEmpty()) Text("Your feedback\u2026", style = SpaceType.body(17.sp, look.sub))
-            BasicTextField(text, { text = it }, textStyle = SpaceType.body(17.sp, look.ink), cursorBrush = SolidColor(look.accent),
-                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Your feedback" })
-        }
+        // Unification 5/9: the shared text field, from SpaceRows.kt
+        SpaceField(text, { text = it }, "Your feedback\u2026", singleLine = false, minHeight = 160.dp, desc = "Your feedback")
         Spacer(Modifier.height(16.dp))
         SpacePillButton("Send feedback", primary = true, enabled = text.isNotBlank(), onClick = {
             val body = SpaceFeedback.body(text, version, android.os.Build.MODEL ?: "", android.os.Build.VERSION.SDK_INT)
