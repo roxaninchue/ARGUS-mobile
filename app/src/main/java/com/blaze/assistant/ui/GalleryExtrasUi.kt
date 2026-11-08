@@ -242,11 +242,11 @@ fun PhotoEditor(e: Entry, onDone: () -> Unit) {
                 else Image(p, "Preview", Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
             }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                PillButton("Rotate", primary = false, icon = Icons.AutoMirrored.Rounded.RotateRight) { rotate = (rotate + 90) % 360 }
+                PillButton("Rotate", primary = false, icon = Icons.AutoMirrored.Rounded.RotateRight, onDark = true) { rotate = (rotate + 90) % 360 }
                 listOf("Original" to 0f, "Square" to 1f, "4:3" to 4f / 3f, "16:9" to 16f / 9f, "9:16" to 9f / 16f).forEach { (n, r) ->
-                    PillButton(n, primary = aspect == r) { aspect = r }
+                    PillButton(n, primary = aspect == r, onDark = true) { aspect = r }
                 }
-                PillButton("Reset", primary = false, icon = Icons.Rounded.RestartAlt) { rotate = 0; aspect = 0f; bright = 0f; contrast = 1f; sat = 1f }
+                PillButton("Reset", primary = false, icon = Icons.Rounded.RestartAlt, onDark = true) { rotate = 0; aspect = 0f; bright = 0f; contrast = 1f; sat = 1f }
             }
             @Composable fun Knob(label: String, v: Float, range: ClosedFloatingPointRange<Float>, set: (Float) -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -258,8 +258,8 @@ fun PhotoEditor(e: Entry, onDone: () -> Unit) {
             Knob("Contrast", contrast, 0.5f..1.5f) { contrast = it }
             Knob("Colour", sat, 0f..2f) { sat = it }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                PillButton("Cancel", primary = false, onClick = onDone)
-                PillButton(if (saving) "Saving\u2026" else "Save copy", primary = true) {
+                PillButton("Cancel", primary = false, onDark = true, onClick = onDone)
+                PillButton(if (saving) "Saving\u2026" else "Save copy", primary = true, onDark = true) {
                     val s = src ?: return@PillButton
                     if (saving) return@PillButton
                     saving = true

@@ -322,7 +322,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
 /** The "3D engine couldn't start" banner: the real error, what's shown instead, and Retry. */
 @Composable
 private fun FailBanner(error: String, sketch: Boolean, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth().padding(12.dp).clip(BlazeShapes.medium).background(DialogColors.surface, BlazeShapes.medium).border(1.dp, DialogColors.border, BlazeShapes.medium)
+    Row(modifier.fillMaxWidth().padding(12.dp).clip(BlazeShapes.medium).background(DialogColors.Dark.surface, BlazeShapes.medium).border(1.dp, DialogColors.Dark.border, BlazeShapes.medium)
         .padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(DesignServe.failText(error), maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,

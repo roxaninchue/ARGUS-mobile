@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +46,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.blaze.assistant.ui.space.SpaceInsets
+import com.blaze.assistant.ui.space.SpaceLook
+import com.blaze.assistant.ui.space.SpacePalette
+import com.blaze.assistant.ui.space.SpaceShapes
+import com.blaze.assistant.ui.space.SpaceType
+import com.blaze.assistant.ui.space.SpaceTypeScale
+import com.blaze.assistant.ui.space.spaceLook
 
 /*
  * v0.19.0 visual parity: the small kit Blaze Desktop's pages are built from (frontend/dist/style.css:
@@ -139,41 +148,42 @@ fun Tag(text: String, on: Boolean = false) {
 enum class Btn { ACCENT, INK, LINE, GHOST }
 
 /**
- * Desktop's .btn as a Blaze pill (v0.24.8): 40dp tall, sentence case. ACCENT and INK are the primary gradient pill,
- * LINE a raised outlined pill, GHOST plain text in a pill-shaped touch area.
+ * Desktop's .btn as a Blaze pill (v0.24.8), sentence case. ACCENT and INK are the primary pill, LINE a raised outlined
+ * pill, GHOST plain text in a pill-shaped touch area. Unification: [SpaceInsets.CONTROL_DP] tall like every other control.
  */
 @Composable
 fun KitButton(text: String, kind: Btn = Btn.LINE, modifier: Modifier = Modifier, enabled: Boolean = true,
               icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit) {
     BlazeButton(text, modifier = modifier, kind = when (kind) { Btn.ACCENT, Btn.INK -> BtnKind.PRIMARY; Btn.LINE -> BtnKind.SECONDARY; Btn.GHOST -> BtnKind.GHOST },
-        enabled = enabled, height = 40.dp, icon = icon, onClick = onClick)
+        enabled = enabled, height = SpaceInsets.CONTROL_DP.dp, icon = icon, onClick = onClick)
 }
 
 enum class BtnKind { PRIMARY, SECONDARY, GHOST, DANGER }
 
 /**
- * The one Blaze button (v0.24.8): a pill, sentence case. PRIMARY = orange-to-blue gradient with white text,
- * SECONDARY = raised pill with a hairline, GHOST = text only, DANGER = warm orange outline.
+ * The one Blaze button (v0.24.8): a pill, sentence case. PRIMARY = the one primary style ([PrimaryButton], the shell's
+ * SpacePillButton primary), SECONDARY = raised pill with a hairline, GHOST = text only, DANGER = warm outline.
  */
 @Composable
 fun BlazeButton(text: String, modifier: Modifier = Modifier, kind: BtnKind = BtnKind.PRIMARY, enabled: Boolean = true,
-                height: androidx.compose.ui.unit.Dp = 44.dp, lead: String = "", icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+                height: androidx.compose.ui.unit.Dp = SpaceInsets.CONTROL_DP.dp, lead: String = "", icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
                 onClick: () -> Unit) {
     val c = LocalBlaze.current
     val shape = BlazeShapes.pill
     // v0.27.0: shrinks slightly while pressed (MotionTokens; none with Remove animations on).
     val press = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val base = modifier.pressScale(press).height(height).widthIn(min = 64.dp).clip(shape)
+    val primary = PrimaryButton.colors()
     val filled = when {
-        // v0.31.0: glass pills: primary = bright frost (dark) / solid ink (light), secondary = quiet frost, danger = warm rim.
-        kind == BtnKind.PRIMARY -> modifier.pressScale(press).height(height).widthIn(min = 64.dp).glassPrimary(shape, enabled)
+        // v0.31.0: glass pills: secondary = quiet frost, danger = warm rim. Unification: primary = [PrimaryButton].
+        kind == BtnKind.PRIMARY -> base.background(PrimaryButton.fill(primary, enabled), shape)
         !enabled -> base.background(if (c.dark) c.faint else GlassTokens.lightInk.copy(alpha = 0.10f), shape)
         kind == BtnKind.SECONDARY -> modifier.pressScale(press).height(height).widthIn(min = 64.dp).glass(shape, GlassIntensity.Low, shadow = false)
         kind == BtnKind.DANGER -> base.border(1.dp, GlassTokens.error.copy(alpha = 0.7f), shape)
         else -> base
     }
     val fg = when {
-        kind == BtnKind.PRIMARY -> GlassTokens.onPrimary(c.dark, enabled)
+        kind == BtnKind.PRIMARY -> PrimaryButton.ink(primary, enabled)
         !enabled -> if (c.dark) c.weak else GlassTokens.lightInk.copy(alpha = 0.50f)
         kind == BtnKind.DANGER -> GlassTokens.error
         kind == BtnKind.GHOST -> c.sub
@@ -317,50 +327,109 @@ fun Segmented(options: List<Pair<String, String>>, value: String, modifier: Modi
 /** Round on/off switch (v0.24.8: a pill track with a round knob, blue when on), usable outside Settings. */
 @Composable
 fun KitSwitch(on: Boolean, onToggle: () -> Unit) {
-    val c = LocalBlaze.current
     Box(Modifier.clip(BlazeShapes.pill).clickable(onClick = onToggle).padding(4.dp)) {
-        BlazeSwitchTrack(on, 40.dp, 22.dp)
+        BlazeSwitchTrack(on)
     }
 }
 
-/** The rounded switch drawing shared by [KitSwitch] and Settings' own toggles: pill track, round knob, accent when on. */
+/** Unification: the app's one switch size, in dp ([KitSwitch], Settings' toggles and the glass pages' toggle rows). */
+object SwitchSize {
+    const val W_DP = 46
+    const val H_DP = 28
+    const val KNOB_INSET_DP = 3
+}
+
+/**
+ * The rounded switch drawing shared by [KitSwitch] and Settings' own toggles: pill track, round knob, accent when on.
+ * Unification: one size ([SwitchSize]) and the shell's colours (accent when on, the track colour when off).
+ */
 @Composable
-fun BlazeSwitchTrack(on: Boolean, w: androidx.compose.ui.unit.Dp, h: androidx.compose.ui.unit.Dp) {
-    val c = LocalBlaze.current
-    val knob = h - 4.dp
-    Box(Modifier.width(w).height(h).clip(BlazeShapes.pill).background(if (on) c.accent else c.faint, BlazeShapes.pill)
-        .border(1.dp, if (on) c.accent else c.hair2, BlazeShapes.pill)) {
-        Box(Modifier.padding(start = if (on) w - knob - 2.dp else 2.dp, top = 2.dp).size(knob).clip(BlazeShapes.pill)
-            .background(if (on) c.onAccent else c.weak, BlazeShapes.pill))
+fun BlazeSwitchTrack(on: Boolean) {
+    val look = spaceLook()
+    val w = SwitchSize.W_DP.dp; val h = SwitchSize.H_DP.dp; val inset = SwitchSize.KNOB_INSET_DP.dp
+    val knob = h - inset * 2
+    Box(Modifier.width(w).height(h).clip(BlazeShapes.pill).background(if (on) look.accent else look.track, BlazeShapes.pill)
+        .border(1.dp, if (on) look.accent else look.hair, BlazeShapes.pill)) {
+        Box(Modifier.padding(start = if (on) w - knob - inset else inset, top = inset).size(knob).clip(BlazeShapes.pill)
+            .background(if (on) look.primaryInk else look.sub, BlazeShapes.pill))
     }
 }
 
 // ---------------- v0.24.5: Blaze dialog and menu (no Material defaults anywhere) ----------------
 
-/** Dialog surface: always the dark Blaze card (Blazeinchue: matches the app; never Material's lavender). */
 /**
  * v0.31.2 theme fix: the surface for menus and pop-up lists whose text uses the theme's ink (the avatar menu, the "/"
- * suggestions). They used the always-dark dialog surface, so in the light theme dark text sat on a dark panel.
- * Near-opaque so the chat behind never shows through the words.
+ * suggestions). Unification: the shell's menu colour ([SpaceLook.menu]) in each mode, so every menu is one material.
  */
-val BlazeColors.menuSurface: Color get() = if (dark) Color(0xF5141416) else Color(0xFAF7F7F8)
+val BlazeColors.menuSurface: Color get() = SpaceLook.of(dark).menu
 
+/** Unification: the one corner radius of dialogs and menus (the shell's card, as on the profile groups). */
+val FloatingShape = SpaceShapes.card
+
+/** A menu row's pressed shape: [FloatingShape]'s 28 dp less the row's 6 dp inset. */
+internal val MenuRowShape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+
+/** One mode's dialog colours: the solid card with the shell's ink, sub text and hairline. */
+@Immutable
+class DialogPalette(
+    val surface: Color, val border: Color, val title: Color, val body: Color,
+    val primary: Color, val primaryWarm: Color, val onPrimary: Color, val ghost: Color,
+    /** The warm (destructive-looking) primary button's fill, white text on it. */
+    val warmFill: Color,
+)
+
+/**
+ * Dialog and menu colours. Unification: light-aware (they were always dark, so light mode got black slabs): the surface
+ * is the shell's solid card ([SpaceLook.cardSolid]), the text its ink and sub. Read inside a composable, each colour
+ * follows the app's light / dark mode; [Dark] / [Light] are for surfaces that stay one mode on purpose (the work banner
+ * over other apps, the camera's result sheet) and for code outside composition.
+ */
 object DialogColors {
-    // v0.31.0: greyscale glass (near-opaque so dialogs read over anything).
-    val surface = Color(0xF2141416)
-    val border = Color(0x2EFFFFFF)
-    val title = GlassTokens.ink
-    val body = GlassTokens.sub
-    val primary = Color(0xFFE6E6EA)
-    val primaryWarm = GlassTokens.error      // desaturated warm, for a destructive-looking primary
-    val onPrimary = Color(0xFFFFFFFF)
-    val ghost = Color(0xCCF2F2F3)
+    val Dark = DialogPalette(
+        surface = SpaceLook.Dark.cardSolid, border = Color(0x2EFFFFFF), title = SpaceLook.Dark.ink, body = SpaceLook.Dark.sub,
+        primary = Color(0xFFE6E6EA), primaryWarm = GlassTokens.error, onPrimary = Color(0xFFFFFFFF), ghost = Color(0xCCF2F2F3),
+        warmFill = GlassTokens.error.copy(alpha = 0.55f))
+    val Light = DialogPalette(
+        surface = SpaceLook.Light.cardSolid, border = Color(0x290A1020), title = SpaceLook.Light.ink, body = SpaceLook.Light.sub,
+        primary = Color(SpacePalette.INK_LIGHT), primaryWarm = Color(0xFFB42318), onPrimary = Color(0xFFFFFFFF), ghost = Color(0xE60A0F1A),
+        warmFill = Color(0xFFB42318))
+
+    fun of(dark: Boolean): DialogPalette = if (dark) Dark else Light
+
+    private val now: DialogPalette @Composable @ReadOnlyComposable get() = of(LocalBlaze.current.dark)
+
+    val surface: Color @Composable @ReadOnlyComposable get() = now.surface
+    val border: Color @Composable @ReadOnlyComposable get() = now.border
+    val title: Color @Composable @ReadOnlyComposable get() = now.title
+    val body: Color @Composable @ReadOnlyComposable get() = now.body
+    /** The selected-row tint and check marks inside dialogs (near-white on dark, ink on light). */
+    val primary: Color @Composable @ReadOnlyComposable get() = now.primary
+    /** Warm text for a destructive-looking item (desaturated on dark, a deeper red on light so it reads on white). */
+    val primaryWarm: Color @Composable @ReadOnlyComposable get() = now.primaryWarm
+    val onPrimary: Color @Composable @ReadOnlyComposable get() = now.onPrimary
+    val ghost: Color @Composable @ReadOnlyComposable get() = now.ghost
+    /** The dim behind a dialog: the same in both modes. */
     val scrim = Color(0x99000000)
 }
 
 /**
- * The shared Blaze dialog: a rounded dark card with a subtle border and shadow, paper-white title, muted body,
- * a primary pill button (brand blue, or orange with [warm]) and an optional ghost secondary button.
+ * Unification: the one primary button style, the shell's SpacePillButton primary (white with dark text in dark mode,
+ * Argus Blue with white text in light), used by [BlazeButton] PRIMARY and [PillButton]. [colors] with onDark = true
+ * keeps the dark-mode pair for buttons drawn over video or a black scrim.
+ */
+object PrimaryButton {
+    @Composable
+    fun colors(onDark: Boolean = false): Pair<Color, Color> {
+        val look = if (onDark) SpaceLook.Dark else spaceLook()
+        return look.primaryFill to look.primaryInk
+    }
+    fun fill(colors: Pair<Color, Color>, enabled: Boolean): Color = if (enabled) colors.first else colors.first.copy(alpha = 0.45f)
+    fun ink(colors: Pair<Color, Color>, enabled: Boolean): Color = if (enabled) colors.second else colors.second.copy(alpha = 0.7f)
+}
+
+/**
+ * The shared Blaze dialog: the shell's solid card ([DialogColors], light or dark with the app) with a hairline and a
+ * shadow, ink title, muted body, a primary pill button (or warm with [warm]) and an optional ghost secondary button.
  */
 @Composable
 fun BlazeDialog(
@@ -378,12 +447,12 @@ fun BlazeDialogCard(
     dismiss: String? = null, onDismiss: () -> Unit = {}, warm: Boolean = false,
     content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
-    val shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+    val shape = FloatingShape
     Column(Modifier.widthIn(max = 360.dp).fillMaxWidth()
         .shadow(18.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
         .background(DialogColors.surface, shape)
-        .glass(shape, GlassIntensity.High, shadow = false)
-        .padding(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 16.dp)) {
+        .border(1.dp, DialogColors.border, shape)
+        .padding(start = SpaceInsets.CARD_PAD_DP.dp, end = SpaceInsets.CARD_PAD_DP.dp, top = SpaceInsets.CARD_PAD_DP.dp, bottom = 16.dp)) {
         Text(title, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 24.sp, color = DialogColors.title))
         if (body.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
@@ -398,18 +467,23 @@ fun BlazeDialogCard(
     }
 }
 
-/** Rounded pill button for dialogs, menus and overlays: filled brand blue / orange, or a ghost. */
+/**
+ * Rounded pill button for dialogs, menus and overlays: the one primary style ([PrimaryButton]), warm, or a ghost.
+ * Unification: [SpaceInsets.CONTROL_DP] tall; light-aware, except with [onDark] (over video or a black scrim).
+ */
 @Composable
 fun PillButton(text: String, primary: Boolean, warm: Boolean = false, modifier: Modifier = Modifier,
-               icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit) {
+               icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onDark: Boolean = false, onClick: () -> Unit) {
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
-    val bg = if (!primary) androidx.compose.ui.graphics.SolidColor(Color.Transparent) else if (warm) androidx.compose.ui.graphics.SolidColor(DialogColors.primaryWarm.copy(alpha = 0.55f)) else BlazeBrush.primary
+    val pal = if (onDark) DialogColors.Dark else DialogColors.of(LocalBlaze.current.dark)
+    val main = PrimaryButton.colors(onDark)
+    val bg = if (!primary) Color.Transparent else if (warm) pal.warmFill else main.first
     val press = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Box(modifier.pressScale(press).height(40.dp).widthIn(min = 72.dp).clip(shape).background(bg, shape)
-        .let { if (!primary) it.border(1.dp, DialogColors.border, shape) else it }
+    Box(modifier.pressScale(press).height(SpaceInsets.CONTROL_DP.dp).widthIn(min = 72.dp).clip(shape).background(bg, shape)
+        .let { if (!primary) it.border(1.dp, pal.border, shape) else it }
         .clickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current, onClick = onClick)
         .padding(start = if (icon != null) 14.dp else 18.dp, end = 18.dp), contentAlignment = Alignment.Center) {
-        val fg = if (primary) DialogColors.onPrimary else DialogColors.ghost
+        val fg = if (!primary) pal.ghost else if (warm) pal.onPrimary else main.second
         // 0.52.4: an optional leading icon (Play, Shuffle, Retry…), the shared button-icon size
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) { LeadIcon(icon, fg, size = BlazeIconStyle.buttonIcon); Spacer(Modifier.width(8.dp)) }
@@ -418,7 +492,7 @@ fun PillButton(text: String, primary: Boolean, warm: Boolean = false, modifier: 
     }
 }
 
-/** The shared Blaze menu (replaces Material's DropdownMenu): a rounded dark card in a popup. */
+/** The shared Blaze menu (replaces Material's DropdownMenu): the shell's menu card in a popup. */
 @Composable
 fun BlazeMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<Pair<String, () -> Unit>>) {
     if (!expanded) return
@@ -435,13 +509,16 @@ fun BlazeMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<Pair<String,
  */
 @Composable
 fun BlazeMenuCard(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit = {}) {
-    val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+    // Unification: the shell's opaque menu colour ([menuSurface], light or dark with the app), the dialogs' radius, a hairline.
+    val shape = FloatingShape
+    val c = LocalBlaze.current
     val icons = remember(items.map { it.first }) { items.map { MenuIcons.forLabel(it.first) } }
     val anyIcon = icons.any { it != null }
-    Column(Modifier.widthIn(min = 200.dp, max = 280.dp).shadow(12.dp, shape).background(DialogColors.surface, shape)
-        .glass(shape, GlassIntensity.High, shadow = false).padding(vertical = 6.dp)) {
+    Column(Modifier.widthIn(min = 200.dp, max = 280.dp).shadow(12.dp, shape).background(c.menuSurface, shape)
+        .border(1.dp, DialogColors.border, shape).padding(vertical = 8.dp)) {
         items.forEachIndexed { i, (label, act) ->
-            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp).clip(BlazeShapes.small).clickable { onDismiss(); act() }.padding(horizontal = 12.dp, vertical = 12.dp),
+            // rows round to the card's corner less their 6 dp inset, so the pressed row sits concentric in the card
+            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp).clip(MenuRowShape).clickable { onDismiss(); act() }.padding(horizontal = 12.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 val icon = icons.getOrNull(i)
                 if (icon != null) LeadIcon(icon.vector(), DialogColors.title)
@@ -478,43 +555,51 @@ val BlazeColors.backLine: Color get() = if (dark) Color(0x33FFFFFF) else Color(0
 
 /**
  * v0.28.3: the one back button for every page (settings, projects, project chats, search, gallery, Learn…), instead of
- * a thin "←" text glyph. A 40 dp round tonal button with a 1 dp outline and Material's rounded ArrowBack (auto-mirrored
+ * a thin "←" text glyph. A round tonal button with a 1 dp outline and Material's rounded ArrowBack (auto-mirrored
  * for right-to-left), inside a 48 dp touch target, with a ripple and a slight press scale. Pair it with [BackTitle].
+ * Unification: [SpaceInsets.CONTROL_DP] (44 dp) across in the shell's track colour, like the top bar's round buttons.
  */
 @Composable
 fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier, desc: String = "Back") {
-    val c = LocalBlaze.current
+    val look = spaceLook()
     val press = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val circle = androidx.compose.foundation.shape.CircleShape
     Box(modifier.size(48.dp)
         .semantics(mergeDescendants = true) { contentDescription = desc }
         .clickable(interactionSource = press, indication = null, onClickLabel = desc, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center) {
-        Box(Modifier.pressScale(press).size(40.dp).clip(circle).background(c.backFill, circle).border(1.dp, c.backLine, circle)
+        Box(Modifier.pressScale(press).size(SpaceInsets.CONTROL_DP.dp).clip(circle).background(look.track, circle).border(1.dp, look.hair, circle)
             .indication(press, androidx.compose.foundation.LocalIndication.current), contentAlignment = Alignment.Center) {
             androidx.compose.material3.Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null,
-                tint = c.ink, modifier = Modifier.size(22.dp))
+                tint = look.ink, modifier = Modifier.size(22.dp))
         }
     }
 }
 
 /**
  * v0.28.3: a page header row: [BackButton], then the title (and an optional small line above it, e.g. the project name
- * over a project chat's title), aligned the same on every page. [right] holds trailing actions.
+ * over a project chat's title), aligned the same on every page. [right] holds trailing actions (the ThemeSwitch on
+ * Settings). Unification: matched to the top bar: the same height (44 dp control plus 10 dp above and below), the back
+ * circle at the gutter ([SpaceInsets.GUTTER_DP]; [edge] is the start padding before its 48 dp touch target, for headers
+ * already inset by their parent), and the shell's serif title ([SpaceType.headline], [SpaceTypeScale.SECTION] by default).
  */
 @Composable
-fun BackTitle(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, eyebrow: String = "", size: androidx.compose.ui.unit.TextUnit = 20.sp,
-              right: (@Composable RowScope.() -> Unit)? = null) {
-    val c = LocalBlaze.current
-    Row(modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 4.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+fun BackTitle(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, eyebrow: String = "",
+              size: androidx.compose.ui.unit.TextUnit = SpaceTypeScale.SECTION.sp,
+              edge: androidx.compose.ui.unit.Dp = BackTitleEdge, right: (@Composable RowScope.() -> Unit)? = null) {
+    val look = spaceLook()
+    Row(modifier.fillMaxWidth().heightIn(min = (SpaceInsets.CONTROL_DP + 2 * 10).dp).padding(start = edge, end = BackTitleEdge),
+        verticalAlignment = Alignment.CenterVertically) {
         BackButton(onBack)
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             if (eyebrow.isNotBlank()) Text(eyebrow, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 12.sp, color = c.sub))
-            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = size, letterSpacing = (-0.01).em, color = c.ink))
+                style = SpaceType.body(SpaceTypeScale.CAPTION.sp, look.sub, FontWeight.Medium))
+            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.headline(size, look.ink))
         }
         right?.invoke(this)
     }
 }
+
+/** The back circle's 48 dp touch target is 2 dp wider than the 44 dp circle on each side, so this puts the circle at the gutter. */
+val BackTitleEdge: androidx.compose.ui.unit.Dp = (SpaceInsets.GUTTER_DP - (48 - SpaceInsets.CONTROL_DP) / 2).dp

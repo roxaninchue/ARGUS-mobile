@@ -1055,5 +1055,5 @@ fun InterestPicker(onDone: (Set<String>, Set<String>, String) -> Unit, onSkip: (
 
 /** v0.31: Home's bottom sheets: a near-opaque dark base (readable over the board) under GlassKit's high frost and a grab-free rim. */
 internal fun Modifier.homeSheet(c: BlazeColors): Modifier =
-    clip(GlassTokens.sheetShape).background(if (c.dark) DialogColors.surface else Color(0xF7FAFAFA), GlassTokens.sheetShape)
+    clip(GlassTokens.sheetShape).background(if (c.dark) DialogColors.Dark.surface else Color(0xF7FAFAFA), GlassTokens.sheetShape)
         .glass(GlassTokens.sheetShape, GlassIntensity.High, shadow = false)

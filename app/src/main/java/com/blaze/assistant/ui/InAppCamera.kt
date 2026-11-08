@@ -782,7 +782,7 @@ private fun camStart(ctx: Context, i: Intent): Boolean = try { ctx.startActivity
 private fun ResultSheet(title: String, content: @Composable () -> Unit) {
     val c = LocalBlaze.current
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).windowInsetsPadding(WindowInsets.safeDrawing), contentAlignment = Alignment.BottomCenter) {
-        Column(Modifier.fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(22.dp)).background(DialogColors.surface, RoundedCornerShape(22.dp))
+        Column(Modifier.fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(22.dp)).background(DialogColors.Dark.surface, RoundedCornerShape(22.dp))
             .glass(RoundedCornerShape(22.dp), GlassIntensity.High, shadow = false).padding(18.dp)) {
             Text(title, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 12.sp, color = GlassTokens.sub))
             Spacer(Modifier.height(6.dp))

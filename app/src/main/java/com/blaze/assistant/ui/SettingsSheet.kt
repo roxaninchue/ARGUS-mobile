@@ -308,8 +308,8 @@ private fun CommandsSection() {
 @Composable
 private fun SquareToggle(on: Boolean) {
     val c = LocalBlaze.current.mono
-    // v0.24.8: round (pill track, round knob, blue when on); the name stays so callers don't change.
-    BlazeSwitchTrack(on, 46.dp, 26.dp)
+    // v0.24.8: round (pill track, round knob, blue when on); the name stays so callers don't change. Unification: the one switch size.
+    BlazeSwitchTrack(on)
 }
 
 @Composable

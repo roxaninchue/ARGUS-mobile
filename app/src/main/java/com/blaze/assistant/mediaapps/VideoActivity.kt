@@ -1083,12 +1083,12 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
             horizontalAlignment = Alignment.CenterHorizontally) {
             MText(error, 13.5.sp, Color.White, maxLines = 4)
             Spacer(Modifier.height(10.dp))
-            PillButton("Try again", primary = true, icon = Icons.Rounded.Refresh) { p.prepare(); p.play() }
+            PillButton("Try again", primary = true, icon = Icons.Rounded.Refresh, onDark = true) { p.prepare(); p.play() }
         }
         // v0.34.0: Skip intro (learned per series), Up next countdown, recap / translation progress.
         val introAt = a.introEnd(cur)
         if (controls && VideoSmart.showSkip(pos, introAt)) Box(Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp)) {
-            PillButton("Skip intro", primary = true, icon = Icons.Rounded.FastForward) { a.skipIntro() }
+            PillButton("Skip intro", primary = true, icon = Icons.Rounded.FastForward, onDark = true) { a.skipIntro() }
         }
         nextUp?.let { nx ->
             var left by remember(nx.key) { mutableStateOf(5) }
@@ -1101,8 +1101,8 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
                 MText(nx.title, 14.sp, Color.White, FontWeight.SemiBold, maxLines = 2)
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PillButton("Cancel", primary = false) { a.cancelUpNext() }
-                    PillButton("Play now", primary = true, icon = Icons.Rounded.PlayArrow) { a.play(nx) }
+                    PillButton("Cancel", primary = false, onDark = true) { a.cancelUpNext() }
+                    PillButton("Play now", primary = true, icon = Icons.Rounded.PlayArrow, onDark = true) { a.play(nx) }
                 }
             }
         }

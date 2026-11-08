@@ -106,6 +106,31 @@ class ContrastTest {
         }
     }
 
+    /**
+     * Unification: dialogs and menus follow light / dark (they were always dark, so light mode got black slabs). Each
+     * mode's dialog colours are the shell's solid card, ink and sub; the title, body, ghost-button text, selected tint and
+     * warm text keep AA on the dialog; white keeps AA on the warm button; menus are the shell's menu surface; and the one
+     * primary button style (the shell's) keeps AA in both modes.
+     */
+    @Test fun dialogsAndMenusFollowTheMode() {
+        val look = com.blaze.assistant.ui.space.SpaceLook
+        assertFalse("light dialogs are not the dark slab", DialogColors.Light.surface == DialogColors.Dark.surface)
+        for ((dark, c) in listOf(false to LightColors, true to DarkColors)) {
+            val d = DialogColors.of(dark)
+            val l = look.of(dark)
+            assertEquals(l.cardSolid, d.surface)
+            assertEquals(l.ink, d.title)
+            assertEquals(l.sub, d.body)
+            assertEquals(l.menu, c.menuSurface)
+            val g = Contrast.over(d.surface, l.ground)
+            for ((name, col) in listOf("title" to d.title, "body" to d.body, "ghost" to d.ghost, "selected tint" to d.primary, "warm text" to d.primaryWarm))
+                assertTrue("$name on the dialog ($dark)", Contrast.ratio(Contrast.over(col, g), g) >= Contrast.AA_TEXT)
+            assertTrue("white on the warm button ($dark)", Contrast.ratio(d.onPrimary, Contrast.over(d.warmFill, g)) >= Contrast.AA_TEXT)
+            assertTrue("the dialog has an edge ($dark)", d.border.alpha > 0f)
+            assertTrue("primary button ($dark)", Contrast.ratio(l.primaryInk, Contrast.over(l.primaryFill, g)) >= Contrast.AA_TEXT)
+        }
+    }
+
     @Test fun chipsAreSolidWithAVisibleBorder() {
         for ((name, c) in palettes) {
             val fill = ChipStyle.fill(c)

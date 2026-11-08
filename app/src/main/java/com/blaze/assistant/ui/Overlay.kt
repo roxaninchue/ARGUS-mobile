@@ -551,8 +551,8 @@ fun TaskCard(onOpen: () -> Unit, onStop: () -> Unit, onMinimise: () -> Unit = {}
             ) { ch, d -> ch.consume(); scope.launch { ox.snapTo(ox.value + d.x); oy.snapTo(oy.value + d.y) } }
         }
         .shadow(14.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-        .background(DialogColors.surface, shape)
-        .border(1.dp, DialogColors.border, shape)
+        .background(DialogColors.Dark.surface, shape)
+        .border(1.dp, DialogColors.Dark.border, shape)
         .clip(shape)
         .clickable(onClick = onOpen)
         .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -563,9 +563,9 @@ fun TaskCard(onOpen: () -> Unit, onStop: () -> Unit, onMinimise: () -> Unit = {}
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
                     color = GlassTokens.sub))
             Text(step, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = DialogColors.title))
+                style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = DialogColors.Dark.title))
         }
         Spacer(Modifier.width(8.dp))
-        PillButton("Stop", primary = true, warm = true, onClick = onStop)
+        PillButton("Stop", primary = true, warm = true, onDark = true, onClick = onStop)
     }
 }

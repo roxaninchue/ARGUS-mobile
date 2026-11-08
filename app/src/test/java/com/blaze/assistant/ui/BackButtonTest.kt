@@ -21,7 +21,8 @@ class BackButtonTest {
         val kit = File(root(), "com/blaze/assistant/ui/Kit.kt").readText()
         assertTrue(kit.contains("fun BackButton("))
         assertTrue(kit.contains("Icons.AutoMirrored.Rounded.ArrowBack"))
-        assertTrue(kit.contains("size(48.dp)") && kit.contains("size(40.dp)"))
+        // unification: the circle is the shell's 44 dp control (was 40 dp) inside the same 48 dp touch target
+        assertTrue(kit.contains("size(48.dp)") && kit.contains("size(SpaceInsets.CONTROL_DP.dp)"))
         assertTrue(kit.contains("contentDescription = desc") && kit.contains("desc: String = \"Back\""))
     }
 }
