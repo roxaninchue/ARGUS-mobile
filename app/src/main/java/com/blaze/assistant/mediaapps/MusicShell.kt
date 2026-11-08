@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -51,6 +53,14 @@ import com.blaze.assistant.ui.KitSearch
 import com.blaze.assistant.ui.LocalBlaze
 import com.blaze.assistant.ui.PillButton
 import com.blaze.assistant.ui.glass
+import com.blaze.assistant.ui.MotionTokens
+import com.blaze.assistant.ui.space.SpaceInsets
+import com.blaze.assistant.ui.space.SpacePalette
+import com.blaze.assistant.ui.space.SpaceRoundButton
+import com.blaze.assistant.ui.space.SpaceShapes
+import com.blaze.assistant.ui.space.SpaceType
+import com.blaze.assistant.ui.space.SpaceTypeScale
+import com.blaze.assistant.ui.space.spaceLook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -64,73 +74,95 @@ import java.io.File
 
 // ---------------------------------------------------------------- shared chrome (Music and Video)
 
-/** The account badge: the user's initial in a glass circle (top-left of Music and Video). */
+/**
+ * The account badge: the user's initial in a round [SpaceInsets.CONTROL_DP] circle (top-left of Music and Video).
+ * Unification: drawn like the top bar's avatar (Argus Blue, white initial).
+ */
 @Composable
 fun AccountBadge(onClick: () -> Unit) {
-    val c = LocalBlaze.current
     val name = remember { runCatching { com.blaze.assistant.agent.Settings.userName }.getOrDefault("") }
     val initial = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: ""
-    Box(Modifier.size(40.dp).clip(BlazeShapes.pill).glass(BlazeShapes.pill, GlassIntensity.Low, shadow = false)
+    Box(Modifier.size(SpaceInsets.CONTROL_DP.dp).clip(CircleShape).background(Color(SpacePalette.ARGUS_BLUE))
         .clickable(role = Role.Button, onClickLabel = "Your account") { onClick() }
         .semantics { contentDescription = if (name.isBlank()) "Your account" else "Your account, $name" }, contentAlignment = Alignment.Center) {
-        if (initial.isNotEmpty()) Text(initial, color = c.ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        else Icon(Icons.Rounded.Person, contentDescription = null, tint = c.ink, modifier = Modifier.size(22.dp))
+        if (initial.isNotEmpty()) Text(initial, style = SpaceType.rowTitle(Color.White))
+        else Icon(Icons.Rounded.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
     }
 }
 
 /**
- * The top bar of Music and Video: account badge left, then [actions] (Blaze DJ in Music, the theme switch) and the close (X)
- * on the right. Close always goes back to the Blaze chat ([MusicNav.CLOSE_TARGET]).
+ * The top bar of Music and Video: account badge left, then [actions] (Blaze DJ in Music), the light / dark switch and the
+ * close (X) on the right. Close always goes back to the Blaze chat ([MusicNav.CLOSE_TARGET]).
+ * Unification: the shared header, matched to the shell's top bar and BackTitle: the same height (the 44 dp control plus
+ * 10 dp above and below), the controls at the gutter ([SpaceInsets.GUTTER_DP]), round [SpaceInsets.CONTROL_DP] buttons
+ * in the track colour, and the shell's serif title ([SpaceType.section]). The switch lives here, so every screen that
+ * uses this header has it ([themeSwitch] = false leaves it out).
  */
 @Composable
-fun MediaTopBar(title: String, onAccount: () -> Unit, onClose: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
-    val c = LocalBlaze.current
-    Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+fun MediaTopBar(title: String, onAccount: () -> Unit, onClose: () -> Unit, themeSwitch: Boolean = true, actions: @Composable RowScope.() -> Unit = {}) {
+    val look = spaceLook()
+    Row(Modifier.fillMaxWidth().heightIn(min = (SpaceInsets.CONTROL_DP + 2 * 10).dp).padding(horizontal = SpaceInsets.GUTTER_DP.dp),
+        verticalAlignment = Alignment.CenterVertically) {
         AccountBadge(onAccount)
         Spacer(Modifier.width(10.dp))
-        Text(title, color = c.ink, fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.section(look.ink),
             modifier = Modifier.weight(1f).semantics { heading() })
-        actions()
-        RoundIcon(Icons.Rounded.Close, "Close and go back to ${BrandName.NAME} chat", onClick = onClose)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            actions()
+            if (themeSwitch) com.blaze.assistant.ui.ThemeSwitch(Modifier.size(SpaceInsets.CONTROL_DP.dp).clip(CircleShape).background(look.track), tint = look.ink)
+            SpaceRoundButton("Close and go back to ${BrandName.NAME} chat", onClose) {
+                Icon(Icons.Rounded.Close, contentDescription = null, tint = look.ink, modifier = Modifier.size(22.dp))
+            }
+        }
     }
 }
 
 data class NavItem(val id: String, val label: String, val icon: ImageVector)
 
-/** The bottom nav of Music and Video: icon + short label (labels are allowed on the nav), glass, edge to edge. */
+/**
+ * The bottom nav of Music and Video: icon + short label (labels are allowed on the nav).
+ * Unification: a floating pill, inset like the composer ([SpaceInsets.COMPOSER_EDGE_DP] from the sides,
+ * [SpaceInsets.COMPOSER_BOTTOM_DP] above the system bar), styled like the top bar's segmented pill: the track colour with
+ * a [SpaceInsets.PILL_FRAME_DP] frame, the picked tab a pill in the selected fill.
+ */
 @Composable
 fun MediaBottomNav(items: List<NavItem>, lit: String, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
-    Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp), GlassIntensity.Medium, shadow = false)
-        .navigationBarsPadding().height(60.dp), verticalAlignment = Alignment.CenterVertically) {
+    val look = spaceLook()
+    Row(Modifier.fillMaxWidth().navigationBarsPadding()
+        .padding(start = SpaceInsets.COMPOSER_EDGE_DP.dp, end = SpaceInsets.COMPOSER_EDGE_DP.dp, top = 6.dp, bottom = SpaceInsets.COMPOSER_BOTTOM_DP.dp)
+        .clip(SpaceShapes.pill).background(look.track).padding(SpaceInsets.PILL_FRAME_DP.dp), verticalAlignment = Alignment.CenterVertically) {
         items.forEach { n ->
             val on = n.id == lit
-            Column(Modifier.weight(1f).fillMaxHeight().clickable(role = Role.Tab, onClickLabel = n.label) { onPick(n.id) }.semantics { selected = on },
+            val fill by animateColorAsState(if (on) look.selectedFill else Color.Transparent, MotionTokens.medium(), label = "mediaNav")
+            val ink by animateColorAsState(if (on) look.selectedInk else look.sub, MotionTokens.medium(), label = "mediaNavInk")
+            Column(Modifier.weight(1f).heightIn(min = 52.dp).clip(SpaceShapes.pill).background(fill)
+                .clickable(role = Role.Tab, onClickLabel = n.label) { onPick(n.id) }.semantics { selected = on }.padding(vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Icon(n.icon, contentDescription = null, tint = if (on) c.ink else c.sub, modifier = Modifier.size(24.dp))
-                Text(n.label, color = if (on) c.ink else c.sub, fontSize = 11.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1)
+                Icon(n.icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+                Text(n.label, maxLines = 1, style = SpaceType.body(SpaceTypeScale.CAPTION.sp, ink, FontWeight.Medium))
             }
         }
     }
 }
 
-/** A chip row (filters): a quiet glass pill, the picked one solid ink. */
+/** A chip row (filters). Unification: the shell's pill colours (track; the picked one in the selected fill). */
 @Composable
 fun FilterChips(items: List<Pair<String, String>>, value: String, modifier: Modifier = Modifier, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val look = spaceLook()
     Row(modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items.forEach { (id, label) ->
             val on = id == value
-            Box(Modifier.clip(BlazeShapes.pill).then(if (on) Modifier.background(c.ink) else Modifier.glass(BlazeShapes.pill, GlassIntensity.Low, shadow = false))
+            Box(Modifier.clip(SpaceShapes.pill).background(if (on) look.selectedFill else look.track)
                 .clickable(role = Role.Button, onClickLabel = label) { onPick(id) }.semantics { selected = on }.padding(horizontal = 14.dp, vertical = 7.dp)) {
-                Text(label, color = if (on) c.paper else c.ink, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(label, maxLines = 1, style = SpaceType.body(13.sp, if (on) look.selectedInk else look.ink, FontWeight.Medium))
             }
         }
     }
 }
 
+/** A section's heading. Unification: the shell's serif sub-headline ([SpaceType.section]); the pages keep their own insets. */
 @Composable
-internal fun SectionTitle(t: String, modifier: Modifier = Modifier) = Text(t, color = LocalBlaze.current.ink, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+internal fun SectionTitle(t: String, modifier: Modifier = Modifier) = Text(t, style = SpaceType.section(spaceLook().ink),
     modifier = modifier.padding(start = 16.dp, top = 18.dp, bottom = 8.dp).semantics { heading() })
 
 // ---------------------------------------------------------------- covers

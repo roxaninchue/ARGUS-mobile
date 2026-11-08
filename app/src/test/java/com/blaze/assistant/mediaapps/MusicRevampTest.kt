@@ -156,6 +156,8 @@ class MusicRevampTest {
         }
         // Themes and glass: the pages sit on the themed screen and use glass surfaces.
         // 0.52.2: one ARGUS look (no Living Theme scene behind Music); the glass shell and the light / dark switch stay.
-        assertTrue("ThemeSwitch(" in src("mediaapps/MusicActivity.kt") && ".glass(" in src("mediaapps/MusicShell.kt"))
+        // Unification 7/9: the switch lives in the shared header (MediaTopBar), which Music uses.
+        val bar = src("mediaapps/MusicShell.kt").substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
+        assertTrue("ThemeSwitch(" in bar && "MediaTopBar(" in src("mediaapps/MusicActivity.kt") && ".glass(" in src("mediaapps/MusicShell.kt"))
     }
 }

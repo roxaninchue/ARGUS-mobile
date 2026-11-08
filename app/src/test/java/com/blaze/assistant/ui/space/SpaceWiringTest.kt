@@ -186,6 +186,26 @@ class SpaceWiringTest {
         assertFalse("the project chat header is not a glass pill", ".glass(" in header)
     }
 
+    @Test fun musicAndVideoWearTheShell() {
+        // Unification 7/9: Music and Video sit on the space background, share one header matched to the top bar (44 dp
+        // controls at the gutter, the serif title, the light / dark switch) and a floating pill nav inset like the composer.
+        for (f in listOf("mediaapps/MusicActivity.kt", "mediaapps/VideoActivity.kt")) {
+            val t = src(f)
+            assertTrue("$f sits on the space background", "${S}SpaceBackdrop {" in t)
+            assertFalse("$f has no flat paper background", "Box(Modifier.fillMaxSize().background(c.paper))" in t)
+        }
+        val shell = src("mediaapps/MusicShell.kt")
+        val bar = shell.substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
+        assertTrue("the header is at the gutter", "padding(horizontal = SpaceInsets.GUTTER_DP.dp)" in bar)
+        assertTrue("the header title is the serif section step", "SpaceType.section(look.ink)" in bar)
+        assertTrue("the close is the shell's round button", "SpaceRoundButton(" in bar)
+        assertFalse("no 20 sp bold title", "fontSize = 20.sp" in bar)
+        val nav = shell.substringAfter("fun MediaBottomNav(").substringBefore("\n}\n")
+        assertTrue("the nav floats at the composer's inset", "SpaceInsets.COMPOSER_EDGE_DP.dp" in nav && "clip(SpaceShapes.pill)" in nav)
+        assertTrue("the nav is the top bar's pill", "look.track" in nav && "look.selectedFill" in nav)
+        assertFalse("the nav is not an edge-to-edge glass sheet", ".glass(" in nav || "topStart = 20.dp" in nav)
+    }
+
     @Test fun thereIsNoModelPicker() {
         for (gone in listOf("ModelPicker(", "ModelPill(", "Act.PickModel", "Kind.MODEL", "Icon.MODEL", "SelfMap.MODELS")) nowhere(gone)
         val mc = src("composer/ModelChoice.kt")

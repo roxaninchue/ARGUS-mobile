@@ -840,13 +840,12 @@ private fun VideoApp(a: VideoActivity) {
     val resume: (com.blaze.assistant.movies.Progress) -> Unit = { pr -> scope.launch {
         try { a.playMovie(resumePlay(ctx, pr)) } catch (e: Exception) { note = e.message ?: "Couldn't continue" } } }
     val page = VideoNav.normalize(if (tab == "player") a.browse.value else tab)
-    // 0.52.2: one ARGUS look; the top bar keeps the light / dark switch.
-    Box(Modifier.fillMaxSize().background(c.paper)) {
+    // 0.52.2: one ARGUS look. Unification: the shell's space background; the shared header (MediaTopBar) carries the
+    // light / dark switch.
+    com.blaze.assistant.ui.space.SpaceBackdrop {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             if (detail == null) MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Library"; "sources" -> "Sources"; else -> "Video" },
-                onAccount = { account = true }, onClose = { a.leaveToChat() }) {
-                com.blaze.assistant.ui.ThemeSwitch(Modifier.width(44.dp))
-            }
+                onAccount = { account = true }, onClose = { a.leaveToChat() })
             if (note.isNotBlank()) MText(note, 12.sp, c.sub, modifier = Modifier.padding(horizontal = 16.dp))
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 val d = detail

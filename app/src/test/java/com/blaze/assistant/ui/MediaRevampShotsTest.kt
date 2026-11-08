@@ -17,6 +17,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.mediaapps.*
 import com.blaze.assistant.movies.*
+import com.blaze.assistant.ui.space.SpaceBackdrop
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -69,11 +70,14 @@ class MediaRevampShotsTest {
 
     private val nav = MusicNav.tabs.map { NavItem(it.id, it.label, androidx.compose.material.icons.Icons.Rounded.Home) }
 
+    // Unification 7/9: Music and Video sit on the space background (as MusicActivity / VideoActivity draw them).
     @Test fun musicHome() = frame("music-home-dark") {
-        Column(Modifier.fillMaxSize()) {
-            MediaTopBar("Music", {}, {})
-            Box(Modifier.weight(1f).fillMaxWidth()) { MusicHomePage(remember { NowPlaying() }, {}, { _, _, _ -> }, {}) }
-            MediaBottomNav(nav, "home") {}
+        SpaceBackdrop {
+            Column(Modifier.fillMaxSize()) {
+                MediaTopBar("Music", {}, {})
+                Box(Modifier.weight(1f).fillMaxWidth()) { MusicHomePage(remember { NowPlaying() }, {}, { _, _, _ -> }, {}) }
+                MediaBottomNav(nav, "home") {}
+            }
         }
     }
 
@@ -97,13 +101,15 @@ class MediaRevampShotsTest {
     private val posts = listOf("Nosferatu", "The General", "Metropolis", "His Girl Friday", "Sita Sings the Blues").mapIndexed { i, t -> MoviePost(t, "archive:$i", "", "archive") }
 
     @Test fun videoHome() = frame("video-home-dark") {
-        Column(Modifier.fillMaxSize()) {
-            MediaTopBar("Video", {}, {})
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                VideoHomeContent(listOf(src), mapOf("archive" to Result.success(listOf("Feature films" to posts))),
-                    listOf(Progress(MoviePlay("m1", "Nosferatu", "u", "", "archive"), 600_000, 5_000_000, 1)), posts.take(2), { false }, { _, _ -> }, {})
+        SpaceBackdrop {
+            Column(Modifier.fillMaxSize()) {
+                MediaTopBar("Video", {}, {})
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    VideoHomeContent(listOf(src), mapOf("archive" to Result.success(listOf("Feature films" to posts))),
+                        listOf(Progress(MoviePlay("m1", "Nosferatu", "u", "", "archive"), 600_000, 5_000_000, 1)), posts.take(2), { false }, { _, _ -> }, {})
+                }
+                MediaBottomNav(VideoNav.tabs.map { NavItem(it.id, it.label, androidx.compose.material.icons.Icons.Rounded.Home) }, "home") {}
             }
-            MediaBottomNav(VideoNav.tabs.map { NavItem(it.id, it.label, androidx.compose.material.icons.Icons.Rounded.Home) }, "home") {}
         }
     }
 

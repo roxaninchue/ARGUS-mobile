@@ -40,8 +40,17 @@ class ThemeEverywhereTest {
         assertEquals(listOf("home", "projects", "chat", "settings", "sheets", "music", "video", "design", "terminal"), AppTheme.SCREENS)
         val switchers = mapOf(
             "home" to "ui/HomeBoardUi.kt", "projects" to "ui/space/SpaceProjects.kt", "settings" to "ui/SettingsSheet.kt",
-            "music" to "mediaapps/MusicActivity.kt", "video" to "mediaapps/VideoActivity.kt", "design" to "ui/DesignView.kt")
+            "design" to "ui/DesignView.kt")
         for ((s, f) in switchers) assertTrue("$s has no ThemeSwitch", "ThemeSwitch(" in src(f))
+        // Unification 7/9: Music and Video share one header (MediaTopBar in MusicShell.kt), and the switch lives in it
+        // (on unless a caller passes themeSwitch = false, which neither does).
+        val bar = src("mediaapps/MusicShell.kt").substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
+        assertTrue("the shared media header has no ThemeSwitch", "ThemeSwitch(" in bar && "themeSwitch: Boolean = true" in bar)
+        for ((s, f) in mapOf("music" to "mediaapps/MusicActivity.kt", "video" to "mediaapps/VideoActivity.kt")) {
+            val t = src(f)
+            assertTrue("$s doesn't use the shared header", "MediaTopBar(" in t)
+            assertFalse("$s turns the switch off", "themeSwitch = false" in t)
+        }
         // 0.52.3 Chat: the avatar opens the profile, whose System Preferences row lists Appearance (light / dark); a
         // long-press on the avatar switches light / dark at once. Terminal: ⋮ › Light or dark.
         val sys = com.blaze.assistant.ui.space.SpaceProfile.row("system")!!

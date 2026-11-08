@@ -304,14 +304,15 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
         onClose()
     }
 
-    // 0.52.2: one ARGUS look; the top bar keeps the light / dark switch.
-    Box(Modifier.fillMaxSize().background(c.paper)) {
+    // 0.52.2: one ARGUS look. Unification: the shell's space background; the shared header (MediaTopBar) carries the
+    // light / dark switch.
+    com.blaze.assistant.ui.space.SpaceBackdrop {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             val page = if (tab == "player") under else MusicNav.normalize(tab)
             MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Your library"; "create" -> "Create"; else -> "Music" },
                 onAccount = { account = true }, onClose = onClose) {
-                RoundIcon(Icons.Rounded.Headphones, if (djOn) "${BrandName.NAME} DJ is on" else "${BrandName.NAME} DJ", tint = if (djOn) c.accent else c.ink) { djOpen = true }
-                com.blaze.assistant.ui.ThemeSwitch(Modifier.width(44.dp))
+                RoundIcon(Icons.Rounded.Headphones, if (djOn) "${BrandName.NAME} DJ is on" else "${BrandName.NAME} DJ", tint = if (djOn) c.accent else c.ink,
+                    fill = com.blaze.assistant.ui.space.spaceLook().track) { djOpen = true }
             }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 val o = open
