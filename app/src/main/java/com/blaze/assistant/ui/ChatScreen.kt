@@ -30,6 +30,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -324,7 +325,13 @@ fun ChatScreen() {
             else -> micPermission.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
-    LaunchedEffect(listenReq) { if (listenReq > 0 && mood == Mood.IDLE) onMic() }
+    // 0.52.4: never on its own at start. Only a NEW listen request (tile, notification, wake word, "voice" action) opens
+    // the mic; a count left over from earlier in the process is marked handled and ignored.
+    LaunchedEffect(listenReq) {
+        val fresh = listenReq > Voice.listenHandled
+        Voice.listenHandled = listenReq
+        if (fresh && listenReq > 0 && mood == Mood.IDLE) onMic()
+    }
 
     // Call Blaze: full-screen voice call.
     var inCall by remember { mutableStateOf(false) }
@@ -1052,7 +1059,10 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val total = items.size + 1 // + working row
     val atBottom by remember { derivedStateOf { !state.canScrollForward } }
     var follow by remember { mutableStateOf(true) }
-    LaunchedEffect(state.isScrollInProgress) { if (state.isScrollInProgress) follow = atBottom }
+    // 0.52.4: only YOUR drag lets go of the end. isScrollInProgress is also true for the list's own follow scrolls, so
+    // a thinking / steps bubble growing mid-scroll used to drop follow and flash the jump arrow.
+    val dragging by state.interactionSource.collectIsDraggedAsState()
+    LaunchedEffect(dragging) { if (dragging) follow = atBottom }
     LaunchedEffect(atBottom) { if (atBottom) follow = true }
 
     suspend fun toEnd(animated: Boolean) {
@@ -1072,7 +1082,8 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     // frame. Now: one relative scrollBy, only while you follow the end and the list can actually scroll further.
     val lastLen = rememberUpdatedState(messages.lastOrNull()?.text?.length ?: 0)
     LaunchedEffect(state) {
-        snapshotFlow { lastLen.value }.collect { if (follow && state.canScrollForward && !state.isScrollInProgress) state.scrollBy(100_000f) }
+        // 0.52.4: also when a row grows or shrinks without new text (thinking / steps bubbles animating), so the end stays put.
+        snapshotFlow { lastLen.value to state.canScrollForward }.collect { (_, more) -> if (follow && more && !dragging) state.scrollBy(100_000f) }
     }
     // Your own new message always brings you down.
     val lastUser = messages.lastOrNull { it.role == Role.USER }?.id
@@ -1194,7 +1205,8 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
             } }
         }
         }
-        AnimatedVisibility(!atBottom, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+        // 0.52.4: the arrow only when you scrolled up yourself, never for a bubble bouncing at the end.
+        AnimatedVisibility(!follow && !atBottom, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             enter = MotionTokens.enterUp(), exit = MotionTokens.fadeAway()) {
             Box(Modifier.size(44.dp).glass(CircleShape, GlassIntensity.High).clickable { scope.launch { follow = true; toEnd(true) } }
                 .semantics { contentDescription = "Jump to the newest message" }, contentAlignment = Alignment.Center) {

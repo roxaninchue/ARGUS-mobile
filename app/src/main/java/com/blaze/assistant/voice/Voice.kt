@@ -37,6 +37,13 @@ object Voice {
     /** Set by the app (MainActivity / assistant session) to ask the chat screen to start listening. */
     val listenRequests = MutableStateFlow(0)
 
+    /**
+     * 0.52.4: the last [listenRequests] value the chat screen acted on. The counter lives as long as the process, so a
+     * chat screen composed again (app reopened, activity recreated, theme switch) used to replay an old request and turn
+     * the mic on at start. Only a request newer than this one opens the mic.
+     */
+    @Volatile var listenHandled = 0
+
     /** Call Blaze: a full-screen voice call. While on, replies are always spoken and the mic reopens after each one. */
     @Volatile var inCall = false
     @Volatile var callMuted = false
