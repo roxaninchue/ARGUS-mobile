@@ -1,3 +1,11 @@
+## Unreleased (after v0.52.3, version not bumped): one look for the whole app
+- Every part of ARGUS now looks like the Home, the top bar and your profile: the same blacks and blues, the same rounded cards, the same margins, one size for round buttons and pills, and one set of text sizes.
+- The colour you pick in Appearance now colours the whole app, not only the older screens.
+- Settings pages one tap deeper, dialogs and menus follow light and dark mode (no more black boxes in light mode), with one switch, one main button style and one corner radius.
+- Chats, the + sheet and the reply, slash and listening strips float at the same inset as the message box instead of running edge to edge.
+- Music, Video and Gallery sit on the space view with the shared header (the light / dark switch included), a floating tab pill and the shared tab switcher.
+- The browser follows the app too: the new-tab page is the space view, its bar, tabs, launcher and site sheet use the app's cards and colours in light and dark, and its switches are the app's switch. Its VPN, location mask and tracker blocking work exactly as before.
+
 ## Unreleased (after v0.52.3, version not bumped): icons everywhere, and the app is a size smaller by default
 - Icons instead of plain text across the app: the selected Home / Chat / Projects segment shows its icon with its name, every menu row (chat and project menus, the message menu, music, video, movies, gallery, the browser) has a leading icon, and the + menu and the Autopilot / Plan chip use icons instead of dots.
 - List rows lead with a round tinted icon tile: the setup screen's items, the profile and System Preferences rows, settings switches, projects, recent projects on Home, project chats, Spotlight results and browser bookmarks and history. One shared style (size, shape, tint) everywhere.
