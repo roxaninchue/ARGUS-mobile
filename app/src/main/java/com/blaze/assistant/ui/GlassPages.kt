@@ -30,16 +30,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.blaze.assistant.ui.space.SpaceLook
+import com.blaze.assistant.ui.space.SpacePalette
+import com.blaze.assistant.ui.space.SpaceShapes
 
 /**
  * Black-and-white frosted glass for the non-chat pages (settings, memory, gallery, setup, home board…).
  * Built only on Compose foundation + the stable [Glass] / [BlazeColors] tokens so it does not depend on the
  * shared design system that is being rebuilt elsewhere. Dark theme: translucent white over near-black;
  * light theme: the same recipe with translucent ink so every page stays legible.
+ * Unification: the cards are the shell's solid card material ([SpaceLook.cardSolid], [SpaceShapes.card]) and the page
+ * ground is the shell's, so every settings sub-page matches the profile root it opens from.
  */
 internal object PageGlass {
-    val card: Shape = RoundedCornerShape(24.dp)
-    val row: Shape = RoundedCornerShape(20.dp)
+    val card: Shape = SpaceShapes.card
+    val row: Shape = SpaceShapes.tile
     val sheet: Shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     val pill: Shape = RoundedCornerShape(50)
 
@@ -60,33 +65,50 @@ internal object PageGlass {
         0f to Color.White.copy(alpha = if (c.dark) 0.07f else 0.30f), 0.45f to Color.Transparent,
         start = Offset.Zero, end = Offset(600f, 600f))
 
+    /**
+     * Unification: the shell's ground. Dark = the space backdrop's own sky as it looks under its scrim (black into a
+     * deep blue, for pages drawn without the photo); light = the light ground's gradient, as on SpaceBackdrop.
+     */
     fun backdrop(c: BlazeColors): Brush =
-        if (c.dark) Brush.verticalGradient(listOf(Color(0xFF111114), Color(0xFF070708), Color.Black))
-        else Brush.verticalGradient(listOf(Color(0xFFF7F7F7), Color(0xFFEDEDEE)))
+        if (c.dark) Brush.verticalGradient(listOf(Color(SpacePalette.OBSIDIAN), Color(0xFF00060F), Color(0xFF000D29)))
+        else Brush.verticalGradient(listOf(Color(SpacePalette.GROUND_LIGHT), Color(0xFFE7EDF8)))
+
+    /** The [pageGlass] alpha that means "the plain card"; a larger one lifts the card (a selected row) by the difference. */
+    const val BASE_ALPHA = 0.08f
 }
 
 /** Monochrome palette for glass pages: the accent becomes the ink (white on dark, near-black on light). */
 internal val BlazeColors.mono: BlazeColors get() = copy(accent = ink)
 
-/** Full-screen page background: near-black gradient (dark) or soft grey (light). */
+/** Full-screen page background: the shell's ground ([PageGlass.backdrop]). */
 internal fun Modifier.pageBackdrop(c: BlazeColors): Modifier = background(PageGlass.backdrop(c))
 
-/** A frosted glass surface: translucent fill, faint top-left sheen, 1dp gradient rim, content clipped to [shape]. */
+/**
+ * A page card, content clipped to [shape]. Unification: the shell's solid card material (the profile root's groups) with
+ * its hairline, instead of the 8 % white frost. An [alpha] above [PageGlass.BASE_ALPHA] lifts it by the difference (the
+ * selected state); [strongRim] gives the selected state a stronger edge.
+ */
 internal fun Modifier.pageGlass(
-    c: BlazeColors, shape: Shape = PageGlass.card, alpha: Float = 0.08f, strongRim: Boolean = false,
-): Modifier = clip(shape)
-    .background(PageGlass.fill(c, alpha), shape)
-    .background(PageGlass.sheen(c), shape)
-    .border(1.dp, PageGlass.rim(c, strongRim), shape)
+    c: BlazeColors, shape: Shape = PageGlass.card, alpha: Float = PageGlass.BASE_ALPHA, strongRim: Boolean = false,
+): Modifier {
+    val look = SpaceLook.of(c.dark)
+    val lift = (alpha - PageGlass.BASE_ALPHA).coerceAtLeast(0f)
+    return clip(shape)
+        .background(look.cardSolid, shape)
+        .let { if (lift > 0f) it.background(PageGlass.fill(c, lift), shape) else it }
+        .border(1.dp, if (strongRim) look.ink.copy(alpha = 0.35f) else look.hair, shape)
+}
 
 /** Same as [pageGlass] but toggles to a brighter "selected" state. */
 internal fun Modifier.pageGlassSelectable(c: BlazeColors, on: Boolean, shape: Shape = PageGlass.row): Modifier =
     pageGlass(c, shape, alpha = if (on) 0.16f else 0.07f, strongRim = on)
 
-/** Primary call-to-action pill: brighter glass (dark) or solid ink (light) so white labels read either way. */
+/**
+ * Primary call-to-action pill. Unification: solid Argus Blue in both modes (it was a brighter frost on dark, which is now
+ * the card itself), so the white labels its callers draw keep AA either way.
+ */
 internal fun Modifier.glassButton(c: BlazeColors, shape: Shape = PageGlass.pill): Modifier =
-    if (c.dark) pageGlass(c, shape, alpha = 0.16f, strongRim = true)
-    else clip(shape).background(GlassTokens.primaryFill(false), shape).border(1.dp, Color.White.copy(alpha = 0.10f), shape)
+    clip(shape).background(GlassTokens.primaryFill(false), shape).border(1.dp, Color.White.copy(alpha = 0.10f), shape)
 
 /** Faint inner wash for nested/expanded areas inside a glass card (replaces c.faint panels). */
 internal fun Modifier.glassInset(c: BlazeColors, shape: Shape = RoundedCornerShape(16.dp)): Modifier =
@@ -131,17 +153,11 @@ internal fun GlassRow(title: String, sub: String = "", modifier: Modifier = Modi
     }
 }
 
-/** Glass row with a monochrome switch (track = white glass when on). */
+/** Glass row with the app's one switch ([BlazeSwitchTrack], unification: it had its own 40 dp monochrome one). */
 @Composable
 internal fun GlassToggleRow(title: String, sub: String = "", on: Boolean, modifier: Modifier = Modifier, onToggle: () -> Unit) {
-    val c = LocalBlaze.current
     GlassRow(title, sub, modifier, onClick = onToggle) {
-        Box(Modifier.width(40.dp).padding(vertical = 2.dp).clip(PageGlass.pill)
-            .background(if (on) c.ink.copy(alpha = 0.85f) else PageGlass.fill(c, 0.12f), PageGlass.pill)
-            .border(1.dp, PageGlass.rim(c), PageGlass.pill).padding(3.dp),
-            contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart) {
-            Box(Modifier.size(18.dp).background(if (on) (if (c.dark) Color.Black else Color.White) else c.sub, PageGlass.pill))
-        }
+        BlazeSwitchTrack(on)
         Spacer(Modifier.width(2.dp))
     }
 }
