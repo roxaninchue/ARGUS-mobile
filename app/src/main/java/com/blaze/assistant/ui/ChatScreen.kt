@@ -705,7 +705,7 @@ fun ChatScreen() {
             }
             if (!designFull && !maxed && showing.isNotEmpty() && nav.tab == ChatNav.CHAT) com.blaze.assistant.ui.space.SpaceChip(
                 (Views.find(showing)?.name ?: showing) + (if (showing == "design") " \u00b7 $DESIGN_BETA" else "") + "  \u2715", { exitView() },
-                modifier = Modifier.padding(start = 16.dp, bottom = 6.dp))
+                modifier = Modifier.padding(start = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, bottom = 6.dp))
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 // v0.27.0: Chat and Projects cross-fade when you switch tabs.
                 // v0.28.3: three panes: main Chat, the Projects list / a project page, and a project chat screen.
@@ -843,7 +843,7 @@ fun ChatScreen() {
                 if (quote.isNotBlank()) QuoteStrip(quote) { quote = "" }
                 if (pending.isNotEmpty() || loadingFiles) AttachmentThumbs(pending, loadingFiles) { a -> pending = pending - a }
                 if (clipHasImage && pending.isEmpty() && !plusOpen) Row(Modifier.fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    .padding(start = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, end = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp - 8.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Label("Image on your clipboard", size = 10.sp, modifier = Modifier.weight(1f))
                     ActionText("Paste image", color = c.accent, size = 10.sp, modifier = Modifier.clickable { pasteImage() }.padding(8.dp))
                     ActionText("×", size = 12.sp, modifier = Modifier.clickable { clipHasImage = false }.padding(8.dp))
@@ -1120,8 +1120,9 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
         // v0.24.0: a messaging thread. No uniform gaps: runs from one side sit 3dp apart, groups 16dp.
         // v0.26.1: choice buttons and forms in replies send through the same path as the follow-up chips (only when idle).
         CompositionLocalProvider(RichSend.Local provides (if (mood == Mood.IDLE) onFollowup else null)) {
+        // Unification 6/9: the thread sits at the shell gutter, under the top bar's round button and avatar
         LazyColumn(state = state, modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 14.dp)) {
+            contentPadding = PaddingValues(horizontal = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 14.dp)) {
             itemsIndexed(items, key = { _, it -> it.key }, contentType = { _, it -> if (it is Item.Steps) 1 else 0 }) { i, item ->
                 val fresh = remember(item.key) { appear.fresh(item.key) }
                 // 0.45.20: "Today" / "Yesterday" chips between days (ui/ChatBubbles.kt).
@@ -1496,13 +1497,14 @@ private fun ReceiptDialog(json: String, onClose: () -> Unit) {
 @Composable
 private fun QuoteStrip(q: String, onClear: () -> Unit) {
     val c = LocalBlaze.current
-    Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp).glass(RoundedCornerShape(16.dp), GlassIntensity.Low, shadow = false)
-        .padding(start = 12.dp, end = 2.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    // Unification 6/9: a floating panel at the composer's inset (composerPanel), not a 12 dp glass band
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp).composerPanel()
+        .padding(start = 14.dp, end = 2.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(3.dp).height(34.dp).clip(RoundedCornerShape(2.dp)).background(c.accent))
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Label("Replying to", color = c.accent, size = 9.sp)
-            Text(q, maxLines = 2, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
+            Text(q, maxLines = 2, style = com.blaze.assistant.ui.space.SpaceType.meta(c.body))
         }
         ActionText("×", size = 14.sp, modifier = Modifier.clip(CircleShape).clickable(onClick = onClear).semantics { contentDescription = "Cancel reply" }.padding(12.dp))
     }
@@ -1511,8 +1513,8 @@ private fun QuoteStrip(q: String, onClear: () -> Unit) {
 @Composable
 internal fun SuggestionList(list: List<Suggestion>, onPick: (Suggestion) -> Unit) {
     val c = LocalBlaze.current
-    Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp).background(c.menuSurface, RoundedCornerShape(18.dp))
-        .glass(RoundedCornerShape(18.dp), GlassIntensity.High)
+    // Unification 6/9: the slash list floats at the composer's inset on the menu colour; it sat 10 dp in, radius 18, glass
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).composerPanel(fill = com.blaze.assistant.ui.space.spaceLook().menu)
         .heightIn(max = 260.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp)) {
         list.forEach { s ->
             Row(Modifier.fillMaxWidth().clickable { onPick(s) }.padding(horizontal = 16.dp, vertical = 11.dp),
@@ -1534,24 +1536,24 @@ internal fun SuggestionList(list: List<Suggestion>, onPick: (Suggestion) -> Unit
 internal fun Welcome(needsSetup: Boolean, onSetup: () -> Unit, onPick: (String) -> Unit) {
     val look = com.blaze.assistant.ui.space.spaceLook()
     val hour = remember { com.blaze.assistant.ui.space.SpaceGreeting.hourNow() }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         com.blaze.assistant.ui.space.SpaceCard {
-            com.blaze.assistant.ui.space.SpaceHeadline(com.blaze.assistant.ui.space.SpaceGreeting.hello(hour, Settings.userName.ifBlank { null }), size = 32.sp)
+            com.blaze.assistant.ui.space.SpaceHeadline(com.blaze.assistant.ui.space.SpaceGreeting.hello(hour, Settings.userName.ifBlank { null }))
             Spacer(Modifier.height(10.dp))
             Text("Ask anything. ${BrandName.NAME} answers, opens apps, taps and types for you, and checks with you before anything that matters.",
-                style = com.blaze.assistant.ui.space.SpaceType.body(17.sp, look.sub))
+                style = com.blaze.assistant.ui.space.SpaceType.bodyText(look.sub))
         }
         if (needsSetup) com.blaze.assistant.ui.space.SpaceCard {
-            com.blaze.assistant.ui.space.SpaceHeadline("${BrandName.UPPER} can do more", size = 26.sp)
+            com.blaze.assistant.ui.space.SpaceHeadline("${BrandName.UPPER} can do more", size = com.blaze.assistant.ui.space.SpaceTypeScale.TITLE.sp)
             Spacer(Modifier.height(8.dp))
             Text("Sign in to your ${BrandName.NAME} account for the best answers, synced across your devices.",
-                style = com.blaze.assistant.ui.space.SpaceType.body(16.sp, look.ink))
+                style = com.blaze.assistant.ui.space.SpaceType.bodyText(look.ink))
             Spacer(Modifier.height(14.dp))
             com.blaze.assistant.ui.space.SpacePillButton("Sign in", onSetup, primary = true)
         }
         com.blaze.assistant.ui.space.SpaceCard {
-            Text("Try", style = com.blaze.assistant.ui.space.SpaceType.body(15.sp, look.sub))
+            Text("Try", style = com.blaze.assistant.ui.space.SpaceType.meta(look.sub))
             Spacer(Modifier.height(12.dp))
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf("Set an alarm for 6:30", "Draw a lion wearing sunglasses", "Make me an afro beat", "Open YouTube and play lo-fi music")
@@ -1575,8 +1577,9 @@ private fun ListeningStrip(onStop: () -> Unit) {
     val level by Voice.level.collectAsState()
     val w by animateFloatAsState(0.15f + level * 0.85f, label = "lvl")
     // v0.45.28: tap the strip to stop listening and send.
-    Column(Modifier.fillMaxWidth().background(c.paper).hairlineTop(c.hair).clickable(onClickLabel = "Stop listening and send") { onStop() }
-        .padding(horizontal = 20.dp, vertical = 14.dp)) {
+    // Unification 6/9: a floating panel at the composer's inset; it was a full-width paper band with a top hairline
+    Column(Modifier.fillMaxWidth().padding(top = 6.dp).composerPanel().clickable(onClickLabel = "Stop listening and send") { onStop() }
+        .padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.CARD_PAD_DP.dp, vertical = 14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BlinkLabel("Listening")
             Spacer(Modifier.width(12.dp))
@@ -1586,7 +1589,7 @@ private fun ListeningStrip(onStop: () -> Unit) {
         }
         Spacer(Modifier.height(8.dp))
         Text(partial.ifBlank { "Say \"Open YouTube\" or ask anything" },
-            style = TextStyle(fontFamily = Type.Display, fontSize = 20.sp, color = if (partial.isBlank()) c.weak else c.ink))
+            style = com.blaze.assistant.ui.space.SpaceType.section(if (partial.isBlank()) c.weak else c.ink))
     }
 }
 

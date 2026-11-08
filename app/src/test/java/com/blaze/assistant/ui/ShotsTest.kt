@@ -106,7 +106,7 @@ open class ShotsTest {
     @Composable
     private fun ThreadSample(busy: Boolean = true) {
         val gap: @Composable (GroupPos, Boolean) -> Unit = { p, first -> Spacer(Modifier.height(Bubbles.gapAbove(p, first))) }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 14.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 14.dp)) {
             UserBubble("Hey ${BrandName.NAME}", pos = GroupPos.FIRST)
             gap(GroupPos.LAST, false)
             UserBubble("Make me a one-page portfolio site and show it to me", pos = GroupPos.LAST)

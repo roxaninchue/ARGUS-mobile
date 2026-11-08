@@ -80,14 +80,14 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
     var name by remember { mutableStateOf("") }
     val existing = remember(chats) { chats.map { it.id }.toSet() }
     fun create() { if (name.isNotBlank()) { onCreate(name.trim()); name = "" } }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SpaceHeadline("Projects", Modifier.weight(1f).padding(start = 6.dp), size = 34.sp)
+            SpaceHeadline("Projects", Modifier.weight(1f))
             // light / dark here too (every screen has the switch; ThemeEverywhereTest)
             com.blaze.assistant.ui.ThemeSwitch(tint = look.ink)
         }
         Spacer(Modifier.height(6.dp))
-        Text(SpaceProjectRows.INTRO, modifier = Modifier.padding(start = 6.dp), style = SpaceType.body(15.sp, look.sub))
+        Text(SpaceProjectRows.INTRO, style = SpaceType.bodyText(look.sub))
         Spacer(Modifier.height(16.dp))
         SpaceCard {
             BlazeTextField(name, { name = it }, "New project name", modifier = Modifier.fillMaxWidth(),
@@ -104,8 +104,8 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
                     IconTile(Icons.Rounded.Folder, tint = look.accent)
                     Spacer(Modifier.width(BlazeIconStyle.gap))
                     Column(Modifier.weight(1f)) {
-                        Text(p.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.headline(22.sp, look.ink))
-                        Text(SpaceProjectRows.countLabel(SpaceProjectRows.count(p.chats, existing)), style = SpaceType.body(14.sp, look.sub))
+                        Text(p.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.section(look.ink))
+                        Text(SpaceProjectRows.countLabel(SpaceProjectRows.count(p.chats, existing)), style = SpaceType.meta(look.sub))
                     }
                     val chip = SpaceProjectRows.chip(status)
                     if (chip.isNotEmpty()) StatusPill(chip, filled = status == SpaceProjectRows.Status.NEEDS_YOU)
@@ -116,9 +116,9 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
         if (projects.isEmpty()) {
             Spacer(Modifier.height(12.dp))
             SpaceCard {
-                SpaceHeadline("No projects yet", size = 24.sp)
+                SpaceHeadline("No projects yet", size = SpaceTypeScale.TITLE.sp)
                 Spacer(Modifier.height(6.dp))
-                Text("Name one above to start. Each project keeps its own chats, instructions and brief.", style = SpaceType.body(15.sp, look.sub))
+                Text("Name one above to start. Each project keeps its own chats, instructions and brief.", style = SpaceType.bodyText(look.sub))
             }
         }
         Spacer(Modifier.height(110.dp))
@@ -138,51 +138,55 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
     var renaming by remember { mutableStateOf<ChatMeta?>(null) }
     var deleting by remember { mutableStateOf<ChatMeta?>(null) }
     val P = com.blaze.assistant.agent.Projects
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-        BackTitle(open.name, onBack = onBack, modifier = Modifier.padding(top = 4.dp), size = 22.sp)
-        Spacer(Modifier.height(8.dp))
-        SpacePillButton("New chat in this project", { onNewChat(open.id) }, primary = true, plus = true)
-        Spacer(Modifier.height(12.dp))
-        SpaceCard {
-            CardHead(Icons.Rounded.EditNote) { SpaceHeadline("Instructions", size = 22.sp) }
+    // Unification 6/9: the header spans the screen so its back circle sits at the gutter like the top bar's round
+    // button (it sat ~34 dp in when the whole column was padded); the cards under it take the gutter themselves.
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        BackTitle(open.name, onBack = onBack, modifier = Modifier.padding(top = 4.dp))
+        Column(Modifier.fillMaxWidth().padding(horizontal = SpaceInsets.GUTTER_DP.dp)) {
             Spacer(Modifier.height(8.dp))
-            BlazeTextField(ins, { ins = it; onInstructions(open.id, it) }, "What ${BrandName.NAME} should know in every chat here",
-                modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 72.dp)
-        }
-        Spacer(Modifier.height(12.dp))
-        SpaceCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconTile(Icons.Rounded.PushPin, tint = look.accent, small = true)
-                Spacer(Modifier.width(10.dp))
-                SpaceHeadline("Brief", Modifier.weight(1f), size = 22.sp)
-                // The real count (BlazeDb.tokens) against the hard cap; typing or pasting past it is cut at the cap.
-                val used = P.tokens(brief)
-                Text("$used / ${P.BRIEF_TOKENS} tokens", style = SpaceType.body(13.sp, if (used >= P.BRIEF_TOKENS * 9 / 10) look.accent else look.sub))
+            SpacePillButton("New chat in this project", { onNewChat(open.id) }, primary = true, plus = true)
+            Spacer(Modifier.height(12.dp))
+            SpaceCard {
+                CardHead(Icons.Rounded.EditNote) { SpaceHeadline("Instructions", size = SpaceTypeScale.SECTION.sp) }
+                Spacer(Modifier.height(8.dp))
+                BlazeTextField(ins, { ins = it; onInstructions(open.id, it) }, "What ${BrandName.NAME} should know in every chat here",
+                    modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 72.dp)
             }
-            Spacer(Modifier.height(8.dp))
-            BlazeTextField(brief, { t -> val fit = P.cutTokens(t, P.BRIEF_TOKENS); cut = fit.length < t.length; brief = fit; onBrief(open.id, fit) },
-                "Pinned brief: purpose and rules first, then key files and what's in progress. ${BrandName.NAME} keeps it up to date.",
-                modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 96.dp)
-            if (cut) Text("The brief is at its 600-token cap, so the rest was cut. Put longer details in Instructions: ${BrandName.NAME} searches them when it needs them.",
-                modifier = Modifier.padding(top = 6.dp), style = SpaceType.body(13.sp, look.accent))
-        }
-        Spacer(Modifier.height(12.dp))
-        val list = open.chats.mapNotNull { id -> chats.firstOrNull { it.id == id } }
-        SpaceCard {
-            CardHead(Icons.Rounded.ChatBubbleOutline) { SpaceHeadline("Chats", size = 22.sp) }
-            Spacer(Modifier.height(6.dp))
-            list.forEach { ch ->
-                Box {
-                    ChatRow(ch, ch.id in busy, chip = if (ch.id in needsYou) "Needs you" else "", onMore = { menuFor = ch.id }) { onChat(ch.id) }
-                    if (menuFor == ch.id) BlazeMenu(true, onDismiss = { menuFor = "" },
-                        items = listOf("Rename" to { renaming = ch }, "Delete chat" to { deleting = ch }))
+            Spacer(Modifier.height(12.dp))
+            SpaceCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconTile(Icons.Rounded.PushPin, tint = look.accent, small = true)
+                    Spacer(Modifier.width(10.dp))
+                    SpaceHeadline("Brief", Modifier.weight(1f), size = SpaceTypeScale.SECTION.sp)
+                    // The real count (BlazeDb.tokens) against the hard cap; typing or pasting past it is cut at the cap.
+                    val used = P.tokens(brief)
+                    Text("$used / ${P.BRIEF_TOKENS} tokens", style = SpaceType.caption(if (used >= P.BRIEF_TOKENS * 9 / 10) look.accent else look.sub))
                 }
+                Spacer(Modifier.height(8.dp))
+                BlazeTextField(brief, { t -> val fit = P.cutTokens(t, P.BRIEF_TOKENS); cut = fit.length < t.length; brief = fit; onBrief(open.id, fit) },
+                    "Pinned brief: purpose and rules first, then key files and what's in progress. ${BrandName.NAME} keeps it up to date.",
+                    modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 96.dp)
+                if (cut) Text("The brief is at its 600-token cap, so the rest was cut. Put longer details in Instructions: ${BrandName.NAME} searches them when it needs them.",
+                    modifier = Modifier.padding(top = 6.dp), style = SpaceType.caption(look.accent))
             }
-            if (list.isEmpty()) Text("No chats yet. Start one with New chat: it keeps this project's instructions and brief.", style = SpaceType.body(15.sp, look.sub))
+            Spacer(Modifier.height(12.dp))
+            val list = open.chats.mapNotNull { id -> chats.firstOrNull { it.id == id } }
+            SpaceCard {
+                CardHead(Icons.Rounded.ChatBubbleOutline) { SpaceHeadline("Chats", size = SpaceTypeScale.SECTION.sp) }
+                Spacer(Modifier.height(6.dp))
+                list.forEach { ch ->
+                    Box {
+                        ChatRow(ch, ch.id in busy, chip = if (ch.id in needsYou) "Needs you" else "", onMore = { menuFor = ch.id }) { onChat(ch.id) }
+                        if (menuFor == ch.id) BlazeMenu(true, onDismiss = { menuFor = "" },
+                            items = listOf("Rename" to { renaming = ch }, "Delete chat" to { deleting = ch }))
+                    }
+                }
+                if (list.isEmpty()) Text("No chats yet. Start one with New chat: it keeps this project's instructions and brief.", style = SpaceType.bodyText(look.sub))
+            }
+            Spacer(Modifier.height(12.dp))
+            SpacePillButton("Delete project (chats stay)", { onDelete(open.id) }, icon = Icons.Rounded.Delete)
+            Spacer(Modifier.height(110.dp))
         }
-        Spacer(Modifier.height(12.dp))
-        SpacePillButton("Delete project (chats stay)", { onDelete(open.id) }, icon = Icons.Rounded.Delete)
-        Spacer(Modifier.height(110.dp))
     }
     renaming?.let { ch -> RenameChatDialog(ch.title, onDone = { t -> renaming = null; if (t.isNotBlank()) onRenameChat(ch.id, t) }, onDismiss = { renaming = null }) }
     deleting?.let { ch -> BlazeDialog(title = "Delete \u201c${ch.title.ifBlank { "this chat" }.take(40)}\u201d?",
@@ -206,6 +210,6 @@ private fun StatusPill(text: String, filled: Boolean) {
     val look = spaceLook()
     Box(Modifier.clip(SpaceShapes.pill).background(if (filled) look.primaryFill else Color.Transparent)
         .let { if (filled) it else it.background(look.tile, SpaceShapes.pill) }.padding(horizontal = 12.dp, vertical = 6.dp)) {
-        Text(text, maxLines = 1, style = SpaceType.body(13.sp, if (filled) look.primaryInk else look.ink, FontWeight.Medium))
+        Text(text, maxLines = 1, style = SpaceType.body(SpaceTypeScale.CAPTION.sp, if (filled) look.primaryInk else look.ink, FontWeight.Medium))
     }
 }

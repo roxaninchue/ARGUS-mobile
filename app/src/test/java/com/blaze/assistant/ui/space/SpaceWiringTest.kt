@@ -158,6 +158,34 @@ class SpaceWiringTest {
         assertFalse("ChatRow has no side padding of its own", "padding(horizontal = 16.dp" in chatRow)
     }
 
+    @Test fun shellScreensShareTheGutterAndTypeScale() {
+        // Unification 6/9: Home, the profile, Projects, Spotlight, the empty chat and the thread sit at the one gutter (the
+        // round button's edge), with no ad-hoc text nudges; headlines and text take SpaceType steps; the composer's panels
+        // (the + sheet, reply-to, listening, slash list) float at the composer's inset instead of running edge to edge.
+        for (f in listOf("SpaceHome.kt", "SpaceProfile.kt", "SpaceProjects.kt", "SpaceSpotlight.kt")) {
+            val t = src("ui/space/$f")
+            assertTrue("$f uses the gutter", "SpaceInsets.GUTTER_DP.dp" in t)
+            assertFalse("$f has no 6 dp text nudge", "padding(start = 6.dp" in t)
+            assertFalse("$f has no 16 dp side padding", "start = 16.dp, end = 16.dp" in t || "padding(horizontal = 16.dp" in t)
+        }
+        val profile = src("ui/space/SpaceProfile.kt")
+        assertTrue("the name is the display headline", "SpaceType.display(look.ink)" in profile)
+        assertFalse("no 38 sp name", "38.sp" in profile)
+        assertFalse("Spotlight reads the solid card", "0xF20B0F1A" in src("ui/space/SpaceSpotlight.kt"))
+        val page = src("ui/space/SpaceProjects.kt").substringAfter("private fun ProjectPage(").substringBefore("\n}\n")
+        assertTrue("the project page header spans the screen", page.indexOf("BackTitle(open.name") in 0 until page.indexOf("padding(horizontal = SpaceInsets.GUTTER_DP.dp)"))
+        assertTrue("the thread is at the gutter", "contentPadding = PaddingValues(horizontal = ${S}SpaceInsets.GUTTER_DP.dp, vertical = 14.dp)" in chat)
+        val welcome = chat.substringAfter("internal fun Welcome(").substringBefore("\n}\n")
+        assertTrue("the empty chat is at the gutter", "${S}SpaceInsets.GUTTER_DP.dp" in welcome)
+        val shell = src("ui/Shell.kt")
+        assertTrue("composerPanel insets like the composer", "fun Modifier.composerPanel(" in shell && "padding(horizontal = ${S}SpaceInsets.COMPOSER_EDGE_DP.dp)" in shell)
+        assertTrue("the + sheet floats", ".composerPanel(" in shell.substringAfter("fun PlusMenu(").substringBefore("\n}\n"))
+        for (strip in listOf("private fun QuoteStrip(", "internal fun SuggestionList(", "private fun ListeningStrip("))
+            assertTrue("$strip floats", ".composerPanel(" in chat.substringAfter(strip).substringBefore("\n}\n"))
+        val header = shell.substringAfter("fun ProjectChatHeader(").substringBefore("\n}\n")
+        assertFalse("the project chat header is not a glass pill", ".glass(" in header)
+    }
+
     @Test fun thereIsNoModelPicker() {
         for (gone in listOf("ModelPicker(", "ModelPill(", "Act.PickModel", "Kind.MODEL", "Icon.MODEL", "SelfMap.MODELS")) nowhere(gone)
         val mc = src("composer/ModelChoice.kt")

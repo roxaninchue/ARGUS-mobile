@@ -84,7 +84,7 @@ fun SpaceTopBar(
                 onLongClickLabel = if (look.dark) "Switch to light mode" else "Switch to dark mode")
             .semantics { contentDescription = "Profile and settings. Long-press to switch light or dark"; role = Role.Button },
             contentAlignment = Alignment.Center) {
-            Text(initial.take(1), style = SpaceType.body(18.sp, Color.White, FontWeight.Medium))
+            Text(initial.take(1), style = SpaceType.rowTitle(Color.White))
         }
     }
 }

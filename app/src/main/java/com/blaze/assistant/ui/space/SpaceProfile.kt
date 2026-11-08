@@ -48,11 +48,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.blaze.assistant.BrandName
 import com.blaze.assistant.ui.SearchGlyph
 
@@ -100,18 +99,19 @@ fun SpaceProfileScreen(
 ) {
     val look = spaceLook()
     Box(modifier.fillMaxSize().testTag(SpaceTags.PROFILE)) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 110.dp)) {
-            Text(name, modifier = Modifier.padding(start = 6.dp, top = 6.dp), style = SpaceType.body(38.sp, look.ink, FontWeight.Medium))
-            Text(email, modifier = Modifier.padding(start = 6.dp, top = 2.dp), style = SpaceType.body(17.sp, look.sub))
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = SpaceInsets.GUTTER_DP.dp, end = SpaceInsets.GUTTER_DP.dp, bottom = 110.dp)) {
+            // Unification 6/9: the name is the page headline (serif display step), name and e-mail at the gutter like the cards
+            Text(name, modifier = Modifier.padding(top = 6.dp).semantics { heading() }, style = SpaceType.display(look.ink))
+            Text(email, modifier = Modifier.padding(top = 4.dp), style = SpaceType.bodyText(look.sub))
             Spacer(Modifier.height(18.dp))
             // the plan card
             SpaceGroup {
                 Row(Modifier.fillMaxWidth().padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = SpaceInsets.CARD_PAD_V_DP.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(BrandName.UPPER, style = SpaceType.headline(28.sp, look.ink))
+                    Text(BrandName.UPPER, style = SpaceType.title(look.ink))
                     Spacer(Modifier.width(8.dp))
-                    Text("cloud", style = SpaceType.headline(28.sp, look.sub).copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic))
+                    Text("cloud", style = SpaceType.title(look.sub).copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic))
                     Spacer(Modifier.weight(1f))
-                    Text(planLine, style = SpaceType.body(14.sp, look.sub))
+                    Text(planLine, style = SpaceType.meta(look.sub))
                 }
                 SpaceHairline()
                 ProfileRow(SpaceProfile.PLAN, showIcon = false) { onPage(SpaceProfile.PLAN.page) }
@@ -129,16 +129,16 @@ fun SpaceProfileScreen(
                 Spacer(Modifier.height(16.dp))
                 SpaceGroup { ProfileRow(SpaceProfile.Row("signout", "Sign out", SpaceProfile.Icon.SIGN_OUT, ""), chevron = false) { onSignOut() } }
             }
-            if (version.isNotBlank()) Text("${BrandName.UPPER} $version", modifier = Modifier.padding(start = 6.dp, top = 18.dp), style = SpaceType.body(13.sp, look.sub))
+            if (version.isNotBlank()) Text("${BrandName.UPPER} $version", modifier = Modifier.padding(top = 18.dp), style = SpaceType.caption(look.sub))
         }
-        // the floating Search pill
-        Row(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 24.dp, vertical = 14.dp).fillMaxWidth().heightIn(min = 60.dp)
+        // the floating Search pill; Unification 6/9: at the gutter, the composer's height
+        Row(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = SpaceInsets.COMPOSER_BOTTOM_DP.dp).fillMaxWidth().heightIn(min = SpaceInsets.COMPOSER_MIN_DP.dp)
             .clip(SpaceShapes.pill).background(look.track).border(1.dp, look.hair, SpaceShapes.pill)
             .testTag(SpaceTags.PROFILE_SEARCH).clickable(onClickLabel = "Search settings", onClick = onSearch)
-            .semantics { role = Role.Button }.padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
-            SearchGlyph(look.ink, 20.dp)
-            Spacer(Modifier.width(14.dp))
-            Text("Search", style = SpaceType.body(18.sp, look.sub))
+            .semantics { role = Role.Button }.padding(horizontal = SpaceInsets.CARD_PAD_DP.dp), verticalAlignment = Alignment.CenterVertically) {
+            SearchGlyph(look.ink, SpaceIcons.ROW_ICON_DP.dp)
+            Spacer(Modifier.width(SpaceIcons.GAP_DP.dp))
+            Text("Search", style = SpaceType.bodyText(look.sub))
         }
     }
 }
@@ -176,7 +176,7 @@ fun SpaceFeedbackPage(version: String) {
     val ctx = LocalContext.current
     var text by remember { mutableStateOf("") }
     Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Text("Tell the ${BrandName.NAME} team what works, what doesn't, or what you'd love next.", style = SpaceType.body(16.sp, look.sub))
+        Text("Tell the ${BrandName.NAME} team what works, what doesn't, or what you'd love next.", style = SpaceType.bodyText(look.sub))
         Spacer(Modifier.height(14.dp))
         // Unification 5/9: the shared text field, from SpaceRows.kt
         SpaceField(text, { text = it }, "Your feedback\u2026", singleLine = false, minHeight = 160.dp, desc = "Your feedback")

@@ -80,6 +80,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
@@ -460,10 +461,11 @@ fun ProjectChatHeader(project: String, title: String, onBack: () -> Unit, onRena
     var menu by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
-    BackTitle(title.ifBlank { "New chat" }, onBack = onBack, eyebrow = project, size = 18.sp,
-        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).glass(RoundedCornerShape(26.dp), GlassIntensity.Low, shadow = false)) {
+    // Unification 6/9: the same header as the project page (back circle at the gutter, the section step for the title),
+    // straight on the space view instead of a glass pill inset 8 dp
+    BackTitle(title.ifBlank { "New chat" }, onBack = onBack, eyebrow = project, modifier = Modifier.padding(top = 4.dp)) {
         Box {
-            Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClickLabel = "Chat options") { menu = true }
+            Box(Modifier.size(com.blaze.assistant.ui.space.SpaceInsets.CONTROL_DP.dp).clip(CircleShape).clickable(onClickLabel = "Chat options") { menu = true }
                 .semantics { contentDescription = "Chat options" }, contentAlignment = Alignment.Center) { MoreDots(c.ink) }
             if (menu) BlazeMenu(true, onDismiss = { menu = false }, items = buildList<Pair<String, () -> Unit>> {
                 add("New chat in this project" to onNewChat)
@@ -619,20 +621,19 @@ fun plusItems(work: String, approval: String, model: String, hasClipImage: Boole
 
 @Composable
 fun PlusMenu(items: List<PlusItem>, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
-    Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp), GlassIntensity.High, shadow = false)
-        .background(GlassTokens.bg.copy(alpha = if (c.dark) 0.6f else 0f))
-        .heightIn(max = 480.dp).verticalScroll(rememberScrollState()).padding(top = 8.dp)) {
-        Box(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 4.dp).size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.hair))
+    val look = com.blaze.assistant.ui.space.spaceLook()
+    // Unification 6/9: a floating card at the composer's inset; it ran edge to edge, top-rounded, dark glass only
+    Column(Modifier.fillMaxWidth().padding(bottom = 6.dp).composerPanel(com.blaze.assistant.ui.space.SpaceShapes.card)
+        .heightIn(max = 480.dp).verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
         items.forEach { it ->
             Row(Modifier.fillMaxWidth().clickable { onPick(it.id) }.padding(horizontal = 18.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 // 0.52.4: an icon tile instead of a dot; a mode that is on (Plan, Autopilot) gets the solid tile
                 IconTile(plusIcon(it.id, it.on).vector(), small = true, filled = it.on)
                 Spacer(Modifier.width(BlazeIconStyle.gap))
-                Text(it.label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
+                Text(it.label, style = com.blaze.assistant.ui.space.SpaceType.body(com.blaze.assistant.ui.space.SpaceTypeScale.META.sp, look.ink, FontWeight.Medium))
                 Spacer(Modifier.width(10.dp))
                 Text(it.sub, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-                    style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+                    style = com.blaze.assistant.ui.space.SpaceType.caption(look.sub))
             }
         }
     }
@@ -701,10 +702,10 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
                             (fadeOut(tween(300)) + androidx.compose.animation.slideOutVertically(tween(300)) { -it / 3 })
                     }) { t ->
                     Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp, color = c.sub))
+                        style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = com.blaze.assistant.ui.space.SpaceTypeScale.BODY.sp, lineHeight = 22.sp, color = c.sub))
                 }
                 BasicTextField(value = value, onValueChange = onValue,
-                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, lineHeight = 22.sp, color = c.ink),
+                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = com.blaze.assistant.ui.space.SpaceTypeScale.BODY.sp, lineHeight = 22.sp, color = c.ink),
                     cursorBrush = SolidColor(c.accent), maxLines = if (expanded) 14 else 6,
                     // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
                     keyboardOptions = ComposerKeys.Message,
@@ -741,6 +742,17 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
             }
         }
     }
+}
+
+/**
+ * Unification 6/9: a panel that belongs to the composer (the + sheet, the reply-to strip, the listening strip, the
+ * slash suggestions) floats at the composer's side inset ([com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP]) on the solid card with
+ * a hairline rim, so nothing over the space view runs edge to edge. [fill] defaults to the solid card; menus pass look.menu.
+ */
+@Composable
+fun Modifier.composerPanel(shape: Shape = com.blaze.assistant.ui.space.SpaceShapes.tile, fill: Color? = null): Modifier {
+    val look = com.blaze.assistant.ui.space.spaceLook()
+    return this.padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp).clip(shape).background(fill ?: look.cardSolid).border(1.dp, look.hair, shape)
 }
 
 /** 0.52.3: the composer pill's fill and rim (Hark's floating pill: a dark glassy step over the space view, white on light) and the Send button. */
@@ -824,14 +836,14 @@ fun ProjectBadge(name: String) {
 @Composable
 fun ProjectChatEmpty(project: String, hasInstructions: Boolean) {
     val c = LocalBlaze.current
-    Column(Modifier.fillMaxSize().padding(horizontal = 28.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         ProjectBadge(project)
         Spacer(Modifier.height(14.dp))
         Text("New chat in ${project.ifBlank { "this project" }}", maxLines = 2, overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 18.sp, color = c.ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center))
+            style = com.blaze.assistant.ui.space.SpaceType.section(c.ink).copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center))
         Spacer(Modifier.height(6.dp))
         Text(if (hasInstructions) "${BrandName.NAME} follows this project's instructions and brief here. Your main chat stays as it is."
             else "This thread stays in the project. Your main chat stays as it is.",
-            style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub, textAlign = androidx.compose.ui.text.style.TextAlign.Center))
+            style = com.blaze.assistant.ui.space.SpaceType.meta(c.sub).copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center))
     }
 }

@@ -129,7 +129,7 @@ fun SpaceSpotlightLayer(
         AnimatedVisibility(open, modifier = Modifier.align(Alignment.TopCenter),
             enter = fadeIn(MotionTokens.medium()) + slideInVertically(MotionTokens.medium()) { -it / 6 },
             exit = fadeOut(MotionTokens.fast()) + slideOutVertically(MotionTokens.fast()) { -it / 6 }) {
-            BoxWithConstraints(Modifier.fillMaxWidth().statusBarsPadding().imePadding().padding(horizontal = 12.dp, vertical = 10.dp)) {
+            BoxWithConstraints(Modifier.fillMaxWidth().statusBarsPadding().imePadding().padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
                 SpaceSpotlightPanel(composer, appList, saidList, recent, hour, focus, onRow = { runRow(it) }, maxListHeight = maxHeight * 0.75f)
             }
         }
@@ -165,7 +165,7 @@ fun SpaceSpotlightPanel(
     }
     val top = SpotlightGroups.top(sections)
     val look = SpaceLook.Dark   // the panel is always the dark card over its scrim
-    Column(modifier.fillMaxWidth().clip(SpaceShapes.card).background(Color(0xF20B0F1A))
+    Column(modifier.fillMaxWidth().clip(SpaceShapes.card).background(look.cardSolid)
         .border(1.dp, Color(SpacePalette.ELECTRIC).copy(alpha = 0.35f), SpaceShapes.card)
         .testTag(SpaceTags.SPOTLIGHT)
         // taps on the panel stay in it (the scrim around it closes Spotlight)
@@ -175,9 +175,9 @@ fun SpaceSpotlightPanel(
             SearchGlyph(look.accent, 22.dp)
             Spacer(Modifier.width(12.dp))
             Box(Modifier.weight(1f).padding(vertical = 14.dp)) {
-                if (composer.query.isEmpty()) Text("Search apps, actions, settings, chats\u2026", maxLines = 1, style = SpaceType.body(17.sp, look.sub))
+                if (composer.query.isEmpty()) Text("Search apps, actions, settings, chats\u2026", maxLines = 1, style = SpaceType.bodyText(look.sub))
                 BasicTextField(composer.query, { composer.query = it },
-                    singleLine = true, textStyle = SpaceType.body(17.sp, look.ink),
+                    singleLine = true, textStyle = SpaceType.bodyText(look.ink),
                     cursorBrush = SolidColor(Color(SpacePalette.ELECTRIC)),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { top?.let(onRow) }),
@@ -193,7 +193,7 @@ fun SpaceSpotlightPanel(
             for (s in sections) {
                 item(key = "h:" + s.group.name) {
                     Text(s.group.title.uppercase(), modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 4.dp).semantics { heading() },
-                        style = SpaceType.body(11.sp, look.sub, FontWeight.Medium).copy(letterSpacing = 0.12.em))
+                        style = SpaceType.body(SpaceTypeScale.CAPTION.sp, look.sub, FontWeight.Medium).copy(letterSpacing = 0.12.em))
                 }
                 items(s.rows, key = { s.group.name + "|" + it.id }) { r -> SpotRow(r, top = r == top) { onRow(r) } }
             }
