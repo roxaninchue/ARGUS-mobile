@@ -118,6 +118,9 @@ import com.blaze.assistant.media.AlbumStore
 import com.blaze.assistant.media.GalleryModel
 import com.blaze.assistant.media.GalleryModel.Entry
 import com.blaze.assistant.media.GalleryRepo
+import com.blaze.assistant.ui.space.SpaceBackdrop
+import com.blaze.assistant.ui.space.SpaceInsets
+import com.blaze.assistant.ui.space.SpaceSegmented
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -283,19 +286,19 @@ fun GalleryScreen(onDismiss: () -> Unit) {
         }
     }
 
-    // 0.52.2: one ARGUS look (the glass page).
-    Box(Modifier.fillMaxSize().pageBackdrop(c)) {
+    // 0.52.2: one ARGUS look. Unification: the shell's space background, the shared header (BackTitle, matched to the
+    // top bar) and the shell's segmented pill.
+    SpaceBackdrop {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             // ---------------- header
             if (selected.isNotEmpty()) {
-                BackTitle("${selected.size} selected", onBack = { selected = emptySet() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp)) {
+                BackTitle("${selected.size} selected", onBack = { selected = emptySet() }) {
                     HeaderIcon(Icons.Rounded.SelectAll, "Select all") { selected = shown.map { it.id }.toSet() }
                     HeaderIcon(Icons.Rounded.Close, "Clear selection") { selected = emptySet() }
                 }
             } else {
                 val title = userAlbum?.name ?: autoAlbum?.name ?: "Gallery"
-                BackTitle(title, onBack = { if (albumId != null) albumId = null else onDismiss() },
-                    modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp)) {
+                BackTitle(title, onBack = { if (albumId != null) albumId = null else onDismiss() }) {
                     if (inGrid) Label("${shown.size}", color = c.weak, size = 10.sp, modifier = Modifier.padding(end = 4.dp))
                     if (inGrid) HeaderIcon(Icons.Rounded.Search, "Search") { searching = !searching; if (!searching) query = "" }
                     if (inGrid) Box {
@@ -331,7 +334,7 @@ fun GalleryScreen(onDismiss: () -> Unit) {
             }
             // ---------------- pills + search
             if (albumId == null && selected.isEmpty()) GalleryTabs(tab) { tab = it; selected = emptySet() }
-            if (searching && inGrid) KitSearch(query, { query = it }, "Search by name", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            if (searching && inGrid) KitSearch(query, { query = it }, "Search by name", modifier = Modifier.padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 6.dp))
 
             // ---------------- body
             Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -500,23 +503,13 @@ private fun setWallpaper(ctx: android.content.Context, scope: kotlinx.coroutines
 
 // ---------------------------------------------------------------- pieces
 
-/** All | Albums | Images | Music | Videos: the same pill as Chat | Projects | Home. Scrolls sideways on narrow phones. */
+/**
+ * All | Albums | Images | Music | Videos: the same pill as Home | Chat | Projects. Unification: the shell's shared
+ * [SpaceSegmented], at the gutter; scrolls sideways on narrow phones.
+ */
 @Composable
 private fun GalleryTabs(tab: String, onTab: (String) -> Unit) {
-    val c = LocalBlaze.current.mono
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 8.dp)) {
-        Row(Modifier.pageGlass(c, RoundedCornerShape(20.dp), alpha = 0.06f).padding(3.dp)) {
-            GalleryModel.tabs.forEach { (id, label) ->
-                val on = tab == id
-                val fill by androidx.compose.animation.animateColorAsState(if (on) c.ink else Color.Transparent, MotionTokens.medium(), label = "gtab")
-                val ink by androidx.compose.animation.animateColorAsState(if (on) c.paper else c.sub, MotionTokens.medium(), label = "gtabText")
-                Box(Modifier.clip(RoundedCornerShape(17.dp)).background(fill).clickable(onClickLabel = "Show $label") { onTab(id) }
-                    .semantics { selected = on }.heightIn(min = 34.dp).padding(horizontal = 13.dp, vertical = 7.dp), contentAlignment = Alignment.Center) {
-                    Text(label, maxLines = 1, softWrap = false, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = ink))
-                }
-            }
-        }
-    }
+    SpaceSegmented(GalleryModel.tabs, tab, Modifier.fillMaxWidth().padding(vertical = 8.dp), scroll = true, edge = SpaceInsets.GUTTER_DP.dp, onPick = onTab)
 }
 
 /** "Today · 12", "Mon, 12 Oct"…: a day in the timeline. While selecting, tapping it selects the whole day. */

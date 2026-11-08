@@ -206,6 +206,18 @@ class SpaceWiringTest {
         assertFalse("the nav is not an edge-to-edge glass sheet", ".glass(" in nav || "topStart = 20.dp" in nav)
     }
 
+    @Test fun galleryWearsTheShell() {
+        // Unification 7b: Gallery sits on the space background and its tabs are the shared segmented pill (its scrolling
+        // form, at the gutter), not a pill of its own.
+        val gallery = src("ui/GalleryScreen.kt")
+        assertTrue("Gallery sits on the space background", "SpaceBackdrop {" in gallery && "pageBackdrop(" !in gallery)
+        val tabs = gallery.substringAfter("private fun GalleryTabs(").substringBefore("\n}\n")
+        assertTrue("Gallery's tabs are the shared segmented pill", "SpaceSegmented(GalleryModel.tabs" in tabs && "scroll = true" in tabs)
+        assertFalse("no pill of its own", "RoundedCornerShape(" in tabs || "pageGlass(" in tabs)
+        val seg = src("ui/space/SpaceRows.kt").substringAfter("fun SpaceSegmented(").substringBefore("\n}\n")
+        assertTrue("the segmented pill can scroll", "scroll: Boolean = false" in seg && "horizontalScroll(" in seg)
+    }
+
     @Test fun thereIsNoModelPicker() {
         for (gone in listOf("ModelPicker(", "ModelPill(", "Act.PickModel", "Kind.MODEL", "Icon.MODEL", "SelfMap.MODELS")) nowhere(gone)
         val mc = src("composer/ModelChoice.kt")

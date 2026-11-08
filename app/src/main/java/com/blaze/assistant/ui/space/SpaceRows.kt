@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -217,9 +218,19 @@ fun SpaceField(
 /**
  * The shell's segmented pill (the top bar's look, for any two- to four-way choice): the track, the selected segment in
  * the selected fill, [SpaceInsets.CONTROL_DP] tall overall. [options] are (id, label) pairs.
+ * [scroll]: for more options than fit a narrow phone (Gallery's five): the pill keeps each segment's own width and
+ * scrolls sideways inside [modifier], with [edge] of room before and after it (the gutter, so it lines up with the page).
  */
 @Composable
-fun SpaceSegmented(options: List<Pair<String, String>>, value: String, modifier: Modifier = Modifier, tag: String? = null, onPick: (String) -> Unit) {
+fun SpaceSegmented(options: List<Pair<String, String>>, value: String, modifier: Modifier = Modifier, tag: String? = null,
+                   scroll: Boolean = false, edge: Dp = 0.dp, onPick: (String) -> Unit) {
+    if (scroll) {
+        Row(modifier.horizontalScroll(rememberScrollState()).padding(horizontal = edge)) { SegmentTrack(options, value, Modifier, tag, false, onPick) }
+    } else SegmentTrack(options, value, modifier, tag, true, onPick)
+}
+
+@Composable
+private fun SegmentTrack(options: List<Pair<String, String>>, value: String, modifier: Modifier, tag: String?, share: Boolean, onPick: (String) -> Unit) {
     val look = spaceLook()
     Row(modifier.clip(SpaceShapes.pill).background(look.track).let { if (tag != null) it.testTag(tag) else it }
         .padding(SpaceInsets.PILL_FRAME_DP.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -227,7 +238,7 @@ fun SpaceSegmented(options: List<Pair<String, String>>, value: String, modifier:
             val on = id == value
             val fill by animateColorAsState(if (on) look.selectedFill else Color.Transparent, MotionTokens.medium(), label = "spaceSegment")
             val ink by animateColorAsState(if (on) look.selectedInk else look.sub, MotionTokens.medium(), label = "spaceSegmentInk")
-            Box(Modifier.weight(1f, fill = false).clip(SpaceShapes.pill).background(fill)
+            Box((if (share) Modifier.weight(1f, fill = false) else Modifier).clip(SpaceShapes.pill).background(fill)
                 .clickable(onClickLabel = "Show $label") { onPick(id) }
                 .semantics { selected = on; role = Role.Tab }
                 .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
