@@ -27,14 +27,15 @@ class ContrastTest {
      * 0.52.3 (ARGUS x Hark): the space palette in both modes. Dark: white, Steel and the lifted Electric text on obsidian
      * and on every card / tile / track / profile group, laid over black and over the brightest the scrimmed space view gets
      * (white under the scrim); Electric (rings, cursor) keeps 3:1. Light: ink, the deepened Steel and Argus Blue on the
-     * light ground, cards, tiles and the track. The selected segment and the primary buttons read in both modes.
+     * light ground, cards, tiles and the track. The selected segment and the primary buttons read in both modes. Unification:
+     * the solid card and the menu surface too.
      */
     @Test fun theSpacePaletteReadsInBothModes() {
         val p = com.blaze.assistant.ui.space.SpacePalette
         val black = Color(p.OBSIDIAN)
         val brightest = Contrast.over(Color.Black.copy(alpha = p.scrimAlpha(true)), Color.White)
         assertTrue("the dark scrim darkens the space view", p.scrimAlpha(true) >= 0.5f)
-        val surfaces = listOf(Color(p.CARD_DARK), Color(p.TILE_DARK), Color(p.TRACK_DARK), Color(0xF2080B12))
+        val surfaces = listOf(Color(p.CARD_DARK), Color(p.TILE_DARK), Color(p.TRACK_DARK), Color(0xF2080B12), Color(p.CARD_SOLID_DARK), Color(p.MENU_DARK))
         val darkGrounds = listOf(black) + surfaces.flatMap { listOf(Contrast.over(it, black), Contrast.over(it, brightest)) }
         for (g in darkGrounds) {
             assertTrue("white on $g", Contrast.ratio(Color(p.WHITE), g) >= Contrast.AA_TEXT)
@@ -42,7 +43,7 @@ class ContrastTest {
             assertTrue("electric text on $g", Contrast.ratio(Color(p.ELECTRIC_TEXT), g) >= Contrast.AA_TEXT)
             assertTrue("electric (rings, cursor) on $g", Contrast.ratio(Color(p.ELECTRIC), g) >= Contrast.AA_UI)
         }
-        val lightGrounds = listOf(Color(p.GROUND_LIGHT), Color(p.CARD_LIGHT), Color(p.TILE_LIGHT), Color(p.TRACK_LIGHT))
+        val lightGrounds = listOf(Color(p.GROUND_LIGHT), Color(p.CARD_LIGHT), Color(p.TILE_LIGHT), Color(p.TRACK_LIGHT), Color(p.CARD_SOLID_LIGHT), Color(p.MENU_LIGHT))
         for (g in lightGrounds) {
             assertEquals("light grounds are opaque", 1f, g.alpha, 0f)
             assertTrue("ink on $g", Contrast.ratio(Color(p.INK_LIGHT), g) >= Contrast.AA_TEXT)
@@ -58,6 +59,12 @@ class ContrastTest {
             assertTrue("ink on the card ($dark)", Contrast.ratio(look.ink, Contrast.over(look.card, look.ground)) >= Contrast.AA_TEXT)
             assertTrue("sub on the card ($dark)", Contrast.ratio(look.sub, Contrast.over(look.card, look.ground)) >= Contrast.AA_TEXT)
             assertTrue("accent on the card ($dark)", Contrast.ratio(look.accent, Contrast.over(look.card, look.ground)) >= Contrast.AA_TEXT)
+            for ((name, s) in listOf("solid card" to look.cardSolid, "menu" to look.menu)) {
+                val g = Contrast.over(s, look.ground)
+                assertTrue("ink on the $name ($dark)", Contrast.ratio(look.ink, g) >= Contrast.AA_TEXT)
+                assertTrue("sub on the $name ($dark)", Contrast.ratio(look.sub, g) >= Contrast.AA_TEXT)
+                assertTrue("accent on the $name ($dark)", Contrast.ratio(look.accent, g) >= Contrast.AA_TEXT)
+            }
         }
         // the brand colours are the palette's (docs/BRAND.md)
         assertEquals(listOf(0xFF000000L, 0xFF0056FFL, 0xFF1286FFL, 0xFF9AA0B3L, 0xFFFFFFFFL), listOf(p.OBSIDIAN, p.ARGUS_BLUE, p.ELECTRIC, p.STEEL, p.WHITE))

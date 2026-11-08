@@ -14,7 +14,8 @@ import com.blaze.assistant.ui.space.SpaceProjectRows.Status as PS
 /**
  * 0.52.3 "ARGUS x Hark" shell, the pure rules (SpaceLogic.kt): the palette, the three tabs and their round button, the
  * pill's fit, the greeting and its hourly refresh, the Home's answer card and card order, the profile page's rows, the
- * decluttered settings tree, the onboarding steps, the projects rows, feedback, the test tags and the image sampling.
+ * decluttered settings tree, the onboarding steps, the projects rows, feedback, the test tags and the image sampling,
+ * and the unification tokens (control height, gutter, card padding, rows, type scale, icons, solid card and menu).
  * Replaces ArgusHomeLogicTest (the 3D Home's orb, rings, GL renderer, pull sheet and meshes were removed with ui/argus).
  */
 class SpaceLogicTest {
@@ -33,6 +34,34 @@ class SpaceLogicTest {
         // the cards are translucent over the space view, opaque on the light ground
         assertTrue((SpacePalette.CARD_DARK ushr 24) in 0xC0L..0xFEL)
         assertEquals(0xFFL, SpacePalette.CARD_LIGHT ushr 24)
+    }
+
+    /**
+     * Unification tokens: one control height (round buttons, the segmented pill with its frame, the pill buttons), one
+     * gutter under the round button, one card padding and row size, a stepped type scale and one icon style.
+     */
+    @Test fun oneSetOfShellTokens() {
+        assertEquals(44, SpaceInsets.CONTROL_DP)
+        assertEquals(SpaceInsets.CONTROL_DP, SpaceInsets.ROUND_DP)
+        assertEquals("the pill is as tall as the round buttons beside it", SpaceInsets.CONTROL_DP, SpaceInsets.SEGMENT_DP + 2 * SpaceInsets.PILL_FRAME_DP)
+        assertEquals(20, SpaceInsets.GUTTER_DP)
+        assertEquals("content lines up under the round button", SpaceInsets.EDGE_DP, SpaceInsets.GUTTER_DP)
+        assertTrue("the composer is the one deliberate exception", SpaceInsets.COMPOSER_EDGE_DP > SpaceInsets.GUTTER_DP)
+        assertEquals(22, SpaceInsets.CARD_PAD_DP)
+        assertEquals(56, SpaceInsets.ROW_MIN_DP)
+        assertTrue(SpaceInsets.ROW_MIN_LARGE_DP > SpaceInsets.ROW_MIN_DP)
+        assertTrue("a row's padding leaves room for a line of text", SpaceInsets.ROW_MIN_DP - 2 * SpaceInsets.ROW_PAD_V_DP >= 24)
+        assertEquals(listOf(32f, 24f, 20f, 17f, 16f, 14f, 12f), SpaceTypeScale.ALL)
+        assertEquals("the scale steps down", SpaceTypeScale.ALL.sortedDescending(), SpaceTypeScale.ALL)
+        assertEquals(SpaceTypeScale.ALL.size, SpaceTypeScale.ALL.toSet().size)
+        assertTrue("the icon sits inside its tile", SpaceIcons.TILE_ICON_DP < SpaceIcons.TILE_DP && SpaceIcons.SMALL_ICON_DP < SpaceIcons.SMALL_DP)
+        assertTrue("the tile fits a list row", SpaceIcons.TILE_DP <= SpaceInsets.ROW_MIN_DP - 2 * 8)
+        assertTrue(SpaceIcons.fillAlpha(true) > SpaceIcons.fillAlpha(false))
+        // the solid card and the menu are (nearly) opaque in dark mode and opaque in light mode
+        assertTrue((SpacePalette.CARD_SOLID_DARK ushr 24) >= 0xF0L)
+        assertTrue((SpacePalette.MENU_DARK ushr 24) >= (SpacePalette.CARD_SOLID_DARK ushr 24))
+        assertEquals(0xFFL, SpacePalette.CARD_SOLID_LIGHT ushr 24)
+        assertEquals(0xFFL, SpacePalette.MENU_LIGHT ushr 24)
     }
 
     @Test fun threeTabsInHarksOrderWithTheirRoundButton() {

@@ -29,10 +29,20 @@ object SpacePalette {
     const val HAIR_DARK = 0x1FFFFFFFL
     /** The segmented pill's track and the round buttons. */
     const val TRACK_DARK = 0xCC10141FL
+    /**
+     * Unification: the one solid card material, for surfaces that must not show the space view through them (the profile
+     * groups, Spotlight, the composer, dialogs). Same blue-black as [CARD_DARK], nearly opaque.
+     */
+    const val CARD_SOLID_DARK = 0xF20B0F1AL
+    /** Menus and pop-ups: a step above the solid card, practically opaque, so a menu reads over any card. */
+    const val MENU_DARK = 0xFA10141FL
 
     // ---- light (the light ARGUS variant; the space view stays at the top as a band)
     const val GROUND_LIGHT = 0xFFF4F6FBL
     const val CARD_LIGHT = 0xFFFFFFFFL
+    /** Light mode: the light card is already opaque, so the solid card and the menu are white too (the hairline edges them). */
+    const val CARD_SOLID_LIGHT = CARD_LIGHT
+    const val MENU_LIGHT = 0xFFFFFFFFL
     const val TILE_LIGHT = 0xFFEDF1F8L
     const val HAIR_LIGHT = 0x1A0A1020L
     const val TRACK_LIGHT = 0xFFE4E9F3L
@@ -77,21 +87,66 @@ object SpaceTabs {
     fun selectedInk(dark: Boolean): Long = if (dark) SpacePalette.INK_LIGHT else SpacePalette.WHITE
 }
 
-/** How the pill fits the room it has (dp) at the phone's font scale: Hark's 17 sp labels, smaller on narrow screens. */
 /**
  * 0.52.4 Hark-sized chrome: nothing touches the screen's sides, top or bottom. The top bar and the composer sit
- * [EDGE_DP] / [COMPOSER_EDGE_DP] in from the sides; the round button and avatar are [ROUND_DP]; the pill's segments
- * [SEGMENT_DP] tall (48 dp with the pill's 4 dp frame); the composer pill at least [COMPOSER_MIN_DP] tall.
+ * [EDGE_DP] / [COMPOSER_EDGE_DP] in from the sides; the composer pill at least [COMPOSER_MIN_DP] tall.
+ *
+ * Unification: ONE control height, [CONTROL_DP]. The round buttons and the avatar are [ROUND_DP] (= [CONTROL_DP]); the
+ * segmented pill is [SEGMENT_DP] plus its [PILL_FRAME_DP] frame on each side (= [CONTROL_DP]), so the three tops line up;
+ * the pill buttons are at least [CONTROL_DP] tall. Every screen's content sits [GUTTER_DP] in (= [EDGE_DP], under the
+ * round button); cards pad [CARD_PAD_DP] across and [CARD_PAD_V_DP] down; list rows are at least [ROW_MIN_DP] tall
+ * ([ROW_MIN_LARGE_DP] on the profile's roomy groups) with [ROW_PAD_V_DP] above and below. [COMPOSER_EDGE_DP] is the one
+ * deliberate exception to the gutter: the composer floats a little further in.
  */
 object SpaceInsets {
     const val EDGE_DP = 20
-    const val ROUND_DP = 44
-    const val SEGMENT_DP = 40
+    const val GUTTER_DP = EDGE_DP
+    const val CONTROL_DP = 44
+    const val ROUND_DP = CONTROL_DP
+    const val PILL_FRAME_DP = 4
+    const val SEGMENT_DP = CONTROL_DP - 2 * PILL_FRAME_DP
+    const val CARD_PAD_DP = 22
+    const val CARD_PAD_V_DP = 20
+    const val ROW_MIN_DP = 56
+    const val ROW_MIN_LARGE_DP = 64
+    const val ROW_PAD_V_DP = 14
     const val COMPOSER_EDGE_DP = 28
     const val COMPOSER_MIN_DP = 50
     const val COMPOSER_BOTTOM_DP = 12
 }
 
+/**
+ * Unification: the shell's type scale in sp, so no screen picks its own size. Serif steps ([DISPLAY], [TITLE], [SECTION])
+ * are headlines; the rest are the grotesk ([ROW_TITLE] medium weight). SpaceType turns these into text styles.
+ */
+object SpaceTypeScale {
+    const val DISPLAY = 32f
+    const val TITLE = 24f
+    const val SECTION = 20f
+    const val ROW_TITLE = 17f
+    const val BODY = 16f
+    const val META = 14f
+    const val CAPTION = 12f
+    val ALL = listOf(DISPLAY, TITLE, SECTION, ROW_TITLE, BODY, META, CAPTION)
+}
+
+/**
+ * Unification: the one icon style (0.52.4 icons everywhere), in dp. List rows lead with a round tinted tile [TILE_DP]
+ * across holding a [TILE_ICON_DP] icon; compact rows use the [SMALL_DP] tile or a bare [ROW_ICON_DP] icon; buttons and
+ * chips lead with a [BUTTON_ICON_DP] icon, [GAP_DP] before the text. The tile's tint shows at [fillAlpha].
+ */
+object SpaceIcons {
+    const val TILE_DP = 40
+    const val TILE_ICON_DP = 20
+    const val SMALL_DP = 32
+    const val SMALL_ICON_DP = 17
+    const val ROW_ICON_DP = 20
+    const val BUTTON_ICON_DP = 18
+    const val GAP_DP = 14
+    fun fillAlpha(dark: Boolean): Float = if (dark) 0.18f else 0.12f
+}
+
+/** How the pill fits the room it has (dp) at the phone's font scale: 15 sp labels, smaller on narrow screens. */
 object SpacePillFit {
     data class Fit(val padDp: Int, val fontSp: Float)
 

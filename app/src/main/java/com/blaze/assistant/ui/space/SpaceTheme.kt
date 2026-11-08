@@ -57,11 +57,16 @@ import com.blaze.assistant.ui.Type
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** The shell's colours for one mode (made from [SpacePalette]). Dark = the space view; light = the light ARGUS variant. */
+/**
+ * The shell's colours for one mode (made from [SpacePalette]). Dark = the space view; light = the light ARGUS variant.
+ * [card] is the translucent card over the backdrop; [cardSolid] the near-opaque one (profile groups, Spotlight, the
+ * composer, dialogs); [menu] the opaque pop-up surface (menus, the slash list).
+ */
 @Immutable
 data class SpaceLook(
     val dark: Boolean,
     val ground: Color, val card: Color, val tile: Color, val hair: Color, val track: Color,
+    val cardSolid: Color, val menu: Color,
     val ink: Color, val sub: Color, val accent: Color,
     val selectedFill: Color, val selectedInk: Color,
     val primaryFill: Color, val primaryInk: Color,
@@ -70,12 +75,14 @@ data class SpaceLook(
         val Dark = SpaceLook(true,
             ground = Color(SpacePalette.OBSIDIAN), card = Color(SpacePalette.CARD_DARK), tile = Color(SpacePalette.TILE_DARK),
             hair = Color(SpacePalette.HAIR_DARK), track = Color(SpacePalette.TRACK_DARK),
+            cardSolid = Color(SpacePalette.CARD_SOLID_DARK), menu = Color(SpacePalette.MENU_DARK),
             ink = Color(SpacePalette.WHITE), sub = Color(SpacePalette.STEEL), accent = Color(SpacePalette.ELECTRIC_TEXT),
             selectedFill = Color(SpaceTabs.selectedFill(true)), selectedInk = Color(SpaceTabs.selectedInk(true)),
             primaryFill = Color(SpacePalette.WHITE), primaryInk = Color(SpacePalette.INK_LIGHT))
         val Light = SpaceLook(false,
             ground = Color(SpacePalette.GROUND_LIGHT), card = Color(SpacePalette.CARD_LIGHT), tile = Color(SpacePalette.TILE_LIGHT),
             hair = Color(SpacePalette.HAIR_LIGHT), track = Color(SpacePalette.TRACK_LIGHT),
+            cardSolid = Color(SpacePalette.CARD_SOLID_LIGHT), menu = Color(SpacePalette.MENU_LIGHT),
             ink = Color(SpacePalette.INK_LIGHT), sub = Color(SpacePalette.SUB_LIGHT), accent = Color(SpacePalette.BLUE_LIGHT),
             selectedFill = Color(SpaceTabs.selectedFill(false)), selectedInk = Color(SpaceTabs.selectedInk(false)),
             primaryFill = Color(SpacePalette.ARGUS_BLUE), primaryInk = Color(SpacePalette.WHITE))
@@ -88,11 +95,29 @@ data class SpaceLook(
 @Composable
 fun spaceLook(): SpaceLook = SpaceLook.of(LocalBlaze.current.dark)
 
-/** Hark's two families: a serif for display headlines, the app's grotesk (Inter, the Aeonik stand-in) for everything else. */
+/**
+ * Hark's two families: a serif for display headlines, the app's grotesk (Inter, the Aeonik stand-in) for everything else.
+ * Unification: the named steps of [SpaceTypeScale] ([display] .. [caption]); [headline] / [body] with a size stay for the
+ * few places a step doesn't fit.
+ */
 object SpaceType {
     val Serif: FontFamily = FontFamily.Serif
     fun headline(size: TextUnit, color: Color) = TextStyle(fontFamily = Serif, fontWeight = FontWeight.Normal, fontSize = size, lineHeight = size * 1.15f, color = color)
     fun body(size: TextUnit, color: Color, weight: FontWeight = FontWeight.Normal) = TextStyle(fontFamily = Type.Sans, fontWeight = weight, fontSize = size, lineHeight = size * 1.35f, color = color)
+
+    /** Page and hero headline (the profile name included). */
+    fun display(color: Color) = headline(SpaceTypeScale.DISPLAY.sp, color)
+    /** A card's headline. */
+    fun title(color: Color) = headline(SpaceTypeScale.TITLE.sp, color)
+    /** A sub-headline inside a page. */
+    fun section(color: Color) = headline(SpaceTypeScale.SECTION.sp, color)
+    /** A list row's title and the pill buttons' labels. */
+    fun rowTitle(color: Color) = body(SpaceTypeScale.ROW_TITLE.sp, color, FontWeight.Medium)
+    /** Running text. */
+    fun bodyText(color: Color) = body(SpaceTypeScale.BODY.sp, color)
+    /** A row's second line, counts, small labels. */
+    fun meta(color: Color) = body(SpaceTypeScale.META.sp, color)
+    fun caption(color: Color) = body(SpaceTypeScale.CAPTION.sp, color)
 }
 
 object SpaceShapes {
@@ -213,31 +238,34 @@ fun SpaceCard(modifier: Modifier = Modifier, tag: String? = null, onClick: (() -
     Column(modifier.fillMaxWidth().clip(SpaceShapes.card).background(look.card)
         .let { if (tag != null) it.testTag(tag) else it }
         .let { if (onClick != null) it.clickable(onClickLabel = onClickLabel, onClick = onClick) else it }
-        .padding(horizontal = 22.dp, vertical = 20.dp), content = content)
+        .padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = SpaceInsets.CARD_PAD_V_DP.dp), content = content)
 }
 
 /** A card's serif headline ("hark can do more" in the reference). */
 @Composable
-fun SpaceHeadline(text: String, modifier: Modifier = Modifier, size: TextUnit = 30.sp, color: Color = spaceLook().ink) {
+fun SpaceHeadline(text: String, modifier: Modifier = Modifier, size: TextUnit = SpaceTypeScale.DISPLAY.sp, color: Color = spaceLook().ink) {
     Text(text, modifier = modifier.semantics { heading() }, style = SpaceType.headline(size, color))
 }
 
-/** Hark's full-width pill button ("+ Create a new panel"). [primary] = white (dark) / Argus Blue (light), else the card fill. */
+/**
+ * Hark's full-width pill button ("+ Create a new panel"). [primary] = white (dark) / Argus Blue (light), else the card fill.
+ * Unification: at least [SpaceInsets.CONTROL_DP] tall, the same height as the round buttons and the segmented pill.
+ */
 @Composable
 fun SpacePillButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, primary: Boolean = false, plus: Boolean = false,
                     tag: String? = null, enabled: Boolean = true, icon: ImageVector? = null) {
     val look = spaceLook()
     val fill = if (primary) look.primaryFill else look.card
     val ink = if (primary) look.primaryInk else look.ink
-    Row(modifier.fillMaxWidth().heightIn(min = 56.dp).clip(SpaceShapes.pill).background(if (enabled) fill else fill.copy(alpha = 0.5f))
+    Row(modifier.fillMaxWidth().heightIn(min = SpaceInsets.CONTROL_DP.dp).clip(SpaceShapes.pill).background(if (enabled) fill else fill.copy(alpha = 0.5f))
         .let { if (tag != null) it.testTag(tag) else it }
         .clickable(enabled = enabled, onClickLabel = label, onClick = onClick)
         .semantics { role = Role.Button }
-        .padding(horizontal = 20.dp, vertical = 14.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+        .padding(horizontal = 20.dp, vertical = 10.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically) {
         if (plus) { PlusMark(ink, 20.dp); Spacer(Modifier.width(10.dp)) }
         else if (icon != null) { Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(com.blaze.assistant.ui.BlazeIconStyle.tileIcon)); Spacer(Modifier.width(10.dp)) }
-        Text(label, style = SpaceType.body(17.sp, ink, FontWeight.Medium))
+        Text(label, style = SpaceType.rowTitle(ink))
     }
 }
 
@@ -256,9 +284,9 @@ fun SpaceChip(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
     }
 }
 
-/** The round buttons of the top bar (+, search, menu) and the avatar's frame. */
+/** The round buttons of the top bar (+, search, menu) and the avatar's frame: [SpaceInsets.ROUND_DP] unless [size] says otherwise. */
 @Composable
-fun SpaceRoundButton(desc: String, onClick: () -> Unit, modifier: Modifier = Modifier, tag: String? = null, size: androidx.compose.ui.unit.Dp = 52.dp,
+fun SpaceRoundButton(desc: String, onClick: () -> Unit, modifier: Modifier = Modifier, tag: String? = null, size: androidx.compose.ui.unit.Dp = SpaceInsets.ROUND_DP.dp,
                      fill: Color = spaceLook().track, content: @Composable BoxScope.() -> Unit) {
     Box(modifier.size(size).clip(CircleShape).background(fill)
         .let { if (tag != null) it.testTag(tag) else it }
