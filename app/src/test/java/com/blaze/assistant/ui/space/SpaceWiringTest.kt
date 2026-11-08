@@ -218,6 +218,40 @@ class SpaceWiringTest {
         assertTrue("the segmented pill can scroll", "scroll: Boolean = false" in seg && "horizontalScroll(" in seg)
     }
 
+    @Test fun browserWearsTheShell() {
+        // Unification 8/9: the browser's Sky look reads the shell. Its colours are SpaceLook getters (light / dark with the
+        // app, the accent picker's accent), the start page is the space view, the controls are the one 44 dp size at the
+        // gutter, the text is the type scale, and the launcher's switches are the shared one with the VPN wiring as before.
+        val sky = src("browser/SkyUi.kt")
+        val obj = sky.substringAfter("object Sky {").substringBefore("\n}\n")
+        assertTrue("Sky reads the shell's look", "spaceLook()" in obj)
+        for (c in listOf("navy", "frost", "frostSoft", "frostStrong", "rim", "ink", "sub", "weak", "blue"))
+            assertTrue("Sky.$c is read in composition", Regex("val $c: Color @Composable get\\(\\)").containsMatchIn(obj))
+        assertFalse("no fixed navy", "0xFF122846" in sky)
+        assertFalse("no Sky blue of its own", "0xFF2F7BFF" in sky)
+        assertTrue("frost takes its fill and rim", "fun Modifier.frost(shape: Shape, fill: Color, rim: Color)" in sky)
+        assertTrue("the controls are the one size", "SpaceInsets.CONTROL_DP" in obj && "SpaceInsets.GUTTER_DP" in obj)
+        val start = sky.substringAfter("internal fun SkyStartPage(").substringBefore("\n}\n")
+        assertTrue("the start page is the space view", "SpaceBackdrop {" in start)
+        nowhere("SkyWallpaper")
+        nowhere("R.drawable.sky_day")
+        assertFalse("the sky picture is gone", File(main, "res/drawable-nodpi/sky_day.webp").exists())
+        assertFalse("no sizes outside the type scale", Regex("SkyText\\([^\\n]*?, \\d+[,)]").containsMatchIn(sky))
+        assertTrue("the tabs sheet uses the shared segmented pill", "SpaceSegmented(" in sky.substringAfter("internal fun SkyTabsSheet(").substringBefore("\n}\n"))
+        val toggle = sky.substringAfter("private fun Toggle(").substringBefore("\n}\n")
+        assertTrue("the shared switch", "BlazeSwitchTrack(on)" in toggle)
+        assertTrue("the switch still sets the value", "toggleable(value = on, role = Role.Switch, onValueChange = set)" in toggle)
+        assertFalse("no Material switch", "Switch(on, onCheckedChange" in sky)
+        val launcher = sky.substringAfter("internal fun SkyLauncher(").substringBefore("\n}\n")
+        assertTrue("VPN wiring untouched", "BrowserVpn.connect(BrowserVpn.defaultId()) else BrowserVpn.disconnect()" in launcher)
+        assertTrue("tracker wiring untouched", "TrackerBlock.setOn(it)" in launcher && "BrowserVpn.setMask(it)" in launcher)
+        val browser = src("browser/BrowserActivity.kt")
+        assertTrue("the blank page sits on the look's ground", "background(if (blank) Sky.navy else Color.White)" in browser)
+        assertTrue("the bar is at the gutter", "padding(start = Sky.gutter, end = Sky.gutter, bottom = 8.dp)" in browser)
+        assertTrue("the Ask button is the one primary button", "Sky.primary" in browser && "Sky.onPrimary" in browser)
+        assertFalse("no fixed warning orange on the bar", "Color(0xFFFFB86B)" in browser)
+    }
+
     @Test fun thereIsNoModelPicker() {
         for (gone in listOf("ModelPicker(", "ModelPill(", "Act.PickModel", "Kind.MODEL", "Icon.MODEL", "SelfMap.MODELS")) nowhere(gone)
         val mc = src("composer/ModelChoice.kt")

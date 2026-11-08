@@ -3,7 +3,6 @@ package com.blaze.assistant.browser
 
 import com.blaze.assistant.BrandName
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -25,8 +25,6 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,65 +33,103 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.R
 import com.blaze.assistant.siteapps.SiteApp
 import com.blaze.assistant.siteapps.SiteInstaller
+import com.blaze.assistant.ui.BlazeSwitchTrack
 import com.blaze.assistant.ui.Type
+import com.blaze.assistant.ui.space.SpaceBackdrop
+import com.blaze.assistant.ui.space.SpaceInsets
+import com.blaze.assistant.ui.space.SpaceLook
+import com.blaze.assistant.ui.space.SpaceSegmented
+import com.blaze.assistant.ui.space.SpaceShapes
+import com.blaze.assistant.ui.space.SpaceType
+import com.blaze.assistant.ui.space.SpaceTypeScale
+import com.blaze.assistant.ui.space.spaceLook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
- * v0.45.25 "Sky": frosted glass over open sky. Translucent navy fills with a thin white rim (no live blur: the page
- * behind is a WebView and blurring it every frame costs more than the whole tab). The only picture is the new-tab
- * wallpaper, decoded at screen size and dropped when the new-tab page goes away.
+ * v0.45.25 "Sky", unification 8/9: the browser wears the shell. The names stay so the screen reads as before, but every
+ * colour comes from the app's [SpaceLook] (light or dark with the app, the accent picker's accent), read in composition
+ * like DialogColors: [frost] is the shell's translucent card (over the space view), [frostStrong] the solid card (sheets
+ * and the bar over a web page), [rim] the hairline. No live blur: the page behind is a WebView.
  */
 object Sky {
-    val navy = Color(0xFF122846)
-    val frost = navy.copy(alpha = 0.66f)
-    val frostSoft = navy.copy(alpha = 0.55f)
-    val frostStrong = navy.copy(alpha = 0.78f)
-    val rim = Color.White.copy(alpha = 0.16f)
-    val ink = Color.White
-    val sub = Color.White.copy(alpha = 0.72f)
-    val weak = Color.White.copy(alpha = 0.5f)
-    val blue = Color(0xFF2F7BFF)
-    val green = Color(0xFF34C759)
-    val pill = RoundedCornerShape(50)
-    val card = RoundedCornerShape(26.dp)
-    val sheet = RoundedCornerShape(30.dp)
-    val tile = RoundedCornerShape(18.dp)
+    private val look: SpaceLook @Composable get() = spaceLook()
+    /** The blank page's ground (under the space view while it decodes). */
+    val navy: Color @Composable get() = look.ground
+    /** The floating bar and the chips over a web page: the solid card, so the address reads over any page. */
+    val frost: Color @Composable get() = look.cardSolid
+    /** Cards over the space view (the start page). */
+    val frostSoft: Color @Composable get() = look.card
+    /** Sheets (tabs, launcher, site sheet). */
+    val frostStrong: Color @Composable get() = look.cardSolid
+    val rim: Color @Composable get() = look.hair
+    val ink: Color @Composable get() = look.ink
+    val sub: Color @Composable get() = look.sub
+    val weak: Color @Composable get() = look.sub.copy(alpha = 0.72f)
+    /** Accent marks (the Ask sparkle). */
+    val blue: Color @Composable get() = look.accent
+    /** The Ask button: the one primary button style. */
+    val primary: Color @Composable get() = look.primaryFill
+    val onPrimary: Color @Composable get() = look.primaryInk
+    /** Inner tiles (tools, stats) and the selected tab row. */
+    val tile: Color @Composable get() = look.tile
+    /** Secure / on: a calm green, deeper on light grounds. */
+    val green: Color @Composable get() = if (look.dark) Color(0xFF34C759) else Color(0xFF1A7F37)
+    /** Not secure, connecting. */
+    val warn: Color @Composable get() = if (look.dark) Color(0xFFFFB86B) else Color(0xFFB54708)
+    /** Failed. */
+    val bad: Color @Composable get() = if (look.dark) Color(0xFFFF8A80) else Color(0xFFB42318)
+    val pill = SpaceShapes.pill
+    val card = SpaceShapes.card
+    val sheet = SpaceShapes.card
+    val tile20 = SpaceShapes.tile
+    /** The one control height (round buttons, chips) and the pills that hold one (the control plus the pill's frame). */
+    val control: Dp = SpaceInsets.CONTROL_DP.dp
+    val bar: Dp = (SpaceInsets.CONTROL_DP + 2 * SpaceInsets.PILL_FRAME_DP).dp
+    val gutter: Dp = SpaceInsets.GUTTER_DP.dp
 }
 
 /** Taps on a sheet stay on the sheet (the dimmed backdrop behind it closes it). */
 internal fun Modifier.eatTaps(): Modifier = this.pointerInput(Unit) { detectTapGestures { } }
 
-fun Modifier.frost(shape: Shape = Sky.card, fill: Color = Sky.frost): Modifier = this.clip(shape).background(fill).border(1.dp, Sky.rim, shape)
+/** Unification: the fill and rim are explicit (Sky's colours are read in composition, a Modifier can't read them). */
+fun Modifier.frost(shape: Shape, fill: Color, rim: Color): Modifier = this.clip(shape).background(fill).border(1.dp, rim, shape)
 
 @Composable
-internal fun SkyText(s: String, size: Int, color: Color = Sky.ink, modifier: Modifier = Modifier, weight: FontWeight = FontWeight.Normal,
-                     maxLines: Int = 1, spacing: Float = 0f, center: Boolean = false) =
+internal fun SkyText(s: String, size: Float, color: Color = Sky.ink, modifier: Modifier = Modifier, weight: FontWeight = FontWeight.Normal,
+                     maxLines: Int = 1, spacing: Float = 0f, center: Boolean = false, family: FontFamily = Type.Sans) =
     androidx.compose.material3.Text(s, modifier = modifier, maxLines = maxLines, overflow = TextOverflow.Ellipsis,
-        style = TextStyle(fontFamily = Type.Sans, fontWeight = weight, fontSize = size.sp, color = color, letterSpacing = spacing.sp,
-            textAlign = if (center) TextAlign.Center else TextAlign.Start))
+        style = TextStyle(fontFamily = family, fontWeight = weight, fontSize = size.sp, lineHeight = (size * 1.3f).sp, color = color,
+            letterSpacing = spacing.sp, textAlign = if (center) TextAlign.Center else TextAlign.Start))
+
+/** Sizes for [SkyText]: the shell's type scale (SpaceTypeScale). */
+private const val T_TITLE = SpaceTypeScale.TITLE
+private const val T_SECTION = SpaceTypeScale.SECTION
+private const val T_ROW = SpaceTypeScale.ROW_TITLE
+private const val T_BODY = SpaceTypeScale.BODY
+private const val T_META = SpaceTypeScale.META
+private const val T_CAPTION = SpaceTypeScale.CAPTION
 
 /** A round letter tile in a colour picked from the site's name (no network, no bitmap). */
 @Composable
@@ -102,34 +138,11 @@ internal fun SiteDot(label: String, icon: ImageBitmap? = null, size: Dp = 28.dp,
     val palette = listOf(0xFF1F6FEB, 0xFFD1242F, 0xFF8250DF, 0xFF1A7F37, 0xFFBF8700, 0xFF0969DA, 0xFFE16F24, 0xFF24292F)
     val c = Color(palette[(label.lowercase().hashCode() and 0x7fffffff) % palette.size])
     Box(Modifier.size(size).clip(shape).background(c), contentAlignment = Alignment.Center) {
-        SkyText(label.firstOrNull { it.isLetterOrDigit() }?.uppercase() ?: "•", (size.value * 0.45f).toInt().coerceAtLeast(9), weight = FontWeight.SemiBold)
+        SkyText(label.firstOrNull { it.isLetterOrDigit() }?.uppercase() ?: "•", (size.value * 0.45f).coerceAtLeast(9f), Color.White, weight = FontWeight.SemiBold)
     }
 }
 
 internal fun skyHost(u: String): String = u.removePrefix("https://").removePrefix("http://").removePrefix("www.").substringBefore('/').substringBefore('?')
-
-/** The sky wallpaper, decoded at about screen size (RGB_565, ~1.3 MB) only while it is shown. */
-@Composable
-internal fun SkyWallpaper(modifier: Modifier = Modifier) {
-    val ctx = LocalContext.current
-    val img by produceState<ImageBitmap?>(null) {
-        value = withContext(Dispatchers.IO) {
-            try {
-                val dm = ctx.resources.displayMetrics
-                val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeResource(ctx.resources, R.drawable.sky_day, o)
-                var sample = 1
-                while (o.outWidth / (sample * 2) >= dm.widthPixels && o.outHeight / (sample * 2) >= dm.heightPixels) sample *= 2
-                BitmapFactory.decodeResource(ctx.resources, R.drawable.sky_day,
-                    BitmapFactory.Options().apply { inSampleSize = sample; inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 })?.asImageBitmap()
-            } catch (_: Throwable) { null }
-        }
-    }
-    Box(modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF3E6FA8), Color(0xFF9CC3E6))))) {
-        img?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x33000000), Color.Transparent, Color(0x22000000)))))
-    }
-}
 
 /** The clock line on the new-tab page; it changes once a minute (no animation). */
 @Composable
@@ -146,7 +159,7 @@ private fun rememberClock(): String {
 private data class Pin(val label: String, val url: String, val app: SiteApp? = null)
 
 /**
- * The Sky new-tab page: wallpaper, wordmark, time and date, the search pill (with voice), pinned sites and installed site
+ * The Sky new-tab page (unification 8/9: on the shell's space view): wordmark, time and date, the search pill (with voice), pinned sites and installed site
  * apps, "pick up where you left off" (recent tabs and Blaze's task) and two chips (trackers, live tabs).
  */
 @Composable
@@ -169,25 +182,26 @@ internal fun SkyStartPage(tick: Int, bottomSpace: Dp, open: (String) -> Unit, on
     val agent = BrowserEngine.agentTab()
     val others = BrowserEngine.tabs.filter { it !== cur && it.isPrivate == (cur?.isPrivate == true) && it.url.startsWith("http") }.sortedByDescending { it.lastSeen }
 
-    Box(Modifier.fillMaxSize()) {
-        SkyWallpaper()
-        Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp),
+    SpaceBackdrop {
+        Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = Sky.gutter),
             horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(72.dp))
-            SkyText("${BrandName.UPPER}", 44, weight = FontWeight.Normal, spacing = 18f)
+            // the wordmark keeps its own size and tracking: it is the logo, not a heading
+            SkyText("${BrandName.UPPER}", 44f, weight = FontWeight.Normal, spacing = 18f)
             Spacer(Modifier.height(8.dp))
-            SkyText(clock, 14, Sky.ink.copy(alpha = 0.9f))
+            SkyText(clock, T_META, Sky.sub)
             Spacer(Modifier.height(48.dp))
-            Row(Modifier.fillMaxWidth().height(52.dp).frost(Sky.pill, Sky.frostSoft).clickable(onClick = onSearch).padding(start = 18.dp, end = 6.dp),
+            Row(Modifier.fillMaxWidth().height(Sky.bar).frost(Sky.pill, Sky.frostSoft, Sky.rim).clickable(onClick = onSearch)
+                .padding(start = 18.dp, end = SpaceInsets.PILL_FRAME_DP.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Search, null, tint = Sky.sub, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(12.dp))
-                SkyText(if (cur?.isPrivate == true) "Private: search or enter an address" else "Search or enter an address", 15, Sky.sub, Modifier.weight(1f))
-                Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onVoice), contentAlignment = Alignment.Center) {
+                SkyText(if (cur?.isPrivate == true) "Private: search or enter an address" else "Search or enter an address", T_BODY, Sky.sub, Modifier.weight(1f))
+                Box(Modifier.size(Sky.control).clip(CircleShape).clickable(onClick = onVoice), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Mic, "Search by voice", tint = Sky.sub, modifier = Modifier.size(20.dp)) }
             }
             Spacer(Modifier.height(16.dp))
-            if (pins.isNotEmpty()) Row(Modifier.fillMaxWidth().frost(Sky.card, Sky.frostSoft).padding(vertical = 12.dp, horizontal = 6.dp),
+            if (pins.isNotEmpty()) Row(Modifier.fillMaxWidth().frost(Sky.card, Sky.frostSoft, Sky.rim).padding(vertical = 14.dp, horizontal = 6.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly) {
                 pins.forEach { p ->
                     Column(Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable {
@@ -198,7 +212,7 @@ internal fun SkyStartPage(tick: Int, bottomSpace: Dp, open: (String) -> Unit, on
                         val icon = remember(p.app?.id) { p.app?.let { a -> try { SiteInstaller.icon(ctx, a.id)?.asImageBitmap() } catch (_: Throwable) { null } } }
                         SiteDot(p.label, icon, 40.dp, RoundedCornerShape(12.dp))
                         Spacer(Modifier.height(6.dp))
-                        SkyText(p.label, 11, Sky.sub)
+                        SkyText(p.label, T_CAPTION, Sky.sub)
                     }
                 }
             }
@@ -208,26 +222,26 @@ internal fun SkyStartPage(tick: Int, bottomSpace: Dp, open: (String) -> Unit, on
             if (pick.isEmpty()) recent.take(2).forEach { e -> pick += Triple(e.title.ifBlank { skyHost(e.url) }, "Recent") { open(e.url) } }
             if (pick.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
-                Column(Modifier.fillMaxWidth().frost(Sky.card, Sky.frostSoft).padding(vertical = 10.dp)) {
-                    SkyText("PICK UP WHERE YOU LEFT OFF", 11, Sky.sub, Modifier.padding(start = 16.dp, bottom = 6.dp), spacing = 1.5f)
+                Column(Modifier.fillMaxWidth().frost(Sky.card, Sky.frostSoft, Sky.rim).padding(vertical = 12.dp)) {
+                    SkyLabel("Pick up where you left off")
                     pick.forEach { (title, tag, go) ->
-                        Row(Modifier.fillMaxWidth().clickable(onClick = go).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            SiteDot(title, null, 22.dp, RoundedCornerShape(6.dp))
+                        Row(Modifier.fillMaxWidth().clickable(onClick = go).padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            SiteDot(title, null, 28.dp)
                             Spacer(Modifier.width(12.dp))
-                            SkyText(title, 14, modifier = Modifier.weight(1f))
-                            SkyText(tag, 11, Sky.weak)
+                            SkyText(title, T_BODY, modifier = Modifier.weight(1f))
+                            SkyText(tag, T_CAPTION, Sky.weak)
                         }
                     }
                 }
             }
             if (marks.size > 6) {
                 Spacer(Modifier.height(16.dp))
-                Column(Modifier.fillMaxWidth().frost(Sky.card, Sky.frostSoft).padding(vertical = 10.dp)) {
-                    SkyText("BOOKMARKS", 11, Sky.sub, Modifier.padding(start = 16.dp, bottom = 6.dp), spacing = 1.5f)
+                Column(Modifier.fillMaxWidth().frost(Sky.card, Sky.frostSoft, Sky.rim).padding(vertical = 12.dp)) {
+                    SkyLabel("Bookmarks")
                     marks.drop(0).take(12).forEach { e ->
-                        Row(Modifier.fillMaxWidth().clickable { open(e.url) }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            SiteDot(e.title.ifBlank { skyHost(e.url) }, null, 22.dp, RoundedCornerShape(6.dp)); Spacer(Modifier.width(12.dp))
-                            SkyText(e.title.ifBlank { e.url }, 14, modifier = Modifier.weight(1f))
+                        Row(Modifier.fillMaxWidth().clickable { open(e.url) }.padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            SiteDot(e.title.ifBlank { skyHost(e.url) }, null, 28.dp); Spacer(Modifier.width(12.dp))
+                            SkyText(e.title.ifBlank { e.url }, T_BODY, modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -243,20 +257,24 @@ internal fun SkyStartPage(tick: Int, bottomSpace: Dp, open: (String) -> Unit, on
     }
 }
 
+/** A small heading in a card ("Pick up where you left off"): the shell's section label, sentence case, aligned with the rows. */
+@Composable
+private fun SkyLabel(s: String) = SkyText(s, T_CAPTION, Sky.sub, Modifier.padding(start = SpaceInsets.CARD_PAD_DP.dp, bottom = 4.dp), weight = FontWeight.Medium)
+
 @Composable
 private fun Chip(icon: ImageVector, text: String, strong: String?) {
-    Row(Modifier.height(32.dp).frost(Sky.pill, Sky.frostSoft).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = Sky.sub, modifier = Modifier.size(14.dp)); Spacer(Modifier.width(6.dp))
-        SkyText(text, 12, Sky.ink.copy(alpha = 0.9f))
-        if (strong != null) { Spacer(Modifier.width(5.dp)); SkyText(strong, 12, weight = FontWeight.SemiBold) }
+    Row(Modifier.height(36.dp).frost(Sky.pill, Sky.frostSoft, Sky.rim).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = Sky.sub, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(6.dp))
+        SkyText(text, T_CAPTION, Sky.ink)
+        if (strong != null) { Spacer(Modifier.width(5.dp)); SkyText(strong, T_CAPTION, weight = FontWeight.SemiBold) }
     }
 }
 
-/** A small frosted chip button (back, forward, reload, Blaze status). */
+/** A round chip button (back, forward, reload, home): the shell's one control size. */
 @Composable
 internal fun SkyChipButton(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Box(Modifier.size(36.dp).clip(CircleShape).clickable(enabled = enabled, onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
-        Icon(icon, label, tint = if (enabled) Sky.ink else Sky.weak, modifier = Modifier.size(18.dp))
+    Box(Modifier.size(Sky.control).clip(CircleShape).clickable(enabled = enabled, onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
+        Icon(icon, label, tint = if (enabled) Sky.ink else Sky.weak, modifier = Modifier.size(com.blaze.assistant.ui.BlazeIconStyle.rowIcon))
     }
 }
 
@@ -285,20 +303,13 @@ internal fun SkyTabsSheet(startSeg: TabSeg, onDone: () -> Unit, onGrid: () -> Un
     var menu by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)).clickable(onClick = onDone)) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 10.dp).padding(top = 8.dp)
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = Sky.gutter).padding(top = 8.dp)
             .windowInsetsPadding(skyBottomInsets())) {
-            Column(Modifier.weight(1f).fillMaxWidth().frost(Sky.sheet, Sky.frostStrong).eatTaps()) {
-                Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 6.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SkyText("Tabs", 22, weight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                    Row(Modifier.frost(Sky.pill, Color.White.copy(alpha = 0.08f)).padding(3.dp)) {
-                        listOf(TabSeg.OPEN to "Open ${BrowserEngine.normalTabs().size}", TabSeg.PRIVATE to "Private ${BrowserEngine.privateTabs().size}", TabSeg.BLAZE to "${BrandName.NAME}")
-                            .forEach { (s, l) ->
-                                SkyText(l, 13, if (seg == s) Sky.navy else Sky.ink, Modifier.clip(Sky.pill).background(if (seg == s) Color.White else Color.Transparent)
-                                    .clickable { seg = s }.padding(horizontal = 12.dp, vertical = 6.dp))
-                            }
-                    }
+            Column(Modifier.weight(1f).fillMaxWidth().frost(Sky.sheet, Sky.frostStrong, Sky.rim).eatTaps()) {
+                Row(Modifier.fillMaxWidth().padding(start = SpaceInsets.CARD_PAD_DP.dp, end = 6.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SkyText("Tabs", T_TITLE, family = SpaceType.Serif, modifier = Modifier.weight(1f))
                     Box {
-                        Box(Modifier.size(40.dp).clip(CircleShape).clickable { menu = true }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(Sky.control).clip(CircleShape).clickable { menu = true }, contentAlignment = Alignment.Center) {
                             Icon(Icons.Rounded.MoreVert, "Tab options", tint = Sky.ink, modifier = Modifier.size(20.dp)) }
                         com.blaze.assistant.ui.BlazeMenu(menu, onDismiss = { menu = false }, items = listOf(
                             "Picture grid" to { onGrid() },
@@ -309,21 +320,24 @@ internal fun SkyTabsSheet(startSeg: TabSeg, onDone: () -> Unit, onGrid: () -> Un
                             }))
                     }
                 }
+                // unification: the shell's one segmented pill, on its own line so it fits a 360 dp phone
+                SpaceSegmented(listOf(TabSeg.OPEN.name to "Open ${BrowserEngine.normalTabs().size}", TabSeg.PRIVATE.name to "Private ${BrowserEngine.privateTabs().size}",
+                    TabSeg.BLAZE.name to "${BrandName.NAME}"), seg.name, Modifier.fillMaxWidth().padding(horizontal = 14.dp).padding(bottom = 6.dp)) { id -> seg = TabSeg.valueOf(id) }
                 LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                     if (list.isEmpty()) item {
                         SkyText(when (seg) { TabSeg.PRIVATE -> "No private tabs. Private tabs keep no history; their cookies go when the last one closes."
-                            TabSeg.BLAZE -> "Tabs ${BrandName.NAME} browses for you show up here."; else -> "No open tabs" }, 14, Sky.sub, Modifier.padding(18.dp), maxLines = 4)
+                            TabSeg.BLAZE -> "Tabs ${BrandName.NAME} browses for you show up here."; else -> "No open tabs" }, T_META, Sky.sub, Modifier.padding(SpaceInsets.CARD_PAD_DP.dp), maxLines = 4)
                     }
-                    if (awake.isNotEmpty()) { item { Section("AWAKE") }; items(awake, key = { it.id }) { t -> TabRow(t, t === cur, t === agent, now, onDone) } }
-                    if (asleep.isNotEmpty()) { item { Section("SLEEPING \u00b7 0 MB EACH") }; items(asleep, key = { it.id }) { t -> TabRow(t, false, t === agent, now, onDone) } }
+                    if (awake.isNotEmpty()) { item { Section("Awake") }; items(awake, key = { it.id }) { t -> TabRow(t, t === cur, t === agent, now, onDone) } }
+                    if (asleep.isNotEmpty()) { item { Section("Sleeping \u00b7 0 MB each") }; items(asleep, key = { it.id }) { t -> TabRow(t, false, t === agent, now, onDone) } }
                 }
             }
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth().eatTaps(), verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.weight(1f).height(52.dp).frost(Sky.pill, Sky.frostStrong).clickable { BrowserEngine.newTab(ctx, isPrivate = seg == TabSeg.PRIVATE); onDone() },
+                Row(Modifier.weight(1f).height(Sky.bar).frost(Sky.pill, Sky.frostStrong, Sky.rim).clickable { BrowserEngine.newTab(ctx, isPrivate = seg == TabSeg.PRIVATE); onDone() },
                     horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Add, null, tint = Sky.ink, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(8.dp))
-                    SkyText(if (seg == TabSeg.PRIVATE) "New private tab" else "New tab", 15)
+                    SkyText(if (seg == TabSeg.PRIVATE) "New private tab" else "New tab", T_ROW, weight = FontWeight.Medium)
                 }
                 Spacer(Modifier.width(10.dp))
                 RoundFrost(Icons.Rounded.VisibilityOff, "New private tab") { BrowserEngine.newTab(ctx, isPrivate = true); onDone() }
@@ -335,28 +349,28 @@ internal fun SkyTabsSheet(startSeg: TabSeg, onDone: () -> Unit, onGrid: () -> Un
     }
 }
 
-@Composable private fun Section(s: String) = SkyText(s, 11, Sky.sub, Modifier.padding(start = 18.dp, top = 10.dp, bottom = 4.dp), spacing = 1.5f)
+@Composable private fun Section(s: String) = SkyText(s, T_CAPTION, Sky.sub, Modifier.padding(start = SpaceInsets.CARD_PAD_DP.dp, top = 10.dp, bottom = 4.dp), weight = FontWeight.Medium)
 
 @Composable
 private fun RoundFrost(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Box(Modifier.size(52.dp).frost(CircleShape, Sky.frostStrong).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(Sky.bar).frost(CircleShape, Sky.frostStrong, Sky.rim).clickable(onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
         Icon(icon, label, tint = Sky.ink, modifier = Modifier.size(20.dp)) }
 }
 
 @Composable
 private fun TabRow(t: BrowserEngine.Tab, selected: Boolean, isAgent: Boolean, now: Long, onDone: () -> Unit) {
     val blank = t.url.isBlank() || t.url == "about:blank"
-    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp).clip(RoundedCornerShape(16.dp))
-        .background(if (selected) Color.White.copy(alpha = 0.12f) else Color.Transparent)
-        .clickable { BrowserEngine.switchTo(t); onDone() }.padding(start = 10.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        SiteDot(t.title.ifBlank { skyHost(t.url) }, t.icon, 28.dp)
+    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp).clip(Sky.tile20)
+        .background(if (selected) Sky.tile else Color.Transparent)
+        .clickable { BrowserEngine.switchTo(t); onDone() }.padding(start = 14.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        SiteDot(t.title.ifBlank { skyHost(t.url) }, t.icon, 32.dp)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            SkyText(t.title.ifBlank { if (t.isPrivate) "Private tab" else "New tab" }, 15)
-            SkyText(if (t.isPrivate) "Private \u00b7 not saved" else if (blank) "New tab page" else if (SavedPages.isSavedUrl(t.url)) "Offline copy" else skyHost(t.url), 12, Sky.sub)
+            SkyText(t.title.ifBlank { if (t.isPrivate) "Private tab" else "New tab" }, T_BODY, weight = FontWeight.Medium)
+            SkyText(if (t.isPrivate) "Private \u00b7 not saved" else if (blank) "New tab page" else if (SavedPages.isSavedUrl(t.url)) "Offline copy" else skyHost(t.url), T_CAPTION, Sky.sub)
         }
-        SkyText(when { selected -> "Live"; isAgent -> "${BrandName.NAME}"; t.live != null -> "Awake"; else -> age(t.lastSeen, now) }, 11, Sky.sub, Modifier.padding(start = 8.dp))
-        Box(Modifier.size(40.dp).clip(CircleShape).clickable {
+        SkyText(when { selected -> "Live"; isAgent -> "${BrandName.NAME}"; t.live != null -> "Awake"; else -> age(t.lastSeen, now) }, T_CAPTION, Sky.sub, Modifier.padding(start = 8.dp))
+        Box(Modifier.size(Sky.control).clip(CircleShape).clickable {
             val i = BrowserEngine.tabs.indexOf(t); if (i >= 0) BrowserEngine.close(i)
             if (BrowserEngine.normalTabs().isEmpty() && BrowserEngine.tabs.none { it.isPrivate }) BrowserEngine.newTab(BrowserEngine.appContext())
         }, contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Close, "Close tab", tint = Sky.sub, modifier = Modifier.size(16.dp)) }
@@ -394,31 +408,31 @@ internal fun SkyLauncher(onDismiss: () -> Unit, onGo: (String) -> Unit, onAsk: (
     val matchHist = remember(q) { if (!typing) emptyList() else (BrowserData.bookmarks(ctx) + BrowserData.history(ctx)).filter { it.title.contains(q, true) || it.url.contains(q, true) }.distinctBy { it.url }.take(4) }
 
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)).clickable(onClick = onDismiss)) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().padding(horizontal = 10.dp).padding(top = 8.dp)) {
-            Row(Modifier.fillMaxWidth().height(54.dp).frost(Sky.pill, Sky.frostStrong).eatTaps().padding(start = 18.dp, end = 6.dp),
+        Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().padding(horizontal = Sky.gutter).padding(top = 8.dp)) {
+            Row(Modifier.fillMaxWidth().height(Sky.bar).frost(Sky.pill, Sky.frostStrong, Sky.rim).eatTaps().padding(start = 18.dp, end = SpaceInsets.PILL_FRAME_DP.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Search, null, tint = Sky.sub, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(10.dp))
                 Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                    if (q.isEmpty()) SkyText(if (tab?.isPrivate == true) "Private: search or type a web address" else "Search or type a web address", 15, Sky.weak)
+                    if (q.isEmpty()) SkyText(if (tab?.isPrivate == true) "Private: search or type a web address" else "Search or type a web address", T_BODY, Sky.weak)
                     BasicTextField(q, { q = it }, singleLine = true, cursorBrush = SolidColor(Sky.ink),
-                        textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = Sky.ink),
+                        textStyle = SpaceType.bodyText(Sky.ink),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
                         keyboardActions = KeyboardActions(onGo = { if (q.isNotBlank()) onGo(q) }),
                         modifier = Modifier.fillMaxWidth().focusRequester(focus))
                 }
-                if (q.isNotEmpty()) Box(Modifier.size(40.dp).clip(CircleShape).clickable { q = "" }, contentAlignment = Alignment.Center) {
+                if (q.isNotEmpty()) Box(Modifier.size(Sky.control).clip(CircleShape).clickable { q = "" }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Close, "Clear", tint = Sky.sub, modifier = Modifier.size(18.dp)) }
             }
             Spacer(Modifier.height(10.dp))
-            Column(Modifier.fillMaxWidth().weight(1f, fill = false).frost(Sky.sheet, Sky.frostStrong).eatTaps()
+            Column(Modifier.fillMaxWidth().weight(1f, fill = false).frost(Sky.sheet, Sky.frostStrong, Sky.rim).eatTaps()
                 .verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
                 if (typing) {
                     matchTabs.forEach { t -> Result(t.title.ifBlank { t.url }, skyHost(t.url), "Switch", t.icon) { BrowserEngine.switchTo(t); onDismiss() } }
                     matchHist.forEach { e -> Result(e.title.ifBlank { e.url }, skyHost(e.url), "History", null) { onGo(e.url) } }
                     Result("Go to \u201c${q.take(60)}\u201d", skyHost(BrowserEngine.toUrl(q)), "Enter", null) { onGo(q) }
-                    if (http) Row(Modifier.fillMaxWidth().clickable { onAsk(q) }.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (http) Row(Modifier.fillMaxWidth().clickable { onAsk(q) }.padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.AutoAwesome, null, tint = Sky.blue, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(12.dp))
-                        SkyText("Ask ${BrandName.NAME} \u201c${q.take(40)}\u201d", 15, modifier = Modifier.weight(1f)); SkyText("${BrandName.NAME}", 11, Sky.weak)
+                        SkyText("Ask ${BrandName.NAME} \u201c${q.take(40)}\u201d", T_BODY, modifier = Modifier.weight(1f)); SkyText("${BrandName.NAME}", T_CAPTION, Sky.weak)
                     }
                     Divider()
                 }
@@ -428,13 +442,13 @@ internal fun SkyLauncher(onDismiss: () -> Unit, onGo: (String) -> Unit, onAsk: (
                     Tool.INSTALL -> tab?.url.orEmpty().startsWith("https://") && tab?.isPrivate != true
                     else -> true } }
                 tools.chunked(4).forEach { row ->
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { t ->
-                            Column(Modifier.weight(1f).height(66.dp).clip(Sky.tile).background(Color.White.copy(alpha = 0.08f)).border(1.dp, Sky.rim, Sky.tile)
+                            Column(Modifier.weight(1f).height(68.dp).clip(Sky.tile20).background(Sky.tile).border(1.dp, Sky.rim, Sky.tile20)
                                 .clickable { onTool(t) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                 Icon(if (t == Tool.DESKTOP && BrowserEngine.desktop) Icons.Rounded.PhoneAndroid else t.icon, null, tint = Sky.ink, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.height(6.dp))
-                                SkyText(if (t == Tool.DESKTOP && BrowserEngine.desktop) "Mobile" else t.label, 11, Sky.sub)
+                                SkyText(if (t == Tool.DESKTOP && BrowserEngine.desktop) "Mobile" else t.label, T_CAPTION, Sky.sub)
                             }
                         }
                         repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -455,25 +469,29 @@ internal fun SkyLauncher(onDismiss: () -> Unit, onGo: (String) -> Unit, onAsk: (
     }
 }
 
-@Composable private fun Divider() = Box(Modifier.padding(horizontal = 18.dp, vertical = 8.dp).fillMaxWidth().height(1.dp).background(Sky.rim))
+@Composable private fun Divider() = Box(Modifier.padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = 8.dp).fillMaxWidth().height(1.dp).background(Sky.rim))
 
 @Composable
 private fun Result(title: String, sub: String, tag: String, icon: ImageBitmap?, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        SiteDot(title, icon, 26.dp); Spacer(Modifier.width(12.dp))
-        SkyText(title, 15, modifier = Modifier.weight(1f, fill = false)); Spacer(Modifier.width(6.dp))
-        SkyText(sub, 12, Sky.weak, Modifier.weight(1f)); SkyText(tag, 11, Sky.weak)
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        SiteDot(title, icon, 28.dp); Spacer(Modifier.width(12.dp))
+        SkyText(title, T_BODY, modifier = Modifier.weight(1f, fill = false)); Spacer(Modifier.width(6.dp))
+        SkyText(sub, T_CAPTION, Sky.weak, Modifier.weight(1f)); SkyText(tag, T_CAPTION, Sky.weak)
     }
 }
 
 @Composable
 private fun Toggle(icon: ImageVector, label: String, value: String, on: Boolean, onRow: (() -> Unit)? = null, set: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable { if (onRow != null) onRow() else set(!on) }.padding(horizontal = 18.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = SpaceInsets.ROW_MIN_DP.dp).clickable { if (onRow != null) onRow() else set(!on) }
+        .padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = Sky.ink, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(14.dp))
-        SkyText(label, 15, modifier = Modifier.weight(1f))
-        if (value.isNotEmpty()) { SkyText(value, 12, Sky.sub); Spacer(Modifier.width(10.dp)) }
-        Switch(on, onCheckedChange = set, colors = SwitchDefaults.colors(checkedTrackColor = Sky.green, checkedThumbColor = Color.White,
-            uncheckedTrackColor = Color.White.copy(alpha = 0.2f), uncheckedThumbColor = Color.White, uncheckedBorderColor = Color.Transparent))
+        SkyText(label, T_BODY, modifier = Modifier.weight(1f))
+        if (value.isNotEmpty()) { SkyText(value, T_CAPTION, Sky.sub); Spacer(Modifier.width(10.dp)) }
+        // unification: the one switch (BlazeSwitchTrack). The switch itself still sets the value even when the row opens
+        // more (VPN, location: [onRow]), exactly as the Material switch did.
+        Box(Modifier.heightIn(min = Sky.control).toggleable(value = on, role = Role.Switch, onValueChange = set), contentAlignment = Alignment.Center) {
+            BlazeSwitchTrack(on)
+        }
     }
 }
 
@@ -496,21 +514,21 @@ internal fun SkySiteSheet(onDismiss: () -> Unit, onAction: (SiteAction) -> Unit)
     val exit = BrowserVpn.exitCountry ?: BrowserVpn.current()?.country
     val masked = BrowserVpn.maskLocation && (t.isPrivate || BrowserVpn.on)
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)).clickable(onClick = onDismiss), contentAlignment = Alignment.BottomCenter) {
-        Column(Modifier.padding(horizontal = 10.dp).windowInsetsPadding(skyBottomInsets()).padding(bottom = 8.dp).fillMaxWidth()
-            .frost(Sky.sheet, Sky.frostStrong).eatTaps().verticalScroll(rememberScrollState()).padding(vertical = 12.dp)) {
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                SiteDot(t.title.ifBlank { host }, t.icon, 34.dp, RoundedCornerShape(10.dp)); Spacer(Modifier.width(12.dp))
+        Column(Modifier.padding(horizontal = Sky.gutter).windowInsetsPadding(skyBottomInsets()).padding(bottom = 8.dp).fillMaxWidth()
+            .frost(Sky.sheet, Sky.frostStrong, Sky.rim).eatTaps().verticalScroll(rememberScrollState()).padding(vertical = 14.dp)) {
+            Row(Modifier.fillMaxWidth().padding(start = SpaceInsets.CARD_PAD_DP.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                SiteDot(t.title.ifBlank { host }, t.icon, 40.dp, RoundedCornerShape(12.dp)); Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    SkyText(if (SavedPages.isSavedUrl(url)) "Offline copy" else host.ifBlank { "New tab" }, 16, weight = FontWeight.SemiBold)
+                    SkyText(if (SavedPages.isSavedUrl(url)) "Offline copy" else host.ifBlank { "New tab" }, T_SECTION, family = SpaceType.Serif)
                     SkyText((if (insecure) "Not secure" else if (url.startsWith("https")) "Secure" else "Page") +
                         (if (vpnOn) " \u00b7 via ${exit?.let { Countries.byCode(it)?.name ?: it } ?: "VPN"}" else " \u00b7 direct") +
-                        (if (t.isPrivate) " \u00b7 private" else ""), 12, if (insecure) Color(0xFFFFB86B) else Sky.sub)
+                        (if (t.isPrivate) " \u00b7 private" else ""), T_CAPTION, if (insecure) Sky.warn else Sky.sub)
                 }
-                Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(Sky.control).clip(CircleShape).clickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Close, "Close", tint = Sky.ink, modifier = Modifier.size(18.dp)) }
             }
             Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Stat(if (TrackerBlock.enabled) "${t.blocked}" else "Off", "trackers blocked", Modifier.weight(1f))
                 Stat(if (vpnOn) (exit ?: "On") else "Off", "VPN exit", Modifier.weight(1f))
                 val live = BrowserEngine.liveCount()
@@ -534,17 +552,18 @@ internal fun SkySiteSheet(onDismiss: () -> Unit, onAction: (SiteAction) -> Unit)
 
 @Composable
 private fun Stat(big: String, small: String, modifier: Modifier) {
-    Column(modifier.clip(RoundedCornerShape(18.dp)).background(Color.White.copy(alpha = 0.08f)).border(1.dp, Sky.rim, RoundedCornerShape(18.dp)).padding(vertical = 10.dp),
+    Column(modifier.clip(Sky.tile20).background(Sky.tile).border(1.dp, Sky.rim, Sky.tile20).padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        SkyText(big, 20, weight = FontWeight.SemiBold); SkyText(small, 11, Sky.sub)
+        SkyText(big, T_SECTION, weight = FontWeight.SemiBold); SkyText(small, T_CAPTION, Sky.sub)
     }
 }
 
 @Composable
 private fun Row2(icon: ImageVector, label: String, value: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = Sky.ink, modifier = Modifier.size(19.dp)); Spacer(Modifier.width(14.dp))
-        SkyText(label, 15, modifier = Modifier.weight(1f)); if (value.isNotEmpty()) SkyText(value, 12, Sky.sub)
+    Row(Modifier.fillMaxWidth().heightIn(min = SpaceInsets.ROW_MIN_DP.dp).clickable(onClick = onClick).padding(horizontal = SpaceInsets.CARD_PAD_DP.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = Sky.ink, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(14.dp))
+        SkyText(label, T_BODY, modifier = Modifier.weight(1f)); if (value.isNotEmpty()) SkyText(value, T_CAPTION, Sky.sub)
     }
 }
 
@@ -560,17 +579,18 @@ internal fun SkyFindBar(web: android.webkit.WebView?, onClose: () -> Unit) {
         onDispose { try { web?.clearMatches(); web?.setFindListener(null) } catch (_: Throwable) { } }
     }
     LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
-    Row(Modifier.statusBarsPadding().padding(10.dp).fillMaxWidth().height(50.dp).frost(Sky.pill, Sky.frostStrong).padding(start = 16.dp, end = 4.dp),
+    Row(Modifier.statusBarsPadding().padding(horizontal = Sky.gutter, vertical = 10.dp).fillMaxWidth().height(Sky.bar).frost(Sky.pill, Sky.frostStrong, Sky.rim)
+        .padding(start = 16.dp, end = SpaceInsets.PILL_FRAME_DP.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Rounded.FindInPage, null, tint = Sky.sub, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(10.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (q.isEmpty()) SkyText("Find in page", 15, Sky.weak)
+            if (q.isEmpty()) SkyText("Find in page", T_BODY, Sky.weak)
             BasicTextField(q, { q = it; if (it.isBlank()) { web?.clearMatches(); count = 0 to 0 } else web?.findAllAsync(it) }, singleLine = true,
-                cursorBrush = SolidColor(Sky.ink), textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Sky.ink),
+                cursorBrush = SolidColor(Sky.ink), textStyle = SpaceType.bodyText(Sky.ink),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { web?.findNext(true) }),
                 modifier = Modifier.fillMaxWidth().focusRequester(focus))
         }
-        if (q.isNotBlank()) SkyText("${count.first}/${count.second}", 12, Sky.sub)
+        if (q.isNotBlank()) SkyText("${count.first}/${count.second}", T_CAPTION, Sky.sub)
         SkyChipButton(Icons.Rounded.KeyboardArrowUp, "Previous match", enabled = count.second > 0) { web?.findNext(false) }
         SkyChipButton(Icons.Rounded.KeyboardArrowDown, "Next match", enabled = count.second > 0) { web?.findNext(true) }
         SkyChipButton(Icons.Rounded.Close, "Close find") { onClose() }

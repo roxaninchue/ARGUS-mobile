@@ -91,6 +91,9 @@ import com.blaze.assistant.ui.Type
 import com.blaze.assistant.ui.hairline
 import com.blaze.assistant.ui.hairlineBottom
 import com.blaze.assistant.ui.hairlineTop
+import com.blaze.assistant.ui.space.SpaceInsets
+import com.blaze.assistant.ui.space.SpaceLook
+import com.blaze.assistant.ui.space.SpaceTypeScale
 
 /** The Browser screen: shows BrowserEngine's current tab with an address bar, tabs, bookmarks, history and downloads. */
 class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled {
@@ -381,6 +384,7 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
     val sideInsets = WindowInsets.systemGestures.only(WindowInsetsSides.Horizontal)
     val navBottom = bottomInsets.asPaddingValues().calculateBottomPadding()
 
+    // unification 8/9: a blank tab sits on the shell's ground; the start page draws the space view over it
     Box(Modifier.fillMaxSize().background(if (blank) Sky.navy else Color.White).imePadding().onSizeChanged { areaSize = it }) {
         // The page, full-bleed under the floating pill (only the status bar is kept clear).
         if (previewPage != null) {
@@ -475,8 +479,8 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
                 if (dragging) { scaleX = 1.04f; scaleY = 1.04f }
             }
             .then(when (dock) {
-                ToolbarDock.BOTTOM -> Modifier.windowInsetsPadding(bottomInsets).padding(start = 12.dp, end = 12.dp, bottom = 8.dp).fillMaxWidth()
-                ToolbarDock.TOP -> Modifier.statusBarsPadding().padding(start = 12.dp, end = 12.dp, top = 10.dp).fillMaxWidth()
+                ToolbarDock.BOTTOM -> Modifier.windowInsetsPadding(bottomInsets).padding(start = Sky.gutter, end = Sky.gutter, bottom = 8.dp).fillMaxWidth()
+                ToolbarDock.TOP -> Modifier.statusBarsPadding().padding(start = Sky.gutter, end = Sky.gutter, top = 10.dp).fillMaxWidth()
                 ToolbarDock.LEFT -> Modifier.windowInsetsPadding(sideInsets).windowInsetsPadding(bottomInsets).padding(start = 6.dp, top = 10.dp, bottom = 10.dp)
                 ToolbarDock.RIGHT -> Modifier.windowInsetsPadding(sideInsets).windowInsetsPadding(bottomInsets).padding(end = 6.dp, top = 10.dp, bottom = 10.dp)
             })
@@ -500,22 +504,23 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
         val lockIcon = when { priv -> Icons.Rounded.VisibilityOff; insecure -> Icons.Rounded.ErrorOutline; url.startsWith("https") -> Icons.Rounded.Lock; else -> Icons.Rounded.Info }
         val tabCount: @Composable () -> Unit = {
             val n = BrowserEngine.tabs.count { it.isPrivate == priv }
-            Box(Modifier.size(40.dp).clip(CircleShape).combinedClickable(
+            Box(Modifier.size(Sky.control).clip(CircleShape).combinedClickable(
                 onClick = { BrowserEngine.snapshot(); tabsSeg = if (priv) TabSeg.PRIVATE else TabSeg.OPEN; panel = Panel.TABS },
                 onLongClick = { BrowserEngine.newTab(ctx, isPrivate = priv); panel = Panel.NONE },
                 onClickLabel = "Tabs", onLongClickLabel = "New tab")
                 .semantics { contentDescription = "Tabs ($n). Long-press for a new tab" }, contentAlignment = Alignment.Center) {
                 Box(Modifier.size(24.dp).clip(RoundedCornerShape(7.dp)).border(1.6.dp, Sky.ink, RoundedCornerShape(7.dp)), contentAlignment = Alignment.Center) {
-                    Text(if (n > 99) ":D" else "$n", Sky.ink, 11, weight = FontWeight.SemiBold) }
+                    Text(if (n > 99) ":D" else "$n", Sky.ink, SpaceTypeScale.CAPTION.toInt() - 1, weight = FontWeight.SemiBold) }
             }
         }
         val blazeButton: @Composable () -> Unit = {
-            Box(Modifier.size(44.dp).clip(CircleShape).background(if (pointer) Sky.blue.copy(alpha = 0.75f) else Sky.blue)
+            // unification: the one primary button, white on dark and Argus Blue on light
+            Box(Modifier.size(Sky.control).clip(CircleShape).background(if (pointer) Sky.primary.copy(alpha = 0.75f) else Sky.primary)
                 .combinedClickable(onClick = { if (url.startsWith("http") && !pointer) { askFirst = null; askOpen = true } else pointer = !pointer },
                     onLongClick = { pointer = true; panel = Panel.NONE },
                     onClickLabel = "Ask ${BrandName.NAME} about this page", onLongClickLabel = "Summon the ${BrandName.NAME} pointer")
                 .semantics { contentDescription = "${BrandName.NAME}: tap to ask about this page, long-press for the pointer" }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.AutoAwesome, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                Icon(Icons.Rounded.AutoAwesome, null, tint = Sky.onPrimary, modifier = Modifier.size(20.dp))
             }
         }
         val navChips: @Composable () -> Unit = {
@@ -524,7 +529,8 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
             if (tab != null && !blank) ReloadChip(tab)
             SkyChipButton(Icons.Rounded.Home, "Start page") { tab?.let { BrowserEngine.load(it, "about:blank") }; panel = Panel.NONE; pointer = false }
         }
-        if (vertical) Column(barMod.frost(Sky.pill, Sky.frost).verticalScroll(rememberScrollState()).padding(horizontal = 3.dp, vertical = 6.dp),
+        if (vertical) Column(barMod.frost(Sky.pill, Sky.frost, Sky.rim).verticalScroll(rememberScrollState())
+            .padding(horizontal = SpaceInsets.PILL_FRAME_DP.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             grip()
             SkyChipButton(lockIcon, "Site info") { panel = Panel.SITE }
@@ -535,32 +541,32 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     BlazeStatusChip(tab, Modifier.weight(1f, fill = false))
                     Spacer(Modifier.weight(0.01f))
-                    if (!blank) Row(Modifier.frost(Sky.pill, Sky.frost).padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) { navChips() }
+                    if (!blank) Row(Modifier.frost(Sky.pill, Sky.frost, Sky.rim).padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) { navChips() }
                 }
             }
             if (dock == ToolbarDock.TOP) Unit else chips()
             var swipe by remember { mutableFloatStateOf(0f) }
-            Row(Modifier.fillMaxWidth().height(56.dp).frost(Sky.pill, Sky.frost)
+            Row(Modifier.fillMaxWidth().height(Sky.bar).frost(Sky.pill, Sky.frost, Sky.rim)
                 .pointerInput(tab?.id, priv) {
                     detectHorizontalDragGestures(onDragStart = { swipe = 0f },
                         onDragEnd = { val th = 56.dp.toPx(); if (swipe < -th) swipeTab(true) else if (swipe > th) swipeTab(false); swipe = 0f },
                         onDragCancel = { swipe = 0f }, onHorizontalDrag = { ch, d -> ch.consume(); swipe += d })
                 }
-                .padding(start = 2.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                .padding(start = 2.dp, end = SpaceInsets.PILL_FRAME_DP.dp), verticalAlignment = Alignment.CenterVertically) {
                 grip()
-                Box(Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = "Site info") { panel = Panel.SITE }, contentAlignment = Alignment.Center) {
-                    Icon(lockIcon, if (insecure) "Not secure" else "Site info", tint = if (insecure) Color(0xFFFFB86B) else if (url.startsWith("https")) Sky.green else Sky.sub, modifier = Modifier.size(16.dp))
+                Box(Modifier.size(Sky.control).clip(CircleShape).clickable(onClickLabel = "Site info") { panel = Panel.SITE }, contentAlignment = Alignment.Center) {
+                    Icon(lockIcon, if (insecure) "Not secure" else "Site info", tint = if (insecure) Sky.warn else if (url.startsWith("https")) Sky.green else Sky.sub, modifier = Modifier.size(18.dp))
                 }
                 Box(Modifier.weight(1f).fillMaxHeight().clickable(onClickLabel = "Search or type a web address") { panel = Panel.LAUNCHER }, contentAlignment = Alignment.CenterStart) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (insecure) { Text("Not secure \u00b7 ", Color(0xFFFFB86B), 13, maxLines = 1) }
-                        Text(if (blank) (if (priv) "Private: search or type" else "Search or type a web address") else display(url), if (blank) Sky.sub else Sky.ink, 15, maxLines = 1)
+                        if (insecure) { Text("Not secure \u00b7 ", Sky.warn, SpaceTypeScale.META.toInt(), maxLines = 1) }
+                        Text(if (blank) (if (priv) "Private: search or type" else "Search or type a web address") else display(url), if (blank) Sky.sub else Sky.ink, SpaceTypeScale.BODY.toInt(), maxLines = 1)
                     }
                 }
                 when (BrowserVpn.status) {
                     BrowserVpn.Status.ON -> VpnBadge("VPN", Sky.green) { panel = Panel.PRIVACY }
-                    BrowserVpn.Status.CONNECTING -> VpnBadge("VPN\u2026", Color(0xFFFFB86B)) { panel = Panel.PRIVACY }
-                    BrowserVpn.Status.FAILED -> VpnBadge("VPN!", Color(0xFFFF8A80)) { panel = Panel.PRIVACY }
+                    BrowserVpn.Status.CONNECTING -> VpnBadge("VPN\u2026", Sky.warn) { panel = Panel.PRIVACY }
+                    BrowserVpn.Status.FAILED -> VpnBadge("VPN!", Sky.bad) { panel = Panel.PRIVACY }
                     BrowserVpn.Status.OFF -> {}
                 }
                 tabCount()
@@ -594,7 +600,7 @@ private fun VpnBadge(text: String, color: Color, onClick: () -> Unit) {
         // 0.52.4: a shield leads the VPN state, so it reads as an icon + word like the rest of the bar
         Icon(Icons.Rounded.Shield, contentDescription = null, tint = color, modifier = Modifier.size(12.dp))
         Spacer(Modifier.width(3.dp))
-        Text(text, color, 11, weight = FontWeight.SemiBold) }
+        Text(text, color, SpaceTypeScale.CAPTION.toInt(), weight = FontWeight.SemiBold) }
 }
 
 /** Reload, or stop while loading: reads the tab's progress in its own scope. */
@@ -622,10 +628,10 @@ private fun BlazeStatusChip(tab: BrowserEngine.Tab?, modifier: Modifier) {
     if (now - s.at !in 0..BrowserLive.WINDOW_MS) return
     val agent = BrowserEngine.agentTab() ?: return
     val here = agent === tab
-    Row(modifier.height(36.dp).frost(Sky.pill, Sky.frost).clickable(enabled = !here) { BrowserEngine.switchTo(agent) }.padding(horizontal = 12.dp),
+    Row(modifier.height(36.dp).frost(Sky.pill, Sky.frost, Sky.rim).clickable(enabled = !here) { BrowserEngine.switchTo(agent) }.padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(7.dp).clip(CircleShape).background(Sky.green)); Spacer(Modifier.width(8.dp))
-        Text(if (here) "${BrandName.NAME} is browsing this tab" else "${BrandName.NAME} ${s.what.ifBlank { "reading" }.replaceFirstChar { it.lowercase() }.take(30)} in background \u00b7 Watch", Sky.ink, 12, maxLines = 1)
+        Text(if (here) "${BrandName.NAME} is browsing this tab" else "${BrandName.NAME} ${s.what.ifBlank { "reading" }.replaceFirstChar { it.lowercase() }.take(30)} in background \u00b7 Watch", Sky.ink, SpaceTypeScale.CAPTION.toInt(), maxLines = 1)
     }
 }
 
@@ -672,10 +678,13 @@ private fun display(u: String) = if (u == "about:blank") "" else if (SavedPages.
 internal val LocalSheetInset = androidx.compose.runtime.compositionLocalOf { 0.dp }
 
 @Composable internal fun Sheet(content: @Composable ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+    val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    // Unification 8/9: the shell's solid card at the card radius. It stays the DARK look in both modes for now: what it
+    // holds (privacy, passwords, site apps, saved pages, bookmarks, history) still draws with the old Glass ink, which is
+    // light-on-dark only; those panels move to SpaceRows in the overlay round, and then this follows spaceLook too.
+    val look = SpaceLook.Dark
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)), contentAlignment = Alignment.BottomCenter) {
-        // v0.45.25 Sky: frosted navy, no shadow (a translucent fill; nothing is blurred behind it).
-        Column(Modifier.fillMaxWidth().clip(shape).background(Sky.navy.copy(alpha = 0.94f)).border(1.dp, Sky.rim, shape)
+        Column(Modifier.fillMaxWidth().clip(shape).background(look.cardSolid).border(1.dp, look.hair, shape)
             .padding(top = 10.dp, bottom = 8.dp + LocalSheetInset.current), content = content)
     }
 }
