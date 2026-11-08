@@ -90,15 +90,15 @@ enum class GlassIntensity(val top: Float, val bottom: Float, val rim: Float, val
 
 object GlassTokens {
     /** The dark ground every glass tile sits on. */
-    val bg = Color(0xFF0A0A0A)   // 0.52.1 Argus Black
+    val bg = Color(com.blaze.assistant.ui.space.SpacePalette.OBSIDIAN)   // unification: the shell's Obsidian
     val bgTop = Color(0xFF06103D)   // 0.52.1 Argus cobalt-black (ArgusBrand.CobaltNight)
     val ink = Color(0xFFF2F2F3)
     val body = Color(0xDEF2F2F3)
     val sub = Color(0x9EF2F2F3)
     val weak = Color(0x5CF2F2F3)
     /** Monochrome accent (focus rings, "on" states, links). */
-    val accent = Color(0xFF6A8FFF)   // 0.52.1 Argus electric blue, text-safe tint (ArgusBrand.ElectricText, 6.6:1 on black)
-    val onAccent = Color(0xFF0A0A0A)
+    val accent = Color(com.blaze.assistant.ui.space.SpacePalette.ELECTRIC_TEXT)   // unification: the shell's Electric text tint, 8.5:1 on black
+    val onAccent = Color(com.blaze.assistant.ui.space.SpacePalette.OBSIDIAN)
     /** Semantic colours, desaturated. */
     val error = Color(0xFFD9918A)
     val warning = Color(0xFFD6C08E)
@@ -134,7 +134,7 @@ object GlassTokens {
 
     /** Primary action fill: bright frost on dark; solid near-black ink on light (disabled: ink 25 %). */
     fun primaryFill(dark: Boolean, enabled: Boolean = true): Brush = when {
-        dark && enabled -> ArgusBrand.primary   // 0.52.1 Argus: cobalt → electric (white text 4.7:1+)
+        dark && enabled -> ArgusBrand.primary   // unification: solid Argus Blue, white text 5.6:1
         dark -> Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.10f), Color.White.copy(alpha = 0.06f)))
         enabled -> ArgusBrand.primary
         else -> androidx.compose.ui.graphics.SolidColor(lightInk.copy(alpha = 0.25f))

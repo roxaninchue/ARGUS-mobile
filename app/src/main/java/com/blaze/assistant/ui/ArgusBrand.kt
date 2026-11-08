@@ -10,33 +10,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.blaze.assistant.ui.space.SpacePalette
 
 /**
  * 0.52.1 Argus brand tokens (owner's board work/ref/argus/argus-brand-reference.jpg; docs/BRAND.md). The palette, the
  * text-safe tints that keep WCAG AA, the cobalt-to-black ground with its thin light arcs, and the wordmark style.
+ * Unification: ONE palette. The brand colours are [SpacePalette]'s (the ARGUS x Hark shell); the old names stay so
+ * nothing that reads them has to change: Cobalt = Argus Blue, Electric = Electric, Black = Obsidian, Silver = Steel.
  */
 object ArgusBrand {
-    // The five brand colours.
-    val Black = Color(0xFF0A0A0A)
-    val Cobalt = Color(0xFF0D28FF)
-    val Electric = Color(0xFF3466FF)
-    val Silver = Color(0xFFA6ABB3)
-    val White = Color(0xFFFFFFFF)
+    // The five brand colours (SpacePalette).
+    val Black = Color(SpacePalette.OBSIDIAN)
+    val Cobalt = Color(SpacePalette.ARGUS_BLUE)
+    val Electric = Color(SpacePalette.ELECTRIC)
+    val Silver = Color(SpacePalette.STEEL)
+    val White = Color(SpacePalette.WHITE)
 
     /**
-     * AA notes (contrast ratios, normal text needs 4.5): white on Electric 4.68, white on Cobalt 7.6, Cobalt on white 7.6.
-     * Electric on Black is only 4.23, so accent TEXT / icons on the dark ground use [ElectricText] (6.6 on Black);
-     * Silver on Black 8.6 (fine for secondary text), Silver on white 2.3 (decoration only, never text).
+     * AA notes (contrast ratios, normal text needs 4.5): white on Cobalt (Argus Blue) 5.6, Cobalt on the light ground 5.1.
+     * White on Electric is only 3.6, so Electric is a fill / ring colour, never under text; accent TEXT / icons on the dark
+     * ground use [ElectricText] (8.5 on Black). Silver (Steel) on Black 8.1, on white 2.6: decoration only on light grounds.
      */
-    val ElectricText = Color(0xFF6A8FFF)
+    val ElectricText = Color(SpacePalette.ELECTRIC_TEXT)
     /** Deep cobalt-black: the top of the dark ground gradient. */
     val CobaltNight = Color(0xFF06103D)
-    /** Light mode: silver-white ground and a silver hairline. */
-    val Paper = Color(0xFFF6F7F9)
+    /** Light mode: the shell's light ground and a silver hairline. */
+    val Paper = Color(SpacePalette.GROUND_LIGHT)
     val SilverLine = Color(0xFFD9DCE1)
 
-    /** Primary fills (buttons, the send arrow, selected chips): cobalt → electric. White text on it. */
-    val primary: Brush get() = Brush.linearGradient(listOf(Cobalt, Electric))
+    /**
+     * Primary fills (buttons, the send arrow, selected chips). Unification: solid Argus Blue (the 0.52.1 cobalt-to-electric
+     * gradient is retired), white text on it.
+     */
+    val primary: Brush get() = androidx.compose.ui.graphics.SolidColor(Cobalt)
 
     /** Wordmark: "ARGUS", wide-tracked uppercase (~0.35 em). */
     fun wordmark(size: TextUnit = 14.sp, color: Color = White): TextStyle =

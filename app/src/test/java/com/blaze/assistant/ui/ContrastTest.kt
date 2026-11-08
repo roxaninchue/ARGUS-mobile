@@ -70,6 +70,42 @@ class ContrastTest {
         assertEquals(listOf(0xFF000000L, 0xFF0056FFL, 0xFF1286FFL, 0xFF9AA0B3L, 0xFFFFFFFFL), listOf(p.OBSIDIAN, p.ARGUS_BLUE, p.ELECTRIC, p.STEEL, p.WHITE))
     }
 
+    /**
+     * Unification: one palette. The legacy tokens (ArgusBrand, GlassTokens, Light / DarkColors, the Material scheme) are
+     * the shell's SpacePalette colours, the default accent is the same in both systems, and the shell takes an accent
+     * picked in Look and feel the way the legacy screens do. The solid primary keeps white text at AA.
+     */
+    @Test fun oneBrandPaletteEverywhere() {
+        val p = com.blaze.assistant.ui.space.SpacePalette
+        val look = com.blaze.assistant.ui.space.SpaceLook
+        assertEquals(Color(p.OBSIDIAN), ArgusBrand.Black)
+        assertEquals(Color(p.ARGUS_BLUE), ArgusBrand.Cobalt)
+        assertEquals(Color(p.ELECTRIC), ArgusBrand.Electric)
+        assertEquals(Color(p.ELECTRIC_TEXT), ArgusBrand.ElectricText)
+        assertEquals(Color(p.STEEL), ArgusBrand.Silver)
+        assertEquals(Color(p.GROUND_LIGHT), ArgusBrand.Paper)
+        assertEquals(Color(p.OBSIDIAN), GlassTokens.bg)
+        assertEquals(Color(p.ELECTRIC_TEXT), GlassTokens.accent)
+        assertEquals(Color(p.GROUND_LIGHT), LightColors.paper)
+        assertEquals(Color(p.OBSIDIAN), DarkColors.paper)
+        assertEquals("one default accent (light)", look.Light.accent, LightColors.accent)
+        assertEquals("one default accent (dark)", look.Dark.accent, DarkColors.accent)
+        assertEquals(LightColors.accent, blazeScheme(false).primary)
+        assertEquals(DarkColors.accent, blazeScheme(true).primary)
+        assertTrue("the primary is solid", ArgusBrand.primary is androidx.compose.ui.graphics.SolidColor)
+        assertTrue("white on the primary", Contrast.ratio(Color.White, ArgusBrand.Cobalt) >= Contrast.AA_TEXT)
+        // the accent picker reaches the shell: same colour as the legacy screens get, the rest of the look unchanged
+        for (dark in listOf(true, false)) {
+            val picked = blazePalette(dark, 0xFF14B8A6).accent
+            val l = look.of(dark, picked)
+            assertEquals(picked, l.accent)
+            assertEquals(picked, blazeScheme(dark, picked).primary)
+            assertEquals(look.of(dark).copy(accent = picked), l)
+            assertEquals("nothing picked = the shell's own", look.of(dark), look.of(dark, blazePalette(dark).accent))
+            assertEquals(look.of(dark), look.of(dark, null))
+        }
+    }
+
     @Test fun chipsAreSolidWithAVisibleBorder() {
         for ((name, c) in palettes) {
             val fill = ChipStyle.fill(c)

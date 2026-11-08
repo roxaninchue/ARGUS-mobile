@@ -66,16 +66,16 @@ data class BlazeColors(
 )
 
 // v0.31.0: greyscale. Light keeps working (Settings → theme) but the glass look is designed dark-first.
-// 0.52.1 Argus light: white and silver with cobalt accents (cobalt on white 7.6:1).
+// Unification: the ground and the accent are the shell's (SpacePalette light ground, Argus Blue at 5.1:1 on it).
 val LightColors = BlazeColors(
-    paper = Color(0xFFF6F7F9),
+    paper = Color(com.blaze.assistant.ui.space.SpacePalette.GROUND_LIGHT),
     ink = Color(0xFF0A0A0A),
     body = Color(0xD10A0A0A),
     sub = Color(0x990A0A0A),
     weak = Color(0x5C0A0A0A),
     hair = Color(0x24384056),
     faint = Color(0x10384056),
-    accent = Color(0xFF0D28FF),
+    accent = Color(com.blaze.assistant.ui.space.SpacePalette.BLUE_LIGHT),
     dark = false
 )
 
@@ -174,7 +174,7 @@ fun BlazeTheme(content: @Composable () -> Unit) {
     // An accent picked in Look & feel drives the app's accents; on light grounds a pale accent is deepened so it still reads.
     val c = androidx.compose.runtime.remember(dark, accentHex) { blazePalette(dark, LookLogic.parseAccent(accentHex)) }
     // v0.24.5: Material's own colours mapped to Blaze, so no default purple / lavender can leak into anything Material draws.
-    androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark), shapes = BlazeShapes.material, typography = Type.material()) {
+    androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark, c.accent), shapes = BlazeShapes.material, typography = Type.material()) {
         // 0.52.4: Settings › Appearance › Size scales every dp and sp by one factor (1.0 leaves the phone's own density).
         val scale by Look.scale.collectAsState()
         val base = androidx.compose.ui.platform.LocalDensity.current
@@ -209,15 +209,16 @@ object BlazeShapes {
  * IconTile in IconKit.kt, so no screen picks its own sizes.
  */
 object BlazeIconStyle {
-    val tile = 40.dp
-    val tileIcon = 20.dp
-    val small = 32.dp
-    val smallIcon = 17.dp
-    val rowIcon = 20.dp
-    val buttonIcon = 18.dp
-    val gap = 14.dp
+    // Unification: the sizes and the tint strength are the shell's tokens (SpaceIcons), so both systems draw one tile.
+    val tile = com.blaze.assistant.ui.space.SpaceIcons.TILE_DP.dp
+    val tileIcon = com.blaze.assistant.ui.space.SpaceIcons.TILE_ICON_DP.dp
+    val small = com.blaze.assistant.ui.space.SpaceIcons.SMALL_DP.dp
+    val smallIcon = com.blaze.assistant.ui.space.SpaceIcons.SMALL_ICON_DP.dp
+    val rowIcon = com.blaze.assistant.ui.space.SpaceIcons.ROW_ICON_DP.dp
+    val buttonIcon = com.blaze.assistant.ui.space.SpaceIcons.BUTTON_ICON_DP.dp
+    val gap = com.blaze.assistant.ui.space.SpaceIcons.GAP_DP.dp
     val shape = androidx.compose.foundation.shape.CircleShape
-    fun fillAlpha(dark: Boolean): Float = if (dark) 0.18f else 0.12f
+    fun fillAlpha(dark: Boolean): Float = com.blaze.assistant.ui.space.SpaceIcons.fillAlpha(dark)
 }
 
 /** Primary buttons: the classic Blaze blue, solid (v0.25.2; the v0.24.8 orange-to-blue gradient is gone). */
@@ -227,17 +228,21 @@ object BlazeIconStyle {
  */
 object BlazeBrush {
     val orange = Color(0xFFD6B48E)
-    val blue = Color(0xFF3466FF)   // 0.52.1 Argus electric blue
-    val primary: androidx.compose.ui.graphics.Brush get() = ArgusBrand.primary   // 0.52.1 Argus: cobalt → electric, white text
+    val blue = ArgusBrand.Electric   // unification: the shell's Electric, for fills and rings only, never under text
+    val primary: androidx.compose.ui.graphics.Brush get() = ArgusBrand.primary   // unification: solid Argus Blue, white text
     val primarySoft: androidx.compose.ui.graphics.Brush get() = androidx.compose.ui.graphics.SolidColor(Color.White.copy(alpha = 0.10f))
 }
 
-/** Material colour scheme from Blaze's tokens (v0.24.5): blue primary, orange secondary, Blaze surfaces; never purple. */
-fun blazeScheme(dark: Boolean): androidx.compose.material3.ColorScheme {
+/**
+ * Material colour scheme from Blaze's tokens (v0.24.5): blue primary, orange secondary, Blaze surfaces; never purple.
+ * Unification: the primary is the app's accent ([accent], the one Look and feel picked, else the shell's: Electric text
+ * in dark, Argus Blue in light), so a Material slider or progress bar matches the shell and the accent picker.
+ */
+fun blazeScheme(dark: Boolean, accent: Color? = null): androidx.compose.material3.ColorScheme {
     // v0.31.0: Material's slots mapped to the greyscale glass palette, so stock components pick up the look.
     // Containers are opaque greys (Material layers them), surfaces sit a step above the near-black ground.
     return if (dark) androidx.compose.material3.darkColorScheme(
-        primary = GlassTokens.accent, onPrimary = GlassTokens.onAccent, primaryContainer = Color(0xFF0B1A6B), onPrimaryContainer = GlassTokens.ink,
+        primary = accent ?: GlassTokens.accent, onPrimary = GlassTokens.onAccent, primaryContainer = Color(0xFF0B1A6B), onPrimaryContainer = GlassTokens.ink,
         secondary = Color(0xFFA6ABB3), onSecondary = GlassTokens.onAccent, secondaryContainer = Color(0xFF242427), onSecondaryContainer = GlassTokens.ink,
         tertiary = Color(0xFFA9A9AE), onTertiary = GlassTokens.onAccent, tertiaryContainer = Color(0xFF242427), onTertiaryContainer = GlassTokens.ink,
         background = GlassTokens.bg, onBackground = GlassTokens.ink, surface = Color(0xFF131315), onSurface = GlassTokens.ink,
@@ -249,7 +254,7 @@ fun blazeScheme(dark: Boolean): androidx.compose.material3.ColorScheme {
         surfaceContainerHighest = Color(0xFF212124), error = GlassTokens.error, onError = Color(0xFF1A0F0E),
         errorContainer = Color(0xFF3A2624), onErrorContainer = Color(0xFFF2D6D2))
     else androidx.compose.material3.lightColorScheme(
-        primary = Color(0xFF0D28FF), onPrimary = Color.White, primaryContainer = Color(0xFFDDE3FF), onPrimaryContainer = Color(0xFF0A0A0A),
+        primary = accent ?: LightColors.accent, onPrimary = Color.White, primaryContainer = Color(0xFFDDE3FF), onPrimaryContainer = Color(0xFF0A0A0A),
         secondary = Color(0xFF4A4A4F), onSecondary = Color.White, secondaryContainer = Color(0xFFE8E8EA), onSecondaryContainer = Color(0xFF111112),
         tertiary = Color(0xFF5A5A5F), onTertiary = Color.White, tertiaryContainer = Color(0xFFE8E8EA), onTertiaryContainer = Color(0xFF111112),
         background = LightColors.paper, onBackground = LightColors.ink, surface = Color(0xFFFFFFFF), onSurface = LightColors.ink,

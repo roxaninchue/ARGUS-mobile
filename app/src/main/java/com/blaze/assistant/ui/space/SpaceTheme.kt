@@ -88,12 +88,22 @@ data class SpaceLook(
             primaryFill = Color(SpacePalette.ARGUS_BLUE), primaryInk = Color(SpacePalette.WHITE))
 
         fun of(dark: Boolean) = if (dark) Dark else Light
+
+        /**
+         * Unification: the look in [dark] mode with the app's [accent] (the one Look and feel picked; the legacy screens
+         * read the same colour from LocalBlaze). The default accents of both systems are the same SpacePalette colour, so
+         * with nothing picked this is exactly [of]. Unspecified or null keeps the shell's own.
+         */
+        fun of(dark: Boolean, accent: Color?): SpaceLook {
+            val base = of(dark)
+            return if (accent == null || accent == Color.Unspecified || accent == base.accent) base else base.copy(accent = accent)
+        }
     }
 }
 
-/** The look for the app's current light / dark mode. */
+/** The look for the app's current light / dark mode, with the accent the rest of the app uses (the accent picker's). */
 @Composable
-fun spaceLook(): SpaceLook = SpaceLook.of(LocalBlaze.current.dark)
+fun spaceLook(): SpaceLook { val c = LocalBlaze.current; return SpaceLook.of(c.dark, c.accent) }
 
 /**
  * Hark's two families: a serif for display headlines, the app's grotesk (Inter, the Aeonik stand-in) for everything else.
