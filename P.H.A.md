@@ -53,3 +53,6 @@ There are a few related cards. Browser agents raise their own forms for sign-in 
 2. More reach: placing calls, texting other people and joining group chats. These gaps stop Hark from finishing a lot of real-life errands.
 3. Let users pin facts that must never be lost to summarizing, and show exactly what Hark is holding in mind.
 4. Smaller items: secure forms for more than logins, cards and keys (an ID number, for example), and video generation alongside images.
+
+## Q: Do you have dedicated models for image generation, or do you rely on code?
+Both, for different jobs. Pictures like photos, illustrations and logos come from a dedicated image-generation model, which can also work from up to four reference images and make transparent cutouts. Hark can't see which model it is. Charts and diagrams are drawn with code, and edits like cropping, resizing or watermarks also run through code tools (ImageMagick).
