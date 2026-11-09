@@ -79,6 +79,36 @@ jobs:
           "$BT/apksigner" verify --print-certs "test-signed/ARGUS-v${VER}-test-signed.apk" | head -3 | tee -a "$GITHUB_STEP_SUMMARY"
           rm -f ci-test.p12
           (cd test-signed && sha256sum *.apk | tee SHA256SUMS)
+      # 0.52.4: the ARGUS key (owner 2026-11-09, closed testing). Signs the same aligned APK with the owner's key when the
+      # ARGUS_KEYSTORE_B64 (base64 of argus-signing.p12) and ARGUS_KEY_PASSWORD secrets are set; skipped otherwise.
+      # The keystore is written to the runner's temp dir and removed in the same step; never committed or uploaded.
+      - name: ARGUS-signed APK (owner key)
+        id: argus_signed
+        env:
+          ARGUS_KEYSTORE_B64: ${{ secrets.ARGUS_KEYSTORE_B64 }}
+          ARGUS_KEY_PASSWORD: ${{ secrets.ARGUS_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ARGUS_KEYSTORE_B64" ] || [ -z "$ARGUS_KEY_PASSWORD" ]; then
+            echo "::notice::ARGUS_KEYSTORE_B64 / ARGUS_KEY_PASSWORD not set: no ARGUS-signed APK in this run"
+            echo "present=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          BT="$ANDROID_HOME/build-tools/34.0.0"
+          KS="$RUNNER_TEMP/argus-signing.p12"
+          echo "$ARGUS_KEYSTORE_B64" | base64 -d > "$KS"
+          mkdir -p argus-signed
+          "$BT/apksigner" sign --ks "$KS" --ks-type PKCS12 --ks-key-alias argus --ks-pass env:ARGUS_KEY_PASSWORD --key-pass env:ARGUS_KEY_PASSWORD \
+            --out "argus-signed/ARGUS-v${VER}.apk" "out/Blaze-v${VER}-release-unsigned-aligned.apk"
+          rm -f "$KS"
+          "$BT/apksigner" verify --print-certs "argus-signed/ARGUS-v${VER}.apk" | grep -E "SHA-256|DN" | tee -a "$GITHUB_STEP_SUMMARY"
+          (cd argus-signed && sha256sum *.apk | tee SHA256SUMS)
+          echo "present=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.argus_signed.outputs.present == 'true'
+        with:
+          name: apk-argus-signed
+          retention-days: 14
+          path: argus-signed/
       - uses: actions/upload-artifact@v4
         with:
           name: apk-test-signed
