@@ -63,3 +63,9 @@ The specialties Hark does have are coding-adjacent: building Pages, drawing char
 
 ## Q: So you always run tests on any code you write?
 No, not always. Hark usually runs what it writes when the code can run in its workspace, and checks the output (for example, every GitLab push in this session). It doesn't write formal tests by default, though. Some code can't run there at all, like an Android app that needs a device or code that needs the user's own keys. That code gets reviewed, not run.
+
+## Q: How does sending message after message work? (Finn sent "like this", "or", "this" as separate messages)
+Messages that arrive while Hark is working are added to its current turn, each with its own ID. Hark reads the whole batch before acting, like one thought sent in pieces, and if they conflict the latest wins. One reply can cover all of them. A running list tracks which messages still need a reply, so nothing gets dropped. If a message arrives while a task is running, Hark either folds it in as a correction (steering the agent mid-task) or starts it as separate work if it's unrelated.
+
+## Q: You receive everything?
+Yes. All four messages came through, each with its own ID. Anything sent after Hark has finished a reply just starts a fresh turn, so nothing slips between the cracks.
