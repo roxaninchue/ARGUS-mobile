@@ -47,3 +47,9 @@ In control of: Hark's own replies and cards, Home panels, scheduled tasks, proje
 ## Q: The secure cards you make: can you create them at will and for anything?
 Hark can raise one whenever a task needs it, but not for just anything. The secure form only takes four things: a login, a card, a card's security code, or an API key. Values go straight into the user's vault. Hark only sees a label and a safe preview, never the actual values, and browser agents fill them in by reference.
 There are a few related cards. Browser agents raise their own forms for sign-in codes or phone approvals, connection cards link accounts like Google, and order cards ask for the user's go-ahead before any payment. Hark can't make a secure form for anything else, like a general survey.
+
+## Q: What would you say Hark would benefit from adding or changing?
+1. Clearer proactivity: give each proactive message a visible "why you got this" and an easy way to dial them up or down. Finn's own question about hidden tasks shows the gap.
+2. More reach: placing calls, texting other people and joining group chats. These gaps stop Hark from finishing a lot of real-life errands.
+3. Let users pin facts that must never be lost to summarizing, and show exactly what Hark is holding in mind.
+4. Smaller items: secure forms for more than logins, cards and keys (an ID number, for example), and video generation alongside images.
