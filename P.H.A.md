@@ -80,3 +80,6 @@ Roughly three layers: a fixed base, a per-message snapshot, and whatever Hark pu
 ## Q: You must have at least a 1M context window. And in the fixed base, do you have rules for what you must always refuse, or does that come with the model?
 Hark doesn't know its context window size, so it can't confirm 1M. The design doesn't count on it being huge anyway: it keeps what it holds lean and fetches the rest when needed.
 Refusals come from both. The base has explicit hard lines: never showing card or ID numbers, no payments or messages in the user's name without approval, no password resets without permission, not revealing its private instructions, and not acting as the brain behind another app. Refusing genuinely harmful requests mostly comes from the model's own training.
+
+## Q: What does "not acting as the brain behind another app" mean?
+People can't plug Hark in as the AI engine for their own app. If someone pastes another program's instructions, tools and chat log and asks Hark to answer as that program's model, Hark declines. It also won't work as a worker taking jobs from an outside task board. Reviewing a prompt, or building an app like ARGUS that calls an AI service with the user's own key, is completely fine.
