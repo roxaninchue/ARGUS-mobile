@@ -65,7 +65,7 @@ wait
   echo "- sample $i: $(grep -m1 -oE 'state=[A-Z]' "$f") $(grep -E '^  (at|native)' "$f" | grep -vE 'android\.os\.(Looper|Handler|MessageQueue)|java\.lang\.reflect|com\.android\.internal\.os|ActivityThread\.main' | head -6 | sed 's/^ *//' | tr '\n' ' ')"; done; } >> "$OUT/SUMMARY.md"
 adb uninstall $PKG > /dev/null 2>&1 || true
 
-# ---- 2. instrumented scenarios (debug build of the same commit)
+# ---- 2. instrumented scenarios, on the debug build of the same commit
 adb logcat -c
 adb install -r -g "$DBG" > "$OUT/install-debug.txt" 2>&1 || FAIL+=("debug install failed")
 adb install -r -g "$TST" > "$OUT/install-test.txt" 2>&1 || FAIL+=("test install failed")
@@ -73,7 +73,7 @@ timeout 1500 adb shell am instrument -w -r -e class com.blaze.assistant.smoke.Lo
 adb logcat -d -v threadtime > "$OUT/logcat-smoke.txt"; adb logcat -d -b crash > "$OUT/logcat-smoke-crash.txt" 2>/dev/null || true
 grep -E "INSTRUMENTATION_STATUS: (test|stack)=|INSTRUMENTATION_STATUS_CODE: -2|OK \(|FAILURES|Tests run|Process crashed|INSTRUMENTATION_RESULT|shortMsg" "$OUT/instrument.txt" | grep -v "INSTRUMENTATION_STATUS: test=" | head -40 >> "$OUT/SUMMARY.md"
 grep "BlazeSmoke" "$OUT/logcat-smoke.txt" | sed 's/^.*BlazeSmoke: /  /' >> "$OUT/SUMMARY.md"
-# 0.52.2: 7 tests (f_argusHome added: the ARGUS Home is the root); 0.52.3: still 7 (f_argusHome became f_spaceHome)
+# 0.52.2: 7 tests, f_argusHome added as the ARGUS Home is the root. 0.52.3: still 7, f_argusHome became f_spaceHome
 grep -q "^OK (7 tests)" "$OUT/instrument.txt" || FAIL+=("instrumented smoke test not green")
 C=$(crashes "$OUT/logcat-smoke.txt"; crashes "$OUT/logcat-smoke-crash.txt")
 [ -n "$C" ] && { FAIL+=("crash/ANR during instrumented smoke"); echo "$C" | head -20 | tee -a "$OUT/SUMMARY.md"; }
