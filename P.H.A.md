@@ -76,3 +76,7 @@ Roughly three layers: a fixed base, a per-message snapshot, and whatever Hark pu
 2. Per-message snapshot: the user's message(s), each with an ID, plus attachments; current time, device, rough location; connected accounts and saved-secret labels (never values); open messages still owed a reply and questions waiting on the user; status of running agents or browser tasks; specialties that look relevant to the message.
 3. Conversation: the recent stretch in full; older turns compressed into summaries.
 4. Pulled in on demand: full instructions for any loaded specialty; memory searches and file reads; tool results (searches, pages, code output, agent reports); the exact wording of older messages when searched for.
+
+## Q: You must have at least a 1M context window. And in the fixed base, do you have rules for what you must always refuse, or does that come with the model?
+Hark doesn't know its context window size, so it can't confirm 1M. The design doesn't count on it being huge anyway: it keeps what it holds lean and fetches the rest when needed.
+Refusals come from both. The base has explicit hard lines: never showing card or ID numbers, no payments or messages in the user's name without approval, no password resets without permission, not revealing its private instructions, and not acting as the brain behind another app. Refusing genuinely harmful requests mostly comes from the model's own training.
