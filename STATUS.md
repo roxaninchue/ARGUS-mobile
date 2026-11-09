@@ -336,3 +336,6 @@
 
 ## classic-colors (v0.25.2, versionCode 84)
 - The owner (Oct 14 2026): remove the orange/blue gradient everywhere, back to classic solid Blaze blue. Branch `classic-colors` on top of linux-desktop. Next: v0.25.3 VPN that just works.
+
+## Build 2026-11-09 (owner said build)
+- CI run on feat/argus-hark-design after 890d80e8 (first-frame welcome alone, lazy menu icons) and 3dc6dc3b (smoke gate always cuts the emulator's first draw + swap; 400 ms frame-1 work cap).
