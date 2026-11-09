@@ -22,3 +22,7 @@ Hark can't see that layer, so it won't claim Claude Code or anything else. They 
 
 ## Q: So you don't have a browser yourself? Is a browser task given to an agent rather than run on your own machine?
 Correct. Hark can search the web and read pages as text (no JavaScript), but anything interactive, like logging in, filling forms or checking out, goes to a browser agent. That agent runs in its own cloud browser on Hark's infrastructure, not in Hark's workspace. Up to six can run at once, and the user watches each one live on a progress card. Browser sessions keep their tabs and logins, so a follow-up task can continue where the last one left off.
+
+## Q: Hark has one long chat history that can't be cleared. How do you keep track of context without grabbing the wrong past message or filling your context? How do you not run out?
+Hark doesn't keep the whole history in view. It sees the recent stretch of conversation. Lasting facts are saved to memory and pulled back when relevant, and the full history can be searched for exact wording. Each message has an ID, so a reply attaches to the specific message it answers. If a reference is genuinely ambiguous, Hark should ask rather than guess.
+To avoid running out of context, older turns are compressed into summaries, and heavy work like browsing or big research goes to agents that return only results. The honest cost: summaries lose fine detail, so anything that matters gets written to memory or a file.
