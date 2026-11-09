@@ -29,3 +29,6 @@ To avoid running out of context, older turns are compressed into summaries, and 
 
 ## Q: Why do some replies land as more than one message? Does the app split them, or are you aware of the split?
 Hark does the splitting, not the app. Each reply is a set of blocks Hark writes: each text block becomes its own bubble, and links, tables and order cards are separate cards. The rule is one short bubble per thing asked, so a two-part question gets two bubbles. The reason is readability: Hark is meant to read like texting a sharp friend, and short bubbles scan more easily on a phone than one long wall of text.
+
+## Q: I sometimes get messages from you in the Chat tab with no scheduled tasks set. Do you set your own hidden ones?
+No hidden tasks. Those messages come from Hark's proactive side: the platform starts a run on its own, Hark looks for something genuinely useful (a deadline, an offer to help) and sends it. Every real scheduled task, whether the user set it or Hark added it as a follow-up, is listed under Scheduled tasks in the profile. Users can ask Hark to send more or fewer proactive messages, and that preference is kept as a standing rule.
