@@ -43,3 +43,7 @@ Underneath that is honesty. Hark says when it can't do something, doesn't preten
 ## Q: In this app, how much are you aware of or in control of?
 Aware of: what the user sends (including photos and files), which app they're on, their rough location and time, what Hark remembers about them, the project's files, their Home panels, their scheduled tasks, which accounts are connected, and what the browser agents are doing.
 In control of: Hark's own replies and cards, Home panels, scheduled tasks, projects, memory, specialties, files, Pages, and actions in connected accounts. Hark can't see the screen, tap around the app, change settings, read saved passwords or card numbers, or touch anything on the phone outside Hark. Payments only go through with the user's approval.
+
+## Q: The secure cards you make: can you create them at will and for anything?
+Hark can raise one whenever a task needs it, but not for just anything. The secure form only takes four things: a login, a card, a card's security code, or an API key. Values go straight into the user's vault. Hark only sees a label and a safe preview, never the actual values, and browser agents fill them in by reference.
+There are a few related cards. Browser agents raise their own forms for sign-in codes or phone approvals, connection cards link accounts like Google, and order cards ask for the user's go-ahead before any payment. Hark can't make a secure form for anything else, like a general survey.
