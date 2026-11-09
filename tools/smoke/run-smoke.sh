@@ -1,9 +1,10 @@
 #!/bin/bash
 # 0.46.6 low-RAM release gate, run inside the emulator by .github/workflows/lowram-smoke.yml.
 # usage: run-smoke.sh <release.apk (CI-signed, install only)> <app-debug.apk> <app-debug-androidTest.apk>
-# PASS needs: release cold start with zero crash / ANR and no APP-ATTRIBUTABLE main-thread stall over 700 ms
-# (tools/smoke/app_stall.py: Choreographer "Skipped N frames" per frame, minus only the main thread's wait on the emulator's
-# one-off swiftshader software first frame; approved gate change 2026-10-27; the raw number is still reported), after a
+# PASS needs: release cold start with zero crash / ANR, no APP-ATTRIBUTABLE main-thread stall of 700 ms or more and
+# frame 1's own main-thread work (wait for main + layout + record) at most 400 ms. tools/smoke/app_stall.py counts
+# Choreographer "Skipped N frames" per frame minus the main thread's wait on the emulator's software first-frame draw + swap,
+# always cut since 2026-11-09 (approved gate changes 2026-10-27 and 2026-11-09; the raw number is still reported), after a
 # warm-up launch that primes shaders and caches, and the instrumented LowRamSmokeTest green (browse 200 x concurrent loads, details, 10 s video, music, 30 tool-chat
 # turns with DSML, 0.52.3: the ARGUS x Hark shell + Spotlight (f_spaceHome); main thread sampled every 50 ms) with zero crash / ANR in logcat.
 set -uo pipefail
@@ -35,14 +36,16 @@ N=$(stall_frames "$OUT/logcat-release.txt" "$PID"); MS=$(( N * 1000 / 60 ))
 python3 tools/smoke/app_stall.py "$OUT/logcat-release.txt" "$PID" > "$OUT/app-stall.json" 2> "$OUT/app-stall.err" || echo '{"app_ms": -1}' > "$OUT/app-stall.json"
 APP=$(python3 -c "import json;print(json.load(open('$OUT/app-stall.json'))['app_ms'])")
 EXCL=$(python3 -c "import json;print(json.load(open('$OUT/app-stall.json')).get('excluded_ms',0))")
+F1=$(python3 -c "import json;v=json.load(open('$OUT/app-stall.json')).get('frame1_own_ms');print('?' if v is None else v)")
+GATEFAIL=$(python3 -c "import json;print('\n'.join(json.load(open('$OUT/app-stall.json')).get('failures',[])))" 2>/dev/null)
 OC=$(grep -E " $PID .*BlazeStart: onCreate " "$OUT/logcat-release.txt" | grep -oE "onCreate [0-9]+" | tail -1 | grep -oE "[0-9]+" || echo "?")
 C=$(crashes "$OUT/logcat-release.txt"; crashes "$OUT/logcat-release-crash.txt")
 STILL=$(adb shell pidof $PKG | tr -d '\r')
-note "- release cold start: TotalTime ${TT} ms, BlazeApp.onCreate ${OC} ms, worst app-attributable main stall ${APP} ms (raw Choreographer ~${MS} ms, ${N} frames; ${EXCL} ms excluded = main thread waiting on the emulator's software first frame), process alive after 20 s: $([ -n "$STILL" ] && echo yes || echo NO)"
-python3 -c "import json;[print('  frame %(frame)s: delay %(delay_ms)s ms, render wait excluded %(render_wait_excluded_ms)s ms, own work %(own_work_ms)s ms -> app %(app_ms)s ms' % f + (' (first frame GL %s ms)' % f['first_frame_gl_ms'] if f.get('first_frame_gl_ms') else '')) for f in json.load(open('$OUT/app-stall.json')).get('frames', [])]" >> "$OUT/SUMMARY.md" 2>/dev/null || true
+note "- release cold start: TotalTime ${TT} ms, BlazeApp.onCreate ${OC} ms, worst app-attributable main stall ${APP} ms of 700 (raw Choreographer ~${MS} ms, ${N} frames; ${EXCL} ms excluded = main thread waiting on the emulator's software first frame draw + swap), frame 1 own main-thread work ${F1} ms of 400, process alive after 20 s: $([ -n "$STILL" ] && echo yes || echo NO)"
+python3 -c "import json;[print('  frame %(frame)s: delay %(delay_ms)s ms, render wait excluded %(render_wait_excluded_ms)s ms, own work %(own_work_ms)s ms -> app %(app_ms)s ms' % f + (' (first frame draw + swap %s ms)' % f['first_frame_gl_ms'] if f.get('first_frame_gl_ms') else '')) for f in json.load(open('$OUT/app-stall.json')).get('frames', [])]" >> "$OUT/SUMMARY.md" 2>/dev/null || true
 [ -n "$C" ] && { FAIL+=("crash/ANR during release cold start"); echo "$C" | head -20 | tee -a "$OUT/SUMMARY.md"; }
 [ -z "$STILL" ] && FAIL+=("release process died after cold start")
-if [ "$APP" -lt 0 ] 2>/dev/null; then FAIL+=("app stall analysis failed"); elif [ "$APP" -ge 700 ]; then FAIL+=("release cold start app-attributable main stall ${APP} ms > 700 ms"); fi
+if [ "$APP" -lt 0 ] 2>/dev/null; then FAIL+=("app stall analysis failed"); else while IFS= read -r g; do [ -n "$g" ] && FAIL+=("release cold start $g"); done <<< "$GATEFAIL"; fi
 grep -E "$PID .*Choreographer.*Skipped" "$OUT/logcat-release.txt" | head -5 >> "$OUT/SUMMARY.md" || true
 # diagnosis only: start steps of 20 ms+ (BlazeStart) and the first frames' timeline (Davey) of the measured cold start
 grep -E "^\S+ \S+ +$PID .*(BlazeStart|Verification of)" "$OUT/logcat-release.txt" | sed -E 's/^\S+ (\S+) .*(BlazeStart|blaze[^:]*): /  \1 /' | head -40 >> "$OUT/SUMMARY.md" || true

@@ -49,7 +49,7 @@ The other workflows also pass `-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspa
 | `unit-tests` | Mobile build | `./gradlew :app:testDebugUnitTest --continue` |
 | `shots` | Mobile build | `./gradlew :app:testDebugUnitTest --tests` ShotsTest, Shots375Test, StageShotsTest, MoviesShotsTest, MediaRevampShotsTest, SecretCardsShotsTest, HomeRedesignShotsTest, ComposerShotsTest, Blaze050ShotsTest, SpaceShotsTest |
 | `app-template` | Mobile build | builds the android-app-builder skill template |
-| `smoke` | Low-RAM smoke gate | `assembleRelease assembleDebug assembleDebugAndroidTest`, then API 31 emulator, 1.5 GB RAM, 192 MB heap |
+| `smoke` | Low-RAM smoke gate | `assembleRelease assembleDebug assembleDebugAndroidTest`, then API 31 emulator, 1.5 GB RAM, 192 MB heap. Cold-start verdict (`tools/smoke/app_stall.py`): app-attributable main stall under 700 ms, and frame 1's own main-thread work at most 400 ms |
 | `focus` | Home focus check | `assembleDebug assembleDebugAndroidTest`, `SpaceHomeCheck` on the low-RAM emulator (0.52.2: ArgusHomeCheck) |
 | `intro` | Home intro check | same, `SpaceOnboardingCheck` via tools/smoke/run-space-onboarding.sh (0.52.2: ArgusSpotlightCheck) |
 
@@ -88,6 +88,7 @@ the rest are usually cascades (one bad paren produced "Unresolved reference 'ass
 | 21e7f293/66ed074d | smoke: 2150 ms (worse) | Guess without the per-frame data: prefetching the space image + logo in `StartWarm` (before `warmClasses`) and skipping the root backdrop under onboarding. Made it worse | Avoid: blind prefetch on StartWarm's thread; it delays class warm-up and competes for the emulator's CPU. Get the frame data first |
 | 2b84a204 (PASS, 559 ms) | smoke fix after 66ed074d | Per-frame data: first frame = ~670 ms main (636 ms layout: the hidden Home, top bar, chat and Spotlight composed under the opaque onboarding) + ~1440 ms waiting on software-GL. `app_stall.py` only cut that wait when frame 2 had a Davey line | Don't compose UI that a full-screen layer hides on first run; `app_stall.py` now cuts the soft-first-frame wait from the first unmatched skip (gate stays 700 ms). StartWarm prefetch removed |
 | d0f196dc | smoke: release cold start 717 ms app-attributable (0 ms excluded) | Fast runner (TotalTime 1200 ms): frame 1 = 157 ms vsync to main start, 209 ms layout, 5 ms record, then 413 ms RenderThread GL + 80 ms swap with main blocked. GL under 700 ms is not the software first frame to `app_stall.py`, so the whole wait counts; per-runner-speed main work did not grow vs 2b84a204 | The first-run welcome is drawn alone in frame 1 (`FirstRunGate`), ChatScreen's setup composes from frame 2; MenuIcons rules lazy + cached, icons warmed off main after the first frame. Main work is only ~215 ms of the 717: on a fast runner the GL + swap wait (~490 ms) is most of the number |
+| d0f196dc (gate rule, 2026-11-09) | Same run: the gate itself counted the emulator's draw as app stall | `app_stall.py` cut the main thread's wait on the first frame's draw + swap only when that draw took over 700 ms, so a fast runner was penalised for being fast | Gate changed (approved by Lukas): the first frame's draw + swap is always cut (d0f196dc replays at 226 ms, 491 ms excluded), and frame 1's own work (wait for main + layout + record) must be at most 400 ms (d0f196dc: 372 ms). 2b84a204's frame 1 (787 ms of main work) would fail that new check |
 
 The deep-link scheme stays `blaze://` (any case) after the rename; don't rename it.
 
@@ -107,15 +108,23 @@ The deep-link scheme stays `blaze://` (any case) after the rename; don't rename 
 10. Smoke used to cancel on a new push (66ed074d cancelled 21e7f293's smoke, so that fix was never judged). It now queues instead, but still batch fixes into one push.
 11. Docs-only pushes (`*.md`, `docs/`) start no build: all app workflows have `paths-ignore` for them. A commit message with `[skip ci]` skips every workflow (use it for workflow/tooling edits that need no app round).
 12. Changing `tools/smoke/app_stall.py`? Run `python3 tools/smoke/test_app_stall.py` first (seconds, no emulator; the smoke job also runs it first). Add a case with the new run's numbers.
+
+### The cold-start gate rule: `tools/smoke/app_stall.py`, changed 2026-11-09
+
+- **Before:** app_ms = worst Choreographer stall per frame, minus the main thread's wait on the first frame's RenderThread draw + swap only when that draw took over 700 ms (the slow-runner software first frame). Pass if app_ms < 700 ms. A fast runner's 400-500 ms draw counted in full (d0f196dc failed at 717 ms with ~215 ms of app work).
+- **After:** the first frame's draw + swap wait (`IssueDrawCommandsStart` to `SwapBuffersCompleted`, main blocked) is **always** cut, once: from frame 2's Davey delay when it has one, otherwise from the largest unmatched Choreographer skip. Two checks must both pass:
+  1. app-attributable main stall (after the cut) **under 700 ms**;
+  2. frame 1's own main-thread work, `SyncQueued - IntendedVsync` (wait for main + layout + record, draw and swap left out), **at most 400 ms**.
+- SUMMARY's cold-start line shows both numbers, `... main stall N ms of 700 (... X ms excluded = ...draw + swap), frame 1 own main-thread work M ms of 400 ...`; each failed check is its own FAIL line. `app-stall.json` lists them under `failures`.
 13. Releasing a feature-branch build: `release-apk.yml` failed twice on v0.52.3 with `HTTP 403: Resource not accessible by integration` in "Create or update the release" (the repo's Workflow permissions setting is not the cause: the workflow sets `contents: write` itself). Until that is understood, publish by hand: download the `argus-hark-design-test-signed-<sha>` artifact from the Build APK run, then Releases, Draft a new release, the tag, attach the APK, pre-release, Publish.
 
 ## When the low-RAM smoke gate fails (fast path, one fix round)
 
 0.52.3 took four rounds (~2 hours) because the first two fixes were guesses. Do this instead:
 
-1. Read the cold-start lines of SUMMARY (GitHub step summary, also `smoke-out/SUMMARY.md` in the artifact): `app-attributable`, `excluded`, `frame 1: delay / own work / first frame GL`, and the Davey line (`vsync to main start, layout, record, RenderThread GL`).
-2. Split the number: **app_ms = main work (layout + record + vsync-to-start) + whatever render wait was not excluded.** If `excluded` is 0 while `first frame GL` is over 700 ms, the script missed the software first frame (that was 66ed074d); if `layout` is large, it is first composition.
-3. Replay before pushing: download `smoke-out`, run `python3 tools/smoke/app_stall.py smoke-out/logcat-release.txt <pid>` with your script change, and estimate the code change from the layout ms it removes. Only push when the estimate is under 700 ms with margin.
+1. Read the cold-start lines of SUMMARY (GitHub step summary, also `smoke-out/SUMMARY.md` in the artifact): `app-attributable`, `excluded`, `frame 1 own main-thread work`, `frame 1: delay / own work / first frame draw + swap`, and the Davey line (`vsync to main start, layout, record, RenderThread GL, swap`).
+2. Split the number: **app_ms = main work (layout + record + vsync-to-start) + whatever render wait was not excluded; frame 1 own = vsync-to-start + layout + record of frame 1.** If `excluded` is 0 while the Davey line shows RenderThread GL, the script missed the first-frame draw (66ed074d); if `layout` is large, it is first composition, and the 400 ms frame-1 check is the one that fails.
+3. Replay before pushing: download `smoke-out`, run `python3 tools/smoke/app_stall.py smoke-out/logcat-release.txt <pid>` with your script change, and estimate the code change from the layout ms it removes. Only push when both estimates are under their limits (700 ms stall, 400 ms frame 1) with margin.
 4. Usual cause of big first-frame layout: composing UI hidden under a full-screen layer (onboarding, a sheet). Don't compose it. Don't prefetch on `StartWarm`'s thread: it delays class warm-up (21e7f293 made it worse).
 5. Batch every fix into one push, then let all checks finish (smoke no longer cancels on a new push, so a second push just queues).
 
