@@ -358,6 +358,14 @@ object SpaceOnboarding {
     /** First run only: someone who already used ARGUS (onboarded, signed in, or with a chat) never sees it. */
     fun show(onboarded: Boolean, signedIn: Boolean, hasMessages: Boolean): Boolean = !onboarded && !signedIn && !hasMessages
 
+    /**
+     * 0.52.4 CI fix (low-RAM smoke, cold start 717 ms): on a fresh cold start that opens on the welcome, the FIRST frame
+     * draws only the welcome (FirstRunGate) and the chat shell's setup (ChatScreen's state, launchers, flows and binder
+     * calls, all under the opaque onboarding) composes from the second frame. Same pixels; never on a restore
+     * ([coldStart] false, its step may not be the welcome) and never once a first frame was drawn in this process.
+     */
+    fun lightFirstFrame(coldStart: Boolean, firstFrameDrawn: Boolean, show: Boolean): Boolean = coldStart && !firstFrameDrawn && show
+
     fun signInButton(signedIn: Boolean): String = if (signedIn) "Continue" else "Skip for now"
 
     fun setupButton(complete: Boolean): String = if (complete) "Start using ${BrandName.UPPER}" else "Continue \u00b7 finishes in the background"

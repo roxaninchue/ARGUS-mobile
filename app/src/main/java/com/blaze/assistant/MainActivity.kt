@@ -44,6 +44,8 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
         )
         locked.value = com.blaze.assistant.agent.Settings.appLock
+        // 0.52.4 CI fix: a fresh start (no saved state) may draw only the first-run welcome in its first frame, see FirstRunGate
+        val coldStart = savedInstanceState == null
         setContent { BlazeTheme {
             // 0.45.19 fix 4: in picture-in-picture only Blaze Phone's live view is drawn; the chat stays composed (its
             // draft, attachments and scroll survive) but is not placed, so nothing of it shows in the small window.
@@ -51,7 +53,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
                 androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize().layout { m, c ->
                     val p = m.measure(c); layout(p.width, p.height) { if (!pip.value) p.place(0, 0) }
                 }) {
-                    if (locked.value) com.blaze.assistant.ui.LockScreen { unlock() } else ChatScreen()
+                    if (locked.value) com.blaze.assistant.ui.LockScreen { unlock() } else com.blaze.assistant.ui.space.FirstRunGate(coldStart) { ChatScreen() }
                 }
                 if (pip.value && !locked.value) { if (videoPip.value) com.blaze.assistant.ui.StageVideoPip() else com.blaze.assistant.browser.phone.PhonePipView() }
                 // 0.46.5: after a crash (also a native one, read on the next start), offer the local report once; the user chooses

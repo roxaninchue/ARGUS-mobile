@@ -68,6 +68,27 @@ class MenuIconsTest {
         assertEquals(MenuIcon.TUNE, MenuIcons.forSetting("Something new"))
     }
 
+    @Test fun answersAreCachedAndStayTheSame() {
+        // 0.52.4 CI fix: a label or title is matched once; asking again gives the same answer, also for "no icon"
+        for (l in listOf("Rename", "Normal", "Repeat: off", "Share\u2026")) assertEquals(l, MenuIcons.forLabel(l), MenuIcons.forLabel(l))
+        assertNull(MenuIcons.forLabel("1080p")); assertNull(MenuIcons.forLabel("1080p"))
+        for (t in listOf("Speak replies", "Something new")) assertEquals(t, MenuIcons.forSetting(t), MenuIcons.forSetting(t))
+    }
+
+    @Test fun nothingIsBuiltAtStartOnTheMainThread() {
+        // 0.52.4 CI fix (low-RAM smoke): the rules are lazy, the regexes compiled once, and the warm-up runs off the main thread
+        val m = src("ui/MenuIcons.kt")
+        assertTrue("private val RULES: List<Pair<MenuIcon, List<String>>> by lazy {" in m)
+        assertTrue("private val SETTING_RULES: List<Pair<MenuIcon, List<String>>> by lazy {" in m)
+        val norm = m.substringAfter("internal fun normalise(").substringBefore("\n\n")
+        assertTrue("no regex compiled per label", "Regex(" !in norm)
+        val app = src("BlazeApp.kt").substringAfter("StartLater.add(\"ui.MenuIcons.warm\")").take(300)
+        assertTrue("Thread(" in app && "MenuIcons.warm()" in app && "THREAD_PRIORITY_BACKGROUND" in app)
+        // the first-run welcome is drawn alone in the first frame; ChatScreen composes from the second
+        assertTrue("FirstRunGate(coldStart) { ChatScreen() }" in src("MainActivity.kt"))
+        assertTrue("fun FirstRunGate(coldStart: Boolean, content: @Composable () -> Unit)" in src("ui/space/SpaceOnboarding.kt"))
+    }
+
     @Test fun thePlusMenuShowsTheModeItIsIn() {
         assertEquals(MenuIcon.CAMERA, plusIcon("camera"))
         assertEquals(MenuIcon.AUTOPLAY_MODE, plusIcon("approval", on = true))

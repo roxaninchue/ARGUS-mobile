@@ -11,6 +11,7 @@
 - List rows lead with a round tinted icon tile: the setup screen's items, the profile and System Preferences rows, settings switches, projects, recent projects on Home, project chats, Spotlight results and browser bookmarks and history. One shared style (size, shape, tint) everywhere.
 - Buttons with icons: Play, Shuffle, Skip, Try again, Download, Skip intro, Play now, Restore, Delete, Rotate, Reset, Sign in, Retry and more.
 - The app now draws at 90 % by default (Settings › Appearance › Size calls 90 % "Default"; 100 % is the phone's own size). A size you picked before stays as it is.
+- Faster first start on low-memory phones: the welcome screen is drawn on its own first and the rest of the app gets ready a moment later behind it, and menu and settings icons are prepared in the background instead of while a screen is opening (CI fix: low-RAM smoke cold start 717 ms > 700 ms).
 
 ## v0.52.3: ARGUS takes the Hark design, over a view of the Earth from space, with a one-screen setup (versionCode 190)
 - A new look everywhere: a round button, a Home | Chat | Projects switch and your avatar at the top; big rounded cards with serif headlines; a floating "Message" box at the bottom. It all sits on a view of the Earth from space in the ARGUS colours (black, Argus Blue, Electric Blue, Steel), dark or light.

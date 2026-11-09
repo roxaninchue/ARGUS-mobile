@@ -261,6 +261,11 @@ class SpaceLogicTest {
         assertFalse(SpaceOnboarding.show(true, false, false))
         assertFalse(SpaceOnboarding.show(false, true, false))
         assertFalse(SpaceOnboarding.show(false, false, true))
+        // 0.52.4 CI fix: the welcome alone in the first frame, only on a fresh cold start that shows it
+        assertTrue(SpaceOnboarding.lightFirstFrame(coldStart = true, firstFrameDrawn = false, show = true))
+        assertFalse(SpaceOnboarding.lightFirstFrame(coldStart = false, firstFrameDrawn = false, show = true))
+        assertFalse(SpaceOnboarding.lightFirstFrame(coldStart = true, firstFrameDrawn = true, show = true))
+        assertFalse(SpaceOnboarding.lightFirstFrame(coldStart = true, firstFrameDrawn = false, show = false))
         assertEquals("Continue", SpaceOnboarding.signInButton(true))
         assertEquals("Skip for now", SpaceOnboarding.signInButton(false))
         assertEquals("Start using ARGUS", SpaceOnboarding.setupButton(true))

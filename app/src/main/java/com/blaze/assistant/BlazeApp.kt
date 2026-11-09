@@ -134,6 +134,12 @@ class BlazeApp : Application() {
         com.blaze.assistant.device.StartLater.add("ui.Overlay.watchTasks") { com.blaze.assistant.ui.Overlay.watchTasks(this) }
         // 0.50.0: edge particles while Blaze controls the screen (suspends while idle)
         com.blaze.assistant.device.StartLater.add("ui.ScreenGlow.watch") { com.blaze.assistant.ui.ScreenGlow.watch(this) }
+        // 0.52.4 CI fix: the menu / settings icon rules and every icon vector are built on a low-priority thread after the
+        // first frame, so the first menu, settings page or top bar does not build them on the main thread.
+        com.blaze.assistant.device.StartLater.add("ui.MenuIcons.warm") {
+            Thread({ android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND); com.blaze.assistant.ui.MenuIcons.warm() }, "argus-icon-warm")
+                .apply { isDaemon = true }.start()
+        }
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("link.DesktopLink.start") { com.blaze.assistant.link.DesktopLink.start() }
         if (!com.blaze.assistant.device.StartGuard.safeStart && Settings.bool("dash_auto", false)) com.blaze.assistant.device.StartLater.add("Dashboard.start") { com.blaze.assistant.dashboard.Dashboard.start(this) }
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("Overlay.showOrb") { if (Settings.orbPinned && android.provider.Settings.canDrawOverlays(this)) com.blaze.assistant.ui.Overlay.showOrb(this) }

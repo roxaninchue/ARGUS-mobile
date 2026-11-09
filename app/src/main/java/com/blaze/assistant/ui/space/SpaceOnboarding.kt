@@ -134,6 +134,30 @@ fun SpaceOnboardingScreen(
     }
 }
 
+/**
+ * 0.52.4 CI fix (low-RAM smoke, release cold start 717 ms > 700): a fresh cold start that opens on the welcome draws
+ * only the welcome in its FIRST frame and composes [content] (ChatScreen, which shows the very same welcome) from the
+ * second frame, after StartLater.firstFrame. That moves ChatScreen's whole setup out of the first frame: its state,
+ * activity-result launchers, flow collectors, clipboard / accessibility / camera binder calls and the class loading of
+ * its large composable, none of which the welcome needs. Everyone else (onboarded, signed in, a restore, a second
+ * Activity in a warm process) composes [content] in the first frame as before ([SpaceOnboarding.lightFirstFrame]).
+ * The stand-in's buttons do nothing; it is on screen for one frame.
+ */
+@Composable
+fun FirstRunGate(coldStart: Boolean, content: @Composable () -> Unit) {
+    val light = androidx.compose.runtime.remember {
+        SpaceOnboarding.lightFirstFrame(coldStart, com.blaze.assistant.device.StartLater.firstFrame.value,
+            SpaceOnboarding.show(com.blaze.assistant.agent.Settings.bool(SpaceOnboarding.PREF_ONBOARDED, false),
+                com.blaze.assistant.agent.Settings.ready, com.blaze.assistant.agent.Agent.messages.value.isNotEmpty()))
+    }
+    val shown = com.blaze.assistant.ui.firstFrameShown()
+    if (light && !shown) {
+        Box(Modifier.fillMaxSize()) {
+            SpaceOnboardingScreen(SpaceOnboarding.Step.WELCOME, signedIn = false, setup = emptyMap(), onNext = {}, onRetry = {}, accountCard = {})
+        }
+    } else content()
+}
+
 @Composable
 private fun Welcome(onStart: () -> Unit) {
     val look = SpaceLook.Dark

@@ -114,8 +114,11 @@ enum class MenuIcon {
 }
 
 object MenuIcons {
-    /** Ordered rules: the first rule with a phrase found in the label (as whole words) wins. */
-    private val RULES: List<Pair<MenuIcon, List<String>>> = listOf(
+    /**
+     * Ordered rules: the first rule with a phrase found in the label (as whole words) wins. 0.52.4 CI fix (low-RAM smoke):
+     * built on first use (lazy), never in a static initialiser, and warmed off the main thread after the first frame ([warm]).
+     */
+    private val RULES: List<Pair<MenuIcon, List<String>>> by lazy { listOf(
         // the most specific phrases first
         MenuIcon.NEW_CHAT to listOf("new chat", "new thread"),
         MenuIcon.NEW_TAB to listOf("new tab", "new private tab"),
@@ -174,13 +177,26 @@ object MenuIcons {
         MenuIcon.LANGUAGE to listOf("english", "french", "portuguese", "spanish", "swahili", "german", "italian", "arabic", "chinese",
             "japanese", "hindi", "language"),
         MenuIcon.ADD to listOf("add", "new", "create"),
-    )
+    ) }
+
+    // 0.52.4 CI fix: compiled once (lazily), not twice per label on every call.
+    private val STATE_SUFFIX: Regex by lazy { Regex(":\\s*(on|off)\\s*$") }
+    private val SPACES: Regex by lazy { Regex("\\s+") }
+
+    /**
+     * 0.52.4 CI fix: a label's or title's answer, worked out once. Menus and settings rows ask again on every
+     * recomposition; the labels are a small fixed set, so the cache stays small (cleared if it ever grows past [CACHE_MAX]).
+     */
+    private const val CACHE_MAX = 1024
+    private val NONE = Any()
+    private val labelCache = java.util.concurrent.ConcurrentHashMap<String, Any>()
+    private val settingCache = java.util.concurrent.ConcurrentHashMap<String, MenuIcon>()
 
     /** The words of a label, lower-cased, without a trailing "✓", "…" or ": on" / ": off" state. */
     internal fun normalise(label: String): String = label.lowercase()
         .replace("\u2713", " ").replace("\u2026", " ").replace("...", " ")
-        .replace(Regex(":\\s*(on|off)\\s*$"), " ")
-        .replace(Regex("\\s+"), " ").trim()
+        .replace(STATE_SUFFIX, " ")
+        .replace(SPACES, " ").trim()
 
     /** [phrase] in [text] starting at a word start; ending at a word end too unless [prefix] ("record" finds "recordings"). */
     private fun has(text: String, phrase: String, prefix: Boolean = false): Boolean {
@@ -197,6 +213,15 @@ object MenuIcons {
 
     /** The icon for a menu row's label, or null when nothing fits (the row then shows text only). */
     fun forLabel(label: String): MenuIcon? {
+        val hit = labelCache[label]
+        if (hit != null) return hit as? MenuIcon
+        val found = matchLabel(label)
+        if (labelCache.size >= CACHE_MAX) labelCache.clear()
+        labelCache[label] = found ?: NONE
+        return found
+    }
+
+    private fun matchLabel(label: String): MenuIcon? {
         val t = normalise(label)
         if (t.isEmpty()) return null
         if (t == "off") return MenuIcon.SUBTITLES_OFF   // the subtitles menu's first row
@@ -204,7 +229,7 @@ object MenuIcons {
     }
 
     /** Settings rows (ToggleRow and friends): the first rule whose phrase is in the title, else a neutral Tune. */
-    private val SETTING_RULES: List<Pair<MenuIcon, List<String>>> = listOf(
+    private val SETTING_RULES: List<Pair<MenuIcon, List<String>>> by lazy { listOf(
         MenuIcon.BANK to listOf("bank", "money"),
         MenuIcon.SHIELD to listOf("scam", "risky", "strict", "shield", "security", "privacy"),
         MenuIcon.LOCK to listOf("lock"),
@@ -232,11 +257,29 @@ object MenuIcons {
         MenuIcon.STORE to listOf("store", "seller"),
         MenuIcon.AGENT to listOf("specialists", "copilot", "agent"),
         MenuIcon.MEMORY to listOf("ask before saving", "keep"),
-    )
+    ) }
 
     fun forSetting(title: String): MenuIcon {
+        settingCache[title]?.let { return it }
         val t = normalise(title)
-        return SETTING_RULES.firstOrNull { (_, phrases) -> phrases.any { has(t, it, prefix = true) } }?.first ?: MenuIcon.TUNE
+        val found = SETTING_RULES.firstOrNull { (_, phrases) -> phrases.any { has(t, it, prefix = true) } }?.first ?: MenuIcon.TUNE
+        if (settingCache.size >= CACHE_MAX) settingCache.clear()
+        settingCache[title] = found
+        return found
+    }
+
+    /**
+     * 0.52.4 CI fix: builds the rules, the two regexes and every key's vector on the calling thread (BlazeApp runs it on a
+     * low-priority background thread after the first frame), so the first menu, settings page or top bar that needs them
+     * does not build them on the main thread. Pure warm-up: safe to call more than once, never throws.
+     */
+    fun warm() {
+        try {
+            forLabel("Rename"); forSetting("Speak replies")
+            for (k in MenuIcon.entries) k.vector()
+        } catch (t: Throwable) {
+            if (t is OutOfMemoryError) throw t
+        }
     }
 }
 
