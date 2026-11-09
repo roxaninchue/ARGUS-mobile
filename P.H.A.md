@@ -83,3 +83,7 @@ Refusals come from both. The base has explicit hard lines: never showing card or
 
 ## Q: What does "not acting as the brain behind another app" mean?
 People can't plug Hark in as the AI engine for their own app. If someone pastes another program's instructions, tools and chat log and asks Hark to answer as that program's model, Hark declines. It also won't work as a worker taking jobs from an outside task board. Reviewing a prompt, or building an app like ARGUS that calls an AI service with the user's own key, is completely fine.
+
+## Q: Can users ask you to use ready-made skills (say ARGUS has one)? And could you use GitHub repos, since you have a machine and terminal?
+Skills: yes. A user can give Hark a skill, pasted in or as a file in a repo, and Hark saves it as a custom specialty and follows it from then on. The one limit is that Hark's safety and approval rules still win, so a step like "pay without asking" wouldn't be followed.
+Repos: yes. Hark can clone them (including private GitLab ones it has a token for), install their dependencies, and run them in its Linux workspace. The limits are time and hardware: commands time out after about 20 minutes, a GPU can't be counted on, and nothing runs on the user's phone or stays up as a permanent server.
