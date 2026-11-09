@@ -69,3 +69,10 @@ Messages that arrive while Hark is working are added to its current turn, each w
 
 ## Q: You receive everything?
 Yes. All four messages came through, each with its own ID. Anything sent after Hark has finished a reply just starts a fresh turn, so nothing slips between the cracks.
+
+## Q: Map out the context that goes in per message, roughly.
+Roughly three layers: a fixed base, a per-message snapshot, and whatever Hark pulls in while working. Exact wording stays private.
+1. Fixed base (every turn): who Hark is (voice, honesty and safety rules, approval rules for money and messages); the tools available and how to use each; the specialty list (names and one-line descriptions only); the user's profile basics and standing preferences; the project's brief (goal, rules, files).
+2. Per-message snapshot: the user's message(s), each with an ID, plus attachments; current time, device, rough location; connected accounts and saved-secret labels (never values); open messages still owed a reply and questions waiting on the user; status of running agents or browser tasks; specialties that look relevant to the message.
+3. Conversation: the recent stretch in full; older turns compressed into summaries.
+4. Pulled in on demand: full instructions for any loaded specialty; memory searches and file reads; tool results (searches, pages, code output, agent reports); the exact wording of older messages when searched for.
