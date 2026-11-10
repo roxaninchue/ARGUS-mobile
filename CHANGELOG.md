@@ -1,3 +1,8 @@
+## Unreleased (after v0.52.3, version not bumped): ARGUS is always on Autopilot
+- No more Auto / Autopilot choice: ARGUS always works on Autopilot. Deleting, paying and messaging people still wait for your tap.
+- Gone: the Auto / Autopilot row in the + menu, the AUTOPILOT chip above the message box, the AUTO / AUTOPILOT switch in the mode bar, the /autopilot and /auto commands and the "Ask before acting" Spotlight entry.
+- If you picked Auto in an older version, ARGUS moves you to Autopilot by itself.
+
 ## Unreleased (after v0.52.3, version not bumped): one look for the whole app
 - Every part of ARGUS now looks like the Home, the top bar and your profile: the same blacks and blues, the same rounded cards, the same margins, one size for round buttons and pills, and one set of text sizes.
 - The colour you pick in Appearance now colours the whole app, not only the older screens.

@@ -39,7 +39,6 @@ object SelfMap {
         Entry("action:paste", Kind.ACTION, "Paste image", "The picture on your clipboard", "paste", listOf("clipboard", "paste")),
         Entry("action:call", Kind.ACTION, "Call ${BrandName.NAME}", "A hands-free voice call", "call", listOf("phone call", "voice call", "ring")),
         Entry("action:plan", Kind.ACTION, "Plan mode", "${BrandName.NAME} plans before it acts (on / off)", "plan", listOf("plan first", "work mode")),
-        Entry("action:approval", Kind.ACTION, "Ask before acting", "Autopilot or ask first (on / off)", "approval", listOf("autopilot", "approvals", "ask first", "drafts")),
         Entry("action:clear", Kind.ACTION, "Clear the screen", "/clear: hides the chat, nothing is forgotten", "clear", listOf("/clear", "clean")),
         Entry("action:account", Kind.ACTION, "Profile", "Account, settings, sign out", "profile", listOf("me", "sign out", "logout", "avatar")),
     )

@@ -23,8 +23,6 @@ object Commands {
         Command("update", "", "Update ${BrandName.NAME} to the newest build"),
         Command("plan", "[goal]", "Plan mode: read and look only, then a plan"),
         Command("build", "", "Build mode: full access (default)"),
-        Command("autopilot", "", "Autopilot: work on without asking (deletes, money and messages still ask)"),
-        Command("auto", "", "Auto: ask before risky actions (default)"),
         Command("agent", "<task>", "Hand a task to a background agent"),
         Command("agents", "", "List background agents"),
         Command("remember", "<fact>", "Save something to memory"),

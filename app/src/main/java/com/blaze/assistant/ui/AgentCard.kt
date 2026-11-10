@@ -90,18 +90,16 @@ fun AgentCard(id: String) {
     }
 }
 
-/** Composer mode switches: Plan / Build and Auto / Autopilot, plus how many agents are working. */
+/** Composer mode switches: Plan / Build (Autopilot is always on), plus how many agents are working. */
 @Composable
 fun ModeBar() {
     val c = LocalBlaze.current
     val work by Modes.work.collectAsState()
-    val appr by Modes.approval.collectAsState()
     val agents by BgAgents.all.collectAsState()
     val live = agents.count { it.live }
     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp).glass(GlassTokens.pillShape, GlassIntensity.Low, shadow = false).padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Chip(if (work == "plan") "PLAN" else "BUILD", on = work == "plan") { Modes.toggleWork() }
-        Chip(if (appr == "autopilot") "AUTOPILOT" else "AUTO", on = appr == "autopilot") { Modes.toggleApproval() }
         Spacer(Modifier.weight(1f))
         // 0.52.1 (owner): no agent counter here; agents show only as the one task pill in the chat.
         @Suppress("UNUSED_EXPRESSION") live

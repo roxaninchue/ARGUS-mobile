@@ -527,8 +527,6 @@ fun ChatScreen() {
             "call" -> { startCall(); true }
             "plan" -> { com.blaze.assistant.agent.Modes.toggleWork()
                 Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.plan) "Plan mode on: ${BrandName.NAME} plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
-            "approval" -> { com.blaze.assistant.agent.Modes.toggleApproval()
-                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.autopilot) "Autopilot: ${BrandName.NAME} acts, you can undo" else "${BrandName.NAME} asks before it acts", Toast.LENGTH_SHORT).show(); true }
             "clear" -> { clearScreen(); true }
             "views" -> { composer.openSpotlight(); composer.query = "@"; true }
             "profile" -> { settingsPage = ""; true }
@@ -857,7 +855,6 @@ fun ChatScreen() {
                             "voice" -> onMic()
                             "call" -> startCall()
                             "plan" -> com.blaze.assistant.agent.Modes.toggleWork()
-                            "approval" -> com.blaze.assistant.agent.Modes.toggleApproval()
                             "model" -> settingsPage = "ai"
                             "views" -> showViews = true
                             "new" -> newProjectChat(navNow().project)

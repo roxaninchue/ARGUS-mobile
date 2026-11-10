@@ -17,7 +17,7 @@ class CommandRegistryTest {
         assertEquals(CommandRegistry.Kind.VIEW, CommandRegistry.kind("/doing"))
         assertEquals(CommandRegistry.Kind.VIEW, CommandRegistry.kind("home"))
         assertEquals(CommandRegistry.Kind.PROMPT, CommandRegistry.kind("translate"))
-        assertEquals(CommandRegistry.Kind.ACTION, CommandRegistry.kind("autopilot"))
+        assertEquals(CommandRegistry.Kind.ACTION, CommandRegistry.kind("plan"))
         assertEquals(CommandRegistry.Kind.USER_ONLY, CommandRegistry.kind("stop"))
         assertEquals(CommandRegistry.Kind.UNKNOWN, CommandRegistry.kind("nope"))
     }

@@ -31,7 +31,7 @@ class SimpleModeTest {
     @Test fun pagesPlusAndMcp() {
         assertFalse(SimpleMode.pageVisible("ai", true)); assertTrue(SimpleMode.pageVisible("ai", false))
         assertTrue(SimpleMode.pageVisible("desktop", true)); assertTrue(SimpleMode.pageVisible("voice", true))
-        assertFalse(SimpleMode.plusVisible("plan", true)); assertTrue(SimpleMode.plusVisible("approval", true)); assertTrue(SimpleMode.plusVisible("views", true))
+        assertFalse(SimpleMode.plusVisible("plan", true)); assertTrue(SimpleMode.plusVisible("views", true))
         assertFalse(SimpleMode.showMcp(true)); assertTrue(SimpleMode.showMcp(false))
         assertTrue(SimpleMode.commandRuns("terminal", true))
     }
