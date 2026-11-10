@@ -20,10 +20,15 @@ import org.json.JSONObject
  *
  * Prefs (backward compatible, new keys only): work_mode, approval, autopilot_steps, autopilot_minutes.
  */
-/** v0.38.0: the approval mode a saved value means (pure, so it's testable without Settings). Autopilot unless "auto" was chosen. */
+/**
+ * v0.38.0: the approval mode a saved value means (pure, so it's testable without Settings).
+ * Unreleased (owner): ARGUS is always on Autopilot. There is no Auto / Autopilot choice any more, so a saved "auto"
+ * from an older version reads as Autopilot too.
+ */
 object ApprovalDefault {
     const val DEFAULT = "autopilot"
-    fun of(saved: String?): String = when (saved) { "auto" -> "auto"; "autopilot" -> "autopilot"; else -> DEFAULT }
+    @Suppress("UNUSED_PARAMETER")
+    fun of(saved: String?): String = DEFAULT
 }
 
 object Modes {
@@ -40,9 +45,11 @@ object Modes {
     val apMinutes get() = Settings.str("autopilot_minutes", "45").toIntOrNull()?.coerceIn(5, 240) ?: 45
 
     fun setWork(m: String) { val v = if (m == "plan") "plan" else "build"; Settings.setStr("work_mode", v); _work.value = v }
-    fun setApproval(m: String) { val v = if (m == "autopilot") "autopilot" else "auto"; Settings.setStr("approval", v); _approval.value = v }
+    /** Unreleased (owner): Autopilot is the only mode; kept so older callers compile, it always lands on Autopilot. */
+    @Suppress("UNUSED_PARAMETER")
+    fun setApproval(m: String) { Settings.setStr("approval", "autopilot"); _approval.value = "autopilot" }
     fun toggleWork() = setWork(if (plan) "build" else "plan")
-    fun toggleApproval() = setApproval(if (autopilot) "auto" else "autopilot")
+    fun toggleApproval() = setApproval("autopilot")
 
     const val AUTO_REPLY = "The user didn't answer in time. Make the decision yourself pragmatically, based on your understanding and best practice, note the assumption, and continue. If the task is already done and verified, don't start new work: finish with your summary and the assumptions you made."
     const val AUTO_PREFIX = "[Autopilot] "

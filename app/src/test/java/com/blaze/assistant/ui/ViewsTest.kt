@@ -52,7 +52,8 @@ class ViewsTest {
 
     @Test fun modeChipOnlyWhenNotDefault() {
         assertEquals("", modeChip("build", "auto"))
-        assertEquals("PLAN · AUTOPILOT", modeChip("plan", "autopilot"))
+        assertEquals("PLAN", modeChip("plan", "autopilot"))
+        assertEquals("", modeChip("build", "autopilot"))
     }
 
     @Test fun durations() {

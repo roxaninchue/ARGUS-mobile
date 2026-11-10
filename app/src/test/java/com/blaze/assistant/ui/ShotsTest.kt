@@ -178,7 +178,7 @@ open class ShotsTest {
 
     @Test fun chatLight() = shot("01-chat-light") { Chat() }
     @Test fun chatDark() = shot("02-chat-dark", dark = true) { Chat() }
-    @Test fun plusMenu() = shot("03-plus-menu") { Chat(plus = true, chip = "PLAN · AUTOPILOT") }
+    @Test fun plusMenu() = shot("03-plus-menu") { Chat(plus = true, chip = "PLAN") }
     @Test fun views() = shot("04-views") { Chat(views = true, input = "/views") }
     @Test fun avatar() = shot("05-avatar-menu") {
         Chat()

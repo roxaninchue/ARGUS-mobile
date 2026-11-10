@@ -22,7 +22,7 @@ object SimpleMode {
     /** Settings pages (SettingsSheet ids) that only show in Advanced lists. */
     val TECH_PAGES = setOf("ai", "terminal", "dashboard", "usage", "commands", "skills", "specialists")
 
-    /** + menu entries that only show in Advanced (Plan / Build is a developer switch; Autopilot stays visible). */
+    /** + menu entries that only show in Advanced (Plan / Build is a developer switch; Autopilot is always on and has no row). */
     val TECH_PLUS = setOf("plan", "atfile")
 
     /** The line under the switch in Settings: what Simple keeps out of sight. */

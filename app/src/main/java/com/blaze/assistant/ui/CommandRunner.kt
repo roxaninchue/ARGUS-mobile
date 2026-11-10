@@ -92,9 +92,6 @@ object CommandRunner {
             "look", "theme" -> openSettings("look")
             "sync" -> openSettings("sync")
             "linux" -> openSettings("terminal")   // wave B-4: the on-phone Linux desktop is gone; /linux opens the terminal
-            "autopilot" -> { com.blaze.assistant.agent.Modes.setApproval("autopilot")
-                Agent.note("Autopilot on: I keep going without asking, up to ${com.blaze.assistant.agent.Modes.apSteps} steps or ${com.blaze.assistant.agent.Modes.apMinutes} min. Deleting, paying and messaging people still need your tap.") }
-            "auto" -> { com.blaze.assistant.agent.Modes.setApproval("auto"); Agent.note("Auto: I'll ask before risky actions.") }
             "agent" -> if (arg.isEmpty()) toast("Type the task after /agent") else Agent.startAgentFromUser(arg)
             "agents" -> Agent.note(com.blaze.assistant.agent.BgAgents.run("list_agents", org.json.JSONObject(), ""), asReply = true)
             "remember" -> if (arg.isNotEmpty()) { Memory.add(arg); Agent.note("Remembered: $arg") } else openSettings("memory")

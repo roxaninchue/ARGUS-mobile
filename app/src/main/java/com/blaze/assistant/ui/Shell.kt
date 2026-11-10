@@ -613,7 +613,7 @@ fun plusItems(work: String, approval: String, model: String, hasClipImage: Boole
     add(PlusItem("voice", "Voice", "Talk instead of typing"))
     add(PlusItem("call", "Call ${BrandName.NAME}", "Hands-free voice call"))
     add(PlusItem("plan", if (work == "plan") "Plan mode" else "Build mode", if (work == "plan") "Read and look only · tap for Build" else "Full access · tap for Plan", on = work == "plan"))
-    add(PlusItem("approval", if (approval == "autopilot") "Autopilot" else "Auto", if (approval == "autopilot") "Works on without asking · tap for Auto" else "Asks before risky steps · tap for Autopilot", on = approval == "autopilot"))
+    // Unreleased (owner): no Auto / Autopilot row; ARGUS is always on Autopilot.
     // v0.25.0: no Model row; Blaze Cloud picks the model for every message.
     add(PlusItem("views", "Views", "Memory, jobs, design, accounts…"))
     // One mind: outside projects there is one conversation. v0.24.0: "Clear screen" (/clear) empties it, nothing is forgotten.
@@ -641,14 +641,14 @@ fun PlusMenu(items: List<PlusItem>, onPick: (String) -> Unit) {
     }
 }
 
-/** Mode chip text, only when it isn't the default (Build · Auto). */
+/** Mode chip text above the message box: only Plan shows (Autopilot is always on and never shown). */
 fun modeChip(work: String, approval: String): String {
-    val parts = buildList { if (work == "plan") add("PLAN"); if (approval == "autopilot") add("AUTOPILOT") }
-    return parts.joinToString(" · ")
+    // Unreleased (owner): Autopilot is always on, so it never shows above the message box; only Plan does.
+    return if (work == "plan") "PLAN" else ""
 }
 
-/** 0.52.4: the mode chip's icon, the same one the + menu shows for that mode (Autopilot wins when both are on). */
-fun modeChipIcon(chip: String): MenuIcon = if ("AUTOPILOT" in chip.uppercase()) plusIcon("approval", on = true) else plusIcon("plan", on = true)
+/** 0.52.4: the mode chip's icon, the same one the + menu shows for Plan. */
+fun modeChipIcon(@Suppress("UNUSED_PARAMETER") chip: String): MenuIcon = plusIcon("plan", on = true)
 
 /**
  * 0.52.3 composer: Hark's floating "Message ARGUS" pill (owner: the Hark design in the ARGUS theme). One rounded pill at

@@ -9,8 +9,8 @@ class ModesDefaultTest {
         assertEquals("autopilot", ApprovalDefault.of(null))
         assertEquals("autopilot", ApprovalDefault.of(""))
         assertEquals("autopilot", ApprovalDefault.of("garbage"))
-        // Someone who chose Auto keeps the confirm cards.
-        assertEquals("auto", ApprovalDefault.of("auto"))
+        // Unreleased (owner): Autopilot is the only mode; an old saved "auto" reads as Autopilot.
+        assertEquals("autopilot", ApprovalDefault.of("auto"))
         assertEquals("autopilot", ApprovalDefault.of("autopilot"))
     }
 }
