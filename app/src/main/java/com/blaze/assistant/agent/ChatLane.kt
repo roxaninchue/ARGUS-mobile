@@ -74,6 +74,8 @@ object ChatLane {
             append("anything on the user's phone, apps, messages, files, calendar or settings, or doing or making anything (an image, a beat, a file, any action), or if they ask whether you can do something, reply with exactly $ESCAPE and nothing else. ") }
             if (Settings.followups) append(QuickReplies.RULE).append(' ')
             append(Memory.promptBlock(userText).take(1500))
+            // Unreleased after 0.52.3: the user's pinned facts, in every prompt (the chat lane too).
+            append(PinnedStore.block())
             // v0.45.9: the assistant rules and the [context] block, last (Site persona v1.0.1 `context_block`).
             append(Duo.ASSISTANT_RULES)
             append(GreetName.RULE)

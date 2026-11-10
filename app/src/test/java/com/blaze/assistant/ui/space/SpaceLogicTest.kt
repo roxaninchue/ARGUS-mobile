@@ -214,7 +214,7 @@ class SpaceLogicTest {
     }
 
     @Test fun theProfilePageIsHarks() {
-        assertEquals(listOf("Profile", "Scheduled Tasks", "Accounts", "Wallet"), SpaceProfile.GROUPS[0].map { it.label })
+        assertEquals(listOf("Profile", "Scheduled Tasks", "Accounts", "Wallet", "What Argus is holding"), SpaceProfile.GROUPS[0].map { it.label })
         assertEquals(listOf("Security", "System Preferences", "Submit Feedback", "About"), SpaceProfile.GROUPS[1].map { it.label })
         assertEquals("Usage and plan", SpaceProfile.PLAN.label)
         val all = SpaceProfile.GROUPS.flatten() + SpaceProfile.PLAN

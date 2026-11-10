@@ -30,6 +30,8 @@ object Commands {
         Command("remember", "<fact>", "Save something to memory"),
         Command("forget", "<fact>", "Remove something from memory"),
         Command("memory", "", "See what ${BrandName.NAME} remembers"),
+        Command("pin", "<fact>", "Pin a fact ${BrandName.NAME} keeps in every chat"),
+        Command("holding", "", "What ${BrandName.NAME} is holding: pinned facts, this chat's summary, the current task"),
         Command("routines", "", "See and edit routines"),
         Command("usage", "", "Tokens and cost so far"),
         Command("think", "", "Turn the \u201cThinking it through\u201d line on/off"),

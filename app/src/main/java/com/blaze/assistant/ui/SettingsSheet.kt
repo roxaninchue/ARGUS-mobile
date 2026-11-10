@@ -84,6 +84,8 @@ val topPages = listOf(
     SettingsPage("account", "Profile", "${BrandName.NAME} account and connected apps"),
     SettingsPage("updates", "Updates", "Check for a newer ${BrandName.NAME}; updates run in the background"),
     SettingsPage("about", "About", "Version, licences and what ${BrandName.NAME} keeps on this phone"),
+    // Unreleased after 0.52.3: pinned facts, this chat's summary, the current task, the skills in use (HoldingPage).
+    SettingsPage("holding", "What ${BrandName.NAME} is holding", "Pinned facts, this chat's summary, the current task and skills"),
 )
 
 /** Pages that left the Settings UI in 0.52.3 but still open by id (their prefs keep working). */
@@ -214,6 +216,7 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "orb" -> OrbSection()
                     "routines" -> SchedulePage()
                     "memory" -> { MemoryPage(); LearningSection() }
+                    "holding" -> HoldingPage()
                     "usage" -> { UsageSection(); CostCap() }
                     // 0.52.3 Security: app lock and approvals, then Bank mode (it left the top list).
                     "privacy" -> { SecuritySection(); Spacer(Modifier.height(18.dp)); BankModePage() }

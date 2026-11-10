@@ -21,7 +21,7 @@ object CommandRegistry {
     val USER_ONLY = setOf("stop", "new", "clear", "retry", "copy", "update", "search", "help")
 
     /** App commands Blaze may run as if typed (mode switches, voice, the orb, opening pages). */
-    val ACTIONS = setOf("plan", "build", "autopilot", "auto", "think", "voice", "orb", "views", "settings", "routines", "memory", "usage",
+    val ACTIONS = setOf("plan", "build", "autopilot", "auto", "think", "voice", "orb", "views", "settings", "routines", "memory", "holding", "pin", "usage",
         "persona", "agents", "remember", "forget", "logs", "brainstorm", "agent", "simple", "advanced", "bank")
 
     fun kind(name: String, all: List<Command> = Commands.all()): Kind {

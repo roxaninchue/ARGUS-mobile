@@ -90,6 +90,36 @@ object MemoryIntent {
             (if (f.size > shown.size) "\n\n\u2026and ${f.size - shown.size} more." else "") + "\n\n" + MANAGE).trim()
     }
 
+    // ---------- Unreleased after 0.52.3: pinned facts ("pin this", "never forget X", "unpin X") ----------
+
+    /** A pin request: [fact] to pin, or [refersBack] = "pin this" (the message before it is the fact). */
+    data class PinAsk(val fact: String, val refersBack: Boolean)
+
+    // "pin this" / "pin that" / "pin it" / "pin this message" / "never forget this", with nothing after it
+    private val pinBack = Regex("""^\s*(?:please\s+)?(?:pin|never forget|always remember|don'?t ever forget)\s+(?:this|that|it)(?:\s+(?:one|message|reply|answer|fact|for me))?\s*(?:please)?\s*[.!]*\s*$""", ic)
+    // "pin: X", "pin this: X", "pin that X", "please pin: X"
+    private val pinFact = Regex("""^\s*(?:please\s+)?pin(?:\s+(?:this|that))?(?:\s*:|\s+[\-\u2013])\s*(.+)$|^\s*(?:please\s+)?pin\s+that\s+(.+)$""", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+    // "never forget X", "never forget that X", "always remember X", "don't ever forget X"
+    private val neverForget = Regex("""^\s*(?:please\s+)?(?:never forget|always remember|don'?t ever forget)\s*[:,]?\s+(.+)$""", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+    private val unpinRe = Regex("""^\s*(?:please\s+)?unpin\s*[:\-]?\s+(.+?)\s*[.!]*\s*$""", ic)
+
+    /** Is [text] a request to pin a fact? Questions, commands ("/pin" is a command) and long texts are not. */
+    fun pinAsk(text: String): PinAsk? {
+        val t = text.trim()
+        if (t.isEmpty() || t.startsWith("/") || t.length > 500 || t.endsWith("?")) return null
+        if (pinBack.matches(t)) return PinAsk("", refersBack = true)
+        pinFact.find(t)?.let { m -> val f = m.groupValues[1].ifEmpty { m.groupValues[2] }.trim(); if (f.isNotEmpty()) return PinAsk(f, false) }
+        neverForget.find(t)?.let { m -> val f = m.groupValues[1].trim(); if (f.isNotEmpty()) return PinAsk(f, false) }
+        return null
+    }
+
+    /** "unpin coffee" → "coffee" (words of the pinned fact to remove); null when it isn't one. */
+    fun unpinAsk(text: String): String? {
+        val t = text.trim()
+        if (t.isEmpty() || t.startsWith("/") || t.length > 200) return null
+        return unpinRe.find(t)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
     /** Queries that mean "everything" when the model calls memory_search / recall_memory for a list request. */
     fun meansAll(query: String): Boolean = query.trim().lowercase().trim('*', '.', '?', '!', ' ') in
         setOf("", "all", "everything", "any", "me", "user", "the user", "about me", "memories", "memory", "all memories", "list", "list all")

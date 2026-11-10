@@ -269,7 +269,7 @@ object SpaceHomeCards {
  * ([com.blaze.assistant.ui.SettingsScreen]). 0.52.3: this replaces the old Settings list, Advanced and the brain pages.
  */
 object SpaceProfile {
-    enum class Icon { PROFILE, SCHEDULE, ACCOUNTS, WALLET, SECURITY, SYSTEM, FEEDBACK, ABOUT, PLAN, SIGN_OUT }
+    enum class Icon { PROFILE, SCHEDULE, ACCOUNTS, WALLET, HOLDING, SECURITY, SYSTEM, FEEDBACK, ABOUT, PLAN, SIGN_OUT }
 
     data class Row(val id: String, val label: String, val icon: Icon, val page: String)
 
@@ -281,6 +281,8 @@ object SpaceProfile {
             Row("scheduled", "Scheduled Tasks", Icon.SCHEDULE, "routines"),
             Row("accounts", "Accounts", Icon.ACCOUNTS, "connections"),
             Row("wallet", "Wallet", Icon.WALLET, "secrets"),
+            // Unreleased after 0.52.3: pinned facts and what the open chat holds (HoldingPage).
+            Row("holding", "What ${BrandName.NAME} is holding", Icon.HOLDING, "holding"),
         ),
         listOf(
             Row("security", "Security", Icon.SECURITY, "privacy"),

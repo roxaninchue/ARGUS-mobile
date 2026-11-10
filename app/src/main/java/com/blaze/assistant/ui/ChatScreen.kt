@@ -1242,6 +1242,8 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
         if (m.role != Role.ERROR) add("Quote" to { onQuote(if (m.role == Role.BLAZE) com.blaze.assistant.agent.ToolLeak.forDisplay(m.text) else splitQuote(m.text).second) })
         add("Retry" to (if (canAct) ({ Agent.retry(m.id) }) else null))
         if (m.role == Role.BLAZE && !live) add("React \uD83D\uDC4D" to { reactNow(entryCtx, m, Reactions.DOUBLE_TAP) })
+        // Unreleased after 0.52.3: pin this message's words as a fact Argus keeps in every chat (PinnedStore).
+        if ((m.role == Role.BLAZE || m.role == Role.USER) && !live) add("Pin" to { pinNow(entryCtx, m) })
     }) { menu.value = false }
     when (m.role) {
         Role.USER -> SwipeToQuote(true, onQuote = { onQuote(splitQuote(m.text).second) }) { Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
@@ -1371,6 +1373,14 @@ private fun HeadsUpWhy(meta: String) {
     Text(if (open) "Why: $why" else "Why?", maxLines = 2,
         modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 2.dp).clickable(onClickLabel = "Why you got this") { open = !open },
         style = com.blaze.assistant.ui.space.SpaceType.meta(c.body))
+}
+
+/** Unreleased after 0.52.3: long-press › Pin. A private chat keeps nothing; otherwise PinnedStore says what it did. */
+private fun pinNow(ctx: android.content.Context, m: ChatMessage) {
+    val line = if (Agent.privateChat.value) "This is a private chat, so nothing from it is kept."
+    else com.blaze.assistant.agent.PinnedStore.pin(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text)))
+        else Md.plain(splitQuote(m.text).second))
+    Toast.makeText(ctx, line, Toast.LENGTH_LONG).show()
 }
 
 /** v0.45.0 reactions: toggles one; in a private chat it says once that reactions there aren't kept. */

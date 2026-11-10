@@ -100,6 +100,9 @@ object CommandRunner {
             "remember" -> if (arg.isNotEmpty()) { Memory.add(arg); Agent.note("Remembered: $arg") } else openSettings("memory")
             "forget" -> if (arg.isNotEmpty()) Agent.note(Memory.forget(arg)) else openSettings("memory")
             "memory" -> openSettings("memory")
+            // Unreleased after 0.52.3: pinned facts (PinnedStore) and the "What Argus is holding" page.
+            "pin" -> if (arg.isNotEmpty()) Agent.note(com.blaze.assistant.agent.PinnedStore.pin(arg), asReply = true) else openSettings("holding")
+            "holding" -> openSettings("holding")
             "routines" -> openSettings("routines")
             "usage", "cost" -> {
                 val t = Usage.today(); val m = Usage.month()

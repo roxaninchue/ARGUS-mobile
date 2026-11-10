@@ -21,7 +21,7 @@ object ReplyLedger {
     const val MAX_IDS = 6
 
     /**
-     * The turn's user message ids ([turnIds], oldest first) that the final reply [reply] (raw text, markers still in it)
+     * The turn's user message ids ([turnIds], oldest first) that the final reply [reply], raw text with its markers,
      * leaves unanswered, oldest first. Empty when the turn has fewer than two messages or the reply has no marker at all.
      */
     fun uncovered(turnIds: Collection<Long>, reply: String): List<Long> {

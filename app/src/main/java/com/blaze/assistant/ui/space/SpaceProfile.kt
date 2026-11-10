@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PrivacyTip
+import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
@@ -61,6 +62,7 @@ fun SpaceProfile.Icon.vector(): ImageVector = when (this) {
     SpaceProfile.Icon.SCHEDULE -> Icons.Rounded.Schedule
     SpaceProfile.Icon.ACCOUNTS -> Icons.Rounded.Link
     SpaceProfile.Icon.WALLET -> Icons.Rounded.CreditCard
+    SpaceProfile.Icon.HOLDING -> Icons.Rounded.PushPin
     SpaceProfile.Icon.SECURITY -> Icons.Rounded.Shield
     SpaceProfile.Icon.SYSTEM -> Icons.Rounded.Settings
     SpaceProfile.Icon.FEEDBACK -> Icons.Rounded.ChatBubbleOutline
