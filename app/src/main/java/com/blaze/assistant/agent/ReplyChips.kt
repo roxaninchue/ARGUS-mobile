@@ -44,7 +44,8 @@ object ReplyChips {
         if (meta.trim() == Ack.META) return ""
         if (meta.startsWith("usedup:")) return ""
         // "Heads-up · 14:02" is one human chip even though it has a dot.
-        if (meta.startsWith("Heads-up")) return meta
+        // Unreleased after 0.52.3: its "why you got this" reason is not part of the chip (the bubble has its own "Why?").
+        if (meta.startsWith("Heads-up")) return com.blaze.assistant.proactive.ProactiveDial.chipOf(meta)
         return meta.split(" \u00b7 ").map { it.trim() }.filter { p ->
             p.isNotEmpty() && p != Ack.META && !Receipt.isChip(p) && !ModelHide.mentions(p) && !isRouteWord(p) && (showTech || !isTechnical(p))
         }.joinToString(" \u00b7 ")

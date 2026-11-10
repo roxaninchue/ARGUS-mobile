@@ -121,7 +121,10 @@ object FollowUps {
 
     private fun notifyAsk(ctx: Context, i: Item) {
         val text = FollowUpLogic.askText(i)
-        try { com.blaze.assistant.agent.Agent.recordHeadsUp(text) } catch (_: Throwable) { }
+        // Unreleased after 0.52.3: a plan Argus noticed on its own is a heads-up the dial judges (Off / Low drop it).
+        if (!ProactiveDial.allows(Proactive.level, ProactiveDial.Source.FOLLOW_UP, false)) return
+        val why = ProactiveDial.Why.newPlan(i.person, i.app)
+        try { com.blaze.assistant.agent.Agent.recordHeadsUp(text, why) } catch (_: Throwable) { }
         if (Proactive.quietNow()) return
         fun act(a: String, code: Int) = PendingIntent.getBroadcast(ctx, (i.id + a).hashCode() + code, Intent(ctx, FollowUpReceiver::class.java).setAction(a).putExtra("id", i.id),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
@@ -130,7 +133,7 @@ object FollowUps {
         val acts = mutableListOf(NotificationCompat.Action.Builder(0, goingWord, act(FollowUpReceiver.GOING, 1)).build(),
             NotificationCompat.Action.Builder(0, "No", act(FollowUpReceiver.NOT_GOING, 2)).build())
         if (i.needsReply) acts.add(1, NotificationCompat.Action.Builder(0, "I replied", act(FollowUpReceiver.REPLIED, 3)).build())
-        com.blaze.assistant.notify.Notifier.post(text, com.blaze.assistant.notify.BlazeThread.Kind.FOLLOW_UP, context = text, extra = acts, reply = false)
+        com.blaze.assistant.notify.Notifier.post(text, com.blaze.assistant.notify.BlazeThread.Kind.FOLLOW_UP, context = text, extra = acts, reply = false, why = why)
     }
 
     fun cancelNotification(ctx: Context, id: String) { try { NotificationManagerCompat.from(ctx).cancel(9100 + Math.floorMod(id.hashCode(), 400)); com.blaze.assistant.notify.Notifier.clearReplies() } catch (_: Throwable) { } }
@@ -180,7 +183,11 @@ object FollowUps {
         update(i.id) { it.copy(nudgedAt = now) }
         scope.launch {
             delay(2_500)   // let the app come up first
-            Proactive.say(FollowUpLogic.nudgeText(i), "followup-nudge:" + i.id + ":" + (now / 3_600_000L), suggest = "Draft a reply to ${i.person.substringBefore(' ')}")
+            // Unreleased after 0.52.3: one the user said yes to counts as asked for (Low keeps it); the rest are Argus's own.
+            val asked = i.status == Status.GOING || i.reminderSet
+            Proactive.say(FollowUpLogic.nudgeText(i), "followup-nudge:" + i.id + ":" + (now / 3_600_000L), suggest = "Draft a reply to ${i.person.substringBefore(' ')}",
+                why = if (asked) ProactiveDial.Why.followUpAsked(i.created) else ProactiveDial.Why.followUp(i.person, i.app),
+                source = if (asked) ProactiveDial.Source.FOLLOW_UP_ASKED else ProactiveDial.Source.FOLLOW_UP)
         }
     }
 

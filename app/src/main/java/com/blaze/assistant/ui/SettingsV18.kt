@@ -367,6 +367,13 @@ fun ProactivePage() {
         V18Button("%02d:00".format(qt), primary = false, modifier = Modifier.width(84.dp)) { qt = (qt + 1) % 24; P.quietTo = qt }
     }
     V18Note("Only urgent things get through in quiet hours. Tap a time to change it.", top = 6)
+    // Unreleased after 0.52.3: the proactivity dial, next to quiet hours (ProactiveDial; applied where Proactive.say drops).
+    var dial by remember { mutableStateOf(P.level) }
+    Spacer(Modifier.height(12.dp))
+    Label("How proactive", modifier = Modifier.padding(bottom = 8.dp))
+    com.blaze.assistant.ui.space.SpaceSegmented(com.blaze.assistant.proactive.ProactiveDial.Level.values().map { it.id to it.label }, dial.id,
+        Modifier.fillMaxWidth(), tag = "proactive_level") { id -> dial = com.blaze.assistant.proactive.ProactiveDial.Level.of(id); P.level = dial }
+    V18Note(com.blaze.assistant.proactive.ProactiveDial.note(dial) + " Every heads-up says why it came.", top = 6)
     if (!com.blaze.assistant.notify.NotificationBrain.enabled(ctx)) { Spacer(Modifier.height(6.dp)); NotificationAccessRow() }
     val pm = ctx.getSystemService(android.os.PowerManager::class.java)
     if (pm?.isIgnoringBatteryOptimizations(ctx.packageName) != true) {

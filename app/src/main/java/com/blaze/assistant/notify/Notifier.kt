@@ -230,7 +230,8 @@ object Notifier {
      * [extra] = buttons beyond Reply (a suggestion, Going / No, Call me). [tap] = what tapping opens (default: the chat).
      */
     fun post(raw: String, kind: BlazeThread.Kind, chatId: String? = null, context: String? = null, urgent: Boolean = false,
-             extra: List<NotificationCompat.Action> = emptyList(), tap: PendingIntent? = null, reply: Boolean = true, quiet: Boolean = false) {
+             extra: List<NotificationCompat.Action> = emptyList(), tap: PendingIntent? = null, reply: Boolean = true, quiet: Boolean = false,
+             why: String = "") {
         if (!::app.isInitialized) return
         val text = com.blaze.assistant.ui.Md.plain(raw)
         if (text.isBlank() || !allowed()) return
@@ -260,6 +261,8 @@ object Notifier {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setShortcutId(BlazeThread.SHORTCUT)
         if (reply) b.addAction(replyA)
+        // Unreleased after 0.52.3: a proactive heads-up says why it came, as the notification's small sub line.
+        if (why.isNotBlank()) b.setSubText(why.take(com.blaze.assistant.proactive.ProactiveDial.MAX))
         extra.take(2).forEach { b.addAction(it) }
         try {
             val style = NotificationCompat.MessagingStyle(me)
@@ -328,11 +331,11 @@ object Notifier {
     private const val ID_PROACTIVE = 8
 
     /** Blaze speaking up on its own, with a one-tap suggestion and an inline reply. 0.45.19: one Blaze thread ([post]). */
-    fun proactive(text0: String, suggest: String, urgent: Boolean, kind: BlazeThread.Kind = BlazeThread.Kind.HEADS_UP) {
+    fun proactive(text0: String, suggest: String, urgent: Boolean, kind: BlazeThread.Kind = BlazeThread.Kind.HEADS_UP, why: String = "") {
         // v0.28.1: notification text never shows markdown symbols.
         val text = com.blaze.assistant.ui.Md.plain(text0)
         // Kept in the Heads-ups chat (even when notifications are off) so a reply has the context (v0.8.0).
-        val chatId = try { Agent.recordHeadsUp(text) } catch (_: Exception) { null }
+        val chatId = try { Agent.recordHeadsUp(text, why) } catch (_: Exception) { null }
         if (!::app.isInitialized || !allowed()) return
         val extra: List<NotificationCompat.Action> = if (suggest.isBlank()) emptyList() else {
             val pi = PendingIntent.getBroadcast(app, ("do" + suggest).hashCode(), Intent(app, ActionReceiver::class.java).setAction(ActionReceiver.DO)
@@ -340,7 +343,7 @@ object Notifier {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             listOf(NotificationCompat.Action.Builder(0, suggest.take(28), pi).build())
         }
-        post(text, kind, chatId, context = text, urgent = urgent, extra = extra)
+        post(text, kind, chatId, context = text, urgent = urgent, extra = extra, why = why)
     }
 
     private const val ID_QUESTION = 7

@@ -1057,7 +1057,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
      * model is told about it with the next message there, so replying from the notification (or later in
      * the app) continues that conversation instead of starting a blank one. Returns the chat's id.
      */
-    fun recordHeadsUp(text: String): String {
+    fun recordHeadsUp(text: String, why: String = ""): String {
         val id = headsUpChatId()
         val stamp = java.text.SimpleDateFormat("EEE HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
         scope.launch {
@@ -1065,7 +1065,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             s.keep = true
             sessions[s.id] = s
             val mid = s.add(Role.BLAZE, text)
-            s.addMeta(mid, "Heads-up \u00b7 $stamp")
+            s.addMeta(mid, com.blaze.assistant.proactive.ProactiveDial.meta(stamp, why))   // unreleased after 0.52.3: "Why?" under it
             s.unseenTips += "$stamp: $text"
             while (s.unseenTips.size > 20) s.unseenTips.removeAt(0)
             s.persist()

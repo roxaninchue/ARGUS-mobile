@@ -102,7 +102,8 @@ object HomeNews {
             val day = s().str("home_news_day", "")
             val count = if (day == today) s().str("home_news_count", "0").toIntOrNull() ?: 0 else 0
             if (!mayTell(now, s().str("home_news_last", "0").toLongOrNull() ?: 0L, today, day, count)) return
-            com.blaze.assistant.proactive.Proactive.say(summary(items), "home:" + items.joinToString { it.key }.hashCode(), urgent = false, suggest = "")
+            com.blaze.assistant.proactive.Proactive.say(summary(items), "home:" + items.joinToString { it.key }.hashCode(), urgent = false, suggest = "",
+                why = com.blaze.assistant.proactive.ProactiveDial.Why.news(), source = com.blaze.assistant.proactive.ProactiveDial.Source.NEWS)
             s().setStr("home_news_last", now.toString()); s().setStr("home_news_day", today); s().setStr("home_news_count", (count + 1).toString())
             saveSeen(seen + items.map { it.key })   // told once; the rest waits for the next check or the user's own look
         } catch (_: Throwable) { }

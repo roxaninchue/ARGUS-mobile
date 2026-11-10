@@ -94,7 +94,8 @@ object Triggers {
             val n = t.match.filter { it.isDigit() }.toIntOrNull() ?: 20
             if (level == n || (level < n && level == lastBattery - 1 && level % 5 == 0 && level <= n - 5)) fire(t, "Battery is at $level%.")
         }
-        if (level == 15 || level == 5) Proactive.say("Battery is at $level%. Want me to turn on battery saver?", "battery$level", urgent = level == 5)
+        if (level == 15 || level == 5) Proactive.say("Battery is at $level%. Want me to turn on battery saver?", "battery$level", urgent = level == 5,
+            why = ProactiveDial.Why.battery(level), source = ProactiveDial.Source.DEVICE)
     }
 
     fun onApp(pkg: String, label: String) {

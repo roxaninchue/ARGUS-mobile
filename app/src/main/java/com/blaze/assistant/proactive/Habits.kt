@@ -37,11 +37,13 @@ object Habits {
             all.keys().asSequence().toList().forEach { k -> if ((all.optJSONArray(k)?.length() ?: 0) == 0) all.remove(k) }
             Settings.setStr("habits", all.toString().take(20_000))
             val offered = Settings.str("habits_offered", "")
-            if (recent.size >= 4 && !offered.split(',').contains(key)) {
+            // Unreleased after 0.52.3: the dial's High offers at 3 of the last 7 days (else 4).
+            if (recent.size >= ProactiveDial.habitDays(Proactive.level) && !offered.split(',').contains(key)) {
                 Settings.setStr("habits_offered", (offered.split(',').filter { it.isNotBlank() }.takeLast(40) + key).joinToString(","))
                 val time = "%02d:%02d".format(hour, 0)
                 Proactive.say("You open $label around ${hour}:00 most days. Want me to do it for you?",
-                    "habit_$key", suggest = "Every day at $time open $label for me")
+                    "habit_$key", suggest = "Every day at $time open $label for me",
+                    why = ProactiveDial.Why.habit(label, hour), source = ProactiveDial.Source.HABIT)
             }
         } catch (_: Exception) { }
     }

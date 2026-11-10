@@ -138,7 +138,8 @@ object Jarvis {
             JarvisLogic.parseQuestion(llm(sys, ctx))
         } catch (_: Throwable) { "" }
         val text = own.ifBlank { q.text }
-        Proactive.say(text, "jarvis-q:" + q.id, kind = com.blaze.assistant.notify.BlazeThread.Kind.CHECK_IN)
+        Proactive.say(text, "jarvis-q:" + q.id, kind = com.blaze.assistant.notify.BlazeThread.Kind.CHECK_IN,
+            why = ProactiveDial.Why.checkIn(), source = ProactiveDial.Source.CHECK_IN)
         Settings.setStr("jarvis_asked", (asked + q.id).joinToString(","))
         Settings.setStr("jarvis_last_topic", q.topic)
         Settings.setStr("jarvis_q_day", day); Settings.setStr("jarvis_q_n", (askedToday + 1).toString())
@@ -173,7 +174,8 @@ object Jarvis {
             "\"note\": \"what they're doing, max 12 words, no private details\"}"
         val g = JarvisLogic.parseGlance(llm(sys, "App: $label\nToday's usage: ${usageToday()}\n${Awareness.promptBlock()}\nScreen:\n$compact"))
         if (g.note.isNotBlank()) Awareness.did("glance", "in $label: ${g.note}")
-        if (g.say.isNotBlank()) { Proactive.say(g.say, "jarvis-glance:" + g.say.lowercase().take(40), suggest = g.suggest); return true }
+        if (g.say.isNotBlank()) { Proactive.say(g.say, "jarvis-glance:" + g.say.lowercase().take(40), suggest = g.suggest,
+            why = ProactiveDial.Why.glance(label), source = ProactiveDial.Source.GLANCE); return true }
         return false
     }
 
@@ -239,7 +241,8 @@ object Jarvis {
         } catch (_: Throwable) { return false }
         val g = JarvisLogic.parseGlance(raw)
         if (g.say.isBlank()) return false
-        Proactive.say(g.say, "jarvis-cam:" + g.say.lowercase().take(40), suggest = g.suggest)
+        Proactive.say(g.say, "jarvis-cam:" + g.say.lowercase().take(40), suggest = g.suggest,
+            why = ProactiveDial.Why.camera(), source = ProactiveDial.Source.GLANCE)
         return true
     }
 
@@ -271,10 +274,10 @@ object Jarvis {
             val r = com.blaze.assistant.routine.Routines.add(JarvisLogic.SELF_PREFIX + idea.name, idea.prompt, idea.hour, idea.minute, idea.days)
             Awareness.did("routine", "set itself a routine: ${r.name} at $time")
             Proactive.say("I set myself a routine: ${idea.name}, ${r.daysLabel().lowercase()} at $time. ${idea.why}".trim(), "jarvis-routine:" + idea.name.lowercase(),
-                suggest = "Remove routine ${r.name}")
+                suggest = "Remove routine ${r.name}", why = ProactiveDial.Why.routine(), source = ProactiveDial.Source.ROUTINE_IDEA)
         } else {
             Proactive.say("Want me to take care of something? ${idea.name}, at $time. ${idea.why}".trim(), "jarvis-routine:" + idea.name.lowercase(),
-                suggest = "Yes, set up ${idea.name}".take(60))
+                suggest = "Yes, set up ${idea.name}".take(60), why = ProactiveDial.Why.routine(), source = ProactiveDial.Source.ROUTINE_IDEA)
         }
     }
 
@@ -283,13 +286,15 @@ object Jarvis {
     /** "Got a minute? I can catch you up out loud." with a Call me button (Blaze's voice call). */
     private fun offerCall() {
         val open = Awareness.nows().count { it.key.startsWith("followup:") }
+        // Unreleased after 0.52.3: a call offer is a check-in the dial judges.
+        if (!ProactiveDial.allows(Proactive.level, ProactiveDial.Source.CHECK_IN, false)) return
         val text = JarvisLogic.callLine(open, Calendar.getInstance().get(Calendar.HOUR_OF_DAY))
-        try { com.blaze.assistant.agent.Agent.recordHeadsUp(text) } catch (_: Throwable) { }
+        try { com.blaze.assistant.agent.Agent.recordHeadsUp(text, ProactiveDial.Why.checkIn()) } catch (_: Throwable) { }
         val call = android.app.PendingIntent.getActivity(app, 7400, com.blaze.assistant.IntentKey.sign(app, Intent(app, com.blaze.assistant.MainActivity::class.java)
             .setAction(com.blaze.assistant.MainActivity.ACTION_CALL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)),
             android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)
         // 0.45.19: a check-in is a text in the one Blaze thread (avatar, quick replies, alerting channel), with Call me.
-        com.blaze.assistant.notify.Notifier.post(text, com.blaze.assistant.notify.BlazeThread.Kind.CALL_OFFER, context = text, tap = call,
+        com.blaze.assistant.notify.Notifier.post(text, com.blaze.assistant.notify.BlazeThread.Kind.CALL_OFFER, context = text, tap = call, why = ProactiveDial.Why.checkIn(),
             extra = listOf(androidx.core.app.NotificationCompat.Action.Builder(0, "Call me", call).build()))
     }
 

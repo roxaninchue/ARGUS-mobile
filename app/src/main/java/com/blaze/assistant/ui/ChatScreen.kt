@@ -1342,7 +1342,7 @@ private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, o
     // v0.24.4: technical parts of the chip (timings, data, model ids) are hidden unless Show technical details is on.
     val chip = if (usedUp) "" else com.blaze.assistant.agent.ReplyChips.shown(m.meta)
     if (chipOnly && chip.isBlank()) return
-    if (chipOnly) { MetaLine(side, "", emptyList(), chip, chip.startsWith("⚡")); return }
+    if (chipOnly) { MetaLine(side, "", emptyList(), chip, chip.startsWith("⚡")); HeadsUpWhy(m.meta); return }
     val acts = buildList<Pair<String, (() -> Unit)?>> {
         add("Copy" to { clip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() })
         if (allowQuote) add("Quote" to { onQuote(m.text) })
@@ -1355,9 +1355,22 @@ private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, o
         if (reactable && m.role == Role.BLAZE) add("React" to { picker.value = true })
     }
     MetaLine(side, time, acts, chip, chip.startsWith("⚡"), orbSlot = orbSlot)
+    HeadsUpWhy(m.meta)
     if (showReceipt.value) ReceiptDialog(m.receipt) { showReceipt.value = false }
     if (showTrace.value && com.blaze.assistant.agent.DevFlags.modelInfo()) TraceDialog(m.trace) { showTrace.value = false }
     if (picker.value) ReactionPicker(m.reactions, onPick = { e -> picker.value = false; reactNow(ctx, m, e) }, onDismiss = { picker.value = false })
+}
+
+/** Unreleased after 0.52.3: the small "Why?" under a heads-up; a tap shows what set it off (ProactiveDial.whyOf). */
+@Composable
+private fun HeadsUpWhy(meta: String) {
+    val why = remember(meta) { com.blaze.assistant.proactive.ProactiveDial.whyOf(meta) }
+    if (why.isBlank()) return
+    var open by remember(meta) { mutableStateOf(false) }
+    val c = LocalBlaze.current
+    Text(if (open) "Why: $why" else "Why?", maxLines = 2,
+        modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 2.dp).clickable(onClickLabel = "Why you got this") { open = !open },
+        style = com.blaze.assistant.ui.space.SpaceType.meta(c.body))
 }
 
 /** v0.45.0 reactions: toggles one; in a private chat it says once that reactions there aren't kept. */

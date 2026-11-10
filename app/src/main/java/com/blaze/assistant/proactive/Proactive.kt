@@ -36,7 +36,7 @@ import java.util.Locale
  * you) and decides whether something is worth telling you. Most checks end in silence.
  */
 object Proactive {
-    data class HeadsUp(val time: Long, val text: String, val urgent: Boolean)
+    data class HeadsUp(val time: Long, val text: String, val urgent: Boolean, val why: String = "")
 
     private lateinit var app: Context
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.blaze.assistant.device.CrashLog.guard)
@@ -56,6 +56,10 @@ object Proactive {
     var speak: Boolean
         get() = Settings.bool("proactive_speak", false)
         set(v) = Settings.setBool("proactive_speak", v)
+    /** Unreleased after 0.52.3: the proactivity dial (Off / Low / Normal / High, default Normal); applied in [say]. */
+    var level: ProactiveDial.Level
+        get() = ProactiveDial.Level.of(Settings.str(ProactiveDial.KEY, ProactiveDial.Level.NORMAL.id))
+        set(v) = Settings.setStr(ProactiveDial.KEY, v.id)
     var quietFrom: Int
         get() = Settings.str("quiet_from", "22").toIntOrNull() ?: 22
         set(v) = Settings.setStr("quiet_from", v.toString())
@@ -84,6 +88,7 @@ object Proactive {
     /** Called by the loop and the alarm. Skips if a check ran recently. */
     fun tick(force: Boolean = false) {
         if (!::app.isInitialized || !enabled || !Settings.ready) return
+        if (!ProactiveDial.runsChecks(level)) return   // dial at Off: nothing this check could raise would be shown
         if (!force && System.currentTimeMillis() - lastCheck < everyMin * 60_000L * 0.8) return
         scope.launch { check() }
     }
@@ -92,14 +97,14 @@ object Proactive {
     private val chatApps = Regex("whatsapp|messages|messenger|telegram|signal|phone|sms|gmail|outlook|slack|teams", RegexOption.IGNORE_CASE)
 
     fun onNotification(appName: String, title: String, text: String) {
-        if (!enabled || !::app.isInitialized) return
+        if (!enabled || !::app.isInitialized || !ProactiveDial.runsChecks(level)) return
         if (chatApps.containsMatchIn(appName) && urgentWords.containsMatchIn("$title $text") && System.currentTimeMillis() - lastUrgent > 120_000) {
             lastUrgent = System.currentTimeMillis()
-            scope.launch { delay(4000); check(urgentHint = "$appName — $title: $text") }
+            scope.launch { delay(4000); check(urgentHint = "$appName — $title: $text", urgentApp = appName) }
         }
     }
 
-    private suspend fun check(urgentHint: String? = null) = lock.withLock {
+    private suspend fun check(urgentHint: String? = null, urgentApp: String = "") = lock.withLock {
         val since = lastCheck
         lastCheck = System.currentTimeMillis()
         val notes = NotificationBrain.since(since).takeLast(30)
@@ -163,7 +168,14 @@ Reply ONLY with JSON: {"say": "" or "one or two short friendly sentences", "urge
         val raw = try { LlmClient.complete(msgs, null, null, null, LlmClient.Lane.BACKGROUND).optString("content") } catch (e: Exception) { return@withLock }
         val o = try { JSONObject(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1)) } catch (_: Exception) { return@withLock }
         val text = o.optString("say").trim()
-        if (text.isNotEmpty()) say(text, (if (morning || evening) "brief:" else "") + text.lowercase().take(40), o.optBoolean("urgent"), o.optString("suggest").trim())
+        // Unreleased after 0.52.3: each heads-up says what set it off (the brief, an urgent-looking message, or the regular check).
+        val why = when {
+            morning || evening -> ProactiveDial.Why.brief(morning)
+            urgentHint != null -> ProactiveDial.Why.notification(urgentApp)
+            else -> ProactiveDial.Why.check()
+        }
+        if (text.isNotEmpty()) say(text, (if (morning || evening) "brief:" else "") + text.lowercase().take(40), o.optBoolean("urgent"), o.optString("suggest").trim(),
+            why = why, source = if (morning || evening) ProactiveDial.Source.BRIEF else ProactiveDial.Source.CHECK)
     }
 
     /** v0.45.23 perf: the rest of the quiet-hours skip test (no brief window, no new chats, no open follow-ups). */
@@ -210,10 +222,16 @@ Reply ONLY with JSON: {"say": "" or "one or two short friendly sentences", "urge
         return out.toString().trim()
     }
 
-    /** Tell the user something unprompted: notification, optional voice, and the orb if it's out. */
+    /**
+     * Tell the user something unprompted: notification, optional voice, and the orb if it's out.
+     * Unreleased after 0.52.3: [why] is the one-line "why you got this" (the notification's sub line, "Why?" in the
+     * Heads-ups chat); [source] is the trigger the proactivity dial ([level], [ProactiveDial.allows]) judges.
+     */
     fun say(text: String, key: String, urgent: Boolean = false, suggest: String = "",
-            kind: com.blaze.assistant.notify.BlazeThread.Kind = com.blaze.assistant.notify.BlazeThread.Kind.HEADS_UP) {
+            kind: com.blaze.assistant.notify.BlazeThread.Kind = com.blaze.assistant.notify.BlazeThread.Kind.HEADS_UP,
+            why: String = "", source: ProactiveDial.Source = ProactiveDial.Source.CHECK) {
         if (!::app.isInitialized) return
+        if (!ProactiveDial.allows(level, source, urgent)) return
         val now = System.currentTimeMillis()
         synchronized(said) {
             said.entries.removeAll { now - it.value > 6 * 3600_000 }
@@ -223,8 +241,8 @@ Reply ONLY with JSON: {"say": "" or "one or two short friendly sentences", "urge
         if (quietNow() && !urgent) return
         // Digest mode: non-urgent things wait for the morning/evening brief instead of buzzing now.
         if (!urgent && Settings.bool("digest_mode", false) && !key.startsWith("brief")) { synchronized(digest) { digest += text; while (digest.size > 12) digest.removeAt(0) }; return }
-        recent.value = (recent.value + HeadsUp(now, text, urgent)).takeLast(30)
-        com.blaze.assistant.notify.Notifier.proactive(text, suggest, urgent, kind)
+        recent.value = (recent.value + HeadsUp(now, text, urgent, why)).takeLast(30)
+        com.blaze.assistant.notify.Notifier.proactive(text, suggest, urgent, kind, why)
         val audio = app.getSystemService(AudioManager::class.java)
         val canTalk = audio?.ringerMode == AudioManager.RINGER_MODE_NORMAL && audio.mode == AudioManager.MODE_NORMAL && !quietNow()
         // v0.20.0 (Blazeinchue): heads-ups and reminders are read aloud only when the user switched "proactive_speak" on.
