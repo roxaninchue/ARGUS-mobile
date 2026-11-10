@@ -16,6 +16,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -25,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.foundation.background
@@ -85,6 +88,27 @@ object MotionTokens {
     fun collapse(): ExitTransition = if (enabled) fadeOut(tween(SHORT)) + shrinkVertically(tween(MEDIUM, easing = Standard)) else ExitTransition.None
     fun fade(): EnterTransition = if (enabled) fadeIn(tween(MEDIUM)) else EnterTransition.None
     fun fadeAway(): ExitTransition = if (enabled) fadeOut(tween(SHORT)) else ExitTransition.None
+
+    /**
+     * Overlays (Spotlight, the views sheet, menus that drop over the chat): fade with a slight scale from the edge they
+     * hang from and a short slide. Fade and scale draw in the graphics layer, so nothing under it re-measures per frame.
+     * [fromTop] = true for a panel under the status bar, false for one rising from the composer.
+     */
+    fun overlayIn(fromTop: Boolean = true): EnterTransition = if (enabled)
+        fadeIn(tween(MEDIUM, easing = Decelerate)) +
+            scaleIn(tween(MEDIUM, easing = Decelerate), initialScale = OVERLAY_SCALE, transformOrigin = TransformOrigin(0.5f, if (fromTop) 0f else 1f)) +
+            slideInVertically(tween(MEDIUM, easing = Decelerate)) { if (fromTop) -it / 16 else it / 16 }
+        else EnterTransition.None
+    fun overlayOut(fromTop: Boolean = true): ExitTransition = if (enabled)
+        fadeOut(tween(SHORT, easing = Accelerate)) +
+            scaleOut(tween(SHORT, easing = Accelerate), targetScale = OVERLAY_SCALE, transformOrigin = TransformOrigin(0.5f, if (fromTop) 0f else 1f)) +
+            slideOutVertically(tween(SHORT, easing = Accelerate)) { if (fromTop) -it / 16 else it / 16 }
+        else ExitTransition.None
+    /** The scrim behind an overlay: a plain fade on the overlay's own clock, so the two arrive and leave together. */
+    fun scrimIn(): EnterTransition = if (enabled) fadeIn(tween(MEDIUM, easing = Decelerate)) else EnterTransition.None
+    fun scrimOut(): ExitTransition = if (enabled) fadeOut(tween(SHORT, easing = Accelerate)) else ExitTransition.None
+    /** How far an overlay is scaled down when it starts to come in and when it leaves. */
+    const val OVERLAY_SCALE = 0.96f
 }
 
 /** v0.27.0: shrink slightly while pressed (pass the same [interaction] to clickable). No motion when animations are off. */

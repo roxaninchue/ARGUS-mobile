@@ -182,19 +182,20 @@ fun spotIcon(i: SpotlightSearch.Icon): ImageVector = when (i) {
 
 /** One result: icon tile, title, subtitle; the top row is highlighted (Enter runs it), like macOS Spotlight. */
 @Composable
-fun SpotRow(r: SpotlightSearch.Row, top: Boolean, onClick: () -> Unit) {
+fun SpotRow(r: SpotlightSearch.Row, top: Boolean, ink: Color = LocalBlaze.current.ink, sub: Color = LocalBlaze.current.sub, onClick: () -> Unit) {
     val c = LocalBlaze.current
+    // the caller passes the ink of the surface it draws on: a dark overlay over a light app needs white titles
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (top) DuoColors.blazeBlue.copy(alpha = if (c.dark) 0.34f else 0.20f) else Color.Transparent)
         .clickable(onClick = onClick).semantics { contentDescription = r.title + ". " + r.subtitle }.padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically) {
         // 0.52.4: the shared round icon tile, solid for the top hit that Enter runs
-        com.blaze.assistant.ui.IconTile(spotIcon(r.icon), tint = if (top) DuoColors.blazeBlue else c.ink, small = true, filled = top)
+        com.blaze.assistant.ui.IconTile(spotIcon(r.icon), tint = if (top) DuoColors.blazeBlue else ink, small = true, filled = top)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(r.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
-            if (r.subtitle.isNotBlank()) Text(r.subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+            Text(r.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = ink))
+            if (r.subtitle.isNotBlank()) Text(r.subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = sub))
         }
-        if (top) Icon(Icons.AutoMirrored.Rounded.KeyboardReturn, contentDescription = null, tint = c.sub, modifier = Modifier.padding(start = 8.dp).size(16.dp))
+        if (top) Icon(Icons.AutoMirrored.Rounded.KeyboardReturn, contentDescription = null, tint = sub, modifier = Modifier.padding(start = 8.dp).size(16.dp))
     }
 }
 

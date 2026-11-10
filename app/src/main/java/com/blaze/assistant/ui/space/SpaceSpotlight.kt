@@ -2,12 +2,7 @@ package com.blaze.assistant.ui.space
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -59,6 +54,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -122,13 +118,10 @@ fun SpaceSpotlightLayer(
         }
     }
     Box(modifier.fillMaxSize()) {
-        AnimatedVisibility(open, enter = fadeIn(MotionTokens.medium()), exit = fadeOut(MotionTokens.fast())) {
-            Box(Modifier.fillMaxSize().testTag(SpaceTags.SCRIM).background(Color.Black.copy(alpha = 0.55f))
-                .clickable(remember { MutableInteractionSource() }, indication = null, onClickLabel = "Close search") { composer.closeSpotlight() })
-        }
+        // the shared overlay: a 55 % scrim and the panel arrive and leave on one clock
+        SpaceScrim(open, onDismiss = { composer.closeSpotlight() }, label = "Close search", modifier = Modifier.testTag(SpaceTags.SCRIM))
         AnimatedVisibility(open, modifier = Modifier.align(Alignment.TopCenter),
-            enter = fadeIn(MotionTokens.medium()) + slideInVertically(MotionTokens.medium()) { -it / 6 },
-            exit = fadeOut(MotionTokens.fast()) + slideOutVertically(MotionTokens.fast()) { -it / 6 }) {
+            enter = MotionTokens.overlayIn(fromTop = true), exit = MotionTokens.overlayOut(fromTop = true)) {
             BoxWithConstraints(Modifier.fillMaxWidth().statusBarsPadding().imePadding().padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
                 SpaceSpotlightPanel(composer, appList, saidList, recent, hour, focus, onRow = { runRow(it) }, maxListHeight = maxHeight * 0.75f)
             }
@@ -165,40 +158,42 @@ fun SpaceSpotlightPanel(
     }
     val top = SpotlightGroups.top(sections)
     val look = SpaceLook.Dark   // the panel is always the dark card over its scrim
-    Column(modifier.fillMaxWidth().clip(SpaceShapes.card).background(look.cardSolid)
-        .border(1.dp, Color(SpacePalette.ELECTRIC).copy(alpha = 0.35f), SpaceShapes.card)
-        .testTag(SpaceTags.SPOTLIGHT)
-        // taps on the panel stay in it (the scrim around it closes Spotlight)
-        .clickable(remember { MutableInteractionSource() }, indication = null) { }
-        .semantics { contentDescription = "Spotlight" }) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            SearchGlyph(look.accent, 22.dp)
-            Spacer(Modifier.width(12.dp))
-            Box(Modifier.weight(1f).padding(vertical = 14.dp)) {
-                if (composer.query.isEmpty()) Text("Search apps, actions, settings, chats\u2026", maxLines = 1, style = SpaceType.bodyText(look.sub))
-                BasicTextField(composer.query, { composer.query = it },
-                    singleLine = true, textStyle = SpaceType.bodyText(look.ink),
-                    cursorBrush = SolidColor(Color(SpacePalette.ELECTRIC)),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { top?.let(onRow) }),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(SpaceTags.SPOTLIGHT_FIELD).semantics { contentDescription = "Spotlight search" })
-            }
-            if (composer.query.isNotEmpty()) Box(Modifier.size(40.dp).clip(CircleShape).clickable { composer.query = "" }
-                .semantics { contentDescription = "Clear the search"; role = Role.Button }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Close, contentDescription = null, tint = look.sub, modifier = Modifier.size(18.dp))
-            }
-        }
-        Box(Modifier.fillMaxWidth().padding(horizontal = 18.dp).height(1.dp).background(look.hair))
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = maxListHeight), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) {
-            for (s in sections) {
-                item(key = "h:" + s.group.name) {
-                    Text(s.group.title.uppercase(), modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 4.dp).semantics { heading() },
-                        style = SpaceType.body(SpaceTypeScale.CAPTION.sp, look.sub, FontWeight.Medium).copy(letterSpacing = 0.12.em))
+    // the rows and icon tiles read LocalBlaze, so they take the dark overlay's ink too, whatever the app's theme
+    ProvideOverlayInk(dark = look.dark) {
+        Column(modifier.fillMaxWidth().overlaySurface(look.dark, SpaceShapes.card, Color(SpacePalette.ELECTRIC).copy(alpha = 0.35f))
+            .testTag(SpaceTags.SPOTLIGHT)
+            // taps on the panel stay in it (the scrim around it closes Spotlight)
+            .clickable(remember { MutableInteractionSource() }, indication = null) { }
+            .semantics { contentDescription = "Spotlight" }) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                SearchGlyph(look.accent, 22.dp)
+                Spacer(Modifier.width(12.dp))
+                Box(Modifier.weight(1f).padding(vertical = 14.dp)) {
+                    if (composer.query.isEmpty()) Text("Search apps, actions, settings, chats\u2026", maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.bodyText(look.sub))
+                    BasicTextField(composer.query, { composer.query = it },
+                        singleLine = true, textStyle = SpaceType.bodyText(look.ink),
+                        cursorBrush = SolidColor(Color(SpacePalette.ELECTRIC)),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { top?.let(onRow) }),
+                        modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(SpaceTags.SPOTLIGHT_FIELD).semantics { contentDescription = "Spotlight search" })
                 }
-                items(s.rows, key = { s.group.name + "|" + it.id }) { r -> SpotRow(r, top = r == top) { onRow(r) } }
+                if (composer.query.isNotEmpty()) Box(Modifier.size(40.dp).clip(CircleShape).clickable { composer.query = "" }
+                    .semantics { contentDescription = "Clear the search"; role = Role.Button }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Close, contentDescription = null, tint = look.sub, modifier = Modifier.size(18.dp))
+                }
             }
+            Box(Modifier.fillMaxWidth().padding(horizontal = 18.dp).height(1.dp).background(look.hair))
+            LazyColumn(Modifier.fillMaxWidth().heightIn(max = maxListHeight), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) {
+                for (s in sections) {
+                    item(key = "h:" + s.group.name) {
+                        Text(s.group.title.uppercase(), modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 4.dp).semantics { heading() },
+                            style = SpaceType.body(SpaceTypeScale.CAPTION.sp, look.sub, FontWeight.Medium).copy(letterSpacing = 0.12.em))
+                    }
+                    items(s.rows, key = { s.group.name + "|" + it.id }) { r -> SpotRow(r, top = r == top, ink = look.ink, sub = look.sub) { onRow(r) } }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
         }
-        Spacer(Modifier.height(8.dp))
     }
 }
 

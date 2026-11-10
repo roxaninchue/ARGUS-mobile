@@ -36,6 +36,13 @@ object SpacePalette {
     const val CARD_SOLID_DARK = 0xF20B0F1AL
     /** Menus and pop-ups: a step above the solid card, practically opaque, so a menu reads over any card. */
     const val MENU_DARK = 0xFA10141FL
+    /**
+     * Overlays that open over the chat (Spotlight, the views sheet, floating windows): the solid card's blue-black at
+     * full opacity, so no bubble under them ever reads through a row title. Light overlays are white.
+     */
+    const val OVERLAY_DARK = 0xFF0B0F1AL
+    /** The dim behind an overlay: the same 55 % black as [SCRIM_DARK], in both themes. */
+    const val OVERLAY_SCRIM = SCRIM_DARK
 
     // ---- light (the light ARGUS variant; the space view stays at the top as a band)
     const val GROUND_LIGHT = 0xFFF4F6FBL
@@ -43,6 +50,7 @@ object SpacePalette {
     /** Light mode: the light card is already opaque, so the solid card and the menu are white too (the hairline edges them). */
     const val CARD_SOLID_LIGHT = CARD_LIGHT
     const val MENU_LIGHT = 0xFFFFFFFFL
+    const val OVERLAY_LIGHT = 0xFFFFFFFFL
     const val TILE_LIGHT = 0xFFEDF1F8L
     const val HAIR_LIGHT = 0x1A0A1020L
     const val TRACK_LIGHT = 0xFFE4E9F3L

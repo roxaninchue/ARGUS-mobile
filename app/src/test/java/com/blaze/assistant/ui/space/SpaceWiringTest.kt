@@ -27,6 +27,22 @@ class SpaceWiringTest {
     private val S = "com.blaze.assistant.ui.space."
     private val allMain by lazy { root.walkTopDown().filter { it.isFile && it.extension == "kt" }.associate { it.name to it.readText() } }
 
+
+    @Test fun overlaysOverTheChatAreOpaque() {
+        // Finn 2026-11-10: Spotlight over the chat let bubbles read through its rows, and its rows took the app's ink
+        // (near black on the forced-dark card). Every overlay now sits on the shared opaque surface with the shared scrim.
+        assertEquals(0xFFL, SpacePalette.OVERLAY_DARK ushr 24)
+        assertEquals(0xFFL, SpacePalette.OVERLAY_LIGHT ushr 24)
+        val spot = src("ui/space/SpaceSpotlight.kt")
+        assertTrue("Spotlight is on the overlay surface", ".overlaySurface(" in spot && "ProvideOverlayInk(" in spot && "SpaceScrim(" in spot)
+        assertTrue("rows get the panel's ink", "ink = look.ink, sub = look.sub" in spot)
+        assertTrue("the hint ellipsizes", "chats\\u2026\", maxLines = 1, overflow = TextOverflow.Ellipsis" in spot)
+        assertTrue("one overlay motion", "MotionTokens.overlayIn(" in spot && "MotionTokens.overlayOut(" in spot)
+        val views = src("ui/Shell.kt").substringAfter("fun ViewsSheet(").substringBefore("\n}\n")
+        assertTrue("the views sheet is opaque", ".overlaySurface(" in views && "GlassTokens.bg.copy(alpha" !in views)
+        val window = src("ui/GlassFloat.kt")
+        assertTrue("floating windows are opaque", "SpaceOverlay.surface(c.dark)" in window && "Color.White.copy(alpha = 0.80f)" !in window)
+    }
     private fun after(text: String, marker: String, len: Int = 1_600): String {
         val i = text.indexOf(marker)
         assertTrue("'$marker' not found", i >= 0)

@@ -277,14 +277,14 @@ fun GlassSheet(modifier: Modifier = Modifier, content: @Composable ColumnScope.(
 fun GlassViewer(title: String, onDismiss: () -> Unit, subtitle: String = "", content: @Composable BoxScope.() -> Unit) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         val c = LocalBlaze.current
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.62f)).padding(horizontal = 10.dp, vertical = 28.dp)) {
+        Box(Modifier.fillMaxSize().background(com.blaze.assistant.ui.space.SpaceOverlay.scrim).padding(horizontal = 10.dp, vertical = 28.dp)) {
             Column(Modifier.fillMaxSize().appearIn(true, riseDp = 18f).glass(RoundedCornerShape(28.dp), GlassIntensity.High)
-                .background(GlassTokens.bg.copy(alpha = if (c.dark) 0.55f else 0f))) {
+                .background(com.blaze.assistant.ui.space.SpaceOverlay.surface(c.dark))) {
                 Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.ink))
-                        if (subtitle.isNotBlank()) Text(subtitle, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 11.5.sp, color = c.sub))
+                        if (subtitle.isNotBlank()) Text(subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 11.5.sp, color = c.sub))
                     }
                     GlassIconButton(Icons.Rounded.Close, "Close", size = 40.dp, onClick = onDismiss)
                 }

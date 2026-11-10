@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import com.blaze.assistant.ui.space.SpaceOverlay
 
 /**
  * v0.31.1 floating glass window: a centred card-like glass window over a dimmed (and, on Android 12+, blurred) scrim,
@@ -70,7 +71,7 @@ fun GlassFloatingWindow(title: String, onDismiss: () -> Unit, subtitle: String =
         val view = LocalView.current
         LaunchedEffect(Unit) {
             (view.parent as? DialogWindowProvider)?.window?.let { w ->
-                w.setDimAmount(if (c.dark) 0.55f else 0.35f)
+                w.setDimAmount(SpaceOverlay.scrimAlpha)   // the shared overlay dim, in both themes
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && GlassTokens.blurSupported(view.context)) try {
                     w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                     w.attributes = w.attributes.apply { blurBehindRadius = 36 }
@@ -98,8 +99,7 @@ fun GlassFloatingWindow(title: String, onDismiss: () -> Unit, subtitle: String =
                     scaleX = s; scaleY = s
                 }
                 .glass(shape, GlassIntensity.High)
-                .background(GlassTokens.bg.copy(alpha = if (c.dark) 0.72f else 0f), shape)
-                .background(if (c.dark) Color.Transparent else Color.White.copy(alpha = 0.80f), shape)
+                .background(SpaceOverlay.surface(c.dark), shape)   // opaque: nothing under the window reads through its text
                 .pointerInput(Unit) { detectTapGestures { } }   // taps inside the window never reach the scrim
             ) {
                 Column(Modifier.fillMaxWidth().draggable(rememberDraggableState { delta -> dragY = (dragY + delta).coerceAtLeast(0f) },
@@ -114,7 +114,7 @@ fun GlassFloatingWindow(title: String, onDismiss: () -> Unit, subtitle: String =
                         Column(Modifier.weight(1f)) {
                             Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.ink))
-                            if (subtitle.isNotBlank()) Text(subtitle, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 11.5.sp, color = c.sub))
+                            if (subtitle.isNotBlank()) Text(subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 11.5.sp, color = c.sub))
                         }
                         GlassIconButton(Icons.Rounded.Close, "Close", size = 40.dp, onClick = onDismiss)
                     }

@@ -96,6 +96,7 @@ import com.blaze.assistant.agent.ChatMeta
 import com.blaze.assistant.agent.Mood
 import com.blaze.assistant.agent.Project
 import kotlinx.coroutines.delay
+import com.blaze.assistant.ui.space.overlaySurface
 
 /*
  * Blaze 0.12 shell: a calm, messaging-app layout (Desktop 1.0 redesign, part A).
@@ -312,14 +313,15 @@ fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismi
     val focus = remember { FocusRequester() }
     if (autoFocus) LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     // v0.24.8: a rounded sheet with a pill search field and rounded rows (no square top rule, no row numbers).
-    Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp), GlassIntensity.High, shadow = false)
-        .background(GlassTokens.bg.copy(alpha = if (c.dark) 0.6f else 0f)).padding(top = 10.dp)) {
+    // On the shared opaque overlay surface: the glass let the chat above read through the view names.
+    Column(Modifier.fillMaxWidth().overlaySurface(c.dark, RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp), com.blaze.assistant.ui.space.spaceLook().hair)
+        .padding(top = 10.dp)) {
         Row(Modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(BlazeShapes.pill).background(c.field).border(1.dp, c.fieldLine, BlazeShapes.pill)
             .padding(start = 16.dp, end = 6.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             SearchGlyph(c.sub, 14.dp)
             Spacer(Modifier.width(10.dp))
             Box(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                if (q.isEmpty()) Text("Search views", style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.weak))
+                if (q.isEmpty()) Text("Search views", maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub))
                 BasicTextField(q, { q = it }, singleLine = true, cursorBrush = SolidColor(c.accent),
                     textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
@@ -337,7 +339,7 @@ fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismi
                     Box(Modifier.size(7.dp).clip(CircleShape).background(c.accent))
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(v.name, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
+                        Text(v.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
                         Text(v.desc, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                     }
                     badges[v.id]?.takeIf { it.isNotBlank() }?.let { Label(it, color = c.accent, size = 9.sp) }

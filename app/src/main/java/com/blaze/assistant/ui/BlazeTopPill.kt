@@ -96,14 +96,14 @@ fun BlazeTopPill(label: String, mood: Mood = Mood.IDLE, onClick: () -> Unit, mod
 @Composable
 fun BlazeTopOverlay(open: Boolean, current: String, options: List<BlazeTopPillModel.Option>, onPick: (String) -> Unit, onDismiss: () -> Unit) {
     val c = LocalBlaze.current
-    AnimatedVisibility(open, enter = MotionTokens.enterUp(), exit = MotionTokens.fadeAway()) {
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f))
+    AnimatedVisibility(open, enter = MotionTokens.overlayIn(fromTop = true), exit = MotionTokens.overlayOut(fromTop = true)) {
+        Box(Modifier.fillMaxSize().background(com.blaze.assistant.ui.space.SpaceOverlay.scrim)
             .clickable(remember { MutableInteractionSource() }, null, onClick = onDismiss)
             .semantics { contentDescription = "Close views" }) {
             Column(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 104.dp, start = 24.dp, end = 24.dp)
                 .widthIn(max = 360.dp).fillMaxWidth()
                 .glass(RoundedCornerShape(24.dp), GlassIntensity.High, shadow = false)
-                .background(GlassTokens.bg.copy(alpha = if (c.dark) 0.55f else 0f))
+                .background(com.blaze.assistant.ui.space.SpaceOverlay.surface(c.dark))
                 .clickable(remember { MutableInteractionSource() }, null) { }
                 .padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 options.forEach { o ->
