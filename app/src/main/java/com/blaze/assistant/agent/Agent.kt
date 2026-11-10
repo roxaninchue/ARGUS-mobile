@@ -3502,6 +3502,7 @@ When you finish, say what you did in one short sentence.
                 var promiseNudged = false   // 0.49.0 (RC5 a): one re-ask when a reply says it is doing something with no tool behind it
                 var emptyNudged = false
                 var echoNudged = false
+                var ledgerAsks = 0   // owed-reply ledger: one follow-up ask per turn (ReplyLedger)
                 var leakNudged = false
                 var credGuarded = false   // 0.45.19 CredAsk: one swap per turn
                 var refusalNudged = false
@@ -4199,6 +4200,24 @@ When you finish, say what you did in one short sentence.
                             throw LlmClient.LlmException(EmptyReply.FAILED, EmptyReply.CODE)
                         }
                     }
+                    // Owed-reply ledger (unreleased after 0.52.3): every user message of the turn gets an answer. A marked reply that
+                    // leaves one out gets ONE short follow-up call (no tools, no loop step); its answer is appended as its own bubble.
+                    // If that call fails or comes back empty, the reply goes out as it was.
+                    if ((calls == null || calls.length() == 0) && !lite && !routine && agentId == null) try {
+                        val turnIds = focus.filter { historyMark.containsKey(it) }.sorted()
+                        val owed = ReplyLedger.uncovered(turnIds, ReplyParts.split(textOut, final = true).text)
+                        if (ReplyLedger.shouldAsk(owed, ledgerAsks)) {
+                            ledgerAsks++
+                            CallState.current().errors.add("reply left ${owed.size} message(s) unanswered; asked once")
+                            val req2 = JSONArray(req.toString())
+                                .put(JSONObject().put("role", "assistant").put("content", textOut))
+                                .put(JSONObject().put("role", "user").put("content", ReplyLedger.nudge(owed)))
+                            val more = kotlinx.coroutines.withTimeoutOrNull(ReplyLedger.TIMEOUT_MS) { LlmClient.complete(req2, null, null, null, LlmClient.Lane.STEPS) }
+                                ?.let { o -> (o.opt("content") as? String).orEmpty() }
+                                ?.let { ReplyLedger.accept(ReplyParts.split(it, final = true).text, owed) }
+                            if (more != null) { textOut = ReplyLedger.merge(textOut, more); reply.put("content", textOut) }
+                        }
+                    } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ReplyLedger", e) }
                     if (calls == null || calls.length() == 0) {
                         // v0.27.x: the reply only describes what the design tool really produced (a flat diagram is not "3D").
                         // v0.33.3: "Here's your app list" always comes with the list (the tappable app card).
