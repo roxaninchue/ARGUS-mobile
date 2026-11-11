@@ -69,7 +69,9 @@ object ActionClasses {
             "start_agent", "spawn_agent", "delegate", "orchestrate", "message_agent", "cancel_agent", "create_specialist", "post_update",
             "skill_manage", "write_skill", "save_workflow", "run_skill", "watch",
             "file_write", "file_edit", "export_file", "download_file", "run_code", "job_input", "preview_server", "terminal_stop",
-            "blaze_command")
+            "blaze_command",
+            // P1-TM-05 job board (team/JobTools.kt): local board entries, the job itself is classed when it runs
+            "add_job", "done_job", "update_job", "retry_job", "agent_delegate", "create_task", "update_task")
         // --- other apps / services where the change stays the user's own (allowed when only the user is affected) ---
         c(WRITE_REMOTE, "add_calendar_event", "gcal_create", "move_event", "add_contact", "edit_contact",
             "github_create_issue", "github_create_repo", "notion_add_page", "spotify_play", "spotify_control",
