@@ -54,7 +54,7 @@ The final cascade in `app.css` is what ships: base v2 tokens (line 208) overridd
 | `bg` | `--bg` | `#0B0B0D` | `#EEF0F4` | screen ground |
 | `ink` | `--ink` | `#F2F2F4` | `#111114` | primary text, primary fills (`.btn.p`, user bubble, send) |
 | `onInk` | (`--bg` on ink) | `#0B0B0D` | `#FFFFFF` | text/icons on ink fills |
-| `mute` | `--mute` | `#9B9BA3` | `#7C7C84` | secondary text, previews |
+| `mute` | `--mute` | `#9B9BA3` | `#64646C` (AT `#7C7C84` fails AA, see §5.2) | secondary text, previews |
 | `dim` | `--dim` | `#6B6B73` | `#A2A2AA` | timestamps, placeholders, meta |
 | `soft` | `--soft` | `white 7 %` | `black 4.5 %` | pressed rows, fields, chips (flat) |
 | `soft2` | `--soft2` | `#24242A` | `#E8E8EC` | back buttons on full pages |
@@ -68,10 +68,10 @@ The final cascade in `app.css` is what ships: base v2 tokens (line 208) overridd
 | `chrome` | `--chrome` | `rgba(14,14,18,.58)` | `rgba(255,255,255,.60)` | frosted top bar, composer, chips, toast |
 | `sheet` | `--sheet` | `rgba(22,22,27,.93)` | `rgba(250,250,252,.94)` | sheets, popovers, notification pop-up |
 | `scrim` | `.scrim` | `black 35 %` | `black 35 %` | under sheets |
-| `danger` | `--od` | `#FF5A5F` | `#E5484D` | overdue, failed, delete, red dot |
-| `success` | `--okc` | `#3ECF8E` | `#16A36A` | working/live dot, done ticks |
+| `danger` | `--od` | `#FF5A5F` (6.4:1) | `#E5484D` fill · text `#C4282E` (AA 5.0:1) | overdue, failed, delete, red dot |
+| `success` | `--okc` | `#3ECF8E` | `#16A36A` fill/dots · text `#0E7A4E` (AA 4.7:1) | working/live dot, done ticks |
 | `unread` | `--blue` | `#3B82F6` | `#2F7BFF` | unread dot only |
-| `waiting` | `--warn` (`.mgr-risk`) | `#E0A020` | `#B97F0A` (darkened for AA) | "Waiting for your OK", risk |
+| `waiting` | `--warn` (`.mgr-risk`) | `#E0A020` | `#E0A020` fill · text `#8A5D00` (AA) | "Waiting for your OK", risk |
 | `manager` | `.mbadge` | `#D4A72C` @22 % bg / text | same | Manager badge, Manager row tint 7 % |
 | `brandCobalt` | AM BRAND | `#3466FF` (glow), text tint `#6A8FFF` | `#0D28FF` | **ARGUS-only**: Manager orb glow, focus ring, wordmark, onboarding primary gradient |
 
@@ -966,7 +966,7 @@ Once messages exist it's AM's chat (rich replies, droplet stream, follow-up chip
 ### 5.2 Accessibility
 | Area | Rule |
 |---|---|
-| Contrast | Every text pair ≥ 4.5:1 (body) / 3:1 (≥ 18 sp bold, icons). Verified tokens: ink on bg 17:1 dark, 16:1 light; mute on bg 7.0:1 dark / 4.6:1 light (light `--mute #7C7C84` on `#EEF0F4` = **4.1:1 → darken to `#6E6E76`** **[D]**); dim is for non-essential meta only (timestamps also exposed to TalkBack). Danger/success text uses the AA variants listed in §2.1. Extend AM `ContrastTest` to all three grounds and glass levels. |
+| Contrast | Every text pair ≥ 4.5:1 (body) / 3:1 (≥ 18 sp bold, icons). Verified tokens: ink on bg 17.6:1 dark, 16.5:1 light; mute on bg 7.1:1 dark; light `--mute #7C7C84` on `#EEF0F4` is only **3.6:1 → darken to `#64646C` (5.1:1)** **[D]**; light danger/success/waiting *text* use the darker AA variants in §2.1 (AT's light values 3.4 / 2.8 / 3.0:1 stay for fills and dots only); dim is for non-essential meta only (timestamps also exposed to TalkBack). Danger/success text uses the AA variants listed in §2.1. Extend AM `ContrastTest` to all three grounds and glass levels. |
 | Colour independence | state is always icon + word + colour (● Working, ⚑ overdue text, 🛡 approval); bot identity also by name + face shape, never colour alone. |
 | Touch targets | ≥ 48 dp for everything (38 dp visuals get 48 dp hit areas; 21 dp checkboxes get 48 dp rows). Min 8 dp between targets. |
 | TalkBack | semantics merged per row: "Ledger, Money lead, 1 overdue: Pay ZESCO bill, 9:12, unread". Orbs are decorative (`contentDescription = null`) inside rows. Live regions: ActivityLine is `liveRegion = Polite`, throttled to one announcement per step; approvals `Assertive`. Custom actions on rows: Pin, Mute, Call, Open profile. WorkChip announces "Worked for 2 minutes 10 seconds, 7 steps, double-tap to expand". |
@@ -1034,7 +1034,7 @@ Once messages exist it's AM's chat (rich replies, droplet stream, follow-up chip
 4. **Stage** (AM chat playground) — keep as a power-user "Edit stage" in Chat mode, or retire?
 5. **QS tile for Life logs** — useful, but a mic-recording toggle in QS needs a privacy review.
 6. **BH artwork**: not MIT, not used; confirm the orb-only avatar decision with the owner.
-7. Light-mode `--mute` darkened to `#6E6E76` for AA (deviation from AT CSS).
+7. Light-mode `--mute` darkened to `#64646C` and AA text variants for danger/success/waiting (deviation from AT CSS, measured: AT light mute 3.6:1, danger 3.4:1, success 2.8:1 on `#EEF0F4`).
 
 ---
 *Changelog:* 2026-11-11 v1 — design system, IA + feature map, 13 screen specs, a11y/one-hand, creative ideas, build notes (Specialist 4).
