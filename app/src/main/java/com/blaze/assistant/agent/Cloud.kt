@@ -92,6 +92,14 @@ object Cloud {
     fun tag(body: JSONObject, task: String): JSONObject = body.put("model", MODEL).put("blaze_task", task)
 
     /**
+     * P3-AG-06: a bot's ModelPolicy route on top of [tag]. null = Automatic: the body is left exactly as it was (the
+     * gateway default is unchanged). Otherwise the lane (`blaze_task`), the depth (`blaze_family`, as the 0.52 composer
+     * chip sent it) and the zero-retention flag (`blaze_zero_retention`; the gateway strips every blaze_* field before a
+     * provider sees it). A Gemini own-key route never reaches here: that call goes straight to Google.
+     */
+    fun route(body: JSONObject, r: com.blaze.assistant.team.ModelPolicies.Route?): JSONObject = com.blaze.assistant.team.ModelPolicies.applyTo(body, r)
+
+    /**
      * Worth a quiet retry: no answer (network, timeout: code 0), busy (429 other than the daily allowance),
      * the gateway's side (5xx), or a model that went away / was refused (404, "model not found"): the
      * gateway routes to its task lineup again on the next try.

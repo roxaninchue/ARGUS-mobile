@@ -37,7 +37,7 @@ P0 is landing on `main`, P1 on `overhaul/p1*`, P2 on `overhaul/p2*` at the same 
 |---|---|---|
 | P3-AG-01 | done (pure + store + Mind wiring; prompt use waits on P0 TeamHooks) | `overhaul/p3-ag-01` |
 | P3-AG-03 | done (Soul.kt parse/render/locked/history/undo/regenerate/reset + PromptParts.forBot order) | `overhaul/p3-ag-03` |
-| P3-AG-06 | wave 1 | |
+| P3-AG-06 | done (pure policy + Cloud.route + ThinkBudget/KeyRing seams; call-site wiring waits on P0 TeamHooks/LiveModels) | `overhaul/p3-ag-06` |
 | P3-AG-02 | wave 1 | |
 | P3-AG-04 | wave 1 | |
 | P3-AG-05 | wave 1 | |
@@ -58,3 +58,4 @@ P0 is landing on `main`, P1 on `overhaul/p1*`, P2 on `overhaul/p2*` at the same 
 | BlazeDbTest (unchanged, Desktop schema) | 12 | green |
 | SoulParseTest (P3-AG-03) | 13 | green |
 | PromptOrderTest (P3-AG-03) | 4 | green |
+| ModelPolicyTest (P3-AG-06) | 7 | green |

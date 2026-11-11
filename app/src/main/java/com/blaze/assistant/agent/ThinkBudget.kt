@@ -31,6 +31,10 @@ object ThinkBudget {
         }
     }
 
+    /** P3-AG-06: this classifier's level as a ModelPolicy turn input, and a policy route's level back. */
+    fun toPolicy(l: Level): com.blaze.assistant.team.ModelPolicies.Think = com.blaze.assistant.team.ModelPolicies.Think.valueOf(l.name)
+    fun of(t: com.blaze.assistant.team.ModelPolicies.Think): Level = Level.valueOf(t.name)
+
     /** The quick flag LlmClient reads: think briefly, use the fast lineup. */
     fun quick(text: String, attachments: Int = 0): Boolean =
         if (try { Settings.bool("adaptive_think", true) } catch (_: Throwable) { true }) level(text, attachments) == Level.QUICK
