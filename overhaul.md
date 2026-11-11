@@ -30,7 +30,7 @@ Early look (not final, can change): Team, Agent chat, Life, Desk.
 ## Status
 - 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main (0.52.3 / vc 190 + three unreleased rounds), a-team@main (v2.18), bot-hq@HEAD. Specialists 1–5 landed all five slice docs by 20:56 CAT.
 - 2026-11-11: **Slice 6 done — the plan is ready.** `docs/overhaul/06-team-plan.md` reconciles the slices (30 items), lists 12 decisions for Finn (each with a recommended answer the plan already assumes), sets 11 phases with versions (0.52.4 → 1.0.0, then 1.1.0), 13 workstreams with owners, a 102-ticket backlog (~336 agent-days), and a coverage matrix that places **all 254 source features** (BH 89 · AT 72 · AM 68 · merge map 25) plus 24 new ones on a phase, a ticket and a UI location — 0 missing.
-- **Now:** P0 under way. ✓ P0-TM-01 done and merged to main (MR !40, 2026-11-11). Next: P0-AG-01 (BotEngine + LocalEngine seam).
+- **Now:** P0 under way. ✓ P0-TM-01 (MR !40, 2026-11-11) and ✓ P0-AG-01 (7f12551d, 2026-11-12) on main. Next: P0-SH-01 (ui/argus tokens).
 
 ## Handoff log
 Append one line per session: date, who, what changed, what's next.
@@ -39,6 +39,7 @@ Append one line per session: date, who, what changed, what's next.
 - 2026-11-11 · Hark (Specialist 6) · Published `docs/overhaul/06-team-plan.md` v1 (reconciliation, decisions, phases + versions, workstreams, backlog P0–P10, full coverage matrix, risks, QA plan, A-team migration, pick-up guide) and filled the Unified plan below. Next: Finn answers D1–D12; then dispatch P0 tickets 1–8 in parallel (see "Next 10 tickets").
 - 2026-11-11 · Hark · Added UI concept image (docs/overhaul/ui-concept.png), provisional.
 - 2026-11-11 · Hark · P0-TM-01 done: `team/` Models.kt (05 §9.1 + DEFAULT_RULES), TeamJson.kt (pure JSON), TeamSchema.kt (team.db v1 = 05 §9.2 DDL, 15 tables; v2 = indexes), TeamDb.kt (SQLiteOpenHelper, FKs on, newer file refused); TeamJsonTest 10/10 + TeamSchemaTest 7/7 pass on JVM, TeamDbTest (Robolectric) written, runs on "build"; nothing wired to UI (a1141b6f, merge b765db55). Next: P0-AG-01.
+- 2026-11-12 · Hark · P0-AG-01 done: `agent/engines/BotEngine.kt` (05 §5.2 contract: TurnInput, TurnEvent, EngineCaps, RowSink), `agent/engines/LocalEngine.kt` (LocalEngine on Agent.Session, ToolSubset = core + bot groups + per-tool grants, RowMapper → BH rows message/event/notice/tool-call with seq/updatedSeq), `agent/TeamHooks.kt` (pure seam: identity block, tool subset/refuse, row sink, end), `TeamTools.kt` + `engines/AgentSessionDriver.kt` (Android glue); Agent.kt +7 lines (identity system msg, tool filter, runTool refuse/call/result, add() → row sink, endTurn, teamSession). TeamHooksTest 8/8 + LocalEngineTest 10/10 (fake LLM loop, Agent.kt ≤ 20-line check) + TeamJsonTest 10/10 pass on JVM (kotlinc 2.0.21, JDK 17); Gradle/Robolectric suites not run (no build). Nothing wired to UI. MR !45 closed, landed as 7f12551d (token can't press Merge). Next: P0-SH-01.
 
 ## Unified plan
 Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
@@ -108,7 +109,7 @@ Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). 
 | # | Ticket | Owner |
 |---|---|---|
 | 1 | ✓ P0-TM-01 `team/` + team.db schema + pure models — done, merged to main (MR !40, b765db55) | TM |
-| 2 | P0-AG-01 `BotEngine` + `LocalEngine` seam (Agent.kt +≤20 lines) | AG |
+| 2 | ✓ P0-AG-01 `BotEngine` + `LocalEngine` seam (Agent.kt +≤20 lines) — done, on main (7f12551d; Agent.kt +7) | AG |
 | 3 | P0-SH-01 `ui/argus` A-team tokens behind `argus_look` | SH |
 | 4 | P0-SH-02 Lucide generator + `BotOrb` + Manager sphere | SH |
 | 5 | P0-API-01 `blaze_context:"full"` + `LiveModels` | API |
