@@ -22,6 +22,11 @@ One unified ARGUS app (this repo, `argus-mobile`, Kotlin + Compose) that contain
 | 5 | Agent ecosystem architecture (life-domain specialists, Manager, soul/memory, bot-to-bot, computers, models) | [`docs/overhaul/05-agent-ecosystem.md`](docs/overhaul/05-agent-ecosystem.md) | done (14 life agents, E0–E8 order, 1a21f133) |
 | 6 | Integrated team plan: phases, workstreams, owners, milestones, risks, tests | [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md) | done (30 reconciliations, 12 decisions, 11 phases, 102 tickets, 278-row coverage matrix) |
 
+## UI concept
+Early look (not final, can change): Team, Agent chat, Life, Desk.
+
+![ARGUS UI concept](docs/overhaul/ui-concept.png)
+
 ## Status
 - 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main (0.52.3 / vc 190 + three unreleased rounds), a-team@main (v2.18), bot-hq@HEAD. Specialists 1–5 landed all five slice docs by 20:56 CAT.
 - 2026-11-11: **Slice 6 done — the plan is ready.** `docs/overhaul/06-team-plan.md` reconciles the slices (30 items), lists 12 decisions for Finn (each with a recommended answer the plan already assumes), sets 11 phases with versions (0.52.4 → 1.0.0, then 1.1.0), 13 workstreams with owners, a 102-ticket backlog (~336 agent-days), and a coverage matrix that places **all 254 source features** (BH 89 · AT 72 · AM 68 · merge map 25) plus 24 new ones on a phase, a ticket and a UI location — 0 missing.
@@ -110,3 +115,4 @@ Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). 
 | 8 | P0-IL-02 repo hygiene, notices, ask for a-team LICENSE | IL |
 | 9 | P0-IL-03 do-not-port register | IL |
 | 10 | P0-IL-01 release 0.52.4 (when the owner says build) | IL |
+- 2026-11-11 · Hark · Added UI concept image (docs/overhaul/ui-concept.png), provisional.
