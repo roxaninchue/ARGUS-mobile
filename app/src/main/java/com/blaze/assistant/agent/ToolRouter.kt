@@ -31,7 +31,9 @@ object ToolRouter {
         // 0.46.0 Blaze Stage: stage_show is always on hand, so a timer / music / quiz card is preferred over opening a view.
         "stage_show",
         // 0.46.6 Secure form: never ask for a key, password, card or code in chat.
-        "request_secret"
+        "request_secret",
+        // P4-CN-03: the user's argus-connect apps (lists them and loads one app's tools); the app__ tools are the "connectors" group.
+        com.blaze.assistant.connect.ConnectTools.LIST
     )
 
     data class Group(val id: String, val about: String, val match: Regex, val names: (String) -> Boolean)
@@ -124,6 +126,10 @@ object ToolRouter {
         Group("stage", "the chat Stage: update / move / close cards (timer, music, video, quiz, flashcards, plan), hide or dock the chat, top bar, reply bar, layouts",
             r("""\b(stage|hero|widgets?|mini ?player|timer|pomodoro|countdown|stopwatch|focus (?:mode|session|timer)|study (?:for )?\d+|\d+ ?(?:min|mins|minutes|hours?) (?:of )?(?:study|focus|work)|pause (?:it|the timer|the music)|make (?:it|the \w+) (?:big|bigger|small|smaller)|hide (?:the )?(?:chat|top bar|reply bar)|show (?:the )?(?:chat|top bar)|reset (?:the )?layout|move (?:the )?\w+ (?:to|up|down))\b"""),
             { it.startsWith("stage_") }),
+        // P4-CN-03: argus-connect apps (app__<app>_<tool>), capped at ConnectTools.CAP schemas; also on when the request names a connected app.
+        Group("connectors", "the user's connected apps through argus-connect (Gmail, Calendar, GitHub, Notion, Slack, Drive and more)",
+            r("""\b(connectors?|connected apps?|integrations?|gmail|e-?mail|calendar|drive|docs|sheets|github|gitlab|notion|slack|discord|trello|linear|jira|todoist|dropbox|outlook|onedrive|teams|airtable|asana|hubspot|stripe|shopify|figma)\b"""),
+            { it.startsWith(com.blaze.assistant.connect.ConnectTools.PREFIX) }),
         Group("more", "everything else: watchers, triggers, goals, standing permissions, skill packs and other rarely used tools",
             Regex("(?!)"), { false }),
         Group("extras", "learned skills, helpers working in parallel, screen memory",
@@ -141,7 +147,11 @@ object ToolRouter {
     /** v0.45.0 (#19): the groups that hold [names]. */
     fun groupsFor(names: Collection<String>): Set<String> = names.mapNotNull { groupOf(it) }.toSet()
 
-    fun guess(text: String): Set<String> = groups.filter { it.match.containsMatchIn(text) }.map { it.id }.toSet()
+    fun guess(text: String): Set<String> {
+        com.blaze.assistant.connect.ConnectTools.lastText = text   // P4-CN-03: apps the request names go first in the connector cap
+        val g = groups.filter { it.match.containsMatchIn(text) }.map { it.id }.toSet()
+        return if ("connectors" !in g && com.blaze.assistant.connect.ConnectTools.cued(text)) g + "connectors" else g
+    }
 
     /** v0.45.0 (#20): the action groups a request in any language gets when the English cues found nothing. */
     val CORE_ACTION = setOf("device", "messages", "screen")

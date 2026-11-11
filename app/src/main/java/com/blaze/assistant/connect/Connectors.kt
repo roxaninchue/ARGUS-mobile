@@ -287,9 +287,9 @@ object Connectors {
 
     private val owner: Map<String, String> = defs.flatMap { (id, l) -> l.map { it.getJSONObject("function").getString("name") to id } }.toMap()
 
-    fun handles(name: String) = name in owner || name == "share_to_app"
+    fun handles(name: String) = name in owner || name == "share_to_app" || ConnectTools.handles(name)   // P4-CN-03: argus-connect app__ tools
 
-    fun tools(): List<JSONObject> = defs.filterKeys { connected(it) }.values.flatten()
+    fun tools(): List<JSONObject> = defs.filterKeys { connected(it) }.values.flatten() + ConnectTools.tools()   // P4-CN-03
         .filter { Classroom.enabled || it.getJSONObject("function").getString("name") !in Classroom.toolNames } +
         fn("share_to_app", "Share text (a link, note or message draft) into another app via Android's share sheet, e.g. WhatsApp, Telegram, Gmail, Notes.",
             JSONObject().put("app", s("App name")).put("text", s("What to share")), listOf("app", "text"))
@@ -297,10 +297,12 @@ object Connectors {
     /** Short summary for the system prompt. */
     fun promptBlock(): String {
         val on = all.filter { connected(it.id) }
-        return if (on.isEmpty()) "" else "\nConnected accounts you can use with tools: " + on.joinToString(", ") { "${it.name} (${it.blurb})" } + ".\n"
+        return (if (on.isEmpty()) "" else "\nConnected accounts you can use with tools: " + on.joinToString(", ") { "${it.name} (${it.blurb})" } + ".\n") +
+            ConnectTools.promptLine()   // P4-CN-03
     }
 
     fun describe(name: String): String = when {
+        ConnectTools.handles(name) -> ConnectTools.describe(name)
         name.startsWith("gmail_") -> "Checking Gmail"
         name.startsWith("gcal_") -> "Checking Google Calendar"
         name.startsWith("drive_") -> "Searching Drive"
@@ -317,6 +319,7 @@ object Connectors {
 
     suspend fun run(ctx: Context, name: String, a: JSONObject): String = withContext(Dispatchers.IO) {
         if (name == "share_to_app") return@withContext share(ctx, a.optString("app"), a.optString("text"))
+        if (ConnectTools.handles(name)) return@withContext ConnectTools.run(name, a)   // P4-CN-03
         val id = owner[name] ?: return@withContext "Unknown tool"
         val tok = access(id) ?: return@withContext "${byId(id).name} isn't connected (or the sign-in expired). Ask the user to reconnect in Settings → Connections."
         try {

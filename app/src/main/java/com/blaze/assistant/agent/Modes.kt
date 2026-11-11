@@ -115,6 +115,8 @@ object Modes {
     fun planBlock(name: String, args: JSONObject): String {
         // MCP tools: only those that declare readOnlyHint (Desktop's ReadOnly rule).
         if (com.blaze.assistant.connect.Mcp.handles(name)) return if (com.blaze.assistant.connect.Mcp.readOnly(name)) "" else "$name can change things"
+        // P4-CN-03: argus-connect tools: only the catalog's read-only ones (and the app list).
+        if (com.blaze.assistant.connect.ConnectTools.handles(name)) return if (com.blaze.assistant.connect.ConnectTools.readOnly(name)) "" else "$name can change things"
         if (name !in planTools) return "$name can change things"
         actionReadOnly[name]?.let { ok ->
             val a = args.optString("action").ifBlank { if (name == "gallery") "list" else "" }
@@ -139,7 +141,8 @@ object Modes {
             for (i in 0 until all.length()) {
                 val t = all.getJSONObject(i)
                 val n = t.optJSONObject("function")?.optString("name").orEmpty()
-                if (n in planTools || (com.blaze.assistant.connect.Mcp.handles(n) && com.blaze.assistant.connect.Mcp.readOnly(n))) put(t)
+                if (n in planTools || (com.blaze.assistant.connect.Mcp.handles(n) && com.blaze.assistant.connect.Mcp.readOnly(n)) ||
+                    (com.blaze.assistant.connect.ConnectTools.handles(n) && com.blaze.assistant.connect.ConnectTools.readOnly(n))) put(t)
             }
         }
     }

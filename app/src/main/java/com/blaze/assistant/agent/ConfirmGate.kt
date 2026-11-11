@@ -46,6 +46,7 @@ object ConfirmGate {
         tool in screen -> SCREEN
         tool in otherApps -> "content from ${tool.substringBefore('_').replaceFirstChar { it.uppercase() }}"
         tool.startsWith("mcp__") -> "an MCP tool's answer"
+        tool.startsWith(com.blaze.assistant.connect.ConnectTools.PREFIX) -> "an app's answer"   // P4-CN-03: argus-connect output is untrusted
         else -> null
     }
 
