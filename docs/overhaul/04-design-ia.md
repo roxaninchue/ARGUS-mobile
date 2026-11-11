@@ -575,3 +575,378 @@ Legend — **From**: AM Argus-mobile · AT A-team · BH Bot HQ · N new. **Home*
 | Language, reply language | AM | Settings → Language | — |
 | Feedback, About, licences, what's kept on this phone | AM | You → About | — |
 
+---
+
+## 4. Key screen specs
+
+Phone frame ≈ 360 × 780 dp. `○` = 38 dp glass icon button, `●` = status dot, `(◉)` = bot orb, `[ ]` = button, `▔` = frosted chrome. Bottom composer is identical on every mode unless noted:
+
+```
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+ ( + )  Tell the team…                 ( 🎙 )      ← 58 dp pill, 12 dp insets, mic ↔ send ↔ stop
+```
+
+### 4.1 Home — Team mode
+
+```
+┌──────────────────────────────────────────────┐
+│ (F)                       ○🔍   ○🔔•   ○＋    │ top bar, frosted; F = me avatar
+│                    ▂▂▂                        │ notch handle (pull → Team·Chat·Life·Desk)
+│ Finn's team                                   │ display 32/750
+│ 9 bots + Manager · 4 jobs today · 1 overdue   │ sub 14.5 mute, "1 overdue" red
+│ [All] [Health] [Money] [Work] [Home] [People]→│ FilterChips, scroll
+│ ┌──────────────────────────────────────────┐ │
+│ │ ⚑  3 need you · Ledger, Atlas    Review ›│ │ NeedYouBanner (ink, glossy)
+│ └──────────────────────────────────────────┘ │
+│   (◉)        (◉)•        (◉)        (◉)       │ PinStrip lg orbs, red dot = overdue
+│   Vita      Ledger      Atlas      Coder      │
+│ (A) Manager  LEAD                    9:41    │ gold-tinted row
+│     Booked Vita's check-in for 9am. 2 ideas…  │
+│ (◉) Ledger                           9:12  • │ unread dot
+│     1 overdue · Pay ZESCO bill               │ red preview
+│ (◉◉) Trip to Cape Town           Yesterday  │ group row, stacked orbs
+│     Atlas: Flights found, need your OK        │
+│ (◉) Coder ● working                   8:02   │ green live dot on orb
+│     Worked for 6m · 23 steps                  │
+│ (?) Unassigned                                │
+│     2 jobs without a bot                      │
+│ ┌──────────────────────────────────────────┐ │
+│ │ All jobs                         11 open │ │ .alljobs
+│ └──────────────────────────────────────────┘ │
+│ [＋Add job] [🧠 Memory] [⟳ Routines]          │ ChipsRow (Team variant)
+│ ( + )  Tell the team…                 ( 🎙 ) │
+└──────────────────────────────────────────────┘
+```
+Behaviour: pull-to-refresh = sync; search icon turns the title into a search field in place (AT `_hs`); empty team → serif hero "Build your team" + three orbs + [New bot] [Demo team] + "Set up my life team" (seeds domain leads after a 3-question interview). A running cloud computer adds the CloudChip under the top bar.
+
+### 4.2 Team roster (Team → `⋯` on the title, or `/roster`)
+
+```
+┌──────────────────────────────────────────────┐
+│ ‹  Team                    [List | Graph]  ○＋ │
+│ ─────────────────────────────────────────────│
+│ (A) Manager · Lead      routes everything     │
+│ HEALTH ─────────────────────────────────────  │ section head + domain hue tick
+│ (◉) Vita          ● idle    Claude · 2 apps   │ engine + app count
+│    └ (◉) Sleep coach   ● waiting for you      │ specialist nested
+│ MONEY ──────────────────────────────────────  │
+│ (◉) Ledger        ● working  Auto · 3 apps    │
+│ WORK ───────────────────────────────────────  │
+│ (◉) Chief of Staff ● idle   Grok · Gmail…     │
+│    ├ (◉) Inbox     ● idle                     │
+│    └ (◉) Coder     ● working 🖥 live          │ computer live badge
+│ …                                             │
+│ [ ＋ Hire a specialist ]   [ ⤓ Templates ]     │
+└──────────────────────────────────────────────┘
+
+Graph view (AT Compose graph, full-bleed canvas):
+      (A) Manager
+     ╱  ┊   ┊   ╲              solid = owns job · dashed = waits on · dotted = reports to
+ (Vita)(Ledger)(CoS)(Atlas)    nodes = glass boxes with orb, name, live status dot, progress bar
+           ┊   ╱  ╲            drag to re-parent; tap edge → Connection sheet; pinch/pan
+        [job] (Inbox)(Coder) ── ─ ─ ▶ [job]
+ gtools bar: hint · legend · [Fit] [＋ Bot] [＋ Job]
+```
+
+### 4.3 Bot chat (thread)
+
+```
+┌──────────────────────────────────────────────┐
+│ ‹ (◉) Atlas                            ○⋯    │ top bar thread variant
+│       ● Working · Travel                      │ green status line
+│ ─────────────────────────────────────────────│
+│                 (◉)                           │ ThreadIntro (xl orb)
+│                Atlas                          │
+│        Travel · atlas@argus.ai                │
+│        ( ● Auto · gateway )                   │
+│ ┌ ATLAS · JOBS ────────────── 2 open ┐        │ JobCard
+│ │ ☐ Find flights LUN→CPT    Fri      │        │
+│ │ ☐ Hotel near V&A          Fri      │        │
+│ └────────────────────────────────────┘        │
+│              ┌──────────────────────────┐    │
+│              │ Find flights for Jan 5,  │    │ user bubble (ink)
+│              │ window seat, under $400  │    │
+│              └──────────────────────────┘    │
+│ ( Worked for 2m 10s · 7 steps  › )            │ WorkChip (done)
+│ Found 3 options. The best is Proflight 07:10, │ AgentText, no bubble
+│ $356, window 12A. Booking needs your OK.      │
+│ ┃ 🛡 Atlas wants to                            │ ApprovalCard (amber edge)
+│ ┃ Book Proflight PF701 · $356                 │
+│ ┃ Jan 5 07:10 LUN→CPT · seat 12A · Visa ··42  │
+│ ┃ Browser · pays money                         │
+│ ┃          [ Deny ]  [ Approve ]   ⋯           │ Approve on thumb side
+│ ┌ ● Live · Atlas's computer ─────────────┐    │ LiveScreenCard
+│ │ "Opening proflight.co.zm…"             │    │
+│ │ ┌────────────────────────────────────┐ │    │
+│ │ │          16:10 live frame          │ │    │
+│ │ └────────────────────────────────────┘ │    │
+│ │ [Watch]  [✋ Take over]  [■ Stop]       │    │
+│ └────────────────────────────────────────┘    │
+│ ◌ Checking hotels near V&A · 3 steps   1:24 ⌄ │ ActivityLine (live)
+│   ● Searching the web   "V&A hotels"          │  step list (open)
+│   ● Reading a page      booking.com           │
+│   ◌ Comparing prices                          │
+│ [＋Add job] [🧠 Memory] [⟳ Routine] [🖥 Screen]│ ChipsRow (thread)
+│   [📞 Call] [✎ Soul]                           │
+│ ( + )  Message Atlas                  ( ■ )  │ stop while working
+└──────────────────────────────────────────────┘
+```
+Rules: the thread scrolls under the frosted composer; new content auto-follows only when you're at the end (AT `atEnd`); a "↓ 2 new" pill appears otherwise. A HandoffCard appears when Atlas asks Ledger something ("Atlas → Ledger: Is $356 within the travel budget?" · ✓ "Yes, $500 left").
+
+### 4.4 Bot profile (`⋯` in thread, tap orb, long-press row → Open profile)
+
+```
+┌──────────────────────────────────────────────┐
+│ ‹                                    ○⋯       │
+│                  (◉)                          │ hero orb 120, Working ring
+│                 Atlas                         │ title2
+│        Travel · reports to Manager            │
+│   ● Computer awake · Auto (gateway) · 4 apps  │ status line (BH)
+│  [💬 Message] [📞 Call] [🖥 Watch] [⏸ Pause]   │ 4 action discs
+│ [Overview][Soul][Memory][Skills][Apps][Engine]│ scrollable tab row (seg)
+│ [Computer][Routines][Voice][Connections]      │
+│ ─────────────────────────────────────────────│
+│ OVERVIEW                                       │
+│ ┌ Live screen (thumb) ──────────────┐ Open ›   │ (BH details panel top)
+│ UPCOMING                          Manage       │
+│ ⏱ Daily fare check · Weekdays 9:00   (●━)      │ routine toggle
+│ TASKS · 2 open      LIBRARY · 5 files          │
+│ SUGGESTED                          Hide        │
+│ ⧉ Connect Google Calendar              ›      │
+│ CONVERSATION  [New conversation] [Compact]    │
+│ DANGER  [Make primary] [Delete Atlas]         │
+└──────────────────────────────────────────────┘
+```
+
+| Tab | Contents | From |
+|---|---|---|
+| Overview | live screen thumb, upcoming routines (toggles), tasks, library count, suggested (connect app), conversation actions (fresh, compact), make primary, delete (danger, confirm; Manager locked) | BH DetailsPanel + BotSettings General |
+| Soul | Name, label, about, **instructions**, effort (Low/Medium/High/Max), used as (Personal/Teammate), look (6 faces × colour), domain, reports-to; **Soul file** (SOUL.md monospace editor with Preview, Revert, history); **Personality** sliders (warmth, humour, playfulness, formality, length), language mix, boundaries | BH, AT, AM Halo Studio |
+| Memory | search, private notes (add/edit/forget), team notes visible to this bot, Holding (pinned facts, goal pin), conversation-memory meter ("62 % full — older messages summarise automatically"), Consolidate, memory files (MEMORY.md / USER.md view-edit for Hermes bots) | AT memory.js, BH, AM |
+| Skills | this bot's skills (create, edit, delete, Polish), shared skills toggles | BH, AT |
+| Apps | connectors this bot may use (on/off per app and per tool), Connect new, write actions → "asks first / always allowed" | AT connect.js, BH |
+| Engine | Automatic (default) or provider + model, depth tier, Gemini key model, subscription sign-in (opens Computer viewer on the bot's screen), Hermes status (ready/restart), fallback note | BH EngineSettings, AT, AM |
+| Computer | screen (live thumb, Open viewer, Reset screen, Suspend), Ubuntu workspace (open terminal at the bot's tmux window, disk use), cloud computer (provider, idle minutes, used minutes/cost), browser profile (tabs, Clear cookies) | BH, AT |
+| Routines | the bot's schedule + event routines + check-in times (Manager) | BH, AT |
+| Voice | voice (Ara, Eve, Leo, Luna, Rex, Sal / My voice), speed, language, Preview, Start call | BH VoiceSettings, AM |
+| Connections | **people** this bot serves (from People graph), **bots** it talks to (frequency, last handoff), groups it's in, reports-to/manages | N |
+
+### 4.5 Computer viewer / take-over
+
+```
+┌──────────────────────────────────────────────┐  black, full screen, immersive
+│ (◉) Atlas's computer · Awake        ✕        │  BH header
+│ ● Live  ⟳  ▾tabs                              │
+│ ┌──────────────────────────────────────────┐ │
+│ │                                          │ │  frame, fit-width; pinch zoom 1–4×,
+│ │       (landscape: rotate for full)       │ │  double-tap zoom to point
+│ │                                          │ │
+│ └──────────────────────────────────────────┘ │
+│ "Clicking 'Select seat'…"                    │  action line (AT)
+│ ─────────────────────────────────────────────│
+│  WATCHING                                     │
+│  [ ✋ Take over ]        [ ■ Stop bot ]        │  bottom bar, thumb zone
+│                                               │
+│  TAKEN OVER (bot paused, amber frame border) │
+│  [⌨ Keys] [⇥ Tab] [Esc] [⌫] [🖱 Right-click]  │  extra keys row (AT terminal style)
+│  touch = mouse: tap click · long-press right  │
+│  · two-finger scroll · drag select            │
+│  [ ↩ Hand back to Atlas  + note… ]            │  primary ink; note goes into thread
+└──────────────────────────────────────────────┘
+```
+Rules: frames only poll while visible (AT); Take over pauses the turn (BH interrupt) and shows an amber 2 dp border + "You're in control" chip; Hand back resumes with an optional note ("I picked 12F"); secure fields in the frame are masked when the bot is in control. Landscape supported only here and in Terminal/Media.
+
+### 4.6 People — social graph (Life → People, `/people`, Muse's home)
+
+```
+┌──────────────────────────────────────────────┐
+│ ‹  People                  [Graph | List] ○＋ │
+│ ┌──────────────────────────────────────────┐ │
+│ │          (Mum)                           │ │  graph: You at centre (avatar),
+│ │            ╲     (Tumelo)                │ │  people as photo/initial circles
+│ │   (Sara)───(F)───(Dad)                    │ │  (no glow = humans), distance =
+│ │            ╱  ┊                          │ │  closeness; ring segments = which
+│ │      (Alex)   ┊ (◉)Muse (◉)CoS            │ │  bots help with them; bots shown
+│ └──────────────────────────────────────────┘ │  small on dotted edges
+│ KEEP IN TOUCH                                 │
+│ (S) Sara · 3 weeks since you talked  [Nudge] │  Muse suggestions
+│ (M) Mum · birthday in 4 days       [Gift ›]  │
+│ GROUPS                                        │
+│ 👥 Family · 300 unread → "Catch me up"        │  Group Brain
+│ BOTS TALKING                                  │
+│ (◉)Atlas ⇄ (◉)Ledger · 4 today        ›       │  bot↔bot rooms (read-only + drop in)
+└──────────────────────────────────────────────┘
+Person sheet: avatar · how you know them · notes (memory) · key dates · channels
+(phone, WhatsApp, email) · "Bots that help": Muse (birthdays), CoS (email) ·
+[Message via …] [Remind me] [Forget person] (danger)
+```
+Data: people come from contacts (permission), memory, connectors (email/Slack), notification logs (opt-in). Everything is on-device by default; "Forget person" removes notes + edges.
+
+### 4.7 Routines & tasks (Desk → Jobs / Routines)
+
+```
+┌──────────────────────────────────────────────┐
+│ (F)   Desk                    ○🔍  ○🔔  ○＋    │
+│ [Inbox 3][Jobs][Routines][Library][Projects]→ │  seg (scroll), counts
+│ JOBS                                          │
+│ [Today 4][Upcoming][Overdue 1][Done][By bot] │
+│ ▌☐ Pay ZESCO bill        (◉)Ledger   Yesterday│  red due, 4 dp priority tick
+│ ▌☐ Send deck to Alex      (◉)CoS      Today   │
+│  ☐ Book hotel  · waiting  (◉)Atlas    Fri     │  waits-on shown
+│ ROUTINES  (Routines tab)                      │
+│ TODAY ───────── 06 ─ 09 ─ 12 ─ 15 ─ 18 ─ 21   │  day timeline, now-line
+│        ⏱Vita  ⏱Ledger digest   ⏱CoS check-in  │
+│ ⏱ Daily digest · Weekdays 9:00 · (◉)CoS (●━)  │  schedule row: toggle, ⋯ Run now
+│ ⚡ When a Gmail arrives from "bank" → Ledger   │  event routine (BH triggers)
+│ 📍 When I get to campus → silent, timetable   │  device trigger (AM Autopilot)
+│ ⏰ Alarm 06:30 · weekdays                      │  clock group
+│ 💬 Check-ins 09:00 · 16:30 (Manager)          │  proactive check-ins
+│ ( + )  "every Friday 5pm, Ledger sends…"  🎙  │  composer creates by text
+└──────────────────────────────────────────────┘
+```
+Routine editor sheet: *What* (prompt) · *Who* (bot picker) · *When* (Time / Repeat / Cron / Event: app trigger, location, battery, Wi-Fi, notification) · *Deliver* (thread / notification / silent unless something found) · *Ask first?* · [Run now] [Save].
+
+### 4.8 Library (Desk → Library)
+
+```
+┌──────────────────────────────────────────────┐
+│ [Inbox][Jobs][Routines][Library][Projects]   │
+│ 🔍 Search files                               │
+│ [All][Docs][Images][Code][Media][Workspaces] │
+│ RECENT                                        │
+│ 📄 cape-town-itinerary.md  (◉)Atlas · 2h · 4KB│  FileCard rows
+│ 🖼 logo-v3.png            (◉)Studio · 1d      │
+│ </> budget.py             (◉)Coder · /root/…  │  workspace file
+│ BY BOT    (◉)(◉)(◉)(◉)(◉)  →                 │  orb strip filters by bot
+│ BY PROJECT  ▸ Cape Town trip (6) ▸ ARGUS (14) │
+│ Gallery ›                    Downloads ›      │  AM Gallery link
+└──────────────────────────────────────────────┘
+File sheet: preview (image / HTML sandbox / text / code with highlight) ·
+Open · Share · Save to Downloads · Send to bot · Move to project · Delete
+```
+
+### 4.9 Approvals inbox (bell sheet; Desk → Inbox full page)
+
+```
+┌──────────────────────────────────────────────┐
+│ Inbox                         [Select] ✓ All  │
+│ [All 5][Approvals 3][Questions][Connect][Failed][Suggestions]
+│ ┃🛡 (◉)Atlas · 2m       Book PF701 · $356     │  pays money → amber, biometric
+│ ┃   Jan 5 · seat 12A · Visa ··42              │
+│ ┃   [Deny]                [Approve 🔒]         │
+│ ┃🛡 (◉)CoS · 10m        Send email to Alex     │
+│ ┃   "Hi Alex, quick question about seats…"    │  preview 3 lines, tap = full draft
+│ ┃   [Edit] [Deny]               [Approve]     │
+│ ? (◉)Vita · 1h  Which gym days work?          │  question
+│   [Mon/Wed/Fri] [Tue/Thu] [Reply…]            │
+│ ⧉ (◉)Muse · 3h  Needs WhatsApp to send wishes │  connect
+│   [Not now]                   [Connect]       │
+│ ✕ (◉)Coder · job failed after 3 tries   Log ›│  failure
+│ ✦ Manager suggests: automate your 7am news?   │  suggestion → routine
+│   [Mute topic]  [No]           [Yes, set up]  │
+└──────────────────────────────────────────────┘
+```
+Rules: sorted by urgency (money/irreversible first, then age). Swipe right = Approve only for low-risk kinds (send message to a known contact); money/delete/post never swipe-approve — they need the button **and** biometric (Settings). Every decision writes back into the owning thread. Bulk approve only within one bot and one kind.
+
+### 4.10 Voice mode
+
+```
+┌──────────────────────────────────────────────┐  ground darkens; orb is the UI
+│ ⌄                                 Eve · 1.0× │  collapse / voice chip
+│                                               │
+│                  (  ◉  )                      │  hero orb 200 dp, body pulses with
+│                                               │  amplitude (Talking state);
+│                  Atlas                        │  swipe orb ←/→ = switch bot
+│              Listening…                       │
+│                                               │
+│  "Find me a cheaper flight on the 6th"        │  live captions (you)
+│  Searching X and the web for fares…           │  bot captions; tool line
+│ ┌ 𝕏 3 posts · Proflight sale Jan 6 ┐          │  result cards (X search) stack
+│                                               │
+│  (◉)(◉)(◉)(◉)  ← who's on the call (group)    │
+│                                               │
+│  [ 🔇 ]      [ ⏹ End ]      [ ⌨ Type ]         │  bottom bar; End = big red disc
+│  [ ⇢ Hand to chat ]  (opens thread with summary)
+└──────────────────────────────────────────────┘
+```
+Rules: hold-to-talk or open-mic toggle; barge-in interrupts the bot; real work is handed to the same bot with the same memory/tools (BH rule) and appears in its thread; approvals spoken *and* shown, but approval needs a tap (never voice-only for money/delete). Lock-screen voice: read-only.
+
+### 4.11 Settings (avatar → You)
+
+```
+┌──────────────────────────────────────────────┐
+│ ‹                                             │
+│ Finn                                          │  display
+│ argusagent7@… · Pro                           │
+│ ┌ Plan & usage ────────── Pro · 12 days ›  ┐  │  plan card (serif italic plan name)
+│ ┌──────────────────────────────────────────┐ │
+│ │ 🧠 What the team knows               ›   │ │  profile + Mind memory + graph
+│ │ 👥 People                            ›   │ │
+│ │ 🛡 Approvals & permissions      2 rules › │ │
+│ └──────────────────────────────────────────┘ │
+│ ┌ TEAM ────────────────────────────────────┐ │
+│ │ 🤖 Team & bots (defaults, templates, demo)│ │
+│ │ ⧉ Apps & connectors · 6 on           ›   │ │
+│ │ ✦ Skills                              ›  │ │
+│ │ ⚙ Models & engines · Automatic        ›  │ │
+│ │ 🖥 Computers & workspace · Cloud off   ›  │ │
+│ └──────────────────────────────────────────┘ │
+│ ┌ YOU & PHONE ─────────────────────────────┐ │
+│ │ 🎙 Voice (Hey Argus, voices, My voice) › │ │
+│ │ 🔔 Notifications & proactivity        ›  │ │  quiet hours, check-ins, Jarvis, mutes
+│ │ 📱 Phone & permissions (control, Magic   │ │
+│ │    Hand, orb, browser, calls)          › │ │
+│ │ 🔒 Privacy & security (app lock, wallet, │ │
+│ │    logins, Bank mode, Scam Shield)     › │ │
+│ │ 🎨 Appearance · Dark · Plain ground    › │ │
+│ │ 🌐 Language                            › │ │
+│ └──────────────────────────────────────────┘ │
+│ ┌ SYSTEM ──────────────────────────────────┐ │
+│ │ ⟳ Sync & devices (sync, MCP, PC link,     │ │
+│ │   dashboard, backup/import/export)     › │ │
+│ │ ⤓ Updates · 1.0.0                      › │ │
+│ │ 🩺 Diagnostics (doctor, downloads, logs)›│ │
+│ │ ℹ About & feedback                     › │ │
+│ └──────────────────────────────────────────┘ │
+│ [ Sign out ]                                  │
+│ (🔍 Search settings)                          │  floating search pill (AT .cnp-search)
+└──────────────────────────────────────────────┘
+```
+Every page reachable by name (`/settings voice`, Spotlight, ask a bot) — AM "open by name" rule kept.
+
+### 4.12 Life mode (domains)
+
+```
+┌──────────────────────────────────────────────┐
+│ (F)                       ○🔍   ○🔔   ○＋      │
+│ Wednesday — three things today.               │  serif day line
+│ TODAY  06 ──●now── 12 ──── 18 ──── 24         │  timeline: events, routines, check-ins
+│        Gym  ⏱digest  Call Mum  ⏱bills          │
+│ ┌──────────────┐ ┌──────────────┐            │  domain tiles (Surface glass)
+│ │(◉) Health    │ │(◉) Money     │            │
+│ │ 6.2k steps   │ │ K1,240 week  │            │  one live value
+│ │ Gym at 17:00 │ │ 1 bill due ⚠ │            │  one line
+│ └──────────────┘ └──────────────┘            │
+│ │(◉) Work │ │(◉) Home │ │(◉) People│ …       │  2-col grid, reorderable
+│ PEOPLE   (M)(S)(A)(T)(D)        See graph ›   │
+│ PROJECTS ▸ Cape Town trip  ▸ ARGUS overhaul   │
+│ PANELS   ☁ 24° Lusaka · Latest answer · Ask…  │  AM Home cards
+│ ( + )  Ask about your life…           ( 🎙 ) │
+└──────────────────────────────────────────────┘
+```
+
+### 4.13 Chat mode
+
+```
+┌──────────────────────────────────────────────┐
+│ (F)                          ○👻   ○✎          │  ghost = private chat, ✎ = new chat
+│                                               │
+│                  (A)                          │  Manager sphere (cobalt glow)
+│        Evening. What's on your mind?          │  serif 30
+│                                               │
+│  [Plan my week] [What did I miss?] [Scan…]    │  suggested asks (AM)
+│ ( + )  Ask anything                   ( 🎙 ) │
+└──────────────────────────────────────────────┘
+```
+Once messages exist it's AM's chat (rich replies, droplet stream, follow-up chips) in AT's no-bubble agent text. When the Manager delegates, a HandoffCard shows which bot took it ("Atlas is on it →").
+
