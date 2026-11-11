@@ -35,7 +35,7 @@
 ## Status
 | Ticket | State | Branch / commit |
 |---|---|---|
-| P5-TM-01 | wave 1 | |
+| P5-TM-01 | done — TeamBus + BotMessaging + HandoffCard, TeamBusTest 22/22 (see P5-TM-01-LOG.md) | `overhaul/p5-tm-01` @ ad7b0d89 |
 | P5-AG-01 | wave 1 | |
 | P5-TM-02 | wave 2 | |
 | P5-TM-03 | wave 2 | |
