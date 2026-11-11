@@ -283,3 +283,158 @@ Each domain ships as `assets/domains/<id>/` → `domain.json` + `SOUL.md` + `PLA
 ```
 Users and Manager can create new domains from the same template (`agent_create` with `template`), so "a bot for my band" or "a bot for my dog" is a first-class domain.
 
+---
+
+## 4. Memory architecture
+
+### 4.1 Today (three incompatible stores)
+
+| Source | Store | Shape | Sync |
+|---|---|---|---|
+| Argus-mobile | `filesDir/blaze.db` `memories` (+FTS5; schema shared with Blaze Desktop/CLI — must not change) + side tables `mind_mem`, `mind_journal`; pinned core (`PinnedFacts`); chat tier (rolling summary); cache tier (`cache.db`) | Flat facts with `category`, `project`, `chat`, `pinned`, `uses` | Blaze account cloud sync (`CloudSync`, `SyncCrypto`) |
+| A-team | Profile `argus.profile.v1` in localStorage (kinds: name, style, goal, project, preference, person, date, place, rule, note; `stated` vs `inferred`) mirrored to `/root/.argus/manager/profile.{json,md}`; bot memory `S.memory.bots[id]` + `S.memory.team` (visibility: own + team + reports') | JSON items | **Never synced** |
+| Bot HQ | Hermes home `memories/MEMORY.md` (bot's notes) + `USER.md` (about user), entries separated by `§`; UI can list/remove | Markdown files | None (lives on the Hermes host) |
+
+### 4.2 Target: one store, many views
+
+**Keep `blaze.db` as the single source of truth** (the Desktop-shared `memories` table stays byte-compatible). Add one Android-side table `mem_scope` keyed by the memory id, so Desktop/CLI keep working and ignore it — the same trick as `mind_mem`.
+
+```
+                 ┌───────────────── blaze.db ─────────────────┐
+                 │ memories (Desktop schema, FTS5)            │
+                 │ mem_scope(id → scope, bot, kind, stated,   │
+                 │           sensitivity, source, expires)    │
+                 │ mind_mem / mind_journal (existing)         │
+                 └───────┬───────────────┬──────────────┬─────┘
+         renders ▲       │               │              │      ▲ parses edits
+   bots/<id>/MEMORY.md   │   USER.md (profile view)     │   Hermes home (§-separated) for HERMES bots
+   bots/<id>/SOUL.md (separate file, not facts)          │
+                         ▼                              ▼
+              prompt blocks per turn            Settings › "What your team knows"
+```
+
+**Scopes** (a memory line has exactly one owner scope, plus optional share tags):
+
+| Scope | Who writes | Who reads | Examples |
+|---|---|---|---|
+| `user:core` | Manager (and any bot via *proposal*) | every bot | name, time zone, home city, dietary requirements/allergies, standing rules ("refundable only") |
+| `user:<kind>` | Manager | bots whose domain lists the kind | `user:people`, `user:places`, `user:dates`, `user:goals` (A-team kinds) |
+| `team` | any bot | every bot | "Finn is travelling 14–20 Dec", "ARGUS v2.18 ships Friday" (cross-domain facts) |
+| `<domain>` (e.g. `money`) | that domain bot | that bot + Manager (summary only if private) + bots it explicitly shares with | "Netflix renews on the 3rd" |
+| `<domain>` **private** (health, money, admin, health:mind) | that domain bot | that bot only; Manager sees *existence* and can show the user | resting heart rate trend, balances |
+| `bot:<id>` | that bot | that bot | working notes, how it likes to do its job (Hermes MEMORY.md equivalent) |
+| `session` | runtime | that chat | chat tier summary (not in `memories`; stays in chat tier) |
+
+Visibility rule (A-team `MEM.visible`, generalised): a bot sees `user:core` + allowed `user:<kind>` + `team` + its own domain + `bot:<self>` + the domain scopes of bots that **report to it** (Manager is lead of all, but private scopes are excluded unless shared).
+
+**Share tags** let one line be readable outside its scope without copying it: `money` line "Trip budget for Cape Town: ZMW 18,000" tagged `share:travel`. Atlas reads it; it can't read the rest of Money.
+
+### 4.3 Writing memory
+
+- **Stated vs inferred** (A-team): every line carries `stated: Boolean`. Inferred lines are marked and are confirmed with the user before acting on them (Argus `MemoryGate`, A-team `learn()` detectors `PREF`, `RULE_START`, `REM`).
+- **Where a line goes** (classifier on save, deterministic first, quick-model second): standing rule → `user:core` + SOUL.md "Standing rules" of the relevant bot; allergy/dietary → `user:core` (and mirrored as a `food` share tag); person → `user:people`; domain fact → that domain; cross-domain event → `team`.
+- **Proposals**: a domain bot that learns a user-level fact calls `memory_propose(text, scope)`; Manager (or a deterministic rule) accepts. This keeps `user:core` clean and consistent across bots.
+- **Secrets refused** everywhere: A-team `SECRET` regex + Argus `SecretGuards` run on every write and every file parse; matching lines are dropped with a one-line notice. Card digits, ID numbers, passwords never stored; only "passport expires 2028-03, kept in Clerk's vault" style pointers.
+- **Idle review** (Argus `MindReview` over `mind_journal`) extracts facts per chat; for bot chats it writes into that bot's domain scope.
+- **Narrowness** (A-team prompt rule + Hark-style): save as narrowly as the user said it, with context (where, when, with whom); never broaden "usually" to "always".
+
+### 4.4 Reading memory (per turn)
+
+For bot B on turn t (extends `Memory.promptBlock`):
+1. **Pinned core**: `user:core` pinned lines (≤ 1.2k chars).
+2. **Soul**: SOUL.md.
+3. **Relevant notes**: FTS over the scopes B can see with the message's content words (`Mind.relevantBlock`, ≤5 lines/800 chars), plus B's own `bot:<id>` top lines by `uses`.
+4. **Delegation context**: lines Manager attached to the job brief (A-team `pRelevant`).
+5. **Chat tier**: rolling summary + verbatim tail (Argus `ChatTier.budget`).
+6. **Cache tier TOCs** (documents).
+Tools: `memory_search(scope?)`, `memory_save`, `memory_update`, `memory_delete`, `memory_propose`, `cache_*`, `search_chat`.
+
+### 4.5 User-editable files
+
+- Settings › **Team memory**: per bot, two tabs — **Soul** (SOUL.md editor with locked sections greyed) and **Memory** (MEMORY.md list view: edit, delete, mark as stated, move scope, share with…). Plus **About you** (USER.md view of `user:*`) with A-team's add/edit/delete/"Forget everything".
+- The `.md` files are **projections**: the app renders them from the DB on change and parses edits back (line = memory, `§` separator for Hermes compatibility). A parse that fails keeps the DB and shows the diff.
+- For HERMES bots, the projection is written to the Hermes home over the bot's MCP relay, and Hermes-made entries are imported on each turn end (Bot HQ `engine-memory.ts` read path) — so Hermes memory and ARGUS memory don't drift.
+
+### 4.6 Sync and privacy
+
+- `user:*`, `team`, non-private domain scopes, `bot:*` and SOUL.md sync via the **existing Blaze account sync** (`CloudSync`, end-to-end `SyncCrypto`), never through `argus-agents-api` (which carries only roster, jobs, routines metadata and approvals — §6.4). This fixes A-team's "memory never leaves this phone" without exposing it to the Worker.
+- Private scopes sync only if the user turns on "Sync private memory" (off by default), still E2E encrypted.
+- Private chats (`PrivateChat`) are never paged, journaled or reviewed (Argus rule kept).
+- **Forget**: deleting a line removes it from `memories`, `mem_scope`, FTS, projections, the Hermes home and the sync blob (tombstone), then re-validates by search (the Hark-style "verify after delete" rule).
+
+---
+
+## 5. Runtime placement and open replacements
+
+### 5.1 Where each piece runs
+
+```mermaid
+flowchart LR
+  subgraph Phone[Phone · ARGUS app]
+    RT[Agent runtime<br/>Session loop · BgAgents · Orchestra]
+    ND[Needle 3 on-device<br/>command parser]
+    OB[On-device brain<br/>OpenCode / small local model]
+    PC[Phone control<br/>a11y · WebView browser]
+    UB[proot Ubuntu 24.04<br/>tmux window per bot]
+    DB[(blaze.db · team.db · cache.db)]
+    VA[SecretVault · Keystore]
+  end
+  subgraph Edge[Cloudflare · free tier]
+    GW[Blaze Gateway<br/>/v1/chat · /v1/runs · /v1/models/live]
+    AA[argus-agents-api v2<br/>REST + MCP + sync]
+    AC[argus-connect<br/>OAuth apps · skills]
+    AU[blaze-auth]
+  end
+  subgraph Compute[Optional compute]
+    CC[Cloud desk<br/>self-hosted · Codespaces · Orgo]
+    HE[Hermes gateway<br/>user-hosted]
+  end
+  RT -->|model calls| GW
+  RT --> ND & OB & PC & UB & DB
+  RT -->|roster/jobs/approvals| AA
+  RT -->|app tools| AC
+  RT -->|confirmed only| CC
+  RT <-->|/v1/responses + MCP relay| HE
+  GW --> AU; AA --> AU; AC --> AU
+```
+
+**Placement decision** (per tool call, in `ExecRoute`, extending A-team's computer rule):
+
+| Need | Run on | Fallback |
+|---|---|---|
+| Intent → command (add job, reminder, route) | Needle on-device | gateway `quick` lane |
+| Chat / reasoning | Gateway lane via `/v1/models/live` pick; on-device brain first for private/zero-retention or offline (BrainOrder: on-device → Nous `:free` → Blaze Cloud) | next in BrainOrder |
+| Long job that must survive app close | Gateway `/v1/runs` (CloudRuns) | local loop + `TaskWorker` |
+| Phone apps, settings, SMS/calls, notifications | Phone | — |
+| Code, scripts, files, PDFs, git, headless fetch | proot Ubuntu (bot's own tmux window/home) | cloud desk (ask) |
+| Real Chrome, JS/login sites, GUI, x86 | Cloud desk, **user confirms each session**, auto-stop on idle | phone WebView browser |
+| Hermes-native skills | Hermes engine | — |
+
+Rules kept from A-team: the engine never starts the cloud computer on its own; proactive routines can't start it; low-RAM phones refuse clone-mode / heavy proot work.
+
+### 5.2 Engine contract (so LOCAL, CLOUD_RUN and HERMES are interchangeable)
+
+```kotlin
+interface BotEngine {
+    val kind: EngineKind
+    /** Runs one turn; emits rows (message deltas, tool calls, cards) and live activity. */
+    fun turn(bot: Bot, input: TurnInput, sink: RowSink): Flow<TurnEvent>
+    suspend fun cancel(turnId: String)
+    suspend fun steer(turnId: String, text: String)       // Argus message_agent / Bot HQ new message
+    fun capabilities(): EngineCaps                         // tools it can run locally, max context, voice?
+}
+```
+- `LocalEngine` wraps `Agent.Session`; `CloudRunEngine` wraps `CloudRuns.Turn`; `HermesEngine` ports Bot HQ `agent/loop.ts` (POST `/v1/responses` streaming → rows) to Kotlin, with the ARGUS tool surface served to Hermes as an MCP server through the phone relay (§6.3).
+- All three emit the same `Row` model (§9) so the UI, approvals and audit don't care which ran.
+
+### 5.3 Replacing paid dependencies
+
+| Paid dep (Bot HQ) | Used for | Open / free replacement (recommended) | Keep paid as |
+|---|---|---|---|
+| **Composio** | OAuth apps, tool catalog, triggers, approvals | **argus-connect** (already exists in A-team v2.17: per-user OAuth apps on Cloudflare, `/v1/me/apps/*`) + remote **MCP servers** (`connect/Mcp.kt`) + on-device connectors (`Connectors.kt` loopback/device/token). Triggers: argus-connect webhooks/polling (Gmail push, Calendar watch) → `argus-agents-api` events → phone via FCM-free polling/WebSocket. Approvals are ours (§7), not Composio's. | Optional adapter `composio` app provider for long-tail toolkits, user's own key |
+| **xAI** realtime voice, TTS, dictation | Voice calls with a bot | On-device: Android `SpeechRecognizer` (offline where available) + Android TTS / Piper-Kokoro voices in Ubuntu; gateway: Workers AI Whisper for STT (free neurons), gateway TTS lane. Voice agent = the bot's normal turn queue with a short-reply voice style (Bot HQ voice hands real work to the queue — kept). | Optional "Grok voice" provider with user's key |
+| **xAI `x_search`** | Live X research | Gateway `web` search with `site:x.com` + public X embeds; honest label "limited without an X key" | Optional `x_search` tool when user adds an xAI key (vault) |
+| **Orgo** | Cloud desktop + screens + VNC | **Self-hosted desk**: one Docker image (Xvfb + fluxbox + Chrome + x11vnc + noVNC, Bot HQ `server/box/*` scripts reused) runnable on Finn's PC via Blaze Desktop link, on an always-free VM (e.g. Oracle Cloud Ampere), or as a **GitHub Codespace** (A-team provider; 60 free core-h/month, idle_timeout 5 min). Screen-per-bot = one X display per bot, DevTools port 9200+display (Bot HQ). | Orgo provider kept (A-team cloud.js), billing warning shown, auto-stop enforced by ARGUS since Orgo has none |
+| **Hermes** (free, but external) | Agent loop | Not replaced; demoted to optional engine. Default engine = ARGUS runtime. | `HERMES` engine kind |
+
+---
