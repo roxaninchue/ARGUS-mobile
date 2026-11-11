@@ -134,12 +134,24 @@ class ApprovalsTest {
     @Test fun sqlPolicyStoreStatements() {
         val log = mutableListOf<Pair<String, List<Any?>>>()
         val rows = mutableListOf<Map<String, Any?>>()
+        var changed = 0; var txs = 0
         val st = SqlPolicyStore(object : SqlPolicyStore.Sql {
             override fun exec(statement: String, args: List<Any?>) { log += statement to args }
             override fun query(statement: String, args: List<Any?>) = rows.toList()
+            override fun update(statement: String, args: List<Any?>): Int { log += statement to args; return changed }
+            override fun <T> transaction(block: () -> T): T { txs++; return block() }
         })
+        // No row yet: UPDATE changes nothing, so the INSERT follows, both in one transaction.
         st.set("gcal_create", "nova", Rule.ALLOW, "user", 7)
-        assertEquals(SqlPolicyStore.UPSERT to listOf<Any?>("gcal_create", "nova", "ALLOW", "user", 7L), log.last())
+        assertEquals(listOf(SqlPolicyStore.UPDATE to listOf<Any?>("ALLOW", "user", 7L, "gcal_create", "nova"),
+            SqlPolicyStore.INSERT to listOf<Any?>("gcal_create", "nova", "ALLOW", "user", 7L)), log)
+        assertEquals(1, txs)
+        // The row exists: the UPDATE hits it and no INSERT is sent.
+        log.clear(); changed = 1
+        st.set("gcal_create", "nova", Rule.NEVER, "user", 8)
+        assertEquals(listOf(SqlPolicyStore.UPDATE to listOf<Any?>("NEVER", "user", 8L, "gcal_create", "nova")), log)
+        assertEquals(2, txs)
+        assertTrue(log.none { it.first.contains("ON CONFLICT", ignoreCase = true) || it.first.contains("OR REPLACE", ignoreCase = true) })
         st.clear("gcal_create", "nova")
         assertEquals(SqlPolicyStore.DELETE, log.last().first)
         assertNull(st.rule("gcal_create", "nova"))

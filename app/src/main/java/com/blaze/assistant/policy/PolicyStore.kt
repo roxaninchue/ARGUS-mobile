@@ -37,24 +37,39 @@ class InMemoryPolicyStore : PolicyStore {
 
 /**
  * The team.db `policies` table behind [PolicyStore], over a minimal SQL seam ([Sql]) so it stays pure and P0's
- * `TeamDb` (SQLiteOpenHelper) plugs in with a three-line adapter once it lands (P0-TM-01). Statements match 05 §9.2.
+ * `TeamDb` (SQLiteOpenHelper) plugs in through [TeamDbPolicySql] (TeamDbPolicySql.kt, the only Android part). Statements match 05 §9.2 / P0-TM-01 TeamSchema.
+ *
+ * [set] is an upsert written for the phone's system SQLite: team.db is a plain SQLiteOpenHelper, so on Android 8–10
+ * (minSdk 26) it runs on SQLite 3.18–3.22, which has no `INSERT … ON CONFLICT … DO UPDATE` (added in 3.24). Inside one
+ * transaction it runs [UPDATE] on the key and, only when that changed no row, [INSERT]. Never `INSERT OR REPLACE`:
+ * that deletes and re-inserts the row, which fires ON DELETE CASCADE on anything referencing it and resets columns the
+ * statement doesn't name. SqlPolicyStoreTest checks this on sqlite-jdbc 3.21 (an engine without 3.24 upsert) and 3.46.
  */
 class SqlPolicyStore(private val sql: Sql) : PolicyStore {
-    /** The two calls the store needs; `args` are bound positionally (`?`). */
+    /** The calls the store needs; `args` are bound positionally (`?`). */
     interface Sql {
         fun exec(statement: String, args: List<Any?>)
         /** Rows as column→value maps. */
         fun query(statement: String, args: List<Any?>): List<Map<String, Any?>>
+        /** Runs an UPDATE / DELETE and returns how many rows it changed (SQLite `changes()`). */
+        fun update(statement: String, args: List<Any?>): Int
+        /** Runs [block] in one transaction: committed when it returns, rolled back when it throws. */
+        fun <T> transaction(block: () -> T): T
     }
 
     override fun rule(tool: String, botId: String): Rule? =
         sql.query(SELECT_ONE, listOf(tool, botId, PolicyStore.ANY_BOT, PolicyStore.ANY_BOT)).firstOrNull()
             ?.let { r -> runCatching { Rule.valueOf(r["rule"].toString()) }.getOrNull() }
 
-    override fun set(tool: String, botId: String, rule: Rule, setBy: String, at: Long) =
-        sql.exec(UPSERT, listOf(tool, botId, rule.name, setBy, at))
+    /** Upsert on (tool, bot_id): UPDATE, then INSERT only when no row matched, in one transaction (see the class doc). */
+    @Synchronized override fun set(tool: String, botId: String, rule: Rule, setBy: String, at: Long) {
+        sql.transaction {
+            if (sql.update(UPDATE, listOf(rule.name, setBy, at, tool, botId)) == 0)
+                sql.exec(INSERT, listOf(tool, botId, rule.name, setBy, at))
+        }
+    }
 
-    override fun clear(tool: String, botId: String) = sql.exec(DELETE, listOf(tool, botId))
+    @Synchronized override fun clear(tool: String, botId: String) = sql.exec(DELETE, listOf(tool, botId))
 
     override fun all(): List<PolicyStore.Entry> = sql.query(SELECT_ALL, emptyList()).mapNotNull { r ->
         val rule = runCatching { Rule.valueOf(r["rule"].toString()) }.getOrNull() ?: return@mapNotNull null
@@ -64,7 +79,10 @@ class SqlPolicyStore(private val sql: Sql) : PolicyStore {
     companion object {
         /** The bot's own row first, then `*`. */
         const val SELECT_ONE = "SELECT rule FROM policies WHERE tool = ? AND (bot_id = ? OR bot_id = ?) ORDER BY CASE WHEN bot_id = ? THEN 1 ELSE 0 END LIMIT 1"
-        const val UPSERT = "INSERT OR REPLACE INTO policies(tool, bot_id, rule, set_by, at) VALUES(?, ?, ?, ?, ?)"
+        /** Upsert, step 1: args (rule, set_by, at, tool, bot_id). */
+        const val UPDATE = "UPDATE policies SET rule = ?, set_by = ?, at = ? WHERE tool = ? AND bot_id = ?"
+        /** Upsert, step 2 (only when [UPDATE] changed no row): args (tool, bot_id, rule, set_by, at). */
+        const val INSERT = "INSERT INTO policies(tool, bot_id, rule, set_by, at) VALUES(?, ?, ?, ?, ?)"
         const val DELETE = "DELETE FROM policies WHERE tool = ? AND bot_id = ?"
         const val SELECT_ALL = "SELECT tool, bot_id, rule, set_by, at FROM policies ORDER BY tool, bot_id"
     }

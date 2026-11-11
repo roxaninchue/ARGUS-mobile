@@ -12,9 +12,10 @@ import java.time.ZoneId
  * decision with them applied. Checked by hand (no Robolectric run without "build").
  *
  *  - Standing rules: a [TextPolicyStore] in SharedPreferences `argus_permissions` / `policies` until P0-TM-01's team.db
- *    exists; then wrap TeamDb in a [SqlPolicyStore.Sql] adapter, call [TextPolicyStore.migrateTo] once and pass that
- *    store to [install] instead. [install] puts the store in [ConfirmGate.policyStore] (SF-01 left that to SF-04), so
- *    "Never" rules refuse at dispatch from then on. It does no disk work (the store loads on first use).
+ *    exists; then wrap TeamDb in [TeamDbPolicySql] (`SqlPolicyStore(TeamDbPolicySql(teamDb))`), call
+ *    [TextPolicyStore.migrateTo] once and pass that store to [install] instead. [install] puts the store in
+ *    [ConfirmGate.policyStore] (SF-01 left that to SF-04), so "Never" rules refuse at dispatch from then on.
+ *    It does no disk work (the store loads on first use).
  *  - Per-bot settings ([PermissionSettings]): the same prefs file, key `bots` ([PermissionsCodec]).
  *  - [decide]: [PermissionsModel.decide] with the stored settings, the installed store and this month's spending from
  *    the audit ledger (AuditDao, when installed). For SF-02's cards / the TeamHooks seam.
