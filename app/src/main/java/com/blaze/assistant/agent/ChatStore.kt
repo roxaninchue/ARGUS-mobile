@@ -57,8 +57,12 @@ object ChatStore {
             return false
         }
         com.blaze.assistant.connect.CloudSync.localChange(com.blaze.assistant.connect.SyncKinds.CHATS)   // v0.40.0 (off by default)
+        try { onSaved?.invoke(o.optString("id")) } catch (_: Throwable) { }   // 0.53.0 (P1-TM-02): ARGUS's thread preview / unread
         return true
     }
+
+    /** 0.53.0 (P1-TM-02): told after every saved chat, so ARGUS's team thread (team/BotThreads) follows the main conversation. Read only. */
+    @Volatile var onSaved: ((id: String) -> Unit)? = null
 
     /** A plain reason for a failed save: storage full (under 20 MB free) or a generic one. */
     fun saveFailReason(d: File): String = try {
