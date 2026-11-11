@@ -41,7 +41,7 @@ P0 is landing on `main`, P1 on `overhaul/p1*`, P2 on `overhaul/p2*` at the same 
 | P3-AG-02 | done (scopeExisting on every attach + A-team import into scopes; idempotent, counted) | `overhaul/p3-ag-02` |
 | P3-AG-04 | done (MEMORY.md/USER.md render + parse-back plan with diff on failure, ProjectionFiles, Forget everywhere + verify; Mind memory_delete uses it) | `overhaul/p3-ag-04` |
 | P3-AG-05 | done (AutoLearn detect/place/decide/run + Saved card + MemoryGate.learnable; chat call-site + card UI wait on P2 cards / P0 TeamHooks) | `overhaul/p3-ag-05` |
-| P3-API-01 | wave 2 | |
+| P3-API-01 | done (ScopedSync: private lines filtered from MemoryAdapter unless Sync private memory; mem_scope + soul adapters under the Memory switch; soul merge = higher version) | `overhaul/p3-api-01` |
 | P3-MG-01 | wave 2 | |
 | P3-SH-01 | wave 3 | |
 | P3-SH-02 | wave 3 | |
@@ -63,4 +63,5 @@ P0 is landing on `main`, P1 on `overhaul/p1*`, P2 on `overhaul/p2*` at the same 
 | ProjectionRoundTripTest (P3-AG-04) | 7 | green |
 | ForgetVerifyTest (P3-AG-04) | 4 | green |
 | LearnDetectTest (P3-AG-05) | 8 | green |
-| MemoryGateTest (unchanged) | all | green |
+| ScopedSyncTest (P3-API-01) | 5 | green |
+| SyncMergeTest + SyncAdaptersTest + SyncEngineTest (existing, re-run) | 27 | green |
