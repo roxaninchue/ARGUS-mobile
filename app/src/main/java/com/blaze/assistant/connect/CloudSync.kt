@@ -105,7 +105,8 @@ object CloudSync {
     private fun split(ctx: Context): ChatSplit = split ?: ChatSplit { File(ctx.filesDir, "chats").apply { mkdirs() } }.also { split = it }
 
     /** Message and reaction items follow the Chats switch. */
-    private fun group(kind: String) = if (kind == ChatItems.MSG || kind == ChatItems.REACT) SyncKinds.CHATS else kind
+    private fun group(kind: String) = if (kind == ChatItems.MSG || kind == ChatItems.REACT) SyncKinds.CHATS
+        else if (kind == ScopedSync.MEM_SCOPE || kind == ScopedSync.SOUL) SyncKinds.MEMORY else kind   // P3-API-01: follow the Memory switch
 
     private fun adapters(st: SyncEngine.State): List<SyncEngine.Adapter> {
         val ctx = app ?: return emptyList()
@@ -118,13 +119,37 @@ object CloudSync {
             MessageAdapter(sp) { id -> st.get(SyncKinds.CHATS, id).let { e -> e != null && (e.deleted || sp.peek(id) == null) } },
             ReactionAdapter(sp),
             MemoryAdapter(object : MemoryStore {
-                override fun all() = com.blaze.assistant.agent.Mind.all().map { MemoryStore.Line(it.kind, it.subject, it.text, it.related, it.updated) }
+                // P3-API-01: private lines (and private domains) stay on this phone unless "Sync private memory" is on.
+                override fun all(): List<MemoryStore.Line> {
+                    val priv = try { Settings.bool(ScopedSync.PRIVATE_PREF, false) } catch (_: Throwable) { false }
+                    val sc = try { com.blaze.assistant.agent.Mind.scopes()?.lines()?.associateBy { it.id } } catch (_: Throwable) { null }
+                    return com.blaze.assistant.agent.Mind.all().filter { m -> sc?.get(m.id)?.let { ScopedSync.syncable(it, priv) } ?: true }
+                        .map { MemoryStore.Line(it.kind, it.subject, it.text, it.related, it.updated) }
+                }
                 override fun add(l: MemoryStore.Line) { com.blaze.assistant.agent.Mind.save(l.kind, l.subject, l.text, l.related, max = com.blaze.assistant.agent.Mind.MERGED_MAX) }
                 override fun remove(l: MemoryStore.Line) {
                     com.blaze.assistant.agent.Mind.all().filter { MemoryAdapter.idOf(it.text) == MemoryAdapter.idOf(l.text) }
                         .forEach { com.blaze.assistant.agent.Mind.delete(it.id) }
                 }
             }),
+            // P3-API-01: each line's scope row, and every bot's SOUL.md.
+            MemScopeAdapter(object : ScopeSource {
+                override fun lines() = com.blaze.assistant.agent.Mind.scopes()?.lines() ?: emptyList()
+                override fun syncPrivate() = try { Settings.bool(ScopedSync.PRIVATE_PREF, false) } catch (_: Throwable) { false }
+                override fun put(text: String, scope: String, botId: String?, kind: String?, stated: Boolean, sensitivity: Int, shares: Set<String>, source: String, expires: Long?) {
+                    val sc = com.blaze.assistant.agent.Mind.scopes() ?: return
+                    val id = com.blaze.assistant.agent.Mind.all().firstOrNull { MemoryAdapter.idOf(it.text) == MemoryAdapter.idOf(text) }?.id
+                        ?: com.blaze.assistant.agent.Mind.saveScoped(scope, text, kind = "fact", botId = botId, stated = stated, source = source).second
+                    if (id > 0) sc.put(id, scope, botId, kind, stated, sensitivity, shares, source, expires)
+                }
+            }),
+            run {
+                val port = com.blaze.assistant.team.FileSoulPort(ctx.filesDir)
+                val botsDir = File(ctx.filesDir, "bots")
+                SoulAdapter({ port.read(it) }, { id, body -> port.write(id, body) },
+                    { ((botsDir.listFiles()?.filter { File(it, "SOUL.md").isFile }?.map { it.name } ?: emptyList()) + com.blaze.assistant.agent.Mind.botNames().keys).distinct() },
+                    { id -> port.versions(id).firstOrNull()?.at ?: 0L })
+            },
             SettingsAdapter(object : PrefStore {
                 override fun all(): Map<String, Any?> = Settings.rawAll()
                 override fun put(key: String, v: Any?) = Settings.rawPut(key, v)
