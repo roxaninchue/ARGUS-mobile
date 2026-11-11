@@ -583,3 +583,411 @@ flowchart LR
 - **Weekly review** (Sunday, opt-in): done jobs, money summary (if Ledger shares), habits, next week's calendar crunch.
 
 ---
+## 9. Data models
+
+### 9.1 Kotlin (package `com.blaze.assistant.team`)
+
+```kotlin
+enum class BotKind { MANAGER, DOMAIN, CUSTOM, WORKER, SUBAGENT, ROOM, REMOTE }
+enum class EngineKind { LOCAL, CLOUD_RUN, HERMES }
+enum class ComputerKind { NONE, PHONE, UBUNTU, CLOUD, HERMES_HOST }
+enum class CloudProvider { SELF_HOSTED, CODESPACES, ORGO }
+enum class Autonomy { ASSIST, ACT, AUTOPILOT }
+enum class ActionClass { READ, WRITE_LOCAL, WRITE_REMOTE, SEND, SPEND, DELETE, SETTINGS, CREDENTIAL, COMPUTE_PAID, PHYSICAL }
+enum class Rule { ALLOW, ASK, NEVER }
+enum class SendScope { NONE, DRAFT_ONLY, KNOWN_CONTACTS, ANY }
+
+data class Avatar(val shape: String, val color: String, val face: Int? = null, val image: String? = null)
+data class Voice(val id: String = "default", val speed: Float = 1f, val language: String = "auto")
+
+data class ModelPolicy(
+    val lane: String = "agent",            // gateway blaze_task: chat|quick|code|vision|long|agent
+    val tier: String? = null,              // spark|flare|inferno (ModelChoice.forRole); null = Auto
+    val pinned: String? = null,            // user's choice; gateway still fails over inside the lane
+    val effort: String = "medium",         // low|medium|high|xhigh
+    val zeroRetention: Boolean = false     // BrainOrder privacy rule
+)
+
+data class EngineSpec(val kind: EngineKind = EngineKind.LOCAL, val model: ModelPolicy = ModelPolicy(),
+                      val hermesUrl: String? = null, val hermesSecretRef: String? = null /* vault id, never the token */)
+
+data class ComputerSpec(val kind: ComputerKind = ComputerKind.NONE, val provider: CloudProvider? = null,
+                        val askEachSession: Boolean = true, val idleStopMin: Int = 10)
+
+data class Permissions(
+    val autonomy: Autonomy = Autonomy.ACT,
+    val actions: Map<ActionClass, Rule> = DEFAULT_RULES,
+    val spendCapMonthlyMinor: Long = 0, val currency: String = "ZMW",
+    val sendScope: SendScope = SendScope.DRAFT_ONLY,
+    val dataScopes: Set<String> = setOf("user:core", "team"),
+    val maxStepsPerTurn: Int = 40, val maxJobMinutes: Int = 30, val maxHops: Int = 3
+)
+
+data class Bot(
+    val id: String, val kind: BotKind, val name: String, val label: String, val domain: String? = null,
+    val avatar: Avatar, val voice: Voice = Voice(), val mode: String = "personal",        // personal|teammate (Bot HQ)
+    val soulPath: String,                       // filesDir/bots/<id>/SOUL.md
+    val soulVersion: Int = 1,
+    val skills: List<String> = emptyList(),     // skill slugs / pack ids
+    val toolGroups: Set<String>, val toolGrants: Map<String, Rule> = emptyMap(),
+    val engine: EngineSpec = EngineSpec(), val computer: ComputerSpec = ComputerSpec(),
+    val apps: List<BotAppGrant> = emptyList(), val permissions: Permissions = Permissions(),
+    val reportsTo: String? = "manager", val parentId: String? = null, val members: List<String> = emptyList(),
+    val hidden: Boolean = false, val pinned: Boolean = false, val enabled: Boolean = true,
+    val routingHints: List<String> = emptyList(),
+    val createdAt: Long, val u: Long                                   // u = HLC for LWW sync
+)
+
+data class BotAppGrant(val appId: String, val source: String /* argus-connect|mcp|device|composio */,
+                       val tools: Map<String, Rule> = emptyMap())
+
+enum class JobRun { QUEUED, RUNNING, WAITING, DONE, FAILED, CANCELLED }
+data class Job(
+    val id: String, val title: String, val botId: String?, val due: String?, val priority: String = "normal",
+    val status: String = "todo", val run: JobRun = JobRun.QUEUED, val deps: List<String> = emptyList(),
+    val parentJob: String? = null, val source: String /* user|manager|routine|bot|mcp|suggestion */,
+    val brief: String, val result: String? = null, val notes: String = "",
+    val confirmed: Boolean, /* proactive jobs start false */ val retryAt: Long? = null,
+    val createdAt: Long, val doneAt: Long? = null, val u: Long
+)
+data class JobStep(val jobId: String, val seq: Int, val label: String, val state: String, val at: Long)
+
+data class Row(  // Bot HQ transcript row, used for every bot chat and room
+    val botId: String, val generation: Int, val seq: Long, val updatedSeq: Long,
+    val kind: String /* message|tool-call|card|event|notice */, val body: String /* JSON */, val createdAt: Long)
+
+data class BotMessage(val threadId: String, val fromBot: String, val toBot: String, val text: String,
+                      val depth: Int, val expectsReply: Boolean, val budgetLeft: Int)
+
+data class Routine(
+    val id: String, val botId: String, val name: String, val prompt: String,
+    val kind: String /* CRON|EVENT|CHECKIN|WATCH */, val schedule: String /* cron or event spec */,
+    val timezone: String, val runsIn: String = "phone" /* phone|cloud */, val enabled: Boolean,
+    val silentIfNothing: Boolean = true, val silentStreak: Int = 0, val lastRunAt: Long? = null, val u: Long)
+
+data class Suggestion(val id: String, val botId: String, val title: String, val why: String, val task: String,
+                      val topic: String, val urgency: Int, val risk: Set<ActionClass>, val createdAt: Long,
+                      val state: String /* new|shown|done|not_now|muted|expired */)
+
+data class Approval(val id: String, val botId: String, val jobId: String?, val callId: String, val tool: String,
+                    val actionClass: ActionClass, val title: String, val detail: String, val argsRedacted: String,
+                    val tainted: Boolean, val status: String /* pending|allowed|always|denied|expired|skipped */,
+                    val onDeviceOnly: Boolean, val createdAt: Long, val resolvedAt: Long?, val resolvedBy: String?)
+
+data class MemScope(val memId: Long, val scope: String, val botId: String?, val kind: String?,
+                    val stated: Boolean, val sensitivity: Int /* 0 normal, 1 private, 2 secret-refused */,
+                    val shareTags: Set<String>, val source: String, val expires: Long?)
+```
+
+### 9.2 On-device SQL
+
+`team.db` (new, Argus-only; Room or raw SQLite like `cache.db`) — kept out of `blaze.db` because that schema is shared with Desktop/CLI:
+
+```sql
+CREATE TABLE bots(
+  id TEXT PRIMARY KEY, kind TEXT NOT NULL, name TEXT NOT NULL, label TEXT NOT NULL DEFAULT '', domain TEXT,
+  avatar TEXT NOT NULL, voice TEXT, mode TEXT NOT NULL DEFAULT 'personal',
+  soul_version INTEGER NOT NULL DEFAULT 1, skills TEXT NOT NULL DEFAULT '[]',
+  tool_groups TEXT NOT NULL DEFAULT '[]', tool_grants TEXT NOT NULL DEFAULT '{}',
+  engine TEXT NOT NULL, computer TEXT NOT NULL, permissions TEXT NOT NULL, routing_hints TEXT NOT NULL DEFAULT '[]',
+  reports_to TEXT, parent_id TEXT REFERENCES bots(id) ON DELETE CASCADE, members TEXT NOT NULL DEFAULT '[]',
+  hidden INTEGER NOT NULL DEFAULT 0, pinned INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1,
+  generation INTEGER NOT NULL DEFAULT 0, unread INTEGER NOT NULL DEFAULT 0, last_preview TEXT, last_activity_at INTEGER,
+  created_at INTEGER NOT NULL, u INTEGER NOT NULL
+);
+CREATE TABLE bot_soul_versions(bot_id TEXT NOT NULL REFERENCES bots(id) ON DELETE CASCADE, version INTEGER NOT NULL,
+  body TEXT NOT NULL, at INTEGER NOT NULL, by TEXT NOT NULL, PRIMARY KEY(bot_id, version));
+CREATE TABLE bot_apps(bot_id TEXT NOT NULL REFERENCES bots(id) ON DELETE CASCADE, app_id TEXT NOT NULL, source TEXT NOT NULL,
+  tools TEXT NOT NULL DEFAULT '{}', PRIMARY KEY(bot_id, app_id));
+
+CREATE TABLE rows(bot_id TEXT NOT NULL, generation INTEGER NOT NULL, seq INTEGER NOT NULL, updated_seq INTEGER NOT NULL,
+  kind TEXT NOT NULL, body TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(bot_id, generation, seq));
+CREATE INDEX rows_updated ON rows(bot_id, updated_seq);
+
+CREATE TABLE jobs(id TEXT PRIMARY KEY, title TEXT NOT NULL, bot_id TEXT, due TEXT, priority TEXT NOT NULL DEFAULT 'normal',
+  status TEXT NOT NULL DEFAULT 'todo', run TEXT NOT NULL DEFAULT 'QUEUED', deps TEXT NOT NULL DEFAULT '[]',
+  parent_job TEXT, source TEXT NOT NULL, brief TEXT NOT NULL, result TEXT, notes TEXT NOT NULL DEFAULT '',
+  confirmed INTEGER NOT NULL DEFAULT 1, retry_at INTEGER, created_at INTEGER NOT NULL, done_at INTEGER, u INTEGER NOT NULL);
+CREATE TABLE job_steps(job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE, seq INTEGER NOT NULL, label TEXT NOT NULL,
+  state TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY(job_id, seq));
+
+CREATE TABLE bot_threads(id TEXT PRIMARY KEY, a TEXT NOT NULL, b TEXT NOT NULL, origin_job TEXT, depth INTEGER NOT NULL,
+  budget_left INTEGER NOT NULL, state TEXT NOT NULL, created_at INTEGER NOT NULL);
+
+CREATE TABLE routines(id TEXT PRIMARY KEY, bot_id TEXT NOT NULL REFERENCES bots(id) ON DELETE CASCADE, name TEXT NOT NULL,
+  prompt TEXT NOT NULL, kind TEXT NOT NULL, schedule TEXT NOT NULL, timezone TEXT NOT NULL, runs_in TEXT NOT NULL DEFAULT 'phone',
+  enabled INTEGER NOT NULL DEFAULT 1, silent_if_nothing INTEGER NOT NULL DEFAULT 1, silent_streak INTEGER NOT NULL DEFAULT 0,
+  last_run_at INTEGER, next_run_at INTEGER, created_at INTEGER NOT NULL, u INTEGER NOT NULL);
+
+CREATE TABLE suggestions(id TEXT PRIMARY KEY, bot_id TEXT NOT NULL, title TEXT NOT NULL, why TEXT NOT NULL, task TEXT NOT NULL,
+  topic TEXT NOT NULL, urgency INTEGER NOT NULL, risk TEXT NOT NULL, state TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE TABLE proactivity(id INTEGER PRIMARY KEY CHECK (id = 1), enabled INTEGER NOT NULL, quiet TEXT NOT NULL DEFAULT '22:00-07:00',
+  daily_cap INTEGER NOT NULL DEFAULT 3, sent_day TEXT, sent_n INTEGER NOT NULL DEFAULT 0, mutes TEXT NOT NULL DEFAULT '[]');
+
+CREATE TABLE approvals(id TEXT PRIMARY KEY, bot_id TEXT NOT NULL, job_id TEXT, call_id TEXT NOT NULL, tool TEXT NOT NULL,
+  action_class TEXT NOT NULL, title TEXT NOT NULL, detail TEXT NOT NULL, args_redacted TEXT NOT NULL, tainted INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending', on_device_only INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL,
+  resolved_at INTEGER, resolved_by TEXT, u INTEGER NOT NULL);
+CREATE TABLE policies(tool TEXT NOT NULL, bot_id TEXT NOT NULL DEFAULT '*', rule TEXT NOT NULL, set_by TEXT NOT NULL,
+  at INTEGER NOT NULL, PRIMARY KEY(tool, bot_id));
+CREATE TABLE spend_ledger(id TEXT PRIMARY KEY, bot_id TEXT NOT NULL, approval_id TEXT NOT NULL, amount_minor INTEGER NOT NULL,
+  currency TEXT NOT NULL, merchant TEXT NOT NULL, at INTEGER NOT NULL);
+
+CREATE TABLE audit_log(id INTEGER PRIMARY KEY, at INTEGER NOT NULL, bot_id TEXT NOT NULL, chain TEXT NOT NULL /* parent bots */,
+  trigger TEXT NOT NULL, tool TEXT NOT NULL, action_class TEXT NOT NULL, args_redacted TEXT NOT NULL, decision TEXT NOT NULL,
+  decided_by TEXT, device TEXT, result TEXT, undo TEXT, cost_minor INTEGER, prev_hash TEXT NOT NULL, hash TEXT NOT NULL);
+
+CREATE TABLE screens(id TEXT PRIMARY KEY, bot_id TEXT REFERENCES bots(id) ON DELETE SET NULL, provider TEXT NOT NULL,
+  display INTEGER, cdp_port INTEGER, state TEXT NOT NULL, leased_at INTEGER, last_used_at INTEGER);  -- Bot HQ screen leases
+```
+
+`blaze.db` (shared) gets one Android-side table, ignored by Desktop/CLI:
+
+```sql
+CREATE TABLE IF NOT EXISTS mem_scope(
+  mem_id INTEGER PRIMARY KEY,               -- = memories.id
+  scope TEXT NOT NULL,                      -- user:core | user:<kind> | team | <domain> | bot:<id>
+  bot_id TEXT, kind TEXT, stated INTEGER NOT NULL DEFAULT 1,
+  sensitivity INTEGER NOT NULL DEFAULT 0, share_tags TEXT NOT NULL DEFAULT '[]',
+  source TEXT NOT NULL DEFAULT 'chat', expires INTEGER
+);
+CREATE INDEX IF NOT EXISTS mem_scope_scope ON mem_scope(scope, bot_id);
+```
+Migration: existing `memories` rows → `user:core` if `pinned`, else `team`; A-team profile items → `user:<kind>` with `stated`; A-team `S.memory.bots[id]` → `bot:<id>`; `S.memory.team` → `team`; Bot HQ `USER.md` → `user:core` proposals, `MEMORY.md` → `bot:<id>`.
+
+### 9.3 `argus-agents-api` v2 (D1)
+
+```sql
+CREATE TABLE agents(user_id TEXT NOT NULL, id TEXT NOT NULL, doc TEXT NOT NULL /* public bot fields JSON */,
+  u INTEGER NOT NULL, rev INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(user_id, id));
+CREATE TABLE jobs(user_id TEXT NOT NULL, id TEXT NOT NULL, doc TEXT NOT NULL, u INTEGER NOT NULL, rev INTEGER NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(user_id, id));
+CREATE TABLE routines(user_id TEXT NOT NULL, id TEXT NOT NULL, doc TEXT NOT NULL, u INTEGER NOT NULL, rev INTEGER NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(user_id, id));
+CREATE TABLE approvals(user_id TEXT NOT NULL, id TEXT NOT NULL, doc TEXT NOT NULL, decision TEXT, decided_by TEXT,
+  u INTEGER NOT NULL, rev INTEGER NOT NULL, PRIMARY KEY(user_id, id));
+CREATE TABLE events(user_id TEXT NOT NULL, rev INTEGER NOT NULL, at INTEGER NOT NULL, bot_id TEXT, kind TEXT NOT NULL,
+  text TEXT NOT NULL, ref TEXT, PRIMARY KEY(user_id, rev));
+CREATE TABLE revs(user_id TEXT PRIMARY KEY, rev INTEGER NOT NULL);
+CREATE TABLE tokens(id TEXT PRIMARY KEY, user_id TEXT NOT NULL, hash TEXT NOT NULL, scopes TEXT NOT NULL,
+  label TEXT, created_at INTEGER NOT NULL, last_used_at INTEGER, revoked INTEGER NOT NULL DEFAULT 0);
+CREATE INDEX agents_rev ON agents(user_id, rev); CREATE INDEX jobs_rev ON jobs(user_id, rev);
+CREATE INDEX routines_rev ON routines(user_id, rev); CREATE INDEX approvals_rev ON approvals(user_id, rev);
+```
+Each write runs in one D1 batch: `UPDATE revs SET rev = rev + 1 … RETURNING rev`, then upsert with `WHERE excluded.u > u` (LWW). Tombstones = `deleted=1` rows, purged after 30 days.
+
+---
+
+## 10. Sequence diagrams
+
+### 10.1 Unaddressed request → Manager → domain agent → approval → result
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor U as Finn
+  participant M as Manager (fast lane)
+  participant N as Needle (on-device)
+  participant R as Router
+  participant Q as Job queue
+  participant A as Atlas (Travel)
+  participant W as Booker worker
+  participant P as Policy engine
+  participant C as Card UI
+  U->>M: "Find me a refundable flight to Cape Town on the 14th, under 6k"
+  M->>N: parse intent (≤150 ms)
+  N-->>M: no confident command
+  M->>R: score domains
+  R-->>M: Atlas 0.91
+  M->>Q: add_job(brief + user:core lines + money share:travel)
+  M-->>U: "Handing this to Atlas." (pill appears)
+  Q->>A: start job (BgAgents, Atlas identity)
+  A->>W: spawn_agent(booker, constraints)
+  W->>W: web/browser search (parallel tools)
+  W-->>A: 3 options + pick
+  A-->>U: options card (```compare) in Atlas chat + notification
+  U->>A: "Book the 07:15"
+  A->>P: book_flight (SPEND)
+  P->>C: approval card (amount, merchant, card label)
+  U->>C: Allow
+  C-->>P: allowed
+  P-->>A: run with {{secret:card}} at checkout
+  A->>Q: done_job(result) · audit_log · spend_ledger · Ledger notified (money scope)
+```
+
+### 10.2 Bot-to-bot with hop and scope control
+
+```mermaid
+sequenceDiagram
+  participant A as Atlas
+  participant B as TeamBus
+  participant L as Ledger (Money, private)
+  participant T as Tempo
+  A->>B: send_to_bot(Ledger, "Budget left for Dec trip?", depth=1)
+  B->>B: check depth<3, thread budget, A's scopes
+  B->>L: BotMessage (thread t1)
+  L->>L: reads money scope
+  L->>B: reply "ZMW 18,000 left" (line tagged share:travel)
+  B->>B: redact lines not readable by Atlas
+  B-->>A: reply
+  A->>B: send_to_bot(Tempo, "Block 14–20 Dec", depth=1)
+  B-->>T: BotMessage
+  T->>T: create event (WRITE_REMOTE, user-only → allow)
+  T-->>A: "Blocked."
+  Note over A,T: Both chats show a collapsed "Atlas ↔ Ledger · 2 messages" line
+```
+
+### 10.3 Room turn (huddle)
+
+```mermaid
+sequenceDiagram
+  actor U as Finn
+  participant RM as Room "Weekend"
+  participant D as Room dispatcher
+  participant S as Circle
+  participant F as Pantry
+  participant M as Manager (facilitator)
+  U->>RM: "Plan Saturday with Thandi — work it out"
+  RM->>D: dispatch (huddle, ≤3 responders, ≤30 calls)
+  D->>S: group context (last 12 msgs)
+  D->>F: group context
+  S->>RM: post_to_group(proposal: hike + picnic)
+  F->>RM: post_to_group(picnic menu, allergy-safe)
+  D->>M: round summary
+  M->>RM: decision + ```compare + choices
+  U->>RM: picks option 1
+  M->>S: add_job(send invite draft)  %% SEND → draft card later
+```
+
+### 10.4 Routine fire (phone) with silence and back-off
+
+```mermaid
+sequenceDiagram
+  participant AL as AlarmManager / WorkManager
+  participant RQ as Routine runner
+  participant L as Ledger
+  participant AR as Manager arbiter
+  participant UI as Cards / notification
+  AL->>RQ: fire "Bills due" 08:00 (tz Africa/Lusaka)
+  RQ->>L: turn (from: routine)
+  alt nothing due
+    L-->>RQ: stay_silent
+    RQ->>RQ: silent_streak++ (stretch interval after N)
+  else ZESCO bill due tomorrow
+    L->>AR: Suggestion(topic=bill due, urgency=2, risk={SPEND})
+    AR->>AR: mutes, dedupe, quiet hours, daily cap
+    AR->>UI: card "Electricity bill due tomorrow — pay now?" (Do it → normal SPEND card)
+  end
+```
+
+### 10.5 Memory: proposal and user edit
+
+```mermaid
+sequenceDiagram
+  actor U as Finn
+  participant P as Pantry
+  participant MS as Memory service
+  participant M as Manager
+  participant F as Files (USER.md / MEMORY.md)
+  U->>P: "I'm allergic to peanuts"
+  P->>MS: memory_propose("Allergic to peanuts", user:core, stated)
+  MS->>MS: secret check · classifier → user:core + share:food
+  MS->>M: proposal (auto-accept rule: allergy = requirement)
+  M-->>MS: accept
+  MS->>F: re-render USER.md, sync blob (E2E)
+  U->>F: edits MEMORY.md of Pantry in Settings (deletes a line)
+  F->>MS: parse diff → memory_delete(id) · tombstone · verify by search
+```
+
+### 10.6 Sync with `argus-agents-api` v2 and remote approval
+
+```mermaid
+sequenceDiagram
+  participant PH as Phone (team.db)
+  participant API as argus-agents-api v2 (D1)
+  participant CL as MCP client (Claude / Cursor)
+  PH->>API: POST /v2/sync {since: 41, changes, tomb}
+  API-->>PH: {rev: 47, changes since 41, tomb}
+  CL->>API: tools/call add_job("Draft investor update", agent="Career")
+  API->>API: rev 48, event job.created
+  PH->>API: sync (since 47)
+  API-->>PH: job (source=mcp, confirmed=false → waits for OK)
+  PH->>PH: Career runs job → SEND needs approval (not on-device-only)
+  PH->>API: approval pending (rev 49)
+  CL->>API: decide_approval(allow) with aat_ token scope=approve
+  PH->>API: sync → decision
+  PH->>PH: apply if still pending · audit_log(decided_by=token label)
+```
+
+### 10.7 Escalation to a cloud desk with takeover
+
+```mermaid
+sequenceDiagram
+  participant F as Forge
+  participant X as ExecRoute
+  participant P as Policy
+  actor U as Finn
+  participant D as Cloud desk (self-hosted / Codespaces / Orgo)
+  F->>X: needs real Chrome for Cloudflare dashboard
+  X->>X: phone WebView insufficient (JS/login)
+  X->>P: cloud_start (COMPUTE_PAID)
+  P->>U: card "Start cloud desk? ~$0.06/h (Orgo) · auto-stop 10 min idle"
+  U-->>P: Allow
+  P->>D: start / resume, lease screen :2, Chrome CDP 9202
+  F->>D: browse (screenshots back to F)
+  U->>D: Take over (noVNC, input enabled)
+  D-->>F: "Finn has control — wait"
+  U->>D: Hand back
+  F->>D: Orient (fresh look), continue
+  D->>D: idle 10 min → stop (ARGUS-enforced)
+```
+
+---
+
+## 11. Source → target map, build order, risks
+
+### 11.1 Map
+
+| Target component | Argus-mobile | A-team | Bot HQ |
+|---|---|---|---|
+| Bot record & roster | `Specialists.Spec`, `Personas` | `S.agents`, `manager.js ensure` | `types.ts Bot`, `db.ts bots` |
+| Soul | `OnePersona`, `SharedPersona` | `agent.prompt`, `DEFAULT_PROMPT` | Hermes persona, `instructions` |
+| Engine | `Agent.Session`, `CloudRuns`, `BrainOrder` | `CHAT.reply`, `models.js` | `engine.ts`, `agent/loop.ts` (→ `HermesEngine`) |
+| Manager | chat agent + `BgAgents.leadLine` | `manager.js` tools + prompt | primary bot "main point of contact" |
+| Jobs | `BgAgents`, `TaskKeeper` | `jobs.js QUEUE`, `bgjobs.js` | `tasks` table |
+| Orchestration | `orchestra/*` | — | Hermes delegation |
+| Bot-to-bot, rooms, subagents | `delegate` | `agent_delegate` | `send_to_bot`, `rooms.ts`, `subagents.ts` |
+| Memory | Mind/`blaze.db`, chat/cache tiers | profile + `memory.js` | `engine-memory.ts` |
+| Tools/MCP | `CommandRegistry`, `ToolRouter`, `Mcp.kt` | `guard.js` schemas, `connect.js` | `mcp.ts`, `agent/tools.ts` |
+| Apps | `Connectors.kt` | argus-connect | `composio.ts`, `triggers.ts` |
+| Computers | `terminal/` proot, phone control | `workspace.js`/`Workspace.java`, `cloud.js` | `computer.ts`, `desk.ts`, `box.ts`, `vnc.ts` |
+| Safety | `ConfirmGate`, `Modes`, `UndoCenter`, `SecretGuards` | `guard.js`, `RISKY`, `jobAllowed`, review | approvals/policies in MCP call |
+| Proactivity | `Proactive`, `Jarvis`, `Triggers`, `Autopilot`, `Routines` | daily check, cards, quiet hours, caps | `routines.ts`, `proactive.ts` check-ins |
+| Sync | `CloudSync` | `argus-agents-api` v1 | — |
+| Voice | `voice/` | — | `voice.ts` (xAI) → on-device/gateway |
+
+### 11.2 Suggested build order (for slice 6)
+
+1. **E0 — Team core**: `team.db`, `Bot`/`Job`/`Row` models, Manager as a `Bot` wrapping today's chat agent, per-bot chats in the A-team UI shell, `BotEngine` with `LocalEngine`. Migrate Argus `Specialists` → workers. *Exit:* Manager + 2 domain bots chat and delegate jobs on-device.
+2. **E1 — Policy & audit**: unified `Policy.decide`, cards (approval/draft/question/connect), `audit_log`, Pause-all. Before any proactive or cloud feature.
+3. **E2 — Memory scopes**: `mem_scope`, SOUL.md/MEMORY.md/USER.md projections + editor, A-team profile migration, scoped prompt blocks.
+4. **E3 — TeamBus**: `send_to_bot`, threads, rooms, subagents, huddle.
+5. **E4 — Domain catalog**: templates for the 14 domains, setup picker, routing hints, Needle `route_to`.
+6. **E5 — Proactivity**: SignalBus, arbiter, routines per bot, morning brief, Today strip.
+7. **E6 — Sync & MCP**: `argus-agents-api` v2 (D1, bz_ auth, delta sync, approvals, events), on-device MCP relay.
+8. **E7 — Computers & engines**: per-bot proot home/tmux, cloud desk providers (self-hosted image first), noVNC takeover, `CloudRunEngine`, `HermesEngine`.
+9. **E8 — Voice & optional paid adapters**: on-device/gateway voice, optional xAI / Composio / Orgo adapters.
+
+### 11.3 Risks and open questions
+
+| Risk | Mitigation |
+|---|---|
+| Phone RAM/battery with many bots | Domain agents are idle data; only running jobs cost RAM; global `AgentBudget.cap()`; signals are local and model-free; back-off on silent routines |
+| Free model quality for multi-agent coordination | Deterministic routing first (Needle, hints), strong lane only for Manager decisions/huddles, `reviewer` worker on important outputs, evals (`a-team/evals`) extended with routing + delegation suites |
+| Bot-to-bot loops and cost blow-ups | Hop cap 3, thread budgets, runaway guard, per-bot daily budget, visible bot-to-bot lines |
+| Memory leakage across domains | Scopes enforced in the memory service and TeamBus redaction, not in prompts; private-by-default for health/money/admin |
+| Prompt injection via mail/web/MCP leading to sends/spends | `ConfirmGate` taint → card; SEND/SPEND/DELETE never auto from proactive or bot-initiated work |
+| KV race in v1 API | D1 + rev counter in v2 |
+| Hermes/MCP relay exposes phone tools to the internet | Per-bot tokens from blaze-auth, approvals in the call, money/delete on-device-only, relay off by default |
+| Too many bots overwhelm the user | Seed 3 (Manager, Tempo, Inbox) + picked domains; Manager proposes new ones only when work repeats |
+| Open questions for Finn | (1) Persona names (Ledger, Pulse…) vs plain labels by default? (2) Should cloud routines (phone off) exist in v1? (3) Self-hosted desk target: his PC via Blaze Desktop, or an always-free VM? (4) Keep Hermes engine in v1 or defer to E7? |
