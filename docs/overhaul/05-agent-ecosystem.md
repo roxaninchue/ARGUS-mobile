@@ -438,3 +438,148 @@ interface BotEngine {
 | **Hermes** (free, but external) | Agent loop | Not replaced; demoted to optional engine. Default engine = ARGUS runtime. | `HERMES` engine kind |
 
 ---
+## 6. Tools / MCP surface and the `argus-agents-api` v2 contract
+
+### 6.1 One tool registry, namespaced groups
+
+All three sources' tools merge into one `ToolRegistry` (Argus `CommandRegistry` + `ToolRouter` groups). A tool declares: `name`, `group`, JSON schema, `actionClass` (§7), `claims` (for `ToolScheduler`/`KeyedLocks`), `prefetchable`, `runsOn` (PHONE | UBUNTU | CLOUD | GATEWAY | REMOTE_MCP), `readOnly`.
+
+| Group | Tools (source) |
+|---|---|
+| `team` | `agents_list`, `agent_create`, `agent_update`, `agent_delete`, `agent_status` (A-team) · `send_to_bot`, `create_group`, `post_to_group`, `stay_silent` (Bot HQ) · `spawn_agent`, `delegate`, `orchestrate`, `message_agent`, `cancel_agent`, `list_agents`, `check_agent` (Argus) · `spawn_subagent`, `check_subagent`, `stop_subagent` (Bot HQ) |
+| `jobs` | `add_job`, `done_job`, `update_job`, `agent_delegate`, `retry_job` (A-team) · `create_task`, `update_task` (Bot HQ, become job steps) · `job_status/wait/kill` (A-team bgjobs) |
+| `memory` | `memory_search/save/update/delete/merge` (Argus) · `memory_read/write/forget` (A-team profile = `user:*` scope) · `memory_propose` (new) · `cache_toc/read/search/summarize`, `search_chat`, `read_turn` |
+| `routines` | `routine_create/list/cancel` (A-team) · `create_routine`, `create_event_routine`, `list_event_triggers`, `update_routine`, `delete_routine`, `set_checkins` (Bot HQ) · Argus `Routines`/`Triggers`/`Autopilot` events |
+| `user` | `ask_user` (choices card), `request_app_connection` (connect card), `draft` (send card), `secure_input` |
+| `files` | `save_file` → **Library** per bot (Bot HQ) = Argus `SaveFile` + A-team `files.js`; `file_read/write/edit/list` |
+| `ubuntu` | `run` (A-team ```run blocks / Argus `run_shell`), `run_code`, terminal sessions per bot (tmux window = `term:<botId>`) |
+| `cloud` | `cloud_start/stop/status`, `desk_screenshot/click/type/key`, `desk_bash` (A-team cloud.js, Bot HQ computer tools) — every start is `ASK` |
+| `phone` / `device` / `comms` / `notifications` | Argus phone control, alarms, SMS/calls, notification read |
+| `browser` | Argus `browser_*` (WebView) · CDP browser on a cloud desk |
+| `web` | `web_search`, `web_fetch`, BlazeQuery · `x_search` (optional key) |
+| `apps` | argus-connect app tools (`gmail_list`, `gmail_read`, `cal_list`, … A-team v2.16 helpers), `connectors_list`, MCP servers as `mcp__<server>__<tool>` |
+| `dev` | `gitlab_issue_read/list`, `gitlab_branch_create`, `gitlab_mr_create`, `ci_status` (PLAN-reliable-agent §1; Forge only) |
+| `design`, `media`, `study`, `bank`, `health` | Argus groups (Designs, media, Learn/Flashcards, Bank mode, Health Connect) |
+
+Per-bot exposure: the bot's `toolGroups` ∩ permissions, connected apps' tools first, capped at **64 tools in the prompt** (A-team cap); other groups load on request (`ToolRouter`, `active_tools` table in blaze.db).
+
+### 6.2 ARGUS as an MCP **client**
+
+`connect/Mcp.kt` (Streamable HTTP + legacy SSE; stdio listed but needs a PC → runs via Blaze Desktop link or inside proot Ubuntu for Node/Python MCP servers — new: proot makes stdio servers possible on the phone). Each server is granted to specific bots (`BotAppGrant`), and each tool carries `Ask / Always / Off` (Mcp.kt) mapped onto §7 policies. MCP tool output counts as **untrusted** content (`ConfirmGate` taint).
+
+### 6.3 ARGUS as an MCP **server**
+
+Two servers, same tool definitions:
+1. **On-device relay** `mcp://argus/<botId>` — used by `HERMES` bots and by Blaze Desktop. Served by the phone through the gateway relay (the phone keeps an outbound WebSocket to the gateway; the gateway exposes `POST /mcp/<botId>` with a per-bot bearer derived like Bot HQ's `SESSION_SECRET` scheme but issued by blaze-auth). Tools: everything the bot is granted. Approvals happen inside the call (card on the phone; call waits; Bot HQ semantics: Allow / Always / Don't / expired → "skipped").
+2. **`argus-agents-api` MCP** (`/mcp`, cloud) — team-level tools usable from any MCP client (Claude, Cursor, Hermes): roster, jobs, routines, approvals, summary. No memory tools (privacy, §4.6).
+
+### 6.4 `argus-agents-api` v2 contract
+
+Today (v1, `a-team/api/src/index.js`): one KV document, a single shared `API_TOKEN`, entities agents + jobs, `POST /v1/sync` LWW per item by `u`, 30-day tombstones, REST `/v1/agents|jobs|summary`, MCP tools mirroring `OPS`.
+
+Problems to fix: (a) single KV doc = lost updates under concurrent writers (two phones, MCP client + phone) — KV has no transactions; (b) one global token, not per user; (c) full-document sync each time; (d) no routines/approvals/events, so a remote client can't approve or see bot activity.
+
+**v2** (same Worker, `api/` in a-team → moves to `argus-mobile/agentsapi/`):
+- **Storage**: D1 (free tier) tables per entity, keyed by `user_id` (§9.3), or one Durable Object per user if realtime fan-out is wanted. D1 first (simpler, free).
+- **Auth**: `Authorization: Bearer bz_…` verified with blaze-auth (same token as gateway and argus-connect). Personal access tokens (`aat_…`, scoped `read`, `jobs:write`, `approve`) for MCP clients, created in Settings, revocable. The v1 `API_TOKEN` keeps working for self-hosted single-user deployments (`custom` mode in A-team sync).
+- **Entities**: `agents` (+ `kind`, `domain`, `label`, `engine`, `avatar`, `soulHash`, `toolGroups`, `reportsTo`, `members`, `parentId`, `hidden`), `jobs` (+ `run`, `result`, `parentJob`, `deps`, `source` user|manager|routine|bot|mcp, `approvalIds`), `routines` (metadata + schedule; prompt text included, it is user-authored), `approvals` (pending cards mirrored so they can be answered from another device or MCP client), `events` (append-only activity feed: job state changes, bot-to-bot summaries, routine runs — **no message bodies, no memory**).
+- **Delta sync**: `POST /v2/sync {since: rev, changes: {agents:[], jobs:[], routines:[], approvals:[]}, tomb:{}}` → `{rev, changes since, tomb, serverTime}`. Per-item LWW by `u` (HLC timestamp `u = max(wall, last+1)` to survive clock skew), tombstones 30 days (kept from v1). Server assigns a monotonically increasing `rev` per user; each changed row stores `rev` so "since" is an index scan.
+- **Approvals from anywhere**: `POST /v2/approvals/:id {decision: allow|always|deny}`. The phone (which executes) polls/streams `events` and applies the decision only if the approval is still `pending` and the decision is signed by an allowed token with `approve` scope. Money/delete approvals can be restricted to *on-device only* (default on).
+- **REST + MCP parity** (v1 rule kept): every REST op is an MCP tool; add `list_routines`, `pause_routine`, `list_approvals`, `decide_approval`, `team_activity`.
+- **OpenAPI** at `/openapi.json` (kept).
+
+---
+
+## 7. Safety: approvals, spending, sending, deletion, audit, takeover
+
+### 7.1 Action classes
+
+Every tool declares one `ActionClass`. The **policy engine** (one Kotlin object, `Policy.decide(bot, call, ctx)`) merges `ConfirmGate` (taint), `Modes` (Plan refuses all non-read at dispatch), A-team `RISKY` (money/send/delete regex for free-text tasks and routines), Bot HQ approval-in-the-call and per-tool `Always allow`, and Mcp.kt `Ask/Always/Off`.
+
+| Class | Examples | Default | Can be pre-approved? |
+|---|---|---|---|
+| `READ` | search, read mail, list files, read calendar | allow | — |
+| `WRITE_LOCAL` | save file in Library, memory save, create job | allow | — |
+| `WRITE_REMOTE` | create calendar event (only self), edit doc | ask (allow if only the user is affected — Hark-style calendar rule) | yes, per tool per bot |
+| `SEND` | email, SMS, chat message, post, invite, RSVP | **ask with full draft and recipients** | only "this recipient, this kind" standing rule; never for public posts |
+| `SPEND` | buy, book, pay, subscribe, transfer, top-up | **always ask**, shows total + payee + card label | no auto above the bot's monthly cap; default cap 0 |
+| `DELETE` | delete file/mail/event/bot, cancel booking, uninstall, `rm -rf` | **always ask** (destructive) | no |
+| `SETTINGS` | change phone/system settings, install app | ask | yes (non-destructive) |
+| `CREDENTIAL` | sign in, use vault secret, reset password | ask; password reset never without explicit yes | no |
+| `COMPUTE_PAID` | start cloud desk, paid model lane | ask each session, shows cost/h | per-session only |
+| `PHYSICAL` | phone screen taps in other apps | allow in task scope; ask after tainted content | — |
+
+Decision order: `NEVER` in bot permissions → refuse · Plan mode & non-read → refuse · destructive/`SPEND`/`SEND` → card · tainted turn (read untrusted content) and action ≥ `WRITE_REMOTE` → card with "Requested after reading …" (`ConfirmGate`) · standing policy (user, tool, bot) → allow · autonomy `AUTOPILOT` and non-destructive → allow with **Undo bar** if undoable (`UndoCenter`, 10 s) · else card.
+
+Cards (Bot HQ card kinds kept): `approval` (Allow / Always allow / Don't allow), `draft` (Send / Edit / Discard), `question` (choices), `connect`. Card rules: a new user message or timeout closes it as `skipped` (Bot HQ); "Don't allow" returns a refusal telling the bot not to retry; never two cards at once (`ToolScheduler` `user` claim) but one bot's card never stalls another bot.
+
+### 7.2 Proactive and bot-initiated actions
+
+- Anything started by a routine, check-in, suggestion or another bot is **never** executed unconfirmed if it is `SEND`/`SPEND`/`DELETE` (A-team `jobAllowed`, `risky()`), even in Autopilot.
+- Bot-to-bot requests inherit the **lowest** permission in the chain (a worker can't do what its parent can't; Money can't ask Scout to buy beyond Money's cap).
+- Hop cap 3, thread budget 20 calls, runaway guard 12 automatic job starts / 10 min, global daily model-call budget per bot (`TokenLedger`, `Budget`).
+
+### 7.3 Spending
+
+`SpendGuard`: per-bot monthly cap (default 0 → every spend asks), per-transaction max, currency, allowed merchants (optional). A `SPEND` card shows amount, currency, merchant, card label (never digits), and which bot asked. Card details come from the vault at final checkout only (Argus Secure Form / `SecretUse` placeholders: the model sees `{{secret:card}}`, never the number). Spend events are written to the audit log and to Ledger's `money` scope (so Money knows what was spent).
+
+### 7.4 Sending
+
+`SEND` requires the full draft and recipients on a `draft` card; approval covers that content and those recipients only. Optional standing rule "Inbox may send informal replies to people I've emailed before, one recipient, no CC" (Hark default rule) — off by default, user-enabled per bot.
+
+### 7.5 Deletion
+
+Always a card; soft-delete with 30-day tombstone where we own the data (bots, jobs, memory, Library files); bot deletion removes its desk screen, Chrome profile, Library dir, Ubuntu home and tmux window after the card (Bot HQ delete semantics), Manager can't be deleted.
+
+### 7.6 Audit log
+
+Append-only `audit_log` (team.db) for every non-read action and every decision: who (bot, parent chain, trigger), what (tool, args summary with secrets redacted by `SecretGuards`), decision (auto/allowed/always/denied/expired, by whom, from which device), result, undo handle, cost. Rows are hash-chained (`prev_hash`) so tampering is visible. Settings › **Activity** shows it per bot and team-wide; exportable. Synced (summaries only) as `events` to `argus-agents-api`.
+
+### 7.7 Takeover and kill switch
+
+- **Watch / Take over** any computer a bot is using: cloud desk via noVNC (Bot HQ `vnc.ts`: server does VNC auth; watch mode drops input server-side), proot via the Terminal tab attached to the bot's tmux window (A-team), phone via the existing "hands off" pause in phone control.
+- **Pause bot** (finish current step, stop), **Stop** (A-team v2.16b instant stop: abort stream, cancel commands, `pkill` + `tmux wait-for`), **Pause all agents** (one tap in the Notch / quick settings tile: cancels every turn, holds the job queue and routines until resumed).
+- Takeover state is shown to the bot ("Finn has control of your screen; wait") and the bot resumes with a fresh look (Argus `Orient`).
+
+---
+
+## 8. Proactivity and routines
+
+### 8.1 Today
+
+Argus: `Proactive.kt` (periodic look at notifications/calendar/health → most checks silent), `Jarvis` (questions, screen glances, camera looks — off by default — levels in `JarvisLogic`), `Triggers` (notification, battery, charger, app opened), `Autopilot` (place arrive/leave, Bluetooth, Wi-Fi), `Routines` (scheduled prompts, AlarmManager), `FollowUps`, `Habits`. A-team: daily 07:30 check (one cheap call, skipped if unchanged), ≤3 "Manager suggests" cards (Do it / Not now / Stop suggesting this), quiet hours 22–07, ≤3 proactive notifications/day, topic mutes, Today strip, Java alarm + JobScheduler backstop. Bot HQ: cron + event routines (Composio triggers), check-ins at chosen times with `stay_silent` and silent-streak back-off.
+
+### 8.2 Target: Signal bus → domain proposers → Manager arbiter
+
+```mermaid
+flowchart LR
+  subgraph Signals
+    N[Notifications] ; C[Calendar changes] ; E[Mail / app webhooks<br/>argus-connect] ; L[Place · Wi-Fi · BT · battery] ; T[Time ticks & routines] ; J[Job results] ; X[Web watches<br/>prices · flights]
+  end
+  Signals --> SB[(SignalBus<br/>on-device)]
+  SB -->|subscriptions| D1[Pulse] & D2[Ledger] & D3[Atlas] & D4[Inbox] & D5[...]
+  D1 & D2 & D3 & D4 & D5 -->|Suggestion candidates| AR{Manager arbiter}
+  AR -->|≤ caps, deduped, ranked| UI[Cards · Today strip · Notification]
+  AR -->|nothing worth it| S[(silence + log)]
+```
+
+- **Signals** are cheap, local events (no model call). Each domain declares subscriptions in `domain.json` (e.g. Ledger: notifications from bank apps; Atlas: calendar events with "flight"; Tempo: calendar conflicts).
+- **Proposers**: a domain bot wakes only when a subscribed signal arrives or its routine fires, decides with the cheapest lane, and either emits a `Suggestion` (title, why, task, urgency, topic, risk classes) or stays silent.
+- **Arbiter** (Manager, deterministic first): drops muted topics and "don't" rules (A-team `muted()`), dedupes across bots (same topic within 24 h), applies **global caps** (quiet hours, ≤3 proactive notifications/day, ≤1 per domain/day, user's PROACTIVITY preferences), ranks by urgency × relevance, and bundles the rest into the next brief. Urgent signals (flight cancelled, bill overdue today) bypass the batch but not quiet hours unless the user allows "urgent during quiet hours".
+- **Back-off**: Bot HQ silent streak — a routine or check-in that stays silent N times stretches its interval; repeated "Not now" on a topic halves its frequency; "Stop suggesting this" writes a standing rule.
+- Suggestions never execute `SEND/SPEND/DELETE` on "Do it" without the normal card (§7.2). Cloud desk never started proactively.
+
+### 8.3 Routines
+
+- **Owner**: every routine belongs to a bot (Bot HQ), visible in that bot's details and in Settings › Routines (all). Manager creates routines for others via `routine_create(bot=…)`.
+- **Kinds**: `CRON` (cron or once/daily/weekly in the user's time zone, A-team `nextRun`), `EVENT` (signal match: notification, app webhook, place, Wi-Fi, BT, battery, calendar), `CHECKIN` (Bot HQ check-in times, primary/Manager only), `WATCH` (poll a URL/price/flight at an honest interval ≥ 1 h).
+- **Execution**: AlarmManager exact alarm + WorkManager backstop on the phone (A-team `RoutineAlarm`/`RoutineJob`, Argus `RoutineReceiver`); each fire = a turn in the owner bot's queue tagged `from: routine`, may end with `stay_silent`. Routines that must run while the phone is off (e.g. 03:00 CI watch) can be marked **cloud** → registered on `argus-agents-api` as a Cron Trigger that starts a gateway `/v1/runs` run for that bot with read-only/cloud tools; results land as events and appear when the phone syncs. Any action ≥ `WRITE_REMOTE` from a cloud routine waits as a pending approval.
+- **Templates** shipped per domain (§3.3), off until the user accepts; Manager offers a routine the second time the same request repeats (onboarding pattern).
+
+### 8.4 The daily picture
+
+- **Morning brief** (Manager, opt-in): collects each domain's `briefLine()` (one line or nothing) — Tempo's day, Inbox's owed replies, Ledger's due bills, Atlas's next trip step, Pulse's plan — ≤ 8 lines, a ```choices block of 2–3 offered actions.
+- **Today strip** (A-team) at the top of the Manager chat: running jobs, pending approvals, next routine, suggestions.
+- **Weekly review** (Sunday, opt-in): done jobs, money summary (if Ledger shares), habits, next week's calendar crunch.
+
+---
