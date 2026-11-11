@@ -825,6 +825,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         return loadRaw(id)
     }
 
+    internal fun teamSession(id: String): Session = sessions[id] ?: (load(id) ?: Session(id)).let { sessions.putIfAbsent(id, it) ?: it }   // P0-AG-01 (LocalEngine)
     /** Reads chat [id] from disk (the preloaded main chat when it is still fresh); null when there is no such chat. */
     private fun loadRaw(id: String): Session? {
         val p = takePreload(id) ?: (ChatStore.load(id) ?: return null).let { o -> parseChat(o) }
@@ -1965,6 +1966,7 @@ When you finish, say what you did in one short sentence.
             val text0 = SecretVault.scrub(text1)   // 0.46.6: no saved secret's value ever lands in the chat
             // v0.32.0: the model sometimes copies the history's [Blaze] / [Halo] tags into its narration; never shown.
             val text = if (role == Role.STEP || role == Role.BLAZE) Duo.clean(text0).ifEmpty { text0 } else text0
+            TeamHooks.message(this.id, role.name, text)   // P0-AG-01: a bound bot's row sink
             if (role == Role.STEP && autoStepId >= 0 && msgs.lastOrNull()?.id == autoStepId) {
                 val sid = autoStepId; autoStepId = -1L
                 msgs = msgs.map { if (it.id == sid) it.copy(text = text) else it }
@@ -3178,6 +3180,7 @@ When you finish, say what you did in one short sentence.
             // v0.45.5 (#10): the shared persona first (byte-identical every turn), the app's context second.
             if (sp == null && SharedPersona.applies(Settings.personaId)) SharedPersona.get()?.let { msgs.put(JSONObject().put("role", "system").put("content", it.system)) }
             msgs.put(JSONObject().put("role", "system").put("content", sys))
+            TeamHooks.identityBlock(id)?.let { msgs.put(JSONObject().put("role", "system").put("content", it)) }   // P0-AG-01: the bot's identity
             var lastShot = -1
             for (i in 0 until history.length()) if (isShot(history.getJSONObject(i))) lastShot = i
             if (windowed && from > base) msgs.put(JSONObject().put("role", "user").put("content",
@@ -3348,6 +3351,7 @@ When you finish, say what you did in one short sentence.
         /** The end of every turn (was runLoop's finally body; moved out in 0.52.1 to keep runLoop under the JVM's 64 KB method limit). */
         private fun endTurn(turnEnd: TurnEnd.Reason, notSent: Boolean, bytes0: Long, turnModel: TurnModel?, cloudTurn: CloudRuns.Turn?) {
             val wasProgress = progressWake; progressWake = false
+            TeamHooks.end(id, turnEnd.name)   // P0-AG-01
             if (wasProgress) dropSkip()
             liveGate = null
             // v0.45.6: a turn never ends silently (stop, timeout, tool failure): one plain closing line.
@@ -3479,7 +3483,7 @@ When you finish, say what you did in one short sentence.
                 par.launch(Dispatchers.Default) { try { Memory.promptBlock(userNow) } catch (e: CancellationException) { throw e } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: memory warm", e) } }
                 val dOrient = if (!routine && "screen" in groupsOn) par.async(Dispatchers.Main) {
                     try { orientRead() } catch (e: CancellationException) { throw e } catch (_: Throwable) { "" to "" } } else null
-                val allTools0 = dTools.await()
+                val allTools0 = TeamTools.keep(id, dTools.await())   // P0-AG-01: a bound bot's tool subset
                 // Agents don't start or steer other agents; Plan keeps only read-only tools.
                 val allTools = Modes.filterTools(if (agentId == null) allTools0 else JSONArray().apply {
                     // v0.26.2: a background agent running as a specialist gets only its groups' tools (like delegate's runs).
@@ -4788,10 +4792,13 @@ When you finish, say what you did in one short sentence.
         @Volatile var songResolved = ""
 
         suspend fun runTool(name: String, args: JSONObject, shots: MutableList<String>): String {
+            TeamHooks.refuse(id, name)?.let { return it }   // P0-AG-01: outside a bound bot's tool subset
             val user = lastUserText()
             MemoryLoop.gate(name, user, memoryLookups, songResolved.ifBlank { MemoryLoop.concrete(user).orEmpty() })?.let { add(Role.STEP, "Skipping another memory check"); return it }
             if (MemoryLoop.isLookup(name)) memoryLookups++
+            if (TeamHooks.isBound(id)) TeamHooks.call(id, name, SecretVault.scrub(args.toString()))
             val out = runToolScreen(name, args, shots)
+            if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out))
             if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
             return out
         }
