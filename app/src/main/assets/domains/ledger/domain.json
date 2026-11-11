@@ -1,0 +1,114 @@
+{
+  "format": 1,
+  "id": "ledger",
+  "label": "Money",
+  "defaultName": "Ledger",
+  "area": "money",
+  "about": "Budgets, bills, subscriptions, receipts, savings goals and the price of decisions.",
+  "avatar": {
+    "shape": "orb",
+    "face": 4,
+    "color": "#f59e0b",
+    "glyph": "wallet"
+  },
+  "seeded": false,
+  "routingHints": [
+    "budget",
+    "spend",
+    "spending",
+    "bill",
+    "bills",
+    "subscription",
+    "afford",
+    "save",
+    "savings",
+    "bank",
+    "salary",
+    "receipt",
+    "expense",
+    "money",
+    "mobile money"
+  ],
+  "toolGroups": [
+    "bank",
+    "files",
+    "web",
+    "routines",
+    "memory"
+  ],
+  "suggestedApps": [
+    "sheets",
+    "bank-sms-parser"
+  ],
+  "workers": [
+    "researcher",
+    "writer"
+  ],
+  "skills": [
+    "bills-calendar"
+  ],
+  "sharedSkills": [
+    "data-analysis"
+  ],
+  "memory": {
+    "owns": "money",
+    "private": true,
+    "reads": [
+      "user:core"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SPEND": "ASK",
+      "SEND": "NEVER",
+      "DELETE": "ASK",
+      "WRITE_REMOTE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "NONE"
+  },
+  "approvals": [
+    "Any payment, transfer, subscribe or cancel",
+    "Sharing balances or transactions with another bot or person",
+    "Deleting a budget or receipt"
+  ],
+  "routines": [
+    {
+      "name": "Bills due",
+      "kind": "CRON",
+      "schedule": "0 8 * * *",
+      "prompt": "Check bills due in the next 3 days against what has been paid. Name each with amount and date; stay silent if nothing is due.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Subscription audit",
+      "kind": "CRON",
+      "schedule": "0 10 1 * *",
+      "prompt": "List every recurring charge seen this month with its amount and last use; flag ones unused for 30 days and any price rise.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Spend this week",
+      "kind": "CRON",
+      "schedule": "0 17 * * 5",
+      "prompt": "Sum this week's spending by category against the budget; one line per category that is over, and the total.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "notification.bank",
+    "sms.mobile-money",
+    "time.tick"
+  ],
+  "suggestions": {
+    "maxPerWeek": 2,
+    "topics": [
+      "bill due",
+      "unused subscription",
+      "budget overrun"
+    ]
+  }
+}

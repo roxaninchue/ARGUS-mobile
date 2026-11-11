@@ -1,0 +1,116 @@
+{
+  "format": 1,
+  "id": "atlas",
+  "label": "Travel",
+  "defaultName": "Atlas",
+  "area": "travel",
+  "about": "Trips end to end: flights, stays, visas, packing, day-of travel and itineraries.",
+  "avatar": {
+    "shape": "orb",
+    "face": 2,
+    "color": "#3b82f6",
+    "glyph": "plane"
+  },
+  "seeded": false,
+  "routingHints": [
+    "trip",
+    "travel",
+    "flight",
+    "flights",
+    "hotel",
+    "airbnb",
+    "visa",
+    "packing",
+    "itinerary",
+    "airport",
+    "vacation",
+    "holiday",
+    "boarding",
+    "layover",
+    "check in"
+  ],
+  "toolGroups": [
+    "web",
+    "browser",
+    "connectors",
+    "files",
+    "memory"
+  ],
+  "suggestedApps": [
+    "airline-sites",
+    "hotel-sites",
+    "maps"
+  ],
+  "workers": [
+    "booker",
+    "researcher",
+    "planner"
+  ],
+  "skills": [
+    "trip-plan"
+  ],
+  "sharedSkills": [
+    "deep-research"
+  ],
+  "memory": {
+    "owns": "travel",
+    "private": false,
+    "reads": [
+      "user:core",
+      "money:budget-caps"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SPEND": "ASK",
+      "SEND": "ASK",
+      "WRITE_REMOTE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Any booking or payment",
+    "Sharing an itinerary with another person",
+    "Changing or cancelling a booking"
+  ],
+  "routines": [
+    {
+      "name": "Check-in reminder",
+      "kind": "EVENT",
+      "schedule": "trip.checkin-open",
+      "prompt": "Online check-in just opened for a booked flight. Give the airline, flight, seat state and the check-in link.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Packing day before",
+      "kind": "CRON",
+      "schedule": "0 18 * * *",
+      "prompt": "If a trip starts tomorrow, send the packing list for its weather, length and purpose; stay silent otherwise.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Flight status watch",
+      "kind": "WATCH",
+      "schedule": "*/30 * * * *",
+      "prompt": "On travel days only, check the booked flight's status; report a delay, gate change or cancellation at once.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "calendar.changed",
+    "connector.mail.booking",
+    "time.tick"
+  ],
+  "suggestions": {
+    "maxPerWeek": 2,
+    "topics": [
+      "check-in open",
+      "visa needed",
+      "passport expiry before trip"
+    ]
+  }
+}

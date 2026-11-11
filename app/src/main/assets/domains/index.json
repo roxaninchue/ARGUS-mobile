@@ -1,0 +1,139 @@
+{
+  "format": 1,
+  "domains": [
+    "tempo",
+    "inbox",
+    "pulse",
+    "ledger",
+    "career",
+    "forge",
+    "hearth",
+    "pantry",
+    "atlas",
+    "circle",
+    "tutor",
+    "clerk",
+    "scout",
+    "studio"
+  ],
+  "seeded": [
+    "tempo",
+    "inbox"
+  ],
+  "areas": [
+    {
+      "id": "health",
+      "label": "Health",
+      "hue": "#22C55E",
+      "glyph": "heart-pulse",
+      "domains": [
+        "pulse"
+      ],
+      "related": [],
+      "lead": "pulse"
+    },
+    {
+      "id": "money",
+      "label": "Money",
+      "hue": "#F59E0B",
+      "glyph": "wallet",
+      "domains": [
+        "ledger",
+        "scout"
+      ],
+      "related": [],
+      "lead": "ledger"
+    },
+    {
+      "id": "work",
+      "label": "Work",
+      "hue": "#6366F1",
+      "glyph": "briefcase",
+      "domains": [
+        "career",
+        "inbox",
+        "tempo",
+        "forge"
+      ],
+      "related": [],
+      "lead": "career"
+    },
+    {
+      "id": "home",
+      "label": "Home",
+      "hue": "#06B6D4",
+      "glyph": "house",
+      "domains": [
+        "hearth",
+        "pantry",
+        "clerk"
+      ],
+      "related": [],
+      "lead": "hearth"
+    },
+    {
+      "id": "people",
+      "label": "People",
+      "hue": "#EC4899",
+      "glyph": "users",
+      "domains": [
+        "circle"
+      ],
+      "related": [],
+      "lead": "circle"
+    },
+    {
+      "id": "learning",
+      "label": "Learning",
+      "hue": "#8B5CF6",
+      "glyph": "graduation-cap",
+      "domains": [
+        "tutor"
+      ],
+      "related": [],
+      "lead": "tutor"
+    },
+    {
+      "id": "travel",
+      "label": "Travel",
+      "hue": "#3B82F6",
+      "glyph": "plane",
+      "domains": [
+        "atlas"
+      ],
+      "related": [],
+      "lead": "atlas"
+    },
+    {
+      "id": "create",
+      "label": "Create",
+      "hue": "#EF4444",
+      "glyph": "palette",
+      "domains": [
+        "studio"
+      ],
+      "related": [],
+      "lead": "studio"
+    },
+    {
+      "id": "mind",
+      "label": "Mind",
+      "hue": "#CBD5E1",
+      "glyph": "notebook-pen",
+      "domains": [],
+      "related": [
+        "pulse"
+      ],
+      "lead": "manager"
+    },
+    {
+      "id": "phone",
+      "label": "Phone",
+      "hue": "#9B9BA3",
+      "glyph": "smartphone",
+      "domains": [],
+      "related": [],
+      "lead": "manager"
+    }
+  ]
+}

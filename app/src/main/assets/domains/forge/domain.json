@@ -1,0 +1,126 @@
+{
+  "format": 1,
+  "id": "forge",
+  "label": "Founder Dev/Ops",
+  "defaultName": "Forge",
+  "area": "work",
+  "about": "ARGUS engineering: repos, issues, merge requests, CI pipelines, deploys and infra health.",
+  "avatar": {
+    "shape": "orb",
+    "face": 5,
+    "color": "#6366f1",
+    "glyph": "hammer"
+  },
+  "seeded": false,
+  "proposeFor": [
+    "founder"
+  ],
+  "routingHints": [
+    "repo",
+    "gitlab",
+    "github",
+    "merge request",
+    "pipeline",
+    "ci",
+    "deploy",
+    "build",
+    "bug",
+    "crash",
+    "sentry",
+    "cloudflare",
+    "release",
+    "commit",
+    "branch",
+    "apk"
+  ],
+  "toolGroups": [
+    "terminal",
+    "dev",
+    "web",
+    "cloud",
+    "memory"
+  ],
+  "suggestedApps": [
+    "gitlab",
+    "github",
+    "cloudflare",
+    "sentry"
+  ],
+  "workers": [
+    "coder",
+    "reviewer",
+    "researcher"
+  ],
+  "skills": [
+    "ci-triage"
+  ],
+  "sharedSkills": [
+    "code-review",
+    "git-pr-workflow",
+    "debugging"
+  ],
+  "memory": {
+    "owns": "work:argus",
+    "private": false,
+    "reads": [
+      "user:core",
+      "work"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "WRITE_REMOTE": "ASK",
+      "DELETE": "ASK",
+      "CREDENTIAL": "NEVER",
+      "COMPUTE_PAID": "ASK",
+      "SEND": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Merging, tagging or deploying",
+    "Pushing to a protected branch (never: open a merge request instead)",
+    "Touching secrets, keys or CI variables",
+    "Starting paid cloud compute"
+  ],
+  "routines": [
+    {
+      "name": "CI watch",
+      "kind": "EVENT",
+      "schedule": "connector.ci.failed",
+      "prompt": "A pipeline failed. Read the failing job log, name the first real error and the commit that introduced it, and propose the smallest fix.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "What broke, what shipped",
+      "kind": "CRON",
+      "schedule": "0 18 * * 1-5",
+      "prompt": "Summarise today's merged MRs, failed pipelines and new crash groups in five lines or fewer.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Worker health ping",
+      "kind": "WATCH",
+      "schedule": "0 */6 * * *",
+      "prompt": "Ping the gateway workers' health endpoints; report only a failure or a latency more than twice its usual.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "connector.ci.failed",
+    "connector.mr.updated",
+    "connector.sentry.issue"
+  ],
+  "suggestions": {
+    "maxPerWeek": 3,
+    "topics": [
+      "red pipeline",
+      "stale merge request",
+      "new crash group"
+    ]
+  }
+}

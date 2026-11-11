@@ -1,0 +1,101 @@
+{
+  "format": 1,
+  "id": "tempo",
+  "label": "Time & calendar",
+  "defaultName": "Tempo",
+  "area": "work",
+  "about": "Calendar, reminders, scheduling, conflicts, focus blocks and alarms.",
+  "avatar": {
+    "shape": "orb",
+    "face": 1,
+    "color": "#06b6d4",
+    "glyph": "calendar-clock"
+  },
+  "seeded": true,
+  "routingHints": [
+    "calendar",
+    "meeting",
+    "schedule",
+    "remind",
+    "reminder",
+    "alarm",
+    "tomorrow",
+    "tonight",
+    "appointment",
+    "free time",
+    "busy",
+    "reschedule"
+  ],
+  "toolGroups": [
+    "comms",
+    "routines",
+    "device",
+    "memory"
+  ],
+  "suggestedApps": [
+    "google-calendar",
+    "outlook"
+  ],
+  "workers": [
+    "planner"
+  ],
+  "skills": [
+    "week-planning"
+  ],
+  "sharedSkills": [
+    "planning-task-breakdown"
+  ],
+  "memory": {
+    "owns": "time",
+    "private": false,
+    "reads": [
+      "user:core",
+      "work"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SEND": "ASK",
+      "DELETE": "ASK",
+      "WRITE_REMOTE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Sending invites or RSVPs to other people",
+    "Cancelling or moving a meeting that has other guests",
+    "Deleting a calendar event"
+  ],
+  "routines": [
+    {
+      "name": "Tomorrow at a glance",
+      "kind": "CRON",
+      "schedule": "0 20 * * *",
+      "prompt": "Look at tomorrow's calendar, routines and reminders. If anything needs preparing or clashes, say it in three lines or fewer; otherwise stay silent.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Conflict watch",
+      "kind": "EVENT",
+      "schedule": "calendar.changed",
+      "prompt": "A calendar event changed. Check it against the rest of the week for overlaps, travel time and focus blocks; tell the user only if something now clashes.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "calendar.changed",
+    "time.tick"
+  ],
+  "suggestions": {
+    "maxPerWeek": 3,
+    "topics": [
+      "double booking",
+      "no focus time",
+      "early start tomorrow"
+    ]
+  }
+}

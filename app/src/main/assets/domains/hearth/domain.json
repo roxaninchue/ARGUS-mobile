@@ -1,0 +1,114 @@
+{
+  "format": 1,
+  "id": "hearth",
+  "label": "Home",
+  "defaultName": "Hearth",
+  "area": "home",
+  "about": "Home tasks, a maintenance schedule, utilities, smart-home devices, home services and the household list.",
+  "avatar": {
+    "shape": "orb",
+    "face": 0,
+    "color": "#06b6d4",
+    "glyph": "house"
+  },
+  "seeded": false,
+  "routingHints": [
+    "home",
+    "house",
+    "repair",
+    "plumber",
+    "electrician",
+    "maintenance",
+    "utility",
+    "zesco",
+    "water bill",
+    "cleaning",
+    "smart home",
+    "lights",
+    "household",
+    "leak",
+    "landlord"
+  ],
+  "toolGroups": [
+    "device",
+    "phone",
+    "web",
+    "routines",
+    "memory"
+  ],
+  "suggestedApps": [
+    "home-assistant",
+    "utility-apps"
+  ],
+  "workers": [
+    "operator",
+    "booker",
+    "researcher"
+  ],
+  "skills": [
+    "maintenance-plan"
+  ],
+  "sharedSkills": [],
+  "memory": {
+    "owns": "home",
+    "private": false,
+    "reads": [
+      "user:core",
+      "user:places"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SPEND": "ASK",
+      "SETTINGS": "ASK",
+      "PHYSICAL": "ASK",
+      "WRITE_REMOTE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Booking or paying a home service",
+    "Changing a smart-home device or home setting",
+    "Messaging a landlord, neighbour or tradesperson"
+  ],
+  "routines": [
+    {
+      "name": "Maintenance calendar",
+      "kind": "CRON",
+      "schedule": "0 9 1 * *",
+      "prompt": "List the home maintenance due this month (filters, gutters, gas, service visits) from the saved schedule; stay silent if none.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Utility bill reminder",
+      "kind": "CRON",
+      "schedule": "0 9 25 * *",
+      "prompt": "Remind the user of electricity, water and internet bills due before the month ends, with last month's amount for comparison.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Leaving home checklist",
+      "kind": "EVENT",
+      "schedule": "place.leave:home",
+      "prompt": "The user just left home. If they asked for a leaving checklist (stove, windows, lights, keys), show it in one line.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "place.leave",
+    "place.arrive",
+    "time.tick"
+  ],
+  "suggestions": {
+    "maxPerWeek": 2,
+    "topics": [
+      "maintenance due",
+      "utility spike",
+      "service overdue"
+    ]
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "format": 1,
+  "id": "inbox",
+  "label": "Comms",
+  "defaultName": "Inbox",
+  "area": "work",
+  "about": "Mail, messages and notification triage, reply drafts and follow-ups the user owes.",
+  "avatar": {
+    "shape": "orb",
+    "face": 3,
+    "color": "#3b82f6",
+    "glyph": "inbox"
+  },
+  "seeded": true,
+  "routingHints": [
+    "email",
+    "mail",
+    "inbox",
+    "message",
+    "messages",
+    "reply",
+    "notification",
+    "whatsapp",
+    "slack",
+    "draft",
+    "unread"
+  ],
+  "toolGroups": [
+    "connectors",
+    "comms",
+    "notifications",
+    "memory"
+  ],
+  "suggestedApps": [
+    "gmail",
+    "outlook",
+    "slack",
+    "whatsapp-notifications"
+  ],
+  "workers": [
+    "writer",
+    "researcher"
+  ],
+  "skills": [
+    "triage-pass"
+  ],
+  "sharedSkills": [
+    "email-drafting",
+    "whatsapp-replies"
+  ],
+  "memory": {
+    "owns": "comms",
+    "private": false,
+    "reads": [
+      "user:core",
+      "social"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SEND": "ASK",
+      "DELETE": "ASK",
+      "WRITE_REMOTE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Every send: each reply goes out only from a draft card the user approved",
+    "Unsubscribing from a list",
+    "Deleting or archiving mail in bulk"
+  ],
+  "routines": [
+    {
+      "name": "Inbox triage",
+      "kind": "CRON",
+      "schedule": "0 8,17 * * *",
+      "prompt": "Triage new mail and messages since the last pass: what needs the user, what can wait, what is noise. Draft replies for the top items; stay silent when nothing needs them.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Replies you owe",
+      "kind": "CRON",
+      "schedule": "0 16 * * 5",
+      "prompt": "List the threads where someone is waiting on the user for more than two days, oldest first, each with a one-line draft reply.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "notification.posted",
+    "connector.mail.new"
+  ],
+  "suggestions": {
+    "maxPerWeek": 3,
+    "topics": [
+      "reply owed",
+      "important unread",
+      "newsletter overload"
+    ]
+  }
+}

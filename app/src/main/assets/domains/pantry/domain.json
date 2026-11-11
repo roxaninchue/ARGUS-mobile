@@ -1,0 +1,101 @@
+{
+  "format": 1,
+  "id": "pantry",
+  "label": "Food",
+  "defaultName": "Pantry",
+  "area": "home",
+  "about": "Meal plans, groceries, usual orders, recipes and dietary rules.",
+  "avatar": {
+    "shape": "orb",
+    "face": 4,
+    "color": "#06b6d4",
+    "glyph": "cooking-pot"
+  },
+  "seeded": false,
+  "routingHints": [
+    "food",
+    "meal",
+    "dinner",
+    "lunch",
+    "breakfast",
+    "recipe",
+    "grocery",
+    "groceries",
+    "cook",
+    "cooking",
+    "order food",
+    "delivery",
+    "hungry",
+    "allergy",
+    "snack"
+  ],
+  "toolGroups": [
+    "web",
+    "browser",
+    "phone",
+    "memory"
+  ],
+  "suggestedApps": [
+    "grocery-delivery-apps"
+  ],
+  "workers": [
+    "shopper",
+    "operator",
+    "researcher"
+  ],
+  "skills": [
+    "meal-plan"
+  ],
+  "sharedSkills": [],
+  "memory": {
+    "owns": "food",
+    "private": false,
+    "reads": [
+      "user:core"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SPEND": "ASK",
+      "SEND": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Placing any order or checkout",
+    "Changing a saved delivery address",
+    "Sharing dietary details with another person"
+  ],
+  "routines": [
+    {
+      "name": "Weekly meal plan",
+      "kind": "CRON",
+      "schedule": "0 10 * * 6",
+      "prompt": "Plan next week's dinners from the user's dietary rules, what they liked and the season, then build one grocery list grouped by aisle.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Dinner idea",
+      "kind": "CRON",
+      "schedule": "30 17 * * *",
+      "prompt": "Suggest one dinner the user can make tonight from the week's list or their usual order; stay silent if a plan already covers tonight.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "time.tick",
+    "place.arrive"
+  ],
+  "suggestions": {
+    "maxPerWeek": 2,
+    "topics": [
+      "no plan this week",
+      "usual order",
+      "pantry running low"
+    ]
+  }
+}

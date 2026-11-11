@@ -1,0 +1,103 @@
+{
+  "format": 1,
+  "id": "scout",
+  "label": "Shopping",
+  "defaultName": "Scout",
+  "area": "money",
+  "about": "Product research, price watches, return windows and order tracking.",
+  "avatar": {
+    "shape": "orb",
+    "face": 1,
+    "color": "#f59e0b",
+    "glyph": "shopping-bag"
+  },
+  "seeded": false,
+  "routingHints": [
+    "buy",
+    "shop",
+    "shopping",
+    "cheapest",
+    "deal",
+    "discount",
+    "order",
+    "tracking",
+    "return",
+    "refund",
+    "compare",
+    "product",
+    "amazon",
+    "takealot",
+    "which one"
+  ],
+  "toolGroups": [
+    "web",
+    "browser",
+    "memory"
+  ],
+  "suggestedApps": [
+    "amazon",
+    "takealot"
+  ],
+  "workers": [
+    "shopper",
+    "researcher"
+  ],
+  "skills": [
+    "price-watch"
+  ],
+  "sharedSkills": [
+    "price-scout"
+  ],
+  "memory": {
+    "owns": "shopping",
+    "private": false,
+    "reads": [
+      "user:core",
+      "money:budget-caps"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SPEND": "ASK",
+      "SEND": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Any purchase",
+    "A return or exchange that costs money",
+    "Saving a new delivery address or card on a store"
+  ],
+  "routines": [
+    {
+      "name": "Price drop watch",
+      "kind": "WATCH",
+      "schedule": "0 9 * * *",
+      "prompt": "Check the watched products' prices; report only a drop to or below the user's target price, with the link.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Return window reminder",
+      "kind": "CRON",
+      "schedule": "0 10 * * *",
+      "prompt": "Name orders whose return window closes within 3 days, with the item and the store's return steps; stay silent otherwise.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "connector.mail.order",
+    "time.tick"
+  ],
+  "suggestions": {
+    "maxPerWeek": 2,
+    "topics": [
+      "price drop",
+      "return window closing",
+      "package delayed"
+    ]
+  }
+}

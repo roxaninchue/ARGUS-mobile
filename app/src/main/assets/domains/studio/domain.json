@@ -1,0 +1,99 @@
+{
+  "format": 1,
+  "id": "studio",
+  "label": "Creative",
+  "defaultName": "Studio",
+  "area": "create",
+  "about": "Writing, design, images, video, social posts and pages.",
+  "avatar": {
+    "shape": "orb",
+    "face": 4,
+    "color": "#ef4444",
+    "glyph": "palette"
+  },
+  "seeded": false,
+  "routingHints": [
+    "write",
+    "design",
+    "logo",
+    "image",
+    "poster",
+    "video",
+    "caption",
+    "content",
+    "blog",
+    "story",
+    "thumbnail",
+    "social post",
+    "edit video",
+    "illustration",
+    "brand"
+  ],
+  "toolGroups": [
+    "design",
+    "media",
+    "web",
+    "ubuntu",
+    "memory"
+  ],
+  "suggestedApps": [
+    "canva-browser",
+    "x-read"
+  ],
+  "workers": [
+    "designer",
+    "writer",
+    "researcher"
+  ],
+  "skills": [
+    "content-calendar-plan"
+  ],
+  "sharedSkills": [
+    "content-calendar",
+    "image-assets",
+    "slide-deck"
+  ],
+  "memory": {
+    "owns": "creative",
+    "private": false,
+    "reads": [
+      "user:core"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SEND": "ASK",
+      "WRITE_REMOTE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Posting anything publicly",
+    "Sending work to a client or collaborator",
+    "Paying for assets, fonts or tools"
+  ],
+  "routines": [
+    {
+      "name": "Content calendar",
+      "kind": "CRON",
+      "schedule": "0 9 * * 1",
+      "prompt": "If the user keeps a content calendar, list this week's planned posts with a draft for the first; stay silent if they don't.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "time.tick"
+  ],
+  "suggestions": {
+    "maxPerWeek": 1,
+    "topics": [
+      "post planned today",
+      "draft waiting",
+      "brand kit missing"
+    ]
+  }
+}
