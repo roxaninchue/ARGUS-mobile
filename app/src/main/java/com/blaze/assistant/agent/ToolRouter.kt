@@ -201,6 +201,19 @@ object ToolRouter {
         return out
     }
 
+    /** P2-SF-01: the tool's ActionClass, its ToolRegistry declaration (05 §6.1 / §7.1; table in policy/ActionClass.kt). */
+    fun actionClass(name: String, args: JSONObject? = null): com.blaze.assistant.team.ActionClass =
+        com.blaze.assistant.policy.ActionClasses.of(name, argsOf(args))
+
+    /** P2-SF-01: a call's arguments as Policy reads them (top-level keys; nested values as their JSON text). */
+    fun argsOf(args: JSONObject?): Map<String, String> {
+        if (args == null) return emptyMap()
+        val out = LinkedHashMap<String, String>()
+        val it = args.keys()
+        while (it.hasNext()) { val k = it.next(); out[k] = args.opt(k)?.toString().orEmpty() }
+        return out
+    }
+
     fun loadTool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", "load_tools")
         .put("description", "Load more tools when the ones you have can't do the job. Groups: " +

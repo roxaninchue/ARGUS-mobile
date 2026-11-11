@@ -126,6 +126,7 @@ object Modes {
 
     /** The refusal the model gets in Plan ("" = allowed). [agentPlan]: a background agent started in Plan. */
     fun block(name: String, args: JSONObject, agentPlan: Boolean = false): String {
+        if (ConfirmGate.policyStore != null) ConfirmGate.refusal(name, ToolRouter.argsOf(args))?.let { return it }   // P2-SF-01: Policy's "Never"
         if (!plan && !agentPlan) return ""
         val why = planBlock(name, args)
         if (why.isEmpty()) return ""
