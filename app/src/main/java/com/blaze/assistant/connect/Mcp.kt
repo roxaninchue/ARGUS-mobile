@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Remote MCP servers (Model Context Protocol, JSON-RPC 2.0) over Streamable HTTP, or the older HTTP+SSE
- * transport. stdio servers need a PC, so they are listed but not run. Tools appear to the model as
+ * transport. stdio servers need a PC, or (P4-CN-06, optional) run inside the phone's Linux under proot. Tools appear to the model as
  * mcp__<server>__<tool> and go through the same approval as Blaze Desktop: read-only tools run, others
  * show the confirm card (Action tools pass in Autopilot), destructive ones always ask, and each tool can
  * be set to Ask / Always / Off.
@@ -62,7 +62,7 @@ object Mcp {
             }
         }
         _servers.value = list
-        list.filter { !it.remote }.forEach { setStatus(it.name, if (it.transport == McpConfig.STDIO) "Needs a PC (runs on ${BrandName.NAME} Desktop/CLI)" else "No URL") }
+        list.filter { !runnable(it) }.forEach { setStatus(it.name, if (it.transport == McpConfig.STDIO) "Needs a PC, or turn on Run stdio servers in Linux" else "No URL") }
     }
 
     private fun save(l: List<Server>, sync: Boolean = true) {
@@ -289,12 +289,67 @@ object Mcp {
         c.notify("notifications/initialized")
     }
 
+    /**
+     * P4-CN-06: runs on this phone: a remote server, or a stdio one when "Run stdio servers in Linux" is on and the
+     * phone's Linux is installed (Node / Python servers from Ubuntu, else Alpine).
+     */
+    fun runnable(s: Server): Boolean = s.remote || (s.transport == McpConfig.STDIO && stdioOn() && McpGrants.stdioLine(s.raw) != null)
+
+    private fun stdioOn(): Boolean = Settings.bool(McpGrants.PREF_STDIO, false) &&
+        runCatching { com.blaze.assistant.terminal.Linux.installed() }.getOrDefault(false)
+
+    /** P4-CN-06: a stdio MCP server inside proot: newline-delimited JSON-RPC over the process's stdin / stdout. */
+    private class StdioConn(val line: String, val distro: String) : Conn {
+        private val ids = AtomicLong(1)
+        private val waiting = ConcurrentHashMap<Long, CompletableFuture<JSONObject>>()
+        private var proc: Process? = null
+        @Volatile var alive = false
+            private set
+
+        fun start(): StdioConn {
+            com.blaze.assistant.terminal.Terminal.setup()
+            val pb = ProcessBuilder(com.blaze.assistant.terminal.Linux.command(line, distro = distro)).redirectErrorStream(false)
+            pb.environment().putAll(com.blaze.assistant.terminal.Terminal.env()); pb.environment().putAll(com.blaze.assistant.terminal.Linux.env())
+            val p = pb.start(); proc = p; alive = true
+            Thread { runCatching { p.inputStream.bufferedReader().forEachLine { l -> deliver(l) } }; fail(Exception("server exited")) }.apply { isDaemon = true; start() }
+            Thread { runCatching { p.errorStream.bufferedReader().forEachLine { } } }.apply { isDaemon = true; start() }
+            return this
+        }
+
+        private fun deliver(l: String) {
+            val o = try { JSONObject(l.trim()) } catch (_: Exception) { return }
+            if (!o.has("id") || o.isNull("id")) return
+            waiting.remove(o.optLong("id"))?.complete(o)
+        }
+
+        private fun fail(e: Exception) { alive = false; waiting.values.forEach { it.completeExceptionally(e) }; waiting.clear() }
+
+        private fun send(body: JSONObject) {
+            val out = proc?.outputStream ?: throw Exception("not running")
+            synchronized(this) { out.write((body.toString() + "\n").toByteArray()); out.flush() }
+        }
+
+        override fun request(method: String, params: JSONObject?): JSONObject? {
+            if (!alive) throw Exception("server exited")
+            val id = ids.getAndIncrement()
+            val f = CompletableFuture<JSONObject>(); waiting[id] = f
+            send(envelope(id, method, params))
+            return result(try { f.get(60, TimeUnit.SECONDS) } catch (e: java.util.concurrent.TimeoutException) { waiting.remove(id); throw Exception("timed out") }
+                catch (e: java.util.concurrent.ExecutionException) { throw (e.cause as? Exception) ?: e })
+        }
+        override fun notify(method: String) { try { send(envelope(null, method, null)) } catch (_: Exception) { } }
+        override fun close() { fail(Exception("closed")); try { proc?.destroy() } catch (_: Exception) { } }
+    }
+
     private fun looksSse(url: String) = try { URL(url).path.trimEnd('/').endsWith("/sse") } catch (_: Exception) { false }
 
     /** A live, initialized connection (Streamable HTTP first; SSE when asked for or when HTTP isn't offered). */
     private fun connect(s: Server): Conn {
-        conns[s.name]?.let { if (it !is SseConn || it.alive) return it else conns.remove(s.name) }
-        val conn: Conn = if (s.transport == McpConfig.SSE || (s.transport == McpConfig.AUTO && looksSse(s.url))) {
+        conns[s.name]?.let { if ((it !is SseConn || it.alive) && (it !is StdioConn || it.alive)) return it else conns.remove(s.name) }
+        val conn: Conn = if (s.transport == McpConfig.STDIO) {
+            val line = McpGrants.stdioLine(s.raw) ?: throw Exception("no command")
+            StdioConn(line, McpGrants.distroFor(com.blaze.assistant.terminal.Distros.installedIds())).start().also { initialize(it) }
+        } else if (s.transport == McpConfig.SSE || (s.transport == McpConfig.AUTO && looksSse(s.url))) {
             SseConn(s.url, s.headers).start().also { initialize(it) }
         } else try {
             HttpConn(s.url, s.headers).also { initialize(it) }
@@ -312,7 +367,7 @@ object Mcp {
 
     /** Connects and lists a server's tools. Returns the status line. */
     suspend fun refresh(s: Server): String = withContext(Dispatchers.IO) {
-        if (!s.remote) return@withContext (if (s.transport == McpConfig.STDIO) "Needs a PC (runs on ${BrandName.NAME} Desktop/CLI)" else "No URL").also { setStatus(s.name, it) }
+        if (!runnable(s)) return@withContext (if (s.transport == McpConfig.STDIO) "Needs a PC, or turn on Run stdio servers in Linux" else "No URL").also { setStatus(s.name, it) }
         setStatus(s.name, "Connecting…")
         try {
             conns.remove(s.name)?.close()
@@ -341,10 +396,12 @@ object Mcp {
      * background and this turn goes out with the tools already known; the next turn has the server's tools.
      */
     suspend fun tools(): List<JSONObject> {
-        val on = _servers.value.filter { it.enabled && it.remote }
+        // P4-CN-06: only the servers this bot may use (Manager / plain chat: all), with the bot's own tool modes.
+        val grants = ConnectTools.grants(); val bot = ConnectTools.currentBot
+        val on = _servers.value.filter { it.enabled && runnable(it) && McpGrants.serverAllowed(grants, bot, it) }
         for (s in on) if (_tools.value[s.name] == null && _status.value[s.name]?.startsWith("Error") != true && refreshing.add(s.name))
             bg.launch { try { withTimeoutOrNull(15_000) { refresh(s) } } catch (_: Throwable) { } finally { refreshing.remove(s.name) } }
-        return on.flatMap { s -> _tools.value[s.name].orEmpty().filter { McpConfig.mode(s.toolModes[it.name], it.risk) != McpConfig.OFF }.map { t ->
+        return on.flatMap { s -> _tools.value[s.name].orEmpty().filter { McpConfig.mode(McpGrants.override(grants, bot, s, it.name), it.risk) != McpConfig.OFF }.map { t ->
             JSONObject().put("type", "function").put("function", JSONObject()
                 .put("name", McpConfig.toolName(s.name, t.name))
                 .put("description", ("[${s.name}] " + t.description).take(900))
@@ -360,9 +417,10 @@ object Mcp {
     }
 
     fun find(name: String): Found? {
-        for (s in _servers.value.filter { it.enabled && it.remote }) {
+        val grants = ConnectTools.grants(); val bot = ConnectTools.currentBot   // P4-CN-06
+        for (s in _servers.value.filter { it.enabled && runnable(it) && McpGrants.serverAllowed(grants, bot, it) }) {
             val t = _tools.value[s.name]?.firstOrNull { McpConfig.toolName(s.name, it.name) == name } ?: continue
-            return Found(s, t, s.toolModes[t.name])
+            return Found(s, t, McpGrants.override(grants, bot, s, t.name))
         }
         return null
     }

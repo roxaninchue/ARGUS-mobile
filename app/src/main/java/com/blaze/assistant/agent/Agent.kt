@@ -5009,7 +5009,7 @@ When you finish, say what you did in one short sentence.
             val t = m.find(name) ?: return "That MCP tool isn't available any more (its server is off, removed or unreachable). Use find_tool or another way."
             val label = "${t.server.name} \u00b7 ${t.tool.name}"
             if (t.mode == com.blaze.assistant.connect.McpConfig.OFF) return "Refused: the user turned ${t.tool.name} off in Settings \u203a MCP servers."
-            if (com.blaze.assistant.connect.McpConfig.needsApproval(t.override, t.tool.risk, Modes.autopilot)) {
+            if (com.blaze.assistant.connect.McpConfig.needsApproval(t.override, t.tool.risk, Modes.autopilot) || com.blaze.assistant.connect.McpGrants.taintAsks(t.tool.risk, kotlin.coroutines.coroutineContext[ConfirmGate.Taint]?.source)) {   // P4-CN-06
                 val shown = args.toString(2).let { if (it.length > 900) it.take(900) + "\n\u2026" else it }
                 val warn = if (t.tool.risk == com.blaze.assistant.connect.McpConfig.Risk.WRITE) "This tool can delete or change data on ${t.server.name}.\n" else ""
                 if (!confirm("Allow $label?", warn + shown, "Allow"))
