@@ -57,7 +57,9 @@ object ActionClasses {
             "file_read", "file_list", "file_search", "terminal_status", "terminal_jobs", "processes", "list_routines", "list_triggers",
             "list_agents", "check_agent", "agent_progress", "home_widget_list", "store_search", "store_info", "store_status",
             "browser_open", "browser_read", "browser_scroll", "browser_back", "browser_tabs", "browser_find", "browser_wait", "browser_show",
-            "phone_open", "phone_read", "phone_screenshot", "phone_wait", "phone_status", "money", "camera_math", "phone_health")
+            "phone_open", "phone_read", "phone_screenshot", "phone_wait", "phone_status", "money", "camera_math", "phone_health",
+            // P5-TM-01: ending a turn without a message changes nothing
+            "stay_silent")
         // --- the user's own data on the phone / in Argus (undoable or local) ---
         c(WRITE_LOCAL, "save_file", "remember", "memory_save", "memory_update", "memory_merge", "update_brief", "goal", "flashcards",
             "design", "generate_image", "gallery", "gallery_ops", "cover_art", "beat_lab", "clip_studio", "video_ops", "music_ops", "movies",
@@ -67,6 +69,8 @@ object ActionClasses {
             "create_routine", "schedule_command", "create_trigger", "classroom_sync", "process", "clipboard", "blaze_camera",
             "post_notification", "compose_sms", "request_secret", "phone_handoff", "store_open",
             "start_agent", "spawn_agent", "delegate", "orchestrate", "message_agent", "cancel_agent", "create_specialist", "post_update",
+            // P5-TM-01: a message to a teammate bot; the receiver runs under its own Policy with trigger BOT (05 §7.2)
+            "send_to_bot",
             "skill_manage", "write_skill", "save_workflow", "run_skill", "watch",
             "file_write", "file_edit", "export_file", "download_file", "run_code", "job_input", "preview_server", "terminal_stop",
             "blaze_command")
