@@ -37,6 +37,7 @@ Append one line per session: date, who, what changed, what's next.
 - 2026-11-11 · Hark · Created this file and the slice table. Next: slice docs land, then slice 6 merges them into the plan below.
 - 2026-11-11 · Hark · Slices 1–5 published to docs/overhaul/. Slice 6 now writing 06-team-plan.md and the Unified plan section.
 - 2026-11-11 · Hark (Specialist 6) · Published `docs/overhaul/06-team-plan.md` v1 (reconciliation, decisions, phases + versions, workstreams, backlog P0–P10, full coverage matrix, risks, QA plan, A-team migration, pick-up guide) and filled the Unified plan below. Next: Finn answers D1–D12; then dispatch P0 tickets 1–8 in parallel (see "Next 10 tickets").
+- 2026-11-11 · Hark · Added UI concept image (docs/overhaul/ui-concept.png), provisional.
 
 ## Unified plan
 Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
@@ -115,4 +116,3 @@ Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). 
 | 8 | P0-IL-02 repo hygiene, notices, ask for a-team LICENSE | IL |
 | 9 | P0-IL-03 do-not-port register | IL |
 | 10 | P0-IL-01 release 0.52.4 (when the owner says build) | IL |
-- 2026-11-11 · Hark · Added UI concept image (docs/overhaul/ui-concept.png), provisional.
