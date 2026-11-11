@@ -30,6 +30,9 @@ class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
 
     init { for (st in BlazeDb.statements(EXTRA)) sql.exec(st) }
 
+    /** P3-AG-01: who may read each line (mem_scope side table; `memories` untouched). */
+    val scopes = com.blaze.assistant.memory.MemScopeStore(sql)
+
     // ---------------- meta ----------------
 
     override fun meta(key: String): String = blaze.meta(META + key)
@@ -118,13 +121,13 @@ class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
         sql.tx {
             sql.exec("UPDATE memories SET text=?, norm=?, category=?, updated=? WHERE id=?", t, BlazeDb.norm(t), k, now / 1000, keep)
             side(keep, old.created / 1000, s, related, old.sourceTurn)
-            for (id in gone) { sql.exec("DELETE FROM memories WHERE id=?", id); sql.exec("DELETE FROM mind_mem WHERE id=?", id) }
+            for (id in gone) { sql.exec("DELETE FROM memories WHERE id=?", id); sql.exec("DELETE FROM mind_mem WHERE id=?", id); sql.exec("DELETE FROM mem_scope WHERE mem_id=?", id) }
         }
         true
     }
 
     override fun delete(id: Long) = synchronized(lock) {
-        sql.tx { sql.exec("DELETE FROM memories WHERE id=?", id); sql.exec("DELETE FROM mind_mem WHERE id=?", id) }
+        sql.tx { sql.exec("DELETE FROM memories WHERE id=?", id); sql.exec("DELETE FROM mind_mem WHERE id=?", id); sql.exec("DELETE FROM mem_scope WHERE mem_id=?", id) }
     }
 
     /**
