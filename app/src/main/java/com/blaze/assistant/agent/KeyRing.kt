@@ -69,6 +69,14 @@ object KeyRing {
         Settings.setStr("key_rest", m.toString())
     }
 
+    // ---- P3-AG-06: a bot's own Gemini key (D6) ----
+    // Stored like the provider keys (Keystore-backed Settings.secret) but never synced (no KeySync stamp), never shown,
+    // never exported; one per bot so its 429 cool-down (GeminiCooldown) rests only that bot.
+    fun botGeminiSlot(botId: String) = "key_bot_" + botId.replace(Regex("[^A-Za-z0-9_-]"), "_") + "_gemini"
+    fun botGemini(botId: String): String = try { Settings.secret(botGeminiSlot(botId)) } catch (_: Throwable) { "" }
+    fun hasBotGemini(botId: String): Boolean = botGemini(botId).isNotBlank()
+    fun setBotGemini(botId: String, key: String?) = Settings.setSecret(botGeminiSlot(botId), key?.trim().orEmpty())
+
     fun isQuota(e: Exception): Boolean {
         val code = (e as? LlmClient.LlmException)?.code ?: 0
         val m = e.message.orEmpty().lowercase()
