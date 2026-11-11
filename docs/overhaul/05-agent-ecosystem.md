@@ -1,6 +1,6 @@
 # 05 — Agent ecosystem architecture
 
-> Slice 5 of the ARGUS overhaul (see `overhaul.md`). Owner: Specialist 5 (agent systems architect). Status: **draft v1, 2026-11-11**.
+> Slice 5 of the ARGUS overhaul (see `overhaul.md`). Owner: Specialist 5 (agent systems architect). Status: **v1 complete, 2026-11-11** (open questions in §11.3).
 > Scope: how the unified ARGUS app (Kotlin/Compose, `argus-mobile`) runs an **ecosystem of specialist agents** — one per part of a person's life and per kind of task — orchestrated by a Manager. Built from what already exists in Argus-mobile (Blaze agent, BgAgents, Orchestra, Mind, Proactive, Routines, Connectors, MCP), A-team (Manager bot, jobs queue, profile memory, skills, Ubuntu workspace, cloud computer, live model picking, Needle, `argus-agents-api`) and Bot HQ (Hermes engines, per-bot MCP, approvals, rooms, subagents, soul/memory files, per-bot screen, voice).
 > Nothing here is implemented yet. File references are to the three source trees as pulled on 2026-11-11.
 
@@ -216,16 +216,16 @@ Bot HQ semantics + Manager moderation:
 ```mermaid
 flowchart TB
   U((Finn)) --> M[Manager · lead]
-  subgraph Domain agents — persistent, own memory + routines
-    H[Pulse · Health & fitness]; $[Ledger · Money]; W[Career · Work]; F[Forge · Founder Dev/Ops]
+  subgraph DA["Domain agents: persistent, own memory and routines"]
+    H["Pulse · Health & fitness"]; MO["Ledger · Money"]; W[Career · Work]; F[Forge · Founder Dev/Ops]
     HO[Hearth · Home]; FO[Pantry · Food]; T[Atlas · Travel]; S[Circle · Social]
     L[Tutor · Learning]; A[Clerk · Admin & paperwork]; SH[Scout · Shopping]; C[Studio · Creative]
     I[Inbox · Comms]; CAL[Tempo · Time & calendar]
   end
-  subgraph Task workers — ephemeral templates (Specialists.builtIn)
+  subgraph TW["Task workers: ephemeral templates"]
     r[Researcher]; o[Phone operator]; wr[Writer]; p[Planner]; co[Coder]; sh2[Shopper]; b[Booker]; tu[Tutor]; d[Designer]; rv[Reviewer]
   end
-  M --> H & $ & W & F & HO & FO & T & S & L & A & SH & C & I & CAL
+  M --> H & MO & W & F & HO & FO & T & S & L & A & SH & C & I & CAL
   T -. spawns .-> b & r
   F -. spawns .-> co & rv
   SH -. spawns .-> sh2
@@ -856,7 +856,8 @@ sequenceDiagram
   D->>M: round summary
   M->>RM: decision + ```compare + choices
   U->>RM: picks option 1
-  M->>S: add_job(send invite draft)  %% SEND → draft card later
+  Note over M,S: SEND becomes a draft card later
+  M->>S: add_job(send invite draft)
 ```
 
 ### 10.4 Routine fire (phone) with silence and back-off
