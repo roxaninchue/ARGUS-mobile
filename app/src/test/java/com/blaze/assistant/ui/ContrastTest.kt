@@ -170,4 +170,30 @@ class ContrastTest {
         assertTrue(hits.size >= 4)
         for (h in hits) assertTrue("no reveal toggle: $h", Regex("reveal|masked\\)|SecretField\\.masked").containsMatchIn(h))
     }
+
+    /**
+     * P0-SH-01: the ARGUS look (ui/argus) as drawn: every text colour of [com.blaze.assistant.ui.argus.ArgusColors] at
+     * 4.5:1 and every status dot at 3:1 on the 3 grounds (Plain, Orbit, Cobalt night) × the glass levels, both modes,
+     * through this file's Compose-colour math (ArgusTokensTest runs the same matrix on the raw tokens).
+     */
+    @Test fun theArgusLookReadsOnEveryGroundAndGlassLevel() {
+        val fails = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val c = com.blaze.assistant.ui.argus.ArgusColors.of(dark)
+            val text = listOf("ink" to c.ink, "mute" to c.mute, "meta" to c.meta, "dangerText" to c.dangerText, "successText" to c.successText,
+                "waitingText" to c.waitingText, "cobaltText" to c.cobaltText)
+            val ui = listOf("unread" to c.unread, "success" to c.success, "danger" to c.danger)
+            for (g in com.blaze.assistant.ui.argus.Ground.entries) for (l in com.blaze.assistant.ui.argus.GlassLevel.entries) {
+                val grounds = com.blaze.assistant.ui.argus.ArgusTokens.groundSamples(c.palette, g).map { com.blaze.assistant.ui.argus.ArgusColors.c(it) }
+                val fill = c.fill(l)
+                for (ground in grounds) {
+                    val surface = Contrast.over(fill, ground)
+                    for ((n, fg) in text) Contrast.ratio(fg, surface).let { if (it < Contrast.AA_TEXT) fails += "${if (dark) "dark" else "light"} $g $l $n $it" }
+                    for ((n, fg) in ui) Contrast.ratio(fg, surface).let { if (it < Contrast.AA_UI) fails += "${if (dark) "dark" else "light"} $g $l $n $it" }
+                }
+            }
+            assertTrue(Contrast.ratio(c.onInk, c.ink) >= 7.0)
+        }
+        assertTrue(fails.joinToString("\n"), fails.isEmpty())
+    }
 }

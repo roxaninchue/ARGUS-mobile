@@ -61,7 +61,9 @@ class SpaceWiringTest {
             assertTrue("$f package", file.readText().startsWith("package com.blaze.assistant.ui.space\n"))
         }
         for (f in listOf("SetupPlan", "SetupRunner")) assertTrue(f, File(root, "com/blaze/assistant/setup/$f.kt").isFile)
-        assertFalse("ui/argus was removed", File(root, "com/blaze/assistant/ui/argus").exists())
+        // the 3D Home's ui/argus files stay gone (P0-SH-01 reuses the package for the ARGUS tokens)
+        for (f in listOf("ArgusHomeLogic", "ArgusGl", "ArgusSceneView", "ArgusHome", "ArgusSpotlight"))
+            assertFalse("ui/argus/$f.kt was removed", File(root, "com/blaze/assistant/ui/argus/$f.kt").exists())
         assertTrue("the ARGUS mark stays", File(root, "com/blaze/assistant/ui/ArgusMark.kt").isFile)
         for (gone in listOf("ArgusHomeBus", "ArgusHomeScreen", "ArgusSceneView", "ArgusSpotlightPanel", "ArgusHomeTokens", "ProjectsPane(")) nowhere(gone)
         // the old Home board is left in the tree (BUILDING.md: don't delete it blind)

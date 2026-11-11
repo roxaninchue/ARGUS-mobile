@@ -224,6 +224,7 @@ dependencies {
     implementation("com.github.termux.termux-app:terminal-view:v0.118.0")
     implementation("org.tukaani:xz:1.10")   // v0.29.2 .tar.xz rootfs for Ubuntu/Debian/Arch/Fedora   // v0.29.2 Blaze Terminal (pulls terminal-emulator + libtermux.so)
     implementation("androidx.compose.material:material-icons-core")
+    implementation("dev.chrisbanes.haze:haze:1.0.2")   // P0-SH-01: ARGUS chrome / sheet glass (Apache-2.0); pulls compose ui/foundation 1.7.5
     implementation("androidx.compose.material:material-icons-extended")   // v0.24.6: rounded icon buttons (browser, pointer menu, overlay)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")
