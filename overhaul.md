@@ -15,20 +15,98 @@ One unified ARGUS app (this repo, `argus-mobile`, Kotlin + Compose) that contain
 ## Specialist slices (each writes its own doc, then this file is merged)
 | # | Slice | Doc | Status |
 |---|---|---|---|
-| 1 | Bot HQ full feature inventory + port notes | `docs/overhaul/01-bothq-inventory.md` | done (89 features, 2cdb65b4) |
-| 2 | A-team full feature inventory + port notes | `docs/overhaul/02-ateam-inventory.md` | done (72 features + design language, 086b8f21) |
-| 3 | Argus-mobile inventory, architecture & merge map | `docs/overhaul/03-argus-mobile-map.md` | done (25-row merge map, 73988433) |
-| 4 | Design system + information architecture (A-team look, every feature placed) | `docs/overhaul/04-design-ia.md` | done (~150-row feature map, 13 wireframes) |
-| 5 | Agent ecosystem architecture (life-domain specialists, Manager, soul/memory, bot-to-bot, computers, models) | `docs/overhaul/05-agent-ecosystem.md` | done (14 life agents, E0–E8 order, 1a21f133) |
-| 6 | Integrated team plan: phases, workstreams, owners, milestones, risks, tests | `docs/overhaul/06-team-plan.md` | in progress |
+| 1 | Bot HQ full feature inventory + port notes | [`docs/overhaul/01-bothq-inventory.md`](docs/overhaul/01-bothq-inventory.md) | done (89 features, 2cdb65b4) |
+| 2 | A-team full feature inventory + port notes | [`docs/overhaul/02-ateam-inventory.md`](docs/overhaul/02-ateam-inventory.md) | done (72 features + design language, 086b8f21) |
+| 3 | Argus-mobile inventory, architecture & merge map | [`docs/overhaul/03-argus-mobile-map.md`](docs/overhaul/03-argus-mobile-map.md) | done (25-row merge map, 73988433) |
+| 4 | Design system + information architecture (A-team look, every feature placed) | [`docs/overhaul/04-design-ia.md`](docs/overhaul/04-design-ia.md) | done (~150-row feature map, 13 wireframes) |
+| 5 | Agent ecosystem architecture (life-domain specialists, Manager, soul/memory, bot-to-bot, computers, models) | [`docs/overhaul/05-agent-ecosystem.md`](docs/overhaul/05-agent-ecosystem.md) | done (14 life agents, E0–E8 order, 1a21f133) |
+| 6 | Integrated team plan: phases, workstreams, owners, milestones, risks, tests | [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md) | done (30 reconciliations, 12 decisions, 11 phases, 102 tickets, 278-row coverage matrix) |
 
 ## Status
-- 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main, a-team@main, bot-hq@HEAD. Specialists 1–5 dispatched and all five slice docs landed by 20:56 CAT. Slice 6 (integrated team plan) dispatched.
+- 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main (0.52.3 / vc 190 + three unreleased rounds), a-team@main (v2.18), bot-hq@HEAD. Specialists 1–5 landed all five slice docs by 20:56 CAT.
+- 2026-11-11: **Slice 6 done — the plan is ready.** `docs/overhaul/06-team-plan.md` reconciles the slices (30 items), lists 12 decisions for Finn (each with a recommended answer the plan already assumes), sets 11 phases with versions (0.52.4 → 1.0.0, then 1.1.0), 13 workstreams with owners, a 102-ticket backlog (~336 agent-days), and a coverage matrix that places **all 254 source features** (BH 89 · AT 72 · AM 68 · merge map 25) plus 24 new ones on a phase, a ticket and a UI location — 0 missing.
+- **Now:** waiting on Finn's answers to the decisions below (or a "go with the recommendations"), then P0 starts. No code written, nothing built (owner rule).
 
 ## Handoff log
 Append one line per session: date, who, what changed, what's next.
 - 2026-11-11 · Hark · Created this file and the slice table. Next: slice docs land, then slice 6 merges them into the plan below.
 - 2026-11-11 · Hark · Slices 1–5 published to docs/overhaul/. Slice 6 now writing 06-team-plan.md and the Unified plan section.
+- 2026-11-11 · Hark (Specialist 6) · Published `docs/overhaul/06-team-plan.md` v1 (reconciliation, decisions, phases + versions, workstreams, backlog P0–P10, full coverage matrix, risks, QA plan, A-team migration, pick-up guide) and filled the Unified plan below. Next: Finn answers D1–D12; then dispatch P0 tickets 1–8 in parallel (see "Next 10 tickets").
 
 ## Unified plan
-_(filled by slice 6)_
+Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
+
+### In one paragraph
+Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). A-team's look and team-of-bots-as-chats become the product shape; Bot HQ's multi-agent UX and safety mechanics (rows, in-call approvals, bot-to-bot, rooms, watch/take-over, voice hand-off) are ported natively; Argus-mobile's runtime (agent loop, BgAgents, Orchestra, Mind, phone control, terminal, browser, media) is the engine of **every** bot. Every bot is data — identity + soul + memory + skills + tools + engine + apps + computer + permissions — run by one runtime, with **ARGUS (the Manager)** as the front door routing to **14 life-domain agents** (Tempo, Inbox, Pulse, Ledger, Career, Forge, Hearth, Pantry, Atlas, Circle, Tutor, Clerk, Scout, Studio) that spin up short-lived workers. The app has four modes — **Team · Chat · Life · Desk** — switched by the A-team notch. Zero-budget by default: paid services (Composio, xAI, Orgo) are optional adapters.
+
+### Architecture
+```
+ ARGUS app (Kotlin/Compose)
+ ├ ui/argus  A-team tokens · Lucide · BotOrb · Notch[Team|Chat|Life|Desk] · Composer(@bot /cmd $ #file mic) · Inbox · Voice
+ ├ team/     Bot = persistent Spec · Rows · Jobs queue · ManagerTools · TeamBus (hop≤3) · Rooms · 14 Domains
+ ├ agent/    BotEngine → LocalEngine (Agent.Session, frozen) · CloudRunEngine · HermesEngine (1.1)
+ ├ policy/   Policy.decide(ActionClass, taint, autonomy) → approval/draft/question/connect cards → audit_log
+ ├ memory    Mind/blaze.db + mem_scope · SOUL.md / MEMORY.md / USER.md projections
+ ├ proactive SignalBus → domain proposers → ARGUS arbiter (caps, quiet hours, one dial) · routines per bot
+ ├ computer/ LocalBrowser · Codespaces · self-hosted desk · Orgo (leases)   terminal/ Alpine system + Ubuntu workspace, home+tmux per bot
+ └ connect/  argus-connect · MCP client · device OAuth · CloudSync (E2E) · TeamSync          voice/ on-device · Gemini · xAI (opt.)
+        │ bz_ token everywhere
+        ├─▶ Blaze Gateway (models, /v1/runs, live models, relay)      ├─▶ argus-connect (apps, skills, triggers; Composio optional, server-side)
+        └─▶ argus-agents-api v2 (D1, REST+MCP, PATs, approvals, events) ◀─ Desktop / Claude / Cursor     └─▶ cloud desk (confirmed only)
+```
+
+### Phases (each shippable; patch per release, .9 rolls to next minor, each big feature = next minor)
+| Phase | Version | Ships |
+|---|---|---|
+| P0 Groundwork | **0.52.4** | the three unreleased rounds on main + invisible seams (team.db, BotEngine, ui/argus tokens, BotOrb, LiveModels, `blaze_context`) |
+| P1 One look, one team | **0.53.0** | A-team shell (Team·Chat·Life·Desk), ARGUS as a bot, bot threads, create bots with orbs, Tempo + Inbox, delegation as Jobs, Desk → Jobs, Settings re-tree, A-team backup import |
+| P2 Safe hands | **0.54.0** | one policy engine, approval/draft/question/connect cards, Inbox + Need-you, Permissions, Activity (audit), Pause all, A-team guard ports |
+| P3 Souls & memory | **0.55.0** | Bot profile, SOUL.md editor, memory scopes, What the team knows, auto-learn, per-bot model policy |
+| P4 Apps & skills | **0.56.0** | argus-connect Apps page, per-bot apps/skills/MCP, connector writes behind cards |
+| P5 Team talk & life | **0.57.0** | bot-to-bot + Handoff cards, rooms + huddle, 14 domain agents + setup picker, routing v2, Life mode, People graph, Compose graph |
+| P6 Proactive team | **0.58.0** | routines per bot, SignalBus + arbiter + one dial, check-ins/brief/Today, pop-up + edge glow, widgets/QS/share/deep links |
+| P7 Computers | **0.59.0** | Ubuntu workspace per bot, Terminal tabs, Library, code review, cloud desk leases, Computer viewer + take-over |
+| P8 Voice & everywhere | **0.60.0** | voice two-agent calls, X search (optional key), agents-api v2 + sync + remote approvals, MCP relay, A-team v2.20 "Move to ARGUS" |
+| P9 ARGUS 1.0 | **1.0.0** | every AM surface on the new look, domain wiring, A-team retired, full release gate |
+| P10 Open engines | 1.1.0 | Hermes engine, cloud routines, optional paid adapters, targetSdk 35 |
+
+### Workstreams and owners
+| Code | Workstream | Owner | Code | Workstream | Owner |
+|---|---|---|---|---|---|
+| SH | Shell & Design | Design-system agent | PR | Proactivity & Routines | Proactivity agent |
+| TM | Team & Manager | Team-runtime agent | VC | Voice | Voice agent |
+| AG | Agents & Memory | Agent-runtime agent | API | API / Gateway & Sync | Platform agent |
+| SF | Safety | Safety agent | LF | Life & Phone continuity | Continuity agent |
+| CN | Connectors & Apps | Connectors agent | MG | Migration (A-team) | Migration agent |
+| CP | Computers & Terminal | Computers agent | QA | QA / Evals | QA agent |
+| IL | Integration lead (versions, docs, matrix) | Specialist 6 | | | |
+
+### Decisions for Finn (the plan assumes the recommended answer)
+| # | Decision | Recommended |
+|---|---|---|
+| D1 | One continuous chat with ARGUS + one thread per bot; "new chat" = fresh context with a history drawer | Yes |
+| D2 | Persona names (Ledger, Atlas, Pulse…) with the life-area label underneath | Yes |
+| D3 | The lead bot is called **ARGUS** (role Manager), undeletable | ARGUS |
+| D4 | Alpine stays system; Ubuntu 24.04 opt-in workspace (~800 MB) shared by all bots, a home each | Yes |
+| D5 | Third-party apps through argus-connect (credentials server-side); on-phone tokens only for device-bound apps; Composio never in the app | Yes |
+| D6 | Automatic models; per-bot Depth + optional own Gemini key; no model-id picker | Yes |
+| D7 | Hermes engine after 1.0 (1.1.0) | Defer |
+| D8 | Cloud desk: Codespaces default; self-hosted desk on your PC (Desktop link) second; Orgo optional | Yes |
+| D9 | Cloud routines with the phone off: after 1.0 | Defer |
+| D10 | Retire A-team after migration (v2.20 "Move to ARGUS", archived at 1.0) | Retire |
+| D11 | Confirm reversing the 0.51 "Halo merged" single-persona decision (bots are personas on one engine) | Confirm |
+| D12 | Gateway work (relay, voice token, x-search) goes to `Blaze-agent`; we need access or an owner there | Give access |
+
+### Next 10 tickets (all of P0; 1–8 in parallel)
+| # | Ticket | Owner |
+|---|---|---|
+| 1 | P0-TM-01 `team/` + team.db schema + pure models | TM |
+| 2 | P0-AG-01 `BotEngine` + `LocalEngine` seam (Agent.kt +≤20 lines) | AG |
+| 3 | P0-SH-01 `ui/argus` A-team tokens behind `argus_look` | SH |
+| 4 | P0-SH-02 Lucide generator + `BotOrb` + Manager sphere | SH |
+| 5 | P0-API-01 `blaze_context:"full"` + `LiveModels` | API |
+| 6 | P0-QA-01 spec index + A-team evals harness in `evals/` | QA |
+| 7 | P0-MG-01 `argus-team-export.v1` format + fixtures | MG |
+| 8 | P0-IL-02 repo hygiene, notices, ask for a-team LICENSE | IL |
+| 9 | P0-IL-03 do-not-port register | IL |
+| 10 | P0-IL-01 release 0.52.4 (when the owner says build) | IL |
