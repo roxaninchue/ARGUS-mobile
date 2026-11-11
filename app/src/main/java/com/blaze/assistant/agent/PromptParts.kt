@@ -107,6 +107,46 @@ object PromptParts {
         fun clear() { slots.clear() }
     }
 
+    // ---------------- P3-AG-03: a bot's prompt in cache-stable order ----------------
+
+    /**
+     * The pieces of one bot's system prompt (05 §1.2, §4.4). Empty pieces are dropped. [now] is the `Now:` line
+     * (A-team nowLine) and is the only clock text allowed; it always goes last.
+     */
+    data class BotPrompt(
+        val core: String = "",        // locked ARGUS core rules
+        val pinned: String = "",      // pinned user:core block (MemScopes.coreBlock)
+        val soul: String = "",        // SOUL.md (Souls.promptText)
+        val playbook: String = "",    // domain playbook
+        val skills: String = "",      // skills index
+        val relevant: String = "",    // relevant notes over the visible scopes
+        val delegation: String = "",  // lines the Manager attached to the job brief
+        val chatTier: String = "",    // rolling summary
+        val cacheTocs: String = "",   // cache-tier tables of contents
+        val context: String = "",     // roster, connected apps, routines (no clock)
+        val now: String = "",         // "Now: Tue 11 Nov 2026 22:50 CAT" — last
+    )
+
+    /**
+     * Cache-stable order: core (STATIC) → pinned user:core → SOUL → playbook → skills (SLOW) → relevant notes →
+     * delegation → chat tier → cache TOCs → context (TURN) → Now: (LIVE). Nothing clock-dependent above the memory
+     * block (Bot HQ instructionsFor rule), so the gateway's prompt cache keeps the long prefix (PromptOrderTest).
+     */
+    fun forBot(p: BotPrompt): List<Part> = build {
+        s("core", p.core.withNl())
+        slow("pinned", p.pinned.withNl()); slow("soul", p.soul.withNl()); slow("playbook", p.playbook.withNl()); slow("skills", p.skills.withNl())
+        turn("relevant", p.relevant.withNl()); turn("delegation", p.delegation.withNl()); turn("chat_tier", p.chatTier.withNl())
+        turn("cache_tocs", p.cacheTocs.withNl()); turn("context", p.context.withNl())
+        live("now", p.now.withNl())
+    }.let { ordered(it) }
+
+    private fun String.withNl() = if (isEmpty() || endsWith("\n")) this else this + "\n"
+
+    private val clockLike = Regex("""(?i)\bnow:|\b(?:[01]?\d|2[0-3]):[0-5]\d\b|\b(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?\s+\d{1,2}\b|\b(?:today|tonight|this morning) is\b|\b\d{4}-\d{2}-\d{2}[ t]\d{2}:\d{2}""")
+
+    /** Names of non-LIVE parts that carry clock text (a time, "Now:", a weekday date): each one breaks the cache. */
+    fun clockAbove(parts: List<Part>): List<String> = parts.filter { it.tier != Tier.LIVE && clockLike.containsMatchIn(it.text) }.map { it.name }
+
     /** (prompt tokens, cached prompt tokens) from a provider's usage block (OpenAI / Gemini / DeepSeek shapes); (0, 0) when absent. */
     fun cacheOf(usage: org.json.JSONObject?): Pair<Int, Int> {
         if (usage == null) return 0 to 0
