@@ -233,4 +233,86 @@ object ClaimGuard {
         val line = "I haven't actually sent it: no message left the phone this time. Say \u201ctry again\u201d and I'll send it properly."
         return if (rest.length < 12) line else "$line\n\n$rest"
     }
+    // ---------------- P2-SF-07: command results claimed with no tool run (A team v2.9 unbackedClaims, v2.11 unranShellFence) ----------------
+    // Ported from A team app/www/guard.js (owner grant, MIT). A reply that states command output or results when no tool ran
+    // in that turn invented them. Hypotheticals ("if you run", "you should see"), negations ("I haven't run it") and offers
+    // ("let me run") don't count. Cases: A team evals/test/v29.test.mjs + v211.test.mjs, as JUnit in ClaimGuardRunTest.
+    // Complements [unbacked] (views), [unbackedCard] (Stage cards) and [unbackedSend] (messages): this one is about shell /
+    // build / test results. The loop re-prompts once with [RUN_CLAIM_MSG] (or [FENCE_MSG]); a repeat is flagged.
+
+    /** [flag] = the reply claims results no tool produced; [reasons] ⊂ ran, result, output, exit, state, terminal; [quote] = the first claim. */
+    data class RunClaim(val flag: Boolean, val reasons: List<String> = emptyList(), val quote: String = "")
+
+    private val runClaims: List<Pair<String, Regex>> = listOf(
+        "ran" to Regex("""\b(i|we)(?:'ve| have)? (?:just |already )?(ran|run|executed|tested|re-?ran|compiled|built|checked|verified|installed|deleted|removed|created|wrote|written|saved|moved|copied|updated)\b(?! (?:it|this|that) (?:for|on) you\b)""", ic),
+        "result" to Regex("""\b(the |that |this |your )?(command|script|test(?:s| suite)?|build|program|check|query|run|ping|curl|install(?:ation)?)\b[^.!?\n]{0,30}\b(returned|printed|outputs?|output(?:ted)?|shows?|showed|shown|produced|passed|succeeded|failed|exited|completed|finished|says|said|reports?|reported)\b""", ic),
+        "output" to Regex("""\bhere(?:'s| is| are) (?:the )?(?:actual |real |full )?(output|results?|logs?)\b|(^|\n)\s*(output|result|stdout|stderr)s?\s*:\s*(\n|`)""", ic),
+        "exit" to Regex("""\bexit(?:ed)? (?:with )?(?:code|status) \d+\b|\b\d+ (?:tests? )?(?:passed|failed)\b|\ball (?:\d+ )?tests? (?:passed|pass)\b|\btests? (?:all )?passed\b""", ic),
+        "state" to Regex("""\b(there (?:are|is)|you have|it has|the (?:folder|directory|repo|file) has) \d+ (?:files?|folders?|director(?:y|ies)|lines?|processes|tests?|errors?|commits?|rows?|entries)\b""", ic),
+        "terminal" to Regex("""(^|\n)\s*(total \d+\s*\n|[d-][rwx-]{9}[.@+]?\s+\d+\s|root@[\w.-]+:[^\n]*[#$]|\d+ packets transmitted|PING \S+ \()"""),
+    )
+    private val runHedge = Regex("""\b(if|when|once|after|you can|you could|you'?ll|you will|you should|you'd|would|should|could|might|may|expect(?:ed)?|example|e\.g\.|sample|like this|haven'?t|have not|hasn'?t|didn'?t|did not|can'?t|cannot|couldn'?t|not yet|never|unable|let me|i'?ll|i will|i'?m going to|going to|i can|try|plan|want to|need to|before)\b""", ic)
+    private val exampleCtx = Regex("""\b(example|expected|sample|should look|would look|looks like|like this|you'?ll see|you should see|will (list|show|print))\b""", ic)
+
+    /** A team sentences(): code fences dropped unless they are output-like (```text/output/console/log). */
+    private fun runSentences(t: String): List<String> = Regex("""```[\s\S]*?```""").replace(t) { m ->
+        if (Regex("""```(text|txt|output|console|log)?\n""").containsMatchIn(m.value)) m.value else " "
+    }.split(Regex("""(?<=[.!?])\s+|\n{2,}"""))
+
+    /** Does [text] claim command output / results that no tool produced? [ran] = a tool ran in this turn (then never). */
+    fun unbackedRun(text: String, ran: Boolean = false): RunClaim {
+        if (ran) return RunClaim(false)
+        val reasons = ArrayList<String>(); var quote = ""
+        for (s in runSentences(text)) {
+            for ((k, re) in runClaims) {
+                val m = re.find(s) ?: continue
+                if (k != "terminal" && runHedge.containsMatchIn(s)) continue
+                if (k == "terminal") {   // example output ("expected output looks like this:") is not a claim
+                    val at = text.indexOf(s.trim().take(20))
+                    val ctx = (if (at > 0) text.substring(maxOf(0, at - 240), at) else "") + s.substring(0, m.range.first)
+                    if (exampleCtx.containsMatchIn(ctx)) continue
+                }
+                if (k !in reasons) reasons += k
+                if (quote.isEmpty()) quote = s.trim().take(160)
+            }
+        }
+        return RunClaim(reasons.isNotEmpty(), reasons, quote)
+    }
+    const val RUN_CLAIM_MSG = "CHECK: your reply states command output or results, but no tool ran in this turn, so the app can't back them up. If you need a result, run the command now (the shell tool) and report only what it really prints. If the result came from an earlier turn, say so. Otherwise say plainly that you have not run it. Do not repeat the unverified claim."
+
+    /**
+     * One turn's handling of unbacked run claims (A team eval loop): the first final reply that claims results with no tool
+     * run is hidden and bounced once with [RUN_CLAIM_MSG]; a second one in the same turn is let through but [flagged].
+     */
+    class RunClaimTurn {
+        enum class Action { OK, BOUNCE, FLAG }
+        private var bounced = false
+        var flagged = false; private set
+        fun onFinal(text: String, ran: Boolean): Action {
+            if (!unbackedRun(text, ran).flag) return Action.OK
+            if (!bounced) { bounced = true; return Action.BOUNCE }
+            flagged = true; return Action.FLAG
+        }
+    }
+
+    private val shellFence = Regex("""```[ \t]*(bash|sh|shell|zsh|console|terminal)?[ \t]*\n([\s\S]*?)```""")
+    private val cmdLine = Regex("""^\s*(?:\$ )?(python3?|pytest|node|npm|npx|pip3?|cd|ls|cat|git|make|bash|sh|sed|grep|find|mkdir|rm|cp|mv|chmod|curl|go|cargo|java|javac|gcc)\b""")
+    private val runIntent = Regex("""\b(let me|let'?s|i'?ll|i will|i'?m going to|now i'?ll|going to) (run|execute|test|check|verify|try)\b|\b(running|executing)\b[^.\n]{0,40}(:|\bnow\b)|(^|\n)\s*(output|result)s?\s*:|\ball (checks|tests) pass|\bit (prints|printed|outputs|returned)\b""", ic)
+    private val forUser = Regex("""\byou (can|could|should|may|might|'ll|will) (run|use|try|execute)\b|\bto run (it|this) yourself\b""", ic)
+
+    /** [flag] = the reply shows a shell command in a non-run fence (```bash) and talks as if it ran or will run now. */
+    data class FenceClaim(val flag: Boolean, val cmd: String = "")
+
+    fun unranShellFence(text: String): FenceClaim {
+        var cmd = ""
+        for (m in shellFence.findAll(text)) {
+            val body = m.groupValues[2]
+            if (if (m.groupValues[1].isNotEmpty()) body.trim().isNotEmpty() else cmdLine.containsMatchIn(body)) { cmd = body.trim().split("\n")[0].take(120); break }
+        }
+        if (cmd.isEmpty()) return FenceClaim(false)
+        val prose = shellFence.replace(text, " ")
+        if (forUser.containsMatchIn(prose) && !Regex("""\b(let me|i'?ll|i will)\b""", ic).containsMatchIn(prose)) return FenceClaim(false)
+        return FenceClaim(runIntent.containsMatchIn(text), cmd)
+    }
+    const val FENCE_MSG = "CHECK: you put a command in a ```bash block. That only displays it: nothing ran and there is no output yet. If you meant to run it, call the shell tool and report only what it prints. If it was only an example for the user, say so plainly."
 }

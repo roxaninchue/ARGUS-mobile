@@ -332,4 +332,207 @@ object ToolVerify {
         "A result marked \u201cchecked on the phone\u201d needs no extra check. verified=pending means the phone is still checking: say you started it, not that it's done. " +
         "Opening an app or a settings page is only the first step of a task, never the task: keep going (read_screen, tap, type, search) until the thing the user asked for is read back verified=true. " +
         "Say the exact time, name or value the tool result reports (an alarm set for 18:15 is 18:15)."
+    // ---------------- P2-SF-07: verified done_job (A team v2.7 AT-20: chat.js verifyJob / checkFile) ----------------
+    // Ported from A team app/www/chat.js (owner grant, MIT). A job is done only when its result exists, checks out and was
+    // shown: a deliverable job needs a non-empty file written in this run; HTML must look like HTML and its inline scripts
+    // must parse, JSON must parse, JS must parse, Python must py_compile and shell scripts must pass bash -n; code changed
+    // after the last passing check (the CompletenessGate) blocks it; the file must have been attached / shown. A job with no
+    // deliverable must at least have said something to the user. Cases: A team app/tests/v27.test.js §9 + the A team
+    // file-check rules, as JUnit in ToolVerifyDoneTest. The problems go back to the model as the done_job result
+    // ("not done: …"), and after the retry budget the job ends blocked with them.
+
+    /** A workspace path's state (null from [DoneProbes.stat] = it does not exist or can't be read). */
+    data class FileStat(val dir: Boolean = false, val size: Long = 0, val count: Int = 0)
+
+    /** What done_job verification needs from the phone. Every method may say "can't tell" (null). */
+    interface DoneProbes {
+        /** The file or folder at [path], or null when it doesn't exist. */
+        fun stat(path: String): FileStat? = null
+        /** Text of [path] (up to a few MB), or null when it can't be read. */
+        fun read(path: String): String? = null
+        /** Run [cmd] in the Linux workspace: (exit code, output), or null when there is no workspace. */
+        suspend fun exec(cmd: String): Pair<Int, String>? = null
+        /** Does [code] parse as JavaScript? The error message, or null. The phone can use QuickJS / a WebView; default is [JsSyntax]. */
+        fun jsError(code: String): String? = JsSyntax.error(code)
+    }
+
+    /** A job title that asks for something made (a file, page, script, image, document…). */
+    val DELIVERABLE = Regex("""\b(create|build|make|write|generate|design|code|develop|draft|produce|game|website|site|web ?page|landing|app|script|program|document|doc|report|pdf|image|picture|logo|deck|slides?|spreadsheet|csv|file|html|page)\b""", ic)
+    private val SHOWABLE = Regex("""\.(html?|png|jpe?g|gif|webp|svg|pdf|md|txt|docx?|xlsx?|pptx?|csv|zip|py|js|sh)$""", ic)
+
+    /**
+     * Why done_job for [title] can't be accepted yet (empty = done). [written] = files written this run, [attached] = paths
+     * shown to the user, [said] = a real reply reached the user, [gate] = the run's CompletenessGate.
+     */
+    suspend fun doneProblems(title: String, notes: String = "", written: List<String>, attached: List<String>, said: Boolean,
+                             gate: com.blaze.assistant.agent.guards.CompletenessGate?, p: DoneProbes): List<String> {
+        val probs = ArrayList<String>()
+        val files = written.distinct().filter { !it.startsWith("/tmp/") }
+        val want = files.isNotEmpty() || DELIVERABLE.containsMatchIn("$title $notes")
+        if (!want) {
+            if (!said) probs += "you have not delivered anything to the user yet: write the result to them in this chat first"
+            return probs
+        }
+        if (files.isEmpty()) { probs += "no deliverable file was created in this run: make it in the workspace first"; return probs }
+        if (gate != null && gate.codeTouched && !gate.verified) probs += "you changed code (${gate.edited.take(3).joinToString(", ")}) but have not run its build, tests or demo successfully since the last edit: run them end to end first, or cut scope to a smaller version that works and say what you cut"
+        val real = ArrayList<String>()
+        for (f in files) {
+            val st = p.stat(f)
+            if (st == null) { if (Regex("""\.[a-z0-9]{1,6}$""", ic).containsMatchIn(f)) probs += "$f does not exist"; continue }
+            if (st.dir) { if (st.count == 0) probs += "$f is an empty folder"; continue }
+            if (st.size <= 0) { probs += "$f is empty"; continue }
+            real += f
+            checkFile(f, p).takeIf { it.isNotEmpty() }?.let { probs += it }
+        }
+        if (real.isEmpty() && probs.isEmpty()) probs += "no deliverable file was found"
+        val shown = { f: String -> attached.any { it == f || f.startsWith("$it/") } }
+        val top = real.filter { SHOWABLE.containsMatchIn(it) }
+        if (top.isNotEmpty() && top.none(shown)) probs += "it was not shown to the user: attach ${top[0]}"
+        return probs
+    }
+
+    private val scriptTag = Regex("""<script\b([^>]*)>([\s\S]*?)</script\s*>""", ic)
+    private val moduleSyntax = Regex("""^\s*(import|export)\s""", RegexOption.MULTILINE)
+
+    /** Syntax-level checks that need no network (HTML, JSON, JS, Python, bash). The problem, or "". */
+    suspend fun checkFile(f: String, p: DoneProbes): String {
+        val ext = f.substringAfterLast('.', "").lowercase()
+        if (ext == "html" || ext == "htm") {
+            val src = p.read(f) ?: return ""
+            if (!Regex("""<(html|body|script|div|canvas|h1|p)\b""", ic).containsMatchIn(src)) return "$f doesn't look like HTML"
+            for (m in scriptTag.findAll(src)) {
+                val attrs = m.groupValues[1]
+                if (Regex("""\bsrc\s*=""", ic).containsMatchIn(attrs)) continue
+                val ty = Regex("""\btype\s*=\s*["']?([^"'\s>]+)""", ic).find(attrs)?.groupValues?.get(1)?.lowercase().orEmpty()
+                if (ty.isNotEmpty() && !Regex("""javascript|ecmascript|^text/babel$""").containsMatchIn(ty)) continue
+                if (moduleSyntax.containsMatchIn(m.groupValues[2])) continue
+                p.jsError(m.groupValues[2])?.let { return "$f has a JavaScript error: $it" }
+            }
+            return ""
+        }
+        if (ext == "json") { val src = p.read(f) ?: return ""; return JsonStrict.error(src)?.let { "$f is not valid JSON: $it" } ?: "" }
+        if (ext == "js" || ext == "cjs") {
+            val src = p.read(f) ?: return ""
+            if (moduleSyntax.containsMatchIn(src) || src.startsWith("#!")) return ""
+            return p.jsError(src)?.let { "$f has a JavaScript error: $it" } ?: ""
+        }
+        if (ext == "py" || ext == "sh") {
+            val q = "'" + f.replace("'", "'\\''") + "'"
+            val r = p.exec(if (ext == "py") "python3 -m py_compile $q 2>&1" else "bash -n $q 2>&1") ?: return ""
+            if (r.first != 0) return "$f fails its syntax check: " + r.second.trim().split("\n").takeLast(2).joinToString(" ").take(200)
+        }
+        return ""
+    }
+
+    /**
+     * A pure JavaScript syntax screen for when no engine is at hand: unbalanced brackets, unterminated strings, template
+     * literals, block comments and regex literals. It does not catch every error a real engine would (the phone passes a
+     * QuickJS/WebView check through [DoneProbes.jsError]); it never fails code a real engine accepts for these reasons.
+     */
+    object JsSyntax {
+        private val regexBefore = setOf('(', ',', '=', ':', '[', '!', '&', '|', '?', '{', '}', ';', '+', '-', '*', '%', '<', '>', '~', '^')
+        private val regexKeywords = setOf("return", "typeof", "instanceof", "in", "of", "new", "delete", "void", "throw", "case", "do", "else", "yield", "await")
+
+        fun error(code: String): String? {
+            val stack = ArrayDeque<Pair<Char, Int>>()   // open '(' '[' '{', or '$' for a template's ${ … }, and where
+            var i = 0; val n = code.length
+            var lastSig = ' '; var lastWord = ""; var sep = false
+            fun line(at: Int) = code.substring(0, at.coerceIn(0, n)).count { it == '\n' } + 1
+            // Template text from [j]: the index after its closing '`', or after "${" (pushed as '$'); null when unterminated.
+            fun tpl(start: Int): Int? {
+                var j = start
+                while (j < n) {
+                    val d = code[j]
+                    if (d == '\\') { j += 2; continue }
+                    if (d == '`') return j + 1
+                    if (d == '$' && j + 1 < n && code[j + 1] == '{') { stack.addLast('$' to j); return j + 2 }
+                    j++
+                }
+                return null
+            }
+            while (i < n) {
+                val c = code[i]
+                if (c == '/' && i + 1 < n && code[i + 1] == '/') { while (i < n && code[i] != '\n') i++; continue }
+                if (c == '/' && i + 1 < n && code[i + 1] == '*') { val e = code.indexOf("*/", i + 2); if (e < 0) return "unterminated comment (line ${line(i)})"; i = e + 2; continue }
+                if (c == '\'' || c == '"') {
+                    var j = i + 1
+                    while (j < n && code[j] != c) { if (code[j] == '\\') j++ else if (code[j] == '\n') return "unterminated string (line ${line(i)})"; j++ }
+                    if (j >= n) return "unterminated string (line ${line(i)})"
+                    i = j + 1; lastSig = c; lastWord = ""; continue
+                }
+                if (c == '`') { i = tpl(i + 1) ?: return "unterminated template literal (line ${line(i)})"; lastSig = '`'; lastWord = ""; continue }
+                if (c == '/' && (lastSig in regexBefore || lastSig == ' ' || lastWord in regexKeywords)) {
+                    var j = i + 1; var cls = false
+                    while (j < n) {
+                        val d = code[j]
+                        if (d == '\\') j++ else if (d == '[') cls = true else if (d == ']') cls = false else if (d == '/' && !cls) break else if (d == '\n') return "unterminated regular expression (line ${line(i)})"
+                        j++
+                    }
+                    if (j >= n) return "unterminated regular expression (line ${line(i)})"
+                    i = j + 1; while (i < n && code[i].isLetter()) i++
+                    lastSig = '/'; lastWord = ""; continue
+                }
+                if (c == '(' || c == '[' || c == '{') stack.addLast(c to i)
+                if (c == ')' || c == ']' || c == '}') {
+                    val top = stack.removeLastOrNull() ?: return "unexpected '$c' (line ${line(i)})"
+                    if (top.first == '$' && c == '}') { i = tpl(i + 1) ?: return "unterminated template literal (line ${line(top.second)})"; lastSig = '`'; lastWord = ""; continue }
+                    val want = when (c) { ')' -> '('; ']' -> '['; else -> '{' }
+                    if (top.first != want) return "unexpected '$c' (line ${line(i)})"
+                }
+                if (!c.isWhitespace()) {
+                    val idc = c.isLetterOrDigit() || c == '_' || c == '$'
+                    lastWord = if (!idc) "" else if (!sep && (lastSig.isLetterOrDigit() || lastSig == '_' || lastSig == '$')) lastWord + c else c.toString()
+                    lastSig = c; sep = false
+                } else sep = true
+                i++
+            }
+            stack.lastOrNull()?.let { (b, at) -> return if (b == '$') "unterminated template literal (line ${line(at)})" else "unexpected end of input: '$b' (line ${line(at)}) is never closed" }
+            return null
+        }
+    }
+
+    /** A strict JSON (RFC 8259) check, like JSON.parse: the error, or null. org.json is lenient, so it isn't used here. */
+    object JsonStrict {
+        fun error(src: String): String? = try { val p = P(src); p.ws(); p.value(); p.ws(); if (p.i < src.length) p.fail("unexpected '${src[p.i]}'"); null } catch (e: IllegalArgumentException) { e.message }
+
+        private class P(val s: String) {
+            var i = 0
+            fun fail(m: String): Nothing = throw IllegalArgumentException("$m at position $i")
+            fun ws() { while (i < s.length && s[i] in " \t\n\r") i++ }
+            fun lit(w: String) { if (!s.startsWith(w, i)) fail("unexpected token"); i += w.length }
+            fun value() {
+                if (i >= s.length) fail("unexpected end of JSON input")
+                when (s[i]) {
+                    '{' -> { i++; ws(); if (i < s.length && s[i] == '}') { i++; return }
+                        while (true) { ws(); if (i >= s.length || s[i] != '"') fail("expected a property name"); string(); ws(); if (i >= s.length || s[i] != ':') fail("expected ':'"); i++; ws(); value(); ws()
+                            if (i < s.length && s[i] == ',') { i++; continue }; if (i < s.length && s[i] == '}') { i++; return }; fail("expected ',' or '}'") } }
+                    '[' -> { i++; ws(); if (i < s.length && s[i] == ']') { i++; return }
+                        while (true) { ws(); value(); ws(); if (i < s.length && s[i] == ',') { i++; continue }; if (i < s.length && s[i] == ']') { i++; return }; fail("expected ',' or ']'") } }
+                    '"' -> string()
+                    't' -> lit("true"); 'f' -> lit("false"); 'n' -> lit("null")
+                    else -> number()
+                }
+            }
+            fun string() {
+                i++
+                while (i < s.length) {
+                    val c = s[i]
+                    when {
+                        c == '"' -> { i++; return }
+                        c == '\\' -> { i++; if (i >= s.length) fail("unterminated string"); val e = s[i]
+                            if (e == 'u') { if (i + 4 >= s.length || !s.substring(i + 1, i + 5).all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }) fail("bad unicode escape"); i += 4 }
+                            else if (e !in "\"\\/bfnrt") fail("bad escape") }
+                        c < ' ' -> fail("control character in string")
+                    }
+                    i++
+                }
+                fail("unterminated string")
+            }
+            fun number() {
+                val m = java.util.regex.Pattern.compile("""-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?""").matcher(s).region(i, s.length)
+                if (!m.lookingAt() || m.end() == i) fail("unexpected token")
+                i = m.end()
+            }
+        }
+    }
 }
