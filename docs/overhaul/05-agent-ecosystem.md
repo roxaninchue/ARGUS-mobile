@@ -207,3 +207,79 @@ Bot HQ semantics + Manager moderation:
 - **Task** (Bot HQ `create_task/update_task`) = a bot's self-tracked progress item inside a job → merged as `JobStep`s, shown as the pill's step list.
 - The **Board** (A-team Compose graph/job list) shows all jobs by bucket (overdue, today, tomorrow, upcoming, todo, done — `bucket()` in `api/src/index.js`), filterable by bot. Synced through `argus-agents-api` (§6.4).
 
+---
+
+## 3. Catalog of life-domain specialist agents
+
+### 3.1 Two layers
+
+```mermaid
+flowchart TB
+  U((Finn)) --> M[Manager · lead]
+  subgraph Domain agents — persistent, own memory + routines
+    H[Pulse · Health & fitness]; $[Ledger · Money]; W[Career · Work]; F[Forge · Founder Dev/Ops]
+    HO[Hearth · Home]; FO[Pantry · Food]; T[Atlas · Travel]; S[Circle · Social]
+    L[Tutor · Learning]; A[Clerk · Admin & paperwork]; SH[Scout · Shopping]; C[Studio · Creative]
+    I[Inbox · Comms]; CAL[Tempo · Time & calendar]
+  end
+  subgraph Task workers — ephemeral templates (Specialists.builtIn)
+    r[Researcher]; o[Phone operator]; wr[Writer]; p[Planner]; co[Coder]; sh2[Shopper]; b[Booker]; tu[Tutor]; d[Designer]; rv[Reviewer]
+  end
+  M --> H & $ & W & F & HO & FO & T & S & L & A & SH & C & I & CAL
+  T -. spawns .-> b & r
+  F -. spawns .-> co & rv
+  SH -. spawns .-> sh2
+```
+
+- **Domain agents** have a name (persona, renamable), a label (the life area, fixed), a soul, private memory, routines and suggestion rules. They are **seeded off** except Manager, Tempo and Inbox; setup ("What do you want help with?") switches on the ones the user picks — a roster of 14 visible bots on day one would overwhelm. Manager proposes a domain bot when a kind of work keeps coming up with no owner (A-team prompt rule) — e.g. after the third food-delivery request: "Want a Food bot to keep your usual orders?"
+- **Task workers** are the existing Argus specialists, now callable by any domain agent. `reviewer` is new: A-team's strict code review (`review.js`) and the research pipeline's claim reviewers, generalised.
+
+### 3.2 Catalog
+
+Legend — **Tools** are tool groups (`ToolRouter` groups; §6.1). **Apps** are default connector suggestions (argus-connect / MCP); none are connected without the user. **Approvals** list what always shows a card regardless of autonomy (on top of the global rules in §7). **Scope** is the memory scope it owns; "reads" are other scopes it may read by default.
+
+| Bot (label) | Role | Tools | Apps (suggested) | Routines (default, off until accepted) | Memory scope | Approvals (always ask) |
+|---|---|---|---|---|---|---|
+| **Manager** (Lead) | Front door, routing, roster, job board, profile, proactivity arbiter, daily brief | team, jobs, memory(user:write), routines, web, phone(light) | — | 07:30 daily check (cheap), Morning brief (if accepted), Sunday weekly review | `user:*` (write), `team` | delete bot, create routine that spends/sends, anything another bot escalates |
+| **Tempo** (Time & calendar) | Calendar, reminders, scheduling, conflicts, focus blocks, alarms | calendar, routines, device(alarms), comms(read) | Google Calendar, Outlook | Evening "tomorrow at a glance", conflict watch (event trigger) | `time` (reads `user:core`, `work`) | invites/RSVPs to others, cancelling meetings with guests |
+| **Inbox** (Comms) | Mail, messages, notifications triage, drafts, follow-ups owed | connectors(mail), comms, notifications, memory | Gmail, Outlook, Slack, WhatsApp (notifications only) | Inbox triage 2×/day, "replies you owe" Friday | `comms` (reads `user:core`, `social`) | **every send** (draft card, Bot HQ `draft` card), unsubscribes, deletes |
+| **Pulse** (Health & fitness) | Training plans, habits, sleep, steps, meds reminders, appointments | health(read), routines, web, calendar | Health Connect, Strava, Google Fit | Weekly training plan Sun, habit nudges, med reminders | `health` **private** | booking appointments, sharing any health data with another bot or person |
+| **Ledger** (Money) | Budgets, bills, subscriptions, receipts, savings goals, price of decisions | bank(read), files, web, routines | Bank SMS/notification parser (on-device), Sheets | Bill due reminders, monthly subscription audit, "spend this week" Fri | `money` **private** | **any payment, transfer, subscribe/cancel**, sharing balances |
+| **Career** (Work) | Job/career goals, CV, applications, networking, skills plan, meeting prep | web, files, writer, calendar(read) | LinkedIn (browser), Google Docs | Weekly goals check, meeting prep 30 min before key meetings | `work` | applications, outreach messages |
+| **Forge** (Founder Dev/Ops) | ARGUS-specific: repos, issues, MRs, CI, deploys, infra health, Blaze-builds-Blaze loop | terminal(ubuntu), dev(gitlab/github), web, cloud(ask) | GitLab, GitHub, Cloudflare, Sentry | CI watch (event), daily "what broke / what shipped", Worker health ping | `work:argus` | merge, tag, deploy, push to protected branches (PLAN-reliable-agent §1 rules: never), touching secrets |
+| **Hearth** (Home) | Home tasks, maintenance schedule, utilities, smart home, home services, household list | device, phone, web, routines | Home Assistant (MCP), utility apps | Maintenance calendar, utility bill reminders, "leaving home" checklist (place trigger) | `home` | booking services, changing device/home settings |
+| **Pantry** (Food) | Meal plans, groceries, usual orders, recipes, dietary rules | web, browser, phone(delivery apps), memory | Grocery/delivery apps (browser/phone) | Weekly meal plan + list, "dinner idea" 17:30 opt-in | `food` (allergies mirrored in `user:core`) | **orders/checkouts** |
+| **Atlas** (Travel) | Trips end to end: flights, stays, visas, packing, day-of travel, itinerary pages | web, browser, booker, calendar, files | Airline/hotel sites, Maps | Check-in reminders, day-before packing, flight status watch | `travel` (reads `money:budget-caps` only) | **bookings/payments**, sharing itinerary |
+| **Circle** (Social & relationships) | People, birthdays, gifts, keeping in touch, plans with friends, events | contacts(read), calendar, web, writer | Contacts, Calendar | Birthday heads-ups (7 days), "haven't talked to X in a while" (opt-in, max 1/week) | `social` (people files) | any message to a person, gift purchase |
+| **Tutor** (Learning) | Study plans, flashcards (`Learn`), exam coach, courses, reading list | study, web, files, ubuntu | Classroom (Argus `connect/Classroom.kt`) | Spaced-repetition reviews, exam countdown | `learning` | submitting graded work (never hand over answers — Specialists tutor rule) |
+| **Clerk** (Admin & paperwork) | Forms, IDs renewals, taxes, contracts, insurance, document vault, signatures | files, pdf, ubuntu, browser | Drive, e-sign | Document expiry watch, tax-season prep | `admin` **private** (no ID numbers stored, only expiry + where) | submitting forms, signing, sharing documents |
+| **Scout** (Shopping) | Product research, price watch, returns windows, order tracking | web, browser, shopper | Amazon/Takealot (browser) | Price drop watch, return-window reminders | `shopping` | **purchases**, returns that cost money |
+| **Studio** (Creative) | Writing, design, images, video, social posts, pages | design, media, writer, ubuntu | Canva-like via browser, X (read) | Content calendar (opt-in) | `creative` | **posting publicly** |
+
+Notes:
+- **Researcher** is deliberately a worker, not a domain: every domain needs research; one persistent Researcher would accumulate unrelated memory.
+- **Wellbeing** (mood, journaling) is folded into Pulse with a stricter scope (`health:mind`), off unless enabled; it must follow the "not a companion" rule (A-team Manager prompt: nudge toward people and life away from the screen).
+- The founder (Finn) gets **Forge** pre-proposed at setup, since ARGUS work is his main context.
+
+### 3.3 Domain template (data, not code)
+
+Each domain ships as `assets/domains/<id>/` → `domain.json` + `SOUL.md` + `PLAYBOOK.md` (Argus `Playbooks`) + `skills/*.md`:
+
+```json
+{
+  "id": "money", "label": "Money", "defaultName": "Ledger", "avatar": {"shape": "gem", "color": "green"},
+  "routingHints": ["budget", "spend", "bill", "subscription", "price", "afford", "save", "bank", "salary", "receipt"],
+  "toolGroups": ["bank", "files", "web", "routines", "memory"],
+  "suggestedApps": ["sheets"],
+  "workers": ["researcher", "writer"],
+  "memory": {"owns": "money", "private": true, "reads": ["user:core"]},
+  "permissions": {"autonomy": "ACT", "actions": {"SPEND": "ASK", "SEND": "NEVER", "DELETE": "ASK"}, "spendCapMonthly": 0, "sendScope": "NONE"},
+  "routines": [
+    {"name": "Bills due", "kind": "cron", "cron": "0 8 * * *", "prompt": "Check bills due in the next 3 days...", "silentIfNothing": true},
+    {"name": "Subscription audit", "kind": "cron", "cron": "0 10 1 * *", "prompt": "..."}
+  ],
+  "suggestions": {"maxPerWeek": 2, "topics": ["bill due", "unused subscription", "budget overrun"]}
+}
+```
+Users and Manager can create new domains from the same template (`agent_create` with `template`), so "a bot for my band" or "a bot for my dog" is a first-class domain.
+
