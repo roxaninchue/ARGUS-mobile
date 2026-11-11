@@ -21,6 +21,7 @@ class BlazeApp : Application() {
         com.blaze.assistant.device.StartGuard.begin(this)   // 0.45.16: crash-loop detection (safe start)
         com.blaze.assistant.device.MainWatch.start()        // 0.45.16: ANR / stall log with the main thread's stack
         com.blaze.assistant.device.StartGuard.step("Settings.init") { Settings.init(this) }
+        com.blaze.assistant.device.StartGuard.step("policy.PermissionsPrefs.install") { com.blaze.assistant.policy.PermissionsPrefs.install(this) }   // P2-SF-04: ConfirmGate.policyStore (no disk work)
         com.blaze.assistant.device.StartGuard.step("Agent.preload") { Agent.preload(this) }   // v0.45.0 (#2): the main chat is read and parsed on a background thread while the rest starts
         com.blaze.assistant.device.StartGuard.step("agent.SimpleMode.load") { com.blaze.assistant.agent.SimpleMode.load() }   // v0.39.0 Simple / Advanced
         com.blaze.assistant.device.StartGuard.step("agent.SwipeNav.load") { com.blaze.assistant.agent.SwipeNav.load() }     // v0.39.0 Navigation: Swipe or Classic tabs
