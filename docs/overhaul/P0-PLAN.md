@@ -45,8 +45,8 @@ Shared bookkeeping files (`06-team-plan.md`, `STATUS.md`, `overhaul.md`) are wri
 |---|---|---|
 | P0-TM-01 | ✓ done | a1141b6f (merge b765db55) |
 | P0-AG-01 | ✓ done | 7f12551d |
-| P0-SH-01 | in progress | |
-| P0-SH-02 | waiting on SH-01 | |
+| P0-SH-01 | ✓ done | 21fe3ebb |
+| P0-SH-02 | ready (SH-01 done) | |
 | P0-API-01 | in progress | |
 | P0-QA-01 | in progress | |
 | P0-MG-01 | in progress | |
