@@ -17,7 +17,11 @@ import org.json.JSONObject
  * plain "continue / resume / carry on" picks the task up: the goal is pinned again and [note] tells the model what was
  * done, what was interrupted, and not to repeat finished actions. Anything else the user says starts something new.
  *
- * Pure (org.json only); StopResumeTest.
+ * P2-SF-06 (0.54.0), additive: a turn the step budget ended (policy/Kill.kt, 40 model calls, A-team `MAX_STEPS`) is kept the
+ * same way with [Pending.why] = [WHY_BUDGET]; the WorkChip reads [budgetLine] ("Stopped after 40 steps · Go on") and its
+ * [GO_ON] chip (or a typed "go on", already a resume word) continues through [note]. Stop and Pause keep [WHY_STOPPED].
+ *
+ * Pure (org.json only); StopResumeTest, StopTest.
  */
 object StopResume {
     const val CHIP = "Continue where you stopped"
@@ -25,16 +29,25 @@ object StopResume {
     const val INTERRUPTED = "Interrupted before this finished (the user tapped Stop, or the turn failed), so it may or may not have happened. " +
         "Check the result (the screen, the app, the sent list) before doing it again; never repeat it blindly."
 
-    data class Pending(val goal: GoalPin.Goal, val done: List<String>, val interrupted: List<String>, val at: Long) {
+    /** P2-SF-06: why the task is waiting (a Stop / Pause, or the step budget). */
+    const val WHY_STOPPED = "stopped"
+    const val WHY_BUDGET = "budget"
+    /** The WorkChip's continue chip after the step budget (a typed "go on" works too: [isResume]). */
+    const val GO_ON = "Go on"
+
+    data class Pending(val goal: GoalPin.Goal, val done: List<String>, val interrupted: List<String>, val at: Long,
+                       val why: String = WHY_STOPPED, val steps: Int = 0) {
         fun toJson(): JSONObject = JSONObject().put("request", goal.request).put("constraints", JSONArray(goal.constraints))
             .put("done", JSONArray(done)).put("interrupted", JSONArray(interrupted)).put("at", at)
+            .apply { if (why != WHY_STOPPED) put("why", why).put("steps", steps) }
     }
 
     fun fromJson(o: JSONObject?): Pending? {
         if (o == null) return null
         val req = o.optString("request").ifBlank { return null }
         fun list(k: String) = o.optJSONArray(k)?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } } ?: emptyList()
-        return Pending(GoalPin.Goal(req, list("constraints")), list("done"), list("interrupted"), o.optLong("at"))
+        return Pending(GoalPin.Goal(req, list("constraints")), list("done"), list("interrupted"), o.optLong("at"),
+            o.optString("why").ifBlank { WHY_STOPPED }, o.optInt("steps"))
     }
 
     private val resumeRe = Regex(
@@ -92,7 +105,9 @@ object StopResume {
 
     /** The note the resumed turn's message carries (the model reads it; the bubble shows only what the user tapped). */
     fun note(p: Pending): String = buildString {
-        append("[Resuming the task the user stopped: \u201c").append(p.goal.request.take(600)).append("\u201d.")
+        if (p.why == WHY_BUDGET) append("[Going on with the task that paused after ").append(p.steps).append(" steps (the step budget), the user said go on: \u201c")
+        else append("[Resuming the task the user stopped: \u201c")
+        append(p.goal.request.take(600)).append("\u201d.")
         if (p.goal.constraints.isNotEmpty()) append(" Their constraints still hold: ").append(p.goal.constraints.joinToString(" | ") { "\u201c$it\u201d" }).append('.')
         if (p.done.isNotEmpty()) append(" Already done (don't redo): ").append(p.done.take(12).joinToString("; ")).append('.')
         if (p.interrupted.isNotEmpty()) append(" Interrupted mid-way (check whether it happened before repeating): ").append(p.interrupted.distinct().joinToString(", ")).append('.')
@@ -108,4 +123,11 @@ object StopResume {
     /** A Pending for a stopped turn ([goal] null or blank = nothing to resume). */
     fun pending(goal: GoalPin.Goal?, done: List<String>, interrupted: List<String>, at: Long = System.currentTimeMillis()): Pending? =
         goal?.takeIf { it.request.isNotBlank() }?.let { Pending(it, done, interrupted, at) }
+
+    /** P2-SF-06: the WorkChip line of a turn the step budget ended ("Stopped after 40 steps · Go on"). */
+    fun budgetLine(steps: Int): String = "Stopped after $steps step${if (steps == 1) "" else "s"} \u00b7 $GO_ON"
+
+    /** P2-SF-06: a Pending for a turn the step budget ended ([goal] null or blank = nothing to go on with). */
+    fun budgetPending(goal: GoalPin.Goal?, done: List<String>, steps: Int, at: Long = System.currentTimeMillis()): Pending? =
+        goal?.takeIf { it.request.isNotBlank() }?.let { Pending(it, done, emptyList(), at, WHY_BUDGET, steps) }
 }
