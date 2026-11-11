@@ -15,19 +15,20 @@ One unified ARGUS app (this repo, `argus-mobile`, Kotlin + Compose) that contain
 ## Specialist slices (each writes its own doc, then this file is merged)
 | # | Slice | Doc | Status |
 |---|---|---|---|
-| 1 | Bot HQ full feature inventory + port notes | `docs/overhaul/01-bothq-inventory.md` | in progress |
-| 2 | A-team full feature inventory + port notes | `docs/overhaul/02-ateam-inventory.md` | in progress |
-| 3 | Argus-mobile inventory, architecture & merge map | `docs/overhaul/03-argus-mobile-map.md` | in progress |
-| 4 | Design system + information architecture (A-team look, every feature placed) | `docs/overhaul/04-design-ia.md` | in progress |
-| 5 | Agent ecosystem architecture (life-domain specialists, Manager, soul/memory, bot-to-bot, computers, models) | `docs/overhaul/05-agent-ecosystem.md` | in progress |
-| 6 | Integrated team plan: phases, workstreams, owners, milestones, risks, tests | `docs/overhaul/06-team-plan.md` | waits on 1–5 |
+| 1 | Bot HQ full feature inventory + port notes | `docs/overhaul/01-bothq-inventory.md` | done (89 features, 2cdb65b4) |
+| 2 | A-team full feature inventory + port notes | `docs/overhaul/02-ateam-inventory.md` | done (72 features + design language, 086b8f21) |
+| 3 | Argus-mobile inventory, architecture & merge map | `docs/overhaul/03-argus-mobile-map.md` | done (25-row merge map, 73988433) |
+| 4 | Design system + information architecture (A-team look, every feature placed) | `docs/overhaul/04-design-ia.md` | done (~150-row feature map, 13 wireframes) |
+| 5 | Agent ecosystem architecture (life-domain specialists, Manager, soul/memory, bot-to-bot, computers, models) | `docs/overhaul/05-agent-ecosystem.md` | done (14 life agents, E0–E8 order, 1a21f133) |
+| 6 | Integrated team plan: phases, workstreams, owners, milestones, risks, tests | `docs/overhaul/06-team-plan.md` | in progress |
 
 ## Status
-- 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main, a-team@main, bot-hq@HEAD. Specialists 1–5 dispatched.
+- 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main, a-team@main, bot-hq@HEAD. Specialists 1–5 dispatched and all five slice docs landed by 20:56 CAT. Slice 6 (integrated team plan) dispatched.
 
 ## Handoff log
 Append one line per session: date, who, what changed, what's next.
 - 2026-11-11 · Hark · Created this file and the slice table. Next: slice docs land, then slice 6 merges them into the plan below.
+- 2026-11-11 · Hark · Slices 1–5 published to docs/overhaul/. Slice 6 now writing 06-team-plan.md and the Unified plan section.
 
 ## Unified plan
 _(filled by slice 6)_
