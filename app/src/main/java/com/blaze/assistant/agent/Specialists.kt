@@ -16,7 +16,15 @@ object Specialists {
      * [madeBy] = "user" (Settings) or "blaze" (create_specialist). Both are optional in the saved JSON.
      */
     data class Spec(val id: String, val name: String, val prompt: String, val groups: Set<String>, val custom: Boolean = false,
-                    val skills: List<String> = emptyList(), val playbook: String = "", val madeBy: String = "") {
+                    val skills: List<String> = emptyList(), val playbook: String = "", val madeBy: String = "",
+                    /**
+                     * 0.53.0 (P1-TM-01): a specialist is a WORKER template of the team (team/Workers.kt). These Bot-spec fields are
+                     * optional ("" = the default) and saved only when set: [soul] its SOUL.md body, [avatar] orb face name
+                     * (Orbit…Polar), [color] #RRGGBB, [memoryScope] e.g. "team", [workspace] none|phone|ubuntu, [voice] voice id,
+                     * [managedBy] the lead bot id ("manager"), [modelPref] a Depth tier (spark|flare|inferno).
+                     */
+                    val soul: String = "", val avatar: String = "", val color: String = "", val memoryScope: String = "",
+                    val workspace: String = "", val voice: String = "", val managedBy: String = "", val modelPref: String = "") {
         val byBlaze: Boolean get() = madeBy == BLAZE
     }
 
@@ -51,7 +59,9 @@ object Specialists {
             else Spec(id, name, it.optString("prompt"),
                 it.optString("groups", "web,memory").split(',').map { g -> g.trim() }.filter { g -> g.isNotEmpty() }.toSet(), true,
                 it.optString("skills").split(',').map { k -> k.trim() }.filter { k -> k.isNotEmpty() },
-                it.optString("playbook"), it.optString("made_by", USER).ifBlank { USER })
+                it.optString("playbook"), it.optString("made_by", USER).ifBlank { USER },
+                soul = it.optString("soul"), avatar = it.optString("avatar"), color = it.optString("color"), memoryScope = it.optString("memory_scope"),
+                workspace = it.optString("workspace"), voice = it.optString("voice"), managedBy = it.optString("managed_by"), modelPref = it.optString("model_pref"))
         }
     } catch (_: Exception) { emptyList() }
 
@@ -62,6 +72,9 @@ object Specialists {
                 if (s.playbook.isNotBlank()) put("playbook", s.playbook)
                 put("made_by", s.madeBy.ifBlank { USER })
                 if (s.skills.isNotEmpty()) put("skills", s.skills.joinToString(","))
+                // 0.53.0 (P1-TM-01): the Bot-spec fields, only when set (older builds ignore unknown keys).
+                listOf("soul" to s.soul, "avatar" to s.avatar, "color" to s.color, "memory_scope" to s.memoryScope, "workspace" to s.workspace,
+                    "voice" to s.voice, "managed_by" to s.managedBy, "model_pref" to s.modelPref).forEach { (k, v) -> if (v.isNotBlank()) put(k, v) }
             })
         }
     }.toString()
