@@ -38,6 +38,7 @@ Append one line per session: date, who, what changed, what's next.
 - 2026-11-11 · Hark · Slices 1–5 published to docs/overhaul/. Slice 6 now writing 06-team-plan.md and the Unified plan section.
 - 2026-11-11 · Hark (Specialist 6) · Published `docs/overhaul/06-team-plan.md` v1 (reconciliation, decisions, phases + versions, workstreams, backlog P0–P10, full coverage matrix, risks, QA plan, A-team migration, pick-up guide) and filled the Unified plan below. Next: Finn answers D1–D12; then dispatch P0 tickets 1–8 in parallel (see "Next 10 tickets").
 - 2026-11-11 · Hark · Added UI concept image (docs/overhaul/ui-concept.png), provisional.
+- 2026-11-11 · Hark · P0-TM-01 done: `team/` Models.kt (05 §9.1 + DEFAULT_RULES), TeamJson.kt (pure JSON), TeamSchema.kt (team.db v1 = 05 §9.2 DDL, 15 tables; v2 = indexes), TeamDb.kt (SQLiteOpenHelper, FKs on, newer file refused); TeamJsonTest 10/10 + TeamSchemaTest 7/7 pass on JVM, TeamDbTest (Robolectric) written, runs on "build"; nothing wired to UI (a1141b6f, merge b765db55). Next: P0-AG-01.
 
 ## Unified plan
 Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
