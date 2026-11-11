@@ -96,6 +96,9 @@ val advancedPages = listOf(
     SettingsPage("persona", "Personality", "How ${BrandName.NAME} talks"),
     SettingsPage("feel", "Taps, sounds & panel", "Tap highlights, sounds, compact panel"),
     SettingsPage("privacy", "Security", "App lock, approvals, bank mode"),
+    // P2-SF-04 / P2-SF-05 (until P1-SH-06's settings tree): opened from Security, or by id.
+    SettingsPage("approvals", "Approvals & permissions", "What each bot may do on its own, spend and send; tools you always allow"),
+    SettingsPage("activity", "Activity", "What your team did, every decision, export"),
     SettingsPage("watches", "Watches", "Values Magic Hand is watching for you"),
     SettingsPage("secrets", "Wallet", "Keys, tokens, logins and cards from the Secure Form, only on this phone"),
     SettingsPage("logins", "Saved logins", "Sign-ins from ${BrandName.NAME}'s secure form, encrypted on this phone"),
@@ -219,7 +222,11 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "holding" -> HoldingPage()
                     "usage" -> { UsageSection(); CostCap() }
                     // 0.52.3 Security: app lock and approvals, then Bank mode (it left the top list).
-                    "privacy" -> { SecuritySection(); Spacer(Modifier.height(18.dp)); BankModePage() }
+                    "privacy" -> { SecuritySection(); Spacer(Modifier.height(18.dp)); BankModePage(); Spacer(Modifier.height(18.dp))
+                        Rows { KitRow("Approvals & permissions", "Autonomy, spending, sending, always-allowed tools", first = true, onClick = { page = "approvals" })
+                            KitRow("Activity", "What your team did, every decision", onClick = { page = "activity" }) } }
+                    "approvals" -> com.blaze.assistant.ui.argus.settings.PermissionsPage()   // P2-SF-04
+                    "activity" -> com.blaze.assistant.ui.argus.settings.ActivityPage()       // P2-SF-05
                     "device" -> DevicePage()
                     "proactive" -> ProactivePage()
                     "specialists" -> SpecialistsPage()
