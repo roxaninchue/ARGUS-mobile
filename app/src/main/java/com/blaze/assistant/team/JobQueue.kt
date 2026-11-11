@@ -28,6 +28,8 @@ class JobQueue(
     var notify: (Bot, String) -> Unit = { _, _ -> }
     /** Told whenever a job changes (Desk / Team badges / graph). */
     var changed: () -> Unit = {}
+    /** P2-SF-06: a paused bot (Pause bot / Pause all agents) starts no job; its jobs stay queued until resumed. */
+    var held: (String) -> Boolean = { com.blaze.assistant.policy.Kill.isPaused(it) }
 
     private val starts = ArrayList<Long>()
     var paused = false; private set
@@ -97,7 +99,7 @@ class JobQueue(
         val all = port.jobs()
         if (all.count { it.run == JobRun.RUNNING } >= cap().coerceAtLeast(1)) return null
         val now = clock()
-        val bots = team.all().map { it.id }.toSet()
+        val bots = team.all().map { it.id }.filterNot(held).toSet()
         val j = Jobs.next(all, bots, busyBots, now) ?: return null
         starts.removeAll { now - it >= Jobs.WINDOW_MS }
         if (starts.size >= Jobs.LIMIT) { paused = true; return null }
