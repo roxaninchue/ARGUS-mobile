@@ -30,7 +30,7 @@ Early look (not final, can change): Team, Agent chat, Life, Desk.
 ## Status
 - 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main (0.52.3 / vc 190 + three unreleased rounds), a-team@main (v2.18), bot-hq@HEAD. Specialists 1–5 landed all five slice docs by 20:56 CAT.
 - 2026-11-11: **Slice 6 done — the plan is ready.** `docs/overhaul/06-team-plan.md` reconciles the slices (30 items), lists 12 decisions for Finn (each with a recommended answer the plan already assumes), sets 11 phases with versions (0.52.4 → 1.0.0, then 1.1.0), 13 workstreams with owners, a 102-ticket backlog (~336 agent-days), and a coverage matrix that places **all 254 source features** (BH 89 · AT 72 · AM 68 · merge map 25) plus 24 new ones on a phase, a ticket and a UI location — 0 missing.
-- **Now:** waiting on Finn's answers to the decisions below (or a "go with the recommendations"), then P0 starts. No code written, nothing built (owner rule).
+- **Now:** P0 under way. ✓ P0-TM-01 done and merged to main (MR !40, 2026-11-11). Next: P0-AG-01 (BotEngine + LocalEngine seam).
 
 ## Handoff log
 Append one line per session: date, who, what changed, what's next.
@@ -107,7 +107,7 @@ Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). 
 ### Next 10 tickets (all of P0; 1–8 in parallel)
 | # | Ticket | Owner |
 |---|---|---|
-| 1 | P0-TM-01 `team/` + team.db schema + pure models | TM |
+| 1 | ✓ P0-TM-01 `team/` + team.db schema + pure models — done, merged to main (MR !40, b765db55) | TM |
 | 2 | P0-AG-01 `BotEngine` + `LocalEngine` seam (Agent.kt +≤20 lines) | AG |
 | 3 | P0-SH-01 `ui/argus` A-team tokens behind `argus_look` | SH |
 | 4 | P0-SH-02 Lucide generator + `BotOrb` + Manager sphere | SH |
