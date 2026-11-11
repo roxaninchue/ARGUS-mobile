@@ -53,6 +53,8 @@ object Memory {
             if (d.meta("mig_memory") != "1") { Mind.importFacts(d, legacy()); d.setMeta("mig_memory", "1") }
             else if (mergeLegacy) Mind.importFacts(d, legacy())
         } catch (_: Exception) { }
+        // P3-AG-02: lines with no scope yet (older builds, Desktop, the CLI) get theirs: pinned → user:core, else team.
+        try { Mind.scopes()?.let { com.blaze.assistant.memory.MemMigration.scopeExisting(it) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Memory: scopeExisting", e) }
         Mind.onChange = { reload() }
         reload()
     }
