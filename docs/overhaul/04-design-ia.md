@@ -278,3 +278,300 @@ Every component lists: purpose · AT source · Compose API · key specs. All liv
 | `font-variant-numeric:tabular-nums` | `TextStyle(fontFeatureSettings = "tnum")` | |
 | `prefers-reduced-motion` | `LocalReducedMotion` | |
 
+---
+
+## 3. Information architecture
+
+### 3.1 Mental model
+
+> **"Your life, run by a team you can text."**
+
+Three layers, always in this order of importance:
+
+1. **You** — your profile, your people, what the team knows about you, your approvals. (Avatar, People, Inbox.)
+2. **The team** — the **Manager** (ARGUS, the cobalt "A") plus **life-domain leads** (Health, Money, Work, Home, People, Learning, Travel, Create, Mind, Phone) plus any **specialists** you hire or make under them (Coder, Researcher, Designer, "Inbox", "Nova"…). Each is a chat with a soul, memory, engine, apps and (optionally) a computer.
+3. **The work** — conversations, jobs/tasks, routines, approvals, files in the Library, projects, computers. Work is always *owned by a bot* and *visible in that bot's thread*, then *collected* in Desk.
+
+The Manager is the front door (Chat mode and the default `Tell the team…` target): it routes, delegates (bot-to-bot), creates bots, and keeps the user profile. Domain leads are the second door: pinned, one tap. Specialists are the third: reachable by `@name`, the roster, or their lead.
+
+### 3.2 Top-level structure
+
+No bottom tab bar (A-team removed it to give the composer the bottom). Four **modes**, switched by the **Notch** (AT), by **horizontal swipe** on the content (pager, with the notch pill flashing the new name), or by `/team /chat /life /desk`.
+
+```
+                 ┌──────────── Notch pill (pull / tap top centre) ────────────┐
+                 │   [ Team ]   Chat     Life     Desk                         │
+                 └─────────────────────────────────────────────────────────────┘
+   ◀ swipe ▶      TEAM              CHAT               LIFE               DESK
+                 your bots as     plain chat with    domains, people,   inbox, jobs,
+                 chats (home)     the Manager        today, projects    routines, library,
+                                  (Argus's one                          computers
+                                  conversation)
+   always:  top bar (me · search · bell · +)          bottom: the Composer (+ · text · mic/send)
+```
+
+| Mode | What it answers | Contents (top → bottom) | Composer target |
+|---|---|---|---|
+| **Team** (default) | "Who's doing what, and what needs me?" | Team name (display) · sub line "9 bots + Manager · 4 jobs today · 1 overdue" · domain filter chips (All · Health · Money · …) · **Need you** banner · **Pins** (3–4 leads) · **Manager** row · chat rows by recency (bots and **groups**) · "Unassigned" row · "All jobs" button | "Tell the team…" → Manager routes (or on-device Needle parses a command) |
+| **Chat** | "Just ask." | Serif greeting by time of day (AT talk-hello / AM Space greeting) → the continuous conversation with the Manager: AM's rich replies, follow-up chips, projects, private chat toggle (ghost in top bar) | "Ask anything" → Manager, full AM agent (phone control, browser, media, Linux…) |
+| **Life** | "How is my life going?" | Day line (serif: "Wednesday · 3 things today") · **Today** strip (calendar + routines + check-ins as a horizontal timeline) · **Domains** grid (2-col tiles: lead orb, domain name, one live line, one panel value) · **People** card (top 5 people + "See graph") · **Projects** (AM) · **Panels** (AM Home cards: weather, latest answer, suggested asks) | "Ask about your life…" → Manager with Life context |
+| **Desk** | "Where's the stuff?" | Segmented: **Inbox** (approvals, questions, connects, failures) · **Jobs** (AT jobs + BH tasks, filters Today/Upcoming/Overdue/Done/Unassigned) · **Routines** (schedule + event + check-ins) · **Library** (all files bots made) · **Projects** · **Computers** (screens, Ubuntu workspace, cloud, browser tabs) | "Add a job, routine or file…" → Needle command parser first |
+
+Global, outside the modes:
+- **Top bar** (all modes): `me` avatar → **You** (profile + Settings) · `search` → **Spotlight** (AM: bots, chats, messages, jobs, files, memory, settings, apps, actions, web) · `bell` → **Inbox** sheet (dot when anything waits) · `+` → **New** menu.
+- **Thread** (any bot or group) opens over the mode as a full page; Back returns to the mode you came from (AT NAV stack).
+- **Bot profile** opens from the thread's `⋯`, the orb, or long-press on a row.
+- **Voice mode** is a full-screen layer over anything (hold mic, "Hey Argus", orb, QS tile).
+- **Computer viewer** is a full-screen black layer (AT `#cv-full`, BH viewer).
+
+**[D] Why four modes, not AM's Home | Chat | Projects:** AT's Bots | Chat split is the base; *Life* gives the "ecosystem of specialists for every part of a life" a home of its own (and absorbs AM Home's panels + Projects); *Desk* collects BH's Tasks/Routines/Library and AT's jobs + compose so threads stay light. Projects moves to Desk (and is surfaced in Life).
+
+### 3.3 The team: how life-domain specialists are presented
+
+**Default roster (seeded on first run, each optional; names are suggestions for Specialist 5 to finalise in `05-agent-ecosystem.md`):**
+
+| Domain | Lead (default name) | Orb / glyph | Owns (features routed here) |
+|---|---|---|---|
+| — | **Manager** (ARGUS, locked) | cobalt "A" sphere, Lead badge | routing, delegation, bot CRUD, user profile, check-ins, daily suggestions, Chat mode |
+| Health | **Vita** | green · `heart-pulse` | habits, sleep/steps (Health Connect), meds reminders, Safe Walk, doctor booking |
+| Money | **Ledger** | amber · `wallet` | Money Radar, Scam Shield, bills/subscriptions, Bank mode, wallet/cards (view only), budgets |
+| Work | **Chief of Staff** | indigo · `briefcase` | email/calendar/Slack via connectors, meetings (Call Copilot), drafts, jobs for others, Seller pack |
+| Home | **Hearth** | cyan · `house` | groceries, home services, devices, alarms/timers, family logistics |
+| People | **Muse** | pink · `users` | the People graph, birthdays, keep-in-touch nudges, Group Brain (group chats), notification replies, gifts |
+| Learning | **Tutor** | violet · `graduation-cap` | Learn/flashcards, Google Classroom, study plans, student pack |
+| Travel | **Atlas** | blue · `plane` | trips, flights/hotels, maps, ride booking, travel docs |
+| Create | **Studio** | red · `palette` | images, Design (3D/sites/diagrams), music/Beat Lab, video/Clip Studio, Gallery, brand kit |
+| Mind | **Journal** | silver · `notebook-pen` | life logs, brainstorm, Time Capsule, memory graph, reflections |
+| Phone | **Hand** | grey · `smartphone` | phone control, Magic Hand, app store/site apps, settings toggles, device doctor |
+| (specialists) | Coder, Researcher (X search + web), Designer, Reviewer, custom | any | Ubuntu workspace, code review, cloud computer, browser |
+
+Presentation rules:
+- **Team mode** shows leads as normal chat rows (AT) with a 3 dp domain tick on the orb badge; **domain chips** filter the list (a lead + its specialists + groups with them).
+- A lead's **specialists nest under it**: in the roster (§4.2) as an indented sub-list and in the **Compose graph** as "reports to" edges (AT dotted lead edges). The Manager sits at the root.
+- **Hiring**: `+ → New bot` offers *Blank*, *From a template* (AM Specialists: Coder, Designer, Researcher…, AT demo team, BH "Personal assistant / Teammate"), or *Describe it* ("a bot that watches my rent and electricity bills") → Manager drafts soul + apps + routines and shows an approval card.
+- **Domain page** (Life → tile): the lead's orb hero, live panels, the domain's routines, specialists, recent files, and a "Message Vita" composer. It is a *view onto* the same thread/jobs/routines, not a separate store.
+- **Group chats** (BH rooms, `create_group`/`post_to_group`): a row with stacked orbs (max 3) — e.g. "Trip to Cape Town · Atlas, Ledger, Muse".
+
+### 3.4 Entry points
+
+**A. The Composer grammar** (one parser: on-device Needle 3 first, then the gateway — AT behaviour, extended):
+
+| You type | What happens | From |
+|---|---|---|
+| plain text | Team mode: Manager routes (or applies a command); in a thread: that bot | AT, AM |
+| `@nova …` | send to Nova from anywhere; `@vita @ledger …` = group turn | AT home box mentions, BH groups |
+| `/command` | slash command palette (MentionPopup) — list below | AM SlashCommands, new |
+| `$ cmd` | run in the bot's Ubuntu workspace, output as tool card | AT `WS.chatRun` |
+| `#file` | attach a Library file | new |
+| "add job send the deck Friday" / "every weekday 9am…" | Needle → command → "Here's what I'll do" sheet or `2 changes` note | AT CMDISH + interpret |
+| hold mic | push-to-talk dictation; release sends | AM, BH dictation |
+| tap mic (empty field) | Voice mode with this bot | BH call, AM call |
+| `+` | Add-to-chat sheet: Photo · Camera (Argus Camera modes) · File · Screen (Magic Hand grab) · Location · New job · New routine · Ask a bot (handoff) · Private chat toggle | AT attachSheet, AM + menu |
+
+**Slash commands** (palette groups): *Go* `/team /chat /life /desk /inbox /library /routines /jobs /computers /people /settings /views` · *Make* `/bot /job /routine /group /project /skill /capsule` · *Do* `/search /x <query> /browse <url> /camera /scan /draw /design /music /terminal /run` · *Bot* `/soul /memory /engine /apps /computer /voice /fresh (new conversation) /compact /handback` · *System* `/update /health /doctor /sync /backup /private /clear /phoneqa`. Unknown `/name` falls through to AM `open_view` (every AM view stays reachable by name: Design, Memory, Learn, Seller, Jobs, Schedule, Agents, Accounts, Skills, Gallery, Browser, Doctor, Usage, Voice, Desktop, Music, Video, Holding, Look…).
+
+**B. `+` (top bar) — the New menu** (AT plusSheet, extended; MenuRow list): New bot · New group · New job · New routine · New project · Connect an app · Open terminal · Compose graph · Scan / Camera · Settings.
+
+**C. Long-press map**
+
+| On | Opens |
+|---|---|
+| Bot row / pin / orb | Quick sheet: Open · Call (voice) · Watch computer · Pin/Unpin · Mute topics · Memory · Edit soul · Delete (danger, asks; Manager locked) — AT long-press sheet |
+| Group row | Members · Rename · Leave/Delete |
+| Message (agent) | Copy · Quote/reply · Read aloud · Save to memory · Save to Library · Make a job · Share · Ask another bot · Regenerate |
+| Message (user) | Copy · Edit & resend · Delete |
+| WorkChip / step | Copy log · Re-run step · Report |
+| Approval card | Approve · Deny · Always allow · Edit first |
+| Composer mic | Voice settings (voice, speed, language) |
+| Composer + | Last-used attachment directly (camera) |
+| `me` avatar | Toggle light/dark (AM Space) |
+| Notch handle | Jump straight to Voice mode |
+| Domain tile | Hide domain · Reorder · Change lead |
+| Library file | Open · Share · Rename · Move to project · Send to bot · Delete |
+| Person (People) | Message via bot · Who helps with them · Notes · Remind me |
+
+**D. System entry points (Android)**
+
+| Entry | Behaviour | From |
+|---|---|---|
+| **"Hey Argus"** wake word | Voice mode with the Manager; "Hey Argus, ask Vita…" routes | AM WakeWordService |
+| **Assist gesture** (default assistant, `ASSIST`/`VOICE_COMMAND`) | Compact assistant panel over the current app (AM AssistPanel) with screen context; bot switcher row | AM |
+| **Floating orb** (overlay) | Draggable 56 dp orb of the current bot: tap = compact chat, hold = talk, drag to edge = Magic Hand | AM Overlay / Mascot |
+| **Magic Hand** | circle/grab anything on screen → copy, translate, search, save, **send to a bot** | AM |
+| **Quick Settings tile** | "ARGUS" tile: tap = Voice mode; long-press = app; second tile **"Approvals (n)"** opens Inbox | AM BlazeTile + new |
+| **Home-screen widgets** | (1) *Team* 4×2: Need-you count + 4 pinned orbs (tap = thread) + ask field; (2) *Ask* 4×1: composer pill → Voice/Chat; (3) *Today* 2×2: next routine/event + approvals; (4) *Live screen* 2×2: a bot's last frame when its computer runs | AM BlazeWidget (extend, Glance) |
+| **Share sheet** (`SEND`) | "Share to ARGUS" → bot picker sheet (orbs, last-used first, "Manager decides") + optional note; Direct Share targets = top 4 bots | AM SEND filters + new |
+| **Launcher shortcuts** | long-press icon: New chat · Voice · Inbox · top pinned bot | new |
+| **Notifications** | per-bot channel, the bot's own orb as large icon (AT notify), inline reply, **Approve/Deny actions**, edge glow over other apps (opt-in overlay) | AT notify, AM NotificationBrain |
+| **Deep links** | `argus://bot/<id>`, `argus://inbox`, `argus://computer/<id>`, `argus://routine/<id>`, `argus://library/<file>` | new |
+| **Desktop / web** | Argus Link (QR pair, ask_pc), AT `argus-agents-api` (REST + MCP) so Desktop/Hermes/any MCP client sees the same team; BH dashboard → AM local dashboard | AM, AT, BH |
+| **Lock screen** | voice + approvals require unlock for writes; read-only summaries allowed (setting) | new |
+
+### 3.5 Feature → location table (every feature found in the three repos)
+
+Legend — **From**: AM Argus-mobile · AT A-team · BH Bot HQ · N new. **Home** = primary place; **Also** = other entry points. "Thread" means the owning bot's chat.
+
+#### Team, bots and conversation
+| Feature | From | Home | Also |
+|---|---|---|---|
+| Bots as chats (home list, previews, unread, times) | AT | Team mode | Spotlight, widget |
+| Built-in Manager (locked lead, routes, creates/updates bots, asks before delete) | AT | Team → Manager row; Chat mode | `@manager`, "Hey Argus" |
+| Plain AI chat with the Manager (Talk mode, centred greeting) | AT | Chat mode | Notch, `/chat` |
+| One continuous conversation, rich replies, follow-up chips | AM | Chat mode | — |
+| Private chat (ghost: nothing saved/learned) | AM | Chat mode top bar ghost toggle | `+` sheet, `/private` |
+| Needs-you banner (overdue / high-priority today) | AT | Team mode | widget, QS tile |
+| Pinned bots | AT | Team mode pins | long-press, launcher shortcuts |
+| Search bots and jobs | AT | Spotlight | top bar search |
+| Spotlight (apps, actions, settings, chats, memory, web) | AM | top bar search | `/search` |
+| Create / edit / delete bot (name, role, email, portfolio, face, colour) | AT, BH | `+ → New bot`; Bot profile → Soul | Manager by text |
+| Bot look: 6 orb faces × any colour | AT | Bot profile → Soul → Look | — |
+| Bot label ("Research"), about, instructions, effort, "used as" Personal/Teammate | BH | Bot profile → Soul | — |
+| SOUL.md (editable soul file) | BH (engine.ts) | Bot profile → Soul → *Soul file* editor | `/soul` |
+| Personas & Halo Persona Studio (sliders, language mix, boundaries) | AM | Bot profile → Soul → Personality | Settings → Team defaults |
+| Duo (two companions in one chat, `@blaze`/`@halo`) | AM | generalised as **Groups** (any 2+ bots) | `@a @b` |
+| Meeting room (bots debate, verdict lands in chat) | AM | Group thread → "Room" toggle (bots-only discussion view) | HandoffCard → Open |
+| Bots talking to bots (`send_to_bot`, delegate) | BH, AT | HandoffCard in both threads; **Rooms** list in Desk → Inbox filter "Team talk" | People graph (bot↔bot edges) |
+| Groups (create_group, post_to_group, members) | BH | Team list rows; `+ → New group` | `@a @b` |
+| Make primary / new conversation (fresh) / compact / handback | BH | Bot profile → Overview actions | `/fresh /compact /handback`, long-press |
+| Interrupt / Stop a turn | BH, AT | Composer stop ■ | LiveScreenCard Stop, notification |
+| Step budget, "go on" continue | AT | WorkChip (stopped) → Go on | type "go on" |
+| Live activity line + "Worked for · steps" chip | BH, AT | Thread | — |
+| Grouped tool steps (edits, reads, commands, cloud, browser, memory, team) | AT | WorkChip expanded | — |
+| Tool cards with Undo | AT | Thread | — |
+| Code review gate (static + reviewer, severity) | AT | ReviewCard in thread | Desk → Jobs (job detail) |
+| Guard (unbacked claims, loop stop, completeness gate, refusals) & AM FakeCall/ClaimGuard | AT, AM | invisible; surfaces as SystemNote "I couldn't verify…" | Settings → Diagnostics |
+| Attachments (photo, camera, file → /root/uploads), save/attach tools, working set | AT | Composer `+`; FileCard in thread | Library |
+| Markdown, tables, code blocks with copy | AT, AM | Thread | — |
+| Rich blocks (diagram, chart, compare, mini tools, forms, HTML-lite) | AM | Thread → floating window | Library (saved) |
+| Secure form (logins never reach the model) | AM | Thread card | Settings → Privacy → Saved logins |
+| Message actions (reactions, quote, swipe-to-quote, read aloud, selection actions) | AM | long-press message | — |
+| Question cards (`ask_user`) | BH | Thread | Inbox |
+| Draft cards | BH | Thread | Inbox |
+| Model note ("answered by …") | AT | ThreadIntro engine pill; message long-press → Details | — |
+| Demo team | AT | Empty Team state | Settings → Team |
+| Unassigned jobs | AT | Team list row; Desk → Jobs filter | — |
+
+#### Work: jobs, tasks, routines, approvals, library, projects
+| Feature | From | Home | Also |
+|---|---|---|---|
+| Jobs (due, priority, deps/waits-on, assignee, notes, status) | AT | Desk → Jobs | JobCard in thread, `+ → New job`, Needle text |
+| Bot tasks (`create_task`, `update_task`, task list per bot) | BH | Desk → Jobs (same model, "by bot" filter) | Bot profile → Overview "Tasks" |
+| Jobs that run (queue, waiting, notifications) | AT | Desk → Jobs (status) | Thread system notes |
+| Background jobs (long commands detached, resume on finish) | AT | Desk → Computers → Jobs running | Thread tool card "background job" |
+| Job failure log | AT | Job detail sheet | — |
+| Needs your ok (overdue: Tomorrow / Done) | AT | OkCard in thread; Desk → Inbox | Need-you banner |
+| Approvals for write actions (Composio) | BH | **Desk → Inbox**; ApprovalCard in thread | bell sheet, notification actions, QS tile, widget |
+| Manager confirmations (delete bot, spend, send, cloud start) | AT | Inbox + thread | notification |
+| Browser confirm (pay, book, send, submit, delete) | AT, AM | Inbox + thread | — |
+| ConfirmGate / ask-before-risky (AM) / Autopilot exceptions | AM | Inbox | Settings → Privacy → Approvals |
+| Permissions policy per tool (always allow / ask / never) | BH | Settings → Privacy → **Approvals & permissions** | ApprovalCard "Always allow" |
+| Connect-app requests (`request_app_connection`) | BH | ConnectCard in thread; Inbox | Settings → Apps |
+| Routines (once/daily/weekly/cron, local TZ, fire with app closed) | AT, BH, AM | Desk → Routines | Bot profile → Routines, domain page, `/routine`, Needle text |
+| Event routines (Composio triggers: new Gmail, Slack, GitHub PR) | BH | Desk → Routines → "When…" | Bot profile → Routines |
+| AM Triggers & Autopilot routines (arrive at campus → silent + timetable) | AM | Desk → Routines → "When…" (device triggers group) | Phone lead |
+| Run routine now / pause / edit | BH | Routine row actions | — |
+| Proactive check-ins (times, stay_silent, back-off) | BH | Settings → Notifications → Check-ins; Bot profile (Manager) → Routines | `/checkins` |
+| Daily suggestions (≤3, quiet hours, daily cap, per-topic mutes) | AT | Team (Manager row preview) + Inbox "Suggestions" | Settings → Notifications |
+| Jarvis mode (questions, heads-ups while phone in use) | AM | Settings → Notifications → Proactivity level (Off / Quiet / Chatty / Jarvis) | — |
+| Habits detection (offers to automate) | AM | Inbox suggestion → routine | Phone lead |
+| Follow-ups | AM | Inbox | thread |
+| Alarms, timers, scheduled commands | AM | Desk → Routines (Clock group) | `/alarm`, Home lead |
+| Schedule view (day plan) | AM | Life → Today strip; Desk → Routines → Calendar view | `/schedule` |
+| Library (files bots save, `save_file`, list, download) | BH | **Desk → Library** | Bot profile → Library tab, `#file` |
+| AT workspace files (stat/read/zip/save to Downloads/share) | AT | Desk → Library → "Workspaces" | FileCard |
+| Gallery (images/media) | AM | Desk → Library → Media | Create lead, `/gallery` |
+| Projects (threads, brief ≤600 tokens, instructions, docs search) | AM | Desk → Projects | Life → Projects, `/project` |
+| Compose graph (drag & connect team: owns, waits-on, reports-to; live status) | AT | **Team roster → Graph view** | `+ → Compose graph` |
+| Undo center | AM | Toast "Undo"; Settings → Diagnostics → Recent actions | — |
+
+#### Computers, workspace, browser, terminal
+| Feature | From | Home | Also |
+|---|---|---|---|
+| Per-bot Ubuntu 24.04 workspace (PRoot), tmux window per bot | AT | Bot profile → Computer → Workspace | `$ cmd`, Terminal |
+| AM Alpine Linux terminal, run_code, git, preview servers | AM | Desk → Computers → Terminal (one Linux runtime **[Q]** see §7) | `/terminal` |
+| Terminal view (PTY, tabs, extra keys) | AT, AM | full-screen Terminal | `+ → Open terminal` |
+| Per-bot computer screen (Orgo screen, dressed desktop, dock, home page "Welcome back, Nova") | BH | Bot profile → Computer; Desk → Computers | LiveScreenCard |
+| Watch live (side panel → phone: card + full viewer) | BH, AT | LiveScreenCard → **Computer viewer** | widget, notification "Nova is browsing" |
+| Take over / hand back (mouse+keyboard → touch, keyboard) | BH | Computer viewer → Take over | `/handback` |
+| Cloud computer (Orgo / Codespaces, lease, idle stop, hard cap, extend, minutes, cost) | AT | Desk → Computers → Cloud; Settings → Computers | CloudChip |
+| Computer suspend/ensure, screen reset, engine screen stop | BH | Computer page actions | — |
+| Bots' own browser (search/fetch/open, steps, element ids, tabs keep cookies) | AT, AM | Bot profile → Computer → Browser tabs; Desk → Computers | browser cards in thread |
+| AM background browser, private tabs, VPN by country, Argus Free (WARP), "Ask about this page" | AM | Desk → Computers → Browser; Settings → Phone → Browser | Phone lead, share sheet (URL) |
+| Phone browser activity / PiP | AM | Computers → Browser → "Open on phone" | — |
+| Argus Link (pair Desktop, ask_pc) | AM | Desk → Computers → "Your PC" | Settings → Sync |
+| Local dashboard (phone web server, share on Wi-Fi) | AM | Settings → Sync & devices → Dashboard | — |
+
+#### Engines, models, apps, skills, memory
+| Feature | From | Home | Also |
+|---|---|---|---|
+| Engine per bot (provider, model, effort; subscription sign-in on the bot's screen) | BH | Bot profile → Engine | ThreadIntro pill |
+| Hermes engine status/restart/login | BH | Bot profile → Engine → status row | — |
+| Gateway live models, automatic pick, fallback (no picker by default) | AT, AM | Settings → Models (read-only list + "Automatic") | Engine tab "Automatic" |
+| Gemini with your key (per-bot model, cool-down) | AT | Settings → Models → Your keys; Bot profile → Engine | — |
+| On-device Cactus Needle 3 (commands offline) | AT | Settings → Models → On-device | status in Diagnostics |
+| Backup brain / offline brain, BlazeRouter, brain race | AM | Settings → Models → On-device / Advanced | — |
+| Tiers Insight / Oracle / Panoptes | AM | Bot profile → Engine → Depth (Automatic default) | — |
+| Connectors (ARGUS Connect: per-user apps, per tool on/off, logos, categories, test, disconnect) | AT | **Settings → Apps & connectors** (full-screen plugin list) | ConnectCard, Bot profile → Apps |
+| Composio apps (connect, callback, per-bot app access) | BH | merged into Apps & connectors (provider column) **[Q]** | Bot profile → Apps |
+| MCP servers (user-registered), MCP config | AM | Settings → Apps → MCP servers | — |
+| X search (`x_search`, xAI) | BH | a tool every bot has; Researcher specialist; `/x` | Voice mode results |
+| Skills (SKILL.md, my skills, Polish, Argus originals read-only, packs, install) | AT, AM, BH | Settings → Skills; Bot profile → Skills (per bot) | `/skill`, Manager "write a skill" |
+| Hybrid memory (bot private notes, team memory) | AT | Bot profile → Memory | `/memory`, long-press message → Save |
+| Bot memories (search, forget, consolidate, conversation-memory meter, compact) | BH | Bot profile → Memory | — |
+| Mind memory (blaze.db rows, journal, search_chat, pinned core, subject index) | AM | You → **What the team knows** (+ Manager memory) | Mind lead, Spotlight |
+| User profile kept by Manager ("What Manager knows about you") | AT | You → What the team knows | Manager profile |
+| Memory graph | AM | You → What the team knows → Graph | Mind lead |
+| "What Argus is holding" (pinned facts, summary, goal pin) | AM | Bot profile → Memory → Holding (per bot) | `/holding` |
+| Time Capsule (sealed notes) | AM | Mind domain page | `/capsule` |
+| Learned router, tool stats, traces, speed log | AM | Settings → Diagnostics | — |
+
+#### Voice, phone, device, media, life
+| Feature | From | Home | Also |
+|---|---|---|---|
+| Voice calls with a bot (xAI realtime voices ara/eve/leo/luna/rex/sal, speed, language, preview) | BH | **Voice mode**; Bot profile → Voice | tap mic, long-press mic |
+| Hey Argus, hold orb to talk, spoken replies, Read aloud | AM | Voice mode; Settings → Voice | QS tile, orb |
+| My voice (cloned, on-device PocketTTS) | AM | Settings → Voice → My voice | — |
+| Gemini Live voice | AM (voice/gemini) | Voice mode engine option | Settings → Voice |
+| Dictation | BH, AM | hold mic | — |
+| Call Copilot (live captions, suggested answers) | AM | Work lead; Settings → Phone → Calls | ongoing-call notification |
+| Phone control (run_plan, pointer, accessibility) | AM | Phone lead thread; any bot via tool | PhoneControlBanner, orb |
+| Messages, calls, contacts, calendar, alarms, settings toggles, USSD | AM | Phone lead / Home lead (by tool) | any bot (approval for send/call) |
+| Magic Hand (grab, watches, teach) | AM | system overlay; Settings → Phone → Magic Hand | orb drag, `/hand` |
+| Argus Camera (Scan, Text, Ask, Photo, Translate, Document) | AM | Composer `+ → Camera` | `/camera`, Magic Hand, share |
+| Bank mode | AM | Money lead; Settings → Privacy → Bank mode | QS? (no) |
+| Scam Shield | AM | Money lead (alerts in Inbox) | Settings → Privacy |
+| Money Radar | AM | Money domain page | — |
+| Safe Walk | AM | Health lead ("walk me home"); ongoing notification | `/safewalk` |
+| Notification replies, Group Brain, chat logs | AM | People lead / People page | Settings → Notifications → Replies |
+| Life logs (mic transcription to memory), diarize, brainstorm | AM | Mind domain page | QS tile toggle **[Q]**, `/lifelog` |
+| Learn / flashcards, Google Classroom, student pack | AM | Learning domain page | `/learn` |
+| Seller pack (brand kit, posts, ads, store digest) | AM | Work domain page → Seller | `/seller` |
+| Image generation | AM | Create lead; any thread | `/draw` |
+| Design studio (3D, sites, diagrams, live preview) | AM | Create domain page → Design | `/design` |
+| Music (MusicHub, Beat Lab, DJ, lyrics), Video, Movies (sources, downloads), Clip Studio | AM | Create domain page → Media; **Music/Video apps** stay separate activities | `/music /video`, widget? |
+| App store, site apps (install web apps), VirusTotal scan | AM | Phone domain page → Apps | `/store` |
+| Stage (chat screen as playground, stage elements, timers) | AM | Chat mode → `⋯ → Edit stage` **[Q]** (keep, power-user) | `/stage` |
+| Doctor / Screen doctor / Phone QA | AM | Settings → Diagnostics | `/doctor /phoneqa` |
+| Updates (versions.json, resumable APK, banner) | AM | Settings → Updates | `/update` |
+| Usage, data meter, token ledger, quota | AM, AT | You → Plan & usage | — |
+| Plans / billing (Basic, Standard, Pro) | AT, AM | You → Plan & usage | — |
+
+#### Account, privacy, sync, setup
+| Feature | From | Home | Also |
+|---|---|---|---|
+| ARGUS sign-in (Google/GitHub PKCE, email+password, 2FA, recovery, forgot) | AT, AM | Onboarding; You → Account | — |
+| Use without an account (offline-first) | AT | Onboarding "Skip" | — |
+| Biometric login / app lock | AM | Settings → Privacy → App lock | — |
+| Vault (tokens out of storage into Keystore), saved secrets, saved logins, wallet | AT, AM | Settings → Privacy → Wallet & logins | Secure form |
+| Allowed emails / owner (BH server auth) | BH | n/a on phone (account = ARGUS) | — |
+| Sync (two-way team sync with `argus-agents-api`, advanced self-host URL/token) | AT | Settings → Sync & devices | — |
+| Cloud sync of chats/memory/skills (AM SyncEngine, KeySync) | AM | Settings → Sync & devices | — |
+| MCP endpoint of the team (`/mcp`, OpenAPI) | AT | Settings → Sync & devices → "Use your team from other apps" | — |
+| Backup, import/export JSON, erase | AT, AM | Settings → Sync & devices → Backup | — |
+| One-screen setup (downloads: Linux, tools, skills, brain, voice model) + later | AM | Onboarding → Setup; Settings → Diagnostics → Downloads | ProgressLine |
+| Workspace first-run (Ubuntu download, nickname) | AT | merged into the same setup list | — |
+| Permissions page (phone control, notifications, mic, overlay, battery) | AM | Settings → Phone & permissions | inline when needed |
+| Appearance (light/dark/auto, ground, accent off by default) | AT, AM | Settings → Appearance | long-press avatar |
+| Language, reply language | AM | Settings → Language | — |
+| Feedback, About, licences, what's kept on this phone | AM | You → About | — |
+
