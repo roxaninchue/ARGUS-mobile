@@ -130,4 +130,23 @@ object ConfirmGate {
      */
     object Direct : AbstractCoroutineContextElement(DirectKey)
     object DirectKey : CoroutineContext.Key<Direct>
+
+    // ---------------- P2-SF-01: the policy engine seam (policy/Policy.kt) ----------------
+
+    /**
+     * Standing per-tool rules (team.db `policies`), installed at start once the Permissions page exists (P2-SF-04).
+     * While null, [refusal] never refuses, so dispatch behaves exactly as before.
+     */
+    @Volatile var policyStore: com.blaze.assistant.policy.PolicyStore? = null
+
+    /**
+     * Asked at dispatch (Modes.block) before a tool runs: Policy's refusal ("Never" for this tool / bot) or null to go on.
+     * Cards are still shown by [decide] / Agent.confirm until the TeamHooks seam routes them through Policy (P2-SF-02).
+     */
+    fun refusal(tool: String, args: Map<String, String>, bot: com.blaze.assistant.policy.Policy.Subject = com.blaze.assistant.policy.Policy.LEGACY): String? {
+        val store = policyStore ?: return null
+        val d = com.blaze.assistant.policy.Policy.decide(bot, com.blaze.assistant.policy.Policy.Call(tool, args),
+            com.blaze.assistant.policy.Policy.Ctx(store = store))
+        return (d as? com.blaze.assistant.policy.Policy.Decision.Refuse)?.reason
+    }
 }
