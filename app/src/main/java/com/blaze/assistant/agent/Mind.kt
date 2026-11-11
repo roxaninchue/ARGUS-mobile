@@ -595,6 +595,9 @@ object Mind {
     val ready: Boolean get() = db != null
     fun db(): Store? = db
 
+    /** P3-AG-01: the mem_scope side table (null while the mind is still on the old mind.db or not open). */
+    fun scopes(): com.blaze.assistant.memory.MemScopeStore? = (db as? MindStore)?.scopes
+
     /** Which file the mind is in now: "blaze.db", "mind.db" (blaze.db couldn't open, or the copy is still running) or "". */
     val storeName: String get() = when (db) { is MindStore -> "blaze.db"; is Db -> "mind.db"; else -> "" }
 
@@ -788,6 +791,20 @@ object Mind {
         val q = relevantQuery(query); if (q.isEmpty()) return ""
         val d = db ?: return ""
         return try { relevantLines(d.search(q, null, 8), coreText ?: core(d.all())) } catch (_: Exception) { "" }
+    }
+
+    /**
+     * P3-AG-01: saves a line into [scope] (team notes, a bot's own notes, a domain, the profile) with the same rules
+     * as [save]; then its mem_scope row. A line that already existed keeps the scope it had (saying it again from
+     * another bot never moves it).
+     */
+    fun saveScoped(scope: String, text: String, kind: String = "fact", subject: String = "", botId: String? = null,
+                   stated: Boolean = true, source: String = "chat", shareTags: List<String> = emptyList()): Pair<String, Long> {
+        val r = save(kind, subject.ifBlank { guessKind(text).second }, text)
+        val sc = scopes() ?: return r
+        if (r.second > 0 && (r.first != "same" || sc.line(r.second)?.source == "legacy"))
+            try { sc.put(r.second, scope, botId, kind, stated, shareTags = shareTags, source = source) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: saveScoped", e) }
+        return r
     }
 
     /** [max]: [TEXT_MAX] for a normal save; [MERGED_MAX] for a line that comes in whole (cloud sync, a restore). */

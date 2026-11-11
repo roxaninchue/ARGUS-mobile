@@ -35,7 +35,7 @@ P0 is landing on `main`, P1 on `overhaul/p1*`, P2 on `overhaul/p2*` at the same 
 ## Status
 | Ticket | State | Branch / commit |
 |---|---|---|
-| P3-AG-01 | in progress | `overhaul/p3-ag-01` |
+| P3-AG-01 | done (pure + store + Mind wiring; prompt use waits on P0 TeamHooks) | `overhaul/p3-ag-01` |
 | P3-AG-03 | wave 1 | |
 | P3-AG-06 | wave 1 | |
 | P3-AG-02 | wave 1 | |
@@ -54,3 +54,5 @@ P0 is landing on `main`, P1 on `overhaul/p1*`, P2 on `overhaul/p2*` at the same 
 ## Tests run here
 | Test | Count | Result |
 |---|---|---|
+| MemScopeTest (P3-AG-01) | 10 | green |
+| BlazeDbTest (unchanged, Desktop schema) | 12 | green |
