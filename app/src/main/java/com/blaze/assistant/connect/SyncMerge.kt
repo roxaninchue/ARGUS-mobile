@@ -22,6 +22,8 @@ object SyncMerge {
     const val MSG = "msg"
     /** Chat field: messages at or before this time (ms) were cleared off the screen with /clear. */
     const val CLEARED = "cleared_at"
+    /** P3-API-01: one bot's SOUL.md (ScopedSync.SOUL). */
+    const val SOUL = "soul"
 
     /** One synced thing. [data] is null for a tombstone. */
     data class Item(val kind: String, val id: String, val t: Long, val data: JSONObject?) {
@@ -61,6 +63,11 @@ object SyncMerge {
                 b === local.data -> Outcome.KeepLocal
                 else -> Outcome.TakeRemote
             }
+        }
+        if (local.kind == SOUL && !local.deleted && !remote.deleted) {
+            // P3-API-01: a SOUL.md edited on two phones: the higher version wins (an Undo is a new version too), then LWW.
+            val lv = local.data!!.optInt("version"); val rv = remote.data!!.optInt("version")
+            if (lv != rv) return if (lv > rv) Outcome.KeepLocal else Outcome.TakeRemote
         }
         if (local.kind == CHAT && !local.deleted && !remote.deleted) {
             val m = mergeChat(local.data!!, remote.data!!)

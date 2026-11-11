@@ -633,6 +633,7 @@ object Mind {
         synchronized(initLock) {
             if (db != null) return
             val app = ctx.applicationContext
+            projectionRoot = app.filesDir
             val oldFile = app.getDatabasePath("mind.db")
             val hadOld = oldFile.exists()
             val blaze: MindStore? = try {
@@ -876,6 +877,18 @@ object Mind {
 
     fun delete(id: Long) { db?.delete(id); changed() }
 
+    /** P3-AG-04: where USER.md / bots/<id>/MEMORY.md are written (filesDir; set by [init]). */
+    @Volatile var projectionRoot: java.io.File? = null
+    /** Bot id → display name for MEMORY.md titles (the team store sets it; the Manager is always there). */
+    @Volatile var botNames: () -> Map<String, String> = { mapOf("manager" to BrandName.UPPER) }
+
+    /** Re-renders the projection files from the DB (after a forget or a Settings edit). Quiet on failure. */
+    fun reproject() {
+        val root = projectionRoot ?: return
+        val sc = scopes() ?: return
+        try { com.blaze.assistant.memory.ProjectionFiles(root).write(sc.lines(), "", botNames()) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: reproject", e) }
+    }
+
     /** The journal after a chat was saved (Agent.persist). */
     fun journal(conv: String, h: JSONArray) { if (PrivateChat.isPrivateId(conv)) return; try { db?.journal(conv, h) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Mind: db.journalconv h", e) } }
 
@@ -991,7 +1004,11 @@ object Mind {
                 if (want.isEmpty()) return "No ids given. memory_search shows each line's #id."
                 val have = try { db!!.all().map { it.id }.toSet() } catch (_: Exception) { emptySet() }
                 val gone = want.filter { it in have }
-                gone.forEach { delete(it) }
+                // P3-AG-04: forget = gone from memories, FTS, mind_mem, mem_scope, the .md projections and (via changed) the
+                // sync blob, then verified by search. The old path stays for the mind.db fallback.
+                val f = (db as? MindStore)?.let { s -> com.blaze.assistant.memory.Forget(s.sql, reproject = { reproject() }).ids(gone).also { changed() } }
+                if (f == null) gone.forEach { delete(it) }
+                if (f != null && !f.verified) return "Deleted, but a search still finds: " + f.leftovers.joinToString("; ") { it.take(60) } + ". Tell the user plainly.
                 val missing = want - gone.toSet()
                 (if (gone.isEmpty()) "Nothing deleted" else "Deleted ${gone.size} line(s): " + gone.joinToString(", ") { "#$it" }) +
                     (if (missing.isNotEmpty()) ". Not found (already gone or wrong id): " + missing.joinToString(", ") { "#$it" } else "") + "."

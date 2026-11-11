@@ -102,6 +102,12 @@ object MemoryGate {
         return !isSmallTalk(userText) && !isReadOnlyQuestion(userText) && !isAck(userText)
     }
 
+    /**
+     * P3-AG-05: whether the app's own auto-learn (memory/Learn.kt AutoLearn, A-team v2.16c) may look at this message:
+     * the same gate as the write tools, so small talk and read-only questions never produce a "Saved to memory" card.
+     */
+    fun learnable(userText: String): Boolean = allows(userText)
+
     /** The tool result when a write tool is called on a turn that may not write; null = go ahead. */
     fun refusal(tool: String, userText: String): String? = if (tool in WRITE_TOOLS && !allows(userText)) REFUSED else null
 }

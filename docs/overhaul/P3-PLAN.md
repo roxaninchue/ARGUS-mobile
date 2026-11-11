@@ -37,11 +37,11 @@ P0 is landing on `main`, P1 on `overhaul/p1*`, P2 on `overhaul/p2*` at the same 
 |---|---|---|
 | P3-AG-01 | done (pure + store + Mind wiring; prompt use waits on P0 TeamHooks) | `overhaul/p3-ag-01` |
 | P3-AG-03 | done (Soul.kt parse/render/locked/history/undo/regenerate/reset + PromptParts.forBot order) | `overhaul/p3-ag-03` |
-| P3-AG-06 | wave 1 | |
-| P3-AG-02 | wave 1 | |
-| P3-AG-04 | wave 1 | |
-| P3-AG-05 | wave 1 | |
-| P3-API-01 | wave 2 | |
+| P3-AG-06 | done (pure policy + Cloud.route + ThinkBudget/KeyRing seams; call-site wiring waits on P0 TeamHooks/LiveModels) | `overhaul/p3-ag-06` |
+| P3-AG-02 | done (scopeExisting on every attach + A-team import into scopes; idempotent, counted) | `overhaul/p3-ag-02` |
+| P3-AG-04 | done (MEMORY.md/USER.md render + parse-back plan with diff on failure, ProjectionFiles, Forget everywhere + verify; Mind memory_delete uses it) | `overhaul/p3-ag-04` |
+| P3-AG-05 | done (AutoLearn detect/place/decide/run + Saved card + MemoryGate.learnable; chat call-site + card UI wait on P2 cards / P0 TeamHooks) | `overhaul/p3-ag-05` |
+| P3-API-01 | done (ScopedSync: private lines filtered from MemoryAdapter unless Sync private memory; mem_scope + soul adapters under the Memory switch; soul merge = higher version) | `overhaul/p3-api-01` |
 | P3-MG-01 | wave 2 | |
 | P3-SH-01 | wave 3 | |
 | P3-SH-02 | wave 3 | |
@@ -58,3 +58,10 @@ P0 is landing on `main`, P1 on `overhaul/p1*`, P2 on `overhaul/p2*` at the same 
 | BlazeDbTest (unchanged, Desktop schema) | 12 | green |
 | SoulParseTest (P3-AG-03) | 13 | green |
 | PromptOrderTest (P3-AG-03) | 4 | green |
+| ModelPolicyTest (P3-AG-06) | 7 | green |
+| MemMigrationTest (P3-AG-02) | 5 | green |
+| ProjectionRoundTripTest (P3-AG-04) | 7 | green |
+| ForgetVerifyTest (P3-AG-04) | 4 | green |
+| LearnDetectTest (P3-AG-05) | 8 | green |
+| ScopedSyncTest (P3-API-01) | 5 | green |
+| SyncMergeTest + SyncAdaptersTest + SyncEngineTest (existing, re-run) | 27 | green |
