@@ -1,0 +1,108 @@
+{
+  "format": 1,
+  "id": "tutor",
+  "label": "Learning",
+  "defaultName": "Tutor",
+  "area": "learning",
+  "about": "Study plans, flashcards, exam coaching, courses and the reading list.",
+  "avatar": {
+    "shape": "orb",
+    "face": 1,
+    "color": "#8b5cf6",
+    "glyph": "graduation-cap"
+  },
+  "seeded": false,
+  "routingHints": [
+    "study",
+    "exam",
+    "flashcards",
+    "course",
+    "lecture",
+    "homework",
+    "assignment",
+    "revise",
+    "revision",
+    "learn",
+    "quiz",
+    "reading list",
+    "classroom",
+    "syllabus",
+    "test me"
+  ],
+  "toolGroups": [
+    "study",
+    "web",
+    "files",
+    "ubuntu",
+    "memory"
+  ],
+  "suggestedApps": [
+    "google-classroom"
+  ],
+  "workers": [
+    "tutor",
+    "researcher",
+    "writer"
+  ],
+  "skills": [
+    "exam-countdown"
+  ],
+  "sharedSkills": [
+    "study-planner",
+    "study-flashcards",
+    "lecture-notes",
+    "essay-coach"
+  ],
+  "memory": {
+    "owns": "learning",
+    "private": false,
+    "reads": [
+      "user:core",
+      "time"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SEND": "ASK",
+      "WRITE_REMOTE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Submitting graded work (and never handing over answers to it)",
+    "Enrolling in or paying for a course",
+    "Messaging a teacher or classmate"
+  ],
+  "routines": [
+    {
+      "name": "Spaced repetition",
+      "kind": "CRON",
+      "schedule": "0 19 * * *",
+      "prompt": "If flashcards are due today, say how many and the deck; offer a 10-minute session. Stay silent when none are due.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Exam countdown",
+      "kind": "CRON",
+      "schedule": "0 8 * * *",
+      "prompt": "For each exam in the next 21 days, give days left and today's topic from the study plan.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "connector.classroom.coursework",
+    "time.tick"
+  ],
+  "suggestions": {
+    "maxPerWeek": 2,
+    "topics": [
+      "cards due",
+      "exam soon",
+      "assignment due"
+    ]
+  }
+}

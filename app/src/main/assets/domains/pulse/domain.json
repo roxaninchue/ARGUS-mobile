@@ -1,0 +1,117 @@
+{
+  "format": 1,
+  "id": "pulse",
+  "label": "Health & fitness",
+  "defaultName": "Pulse",
+  "area": "health",
+  "about": "Training plans, habits, sleep, steps, medication reminders and health appointments.",
+  "avatar": {
+    "shape": "orb",
+    "face": 0,
+    "color": "#22c55e",
+    "glyph": "heart-pulse"
+  },
+  "seeded": false,
+  "routingHints": [
+    "workout",
+    "run",
+    "gym",
+    "training",
+    "sleep",
+    "steps",
+    "health",
+    "doctor",
+    "medicine",
+    "meds",
+    "pill",
+    "habit",
+    "weight",
+    "exercise",
+    "fitness",
+    "heart rate"
+  ],
+  "toolGroups": [
+    "health",
+    "routines",
+    "web",
+    "connectors",
+    "memory"
+  ],
+  "suggestedApps": [
+    "health-connect",
+    "strava",
+    "google-fit"
+  ],
+  "workers": [
+    "researcher",
+    "planner",
+    "booker"
+  ],
+  "skills": [
+    "training-week"
+  ],
+  "sharedSkills": [],
+  "memory": {
+    "owns": "health",
+    "private": true,
+    "reads": [
+      "user:core"
+    ],
+    "optional": [
+      "health:mind"
+    ]
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SEND": "ASK",
+      "SPEND": "ASK",
+      "WRITE_REMOTE": "ASK",
+      "DELETE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "NONE"
+  },
+  "approvals": [
+    "Booking or cancelling a health appointment",
+    "Sharing any health data with another bot or person",
+    "Paying for a plan, class or service"
+  ],
+  "routines": [
+    {
+      "name": "Weekly training plan",
+      "kind": "CRON",
+      "schedule": "0 18 * * 0",
+      "prompt": "Build next week's training plan from last week's sessions, sleep and the user's goal; fit it around the calendar's busy days.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Habit nudge",
+      "kind": "CHECKIN",
+      "schedule": "19:00",
+      "prompt": "If a habit the user asked to track is not done today, send one short nudge; if it is done or there is no habit, stay silent.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Medication reminder",
+      "kind": "CRON",
+      "schedule": "0 8 * * *",
+      "prompt": "Remind the user of medication they asked to be reminded about, with the dose they gave; stay silent if they set none.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "health.steps",
+    "health.sleep",
+    "time.tick"
+  ],
+  "suggestions": {
+    "maxPerWeek": 2,
+    "topics": [
+      "missed workouts",
+      "short sleep",
+      "refill due"
+    ]
+  }
+}

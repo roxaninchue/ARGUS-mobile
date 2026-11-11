@@ -182,6 +182,39 @@ object Playbooks {
         return Check(p.isEmpty(), p)
     }
 
+    // ---------------- domain playbooks (P5-AG-01) ----------------
+
+    /**
+     * Life-domain playbooks ship in assets/domains/<id>/PLAYBOOK.md (team/Domains.kt reads them). They pass the same
+     * gate as a specialist's ([validate]) plus two domain rules: the "# <Name> playbook" title, and an approvals line
+     * (every domain works under approval cards for what it may not do alone, 05 §3.2 / §7).
+     */
+    const val DOMAIN_TITLE = "playbook"
+
+    /** The field a domain playbook is judged against: persona name, life-area label, what it does, its routing hints. */
+    fun domainField(name: String, label: String, about: String, hints: List<String> = emptyList()): String =
+        "$name $label $about ${hints.joinToString(" ")}".trim()
+
+    /** The playbook gate for a domain: [validate] + title + approvals. [others] = the other domain and specialist playbooks. */
+    fun validateDomain(md: String, field: String, others: List<String> = emptyList()): Check {
+        val base = validate(md, field, others)
+        val p = ArrayList(base.problems)
+        val title = Regex("^#\\s+(.+)$", RegexOption.MULTILINE).find(md.trim())?.groupValues?.get(1)?.trim().orEmpty()
+        if (!title.lowercase().endsWith(DOMAIN_TITLE)) p += "Start with a \"# <Name> playbook\" title."
+        if (!Regex("approv|card|explicit yes", RegexOption.IGNORE_CASE).containsMatchIn(md)) p += "Say what always needs the user's approval card in this field."
+        return Check(p.isEmpty(), p)
+    }
+
+    private val domainCache = ConcurrentHashMap<String, String>()
+
+    /** A domain bot's playbook, from the catalog (cached; "" when the domain or its file is missing). */
+    fun forDomain(id: String): String = domainCache[id] ?: run {
+        val t = com.blaze.assistant.team.Domains.get(id)
+        (t?.let { try { com.blaze.assistant.team.Domains.playbook(it) } catch (_: Throwable) { null } }).orEmpty().also { if (it.isNotBlank()) domainCache[id] = it }
+    }
+
+    fun resetDomains() = domainCache.clear()
+
     // ---------------- prompts ----------------
 
     /** The playbook block for a specialist's system prompt ("" when it has none). */

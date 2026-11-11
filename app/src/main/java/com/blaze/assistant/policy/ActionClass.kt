@@ -71,6 +71,8 @@ object ActionClasses {
             "start_agent", "spawn_agent", "delegate", "orchestrate", "message_agent", "cancel_agent", "create_specialist", "post_update",
             // P5-TM-01: a message to a teammate bot; the receiver runs under its own Policy with trigger BOT (05 §7.2)
             "send_to_bot",
+            // P1-TM-05 job board (team.db, local, undoable): classified here so ActionClassCoverageTest stays green after the P1/P2 merge
+            "add_job", "done_job", "update_job", "retry_job", "agent_delegate", "create_task", "update_task",
             "skill_manage", "write_skill", "save_workflow", "run_skill", "watch",
             "file_write", "file_edit", "export_file", "download_file", "run_code", "job_input", "preview_server", "terminal_stop",
             "blaze_command")

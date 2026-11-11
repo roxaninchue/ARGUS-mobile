@@ -1,0 +1,107 @@
+{
+  "format": 1,
+  "id": "clerk",
+  "label": "Admin & paperwork",
+  "defaultName": "Clerk",
+  "area": "home",
+  "about": "Forms, ID renewals, taxes, contracts, insurance, a document vault and signatures.",
+  "avatar": {
+    "shape": "orb",
+    "face": 5,
+    "color": "#cbd5e1",
+    "glyph": "file-text"
+  },
+  "seeded": false,
+  "routingHints": [
+    "form",
+    "forms",
+    "document",
+    "documents",
+    "passport",
+    "license",
+    "licence",
+    "renewal",
+    "tax",
+    "taxes",
+    "contract",
+    "insurance",
+    "signature",
+    "certificate",
+    "paperwork",
+    "zra"
+  ],
+  "toolGroups": [
+    "files",
+    "ubuntu",
+    "browser",
+    "memory"
+  ],
+  "suggestedApps": [
+    "google-drive",
+    "e-sign"
+  ],
+  "workers": [
+    "writer",
+    "operator",
+    "researcher"
+  ],
+  "skills": [
+    "renewal-watch"
+  ],
+  "sharedSkills": [
+    "paperwork-mode"
+  ],
+  "memory": {
+    "owns": "admin",
+    "private": true,
+    "reads": [
+      "user:core"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SEND": "ASK",
+      "WRITE_REMOTE": "ASK",
+      "DELETE": "ASK",
+      "CREDENTIAL": "NEVER"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Submitting any form",
+    "Signing anything",
+    "Sharing a document with another bot or person"
+  ],
+  "routines": [
+    {
+      "name": "Document expiry watch",
+      "kind": "CRON",
+      "schedule": "0 9 * * 1",
+      "prompt": "Check saved expiry dates (passport, licence, insurance, permits) and name anything expiring within 90 days, with how to renew.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Tax season prep",
+      "kind": "CRON",
+      "schedule": "0 9 1 5 *",
+      "prompt": "Tax returns are due soon. List the documents the user needs, what is already in the vault and what is still missing.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "time.tick",
+    "files.added"
+  ],
+  "suggestions": {
+    "maxPerWeek": 1,
+    "topics": [
+      "document expiring",
+      "tax deadline",
+      "form half done"
+    ]
+  }
+}

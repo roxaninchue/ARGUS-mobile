@@ -1,0 +1,102 @@
+{
+  "format": 1,
+  "id": "career",
+  "label": "Work",
+  "defaultName": "Career",
+  "area": "work",
+  "about": "Career goals, CV, job applications, networking, a skills plan and meeting preparation.",
+  "avatar": {
+    "shape": "orb",
+    "face": 2,
+    "color": "#6366f1",
+    "glyph": "briefcase"
+  },
+  "seeded": false,
+  "routingHints": [
+    "job",
+    "career",
+    "cv",
+    "resume",
+    "interview",
+    "application",
+    "linkedin",
+    "promotion",
+    "networking",
+    "recruiter",
+    "cover letter",
+    "performance review",
+    "meeting prep"
+  ],
+  "toolGroups": [
+    "web",
+    "files",
+    "connectors",
+    "memory"
+  ],
+  "suggestedApps": [
+    "linkedin",
+    "google-docs"
+  ],
+  "workers": [
+    "writer",
+    "researcher"
+  ],
+  "skills": [
+    "interview-prep"
+  ],
+  "sharedSkills": [
+    "document-writing"
+  ],
+  "memory": {
+    "owns": "work",
+    "private": false,
+    "reads": [
+      "user:core",
+      "time"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SEND": "ASK",
+      "WRITE_REMOTE": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Submitting a job application",
+    "Any outreach message to a recruiter, colleague or contact",
+    "Posting to a professional profile"
+  ],
+  "routines": [
+    {
+      "name": "Weekly goals check",
+      "kind": "CRON",
+      "schedule": "0 9 * * 1",
+      "prompt": "Review last week's work goals and set three for this week from the user's priorities and calendar; ask one question if a goal is unclear.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Meeting prep",
+      "kind": "EVENT",
+      "schedule": "calendar.before:30m",
+      "prompt": "A key meeting starts in 30 minutes. Give who is in it, the last thread with them, the goal and two questions worth asking.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "calendar.upcoming",
+    "connector.mail.new"
+  ],
+  "suggestions": {
+    "maxPerWeek": 2,
+    "topics": [
+      "application deadline",
+      "meeting without prep",
+      "stale goal"
+    ]
+  }
+}

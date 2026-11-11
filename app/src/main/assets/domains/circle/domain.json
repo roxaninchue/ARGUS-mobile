@@ -1,0 +1,104 @@
+{
+  "format": 1,
+  "id": "circle",
+  "label": "Social",
+  "defaultName": "Circle",
+  "area": "people",
+  "about": "People, birthdays, gifts, keeping in touch, plans with friends and events.",
+  "avatar": {
+    "shape": "orb",
+    "face": 3,
+    "color": "#EC4899",
+    "glyph": "users"
+  },
+  "seeded": false,
+  "routingHints": [
+    "friend",
+    "friends",
+    "birthday",
+    "gift",
+    "anniversary",
+    "catch up",
+    "keep in touch",
+    "party",
+    "wedding",
+    "invite",
+    "family",
+    "mum",
+    "dad",
+    "haven't talked",
+    "get together"
+  ],
+  "toolGroups": [
+    "comms",
+    "connectors",
+    "web",
+    "memory"
+  ],
+  "suggestedApps": [
+    "contacts",
+    "calendar"
+  ],
+  "workers": [
+    "writer",
+    "shopper"
+  ],
+  "skills": [
+    "keep-in-touch"
+  ],
+  "sharedSkills": [],
+  "memory": {
+    "owns": "social",
+    "private": false,
+    "reads": [
+      "user:core",
+      "user:people",
+      "user:dates"
+    ],
+    "optional": []
+  },
+  "permissions": {
+    "autonomy": "ACT",
+    "actions": {
+      "SEND": "ASK",
+      "SPEND": "ASK"
+    },
+    "spendCapMonthly": 0,
+    "currency": "ZMW",
+    "sendScope": "DRAFT_ONLY"
+  },
+  "approvals": [
+    "Any message to a person",
+    "Buying a gift",
+    "Accepting or declining an invitation"
+  ],
+  "routines": [
+    {
+      "name": "Birthday heads-up",
+      "kind": "CRON",
+      "schedule": "0 9 * * *",
+      "prompt": "Name birthdays and anniversaries in exactly 7 days, with a gift idea from what the user said about that person; stay silent otherwise.",
+      "silentIfNothing": true
+    },
+    {
+      "name": "Keep in touch",
+      "kind": "CRON",
+      "schedule": "0 11 * * 6",
+      "prompt": "If someone the user wants to stay close to hasn't been in touch for their chosen interval, suggest one person and a short opener. At most one a week.",
+      "silentIfNothing": true
+    }
+  ],
+  "signals": [
+    "calendar.changed",
+    "contacts.updated",
+    "notification.posted"
+  ],
+  "suggestions": {
+    "maxPerWeek": 1,
+    "topics": [
+      "birthday soon",
+      "lost touch",
+      "plans this weekend"
+    ]
+  }
+}
