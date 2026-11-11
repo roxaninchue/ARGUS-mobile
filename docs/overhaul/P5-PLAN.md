@@ -36,7 +36,7 @@
 | Ticket | State | Branch / commit |
 |---|---|---|
 | P5-TM-01 | wave 1 | |
-| P5-AG-01 | done — 14 domain templates (domain.json/SOUL/PLAYBOOK/skill) in 10 Life areas, `team/Domains.kt` catalog + create-from-template, private Pulse/Ledger/Clerk; 33 JVM tests green; log `P5-AG-01-LOG.md` | `overhaul/p5-ag-01` |
+| P5-AG-01 | done — 14 domain templates (domain.json/SOUL/PLAYBOOK/skill) in 10 Life areas, `team/Domains.kt` catalog + create-from-template, private Pulse/Ledger/Clerk; 33 JVM tests green; log `P5-AG-01-LOG.md` | `overhaul/p5-ag-01` @ ed0d9907 |
 | P5-TM-02 | wave 2 | |
 | P5-TM-03 | wave 2 | |
 | P5-TM-04 | wave 2 | |
