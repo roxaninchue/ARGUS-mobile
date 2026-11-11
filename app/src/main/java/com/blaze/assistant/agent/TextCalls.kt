@@ -289,4 +289,141 @@ object TextCalls {
     /** Sent once when the reply was function syntax for no real tool. */
     const val NUDGE = "Your last reply was function-call text (like name(...)) instead of a real tool call, so the user would only see code. " +
         "Call tools only through the native tool-calling API. If no tool fits, answer in plain words. Never write function names, brackets or JSON in your reply."
+    // ---------------- P2-SF-07: fence tool blocks (A team AT-25 fence fallback: guard.js parse / normalize / validate) ----------------
+    // Ported from A team app/www/guard.js (owner grant, MIT). Models that don't call tools natively write them as fences:
+    // ```run\nls -la\n``` or ```write_file ~/a.sh\n…\n```. [fenceNormalize] repairs the common slips (```RUN, ``` run:, ~~~run,
+    // ```terminal, one-line ```run ls```, an unclosed last block, "$ " prompts); [fenceParse] splits a reply into markdown
+    // and tool blocks (code fences in other languages stay markdown); [fenceCalls] turns run / write_file / remember /
+    // recall / forget blocks into real calls of this app's tools when those tools are offered. Cases: A team
+    // evals/test/guard.test.mjs, as JUnit in TextCallsFenceTest.
+
+    /** Fence words that are tool blocks (the A team's TOOLS). */
+    val FENCE_TOOLS: List<String> = listOf("run", "write_file", "remember", "recall", "forget", "add_job", "done_job", "update_agent", "note_team", "cloud",
+        "job_status", "job_wait", "job_kill", "agents_list", "agent_create", "agent_update", "agent_delete", "agent_delegate", "agent_status",
+        "memory_read", "memory_write", "memory_forget", "routine_create", "routine_list", "routine_cancel", "retry_job", "browser")
+    /** Slipped fence words and their canonical tool. */
+    val FENCE_ALIASES: Map<String, String> = mapOf("shell" to "run", "bash_run" to "run", "run_shell" to "run", "terminal" to "run", "exec" to "run", "execute" to "run", "cmd" to "run",
+        "memory" to "remember", "save_memory" to "remember", "search_memory" to "recall", "addjob" to "add_job", "add-job" to "add_job",
+        "donejob" to "done_job", "done-job" to "done_job", "complete_job" to "done_job", "update-agent" to "update_agent",
+        "writefile" to "write_file", "write-file" to "write_file", "write_to_file" to "write_file", "create_file" to "write_file")
+
+    sealed class FenceBlock {
+        data class Md(val text: String) : FenceBlock()
+        data class Tool(val name: String, val arg: String, val body: String, val closed: Boolean) : FenceBlock()
+    }
+    data class Normalized(val text: String, val fixes: List<String>)
+
+    private val fenceOpen = Regex("""^[ \t]*(`{3,}|~{3})[ \t]*([A-Za-z_-]+)?[ \t]*:?[ \t]*([^\n`]*)$""")
+
+    /** A reply as markdown and tool blocks (a fence named after a [FENCE_TOOLS] word is a tool block). */
+    fun fenceParse(text: String?): List<FenceBlock> {
+        val lines = (text ?: "").replace(Regex("""\r\n?"""), "\n").split("\n")
+        val out = ArrayList<FenceBlock>(); val md = ArrayList<String>(); var i = 0
+        fun flush() { if (md.joinToString("\n").trim().isNotEmpty()) out += FenceBlock.Md(md.joinToString("\n").replace(Regex("""\n+$"""), "")); md.clear() }
+        while (i < lines.size) {
+            val m = fenceOpen.find(lines[i])
+            if (m == null) { md += lines[i++]; continue }
+            val fence = m.groupValues[1]; val raw = m.groupValues[2].lowercase(); val name = raw.takeIf { it in FENCE_TOOLS }
+            val close = Regex("^[ \\t]*" + Regex.escape(fence[0].toString()) + "{" + fence.length + ",}[ \\t]*$")
+            val body = ArrayList<String>(); var j = i + 1; var closed = false
+            while (j < lines.size) { if (close.containsMatchIn(lines[j])) { closed = true; break }; body += lines[j++] }
+            if (name != null) { flush(); out += FenceBlock.Tool(name, m.groupValues[3].trim(), body.joinToString("\n"), closed) }
+            else md += lines.subList(i, if (closed) j + 1 else j)
+            i = if (closed) j + 1 else j
+        }
+        flush()
+        return out
+    }
+
+    /** Index just after the first closing run / recall / write_file / cloud fence (text after it is dropped), or null. */
+    fun cutAfterFirstResultBlock(text: String?): Int? {
+        var pos = 0; var inFence: Regex? = null; var tool = false
+        for (l in (text ?: "").split("\n")) {
+            val end = pos + l.length
+            val f = inFence
+            if (f != null) {
+                if (f.containsMatchIn(l)) { if (tool) return end; inFence = null }
+            } else {
+                fenceOpen.find(l)?.let { m ->
+                    inFence = Regex("^[ \\t]*" + Regex.escape(m.groupValues[1][0].toString()) + "{" + m.groupValues[1].length + ",}[ \\t]*$")
+                    tool = Regex("^(run|recall|write_file|cloud)$", RegexOption.IGNORE_CASE).matches(m.groupValues[2])
+                }
+            }
+            pos = end + 1
+        }
+        return null
+    }
+
+    /** Fix common tool-fence slips so the parser sees what the model meant. */
+    fun fenceNormalize(text: String?): Normalized {
+        val fixes = ArrayList<String>(); var t = (text ?: "").replace(Regex("""\r\n?"""), "\n")
+        // ``` RUN / ```Run / ~~~run / ```run: -> ```run ; aliases (```terminal etc.) -> canonical; unknown words stay
+        t = Regex("""^([ \t]*)(`{3,}|~{3})[ \t]*([A-Za-z_-]+)[ \t]*:?[ \t]*$""", RegexOption.MULTILINE).replace(t) { m ->
+            val lw = m.groupValues[3].lowercase(); val canon = if (lw in FENCE_TOOLS) lw else FENCE_ALIASES[lw]
+            if (canon == null) m.value else { val fixed = "```$canon"; if (m.value.trim() != fixed) fixes += "fence \"${m.value.trim()}\" -> \"$fixed\""; fixed }
+        }
+        t = Regex("""^[ \t]*~~~[ \t]*$""", RegexOption.MULTILINE).replace(t) { fixes += "~~~ close -> ```"; "```" }
+        // one-line form: ```run ls -la```  -> multi-line
+        t = Regex("""^```(run|recall|forget|done_job)[ \t]+([^\n`]+?)[ \t]*```[ \t]*$""", RegexOption.MULTILINE).replace(t) { m -> fixes += "inline ${m.groupValues[1]} block expanded"; "```" + m.groupValues[1] + "\n" + m.groupValues[2] + "\n```" }
+        // unclosed final tool block
+        val last = fenceParse(t).lastOrNull()
+        if (last is FenceBlock.Tool && !last.closed) { t = t.replace(Regex("""\n*$"""), "\n```"); fixes += "closed unterminated ${last.name} block" }
+        // "$ " prompt prefixes inside run blocks
+        t = Regex("""(^```run[^\n]*\n)([\s\S]*?)(\n```)""", RegexOption.MULTILINE).replace(t) { m ->
+            var body = m.groupValues[2]; val ls = body.split("\n")
+            if (ls.isNotEmpty() && ls.all { it.isBlank() || Regex("""^\s*\$ """).containsMatchIn(it) }) { fixes += "stripped \"\$ \" prompts"; body = ls.joinToString("\n") { it.replace(Regex("""^(\s*)\$ """), "$1") } }
+            m.groupValues[1] + body + m.groupValues[3]
+        }
+        return Normalized(t, fixes)
+    }
+
+    data class FenceProblem(val index: Int, val name: String, val error: String)
+    data class FenceCheck(val text: String, val blocks: List<FenceBlock.Tool>, val problems: List<FenceProblem>, val fixes: List<String>)
+
+    /** Normalize, then check every tool block (run: CheckRun rules; secrets never go to memory; update_agent needs fields). */
+    fun fenceValidate(reply: String?, cwd: String? = null): FenceCheck {
+        val n = fenceNormalize(reply); val all = fenceParse(n.text)
+        val blocks = all.filterIsInstance<FenceBlock.Tool>(); val problems = ArrayList<FenceProblem>()
+        blocks.forEachIndexed { i, b ->
+            if (b.name == "run") com.blaze.assistant.agent.guards.CheckRun.check(b.body, cwd).errors.forEach { problems += FenceProblem(i, b.name, it) }
+            else if (b.body.isBlank() && !(b.name == "remember" && b.arg.isNotEmpty())) problems += FenceProblem(i, b.name, "empty ${b.name} block")
+            if (b.name == "remember" && Regex("""\b(password|passwd|api[_ -]?key|secret|token|bearer)\b\s*[:=]?\s*\S{6,}""", RegexOption.IGNORE_CASE).containsMatchIn(b.body)) problems += FenceProblem(i, b.name, "secrets are never stored in memory")
+            if (b.name == "update_agent" && !Regex("""^\s*\w+\s*:""", RegexOption.MULTILINE).containsMatchIn(b.body)) problems += FenceProblem(i, b.name, "update_agent needs \"field: value\" lines (name, role, email, portfolio, model)")
+        }
+        val md = all.filterIsInstance<FenceBlock.Md>().joinToString("\n") { it.text }
+        if (blocks.isNotEmpty() && Regex("""```run[\s\S]*```[\s\S]*\n(output|result)s?:\s*\n""", RegexOption.IGNORE_CASE).containsMatchIn(n.text)) problems += FenceProblem(-1, "text", "invented output after a run block: stop and wait for the result")
+        if (blocks.none { it.name == "run" } && Regex("""^\s*(\$|root@\S*#)\s+\S+[\s\S]*\n(total \d+|drwx|-rw-)""", RegexOption.MULTILINE).containsMatchIn(md)) problems += FenceProblem(-1, "text", "shows terminal output without running anything")
+        return FenceCheck(n.text, blocks, problems, n.fixes)
+    }
+
+    /** Fence tool -> (this app's tool, how its arguments are built), used by [fenceCalls] when that tool is offered. */
+    private val fenceTools: Map<String, Pair<String, (FenceBlock.Tool) -> JSONObject>> = mapOf(
+        "run" to ("run_shell" to { b -> JSONObject().put("command", b.body) }),
+        "write_file" to ("file_write" to { b -> JSONObject().put("path", b.arg).put("content", b.body) }),
+        "remember" to ("remember" to { b -> JSONObject().put("text", b.body) }),
+        "recall" to ("recall_memory" to { b -> JSONObject().put("query", b.body) }),
+        "forget" to ("forget" to { b -> JSONObject().put("text", b.body) }),
+    )
+
+    /**
+     * Real calls for the closed, valid fence tool blocks whose tool is in [all] (run -> run_shell, write_file -> file_write,
+     * remember / recall_memory / forget), and the markdown left over; null when there is none. A run block that
+     * [fenceValidate] rejects is not turned into a call.
+     */
+    fun fenceCalls(text: String, all: JSONArray): Pair<JSONArray, String>? {
+        val known = ToolCalls.names(all)
+        val v = fenceValidate(text)
+        val bad = v.problems.filter { it.index >= 0 }.map { it.index }.toSet()
+        val calls = JSONArray()
+        v.blocks.forEachIndexed { i, b ->
+            if (!b.closed || i in bad) return@forEachIndexed
+            val (tool, args) = fenceTools[b.name] ?: return@forEachIndexed
+            if (known.none { it == tool }) return@forEachIndexed
+            calls.put(JSONObject().put("id", "fencecall_${calls.length()}").put("type", "function")
+                .put("function", JSONObject().put("name", tool).put("arguments", args(b).toString())))
+        }
+        if (calls.length() == 0) return null
+        val rest = fenceParse(v.text).filterIsInstance<FenceBlock.Md>().joinToString("\n\n") { it.text }.trim()
+        return calls to rest
+    }
 }
