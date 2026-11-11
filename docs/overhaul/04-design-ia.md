@@ -3,7 +3,7 @@
 > Slice 4 of the ARGUS overhaul (see `overhaul.md`). Owner: Specialist 4 (product design / IA).
 > Target: the one ARGUS Android app (`argus-mobile`, Kotlin + Compose) that holds every feature of Argus-mobile (AM), A-team (AT) and Bot HQ (BH).
 > **Base look: A-team** (v2.16+ "chat-first + liquid glass", `a-team/app/www/app.css`). Sources read for this doc are listed in §0.
-> Status: **partial** — §0–2 published, §3–7 in progress. Decisions marked **[D]**, open questions marked **[Q]**.
+> Status: **v1 complete** (all sections). Decisions marked **[D]**, open questions marked **[Q]**.
 
 Contents
 0. Sources and what each brings
@@ -950,3 +950,91 @@ Every page reachable by name (`/settings voice`, Spotlight, ask a bot) — AM "o
 ```
 Once messages exist it's AM's chat (rich replies, droplet stream, follow-up chips) in AT's no-bubble agent text. When the Manager delegates, a HandoffCard shows which bot took it ("Atlas is on it →").
 
+---
+
+## 5. Accessibility and one-hand use
+
+### 5.1 One-hand rules (thumb-first)
+1. **Bottom 45 % = action zone.** Composer, chips, approve/deny, take over/hand back, end call, sheet primaries all live there. Top bar holds only *navigation* (me, search, bell, +) — each also has a bottom path: search = swipe down on the composer or `/search`; bell = Need-you banner / chip; + = composer `+` long-press → "New…"; me = `/settings`.
+2. **Reach mode:** swiping down anywhere on the empty top half of a list scrolls the page so its first actionable row sits at mid-screen (iOS-reachability-like, AT notch pull gesture reused): pulling the notch past 120 dp opens the mode pill *at the bottom* (above the composer) instead of the top.
+3. **Primary right, destructive left and separated.** Approve/Send/Save on the trailing edge (thumb side for right-handers); a **Handedness** setting mirrors button order and swipe directions for left-handed users. Destructive buttons are never in the composer row and never the last thing under the thumb; they always confirm (or need biometric for money/delete).
+4. **Sheets, not new screens,** for anything < 6 fields; sheets open at ≤ 60 % height, primary action pinned at the bottom.
+5. **Swipe gestures are shortcuts, never the only way:** every swipe (pin, mute, approve, mode switch) has a visible button or long-press equivalent.
+6. **No keyboard jump:** composer uses `imePadding`, threads keep their scroll anchor; chips hide while typing if the screen height < 640 dp.
+7. **Mode switch without reaching:** horizontal swipe on content, or the notch pill in reach mode.
+
+### 5.2 Accessibility
+| Area | Rule |
+|---|---|
+| Contrast | Every text pair ≥ 4.5:1 (body) / 3:1 (≥ 18 sp bold, icons). Verified tokens: ink on bg 17:1 dark, 16:1 light; mute on bg 7.0:1 dark / 4.6:1 light (light `--mute #7C7C84` on `#EEF0F4` = **4.1:1 → darken to `#6E6E76`** **[D]**); dim is for non-essential meta only (timestamps also exposed to TalkBack). Danger/success text uses the AA variants listed in §2.1. Extend AM `ContrastTest` to all three grounds and glass levels. |
+| Colour independence | state is always icon + word + colour (● Working, ⚑ overdue text, 🛡 approval); bot identity also by name + face shape, never colour alone. |
+| Touch targets | ≥ 48 dp for everything (38 dp visuals get 48 dp hit areas; 21 dp checkboxes get 48 dp rows). Min 8 dp between targets. |
+| TalkBack | semantics merged per row: "Ledger, Money lead, 1 overdue: Pay ZESCO bill, 9:12, unread". Orbs are decorative (`contentDescription = null`) inside rows. Live regions: ActivityLine is `liveRegion = Polite`, throttled to one announcement per step; approvals `Assertive`. Custom actions on rows: Pin, Mute, Call, Open profile. WorkChip announces "Worked for 2 minutes 10 seconds, 7 steps, double-tap to expand". |
+| Headings | section heads `heading()`; screen title first in focus order; Back always first. |
+| Font scale | up to 200 %: rows wrap to 2 lines, chips wrap into 2 rows, top bar title ellipsizes before icons shrink; composer grows. Tested at 100/130/200 % in shots. |
+| Motion | reduced-motion setting + system animator scale (§2.6); no essential info only in animation (edge glow always paired with a pop-up or notification). |
+| Haptics | AT "two crisp taps" for bot pings (`HapticFeedbackConstants.CONFIRM`), single tick on approve, long-press feedback; all off with system haptics off. |
+| Voice parity | every core action has a spoken form ("approve Atlas's booking" → shows the card and asks for tap/biometric for money). |
+| Computer viewer | captions of the action line read aloud on request; Take over has a "large controls" layout; frames get a text summary ("Chrome, proflight.co.zm, seat map") via the bot's last screen read. |
+| Language | RTL mirroring via `LayoutDirection`; reply language follows AM ReplyLanguage. |
+| Cognitive load | one primary action per card; plain verbs ("Approve", "Not now"); never more than 3 chips of suggested asks. |
+
+---
+
+## 6. Creative ideas that make it feel unified and impressive
+
+1. **The orb is the agent, everywhere.** The same `BotOrb` is the avatar, the notification icon, the floating overlay, the voice hero, the widget pin and the graph node — and its *state* is consistent: slow ring spin = working, amber satellite = waiting for you, body pulse = talking, dim = paused. You learn one visual language once.
+2. **Edge glow in the bot's colour** (AT notify) becomes ARGUS's signature: when Ledger finds something while you're in another app, the screen edges pulse amber twice. Approvals glow with a double pulse + the shield.
+3. **"Team talk" made visible:** when bots hand work to each other, a thin dotted line animates between their orbs on the Team list for 2 s (the Compose graph's lead edge, brought to life), and a HandoffCard lands in both threads. Bots-talking-to-bots stops being invisible plumbing.
+4. **The day line.** Life mode opens with one serif sentence written by the Manager each morning ("Wednesday — three things today, and Mum's birthday is Saturday."). It's the Chat greeting's sibling and the widget's headline.
+5. **Dressed computers** (BH): each bot's screen shows its own desktop with its orb, name, role and apps; the LiveScreenCard thumbnail therefore *looks like the bot*, so you know whose screen you're watching at a glance.
+6. **Take over = hand on the glass.** Pressing Take over draws AM's Magic Hand pointer onto the frame and an amber frame border; Hand back plays the orb sliding back into the corner. One consistent metaphor for "you vs. the bot is driving" across phone control (AM pointer), browser, and cloud screens.
+7. **Work receipts.** The WorkChip doubles as a receipt: open it and the steps are grouped by kind with time per group and "proof" links (files, screenshots, API responses) — the AM ActionProof/ClaimGuard work, finally visible.
+8. **Domain colours as a quiet compass.** Only a 3 dp tick on orb badges and the domain tile icon carry domain hue, so the monochrome stays calm but Health always feels green and Money always amber.
+9. **Notch as the "mind switch".** The wordless notch (AT) pulls down to switch modes; pulled further it summons Voice mode — "pull down to talk to ARGUS".
+10. **Share-to-bot with intent.** Sharing a link or screenshot into ARGUS shows the bot picker *ranked by what it is* (flight confirmation → Atlas first, receipt → Ledger, code → Coder) with one tap to send.
+11. **One "Needs you" truth.** The same count appears on the banner, the bell dot, the widget, the QS tile label and the launcher badge — they're one query, never out of sync.
+12. **Soul as a living document.** The Soul tab shows the SOUL.md with a gentle diff highlight when the bot or the Manager proposes a change ("Atlas wants to add: *Prefers window seats*") — accepted via a normal approval card. Editable soul/memory files become a transparent relationship, Muse-style.
+13. **Quiet by design.** A single **Proactivity dial** (Off · Quiet · Normal · Jarvis) maps AT daily-suggestion caps, BH check-ins and AM Jarvis to one control, with per-bot overrides — respecting the user's attention is part of the brand.
+14. **Haptic signatures per bot** (optional): each orb face has its own short vibration pattern so you can tell who pinged you from your pocket.
+
+---
+
+## 7. Build notes, hand-offs and open questions
+
+### 7.1 Implementation order (for slice 6)
+1. `ui/argus/` tokens + `ArgusTheme` (colours, type, shapes, motion, glass with Haze) + Lucide vectors + `BotOrb` — and map Material3 `colorScheme` to them so existing AM screens shift look immediately.
+2. Shell: `Scaffold` with `ArgusTopBar`, `NotchSwitcher`, `HorizontalPager` (Team/Chat/Life/Desk), `Composer`, `ChipsRow`, toast, pop-up + edge glow. Replace `ui/space/SpaceTopBar` + tabs; keep `SpaceBackdrop` as the *Orbit* ground; keep `SpaceProfile` row pattern for Settings in AT glass.
+3. Team mode + thread components (rows, intro, bubbles, ActivityLine/WorkChip, ToolCard, Approval/Question/Connect/Draft, LiveScreenCard, JobCard, HandoffCard). AM's `ChatScreen` message list is re-skinned, not rewritten (keep `StreamGate`, `MessageList` stability work).
+4. Bot profile tabs; Desk (Inbox, Jobs, Routines, Library, Projects, Computers); Computer viewer.
+5. Life mode + People graph; Voice mode re-skin; widgets/QS/share/launcher shortcuts.
+6. Settings re-tree (§4.11) with "open by name" aliases for every old AM page id (`SpaceSettings.PARENT` and `about.md` updated).
+
+### 7.2 Mapping AM's existing kit
+| AM today | Becomes |
+|---|---|
+| `GlassTokens`, `BlazeColors`, `Theme.kt` | aliases over `ArgusColors` (deprecated, then removed) |
+| `Modifier.glass(intensity)` Low/Medium/High | `argusGlass(Surface)` / `argusGlass(Surface)` / `Chrome`/`Sheet` |
+| `GlassCard`, `GlassSheet`, `GlassTopBar`, `GlassFloatingWindow` | `ArgusCard`, `ArgusSheet`, `ArgusTopBar`, kept `GlassFloatingWindow` (restyled) |
+| `MotionTokens` | `ArgusMotion` (same durations + AT springs) |
+| `StreamOrb` droplet | kept, monochrome; cobalt for Manager |
+| `SpaceLook`, `SpaceType` serif | `ArgusType.Serif` (3 uses only) |
+| `ArgusBrand` cobalt/electric | brand-only tokens (Manager, onboarding, focus) |
+| `ui/space/SpaceSpotlight` | Spotlight behind the top bar search |
+
+### 7.3 Hand-offs to other slices
+- **Slice 5 (agent ecosystem):** final names/souls of domain leads; the routing contract behind "Tell the team…"; the HandoffCard data (`from, to, ask, status, roomId`); the approval kinds + risk levels used to sort Inbox and decide swipe-approve vs biometric; check-ins/suggestions/Jarvis unified into the Proactivity dial.
+- **Slices 1–3 (inventories):** please flag any feature missing from §3.5 so it gets a home; this table is meant to be exhaustive and is the IA acceptance list.
+- **Slice 6 (plan):** each §4 screen = one workstream deliverable with Robolectric shots in light/dark × 3 grounds × font 100/200 %.
+
+### 7.4 Open questions **[Q]**
+1. **One Linux runtime or two?** AT ships Ubuntu 24.04 per bot (PRoot); AM ships Alpine. Design assumes *one* workspace system with a tmux window per bot (Computer tab + Terminal).
+2. **Composio vs ARGUS Connect:** design shows one "Apps & connectors" list with the provider as a detail; needs a backend decision.
+3. **Orgo 4-screen limit (BH)** vs a team of 10+ bots: design treats a screen as *optional* per bot (Computer tab shows "No screen — borrow one when needed"), with the cloud computer leased on demand (AT rules).
+4. **Stage** (AM chat playground) — keep as a power-user "Edit stage" in Chat mode, or retire?
+5. **QS tile for Life logs** — useful, but a mic-recording toggle in QS needs a privacy review.
+6. **BH artwork**: not MIT, not used; confirm the orb-only avatar decision with the owner.
+7. Light-mode `--mute` darkened to `#6E6E76` for AA (deviation from AT CSS).
+
+---
+*Changelog:* 2026-11-11 v1 — design system, IA + feature map, 13 screen specs, a11y/one-hand, creative ideas, build notes (Specialist 4).
