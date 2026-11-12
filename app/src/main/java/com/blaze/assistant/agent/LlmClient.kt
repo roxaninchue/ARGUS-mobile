@@ -461,7 +461,7 @@ object LlmClient {
             .filter { it.isNotBlank() }.joinToString(" · ")
         if (t.pid == Providers.GATEWAY) lastServedKey = listOfNotNull(conn.getHeaderField("X-Blaze-Provider"), conn.getHeaderField("X-Blaze-Model"))
             .filter { it.isNotBlank() }.takeIf { it.size == 2 }?.joinToString("/").orEmpty()
-        // P0-API-01: gateway 0.8.45+ names the route only as an X-Blaze-Route token (it takes it back in Prefer / Avoid).
+        // P0-API-01 (always on): gateway 0.8.45+ names the route only as an X-Blaze-Route token (it takes it back in Prefer / Avoid).
         if (t.pid == Providers.GATEWAY && lastServedKey.isEmpty()) LiveModelsFeed.served(conn.headerFields)?.let { (r, l) -> lastServedKey = r; if (lastServedBy.isEmpty()) lastServedBy = l }
         if (code in 200..299) turnModel?.served(lastServedKey)
         // v0.45.5 (#1, #5b): request id + route / timing headers for the "What happened" sheet.

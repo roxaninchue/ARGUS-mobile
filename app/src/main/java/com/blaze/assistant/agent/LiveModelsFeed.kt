@@ -2,8 +2,8 @@ package com.blaze.assistant.agent
 
 /**
  * P0-API-01 Android glue for [LiveModels] (behind Settings `live_models`, default off): fetches GET /v1/models/live in
- * the background at most every 5 min, names the live pick in X-Blaze-Prefer when the turn has no pin yet, and reads
- * back which route answered from X-Blaze-Route (gateway 0.8.45+ sends no model ids by default). Not unit-tested; the
+ * the background at most every 5 min and names the live pick in X-Blaze-Prefer when the turn has no pin yet. Reading
+ * back which route answered from X-Blaze-Route ([served]) is always on. Not unit-tested; the
  * decisions it calls are (LiveModelsTest, ModelRouteTest).
  */
 object LiveModelsFeed {
@@ -31,10 +31,14 @@ object LiveModelsFeed {
         return ModelRoute.livePrefer(LiveModels.shared.list(), pick, hasTools, failed)
     }
 
-    /** "provider/model"-free served key + label from the response headers: (route token, "Groq · GPT OSS 120b"). */
+    /**
+     * The served key + label from the response headers: (route token, "Groq · GPT OSS 120b"). The token part is always
+     * on (owner, 2026-11-12): gateway 0.8.45+ hides X-Blaze-Provider/Model, so without it TurnModel never pinned and an
+     * empty route was never avoided; the gateway takes the token back in X-Blaze-Prefer / blaze_avoid. The label needs
+     * the live list, so it only shows with `live_models` on.
+     */
     fun served(headers: Map<String?, List<String>>?): Pair<String, String>? {
-        if (!on()) return null
-        val a = LiveModels.answered(headers, LiveModels.shared.list())
+        val a = LiveModels.answered(headers, if (on()) LiveModels.shared.list() else emptyList())
         if (a.route.isEmpty()) return null
         return a.route to (a.model?.let { "${it.prov} · ${it.name}" + if (a.fallback) " (fallback)" else "" } ?: "")
     }
