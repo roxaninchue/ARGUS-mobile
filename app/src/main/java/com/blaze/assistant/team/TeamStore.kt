@@ -98,6 +98,7 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
         BotRules.nameProblem(b.name, bots)?.let { return@tx Result.Refused(it) }
         val taken = bots.map { it.id }.toSet() + BotRules.MANAGER_ID + read().second
         val base = BotRules.slug(b.id.ifBlank { b.name }).ifBlank { "bot" }
+            .let { if (it.startsWith(BotRules.WORKER_PREFIX)) "bot-$it" else it }   // worker-* is the templates' id space
         var id = base; var n = 2
         while (id in taken) { id = "$base-$n"; n++ }
         val now = clock()

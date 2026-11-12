@@ -92,13 +92,22 @@ object BotRules {
 
     /** A built-in or custom specialist as a WORKER template: hidden from the roster, reports to its manager (default ARGUS). */
     fun workerTemplate(s: Specialists.Spec, now: Long = 0L): Bot = Bot(
-        id = s.id, kind = BotKind.WORKER, name = s.name, label = "Worker", domain = null,
+        id = workerId(s.id), kind = BotKind.WORKER, name = s.name, label = "Worker", domain = null,
         avatar = Avatar(s.avatar.ifBlank { "orb" }, s.colour.ifBlank { WORKER_COLOR }),
         voice = if (s.voice.isBlank()) Voice() else Voice(id = s.voice),
-        soulPath = soulPath(s.id), skills = s.skills, toolGroups = s.groups,
+        soulPath = soulPath(workerId(s.id)), skills = s.skills, toolGroups = s.groups,
         engine = EngineSpec(model = ModelPolicy(pinned = s.modelPref.ifBlank { null })),
         permissions = Permissions(dataScopes = if (s.memoryScope.isBlank()) Permissions().dataScopes else setOf("user:core", "team", s.memoryScope)),
         reportsTo = s.managedBy.ifBlank { MANAGER_ID }, hidden = true, createdAt = now, u = now)
+
+    /**
+     * Worker templates live in their own id space, `worker-<specialist id>`, so the Inbox-manager specialist (`inbox`)
+     * never collides with the Inbox domain bot (`inbox`). [specialistId] maps back for `delegate`, which keeps taking the
+     * plain specialist id. No other bot may take an id in this space ([TeamStore.insert]).
+     */
+    const val WORKER_PREFIX = "worker-"
+    fun workerId(specialistId: String) = WORKER_PREFIX + specialistId
+    fun specialistId(workerId: String): String? = workerId.takeIf { it.startsWith(WORKER_PREFIX) }?.removePrefix(WORKER_PREFIX)?.ifEmpty { null }
 
     /** Monochrome ink for workers (04 §2: colour is for a bot's identity; workers have none of their own until set). */
     const val WORKER_COLOR = "#8A8F98"
