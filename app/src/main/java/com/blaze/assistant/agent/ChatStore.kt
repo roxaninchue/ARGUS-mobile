@@ -75,6 +75,12 @@ object ChatStore {
         if (d.usableSpace in 0 until 20_000_000L) "phone storage is full" else "the phone wouldn't write the file"
     } catch (_: Exception) { "the phone wouldn't write the file" }
 
+    /** P1-SH-04: Chat mode's Manager chats ([ManagerChats]), kept beside the chats; null before the first save or when unreadable. */
+    fun managerChatsText(): String? = try { if (::dir.isInitialized) File(dir, ManagerChats.FILE).takeIf { it.isFile }?.readText() else null } catch (_: Exception) { null }
+
+    /** P1-SH-04: writes Chat mode's Manager chats atomically (best effort: a failed write keeps the previous file). */
+    fun saveManagerChats(text: String): Boolean = ::dir.isInitialized && ChatIndex.write(dir, File(dir, ManagerChats.FILE), text)
+
     fun rename(id: String, title: String) = load(id)?.let { save(it.put("title", title.trim().ifEmpty { "Chat" })) }
     fun setPinned(id: String, pinned: Boolean) = load(id)?.let { save(it.put("pinned", pinned)) }
     fun delete(id: String) { file(id).delete(); index.forget(id); com.blaze.assistant.connect.CloudSync.localChange(com.blaze.assistant.connect.SyncKinds.CHATS) }

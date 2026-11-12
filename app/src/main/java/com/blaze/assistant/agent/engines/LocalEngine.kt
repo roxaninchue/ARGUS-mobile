@@ -172,10 +172,14 @@ class RowMapper(private val botId: String, private val generation: Int, firstSeq
     }
 
     companion object {
-        /** The live line for an event, or null. */
+        /**
+         * The live line for an event, or null. P1-SH-04: on its way to a screen, so it is shown-safe: a step's text only
+         * when [com.blaze.assistant.agent.StepPill.clean] passes it (no raw tool, model or provider names, code or
+         * URLs), a tool call by what it does ([com.blaze.assistant.agent.StepTool.label]), never by its name.
+         */
         fun activity(e: TeamHooks.Event): String? = when (e) {
-            is TeamHooks.Event.Message -> e.text.takeIf { e.role == "STEP" }
-            is TeamHooks.Event.ToolCall -> "Using ${e.name}"
+            is TeamHooks.Event.Message -> if (e.role == "STEP") com.blaze.assistant.agent.StepPill.clean(e.text) else null
+            is TeamHooks.Event.ToolCall -> com.blaze.assistant.agent.StepTool.label(e.name).now
             else -> null
         }
     }

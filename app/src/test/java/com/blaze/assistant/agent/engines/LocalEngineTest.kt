@@ -102,7 +102,8 @@ class LocalEngineTest {
         assertEquals("done", body(rows[3])["state"]); assertEquals("bank_balance ok", body(rows[3])["output"])
         assertEquals(body(rows[2])["callId"], body(rows[3])["callId"])
         assertEquals("ledger", body(rows[4])["from"])
-        assertTrue(events.filterIsInstance<TurnEvent.Activity>().map { it.text }.containsAll(listOf("Working on bank_balance", "Using bank_balance")))
+        // P1-SH-04: the live line never carries the raw tool name ("Working on bank_balance" fails StepPill.clean and is dropped)
+        assertEquals(listOf("Looking things up"), events.filterIsInstance<TurnEvent.Activity>().map { it.text })
         assertFalse(TeamHooks.isBound("bot:ledger"))                   // released when the turn ends
     }
 
@@ -195,5 +196,20 @@ class LocalEngineTest {
         assertTrue("Agent.kt is ${lines.size} lines", lines.size <= 5807 + 20)
         val seam = lines.count { "TeamHooks" in it || "TeamTools" in it || "P0-AG-01" in it }
         assertTrue("seam lines: $seam", seam in 1..20)
+    }
+
+    /** P1-SH-04: the live "what it's doing" line is shown-safe before Chat mode streams it (no raw tool or model names). */
+    @Test fun theLiveLineNeverNamesTheToolOrTheModel() {
+        val a = { e: TeamHooks.Event -> RowMapper.activity(e) }
+        assertEquals("Looking things up", a(TeamHooks.Event.ToolCall("c1", "bank_balance", "{}")))
+        assertEquals("Searching the web", a(TeamHooks.Event.ToolCall("c2", "web_search", "{}")))
+        assertEquals("Working", a(TeamHooks.Event.ToolCall("c3", "zq_xx9", "{}")))
+        assertNull(a(TeamHooks.Event.Message("STEP", "Working on bank_balance")))
+        assertNull(a(TeamHooks.Event.Message("STEP", "Asking gpt-4o for help")))
+        assertNull(a(TeamHooks.Event.Message("STEP", "Reading https://example.com/x")))
+        assertEquals("Checking your calendar", a(TeamHooks.Event.Message("STEP", "Checking your calendar.")))
+        assertNull(a(TeamHooks.Event.Message("BLAZE", "Hi")))
+        for (n in listOf("bank_balance", "memory_save", "mcp_github_list", "terminal_run"))
+            assertFalse(a(TeamHooks.Event.ToolCall("c", n, "{}"))!!.contains(n))
     }
 }

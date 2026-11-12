@@ -440,6 +440,9 @@ fun ChatScreen() {
         val body = if (cmd == null) com.blaze.assistant.agent.SimpleHome.tagged(text, talkTo) else cmd
         val full = if (quote.isNotBlank()) quote.lines().joinToString("\n") { "> $it" } + "\n\n" + body else body
         if (full.isBlank() && pending.isEmpty()) return
+        // P1-SH-04: Chat mode sends to the newest Manager chat (an older one is read-only)
+        if (argus && navNow().tab == ChatNav.CHAT && !navNow().inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value)
+            com.blaze.assistant.ui.team.ChatModeRuntime.beforeSend()
         // v0.30.6 rapid messages: no "busy" check; a message sent while Blaze works joins the turn (Agent.send).
         clearedAt = 0L
         // v0.28.3: a new project chat joins its project with its first message (only from its own screen in Projects).
@@ -764,6 +767,17 @@ fun ChatScreen() {
                         home = try { com.blaze.assistant.terminal.Terminal.home() } catch (_: Exception) { null },
                         onBack = { Views.showing.value = DesignNav.back(Views.showing.value) })
                     BackHandler { Views.showing.value = DesignNav.back(Views.showing.value) }
+                } else if (argus && nav.tab == ChatNav.CHAT && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty)) {
+                    // P1-SH-04 Chat mode: the Manager's chats (history drawer, ✎ new chat, ghost toggle, greeting) on the main chat
+                    com.blaze.assistant.ui.team.ChatModeFrame(name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null },
+                        privateOn = isPrivate, onPrivate = { if (isPrivate) confirmLeavePrivate = true else Agent.enterPrivate() },
+                        onAsk = { send(it) }, onOpenProjectChat = { openProjectChat(it) }) { keep ->
+                        val dens = LocalDensity.current
+                        CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip, LocalOpenLink provides openLink,
+                            LocalDensity provides androidx.compose.ui.unit.Density(dens.density, dens.fontScale * Settings.textScale)) {
+                            MessageList(mood, onQuote = { quote = it }, onFollowup = { send(it) }, keep = keep)
+                        }
+                    }
                 } else if (!hasMessages && !(stageActive && stage.items.isNotEmpty())) {
                     // 0.52.3: the empty chat in the Hark look (greeting card + suggested asks)
                     Welcome(needsSetup = !Settings.ready, onSetup = { settingsPage = "account" }) { send(it) }
@@ -1092,7 +1106,9 @@ private fun fileSuggestions(text: String): List<Suggestion> {
 }
 
 @Composable
-private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (String) -> Unit) {
+private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (String) -> Unit,
+                        /** P1-SH-04: Chat mode's open chat (a window of the main chat); null = every message. */
+                        keep: ((ChatMessage) -> Boolean)? = null) {
     val c = LocalBlaze.current
     val messages by Agent.messages.collectAsState()
     val state = rememberLazyListState()
@@ -1103,8 +1119,8 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val hideDoneSteps = com.blaze.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, live = false) == com.blaze.assistant.agent.SimpleMode.Work.NONE
     // v0.45.0 (#10): built incrementally: a streamed frame only rebuilds the rows after the last unchanged message.
     // 0.52.1 (owner): no step rows and no agent cards in the chat: the task's work is ONE line in the TaskPill at the end.
-    val items = remember(messages, mood, hideDoneSteps) { itemBuilder.build(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
-        it.role == Role.STEP || it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD) }, mood != Mood.IDLE, hideDoneSteps) }
+    val items = remember(messages, mood, hideDoneSteps, keep) { itemBuilder.build(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
+        it.role == Role.STEP || it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD) || keep?.invoke(it) == false }, mood != Mood.IDLE, hideDoneSteps) }
     // The running turn's step texts (after your newest message), for the pill's line.
     val turnSteps = remember(messages) { val u = messages.indexOfLast { it.role == Role.USER }
         messages.drop(u + 1).filter { it.role == Role.STEP }.takeLast(12).map { it.text } }
