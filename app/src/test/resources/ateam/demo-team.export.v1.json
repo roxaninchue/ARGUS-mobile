@@ -1,0 +1,436 @@
+{
+ "format": "argus-team-export",
+ "v": 1,
+ "exportedAt": 1794470400000,
+ "source": {
+  "app": "a-team",
+  "version": "2.19.0"
+ },
+ "bots": [
+  {
+   "id": "k3n9q2amhw1x",
+   "name": "Nova",
+   "role": "Research lead",
+   "email": "nova@argus.ai",
+   "portfolio": "Market intel, competitor tracking, Q4 strategy deck",
+   "notes": "",
+   "prompt": null,
+   "lead": null,
+   "look": {
+    "color": "#22c55e",
+    "face": null
+   },
+   "gemini": null,
+   "createdAt": 1794466800000,
+   "u": 1794466800100
+  },
+  {
+   "id": "p7d2r8bmhw1y",
+   "name": "Atlas",
+   "role": "Sales ops",
+   "email": "atlas@argus.ai",
+   "portfolio": "Enterprise pipeline, 14 accounts in Lusaka & Nairobi",
+   "notes": "",
+   "prompt": null,
+   "lead": "k3n9q2amhw1x",
+   "look": {
+    "color": "#f59e0b",
+    "face": null
+   },
+   "gemini": null,
+   "createdAt": 1794466800001,
+   "u": 1794466800100
+  },
+  {
+   "id": "w4c6t1cmhw1z",
+   "name": "Echo",
+   "role": "Support",
+   "email": "echo@argus.ai",
+   "portfolio": "Tier-1 inbox, onboarding flows",
+   "notes": "",
+   "prompt": null,
+   "lead": "k3n9q2amhw1x",
+   "look": {
+    "color": "#ef4444",
+    "face": null
+   },
+   "gemini": null,
+   "createdAt": 1794466800002,
+   "u": 1794466800100
+  },
+  {
+   "id": "z8f5h3dmhw20",
+   "name": "Vega",
+   "role": "Engineering",
+   "email": "vega@argus.ai",
+   "portfolio": "Gateway reliability, model routing",
+   "notes": "",
+   "prompt": null,
+   "lead": null,
+   "look": {
+    "color": "#06b6d4",
+    "face": 1
+   },
+   "gemini": "gemini-2.5-flash",
+   "createdAt": 1794466800003,
+   "u": 1794466800100
+  },
+  {
+   "id": "manager",
+   "name": "Manager",
+   "role": "Team lead",
+   "email": "",
+   "portfolio": "Runs the team: routes work, creates bots, keeps the roster tidy, and keeps track of what you need.",
+   "notes": "",
+   "prompt": null,
+   "lead": null,
+   "look": {
+    "color": "#d4a72c",
+    "face": 4
+   },
+   "gemini": null,
+   "createdAt": 1794466740000,
+   "u": 1794466800100,
+   "builtin": "manager"
+  }
+ ],
+ "jobs": [
+  {
+   "id": "t1a2b3cmhw30",
+   "title": "Competitor pricing scan",
+   "bot": "k3n9q2amhw1x",
+   "due": "2026-11-12",
+   "priority": "high",
+   "status": "todo",
+   "run": null,
+   "deps": [],
+   "notes": "",
+   "createdAt": 1794466800010,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t2b3c4dmhw31",
+   "title": "Draft Q4 strategy deck",
+   "bot": "k3n9q2amhw1x",
+   "due": "2026-11-13",
+   "priority": "normal",
+   "status": "todo",
+   "run": null,
+   "deps": [
+    "t1a2b3cmhw30"
+   ],
+   "notes": "",
+   "createdAt": 1794466800011,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t3c4d5emhw32",
+   "title": "Follow up with Zamtel",
+   "bot": "p7d2r8bmhw1y",
+   "due": "2026-11-12",
+   "priority": "normal",
+   "status": "todo",
+   "run": null,
+   "deps": [],
+   "notes": "",
+   "createdAt": 1794466800012,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t4d5e6fmhw33",
+   "title": "Update CRM pipeline",
+   "bot": "p7d2r8bmhw1y",
+   "due": "2026-11-11",
+   "priority": "high",
+   "status": "todo",
+   "run": null,
+   "deps": [],
+   "notes": "",
+   "createdAt": 1794466800013,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t5e6f7gmhw34",
+   "title": "Clear tier-1 inbox",
+   "bot": "w4c6t1cmhw1z",
+   "due": "2026-11-12",
+   "priority": "normal",
+   "status": "todo",
+   "run": null,
+   "deps": [],
+   "notes": "",
+   "createdAt": 1794466800014,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t6f7g8hmhw35",
+   "title": "Rewrite onboarding email",
+   "bot": "w4c6t1cmhw1z",
+   "due": null,
+   "priority": "low",
+   "status": "todo",
+   "run": null,
+   "deps": [],
+   "notes": "",
+   "createdAt": 1794466800015,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t7g8h9imhw36",
+   "title": "Add Cerebras fallback route",
+   "bot": "z8f5h3dmhw20",
+   "due": "2026-11-13",
+   "priority": "high",
+   "status": "todo",
+   "run": "queued",
+   "deps": [],
+   "notes": "",
+   "createdAt": 1794466800016,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t8h9i0jmhw37",
+   "title": "Cooldown dashboard",
+   "bot": "z8f5h3dmhw20",
+   "due": "2026-11-16",
+   "priority": "normal",
+   "status": "todo",
+   "run": null,
+   "deps": [],
+   "notes": "",
+   "createdAt": 1794466800017,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t9i0j1kmhw38",
+   "title": "Weekly gateway report",
+   "bot": "z8f5h3dmhw20",
+   "due": "2026-11-12",
+   "priority": "normal",
+   "status": "done",
+   "run": "done",
+   "deps": [],
+   "notes": "",
+   "createdAt": 1794466800018,
+   "doneAt": 1794466800019,
+   "u": 1794466800100
+  }
+ ],
+ "settings": {
+  "nickname": "Finn",
+  "theme": "dark",
+  "tz": "Africa/Lusaka",
+  "pins": [
+   "k3n9q2amhw1x",
+   "z8f5h3dmhw20"
+  ]
+ },
+ "profile": [
+  {
+   "id": "pa1b2c3x01",
+   "kind": "name",
+   "text": "Call me Finn",
+   "context": "",
+   "stated": true,
+   "at": 1794466801000,
+   "src": "manager"
+  },
+  {
+   "id": "pa1b2c3x02",
+   "kind": "place",
+   "text": "Lives in Lusaka (Africa/Lusaka)",
+   "context": "",
+   "stated": true,
+   "at": 1794466801001,
+   "src": "manager"
+  },
+  {
+   "id": "pa1b2c3x03",
+   "kind": "rule",
+   "text": "Never send email without asking first",
+   "context": "",
+   "stated": true,
+   "at": 1794466801002,
+   "src": "learn"
+  },
+  {
+   "id": "pa1b2c3x04",
+   "kind": "preference",
+   "text": "Prefers short replies",
+   "context": "on the phone, weekdays",
+   "stated": false,
+   "at": 1794466801003,
+   "src": "manager"
+  },
+  {
+   "id": "pa1b2c3x05",
+   "kind": "person",
+   "text": "Mwila is the sales contact at Zamtel",
+   "context": "work",
+   "stated": true,
+   "at": 1794466801004,
+   "src": "manager"
+  },
+  {
+   "id": "pa1b2c3x06",
+   "kind": "date",
+   "text": "Q4 deck is due 2026-12-01",
+   "context": "",
+   "stated": true,
+   "at": 1794466801005,
+   "src": "manager"
+  },
+  {
+   "id": "pa1b2c3x07",
+   "kind": "goal",
+   "text": "Close 3 enterprise accounts this quarter",
+   "context": "",
+   "stated": false,
+   "at": 1794466801006,
+   "src": "manager"
+  }
+ ],
+ "memory": {
+  "team": [
+   {
+    "id": "m1team0001",
+    "text": "ARGUS v2.18 ships Friday",
+    "at": 1794466802000,
+    "src": "bot",
+    "by": "z8f5h3dmhw20"
+   }
+  ],
+  "bots": {
+   "k3n9q2amhw1x": [
+    {
+     "id": "m1nova0001",
+     "text": "Competitor list lives in the Q4 folder",
+     "at": 1794466802001,
+     "src": "bot",
+     "by": "k3n9q2amhw1x"
+    }
+   ],
+   "p7d2r8bmhw1y": [
+    {
+     "id": "m1atls0001",
+     "text": "Zamtel prefers calls after 14:00",
+     "at": 1794466802002,
+     "src": "user",
+     "by": "p7d2r8bmhw1y"
+    }
+   ],
+   "manager": [
+    {
+     "id": "m1mngr0001",
+     "text": "Finn reviews the team on Monday mornings",
+     "at": 1794466802003,
+     "src": "bot",
+     "by": "manager"
+    }
+   ]
+  }
+ },
+ "routines": [
+  {
+   "id": "r4kq2s1",
+   "title": "Review Q4 deck",
+   "kind": "remind",
+   "text": "Review the Q4 strategy deck",
+   "sched": {
+    "type": "weekly",
+    "time": "08:00",
+    "days": [
+     "mon"
+    ]
+   },
+   "tz": "Africa/Lusaka",
+   "bot": "manager",
+   "active": true,
+   "next": 1794808800000,
+   "createdAt": 1794467005000
+  },
+  {
+   "id": "r9mw3t2",
+   "title": "Morning brief",
+   "kind": "brief",
+   "text": "Morning brief",
+   "sched": {
+    "type": "daily",
+    "time": "07:30"
+   },
+   "tz": "Africa/Lusaka",
+   "bot": "manager",
+   "active": true,
+   "next": 1794547800000,
+   "createdAt": 1794466803000
+  },
+  {
+   "id": "r2pz8u3",
+   "title": "Pipeline digest",
+   "kind": "task",
+   "text": "Summarise pipeline changes since last week",
+   "sched": {
+    "type": "cron",
+    "cron": "0 17 * * 5"
+   },
+   "tz": "Africa/Lusaka",
+   "bot": "p7d2r8bmhw1y",
+   "active": true,
+   "next": 1794582000000,
+   "createdAt": 1794466803001
+  },
+  {
+   "id": "r7xx1v4",
+   "title": "Old reminder",
+   "kind": "remind",
+   "text": "Stand-up",
+   "sched": {
+    "type": "once",
+    "date": "2026-11-10",
+    "time": "09:00"
+   },
+   "tz": "Africa/Lusaka",
+   "bot": "manager",
+   "active": false,
+   "next": null,
+   "createdAt": 1794266800000
+  }
+ ],
+ "proactivity": {
+  "on": true,
+  "at": "07:30",
+  "quiet": [
+   "22:00",
+   "07:00"
+  ],
+  "cap": 3,
+  "mutes": []
+ },
+ "chats": {
+  "manager": [
+   {
+    "role": "assistant",
+    "content": "Hi Finn, I'm Manager, the lead for your team of bots. Tell me what you need and I'll hand it to the right bot, set up a new one, or just do it myself.",
+    "t": 1794466741000
+   },
+   {
+    "role": "user",
+    "content": "Remind me to review the Q4 deck every Monday at 08:00",
+    "t": 1794467000000
+   },
+   {
+    "role": "assistant",
+    "content": "Done. I set a weekly reminder for Mondays at 08:00.",
+    "t": 1794467005000
+   }
+  ]
+ }
+}
