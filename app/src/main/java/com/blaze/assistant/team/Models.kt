@@ -78,7 +78,7 @@ data class Bot(
     val createdAt: Long, val u: Long                                   // u = HLC for LWW sync
 )
 
-data class BotAppGrant(val appId: String, val source: String /* argus-connect|mcp|device|composio */,
+data class BotAppGrant(val appId: String, val source: String /* argus-connect|mcp|device (no third-party OAuth broker in the app, D5) */,
                        val tools: Map<String, Rule> = emptyMap())
 
 enum class JobRun { QUEUED, RUNNING, WAITING, DONE, FAILED, CANCELLED }
