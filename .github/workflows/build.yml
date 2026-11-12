@@ -129,8 +129,19 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest*' --tests 'com.blaze.assistant.ui.SpaceShotsTest' --stacktrace 2>&1 | tee shots.log
+          BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest*' --tests 'com.blaze.assistant.ui.SpaceShotsTest' --tests 'com.blaze.assistant.ui.shots.P1ShotsTest' --stacktrace 2>&1 | tee shots.log
           ls -la app/build/shots
+
+      # P1-QA-01: the P1 shots matrix (204 PNGs under app/build/shots/P1ShotsTest/) as an artifact, so it can be reviewed on any repo.
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shots-${{ github.sha }}
+          path: |
+            app/build/shots/
+            shots.log
+          if-no-files-found: ignore
 
       - name: Publish screenshots
         env:
