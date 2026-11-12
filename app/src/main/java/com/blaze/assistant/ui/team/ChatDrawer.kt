@@ -233,38 +233,21 @@ fun ChatModeFrame(
         gesturesEnabled = drawer.isOpen,
         modifier = modifier,
         drawerContent = {
-            ModalDrawerSheet(drawerContainerColor = c.bg, drawerContentColor = c.ink) {
-                val state = remember(version, msgs, allChats, projects, query, mood) {
-                    val pc = allChats.mapNotNull { meta -> Projects.of(meta.id)?.let { p -> ChatDrawerModel.ProjectChat(meta, p.name) } }
-                    ChatDrawerModel.state(chats, msgs, pc, System.currentTimeMillis(), zone, query,
-                        replying = if (mood != Mood.IDLE) chats.live else null)
-                }
-                Column(Modifier.fillMaxHeight().padding(horizontal = 12.dp)) {
-                    Spacer(Modifier.height(12.dp))
-                    ArgusSearch(query, { query = it }, placeholder = "Search chats")
-                    Spacer(Modifier.height(8.dp))
-                    LazyColumn(Modifier.weight(1f)) {
-                        if (state.empty != null) item { Text(state.empty, style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(16.dp)) }
-                        for (s in state.sections) {
-                            item(key = "h-" + s.name) {
-                                Text(s.name, style = ArgusType.meta, color = c.mute, modifier = Modifier.padding(start = 8.dp, top = 14.dp, bottom = 4.dp).semantics { heading() })
-                            }
-                            items(s.entries, key = { e -> e.key.toString() }) { e ->
-                                DrawerRow(e, onOpen = {
-                                    when (val k = e.key) {
-                                        is ChatDrawerModel.Key.Manager -> ChatModeRuntime.open(k.g)
-                                        is ChatDrawerModel.Key.Project -> onOpenProjectChat(k.chatId)
-                                    }
-                                    scope.launch { drawer.close() }
-                                }, onMenu = { menuFor = e })
-                            }
-                        }
-                    }
-                    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.End) {
-                        ArgusButton("New chat", { ChatModeRuntime.newChat(ctx); scope.launch { drawer.close() } }, icon = "square-pen")
-                    }
-                }
+            val state = remember(version, msgs, allChats, projects, query, mood) {
+                val pc = allChats.mapNotNull { meta -> Projects.of(meta.id)?.let { p -> ChatDrawerModel.ProjectChat(meta, p.name) } }
+                ChatDrawerModel.state(chats, msgs, pc, System.currentTimeMillis(), zone, query,
+                    replying = if (mood != Mood.IDLE) chats.live else null)
             }
+            ChatDrawerSheet(state, query, { query = it },
+                onOpen = { e ->
+                    when (val k = e.key) {
+                        is ChatDrawerModel.Key.Manager -> ChatModeRuntime.open(k.g)
+                        is ChatDrawerModel.Key.Project -> onOpenProjectChat(k.chatId)
+                    }
+                    scope.launch { drawer.close() }
+                },
+                onMenu = { e -> menuFor = e },
+                onNew = { ChatModeRuntime.newChat(ctx); scope.launch { drawer.close() } })
         },
     ) {
         Box(Modifier.fillMaxSize()) {
@@ -335,6 +318,41 @@ fun ChatModeFrame(
     }
 }
 
+/**
+ * The history drawer's sheet, stateless (P1-QA-01 split it out of [ChatModeFrame] so the shots draw it on fixtures):
+ * search, the sections of [state] (Pinned / Today / Yesterday / Previous 7 days / Older), and New chat.
+ */
+@Composable
+fun ChatDrawerSheet(
+    state: ChatDrawerModel.State,
+    query: String,
+    onQuery: (String) -> Unit,
+    onOpen: (ChatDrawerModel.Entry) -> Unit,
+    onMenu: (ChatDrawerModel.Entry) -> Unit,
+    onNew: () -> Unit,
+) {
+    val c = Argus.colors
+    ModalDrawerSheet(drawerContainerColor = c.bg, drawerContentColor = c.ink) {
+        Column(Modifier.fillMaxHeight().padding(horizontal = 12.dp)) {
+            Spacer(Modifier.height(12.dp))
+            ArgusSearch(query, onQuery, placeholder = "Search chats")
+            Spacer(Modifier.height(8.dp))
+            LazyColumn(Modifier.weight(1f)) {
+                if (state.empty != null) item { Text(state.empty, style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(16.dp)) }
+                for (s in state.sections) {
+                    item(key = "h-" + s.name) {
+                        Text(s.name, style = ArgusType.meta, color = c.mute, modifier = Modifier.padding(start = 8.dp, top = 14.dp, bottom = 4.dp).semantics { heading() })
+                    }
+                    items(s.entries, key = { e -> e.key.toString() }) { e -> DrawerRow(e, onOpen = { onOpen(e) }, onMenu = { onMenu(e) }) }
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.End) {
+                ArgusButton("New chat", onNew, icon = "square-pen")
+            }
+        }
+    }
+}
+
 /** talks.js EDGE_W / EDGE_H: the strip that opens the drawer (200 dp is also Android's gesture-exclusion cap per edge). */
 private const val EDGE_W_DP = 24
 private const val EDGE_H_DP = 200
@@ -360,16 +378,17 @@ private fun DrawerRow(e: ChatDrawerModel.Entry, onOpen: () -> Unit, onMenu: () -
     }
 }
 
-/** 04 §4.13 the empty Chat mode: Manager sphere, serif greeting, suggested asks. */
+/** 04 §4.13 the empty Chat mode: Manager sphere, serif greeting, suggested asks. [hour] = the clock's (the shots fix it). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ChatModeEmpty(name: String?, privateOn: Boolean, onAsk: (String) -> Unit) {
+fun ChatModeEmpty(name: String?, privateOn: Boolean, onAsk: (String) -> Unit, hour: Int? = null) {
     val c = Argus.colors
-    val hour = remember { java.time.LocalTime.now().hour }
+    val clock = remember { java.time.LocalTime.now().hour }
+    val hr = hour ?: clock
     Column(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         ManagerOrb(size = 72.dp, contentDescription = null)
         Spacer(Modifier.height(18.dp))
-        Text(ChatModeCopy.greeting(hour, name), style = ArgusType.serifHello, color = c.ink, textAlign = TextAlign.Center)
+        Text(ChatModeCopy.greeting(hr, name), style = ArgusType.serifHello, color = c.ink, textAlign = TextAlign.Center)
         if (privateOn) Text(ChatModeCopy.PRIVATE_ON, style = ArgusType.meta, color = c.mute, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(20.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(8.dp)) {
