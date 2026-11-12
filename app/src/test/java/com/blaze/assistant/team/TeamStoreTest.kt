@@ -170,13 +170,18 @@ class TeamStoreTest {
     @Test fun builtInSpecialistsAreWorkerTemplates() {
         val ws = store.workerTemplates()
         assertEquals(10, ws.size)
-        assertEquals(Specialists.builtIn.map { it.id }, ws.map { it.id })
+        assertEquals(Specialists.builtIn.map { "worker-${it.id}" }, ws.map { it.id })
+        assertEquals(Specialists.builtIn.map { it.id }, ws.map { BotRules.specialistId(it.id) })
+        // the Inbox-manager worker and the Inbox domain bot no longer share an id
+        store.ensure(); val ids = store.all().map { it.id }.toSet()
+        assertTrue(ws.none { it.id in ids }); assertEquals("worker-inbox", ws.first { it.name == "Inbox manager" }.id)
+        assertEquals("bot-worker-x", ok(store.insert(bot("worker-x", "Sneaky"))).id)
         for ((w, s) in ws.zip(Specialists.builtIn)) {
             assertEquals(BotKind.WORKER, w.kind); assertTrue(w.hidden); assertEquals("manager", w.reportsTo)
             assertEquals(s.groups, w.toolGroups); assertEquals(s.name, w.name)
         }
-        // workers are not stored, so the roster stays Manager, Tempo, Inbox
-        store.ensure(); assertEquals(3L, count())
+        // workers are not stored, so the roster stays Manager, Tempo, Inbox (plus the one inserted above)
+        assertEquals(4L, count())
     }
 
     @Test fun specBotFieldsRoundTripAndOldJsonStillLoads() {
@@ -191,8 +196,24 @@ class TeamStoreTest {
         assertFalse(Specialists.toJson(listOf(p)).contains("managed_by"))
         val w = BotRules.workerTemplate(s)
         assertEquals("tempo", w.reportsTo); assertEquals("x/y", w.engine.model.pinned); assertEquals("#2BB673", w.avatar.color)
-        assertTrue("farm" in w.permissions.dataScopes); assertEquals("nova", w.voice.id)
-        // delegate still lists every built-in by id (its tool schema is built from Specialists, unchanged)
-        assertTrue(Specialists.builtIn.map { it.id }.containsAll(listOf("researcher", "operator", "writer", "planner", "coder", "inbox", "shopper", "booker", "tutor", "designer")))
+        assertTrue("farm" in w.permissions.dataScopes); assertEquals("nova", w.voice.id); assertEquals("worker-farm", w.id)
+    }
+
+    /** Acceptance "delegate to specialists still works": the delegate tool still names every built-in by its plain id, byId finds each, filter still scopes tools by group. */
+    @Test fun delegateToSpecialistsStillWorks() {
+        val ids = listOf("researcher", "operator", "writer", "planner", "coder", "inbox", "shopper", "booker", "tutor", "designer")
+        assertEquals(ids, Specialists.builtIn.map { it.id })
+        val fn = Specialists.tool().getJSONObject("function")
+        assertEquals("delegate", fn.getString("name"))
+        for (s in Specialists.builtIn) {
+            assertTrue(fn.getString("description").contains("${s.id} (${s.name})"))
+            assertEquals(s, Specialists.byId(s.id))
+        }
+        val all = org.json.JSONArray(listOf("web_search", "delegate", "set_alarm").map { n ->
+            org.json.JSONObject().put("type", "function").put("function", org.json.JSONObject().put("name", n)) })
+        val coder = Specialists.filter(all, Specialists.byId("coder")!!)
+        assertEquals(listOf("web_search"), (0 until coder.length()).map { coder.getJSONObject(it).getJSONObject("function").getString("name") })   // web yes, phone no, never delegate
+        val op = Specialists.filter(all, Specialists.byId("operator")!!)
+        assertEquals(listOf("set_alarm"), (0 until op.length()).map { op.getJSONObject(it).getJSONObject("function").getString("name") })
     }
 }
