@@ -299,9 +299,9 @@ object ArgusGlassRule {
     }
 }
 
-/** P0-SH-01: the `argus_look` switch (default off in P0: nothing draws with these tokens yet). */
+/** P0-SH-01: the `argus_look` switch. P1-SH-01: on by default (the ARGUS shell); off = the 0.52 shell. */
 object ArgusLookFlag {
     const val KEY = "argus_look"
-    const val DEFAULT = false
+    const val DEFAULT = true
     const val GROUND_KEY = "argus_ground"
 }

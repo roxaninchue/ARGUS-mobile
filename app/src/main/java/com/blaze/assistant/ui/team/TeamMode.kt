@@ -208,3 +208,23 @@ fun TeamModeScreen(
         modifier = modifier,
     )
 }
+
+/**
+ * P1-SH-01: the Team page of the ARGUS shell. Opens team.db ([com.blaze.assistant.team.TeamGraph]) off the main thread,
+ * then shows [TeamModeScreen]; a failure to open shows a short note instead of crashing the shell.
+ */
+@Composable
+fun TeamPage(nav: TeamNav, modifier: Modifier = Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var graph by remember { mutableStateOf<com.blaze.assistant.team.TeamGraph.Graph?>(null) }
+    var failed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        try { graph = withContext(Dispatchers.IO) { com.blaze.assistant.team.TeamGraph.get(ctx.applicationContext) } }
+        catch (t: Throwable) { failed = true; com.blaze.assistant.device.CrashLog.quiet("TeamPage.open", t) }
+    }
+    val g = graph
+    when {
+        g != null -> TeamModeScreen(g.store, g.threads, g.sql, nav, modifier)
+        failed -> EmptyState(title = "Team couldn't open", body = "Your chats are safe. Try again after restarting the app.", modifier = modifier)
+    }
+}

@@ -153,4 +153,27 @@ class BackRuleTest {
         assertEquals(BackRule.Action.OWN, BackRule.action(BackRule.Shell(onboarding = true, homeRoot = true)))
         assertEquals(BackRule.Action.OWN, BackRule.action(BackRule.Shell(inCall = true, homeRoot = true)))
     }
+
+    /** P1-SH-01, the ARGUS shell: Team is the root; Chat, Life, Desk and everything over them go back to Team. */
+    @Test fun teamIsTheRootInTheArgusShell() = fiveTimes("argus root") {
+        val a = BackRule.Shell(argus = true, homeRoot = true)
+        assertEquals("team", BackRule.front(a.copy(tab = ChatNav.TEAM)))
+        assertEquals(BackRule.Action.OWN, BackRule.action(a.copy(tab = ChatNav.TEAM)))
+        for (t in listOf(ChatNav.CHAT, ChatNav.LIFE, ChatNav.DESK, ChatNav.PROJECTS))
+            assertEquals(t, BackRule.Action.TO_CHAT, BackRule.action(a.copy(tab = t)))
+        for (o in listOf(a.copy(tab = ChatNav.TEAM, settingsPage = "memory"), a.copy(tab = ChatNav.TEAM, plusMenu = true),
+            a.copy(tab = ChatNav.TEAM, search = true), a.copy(tab = ChatNav.CHAT, view = "design"), a.copy(tab = ChatNav.PROJECTS, inProjectChat = true)))
+            assertEquals("$o", BackRule.Action.TO_CHAT, BackRule.action(o))
+        assertEquals(BackRule.Action.OWN, BackRule.action(a.copy(onboarding = true)))
+        assertEquals(BackRule.Action.OWN, BackRule.action(a.copy(inCall = true)))
+        // a private chat keeps its own Back (it asks before leaving)
+        assertEquals(BackRule.Action.OWN, BackRule.action(BackRule.Shell(argus = true, homeRoot = false, tab = ChatNav.CHAT)))
+        // the Home board opens as Life
+        assertEquals("life", BackRule.front(BackRule.shellFor(Views.find("home")!!, a)!!))
+        // ChatScreen: Back with nothing over a mode lands on Team in the ARGUS shell
+        val btc = src("ui/ChatScreen.kt").substringAfter("fun backToChat() {").substringBefore("\n    }\n")
+        assertTrue(btc.contains("if (argus) go(n.switchTab(ChatNav.TEAM))"))
+        assertTrue(btc.contains("notchOpen = false; newOpen = false"))
+        assertTrue(src("ui/ChatScreen.kt").contains("homeRoot = !Agent.privateChat.value, argus = argus)"))
+    }
 }

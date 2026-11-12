@@ -28,8 +28,8 @@ import com.blaze.assistant.ui.drawArgusArcs
 /**
  * P0-SH-01: the ARGUS theme (04 §2): [ArgusColors] via [LocalArgusColors], the ground via [LocalArgusGround], and
  * Material3's colour scheme and typography mapped from the same tokens so stock components inherit the look.
- * Behind the `argus_look` setting ([ArgusLookFlag], default off): nothing in the app calls [ArgusTheme] in P0; P1-SH-01
- * wraps the new shell in it.
+ * Behind the `argus_look` setting ([ArgusLookFlag]): P1-SH-01 wraps the new shell (ChatScreen) in it and turns it on by
+ * default; switching it off brings back the 0.52 shell.
  */
 val LocalArgusColors = staticCompositionLocalOf { ArgusColors.Dark }
 val LocalArgusGround = staticCompositionLocalOf { Ground.PLAIN }
@@ -38,10 +38,10 @@ object Argus {
     val colors: ArgusColors @Composable @ReadOnlyComposable get() = LocalArgusColors.current
     val ground: Ground @Composable @ReadOnlyComposable get() = LocalArgusGround.current
 
-    /** The `argus_look` switch (Settings, default off). */
+    /** The `argus_look` switch (Settings; default on from P1-SH-01, which draws the ARGUS shell with it). */
     fun lookOn(): Boolean = try { Settings.bool(ArgusLookFlag.KEY, ArgusLookFlag.DEFAULT) } catch (_: Throwable) { ArgusLookFlag.DEFAULT }
-    /** The chosen ground (Appearance), Plain unless set. */
-    fun groundSetting(): Ground = try { Ground.of(Settings.str(ArgusLookFlag.GROUND_KEY, Ground.PLAIN.name)) } catch (_: Throwable) { Ground.PLAIN }
+    /** The chosen ground (Appearance), [default] unless set (the shell passes Orbit: SpaceBackdrop's space view, P1-SH-01). */
+    fun groundSetting(default: Ground = Ground.PLAIN): Ground = try { Ground.of(Settings.str(ArgusLookFlag.GROUND_KEY, default.name)) } catch (_: Throwable) { default }
 }
 
 @Composable

@@ -261,4 +261,16 @@ object KitA11y {
     fun progress(label: String, f: Float?): String = Progress.percent(f)?.let { "$label, $it" } ?: label
 
     fun banner(count: Int, bots: List<String>): String = "${NeedYou.line(count, bots).replace(" · ", ", ")}. ${NeedYou.ACTION}"
+
+    /** P1-SH-01: the shell's controls. */
+    object Shell {
+        const val ME = "You and settings"
+        const val SEARCH = "Search"
+        const val BELL = "Inbox"
+        const val BELL_WAITING = "Inbox, something needs you"
+        const val NEW = "New"
+        const val PLUS = "Add"
+        const val PLUS_CLOSE = "Close menu"
+        fun notch(mode: String, open: Boolean): String = "${ShellSpec.label(mode)} mode. " + if (open) "Close mode switcher" else "Switch mode"
+    }
 }

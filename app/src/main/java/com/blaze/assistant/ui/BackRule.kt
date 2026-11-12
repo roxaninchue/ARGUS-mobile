@@ -43,6 +43,8 @@ object BackRule {
         val room: Boolean = false,
         /** The Home is the root (0.52.2: the ARGUS Home), so the plain chat goes back to Home and Home keeps its own Back. */
         val homeRoot: Boolean = false,
+        /** P1-SH-01: the ARGUS shell (Team · Chat · Life · Desk): Team is where Back stops; the other modes go to Team. */
+        val argus: Boolean = false,
     )
 
     enum class Action { TO_CHAT, OWN }
@@ -63,6 +65,9 @@ object BackRule {
         s.view.isNotEmpty() -> "view:" + s.view
         s.inProjectChat -> "project-chat"
         s.tab == ChatNav.PROJECTS -> "projects"
+        s.tab == ChatNav.TEAM -> "team"
+        s.tab == ChatNav.LIFE -> "life"
+        s.tab == ChatNav.DESK -> "desk"
         s.tab == ChatNav.HOME || s.swipeHome -> "home"
         else -> CHAT
     }
@@ -73,7 +78,17 @@ object BackRule {
     /** With [Shell.homeRoot]: Home (not the chat) is where Back stops; everything else, the plain chat included, goes there. */
     val OWN_BACK_HOME_ROOT = setOf("home", "setup", "setup-gate", "call")
 
-    fun action(s: Shell): Action = if (front(s) in (if (s.homeRoot) OWN_BACK_HOME_ROOT else OWN_BACK)) Action.OWN else Action.TO_CHAT
+    /** P1-SH-01, the ARGUS shell: Team is the root; Chat, Life, Desk and everything over them go back to Team. */
+    val OWN_BACK_ARGUS = setOf("team", "setup", "setup-gate", "call")
+
+    fun action(s: Shell): Action {
+        val own = when {
+            s.argus && s.homeRoot -> OWN_BACK_ARGUS
+            s.homeRoot -> OWN_BACK_HOME_ROOT
+            else -> OWN_BACK            // a private chat keeps its own Back (it asks before leaving)
+        }
+        return if (front(s) in own) Action.OWN else Action.TO_CHAT
+    }
 
     /** Views.special screens that are their own activity (ChatScreen.openView opens exactly these; BackRuleTest checks). */
     val SPECIAL_ACTIVITY = mapOf(
@@ -89,7 +104,7 @@ object BackRule {
     /** What the shell shows after opening [v] from [base] (null = [v] is its own activity, see [SPECIAL_ACTIVITY]). */
     fun shellFor(v: BlazeView, base: Shell = Shell()): Shell? = when (v.special) {
         "gallery" -> base.copy(gallery = true)
-        "home" -> base.copy(tab = ChatNav.HOME)
+        "home" -> base.copy(tab = if (base.argus) ChatNav.LIFE else ChatNav.HOME)
         "projects" -> base.copy(tab = ChatNav.PROJECTS)
         "design" -> base.copy(tab = ChatNav.CHAT, view = "design")
         in SPECIAL_ACTIVITY.keys -> null

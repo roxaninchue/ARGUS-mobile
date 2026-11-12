@@ -121,8 +121,9 @@ class ArgusTokensTest {
         assertEquals(80, ArgusTokens.Motion.duration(80, reduced = true))
     }
 
-    @Test fun theLookIsOffByDefault() {
-        assertFalse(ArgusLookFlag.DEFAULT)
+    /** P1-SH-01 turned it on (06: "`argus_look` default on"); it was off through P0. */
+    @Test fun theLookIsOnByDefault() {
+        assertTrue(ArgusLookFlag.DEFAULT)
         assertEquals("argus_look", ArgusLookFlag.KEY)
     }
 
