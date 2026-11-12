@@ -650,15 +650,19 @@ fun ChatScreen() {
     BackHandler(enabled = isPrivate && !confirmLeavePrivate) { confirmLeavePrivate = true }
     // v0.28.3: back inside Projects: project chat → project page → projects list (then the system's back).
     BackHandler(enabled = !isPrivate && nav.back() != null) { navNow().back()?.let { go(it) } }
+    // P1-TM-04: the bot editor flow (New bot, Edit soul, New › Bot) and the Delete / Keep sheet for agent_delete.
+    var botFlow by remember { mutableStateOf<com.blaze.assistant.ui.team.BotFlow?>(null) }
+    val pendingDelete by com.blaze.assistant.team.JobsRuntime.pendingDelete.collectAsState()
     // P1-SH-01: where the Team page sends you. The Manager's row opens Chat (its thread is the main conversation); other
-    // bots' threads, Edit soul, New bot and the jobs lists come with P1-SH-03 / P1-TM-04 / P1-TM-05 and say so until then.
+    // bots' threads and the jobs lists come with P1-SH-03 / P1-TM-05 and say so until then. P1-TM-04: Edit soul and New
+    // bot open the bot editor.
     val teamNav = remember {
         val later = { com.blaze.assistant.ui.argus.kit.ArgusToasts.show("That comes in the next update.") }
         com.blaze.assistant.ui.team.TeamNav(
             openBot = { id -> if (id == com.blaze.assistant.team.BotRules.MANAGER_ID) go(navNow().switchTab(ChatNav.CHAT)) else later() },
             memory = { settingsPage = "memory" },
-            editSoul = { later() },
-            newBot = { later() },
+            editSoul = { id -> botFlow = com.blaze.assistant.ui.team.BotFlow.Edit(id) },
+            newBot = { botFlow = com.blaze.assistant.ui.team.BotFlow.New },
             // the team's jobs list is P1-TM-05's (the "jobs" view is the terminal job log, not these)
             unassigned = { later() },
             allJobs = { later() },
@@ -1014,11 +1018,23 @@ fun ChatScreen() {
                     onVoice = { startCall() })
             }
         }
-        // P1-SH-01: the top bar's New sheet (bots and jobs join it with P1-TM-04 / P1-TM-05).
+        // P1-SH-01: the top bar's New sheet (P1-TM-04: Bot; jobs join it with the job sheet).
         if (argus && newOpen) com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = "New") {
+            com.blaze.assistant.ui.argus.kit.MenuRow("bot", "Bot", { newOpen = false; botFlow = com.blaze.assistant.ui.team.BotFlow.New }, sub = "A new bot for your team")
             com.blaze.assistant.ui.argus.kit.MenuRow("notebook", "Project", { newOpen = false; go(navNow().projectsList()) }, sub = "A space with its own chats and files")
             com.blaze.assistant.ui.argus.kit.MenuRow("lock", "Private chat", { newOpen = false; Agent.enterPrivate(); go(navNow().switchTab(ChatNav.CHAT)) }, sub = "Nothing here is saved or learned")
         }
+
+        // P1-TM-04: the bot editor (Describe it sends the draft request to ARGUS and opens Chat), and the Delete / Keep
+        // sheet while agent_delete waits for the user's answer (a yes typed in the chat works too).
+        if (argus) com.blaze.assistant.ui.team.BotFlowHost(botFlow, onClose = { botFlow = null },
+            onDescribe = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) })
+        val askDelete = pendingDelete
+        if (argus && askDelete != null) com.blaze.assistant.ui.team.PendingDeleteSheet(askDelete.name,
+            onDelete = { scope.launch { val r = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.team.JobsRuntime.manager()?.confirmByButton(askDelete.botId) }
+                com.blaze.assistant.ui.argus.kit.ArgusToasts.show(if (r == null || r.startsWith("Error:")) (r?.removePrefix("Error: ") ?: "Team isn't ready yet.") else "Bot removed") } },
+            onKeep = { scope.launch { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.team.JobsRuntime.manager()?.keep(askDelete.botId) }
+                com.blaze.assistant.ui.argus.kit.ArgusToasts.show("Kept ${askDelete.name}") } })
 
         // v0.45.28: the same glass window Home opens links in, for links tapped in chat replies.
         chatGlassUrl?.let { u -> GlassWindow(u, onClose = { chatGlassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
