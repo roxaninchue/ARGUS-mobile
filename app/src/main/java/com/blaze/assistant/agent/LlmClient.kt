@@ -385,6 +385,9 @@ object LlmClient {
         // v0.45.0 (#17): every step of a turn names the turn and the route that served its first step (TurnModel).
         val turnModel = if (t.pid == Providers.GATEWAY) TurnModel.current else null
         turnModel?.headers()?.forEach { (k, v) -> conn.setRequestProperty(k, v) }
+        // P0-API-01 (flag live_models, off by default): the live list's pick goes first while the turn has no pin yet.
+        if (t.pid == Providers.GATEWAY) { LiveModelsFeed.touch(base, key); if (turnModel?.pin.isNullOrEmpty()) LiveModelsFeed.prefer(task ?: Cloud.task(messages, tools, liteTurn),
+            heavyTurn, tools != null && tools.length() > 0, avoid)?.let { conn.setRequestProperty(TurnModel.PREFER_HEADER, TurnModel.safe(it)) } }
         // v0.45.8 (Site): the reply-language picker as a header (BCP-47); none for Auto.
         if (t.pid == Providers.GATEWAY) ReplyLanguage.header(ReplyLanguage.current())?.let { (k, v) -> conn.setRequestProperty(k, v) }
         // v0.45.26: where the gateway's Nous reserve goes (BackupRoute): "skip" while the on-device backup is next, "only" last.
@@ -458,6 +461,8 @@ object LlmClient {
             .filter { it.isNotBlank() }.joinToString(" · ")
         if (t.pid == Providers.GATEWAY) lastServedKey = listOfNotNull(conn.getHeaderField("X-Blaze-Provider"), conn.getHeaderField("X-Blaze-Model"))
             .filter { it.isNotBlank() }.takeIf { it.size == 2 }?.joinToString("/").orEmpty()
+        // P0-API-01: gateway 0.8.45+ names the route only as an X-Blaze-Route token (it takes it back in Prefer / Avoid).
+        if (t.pid == Providers.GATEWAY && lastServedKey.isEmpty()) LiveModelsFeed.served(conn.headerFields)?.let { (r, l) -> lastServedKey = r; if (lastServedBy.isEmpty()) lastServedBy = l }
         if (code in 200..299) turnModel?.served(lastServedKey)
         // v0.45.5 (#1, #5b): request id + route / timing headers for the "What happened" sheet.
         if (t.pid == Providers.GATEWAY) try {

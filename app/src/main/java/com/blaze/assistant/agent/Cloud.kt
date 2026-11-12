@@ -88,8 +88,15 @@ object Cloud {
         else -> "chat"
     }
 
-    /** Adds the task hint the gateway reads (`blaze_task`; it strips it before calling a provider). */
-    fun tag(body: JSONObject, task: String): JSONObject = body.put("model", MODEL).put("blaze_task", task)
+    /**
+     * Adds the task hint the gateway reads (`blaze_task`; it strips it before calling a provider) and, P0-API-01 (A-team
+     * D6), `blaze_context: "full"`: the app already sends the context it wants (its own summary + recent turns), so the
+     * gateway's relevance pruning (gateway 0.8.32 relevance.ts) must not drop older turns from it.
+     */
+    fun tag(body: JSONObject, task: String): JSONObject = body.put("model", MODEL).put("blaze_task", task).put("blaze_context", CONTEXT_FULL)
+
+    /** The gateway's opt-out from its per-prompt context pruning. */
+    const val CONTEXT_FULL = "full"
 
     /**
      * Worth a quiet retry: no answer (network, timeout: code 0), busy (429 other than the daily allowance),
