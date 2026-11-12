@@ -1,6 +1,6 @@
 # A team agent evals (ARGUS copy)
 
-> **ARGUS copy (P0-QA-01, 2026-11-12).** Copied from A-team `evals/` (gitlab blazeinchue/a-team @ 7c4b459a, owner grant: A-team code may be copied under MIT; notice lands with P0-IL-02). Changes from the original:
+> **ARGUS copy (P0-QA-01, 2026-11-12).** Copied from A-team `evals/` (gitlab blazeinchue/a-team @ 7c4b459a, same owner; A-team has no licence file yet, credited in THIRD_PARTY_NOTICES.md under ARGUS overhaul). Changes from the original:
 > - `app/www/guard.js` and `app/www/models.js` are vendored in `evals/vendor/` (the lib and tests `require('../vendor/…')`). They stay the A-team originals until P2-SF-07 ports the guard to Kotlin; the Kotlin port of models.js is `agent/LiveModels.kt` (P0-API-01).
 > - Only the A-team eval tests that need no A-team app files came along (`graders`, `guard`, `v212`), plus `test/specs.test.mjs`, which checks `docs/overhaul/specs.md` (every spec has a ticket that 06-team-plan.md defines). The rest of A-team's eval tests are rows in the spec index.
 > - It talks to the same live gateway (`ARGUS_GATEWAY`, default `https://ai.blaze-app.workers.dev`) with an ARGUS account token in `ARGUS_TOKEN` at run time. Never commit a token.

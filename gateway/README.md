@@ -1,3 +1,5 @@
+> **Read-only, stale copy (0.3.0).** The live gateway is the `Blaze-agent` repo (GitLab 87806464, 0.9.7 at https://blaze-gateway.blaze-app.workers.dev). Don't change this folder; it is kept for reference and deleted at 1.0 (P9-IL-01).
+
 # Blaze Gateway 0.3.0
 
 One OpenAI-compatible endpoint for every Blaze app, so users never set up models or API keys.
