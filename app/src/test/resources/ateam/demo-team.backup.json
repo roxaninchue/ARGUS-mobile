@@ -1,0 +1,231 @@
+{
+ "agents": [
+  {
+   "id": "k3n9q2amhw1x",
+   "name": "Nova",
+   "email": "nova@argus.ai",
+   "role": "Research lead",
+   "portfolio": "Market intel, competitor tracking, Q4 strategy deck",
+   "notes": "",
+   "color": "#22c55e",
+   "model": null,
+   "lead": null,
+   "x": 30,
+   "y": 140,
+   "createdAt": 1794466800000,
+   "managed_by": "manager",
+   "u": 1794466800100
+  },
+  {
+   "id": "p7d2r8bmhw1y",
+   "name": "Atlas",
+   "email": "atlas@argus.ai",
+   "role": "Sales ops",
+   "portfolio": "Enterprise pipeline, 14 accounts in Lusaka & Nairobi",
+   "notes": "",
+   "color": "#f59e0b",
+   "model": null,
+   "lead": "k3n9q2amhw1x",
+   "x": 30,
+   "y": 300,
+   "createdAt": 1794466800001,
+   "managed_by": "manager",
+   "u": 1794466800100
+  },
+  {
+   "id": "w4c6t1cmhw1z",
+   "name": "Echo",
+   "email": "echo@argus.ai",
+   "role": "Support",
+   "portfolio": "Tier-1 inbox, onboarding flows",
+   "notes": "",
+   "color": "#ef4444",
+   "model": null,
+   "lead": "k3n9q2amhw1x",
+   "x": 30,
+   "y": 460,
+   "createdAt": 1794466800002,
+   "managed_by": "manager",
+   "u": 1794466800100
+  },
+  {
+   "id": "z8f5h3dmhw20",
+   "name": "Vega",
+   "email": "vega@argus.ai",
+   "role": "Engineering",
+   "portfolio": "Gateway reliability, model routing",
+   "notes": "",
+   "color": "#06b6d4",
+   "model": null,
+   "lead": null,
+   "x": 30,
+   "y": 620,
+   "createdAt": 1794466800003,
+   "managed_by": "manager",
+   "u": 1794466800100,
+   "gm": "gemini-2.5-flash",
+   "face": 1
+  },
+  {
+   "id": "manager",
+   "builtin": "manager",
+   "name": "Manager",
+   "role": "Team lead",
+   "email": "",
+   "portfolio": "Runs the team: routes work, creates bots, keeps the roster tidy, and keeps track of what you need.",
+   "prompt": null,
+   "gm": null,
+   "color": "#d4a72c",
+   "face": 4,
+   "createdAt": 1794466740000,
+   "lead": null,
+   "u": 1794466800100,
+   "_chat": [
+    {
+     "role": "assistant",
+     "content": "Hi Finn, I'm Manager, the lead for your team of bots. Tell me what you need and I'll hand it to the right bot, set up a new one, or just do it myself.",
+     "t": 1794466741000
+    },
+    {
+     "role": "user",
+     "content": "Remind me to review the Q4 deck every Monday at 08:00",
+     "t": 1794467000000
+    },
+    {
+     "role": "assistant",
+     "content": "Done. I set a weekly reminder for Mondays at 08:00.",
+     "t": 1794467005000,
+     "parts": [
+      {
+       "kind": "tool",
+       "name": "routine_create",
+       "ok": true,
+       "res": "[routine_create] r4kq2s1 \"Review Q4 deck\" (mon 08:00), next 2026-11-16 08:00 Africa/Lusaka"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "tasks": [
+  {
+   "id": "t1a2b3cmhw30",
+   "title": "Competitor pricing scan",
+   "agentId": "k3n9q2amhw1x",
+   "due": "2026-11-12",
+   "status": "todo",
+   "priority": "high",
+   "notes": "",
+   "deps": [],
+   "createdAt": 1794466800010,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t2b3c4dmhw31",
+   "title": "Draft Q4 strategy deck",
+   "agentId": "k3n9q2amhw1x",
+   "due": "2026-11-13",
+   "status": "todo",
+   "priority": "normal",
+   "notes": "",
+   "deps": [
+    "t1a2b3cmhw30"
+   ],
+   "createdAt": 1794466800011,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t3c4d5emhw32",
+   "title": "Follow up with Zamtel",
+   "agentId": "p7d2r8bmhw1y",
+   "due": "2026-11-12",
+   "status": "todo",
+   "priority": "normal",
+   "notes": "",
+   "deps": [],
+   "createdAt": 1794466800012,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t4d5e6fmhw33",
+   "title": "Update CRM pipeline",
+   "agentId": "p7d2r8bmhw1y",
+   "due": "2026-11-11",
+   "status": "todo",
+   "priority": "high",
+   "notes": "",
+   "deps": [],
+   "createdAt": 1794466800013,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t5e6f7gmhw34",
+   "title": "Clear tier-1 inbox",
+   "agentId": "w4c6t1cmhw1z",
+   "due": "2026-11-12",
+   "status": "todo",
+   "priority": "normal",
+   "notes": "",
+   "deps": [],
+   "createdAt": 1794466800014,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t6f7g8hmhw35",
+   "title": "Rewrite onboarding email",
+   "agentId": "w4c6t1cmhw1z",
+   "due": null,
+   "status": "todo",
+   "priority": "low",
+   "notes": "",
+   "deps": [],
+   "createdAt": 1794466800015,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t7g8h9imhw36",
+   "title": "Add Cerebras fallback route",
+   "agentId": "z8f5h3dmhw20",
+   "due": "2026-11-13",
+   "status": "todo",
+   "priority": "high",
+   "notes": "",
+   "deps": [],
+   "createdAt": 1794466800016,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t8h9i0jmhw37",
+   "title": "Cooldown dashboard",
+   "agentId": "z8f5h3dmhw20",
+   "due": "2026-11-16",
+   "status": "todo",
+   "priority": "normal",
+   "notes": "",
+   "deps": [],
+   "createdAt": 1794466800017,
+   "doneAt": null,
+   "u": 1794466800100
+  },
+  {
+   "id": "t9i0j1kmhw38",
+   "title": "Weekly gateway report",
+   "agentId": "z8f5h3dmhw20",
+   "due": "2026-11-12",
+   "status": "done",
+   "priority": "normal",
+   "notes": "",
+   "deps": [],
+   "createdAt": 1794466800018,
+   "doneAt": 1794466800019,
+   "u": 1794466800100
+  }
+ ]
+}
