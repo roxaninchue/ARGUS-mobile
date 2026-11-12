@@ -164,7 +164,17 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "specialists" -> SpecialistsPage()
                     "terminal" -> TerminalPage()
                     "dashboard" -> DashboardPage()
-                    "backup" -> BackupSection()
+                    // P1-MG-01: in the ARGUS look, Import A-team backup sits under the app's own Export / Import.
+                    "backup" -> {
+                        BackupSection()
+                        if (com.blaze.assistant.ui.argus.Argus.lookOn()) {
+                            Spacer(Modifier.height(22.dp))
+                            androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
+                                com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
+                                com.blaze.assistant.ui.argus.settings.ATeamBackupLive()
+                            }
+                        }
+                    }
                     "learn" -> LearnPage()
                     "seller" -> SellerPage()
                     "appstore" -> AppStorePage()

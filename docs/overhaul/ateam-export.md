@@ -161,3 +161,16 @@ in a backup is not imported (it holds tool output and file paths from A-team's w
 - `confirmed = 0` on imported open jobs (nothing starts by itself). The alternative is to queue them as A-team did.
 - Bot emails are dropped.
 - Non-Manager chats in a backup are not imported.
+
+## 7. As built in P1-MG-01 (backup import, 2026-11-12)
+`team/ATeamImport.kt` (`ATeamImport.read` → `ATeamImporter.preview` / `apply`) + `ui/argus/settings/BackupPage.kt`
+(Settings › Backup & import › Import A-team backup, ARGUS look; file via SAF or pasted text). Both files are taken; bots,
+jobs, and from v1 the nickname, theme and pins. Differences from §4:
+- Re-import is last-writer-wins on `u`: the file's `u` (and `createdAt`) is kept as the row's own, a row is written only
+  when it is new or the file's `u` is newer. Same file twice = nothing written; an edit made in ARGUS afterwards wins.
+- `portfolio` goes to `bots.portfolio` (team.db v3, P1-TM-04), not the SOUL. The SOUL = prompt, then "Notes: …", then the
+  Gemini note ("In A-team this bot ran on Gemini (<model>) with your own key. ARGUS picks the model for now.").
+- A taken name gets a number ("Nova 2"); `run` running → QUEUED, waiting → WAITING; a queued job with an open dep lands
+  "blocked"; each new job gets the step "Imported from A-team". Nickname only when ARGUS has no name; theme unless the
+  user switches "Use A-team's theme" off on the preview (system / auto → Match phone).
+- Not imported yet (the preview says so): chats (the Manager's too), profile, memory, routines, proactivity → P3-MG-01.

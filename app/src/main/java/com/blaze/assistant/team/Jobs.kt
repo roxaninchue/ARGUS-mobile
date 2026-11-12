@@ -69,7 +69,8 @@ class JobStore(private val sql: Sql, private val clock: () -> Long = { System.cu
     fun open(): List<Job> = all().filter { it.run in OPEN }
 
     // UPDATE or INSERT, never INSERT OR REPLACE: a replace deletes the row first and ON DELETE CASCADE would take its steps.
-    private fun write(j: Job) {
+    /** Writes [j] as it is, without a transaction of its own (P1-MG-01 imports inside one [Sql.tx]). */
+    internal fun write(j: Job) {
         val v = arrayOf<Any?>(j.title, j.botId, j.due, j.priority, j.status, j.run.name, TeamJson.write(j.deps), j.parentJob, j.source, j.brief, j.result,
             j.notes, if (j.confirmed) 1 else 0, j.retryAt, j.createdAt, j.doneAt, j.u)
         val there = sql.query("SELECT 1 FROM jobs WHERE id=?", j.id) { 1 }.isNotEmpty()

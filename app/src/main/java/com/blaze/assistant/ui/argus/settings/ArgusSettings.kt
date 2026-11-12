@@ -58,7 +58,7 @@ object ArgusSettings {
         )),
         Group("System", listOf(
             Row("sync", "Sync & devices", "refresh-cw", "sync", listOf("cloud sync", "devices", "encrypted")),
-            Row("backup", "Backup & import", "download", "backup", listOf("export", "import", "restore")),
+            Row("backup", "Backup & import", "download", "backup", listOf("export", "import", "restore", "a-team")),
             Row("updates", "Updates", "arrow-up", "updates", listOf("version", "upgrade")),
             Row("diagnostics", "Diagnostics", "wrench", "device", listOf("doctor", "health", "self-check", "crash")),
             Row("about", "About", "info", "about", listOf("licences", "version", "privacy")),
@@ -85,7 +85,7 @@ object ArgusSettings {
         "wallet" to "secrets", "bots" to "specialists", "team" to "specialists", "connectors" to "connections",
         "engines" to "ai", "computers" to "terminal", "workspace" to "terminal", "devices" to "sync",
         "handedness" to "look", "motion" to "look", "ground" to "look", "appearance" to "look", "knows" to "memory",
-        "feedback" to "feedback", "diagnostics" to "device",
+        "feedback" to "feedback", "diagnostics" to "device", "ateam" to "backup", "a-team" to "backup",
     )
 
     /**

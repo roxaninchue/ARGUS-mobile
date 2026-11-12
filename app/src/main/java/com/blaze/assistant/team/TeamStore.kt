@@ -152,6 +152,22 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
         Result.Ok(nb)
     }
 
+    /**
+     * P1-MG-01: writes an imported bot as it is (its id, `u` and created time kept, for last-writer-wins re-import) and,
+     * when [soul] differs from the stored one, a new SOUL version. Never the Manager. No transaction of its own: the
+     * importer calls it inside one [Sql.tx] with the jobs ([ATeamImporter]).
+     */
+    internal fun putImported(b: Bot, soul: String?, by: String): Bot {
+        require(!BotRules.isManager(b) && b.kind != BotKind.MANAGER) { "the Manager is never imported" }
+        var nb = b.copy(soulPath = BotRules.soulPath(b.id))
+        val body = soul?.trim().orEmpty()
+        val newSoul = body.isNotEmpty() && body != soul(b.id)?.trim()
+        if (newSoul) nb = nb.copy(soulVersion = (sql.query("SELECT max(version) FROM bot_soul_versions WHERE bot_id=?", b.id) { it.long(0) }.firstOrNull() ?: 0L).toInt() + 1)
+        write(nb)
+        if (newSoul) writeSoul(b.id, nb.soulVersion, body, by, b.u)
+        return nb
+    }
+
     // ---------------- rows ----------------
 
     private val COLS = "id, kind, name, label, domain, avatar, voice, mode, soul_version, skills, tool_groups, tool_grants, engine, " +

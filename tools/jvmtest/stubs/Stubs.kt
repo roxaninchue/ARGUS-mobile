@@ -2,6 +2,7 @@
 package com.blaze.assistant.agent
 object Settings {
     val m = HashMap<String, Any?>()
+    var userName: String = ""   // P1-MG-01: the A-team import sets the name when there is none
     fun bool(k: String, d: Boolean): Boolean = (m[k] as? Boolean) ?: d
     fun str(k: String, d: String): String = (m[k] as? String) ?: d
     fun setStr(k: String, v: String) { m[k] = v }
