@@ -149,7 +149,7 @@ object FastLane {
         false
     }
 
-    fun stop() { proc?.destroy(); proc = null }
+    fun stop() { proc?.destroy(); proc = null; stopTeam() }
 
     private fun post(path: String, body: String): String {
         val c = URL("http://127.0.0.1:$PORT$path").openConnection() as HttpURLConnection
@@ -249,8 +249,72 @@ object FastLane {
     private val playThing = Regex("^\\s*play\\s+\\S+\\s+\\S+", RegexOption.IGNORE_CASE)
     fun compound(text: String) = multi.containsMatchIn(text) || playThing.containsMatchIn(text) || text.count { it == ',' } > 0
 
+    // ---------- P1-TM-06: the team lane (A-team's five commands) ----------
+
+    /**
+     * P1-TM-06 (06 R28, AT-38): the same Needle 3 weights with A-team's five team tools ([TeamCommands.NEEDLE_TOOLS]:
+     * add_agent, add_task, complete_task, reschedule_task, remove) in a second runner on its own port, so the phone
+     * tools above never compete with them. Started on the first command-ish line, stopped with [trimIfIdle] or [stop].
+     * Unlike the phone lane it also runs online: the router asks it before the gateway (exact → Needle → gateway → rules).
+     */
+    private const val TEAM_PORT = PORT + 1
+    private var teamProc: Process? = null
+    private val teamLock = Mutex()
+
+    private suspend fun ensureTeam(ctx: Context): Boolean = withContext(Dispatchers.IO) {
+        if (teamProc?.isAlive == true) return@withContext true
+        if (!ready(ctx)) return@withContext false
+        val d = dir(ctx)
+        val tools = File(d, "team-tools.json")
+        tools.writeText(com.blaze.assistant.team.TeamCommands.NEEDLE_TOOLS)
+        val pb = ProcessBuilder(runner(ctx).absolutePath, "--model", model(ctx).absolutePath,
+            "--tools", tools.absolutePath, "--serve", "--port", TEAM_PORT.toString(), "--threads", "2", "--max", "160")
+            .directory(d).redirectErrorStream(true)
+        pb.environment()["NEEDLE_TELEMETRY"] = "0"; pb.environment()["DO_NOT_TRACK"] = "1"
+        teamProc = pb.start()
+        Thread { try { teamProc?.inputStream?.bufferedReader()?.forEachLine { } } catch (_: Exception) { } }.start()
+        repeat(40) {
+            if (teamProc?.isAlive != true) return@withContext false
+            try { (URL("http://127.0.0.1:$TEAM_PORT/reset").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"; connectTimeout = 300; readTimeout = 500; doOutput = true
+                outputStream.use { it.write("{}".toByteArray()) } }.responseCode; return@withContext true } catch (_: Exception) { }
+            delay(150)
+        }
+        false
+    }
+
+    private fun stopTeam() { teamProc?.destroy(); teamProc = null }
+
+    /**
+     * One clause → the team calls Needle makes of it, or null when the lane can't run (no runner, no weights, fast lane
+     * off, the runner died). Its `function_calls`, else its `suppressed_calls` (A-team needleCalls takes those too).
+     */
+    suspend fun teamCalls(ctx: Context, clause: String): com.blaze.assistant.team.Router.Needle? {
+        if (!enabled(ctx) || clause.isBlank() || clause.length > 400) return null
+        val t0 = System.currentTimeMillis()
+        val out = teamLock.withLock {
+            try {
+                if (!ensureTeam(ctx)) return null
+                withContext(Dispatchers.IO) {
+                    teamPost("/reset", "{}")
+                    JSONObject(teamPost("/complete", JSONObject().put("input", clause.trim()).toString()))
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { stopTeam(); return null }
+        }
+        lastUse = System.currentTimeMillis()
+        return com.blaze.assistant.team.Router.Needle(com.blaze.assistant.team.TeamCommands.needleReply(out.toString()), System.currentTimeMillis() - t0)
+    }
+
+    private fun teamPost(path: String, body: String): String {
+        val c = URL("http://127.0.0.1:$TEAM_PORT$path").openConnection() as HttpURLConnection
+        c.requestMethod = "POST"; c.connectTimeout = 1000; c.readTimeout = 8000; c.doOutput = true
+        c.setRequestProperty("Content-Type", "application/json")
+        c.outputStream.use { it.write(body.toByteArray()) }
+        return c.inputStream.bufferedReader().use { it.readText() }
+    }
+
     /** Idle runner is shut down to give memory back. */
-    fun trimIfIdle() { if (proc != null && System.currentTimeMillis() - lastUse > 5 * 60_000) stop() }
+    fun trimIfIdle() { if ((proc != null || teamProc != null) && System.currentTimeMillis() - lastUse > 5 * 60_000) stop() }
 
     /** A fast-lane result starting with one of these is a failure: the full agent takes the request instead of a "Done". */
     val FAIL_STARTS = listOf("Couldn't", "Could not", "Error", "Unknown", "No app", "No installed app", "Not done", "Failed", "Can't", "Cannot")

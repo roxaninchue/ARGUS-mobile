@@ -418,7 +418,11 @@ fun ChatScreen() {
             com.blaze.assistant.agent.ClearScreen.Result.CLEARED -> { quote = ""; exitView(); clearedAt = System.currentTimeMillis() }
         }
     }
-    fun send(raw: String) {
+    // P1-TM-06: the "Here's what I'll do" sheet waiting for Apply, and its preview switch.
+    var teamPlan by remember { mutableStateOf<com.blaze.assistant.team.Router.Plan?>(null) }
+    var teamPlanFromChat by remember { mutableStateOf(false) }
+    var planInstant by remember { mutableStateOf(com.blaze.assistant.team.TeamRouting.instant) }
+    fun send(raw: String, routed: Boolean = false) {
         // v0.45.8: the reply's start is timed from this tap (StartTrace, monotonic).
         com.blaze.assistant.agent.StartTrace.tap(force = true)
         val text = raw.trim()
@@ -434,6 +438,40 @@ fun ChatScreen() {
             if (cmdName in setOf("jobs", "schedule", "accounts", "doctor", "design", "router", "skills", "gallery", "browser", "terminal", "music", "video", "doing", "look", "home", "sync") && !text.contains(' ')) {
                 input = TextFieldValue(""); Views.find(cmdName)?.let { openView(it) }; return
             }
+        }
+        // P1-TM-06 routing v1: from the Team composer every message is routed (@bot, a bot's name, commands, `$ cmd`,
+        // else ARGUS); in the ARGUS chat only what looks like one of those. What isn't for the team comes back as Chat
+        // and is sent as before (routed = true).
+        val nowNav = navNow()
+        val where = when {
+            !argus || routed || pending.isNotEmpty() || quote.isNotBlank() || text.startsWith("/") || text.isEmpty() -> null
+            nowNav.tab == ChatNav.TEAM -> com.blaze.assistant.team.Router.Where.Team
+            nowNav.tab == ChatNav.CHAT && !nowNav.inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value &&
+                com.blaze.assistant.team.TeamCommands.maybeTeam(text) -> com.blaze.assistant.team.Router.Where.Thread(com.blaze.assistant.team.BotRules.MANAGER_ID)
+            else -> null
+        }
+        if (where != null) {
+            input = TextFieldValue("")
+            val fromTeam = where is com.blaze.assistant.team.Router.Where.Team
+            fun toChat() { if (fromTeam) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) } }
+            val toast = { m: String -> com.blaze.assistant.ui.argus.kit.ArgusToasts.show(m) }
+            scope.launch {
+                when (val o = com.blaze.assistant.team.TeamRouting.handle(ctx, text, where)) {
+                    null -> { send(text, routed = true); toChat() }
+                    is com.blaze.assistant.team.Router.Outcome.Chat -> { send(o.text, routed = true); toChat() }
+                    is com.blaze.assistant.team.Router.Outcome.Shell -> { toChat(); Agent.note(com.blaze.assistant.team.TeamRouting.shell(o.cmd), asReply = true) }
+                    is com.blaze.assistant.team.Router.Outcome.Delegated -> { toast(o.handed.line); if (!fromTeam) Agent.note(o.handed.line + " \u2192 " + text.take(200), asReply = true) }
+                    is com.blaze.assistant.team.Router.Outcome.Open ->
+                        if (com.blaze.assistant.team.BotRules.isManager(o.bot)) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
+                        else toast("${o.bot.name}'s thread comes in the next update. Say \u201c@${o.bot.name.substringBefore(' ')} \u2026\u201d to hand it a job.")
+                    is com.blaze.assistant.team.Router.Outcome.Done -> {
+                        toast(com.blaze.assistant.ui.team.PlanSheetModel.done(o.applied))
+                        if (!fromTeam) Agent.note(o.applied.lines.joinToString("\n") { "\u2713 $it" }, asReply = true)
+                    }
+                    is com.blaze.assistant.team.Router.Outcome.Preview -> { teamPlanFromChat = !fromTeam; teamPlan = o.plan }
+                }
+            }
+            return
         }
         val cmd = CommandRunner.run(ctx, text, openSettings = { settingsPage = it }, listen = { onMic() })
         if (cmd == "") { input = TextFieldValue(""); return }
@@ -987,7 +1025,8 @@ fun ChatScreen() {
                 if (argus) com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
                     mode = if (nav.inProjectChat) ChatNav.CHAT else nav.tab, streaming = mood != Mood.IDLE, attachments = pending.size,
                     onPlus = { plusOpen = !plusOpen; showViews = false; notchOpen = false }, plusOpen = plusOpen,
-                    onSend = { val t = input.text; send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
+                    // P1-TM-06: from Team the router decides (a job or a hand-off stays on Team; conversation opens Chat)
+                    onSend = { val t = input.text; send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && navNow().tab != ChatNav.TEAM && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
                     onMic = { onMic() }, onStop = { Agent.stop() })
                 else Composer(input, { input = it; Agent.typing(it.text.isNotEmpty()) }, busy = mood != Mood.IDLE, canSend = input.text.isNotBlank() || pending.isNotEmpty(),
                     plusOpen = plusOpen, chip = modeChip(work, approval), agents = bgAgents.count { it.live },
@@ -1035,6 +1074,22 @@ fun ChatScreen() {
                 com.blaze.assistant.ui.argus.kit.ArgusToasts.show(if (r == null || r.startsWith("Error:")) (r?.removePrefix("Error: ") ?: "Team isn't ready yet.") else "Bot removed") } },
             onKeep = { scope.launch { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.team.JobsRuntime.manager()?.keep(askDelete.botId) }
                 com.blaze.assistant.ui.argus.kit.ArgusToasts.show("Kept ${askDelete.name}") } })
+
+        // P1-TM-06: "Here's what I'll do" for a command read from the Team composer (or offline in the ARGUS chat)
+        teamPlan?.let { plan ->
+            com.blaze.assistant.ui.team.PlanSheet(plan, instant = planInstant,
+                onInstant = { planInstant = it; com.blaze.assistant.team.TeamRouting.instant = it },
+                onApply = {
+                    teamPlan = null
+                    val inChat = teamPlanFromChat
+                    scope.launch {
+                        val a = com.blaze.assistant.team.TeamRouting.apply(ctx, plan)
+                        com.blaze.assistant.ui.argus.kit.ArgusToasts.show(com.blaze.assistant.ui.team.PlanSheetModel.done(a))
+                        if (inChat) Agent.note(a.lines.joinToString("\n") { "\u2713 $it" }, asReply = true)
+                    }
+                },
+                onCancel = { teamPlan = null })
+        }
 
         // v0.45.28: the same glass window Home opens links in, for links tapped in chat replies.
         chatGlassUrl?.let { u -> GlassWindow(u, onClose = { chatGlassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
