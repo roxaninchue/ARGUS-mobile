@@ -30,7 +30,7 @@ Early look (not final, can change): Team, Agent chat, Life, Desk.
 ## Status
 - 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main (0.52.3 / vc 190 + three unreleased rounds), a-team@main (v2.18), bot-hq@HEAD. Specialists 1–5 landed all five slice docs by 20:56 CAT.
 - 2026-11-11: **Slice 6 done — the plan is ready.** `docs/overhaul/06-team-plan.md` reconciles the slices (30 items), lists 12 decisions for Finn (each with a recommended answer the plan already assumes), sets 11 phases with versions (0.52.4 → 1.0.0, then 1.1.0), 13 workstreams with owners, a 102-ticket backlog (~336 agent-days), and a coverage matrix that places **all 254 source features** (BH 89 · AT 72 · AM 68 · merge map 25) plus 24 new ones on a phase, a ticket and a UI location — 0 missing.
-- **Now:** P0 under way. ✓ P0-TM-01 (MR !40, 2026-11-11) ✓ P0-AG-01 (7f12551d) ✓ P0-SH-01 (21fe3ebb) ✓ P0-SH-02 (ccf1a382) and ✓ P0-API-01 (cd942dad) and ✓ P0-QA-01 (21513181) and ✓ P0-MG-01 (0167d249) and ✓ P0-IL-02 (daa6cbe0, 2026-11-12) on main. Next: P0-IL-03.
+- **Now:** P0 under way. ✓ P0-TM-01 (MR !40, 2026-11-11) ✓ P0-AG-01 (7f12551d) ✓ P0-SH-01 (21fe3ebb) ✓ P0-SH-02 (ccf1a382) and ✓ P0-API-01 (cd942dad) and ✓ P0-QA-01 (21513181) and ✓ P0-MG-01 (0167d249) and ✓ P0-IL-02 (daa6cbe0) and ✓ P0-IL-03 (60818dab, 2026-11-12) on main. P0 groundwork done except P0-IL-01 (release), which waits for "build".
 
 ## Handoff log
 Append one line per session: date, who, what changed, what's next.
@@ -47,6 +47,7 @@ Append one line per session: date, who, what changed, what's next.
 - 2026-11-12 · Hark · P0-QA-01 done: `docs/overhaul/specs.md` = spec index, 833 specs (A-team `app/tests/*` PASS lines + log-only checks + Java, A-team `evals/test/*` cases, Bot HQ `tests/e2e.mjs` + `voice-call.mjs`), each mapped to a ticket by `tools/gen-specs.mjs` (file rule → keyword → file default; first pass, ticket owners re-check their rows). A-team `evals/` copied to `evals/` (guard.js + models.js vendored in `evals/vendor/`; only graders/guard/v212 tests + new `specs.test.mjs`). Local: `node --test evals/test/*.test.mjs` 34/34; refusals mock good 63/63, mock bad 0/63; code selfcheck all pass. Live `--suite refusals` against the gateway not run: needs an ARGUS `bz_` token in `ARGUS_TOKEN`. MR !49 closed, landed as 21513181. Next: P0-MG-01.
 - 2026-11-12 · Hark · P0-MG-01 done: `docs/overhaul/ateam-export.md` defines `argus-team-export.v1` (bots + look, jobs, settings, profile stated/inferred, bot/team memory, routines, proactivity, optional Manager chats) and maps both it and A-team's Copy backup (`{agents, tasks}`) onto team.db / blaze.db + mem_scope. `team/ATeamExport.kt` (pure: detect, 13 validation rules, faceOf, scopeFor, schedule). Fixtures `app/src/test/resources/ateam/demo-team.{backup,export.v1}.json`, hand-built from A-team `demo()` @7c4b459a (not a phone export). `ATeamExportTest` 6/6 (JVM). Open for owner: imported open jobs land `confirmed = 0`; bot emails dropped; non-Manager chats not imported. MR !50 closed, landed as 0167d249. Next: P0-IL-02.
 - 2026-11-12 · Hark · P0-IL-02 done: THIRD_PARTY_NOTICES (root + assets/legal, identical) gain an "ARGUS overhaul" section: Haze 1.0.2 (Apache-2.0), Lucide (ISC, Feather MIT portions; lucide-static 0.460.0), Bot HQ (MIT; design + test names, no artwork), A-team (MIT by owner grant 2026-11-11). `gateway/README.md` gets a read-only stale-copy banner (live gateway: Blaze-agent 0.9.7). `evals/README.md` provenance corrected. LegalAssetsTest gains `overhaulSourcesAreCredited`. Deviations table added under Decisions; D1–D11 recorded as taken. Simple Icons / noVNC not added (not in repo). MR !51 closed, landed as daa6cbe0. Next: P0-IL-03.
+- 2026-11-12 · Hark · P0-IL-03 done: `docs/overhaul/do-not-port.md` lists 18 rows (BH-75/76/77/78/86, Bot HQ artwork, BH dead code ×7, BH mode kept on purpose, AT-01, AT-57, AT-67, cactus.wasm), each with reason and replacing ticket. `node tools/check-do-not-port.mjs` checks the 13 grep-able rows over app/src/main, tools, evals: 0 hits after dropping `composio` from a BotAppGrant comment. `node --test tools/check-do-not-port.test.mjs` 2/2. MR !52 closed, landed as 60818dab. Next: P0-IL-01 when the owner says "build".
 
 ## Unified plan
 Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
@@ -137,6 +138,7 @@ Each line is a place the work differs from this file or 06-team-plan, or a choic
 | P0-MG-01 | (open) | Imported open jobs land `confirmed = 0`: nothing starts by itself | `docs/overhaul/ateam-export.md` §4.2 |
 | P0-MG-01 | (open) | Bot emails dropped; only the Manager's chat is imported | §4.1, §4.6 |
 | P0-IL-02 | Notices for Simple Icons (CC0) and noVNC (MPL-2.0) | Not added: neither is in the repo yet | Added by the ticket that bundles them |
+| P0-IL-03 | `tools/check-do-not-port.sh` | `tools/check-do-not-port.mjs` (Node, like the other tools) + a node test; also removed `composio` from a `team/Models.kt` comment (D5) | Portable regex and a testable rule list |
 | Tests | Full test suite green | Not run: no Gradle build until "build". Unverified: TeamSchemaTest, TeamDbTest, OrbShotsTest, SpaceWiringTest, ThemeEverywhereTest, full ContrastTest and CloudTest, Android compile of Agent.kt, AgentSessionDriver.kt, LlmClient.kt, LiveModelsFeed.kt | Runs with P0-IL-01 |
 
 ### Next 10 tickets (all of P0; 1–8 in parallel)
@@ -150,5 +152,5 @@ Each line is a place the work differs from this file or 06-team-plan, or a choic
 | 6 | ✓ P0-QA-01 spec index + A-team evals harness in `evals/` — done, on main (21513181) | QA |
 | 7 | ✓ P0-MG-01 `argus-team-export.v1` format + fixtures — done, on main (0167d249) | MG |
 | 8 | ✓ P0-IL-02 repo hygiene, notices, ask for a-team LICENSE — done (daa6cbe0; A-team MIT grant recorded) | IL |
-| 9 | P0-IL-03 do-not-port register | IL |
+| 9 | ✓ P0-IL-03 do-not-port register — done (60818dab) | IL |
 | 10 | P0-IL-01 release 0.52.4 (when the owner says build) | IL |
