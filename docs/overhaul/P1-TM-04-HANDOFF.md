@@ -1,5 +1,7 @@
 # P1-TM-04 (Bot CRUD) — WIP handoff
 
+> **Landed 2026-11-12:** finished on this branch (9b542c31 code, c74fbd87 tests) and landed on main as e0ac8f21 + docs a06b504a. Local: 194/194 JVM, do-not-port 0, evals 34/34. This file is history; the deviations are in overhaul.md.
+
 Branch `p1-tm-04-wip`, cut from main @ fad00679 on 2026-11-12 (Hark). Stopped mid-ticket by the owner ("stop coding and testing, push what you have"). **Not on main. Not done. Nothing wired to the UI yet.**
 
 ## Done (on this branch)
