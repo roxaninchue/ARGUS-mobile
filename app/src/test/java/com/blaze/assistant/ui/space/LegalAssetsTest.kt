@@ -34,7 +34,7 @@ class LegalAssetsTest {
     @Test fun overhaulSourcesAreCredited() {
         val n = File(repo, "THIRD_PARTY_NOTICES.md").readText().substringAfter("## ARGUS overhaul")
         for (s in listOf("Haze", "Apache License 2.0", "Lucide", "ISC License", "Feather", "lucide-static 0.460.0",
-                "Bot HQ", "Nick Vasilescu", "No Bot HQ artwork", "A-team", "7c4b459a")) assertTrue("notices name $s", s in n)
+                "Bot HQ", "Nick Vasilescu", "No Bot HQ artwork", "A-team", "7c4b459a", "copied into this project under the MIT License")) assertTrue("notices name $s", s in n)
         assertTrue(File(repo, "gateway/README.md").readText().startsWith("> **Read-only, stale copy"))
         assertTrue("evals provenance", "credited in THIRD_PARTY_NOTICES.md" in File(repo, "evals/README.md").readText())
     }
