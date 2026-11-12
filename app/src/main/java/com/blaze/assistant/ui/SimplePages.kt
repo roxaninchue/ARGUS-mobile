@@ -108,6 +108,13 @@ fun LookPage() {
     val c = LocalBlaze.current.mono
     val accent by Look.accent.collectAsState()
     Spacer(Modifier.height(10.dp))
+    // P1-SH-06: in the ARGUS look, Appearance is the ARGUS section (look switch, Match phone / Dark / Light, ground,
+    // handedness, reduced motion; no accent), then Size and Stage below as before.
+    val argus = androidx.compose.runtime.remember { com.blaze.assistant.ui.argus.Argus.lookOn() }
+    if (argus) androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(c.dark)) {
+        com.blaze.assistant.ui.argus.settings.ArgusAppearanceLive()
+    }
+    if (!argus) {
     Label("Theme")
     Spacer(Modifier.height(8.dp))
     val mode = ThemeMode.mode.value
@@ -122,6 +129,7 @@ fun LookPage() {
     }
     Text("Auto turns dark after sunset and light in the morning.", modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+    }
     Spacer(Modifier.height(14.dp))
     // 0.52.4: how big the app draws, for people who find the default too large (or too small).
     val scale by Look.scale.collectAsState()
@@ -143,6 +151,7 @@ fun LookPage() {
     }
     Text("Makes everything in ${BrandName.NAME} smaller or bigger, text included.", modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+    if (!argus) {
     Spacer(Modifier.height(14.dp))
     Label("Accent")
     Spacer(Modifier.height(8.dp))
@@ -153,6 +162,7 @@ fun LookPage() {
                 .border(if (accent == hex) 3.dp else 1.dp, if (accent == hex) c.ink else c.hair, CircleShape)
                 .clickable { Look.setAccent(hex) }.semantics { contentDescription = "Accent: $name" })
         }
+    }
     }
     Spacer(Modifier.height(14.dp))
     // 0.46.0 Blaze Stage: timers, music, quizzes and other live cards right on the chat (off = Blaze answers in chat / opens views).

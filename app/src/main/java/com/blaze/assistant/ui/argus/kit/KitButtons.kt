@@ -47,7 +47,7 @@ internal fun kc(argb: Long) = ArgusColors.c(argb)
 
 /** Press feedback shared by the kit: scale to 0.97 over 150 ms (instant with reduced motion). */
 @Composable
-internal fun Modifier.kitPress(source: MutableInteractionSource, reducedMotion: Boolean = false): Modifier {
+internal fun Modifier.kitPress(source: MutableInteractionSource, reducedMotion: Boolean = com.blaze.assistant.ui.argus.settings.ArgusPrefs.reducedNow()): Modifier {
     val pressed by source.collectIsPressedAsState()
     val s by animateFloatAsState(if (pressed) ArgusTokens.Motion.PRESS_SCALE else 1f,
         tween(ArgusTokens.Motion.duration(ArgusTokens.Motion.PRESS_MS, reducedMotion)), label = "press")

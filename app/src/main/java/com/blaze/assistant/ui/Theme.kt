@@ -169,7 +169,9 @@ fun BlazeTheme(content: @Composable () -> Unit) {
     // v0.31.0: the glass UI is dark-first: "system" means dark; light only when picked in the menu.
     // v0.39.0 Look & feel: "auto" follows the local time (dark after sunset); an accent picked there tints the accent only.
     val hour = androidx.compose.runtime.remember(ThemeMode.mode.value) { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
-    val dark = LookLogic.darkFor(ThemeMode.mode.value, hour, systemDark = true)
+    // P1-SH-06: "phone" (Appearance › Match phone) follows the phone's dark mode; "system" stays dark as before.
+    val phoneDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val dark = LookLogic.darkFor(ThemeMode.mode.value, hour, systemDark = if (ThemeMode.mode.value == "phone") phoneDark else true)
     val accentHex by Look.accent.collectAsState()
     // An accent picked in Look & feel drives the app's accents; on light grounds a pale accent is deepened so it still reads.
     val c = androidx.compose.runtime.remember(dark, accentHex) { blazePalette(dark, LookLogic.parseAccent(accentHex)) }

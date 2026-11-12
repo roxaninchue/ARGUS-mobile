@@ -149,7 +149,9 @@ class SpaceWiringTest {
         // every page the profile can reach has a branch
         for (p in SpaceSettings.TREE - setOf(SpaceProfile.SYSTEM_PAGE, SpaceProfile.FEEDBACK_PAGE)) assertTrue("no branch for $p", "\"$p\" ->" in s)
         // old ids land somewhere real
-        assertTrue("\"backup_brain\" to \"ai\"" in s && "\"advanced\" to \"\"" in s)
+        // P1-SH-06: the page ids and their aliases moved to SettingsPages.kt (pure, for SettingsAliasTest)
+        val ids = src("ui/SettingsPages.kt")
+        assertTrue("\"backup_brain\" to \"ai\"" in ids && "\"advanced\" to \"\"" in ids)
         for (gone in listOf("SettingsList(", "AdvancedList(", "AiPage(", "BackupBrainSection(", "OfflineBrainSection(", "SimpleAdvancedSwitch()")) assertFalse("$gone in Settings", gone in s)
         for (f in listOf("OfflineBrainSection.kt", "BackupBrainSection.kt")) assertFalse(f, File(root, "com/blaze/assistant/ui/$f").exists())
         nowhere("BackupBrainSection("); nowhere("OfflineBrainSection(")

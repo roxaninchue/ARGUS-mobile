@@ -29,7 +29,12 @@ object AppTheme {
 
     /** Whether the app draws dark now (for non-Compose screens: the Terminal). Same rule as [BlazeTheme]. */
     fun darkNow(hour: Int = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)): Boolean =
-        LookLogic.darkFor(ThemeMode.mode.value, hour, systemDark = true)
+        LookLogic.darkFor(ThemeMode.mode.value, hour, systemDark = if (ThemeMode.mode.value == "phone") phoneDark() else true)
+
+    /** P1-SH-06: the phone's own dark mode (Appearance › Match phone), outside Compose. */
+    fun phoneDark(): Boolean = try {
+        (android.content.res.Resources.getSystem().configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    } catch (_: Throwable) { true }
 
     /** The one write path for light / dark from a switch (the Terminal's menu, [ThemeSwitch]). */
     fun toggle(): String { val m = LightDark.toggle(darkNow()).first; ThemeMode.set(m); return m }

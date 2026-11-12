@@ -95,8 +95,12 @@ fun ArgusSheet(
                 Modifier.fillMaxWidth().heightIn(min = KitSpec.Sheet.ACTION_ROW.dp).padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
             ) {
-                ArgusButton(cancel, onDismiss, Modifier.weight(1f), kind = ButtonKind.GLASS)
-                ArgusButton(primary, onPrimary, Modifier.weight(1f), kind = primaryKind, enabled = primaryEnabled)
+                // P1-SH-06 Handedness: the primary sits on the thumb's side
+                val order = com.blaze.assistant.ui.argus.settings.ArgusSettings.buttonOrder(true, false, com.blaze.assistant.ui.argus.settings.ArgusPrefs.hand())
+                for (isPrimary in order) {
+                    if (isPrimary) ArgusButton(primary, onPrimary, Modifier.weight(1f), kind = primaryKind, enabled = primaryEnabled)
+                    else ArgusButton(cancel, onDismiss, Modifier.weight(1f), kind = ButtonKind.GLASS)
+                }
             }
         }
     }
@@ -199,8 +203,11 @@ fun EmptyState(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.semantics { heading() })
         if (!body.isNullOrBlank()) Text(body, style = ArgusType.body, color = c.mute, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         if (primary != null || secondary != null) Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            secondary?.let { ArgusButton(it.first, it.second, kind = ButtonKind.GLASS) }
-            primary?.let { ArgusButton(it.first, it.second, kind = ButtonKind.PRIMARY) }
+            // P1-SH-06 Handedness: the primary sits on the thumb's side
+            for (isPrimary in com.blaze.assistant.ui.argus.settings.ArgusSettings.buttonOrder(true, false, com.blaze.assistant.ui.argus.settings.ArgusPrefs.hand())) {
+                if (isPrimary) primary?.let { ArgusButton(it.first, it.second, kind = ButtonKind.PRIMARY) }
+                else secondary?.let { ArgusButton(it.first, it.second, kind = ButtonKind.GLASS) }
+            }
         }
     }
 }
@@ -216,7 +223,7 @@ fun ProgressLine(
     modifier: Modifier = Modifier,
     detail: String? = null,
     onClick: (() -> Unit)? = null,
-    reducedMotion: Boolean = false,
+    reducedMotion: Boolean = com.blaze.assistant.ui.argus.settings.ArgusPrefs.reducedNow(),
 ) {
     val c = Argus.colors
     val click = onClick?.let { Modifier.clickable(role = Role.Button, onClick = it) } ?: Modifier

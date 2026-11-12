@@ -61,87 +61,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.clip
 
-/** Settings, grouped into pages. [page] null = the profile page (the root). */
-data class SettingsPage(val id: String, val title: String, val sub: String)
-
-/**
- * 0.52.3 (ARGUS x Hark): the root of Settings is the profile page ([com.blaze.assistant.ui.space.SpaceProfileScreen]):
- * Usage and plan; Profile, Scheduled Tasks, Accounts, Wallet; Security, System Preferences, Submit Feedback, About.
- * System Preferences lists Appearance, Language, Voice, Permissions and Updates. Back follows
- * [com.blaze.assistant.ui.space.SpaceSettings.PARENT] (everything else returns to the profile). The old Settings list,
- * Advanced, the Brain page's switches and the backup / offline brain sections are gone: the brain is picked
- * automatically. The pages below stay reachable by id (ARGUS's open_settings, /views, the + menu) and keep their prefs.
- */
-val topPages = listOf(
-    SettingsPage("system", "System Preferences", "Appearance, language, voice, permissions, updates"),
-    SettingsPage("feedback", "Submit Feedback", "Tell the ${BrandName.NAME} team what works and what doesn't"),
-    SettingsPage("look", "Appearance", "Light, Dark or Auto, and the accent colour"),
-    SettingsPage("language", "Language", "Which language ${BrandName.NAME} replies in. Auto matches yours"),
-    SettingsPage("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders, on or off, and today's diary"),
-    SettingsPage("bank", "Bank mode", "Use banking apps: ${BrandName.NAME} steps back while they're open"),
-    SettingsPage("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, default assistant"),
-    SettingsPage("permissions", "Permissions", "Phone control, notifications, mic, overlay"),
-    SettingsPage("account", "Profile", "${BrandName.NAME} account and connected apps"),
-    SettingsPage("updates", "Updates", "Check for a newer ${BrandName.NAME}; updates run in the background"),
-    SettingsPage("about", "About", "Version, licences and what ${BrandName.NAME} keeps on this phone"),
-    // Unreleased after 0.52.3: pinned facts, this chat's summary, the current task, the skills in use (HoldingPage).
-    SettingsPage("holding", "What ${BrandName.NAME} is holding", "Pinned facts, this chat's summary, the current task and skills"),
-)
-
-/** Pages that left the Settings UI in 0.52.3 but still open by id (their prefs keep working). */
-val advancedPages = listOf(
-    SettingsPage("connections", "Accounts", "Google, GitHub, Spotify, Notion, Slack"),
-    SettingsPage("desktop", "${BrandName.NAME} Desktop", "Pair with ${BrandName.NAME} on your computer"),
-    SettingsPage("control", "Phone control", "Accessibility, skills, the pointer"),
-    SettingsPage("persona", "Personality", "How ${BrandName.NAME} talks"),
-    SettingsPage("feel", "Taps, sounds & panel", "Tap highlights, sounds, compact panel"),
-    SettingsPage("privacy", "Security", "App lock, approvals, bank mode"),
-    SettingsPage("watches", "Watches", "Values Magic Hand is watching for you"),
-    SettingsPage("secrets", "Wallet", "Keys, tokens, logins and cards from the Secure Form, only on this phone"),
-    SettingsPage("logins", "Saved logins", "Sign-ins from ${BrandName.NAME}'s secure form, encrypted on this phone"),
-    SettingsPage("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: sign out of sites, clear its data"),
-    SettingsPage("proactive", "Proactive & triggers", "Speak up on its own, when-X-do-Y"),
-    SettingsPage("commands", "Slash commands", "Your own /commands and prompt skills"),
-    SettingsPage("orb", "Floating orb", "Keep ${BrandName.NAME} over other apps"),
-    SettingsPage("logs", "Life logs", "Transcribe what the mic hears into memory, brainstorms"),
-    SettingsPage("replies", "Notification replies", "Chat logs and replies from notifications, auto-reply"),
-    SettingsPage("usage", "Usage", "Tokens and estimated cost"),
-    SettingsPage("device", "Device & diagnostics", "Phone health, self-check, crash report"),
-    SettingsPage("backup", "Backup", "Export or import everything"),
-)
-
-/**
- * Pages that are views: opened by id from /views, the + menu, open_view and the "Open in …?" chip. "ai" (Brain) is
- * only the status card now: ARGUS Cloud picks the model for every message, nobody picks one.
- */
-val viewPages = listOf(
-    SettingsPage("ai", "Brain", "${BrandName.NAME} Cloud picks the best model for every message"),
-    SettingsPage("terminal", "Jobs", "A real shell, jobs, Linux, Termux"),
-    SettingsPage("memory", "Memory", "What ${BrandName.NAME} remembers and has learned"),
-    SettingsPage("routines", "Scheduled Tasks", "Things ${BrandName.NAME} does on a schedule"),
-    SettingsPage("specialists", "Agents", "Sub-agents ${BrandName.NAME} can delegate to"),
-    SettingsPage("skills", "Skills", "Research, email, plans, docs, code: on, off, restore"),
-    SettingsPage("learn", "Learn", "Flashcards, Google Classroom, low-data mode"),
-    SettingsPage("appstore", "App Store", "Free open-source apps from their developers' own releases"),
-    SettingsPage("seller", "Seller", "Brand kit, weekly store digest, replies from your PC"),
-    SettingsPage("dashboard", "Dashboard", "Local web dashboard and analytics"),
-    SettingsPage("plan", "Usage and plan", "${BrandName.NAME} Cloud plans, monthly or yearly"),
-    SettingsPage("sync", "Cloud sync", "Chats, memory, settings and designs on all your phones, end-to-end encrypted"),
-)
-
-val settingsPages = topPages + advancedPages + viewPages
-
-/** 0.52.3: page ids from before the declutter that now land on another page ("" = the profile). */
-internal val settingsAliases = mapOf("router" to "ai", "backup_brain" to "ai", "advanced" to "", "settings" to "")
-
-/** The page a start id opens: a known page, an alias, or what [com.blaze.assistant.agent.settingsPageFor] makes of it; null = the profile. */
-internal fun settingsStart(start: String?): String? {
-    val s = start?.trim().orEmpty()
-    if (s.isEmpty()) return null
-    settingsAliases[s]?.let { return it.ifEmpty { null } }
-    if (settingsPages.any { it.id == s }) return s
-    return com.blaze.assistant.agent.settingsPageFor(s).takeIf { it.isNotEmpty() }
-}
 
 /**
  * Settings. [start] null / "" opens the profile page; a page id opens that page (Back then closes Settings when it was
@@ -155,10 +74,13 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val first = remember { settingsStart(start) }
     var page by remember { mutableStateOf(first) }
+    val argus = remember { com.blaze.assistant.ui.argus.Argus.lookOn() }
     // Opened straight onto a page (from a /command or ARGUS): Back from that page closes Settings.
     fun back() {
         val p = page
         if (p == null || (first != null && p == first)) onDismiss()
+        // P1-SH-06: the ARGUS tree (You page) has its own parents; the 0.52.3 tree is unchanged with argus_look off.
+        else if (argus) page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)
         else page = com.blaze.assistant.ui.space.SpaceSettings.parentOf(p)
     }
     BackHandler { back() }
@@ -170,7 +92,24 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
 
     com.blaze.assistant.ui.space.SpaceBackdrop {
     Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
-        if (page == null) {
+        if (page == null && argus) {
+            // P1-SH-06: the You page (04 §4.11) in the ARGUS look; the profile below stays for argus_look off.
+            val me = account.user
+            val dark = AppTheme.darkNow()
+            androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(dark)) {
+                BackTitle("You", onBack = { onDismiss() }, modifier = Modifier.padding(vertical = 2.dp), right = { ThemeSwitch() })
+                com.blaze.assistant.ui.argus.settings.YouPage(
+                    name = com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName),
+                    email = com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null),
+                    signedIn = me != null,
+                    planLine = ents?.let { com.blaze.assistant.connect.Billing.planName(it.plan) }.orEmpty(),
+                    onPage = { page = it },
+                    onSignOut = { scope.launch { com.blaze.assistant.connect.BlazeAccount.signOut() } },
+                    modifier = Modifier.weight(1f),
+                    version = version,
+                    pageText = remember { settingsPages.associate { it.id to (it.title + " " + it.sub) } })
+            }
+        } else if (page == null) {
             // The profile page: Hark's top bar (no round button), then the grouped cards.
             val me = account.user
             com.blaze.assistant.ui.space.SpaceTopBar(tab = "", onTab = onTab, onLeft = {}, showLeft = false,

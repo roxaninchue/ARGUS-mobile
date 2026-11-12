@@ -49,10 +49,11 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Student pack (flashcards, Google Classroom) and seller pack (brand kit, posts, ads, store digest).
 
 ## Settings map
-Settings (tap the avatar, or /settings) opens your profile: Usage and plan, then Profile (Argus account, sign in with Google, GitHub or email, connected apps), Scheduled Tasks, Accounts (connected accounts), Wallet (saved keys, logins and cards); Security (app lock, ask before risky actions, Bank mode), System Preferences, Submit Feedback, About (version, what Argus keeps on this phone, licences), and Sign out.
-- System Preferences: Appearance (Light / Dark / Auto, accent), Language, Voice (Hey Argus, spoken replies, default assistant, Argus voice), Permissions (phone control, notifications, microphone, overlay, battery), Updates.
-- There is no model or brain picker: Argus Cloud picks the brain for every message by itself (Settings › Brain only shows whether Argus Cloud is reachable).
-- Pages that left the list still open by name (ask Argus or use /views): Personality, Floating orb, Slash commands, Watches, Proactive & triggers, Life logs, Notification replies, Usage, Device & diagnostics, Backup, Desktop pairing.
+Settings (tap the avatar, or /settings) opens You (0.53, the ARGUS look): your name (tap = Profile, the Argus account), the Plan & usage card, then What the team knows (memory), What Argus is holding, Approvals & app lock (ask before risky actions, Bank mode); Team: Team & bots, Apps & connectors, Skills, Models & engines (Automatic: Argus Cloud picks the brain), Computers & workspace, Scheduled tasks; You & phone: Voice, Notifications & proactivity, Phone & permissions, Wallet & logins, Appearance, Language; System: Sync & devices, Backup & import, Updates, Diagnostics, About, Submit feedback; Sign out. The Search settings pill at the bottom finds any row.
+- Appearance: the ARGUS look switch (off brings back the 0.52 screens), Theme (Match phone / Dark / Light), Ground (Plain / Orbit / Cobalt night), Handedness (main buttons on your thumb's side), Reduced motion, Size.
+- With the ARGUS look off, Settings is the 0.52 profile: Usage and plan, Profile, Scheduled Tasks, Accounts, Wallet; Security, System Preferences (Appearance with Light / Dark / Auto and accent, Language, Voice, Permissions, Updates), Submit Feedback, About, Sign out.
+- There is no model or brain picker: Argus Cloud picks the brain for every message by itself (Models & engines / Brain only shows whether Argus Cloud is reachable).
+- Every older page still opens by name (ask Argus or use /views): Personality, Floating orb, Slash commands, Watches, Proactive & triggers, Life logs, Notification replies, Usage, Device & diagnostics, Backup, Desktop pairing, and the old profile rows (Profile, Scheduled Tasks, Accounts, Wallet, Security, System Preferences).
 Views reachable from /views also open their settings pages: Memory, Schedule, Agents, Skills, Learn, Seller, Jobs, Dashboard.
 
 ## Privacy and security

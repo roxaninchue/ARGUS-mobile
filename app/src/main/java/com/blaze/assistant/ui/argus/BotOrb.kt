@@ -33,7 +33,7 @@ import com.blaze.assistant.ui.drawArgusMark
  */
 @Composable
 fun BotOrb(face: OrbFace, color: Long, size: Dp = OrbSize.MD.dp, state: OrbState = OrbState.IDLE, amplitude: Float = 0f,
-           reducedMotion: Boolean = false, contentDescription: String? = null, modifier: Modifier = Modifier) {
+           reducedMotion: Boolean = com.blaze.assistant.ui.argus.settings.ArgusPrefs.reducedNow(), contentDescription: String? = null, modifier: Modifier = Modifier) {
     val p = LocalArgusColors.current.palette
     val spin = if (state == OrbState.WORKING && !reducedMotion) {
         val t = rememberInfiniteTransition(label = "orb")
