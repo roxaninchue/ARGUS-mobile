@@ -204,7 +204,7 @@ class JobTools(private val store: JobStore, private val queue: JobQueue, private
             linkedMapOf("id" to str("Job id"), "title" to str(""), "due" to str("Due words"), "priority" to str("high, normal or low"), "notes" to str(""),
                 "agent" to str("Bot name"), "status" to str("cancelled to cancel")), listOf("id")),
         fn("retry_job", "Put a failed or waiting job back in the queue now.", linkedMapOf("id" to str("Job id")), listOf("id")),
-        fn("agent_status", "A bot's recent jobs and how each went.", linkedMapOf("agent" to str("Bot name")), listOf("agent")),
+        fn("agent_status", "A bot's recent jobs and how each went; with no agent, the whole team's.", linkedMapOf("agent" to str("Bot name (empty: the whole team)")), emptyList()),
         fn("create_task", "Add a step to the job you are running (shows in its progress).", linkedMapOf("title" to str("The step")), listOf("title")),
         fn("update_task", "Mark a step of your job done or failed.", linkedMapOf("step" to str("Step number"), "status" to str("done, failed or in_progress")), listOf("step", "status")),
     )
@@ -267,12 +267,21 @@ class JobTools(private val store: JobStore, private val queue: JobQueue, private
                 when (j.run) { JobRun.RUNNING -> "${label(j)} is running now."; JobRun.DONE -> "${label(j)} is already done."; else -> "${label(j)} is back in the queue." }
             }
             "agent_status" -> {
-                val b = bot(s("agent")) ?: return "Error: there's no bot called \"${s("agent")}\" on the team."
-                val js = store.forBot(b.id, 8)
-                if (js.isEmpty()) "${b.name} has no jobs." else "${b.name}'s recent jobs:\n" + js.joinToString("\n") { j ->
-                    "${label(j)}: ${j.status}" + (j.due?.let { ", due ${DueWords.label(it, today())}" } ?: "") +
-                        (if (j.run == JobRun.FAILED) ", last failure: " + (store.failures(j.id).lastOrNull()?.label ?: "unknown") else "") +
-                        (j.result?.let { ", result: ${it.take(160)}" } ?: "")
+                fun line(j: Job, withWho: Boolean) = "${label(j)}" + (if (withWho) " (${who(j)})" else "") + ": ${j.status}" +
+                    (j.due?.let { ", due ${DueWords.label(it, today())}" } ?: "") +
+                    (if (j.run == JobRun.FAILED) ", last failure: " + (store.failures(j.id).lastOrNull()?.label ?: "unknown") else "") +
+                    (j.result?.let { ", result: ${it.take(160)}" } ?: "")
+                // P1-TM-04 (A-team t_agent_status): no agent = the whole team's latest jobs, with how many went wrong
+                val word = s("agent")
+                if (word == null) {
+                    val js = store.all().sortedWith(compareByDescending<Job> { it.createdAt }.thenByDescending { it.id }).take(10)
+                    val bad = js.count { it.run == JobRun.FAILED || it.status == "blocked" }
+                    if (js.isEmpty()) "The team has no jobs yet." else "The team's recent jobs:\n" + js.joinToString("\n") { line(it, true) } +
+                        (if (bad > 0) "\n$bad with errors or blocked." else "")
+                } else {
+                    val b = bot(word) ?: return "Error: there's no bot called \"$word\" on the team."
+                    val js = store.forBot(b.id, 8)
+                    if (js.isEmpty()) "${b.name} has no jobs." else "${b.name}'s recent jobs:\n" + js.joinToString("\n") { line(it, false) }
                 }
             }
             "create_task" -> {

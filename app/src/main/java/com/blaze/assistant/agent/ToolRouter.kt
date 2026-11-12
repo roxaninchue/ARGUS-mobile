@@ -130,6 +130,10 @@ object ToolRouter {
         Group("jobs", "team jobs: add, delegate, close, update, retry a job; a bot's recent jobs",
             r("""\b(jobs?|tasks?|to-?dos?|assign\w*|delegate|hand (?:it|this) to|queue|due|deadline)\b"""),
             { it in setOf("add_job", "update_job", "agent_delegate", "retry_job", "agent_status") }),
+        // P1-TM-04: the team's bots (TeamHooks.tools adds these; update_agent and note_team are in every bot's subset, ToolSubset.SELF).
+        Group("team", "the team's bots: list, create, change or delete a bot (the Manager asks the user before deleting), change your own name or role, save a note for the whole team",
+            r("""\b(bots?|team|roster|agents?|hire|rename|roles?|portfolio|notes? (?:for|to) (?:the )?team|team ?notes?)\b"""),
+            { it in setOf("agents_list", "agent_create", "agent_update", "agent_delete", "update_agent", "note_team") }),
         Group("more", "everything else: watchers, triggers, goals, standing permissions, skill packs and other rarely used tools",
             Regex("(?!)"), { false }),
         Group("extras", "learned skills, helpers working in parallel, screen memory",

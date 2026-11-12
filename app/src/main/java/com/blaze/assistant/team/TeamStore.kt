@@ -155,7 +155,7 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
     // ---------------- rows ----------------
 
     private val COLS = "id, kind, name, label, domain, avatar, voice, mode, soul_version, skills, tool_groups, tool_grants, engine, " +
-        "computer, permissions, routing_hints, reports_to, parent_id, members, hidden, pinned, enabled, created_at, u"
+        "computer, permissions, routing_hints, reports_to, parent_id, members, hidden, pinned, enabled, created_at, u, email, portfolio"
 
     /** (readable bots, ids of rows that could not be read). */
     private fun read(): Pair<List<Bot>, List<String>> {
@@ -175,7 +175,7 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
                     permissions = TeamJson.permissions(r.text(14)), routingHints = TeamJson.strings(r.text(15)),
                     reportsTo = r.text(16).ifEmpty { null }, parentId = r.text(17).ifEmpty { null }, members = TeamJson.strings(r.text(18)),
                     hidden = r.long(19) != 0L, pinned = r.long(20) != 0L, enabled = r.long(21) != 0L,
-                    createdAt = r.long(22), u = r.long(23))
+                    createdAt = r.long(22), u = r.long(23), email = r.text(24), portfolio = r.text(25))
             } catch (_: Exception) { bad += id; null }
         }.filterNotNull()
         return bots to bad
@@ -183,16 +183,17 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
 
     /** Upserts the row (keeping its chat counters: generation, unread, preview) and replaces its app grants. */
     private fun write(b: Bot) {
-        sql.exec("INSERT INTO bots($COLS) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) " +
+        sql.exec("INSERT INTO bots($COLS) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) " +
             "ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, name=excluded.name, label=excluded.label, domain=excluded.domain, " +
             "avatar=excluded.avatar, voice=excluded.voice, mode=excluded.mode, soul_version=excluded.soul_version, skills=excluded.skills, " +
             "tool_groups=excluded.tool_groups, tool_grants=excluded.tool_grants, engine=excluded.engine, computer=excluded.computer, " +
             "permissions=excluded.permissions, routing_hints=excluded.routing_hints, reports_to=excluded.reports_to, parent_id=excluded.parent_id, " +
-            "members=excluded.members, hidden=excluded.hidden, pinned=excluded.pinned, enabled=excluded.enabled, created_at=excluded.created_at, u=excluded.u",
+            "members=excluded.members, hidden=excluded.hidden, pinned=excluded.pinned, enabled=excluded.enabled, created_at=excluded.created_at, u=excluded.u, " +
+            "email=excluded.email, portfolio=excluded.portfolio",
             b.id, b.kind.name, b.name, b.label, b.domain, TeamJson.avatar(b.avatar), TeamJson.voice(b.voice), b.mode, b.soulVersion,
             TeamJson.strings(b.skills), TeamJson.strings(b.toolGroups.sorted()), TeamJson.grants(b.toolGrants), TeamJson.engine(b.engine),
             TeamJson.computer(b.computer), TeamJson.permissions(b.permissions), TeamJson.strings(b.routingHints), b.reportsTo, b.parentId,
-            TeamJson.strings(b.members), b.hidden, b.pinned, b.enabled, b.createdAt, b.u)
+            TeamJson.strings(b.members), b.hidden, b.pinned, b.enabled, b.createdAt, b.u, b.email, b.portfolio)
         sql.exec("DELETE FROM bot_apps WHERE bot_id=?", b.id)
         for (a in b.apps) sql.exec("INSERT OR REPLACE INTO bot_apps(bot_id, app_id, source, tools) VALUES(?,?,?,?)", b.id, a.appId, a.source, TeamJson.grants(a.tools))
     }

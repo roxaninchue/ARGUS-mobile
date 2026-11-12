@@ -69,7 +69,7 @@ class ArgusUpgradeTest {
 
         // --- 0.53.0: team.db created next to the chats, ARGUS bridged, a bot thread used
         val (team, sql) = open()
-        assertEquals("no team.db migration in P1-TM-02", 2, TeamSchema.VERSION)
+        assertEquals("team.db v3 since P1-TM-04 (two bot columns only)", 3, TeamSchema.VERSION)
         val idx = ChatIndex(chatsDir)
         var current: String? = "a1b2c3d4e5f6"
         val argus = ArgusChats.of({ idx.list() }, { File(chatsDir, "$it.json").readText() }, { current })

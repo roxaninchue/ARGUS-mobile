@@ -2,11 +2,16 @@ package com.blaze.assistant.team
 
 import android.app.ActivityManager
 import android.content.Context
+import com.blaze.assistant.agent.Agent
 import com.blaze.assistant.agent.BgAgents
 import com.blaze.assistant.agent.ChatNav
+import com.blaze.assistant.agent.Memory
+import com.blaze.assistant.agent.Mind
+import com.blaze.assistant.agent.Role
 import com.blaze.assistant.agent.TaskKeeper
 import com.blaze.assistant.agent.TeamHooks
 import com.blaze.assistant.agent.ToolRouter
+import com.blaze.assistant.agent.UndoCenter
 import com.blaze.assistant.agent.engines.ToolSubset
 import com.blaze.assistant.agent.engines.LocalEngine
 import com.blaze.assistant.agent.engines.RowMapper
@@ -15,6 +20,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
@@ -30,6 +37,13 @@ import java.util.concurrent.ConcurrentHashMap
  *    background agent's does.
  *  - Reports: started → the task message; done / waiting / failed → a note in the bot's thread, and a line in the
  *    requester's thread when another bot asked.
+ *
+ * P1-TM-04: [TeamHooks.tools] is one [TeamToolSet] over the job tools and [ManagerTools] (agents_list, agent_create,
+ * agent_update, agent_delete, update_agent, note_team). The Android glue: the delete confirmation reads the user's
+ * messages of the chat ([chatLog]: the main chat's live list, else that chat's session); a team note is an AM memory
+ * line ("Team note: …") and its Undo deletes that one line by id through Mind (never Memory.forget, which matches
+ * words); the Undo bar is [UndoCenter]; a delete waiting for the user's answer is [pendingDelete], which the shell
+ * shows as a Delete / Keep sheet; a roster change tells [BotThreads.rosterChanged].
  */
 object JobsRuntime {
     const val TICK_MS = 30_000L
@@ -40,6 +54,14 @@ object JobsRuntime {
     @Volatile private var q: JobQueue? = null
     @Volatile private var st: JobStore? = null
     private val bound = ConcurrentHashMap<String, TeamHooks.Binding>()   // chat → binding
+    @Volatile private var mgr: ManagerTools? = null
+    private val _pendingDelete = MutableStateFlow<ManagerTools.Pending?>(null)
+
+    /** P1-TM-04: the bot agent_delete is waiting to delete until the user answers (the shell's Delete / Keep sheet). */
+    val pendingDelete: StateFlow<ManagerTools.Pending?> = _pendingDelete
+
+    /** P1-TM-04: the team tools (null until [init] has opened team.db). */
+    fun manager(): ManagerTools? = mgr
 
     fun jobOfChat(chatId: String): String? = JobTools.jobOfChat(chatId)
 
@@ -63,7 +85,7 @@ object JobsRuntime {
                     if (!manager) {
                         val gen = rowStore.generation(bot.id) ?: return null
                         val mapper = RowMapper(bot.id, gen, rowStore.nextSeq(bot.id, gen), { System.currentTimeMillis() })
-                        val b = TeamHooks.Binding(bot.id, LocalEngine.identity(bot, LocalEngine.readSoul(bot)), ToolSubset.of(bot, ToolRouter::groupOf)) { e ->
+                        val b = TeamHooks.Binding(bot.id, LocalEngine.identity(bot, g.store.soul(bot.id) ?: LocalEngine.readSoul(bot)), ToolSubset.of(bot, ToolRouter::groupOf)) { e ->
                             // the brief is posted once as the task message, so the loop's own copy of it is skipped
                             if (!(e is TeamHooks.Event.Message && e.role == "USER")) for (row in mapper.map(e)) runCatching { g.threads.put(row) }
                         }
@@ -104,12 +126,12 @@ object JobsRuntime {
             }
             queue = JobQueue(store, g.store, runner, cap = { cap }, busy = { g.threads.isRunning(it) })
             val tools = JobTools(store, queue, g.store, current = { jobOfChat(it) }, changed = { kick() })
-            st = store; q = queue
-            TeamHooks.tools = object : TeamHooks.Tools {
-                override fun defs() = tools.defs()
-                override fun names() = JobTools.NAMES
-                override fun run(chatId: String, botId: String?, name: String, args: String) = tools.run(chatId, botId, name, args)
-            }
+            val manager = ManagerTools(g.store, store, chatLog, teamNotes,
+                onAsk = { _pendingDelete.value = it },
+                onUndo = { label, undo -> UndoCenter.offer(label, undo) },
+                changed = { id -> runCatching { g.threads.rosterChanged(id) }; kick() })
+            st = store; q = queue; mgr = manager
+            TeamHooks.tools = TeamToolSet(tools, manager)
             BgAgents.onEnd = { bg -> if (bg.chat.startsWith(CHAT_PREFIX)) scope.launch { ended(bg) } }
             delay(6_000)   // BgAgents puts runs from before a restart back first (it waits 4 s), so they count as alive
             runCatching { queue.recover() }
@@ -126,6 +148,33 @@ object JobsRuntime {
         val jobId = jobOfChat(bg.chat) ?: st?.jobOfRun(bg.id) ?: return
         runCatching { queue.finished(jobId, ok = bg.status == BgAgents.DONE, text = bg.result, cancelled = bg.status == BgAgents.CANCELLED) }
         kick()
+    }
+
+    /**
+     * P1-TM-04: the user's messages of [chatId], for the delete confirmation: the main chat's live list when it is the
+     * open chat, else that chat's session (a bot thread or a job chat).
+     */
+    private val chatLog = ChatLog { chatId ->
+        val msgs = if (chatId == Agent.chatId.value) Agent.messages.value else Agent.teamSession(chatId).msgs
+        msgs.filter { it.role == Role.USER }.map { ChatLog.Line(it.text, it.at) }
+    }
+
+    /** P1-TM-04: team notes as AM memory lines; the new line's id is the one that wasn't there before the save. */
+    private val teamNotes = object : TeamNotes {
+        override fun add(text: String): TeamNotes.Saved {
+            val before = runCatching { Mind.dbOrWait()?.all()?.map { it.id }?.toSet() }.getOrNull()
+            val reply = Memory.add(text)
+            val made = if (before == null || !reply.startsWith("Remembered")) null
+                else runCatching { Mind.dbOrWait()?.all()?.map { it.id }?.filter { it !in before } }.getOrNull()?.singleOrNull()
+            return TeamNotes.Saved(reply, made)
+        }
+
+        override fun remove(id: Long): Boolean {
+            val d = Mind.dbOrWait() ?: return false
+            val had = runCatching { d.all().any { it.id == id } }.getOrDefault(false)
+            if (had) { d.delete(id); runCatching { Memory.reload() } }
+            return had
+        }
     }
 
     /** Tick now (a job was added, closed or retried, or a run ended). */

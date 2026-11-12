@@ -39,7 +39,7 @@ class TeamSchemaTest {
     /** 05 §9.2, column by column, in DDL order. */
     private val expected = mapOf(
         "bots" to "id kind name label domain avatar voice mode soul_version skills tool_groups tool_grants engine computer permissions " +
-            "routing_hints reports_to parent_id members hidden pinned enabled generation unread last_preview last_activity_at created_at u",
+            "routing_hints reports_to parent_id members hidden pinned enabled generation unread last_preview last_activity_at created_at u email portfolio",
         "bot_soul_versions" to "bot_id version body at by",
         "bot_apps" to "bot_id app_id source tools",
         "rows" to "bot_id generation seq updated_seq kind body created_at",
@@ -72,7 +72,7 @@ class TeamSchemaTest {
         val s = sql()
         migrate(s)
         assertEquals(TeamSchema.VERSION, version(s))
-        assertEquals(2, TeamSchema.VERSION)
+        assertEquals(3, TeamSchema.VERSION)
         assertEquals(TeamSchema.TABLES.sorted(), names(s, "table"))
         assertEquals(expected.keys.sorted(), TeamSchema.TABLES.sorted())
         for ((t, cols) in expected) assertEquals(t, cols, columns(s, t))
@@ -102,6 +102,18 @@ class TeamSchemaTest {
             again.query("SELECT priority, status, run, deps, notes, confirmed FROM jobs") { r -> (0..5).map { r.text(it) } }.first())
         // nothing left to do at the current version
         assertTrue(TeamSchema.steps(TeamSchema.VERSION).isEmpty())
+    }
+
+    /** P1-TM-04: v3 adds bots.email / bots.portfolio; a v2 bot row keeps every value and reads both as "". */
+    @Test fun v2FileGetsEmailAndPortfolio() {
+        val s = sql()
+        migrate(s, to = 2)
+        insertBot(s, bot("manager"))
+        assertEquals(expected.getValue("bots").dropLast(2), columns(s, "bots"))
+        migrate(s)
+        assertEquals(3, version(s))
+        assertEquals(expected.getValue("bots"), columns(s, "bots"))
+        assertEquals(listOf("MANAGER", "", ""), s.query("SELECT kind, email, portfolio FROM bots") { r -> (0..2).map { r.text(it) } }.first())
     }
 
     @Test fun botColumnsRoundTripThroughJson() {
@@ -157,11 +169,13 @@ class TeamSchemaTest {
             assertTrue("v${i + 1} is empty", step.isNotEmpty())
             for (st in step) {
                 assertFalse("one statement each, no ';': $st", st.contains(';'))
-                assertTrue(st, st.startsWith("CREATE "))
+                // steps only add: tables / indexes, or (v3 on) a column with a default
+                assertTrue(st, st.startsWith("CREATE ") || Regex("^ALTER TABLE \\w+ ADD COLUMN \\w+ .*DEFAULT ").containsMatchIn(st))
             }
         }
         assertEquals(TeamSchema.MIGRATIONS.flatten(), TeamSchema.steps(0))
-        assertEquals(TeamSchema.MIGRATIONS[1], TeamSchema.steps(1))
+        assertEquals(TeamSchema.MIGRATIONS.drop(1).flatten(), TeamSchema.steps(1))
+        assertEquals(TeamSchema.MIGRATIONS[1], TeamSchema.steps(1, 2))
         try { TeamSchema.steps(TeamSchema.VERSION + 1); fail("newer file") } catch (_: TeamSchema.NewerSchema) { }
         try { TeamSchema.steps(2, 1); fail("backwards") } catch (_: IllegalArgumentException) { }
     }
