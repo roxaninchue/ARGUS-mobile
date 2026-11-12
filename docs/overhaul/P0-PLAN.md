@@ -50,6 +50,6 @@ Shared bookkeeping files (`06-team-plan.md`, `STATUS.md`, `overhaul.md`) are wri
 | P0-API-01 | ✓ done | cd942dad |
 | P0-QA-01 | ✓ done | 21513181 (live gateway run waits for a bz_ token) |
 | P0-MG-01 | ✓ done | 0167d249 (ATeamExportTest 6/6) |
-| P0-IL-02 | in progress | |
+| P0-IL-02 | ✓ done | daa6cbe0 (LegalAssetsTest 4/4; a-team LICENSE open) |
 | P0-IL-03 | in progress | |
 | P0-IL-01 | waits for "build" | |

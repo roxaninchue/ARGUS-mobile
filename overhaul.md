@@ -30,7 +30,7 @@ Early look (not final, can change): Team, Agent chat, Life, Desk.
 ## Status
 - 2026-11-11: Overhaul kicked off. Sources pulled: argus-mobile@main (0.52.3 / vc 190 + three unreleased rounds), a-team@main (v2.18), bot-hq@HEAD. Specialists 1–5 landed all five slice docs by 20:56 CAT.
 - 2026-11-11: **Slice 6 done — the plan is ready.** `docs/overhaul/06-team-plan.md` reconciles the slices (30 items), lists 12 decisions for Finn (each with a recommended answer the plan already assumes), sets 11 phases with versions (0.52.4 → 1.0.0, then 1.1.0), 13 workstreams with owners, a 102-ticket backlog (~336 agent-days), and a coverage matrix that places **all 254 source features** (BH 89 · AT 72 · AM 68 · merge map 25) plus 24 new ones on a phase, a ticket and a UI location — 0 missing.
-- **Now:** P0 under way. ✓ P0-TM-01 (MR !40, 2026-11-11) ✓ P0-AG-01 (7f12551d) ✓ P0-SH-01 (21fe3ebb) ✓ P0-SH-02 (ccf1a382) and ✓ P0-API-01 (cd942dad) and ✓ P0-QA-01 (21513181) and ✓ P0-MG-01 (0167d249, 2026-11-12) on main. Next: P0-IL-02.
+- **Now:** P0 under way. ✓ P0-TM-01 (MR !40, 2026-11-11) ✓ P0-AG-01 (7f12551d) ✓ P0-SH-01 (21fe3ebb) ✓ P0-SH-02 (ccf1a382) and ✓ P0-API-01 (cd942dad) and ✓ P0-QA-01 (21513181) and ✓ P0-MG-01 (0167d249) and ✓ P0-IL-02 (daa6cbe0, 2026-11-12) on main. Next: P0-IL-03.
 
 ## Handoff log
 Append one line per session: date, who, what changed, what's next.
@@ -46,6 +46,7 @@ Append one line per session: date, who, what changed, what's next.
 - 2026-11-12 · Hark · P0-API-01 follow-up (owner: "do what's best"): reading the served route from X-Blaze-Route is now always on (`LiveModelsFeed.served`), so TurnModel pins and empty-route avoid work again on the live gateway; the live pick and its label stay behind `live_models`.
 - 2026-11-12 · Hark · P0-QA-01 done: `docs/overhaul/specs.md` = spec index, 833 specs (A-team `app/tests/*` PASS lines + log-only checks + Java, A-team `evals/test/*` cases, Bot HQ `tests/e2e.mjs` + `voice-call.mjs`), each mapped to a ticket by `tools/gen-specs.mjs` (file rule → keyword → file default; first pass, ticket owners re-check their rows). A-team `evals/` copied to `evals/` (guard.js + models.js vendored in `evals/vendor/`; only graders/guard/v212 tests + new `specs.test.mjs`). Local: `node --test evals/test/*.test.mjs` 34/34; refusals mock good 63/63, mock bad 0/63; code selfcheck all pass. Live `--suite refusals` against the gateway not run: needs an ARGUS `bz_` token in `ARGUS_TOKEN`. MR !49 closed, landed as 21513181. Next: P0-MG-01.
 - 2026-11-12 · Hark · P0-MG-01 done: `docs/overhaul/ateam-export.md` defines `argus-team-export.v1` (bots + look, jobs, settings, profile stated/inferred, bot/team memory, routines, proactivity, optional Manager chats) and maps both it and A-team's Copy backup (`{agents, tasks}`) onto team.db / blaze.db + mem_scope. `team/ATeamExport.kt` (pure: detect, 13 validation rules, faceOf, scopeFor, schedule). Fixtures `app/src/test/resources/ateam/demo-team.{backup,export.v1}.json`, hand-built from A-team `demo()` @7c4b459a (not a phone export). `ATeamExportTest` 6/6 (JVM). Open for owner: imported open jobs land `confirmed = 0`; bot emails dropped; non-Manager chats not imported. MR !50 closed, landed as 0167d249. Next: P0-IL-02.
+- 2026-11-12 · Hark · P0-IL-02 done: THIRD_PARTY_NOTICES (root + assets/legal, identical) gain an "ARGUS overhaul" section: Haze 1.0.2 (Apache-2.0), Lucide (ISC, Feather MIT portions; lucide-static 0.460.0), Bot HQ (MIT; design + test names, no artwork), A-team (same owner, no licence file yet). `gateway/README.md` gets a read-only stale-copy banner (live gateway: Blaze-agent 0.9.7). `evals/README.md` provenance corrected. LegalAssetsTest gains `overhaulSourcesAreCredited`. Deviations table added under Decisions; D1–D11 recorded as taken. Simple Icons / noVNC not added (not in repo). Still open: a LICENSE for a-team. MR !51 closed, landed as daa6cbe0. Next: P0-IL-03.
 
 ## Unified plan
 Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
@@ -111,6 +112,33 @@ Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). 
 | D11 | Confirm reversing the 0.51 "Halo merged" single-persona decision (bots are personas on one engine) | Confirm |
 | D12 | Gateway work (relay, voice token, x-search) goes to `Blaze-agent`; we need access or an owner there | Give access |
 
+**Answered (Finn, 2026-11-12: "anything I haven't answered go with what you see fit"):** D1–D11 taken as recommended above. D12: no write access granted yet, so gateway work stays on branches in Blaze-agent, never its `main`.
+
+### Deviations from this plan and calls taken (Hark, P0, owner: "go with what you see fit", 2026-11-12)
+Each line is a place the work differs from this file or 06-team-plan, or a choice the plan left open. Change any of them by saying so; each names where to undo it.
+
+| Ticket | What the plan said | What was done | Why / where to undo |
+|---|---|---|---|
+| Process | MRs merged after CI | No CI; pure tests run locally; landed by cherry-pick to `main`, MR closed with a note (the token can't press Merge); every commit `[skip ci]` | Owner rule 2026-11-12 |
+| P0-SH-01 | Orbit veil 60% | 82% dark / 95% light | At 60% the Earth's limb in argus_space.webp breaks AA text contrast. `ArgusTokens.orbitVeil` |
+| P0-SH-01 | Spec colours as given | AA-adjusted variants, a new `meta` token, an invented cobalt-night light variant | AA contrast; 04 had no light Cobalt night. `ArgusTokens.kt` |
+| P0-SH-01 | Haze `hazeSource` / `hazeEffect` | Haze 1.0.2 API (`haze` / `hazeChild`); pulls Compose 1.7.5 | Haze 1.0.2 is the version pinned; newer Haze renamed the API. `ArgusGlass.kt` |
+| P0-SH-01 | Instrument Serif + JetBrains Mono | Not bundled: system fallback | Not bundled yet; when they are, add their OFL notices. `ArgusType.kt` |
+| P0-SH-02 | All icons from A-team `icons.js` | 76 from A-team, 20 from lucide-static 0.460.0 (ISC) | A-team lacked them. `tools/gen-lucide.mjs` |
+| P0-SH-02 | Manager sphere = `manager.png` | Cobalt redraw in code with the ARGUS "A" | Keeps the orbs vector, no raster asset. `ui/argus/BotOrb.kt` ManagerOrb |
+| P0-API-01 | `blaze_context: "full"` (flag not specified) | Sent on every gateway call, unconditional | Pure gain; gateway ignores unknown fields. `Cloud.kt` |
+| P0-API-01 | Served model from `X-Blaze-Model` | Gateway 0.8.45+ sends it only in debug builds; the `X-Blaze-Route` token is read instead, **always on** (45d4be86). Same-model pinning and empty-route avoid now run for everyone; not yet tried on a device | Owner "do what's best". `agent/LiveModelsFeed.kt served()` |
+| P0-API-01 | Live model pick | Behind flag `live_models`, default off | Needs a device check first. `agent/LiveModels.kt` |
+| P0-QA-01 | Spec index per ticket | 833 specs mapped by file rule, then keyword, then file default (first pass; `By` column). P1-SH-03 and P7-CP-03 hold large default buckets | Ticket owners recheck their rows. `tools/gen-specs.mjs` |
+| P0-QA-01 | Copy A-team code after a LICENSE is added to a-team (K16) | `evals/` copied first; credited in THIRD_PARTY_NOTICES under ARGUS overhaul as the owner's own code | Same owner. **Still to do: add a LICENSE to a-team** |
+| P0-QA-01 | Live eval run | Not run: needs an ARGUS `bz_` token in `ARGUS_TOKEN`. Mock and self-check runs pass | Run when a token is given |
+| P0-QA-01 | guard.js / models.js shared | Vendored in `evals/vendor/` until P2-SF-07 | |
+| P0-MG-01 | Fixtures from the A-team Demo team | Built by hand from `demo()` @7c4b459a at a fixed clock, not exported from a phone | Swap in a real Copy backup when one is to hand |
+| P0-MG-01 | (open) | Imported open jobs land `confirmed = 0`: nothing starts by itself | `docs/overhaul/ateam-export.md` §4.2 |
+| P0-MG-01 | (open) | Bot emails dropped; only the Manager's chat is imported | §4.1, §4.6 |
+| P0-IL-02 | Notices for Simple Icons (CC0) and noVNC (MPL-2.0) | Not added: neither is in the repo yet | Added by the ticket that bundles them |
+| Tests | Full test suite green | Not run: no Gradle build until "build". Unverified: TeamSchemaTest, TeamDbTest, OrbShotsTest, SpaceWiringTest, ThemeEverywhereTest, full ContrastTest and CloudTest, Android compile of Agent.kt, AgentSessionDriver.kt, LlmClient.kt, LiveModelsFeed.kt | Runs with P0-IL-01 |
+
 ### Next 10 tickets (all of P0; 1–8 in parallel)
 | # | Ticket | Owner |
 |---|---|---|
@@ -121,6 +149,6 @@ Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). 
 | 5 | ✓ P0-API-01 `blaze_context:"full"` + `LiveModels` — done, on main (cd942dad) | API |
 | 6 | ✓ P0-QA-01 spec index + A-team evals harness in `evals/` — done, on main (21513181) | QA |
 | 7 | ✓ P0-MG-01 `argus-team-export.v1` format + fixtures — done, on main (0167d249) | MG |
-| 8 | P0-IL-02 repo hygiene, notices, ask for a-team LICENSE | IL |
+| 8 | ✓ P0-IL-02 repo hygiene, notices, ask for a-team LICENSE — done (daa6cbe0; a-team LICENSE still to add) | IL |
 | 9 | P0-IL-03 do-not-port register | IL |
 | 10 | P0-IL-01 release 0.52.4 (when the owner says build) | IL |
