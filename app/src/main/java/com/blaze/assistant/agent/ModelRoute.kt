@@ -79,6 +79,15 @@ object ModelRoute {
     fun avoid(failed: List<String>, strong: Boolean): List<String> =
         (failed + if (strong) WEAK_FOR_TOOLS else emptyList()).distinct().take(AVOID_MAX)
 
+    /**
+     * P0-API-01: with LiveModels on, the route to name in X-Blaze-Prefer for this request, or null to let the lane choose.
+     * A request with tools needs a tools-verified model, a picture needs vision; routes that just failed ([failed]) and,
+     * on strong turns, the weak ones are skipped.
+     */
+    fun livePrefer(list: List<LiveModels.Member>, p: Pick, hasTools: Boolean, failed: List<String> = emptyList()): String? =
+        LiveModels.pick(list, LiveModels.Need(lane = LiveModels.laneFor(p.task), tools = hasTools, vision = p.task == "vision",
+            avoid = avoid(failed, p.strong)))?.pref
+
     /** The route chip suffix, so "which lane answered" shows in Advanced details. */
     fun label(p: Pick): String = if (p.strong) " · strong" else ""
 }

@@ -29,6 +29,8 @@ class CloudTest {
     @Test fun tagSetsAutoModelAndTask() {
         val b = Cloud.tag(JSONObject().put("model", "gemini-3-pro-preview"), "code")
         assertEquals("blaze-auto", b.getString("model")); assertEquals("code", b.getString("blaze_task"))
+        // P0-API-01 (A-team D6): the app's own context goes through whole; the gateway's relevance pruning is off.
+        assertEquals("full", b.getString("blaze_context")); assertEquals(Cloud.CONTEXT_FULL, b.getString("blaze_context"))
     }
 
     @Test fun modelGoneAndBusyAreRetried() {
