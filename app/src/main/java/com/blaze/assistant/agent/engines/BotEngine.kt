@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
  * P0-AG-01: the engine contract of 05 §5.2, so LOCAL, CLOUD_RUN and HERMES are interchangeable. Every engine emits the
  * same team [Row] model (message / tool-call / card / event / notice), so the UI, approvals and audit never care which
  * one ran. P0 ships [LocalEngine] (wraps `Agent.Session`); CloudRunEngine (P-later) and HermesEngine (1.1.0) follow.
- * Nothing calls an engine yet: P1-TM-02 wires bot threads to it.
+ * P1-TM-02: [com.blaze.assistant.team.BotThreads.send] runs bot turns on it; no screen calls that yet (P1-TM-03, P1-SH-04).
  */
 interface BotEngine {
     val kind: EngineKind
@@ -22,7 +22,7 @@ interface BotEngine {
     fun capabilities(): EngineCaps
 }
 
-/** Where an engine's rows are kept (team.db `rows`, P1-TM-02). Called on the engine's thread; must not block long. */
+/** Where an engine's rows are kept (team.db `rows` via BotThreads.put, P1-TM-02). Called on the engine's thread; must not block long. */
 fun interface RowSink { fun put(row: Row) }
 
 /**
