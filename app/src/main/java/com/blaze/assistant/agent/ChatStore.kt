@@ -17,8 +17,18 @@ object ChatStore {
 
     private lateinit var index: ChatIndex
 
-    /** v0.45.0 (#1): headers come from the chat index; only changed files are read (see ChatIndex). */
-    fun list(): List<ChatMeta> = if (::index.isInitialized) index.list() else emptyList()
+    /**
+     * v0.45.0 (#1): headers come from the chat index; only changed files are read (see ChatIndex).
+     * P1-TM-02: the user's chats only; bot threads' chats (`team-…`, BotThreads) are kept here too but never listed.
+     */
+    fun list(): List<ChatMeta> = if (::index.isInitialized) com.blaze.assistant.team.BotThreads.userChats(index.list()) else emptyList()
+
+    /**
+     * P1-TM-02: the ARGUS thread's read-only view of these chats ([current] = the chat ARGUS is in now). No data move:
+     * BotThreads reads the chat files as they are; nothing here writes.
+     */
+    fun argus(current: () -> String?): com.blaze.assistant.team.ArgusChats =
+        com.blaze.assistant.team.ArgusChats.of(::list, { id -> file(id).takeIf { it.isFile }?.readText() }, current)
 
     fun search(q: String): List<ChatMeta> {
         val needle = q.trim().lowercase()
