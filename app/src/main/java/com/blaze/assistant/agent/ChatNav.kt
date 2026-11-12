@@ -11,7 +11,7 @@ package com.blaze.assistant.agent
  *    notification), [follow] moves the user into Projects at that chat instead of loading it into main Chat.
  */
 data class ChatNav(
-    /** [CHAT], [PROJECTS] or (v0.29.0) [HOME]. */
+    /** [CHAT], [PROJECTS], (v0.29.0) [HOME], or (P1-SH-01, the ARGUS shell) [TEAM] / [LIFE] / [DESK]. */
     val tab: String = CHAT,
     /** The open project on the Projects tab ("" = the projects list). */
     val project: String = "",
@@ -74,7 +74,35 @@ data class ChatNav(
         /** v0.29.0: the Home board. */
         const val HOME = "home"
 
-        fun tabOf(s: String?): String = when (s) { PROJECTS -> PROJECTS; HOME -> HOME; else -> CHAT }
+        /** P1-SH-01: the ARGUS shell's four modes, in notch and pager order (04 §3.2). */
+        const val TEAM = "team"
+        const val LIFE = "life"
+        const val DESK = "desk"
+        val MODES = listOf(TEAM, CHAT, LIFE, DESK)
+
+        fun tabOf(s: String?): String = when (s) { PROJECTS -> PROJECTS; HOME -> HOME; TEAM -> TEAM; LIFE -> LIFE; DESK -> DESK; else -> CHAT }
+
+        /** True for the four ARGUS modes (Projects, a project chat and the old Home are not modes). */
+        fun isMode(tab: String): Boolean = tab in MODES
+
+        /** The pager page for [tab] (a non-mode tab shows over the mode it came from, so it has none: -1). */
+        fun modeIndex(tab: String): Int = MODES.indexOf(tab)
+
+        /**
+         * The ARGUS shell's tab for an old-shell tab: Home's board moved to Life (04 §3.2: Life absorbs AM Home's panels
+         * and Projects); everything else keeps its tab.
+         */
+        fun argusTab(tab: String): String = if (tab == HOME) LIFE else tab
+
+        /** The tab Back stops at: Team in the ARGUS shell, Home in the old one. */
+        fun rootTab(argus: Boolean): String = if (argus) TEAM else HOME
+
+        /** `/team`, `/chat`, `/life`, `/desk` (alone, any case) → that mode; anything else null. */
+        fun modeCommand(text: String): String? {
+            val t = text.trim().lowercase()
+            if (!t.startsWith("/") || t.contains(' ')) return null
+            return t.removePrefix("/").takeIf { it in MODES }
+        }
 
         /** The tab to open on start: Home when the user last left it there (remembered), else Chat (the default on first run). */
         fun startTab(remembered: String?): String = if (remembered == HOME) HOME else CHAT

@@ -99,4 +99,28 @@ class ChatNavTest {
         // A chat without a project is never restored as a project chat.
         assertFalse(ChatNav.decode(ChatNav("projects", "", "pc1").encode()).inProjectChat)
     }
+
+    /** P1-SH-01: the ARGUS shell's four modes (Team · Chat · Life · Desk), their commands and the root Back stops at. */
+    @Test fun argusModes() {
+        assertEquals(listOf("team", "chat", "life", "desk"), ChatNav.MODES)
+        for (m in ChatNav.MODES) {
+            assertEquals(m, ChatNav.tabOf(m))
+            assertTrue(ChatNav.isMode(m))
+            assertEquals(m, ChatNav.decode(ChatNav(tab = m).encode()).tab)      // survives rotation / process death
+            assertEquals(Mind.MAIN, ChatNav(tab = m).visibleChat)                // no mode ever replaces the main chat
+        }
+        assertFalse(ChatNav.isMode(ChatNav.PROJECTS)); assertFalse(ChatNav.isMode(ChatNav.HOME))
+        assertEquals(listOf(0, 1, 2, 3, -1), listOf("team", "chat", "life", "desk", "projects").map { ChatNav.modeIndex(it) })
+        assertEquals(ChatNav.TEAM, ChatNav.rootTab(true)); assertEquals(ChatNav.HOME, ChatNav.rootTab(false))
+        assertEquals(ChatNav.LIFE, ChatNav.argusTab(ChatNav.HOME)); assertEquals(ChatNav.PROJECTS, ChatNav.argusTab(ChatNav.PROJECTS))
+        assertEquals("team", ChatNav.modeCommand("/team")); assertEquals("desk", ChatNav.modeCommand(" /DESK "))
+        assertEquals("life", ChatNav.modeCommand("/life")); assertEquals("chat", ChatNav.modeCommand("/chat"))
+        for (no in listOf("team", "/team now", "/teams", "//team", "/projects", "")) assertNull(no, ChatNav.modeCommand(no))
+        // Projects keeps its place when you switch modes and come back
+        val inP = ChatNav(tab = ChatNav.TEAM).openProject("p1").openChat("p1", "pc1")
+        assertEquals(inP.copy(tab = ChatNav.PROJECTS), inP.switchTab(ChatNav.LIFE).switchTab(ChatNav.PROJECTS))
+        // Back inside Projects still walks its stack; a mode has no stack of its own
+        assertNull(ChatNav(tab = ChatNav.TEAM).back())
+        assertEquals(ChatNav(ChatNav.PROJECTS, "p1", ""), inP.back())
+    }
 }
