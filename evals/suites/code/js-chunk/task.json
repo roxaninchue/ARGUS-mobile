@@ -1,0 +1,14 @@
+{
+ "id": "js-chunk",
+ "level": 1,
+ "tags": [
+  "js"
+ ],
+ "prompt": "In ~/proj/chunk.js export (CommonJS) chunk(arr, size): splits an array into arrays of length size (last may be shorter). Throws a RangeError if size is not a positive integer. Must not modify the input.",
+ "test_cmd": "node --test _hidden/*.test.js",
+ "verify": "node -e \"console.log(JSON.stringify(require('./chunk')([1,2,3,4,5],2)))\"",
+ "required": [
+  "chunk.js"
+ ],
+ "protected": []
+}

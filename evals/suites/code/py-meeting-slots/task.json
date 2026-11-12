@@ -1,0 +1,16 @@
+{
+ "id": "py-meeting-slots",
+ "level": 4,
+ "tags": [
+  "python",
+  "ambiguous",
+  "algorithms"
+ ],
+ "prompt": "In ~/proj/slots.py write free_slots(busy, day_start, day_end, minutes) for finding meeting times. busy is a list of calendars, each a list of (\"HH:MM\", \"HH:MM\") busy ranges (may overlap, be unsorted, or extend outside the day). Return the list of (\"HH:MM\", \"HH:MM\") gaps inside the day when nobody is busy that are at least `minutes` long, in order. Bad times raise ValueError.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from slots import free_slots; print(free_slots([[('09:00','10:00')],[('09:30','11:00')]], '08:00', '12:00', 30))\"",
+ "required": [
+  "slots.py"
+ ],
+ "protected": []
+}

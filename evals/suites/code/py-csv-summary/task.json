@@ -1,0 +1,15 @@
+{
+ "id": "py-csv-summary",
+ "level": 2,
+ "tags": [
+  "python",
+  "data"
+ ],
+ "prompt": "In ~/proj/summary.py write summarize(path) for a CSV with a header: return {column: mean} for every column whose non-empty values are all numbers (ints/floats, empty cells ignored, means rounded to 2 decimals). Columns with any non-numeric value or no values are left out.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "printf \"a,b\\n1,x\\n2,y\\n\" > /tmp/s.csv && python3 -c \"from summary import summarize; print(summarize('/tmp/s.csv'))\"",
+ "required": [
+  "summary.py"
+ ],
+ "protected": []
+}

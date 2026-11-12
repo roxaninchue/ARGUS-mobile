@@ -1,0 +1,29 @@
+{"id": "py-fizzbuzz-cli", "level": 1, "tags": ["python", "cli"], "dir": "code/py-fizzbuzz-cli", "stretch": false}
+{"id": "py-slugify", "level": 1, "tags": ["python"], "dir": "code/py-slugify", "stretch": false}
+{"id": "py-parse-duration", "level": 2, "tags": ["python", "parsing"], "dir": "code/py-parse-duration", "stretch": false}
+{"id": "js-chunk", "level": 1, "tags": ["js"], "dir": "code/js-chunk", "stretch": false}
+{"id": "py-roman", "level": 2, "tags": ["python"], "dir": "code/py-roman", "stretch": false}
+{"id": "js-deep-equal", "level": 2, "tags": ["js"], "dir": "code/js-deep-equal", "stretch": false}
+{"id": "py-word-freq", "level": 2, "tags": ["python", "text"], "dir": "code/py-word-freq", "stretch": false}
+{"id": "py-csv-summary", "level": 2, "tags": ["python", "data"], "dir": "code/py-csv-summary", "stretch": false}
+{"id": "py-lru-cache", "level": 3, "tags": ["python", "datastructures"], "dir": "code/py-lru-cache", "stretch": false}
+{"id": "js-event-emitter", "level": 3, "tags": ["js"], "dir": "code/js-event-emitter", "stretch": false}
+{"id": "py-interval-merge", "level": 2, "tags": ["python", "algorithms"], "dir": "code/py-interval-merge", "stretch": false}
+{"id": "js-semver", "level": 3, "tags": ["js", "parsing"], "dir": "code/js-semver", "stretch": false}
+{"id": "py-rate-limiter", "level": 3, "tags": ["python", "design"], "dir": "code/py-rate-limiter", "stretch": false}
+{"id": "py-json-path", "level": 3, "tags": ["python", "parsing"], "dir": "code/py-json-path", "stretch": false}
+{"id": "py-ini-parser", "level": 3, "tags": ["python", "parsing"], "dir": "code/py-ini-parser", "stretch": false}
+{"id": "js-debounce", "level": 3, "tags": ["js", "async"], "dir": "code/js-debounce", "stretch": false}
+{"id": "py-bank-ledger", "level": 3, "tags": ["python", "design"], "dir": "code/py-bank-ledger", "stretch": false}
+{"id": "py-todo-cli", "level": 4, "tags": ["python", "multi-file", "demo", "stretch"], "dir": "code/py-todo-cli", "stretch": true}
+{"id": "js-markdown-mini", "level": 4, "tags": ["js", "multi-file", "stretch"], "dir": "code/js-markdown-mini", "stretch": true}
+{"id": "py-debug-inventory", "level": 5, "tags": ["python", "debugging", "unfamiliar-repo"], "dir": "code/py-debug-inventory", "stretch": false}
+{"id": "js-debug-cart", "level": 4, "tags": ["js", "debugging", "unfamiliar-repo"], "dir": "code/js-debug-cart", "stretch": false}
+{"id": "py-dedupe-contacts", "level": 4, "tags": ["python", "ambiguous", "data"], "dir": "code/py-dedupe-contacts", "stretch": false}
+{"id": "py-slow-endpoints", "level": 4, "tags": ["python", "ambiguous", "cli"], "dir": "code/py-slow-endpoints", "stretch": false}
+{"id": "py-order-states", "level": 3, "tags": ["python", "design"], "dir": "code/py-order-states", "stretch": false}
+{"id": "js-wc-cli", "level": 3, "tags": ["js", "cli", "demo", "stretch"], "dir": "code/js-wc-cli", "stretch": true}
+{"id": "py-kv-server", "level": 5, "tags": ["python", "http", "demo", "stretch"], "dir": "code/py-kv-server", "stretch": true}
+{"id": "py-refactor-shipping", "level": 4, "tags": ["python", "refactor"], "dir": "code/py-refactor-shipping", "stretch": false}
+{"id": "js-expr-eval", "level": 5, "tags": ["js", "parsing"], "dir": "code/js-expr-eval", "stretch": false}
+{"id": "py-meeting-slots", "level": 4, "tags": ["python", "ambiguous", "algorithms"], "dir": "code/py-meeting-slots", "stretch": false}

@@ -1,0 +1,15 @@
+{
+ "id": "py-lru-cache",
+ "level": 3,
+ "tags": [
+  "python",
+  "datastructures"
+ ],
+ "prompt": "In ~/proj/lru.py write class LRUCache(capacity) with get(key, default=None) and put(key, value), O(1) each, evicting the least recently used item when full (get and put both count as use). len(cache) works and capacity < 1 raises ValueError. Do not use functools.lru_cache.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from lru import LRUCache; c=LRUCache(1); c.put(1,1); c.put(2,2); print(c.get(1), c.get(2))\"",
+ "required": [
+  "lru.py"
+ ],
+ "protected": []
+}

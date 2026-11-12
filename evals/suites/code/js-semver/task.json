@@ -1,0 +1,15 @@
+{
+ "id": "js-semver",
+ "level": 3,
+ "tags": [
+  "js",
+  "parsing"
+ ],
+ "prompt": "In ~/proj/semver.js export compare(a, b) (-1/0/1) and sortVersions(list) for semantic versions \"MAJOR.MINOR.PATCH\" with optional \"-prerelease\" (dot-separated identifiers; numeric ids compare numerically and sort before alphanumeric ones; a prerelease sorts before its release). An optional leading \"v\" is allowed. Invalid versions throw TypeError. sortVersions returns a new array.",
+ "test_cmd": "node --test _hidden/*.test.js",
+ "verify": "node -e \"console.log(require('./semver').sortVersions(['1.10.0','1.2.0','1.2.0-rc.1']))\"",
+ "required": [
+  "semver.js"
+ ],
+ "protected": []
+}

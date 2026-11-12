@@ -1,0 +1,19 @@
+{
+ "id": "js-wc-cli",
+ "level": 3,
+ "tags": [
+  "js",
+  "cli",
+  "demo",
+  "stretch"
+ ],
+ "prompt": "Write ~/proj/wc.js: `node wc.js FILE` prints \"<lines> <words> <bytes> FILE\" like Unix wc (lines = number of \\n). `--json` prints {\"lines\":..,\"words\":..,\"bytes\":..,\"file\":..} instead. A missing file prints an error to stderr and exits 1; no file argument prints usage and exits 2. Optional: several files, followed by a \"total\" line. Ship the part you can fully finish.",
+ "test_cmd": "node --test _hidden/*.test.js",
+ "verify": "printf \"a b\\nc\\n\" > /tmp/w.txt && node wc.js /tmp/w.txt && node wc.js --json /tmp/w.txt; node wc.js; echo exit=$?",
+ "required": [
+  "wc.js"
+ ],
+ "stretch_marker": "total",
+ "stretch_cmd": "cd /root/proj && printf \"a\\n\" > /tmp/s1 && printf \"b c\\n\" > /tmp/s2 && out=$(node wc.js /tmp/s1 /tmp/s2 2>&1); [ \"$(echo \"$out\" | wc -l)\" -lt 3 ] && exit 3; [ \"$(echo \"$out\" | tail -1)\" = \"2 3 6 total\" ]",
+ "protected": []
+}

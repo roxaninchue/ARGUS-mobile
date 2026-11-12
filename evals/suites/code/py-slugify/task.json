@@ -1,0 +1,14 @@
+{
+ "id": "py-slugify",
+ "level": 1,
+ "tags": [
+  "python"
+ ],
+ "prompt": "In ~/proj/text.py write slugify(s): lowercase, accents removed (\u00e9 -> e), anything not a-z/0-9 becomes a dash, no repeated/leading/trailing dashes. slugify(\"  H\u00e9llo, W\u00f6rld!! 2026 \") == \"hello-world-2026\".",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from text import slugify; print(slugify('  H\u00e9llo, W\u00f6rld!! 2026 '))\"",
+ "required": [
+  "text.py"
+ ],
+ "protected": []
+}

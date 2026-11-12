@@ -1,0 +1,15 @@
+{
+ "id": "py-fizzbuzz-cli",
+ "level": 1,
+ "tags": [
+  "python",
+  "cli"
+ ],
+ "prompt": "In ~/proj write fizzbuzz.py: a function fizzbuzz(n) that returns the list of strings for 1..n (Fizz/Buzz/FizzBuzz rules), and a CLI: `python3 fizzbuzz.py 15` prints one item per line. A bad or missing argument prints a usage line to stderr and exits 2.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 fizzbuzz.py 15 | tail -3; python3 fizzbuzz.py x; echo exit=$?",
+ "required": [
+  "fizzbuzz.py"
+ ],
+ "protected": []
+}

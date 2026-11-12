@@ -1,0 +1,15 @@
+{
+ "id": "js-expr-eval",
+ "level": 5,
+ "tags": [
+  "js",
+  "parsing"
+ ],
+ "prompt": "In ~/proj/calc.js export evaluate(expr) for arithmetic on numbers (ints and decimals) with + - * / and parentheses, normal precedence, left associativity, unary minus/plus (e.g. \"-(2+3)*-2\" = 10), and whitespace. Division by zero, empty input, unknown characters or unbalanced parentheses throw an Error. Do not use eval, Function or any library.",
+ "test_cmd": "node --test _hidden/*.test.js",
+ "verify": "node -e \"console.log(require('./calc').evaluate('-(2+3)*-2'))\"",
+ "required": [
+  "calc.js"
+ ],
+ "protected": []
+}

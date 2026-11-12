@@ -1,0 +1,15 @@
+{
+ "id": "py-bank-ledger",
+ "level": 3,
+ "tags": [
+  "python",
+  "design"
+ ],
+ "prompt": "In ~/proj/ledger.py write class Ledger with open(name), deposit(name, amount), withdraw(name, amount), transfer(src, dst, amount), balance(name) and history(name) (list of (kind, amount) tuples, kinds \"deposit\", \"withdraw\", \"transfer_in\", \"transfer_out\"). Use Decimal and round to cents. Raise KeyError for unknown accounts, ValueError for non-positive amounts or duplicate open, and InsufficientFunds (your own exception, subclass of Exception) when a balance would go negative. A failed transfer must change nothing.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from ledger import Ledger; l=Ledger(); l.open('a'); l.deposit('a', '0.10'); l.deposit('a', 0.2); print(l.balance('a'))\"",
+ "required": [
+  "ledger.py"
+ ],
+ "protected": []
+}

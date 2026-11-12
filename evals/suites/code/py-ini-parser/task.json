@@ -1,0 +1,15 @@
+{
+ "id": "py-ini-parser",
+ "level": 3,
+ "tags": [
+  "python",
+  "parsing"
+ ],
+ "prompt": "In ~/proj/ini.py write parse_ini(text) -> dict of sections -> dict of key -> value. Keys before any section go in section \"\". Ignore blank lines and lines starting with ; or #. Strip whitespace around keys and values; \"key = a = b\" gives value \"a = b\". Duplicate keys: last wins. A line that is not a section, comment or key=value raises ValueError with the line number in the message.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from ini import parse_ini; print(parse_ini('[a]\\nx=1'))\"",
+ "required": [
+  "ini.py"
+ ],
+ "protected": []
+}
