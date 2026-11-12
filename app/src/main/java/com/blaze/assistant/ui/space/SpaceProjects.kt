@@ -57,6 +57,8 @@ import com.blaze.assistant.ui.RenameChatDialog
  * project is, a name field with "+ New project", and one large rounded card per project ([SpaceProjectRows] says what
  * each shows). [openId] non-blank opens that project as a page of cards: New chat, Instructions, Brief (with its token
  * cap), the project's chats (tap = open, ⋯ = rename / delete) and Delete project. Same callbacks as the old pane.
+ * P1-TM-07: [embedded] = the list inside Desk's Projects segment (no headline; Desk has its own title). Everything else
+ * is as before: a project page and its chats still open over the pager.
  */
 @Composable
 fun SpaceProjectsScreen(
@@ -65,28 +67,32 @@ fun SpaceProjectsScreen(
     onNewChat: (String) -> Unit, onInstructions: (String, String) -> Unit, onDelete: (String) -> Unit,
     onBrief: (String, String) -> Unit = { _, _ -> },
     onRenameChat: (String, String) -> Unit = { _, _ -> }, onDeleteChat: (String) -> Unit = {},
+    embedded: Boolean = false,
 ) {
     val open = projects.firstOrNull { it.id == openId }
     Box(Modifier.fillMaxSize().testTag(SpaceTags.PROJECTS)) {
-        if (open == null) ProjectList(projects, chats, busy, needsYou, onOpen, onCreate)
+        if (open == null) ProjectList(projects, chats, busy, needsYou, onOpen, onCreate, embedded)
         else ProjectPage(open, chats, busy, needsYou, onBack, onChat, onNewChat, onInstructions, onDelete, onBrief, onRenameChat, onDeleteChat)
     }
 }
 
 @Composable
 private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Set<String>, needsYou: Set<String>,
-                        onOpen: (String) -> Unit, onCreate: (String) -> Unit) {
+                        onOpen: (String) -> Unit, onCreate: (String) -> Unit, embedded: Boolean = false) {
     val look = spaceLook()
     var name by remember { mutableStateOf("") }
     val existing = remember(chats) { chats.map { it.id }.toSet() }
     fun create() { if (name.isNotBlank()) { onCreate(name.trim()); name = "" } }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SpaceHeadline("Projects", Modifier.weight(1f))
-            // light / dark here too (every screen has the switch; ThemeEverywhereTest)
-            com.blaze.assistant.ui.ThemeSwitch(tint = look.ink)
+        // P1-TM-07: inside Desk (its Projects segment) the Desk title and segment row stand in for the headline
+        if (!embedded) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SpaceHeadline("Projects", Modifier.weight(1f))
+                // light / dark here too (every screen has the switch; ThemeEverywhereTest)
+                com.blaze.assistant.ui.ThemeSwitch(tint = look.ink)
+            }
+            Spacer(Modifier.height(6.dp))
         }
-        Spacer(Modifier.height(6.dp))
         Text(SpaceProjectRows.INTRO, style = SpaceType.bodyText(look.sub))
         Spacer(Modifier.height(16.dp))
         SpaceCard {

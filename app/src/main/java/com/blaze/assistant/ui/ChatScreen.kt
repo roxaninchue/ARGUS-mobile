@@ -701,9 +701,9 @@ fun ChatScreen() {
             memory = { settingsPage = "memory" },
             editSoul = { id -> botFlow = com.blaze.assistant.ui.team.BotFlow.Edit(id) },
             newBot = { botFlow = com.blaze.assistant.ui.team.BotFlow.New },
-            // the team's jobs list is P1-TM-05's (the "jobs" view is the terminal job log, not these)
-            unassigned = { later() },
-            allJobs = { later() },
+            // P1-TM-07: Desk → Jobs on Unassigned / All (the "jobs" view stays the terminal job log)
+            unassigned = { com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS, com.blaze.assistant.ui.team.JobsFilter.UNASSIGNED); go(navNow().switchTab(ChatNav.DESK)) },
+            allJobs = { com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS, com.blaze.assistant.ui.team.JobsFilter.ALL); go(navNow().switchTab(ChatNav.DESK)) },
         )
     }
     ArgusShellLocals(argus, c.dark) {
@@ -858,22 +858,13 @@ fun ChatScreen() {
                 // v0.27.0: Chat and Projects cross-fade when you switch tabs.
                 // v0.28.3: three panes: main Chat, the Projects list / a project page, and a project chat screen.
                 // P1-SH-01: in the ARGUS shell the four modes are one pager ("modes"); Projects and project chats show over it.
-                val pane = when { nav.inProjectChat -> "pchat"; nav.tab == ChatNav.PROJECTS -> "projects"; argus && ChatNav.isMode(nav.tab) -> "modes"; nav.tab == ChatNav.HOME -> "home"; else -> "chat" }
-                androidx.compose.animation.Crossfade(pane, modifier = Modifier.fillMaxSize(),
-                    animationSpec = MotionTokens.medium(), label = "tab") { paneNow ->
-                if (paneNow == "home") {
-                    homePane()
-                } else if (paneNow == "modes") {
-                    ArgusModesPager(nav.tab, onTab = { m -> if (navNow().tab != m) { notchOpen = false; go(navNow().switchTab(m)) } },
-                        team = { com.blaze.assistant.ui.team.TeamPage(teamNav) },
-                        chat = { chatPane() },
-                        life = { lifePane() },
-                        desk = { DeskPlaceholder(onProjects = { go(navNow().projectsList()) }) },
-                        // no mode swipe while a view (Design), a sheet or the maximised chat owns the screen
-                        swipe = showing.isEmpty() && !ChatExpand.on && !plusOpen && !showViews)
-                } else if (paneNow == "projects") {
+                // P1-TM-07: the Projects list is Desk's Projects segment in the ARGUS shell (DeskRoute); a project page and a
+                // project chat still show over the pager.
+                val navShown = com.blaze.assistant.ui.team.DeskRoute.shown(nav, argus)
+                LaunchedEffect(nav) { com.blaze.assistant.ui.team.DeskRoute.segment(nav, argus)?.let { com.blaze.assistant.ui.team.DeskState.show(it); go(navShown) } }
+                val projectsPane: @Composable (Boolean) -> Unit = { embedded ->
                     val needs = remember(question, allChats) { question?.let { q -> allChats.filter { it.title == q.chat }.map { it.id }.toSet() } ?: emptySet() }
-                    com.blaze.assistant.ui.space.SpaceProjectsScreen(projects, allChats, busyChats, needs, nav.project,
+                    com.blaze.assistant.ui.space.SpaceProjectsScreen(projects, allChats, busyChats, needs, if (embedded) "" else nav.project,
                         onOpen = { go(navNow().openProject(it)) }, onBack = { navNow().back()?.let { go(it) } },
                         onCreate = { go(navNow().openProject(com.blaze.assistant.agent.Projects.create(it).id)) },
                         onChat = { openProjectChat(it) }, onNewChat = { newProjectChat(it) },
@@ -881,8 +872,39 @@ fun ChatScreen() {
                         onBrief = { id, t -> com.blaze.assistant.agent.Projects.setBrief(id, t) },
                         onDelete = { com.blaze.assistant.agent.Projects.delete(it); go(navNow().projectDeleted(it)) },
                         onRenameChat = { id, t -> Agent.renameChat(id, t) },
-                        onDeleteChat = { deleteProjectChat(it) })
+                        onDeleteChat = { deleteProjectChat(it) }, embedded = embedded)
                     LaunchedEffect(Unit) { Agent.refreshChats() }
+                }
+                val pane = when { navShown.inProjectChat -> "pchat"; navShown.tab == ChatNav.PROJECTS -> "projects"; argus && ChatNav.isMode(navShown.tab) -> "modes"; navShown.tab == ChatNav.HOME -> "home"; else -> "chat" }
+                androidx.compose.animation.Crossfade(pane, modifier = Modifier.fillMaxSize(),
+                    animationSpec = MotionTokens.medium(), label = "tab") { paneNow ->
+                if (paneNow == "home") {
+                    homePane()
+                } else if (paneNow == "modes") {
+                    ArgusModesPager(navShown.tab, onTab = { m -> if (navNow().tab != m) { notchOpen = false; go(navNow().switchTab(m)) } },
+                        team = { com.blaze.assistant.ui.team.TeamPage(teamNav) },
+                        chat = { chatPane() },
+                        life = { lifePane() },
+                        // P1-TM-07: Desk v1 (Inbox placeholder · Jobs · Routines · Library · Projects · Computers)
+                        desk = {
+                            com.blaze.assistant.ui.team.DeskPage(
+                                com.blaze.assistant.ui.team.DeskNav(open = { t ->
+                                    when (t) {
+                                        com.blaze.assistant.ui.team.DeskModel.Targets.CHAT -> go(navNow().switchTab(ChatNav.CHAT))
+                                        com.blaze.assistant.ui.team.DeskModel.Targets.DOWNLOADS -> try {
+                                            ctx.startActivity(Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                        } catch (_: Exception) { GalleryUi.open.value = true }
+                                        else -> Views.find(t)?.let { openView(it) }
+                                    }
+                                }),
+                                inboxWaiting = listOf(question, pendingConfirmNow, fixNow, formNow, secretNow).count { it != null },
+                                projectsCount = projects.size,
+                                projects = { projectsPane(true) })
+                        },
+                        // no mode swipe while a view (Design), a sheet or the maximised chat owns the screen
+                        swipe = showing.isEmpty() && !ChatExpand.on && !plusOpen && !showViews)
+                } else if (paneNow == "projects") {
+                    projectsPane(false)
                 } else if (paneNow == "pchat") {
                     val n = nav
                     val proj = projects.firstOrNull { it.id == n.project }

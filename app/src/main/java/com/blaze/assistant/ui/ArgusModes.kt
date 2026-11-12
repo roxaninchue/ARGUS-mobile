@@ -9,7 +9,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import com.blaze.assistant.agent.ChatNav
-import com.blaze.assistant.ui.argus.kit.EmptyState
 
 /**
  * P1-SH-01: the ARGUS shell's four modes as one HorizontalPager (04 §3.2: the notch, a swipe and /team /chat /life /desk
@@ -50,12 +49,4 @@ internal fun ArgusModesPager(
             }
         }
     }
-}
-
-/** P1-SH-01: Desk until P1-TM-07 (Desk v1) fills it: what will live here, and Projects, which moves to Desk. */
-@Composable
-internal fun DeskPlaceholder(onProjects: () -> Unit) {
-    EmptyState(title = "Desk", icon = "layers",
-        body = "Your inbox, jobs, routines and library will live here. Projects are here already.",
-        primary = "Projects" to onProjects)
 }
