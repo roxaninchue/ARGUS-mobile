@@ -23,7 +23,7 @@
 | 1 | P0-TM-01 · P0-SH-01 · P0-API-01 · P0-QA-01 · P0-MG-01 · P0-IL-02 + P0-IL-03 | no deps between them |
 | 2 | P0-AG-01 (needs TM-01 `Row`/`Bot`) · P0-SH-02 (needs SH-01 tokens) | deps |
 | 3 | Integration: tick §6, coverage "How", STATUS.md, overhaul.md log, re-run every pure test together | one writer for shared docs avoids rebase fights |
-| — | P0-IL-01 release | **waits for the owner's "build"** |
+| — | P0-IL-01 release | ✓ done 2026-11-12 |
 
 Shared bookkeeping files (`06-team-plan.md`, `STATUS.md`, `overhaul.md`) are written only in wave 3 by the integration lead; ticket commits touch code, tests and their own docs.
 
@@ -52,4 +52,4 @@ Shared bookkeeping files (`06-team-plan.md`, `STATUS.md`, `overhaul.md`) are wri
 | P0-MG-01 | ✓ done | 0167d249 (ATeamExportTest 6/6) |
 | P0-IL-02 | ✓ done | daa6cbe0 (LegalAssetsTest 4/4; a-team LICENSE open) |
 | P0-IL-03 | ✓ done | 60818dab (check-do-not-port.mjs 0 hits; test 2/2) |
-| P0-IL-01 | waits for "build" | |
+| P0-IL-01 | ✓ done | 0d48f616 + test fix d35d26f7; GitHub run 43177708047 green |
