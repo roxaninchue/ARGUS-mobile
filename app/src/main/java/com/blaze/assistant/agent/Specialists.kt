@@ -15,8 +15,16 @@ object Specialists {
      * v0.26.2: [playbook] = its field playbook (custom ones; built-ins read assets/specialists/<id>.md, see Playbooks),
      * [madeBy] = "user" (Settings) or "blaze" (create_specialist). Both are optional in the saved JSON.
      */
+    /**
+     * P1-TM-01: a Spec is also a persistent bot definition (team/Bot.kt [com.blaze.assistant.team.BotRules.workerTemplate]):
+     * [soul] (its SOUL.md body; blank = [prompt]), [avatar] (orb shape), [colour] (#RRGGBB), [memoryScope] (the scope it
+     * owns, 05 §8), [workspace] (its folder), [voice] (voice id), [managedBy] (bot id it reports to; blank = the Manager)
+     * and [modelPref] (pinned model; blank = Auto). All optional: blank means the default, and old saved JSON loads as before.
+     */
     data class Spec(val id: String, val name: String, val prompt: String, val groups: Set<String>, val custom: Boolean = false,
-                    val skills: List<String> = emptyList(), val playbook: String = "", val madeBy: String = "") {
+                    val skills: List<String> = emptyList(), val playbook: String = "", val madeBy: String = "",
+                    val soul: String = "", val avatar: String = "", val colour: String = "", val memoryScope: String = "",
+                    val workspace: String = "", val voice: String = "", val managedBy: String = "", val modelPref: String = "") {
         val byBlaze: Boolean get() = madeBy == BLAZE
     }
 
@@ -51,7 +59,9 @@ object Specialists {
             else Spec(id, name, it.optString("prompt"),
                 it.optString("groups", "web,memory").split(',').map { g -> g.trim() }.filter { g -> g.isNotEmpty() }.toSet(), true,
                 it.optString("skills").split(',').map { k -> k.trim() }.filter { k -> k.isNotEmpty() },
-                it.optString("playbook"), it.optString("made_by", USER).ifBlank { USER })
+                it.optString("playbook"), it.optString("made_by", USER).ifBlank { USER },
+                it.optString("soul"), it.optString("avatar"), it.optString("colour"), it.optString("memory_scope"),
+                it.optString("workspace"), it.optString("voice"), it.optString("managed_by"), it.optString("model_pref"))
         }
     } catch (_: Exception) { emptyList() }
 
@@ -62,6 +72,10 @@ object Specialists {
                 if (s.playbook.isNotBlank()) put("playbook", s.playbook)
                 put("made_by", s.madeBy.ifBlank { USER })
                 if (s.skills.isNotEmpty()) put("skills", s.skills.joinToString(","))
+                // P1-TM-01: the bot fields, only when set (so an old reader sees the same JSON as before)
+                listOf("soul" to s.soul, "avatar" to s.avatar, "colour" to s.colour, "memory_scope" to s.memoryScope,
+                    "workspace" to s.workspace, "voice" to s.voice, "managed_by" to s.managedBy, "model_pref" to s.modelPref)
+                    .forEach { (k, v) -> if (v.isNotBlank()) put(k, v) }
             })
         }
     }.toString()
