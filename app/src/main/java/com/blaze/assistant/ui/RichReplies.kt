@@ -9,6 +9,13 @@ package com.blaze.assistant.ui
  * (```chart, ```choices, ```form, ```tool, ```compare; parsed in [RichKit]) and a prompt that picks formats on its own.
  */
 object RichReplies {
+    /** P1-SH-03: the ARGUS look for rich replies (04 §2.8 #16 `.mdb`, #31): card radius = the tool card's, larger mono. */
+    object Look {
+        const val CARD_RADIUS = 14
+        const val CODE_SP = 13f
+        const val CODE_LINE_SP = 19f
+    }
+
     @androidx.compose.runtime.Immutable
     data class Img(val url: String, val alt: String)
 

@@ -271,20 +271,34 @@ private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
 @Composable
 private fun CodeText(code: String) {
     val c = LocalBlaze.current
+    val a = LocalArgusRich.current
     SelectionContainer {
         Text(code, modifier = Modifier.horizontalScroll(rememberScrollState()).padding(12.dp),
-            softWrap = false, style = TextStyle(fontFamily = Type.Mono, fontSize = 12.5.sp, lineHeight = 18.sp, color = c.ink))
+            softWrap = false, style = if (a != null) TextStyle(fontFamily = Type.Mono, fontSize = RichReplies.Look.CODE_SP.sp,
+                lineHeight = RichReplies.Look.CODE_LINE_SP.sp, color = a.ink)
+            else TextStyle(fontFamily = Type.Mono, fontSize = 12.5.sp, lineHeight = 18.sp, color = c.ink))
     }
 }
+
+/**
+ * P1-SH-03: inside the ARGUS shell rich replies (code, tables, titled and folded cards) take its look
+ * ([RichReplies.Look]); null = the 0.52 look. Provided by ChatScreen's ArgusShellLocals.
+ */
+val LocalArgusRich = androidx.compose.runtime.staticCompositionLocalOf<com.blaze.assistant.ui.argus.ArgusColors?> { null }
+
+@Composable
+private fun cardShape(): RoundedCornerShape = if (LocalArgusRich.current != null) ArgusCardShape else CardShape
 
 /** v0.24.0: cards are soft rounded insets, no outline. Inside a Blaze bubble they're lighter than the bubble. */
 @Composable
 private fun cardFill(): Color {
     val c = LocalBlaze.current
+    LocalArgusRich.current?.let { return it.soft }
     return if (LocalBubble.current != null) GlassBubble.cardFill(c) else c.faint
 }
 
 private val CardShape = RoundedCornerShape(12.dp)
+private val ArgusCardShape = RoundedCornerShape(RichReplies.Look.CARD_RADIUS.dp)
 
 @Composable
 internal fun TableGrid(rows: List<List<String>>) {
@@ -292,9 +306,12 @@ internal fun TableGrid(rows: List<List<String>>) {
     val cols = rows.maxOfOrNull { it.size } ?: 0
     if (cols == 0) return
     Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-        Column(Modifier.clip(CardShape).background(cardFill())) {
+        val a = LocalArgusRich.current
+        val head = a?.soft2 ?: c.faint
+        val rule = a?.line ?: c.hair.copy(alpha = c.hair.alpha * 0.7f)
+        Column(Modifier.clip(cardShape()).background(cardFill())) {
             rows.forEachIndexed { r, row ->
-                Row(Modifier.background(if (r == 0) c.faint else Color.Transparent).then(if (r > 0) Modifier.hairlineTop(c.hair.copy(alpha = c.hair.alpha * 0.7f)) else Modifier)) {
+                Row(Modifier.background(if (r == 0) head else Color.Transparent).then(if (r > 0) Modifier.hairlineTop(rule) else Modifier)) {
                     for (k in 0 until cols) {
                         val cell = row.getOrElse(k) { "" }
                         val shown = remember(cell, c.accent) { Md.render(cell, c.accent, c.hair.copy(alpha = 0.35f)) }
@@ -322,7 +339,7 @@ private fun CopyLabel(raw: String) {
 @Composable
 private fun PlainCard(title: String, raw: String, content: @Composable () -> Unit) {
     val c = LocalBlaze.current
-    Column(Modifier.fillMaxWidth().clip(CardShape).background(cardFill())) {
+    Column(Modifier.fillMaxWidth().clip(cardShape()).background(cardFill())) {
         Row(Modifier.fillMaxWidth().padding(start = 12.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             Label(title, color = c.sub, size = 9.sp, modifier = Modifier.weight(1f), maxLines = 1)
             CopyLabel(raw)
@@ -337,7 +354,8 @@ private fun FoldCard(key: String, title: String, raw: String, maxH: Dp = 220.dp,
     val c = LocalBlaze.current
     var open by rememberSaveable(key) { mutableStateOf(false) }
     val fill = if (card) cardFill() else (LocalBubble.current ?: c.paper)
-    Column(Modifier.fillMaxWidth().then(if (card) Modifier.clip(CardShape).background(fill) else Modifier)) {
+    val shape = cardShape()
+    Column(Modifier.fillMaxWidth().then(if (card) Modifier.clip(shape).background(fill) else Modifier)) {
         Row(Modifier.fillMaxWidth().padding(start = if (card) 12.dp else 0.dp, top = if (card) 2.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Label(title, color = c.sub, size = 9.sp, modifier = Modifier.weight(1f), maxLines = 1)
