@@ -157,10 +157,18 @@ object BgAgents {
     fun cardRole(bg: Bg): String = if (bg.specialist.isBlank()) "AGENT" else (spec(bg)?.name ?: bg.specialist).uppercase()
 
     /** Queue a new agent. Returns it; it starts as soon as a slot is free. [specialist] = run it as that specialist. */
-    fun start(task: String, title: String, parent: String, specialist: String = ""): Bg {
+    /** P1-TM-05: told when an agent ends (done, failed or cancelled); the jobs queue listens. Never throws into BgAgents. */
+    @Volatile var onEnd: ((Bg) -> Unit)? = null
+    private fun ended(id: String) { val bg = get(id) ?: return; try { onEnd?.invoke(bg) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BgAgents: onEnd", e) } }
+
+    /** True while agent [id] is queued or running (a resumed one counts). */
+    fun alive(id: String): Boolean = get(id)?.live == true
+
+    /** [chat]: P1-TM-05 a job binds its chat to the bot (TeamHooks) before the agent starts, so it picks the id. */
+    fun start(task: String, title: String, parent: String, specialist: String = "", chat: String? = null): Bg {
         val id = Processes.nextId("agent")
         val bg = Bg(id, title.ifBlank { task.lineSequence().first().take(40) }.take(60), task, parent,
-            "bg-" + java.util.UUID.randomUUID().toString().take(10), plan = Modes.plan, specialist = specialist)
+            chat ?: ("bg-" + java.util.UUID.randomUUID().toString().take(10)), plan = Modes.plan, specialist = specialist)
         synchronized(this) { _all.value = (_all.value + bg).takeLast(40) }
         save()
         scope.launch { pump() }
@@ -243,6 +251,7 @@ object BgAgents {
         update(bg.id) { it.copy(status = if (failed) FAILED else DONE, ended = System.currentTimeMillis(), result = result,
             steps = s.msgs.count { m -> m.role == Role.STEP }, waiting = false) }
         get(bg.id)?.let { Agent.agentFinished(it) }
+        ended(bg.id)
         pump()
     }
 
@@ -260,6 +269,7 @@ object BgAgents {
         update(bg.id) { it.copy(status = if (ok) DONE else FAILED, ended = System.currentTimeMillis(), result = result, waiting = false) }
         com.blaze.assistant.orchestra.OrchestraRuns.forget(bg.id)
         get(bg.id)?.let { Agent.agentFinished(it) }
+        ended(bg.id)
         pump()
     }
 
@@ -290,6 +300,7 @@ object BgAgents {
         Dispatch.browser.release(bg.id); Dispatch.phone.release(bg.id)
         if (bg.status == RUNNING) Agent.stopAgent(bg)
         jobs.remove(id)?.cancel()
+        ended(id)
         scope.launch { pump() }
         return "Stopped ${bg.id}."
     }

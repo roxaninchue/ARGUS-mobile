@@ -90,6 +90,14 @@ object TaskKeeper {
         } catch (_: Throwable) { }
     }
 
+    /** P1-TM-05: a team job started: keep the process while it runs (TaskWorker waits for every running chat). Never throws. */
+    fun hold(ctx: Context) {
+        try {
+            val req = OneTimeWorkRequestBuilder<TaskWorker>().setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST).build()
+            WorkManager.getInstance(ctx.applicationContext).enqueueUniqueWork(UNIQUE, ExistingWorkPolicy.KEEP, req)
+        } catch (_: Throwable) { }
+    }
+
     /** Its turn ended (reply, failure or stop): cross it off. */
     fun finished(ctx: Context, chat: String, user: Long) { try { ledger(ctx).remove(chat, user) } catch (_: Throwable) { } }
 }

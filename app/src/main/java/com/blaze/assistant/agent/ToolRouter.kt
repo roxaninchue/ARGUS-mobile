@@ -31,7 +31,9 @@ object ToolRouter {
         // 0.46.0 Blaze Stage: stage_show is always on hand, so a timer / music / quiz card is preferred over opening a view.
         "stage_show",
         // 0.46.6 Secure form: never ask for a key, password, card or code in chat.
-        "request_secret"
+        "request_secret",
+        // P1-TM-05: a bot running a job must always be able to close it and log its steps (any tool subset keeps core).
+        "done_job", "create_task", "update_task"
     )
 
     data class Group(val id: String, val about: String, val match: Regex, val names: (String) -> Boolean)
@@ -124,6 +126,10 @@ object ToolRouter {
         Group("stage", "the chat Stage: update / move / close cards (timer, music, video, quiz, flashcards, plan), hide or dock the chat, top bar, reply bar, layouts",
             r("""\b(stage|hero|widgets?|mini ?player|timer|pomodoro|countdown|stopwatch|focus (?:mode|session|timer)|study (?:for )?\d+|\d+ ?(?:min|mins|minutes|hours?) (?:of )?(?:study|focus|work)|pause (?:it|the timer|the music)|make (?:it|the \w+) (?:big|bigger|small|smaller)|hide (?:the )?(?:chat|top bar|reply bar)|show (?:the )?(?:chat|top bar)|reset (?:the )?layout|move (?:the )?\w+ (?:to|up|down))\b"""),
             { it.startsWith("stage_") }),
+        // P1-TM-05: the team's jobs queue (TeamHooks.tools adds these).
+        Group("jobs", "team jobs: add, delegate, close, update, retry a job; a bot's recent jobs",
+            r("""\b(jobs?|tasks?|to-?dos?|assign\w*|delegate|hand (?:it|this) to|queue|due|deadline)\b"""),
+            { it in setOf("add_job", "update_job", "agent_delegate", "retry_job", "agent_status") }),
         Group("more", "everything else: watchers, triggers, goals, standing permissions, skill packs and other rarely used tools",
             Regex("(?!)"), { false }),
         Group("extras", "learned skills, helpers working in parallel, screen memory",

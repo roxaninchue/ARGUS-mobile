@@ -81,6 +81,30 @@ object TeamHooks {
 
     fun end(chatId: String, reason: String) = emit(chatId, Event.End(reason))
 
+    // ---------------- team tools (P1-TM-05) ----------------
+
+    /**
+     * Tools the team layer adds to every chat (jobs: add_job, done_job, …). [defs] are function schemas as JSON text;
+     * [run] answers a call, with the bound bot's id ([botId] null = the Manager's own chat). Set by JobsRuntime.
+     */
+    interface Tools {
+        fun defs(): List<String>
+        fun names(): Set<String>
+        fun run(chatId: String, botId: String?, name: String, args: String): String
+    }
+
+    @Volatile var tools: Tools? = null
+
+    /** The team tools' schemas (none until JobsRuntime sets [tools]). */
+    fun toolDefs(): List<String> = tools?.let { t -> safe { t.defs() } } ?: emptyList()
+
+    /** The result of a team tool, or null when [tool] isn't one (the loop runs it as usual). */
+    fun runTool(chatId: String, tool: String, args: String): String? {
+        val t = tools ?: return null
+        if (tool !in (safe { t.names() } ?: emptySet())) return null
+        return safe { t.run(chatId, binding(chatId)?.botId, tool, args) } ?: "Error: $tool didn't run. Try again."
+    }
+
     // ---------------- rules (pure) ----------------
 
     const val ARGS_MAX = 4_000
