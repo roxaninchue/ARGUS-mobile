@@ -755,6 +755,24 @@ fun ChatScreen() {
                         onSignIn = { settingsPage = "account" },
                         onSetup = { setupSheet = true })
                 }
+                // P1-SH-05: Life mode v1 (day line, Today strip, domain tiles, Projects, the Home's panels) is the ARGUS shell's
+                // Life page; the 0.52 Home above stays for the shell with argus_look off.
+                val lifePane: @Composable () -> Unit = {
+                    com.blaze.assistant.ui.team.LifePage(
+                        com.blaze.assistant.ui.team.LifeNav(
+                            onAsk = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) },
+                            onOpenChat = { go(navNow().switchTab(ChatNav.CHAT)) },
+                            onOpenProject = { go(navNow().openProject(it)) },
+                            onOpenProjects = { go(navNow().projectsList()) },
+                            onSignIn = { settingsPage = "account" },
+                            onSetup = { setupSheet = true },
+                            onOpenSchedule = { Views.find("schedule")?.let { openView(it) } },
+                            onSetUpLife = { d -> send(com.blaze.assistant.ui.team.LifeModel.setUpAsk(d)); go(navNow().switchTab(ChatNav.CHAT)) }),
+                        projects = projects.sortedByDescending { it.updated }.take(com.blaze.assistant.ui.space.SpaceHomeCards.MAX_PROJECTS).map { it.id to it.name },
+                        signedIn = me != null || Settings.ready, working = mood != Mood.IDLE,
+                        setupLeft = if (com.blaze.assistant.setup.SetupRunner.started()) com.blaze.assistant.setup.SetupPlan.left(setupState).size else 0,
+                        setupPercent = com.blaze.assistant.setup.SetupPlan.percent(setupState))
+                }
                 val chatPane: @Composable () -> Unit = {
                 if (nav.chat.isNotBlank() && currentChat == nav.chat) {
                     // Main Chat never draws a project chat's thread (the agent is switching back to main).
@@ -807,7 +825,7 @@ fun ChatScreen() {
                     ArgusModesPager(nav.tab, onTab = { m -> if (navNow().tab != m) { notchOpen = false; go(navNow().switchTab(m)) } },
                         team = { com.blaze.assistant.ui.team.TeamPage(teamNav) },
                         chat = { chatPane() },
-                        life = { homePane() },
+                        life = { lifePane() },
                         desk = { DeskPlaceholder(onProjects = { go(navNow().projectsList()) }) },
                         // no mode swipe while a view (Design), a sheet or the maximised chat owns the screen
                         swipe = showing.isEmpty() && !ChatExpand.on && !plusOpen && !showViews)

@@ -65,6 +65,18 @@ object TurnContextSource {
         return TurnContext.block(TurnContext.Inputs(now, weather(), entries, dates, open(), newIn, calendarOff = !calendarAllowed()))
     }
 
+    /**
+     * P1-SH-05: the schedule entries for [now]'s date (routines, alarms, calendar when allowed): the same sources as the
+     * [context] line, for Life's day line and Today strip. Does I/O (calendar): call it off the main thread.
+     */
+    fun dayEntries(now: ZonedDateTime = ZonedDateTime.now()): List<ScheduleDay.Entry> {
+        val entries = ArrayList<ScheduleDay.Entry>()
+        safe { entries += routines() }
+        safe { entries += alarms(now.zone) }
+        safe { entries += calendar(listOf(now.toLocalDate()), now.zone) }
+        return entries
+    }
+
     private inline fun safe(f: () -> Unit) { try { f() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("TurnContext.source", e) } }
 
     fun routines(): List<ScheduleDay.Entry> = com.blaze.assistant.routine.Routines.all.value.filter { !it.isCommand || it.notify != "never" }.map { r ->
