@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // P0-IL-03: proves the do-not-port register (docs/overhaul/do-not-port.md) holds. No CI: run by hand,
-//   node tools/check-do-not-port.mjs            (from the repo root)
+//   node tools/check-do-not-port.mjs            (from the repo root; run it before every release, 0.52.4 onward)
 // Each rule names a register row. A rule fails when its pattern matches a file's text (text) or a file's path (path)
 // under the scanned roots. The register and this file must name the same rows. Exits 1 on any failure.
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
