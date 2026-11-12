@@ -47,12 +47,12 @@ class BlazeThreadTest {
         assertTrue(n.substringAfter("fun proactive(").substringBefore("fun question").contains("post(text, kind, chatId"))
         assertTrue(n.substringAfter("fun question(").substringBefore("fun clearQuestion").contains("post(q, BlazeThread.Kind.QUESTION"))
         // the check-in path and the other senders
-        assertTrue(src("proactive/Jarvis.kt").contains("Proactive.say(text, \"jarvis-q:\" + q.id, kind = com.blaze.assistant.notify.BlazeThread.Kind.CHECK_IN)"))
+        assertTrue(src("proactive/Jarvis.kt").contains("Proactive.say(text, \"jarvis-q:\" + q.id, kind = com.blaze.assistant.notify.BlazeThread.Kind.CHECK_IN,"))
         assertTrue(src("proactive/Jarvis.kt").contains("Notifier.post(text, com.blaze.assistant.notify.BlazeThread.Kind.CALL_OFFER"))
         assertFalse(src("proactive/Jarvis.kt").contains("\"blaze_calls\""))
         assertTrue(src("proactive/FollowUps.kt").contains("Notifier.post(text, com.blaze.assistant.notify.BlazeThread.Kind.FOLLOW_UP"))
         assertFalse(src("proactive/FollowUps.kt").contains("createNotificationChannel"))
-        assertTrue(src("proactive/Proactive.kt").contains("Notifier.proactive(text, suggest, urgent, kind)"))
+        assertTrue(src("proactive/Proactive.kt").contains("Notifier.proactive(text, suggest, urgent, kind, why)"))
         assertFalse(n.contains("NotificationChannel(CH_PROACTIVE"))
     }
 
