@@ -1071,6 +1071,7 @@ private fun ArgusShellLocals(on: Boolean, dark: Boolean, content: @Composable ()
     CompositionLocalProvider(
         com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(dark),
         com.blaze.assistant.ui.argus.LocalArgusGround provides com.blaze.assistant.ui.argus.Argus.groundSetting(com.blaze.assistant.ui.argus.Ground.ORBIT),
+        LocalArgusRich provides com.blaze.assistant.ui.argus.ArgusColors.of(dark),
         content = content,
     )
 }

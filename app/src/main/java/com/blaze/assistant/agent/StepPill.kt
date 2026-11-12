@@ -42,6 +42,10 @@ object StepPill {
     private val code = Regex("[{}\\[\\]<>`|\\\\=;$#@]|\\b[a-z]+_[a-z0-9_]+\\b|\\b[a-z]+[A-Z][a-zA-Z]*\\(|\\w+\\(|=>|->|::")
     private val routeWords = Regex("(?i)\\b(model|provider|route|routing|lineup|endpoint|gateway|token|api key|llm|gpt|claude|gemini|llama|mistral|qwen|deepseek|groq|cerebras|sambanova|openrouter|cohere|nvidia|anthropic|openai|codestral|kimi|glm)\\b")
 
+    /** True when [t] names a model, provider, route or owner (what [clean] refuses on sight). */
+    fun mentionsRoute(t: String): Boolean = owner.containsMatchIn(t) || routeWords.containsMatchIn(t) ||
+        (try { ModelHide.mentions(t) } catch (_: Throwable) { false })
+
     /**
      * The pill text for a step event, or null when it must not be shown. [kind] "specialist" (or a specialty event)
      * always gives the general line.
@@ -96,6 +100,86 @@ object StepPill {
         /** When a step that arrived early becomes visible. */
         fun dueAt(): Long = start + showAfterMs
     }
+}
+
+/**
+ * P1-SH-03: what a tool call is called on screen (thread step lists, the ActivityLine, WorkChip groups). Raw tool names
+ * (`bank_balance`, `memory_save`), model and provider names never reach the screen: a call is named by what it does,
+ * from a short table of known tools, then by the words in its name, else "Working". Any free text shown beside it (a
+ * step line, a detail) goes through [StepPill.clean] first, and a line that fails is replaced, never shown half-clean.
+ */
+object StepTool {
+    /** AT `.tg` sub-groups (04 §2.8 #19), in display order. */
+    enum class Kind(val one: String, val many: String, val group: String) {
+        EDIT("edit", "edits", "Edits"), READ("read", "reads", "Reads"), COMMAND("command", "commands", "Commands"),
+        CLOUD("cloud step", "cloud steps", "Cloud computer"), BROWSER("browser", "browser", "Browser"),
+        MEMORY("memory", "memory", "Memory"), TEAM("team", "team", "Team"), JOBS("job", "jobs", "Jobs"),
+        APPROVAL("approval", "approvals", "Approvals"), OTHER("step", "steps", "Other steps"),
+    }
+
+    /** Present and past tense and its group. */
+    data class Label(val now: String, val done: String, val kind: Kind, val icon: String)
+
+    private fun l(now: String, done: String, kind: Kind, icon: String) = Label(now, done, kind, icon)
+
+    private val known: Map<String, Label> = mapOf(
+        "web_search" to l("Searching the web", "Searched the web", Kind.BROWSER, "search"),
+        "fetch_page" to l("Reading a page", "Read a page", Kind.BROWSER, "globe"),
+        "browser" to l("Using the browser", "Used the browser", Kind.BROWSER, "globe"),
+        "save_file" to l("Saving a file", "Saved a file", Kind.EDIT, "download"),
+        "edit_file" to l("Editing a file", "Edited a file", Kind.EDIT, "pencil"),
+        "write_file" to l("Writing a file", "Wrote a file", Kind.EDIT, "pencil"),
+        "read_file" to l("Reading a file", "Read a file", Kind.READ, "scroll-text"),
+        "remember" to l("Saving to memory", "Saved to memory", Kind.MEMORY, "brain"),
+        "forget" to l("Forgetting something", "Forgot something", Kind.MEMORY, "brain"),
+        "memory_search" to l("Checking memory", "Checked memory", Kind.MEMORY, "brain"),
+        "memory_save" to l("Saving to memory", "Saved to memory", Kind.MEMORY, "brain"),
+        "memory_update" to l("Updating memory", "Updated memory", Kind.MEMORY, "brain"),
+        "memory_delete" to l("Forgetting something", "Forgot something", Kind.MEMORY, "brain"),
+        "search_past_chats" to l("Looking through past chats", "Looked through past chats", Kind.READ, "message-circle"),
+        "search_chat" to l("Looking back in the chat", "Looked back in the chat", Kind.READ, "message-circle"),
+        "read_screen" to l("Reading the screen", "Read the screen", Kind.READ, "smartphone"),
+        "open_app" to l("Opening an app", "Opened an app", Kind.COMMAND, "smartphone"),
+        "run_plan" to l("Using your phone", "Used your phone", Kind.COMMAND, "smartphone"),
+        "phone_task" to l("Using your phone", "Used your phone", Kind.COMMAND, "smartphone"),
+        "terminal" to l("Running a command", "Ran a command", Kind.COMMAND, "terminal"),
+        "run_command" to l("Running a command", "Ran a command", Kind.COMMAND, "terminal"),
+        "start_agent" to l("Starting background work", "Started background work", Kind.JOBS, "workflow"),
+        "send_to_bot" to l("Asking a teammate", "Asked a teammate", Kind.TEAM, "users"),
+        "delegate" to l("Asking a teammate", "Asked a teammate", Kind.TEAM, "users"),
+        "add_job" to l("Adding a job", "Added a job", Kind.JOBS, "list-checks"),
+        "request_secret" to l("Asking for a secure detail", "Asked for a secure detail", Kind.APPROVAL, "lock"),
+        "use_skill" to l(StepPill.SPECIALIST_IN, "Used a specialty", Kind.OTHER, "sparkles"),
+        "run_skill" to l(StepPill.SPECIALIST_IN, "Used a specialty", Kind.OTHER, "sparkles"),
+    )
+
+    private fun has(n: String, vararg w: String) = w.any { Regex("(^|_)$it(_|$)").containsMatchIn(n) }
+
+    /** The label for tool [name]: never the name itself. */
+    fun label(name: String): Label {
+        val n = name.trim().lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_')
+        known[n]?.let { return it }
+        return when {
+            has(n, "cloud", "codespace", "orgo", "vm") -> l("Working on the cloud computer", "Worked on the cloud computer", Kind.CLOUD, "cloud")
+            has(n, "browser", "browse", "web", "page", "url", "site") -> l("Using the browser", "Used the browser", Kind.BROWSER, "globe")
+            has(n, "memory", "remember", "recall") -> l("Checking memory", "Checked memory", Kind.MEMORY, "brain")
+            has(n, "bot", "team", "handoff", "delegate") -> l("Asking a teammate", "Asked a teammate", Kind.TEAM, "users")
+            has(n, "job", "task", "todo", "routine", "schedule", "alarm", "reminder") -> l("Updating jobs", "Updated jobs", Kind.JOBS, "list-checks")
+            has(n, "shell", "exec", "run", "command", "terminal", "script", "git") -> l("Running a command", "Ran a command", Kind.COMMAND, "terminal")
+            has(n, "write", "save", "create", "update", "edit", "delete", "set", "add", "send", "post", "move", "rename") ->
+                l("Making a change", "Made a change", Kind.EDIT, "pencil")
+            has(n, "read", "get", "list", "search", "find", "fetch", "check", "look", "query", "balance", "status", "calendar", "mail", "inbox") ->
+                l("Looking things up", "Looked things up", Kind.READ, "search")
+            else -> l("Working", "Worked", Kind.OTHER, "zap")
+        }
+    }
+
+    /** A notice (an error line) as shown: as written, unless it names a model, provider or route. */
+    fun notice(text: String): String =
+        if (StepPill.mentionsRoute(text)) "Something went wrong on this turn" else text.trim()
+
+    /** A shown line for free text from a step or a detail: [StepPill.clean]'s rules, else [fallback]. */
+    fun line(text: String?, fallback: String): String = text?.let { StepPill.clean(it) } ?: fallback
 }
 
 /**
