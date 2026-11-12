@@ -28,7 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -56,7 +55,7 @@ import com.blaze.assistant.ui.argus.icons.Lucide
 /**
  * P1-SH-02 `ArgusSheet` (A-team `.sheet`, a ModalBottomSheet restyle): handle, title 19/650, content, and a sticky
  * action row (Cancel = glass, primary = ink or danger) when [primary] is set. Sheet glass (tint fallback: ModalBottomSheet
- * sits in its own window, so Haze has no source to blur there).
+ * sits in its own window, so Haze has no source to blur there). Opens fully expanded; callers need no Material3 opt-in.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +63,6 @@ fun ArgusSheet(
     onDismiss: () -> Unit,
     title: String?,
     modifier: Modifier = Modifier,
-    state: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     primary: String? = null,
     onPrimary: () -> Unit = {},
     primaryKind: ButtonKind = ButtonKind.PRIMARY,
@@ -73,6 +71,7 @@ fun ArgusSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Argus.colors
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val tint = ArgusGlassRule.tint(c.palette, GlassLevel.SHEET, ArgusGlassRule.Mode.TINT)
     ModalBottomSheet(
         onDismissRequest = onDismiss,

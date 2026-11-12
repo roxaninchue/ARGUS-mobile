@@ -104,6 +104,7 @@ fun BotChatRow(
         enableDismissFromStartToEnd = onPin != null,
         enableDismissFromEndToStart = onMute != null,
         backgroundContent = {
+            if (state.dismissDirection == SwipeToDismissBoxValue.Settled) return@SwipeToDismissBox
             val toEnd = state.dismissDirection == SwipeToDismissBoxValue.StartToEnd
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = if (toEnd) Arrangement.Start else Arrangement.End) {
