@@ -1,0 +1,15 @@
+{
+ "id": "js-debounce",
+ "level": 3,
+ "tags": [
+  "js",
+  "async"
+ ],
+ "prompt": "In ~/proj/debounce.js export debounce(fn, ms) returning a debounced function with .cancel() and .flush(). Calls within ms of each other collapse into one trailing call with the latest arguments and `this`. flush() runs a pending call immediately (returns its result); cancel() drops it.",
+ "test_cmd": "node --test _hidden/*.test.js",
+ "verify": "node -e \"const d=require('./debounce');const f=(d.debounce||d)(x=>console.log(x),10);f(1);f(2)\"",
+ "required": [
+  "debounce.js"
+ ],
+ "protected": []
+}

@@ -1,0 +1,14 @@
+{
+ "id": "py-roman",
+ "level": 2,
+ "tags": [
+  "python"
+ ],
+ "prompt": "In ~/proj/roman.py write to_roman(n) for 1..3999 and from_roman(s) that accepts only canonical numerals (e.g. \"IIII\", \"IC\", \"MMMM\", \"\" are invalid). Both raise ValueError on bad input.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from roman import *; print(to_roman(1994), from_roman('MCMXCIV'))\"",
+ "required": [
+  "roman.py"
+ ],
+ "protected": []
+}

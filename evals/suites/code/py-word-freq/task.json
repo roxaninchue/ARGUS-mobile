@@ -1,0 +1,15 @@
+{
+ "id": "py-word-freq",
+ "level": 2,
+ "tags": [
+  "python",
+  "text"
+ ],
+ "prompt": "In ~/proj/words.py write top_words(text, k) -> list of (word, count): case-insensitive, words are runs of letters/digits/apostrophes (strip leading/trailing apostrophes), sorted by count desc then word asc, at most k items (k <= 0 gives []).",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from words import top_words; print(top_words('a b a', 2))\"",
+ "required": [
+  "words.py"
+ ],
+ "protected": []
+}

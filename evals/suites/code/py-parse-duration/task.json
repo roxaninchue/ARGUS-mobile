@@ -1,0 +1,15 @@
+{
+ "id": "py-parse-duration",
+ "level": 2,
+ "tags": [
+  "python",
+  "parsing"
+ ],
+ "prompt": "In ~/proj/duration.py write parse_duration(s) -> int seconds for strings like \"45s\", \"1h30m\", \"2d\", \"1d2h3m4s\" (units d,h,m,s in that order, each at most once, case-insensitive, surrounding spaces ok). Anything else (empty, \"5\", \"1m1h\", \"1x\", \"-3s\", \"1h 30m\") raises ValueError.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from duration import parse_duration as p; print(p('1h30m'))\"",
+ "required": [
+  "duration.py"
+ ],
+ "protected": []
+}

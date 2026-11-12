@@ -1,0 +1,16 @@
+{
+ "id": "py-slow-endpoints",
+ "level": 4,
+ "tags": [
+  "python",
+  "ambiguous",
+  "cli"
+ ],
+ "prompt": "I want to know which endpoints are slowest in ~/proj/access.log. Write ~/proj/slow.py so `python3 slow.py access.log` prints the 3 slowest paths by p95 latency, slowest first, one per line as \"<path> <p95 in ms, integer>\". Ignore query strings and malformed lines. p95 = nearest-rank method.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 slow.py access.log",
+ "required": [
+  "slow.py"
+ ],
+ "protected": []
+}

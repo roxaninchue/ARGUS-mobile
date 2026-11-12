@@ -1,0 +1,16 @@
+{
+ "id": "py-dedupe-contacts",
+ "level": 4,
+ "tags": [
+  "python",
+  "ambiguous",
+  "data"
+ ],
+ "prompt": "Our contacts export ~/proj/contacts.csv has duplicates: the same person appears more than once, with the email typed in different case or with spaces. Write ~/proj/dedupe.py so `python3 dedupe.py contacts.csv` writes contacts.clean.csv next to the input with one row per person (keep the first occurrence and the original column order and header), and prints \"removed N duplicates\". Rows with an empty email are kept as they are. Use your judgement for anything not specified.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 dedupe.py contacts.csv && cat contacts.clean.csv",
+ "required": [
+  "dedupe.py"
+ ],
+ "protected": []
+}

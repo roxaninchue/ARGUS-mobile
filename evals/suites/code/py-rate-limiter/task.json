@@ -1,0 +1,15 @@
+{
+ "id": "py-rate-limiter",
+ "level": 3,
+ "tags": [
+  "python",
+  "design"
+ ],
+ "prompt": "In ~/proj/ratelimit.py write class TokenBucket(rate, capacity, clock=time.monotonic): allow(n=1) -> bool takes n tokens if available. It starts full, refills continuously at `rate` tokens/second up to capacity. The clock is injectable for tests. rate <= 0, capacity <= 0 or n <= 0 raise ValueError; n > capacity is simply False.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from ratelimit import TokenBucket; b=TokenBucket(1,2); print([b.allow() for _ in range(3)])\"",
+ "required": [
+  "ratelimit.py"
+ ],
+ "protected": []
+}

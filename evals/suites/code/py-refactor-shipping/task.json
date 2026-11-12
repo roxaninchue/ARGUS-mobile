@@ -1,0 +1,21 @@
+{
+ "id": "py-refactor-shipping",
+ "level": 4,
+ "tags": [
+  "python",
+  "refactor"
+ ],
+ "prompt": "shipping_cost() in ~/proj/shipping.py works but is far too complex to maintain. Refactor it so every function stays under cyclomatic complexity 8 and 30 lines, without changing behaviour for any input (including errors). Do not edit test_shipping.py.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -m unittest -q test_shipping",
+ "protected": [
+  "test_shipping.py"
+ ],
+ "required": [
+  "shipping.py"
+ ],
+ "limits": {
+  "max_cc": 8,
+  "max_fn_lines": 30
+ }
+}

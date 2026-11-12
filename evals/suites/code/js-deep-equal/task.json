@@ -1,0 +1,14 @@
+{
+ "id": "js-deep-equal",
+ "level": 2,
+ "tags": [
+  "js"
+ ],
+ "prompt": "In ~/proj/equal.js export deepEqual(a, b): structural equality for primitives (NaN equals NaN), arrays, plain objects (key order ignored), Dates (same time), Maps and Sets. Arrays never equal objects. Handle cyclic references without crashing.",
+ "test_cmd": "node --test _hidden/*.test.js",
+ "verify": "node -e \"const d=require('./equal');console.log((d.deepEqual||d)({a:[1,{b:2}]},{a:[1,{b:2}]}))\"",
+ "required": [
+  "equal.js"
+ ],
+ "protected": []
+}

@@ -1,0 +1,14 @@
+{
+ "id": "js-event-emitter",
+ "level": 3,
+ "tags": [
+  "js"
+ ],
+ "prompt": "In ~/proj/emitter.js export class Emitter with on(event, fn) (returns an unsubscribe function), off(event, fn), once(event, fn) and emit(event, ...args) (returns how many listeners ran). Listeners run in registration order; adding/removing listeners during an emit must not affect that emit. Do not use node:events.",
+ "test_cmd": "node --test _hidden/*.test.js",
+ "verify": "node -e \"const {Emitter}=require('./emitter');const e=new Emitter();e.on('x',v=>console.log(v));e.emit('x',1)\"",
+ "required": [
+  "emitter.js"
+ ],
+ "protected": []
+}

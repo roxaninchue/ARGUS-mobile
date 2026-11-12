@@ -1,0 +1,20 @@
+{
+ "id": "py-kv-server",
+ "level": 5,
+ "tags": [
+  "python",
+  "http",
+  "demo",
+  "stretch"
+ ],
+ "prompt": "Build a tiny in-memory key-value HTTP service in ~/proj/kvserver.py with only the standard library: `python3 kvserver.py PORT` listens on 127.0.0.1. PUT /kv/<key> with JSON {\"value\": ...} stores it (200, echoes {\"key\",\"value\"}); bad JSON or no \"value\" -> 400. GET /kv/<key> -> 200 {\"key\",\"value\"} or 404. DELETE /kv/<key> -> 204 or 404. Any other path -> 404. Responses are JSON with Content-Type application/json. Optional: a \"ttl\" seconds field in PUT. Make sure what you ship fully works; demo it with curl.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 kvserver.py 8099 & pid=$!; sleep 1; curl -s -X PUT -d '{\"value\":1}' localhost:8099/kv/a; curl -s localhost:8099/kv/a; kill $pid",
+ "required": [
+  "kvserver.py"
+ ],
+ "timeout": 60,
+ "stretch_marker": "ttl",
+ "stretch_cmd": "cd /root/proj && python3 kvserver.py 8771 >/dev/null 2>&1 & pid=$!; sleep 1; c=$(curl -s -o /dev/null -w \"%{http_code}\" -X PUT -d '{\"value\":1,\"ttl\":1}' localhost:8771/kv/t); sleep 1.5; g=$(curl -s -o /dev/null -w \"%{http_code}\" localhost:8771/kv/t); kill $pid; [ \"$c\" = 200 ] || exit 1; [ \"$g\" = 200 ] && exit 3; [ \"$g\" = 404 ]",
+ "protected": []
+}

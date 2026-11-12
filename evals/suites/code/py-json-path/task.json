@@ -1,0 +1,15 @@
+{
+ "id": "py-json-path",
+ "level": 3,
+ "tags": [
+  "python",
+  "parsing"
+ ],
+ "prompt": "In ~/proj/jpath.py write get(obj, path, default=None) for paths like \"a.b[0].c\", \"[2]\", \"users[1].tags[-1]\", or \"\" (the object itself). Missing keys, out-of-range indexes or indexing the wrong type return default. A malformed path (\"a..b\", \"a[\", \"a[x]\", \".a\") raises ValueError.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from jpath import get; print(get({'a':[{'b':1}]}, 'a[0].b'))\"",
+ "required": [
+  "jpath.py"
+ ],
+ "protected": []
+}

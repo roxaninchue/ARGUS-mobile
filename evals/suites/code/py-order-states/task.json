@@ -1,0 +1,15 @@
+{
+ "id": "py-order-states",
+ "level": 3,
+ "tags": [
+  "python",
+  "design"
+ ],
+ "prompt": "In ~/proj/orders.py write class Order with state starting at \"new\" and methods pay(), ship(), deliver(), cancel(). Allowed: new->paid->shipped->delivered; cancel from new or paid only. Anything else raises InvalidTransition (your exception) and leaves the state unchanged. order.history is the list of states visited, starting with \"new\".",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "python3 -c \"from orders import Order; o=Order(); o.pay(); o.ship(); print(o.state, o.history)\"",
+ "required": [
+  "orders.py"
+ ],
+ "protected": []
+}

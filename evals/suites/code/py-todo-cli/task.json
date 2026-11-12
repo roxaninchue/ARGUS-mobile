@@ -1,0 +1,20 @@
+{
+ "id": "py-todo-cli",
+ "level": 4,
+ "tags": [
+  "python",
+  "multi-file",
+  "demo",
+  "stretch"
+ ],
+ "prompt": "Build a small todo CLI as a package in ~/proj/todo/ runnable as `python3 -m todo`: `add <title...>` prints \"added <id>: <title>\", `list` prints lines like \"1. [ ] buy milk\" / \"2. [x] call Mwila\", `done <id>` prints \"done <id>\" (unknown id: message on stderr, exit 1). Data is a JSON file at $TODO_FILE (default ~/.todo.json); ids start at 1 and are never reused. Keep storage and CLI in separate modules. Optional if you have time: `list --pending` showing only open items. A small version that fully works beats a bigger broken one.",
+ "test_cmd": "python3 -m unittest discover -s _hidden -p \"test_*.py\"",
+ "verify": "export TODO_FILE=/tmp/t.json; rm -f $TODO_FILE; python3 -m todo add buy milk && python3 -m todo add call Mwila && python3 -m todo done 1 && python3 -m todo list; python3 -m todo done 9; echo exit=$?",
+ "required": [
+  "todo/__main__.py",
+  "todo/__init__.py"
+ ],
+ "stretch_marker": "pending",
+ "stretch_cmd": "cd /root/proj && export TODO_FILE=$(mktemp -u); python3 -m todo add a >/dev/null && python3 -m todo add b >/dev/null && python3 -m todo done 1 >/dev/null; out=$(python3 -m todo list --pending 2>&1); rc=$?; if [ $rc = 2 ] && echo \"$out\" | grep -qi \"unrecognized\\|usage\"; then exit 3; fi; [ \"$out\" = \"2. [ ] b\" ]",
+ "protected": []
+}
