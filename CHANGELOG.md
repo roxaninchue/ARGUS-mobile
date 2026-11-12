@@ -1,9 +1,18 @@
-## Unreleased (after v0.52.3, version not bumped): ARGUS is always on Autopilot
+## v0.52.4: always on Autopilot, one look for the whole app, icons everywhere, pinned facts (versionCode 191)
+
+### Also new
+- Pinned facts: say "pin this", "never forget X" or long-press › Pin, and ARGUS keeps up to 20 facts in every chat. Settings › What Argus is holding shows them; "unpin X" lets one go.
+- Heads-ups say why: each one carries a one-line reason ("Why?"), and Settings has a proactivity dial (Off, Low, Normal, High).
+- When you send several messages in a row, ARGUS checks it answered each one and adds a short reply for any it missed.
+- Spotlight over a chat is solid and readable in light mode.
+- Under the hood: ARGUS sends the gateway its full context on every call and reads which model served the reply from the gateway's route token. Groundwork for the coming Team (bots, new look, icons) is in the app but switched off.
+
+### ARGUS is always on Autopilot
 - No more Auto / Autopilot choice: ARGUS always works on Autopilot. Deleting, paying and messaging people still wait for your tap.
 - Gone: the Auto / Autopilot row in the + menu, the AUTOPILOT chip above the message box, the AUTO / AUTOPILOT switch in the mode bar, the /autopilot and /auto commands and the "Ask before acting" Spotlight entry.
 - If you picked Auto in an older version, ARGUS moves you to Autopilot by itself.
 
-## Unreleased (after v0.52.3, version not bumped): one look for the whole app
+### One look for the whole app
 - Every part of ARGUS now looks like the Home, the top bar and your profile: the same blacks and blues, the same rounded cards, the same margins, one size for round buttons and pills, and one set of text sizes.
 - The colour you pick in Appearance now colours the whole app, not only the older screens.
 - Settings pages one tap deeper, dialogs and menus follow light and dark mode (no more black boxes in light mode), with one switch, one main button style and one corner radius.
@@ -11,7 +20,7 @@
 - Music, Video and Gallery sit on the space view with the shared header (the light / dark switch included), a floating tab pill and the shared tab switcher.
 - The browser follows the app too: the new-tab page is the space view, its bar, tabs, launcher and site sheet use the app's cards and colours in light and dark, and its switches are the app's switch. Its VPN, location mask and tracker blocking work exactly as before.
 
-## Unreleased (after v0.52.3, version not bumped): icons everywhere, and the app is a size smaller by default
+### Icons everywhere, and the app is a size smaller by default
 - Icons instead of plain text across the app: the selected Home / Chat / Projects segment shows its icon with its name, every menu row (chat and project menus, the message menu, music, video, movies, gallery, the browser) has a leading icon, and the + menu and the Autopilot / Plan chip use icons instead of dots.
 - List rows lead with a round tinted icon tile: the setup screen's items, the profile and System Preferences rows, settings switches, projects, recent projects on Home, project chats, Spotlight results and browser bookmarks and history. One shared style (size, shape, tint) everywhere.
 - Buttons with icons: Play, Shuffle, Skip, Try again, Download, Skip intro, Play now, Restore, Delete, Rotate, Reset, Sign in, Retry and more.
