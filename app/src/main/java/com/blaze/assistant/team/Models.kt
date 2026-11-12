@@ -75,7 +75,8 @@ data class Bot(
     val reportsTo: String? = "manager", val parentId: String? = null, val members: List<String> = emptyList(),
     val hidden: Boolean = false, val pinned: Boolean = false, val enabled: Boolean = true,
     val routingHints: List<String> = emptyList(),
-    val createdAt: Long, val u: Long                                   // u = HLC for LWW sync
+    val createdAt: Long, val u: Long,                                  // u = HLC for LWW sync
+    val email: String = "", val portfolio: String = "",               // P1-TM-04 (A-team bot fields; team.db v3)
 )
 
 data class BotAppGrant(val appId: String, val source: String /* argus-connect|mcp|device (no third-party OAuth broker in the app, D5) */,

@@ -26,6 +26,8 @@ object BotRules {
     /** 04 §2 brandCobalt: ARGUS-only (Manager orb glow). Locked. */
     const val MANAGER_COLOR = "#3466FF"
     const val MANAGER_SHAPE = "sphere"
+    /** P1-TM-04: the Manager's portfolio line (A-team manager.js PORTFOLIO, in our words). Locked like its name. */
+    const val MANAGER_PORTFOLIO = "Runs the team: routes work, creates bots, keeps the roster tidy, and keeps track of what you need."
 
     /** 05 §3.2 Manager tool groups. */
     val MANAGER_GROUPS = setOf("team", "jobs", "memory", "routines", "web", "phone")
@@ -49,7 +51,8 @@ object BotRules {
         permissions = keep?.permissions ?: Permissions(),
         reportsTo = null, parentId = null, members = emptyList(),
         hidden = false, pinned = true, enabled = true, routingHints = emptyList(),
-        createdAt = keep?.createdAt?.takeIf { it > 0 } ?: now, u = keep?.u ?: now)
+        createdAt = keep?.createdAt?.takeIf { it > 0 } ?: now, u = keep?.u ?: now,
+        email = "", portfolio = MANAGER_PORTFOLIO)
 
     /**
      * The fields of [b] (a Manager row) that differ from what the app fixes: empty means the row is the Manager as
@@ -65,6 +68,7 @@ object BotRules {
         chk("engine", b.engine, m.engine); chk("reportsTo", b.reportsTo, m.reportsTo); chk("parent", b.parentId, m.parentId)
         chk("members", b.members, m.members); chk("hidden", b.hidden, m.hidden); chk("pinned", b.pinned, m.pinned)
         chk("enabled", b.enabled, m.enabled); chk("routingHints", b.routingHints, m.routingHints)
+        chk("email", b.email, m.email); chk("portfolio", b.portfolio, m.portfolio)
         return out
     }
 

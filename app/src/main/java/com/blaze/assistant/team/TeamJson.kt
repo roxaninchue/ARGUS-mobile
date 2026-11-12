@@ -149,7 +149,7 @@ object TeamJson {
         "engine" to engineMap(b.engine), "computer" to computerMap(b.computer), "apps" to b.apps.map { appMap(it) },
         "permissions" to permissionsMap(b.permissions), "reportsTo" to (b.reportsTo ?: JsonNull), "parentId" to b.parentId, "members" to b.members,
         "hidden" to b.hidden, "pinned" to b.pinned, "enabled" to b.enabled, "routingHints" to b.routingHints,
-        "createdAt" to b.createdAt, "u" to b.u)
+        "createdAt" to b.createdAt, "u" to b.u, "email" to b.email, "portfolio" to b.portfolio)
     private fun bot(o: Map<String, Any?>) = Bot(
         id = o.str("id"), kind = enumOr(o["kind"], BotKind.CUSTOM), name = o.str("name"), label = o.strOr("label", ""), domain = o.strOrNull("domain"),
         avatar = avatarOf(obj(o["avatar"], "avatar")), voice = (o["voice"] as? Map<*, *>)?.let { voiceOf(it.cast()) } ?: Voice(),
@@ -163,7 +163,8 @@ object TeamJson {
         reportsTo = if (o.containsKey("reportsTo")) o.strOrNull("reportsTo") else "manager",
         parentId = o.strOrNull("parentId"), members = strings(o["members"]),
         hidden = o.boolOr("hidden", false), pinned = o.boolOr("pinned", false), enabled = o.boolOr("enabled", true),
-        routingHints = strings(o["routingHints"]), createdAt = o.long("createdAt"), u = o.long("u"))
+        routingHints = strings(o["routingHints"]), createdAt = o.long("createdAt"), u = o.long("u"),
+        email = o.strOr("email", ""), portfolio = o.strOr("portfolio", ""))
 
     private fun jobMap(j: Job) = linkedMapOf<String, Any?>("id" to j.id, "title" to j.title, "botId" to j.botId, "due" to j.due,
         "priority" to j.priority, "status" to j.status, "run" to j.run.name, "deps" to j.deps, "parentJob" to j.parentJob,

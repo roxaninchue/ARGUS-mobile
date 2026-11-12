@@ -15,6 +15,8 @@ package com.blaze.assistant.team
  * bot_threads, routines, suggestions, proactivity, approvals, policies, spend_ledger, audit_log, screens.
  * v2 adds the read-path indexes the P1/P2 stores query by (job queue per bot, pending approvals, the activity log per
  * bot, open suggestions, due routines, bot-to-bot threads per pair, a parent's workers); no table changes.
+ * v3 (P1-TM-04) adds the bot editor's two A-team fields that had no column: `bots.email` and `bots.portfolio` (both
+ * NOT NULL DEFAULT '', so every v2 row reads as "none set").
  */
 object TeamSchema {
     /** The file name, in the app's databases dir. */
@@ -92,8 +94,13 @@ object TeamSchema {
         "CREATE INDEX IF NOT EXISTS audit_bot ON audit_log(bot_id, at)",
     )
 
+    private val V3 = listOf(
+        "ALTER TABLE bots ADD COLUMN email TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE bots ADD COLUMN portfolio TEXT NOT NULL DEFAULT ''",
+    )
+
     /** MIGRATIONS[n] takes the file from version n to n + 1. */
-    val MIGRATIONS: List<List<String>> = listOf(V1, V2)
+    val MIGRATIONS: List<List<String>> = listOf(V1, V2, V3)
 
     /** The version this build writes. */
     val VERSION: Int get() = MIGRATIONS.size

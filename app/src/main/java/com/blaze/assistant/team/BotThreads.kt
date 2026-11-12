@@ -63,6 +63,8 @@ class BotThreads(
         data class Cleared(override val botId: String, val generation: Int) : Change()
         data class Read(override val botId: String) : Change()
         data class Live(override val botId: String, val running: Boolean) : Change()
+        /** P1-TM-04: a bot was created, edited, switched off or deleted (the Team screen reloads its roster). */
+        data class Roster(override val botId: String) : Change()
     }
 
     sealed class Fresh {
@@ -72,6 +74,9 @@ class BotThreads(
 
     private val _changes = MutableSharedFlow<Change>(extraBufferCapacity = 256, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val changes: SharedFlow<Change> = _changes.asSharedFlow()
+
+    /** P1-TM-04: tells listeners the roster changed (the editor and the team tools call it after a save or delete). */
+    fun rosterChanged(botId: String) { _changes.tryEmit(Change.Roster(botId)) }
 
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val running = ConcurrentHashMap.newKeySet<String>()

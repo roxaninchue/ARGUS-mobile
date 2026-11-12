@@ -93,6 +93,10 @@ class LocalEngine(
                 if (bot.label.isNotBlank() && bot.label != bot.name) append(" (").append(bot.label).append(")")
                 bot.domain?.takeIf { it.isNotBlank() }?.let { append("\nLife area: ").append(it) }
                 bot.reportsTo?.let { append("\nReports to: ").append(it) }
+                // P1-TM-04: the editor's A-team fields, and what mode "teammate" means (Bot HQ stored it unused)
+                bot.email.takeIf { it.isNotBlank() }?.let { append("\nEmail: ").append(it) }
+                bot.portfolio.takeIf { it.isNotBlank() }?.let { append("\nPortfolio: ").append(it) }
+                if (bot.mode == "teammate") append("\nMode: teammate. You work alongside the other bots: take work they hand you, and save what the whole team should know with note_team.")
             }
             return if (s.isEmpty()) head else "$head\n\n$s"
         }
@@ -106,6 +110,12 @@ object ToolSubset {
     /** A tool group meaning "every tool". */
     const val ALL = "*"
 
+    /**
+     * P1-TM-04: tools every bot has whatever its groups (A-team BASE_TOOLS): update_agent (its own name, role, email,
+     * portfolio) and note_team (a note in the team's shared memory). A NEVER grant still removes them.
+     */
+    val SELF = setOf("update_agent", "note_team")
+
     /** Null = every tool (the Manager, or a bot granted [ALL]); else the rule for one tool name. */
     fun of(bot: Bot, groupOf: (String) -> String?): ((String) -> Boolean)? =
         if (bot.kind == BotKind.MANAGER || ALL in bot.toolGroups) null else { name -> allows(bot, name, groupOf(name)) }
@@ -117,7 +127,7 @@ object ToolSubset {
     fun allows(bot: Bot, name: String, group: String?): Boolean = when (bot.toolGrants[name]) {
         Rule.NEVER -> false
         Rule.ALLOW, Rule.ASK -> true
-        null -> group == null || group in bot.toolGroups
+        null -> group == null || group in bot.toolGroups || name in SELF
     }
 }
 
