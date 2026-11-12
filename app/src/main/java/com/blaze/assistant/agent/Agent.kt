@@ -1500,6 +1500,7 @@ When you finish, say what you did in one short sentence.
         t.put(com.blaze.assistant.notify.GroupBrain.tool())
         t.put(com.blaze.assistant.phone.CallControl.tool())
         if (Settings.bool("bg_agents", true)) { BgAgents.tools().forEach { t.put(it) }; t.put(com.blaze.assistant.orchestra.OrchestraRuns.tool()) }
+        TeamHooks.toolDefs().forEach { t.put(JSONObject(it)) }   // P1-TM-05: job tools (add_job, done_job, …)
         if (com.blaze.assistant.link.DesktopLink.paired) t.put(com.blaze.assistant.link.DesktopLink.tool())
         com.blaze.assistant.connect.Connectors.tools().forEach { t.put(it) }
         try { com.blaze.assistant.connect.Mcp.tools().forEach { t.put(it) } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mcp.tools.fo", e) }
@@ -4797,7 +4798,7 @@ When you finish, say what you did in one short sentence.
             MemoryLoop.gate(name, user, memoryLookups, songResolved.ifBlank { MemoryLoop.concrete(user).orEmpty() })?.let { add(Role.STEP, "Skipping another memory check"); return it }
             if (MemoryLoop.isLookup(name)) memoryLookups++
             if (TeamHooks.isBound(id)) TeamHooks.call(id, name, SecretVault.scrub(args.toString()))
-            val out = runToolScreen(name, args, shots)
+            val out = TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots)   // P1-TM-05: job tools
             if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out))
             if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
             return out
