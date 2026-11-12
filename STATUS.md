@@ -5,6 +5,7 @@
 
 ## main, round after 0.52.4 (P1 · 0.53.0, not built)
 - **P1-TM-01 TeamStore + Bot rules (nothing wired to UI):** `team/Bot.kt`, `team/TeamStore.kt`, optional bot fields on `Specialists.Spec`; ARGUS is the locked, undeletable Manager (id `manager`), Tempo + Inbox seeded, specialists as WORKER templates (b862f9c2, 849f7002). TeamStoreTest 15/15, SpecialistStoreTest 4/4 locally. Not built.
+- **P1-TM-02 bot threads (nothing wired to UI):** `team/Rows.kt` (Bot HQ row model, RowStore on team.db `rows`, upsert by seq, generation bump), `team/BotThreads.kt` (unread / preview / last activity, one turn at a time per bot on LocalEngine, ARGUS thread read from the existing chats, no data move), `ChatStore.list()` hides bot-thread chats (702c41a8). RowStoreTest 9/9, BotThreadsTest 13/13, ArgusUpgradeTest 1/1 locally. Not built.
 
 ## main, v0.52.4 (versionCode 191, P0-IL-01, owner said "build" 2026-11-12): releases the three rounds below; first CI round since 0.52.3
 - **Build:** version bump + CHANGELOG / STATUS / about.md in one commit without [skip ci], so GitHub Actions on the mirror runs `apk`, `unit-tests`, `shots`, `build`. Owner accepted for this release: one CI run despite the no-CI rule, and the gateway change (`blaze_context: "full"` on every call, served model read from the route token) shipping to everyone untested on device.
