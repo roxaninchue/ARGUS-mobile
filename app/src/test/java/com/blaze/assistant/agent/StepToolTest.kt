@@ -27,7 +27,7 @@ class StepToolTest {
         assertEquals("Read a page", StepTool.label("fetch_page").done)
         assertEquals(StepTool.Kind.MEMORY, StepTool.label("memory_save").kind)
         assertEquals(StepTool.Kind.READ, StepTool.label("bank_balance").kind)
-        assertEquals(StepTool.Kind.EDIT, StepTool.label("gmail_send_email").kind)
+        assertEquals("a send is a message, not an edit", StepTool.Kind.MESSAGES, StepTool.label("gmail_send_email").kind)
         assertEquals(StepTool.Kind.CLOUD, StepTool.label("codespace_exec").kind)
         assertEquals(StepTool.Kind.TEAM, StepTool.label("send_to_bot").kind)
         assertEquals(StepTool.Kind.JOBS, StepTool.label("add_job").kind)

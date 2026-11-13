@@ -171,4 +171,9 @@ fun LookPage() {
         stageOn = !stageOn; com.blaze.assistant.agent.Settings.setBool("stage_on", stageOn)
         if (!stageOn) com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.Reset)
     }
+    // Milestone 4: live tool rows in the chat (off = the one-line task pill).
+    var toolRowsOn by remember { mutableStateOf(com.blaze.assistant.agent.Settings.toolRows) }
+    ToggleRow("Show tool steps", "While ${BrandName.NAME} works, each step opens to what it ran and what came back. Off: one short line", toolRowsOn) {
+        toolRowsOn = !toolRowsOn; com.blaze.assistant.agent.Settings.toolRows = toolRowsOn
+    }
 }

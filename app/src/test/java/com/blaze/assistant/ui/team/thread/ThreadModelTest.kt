@@ -41,7 +41,7 @@ class ThreadModelTest {
         assertEquals(listOf("User", "Work", "Agent"), items.map { it::class.simpleName })
         val w = items[1] as ThreadItem.Work
         assertEquals("Worked for 2m 10s \u00b7 4 steps", w.chip)
-        assertEquals("4 steps: 1 edit, 1 command, 2 browser", w.summary)
+        assertEquals("4 steps: 1 edit, 1 command, 2 browser steps", w.summary)
         assertEquals(listOf(StepTool.Kind.EDIT, StepTool.Kind.COMMAND, StepTool.Kind.BROWSER), w.groups.map { it.kind })
         val cmd = w.steps.first { it.key == "c3" }
         assertEquals("ls -la", cmd.command); assertEquals("total 0", cmd.output); assertEquals("Ran a command", cmd.title)

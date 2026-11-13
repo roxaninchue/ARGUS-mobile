@@ -347,6 +347,14 @@ object Settings {
         get() = b("show_steps", false)
         set(v) = prefs.edit().putBoolean("show_steps", v).apply()
 
+    /**
+     * Milestone 4: the main chat shows a turn's tool calls as live, expandable rows (group → kind → call) and, once
+     * done, a work chip. Off = the one-line task pill only (the 0.52.1 view).
+     */
+    var toolRows: Boolean
+        get() = b("tool_rows", true)
+        set(v) { prefs.edit().putBoolean("tool_rows", v).apply(); ToolTrail.on = v }
+
     /** Fold long tables, lists, code and reports into cards you tap to open. */
     var foldAnswers: Boolean
         get() = b("fold_answers", true)

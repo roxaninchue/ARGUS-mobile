@@ -109,11 +109,16 @@ object StepPill {
  * step line, a detail) goes through [StepPill.clean] first, and a line that fails is replaced, never shown half-clean.
  */
 object StepTool {
-    /** AT `.tg` sub-groups (04 §2.8 #19), in display order. */
+    /**
+     * AT `.tg` sub-groups (04 §2.8 #19), in display order. [one] / [many] count a group in the WorkChip summary
+     * ("1 edit", "2 edits"); [group] is its header. Only real file and content edits are [EDIT]: sends and posts are
+     * [MESSAGES], alarms, timers and calendar changes [SCHEDULE].
+     */
     enum class Kind(val one: String, val many: String, val group: String) {
         EDIT("edit", "edits", "Edits"), READ("read", "reads", "Reads"), COMMAND("command", "commands", "Commands"),
-        CLOUD("cloud step", "cloud steps", "Cloud computer"), BROWSER("browser", "browser", "Browser"),
-        MEMORY("memory", "memory", "Memory"), TEAM("team", "team", "Team"), JOBS("job", "jobs", "Jobs"),
+        MESSAGES("message", "messages", "Messages"), SCHEDULE("schedule change", "schedule changes", "Schedule"),
+        CLOUD("cloud step", "cloud steps", "Cloud computer"), BROWSER("browser step", "browser steps", "Browser"),
+        MEMORY("memory step", "memory steps", "Memory"), TEAM("handoff", "handoffs", "Team"), JOBS("job", "jobs", "Jobs"),
         APPROVAL("approval", "approvals", "Approvals"), OTHER("step", "steps", "Other steps"),
     }
 
@@ -122,54 +127,108 @@ object StepTool {
 
     private fun l(now: String, done: String, kind: Kind, icon: String) = Label(now, done, kind, icon)
 
+    /** The app's own tool names (orchestra/ToolScheduler.Resources and the tool schemas), named by what they do. */
     private val known: Map<String, Label> = mapOf(
         "web_search" to l("Searching the web", "Searched the web", Kind.BROWSER, "search"),
         "fetch_page" to l("Reading a page", "Read a page", Kind.BROWSER, "globe"),
         "browser" to l("Using the browser", "Used the browser", Kind.BROWSER, "globe"),
+        // files: the only real edits
+        "file_edit" to l("Editing a file", "Edited a file", Kind.EDIT, "pencil"),
+        "file_write" to l("Writing a file", "Wrote a file", Kind.EDIT, "pencil"),
+        "file_delete" to l("Deleting a file", "Deleted a file", Kind.EDIT, "trash-2"),
         "save_file" to l("Saving a file", "Saved a file", Kind.EDIT, "download"),
-        "edit_file" to l("Editing a file", "Edited a file", Kind.EDIT, "pencil"),
-        "write_file" to l("Writing a file", "Wrote a file", Kind.EDIT, "pencil"),
-        "read_file" to l("Reading a file", "Read a file", Kind.READ, "scroll-text"),
+        "export_file" to l("Saving a file", "Saved a file", Kind.EDIT, "download"),
+        "download_file" to l("Downloading a file", "Downloaded a file", Kind.EDIT, "download"),
+        "file_read" to l("Reading a file", "Read a file", Kind.READ, "scroll-text"),
+        "file_list" to l("Listing files", "Listed files", Kind.READ, "scroll-text"),
+        "file_search" to l("Searching files", "Searched files", Kind.READ, "search"),
+        // commands
+        "run_shell" to l("Running a command", "Ran a command", Kind.COMMAND, "terminal"),
+        "termux_run" to l("Running a command", "Ran a command", Kind.COMMAND, "terminal"),
+        "run_code" to l("Running code", "Ran code", Kind.COMMAND, "terminal"),
+        "open_app" to l("Opening an app", "Opened an app", Kind.COMMAND, "smartphone"),
+        "run_plan" to l("Using your phone", "Used your phone", Kind.COMMAND, "smartphone"),
+        "phone_task" to l("Using your phone", "Used your phone", Kind.COMMAND, "smartphone"),
+        "type_text" to l("Typing", "Typed", Kind.COMMAND, "smartphone"),
+        "open_settings_page" to l("Opening settings", "Opened settings", Kind.COMMAND, "settings"),
+        // messages and calls
+        "send_sms" to l("Sending a text", "Sent a text", Kind.MESSAGES, "send"),
+        "send_text" to l("Sending a text", "Sent a text", Kind.MESSAGES, "send"),
+        "compose_sms" to l("Writing a text", "Wrote a text", Kind.MESSAGES, "message-circle"),
+        "gmail_send" to l("Sending an email", "Sent an email", Kind.MESSAGES, "mail"),
+        "slack_post" to l("Posting a message", "Posted a message", Kind.MESSAGES, "message-circle"),
+        "message_contact" to l("Sending a message", "Sent a message", Kind.MESSAGES, "send"),
+        "notif_reply" to l("Replying", "Replied", Kind.MESSAGES, "message-circle"),
+        "reply_to_notification" to l("Replying", "Replied", Kind.MESSAGES, "message-circle"),
+        "call_contact" to l("Placing a call", "Placed a call", Kind.MESSAGES, "phone"),
+        "call_number" to l("Placing a call", "Placed a call", Kind.MESSAGES, "phone"),
+        "dial" to l("Placing a call", "Placed a call", Kind.MESSAGES, "phone"),
+        // schedule
+        "set_alarm" to l("Setting an alarm", "Set an alarm", Kind.SCHEDULE, "clock"),
+        "set_timer" to l("Setting a timer", "Set a timer", Kind.SCHEDULE, "clock"),
+        "add_calendar_event" to l("Adding to your calendar", "Added to your calendar", Kind.SCHEDULE, "calendar"),
+        "gcal_create" to l("Adding to your calendar", "Added to your calendar", Kind.SCHEDULE, "calendar"),
+        "move_event" to l("Moving an event", "Moved an event", Kind.SCHEDULE, "calendar-clock"),
+        "delete_event" to l("Removing an event", "Removed an event", Kind.SCHEDULE, "calendar"),
+        "create_routine" to l("Scheduling a routine", "Scheduled a routine", Kind.SCHEDULE, "calendar-clock"),
+        "schedule_command" to l("Scheduling a command", "Scheduled a command", Kind.SCHEDULE, "calendar-clock"),
+        "gcal_events" to l("Checking your calendar", "Checked your calendar", Kind.READ, "calendar"),
+        "calendar_events" to l("Checking your calendar", "Checked your calendar", Kind.READ, "calendar"),
+        // memory, chats, screen
         "remember" to l("Saving to memory", "Saved to memory", Kind.MEMORY, "brain"),
         "forget" to l("Forgetting something", "Forgot something", Kind.MEMORY, "brain"),
+        "recall_memory" to l("Checking memory", "Checked memory", Kind.MEMORY, "brain"),
         "memory_search" to l("Checking memory", "Checked memory", Kind.MEMORY, "brain"),
         "memory_save" to l("Saving to memory", "Saved to memory", Kind.MEMORY, "brain"),
         "memory_update" to l("Updating memory", "Updated memory", Kind.MEMORY, "brain"),
         "memory_delete" to l("Forgetting something", "Forgot something", Kind.MEMORY, "brain"),
         "search_past_chats" to l("Looking through past chats", "Looked through past chats", Kind.READ, "message-circle"),
         "search_chat" to l("Looking back in the chat", "Looked back in the chat", Kind.READ, "message-circle"),
+        "read_messages" to l("Reading messages", "Read messages", Kind.READ, "message-circle"),
         "read_screen" to l("Reading the screen", "Read the screen", Kind.READ, "smartphone"),
-        "open_app" to l("Opening an app", "Opened an app", Kind.COMMAND, "smartphone"),
-        "run_plan" to l("Using your phone", "Used your phone", Kind.COMMAND, "smartphone"),
-        "phone_task" to l("Using your phone", "Used your phone", Kind.COMMAND, "smartphone"),
-        "terminal" to l("Running a command", "Ran a command", Kind.COMMAND, "terminal"),
-        "run_command" to l("Running a command", "Ran a command", Kind.COMMAND, "terminal"),
+        // team, jobs, approvals, specialties
         "start_agent" to l("Starting background work", "Started background work", Kind.JOBS, "workflow"),
+        "spawn_agent" to l("Starting background work", "Started background work", Kind.JOBS, "workflow"),
         "send_to_bot" to l("Asking a teammate", "Asked a teammate", Kind.TEAM, "users"),
         "delegate" to l("Asking a teammate", "Asked a teammate", Kind.TEAM, "users"),
         "add_job" to l("Adding a job", "Added a job", Kind.JOBS, "list-checks"),
+        "notion_add_page" to l("Adding a page", "Added a page", Kind.EDIT, "notebook-pen"),
         "request_secret" to l("Asking for a secure detail", "Asked for a secure detail", Kind.APPROVAL, "lock"),
         "use_skill" to l(StepPill.SPECIALIST_IN, "Used a specialty", Kind.OTHER, "sparkles"),
         "run_skill" to l(StepPill.SPECIALIST_IN, "Used a specialty", Kind.OTHER, "sparkles"),
     )
 
+    /** Tool names in the [known] table (StepToolLabelsTest walks them). */
+    val knownNames: Set<String> get() = known.keys
+
     private fun has(n: String, vararg w: String) = w.any { Regex("(^|_)$it(_|$)").containsMatchIn(n) }
+
+    private val READS = arrayOf("read", "get", "list", "search", "find", "fetch", "check", "look", "query", "balance", "status", "view", "inbox")
 
     /** The label for tool [name]: never the name itself. */
     fun label(name: String): Label {
         val n = name.trim().lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_')
         known[n]?.let { return it }
+        val reads = has(n, *READS)
         return when {
             has(n, "cloud", "codespace", "orgo", "vm") -> l("Working on the cloud computer", "Worked on the cloud computer", Kind.CLOUD, "cloud")
             has(n, "browser", "browse", "web", "page", "url", "site") -> l("Using the browser", "Used the browser", Kind.BROWSER, "globe")
             has(n, "memory", "remember", "recall") -> l("Checking memory", "Checked memory", Kind.MEMORY, "brain")
             has(n, "bot", "team", "handoff", "delegate") -> l("Asking a teammate", "Asked a teammate", Kind.TEAM, "users")
-            has(n, "job", "task", "todo", "routine", "schedule", "alarm", "reminder") -> l("Updating jobs", "Updated jobs", Kind.JOBS, "list-checks")
-            has(n, "shell", "exec", "run", "command", "terminal", "script", "git") -> l("Running a command", "Ran a command", Kind.COMMAND, "terminal")
-            has(n, "write", "save", "create", "update", "edit", "delete", "set", "add", "send", "post", "move", "rename") ->
+            // sends, posts, replies and calls: their own group, never "Edits"
+            !reads && has(n, "send", "post", "reply", "share", "compose", "sms", "message", "messages", "email", "mail", "dm", "call", "dial") ->
+                l("Sending a message", "Sent a message", Kind.MESSAGES, "send")
+            !reads && has(n, "alarm", "alarms", "timer", "timers", "reminder", "reminders", "calendar", "event", "events", "schedule", "routine", "routines", "meeting") ->
+                l("Updating your schedule", "Updated your schedule", Kind.SCHEDULE, "calendar-clock")
+            has(n, "job", "jobs", "task", "tasks", "todo", "todos", "agent", "agents") -> l("Updating jobs", "Updated jobs", Kind.JOBS, "list-checks")
+            has(n, "shell", "exec", "run", "command", "terminal", "script", "git", "code") -> l("Running a command", "Ran a command", Kind.COMMAND, "terminal")
+            has(n, "file", "files", "doc", "docs", "document", "note", "notes", "contact", "contacts", "sheet", "page") &&
+                has(n, "write", "save", "create", "update", "edit", "delete", "add", "move", "rename", "append", "replace") ->
                 l("Making a change", "Made a change", Kind.EDIT, "pencil")
-            has(n, "read", "get", "list", "search", "find", "fetch", "check", "look", "query", "balance", "status", "calendar", "mail", "inbox") ->
-                l("Looking things up", "Looked things up", Kind.READ, "search")
+            !reads && has(n, "set", "toggle", "enable", "disable", "volume", "setting", "settings", "device", "mode") ->
+                l("Changing a setting", "Changed a setting", Kind.OTHER, "settings")
+            reads || has(n, "calendar", "mail") -> l("Looking things up", "Looked things up", Kind.READ, "search")
+            has(n, "write", "save", "create", "update", "edit", "delete", "add", "move", "rename") -> l("Making a change", "Made a change", Kind.EDIT, "pencil")
             else -> l("Working", "Worked", Kind.OTHER, "zap")
         }
     }

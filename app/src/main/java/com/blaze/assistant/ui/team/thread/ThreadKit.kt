@@ -203,11 +203,13 @@ fun StepList(steps: List<Step>, modifier: Modifier = Modifier) {
 }
 
 /**
- * `ActivityLine` (live): spinner · present-tense line · "· N steps" · elapsed · chevron; open → the [StepList]. A
- * polite live region, so TalkBack reads a new step without taking focus.
+ * `ActivityLine` (live): spinner · present-tense line · "· N steps" · elapsed · chevron; open → the [StepList], or with
+ * [grouped] the calls by kind as [ToolCard]s ([ToolGroups], milestone 4's live tool rows in the main chat). A polite
+ * live region, so TalkBack reads a new step without taking focus.
  */
 @Composable
-fun ActivityLine(live: ThreadItem.Live, modifier: Modifier = Modifier, now: () -> Long = { System.currentTimeMillis() }) {
+fun ActivityLine(live: ThreadItem.Live, modifier: Modifier = Modifier, now: () -> Long = { System.currentTimeMillis() },
+                 grouped: Boolean = false) {
     val c = Argus.colors
     var open by rememberSaveable(live.key) { mutableStateOf(false) }
     var t by remember { mutableLongStateOf(now()) }
@@ -227,7 +229,31 @@ fun ActivityLine(live: ThreadItem.Live, modifier: Modifier = Modifier, now: () -
             if (live.startedAt > 0) Text(ThreadModel.clock(ms), style = ArgusType.mono, color = c.dim)
             Icon(Lucide.icon(if (open) "chevron-down" else "chevron-right", 16), null, Modifier.padding(start = 6.dp).size(16.dp), tint = c.mute)
         }
-        AnimatedVisibility(open) { StepList(live.steps) }
+        AnimatedVisibility(open) {
+            if (grouped) ToolGroups(ThreadModel.groups(live.steps), Modifier.padding(start = ThreadSpec.SIDE.dp, end = ThreadSpec.SIDE.dp, bottom = 6.dp))
+            else StepList(live.steps)
+        }
+    }
+}
+
+/**
+ * Milestone 4: the main chat's live tool block. Collapsed: the current step line and the count; open: EDITS, READS,
+ * COMMANDS… each call a [ToolCard] that opens to its command and output. When the turn ends the chat draws the
+ * turn's [WorkChip] instead.
+ */
+@Composable
+fun LiveToolRows(live: ThreadItem.Live, modifier: Modifier = Modifier, now: () -> Long = { System.currentTimeMillis() }) =
+    ActivityLine(live, modifier, now, grouped = true)
+
+/** A turn's calls grouped by kind (AT `.tg`): a section header per kind, each call a [ToolCard]. */
+@Composable
+fun ToolGroups(groups: List<ThreadModel.Group>, modifier: Modifier = Modifier, onUndo: (callId: String) -> Unit = {}) {
+    val c = Argus.colors
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (g in groups) {
+            Text(g.kind.group.uppercase(), style = ArgusType.section, color = c.meta, modifier = Modifier.semantics { heading() })
+            for (s in g.steps) ToolCard(s, onUndo = { onUndo(s.key) })
+        }
     }
 }
 
@@ -251,10 +277,7 @@ fun WorkChip(w: ThreadItem.Work, actions: ThreadActions, modifier: Modifier = Mo
         AnimatedVisibility(open) {
             Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (w.groups.size > 1) Text(w.summary, style = ArgusType.meta, color = c.mute)
-                for (g in w.groups) {
-                    Text(g.kind.group.uppercase(), style = ArgusType.section, color = c.meta, modifier = Modifier.semantics { heading() })
-                    for (s in g.steps) ToolCard(s, onUndo = { actions.undo(s.key) })
-                }
+                ToolGroups(w.groups, onUndo = actions.undo)
                 if (w.failed) ArgusButton("Go on", actions.goOn, size = ButtonSize.S)
             }
         }

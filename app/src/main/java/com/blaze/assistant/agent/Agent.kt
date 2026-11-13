@@ -4802,7 +4802,7 @@ When you finish, say what you did in one short sentence.
             if (MemoryLoop.isLookup(name)) memoryLookups++
             if (TeamHooks.isBound(id)) TeamHooks.call(id, name, SecretVault.scrub(args.toString()))
             val out = com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots) }   // P1-TM-05 job tools; P2-SF-01 policy
-            if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out))
+            if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out)); ToolTrail.result(id, Friendly.exact(name, args)) { SecretVault.scrub(out) }   // M4 tool rows
             if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
             return out
         }

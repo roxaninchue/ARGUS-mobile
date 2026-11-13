@@ -1245,6 +1245,19 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val chatHere by Agent.chatId.collectAsState()
     val agentLogs = remember(agentsAll, chatHere) { agentsAll.filter { it.live && it.parent == chatHere }.sortedBy { it.started }
         .map { b -> b.log.ifEmpty { listOfNotNull(b.last.takeIf { l -> l.isNotBlank() }) } } }
+    // Milestone 4: live, expandable tool rows (group → kind → call, ui/team/thread/ChatToolRows) behind the tool_rows
+    // setting; off = the 0.52.1 TaskPill line only.
+    val toolRows = Settings.toolRows
+    LaunchedEffect(toolRows) { com.blaze.assistant.agent.ToolTrail.on = toolRows }
+    val trail by com.blaze.assistant.agent.ToolTrail.results.collectAsState()
+    val toolTurns = remember(messages, mood, trail, chatHere, toolRows, keep) {
+        if (!toolRows) null else com.blaze.assistant.ui.team.thread.ChatToolRows.turns(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
+            it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD) || keep?.invoke(it) == false }.map {
+            com.blaze.assistant.ui.team.thread.ChatToolRows.Msg(it.id, it.role == Role.STEP, it.text, if (it.role == Role.STEP) it.meta else "", it.at, it.startAt,
+                ack = it.role == Role.BLAZE && it.meta == com.blaze.assistant.agent.Ack.META) }, mood != Mood.IDLE, trail[chatHere].orEmpty())
+    }
+    val idleNow = rememberUpdatedState(mood == Mood.IDLE)
+    val toolActions = remember(onFollowup) { com.blaze.assistant.ui.team.thread.ThreadActions(goOn = { if (idleNow.value) onFollowup("Go on") }) }
     val total = items.size + 1 // + working row
     val atBottom by remember { derivedStateOf { !state.canScrollForward } }
     var follow by remember { mutableStateOf(true) }
@@ -1318,6 +1331,9 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 val prevAt = if (i > 0) items[i - 1].at else 0L
                 Column(Modifier.fillMaxWidth()) {
                 if (item is Item.Msg && BubbleDays.startsDay(prevAt, item.at)) DayChip(remember(item.at) { BubbleDays.label(item.at) })
+                // Milestone 4: the finished turn's work chip, just above the message that ended it.
+                if (item is Item.Msg && !hideDoneSteps) toolTurns?.before?.get(item.m.id)?.let { w ->
+                    ToolRowsLocals { com.blaze.assistant.ui.team.thread.WorkChip(w, toolActions) } }
                 Box(Modifier.fillMaxWidth().appearIn(fresh && i >= items.size - 3).padding(top = Bubbles.gapAbove(item.pos, i == 0))) {
                     when (item) {
                         is Item.Steps -> {
@@ -1387,7 +1403,11 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 StepPillRow(pillText, pill?.specialist == true, Modifier.weight(1f, fill = false), inline = true) }
                 }
                 // 0.52.1 (owner): ONE pill per task, natural text that changes as the work moves on, gone when done.
-                val pillLine = com.blaze.assistant.agent.TaskLine.pick(if (working) turnSteps else null, agentLogs)
+                // Milestone 4: while the turn runs, its calls are one live, expandable block instead of the pill.
+                val liveRows = toolTurns?.live?.takeIf { working && it.steps.isNotEmpty() }
+                if (liveRows != null) ToolRowsLocals { com.blaze.assistant.ui.team.thread.LiveToolRows(liveRows) }
+                if (!working && !hideDoneSteps) toolTurns?.tail?.let { w -> ToolRowsLocals { com.blaze.assistant.ui.team.thread.WorkChip(w, toolActions) } }
+                val pillLine = if (liveRows != null) null else com.blaze.assistant.agent.TaskLine.pick(if (working) turnSteps else null, agentLogs)
                 AnimatedVisibility(pillLine != null, enter = MotionTokens.enterUp(), exit = MotionTokens.fadeAway()) {
                     TaskPill(pillLine ?: "")
                 }
@@ -1411,6 +1431,13 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
             }
         }
     }
+}
+
+/** Milestone 4: the A-team kit's colours for the tool rows, whichever look the chat is in. */
+@Composable
+private fun ToolRowsLocals(content: @Composable () -> Unit) {
+    val c = LocalBlaze.current
+    CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(c.dark), content = content)
 }
 
 /** "14 steps" folded into one line. Tap to see them all. While working, the newest step shows. */
