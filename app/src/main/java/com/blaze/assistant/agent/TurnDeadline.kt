@@ -20,8 +20,8 @@ object TurnDeadline {
     const val TURN_MS = 5 * 60_000L
 
     /** The hard turn length: Autopilot keeps its own budget (long work), every other turn [TURN_MS]. */
-    fun turnMs(autopilot: Boolean, apMinutes: Int, longWork: Boolean): Long =
-        if (autopilot && longWork) apMinutes.coerceIn(5, 240) * 60_000L else TURN_MS
+    fun turnMs(autopilot: Boolean, apMinutes: Int, longWork: Boolean, build: Boolean = false): Long =
+        maxOf(if (autopilot && longWork) apMinutes.coerceIn(5, 240) * 60_000L else TURN_MS, if (build) BuildMode.TURN_MS else 0L)   // 2026-11-14 build mode
 
     /** What one step may still take at [now] for a turn ending at [end] (never below 5 s, so the last step can answer). */
     fun stepBudget(end: Long, now: Long, cap: Long = STEP_MS): Long = minOf(cap, maxOf(5_000L, end - now))

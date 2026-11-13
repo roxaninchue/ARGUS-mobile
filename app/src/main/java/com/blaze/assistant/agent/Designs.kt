@@ -338,7 +338,7 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
             .put("description", "Make or change anything visual or interactive in ${BrandName.NAME}'s Design view (live preview, opens automatically): 3D scenes and models " +
                 "(a rocket, car, building, room, product, character: pass parts, ${BrandName.NAME} renders it with three.js and orbit controls), 2D art and icons (svg), " +
                 "websites and landing pages, UI mockups and app screens, diagrams and flowcharts, charts and dashboards, posters, flyers, slides, floor plans, " +
-                "product mockups, simple games (html). Posts, stories, slides, icons and posters the user will adjust by hand: kind canvas with elements. create starts a new design and makes it current; update changes the CURRENT design (use it for every " +
+                "product mockups, complete playable games (html). Posts, stories, slides, icons and posters the user will adjust by hand: kind canvas with elements. create starts a new design and makes it current; update changes the CURRENT design (use it for every " +
                 "follow-on like \"show the engine\", \"make it taller\", \"add fins\", \"make it red\": 3D via set_parts/remove_parts, canvas via set_elements/remove_elements, pages via edits or html); " +
                 "read returns the current design's source; open shows it; undo restores the previous version; list shows saved designs. " +
                 "Never say a design was made, changed or opened unless this tool (or open_view) succeeded this turn.")

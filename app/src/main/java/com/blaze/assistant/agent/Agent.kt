@@ -1313,6 +1313,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 CoreSkills.NAMES.mapNotNull { n -> runCatching { n to app.assets.open("skills/$n/SKILL.md").bufferedReader().use { it.readText() } }.getOrNull() }.toMap()
             }
             turn("core_skills", CoreSkills.promptBlock(HarnessPrompt.pinned(prof.core)))
+            turn("build", BuildMode.block(userText))   // 2026-11-14 build / craft mode: plan, design system, self-review, one improvement round
             // v0.23.0: the VIEWS block. v0.45.0 (#16): in full only when a view is routed this turn; else one line.
             turn("views", if (prof.views) ViewRouter.PROMPT else PromptProfile.viewsShort(ViewRouter.specs.map { it.name }))
             // 0.46.0 Blaze Stage: in place first; plain Q&A stays chat; "study 30 min" is a timer card with Start.
@@ -3610,11 +3611,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val lastResults = ArrayList<String>()
                 // Autopilot: a bigger step budget and a clock; normal turns keep the old cap.
                 val autopilot = Modes.autopilot && !routine
-                val maxSteps = if (autopilot) Modes.apSteps else MAX_STEPS
+                val buildTurn = !routine && BuildMode.wants(userNow)   // 2026-11-14 build / craft mode: more steps and time (BuildMode)
+                val maxSteps = BuildMode.steps(if (autopilot) Modes.apSteps else MAX_STEPS, buildTurn)
                 val deadline = if (autopilot) turnStart + Modes.apMinutes * 60_000L else Long.MAX_VALUE
                 // v0.45.9 (TurnDeadline): a hard end for every turn, checked during each model step too (the 56-minute reply).
                 val longWork = bulk || routine || agentId != null || resuming || userNow.length > 280
-                fun hardEnd(): Long = turnStart + (cloudTurn?.waitedMs ?: 0L) + TurnDeadline.turnMs(autopilot, Modes.apMinutes, longWork || synchronized(turnTools) { turnTools.size } >= 3)
+                fun hardEnd(): Long = turnStart + (cloudTurn?.waitedMs ?: 0L) + TurnDeadline.turnMs(autopilot, Modes.apMinutes, longWork || synchronized(turnTools) { turnTools.size } >= 3, buildTurn)
                 var autoReplies = 0
                 // v0.42.0 Cloud runs: a normal chat turn goes to the gateway once, as a run it keeps until the phone has the
                 // reply. Private chats, background agents, specialists, routines and Halo turns stay on the local loop.
