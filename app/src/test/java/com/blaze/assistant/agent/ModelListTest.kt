@@ -14,7 +14,12 @@ class ModelListTest {
         assertEquals("Claude Opus 5.5", LiveModels.prettyName("coarena/claude-opus-5-5"))
         assertEquals("Gemini 3.8 Flash", LiveModels.prettyName("gemini-3-8-flash"))
         assertEquals("Mimo V2.6 Pro", LiveModels.prettyName("mimo-v2-6-pro"))
-        assertEquals("Voxtral Small 2507", LiveModels.prettyName("voxtral-small-2507"))
+        assertEquals("Voxtral Small", LiveModels.prettyName("voxtral-small-2507"))
+        // owner 21:10 screenshot: "Deepseek V4 1 Flash 1017"
+        assertEquals("DeepSeek V4.1 Flash", LiveModels.prettyName("deepseek/deepseek-v4-1-flash-1017"))
+        assertEquals("GPT 4o", LiveModels.prettyName("gpt-4o-2024-08-06"))
+        assertEquals("Qwen3 235b A22b", LiveModels.prettyName("qwen3-235b-a22b-20250701"))
+        assertEquals("GPT OSS 120b", LiveModels.prettyName("openai/gpt-oss-120b:free"))
     }
 
     @Test fun sameModelFromTwoProvidersIsOneRowAndTheHealthierFasterOneWins() {

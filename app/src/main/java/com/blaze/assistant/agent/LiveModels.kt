@@ -49,17 +49,21 @@ object LiveModels {
     fun liveUrl(base: String): String = base.trimEnd('/').removeSuffix("/v1") + Wire.LIVE
 
     // ---------------- names ----------------
-    private val ACR = mapOf("gpt" to "GPT", "oss" to "OSS", "glm" to "GLM", "ai" to "AI", "it" to "IT", "vl" to "VL", "moe" to "MoE")
+    private val ACR = mapOf("gpt" to "GPT", "deepseek" to "DeepSeek", "minimax" to "MiniMax", "oss" to "OSS", "glm" to "GLM", "ai" to "AI", "it" to "IT", "vl" to "VL", "moe" to "MoE")
     private val PROV = mapOf("groq" to "Groq", "cerebras" to "Cerebras", "gemini" to "Gemini", "openrouter" to "OpenRouter", "infron" to "Infron",
         "sambanova" to "SambaNova", "cloudflare" to "Cloudflare", "workers" to "Cloudflare", "mistral" to "Mistral", "nvidia" to "NVIDIA", "ap" to "Apinex")
 
+    private val DATE_STAMP = Regex("^(\\d{4}|\\d{6}|\\d{8})$")
     private val VERSION_PART = Regex("^[A-Za-z]?\\d{1,2}(\\.\\d{1,2})*$")
 
     /** "openai/gpt-oss-120b:free" → "GPT OSS 120b"; "claude-opus-5-5" → "Claude Opus 5.5"; "mimo-v2-6-pro" → "Mimo V2.6 Pro". */
     fun prettyName(model: String?): String {
         val m = model.orEmpty()
         val last = m.substringAfterLast('/').replace(Regex(":free$", RegexOption.IGNORE_CASE), "")
-        val words = last.split(Regex("[-_\\s]+")).filter { it.isNotEmpty() }
+        val words = last.split(Regex("[-_\\s]+")).filter { it.isNotEmpty() }.toMutableList()
+        // Owner 21:10 screenshot, "Deepseek V4 1 Flash 1017": a release date stamp (1017, 2507, 20251017, 2024-08-06) is not part of the name.
+        if (words.size > 3 && words.takeLast(3).let { (y, m, d) -> y.length == 4 && m.length == 2 && d.length == 2 && (y + m + d).all { it.isDigit() } }) repeat(3) { words.removeAt(words.size - 1) }
+        while (words.size > 1 && DATE_STAMP.matches(words.last())) words.removeAt(words.size - 1)
         // "claude-opus-5-5" / "gemini-3-8-flash": short number runs are one version ("5.5", "3.8"), not two words.
         val joined = ArrayList<String>()
         for (w in words) { val p = joined.lastOrNull(); if (p != null && w.length <= 2 && w.all { it.isDigit() } && VERSION_PART.matches(p)) joined[joined.size - 1] = "$p.$w" else joined.add(w) }
