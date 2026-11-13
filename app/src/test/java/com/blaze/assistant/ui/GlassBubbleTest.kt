@@ -14,15 +14,20 @@ class GlassBubbleTest {
         }
     }
 
-    // v0.31.0 borderless thread -> 0.45.20 (user spec A): messages are bubbles again, drawn by ChatBubble (ui/ChatBubbles.kt,
-    // AA-checked frost in ChatUi20Test); cards (the work card) stay glass.
-    @Test fun messagesAreBubblesCardsAreGlass() {
+    // v0.31.0 borderless thread -> 0.45.20 (user spec A) bubbles -> fix/chat-flat-ui (owner, 14 Nov 2026): your messages are
+    // bubbles (ChatBubble, ui/ChatBubbles.kt), replies are flat text on the page (FlatReply: no bubble, fill, border or glass;
+    // long-press menu kept), and cards (the work card) stay glass.
+    @Test fun userPromptsAreBubblesRepliesAreFlatCardsAreGlass() {
         val src = java.io.File("src/main/java/com/blaze/assistant/ui/Bubbles.kt").readText()
         val user = src.substring(src.indexOf("fun UserBubble("), src.indexOf("fun BlazeBubble("))
-        val blaze = src.substring(src.indexOf("fun BlazeBubble("), src.indexOf("fun BlazeReply("))
+        val reply = src.substring(src.indexOf("fun BlazeReply("), src.indexOf("fun FlatReply("))
+        val flat = src.substring(src.indexOf("fun FlatReply("), src.indexOf("\n}\n", src.indexOf("fun FlatReply(")) + 1)
         assertTrue("your message is a bubble on the right", user.contains("ChatBubble(Side.ME"))
-        assertTrue("${BrandName.NAME}'s message is a bubble on the left", blaze.contains("ChatBubble(Side.BLAZE"))
-        assertTrue("no old see-through glass around messages", !user.contains("chatGlass(") && !blaze.contains("chatGlass("))
+        assertTrue("${BrandName.NAME}'s reply is drawn flat", reply.contains("FlatReply(") && !reply.contains("BlazeBubble(") && !reply.contains("ChatBubble("))
+        assertTrue("a flat reply has no bubble, fill or glass", !flat.contains("ChatBubble(") && !flat.contains("background(") && !flat.contains("border(") && !flat.contains("chatGlass("))
+        assertTrue("cards in a flat reply sit on the page", flat.contains("LocalBubble provides null"))
+        assertTrue("long-press menu kept", flat.contains("bubbleLongPress("))
+        assertTrue("no old see-through glass around messages", !user.contains("chatGlass(") && !reply.contains("chatGlass("))
         assertTrue("work card is glass", java.io.File("src/main/java/com/blaze/assistant/ui/Shell.kt").readText().contains("chatGlass(c, mine = false"))
     }
 

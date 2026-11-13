@@ -1,3 +1,12 @@
+## v0.53.2: ARGUS does the work, makes real things, and shows its thinking (versionCode 194)
+
+- ARGUS looks things up, runs commands and uses its tools first, then answers from what they return. Plain questions get the web, files and the terminal too, not just a quick reply from memory.
+- Answers fit the task: a line for chat, as much as it takes for research, explanations and how-tos.
+- "Make me a page / app / game" gets a plan, a real design (colours, type, spacing, states, motion), a self-check and one round of improvements before it is handed over, with more time and steps for the job.
+- Replies sit on the page with no chat box; your own messages keep their bubbles. Cards, code and tables keep their own surface.
+- The thinking shows above the reply: "Thinking" while ARGUS reasons, "Thought for 4s" after, folded once the answer starts. Tap to open or close it; /think hides or shows it.
+- No more "What I did" sheet; the makers' logos in the model picker draw right; asking ARGUS to change a file it saved replaces that file.
+
 ## v0.53.1: tools that always show up, faster tool work, and live tool rows (versionCode 193)
 
 - Pick any model and ARGUS still has all its tools. Asking "what time is it in Tokyo" or "wake me at 6" no longer gets "use your clock app". If a model still refuses, ARGUS moves the turn to one that will do it.

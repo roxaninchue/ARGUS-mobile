@@ -15,7 +15,7 @@ import java.time.ZonedDateTime
 /**
  * v0.45.9 pass check, part 1: writes the requests the app would send for the user's reported turns, built by the
  * app's own code (bundled persona v1.0.1 first, byte-identical; the app's second message with the name line, the
- * assistant rules, the context rule, Halo's identity on @halo turns and the [context] block last; the schedule tools on
+ * harness core (2026-11-14), the identity rules, the context rule, Halo's identity on @halo turns and the [context] block last; the schedule tools on
  * schedule turns), with the clock fixed and fixture reminders / calendar. tools/halo_replay.py sends them to the live
  * gateway turn by turn (history = the real replies) and writes the transcript. Output: app/build/qa/replay-0459.json.
  *
@@ -43,9 +43,11 @@ class HaloReplayRequestTest {
         val name = GreetName.pick("", "Sam Banda")
         val block = TurnContext.block(TurnContext.Inputs(now, weather, reminders + extra, ScheduleDay.datesAsked(user, now.toLocalDate()), open,
             TurnContext.newInLine("0.45.8", "", 0), calOff))
+        // 2026-11-14 harness gap: the stacked talk / save / tool-truth lines became one consolidated core (HarnessPrompt.CORE +
+        // SaveFile.EDIT_RULE), and with the shared persona first only Duo.IDENTITY_RULES follow (the persona carries the assistant rules).
         return SharedPersona.contextLine(name, "") + (if (name != null) "The user's name is $name. " else "") + GreetName.RULE +
-            "\nHOW YOU TALK: short, warm and sure of yourself, like a sharp friend texting back. Lead with the answer. One or two sentences unless they ask for more." +
-            Duo.ASSISTANT_RULES + TurnContext.RULE + SaveFile.RULE + ToolTruth.RULE +
+            HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE +
+            Duo.IDENTITY_RULES + TurnContext.RULE +
             "\nAt the very end of each final answer (never when calling tools), add one line exactly like <<follow-ups: first | second | third>> with three short next requests (max 6 words each) written as the user would say them." +
             Duo.awareness(if (halo) Duo.Who.HALO else Duo.Who.BLAZE) + "\n" + block
     }
@@ -192,5 +194,8 @@ class HaloReplayRequestTest {
         assertTrue(s.contains("schedule Wed 21 Oct 2026 (2 items, 1 still ahead): 08:00 \"CIT class\" (passed); 14:00 \"NET class\""))
         assertTrue(s.contains("schedule Sun 25 Oct 2026 (1 item): 08:30 \"Church 9:00\u201312:30\""))
         assertTrue(!persona().isBlank() && persona().contains("Assistant rules ("))
+        // The replayed second message is the harness-gap one: work first and fit the length to the task, no old "one or two sentences" cap.
+        assertTrue(s.contains("WORK FIRST, THEN ANSWER") && s.contains("Fit the length to the task"))
+        assertTrue(!s.contains("One or two sentences unless they ask for more") && !s.contains("you can only chat"))
     }
 }
