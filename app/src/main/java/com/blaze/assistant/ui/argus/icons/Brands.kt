@@ -23,7 +23,7 @@ object Brands {
             cache.getOrPut(ck) {
                 val b = ImageVector.Builder(name = "brand-$brand", defaultWidth = 24.dp, defaultHeight = 24.dp,
                     viewportWidth = BrandPaths.VIEWPORT, viewportHeight = BrandPaths.VIEWPORT)
-                for (p in ps) b.addPath(pathData = addPathNodes(p.d), pathFillType = PathFillType.EvenOdd,
+                for (p in ps) b.addPath(pathData = addPathNodes(p.d), pathFillType = if (p.evenOdd) PathFillType.EvenOdd else PathFillType.NonZero,
                     fill = SolidColor(p.argb?.let { Color(it.toInt()) } ?: ink))
                 b.build()
             }

@@ -1604,13 +1604,12 @@ private fun Followups(list: List<String>, onPick: (String) -> Unit) {
     FollowupRow(list, onPick = onPick)
 }
 
-/** Time, then Copy / Quote / Retry / What I did / React as small icons under the last message of a group. Long-press words to copy or quote just those. */
+/** Time, then Copy / Quote / Retry / React as small icons under the last message of a group. Long-press words to copy or quote just those. */
 @Composable
 private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, onQuote: (String) -> Unit, allowQuote: Boolean, chipOnly: Boolean = false,
                     orbSlot: ((androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null, reactable: Boolean = false) {
     val clip = LocalClipboardManager.current
     val ctx = LocalContext.current
-    val showReceipt = remember(m.id) { mutableStateOf(false) }
     val showTrace = remember(m.id) { mutableStateOf(false) }
     val picker = remember(m.id) { mutableStateOf(false) }
     // v0.45.0 reactions: under the reply, then "React" in the footer opens the small picker.
@@ -1624,8 +1623,8 @@ private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, o
         add("Copy" to { clip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() })
         if (allowQuote) add("Quote" to { onQuote(m.text) })
         add("Retry" to (if (canAct) ({ Agent.retry(m.id) }) else null))
-        // v0.45.0 "What I did": the turn's action receipts, stored with the reply.
-        if (m.role == Role.BLAZE && m.receipt.isNotBlank()) add("What I did" to { showReceipt.value = true })
+        // 0.53.2: no "What I did" button or sheet (owner, 14 Nov 2026: "remove the what I did cards"). Receipts are still
+        // stored with the reply; the live tool rows (Show tool steps) are where steps show.
         // v0.45.5 (#1): "What happened": model, route, tools, timings, errors, request id. 0.45.19: never shown to users
         // (which model replied is never shown); developers only, behind DevFlags.modelInfo (off by default, debug builds).
         if (m.role == Role.BLAZE && m.trace.isNotBlank() && com.blaze.assistant.agent.DevFlags.modelInfo()) add("What happened" to { showTrace.value = true })
@@ -1633,7 +1632,6 @@ private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, o
     }
     MetaLine(side, time, acts, chip, chip.startsWith("⚡"), orbSlot = orbSlot)
     HeadsUpWhy(m.meta)
-    if (showReceipt.value) ReceiptDialog(m.receipt) { showReceipt.value = false }
     if (showTrace.value && com.blaze.assistant.agent.DevFlags.modelInfo()) TraceDialog(m.trace) { showTrace.value = false }
     if (picker.value) ReactionPicker(m.reactions, onPick = { e -> picker.value = false; reactNow(ctx, m, e) }, onDismiss = { picker.value = false })
 }
@@ -1701,33 +1699,6 @@ private fun TraceDialog(json: String, onClose: () -> Unit) {
                 if (t.errors.isNotEmpty()) {
                     Text("Errors and retries", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
                     t.errors.forEach { Text(it, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.ink)) }
-                }
-            }
-        })
-}
-
-/** v0.45.0: "What I did": each action Blaze took for this reply, what came back and what was checked. */
-@Composable
-private fun ReceiptDialog(json: String, onClose: () -> Unit) {
-    val log = remember(json) { com.blaze.assistant.agent.Receipt.fromJson(json) }
-    val c = LocalBlaze.current
-    androidx.compose.material3.AlertDialog(onDismissRequest = onClose,
-        confirmButton = { androidx.compose.material3.TextButton(onClick = onClose) { Text("Close") } },
-        title = { Text("What I did") },
-        text = {
-            Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                if (log.isEmpty()) Text("Nothing was recorded for this reply.")
-                log.forEach { e ->
-                    val mark = when (e.status) {
-                        com.blaze.assistant.agent.ToolVerify.Status.VERIFIED -> com.blaze.assistant.agent.Receipt.OK
-                        com.blaze.assistant.agent.ToolVerify.Status.UNVERIFIED -> com.blaze.assistant.agent.Receipt.WARN
-                        com.blaze.assistant.agent.ToolVerify.Status.FAILED -> com.blaze.assistant.agent.Receipt.BAD
-                    }
-                    Text("$mark ${e.label.ifBlank { e.tool }}", style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink))
-                    Text(e.result, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 16.sp, color = c.body))
-                    if (e.evidence.isNotBlank()) Text("Checked: ${e.evidence}", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
-                    if (!com.blaze.assistant.agent.SimpleMode.simple) Text("${e.tool}(${e.args})", style = TextStyle(fontFamily = Type.Mono, fontSize = 10.sp, color = c.body))
-                    Spacer(Modifier.height(10.dp))
                 }
             }
         })

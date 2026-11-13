@@ -16,10 +16,19 @@ import org.json.JSONObject
 object SaveFile {
     const val TOOL = "save_file"
 
+    /**
+     * 0.53.2 (owner, 14 Nov 2026, "please polish it" after a saved landing page "just saved the same file again"): the model
+     * called save_file with no content, which re-saves the last code block unchanged, and Android added "index (1).html".
+     * An edit now means writing the whole new version as content under the same name, and the same name replaces the file.
+     */
+    const val EDIT_RULE = "To change a file you already saved (\"polish it\", \"fix it\", \"make it better\"), first write the complete improved " +
+        "version yourself, then call save_file with that full version as content and the SAME filename: it replaces the old file. " +
+        "Never call save_file with no content to edit: that only saves the old version again. "
+
     /** Prompt rule (full lane and chat lane). */
     const val RULE = "\nYOU RUN ON THE USER'S PHONE: never give desktop or computer advice (no \"open a text editor on your computer\", " +
         "no \"copy it into Notepad\"), and never say you can't save files. To save code or text you wrote (\"save this\", \"save the file\", " +
-        "\"download it\"), call save_file (no arguments needed for the last code block) and tell the user the path it returns. "
+        "\"download it\"), call save_file (no arguments needed for the last code block) and tell the user the path it returns. " + EDIT_RULE
 
     data class Block(val lang: String, val code: String)
 
@@ -104,7 +113,9 @@ object SaveFile {
         .put("name", TOOL)
         .put("description", "Save a file to the phone's Downloads folder (Downloads/Blaze) and return its path. With no arguments it saves the last code block in this chat " +
             "(HTML, JS, Python, CSS, JSON, SVG, Markdown, text…) with the right extension, named from the HTML <title> or the language. Give content (and optionally filename) to save something else. " +
-            "Use for \"save this\", \"save the file\", \"download it\". Always tell the user the returned path.")
+            "Use for \"save this\", \"save the file\", \"download it\". A file with the same name in Downloads/Blaze is replaced. " +
+            "To edit a saved file (polish, fix, change), pass the complete new version as content with the same filename; with no content the old code is saved unchanged. " +
+            "Always tell the user the returned path.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("filename", JSONObject().put("type", "string").put("description", "File name, e.g. solar-system.html (optional)"))
             .put("content", JSONObject().put("type", "string").put("description", "What to save; leave out to save the last code block in the chat"))

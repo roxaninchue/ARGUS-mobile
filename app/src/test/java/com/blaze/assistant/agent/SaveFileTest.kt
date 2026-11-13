@@ -63,6 +63,8 @@ class SaveFileTest {
     @Test fun ruleSaysPhoneAndNoRefusal() {
         assertTrue(SaveFile.RULE.contains("PHONE"))
         assertTrue(SaveFile.RULE.contains("never say you can't save"))
+        // 0.53.2: an edit writes the full new version under the same name
+        assertTrue(SaveFile.RULE.contains("SAME filename"))
         val def = SaveFile.tool().getJSONObject("function")
         assertEquals("save_file", def.getString("name"))
         assertEquals("object", def.getJSONObject("parameters").getString("type"))

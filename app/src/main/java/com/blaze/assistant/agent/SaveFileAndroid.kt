@@ -10,8 +10,9 @@ import androidx.core.content.FileProvider
 import java.io.File
 
 /**
- * v0.45.9: the phone side of [SaveFile]. API 29+: MediaStore.Downloads into Download/Blaze (no permission needed; Android
- * renames on a clash, so the name read back is the one reported). Below 29, or if MediaStore refuses: the file goes to
+ * v0.45.9: the phone side of [SaveFile]. API 29+: MediaStore.Downloads into Download/Blaze (no permission needed). 0.53.2: a
+ * file Blaze already saved under the same name is replaced in place (an edit, "polish it"), not saved again as "name (1)";
+ * if it can't be replaced, Android renames on the clash and the name read back is the one reported. Below 29, or if MediaStore refuses: the file goes to
  * Blaze's cache and the share / save sheet opens (the user picks Files / Drive), and the result says so.
  */
 object SaveFileAndroid {
@@ -27,6 +28,15 @@ object SaveFileAndroid {
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
             val cr = ctx.contentResolver
+            val old = runCatching {
+                cr.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.MediaColumns._ID),
+                    "${MediaStore.MediaColumns.DISPLAY_NAME} = ? AND ${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?", arrayOf(p.name, "$rel%"), null)
+                    ?.use { c -> if (c.moveToFirst()) android.content.ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, c.getLong(0)) else null }
+            }.getOrNull()
+            if (old != null) runCatching {
+                cr.openOutputStream(old, "wt")?.use { it.write(p.content.toByteArray(Charsets.UTF_8)) } ?: throw IllegalStateException("no output stream")
+                return SaveFile.savedLine("Downloads/$FOLDER/${p.name}")
+            }
             val uri = cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v) ?: throw IllegalStateException("MediaStore refused the file")
             try {
                 cr.openOutputStream(uri)?.use { it.write(p.content.toByteArray(Charsets.UTF_8)) } ?: throw IllegalStateException("no output stream")
