@@ -36,8 +36,7 @@ class ModelPickTest {
         assertEquals("ap/free/kimi-k3", ModelPick.route(list, tools = true))
         assertEquals("high", ModelPick.effort(list))
         assertEquals("Kimi K3 · High", ModelPick.label(list))
-        assertEquals("ap/free/kimi-k3", Settings.str(ModelPick.PICK))
-        assertEquals("high", Settings.str(ModelPick.EFFORT))
+        assertEquals(ModelPick.Choice("ap/free/kimi-k3", "high"), ModelPick.current.value)   // Settings needs a Context on Gradle
     }
 
     @Test fun effortFallsBackToTheModelDefaultAndNeverToOneItLacks() {
