@@ -4360,7 +4360,7 @@ When you finish, say what you did in one short sentence.
                     val pre: Map<Int, String> = run {
                         val pick = (0 until calls.length()).filter { i -> val n = callName(i)
                             com.blaze.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && i !in refusedCmds && surfaceNote(n, quiet = true) == null &&
-                                loopGuard.check(n, callArgs(i)) == null && oneShot.earlier(n, callArgs(i)) == null }
+                                loopGuard.check(n, callArgs(i)) == null && oneShot.earlier(n, callArgs(i)) == null && com.blaze.assistant.policy.PolicyRuntime.quiet(id, n, callArgs(i).toString(), agentPlan) }   // 0.53.1: a call that may card stays in order
                         if (pick.size < 2 || !Settings.bool("parallel_tools", true)) return@run emptyMap()
                         val tcs = pick.map { i -> com.blaze.assistant.orchestra.ToolScheduler.Call(calls.getJSONObject(i).optString("id", "call_$step$i"), callName(i), callArgs(i)) }
                         val toolMs = Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L

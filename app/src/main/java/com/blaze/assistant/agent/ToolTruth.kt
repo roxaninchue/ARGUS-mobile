@@ -28,7 +28,8 @@ object ToolTruth {
 
     const val RULE = "\nYOUR TOOLS ARE REAL: every tool in your list works on this phone. Never say \"I don't have the capability\", \"I can't access\", " +
         "\"I'm unable to\" or \"as an AI I can't\" about anything a tool in your list does (terminal, browser, opening views and screens, " +
-        "files and save_file, calendar, reminders, web search, memory). Call the tool instead. If a tool fails, say what it returned. After a tool works, say in one short line what it did (for save_file, the saved path). "
+        "files and save_file, calendar, reminders, web search, memory). Call the tool instead. If a tool fails, say what it returned. After a tool works, say in one short line what it did (for save_file, the saved path). " +
+        "Calls that don't depend on each other (several searches, page reads, file reads, edits of different files) go together in ONE reply: they run at the same time. Something that needs the user's OK or another call's result goes in a later reply. "
 
     /** Requests that need a tool (any lane that sends no tools hands these to the full lane). */
     private val shaped = Regex("""(?i)\b(run|execute|terminal|shell|command|ls|cd|pwd|cat|python|script|linux|desktop|browser|browse|open|launch|show me|go to|navigate|settings|design view|view|screen|tab|page|file|files|folder|save|download|export|upload|calendar|schedule|agenda|event|meeting|remind|reminder|alarm|timer|routine|search|look ?up|google|web|fetch|memory|remember|forget|recall|what do you know|weather|send|text|call|message|email|install|make|create|build|generate|draw|play|set|turn (?:on|off)|enable|disable)\b|https?://|\b[\w-]+\.(com|org|net|io|dev|zm|app)\b""")

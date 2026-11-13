@@ -131,6 +131,18 @@ object PolicyRuntime {
         return gate.run(r, block)
     }
 
+    /**
+     * 0.53.1 parallel tools: may this call run ahead in the parallel batch? Only when the policy lets it run with no card
+     * ([PolicyGate.quiet]); connect / ask cards and screen sends never do. Fails safe: an error keeps it in the in-order loop.
+     */
+    suspend fun quiet(chatId: String, tool: String, args: String, agentPlan: Boolean): Boolean = try {
+        if (tool == Cards.CONNECT_TOOL || tool == "ask_user" || ScreenSend.of(tool, args) != null) false else {
+            val binding = TeamHooks.binding(chatId)
+            val jobId = binding?.origin?.jobId ?: JobsRuntime.jobOfChat(chatId)
+            PolicyGate.quiet(request(chatId, tool, args, agentPlan, binding, jobId, binding == null && jobId == null))
+        }
+    } catch (e: CancellationException) { throw e } catch (_: Throwable) { false }
+
     private fun botName(botId: String): String =
         if (botId == BotRules.MANAGER_ID) com.blaze.assistant.BrandName.NAME else team?.get(botId)?.name ?: botId
 

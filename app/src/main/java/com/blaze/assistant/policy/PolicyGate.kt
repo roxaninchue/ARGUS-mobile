@@ -102,6 +102,13 @@ class PolicyGate(
     private fun note(r: Request, d: Policy.Decision, s: Approvals.Status?) { runCatching { observer?.invoke(r, d, s) } }
 
     companion object {
+        /**
+         * 0.53.1 parallel tools: true when [r] would run with no card and no refusal (shadow, or Allow). Only such calls
+         * may run ahead in the parallel batch; a call that may put a card up stays in the agent's in-order loop, so cards
+         * come one at a time in the order the model asked. A policy that throws counts as not quiet.
+         */
+        fun quiet(r: Request?): Boolean = r == null || !r.enforce || try { Policy.decide(r.call, r.ctx) is Policy.Decision.Allow } catch (_: Throwable) { false }
+
         fun title(bot: String, c: ActionClass): String = "$bot wants to " + when (c) {
             ActionClass.SEND -> "send a message"; ActionClass.SPEND -> "spend money"; ActionClass.DELETE -> "delete something"
             ActionClass.CREDENTIAL -> "use a sign-in or secret"; ActionClass.COMPUTE_PAID -> "start a paid computer"
