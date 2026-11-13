@@ -32,7 +32,8 @@ object RapidMessages {
     const val PROMPT_RULE = "\nRAPID MESSAGES: every user message starts with its id, like [m7]. The user may send several in a row, or more while you work " +
         "(those say \"sent while you were working\"): read them all before acting. A later message that corrects or changes an earlier one wins. " +
         "Related messages get ONE combined reply; unrelated ones get separate replies in the same answer. Start each reply with a marker naming the " +
-        "message(s) it answers, at the start of a line: [re:m7] or [re:m7,m8]. The marker is hidden from the user; never write the [m7] ids anywhere else."
+        "message(s) it answers, at the start of a line: [re:m7] or [re:m7,m8]. The marker is hidden from the user; never write the [m7] ids anywhere else." +
+        ChatBurst.RULE   // 2026-11-13 double-text fix
 
     private const val MID_TURN = "sent while you were working"
 

@@ -1580,10 +1580,10 @@ When you finish, say what you did in one short sentence.
          * v0.30.6 rapid messages: a message the model hasn't seen yet, sent while this chat worked or inside an open burst
          * (its bubble is already in the chat). [raw] = an on-device answer made meanwhile, kept as one user-side history line.
          */
-        private class Inbound(val id: Long, val text: String, val attachments: List<Attachment>, val byVoice: Boolean,
+        internal class Inbound(val id: Long, val text: String, val attachments: List<Attachment>, val byVoice: Boolean,
                               val untrusted: String?, val raw: JSONObject? = null)
         /** v0.30.6: what arrived for this chat, in order. Read at the running turn's next step, or it starts the next turn. */
-        private val inbox = java.util.concurrent.ConcurrentLinkedQueue<Inbound>()
+        internal val inbox = java.util.concurrent.ConcurrentLinkedQueue<Inbound>()
         /** v0.30.6: the open burst (messages a moment apart become one turn); null when none. */
         private var burstJob: Job? = null
         @Volatile private var burstAt = 0L
@@ -2210,7 +2210,7 @@ When you finish, say what you did in one short sentence.
                 when (BusyRoute.route(shown, ToolTruth.toolShaped(shown) && !ToolTruth.chatOnly(shown))) {
                     BusyRoute.Kind.STOP -> { val id = post(shown, emptyList()); markSent(id); stop(); sideLine(BusyRoute.STOPPED); persist(); return }
                     BusyRoute.Kind.STEER -> { steer(shown); return }
-                    BusyRoute.Kind.SIDE -> if (Settings.bool("duo_on", true) && SelfControl.match(shown) == null) { sideSend(shown, Duo.route(shown, false).text); return }
+                    BusyRoute.Kind.SIDE -> if (SelfControl.match(shown) == null) { ChatBurstLive.follow(this, shown, byVoice, untrusted); return }   // 2026-11-13 double-text fix: never the side lane (ChatBurst)
                 }
             }
             // v0.32.0 split: Blaze is busy with a task, so Halo takes this one (unless it's "@blaze …": that steers Blaze).
@@ -2346,7 +2346,7 @@ When you finish, say what you did in one short sentence.
         }
 
         /** v0.30.6: a message that waits for the running turn's next step or for the burst to close. */
-        private fun queue(shown: String, attachments: List<Attachment>, byVoice: Boolean, untrusted: String?) {
+        internal fun queue(shown: String, attachments: List<Attachment>, byVoice: Boolean, untrusted: String?) {
             val id = post(shown, attachments)
             inbox.add(Inbound(id, shown, attachments, byVoice, untrusted))
             focus = focus + id
@@ -2844,13 +2844,13 @@ When you finish, say what you did in one short sentence.
                 // 0.45.19: a handoff line ("Passed to Blaze, let me know…") never shows, not even while it streams.
                 if (!Ack.isGeneric(it)) say(it) } } }
                 catch (e: CancellationException) { live.end(""); throw e }
-                catch (e: Exception) { live.end(""); add(Role.ERROR, e.message ?: "${who.display} lost the connection."); return }
+                catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: side reply", e); "" }   // ChatBurst: a failed side reply goes to the main lane
             val relay = Duo.isRelay(raw)
             // 0.45.19: a relay is Blaze's job, so Halo's handoff line ("passing that straight to Blaze") is never kept: Blaze's
             // answer is the one clean reply (it used to sit glued under Halo's name with "Done ✓").
             val shownText = if (relay) "" else duoVisible(raw, final = true)
             live.end(shownText)
-            if (relay) {
+            if (relay || ChatBurst.dropped(shownText)) {
                 // For Blaze: it joins Blaze's running task at its next step (or starts Blaze's next turn).
                 synchronized(sideHist) { sideHist.remove(user) }
                 sideIds -= mid
