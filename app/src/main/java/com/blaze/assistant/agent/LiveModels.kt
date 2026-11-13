@@ -53,12 +53,17 @@ object LiveModels {
     private val PROV = mapOf("groq" to "Groq", "cerebras" to "Cerebras", "gemini" to "Gemini", "openrouter" to "OpenRouter", "infron" to "Infron",
         "sambanova" to "SambaNova", "cloudflare" to "Cloudflare", "workers" to "Cloudflare", "mistral" to "Mistral", "nvidia" to "NVIDIA", "ap" to "Apinex")
 
-    /** "openai/gpt-oss-120b:free" → "GPT OSS 120b". */
+    private val VERSION_PART = Regex("^[A-Za-z]?\\d{1,2}(\\.\\d{1,2})*$")
+
+    /** "openai/gpt-oss-120b:free" → "GPT OSS 120b"; "claude-opus-5-5" → "Claude Opus 5.5"; "mimo-v2-6-pro" → "Mimo V2.6 Pro". */
     fun prettyName(model: String?): String {
         val m = model.orEmpty()
         val last = m.substringAfterLast('/').replace(Regex(":free$", RegexOption.IGNORE_CASE), "")
-        val out = last.split(Regex("[-_\\s]+")).filter { it.isNotEmpty() }
-            .joinToString(" ") { w -> ACR[w.lowercase()] ?: if (w[0].isDigit()) w else w[0].uppercaseChar() + w.substring(1) }
+        val words = last.split(Regex("[-_\\s]+")).filter { it.isNotEmpty() }
+        // "claude-opus-5-5" / "gemini-3-8-flash": short number runs are one version ("5.5", "3.8"), not two words.
+        val joined = ArrayList<String>()
+        for (w in words) { val p = joined.lastOrNull(); if (p != null && w.length <= 2 && w.all { it.isDigit() } && VERSION_PART.matches(p)) joined[joined.size - 1] = "$p.$w" else joined.add(w) }
+        val out = joined.joinToString(" ") { w -> ACR[w.lowercase()] ?: if (w[0].isDigit()) w else w[0].uppercaseChar() + w.substring(1) }
         return out.ifEmpty { m }
     }
 
@@ -182,6 +187,9 @@ object LiveModels {
         }
 
         fun list(): List<Member> = if (now() - goodAt <= maxAgeMs) members else emptyList()
+
+        /** When the list last came back good (ModelPick: a model hidden after a miss comes back only on a newer list). */
+        fun goodAtMs(): Long = goodAt
 
         fun clear() { members = emptyList(); goodAt = Long.MIN_VALUE / 2; triedAt = Long.MIN_VALUE / 2 }
     }

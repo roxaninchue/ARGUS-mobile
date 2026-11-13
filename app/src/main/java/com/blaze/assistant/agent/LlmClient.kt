@@ -469,6 +469,7 @@ object LlmClient {
         // P0-API-01 (always on): gateway 0.8.45+ names the route only as an X-Blaze-Route token (it takes it back in Prefer / Avoid).
         if (t.pid == Providers.GATEWAY && lastServedKey.isEmpty()) LiveModelsFeed.served(conn.headerFields)?.let { (r, l) -> lastServedKey = r; if (lastServedBy.isEmpty()) lastServedBy = l }
         if (code in 200..299) turnModel?.served(lastServedKey)
+        if (code in 200..299 && manual != null) ModelPick.served(manual, lastServedKey, LiveModels.shared.list())   // a pick that didn't answer hides, calls go Auto
         // v0.45.5 (#1, #5b): request id + route / timing headers for the "What happened" sheet.
         if (t.pid == Providers.GATEWAY) try {
             val g = TurnTrace.pick(conn.headerFields)

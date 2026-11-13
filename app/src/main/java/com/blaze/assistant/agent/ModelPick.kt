@@ -21,7 +21,7 @@ object ModelPick {
 
     data class Choice(val key: String = "", val effort: String = "") { val auto: Boolean get() = key.isBlank() }
 
-    enum class Status { AUTO, ON, OFF_LIST, NO_TOOLS, NO_VISION }
+    enum class Status { AUTO, ON, OFF_LIST, NO_TOOLS, NO_VISION, DOWN }
 
     private val _current = MutableStateFlow(load())
     val current: StateFlow<Choice> = _current
@@ -41,6 +41,7 @@ object ModelPick {
     fun status(list: List<LiveModels.Member>, tools: Boolean = false, vision: Boolean = false, c: Choice = current.value): Pair<Status, LiveModels.Member?> {
         if (c.auto) return Status.AUTO to null
         val m = list.firstOrNull { it.key == c.key } ?: return Status.OFF_LIST to null
+        if (isDown(m.key)) return Status.DOWN to m
         if (tools && !m.tools) return Status.NO_TOOLS to m
         if (vision && !m.vision) return Status.NO_VISION to m
         return Status.ON to m
@@ -58,11 +59,42 @@ object ModelPick {
         return c.effort.takeIf { it in m.efforts } ?: m.defaultEffort?.takeIf { it in m.efforts }
     }
 
+    // ---- a pick that doesn't answer (owner, 13 Nov 2026: "auto switch fast to an actually available model and hide the
+    // failed one until truly available") ----
+    /** How long a model that missed stays hidden at least; after that it comes back on the first live list fetched later. */
+    const val HOLD_MS = 3 * 60_000L
+    /** Never hidden longer than this, even with no new list. */
+    const val MAX_HOLD_MS = 30 * 60_000L
+    private val down = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    /** [key] didn't answer: calls go Auto (the gateway's fastest healthy model) and the picker hides it. */
+    fun failed(key: String, now: Long = System.currentTimeMillis()) { if (key.isNotBlank()) down[key] = now }
+
+    /** Hidden: missed less than [HOLD_MS] ago, or no live list has come back good since it missed (at most [MAX_HOLD_MS]). */
+    fun isDown(key: String, listAt: Long = LiveModels.shared.goodAtMs(), now: Long = System.currentTimeMillis()): Boolean {
+        val at = down[key] ?: return false
+        if (now - at < HOLD_MS) return true
+        if (listAt > at || now - at >= MAX_HOLD_MS) { down.remove(key, at); return false }
+        return true
+    }
+
+    /**
+     * After a call that named [pick]: the route that answered ([served] = X-Blaze-Route token or provider/model). Another
+     * route answering means the pick failed at the gateway and it fell back, so the pick is hidden until it's healthy again.
+     */
+    fun served(pick: String, served: String, list: List<LiveModels.Member>, now: Long = System.currentTimeMillis()) {
+        if (served.isBlank()) return
+        val m = list.firstOrNull { it.key == pick } ?: return
+        if (served != m.key && served != m.route && (m.route.isNotEmpty() || '/' in served)) failed(pick, now)
+    }
+
+    fun clearDown() = down.clear()
+
     /** "Auto", "Kimi K3 · Medium", "Kimi K3 · unavailable" for the chip. */
     fun label(list: List<LiveModels.Member>, c: Choice = current.value): String {
         if (c.auto) return "Auto"
-        val m = list.firstOrNull { it.key == c.key }
-            ?: return LiveModels.prettyName(c.key.substringAfter('/')) + " · unavailable"
+        val m = list.firstOrNull { it.key == c.key }?.takeUnless { isDown(it.key) }
+            ?: return (list.firstOrNull { it.key == c.key }?.name ?: LiveModels.prettyName(c.key.substringAfter('/'))) + " · unavailable"
         return m.name + (effort(list, c)?.let { " · " + it.replaceFirstChar { ch -> ch.uppercaseChar() } } ?: "")
     }
 

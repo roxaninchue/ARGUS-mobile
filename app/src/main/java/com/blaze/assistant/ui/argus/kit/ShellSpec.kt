@@ -20,6 +20,8 @@ object ShellSpec {
         const val SIDE = 12
         const val PLUS = 42
         const val MAX_LINES = 5
+        /** Corner radius: half of [HEIGHT], so one line is a pill and more lines are a rounded box with the buttons inside it. */
+        const val CORNER = HEIGHT / 2
 
         enum class Trailing { MIC, SEND, STOP }
 

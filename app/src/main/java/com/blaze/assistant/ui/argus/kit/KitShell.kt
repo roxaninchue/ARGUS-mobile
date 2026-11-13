@@ -182,7 +182,9 @@ fun ArgusComposer(
 ) {
     val c = Argus.colors
     val t = ShellSpec.Composer.trailing(value.text, attachments, streaming)
-    val shape = RoundedCornerShape(ArgusTokens.Radius.PILL.dp)
+    // A fixed corner (half the one-line height), not PILL: one line still reads as a pill, but a long prompt grows into a
+    // rounded box instead of an oval that cuts across the + and send buttons (owner, 13 Nov 2026).
+    val shape = RoundedCornerShape(ShellSpec.Composer.CORNER.dp)
     Row(
         modifier.fillMaxWidth().padding(horizontal = ShellSpec.Composer.SIDE.dp, vertical = 6.dp)
             .heightIn(min = ShellSpec.Composer.HEIGHT.dp).argusGlass(GlassLevel.CHROME, shape).padding(horizontal = 4.dp, vertical = 4.dp),
