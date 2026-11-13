@@ -72,6 +72,7 @@ object JobsRuntime {
         val app = ctx.applicationContext
         scope.launch {
             val g = TeamGraph.get(app)
+            runCatching { com.blaze.assistant.policy.PolicyRuntime.init(g.sql) }   // P2-SF-01: approvals + policies on team.db
             val store = JobStore(g.sql)
             val rowStore = RowStore(g.sql)
             val am = app.getSystemService(ActivityManager::class.java)
@@ -89,6 +90,7 @@ object JobsRuntime {
                             // the brief is posted once as the task message, so the loop's own copy of it is skipped
                             if (!(e is TeamHooks.Event.Message && e.role == "USER")) for (row in mapper.map(e)) runCatching { g.threads.put(row) }
                         }
+                        b.origin = com.blaze.assistant.policy.PolicyCalls.originOf(job)   // P2-SF-01: who started it, for the policy
                         TeamHooks.bind(chat, b); bound[chat] = b
                     }
                     val parent = if (manager || JobStore.requester(job.source) == null) ChatNav.MAIN else PARENT_PREFIX + job.id

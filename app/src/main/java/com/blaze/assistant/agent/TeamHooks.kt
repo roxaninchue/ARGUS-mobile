@@ -32,7 +32,22 @@ object TeamHooks {
      * One bot's hold on one chat for one turn. [identity] is the bot's SOUL / persona text ("" = none). [allow] = the
      * bot's tool subset, null = every tool (the Manager). [sink] receives the [Event]s, on whatever thread the loop runs.
      */
-    class Binding(val botId: String, val identity: String, val allow: ((String) -> Boolean)?, val sink: (Event) -> Unit)
+    class Binding(val botId: String, val identity: String, val allow: ((String) -> Boolean)?, val sink: (Event) -> Unit) {
+        /** P2-SF-01: who started this turn's work, for the policy (set by whoever binds; default = the user). */
+        @Volatile var origin: Origin = Origin()
+    }
+
+    /**
+     * P2-SF-01: what the policy needs to know about why a bound chat is running. [trigger] = a job's `source` kind
+     * (user | manager | routine | bot | mcp | suggestion…); [chain] = ids of the bots the request came through, requester
+     * first; [text] = the job's title and notes or the routine's prompt (A-team RISKY reads it); [confirmed] = the user OK'd
+     * the job.
+     */
+    data class Origin(val trigger: String = "user", val chain: List<String> = emptyList(), val jobId: String? = null,
+                      val text: String = "", val confirmed: Boolean = true)
+
+    /** P2-SF-01: told of every user message in any chat, bound or not (a new message skips approvals waiting there). */
+    @Volatile var onUserMessage: ((chatId: String, botId: String?) -> Unit)? = null
 
     private val bound = ConcurrentHashMap<String, Binding>()
     private val calls = ConcurrentHashMap<String, ArrayDeque<Pair<String, String>>>()   // chat → open (callId, tool)
@@ -63,7 +78,10 @@ object TeamHooks {
         return out
     }
 
-    fun message(chatId: String, role: String, text: String) { if (text.isNotBlank()) emit(chatId, Event.Message(role, text)) }
+    fun message(chatId: String, role: String, text: String) {
+        if (role == "USER") onUserMessage?.let { f -> safe { f(chatId, binding(chatId)?.botId) } }
+        if (text.isNotBlank()) emit(chatId, Event.Message(role, text))
+    }
 
     /** A tool call starts; its [result] pairs with the oldest open call of the same tool (parallel calls stay paired). */
     fun call(chatId: String, tool: String, args: String) {

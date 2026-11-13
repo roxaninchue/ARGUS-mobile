@@ -206,6 +206,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     suspend fun confirm(title1: String, detail1: String, action: String, always: Boolean = false,
                         grants: java.util.concurrent.atomic.AtomicReference<CommandPolicy.Grant>? = null): Boolean {
+        if (ConfirmGate.policyOk(kotlin.coroutines.coroutineContext)) return true   // P2-SF-01: the user just approved this call
         // 0.46.6: a card never shows a saved secret's value (a command with it swapped in shows the handle).
         val title0 = SecretVault.scrub(title1); val detail0 = SecretVault.scrub(detail1)
         val tag = kotlin.coroutines.coroutineContext[BgAgents.Tag]
@@ -4798,7 +4799,7 @@ When you finish, say what you did in one short sentence.
             MemoryLoop.gate(name, user, memoryLookups, songResolved.ifBlank { MemoryLoop.concrete(user).orEmpty() })?.let { add(Role.STEP, "Skipping another memory check"); return it }
             if (MemoryLoop.isLookup(name)) memoryLookups++
             if (TeamHooks.isBound(id)) TeamHooks.call(id, name, SecretVault.scrub(args.toString()))
-            val out = TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots)   // P1-TM-05: job tools
+            val out = com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots) }   // P1-TM-05 job tools; P2-SF-01 policy
             if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out))
             if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
             return out

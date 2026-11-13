@@ -141,6 +141,14 @@ object ToolRouter {
             { it in setOf("skill_manage", "delegate", "create_specialist", "search_screen_memory", "install_skill", "write_skill", "save_workflow", "skill_file") }),
     )
 
+    /** P2-SF-01: the action class a call of [name] counts as (policy/ToolRegistry); [arg] reads one of its arguments. */
+    fun actionClass(name: String, arg: (String) -> String = { "" }): com.blaze.assistant.team.ActionClass =
+        com.blaze.assistant.policy.ToolRegistry.classOf(name, arg) ?: com.blaze.assistant.policy.ToolRegistry.UNDECLARED
+
+    /** P2-SF-01: names of [all] that have no declared action class (ToolRegistryTest keeps this empty). */
+    fun undeclared(all: JSONArray): List<String> = (0 until all.length()).map { nameOf(all.opt(it)) }
+        .filter { it.isNotBlank() && !com.blaze.assistant.policy.ToolRegistry.declared(it) }
+
     private fun nameOf(t: Any?): String = (t as? JSONObject)?.optJSONObject("function")?.optString("name").orEmpty()
 
     /** A tool's group; tools no group claims (and that aren't core) fall into "more", sent only on request. */

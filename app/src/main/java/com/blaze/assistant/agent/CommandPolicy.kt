@@ -1,5 +1,7 @@
 package com.blaze.assistant.agent
 
+import com.blaze.assistant.team.ActionClass
+
 /**
  * v0.45.3 (user: "normal build mode makes me have to approve every single command"): what the Normal approval mode
  * (Build + Auto, the + menu's "Auto") asks before running a command the agent wants to run: shell (run_shell) and git.
@@ -211,6 +213,65 @@ object CommandPolicy {
             if (sub != null && (buildSubs.containsKey(c) || c == "git" || langInstall.containsKey(c) || c in pkgMgr)) "$c $sub" else c
         }.take(120)
     }.trim()
+
+    // ---------------- P2-SF-01: the action class of a command (policy/Policy.decide) ----------------
+
+    /** Riskiest first: the class a command line gets is the worst of its parts. */
+    private val classOrder = listOf(ActionClass.DELETE, ActionClass.SEND, ActionClass.SETTINGS, ActionClass.WRITE_REMOTE, ActionClass.WRITE_LOCAL, ActionClass.READ)
+    private fun worst(a: ActionClass, b: ActionClass): ActionClass = if (classOrder.indexOf(a) <= classOrder.indexOf(b)) a else b
+    private val remoteShells = setOf("ssh", "scp", "sftp", "ftp", "rsync", "nc", "ncat", "telnet")
+    private val uploads = Regex("""(?:^|\s)(-d|--data\S*|-F|--form|-T|--upload-file|-X\s*(POST|PUT|PATCH|DELETE)|--request\s*(POST|PUT|PATCH|DELETE)|--post-data|--post-file|--method=(POST|PUT|PATCH|DELETE))(?=\s|=|$)""", RegexOption.IGNORE_CASE)
+
+    /**
+     * P2-SF-01: what a command does, as an action class: deletes (rm, find -delete, force pushes, hard resets, branch -D)
+     * = DELETE; texts / calls / mail = SEND; sudo, package installs, disk tools = SETTINGS; git push, ssh / scp / rsync,
+     * uploads = WRITE_REMOTE; read-only commands and git reads = READ; everything else (builds, edits in the workspace) =
+     * WRITE_LOCAL. [level] (SAFE / ASK / RISKY) still decides whether a card shows; this says what kind of card.
+     */
+    fun actionClass(kind: Kind, text: String, roots: List<String> = DEFAULT_ROOTS): ActionClass = when (kind) {
+        Kind.GIT -> gitClass(words(text).let { if (it.firstOrNull() == "git") it.drop(1) else it })
+        Kind.SHELL -> segments(text).map { segClass(it, roots) }.fold(ActionClass.READ) { a, b -> worst(a, b) }
+    }
+
+    private fun gitClass(args: List<String>): ActionClass {
+        val a = (if (args.firstOrNull() == "-C") args.drop(2) else args).filter { it != "--no-pager" }
+        if (gitRisky.containsMatchIn(" " + a.joinToString(" "))) return ActionClass.DELETE
+        val sub = a.firstOrNull { !it.startsWith("-") } ?: return ActionClass.READ
+        return when {
+            sub == "push" -> ActionClass.WRITE_REMOTE
+            sub == "rm" || sub == "clean" -> ActionClass.DELETE
+            gitLevel(a) == Level.SAFE && sub in gitRead -> ActionClass.READ
+            else -> ActionClass.WRITE_LOCAL
+        }
+    }
+
+    private fun segClass(seg: String, roots: List<String>): ActionClass {
+        val w = words(seg.replace(Regex("""\d?>{1,2}\s*\S+|&>\s*\S+|<\s*\S+"""), " "))
+        if (w.isEmpty()) return ActionClass.READ
+        val cmd = w[0].substringAfterLast('/')
+        val args = w.drop(1)
+        val sub = args.firstOrNull { !it.startsWith("-") }.orEmpty()
+        val redirect = Regex("""(?:^|[^0-9&<>])(>{1,2}|&>)\s*([^\s;&|]+)""").findAll(seg).any { it.groupValues[2] != "/dev/null" && !it.groupValues[2].startsWith("&") }
+        return when {
+            cmd in setOf("bash", "sh", "zsh", "dash") && args.contains("-c") -> actionClass(Kind.SHELL, args.getOrNull(args.indexOf("-c") + 1).orEmpty(), roots)
+            cmd in deleters -> ActionClass.DELETE
+            cmd == "find" && args.any { it == "-delete" } -> ActionClass.DELETE
+            cmd == "find" && args.any { it == "-exec" || it == "-execdir" } && seg.contains(Regex("""\brm\b""")) -> ActionClass.DELETE
+            talksOrPays.containsMatchIn(cmd) || talksOrPays.containsMatchIn(seg) -> ActionClass.SEND
+            cmd in superUser || diskTools.matches(cmd) -> ActionClass.SETTINGS
+            cmd in pkgMgr && (args.any { pkgVerb.matches(it) } || cmd == "termux-setup-storage") -> ActionClass.SETTINGS
+            langInstall.containsKey(cmd) && (langInstall[cmd] == null || sub in langInstall[cmd]!!) -> ActionClass.SETTINGS
+            (cmd == "python" || cmd == "python3") && args.take(3).joinToString(" ").matches(Regex("""-m\s+pip\s+(install|uninstall).*""")) -> ActionClass.SETTINGS
+            cmd == "git" -> gitClass(args)
+            cmd in remoteShells -> ActionClass.WRITE_REMOTE
+            (cmd == "curl" || cmd == "wget" || cmd == "aria2c") -> if (uploads.containsMatchIn(" " + args.joinToString(" "))) ActionClass.WRITE_REMOTE
+                else if (redirect || args.any { it == "-o" || it == "-O" || it == "--output" || it == "-P" }) ActionClass.WRITE_LOCAL else ActionClass.READ
+            cmd in readOnly && cmd !in runners && cmd != "sed" && cmd != "awk" && cmd != "find" && !redirect -> ActionClass.READ
+            cmd == "sed" && !args.any { it.startsWith("-i") || it.startsWith("--in-place") } && !redirect -> ActionClass.READ
+            cmd == "find" && !redirect -> ActionClass.READ
+            else -> ActionClass.WRITE_LOCAL
+        }
+    }
 
     enum class Decision { RUN, ASK, ASK_RISKY }
 

@@ -124,6 +124,32 @@ object ConfirmGate {
         else -> ScreenDecision.PASS
     }
 
+    // ---------------- P2-SF-01: the policy engine (policy/Policy.decide) reads these ----------------
+
+    /**
+     * The taint rule as the policy applies it: in a turn that read untrusted content, every action that isn't a read or
+     * a local write (WRITE_REMOTE and up, PHYSICAL included) needs the user's card, "Requested after reading …" on top.
+     * (Stricter than [decide], which kept Autopilot for non-destructive actions; [decide] itself is unchanged.)
+     */
+    fun taintAsks(c: com.blaze.assistant.team.ActionClass): Boolean =
+        c != com.blaze.assistant.team.ActionClass.READ && c != com.blaze.assistant.team.ActionClass.WRITE_LOCAL
+
+    /** What [confirm]'s `always = true` means as action classes: these always show the card (sends, money, deletes, secrets). */
+    fun alwaysCard(c: com.blaze.assistant.team.ActionClass): Boolean = c in setOf(com.blaze.assistant.team.ActionClass.SEND,
+        com.blaze.assistant.team.ActionClass.SPEND, com.blaze.assistant.team.ActionClass.DELETE, com.blaze.assistant.team.ActionClass.CREDENTIAL)
+
+    /**
+     * Set around one tool call the user has just approved on the policy's card (approval inside the tool call): the
+     * tool's own confirm cards for that same call are covered by it, so the user isn't asked twice. Only a card the
+     * user answered sets it, never an automatic allow.
+     */
+    class PolicyOk(val tool: String, val approvalId: String) : AbstractCoroutineContextElement(PolicyOk) {
+        companion object Key : CoroutineContext.Key<PolicyOk>
+    }
+
+    /** True inside a tool call the user approved on the policy's card ([PolicyOk]). */
+    fun policyOk(ctx: CoroutineContext): Boolean = ctx[PolicyOk] != null
+
     /**
      * A command the user typed or said, run by the on-device fast lane (no outside content involved):
      * phone-setting changes it makes don't need the card. Texts and calls still always ask.

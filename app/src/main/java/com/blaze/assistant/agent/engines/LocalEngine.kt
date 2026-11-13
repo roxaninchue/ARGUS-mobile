@@ -51,6 +51,8 @@ class LocalEngine(
             for (row in mapper.map(e)) { runCatching { sink.put(row) }; trySend(TurnEvent.RowOut(t, row)) }
             RowMapper.activity(e)?.let { trySend(TurnEvent.Activity(t, it)) }
         }
+        // P2-SF-01: another bot's message is a bot-started turn; the policy decides it on the lowest permission in the chain
+        input.untrusted?.takeIf { it.startsWith("bot:") }?.let { binding.origin = TeamHooks.Origin("bot", listOf(it.removePrefix("bot:"))) }
         TeamHooks.bind(input.threadId, binding)
         live[t] = input.threadId
         send(TurnEvent.Started(t, bot.id))
