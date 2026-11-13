@@ -161,7 +161,7 @@ object TeamCommands {
         return calls.takeIf { it.isNotEmpty() }
     }
 
-    /** A-team cardParse: "Nova, luke@hitch.io" or "Nova luke@hitch.io research". */
+    /** A-team cardParse: "Nova, nova@hitch.io" or "Nova nova@hitch.io research". */
     fun card(text: String): List<Call>? {
         val t = text.trim()
         val e = EMAIL.find(t) ?: return null
@@ -236,7 +236,7 @@ object TeamCommands {
             "\nExisting agents: " + (bots.joinToString(", ").ifEmpty { "none" }) + ". Open tasks: " + (openJobs.take(40).joinToString("; ").ifEmpty { "none" }) +
             ". Today is " + today + ". Rules: add_agent with an EXISTING name means update that agent (e.g. setting their email or role). One call per person or task. Messy notes count as instructions." +
             "\nExamples:\n\"Lukas's email is l@x.io\" -> {\"calls\":[{\"name\":\"add_agent\",\"arguments\":{\"name\":\"Lukas\",\"email\":\"l@x.io\"}}]}" +
-            "\n\"Nova, luke@hitch.io\" -> {\"calls\":[{\"name\":\"add_agent\",\"arguments\":{\"name\":\"Nova\",\"email\":\"luke@hitch.io\"}}]}" +
+            "\n\"Nova, nova@hitch.io\" -> {\"calls\":[{\"name\":\"add_agent\",\"arguments\":{\"name\":\"Nova\",\"email\":\"nova@hitch.io\"}}]}" +
             "\n\"Name: Zed, task: call Zamtel, due: tomorrow\" -> {\"calls\":[{\"name\":\"add_task\",\"arguments\":{\"agent\":\"Zed\",\"title\":\"call Zamtel\",\"due\":\"tomorrow\"}}]}" +
             "\nReply with ONLY the JSON object, no prose, no code fences. Use {\"calls\":[]} only if nothing in the text is an instruction."
 

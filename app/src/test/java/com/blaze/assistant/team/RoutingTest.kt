@@ -60,9 +60,9 @@ class RoutingTest {
     }
 
     @Test fun cardAndListParse() {
-        assertEquals("Lukas", TeamCommands.card("Lukas, luke@hitch.io")!![0].a("name"))
-        assertEquals("research", TeamCommands.card("Nova luke@hitch.io research")!![0].a("role"))
-        assertNull(TeamCommands.card("send the deck to luke@hitch.io"))
+        assertEquals("Rhea", TeamCommands.card("Rhea, nova@hitch.io")!![0].a("name"))
+        assertEquals("research", TeamCommands.card("Nova nova@hitch.io research")!![0].a("role"))
+        assertNull(TeamCommands.card("send the deck to nova@hitch.io"))
         val l = TeamCommands.agentList("add Ann, Bob and Cy")!!
         assertEquals(listOf("Ann", "Bob", "Cy"), l.map { it.a("name") })
         val l2 = TeamCommands.agentList("add Ann (ann@x.ai, sales), Bob Lee as design")!!

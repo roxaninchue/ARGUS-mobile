@@ -86,7 +86,10 @@ class SpaceWiringTest {
     }
 
     @Test fun homeIsTheRootTab() {
-        val home = after(chat, "if (paneNow == \"home\") {", 900)
+        // P1-SH-01: the 0.52 Home (argus_look off) is the `homePane` lambda, drawn when paneNow == "home"; the ARGUS shell's
+        // Life page replaces it when the look is on (LifeMode, P1-SH-05).
+        assertTrue("homePane()" in after(chat, "if (paneNow == \"home\") {", 200))
+        val home = after(chat, "val homePane: @Composable () -> Unit = {", 900)
         assertTrue("SpaceHomeLayer(" in home)
         assertTrue("asking from Home goes to the chat", "onAsk = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) }" in home)
         assertTrue("onOpenProject = { go(navNow().openProject(it)) }" in home)
@@ -99,7 +102,7 @@ class SpaceWiringTest {
     }
 
     @Test fun projectsIsTheHarkStyleList() {
-        assertEquals("the Projects pane uses it (the dead newLook pane is gone)", 1, Regex(Regex.escape("${S}SpaceProjectsScreen(projects, allChats, busyChats, needs, nav.project,")).findAll(chat).count())
+        assertEquals("the Projects pane uses it (the dead newLook pane is gone)", 1, Regex(Regex.escape("${S}SpaceProjectsScreen(projects, allChats, busyChats, needs, if (embedded) \"\" else nav.project,")).findAll(chat).count())
         val p = src("ui/space/SpaceProjects.kt")
         for (k in listOf("onCreate(", "onNewChat(open.id)", "onInstructions(open.id, it)", "onBrief(open.id, fit)", "onRenameChat(ch.id, t)", "onDeleteChat(ch.id)", "onDelete(open.id)"))
             assertTrue("the projects screen keeps $k", k in p)
@@ -109,14 +112,17 @@ class SpaceWiringTest {
 
     @Test fun everyRouteHomeAndBackLandOnTheHomeTab() {
         val homeReq = after(chat, "LaunchedEffect(homeReq)", 1_200)
-        assertTrue("go(navNow().switchTab(ChatNav.HOME))" in homeReq)
+        // P1-SH-01: the Home board is Life's page in the ARGUS shell, the Home tab with argus_look off
+        assertTrue("go(navNow().switchTab(if (argus) ChatNav.LIFE else ChatNav.HOME))" in homeReq)
         assertTrue("views and pages close on the way home", "settingsPage = null" in homeReq && "Views.showing.value = \"\"" in homeReq && "composer.closeSpotlight()" in homeReq)
         assertTrue("open_view home / /home", "\"home\" -> homeRequests.value++" in chat)
         val m = src("MainActivity.kt")
         val extra = after(m, "getBooleanExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME, false)", 500)
         assertTrue("EXTRA_HOME lands on the Home", "homeRequests.value = com.blaze.assistant.ui.homeRequests.value + 1" in extra)
         val back = chat.substringAfter("fun backToChat() {").substringBefore("\n    }\n")
-        assertTrue("with nothing over the tab, Back goes Home", "else if (!Agent.privateChat.value) go(n.switchTab(ChatNav.HOME))" in back)
+        // P1-SH-01: with nothing over the tab, Back goes Home in the 0.52 shell and to Team (the root) in the ARGUS shell
+        assertTrue("with nothing over the tab, Back goes Home", "else if (!Agent.privateChat.value) {" in back)
+        assertTrue("if (argus) go(n.switchTab(ChatNav.TEAM)) else go(n.switchTab(ChatNav.HOME))" in back)
         assertTrue("projects step back inside Projects first", "up.tab == ChatNav.PROJECTS) go(up)" in back)
         val shell = after(chat, "BackRule.shellNow = {\n", 1_200)
         assertTrue("homeRoot = !Agent.privateChat.value" in shell)
@@ -322,9 +328,9 @@ class SpaceWiringTest {
         }
     }
 
-    @Test fun theVersionIs0524() {
+    @Test fun theVersionIs0530() {
         val g = listOf(File("build.gradle.kts"), File("app/build.gradle.kts")).first { it.isFile && it.readText().contains("versionCode") }.readText()
-        assertTrue("versionCode = 191" in g)
-        assertTrue("versionName = \"0.52.4\"" in g)
+        assertTrue("versionCode = 192" in g)
+        assertTrue("versionName = \"0.53.0\"" in g)
     }
 }

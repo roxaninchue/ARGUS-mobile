@@ -1,3 +1,15 @@
+## v0.53.0: one look, one team: Team · Chat · Life · Desk (versionCode 192)
+
+- A new home for ARGUS with four modes you switch with the notch at the top or by swiping: Team, Chat, Life and Desk. /team, /chat, /life and /desk jump straight there, and Back always returns to Team.
+- Team: ARGUS leads a team of bots. Each bot has its own chat, orb, colour and instructions. Pin bots, see unread and overdue jobs at a glance, build your own bots (blank, from a template, or describe what you want) or try the Demo team. ARGUS can never be deleted.
+- Chat: your conversation with ARGUS, with a history drawer (search, pinned, by day, rename / pin / delete with Undo), a new-chat button and suggested asks.
+- Life: a line about your day, a Today strip of routines, alarms and calendar, ten life areas to set up with ARGUS, your projects and panels.
+- Desk: jobs with filters (Needs you, Today, Upcoming, Overdue, Done, by bot) and search, plus Routines, Library, Projects and Computers in one place.
+- Jobs: ask ARGUS or a bot ("ask Atlas to …", "@Nova …") and it becomes a job that runs in the background, retries a few times when the network fails and tells you in plain words when it can't finish. ARGUS shows "Here's what I'll do" before changing your team.
+- Settings opens on You, grouped as Team, You & phone and System, with a search pill. Appearance adds Match phone, grounds (Plain, Orbit, Cobalt night), handedness and reduced motion.
+- Import your A-team backup (Settings › Backup & import): bots, jobs and your theme come across; importing the same file twice changes nothing.
+- The old look is still one switch away (Settings › Appearance › ARGUS look).
+
 ## v0.52.4: always on Autopilot, one look for the whole app, icons everywhere, pinned facts (versionCode 191)
 
 ### Also new

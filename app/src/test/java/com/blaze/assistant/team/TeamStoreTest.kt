@@ -199,21 +199,5 @@ class TeamStoreTest {
         assertTrue("farm" in w.permissions.dataScopes); assertEquals("nova", w.voice.id); assertEquals("worker-farm", w.id)
     }
 
-    /** Acceptance "delegate to specialists still works": the delegate tool still names every built-in by its plain id, byId finds each, filter still scopes tools by group. */
-    @Test fun delegateToSpecialistsStillWorks() {
-        val ids = listOf("researcher", "operator", "writer", "planner", "coder", "inbox", "shopper", "booker", "tutor", "designer")
-        assertEquals(ids, Specialists.builtIn.map { it.id })
-        val fn = Specialists.tool().getJSONObject("function")
-        assertEquals("delegate", fn.getString("name"))
-        for (s in Specialists.builtIn) {
-            assertTrue(fn.getString("description").contains("${s.id} (${s.name})"))
-            assertEquals(s, Specialists.byId(s.id))
-        }
-        val all = org.json.JSONArray(listOf("web_search", "delegate", "set_alarm").map { n ->
-            org.json.JSONObject().put("type", "function").put("function", org.json.JSONObject().put("name", n)) })
-        val coder = Specialists.filter(all, Specialists.byId("coder")!!)
-        assertEquals(listOf("web_search"), (0 until coder.length()).map { coder.getJSONObject(it).getJSONObject("function").getString("name") })   // web yes, phone no, never delegate
-        val op = Specialists.filter(all, Specialists.byId("operator")!!)
-        assertEquals(listOf("set_alarm"), (0 until op.length()).map { op.getJSONObject(it).getJSONObject("function").getString("name") })
-    }
+    // "delegate to specialists still works" moved to SpecialistsDelegateTest (it reads Settings, so it needs Robolectric).
 }
