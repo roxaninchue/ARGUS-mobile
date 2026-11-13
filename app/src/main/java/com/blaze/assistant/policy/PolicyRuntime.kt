@@ -110,6 +110,16 @@ object PolicyRuntime {
         val botId = binding?.botId ?: BotRules.MANAGER_ID
         if (tool == Cards.CONNECT_TOOL) return flow.connect(chatId, botId, botName(botId), args, jobId)
         if (tool == "ask_user" && binding != null && botId != BotRules.MANAGER_ID) return flow.ask(chatId, botId, botName(botId), args, jobId)
+        // 0.53.0 (card fix 1): a screen plan that sends through an app ARGUS can connect (Gmail on the screen because the
+        // send tool was missing) asks to connect it first. Connected: the bot is told to use the app's tool; "Not now":
+        // the screen route goes on to its Draft card; skipped / expired: nothing runs.
+        if (cardsOn()) ScreenSend.of(tool, args)?.takeIf { it.app.isNotEmpty() && connectorFor(it.app) != null && !connected(it.app) && "$chatId|${it.app.lowercase()}" !in declined }?.let { s ->
+            val reason = "Send through ${s.app} directly instead of driving the phone's screen. Nothing was sent yet."
+            val res = flow.connect(chatId, botId, botName(botId), org.json.JSONObject().put("app", s.app).put("reason", reason).toString(), jobId)
+            if (res.startsWith(Cards.connected(s.app))) return "$res. Nothing was sent yet: send it now with the ${s.app} tool, not the screen."
+            if (res != Cards.notConnected(s.app)) return res
+            declined += "$chatId|${s.app.lowercase()}"
+        }
         val own = binding == null && jobId == null
         val r = try { request(chatId, tool, args, agentPlan, binding, jobId, own) } catch (e: Throwable) {
             if (e is CancellationException) throw e
@@ -158,14 +168,22 @@ object PolicyRuntime {
         "id" to card.id, "title" to card.title, "text" to (card.question?.text ?: card.draft?.body ?: card.detail).take(2000),
         "question" to card.question?.text, "name" to card.connect?.app, "to" to card.draft?.to, "state" to state.code))
 
+    /** Chats where the user said "Not now" to connecting an app for a screen send ("chat|app"); the screen route goes on. */
+    private val declined: MutableSet<String> = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
+
+    /** The connector id behind [app] ("Gmail" / "Calendar" / "Drive" are Google), or null when ARGUS has none for it. */
+    fun connectorFor(app: String): String? {
+        val a = app.trim().lowercase()
+        if (a.isEmpty()) return null
+        return when {
+            a.contains("gmail") || a.contains("calendar") || a.contains("drive") || a.contains("google") || a.contains("classroom") -> "google"
+            else -> runCatching { com.blaze.assistant.connect.Connectors.all.firstOrNull { a.contains(it.id) || a.contains(it.name.lowercase()) }?.id }.getOrNull()
+        }
+    }
+
     /** Is [app] connected now (Connectors by id or name; "Gmail" / "Calendar" / "Drive" are Google). */
     fun connected(app: String): Boolean {
-        val a = app.trim().lowercase()
-        if (a.isEmpty()) return false
-        val id = when {
-            a.contains("gmail") || a.contains("calendar") || a.contains("drive") || a.contains("google") || a.contains("classroom") -> "google"
-            else -> com.blaze.assistant.connect.Connectors.all.firstOrNull { a.contains(it.id) || a.contains(it.name.lowercase()) }?.id
-        } ?: return false
+        val id = connectorFor(app) ?: return false
         return runCatching { com.blaze.assistant.connect.Connectors.connected(id) }.getOrDefault(false)
     }
 

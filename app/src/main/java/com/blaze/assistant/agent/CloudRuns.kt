@@ -210,6 +210,9 @@ object CloudRuns {
     fun createBody(clientId: String, messages: JSONArray, tools: JSONArray?, task: String): JSONObject = JSONObject()
         .put("client_msg_id", clientId).put("messages", messages).put("task", task).apply {
             tz().takeIf { it.isNotBlank() }?.let { put("tz", it) }
+            // 0.53.0 (gateway 0.9.12): the manual model + effort pick rides on the run and is preferred on every step.
+            if (LiveModelsFeed.on()) ModelPick.route(LiveModels.shared.list(), tools != null && tools.length() > 0, task == "vision")?.let { pick ->
+                put("blaze_pick", pick); ModelPick.effort(LiveModels.shared.list())?.let { put("reasoning_effort", it) } }
             // v0.45.5 (#1, gateway 0.6.9): schemas are dropped on a plain turn, so a greeting can't come back as a tool call.
             // 0.45.15 (device /phoneqa 21 Oct 22:40, 10/55): a run sent tool_choice "auto" + blaze_tools "auto" every time, so
             // the named tool (ToolTruth.choice) never reached the phone's real route and codestral wrote its calls as text.

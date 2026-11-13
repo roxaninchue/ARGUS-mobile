@@ -109,8 +109,16 @@ class PolicyGate(
             ActionClass.PHYSICAL -> "use the phone's screen"; ActionClass.WRITE_LOCAL -> "save something"; ActionClass.READ -> "look something up"
         }
 
-        fun detail(tool: String, args: String, note: String?): String =
-            listOfNotNull(note, tool.replace('_', ' ') + (args.trim().takeIf { it.isNotEmpty() && it != "{}" }?.let { ": " + it.take(600) } ?: "")).joinToString("\n")
+        /**
+         * 0.53.0: the card's body. The note ("Requested after reading …") is NOT repeated here: the card and the
+         * notification draw [Card.note] on their own line (it showed twice). Args read as words (ScreenSend.readable:
+         * numbered steps for a screen plan, "key: value" lines otherwise), never raw run-plan JSON.
+         */
+        fun detail(tool: String, args: String, @Suppress("UNUSED_PARAMETER") note: String?): String {
+            val words = ScreenSend.readable(tool, args)
+            val name = tool.replace('_', ' ')
+            return if (words.isEmpty()) name else if ('\n' in words) "$name\n$words" else "$name: $words"
+        }
 
         fun denied(tool: String) = "The user did NOT allow $tool. Don't retry it; tell them what you would have done so they can do it."
         fun skipped(tool: String) = "The user sent a new message instead of answering, so $tool was skipped. Don't retry it; read their message."

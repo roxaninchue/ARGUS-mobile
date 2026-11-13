@@ -87,6 +87,13 @@ object Cards {
         return Draft(tool, rec.toList(), subject, body)
     }
 
+    /**
+     * 0.53.0: the draft a call carries, whatever its route: a SEND tool's args ([draftOf]), or a screen plan that types
+     * and taps Send ([ScreenSend.of]: Gmail compose on the screen showed a plain approval). Null = not a send.
+     */
+    fun draftFor(tool: String, argsJson: String, sendClass: Boolean): Draft? =
+        ScreenSend.of(tool, argsJson)?.draft ?: if (sendClass) draftOf(tool, argsJson) else null
+
     /** The same call with [body] in place of the draft's text (what Edit asks the bot to send). */
     fun withBody(tool: String, argsJson: String, body: String): String {
         val a = obj(argsJson)
@@ -142,7 +149,8 @@ object Cards {
     fun connectSkipped(app: String) = "The user sent a new message instead of connecting $app. Don't ask again; read their message."
     fun connectExpired(app: String) = "$app wasn't connected within 25 minutes. Don't retry now; say that it is waiting for the user."
     fun edited(d: Draft) = "The user edited the draft, so it was NOT sent yet. Send exactly this text, unchanged, to the same recipients (${d.to}) " +
-        "by calling ${d.tool} again; that one call is approved:\n\n${d.body}"
+        "by calling ${d.tool} again" + (if (d.tool in ScreenSend.PLAN_TOOLS) " with the same steps, typing this text as the message" else "") +
+        "; that one call is approved:\n\n${d.body}"
     fun discarded(tool: String) = "The user discarded the draft, so nothing was sent ($tool). Don't retry it; ask them what they'd like instead."
 
     /** The card's heading for a class (the bot's name goes on the card itself). */
@@ -290,7 +298,7 @@ class CardFlow(
 
     /** For [PolicyGate]: an edited draft's pass, when this call is exactly that draft. */
     fun pass(r: PolicyGate.Request, ask: Policy.Decision.Ask): String? =
-        if (ask.card == Policy.Card.DRAFT) passes.take(Cards.draftOf(r.tool, r.argsFull).key) else null
+        Cards.draftFor(r.tool, r.argsFull, ask.card == Policy.Card.DRAFT)?.let { passes.take(it.key) }
 
     /** For [PolicyGate]: what the bot is told when a card said no with more to say (Edit, Discard). */
     fun outcome(approvalId: String): String? = outcomes.remove(approvalId)
@@ -304,7 +312,7 @@ class CardFlow(
     }
 
     private suspend fun present(p: Approvals.Pending, ask: Policy.Decision.Ask): Approvals.Status? {
-        val draft = if (ask.card == Policy.Card.DRAFT || p.approval.actionClass == ActionClass.SEND) Cards.draftOf(p.approval.tool, p.args) else null
+        val draft = Cards.draftFor(p.approval.tool, p.args, ask.card == Policy.Card.DRAFT || p.approval.actionClass == ActionClass.SEND)
         val card = cardOf(p, if (draft != null) Cards.Kind.DRAFT else Cards.Kind.APPROVAL, ask, draft)
         return showing(p, card) { a ->
             when (a) {

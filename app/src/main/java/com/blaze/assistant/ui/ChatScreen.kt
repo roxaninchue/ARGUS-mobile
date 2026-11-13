@@ -1048,12 +1048,14 @@ fun ChatScreen() {
                 else AcceptImages(onImage = { uri, mime -> addUris(listOf(uri), mime) }) {
                 // P1-SH-01: the ARGUS composer (+ · text · mic / send / stop, 5 lines); a message from Team, Life or Desk goes
                 // to ARGUS and opens Chat (routing from Team comes with P1-TM-06).
-                if (argus) com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
+                // 0.53.0: the manual model + effort chip sits over the composer (ModelPick; Auto by default).
+                if (argus) androidx.compose.foundation.layout.Column { com.blaze.assistant.ui.argus.kit.ModelChip(Modifier.padding(start = 18.dp))
+                com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
                     mode = if (nav.inProjectChat) ChatNav.CHAT else nav.tab, streaming = mood != Mood.IDLE, attachments = pending.size,
                     onPlus = { plusOpen = !plusOpen; showViews = false; notchOpen = false }, plusOpen = plusOpen,
                     // P1-TM-06: from Team the router decides (a job or a hand-off stays on Team; conversation opens Chat)
                     onSend = { val t = input.text; send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && navNow().tab != ChatNav.TEAM && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
-                    onMic = { onMic() }, onStop = { Agent.stop() })
+                    onMic = { onMic() }, onStop = { Agent.stop() }) }
                 else Composer(input, { input = it; Agent.typing(it.text.isNotEmpty()) }, busy = mood != Mood.IDLE, canSend = input.text.isNotBlank() || pending.isNotEmpty(),
                     plusOpen = plusOpen, chip = modeChip(work, approval), agents = bgAgents.count { it.live },
                     listening = voiceState == Voice.State.LISTENING, speaking = voiceState == Voice.State.SPEAKING,

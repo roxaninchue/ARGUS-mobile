@@ -196,9 +196,19 @@ object ToolRouter {
 
     val enabled get() = Settings.bool("tool_diet", true)
 
+    /**
+     * 0.53.0 harness first step (owner, 13 Nov 2026: "ARGUS should work like a harness: terminal and tools first, like CLI
+     * agents"). The action groups go on every step from the first one, so the model acts instead of claiming: NudgePolicy's
+     * LOAD_AND_ASK (the proving tool wasn't even sent, the model said "done", the claim check swallowed it and asked again)
+     * was the common case. Settings `harness_tools` (default on) turns it off.
+     */
+    val HARNESS = setOf("terminal", "screen", "device", "messages", "google", "browser")
+    val harness get() = Settings.bool("harness_tools", true)
+
     /** The tools to send this step. */
-    fun select(all: JSONArray, groupsOn: Set<String>): JSONArray {
+    fun select(all: JSONArray, groupsOn0: Set<String>): JSONArray {
         if (!enabled) return all
+        val groupsOn = if (harness) groupsOn0 + HARNESS else groupsOn0
         val out = JSONArray()
         for (i in 0 until all.length()) {
             val t = all.opt(i)

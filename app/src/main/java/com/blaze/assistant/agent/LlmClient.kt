@@ -386,7 +386,10 @@ object LlmClient {
         val turnModel = if (t.pid == Providers.GATEWAY) TurnModel.current else null
         turnModel?.headers()?.forEach { (k, v) -> conn.setRequestProperty(k, v) }
         // P0-API-01 (flag live_models, off by default): the live list's pick goes first while the turn has no pin yet.
-        if (t.pid == Providers.GATEWAY) { LiveModelsFeed.touch(base, key); if (turnModel?.pin.isNullOrEmpty()) LiveModelsFeed.prefer(task ?: Cloud.task(messages, tools, liteTurn),
+        // 0.53.0: a manual pick (ModelPick, on the live list and fitting this call) is named on every call, pin or not.
+        val manual = if (t.pid == Providers.GATEWAY && LiveModelsFeed.on()) ModelPick.route(LiveModels.shared.list(), tools != null && tools.length() > 0, task == "vision") else null
+        if (t.pid == Providers.GATEWAY) { LiveModelsFeed.touch(base, key); if (manual != null) conn.setRequestProperty(TurnModel.PREFER_HEADER, TurnModel.safe(manual))
+            else if (turnModel?.pin.isNullOrEmpty()) LiveModelsFeed.prefer(task ?: Cloud.task(messages, tools, liteTurn),
             heavyTurn, tools != null && tools.length() > 0, avoid)?.let { conn.setRequestProperty(TurnModel.PREFER_HEADER, TurnModel.safe(it)) } }
         // v0.45.8 (Site): the reply-language picker as a header (BCP-47); none for Auto.
         if (t.pid == Providers.GATEWAY) ReplyLanguage.header(ReplyLanguage.current())?.let { (k, v) -> conn.setRequestProperty(k, v) }
@@ -419,6 +422,8 @@ object LlmClient {
             if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn) put("blaze_reasoning", "low")
             // v0.26.2: routes that just came back empty or broke mid-stream; the gateway tries its next model.
             if (t.pid == Providers.GATEWAY && avoid.isNotEmpty()) put("blaze_avoid", JSONArray(avoid))
+            // 0.53.0: the picked model's effort (only when it lists one; gateway 0.9.11 drops it for a fallback without efforts).
+            if (manual != null) ModelPick.effort(LiveModels.shared.list())?.let { put("reasoning_effort", it) }
             if (tools != null && tools.length() > 0) {
                 // v0.45.13: never more than 128 tools (some routes 400 "'tools': maximum number of items is 128"); the turn's
                 // own and the named tool always stay (ToolTruth.cap).

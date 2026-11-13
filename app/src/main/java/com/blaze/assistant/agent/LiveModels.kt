@@ -11,7 +11,7 @@ import org.json.JSONObject
  * the next healthy model in the lane and says so in the response headers ([Wire.STATUS] / [Wire.ROUTE] / [Wire.FALLBACK]).
  * Auto (no pick) is always the last resort, and the whole chain when no list is known. No model ids are typed here.
  *
- * Behind the [FLAG] setting (default off): with it off nothing reads this and requests are exactly as before.
+ * Behind the [FLAG] setting, default ON since 0.53.0 (owner, 13 Nov 2026: A-team routing in the app); off = Auto only.
  * Pure Kotlin + org.json; the HTTP fetch is injected ([Cache]).
  */
 object LiveModels {
@@ -37,7 +37,9 @@ object LiveModels {
     const val SKIP_PLAN_MS = 24 * 3_600_000L
 
     data class Member(val key: String, val pref: String?, val name: String, val prov: String, val model: String = "", val route: String = "",
-                      val lanes: List<String> = emptyList(), val ms: Int = 0, val success: Double? = null, val tools: Boolean = false, val vision: Boolean = false)
+                      val lanes: List<String> = emptyList(), val ms: Int = 0, val success: Double? = null, val tools: Boolean = false, val vision: Boolean = false,
+                      /** Gateway 0.9.11+: reasoning efforts this model takes ("low", "medium", "high"); empty = no effort control. */
+                      val efforts: List<String> = emptyList(), val defaultEffort: String? = null)
 
     /** Auto: no pick, the gateway's lane chooses. */
     val AUTO = Member("auto", null, "Auto", "ARGUS gateway")
@@ -49,7 +51,7 @@ object LiveModels {
     // ---------------- names ----------------
     private val ACR = mapOf("gpt" to "GPT", "oss" to "OSS", "glm" to "GLM", "ai" to "AI", "it" to "IT", "vl" to "VL", "moe" to "MoE")
     private val PROV = mapOf("groq" to "Groq", "cerebras" to "Cerebras", "gemini" to "Gemini", "openrouter" to "OpenRouter", "infron" to "Infron",
-        "sambanova" to "SambaNova", "cloudflare" to "Cloudflare", "workers" to "Cloudflare", "mistral" to "Mistral", "nvidia" to "NVIDIA")
+        "sambanova" to "SambaNova", "cloudflare" to "Cloudflare", "workers" to "Cloudflare", "mistral" to "Mistral", "nvidia" to "NVIDIA", "ap" to "Apinex")
 
     /** "openai/gpt-oss-120b:free" → "GPT OSS 120b". */
     fun prettyName(model: String?): String {
@@ -79,7 +81,9 @@ object LiveModels {
         val lanes = e.optJSONArray("lanes")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
         return Member(id, id, prettyName(model), provName(prov), model, e.optString("route"), lanes,
             e.optDouble("latency_ms", 0.0).let { if (it.isNaN()) 0 else it.toInt() },
-            if (e.has("success") && !e.isNull("success")) e.optDouble("success") else null, has(e, "tools"), has(e, "vision"))
+            if (e.has("success") && !e.isNull("success")) e.optDouble("success") else null, has(e, "tools"), has(e, "vision"),
+            e.optJSONArray("efforts")?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it in EFFORTS } } ?: emptyList(),
+            e.optString("default_effort").takeIf { it in EFFORTS })
     }
 
     /** The list from GET [Wire.LIVE] in the gateway's order (fastest first). Bad entries, duplicates and Auto are dropped. */
@@ -117,6 +121,9 @@ object LiveModels {
         val first = still ?: pick(list, need)
         return if (first != null) listOf(first, AUTO) else listOf(AUTO)
     }
+
+    /** The efforts the gateway may list, in order. */
+    val EFFORTS = listOf("low", "medium", "high")
 
     /** Cloud.task → lane. The gateway's lanes have the same names as its task hints. */
     fun laneFor(task: String): String = if (task in LANES) task else "chat"
