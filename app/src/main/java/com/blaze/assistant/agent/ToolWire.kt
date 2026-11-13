@@ -26,7 +26,7 @@ object ToolWire {
     }
 
     /** May this call say `blaze_tools: "auto"` (let the gateway drop the schemas)? [manualPick] = a model picked by hand. */
-    fun mayTrim(messages: JSONArray, choice: String, manualPick: Boolean): Boolean {
+    fun mayTrim(messages: JSONArray, choice: Any, manualPick: Boolean): Boolean {
         if (choice != "auto" || manualPick) return false
         val t = lastUser(messages)?.trim() ?: return false
         if (t.isEmpty() || t.startsWith("[")) return false

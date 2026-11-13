@@ -30,6 +30,7 @@ class ToolWireTest {
         assertFalse(ToolWire.mayTrim(m, "auto", false))
         assertFalse(ToolWire.mayTrim(user("[Check: call the tool now]"), "auto", false))
         assertFalse(ToolWire.mayTrim(JSONArray(), "auto", false))
+        assertFalse("a named-tool object is the app's decision", ToolWire.mayTrim(user("thanks"), org.json.JSONObject().put("type", "function"), false))
     }
 
     @Test fun partsContentIsRead() {
