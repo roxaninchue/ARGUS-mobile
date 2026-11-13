@@ -1298,63 +1298,28 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             s("lang", ReplyLanguage.line(ReplyLanguage.current()))
             if (prof.simple) s("simple", PromptProfile.SIMPLE_RULE)
             slow("connectors", com.blaze.assistant.connect.Connectors.promptBlock())
-            s("talk", "\nHOW YOU TALK: short, warm and sure of yourself, like a sharp friend texting back. Lead with the answer. One or two sentences unless they ask for more. Never say \"let me know if there's anything else\", \"feel free to\", \"I'd be happy to\" or similar filler, and never ask the user to share personal details for your memory. ")
-            s("voice", VoiceFiller.RULE)   // 0.45.20 (item 10): no filler on voice greetings / small talk
-            s("style", AnswerStyle.RULE)
+            // 2026-11-14 harness gap: one consolidated core (HarnessPrompt) instead of ~20 stacked RULE lines (talk, self, remember,
+            // again, yes, ask, pim, load_tools, weather, phone_save, leak, verify, ids, know, search, calls, autonomy, style).
+            s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE)
             s("format", AnswerStyle.FORMAT)   // v0.31.1: HTML tags, tables never in code fences, rich blocks open in glass windows
-            s("self", "\nYou are ${BrandName.NAME} and you can control yourself with blaze_self (close/go quiet, stop, orb, wake word, read-aloud, model, personality, settings, your setup and crash log). When the user wants help setting you up, or asks what you can do or what's installed, call blaze_self setup_check and guide them one step at a time. If the user asks you to shut down, close, go away or stop, do that with blaze_self, never a phone setting. ")
-            s("remember", "\nWhen the user tells you something lasting about themselves (names, preferences, plans, decisions), save it quietly with the remember tool. Never save greetings, moods, small talk, thanks or questions. ")
-            s("again", "\nIf the user says \"again\", \"do it again\" or \"same for X\", repeat your last actions from this chat (adapted to X) without asking. ")
-            // v0.30.6 rapid messages: [m7] ids on user messages, [re:m7] markers on replies (static, so it stays in the cached prefix).
-            s("rapid", RapidMessages.PROMPT_RULE)
-            s("yes", FollowUpBind.RULE)   // 0.45.29 (stale "Yes")
-            s("ask", "\nIf you're unsure what the user wants, or there are several options (accounts, contacts, items, times), don't guess and don't end your turn: call ask_user with short options, then carry on with the answer. ")
-            if (control) {
-                s("control", """
-BACKGROUND FIRST: never take over the user's screen when a background tool can do it. Web questions → web_search/fetch_page; sites you must click, fill or log in to → browser_open/browser_click/browser_type (${BrandName.NAME}'s own background browser; browser_show only when the user must see or take over). When a page needs the user's email, phone, username + password, API key or a one-time code, call browser_secure_input (a secure form in the chat; you get {{secret:name}} placeholders, never the values) instead of asking in chat or showing the browser. ${SecretRules.PROMPT} If a page says the account can't sign in with a password, don't loop on the password: offer Continue with Google, a passkey or the live browser with ask_user. Browser tools never need phone control. Messaging someone → message_contact (never open WhatsApp on screen yourself); a picture ${BrandName.NAME} makes → generate_image, then message_contact with image="last"; several contacts match → ask_user with the exact names; only a result starting "Sent to" means it was sent. Email → gmail_search/gmail_read. Calendar → gcal_events or calendar tools. Texts, calls, contacts → the SMS/call/contact tools. Notifications → recent_notifications. Music → spotify tools. ${PromptProfile.filesLine(prof.simple)} Only if no background tool exists or it isn't connected, use the screen; when a background tool isn't connected, offer to connect it (blaze_self open "settings connections") instead of silently driving the app.
-You can control the phone. SPEED MATTERS: the user is watching.
-${Orient.RULE}
-- For anything in an app (not Settings: use open_settings), call run_plan ONCE with the whole script, using the visible words on buttons and fields as targets (e.g. open_app YouTube → tap "Search" → type "lofi hip hop" submit → tap the first result's title). You know how common apps look; you don't need to read the screen first. Add optional:true for popups you might need to dismiss, and expect:"..." when a step must lead somewhere.
-- Element numbers stay the same while the screen stays the same; after an action you often get only the changes ("Same screen… Changed or new"), so keep using the numbers you have.
-- For flows with predictable pop-ups (sign-in, cookie banners, "Not now"), set watchers with watch (or a preset) so the phone reacts instantly instead of spending your steps.
-- run_plan only comes back when it's done or stuck. If stuck, it returns the screen with element numbers: fix it with a short new run_plan, or tap/type_text by number.
-- Use single tap/type_text/scroll only for one-off fixes. If read_screen shows little (games, maps, video, custom apps), call look_at_screen.
-- Prefer direct tools when they fit: search_in_app for "play/search X on YouTube/Spotify/Play Store/Maps", set_alarm, set_timer, dial, compose_sms. open_url only for real web addresses; web_search to look something up yourself.
-${FastActions.RULE.trimStart('\n')}
-- Before anything irreversible or that spends money or contacts someone (sending, posting, paying, deleting, calling), confirm first unless the user clearly told you to do exactly that.
-When you finish, say what you did in one short sentence.
-""".trimIndent())
-            } else {
-                s("control", "Phone control is turned off in settings, so you can only chat.")
-            }
-            s("pim", "\nYou can also read and send texts, check calls, read and add calendar events, look up contacts, toggle the flashlight and volume, and schedule routines with your tools. Sending a text or placing a call asks the user for approval automatically.")
+            if (Voice.lastTurnByVoice) s("voice", VoiceFiller.RULE)   // 0.45.20 (item 10): no filler on voice turns
+            s("rapid", RapidMessages.PROMPT_RULE)   // v0.30.6: [m7] ids on user messages, [re:m7] markers on replies
+            s("control", HarnessPrompt.phone(control, prof.simple) + (if (control) "\n" + Orient.RULE + FastActions.RULE else ""))
+            s("secrets", "\n" + SecretRules.PROMPT)
             if (Settings.followups) s("followups", "\n" + QuickReplies.RULE + " Skip it for routines.")
-            s("load_tools", "\nIf a tool you need isn't in your list, call load_tools with its group, then carry on.")
-            s("weather", GatewayWeather.SYSTEM_LINE)   // v0.45.5 (#7b): one source for weather, chat and Home alike
-            // v0.45.9: Blaze is on a phone and can save files; no capability refusals for registered tools.
-            s("phone_save", SaveFile.RULE + ToolTruth.RULE)
-            // v0.28.1: models sometimes wrote "[/find_tool need=…]" as the reply instead of calling the tool.
-            s("leak", "\n" + ToolLeak.PROMPT_RULE)
-            // v0.43.0: Blaze once claimed things were running when nothing confirmed it.
-            s("verify", "\nVERIFY BEFORE CLAIMING: say something is running, open, started, sent or done only when a tool result in this turn confirms it. " +
-                "Earlier messages saying it worked are not proof.")
-            // v0.28.4 blaze-docs: one static line + the repo URL; the docs themselves are looked up (blaze_docs_search), never pasted here.
-            s("docs", BlazeDocs.PROMPT_LINE)
-            s("ids", "\nEverything you create that keeps running (alarms, timers, routines, triggers, calendar events, jobs) gets an ID like R4. To change, stop or delete one, call processes to find the ID, then process(id, action). Only use action=details when the user asks for specifics.")
-            // v0.24.3: the core skills' pinned rules (voice, task workflow, views, specialists, workflows, coding), every turn,
-            // read from the shipped assets and static, so they stay in the cached prefix.
+            s("docs", BlazeDocs.PROMPT_LINE)   // v0.28.4: one line + the repo URL; the docs are looked up
+            // Core skills: only the coding one stays pinned (on coding turns); the rest are read with use_skill when they fit.
             if (CoreSkills.loader == null) CoreSkills.loader = {
                 CoreSkills.NAMES.mapNotNull { n -> runCatching { n to app.assets.open("skills/$n/SKILL.md").bufferedReader().use { it.readText() } }.getOrNull() }.toMap()
             }
-            turn("core_skills", CoreSkills.promptBlock(prof.core))
+            turn("core_skills", CoreSkills.promptBlock(HarnessPrompt.pinned(prof.core)))
             // v0.23.0: the VIEWS block. v0.45.0 (#16): in full only when a view is routed this turn; else one line.
             turn("views", if (prof.views) ViewRouter.PROMPT else PromptProfile.viewsShort(ViewRouter.specs.map { it.name }))
             // 0.46.0 Blaze Stage: in place first; plain Q&A stays chat; "study 30 min" is a timer card with Start.
             if (com.blaze.assistant.stage.StageStore.enabled) s("stage", com.blaze.assistant.stage.StageTools.RULE)
             // v0.44.0: every tool result carries [verified=…]; success may only be claimed on verified=true (ToolVerify).
             s("tool_verify", ToolVerify.PROMPT_RULE)
-            // v0.24.9 rich replies / v0.26.1 visual answers (diagrams, charts, compare, tools, choices, forms; picked
-            // automatically). Static text, so it stays in the cached prefix; left out only when Visual answers is off.
+            // v0.24.9 rich replies / v0.26.1 visual answers. Static text, so it stays in the cached prefix; left out only when Visual answers is off.
             if (Settings.bool("rich_replies", true)) s("rich", com.blaze.assistant.ui.RichReplies.PROMPT)
             // Speed plan step 2: everything above stays identical turn after turn, so providers can
             // reuse their cached prefix. Everything that changes (clock, memory, device) goes last.
@@ -1367,11 +1332,6 @@ When you finish, say what you did in one short sentence.
             // turn can use it (phone, screen or media tools, or words like "this song"); otherwise a 2–3 line summary.
             tail("awareness") { if (fullAware) Awareness.promptBlock() else Awareness.summaryBlock() }
             s("phone_state", PhoneState.RULE)
-            // v0.45.1: "in the line above" became "in the phone line near the end": this rule now sits in the stable part.
-            s("know", "\nKNOW BEFORE YOU ASK: never ask the user something you can find out yourself. Their phone make, model, Android version and skin are in the phone line near the end of this prompt; " +
-                "check installed apps with list_apps (e.g. whether Secure Folder, Termux or a bank app is there), where they are with get_location, settings and screen state with your phone tools, time and battery from 'Phone now', " +
-                "and facts about them from memory. Answer for THIS phone specifically (exact menu names for its make and Android version), not a list of options for every brand. " +
-                "Ask only for things that live in their head: preferences, choices, consent.")
             // v0.45.0 (#13, #16): TERMINAL / MAKE THINGS in full only on coding or content-making turns in Advanced;
             // Simple gets one plain line and no paths or commands.
             if (prof.terminal) {
@@ -1393,18 +1353,16 @@ When you finish, say what you did in one short sentence.
             tail("processes") { Processes.countLine().takeIf { it.isNotBlank() }?.let { "\nTracked now: $it (IDs via processes)." }.orEmpty() }
             slow("desktop", com.blaze.assistant.link.DesktopLink.promptLine())
             slow("about", SelfKnowledge.promptBlock(app)); slow("project", Projects.promptLine(chatId))
-            s("search", SearchRoute.PROMPT + ExecRoute.PROMPT)   // 0.51.0: + terminal first
-            s("calls", "\nCALLS: \"let's get on a call\", \"call me\" or \"let's talk\" with no person named means a voice call with YOU: call_control start_blaze_call. Never phone a contact unless they name who. " +
-                "Loudspeaker, mute, hang up, answer, hold, call volume and keypad presses during any call go through call_control, never the Settings app.")
             if (com.blaze.assistant.voice.Voice.inCall) tail("in_call") { " You are on a voice call with the user right now (${BrandName.NAME}'s call screen): \"I can't hear you\" means call_control speaker on or louder." }
-            s("autonomy", Autonomy.promptBlock()); tail("goals") { Autonomy.promptLine() }
+            tail("goals") { Autonomy.promptLine() }
             // v0.30.4: no skills lookup for a plain device / settings action (it only ever pulled in unrelated skills).
             if (!FastActions.plainDevice(userText)) turn("skills", SkillMatch.lookupBlock(userText, skipSkills))
             // v0.30.5: tasks the user has Blaze do often, with no skill yet, come first for a skill.
             if (Settings.autoLearn) tail("frequent") { SkillGuard.Freq.promptLine(SkillGuard.Freq.load()) }
             // v0.45.9: the assistant rules and how to use the [context] block (static). The block itself goes at the very
             // end of this message (requestMessages), after the Halo identity and turn hints (Site persona v1.0.1).
-            s("assistant", Duo.ASSISTANT_RULES)
+            // The shared persona (first system message) already carries the assistant rules; then only the identity rules are added.
+            if (SharedPersona.applies(Settings.personaId) && SharedPersona.get() != null) s("identity", Duo.IDENTITY_RULES) else s("assistant", Duo.ASSISTANT_RULES)
             s("context_rule", TurnContext.RULE)
         }
         val stable = Settings.bool("prompt_stable_order", true)
@@ -3192,8 +3150,10 @@ When you finish, say what you did in one short sentence.
                 .also { msgs.put(JSONObject().put("role", "assistant").put("content", "Got it.")) }
             // Only the newest screen (plus the full readout a diff refers to) is sent; older ones are stale.
             val keepScreens = FastActions.screensToKeep((0 until history.length()).map { i -> history.getJSONObject(i).takeIf { it.optString("role") == "tool" }?.optString("content") })
+            val turnAt = historyMark[turnFrom] ?: 0   // 2026-11-14 (HistoryView): earlier turns' re-prompts and the answers they rejected stay out
             for (i in from until history.length()) {
                 val m = history.getJSONObject(i)
+                if (HistoryView.skip(history, i, turnAt)) continue
                 msgs.put(when {
                     isShot(m) && i != lastShot -> JSONObject().put("role", "user").put("content", "$SHOT_NOTE (older, removed)")
                     // Only the newest screen readout is sent in full; older ones are stale anyway.
@@ -3593,13 +3553,13 @@ When you finish, say what you did in one short sentence.
                         val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
                     if (ToolTruth.full) { sizeLine = "tools all ${allTools.length()}"; return ToolTruth.forRequest(allTools) { allTools } }
                     val diet = ToolRouter.select(allTools, groupsOn)
-                    val joinNames = widenNames + ToolTruth.MUST   // 0.52.1: the must-have tools and what the model asked for always join
+                    val joinNames = widenNames + ToolTruth.MUST + ToolPick.core(SimpleMode.simple)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
                     val diet2 = JSONArray().apply {
                         val have = ToolPick.names(diet).toSet(); for (i in 0 until diet.length()) put(diet.opt(i))
                         val allNames = ToolPick.names(allTools)
                         for (i in 0 until allTools.length()) { val n = allNames[i]; if (n in joinNames && n !in have) put(allTools.opt(i)) } }
                     val sent = ToolPick.keepOrder(sentOrder, ToolPick.pick(diet2, userNow, usedNames + synchronized(turnTools) { turnTools.toSet() }, groupsOn, keepAll = bulk,
-                        must = (if (TurnContext.scheduleAsk(userNow)) TurnContext.SCHEDULE_TOOLS else emptySet()) + widenNames + ToolTruth.MUST, max = ToolPick.MAX_TOOLS + widenNames.size))
+                        must = (if (TurnContext.scheduleAsk(userNow)) TurnContext.SCHEDULE_TOOLS else emptySet()) + widenNames + joinNames, max = ToolPick.MAX_TOOLS + widenNames.size))
                     sizeLine = ToolPick.sizeLine(sent, allTools, diet)
                     sentOrder = ToolPick.names(sent)
                     return sent
@@ -4178,7 +4138,6 @@ When you finish, say what you did in one short sentence.
                     if ((calls == null || calls.length() == 0) && step < maxSteps - 4 && gateLeft > 0 && nudgesLeft > 0 && !routine) {
                         val nudge = when {
                             FakeCall.looksFake(ReplyParts.split(textOut, final = true).text, ToolCalls.names(allTools), actedThisTurn, lastUserText(), lookedThisTurn) -> FakeCall.NUDGE
-                            Autonomy.looksLikeRefusal(textOut) -> Autonomy.REFUSAL_NUDGE
                             actedThisTurn && Autonomy.lastFailed(lastResults) -> Autonomy.VERIFY_NUDGE
                             else -> null
                         }
@@ -4187,7 +4146,7 @@ When you finish, say what you did in one short sentence.
                             nudgeCount++
                             nudgesLeft--
                             if (liveId >= 0) msgs = msgs.filterNot { it.id == liveId }
-                            add(Role.STEP, RetryGuard.label(if (nudge == FakeCall.NUDGE) RetryGuard.Kind.FAKE_CALL else RetryGuard.Kind.REFUSAL))
+                            add(Role.STEP, RetryGuard.label(if (nudge == FakeCall.NUDGE) RetryGuard.Kind.FAKE_CALL else RetryGuard.Kind.VERIFY))
                             // v0.27.x: a retry stays on the user's latest request.
                             history.put(JSONObject().put("role", "user").put("content", RetryGuard.anchor(nudge, lastUserText())))
                             lastResults.clear()

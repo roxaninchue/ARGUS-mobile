@@ -402,7 +402,9 @@ object LlmClient {
             put("messages", messages)
             if (onText != null) put("stream", true)
             if (richTurn) put("temperature", RichRepair.TEMPERATURE)
-            val quick = quickTurn && Settings.bool("quick_think", true)
+            // 2026-11-14 harness gap: "think briefly" + a 1,024-token cap only on calls with no tools (chat). A short ask that may need
+            // work ("who won last night", "make me a page") keeps the model's own reasoning and output limit.
+            val quick = quickTurn && Settings.bool("quick_think", true) && (tools == null || tools.length() == 0)
             if (quick && t.pid == "openrouter") put("reasoning", JSONObject().put("effort", "low"))
             if (quick && t.pid == "gemini" && !thoughts) put("reasoning_effort", "low")
             if (thoughts) put("extra_body", JSONObject().put("google",
@@ -420,7 +422,7 @@ object LlmClient {
             // v0.45.3: a hint for short / plain turns that the first visible word matters more than long reasoning. The
             // gateway strips every blaze_* field before a provider sees it, so this is safe today; a gateway that reads it can
             // map it to each provider's own setting (e.g. reasoning_effort "low" for gpt-oss). Not sent on action turns.
-            if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn) put("blaze_reasoning", "low")
+            if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn && (tools == null || tools.length() == 0)) put("blaze_reasoning", "low")
             // v0.26.2: routes that just came back empty or broke mid-stream; the gateway tries its next model.
             if (t.pid == Providers.GATEWAY && avoid.isNotEmpty()) put("blaze_avoid", JSONArray(avoid))
             // 0.53.0: the picked model's effort (only when it lists one; gateway 0.9.11 drops it for a fallback without efforts).
@@ -440,7 +442,7 @@ object LlmClient {
             }
             // v0.45.5 (#10): reasoning models (gpt-oss) need room to reason and still answer; short turns get a floor of
             // 1024 (≥ SharedPersona.MIN_MAX_TOKENS). Longer turns keep the provider's own limit (no cap, as before).
-            if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn) put("max_tokens", maxOf(1024, SharedPersona.MIN_MAX_TOKENS))
+            if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn && (tools == null || tools.length() == 0)) put("max_tokens", maxOf(1024, SharedPersona.MIN_MAX_TOKENS))
         }
         val who = Providers.byId(t.pid).name
         // v0.45.0 (#5): Stop really ends the request: cancelling this coroutine closes the socket (cancellable), so a blocked

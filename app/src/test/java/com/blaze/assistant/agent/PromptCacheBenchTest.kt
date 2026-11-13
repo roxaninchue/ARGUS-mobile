@@ -61,13 +61,12 @@ class PromptCacheBenchTest {
             s("names", GreetName.RULE)   // v0.45.9
             s("lang", ReplyLanguage.line("auto"))   // v0.45.7
             slow("connectors", "\nConnected accounts you can use with tools: Gmail (mail), Google Calendar (events), Spotify (music).\n")
-            s("talk", lit("s", "talk")); s("voice", VoiceFiller.RULE); s("style", AnswerStyle.RULE); s("format", AnswerStyle.FORMAT)
-            s("self", lit("s", "self")); s("remember", lit("s", "remember")); s("again", lit("s", "again"))
-            s("rapid", RapidMessages.PROMPT_RULE); s("yes", FollowUpBind.RULE); s("ask", lit("s", "ask"))   // 0.45.29
-            s("control", lit("s", "control").trimIndent())
-            s("pim", lit("s", "pim")); s("followups", lit("s", "followups")); s("load_tools", lit("s", "load_tools")); s("weather", GatewayWeather.SYSTEM_LINE)
-            s("leak", "\n" + ToolLeak.PROMPT_RULE); s("verify", lit("s", "verify")); s("docs", BlazeDocs.PROMPT_LINE); s("ids", lit("s", "ids"))
-            turn("core_skills", core(prof.core))
+            // 2026-11-14 harness gap: the consolidated core (HarnessPrompt) replaced the stacked rule lines.
+            s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE); s("format", AnswerStyle.FORMAT)
+            s("rapid", RapidMessages.PROMPT_RULE)
+            s("control", HarnessPrompt.phone(true, false) + "\n" + Orient.RULE + FastActions.RULE); s("secrets", "\n" + SecretRules.PROMPT)
+            s("followups", lit("s", "followups")); s("docs", BlazeDocs.PROMPT_LINE)
+            turn("core_skills", core(HarnessPrompt.pinned(prof.core)))
             turn("views", if (prof.views) ViewRouter.PROMPT else PromptProfile.viewsShort(ViewRouter.specs.map { it.name }))
             s("stage", com.blaze.assistant.stage.StageTools.RULE)   // 0.46.0
             s("tool_verify", ToolVerify.PROMPT_RULE)
@@ -77,14 +76,11 @@ class PromptCacheBenchTest {
             s("learn", Learn.rules(true))
             live("device", "\nPhone: an Android phone, Android 12, One UI 4.1.\nPhone now: battery ${81 - live.t}%, Wi-Fi, ringer normal.")
             live("awareness", "\nAWARENESS: front app ${if (live.screen % 2 == 0) "WhatsApp" else "${BrandName.NAME}"}; screen step ${live.screen}; " + filler("aw${live.screen}", 700))
-            s("phone_state", PhoneState.RULE); s("know", lit("s", "know"))
+            s("phone_state", PhoneState.RULE)
             turn("make", if (prof.terminal) lit("turn", "terminal") + lit("turn", "make") else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             slow("about", "\nABOUT YOU: ${BrandName.NAME} family. You are ${BrandName.NAME} for Android v0.45.1 (build 149). Paired PC: none. ${BrandName.NAME} account: signed in. " + filler("about", 300))
-            s("search", SearchRoute.PROMPT + ExecRoute.PROMPT)   // 0.50.0; 0.51.0 + terminal first
-            s("calls", lit("s", "calls"))
-            s("autonomy", Autonomy.promptBlock())
             turn("skills", "\nSKILLS that may fit this request: " + filler("skill${live.turn}", 600))
-            s("assistant", Duo.ASSISTANT_RULES); s("context_rule", TurnContext.RULE); s("phone_save", SaveFile.RULE + ToolTruth.RULE)   // v0.45.9
+            s("identity", Duo.IDENTITY_RULES); s("context_rule", TurnContext.RULE)   // the shared persona carries the assistant rules
         }
     }
 
@@ -98,7 +94,7 @@ class PromptCacheBenchTest {
     @Test fun everyPartInTheSourceIsBenchmarked() {
         val inSrc = Regex("""\b(s|slow|turn|tail)\("([a-z_]+)"""").findAll(sysSrc).map { it.groupValues[2] }.toSet()
         val here = parts(turns[0].text, turns[0].groups, false, Live(0, 0, 0)).map { it.name }.toSet() +
-            setOf("simple", "terminal", "processes", "in_call", "goals", "setup", "frequent", "desktop", "project")   // empty / off in this phone's state
+            setOf("simple", "terminal", "processes", "in_call", "goals", "setup", "frequent", "desktop", "project", "voice", "build", "assistant")   // empty / off in this phone's state
         assertEquals(emptySet<String>(), inSrc - here)
     }
 
