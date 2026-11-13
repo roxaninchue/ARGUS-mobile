@@ -258,12 +258,25 @@ fun BlazeBubble(pos: GroupPos = GroupPos.SINGLE, modifier: Modifier = Modifier, 
     ChatBubble(Side.BLAZE, pos, modifier.padding(vertical = 1.dp), wide = wide) { content() }
 }
 
-/** A Blaze reply drawn in its bubble (screenshots and the thread use the same one). */
+/**
+ * A Blaze reply (screenshots and the thread use the same one). fix/chat-flat-ui (owner, 14 Nov 2026: "just like normal
+ * ai chats ... no chat box around generated text ... but user prompts keep them"): no bubble, fill or border. The reply
+ * runs full width as plain text on the page; cards inside it (code, tables, rich blocks) keep their own surface, and a
+ * long-press still opens the message menu. [pos] is kept for callers (a flat reply has no tail to shape).
+ */
 @Composable
 fun BlazeReply(key: Long, text: String, pos: GroupPos = GroupPos.SINGLE, live: Boolean = false) {
-    // Tables and code blocks get a little more room (they scroll sideways inside the bubble anyway).
-    val wide = remember(text) { text.contains("```") || Regex("(?m)^\\s*\\|.*\\|\\s*$").containsMatchIn(text) }
-    BlazeBubble(pos, wide = wide) { AnswerBody(key, text, live = live) }
+    FlatReply(Modifier.padding(vertical = 1.dp)) { AnswerBody(key, text, live = live) }
+}
+
+/** Reply content with no bubble: full width, a small inset so the words line up with the cards, page underneath. */
+@Composable
+fun FlatReply(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val menu = LocalBubbleMenu.current
+    Column(modifier.fillMaxWidth().bubbleLongPress(menu).padding(start = 2.dp, end = 6.dp, top = 2.dp, bottom = 2.dp)) {
+        // No bubble colour: cards and fades inside the answer take the page's own (LocalBubble null = on the page).
+        CompositionLocalProvider(LocalBubble provides null) { content() }
+    }
 }
 
 /** An error: in Blaze's bubble with a small desaturated warm label. */

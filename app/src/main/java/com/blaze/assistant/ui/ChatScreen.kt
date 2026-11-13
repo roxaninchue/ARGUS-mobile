@@ -1356,6 +1356,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                             delivery = if (item.m.id == lastUserId) DeliveryView.effective(deliveries[item.m.gid], answeredLast, mood != Mood.IDLE) else null,
                             showActs = item.m.id == lastBlazeId && mood == Mood.IDLE,
                             live = item.m.id == streamId || item.m.id in duoLive || item.m.id in sideLive, latest = item.m.id == waitingId,
+                            streamHere = item.m.id == streamId,
                             followups = if (item.m.id == lastBlazeId && mood == Mood.IDLE && Settings.followups) item.m.followups else emptyList(),
                             onFollowup = onFollowup, askChips = item.m.id == lastBlazeId && mood == Mood.IDLE && com.blaze.assistant.agent.SimpleMode.simple) }
                     }
@@ -1402,6 +1403,9 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 if (ChatPolicy.STATUS_LINES) { if (chip.isNotBlank() && working && streamId < 0) TaskChip(chip)
                 StepPillRow(pillText, pill?.specialist == true, Modifier.weight(1f, fill = false), inline = true) }
                 }
+                // fix/chat-flat-ui: while the model reasons and no reply row exists yet, its thinking opens here ("Thinking");
+                // once the reply starts streaming the reply row carries it (folded, "Thought for 4s").
+                if (working && streamId < 0 && Settings.showReasoning && live.isNotBlank()) ThoughtSection(-1L - (lastUserId ?: 0L), live, live = true, answerStarted = false, ms = 0L)
                 // 0.52.1 (owner): ONE pill per task, natural text that changes as the work moves on, gone when done.
                 // Milestone 4: while the turn runs, its calls are one live, expandable block instead of the pill.
                 val liveRows = toolTurns?.live?.takeIf { working && it.steps.isNotEmpty() }
@@ -1503,7 +1507,9 @@ private fun ThinkingLine(text: String, live: Boolean) {
 @Composable
 private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (String) -> Unit, followups: List<String>, onFollowup: (String) -> Unit,
                   live: Boolean = false, latest: Boolean = false, askChips: Boolean = false,
-                  delivery: com.blaze.assistant.agent.DeliveryState? = null, showActs: Boolean = false) {
+                  delivery: com.blaze.assistant.agent.DeliveryState? = null, showActs: Boolean = false,
+                  /** fix/chat-flat-ui: this row is the reply streaming right now (its thinking is the turn's live one). */
+                  streamHere: Boolean = false) {
     val entryCtx = LocalContext.current
     // 0.45.20 (spec A): the time sits inside the last bubble of a run; actions are a long-press menu (BubbleMenu), and
     // only the latest Blaze reply keeps its small action row.
@@ -1541,6 +1547,13 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
             // v0.31.2 Halo x Blaze: who wrote it (the name over Halo's replies and in a duo, the shimmer colour, the orb half that travels).
             val who = com.blaze.assistant.agent.Duo.Who.of(m.speaker)
             if (m.speaker.isNotEmpty()) SpeakerName(who)
+            // fix/chat-flat-ui (owner, 14 Nov 2026): the reasoning, folded above the reply (ui/ThoughtSection.kt). Saved with
+            // the reply; while this reply streams, the turn's live thinking. Only the streaming row reads the live flow.
+            if (Settings.showReasoning) {
+                val liveThought = if (streamHere) Agent.thinking.collectAsState().value else ""
+                val thought = ThoughtFold.pick(m.thinking, streamHere, liveThought)
+                if (thought.isNotBlank()) ThoughtSection(m.id, thought, live = streamHere, answerStarted = m.text.isNotBlank(), ms = m.thinkMs)
+            }
             // v0.31.2 ("make sure the orb finishes and doesn't stay at the end of the words"): a reply counts as streaming
             // only while words keep arriving. If the stream flag is left on with no new text for STREAM_STALE_MS, the
             // reply settles anyway: the newest words lose their fade / shimmer and the orb leaves the last word.
