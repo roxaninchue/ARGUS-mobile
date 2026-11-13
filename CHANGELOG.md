@@ -1,3 +1,13 @@
+## v0.53.1: tools that always show up, faster tool work, and live tool rows (versionCode 193)
+
+- Pick any model and ARGUS still has all its tools. Asking "what time is it in Tokyo" or "wake me at 6" no longer gets "use your clock app". If a model still refuses, ARGUS moves the turn to one that will do it.
+- Web search keeps working when one search engine blocks it. ARGUS tries DuckDuckGo, Bing, Bing News, Google News and Wikipedia, then simpler words, and only says "no results" when every one came back empty.
+- Model search in the picker: one row per model, signal bars for strength and the makers' own logos.
+- Searches, page reads and edits to different files run at the same time. Anything that needs your OK waits its turn, so approval cards come one at a time, in order.
+- While ARGUS works, the chat shows one live block. Open it to see Edits, Reads, Commands, Messages and Schedule, and open any step to see its command and output. When the turn ends it folds into "Worked for … · N steps". You can turn it off in Settings › Appearance › Show tool steps.
+- Texts, emails, alarms and calendar changes are no longer listed under "Edits".
+- A quick second message is always answered, even while ARGUS is still replying to the first.
+
 ## v0.53.0: one look, one team: Team · Chat · Life · Desk (versionCode 192)
 
 - A new home for ARGUS with four modes you switch with the notch at the top or by swiping: Team, Chat, Life and Desk. /team, /chat, /life and /desk jump straight there, and Back always returns to Team.
