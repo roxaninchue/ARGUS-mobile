@@ -4016,7 +4016,7 @@ When you finish, say what you did in one short sentence.
                     }
                     // v0.45.9 (ToolTruth): "I don't have the capability…" / desktop advice while the list has the tool → one re-prompt.
                     if ((calls == null || calls.length() == 0) && !routine && !refusalNudged && nudgesLeft > 0 && tools.length() > 0 && step < maxSteps - 2 &&
-                        ToolTruth.refusal(ReplyParts.split(textOut, final = true).text)) {
+                        ModelPick.refused(ToolTruth.refusal(ReplyParts.split(textOut, final = true).text))) {
                         refusalNudged = true; nudgesLeft--
                         nudgeCount++
                         if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }

@@ -222,7 +222,7 @@ object CloudRuns {
                 put("tools", sent)
                 val choice = ToolTruth.choice(messages, sent)
                 put("tool_choice", choice)
-                if (choice == "auto") put("blaze_tools", "auto")
+                if (ToolWire.mayTrim(messages, choice, has("blaze_pick"))) put("blaze_tools", "auto")   // 0.53.1: ToolWire
             }
         }
 

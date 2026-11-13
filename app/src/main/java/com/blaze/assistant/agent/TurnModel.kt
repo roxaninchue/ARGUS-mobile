@@ -32,6 +32,18 @@ class TurnModel(val id: String) {
         last = r
     }
 
+    /** 0.53.1: routes that refused a tool turn ("use your clock app"); sent as blaze_avoid for the rest of the turn. */
+    @Volatile var shun: List<String> = emptyList()
+        private set
+
+    /** [route] answered a tool turn by refusing: it is no longer pinned (the next route that answers is) and is avoided. */
+    fun refusedBy(route: String = last) {
+        val r = route.trim()
+        if (r.isEmpty()) return
+        if (pin == r) pin = ""
+        if (r !in shun) shun = shun + r
+    }
+
     /** Headers for one gateway request of this turn. */
     fun headers(): Map<String, String> = buildMap {
         put(TURN_HEADER, safe(id))

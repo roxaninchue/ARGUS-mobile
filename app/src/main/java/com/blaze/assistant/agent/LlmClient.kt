@@ -384,6 +384,7 @@ object LlmClient {
         if (t.pid == Providers.GATEWAY && idemKey.isNotBlank()) conn.setRequestProperty("Idempotency-Key", idemKey)
         // v0.45.0 (#17): every step of a turn names the turn and the route that served its first step (TurnModel).
         val turnModel = if (t.pid == Providers.GATEWAY) TurnModel.current else null
+        val avoid = (avoid + (turnModel?.shun ?: emptyList())).distinct()   // 0.53.1: a route that refused this turn's tools
         turnModel?.headers()?.forEach { (k, v) -> conn.setRequestProperty(k, v) }
         // P0-API-01 (flag live_models, off by default): the live list's pick goes first while the turn has no pin yet.
         // 0.53.0: a manual pick (ModelPick, on the live list and fitting this call) is named on every call, pin or not.
@@ -435,7 +436,7 @@ object LlmClient {
                 // intent), so "hi, introduce yourself" can't come back as a tool call (X-Blaze-Tools-Dropped: 1).
                 // v0.45.9: not when the app named the tool. Live 0.8.7 dropped the schemas (and the named tool_choice) on
                 // "remember that my NET exam is on 3 November" and "what do you remember about my exams?" 10 of 10.
-                if (t.pid == Providers.GATEWAY && choice == "auto") put("blaze_tools", "auto")
+                if (t.pid == Providers.GATEWAY && ToolWire.mayTrim(messages, choice, manual != null)) put("blaze_tools", "auto")   // 0.53.1: full tools unless small talk
             }
             // v0.45.5 (#10): reasoning models (gpt-oss) need room to reason and still answer; short turns get a floor of
             // 1024 (≥ SharedPersona.MIN_MAX_TOKENS). Longer turns keep the provider's own limit (no cap, as before).

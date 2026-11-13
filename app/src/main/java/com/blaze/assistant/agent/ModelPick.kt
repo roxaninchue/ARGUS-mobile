@@ -90,6 +90,18 @@ object ModelPick {
 
     fun clearDown() = down.clear()
 
+    /**
+     * 0.53.1 (owner, 13 Nov 2026: "a model that can't call tools hands the turn to one that can"): the reply refused with
+     * tools on the list ([said] = ToolTruth.refusal). A hand pick is hidden like a pick that didn't answer, so the retry
+     * goes Auto, and the route that answered is avoided for the rest of the turn. Returns [said].
+     */
+    fun refused(said: Boolean, turn: TurnModel? = try { TurnModel.current } catch (_: Throwable) { null }, now: Long = System.currentTimeMillis()): Boolean {
+        if (!said) return false
+        current.value.takeUnless { it.auto }?.let { failed(it.key, now) }
+        turn?.refusedBy()
+        return true
+    }
+
     /** "Auto", "Kimi K3 · Medium", "Kimi K3 · unavailable" for the chip. */
     fun label(list: List<LiveModels.Member>, c: Choice = current.value): String {
         if (c.auto) return "Auto"
