@@ -82,6 +82,8 @@ object LlmClient {
         // with the tool turns flattened to plain text, which every provider accepts.
         // v0.25.0: pictures go to the gateway as they are; its vision lineup reads them.
         // v0.31.1 jank: cleaning (a full pass over the history JSON) never runs on the main thread.
+        // fix/chat-flat-ui: the main turn's system prompt, in memory only, so echoes of it in the thinking are glitched.
+        if (lane == Lane.MAIN && onThink != null) try { PromptEcho.note(messages) } catch (_: Exception) { }
         val clean0 = withContext(kotlinx.coroutines.Dispatchers.Default) { try { ToolCalls.clean(messages) } catch (_: Exception) { messages } }
         // 0.52.1 (gw061): every request is fitted to ~60 KB (tool results trimmed, at most 32 tool schemas, older steps
         // summarised): bigger bodies are what the gateway's 10 ms CPU limit kills (Cloudflare 1102 → "That took too long").
@@ -168,7 +170,9 @@ object LlmClient {
         // signed out with only the on-phone brain: it may still have to start (the one case that waits for it)
         val cold = token.isBlank() && backupReady && !warm
         val steps = if (cold) listOf(BackupRoute.Step.BACKUP) else BrainRace.order(kind, warm, token.isNotBlank(), { BrainLedger.app.ttft(it) }, { BrainLedger.app.reliability(it) })
-        val chatThink = if (lane == Lane.MAIN && kind != BrainRace.Kind.CHAT) onThink else null   // chat: thinking stays hidden
+        // fix/chat-flat-ui (owner, 14 Nov 2026): chat turns stream their thinking too (the folded "Thinking" section above the
+        // reply); only the brain whose answer is shown passes it on (gThink checks a.shows()).
+        val chatThink = if (lane == Lane.MAIN) onThink else null
         var cloudErr: Throwable? = null
         val out = try {
             // the cold on-phone brain (the only brain when signed out) gets its start time on top
