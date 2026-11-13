@@ -16,5 +16,7 @@ class ThinkBudgetTest {
         assertEquals(Level.NORMAL, ThinkBudget.level("I'm moving to a new flat next month and my landlord keeps sending long messages about the deposit, here they are"))
         assertEquals(Level.NORMAL, ThinkBudget.level("", attachments = 1))
         assertEquals(Level.QUICK, ThinkBudget.level(""))
+        // build mode: a short make request still thinks normally (BuildMode)
+        assertEquals(Level.NORMAL, ThinkBudget.level("make me a landing page for my bakery"))
     }
 }

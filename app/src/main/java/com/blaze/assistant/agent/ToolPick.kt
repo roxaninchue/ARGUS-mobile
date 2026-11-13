@@ -20,11 +20,28 @@ import org.json.JSONObject
  */
 object ToolPick {
     /** Upper bound of tool schemas per model call (load_tools / find_tool always on top). */
-    const val MAX_TOOLS = 30   // 0.52.1 (gw061): was 36; RequestBudget caps the wire at 32
+    const val MAX_TOOLS = 48   // 2026-11-14: was 30 (0.52.1); the lean system prompt frees ~25 KB of the gateway budget for schemas
 
     /** Always sent, whatever the request. */
     val ESSENTIAL = setOf("load_tools", "find_tool", "ask_user", "memory_search", "memory_save", "remember", "web_search", "fetch_page",
         "open_app", "run_plan", "read_screen", "search_in_app", "device_status", "blaze_now", "call_control", "open_view", "get_weather", "save_file")
+
+    /**
+     * 2026-11-14 harness core: what a capable agent needs on EVERY turn, whatever words the message uses (search and read
+     * the web, run commands and edit files, the background browser, schedule, message, locate, make images, keep secrets
+     * safe). Before, these came only when a regex guessed their group, so "who won last night" or "fix my CSV" could reach
+     * the model with no web or terminal tool and it answered from memory. Sent on top of [ESSENTIAL], never cut by the cap;
+     * the long tail stays behind load_tools / find_tool.
+     */
+    val HARNESS = setOf("web_search", "fetch_page", "http_request", "run_shell", "run_code", "file_read", "file_write", "file_edit", "file_list",
+        "browser_open", "browser_read", "browser_click", "browser_type", "calendar_events", "create_routine", "set_alarm", "set_timer",
+        "message_contact", "get_location", "generate_image", "request_secret", "blaze_self", "design")
+
+    /** Terminal-ish members of [HARNESS], left to the router in Simple mode (PromptProfile.simpleGroupOk). */
+    val TERMINAL_CORE = setOf("http_request", "run_shell", "run_code", "file_read", "file_write", "file_edit", "file_list")
+
+    /** The names that join every turn from the full list: [ESSENTIAL] + [HARNESS] (Simple mode without the terminal ones). */
+    fun core(simple: Boolean): Set<String> = ESSENTIAL + (if (simple) HARNESS - TERMINAL_CORE else HARNESS)
 
     data class Cue(val id: String, val about: String, val names: Set<String>, val match: Regex)
 
@@ -98,7 +115,7 @@ object ToolPick {
             val t = selected.opt(i)
             val n = nameOf(t)
             val c = cueOf[n]
-            if (n in ESSENTIAL || c == null || c in on) kept += i to t
+            if (n in ESSENTIAL || n in HARNESS || c == null || c in on) kept += i to t
         }
         if (kept.size <= max) return JSONArray().apply { kept.forEach { put(it.second) } }
         // Over the cap: essentials, tools this chat used and tools the request names keep their place; the rest is
@@ -106,7 +123,7 @@ object ToolPick {
         val words = word.findAll(userText.lowercase()).map { it.value }.filter { it !in stop }.toSet()
         fun score(t: Any?): Int {
             val n = nameOf(t)
-            if (n in ESSENTIAL) return 10_000
+            if (n in ESSENTIAL || n in HARNESS) return 10_000
             if (n in must) return 9_500
             if (n in used) return 9_000
             if (cueOf[n] != null) return 8_000

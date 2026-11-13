@@ -57,4 +57,14 @@ class ToolPickTest {
         val s = ToolPick.sizeLine(arr(listOf("a_b")), arr(listOf("a_b", "c_d")), arr(listOf("a_b", "c_d")))
         assertTrue(s, s.startsWith("tools 1/2 · schemas "))
     }
+
+    /** 2026-11-14 harness core: web, terminal, files, browser, schedule and messages ride every turn, whatever the words. */
+    @Test fun harnessCoreRidesEveryTurn() {
+        val many = arr(ToolPick.ESSENTIAL + ToolPick.HARNESS + (1..80).map { "extra_tool_$it" })
+        val out = names(ToolPick.pick(many, "who won last night", emptySet(), emptySet()))
+        assertTrue(out.size <= ToolPick.MAX_TOOLS)
+        assertTrue(out.containsAll(ToolPick.ESSENTIAL + ToolPick.HARNESS))
+        assertTrue(ToolPick.core(true).none { it in ToolPick.TERMINAL_CORE })
+        assertTrue(ToolPick.core(false).containsAll(ToolPick.TERMINAL_CORE))
+    }
 }

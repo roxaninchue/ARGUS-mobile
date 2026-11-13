@@ -22,6 +22,8 @@ object ThinkBudget {
         if (t.isEmpty()) return if (attachments > 0) Level.NORMAL else Level.QUICK
         val deep = deepCue.containsMatchIn(t) || maths.containsMatchIn(t) || code.containsMatchIn(t) || t.count { it == '?' } >= 3
         if (deep) return Level.DEEP
+        // 2026-11-14 build mode: "make me a landing page" is short but never a quick turn (low reasoning, 1,024-token cap).
+        if (BuildMode.wants(t)) return Level.NORMAL
         val easy = easyCue.containsMatchIn(t)
         return when {
             attachments > 0 -> Level.NORMAL

@@ -9,10 +9,15 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * The chat lane: greetings, thanks, small talk and plain knowledge questions go out as ONE call
- * with a short prompt and no tools (roughly a tenth of a full agent turn), which keeps free
- * quotas for real work. If the model sees it actually needs live data or an action, it answers
- * with [ESCAPE] and the turn reruns on the full tool lane.
+ * The chat lane: greetings, thanks and small talk go out as ONE call with a short prompt and no
+ * tools (roughly a tenth of a full agent turn), which keeps free quotas for real work. If the model
+ * sees it actually needs live data or an action, it answers with [ESCAPE] and the turn reruns on
+ * the full tool lane.
+ *
+ * 2026-11-14 harness gap: plain knowledge questions ("what's the best…", "who is…", "how do I…") no
+ * longer take this lane. With no tools and the tool history flattened away they were answered from
+ * the model's memory, never checked, and the model almost never escaped. They go to the full lane,
+ * which has the tools and the history, like any good harness.
  */
 object ChatLane {
     const val ESCAPE = "[[TOOLS]]"
@@ -24,8 +29,6 @@ object ChatLane {
 
     /** 0.48.0 RC5: words that always ask Blaze to act (never plain chat, even inside a short "okay, …"). */
     private val goAhead = Regex("""(?i)\b(?:do it|go ahead|go for it|proceed|carry on|try again)\b""")
-
-    private val knowledge = Regex("""^(what|who|why|how|when|where|which|explain|define|tell me|describe|write|compose|give me|translate|summari[sz]e|compare|is|are|can|could|should|would|do|does|did)\b""", RegexOption.IGNORE_CASE)
 
     /** True when [text] can be answered by plain chat. [lastAssistant] = Blaze's previous message. */
     fun fits(text: String, lastAssistant: String): Boolean {
@@ -49,8 +52,9 @@ object ChatLane {
         val small = smalltalk.containsMatchIn(t)
         // A short reply to a question Blaze just asked is probably part of a task ("yes", "the second one").
         if (!small && lastAssistant.trim().endsWith("?") && t.split(Regex("\\s+")).size < 8) return false
-        if (needsTools.containsMatchIn(t) && !(small && t.length < 40)) return false
-        return small || knowledge.containsMatchIn(t)
+        // 2026-11-14: "hey what's the news" is a request, greeting or not (it used to slip through under 40 chars).
+        if (needsTools.containsMatchIn(t)) return false
+        return small
     }
 
     /** Short system prompt + the recent conversation as plain text turns. */

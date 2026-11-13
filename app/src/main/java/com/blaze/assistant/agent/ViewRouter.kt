@@ -53,7 +53,7 @@ object ViewRouter {
             listOf("create_routine", "schedule_command", "create_trigger", "set_alarm", "add_calendar_event", "open_view"), listOf("schedule", "device"),
             r("""\b(remind(?:er|ers)? ?(?:me)?|every (?:day|morning|evening|night|week|weekday|monday|tuesday|wednesday|thursday|friday|saturday|sunday|hour|\d+)|daily|weekly|routine|schedule (?:a|this|it|my)|wake me)\b""")),
         Spec("design", "Design", "anything visual or interactive, live preview: 3D scenes and models (three.js, orbit to look around), 2D art, websites and landing pages, " +
-            "UI mockups and app screens, diagrams and charts as files to save or export, posters, flyers, slides, floor plans, product mockups, simple games",
+            "UI mockups and app screens, diagrams and charts as files to save or export, posters, flyers, slides, floor plans, product mockups, games",
             listOf(Designs.TOOL, "file_write", "open_view"), listOf("terminal", "media"),
             r(DESIGN_STRONG + "|" + DESIGN_OBJECT)),
         Spec("gallery", "Gallery", "images, pictures, logos, wallpapers, beats, music and other media ${BrandName.NAME} makes",

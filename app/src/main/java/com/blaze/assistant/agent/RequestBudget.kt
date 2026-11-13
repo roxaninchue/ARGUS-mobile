@@ -19,8 +19,8 @@ import org.json.JSONObject
  */
 object RequestBudget {
     const val MAX_BYTES = 60_000
-    const val MAX_TOOLS = 32
-    const val MIN_TOOLS = 24
+    const val MAX_TOOLS = 52   // 2026-11-14: was 32; the system prompt is ~25 KB smaller, so the bytes go to tool schemas instead
+    const val MIN_TOOLS = 36   // was 24; ToolPick's harness core is never cut (see [fit])
     const val RECENT_RESULT_CHARS = 4_000
     const val OLD_RESULT_CHARS = 1_000
     const val KEEP_RECENT_RESULTS = 2
@@ -120,11 +120,11 @@ object RequestBudget {
         return try {
             var m = messages
             var t = tools
-            if (t != null && t.length() > MAX_TOOLS) t = capTools(t, MAX_TOOLS, calledNames(m))
+            if (t != null && t.length() > MAX_TOOLS) t = capTools(t, MAX_TOOLS, calledNames(m) + ToolPick.ESSENTIAL + ToolPick.HARNESS)
             if (size(m, t) <= max) return Fit(m, t, before, size(m, t), t0, t?.length() ?: 0)
             m = copy(m); trimResults(m)
             if (size(m, t) > max && t != null) t = shortDescriptions(t)
-            if (size(m, t) > max && t != null && t.length() > MIN_TOOLS) t = capTools(t, MIN_TOOLS, calledNames(m))
+            if (size(m, t) > max && t != null && t.length() > MIN_TOOLS) t = capTools(t, MIN_TOOLS, calledNames(m) + ToolPick.ESSENTIAL + ToolPick.HARNESS)
             if (size(m, t) > max) m = summariseOld(m, t, max)
             Fit(m, t, before, size(m, t), t0, t?.length() ?: 0)
         } catch (_: Throwable) { Fit(messages, tools, before, before, t0, t0) }
