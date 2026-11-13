@@ -17,8 +17,9 @@ import com.blaze.assistant.team.RowKind
  *  - Tool calls between two messages are one turn's steps: while any runs (or the thread is running) they are the live
  *    [ThreadItem.Live] (ActivityLine) at the end; once the reply lands they fold into a [ThreadItem.Work] chip above it.
  *  - `step` events only feed the live line; other events and notices are [ThreadItem.System] notes.
- *  - Cards: jobs / ok / file / handoff have their own cards; the rest (approval, question, connect, draft…) show as a
- *    plain [CardModel.Other] until their tickets.
+ *  - Cards: jobs / ok / file / handoff have their own cards; approval / draft / question / connect (P2-SF-02) are a
+ *    [CardModel.Decision] with their state (pending → approved / denied / expired / skipped); anything else is a plain
+ *    [CardModel.Other].
  *  - Nothing raw reaches the screen: tools are named by [StepTool.label]; free text from steps goes through
  *    [StepPill.clean].
  */
@@ -64,6 +65,16 @@ object ThreadModel {
             val line: String get() = "$fromName \u2192 $toName"
         }
         data class Other(val card: String, val title: String, val text: String?) : CardModel()
+        /** P2-SF-02: an approval / draft / question / connect card as the thread keeps it; [state] = pending|approved|denied|expired|skipped. */
+        data class Decision(val id: String, val kind: String, val title: String, val text: String?, val to: String?, val app: String?,
+                            val state: String) : CardModel() {
+            val pending: Boolean get() = state == "pending"
+            val stateLabel: String get() = when (state) {
+                "approved" -> if (kind == "draft") "Sent" else if (kind == "question") "Answered" else if (kind == "connect") "Connected" else "Approved"
+                "denied" -> if (kind == "draft") "Not sent" else if (kind == "connect") "Not connected" else if (kind == "question") "Dismissed" else "Not allowed"
+                "expired" -> "Expired"; "skipped" -> "Skipped"; else -> "Waiting for you"
+            }
+        }
     }
 
     // ---------------------------------------------------------------- items
@@ -147,6 +158,8 @@ object ThreadModel {
             "file" -> CardModel.File(b.s("name") ?: b.s("path")?.substringAfterLast('/') ?: "File", b.s("path"), b.n("size"), b.s("mime"))
             "handoff" -> CardModel.Handoff(b.s("from").orEmpty(), b.s("fromName") ?: "A teammate", b.s("to").orEmpty(), b.s("toName") ?: "a teammate",
                 b.s("text").orEmpty(), b.s("status"), b.s("reply"))
+            "approval", "draft", "question", "connect" -> CardModel.Decision(b.s("id").orEmpty(), b.s("card")!!, b.s("title") ?: "Needs your OK",
+                b.s("text") ?: b.s("question"), b.s("to"), b.s("app") ?: b.s("name"), b.s("state") ?: "pending")
             else -> CardModel.Other(b.s("card") ?: "card", b.s("title") ?: RowBodies.preview(RowKind.CARD, r.body) ?: "Card", b.s("text"))
         }
     }

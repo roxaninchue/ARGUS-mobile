@@ -138,6 +138,7 @@ object ToolRegistry {
         // ---------------- CREDENTIAL: secrets, sign-ins, approval rules ----------------
         all(CREDENTIAL, "jamendo_setup", "standing_permission")   // standing_permission changes what ARGUS may do unasked
         one("request_secret", Decl(CREDENTIAL, selfCard = true))
+        one("request_app_connection", Decl(READ, selfCard = true))   // P2-SF-02: the connect card is its own approval
         one("browser_secure_input", Decl(CREDENTIAL, selfCard = true))
 
         // ---------------- PHYSICAL: hands on the phone's screen and apps ----------------

@@ -252,6 +252,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 }
             }
             ConfirmCard()
+            com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark)   // P2-SF-02
             QuestionCard()
             if (listening || note.isNotEmpty()) {
                 Text(if (note.isNotEmpty()) note else partial.ifBlank { "Listening\u2026" },

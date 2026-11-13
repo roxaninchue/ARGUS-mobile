@@ -226,12 +226,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val detail = ConfirmGate.detail(detail0, source)
         val d = kotlinx.coroutines.CompletableDeferred<Boolean>()
         tag?.let { BgAgents.setWaiting(it.id, true) }
-        _confirm.value = if (grants != null) PendingConfirm(title, detail, action, d, true, grants) else PendingConfirm(title, detail, action, d)
+        val pc = if (grants != null) PendingConfirm(title, detail, action, d, true, grants) else PendingConfirm(title, detail, action, d)
+        _confirm.value = pc
         if (!inForeground) Notifier.confirm(title, detail, action)
-        val ok = kotlinx.coroutines.withTimeoutOrNull(120_000) { d.await() } ?: false
-        tag?.let { BgAgents.setWaiting(it.id, false) }
-        _confirm.value = null
-        Notifier.clearConfirm()
+        // P2-SF-02: the card goes however the wait ends (a stopped task used to leave it up until its 2-minute timeout)
+        val ok = try { kotlinx.coroutines.withTimeoutOrNull(120_000) { d.await() } ?: false } finally {
+            tag?.let { BgAgents.setWaiting(it.id, false) }
+            if (_confirm.value === pc) { _confirm.value = null; Notifier.clearConfirm() }
+        }
         cur.note(if (ok) "You approved: $title" else "Not approved: $title", false)
         return ok
     }

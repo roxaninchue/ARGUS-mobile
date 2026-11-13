@@ -113,8 +113,11 @@ object TeamHooks {
 
     @Volatile var tools: Tools? = null
 
-    /** The team tools' schemas (none until JobsRuntime sets [tools]). */
-    fun toolDefs(): List<String> = tools?.let { t -> safe { t.defs() } } ?: emptyList()
+    /**
+     * The team tools' schemas (none until JobsRuntime sets [tools]) and, with them, P2-SF-02's request_app_connection
+     * (the connect card; PolicyRuntime runs it before any tool set sees it).
+     */
+    fun toolDefs(): List<String> = tools?.let { t -> safe { t.defs() }?.plus(com.blaze.assistant.policy.Cards.connectToolDef()) } ?: emptyList()
 
     /** The result of a team tool, or null when [tool] isn't one (the loop runs it as usual). */
     fun runTool(chatId: String, tool: String, args: String): String? {

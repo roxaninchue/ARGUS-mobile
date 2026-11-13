@@ -41,21 +41,31 @@ class Approvals(private val clock: () -> Long = System::currentTimeMillis, priva
     /** What the gate asks for. [chatId] is where the call runs (a new user message there skips it). */
     data class Request(val chatId: String, val botId: String, val jobId: String?, val callId: String, val tool: String,
                        val cls: ActionClass, val title: String, val detail: String, val argsRedacted: String, val tainted: Boolean,
-                       val onDeviceOnly: Boolean = false)
+                       val onDeviceOnly: Boolean = false,
+                       /** P2-SF-02: the bot's display name and the whole (scrubbed) args, for the card only; never stored. */
+                       val botName: String = botId, val args: String = argsRedacted)
 
-    class Pending internal constructor(val approval: Approval, val chatId: String, val expiresAt: Long) {
+    class Pending internal constructor(val approval: Approval, val chatId: String, val expiresAt: Long,
+                                       val botName: String = approval.botId, val args: String = approval.argsRedacted) {
         internal val done = CompletableDeferred<Status>()
         val id get() = approval.id
         val botId get() = approval.botId
     }
 
     private val open = ConcurrentHashMap<String, Pending>()
+    /** P2-SF-02: how recent approvals ended (the card's last state), newest kept, at most [RECENT]. */
+    private val ended = java.util.Collections.synchronizedMap(object : LinkedHashMap<String, Status>() {
+        override fun removeEldestEntry(e: MutableMap.MutableEntry<String, Status>?) = size > RECENT
+    })
+
+    /** PENDING while it waits, how it ended for a recent one, null when unknown. */
+    fun status(id: String): Status? = if (open.containsKey(id)) Status.PENDING else ended[id]
 
     fun open(r: Request): Pending {
         val now = clock()
         val a = Approval(newId(), r.botId, r.jobId, r.callId, r.tool, r.cls, r.title, r.detail, r.argsRedacted, r.tainted,
             Status.PENDING.code, r.onDeviceOnly || r.cls == ActionClass.SPEND || r.cls == ActionClass.DELETE, now, null, null)
-        val p = Pending(a, r.chatId, now + EXPIRY_MS)
+        val p = Pending(a, r.chatId, now + EXPIRY_MS, r.botName, r.args)
         open[a.id] = p
         safe { sink?.put(a) }
         return p
@@ -86,6 +96,7 @@ class Approvals(private val clock: () -> Long = System::currentTimeMillis, priva
 
     private fun finish(id: String, status: Status, by: String?): Status? {
         val p = open.remove(id) ?: return null
+        ended[id] = status
         if (!p.done.complete(status)) return null
         safe { sink?.resolve(id, status, clock(), by) }
         return status
@@ -95,6 +106,7 @@ class Approvals(private val clock: () -> Long = System::currentTimeMillis, priva
 
     companion object {
         const val EXPIRY_MS = 25 * 60_000L
+        const val RECENT = 200
         private val seq = AtomicLong()
     }
 }

@@ -61,7 +61,8 @@ object ToolScheduler {
         val terminal = setOf("run_shell", "termux_run", "run_code", "linux_install", "terminal_stop", "preview_server", "job_input", "process")
         /** May put a card in front of the user (approval / question / send): one at a time. */
         val user = setOf("ask_user", "send_sms", "send_text", "compose_sms", "gmail_send", "slack_post", "call_contact", "call_number", "share_text", "share_to_app",
-            "uninstall_app", "standing_permission", "notif_reply", "reply_to_notification", "github_install_apk", "delete_event", "memory_delete", "forget")
+            "uninstall_app", "standing_permission", "notif_reply", "reply_to_notification", "github_install_apk", "delete_event", "memory_delete", "forget",
+            "request_app_connection", "message_contact")
         val browser = { n: String -> n.startsWith("browser_") }
 
         private val pathKeys = listOf("path", "file", "dest", "destination", "target", "dir", "directory", "filename", "name")
@@ -140,6 +141,15 @@ object ToolScheduler {
          */
         fun lockClaims(claims: Set<KeyedLocks.Claim>): Set<KeyedLocks.Claim> =
             claims.filter { c -> c.key == "screen" || c.key == "browser" || c.key.startsWith("file:") || c.key.startsWith("dir:") || c.key.startsWith("term:") }.toSet()
+
+        /**
+         * P2-SF-02: the `user` claim made per bot and held across agents, for the cards themselves: a card takes
+         * `user:<botId>` for as long as it is on screen, so one bot never has two cards up (its other agents' cards
+         * queue behind it) while another bot's card never waits on it. Held by policy.CardCenter, never by [run]:
+         * [lockClaims] still drops every `user` claim, so a waiting card doesn't hold up the bot's other tools.
+         */
+        fun userLane(botId: String): KeyedLocks.Claim = KeyedLocks.Claim("$USER_LANE${botId.ifBlank { "manager" }}", true)
+        const val USER_LANE = "user:"
 
         /** Tools the chat agent may run ahead, in parallel, before its in-order loop (screen, cards and agent tools stay in the loop). */
         fun prefetchable(name: String): Boolean = name !in screen && name !in user && name !in loopOnly

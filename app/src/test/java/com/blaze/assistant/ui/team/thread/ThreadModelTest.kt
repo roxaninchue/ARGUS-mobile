@@ -106,7 +106,8 @@ class ThreadModelTest {
         assertEquals("plan.pdf", f.name); assertEquals("1.4 MB", f.sizeText); assertFalse(f.image)
         val h = cs[3] as CardModel.Handoff
         assertEquals("Atlas \u2192 Ledger", h.line); assertEquals("Yes, $500 left", h.reply)
-        assertEquals(CardModel.Other("approval", "Book PF701", null), cs[4])
+        assertEquals(CardModel.Decision("", "approval", "Book PF701", null, null, null, "pending"), cs[4])   // P2-SF-02
+        assertEquals("Waiting for you", (cs[4] as CardModel.Decision).stateLabel)
     }
 
     @Test fun introAndText() {

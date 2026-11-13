@@ -140,7 +140,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
             Spacer(Modifier.height(14.dp))
 
             // Questions and "are you sure?" still need a tap; show them right here.
-            Box(Modifier.fillMaxWidth()) { Column { ConfirmCard(); QuestionCard() } }
+            Box(Modifier.fillMaxWidth()) { Column { ConfirmCard(); com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark); QuestionCard() } }
 
             Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 26.dp), horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically) {

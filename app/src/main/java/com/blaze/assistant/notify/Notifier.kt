@@ -434,8 +434,9 @@ class ActionReceiver : BroadcastReceiver() {
                 Agent.doFromHeadsUp(intent.getStringExtra(EXTRA_CHAT), intent.getStringExtra(EXTRA_CONTEXT), p)
                 Notifier.working("Working on: " + p.take(60))
             }
-            ALLOW -> { Agent.answerConfirm(true); Notifier.clearConfirm() }
-            DENY -> { Agent.answerConfirm(false); Notifier.clearConfirm() }
+            // P2-SF-02: the notification answers the policy card it shows, else the old confirm card
+            ALLOW -> { if (!com.blaze.assistant.policy.PolicyRuntime.answerNotified(true)) Agent.answerConfirm(true); Notifier.clearConfirm() }
+            DENY -> { if (!com.blaze.assistant.policy.PolicyRuntime.answerNotified(false)) Agent.answerConfirm(false); Notifier.clearConfirm() }
             REPLY -> {
                 val text = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(Notifier.KEY_REPLY)?.toString()
                 val chat = intent.getStringExtra(EXTRA_CHAT)

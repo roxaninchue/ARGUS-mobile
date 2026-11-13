@@ -19,8 +19,9 @@ import kotlinx.coroutines.withContext
  * [ConfirmGate.PolicyOk] so its own confirm cards don't ask a second time, or returns a "don't retry" result.
  *
  * [Request.enforce] false = shadow: the decision is made and reported to [observer] but the call runs exactly as it
- * did before this ticket (the user's own chat keeps its confirm cards until P2-SF-02's cards). Pure (no Android);
- * PolicyGateTest.
+ * did before P2-SF-01. P2-SF-02: the presenter is the real card flow ([CardFlow]), run inside the call, so a card
+ * closes the moment its approval ends (answered, skipped by a new message, or expired). Pure (no Android);
+ * ApprovalsTest / CardFlowTest.
  */
 class PolicyGate(
     val approvals: Approvals,
@@ -33,12 +34,21 @@ class PolicyGate(
      * would leave the card on screen.
      */
     private val detach: CoroutineScope? = null,
+    /**
+     * P2-SF-02: a one-time pass that already covers this call (a draft the user edited on its card: that exact text to
+     * those recipients). Returns the approval id it came from, or null.
+     */
+    private val pass: ((Request, Policy.Decision.Ask) -> String?)? = null,
+    /** P2-SF-02: the tool result for an approval that didn't run when the card had more to say (an edited draft). */
+    private val outcome: ((approvalId: String) -> String?)? = null,
 ) {
     /** Shows an approval to the user. Returns their answer, or null to leave it waiting (another surface may answer). */
     fun interface Presenter { suspend fun show(p: Approvals.Pending, ask: Policy.Decision.Ask): Approvals.Status? }
 
     data class Request(val chatId: String, val botId: String, val botName: String, val jobId: String?, val tool: String,
-                       val argsRedacted: String, val call: Policy.Call, val ctx: Policy.Ctx, val enforce: Boolean, val callId: String = "")
+                       val argsRedacted: String, val call: Policy.Call, val ctx: Policy.Ctx, val enforce: Boolean, val callId: String = "",
+                       /** P2-SF-02: the whole scrubbed args (a draft card shows every word it approves). */
+                       val argsFull: String = argsRedacted)
 
     sealed class Verdict {
         /** Run the tool; [approvalId] = the card the user answered yes on (null = no card). */
@@ -60,8 +70,10 @@ class PolicyGate(
     }
 
     private suspend fun ask(r: Request, d: Policy.Decision.Ask): Verdict {
+        pass?.let { f -> runCatching { f(r, d) }.getOrNull()?.let { id -> note(r, d, Approvals.Status.ALLOWED); return Verdict.Run(id) } }
         val p = approvals.open(Approvals.Request(r.chatId, r.botId, r.jobId, r.callId.ifBlank { r.tool }, r.tool, r.call.cls,
-            title(r.botName, r.call.cls), detail(r.tool, r.argsRedacted, d.note), r.argsRedacted, r.ctx.tainted != null))
+            title(r.botName, r.call.cls), detail(r.tool, r.argsRedacted, d.note), r.argsRedacted, r.ctx.tainted != null,
+            botName = r.botName, args = r.argsFull))
         val callCtx = currentCoroutineContext().minusKey(Job)
         val st = coroutineScope {
             val shown = presenter?.let { pr -> (detach ?: this).launch(if (detach != null) callCtx else EmptyCoroutineContext) {
@@ -75,7 +87,7 @@ class PolicyGate(
         return when (st) {
             Approvals.Status.ALWAYS -> { if (d.always) runCatching { saveAlways?.invoke(r.tool, r.botId) }; Verdict.Run(p.id) }
             Approvals.Status.ALLOWED -> Verdict.Run(p.id)
-            Approvals.Status.DENIED -> Verdict.Stop(denied(r.tool))
+            Approvals.Status.DENIED -> Verdict.Stop(outcome?.let { f -> runCatching { f(p.id) }.getOrNull() } ?: denied(r.tool))
             Approvals.Status.SKIPPED -> Verdict.Stop(skipped(r.tool))
             Approvals.Status.EXPIRED, Approvals.Status.PENDING -> Verdict.Stop(expired(r.tool))
         }

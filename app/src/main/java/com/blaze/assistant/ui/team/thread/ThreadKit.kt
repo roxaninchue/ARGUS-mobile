@@ -92,6 +92,9 @@ data class ThreadActions(
     val shareFile: (path: String) -> Unit = {},
     val saveFile: (path: String) -> Unit = {},
     val openHandoff: (fromId: String, toId: String) -> Unit = { _, _ -> },
+    /** P2-SF-02: the live card behind a pending card row (null = closed, or not on this phone's screen). */
+    val liveCard: (cardId: String) -> com.blaze.assistant.policy.Card? = { null },
+    val answerCard: (cardId: String, answer: com.blaze.assistant.policy.CardAnswer) -> Unit = { _, _ -> },
 )
 
 /** What AgentText draws its words with (AM's Md / RichBlocks on the phone). */
@@ -383,7 +386,7 @@ fun HandoffCard(h: CardModel.Handoff, actions: ThreadActions, modifier: Modifier
     }
 }
 
-/** Any other card (approval, question, connect, draft…) until its own component lands: title and text. */
+/** Any other card: title and text (approval / draft / question / connect are DecisionThreadCard since P2-SF-02). */
 @Composable
 fun PlainThreadCard(o: CardModel.Other, modifier: Modifier = Modifier) {
     val c = Argus.colors
@@ -408,6 +411,7 @@ fun ThreadItemView(item: ThreadItem, actions: ThreadActions, body: AgentBody = p
             is CardModel.Ok -> OkCard(k, actions)
             is CardModel.File -> FileCard(k, actions)
             is CardModel.Handoff -> HandoffCard(k, actions)
+            is CardModel.Decision -> com.blaze.assistant.ui.team.cards.DecisionThreadCard(k, actions.liveCard(k.id), actions.answerCard)
             is CardModel.Other -> PlainThreadCard(k)
         }
     }

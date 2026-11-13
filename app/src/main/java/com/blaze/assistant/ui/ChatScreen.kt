@@ -619,7 +619,10 @@ fun ChatScreen() {
     // Swipe has no Home tab: a remembered Home tab from Classic tabs becomes the Home surface.
     LaunchedEffect(swipeMode) { if (swipeMode && navNow().tab == ChatNav.HOME) { go(navNow().switchTab(ChatNav.CHAT)); settleTo(0f) } }
     // Things that need the chat bring it up: a question, an approval, a fix card, the computer card, a shared text, the mic.
-    val pendingConfirmNow by Agent.pendingConfirm.collectAsState()
+    val pendingConfirmLegacy by Agent.pendingConfirm.collectAsState()
+    // P2-SF-02: a policy card (approval / draft / question / connect) counts as an approval waiting here too
+    val policyCards by com.blaze.assistant.policy.PolicyRuntime.cards.collectAsState()
+    val pendingConfirmNow: Any? = pendingConfirmLegacy ?: policyCards.firstOrNull()
     val fixNow by com.blaze.assistant.agent.FixCards.current.collectAsState()
     val formNow by Agent.pendingForm.collectAsState()
     val secretNow by com.blaze.assistant.agent.SecretDesk.pending.collectAsState()
@@ -969,6 +972,7 @@ fun ChatScreen() {
                 if (!ChatExpand.on) UpdateBanner()
             }
             ConfirmCard()
+            com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark)   // P2-SF-02: approval / draft / question / connect cards
             QuestionCard()
             FixCard()
             SecureFormCard()
@@ -1853,6 +1857,7 @@ private fun WaitingCards(listening: Boolean, clearedAt: Long, onUndoClear: () ->
         }
     UpdateBanner()
     ConfirmCard()
+    com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark)   // P2-SF-02
     QuestionCard()
     FixCard()
     SecureFormCard()

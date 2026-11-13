@@ -168,6 +168,15 @@ class BotThreads(
         return r
     }
 
+    /** P2-SF-02: a row the app posted gets a new body (a card's final state), counted and passed on like [put]. */
+    fun update(botId: String, seq: Long, body: String): Row? {
+        val before = rows.generation(botId)?.let { rows.get(botId, it, seq) } ?: return null
+        val r = rows.update(botId, seq, body) ?: return null
+        account(r, before)
+        _changes.tryEmit(Change.Rows(botId, r.generation, listOf(r)))
+        return r
+    }
+
     /**
      * The engines' [RowSink]: stores a bot's row (by seq, newer revision wins) and keeps the thread's counters. The
      * Manager's rows are counted and passed on but not stored (its chat file is the record). The row write is one

@@ -72,7 +72,7 @@ object JobsRuntime {
         val app = ctx.applicationContext
         scope.launch {
             val g = TeamGraph.get(app)
-            runCatching { com.blaze.assistant.policy.PolicyRuntime.init(g.sql) }   // P2-SF-01: approvals + policies on team.db
+            runCatching { com.blaze.assistant.policy.PolicyRuntime.init(g.sql, g.threads) }   // P2-SF-01: approvals + policies on team.db; P2-SF-02: card rows in bot threads
             val store = JobStore(g.sql)
             val rowStore = RowStore(g.sql)
             val am = app.getSystemService(ActivityManager::class.java)

@@ -32,6 +32,8 @@ object ToolRouter {
         "stage_show",
         // 0.46.6 Secure form: never ask for a key, password, card or code in chat.
         "request_secret",
+        // P2-SF-02: the connect card (request_app_connection) is a card like request_secret: always on hand.
+        "request_app_connection",
         // P1-TM-05: a bot running a job must always be able to close it and log its steps (any tool subset keeps core).
         "done_job", "create_task", "update_task"
     )
