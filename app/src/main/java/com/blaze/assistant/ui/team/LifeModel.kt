@@ -26,7 +26,8 @@ import java.util.Locale
  * `argus_look` off, so its cards stay reachable both ways.
  */
 object LifeModel {
-    enum class Section { DAY_LINE, SIGN_IN, SETUP, TODAY, DOMAINS, PROJECTS, PANELS }
+    /** Owner 2026-11-14: BOARD (what ARGUS was asked to keep on the dashboard, newest first) and CALENDAR sit on top. */
+    enum class Section { DAY_LINE, SIGN_IN, SETUP, BOARD, CALENDAR, TODAY, DOMAINS, PROJECTS, PANELS }
 
     /** Where each AM Home card lives in Life mode (SpaceHome HERO's greeting becomes the day line). */
     val HOME_CARDS: Map<SpaceHomeCards.Card, Section> = mapOf(
@@ -167,10 +168,12 @@ object LifeModel {
 
     // ---------------- the page ----------------
 
-    fun sections(signedIn: Boolean, setupLeft: Int): List<Section> = buildList {
+    fun sections(signedIn: Boolean, setupLeft: Int, board: Int = 0): List<Section> = buildList {
         add(Section.DAY_LINE)
         if (!signedIn) add(Section.SIGN_IN)
         if (setupLeft > 0) add(Section.SETUP)
+        if (board > 0) add(Section.BOARD)
+        add(Section.CALENDAR)
         add(Section.TODAY)
         add(Section.DOMAINS)
         add(Section.PROJECTS)
@@ -187,6 +190,7 @@ object LifeModel {
         signedIn: Boolean = true,
         setupLeft: Int = 0,
         setupPercent: Int = 100,
+        board: Int = 0,
     ): LifeState = LifeState(
         dayLine = dayLine(date, items, now),
         strip = strip(items, now),
@@ -198,6 +202,55 @@ object LifeModel {
         signedIn = signedIn,
         setupLeft = setupLeft.coerceAtLeast(0),
         setupPercent = setupPercent.coerceIn(0, 100),
-        sections = sections(signedIn, setupLeft),
+        sections = sections(signedIn, setupLeft, board),
     )
+}
+
+/** Owner 2026-11-14: Life's month calendar, pure (weeks start on Monday, the days outside the month are blank). */
+object LifeCalendar {
+    fun weeks(month: java.time.YearMonth, first: java.time.DayOfWeek = java.time.DayOfWeek.MONDAY): List<List<LocalDate?>> {
+        val lead = ((month.atDay(1).dayOfWeek.value - first.value) + 7) % 7
+        val cells = List<LocalDate?>(lead) { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
+        val padded = cells + List((7 - cells.size % 7) % 7) { null }
+        return padded.chunked(7)
+    }
+
+    /** "November 2026". */
+    fun title(month: java.time.YearMonth, locale: Locale = Locale.getDefault()): String =
+        month.month.getDisplayName(TextStyle.FULL, locale).replaceFirstChar { it.titlecase(locale) } + " " + month.year
+
+    /** The weekday initials over the grid ("M T W T F S S"). */
+    fun heads(first: java.time.DayOfWeek = java.time.DayOfWeek.MONDAY, locale: Locale = Locale.getDefault()): List<String> =
+        (0 until 7).map { first.plus(it.toLong()).getDisplayName(TextStyle.NARROW, locale) }
+
+    /** The selected day's line over its list: "Today", "Tomorrow", or "Sat 21 Nov". */
+    fun dayLabel(day: LocalDate, today: LocalDate, locale: Locale = Locale.getDefault()): String = when (day) {
+        today -> "Today"; today.plusDays(1) -> "Tomorrow"; today.minusDays(1) -> "Yesterday"
+        else -> day.dayOfWeek.getDisplayName(TextStyle.SHORT, locale) + " " + day.dayOfMonth + " " + day.month.getDisplayName(TextStyle.SHORT, locale)
+    }
+}
+
+/** Owner 2026-11-14: the dashboard's panels, newest at the top (ARGUS adds at position 0), hidden ones and the weather out. */
+object LifeBoard {
+    fun panels(widgets: List<com.blaze.assistant.home.Widget>): List<com.blaze.assistant.home.Widget> =
+        widgets.filter { !it.hidden && it.type != com.blaze.assistant.home.WidgetTypes.INTO && it.type != com.blaze.assistant.home.WidgetTypes.WEATHER }
+            .sortedWith(compareBy<com.blaze.assistant.home.Widget> { it.order }.thenByDescending { it.created })
+
+    /**
+     * Owner 2026-11-14: the panels under headers (the widget's category, which ARGUS picks, merges or renames). A header
+     * keeps the place of its top panel, so a panel ARGUS just added brings its header to the top.
+     */
+    fun groups(widgets: List<com.blaze.assistant.home.Widget>): List<Pair<String, List<com.blaze.assistant.home.Widget>>> =
+        panels(widgets).groupBy { header(it.category) }.toList()
+
+    fun header(category: String): String = category.trim().ifBlank { "Notes" }
+
+    /** Folded headers are kept as one line ("Sports\nNews"); a blank line never names a header. */
+    fun folded(saved: String): Set<String> = saved.split('\n').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    fun save(folded: Set<String>): String = folded.sorted().joinToString("\n")
+    fun toggle(folded: Set<String>, key: String): Set<String> = if (key in folded) folded - key else folded + key
+
+    /** The settings key the folds live under. Section headers use their own name with this prefix ("§Projects"). */
+    const val FOLD_KEY = "life_folded"
+    const val SECTION = "\u00a7"
 }

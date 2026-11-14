@@ -91,10 +91,12 @@ object WidgetTypes {
     const val GITHUB = "github"
     const val APPS = "apps"
     const val CUSTOM = "custom"
+    /** Owner 2026-11-14: "create a to-do list on my dashboard" → a checklist on Life ([HomeTodo]). */
+    const val TODO = "todo"
     /** The "tell me what you're into" starter card (opens the interest picker). */
     const val INTO = "into"
 
-    val all = listOf(WEATHER, NEWS, CREATORS, SPORTS, PRICES, CALENDAR, ROUTINES, DEADLINES, GITHUB, APPS, CUSTOM, INTO)
+    val all = listOf(WEATHER, NEWS, CREATORS, SPORTS, PRICES, CALENDAR, ROUTINES, DEADLINES, GITHUB, APPS, CUSTOM, INTO, TODO)
 
     fun norm(t: String?): String? {
         val l = t.orEmpty().trim().lowercase().replace(' ', '_')
@@ -110,6 +112,7 @@ object WidgetTypes {
             "deadline", "study", "exams", "homework" -> DEADLINES
             "repo", "git" -> GITHUB
             "most_used_apps", "usage", "app_usage" -> APPS
+            "to_do", "todos", "todo_list", "to_do_list", "checklist", "tasks", "task_list", "shopping_list" -> TODO
             "text", "list", "link", "note" -> CUSTOM
             else -> null
         }
@@ -125,13 +128,14 @@ object WidgetTypes {
         GITHUB -> "Tech"
         APPS -> "Phone"
         INTO -> "For you"
+        TODO -> "To-do"
         else -> "Notes"
     }
 
     fun label(type: String): String = when (type) {
         WEATHER -> "Weather"; NEWS -> "News"; CREATORS -> "Creators"; SPORTS -> "Sports"; PRICES -> "Prices"
         CALENDAR -> "Calendar"; ROUTINES -> "Next routine"; DEADLINES -> "Deadlines"; GITHUB -> "GitHub"
-        APPS -> "Most-used apps"; INTO -> "For you"; else -> "Custom"
+        APPS -> "Most-used apps"; INTO -> "For you"; TODO -> "To-do list"; else -> "Custom"
     }
 
     /** Types that need the network to refresh (others are read on the phone). */
@@ -156,4 +160,40 @@ object Ago {
     const val STALE_MS = 3 * 60 * 60_000L
     fun stale(fetched: Long, now: Long, offline: Boolean, error: String): Boolean =
         fetched > 0L && (offline || error.isNotBlank() || now - fetched > STALE_MS)
+}
+
+/**
+ * Owner 2026-11-14: a to-do list on the Life dashboard. Its items live in the widget's config (`items`: strings or
+ * `{t, done}`), so ARGUS adds or ticks them with home_widget_update and a tap on Life ticks them too. Nothing is fetched.
+ */
+object HomeTodo {
+    data class Item(val text: String, val done: Boolean)
+
+    const val MAX = 50
+
+    fun items(cfg: JSONObject): List<Item> {
+        val a = cfg.optJSONArray("items") ?: return emptyList()
+        return (0 until a.length()).mapNotNull { i ->
+            when (val x = a.opt(i)) {
+                is JSONObject -> Item(x.optString("t").ifBlank { x.optString("title").ifBlank { x.optString("text") } }.trim(), x.optBoolean("done", false))
+                is String -> Item(x.trim(), false)
+                else -> null
+            }
+        }.filter { it.text.isNotBlank() }.take(MAX)
+    }
+
+    fun toJson(items: List<Item>): JSONArray = JSONArray(items.map { JSONObject().put("t", it.text).put("done", it.done) })
+
+    /** The list with item [index] ticked or unticked. */
+    fun toggle(items: List<Item>, index: Int): List<Item> =
+        items.mapIndexed { i, it -> if (i == index) it.copy(done = !it.done) else it }
+
+    /** The card's content: open items first, done ones after; the headline counts what is left. */
+    fun data(w: Widget): WidgetData {
+        val all = items(w.cfg())
+        val left = all.count { !it.done }
+        return WidgetData(headline = w.title, value = if (all.isEmpty()) "" else "$left left",
+            change = if (all.isEmpty()) "Empty. Ask me to add something." else "",
+            lines = all.map { WidgetLine(it.text, note = if (it.done) "done" else "") })
+    }
 }

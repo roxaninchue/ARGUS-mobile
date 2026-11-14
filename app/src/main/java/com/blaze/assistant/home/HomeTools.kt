@@ -20,6 +20,7 @@ object HomeTools {
         "creators {channel: @handle | YouTube channel URL | TikTok/Instagram URL}; sports {team}; " +
         "prices {kind: crypto, ids: \"bitcoin,ethereum\", vs: usd} | {kind: fx, base: USD, symbols: \"EUR,ZMW\"} | {kind: stock, symbols: \"AAPL\"} (stocks best effort); " +
         "calendar {}; routines {}; deadlines {}; github {repo: owner/name} or {notifications:true} (needs the GitHub connector); apps {} (most-used apps, needs Usage access); " +
+        "todo {items:[\"Buy milk\", {t:\"Call mum\", done:true}]} for a to-do list (to add or tick items later, send the whole items list to $UPDATE); " +
         "custom {text?, value?, url?, items:[{title, sub?, url?}]} for anything else ${BrandName.NAME} composes itself."
 
     private fun fn(name: String, desc: String, props: JSONObject, req: List<String>) = JSONObject().put("type", "function").put("function", JSONObject()
@@ -29,13 +30,15 @@ object HomeTools {
     private fun s(d: String) = JSONObject().put("type", "string").put("description", d)
 
     fun tools(): List<JSONObject> = listOf(
-        fn(ADD, "Add a widget to the user's Home board (the Home tab: a scrolling board of live cards). Use it when they ask to see/track/follow something " +
+        fn(ADD, "Add a panel to the user's Life dashboard (the Life tab; the newest panel shows at the top, and the page grows with every panel). " +
+            "Use it when they ask to put something on their dashboard or to see/track/follow something (a to-do list, headlines on a topic, " +
             "(\"show me Arsenal scores\", \"track Bitcoin\", \"new videos from MKBHD\"), and you may offer widgets that fit what you remember about them. " +
-            "Free sources only, no keys. Types and config: $typesDoc Same category = the cards stack together.",
-            JSONObject().put("type", s("weather | news | creators | sports | prices | calendar | routines | deadlines | github | apps | custom"))
+            "Free sources only, no keys. Types and config: $typesDoc Same category = the same header on Life. " +
+            "Keep headers few: when two headers overlap, move panels under one with $UPDATE (category); remove a panel with $REMOVE when the user asks.",
+            JSONObject().put("type", s("weather | news | creators | sports | prices | calendar | routines | deadlines | github | apps | todo | custom"))
                 .put("config", JSONObject().put("type", "object").put("description", "Type settings (see description)"))
                 .put("title", s("Short card title, e.g. \"Arsenal\", \"Bitcoin\", \"Weather in Lagos\""))
-                .put("category", s("Stack name, e.g. Sports, Finance, News, Creators, Weather, Today, Tech"))
+                .put("category", s("The Life header it goes under, e.g. To-do, News, Money, Sports, Health. Reuse a header from $LIST when it fits; the user can fold each header"))
                 .put("size", s("S | M | L (default M)")),
             listOf("type")),
         fn(UPDATE, "Change a Home board widget by id (from $LIST): title, config (merged into the old one), category, size S/M/L, hidden, or position (0 = top).",
@@ -102,9 +105,9 @@ object HomeTools {
                 "Already on Home as \u201c${dupe.title}\u201d (id ${dupe.id})" + (if (dupe.hidden) "; it was hidden, so I showed it again." else ".")
             } else {
                 val w = store.add(Widget("", type, t, args.optString("category").trim().take(30).ifBlank { WidgetTypes.defaultCategory(type) },
-                    cfg.toString(), WidgetSize.norm(args.optString("size"))), now)
+                    cfg.toString(), WidgetSize.norm(args.optString("size"))), now, atEnd = false)   // newest on top (owner 2026-11-14)
                 onChange(w.id)
-                "Added \u201c${w.title}\u201d to Home (id ${w.id}, ${w.type}, stack ${w.category}). It fills in within a few seconds; the user sees it on the Home tab."
+                "Added \u201c${w.title}\u201d to the Life dashboard (id ${w.id}, ${w.type}, stack ${w.category}), at the top. It fills in within a few seconds."
             }
         }
         UPDATE -> {

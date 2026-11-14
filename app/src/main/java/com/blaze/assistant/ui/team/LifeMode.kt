@@ -73,6 +73,9 @@ class LifeNav(
     val onOpenSchedule: () -> Unit = {},
     /** A domain tile → "Set up my life team" (P5 replaces this with the domain page). */
     val onSetUpLife: (LifeModel.DomainTile?) -> Unit = {},
+    /** Owner 2026-11-14: quick access to connecting accounts and adding apps. */
+    val onConnect: () -> Unit = {},
+    val onApps: () -> Unit = {},
 )
 
 object LifeTags {
@@ -99,13 +102,37 @@ fun LifeMode(
     nav: LifeNav,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
+    board: List<Pair<String, List<com.blaze.assistant.home.Widget>>> = emptyList(),
+    boardData: Map<String, com.blaze.assistant.home.WidgetData> = emptyMap(),
+    boardActions: LifeBoardActions = LifeBoardActions(),
+    cal: LifeCal? = null,
+    fold: LifeFold = LifeFold(),
 ) {
     val c = Argus.colors
+    var menuFor by remember { mutableStateOf<com.blaze.assistant.home.Widget?>(null) }
+    androidx.compose.runtime.CompositionLocalProvider(LocalLifeFold provides fold) {
     LazyColumn(modifier.fillMaxSize().testTag(LifeTags.PAGE), contentPadding = contentPadding, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        for (s in state.sections) item(key = s.name) {
+        for (s in state.sections) {
+            // Owner 2026-11-14: what ARGUS keeps on the dashboard, one folding header per category, a panel per item
+            if (s == LifeModel.Section.BOARD) {
+                for ((head, panels) in board) {
+                    item(key = "board-h-$head") { LifeFoldHead(head, head, count = panels.size) }
+                    if (!fold.isFolded(head)) items(panels, key = { "board-" + it.id }) { w -> LifeBoardPanel(w, boardData[w.id], boardActions) { menuFor = w } }
+                }
+                continue
+            }
+            item(key = s.name) {
             when (s) {
-                LifeModel.Section.DAY_LINE -> Text(state.dayLine, style = ArgusType.serifHello, color = c.ink,
-                    modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp).testTag(LifeTags.DAY).semantics { heading() })
+                LifeModel.Section.BOARD -> {}
+                LifeModel.Section.CALENDAR -> if (cal != null) Column(Modifier.fillMaxWidth()) {
+                    LifeFoldHead("Calendar", LifeBoard.SECTION + "Calendar")
+                    if (!fold.isFolded(LifeBoard.SECTION + "Calendar")) LifeCalendarCard(cal, nav.onOpenSchedule)
+                }
+                LifeModel.Section.DAY_LINE -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(state.dayLine, style = ArgusType.serifHello, color = c.ink,
+                        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp).testTag(LifeTags.DAY).semantics { heading() })
+                    LifeQuickAccess(nav.onConnect, nav.onApps)
+                }
                 LifeModel.Section.SIGN_IN -> LifeCard(Modifier.testTag(LifeTags.SIGN_IN)) {
                     Text("${BrandName.UPPER} can do more", style = ArgusType.title2, color = c.ink)
                     Text("Sign in to your ${BrandName.NAME} account and it starts working for you right away. No keys, no settings.",
@@ -123,10 +150,21 @@ fun LifeMode(
                             if (state.projects.isNotEmpty()) SettingsItem("list-checks", "All projects", onClick = nav.onOpenProjects) else null,
                             SettingsItem("plus", "New project", onClick = nav.onOpenProjects),
                         )
-                    SettingsGroup(rows, Modifier.padding(horizontal = 12.dp).testTag(LifeTags.PROJECTS), title = "Projects")
+                    Column(Modifier.fillMaxWidth().testTag(LifeTags.PROJECTS)) {
+                        LifeFoldHead("Projects", LifeBoard.SECTION + "Projects", count = state.projects.size)
+                        if (!fold.isFolded(LifeBoard.SECTION + "Projects")) SettingsGroup(rows, Modifier.padding(horizontal = 12.dp))
+                    }
                 }
                 LifeModel.Section.PANELS -> Panels(state.weather, state.answer, state.asks, nav)
             }
+            }
+        }
+    }
+    }
+    menuFor?.let { w ->
+        com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { menuFor = null }, title = w.title) {
+            com.blaze.assistant.ui.argus.kit.MenuRow("refresh-cw", "Refresh", { menuFor = null; boardActions.onRefresh(w) })
+            com.blaze.assistant.ui.argus.kit.MenuRow("trash-2", "Remove from Life", { menuFor = null; boardActions.onRemove(w) }, danger = true)
         }
     }
 }
@@ -153,8 +191,8 @@ private fun SectionHead(text: String, trailing: String? = null, onTrailing: (() 
 private fun TodayStripView(strip: LifeModel.TodayStrip, onOpen: () -> Unit) {
     val c = Argus.colors
     Column(Modifier.fillMaxWidth().testTag(LifeTags.TODAY)) {
-        SectionHead("Today", "Schedule \u203a", onOpen)
-        Column(Modifier.padding(horizontal = 12.dp).fillMaxWidth().argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp))
+        LifeFoldHead("Today", LifeBoard.SECTION + "Today", "Schedule \u203a", onOpen)
+        if (!LocalLifeFold.current.isFolded(LifeBoard.SECTION + "Today")) Column(Modifier.padding(horizontal = 12.dp).fillMaxWidth().argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp))
             .clickable(role = Role.Button, onClickLabel = "Open Schedule", onClick = onOpen).padding(vertical = 14.dp)) {
             BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(30.dp)) {
                 val w = maxWidth
@@ -191,8 +229,8 @@ private fun TodayStripView(strip: LifeModel.TodayStrip, onOpen: () -> Unit) {
 private fun DomainGrid(domains: List<LifeModel.DomainTile>, onTap: (LifeModel.DomainTile?) -> Unit) {
     val c = Argus.colors
     Column(Modifier.fillMaxWidth().testTag(LifeTags.DOMAINS)) {
-        SectionHead("Your life", LifeModel.SET_UP + " \u203a") { onTap(null) }
-        Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LifeFoldHead("Your life", LifeBoard.SECTION + "Your life", LifeModel.SET_UP + " \u203a", onTrailing = { onTap(null) })
+        if (!LocalLifeFold.current.isFolded(LifeBoard.SECTION + "Your life")) Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             for (pair in domains.chunked(2)) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 for (d in pair) {
                     val hue = Color(d.color)
@@ -222,7 +260,8 @@ private fun DomainGrid(domains: List<LifeModel.DomainTile>, onTap: (LifeModel.Do
 private fun Panels(weather: LifeModel.Weather?, answer: SpaceAnswer.Card?, asks: List<String>, nav: LifeNav) {
     val c = Argus.colors
     Column(Modifier.fillMaxWidth().testTag(LifeTags.PANELS), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionHead("Panels")
+        LifeFoldHead("Panels", LifeBoard.SECTION + "Panels")
+        if (LocalLifeFold.current.isFolded(LifeBoard.SECTION + "Panels")) return@Column
         weather?.let { w ->
             LifeCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -288,6 +327,29 @@ fun LifePage(
         val d = w?.let { board[it.id] }
         d?.let { LifeModel.weather(it.value, it.change, it.headline, it.fetched, System.currentTimeMillis()) }
     }
-    val state = LifeModel.state(now.toLocalDate(), now.toLocalTime(), items, projects, weather, answer, signedIn, setupLeft, setupPercent)
-    LifeMode(state, nav, modifier)
+    // Owner 2026-11-14: the dashboard ARGUS fills (newest header first, each folds), the month calendar and the picked day
+    val groups = remember(widgets) { LifeBoard.groups(widgets) }
+    var folded by remember { mutableStateOf(LifeBoard.folded(try { com.blaze.assistant.agent.Settings.str(LifeBoard.FOLD_KEY) } catch (_: Throwable) { "" })) }
+    val fold = LifeFold(folded) { k ->
+        folded = LifeBoard.toggle(folded, k)
+        try { com.blaze.assistant.agent.Settings.setStr(LifeBoard.FOLD_KEY, LifeBoard.save(folded)) } catch (_: Throwable) {}
+    }
+    val today = now.toLocalDate()
+    var month by remember { mutableStateOf(java.time.YearMonth.from(today)) }
+    var picked by remember { mutableStateOf(today) }
+    var dayItems by remember { mutableStateOf<List<com.blaze.assistant.agent.ScheduleDay.Item>>(emptyList()) }
+    LaunchedEffect(picked, items) {
+        dayItems = if (picked == today) items else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val at = picked.atStartOfDay(now.zone).plusHours(12)
+                com.blaze.assistant.agent.ScheduleDay.itemsOn(picked, now.zone, com.blaze.assistant.agent.TurnContextSource.dayEntries(at))
+            } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("LifePage.day", t); emptyList() }
+        }
+    }
+    val cal = LifeCal(month, picked, today, dayItems, onSelect = { picked = it }, onMonth = { d -> month = month.plusMonths(d.toLong()) })
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val actions = remember { liveBoardActions(ctx) }
+    val state = LifeModel.state(now.toLocalDate(), now.toLocalTime(), items, projects, weather, answer, signedIn, setupLeft, setupPercent,
+        board = groups.size)
+    LifeMode(state, nav, modifier, board = groups, boardData = board, boardActions = actions, cal = cal, fold = fold)
 }

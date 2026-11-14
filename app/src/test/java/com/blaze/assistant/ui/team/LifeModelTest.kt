@@ -117,8 +117,10 @@ class LifeModelTest {
 
     @Test fun sectionsInOrderWithSignInAndSetupWhenNeeded() {
         val S = LifeModel.Section.entries
-        assertEquals(listOf(S[0], S[3], S[4], S[5], S[6]), LifeModel.sections(signedIn = true, setupLeft = 0))
-        assertEquals(S, LifeModel.sections(signedIn = false, setupLeft = 2))
+        // owner 2026-11-14: the board (only when it has panels) and the calendar come first
+        assertEquals(listOf(S[0], S[4], S[5], S[6], S[7], S[8]), LifeModel.sections(signedIn = true, setupLeft = 0))
+        assertEquals(S, LifeModel.sections(signedIn = false, setupLeft = 2, board = 1))
+        assertEquals(LifeModel.Section.BOARD, LifeModel.sections(true, 0, board = 3)[1])
         assertEquals(LifeModel.Section.DAY_LINE, LifeModel.sections(true, 0).first())
         assertEquals(LifeModel.Section.PANELS, LifeModel.sections(true, 0).last())
     }
@@ -156,5 +158,52 @@ class LifeModelTest {
         val life = File(root, "com/blaze/assistant/ui/team/LifeMode.kt").readText()
         assertTrue("Life reads the same day items as the [context] line", "TurnContextSource.dayEntries(now)" in life && "ScheduleDay.itemsOn(" in life)
         assertFalse("Life never fetches weather itself", "HomeSources" in life || "refresh(" in life)
+    }
+
+    @Test fun monthCalendarGrid() {
+        val nov = java.time.YearMonth.of(2026, 11)               // 1 Nov 2026 is a Sunday
+        val w = LifeCalendar.weeks(nov)
+        assertTrue(w.all { it.size == 7 })
+        assertEquals(6, w.size)
+        assertEquals(List(6) { null } + LocalDate.of(2026, 11, 1), w[0])
+        assertEquals(30, w.flatten().count { it != null })
+        assertEquals(LocalDate.of(2026, 11, 30), w.last().first())
+        assertEquals("November 2026", LifeCalendar.title(nov, java.util.Locale.UK))
+        assertEquals(listOf("M", "T", "W", "T", "F", "S", "S"), LifeCalendar.heads(locale = java.util.Locale.UK))
+        val d = LocalDate.of(2026, 11, 14)
+        assertEquals("Today", LifeCalendar.dayLabel(d, d)); assertEquals("Tomorrow", LifeCalendar.dayLabel(d.plusDays(1), d))
+        assertEquals("Sat 21 Nov", LifeCalendar.dayLabel(d.plusDays(7), d, java.util.Locale.UK))
+        assertEquals(4, LifeCalendar.weeks(java.time.YearMonth.of(2027, 2)).size)
+    }
+
+    @Test fun boardNewestFirstWithoutWeatherOrHidden() {
+        fun w(id: String, type: String, order: Int, created: Long, hidden: Boolean = false) =
+            com.blaze.assistant.home.Widget(id, type, id, "x", order = order, created = created, hidden = hidden)
+        val out = LifeBoard.panels(listOf(w("old", "news", 1, 10), w("new", "todo", 0, 20), w("sky", "weather", 0, 30), w("gone", "custom", 0, 40, hidden = true)))
+        assertEquals(listOf("new", "old"), out.map { it.id })
+    }
+
+    @Test fun boardUnderHeadersNewestHeaderFirstAndFoldsSurvive() {
+        fun w(id: String, cat: String, order: Int) = com.blaze.assistant.home.Widget(id, "custom", id, cat, order = order, created = 100L - order)
+        val g = LifeBoard.groups(listOf(w("bills", "Money", 2), w("milk", "To-do", 0), w("rent", "Money", 1), w("x", " ", 3)))
+        assertEquals(listOf("To-do", "Money", "Notes"), g.map { it.first })
+        assertEquals(listOf("rent", "bills"), g[1].second.map { it.id })
+        val f = LifeBoard.toggle(LifeBoard.toggle(emptySet(), "Money"), LifeBoard.SECTION + "Projects")
+        assertEquals(f, LifeBoard.folded(LifeBoard.save(f)))
+        assertEquals(setOf(LifeBoard.SECTION + "Projects"), LifeBoard.toggle(f, "Money"))
+        assertTrue(LifeBoard.folded("\n \n").isEmpty())
+    }
+
+    /** Owner 2026-11-14: quick access to accounts and apps, folding headers, the board and the calendar wired on Life. */
+    @Test fun lifeWiresTheBoardCalendarFoldsAndQuickAccess() {
+        val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
+        val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
+        assertTrue("onConnect = { settingsPage = \"connections\" }" in chat && "onApps = { composer.openSpotlight() }" in chat)
+        val life = File(root, "com/blaze/assistant/ui/team/LifeMode.kt").readText()
+        assertTrue("LifeBoard.groups(widgets)" in life && "LifeCalendarCard(" in life && "LifeQuickAccess(" in life)
+        for (h in listOf("Today", "Your life", "Projects", "Panels", "Calendar")) assertTrue(h, "LifeFoldHead(\"$h\"" in life)
+        val tools = File(root, "com/blaze/assistant/home/HomeTools.kt").readText()
+        assertTrue("newest on top", "atEnd = false" in tools)
+        assertTrue("the model keeps headers few", "Keep headers few" in tools)
     }
 }

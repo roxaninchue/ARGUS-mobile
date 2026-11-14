@@ -45,6 +45,7 @@ object HomeSources {
             WidgetTypes.DEADLINES -> Result(deadlines(now))
             WidgetTypes.APPS -> Result(apps(ctx, now))
             WidgetTypes.CUSTOM -> Result(custom(w))
+            WidgetTypes.TODO -> Result(HomeTodo.data(w))
             WidgetTypes.INTO -> Result(WidgetData(headline = "Tell me what you're into", change = "Pick a few topics and I'll fill your board with them.", action = "interests"))
             else -> Result(WidgetData.failed("This widget type isn't supported in this version."))
         }
