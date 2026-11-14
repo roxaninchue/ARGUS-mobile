@@ -93,7 +93,8 @@ class PromptCacheBenchTest {
 
     @Test fun everyPartInTheSourceIsBenchmarked() {
         val inSrc = Regex("""\b(s|slow|turn|tail)\("([a-z_]+)"""").findAll(sysSrc).map { it.groupValues[2] }.toSet()
-        val here = parts(turns[0].text, turns[0].groups, false, Live(0, 0, 0)).map { it.name }.toSet() +
+        // Core skills are pinned only on coding turns, so cover every bench turn, not just the first.
+        val here = turns.withIndex().flatMap { (i, t) -> parts(t.text, t.groups, t.views, Live(0, 0, i)).map { it.name } }.toSet() +
             setOf("simple", "terminal", "processes", "in_call", "goals", "setup", "frequent", "desktop", "project", "voice", "build", "assistant")   // empty / off in this phone's state
         assertEquals(emptySet<String>(), inSrc - here)
     }
