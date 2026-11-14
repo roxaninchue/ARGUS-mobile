@@ -134,6 +134,18 @@ class ChatDrawerTest {
         assertTrue(src.contains("ModalNavigationDrawer"))
     }
 
+    /** Owner 2026-11-14 (0.53.2 video): closed and still, the root drawer layer is gone, so Chat mode's taps get through. */
+    @Test fun closedDrawerLeavesNoLayer() {
+        assertFalse(ChatDrawerModel.layerUp(requested = false, open = false, opening = false, moving = false))
+        assertTrue(ChatDrawerModel.layerUp(requested = true, open = false, opening = false, moving = false))
+        assertTrue(ChatDrawerModel.layerUp(requested = false, open = true, opening = false, moving = false))
+        assertTrue(ChatDrawerModel.layerUp(requested = false, open = false, opening = true, moving = false))
+        assertTrue(ChatDrawerModel.layerUp(requested = false, open = false, opening = false, moving = true))
+        val src = File("src/main/java/com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
+        assertTrue("the layer returns before drawing while closed", src.contains("if (!ChatDrawerModel.layerUp(requested, drawer.isOpen"))
+        assertFalse("the button asks the layer, never opens a drawer that isn't drawn", src.contains("\"Chat history\", { scope.launch { drawer.open() } }"))
+    }
+
     /** Owner 2026-11-14: the drawer shows ARGUS's title once given; a name you gave still wins. */
     @Test fun drawerShowsTheAutoTitleUnlessNamed() {
         val zone = java.time.ZoneId.of("Africa/Lusaka")

@@ -254,14 +254,14 @@ fun ChatModeFrame(
     // surface, no seams), so the frame only publishes its drawer and what a pick does.
     DisposableEffect(drawer) {
         ChatDrawerUi.drawer.value = drawer
-        onDispose { if (ChatDrawerUi.drawer.value === drawer) ChatDrawerUi.drawer.value = null }
+        onDispose { if (ChatDrawerUi.drawer.value === drawer) { ChatDrawerUi.drawer.value = null; ChatDrawerUi.requested.value = false } }
     }
     ChatDrawerUi.onOpenProjectChat = onOpenProjectChat
     run {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ArgusIconButton(com.blaze.assistant.ui.argus.icons.ArgusGlyphs.MENU_TAPER, "Chat history", { scope.launch { drawer.open() } }, kind = IconButtonKind.FLAT, badge = chats.anyUnseen())
+                    ArgusIconButton(com.blaze.assistant.ui.argus.icons.ArgusGlyphs.MENU_TAPER, "Chat history", { ChatDrawerUi.open() }, kind = IconButtonKind.FLAT, badge = chats.anyUnseen())
                     Spacer(Modifier.weight(1f))
                     ArgusIconButton("lock", if (privateOn) "Private chat on" else "Private chat", onPrivate, kind = if (privateOn) IconButtonKind.GLASS else IconButtonKind.FLAT)
                     ArgusIconButton("square-pen", "New chat", { ChatModeRuntime.newChat(ctx) }, kind = IconButtonKind.FLAT)
@@ -279,7 +279,7 @@ fun ChatModeFrame(
                 }
             }
             // the left edge opens the drawer; Android's back gesture is kept off this strip (≤ 200 dp, the system's cap)
-            val edge = rememberDraggableState { d -> if (d > EDGE_PULL_PX && !drawer.isOpen && !drawer.isAnimationRunning) scope.launch { drawer.open() } }
+            val edge = rememberDraggableState { d -> if (d > EDGE_PULL_PX && !drawer.isOpen && !drawer.isAnimationRunning) ChatDrawerUi.open() }
             Box(Modifier.align(Alignment.CenterStart).width(EDGE_W_DP.dp).height(EDGE_H_DP.dp)
                 .systemGestureExclusion { lc -> Rect(0f, 0f, lc.size.width.toFloat(), lc.size.height.toFloat()) }
                 .draggable(edge, Orientation.Horizontal)
@@ -331,8 +331,11 @@ object ChatDrawerUi {
     val drawer = mutableStateOf<DrawerState?>(null)
     val menuFor = mutableStateOf<ChatDrawerModel.Entry?>(null)
     var onOpenProjectChat: (String) -> Unit = {}
+    /** The button or the edge asked for the drawer; [ChatDrawerLayer] draws it and opens it. */
+    val requested = mutableStateOf(false)
+    fun open() { requested.value = true }
     /** Open or opening: the keyboard is for the drawer's search, so the composer stays where it is. */
-    fun showing(): Boolean = drawer.value?.let { it.isOpen || it.targetValue == DrawerValue.Open } ?: false
+    fun showing(): Boolean = requested.value || (drawer.value?.let { it.isOpen || it.targetValue == DrawerValue.Open } ?: false)
 }
 
 /**
@@ -343,8 +346,15 @@ object ChatDrawerUi {
 @Composable
 fun ChatDrawerLayer(modifier: Modifier = Modifier, zone: ZoneId = ZoneId.systemDefault()) {
     val drawer = ChatDrawerUi.drawer.value ?: return
+    val requested by ChatDrawerUi.requested
+    // Closed and still: nothing at the root, so every tap reaches the screen under it (owner 2026-11-14 video).
+    if (!ChatDrawerModel.layerUp(requested, drawer.isOpen, drawer.targetValue == DrawerValue.Open, drawer.isAnimationRunning)) return
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
+    // A fresh layer opens the drawer it was asked for (a snap if the sheet isn't measured yet, else the slide).
+    LaunchedEffect(requested) {
+        if (requested) try { drawer.open(); if (!drawer.isOpen) drawer.snapTo(DrawerValue.Open) } finally { ChatDrawerUi.requested.value = false }
+    }
     val version by ChatModeRuntime.version.collectAsState()
     val messages by Agent.messages.collectAsState()
     val mood by Agent.mood.collectAsState()

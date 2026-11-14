@@ -25,6 +25,12 @@ object ChatDrawerModel {
     const val NO_MATCH = "No chats match."
     const val NEW_TITLE = "New chat"
 
+    /**
+     * Owner 2026-11-14 (0.53.2 video): a closed ModalNavigationDrawer at the screen's root ate every tap in Chat mode, so the
+     * root layer only exists while the drawer is asked for, open, opening, or still moving.
+     */
+    fun layerUp(requested: Boolean, open: Boolean, opening: Boolean, moving: Boolean): Boolean = requested || open || opening || moving
+
     /** One message of the main conversation, as the drawer needs it. */
     data class Msg(val user: Boolean, val text: String, val at: Long, val listable: Boolean = true)
 
