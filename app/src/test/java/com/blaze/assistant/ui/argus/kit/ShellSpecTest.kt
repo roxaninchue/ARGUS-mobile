@@ -96,7 +96,7 @@ class ShellSpecTest {
         assertTrue(screen.contains("ModelChip(flat = true)"))
         assertFalse("no chip pill over the composer", screen.contains("ModelChip(Modifier.padding(start = 18.dp))"))
         val drawer = java.io.File("src/main/java/com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
-        assertTrue(drawer.contains("drawerShape = RectangleShape"))
+        assertTrue("drawer edge rounded (NoSquareTest)", drawer.contains("drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)"))
         val shell = java.io.File("src/main/java/com/blaze/assistant/ui/argus/kit/KitShell.kt").readText()
         assertTrue(shell.contains("top: (@Composable () -> Unit)? = null"))
     }
