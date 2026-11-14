@@ -123,6 +123,19 @@ jobs:
           ./gradlew testReleaseUnitTest :storeapi:test $YT_TEST assembleRelease --stacktrace 2>&1 | tee build.log
           echo "YouTube plug-in in this build: ${{ steps.yt.outputs.present }}" | tee -a build.log
 
+      # 2026-11-14: the failure log, as an artifact anyone can fetch (job logs need a token; Post failure log runs only upstream)
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildlog-${{ github.sha }}
+          path: |
+            build.log
+            app/build/reports/tests/
+            app/build/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
       # Key rotation (v1.14.2+): v1/v2 stay on the old key for Android 8, v3 moves to the new key with a lineage
       # for Android 9+. The old key keeps installed-data (so current installs update) but loses rollback,
       # permission, shared-uid and auth, so an APK signed only with the old (public) key can't replace a rotated install.
