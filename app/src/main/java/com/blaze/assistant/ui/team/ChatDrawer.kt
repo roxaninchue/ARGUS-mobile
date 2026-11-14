@@ -31,7 +31,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.material3.DrawerValue
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ModalDrawerSheet
@@ -393,7 +392,8 @@ fun ChatDrawerSheet(
     onNew: () -> Unit,
 ) {
     val c = Argus.colors
-    ModalDrawerSheet(drawerShape = RectangleShape, drawerContainerColor = c.bg, drawerContentColor = c.ink) {
+    ModalDrawerSheet(drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),   // NoSquareTest: the outer edge is rounded
+         drawerContainerColor = c.bg, drawerContentColor = c.ink) {
         Column(Modifier.fillMaxHeight().padding(horizontal = 12.dp)) {
             Spacer(Modifier.height(12.dp))
             ArgusSearch(query, onQuery, placeholder = tr("Search chats"))
