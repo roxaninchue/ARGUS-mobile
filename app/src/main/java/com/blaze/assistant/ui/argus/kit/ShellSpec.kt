@@ -43,6 +43,59 @@ object ShellSpec {
             else -> "Ask anything"
         }
 
+        /**
+         * Owner 2026-11-14: the chat field's hint rotates: "Let's {explore|discover|build|…}". One or two words stay put while
+         * the word after them changes; now and then the lead changes too ("Organize my week", "Track my habits"). Pure and
+         * reproducible from (step, seed). Only a fade, never a slide (the owner gets motion sick); with animations off the
+         * field shows the static [placeholder]. Screen readers always hear the static placeholder.
+         */
+        object Hints {
+            /** One change every this long, and the lead changes every [LEAD_EVERY] changes. */
+            const val INTERVAL_MS = 3_200L
+            const val LEAD_EVERY = 4
+            /** The fade between two words. */
+            const val FADE_MS = 600
+            /** Each group's word count is never a multiple of [STRIDE], so stepping by it visits every word before repeating. */
+            const val STRIDE = 3
+            val GROUPS: List<Pair<String, List<String>>> = listOf(
+                "Let's" to listOf("explore", "discover", "build", "arrange", "plan", "write", "learn", "fix", "research", "design"),
+                "Help me" to listOf("focus", "decide", "unwind", "study", "prep for exams"),
+                "Organize" to listOf("my week", "my notes", "my inbox", "my files"),
+                "Track" to listOf("my habits", "my budget", "a package", "my goals"),
+                "Monitor" to listOf("a price", "the news", "my spending", "a flight"),
+            )
+
+            data class Hint(val lead: String, val word: String) { val text: String get() = "$lead $word" }
+
+            private fun mix(a: Int, b: Int): Int {   // splitmix64 of the pair
+                var z = (a.toLong() shl 32) xor (b.toLong() and 0xffffffffL)
+                z += -0x61c8864680b583ebL
+                z = (z xor (z ushr 30)) * -0x40a7b892e31b1a47L
+                z = (z xor (z ushr 27)) * -0x6b2fb644ecceee15L
+                z = z xor (z ushr 31)
+                return (z ushr 33).toInt()
+            }
+
+            /** The group for lead block [block]: "Let's" about half the time (it may stay on); another lead never twice in a row. */
+            fun group(block: Int, seed: Int): Int {
+                if (block <= 0) return 0
+                val r = mix(block, seed)
+                if ((r ushr 9) % 100 < 55) return 0
+                val others = GROUPS.size - 1
+                var g = 1 + (r ushr 3) % others
+                if (g == group(block - 1, seed)) g = 1 + (g % others)
+                return g
+            }
+
+            fun hint(step: Int, seed: Int): Hint {
+                val st = step.coerceAtLeast(0)
+                val block = st / LEAD_EVERY
+                val (lead, words) = GROUPS[group(block, seed)]
+                val i = (mix(seed, block) + (st % LEAD_EVERY) * STRIDE) % words.size
+                return Hint(lead, words[i])
+            }
+        }
+
         fun trailingLabel(t: Trailing): String = when (t) { Trailing.MIC -> "Talk"; Trailing.SEND -> "Send"; Trailing.STOP -> "Stop" }
         fun trailingIcon(t: Trailing): String = when (t) { Trailing.MIC -> "mic"; Trailing.SEND -> "arrow-up"; Trailing.STOP -> "square" }
     }

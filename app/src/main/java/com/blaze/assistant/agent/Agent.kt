@@ -3326,7 +3326,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 if (TurnEnd.silent(msgs.filterNot { it.meta == Ack.META }.map { it.role })) {
                     val lastStep = msgs.lastOrNull { it.role == Role.STEP }?.text.orEmpty()
                     val why = if (turnEnd == TurnEnd.Reason.DONE && lastStep == "You stopped me") TurnEnd.Reason.STOPPED else turnEnd
-                    add(Role.BLAZE, TurnEnd.line(why, lastStep))
+                    if (why != TurnEnd.Reason.DONE) add(Role.BLAZE, TurnEnd.line(why, lastStep))
+                    else scope.launch { kotlinx.coroutines.delay(TurnEnd.DONE_GRACE_MS); if (TurnEnd.doneLineDue(msgs.filterNot { it.meta == Ack.META }.map { it.role }, job?.isActive == true, inbox.isNotEmpty())) { add(Role.BLAZE, TurnEnd.line(why, lastStep)); persist() } }
                 }
             } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnEnd", e) }
             // Low-data mode: how much this task used (Blaze's own traffic: models, web, browser).

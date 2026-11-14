@@ -194,15 +194,16 @@ fun ArgusComposer(
         val placeholder = ShellSpec.Composer.placeholder(mode)
         BasicTextField(
             value = value, onValueChange = onValueChange,
-            modifier = Modifier.weight(1f).heightIn(min = ShellSpec.Composer.PLUS.dp).padding(horizontal = 8.dp)
+            modifier = Modifier.weight(1f).heightIn(min = KitSpec.target(ShellSpec.Composer.PLUS).dp).padding(horizontal = 8.dp)
                 .semantics { contentDescription = placeholder.trimEnd('\u2026') },
             textStyle = ArgusType.field.copy(color = c.ink),
             cursorBrush = SolidColor(c.ink),
             maxLines = ShellSpec.Composer.MAX_LINES,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             decorationBox = { inner ->
-                Box(Modifier.heightIn(min = ShellSpec.Composer.PLUS.dp).padding(vertical = 10.dp), contentAlignment = Alignment.CenterStart) {
-                    if (value.text.isEmpty()) Text(placeholder, style = ArgusType.field, color = c.mute, maxLines = 1)
+                // Same height as the + and mic discs' touch targets, so one line sits on their centre line (owner 2026-11-14).
+                Box(Modifier.heightIn(min = KitSpec.target(ShellSpec.Composer.PLUS).dp).padding(vertical = 10.dp), contentAlignment = Alignment.CenterStart) {
+                    if (value.text.isEmpty()) ComposerHint(placeholder, rotate = mode != "team" && mode != "life" && mode != "desk")
                     inner()
                 }
             },
@@ -210,6 +211,28 @@ fun ArgusComposer(
         val act = when (t) { ShellSpec.Composer.Trailing.MIC -> onMic; ShellSpec.Composer.Trailing.SEND -> onSend; ShellSpec.Composer.Trailing.STOP -> onStop }
         ComposerDisc(ShellSpec.Composer.trailingIcon(t), ShellSpec.Composer.trailingLabel(t), act,
             ink = t != ShellSpec.Composer.Trailing.MIC, onLong = if (t == ShellSpec.Composer.Trailing.MIC) onMicHold else null)
+    }
+}
+
+/**
+ * The empty field's hint. In chat it rotates ([ShellSpec.Composer.Hints]): the lead stays, the next word fades to the
+ * next one. A fade only, never a slide, and still (the static [placeholder]) with the phone's animations off.
+ */
+@Composable
+private fun ComposerHint(placeholder: String, rotate: Boolean) {
+    val c = Argus.colors
+    if (!rotate || !com.blaze.assistant.ui.MotionTokens.enabled) { Text(placeholder, style = ArgusType.field, color = c.mute, maxLines = 1); return }
+    val seed = remember { (System.currentTimeMillis() / 1000L).toInt() }
+    var step by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(ShellSpec.Composer.Hints.INTERVAL_MS); step++ } }
+    val h = ShellSpec.Composer.Hints.hint(step, seed)
+    Row(Modifier.clearAndSetSemantics { }, verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.animation.Crossfade(h.lead, animationSpec = androidx.compose.animation.core.tween(ShellSpec.Composer.Hints.FADE_MS), label = "hintLead") { l ->
+            Text("$l ", style = ArgusType.field, color = c.mute, maxLines = 1)
+        }
+        androidx.compose.animation.Crossfade(h.word, animationSpec = androidx.compose.animation.core.tween(ShellSpec.Composer.Hints.FADE_MS), label = "hintWord") { w ->
+            Text(w, style = ArgusType.field, color = c.mute, maxLines = 1)
+        }
     }
 }
 

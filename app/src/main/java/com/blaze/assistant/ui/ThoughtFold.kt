@@ -12,6 +12,8 @@ object ThoughtFold {
     const val DONE = "Thought for"
     /** The header when the time was never measured (older replies). */
     const val DONE_UNTIMED = "Thoughts"
+    /** The Lucide icon in front of the header (owner 2026-11-14: "use a brain icon for thoughts"). */
+    const val ICON = "brain"
 
     private val leftoverTags = Regex("</?(?:think|thought|thinking)>", RegexOption.IGNORE_CASE)
     private val blankRuns = Regex("\n{3,}")

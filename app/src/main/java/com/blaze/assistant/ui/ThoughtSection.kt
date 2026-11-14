@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blaze.assistant.agent.GlitchSpans
+import com.blaze.assistant.ui.argus.icons.Lucide
 import com.blaze.assistant.agent.PromptEcho
 
 /**
@@ -72,12 +74,14 @@ fun ThoughtSection(key: Long, thinking: String, live: Boolean, answerStarted: Bo
             .clickable(onClickLabel = if (open) "Hide the thinking" else "Show the thinking", role = Role.Button) { choice = !open }
             .semantics { stateDescription = if (open) "Expanded" else "Collapsed" }
             .padding(start = 2.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (now) {
+            // Owner 2026-11-14: a brain icon for thoughts. It glows in the accent and breathes slowly while thinking.
+            val brainAlpha = if (now) {
                 val tr = rememberInfiniteTransition(label = "thoughtDot")
-                val pulse by tr.animateFloat(0.3f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "thoughtDotA")
-                Box(Modifier.size(6.dp).clip(CircleShape).background(c.accent.copy(alpha = if (MotionTokens.enabled) pulse else 1f)))
-                Spacer(Modifier.width(8.dp))
-            }
+                val pulse by tr.animateFloat(0.45f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "thoughtDotA")
+                if (MotionTokens.enabled) pulse else 1f
+            } else 1f
+            Icon(Lucide.icon(ThoughtFold.ICON, 16), null, Modifier.size(16.dp), tint = (if (now) c.accent else c.sub).copy(alpha = brainAlpha))
+            Spacer(Modifier.width(6.dp))
             Text(header, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
             val rot by animateFloatAsState(if (open) 180f else 0f, MotionTokens.fast(), label = "thoughtChev")
             Text("\u2304", modifier = Modifier.padding(start = 6.dp).rotate(rot), style = TextStyle(fontSize = 13.sp, color = c.sub))

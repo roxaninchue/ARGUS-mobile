@@ -54,4 +54,26 @@ class ShellSpecTest {
         assertEquals(3_310L, ShellSpec.Toast.durationMs("x".repeat(35)))
         assertEquals(62, ShellSpec.TOP_BAR_DP)
     }
+
+    /** Owner 2026-11-14: "Let's {explore|discover|build|…}": the lead mostly stays, the next word changes, the lead now and then. */
+    @Test fun composerHintsRotateUnderAMostlyStaticLead() {
+        val H = ShellSpec.Composer.Hints
+        for (seed in listOf(1, 42, 1_731_590_000)) {
+            val hs = (0 until 200).map { H.hint(it, seed) }
+            assertEquals("Let's", hs[0].lead)
+            for (b in 0 until 50) {
+                val block = hs.subList(b * H.LEAD_EVERY, (b + 1) * H.LEAD_EVERY)
+                assertEquals("one lead per block", 1, block.map { it.lead }.toSet().size)
+                assertEquals("no word twice in a block", H.LEAD_EVERY, block.map { it.word }.toSet().size)
+                if (b > 0 && hs[b * H.LEAD_EVERY].lead != "Let's") assertTrue("another lead never repeats block to block", hs[b * H.LEAD_EVERY].lead != hs[b * H.LEAD_EVERY - 1].lead)
+            }
+            val lets = hs.count { it.lead == "Let's" }
+            assertTrue("Let's is the usual lead ($lets/200)", lets in 70..150 && hs.groupingBy { it.lead }.eachCount().maxByOrNull { it.value }!!.key == "Let's")
+            assertTrue("other leads show up too", hs.map { it.lead }.toSet().size >= 4)
+        }
+        assertEquals(H.hint(7, 3), H.hint(7, 3))
+        for ((lead, words) in H.GROUPS) { assertTrue(lead, words.size % H.STRIDE != 0 && words.size >= H.LEAD_EVERY); assertTrue(lead.split(' ').size <= 2) }
+        assertTrue("slow enough not to bother anyone", H.INTERVAL_MS >= 2_500L && H.FADE_MS <= 800)
+        assertEquals("the static hint is still Ask anything", "Ask anything", ShellSpec.Composer.placeholder("chat"))
+    }
 }

@@ -43,6 +43,7 @@ import com.blaze.assistant.agent.GlitchSpans
  * API 33+: an AGSL [RuntimeShader] on the text's layer does it in one pass ([GLITCH_AGSL]). Older phones: the same look
  * from plain Compose drawing (the glitched rects drawn again, clipped, tinted and shifted). Both follow [GlitchMath].
  * With animations off (Remove animations / animator scale 0, [MotionTokens.enabled]) it is still: the colour split only.
+ * Glitched words are also blurred ([GlitchMath.BLUR_DP], still, not animated) so they can't be read (owner 2026-11-14).
  * Screen readers get the plain text.
  */
 @Composable
@@ -97,6 +98,7 @@ uniform float split;
 uniform float jitter;
 uniform float flicker;
 uniform float sliceH;
+uniform float blur;
 
 float hash(float n) { return fract(sin(n) * 43758.5453); }
 
@@ -113,9 +115,19 @@ half4 main(float2 p) {
     float jump = step(0.70, hash(band * 13.7 + tick * 3.1));
     float dx = jump * (hash(band * 7.3 + tick * 1.7) * 2.0 - 1.0) * jitter;
     float2 q = float2(p.x + dx, p.y);
-    half4 base = content.eval(q);
-    half4 red = content.eval(q + float2(split, 0.0));
-    half4 cyan = content.eval(q - float2(split, 0.0));
+    // A still blur (7 x 3 taps) so the words can't be read; the colour split rides on the same blur.
+    half4 base = half4(0.0);
+    half4 red = half4(0.0);
+    half4 cyan = half4(0.0);
+    for (int ix = -3; ix <= 3; ix++) {
+        for (int iy = -1; iy <= 1; iy++) {
+            float2 o = float2(float(ix) * blur / 3.0, float(iy) * blur / 2.0);
+            base += content.eval(q + o);
+            red += content.eval(q + o + float2(split, 0.0));
+            cyan += content.eval(q + o - float2(split, 0.0));
+        }
+    }
+    base /= 21.0; red /= 21.0; cyan /= 21.0;
     half4 ghost = (half4(1.0, 0.18, 0.28, 1.0) * red.a + half4(0.0, 0.9, 1.0, 1.0) * cyan.a) * 0.7;
     ghost = clamp(ghost, 0.0, 1.0);
     half4 b = base * half(1.0 - flicker);
@@ -141,6 +153,7 @@ private fun shaderLayer(rects: List<Rect>, tick: State<Float>?, seed: Int, motio
         shader.setFloatUniform("split", f.splitDp * density)
         shader.setFloatUniform("jitter", if (motion) GlitchMath.JITTER_DP * density else 0f)
         shader.setFloatUniform("flicker", f.flicker)
+        shader.setFloatUniform("blur", GlitchMath.BLUR_DP * density)
         shader.setFloatUniform("sliceH", (shown.firstOrNull()?.height ?: 30f) / GlitchMath.SLICES)
         renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "content").asComposeRenderEffect()
         } catch (_: Throwable) { renderEffect = null }   // never crash a chat row over an effect
@@ -165,10 +178,17 @@ private fun Modifier.glitchDraw(rects: List<Rect>, tick: State<Float>?, seed: In
             val top = r.top + i * h
             clipRect(r.left - 8f * density, top, r.right + 8f * density, top + h) {
                 translate(left = dx) {
-                    if (f.flicker > 0f) drawIntoCanvas { cv ->
-                        cv.saveLayer(Rect(r.left - 8f * density, top, r.right + 8f * density, top + h), Paint().apply { alpha = 1f - f.flicker })
-                        this@drawWithContent.drawContent(); cv.restore()
-                    } else this@drawWithContent.drawContent()
+                    // A still smear (offset copies, low alpha each) so the words can't be read (owner 2026-11-14).
+                    drawIntoCanvas { cv ->
+                        cv.saveLayer(Rect(r.left - 8f * density, top, r.right + 8f * density, top + h), Paint().apply { alpha = (1f - f.flicker) })
+                        val n = GlitchMath.BLUR_TAPS_X
+                        for (j in 0 until n) {
+                            val ox = (j - n / 2) * GlitchMath.BLUR_DP * density / (n / 2)
+                            cv.saveLayer(Rect(r.left - 16f * density, top, r.right + 16f * density, top + h), Paint().apply { alpha = 2.2f / n })
+                            cv.translate(ox, 0f); this@drawWithContent.drawContent(); cv.restore()
+                        }
+                        cv.restore()
+                    }
                 }
             }
         }
@@ -178,9 +198,13 @@ private fun Modifier.glitchDraw(rects: List<Rect>, tick: State<Float>?, seed: In
 /** One colour copy of the text inside [r], tinted [color] and shifted [dx] px. */
 private fun ContentDrawScope.ghost(r: Rect, color: Color, dx: Float) {
     drawIntoCanvas { cv ->
-        cv.saveLayer(r, Paint().apply { colorFilter = ColorFilter.tint(color, BlendMode.SrcIn); alpha = 0.7f })
-        cv.translate(dx, 0f)
-        drawContent()
-        cv.restore()
+        val n = GlitchMath.BLUR_TAPS_X
+        for (j in 0 until n) {   // smeared like the text itself, so the ghosts can't be read either
+            val ox = (j - n / 2) * GlitchMath.BLUR_DP * density / (n / 2)
+            cv.saveLayer(r, Paint().apply { colorFilter = ColorFilter.tint(color, BlendMode.SrcIn); alpha = 0.7f * 1.6f / n })
+            cv.translate(dx + ox, 0f)
+            drawContent()
+            cv.restore()
+        }
     }
 }

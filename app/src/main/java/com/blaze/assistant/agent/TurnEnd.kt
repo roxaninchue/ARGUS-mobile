@@ -8,6 +8,16 @@ package com.blaze.assistant.agent
 object TurnEnd {
     enum class Reason { DONE, STOPPED, TIMEOUT, TOOL_FAILED, ERROR }
 
+    /**
+     * Owner 2026-11-14 ("let's not show 'I finished without…', just a reply for the new message"): a turn that ends DONE
+     * with nothing to read waits this long before its closing line, and drops it when a reply, a queued message or a new
+     * turn shows up in the meantime. Stop, timeout and failures still say so at once.
+     */
+    const val DONE_GRACE_MS = 6_000L
+
+    /** True when the DONE line may still go out after the grace: still silent, no turn running, nothing queued. */
+    fun doneLineDue(roles: List<Role>, turnRunning: Boolean, queued: Boolean): Boolean = !turnRunning && !queued && silent(roles)
+
     /** True when no reply (BLAZE or ERROR) follows the user's last message in [roles] (oldest first). */
     fun silent(roles: List<Role>): Boolean {
         val lastUser = roles.indexOfLast { it == Role.USER }

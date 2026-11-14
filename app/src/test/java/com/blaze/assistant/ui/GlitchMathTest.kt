@@ -41,4 +41,12 @@ class GlitchMathTest {
         assertEquals(GlitchMath.TICKS_PER_SECOND, GlitchMath.tickAt(1_000))
         assertTrue(GlitchMath.tickAt(10_000_000L) in 0 until GlitchMath.LOOP_TICKS)
     }
+
+    /** Owner 2026-11-14: glitched words can't be read, and the motion is no faster than before (motion sickness). */
+    @Test fun wordsAreBlurredAndMotionIsNotFaster() {
+        assertTrue(GlitchMath.BLUR_DP >= 2.5f)
+        assertTrue(GlitchMath.BLUR_TAPS_X % 2 == 1 && GlitchMath.BLUR_TAPS_Y % 2 == 1)
+        assertTrue(GlitchMath.TICKS_PER_SECOND <= 11)
+        assertTrue(GlitchMath.JUMP_RATE <= 0.30f && GlitchMath.FLICKER_RATE <= 0.07f)
+    }
 }

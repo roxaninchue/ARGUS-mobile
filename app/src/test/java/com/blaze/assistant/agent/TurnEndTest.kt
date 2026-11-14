@@ -33,4 +33,14 @@ class TurnEndTest {
         roles += Role.BLAZE   // what the finally block adds
         assertFalse(TurnEnd.silent(roles))
     }
+
+    /** Owner 2026-11-14: no "I finished without a reply" when a reply, a queued message or a new turn follows. */
+    @Test fun doneLineWaitsAndDropsWhenAReplyFollows() {
+        val silent = listOf(Role.USER, Role.BLAZE, Role.USER)
+        assertTrue(TurnEnd.doneLineDue(silent, turnRunning = false, queued = false))
+        assertFalse(TurnEnd.doneLineDue(silent, turnRunning = true, queued = false))
+        assertFalse(TurnEnd.doneLineDue(silent, turnRunning = false, queued = true))
+        assertFalse(TurnEnd.doneLineDue(silent + Role.BLAZE, turnRunning = false, queued = false))
+        assertTrue(TurnEnd.DONE_GRACE_MS in 3_000L..10_000L)
+    }
 }

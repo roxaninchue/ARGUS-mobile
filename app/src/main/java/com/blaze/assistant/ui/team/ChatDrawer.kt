@@ -253,7 +253,7 @@ fun ChatModeFrame(
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ArgusIconButton("rows-3", "Chat history", { scope.launch { drawer.open() } }, kind = IconButtonKind.FLAT, badge = chats.anyUnseen())
+                    ArgusIconButton(com.blaze.assistant.ui.argus.icons.ArgusGlyphs.MENU_TAPER, "Chat history", { scope.launch { drawer.open() } }, kind = IconButtonKind.FLAT, badge = chats.anyUnseen())
                     Spacer(Modifier.weight(1f))
                     ArgusIconButton("lock", if (privateOn) "Private chat on" else "Private chat", onPrivate, kind = if (privateOn) IconButtonKind.GLASS else IconButtonKind.FLAT)
                     ArgusIconButton("square-pen", "New chat", { ChatModeRuntime.newChat(ctx) }, kind = IconButtonKind.FLAT)

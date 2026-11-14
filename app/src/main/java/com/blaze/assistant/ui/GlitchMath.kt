@@ -22,6 +22,15 @@ object GlitchMath {
     const val FLICKER_RATE = 0.07f
     /** How far the text fades in a flicker (0 = none, 1 = gone). */
     const val FLICKER_DIP = 0.55f
+    /**
+     * Owner 2026-11-14 ("words are still visible… don't make the motion faster, I get motion sick, just make the words not
+     * legible"): glitched words are smeared by a still blur of this radius, in dp, so they read as shapes, not letters.
+     * The motion (ticks, jumps, flicker) is unchanged.
+     */
+    const val BLUR_DP = 3.2f
+    /** Taps across the blur per axis (odd): 7 across × 3 down. */
+    const val BLUR_TAPS_X = 7
+    const val BLUR_TAPS_Y = 3
 
     class Frame(
         /** Colour split in dp (red one way, cyan the other). */
