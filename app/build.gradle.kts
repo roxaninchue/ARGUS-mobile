@@ -293,3 +293,5 @@ configurations.configureEach {
     if (name.endsWith("UnitTestRuntimeClasspath")) exclude(group = "io.github.dokar3", module = "quickjs-kt-android")
 }
 // Build 2026-11-14: owner round (Life board, chat titles, model chip) + app language.
+
+// Build trigger 2026-11-14 20:38 CAT: 0.53.2 tap fix (d1806aab)
