@@ -13,3 +13,17 @@ Reported by Finn, 14 Nov 2026, on 0.53.x (screenshot: a "Dots 3 Note Preview" ta
 2. DuckDuckGo: add `&kl=wt-wt` (no region) unless the query itself names a place.
 3. Normalise the query before sending: strip wrapping quotes, turn slug hyphens/underscores into spaces for the simpler-words retry.
 4. Tests: pure tests for the gate (ZRA results vs a "dots3 note preview" query are dropped; on-topic results kept) in SearchChainTest / WebTest. No @Ignore.
+
+## Low search success rate overall
+Reported by Finn, 14 Nov 2026 (same "dots3 note preview" task: the agent found the Rednote press release and a benchmark chart image on finance.yahoo.com, then gave up and told Finn to look on Hugging Face himself).
+
+**Likely causes**
+- Every source is keyless scraping (DuckDuckGo HTML, Bing/Google RSS, Wikipedia). They rate-limit, localise by IP, and are weak on brand-new names, so many searches come back blocked, thin or off-topic.
+- The agent stops at "couldn't find" instead of going to the obvious page: it named `dots-studio/dots3-note-preview` on Hugging Face but never fetch_page'd `https://huggingface.co/dots-studio/dots3-note-preview`.
+- A chart image it already had (benchmarks) wasn't read.
+
+**Fix plan**
+1. Give search a real API path through the Blaze Gateway (key held server-side, keyless chain stays as the fallback). Pick the provider with Finn; it may cost money, so it needs his approval.
+2. "Go to the source" rule: when the answer names a likely canonical page (Hugging Face model card, GitHub repo, official docs), fetch_page it before telling the user to look themselves. Never end with "search for X yourself" while a fetch is untried.
+3. When a found page carries a chart/table image relevant to the ask, read it (vision) before concluding the data isn't available.
+4. Measure: log per-search outcome (source, ok/blocked/empty/irrelevant) so success rate is visible in the gateway admin, and track it release to release.
