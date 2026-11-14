@@ -1954,6 +1954,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return id
         }
 
+        /** 0.53.3: a step that is the model's own words between tool calls (shown as text in the turn's flow). */
+        fun markNarration(id: Long) { if (id >= 0) { msgs = msgs.map { if (it.id == id) it.copy(meta = Narration.META) else it }; if (autoStepId == id) autoStepId = -1L } }
+
         /** A step with its exact call kept for the expanded view. */
         fun addStep(text: String, exact: String): Long {
             val id = add(Role.STEP, text)
@@ -3408,6 +3411,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val dSkills = par.async { SkillMatch.forTurn(userNow) }
                 val dLearned = par.async { if (plainDev0) SkillMatch.learnedOnly(userNow) else null }
                 val dSpecs = par.async {
+                    val userNow = SkillGuard.unnamed(userNow)   // 0.53.3: a product name picks no specialist either
                     // 0.50.0: no specialist (and so none of its skill packs) for a message that doesn't ask for a task (SkillIntent).
                     if (routine || stateQ0 || selfQ0 || plainDev0 || agentId != null || !Settings.bool("specialists_on", true) || !SkillIntent.taskIntent(userNow)) emptyList()
                     else try { SpecialistMatch.match(userNow, Specialists.all()) } catch (e: CancellationException) { throw e } catch (_: Exception) { emptyList() }
@@ -3533,9 +3537,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 if (turnSpecs.isNotEmpty()) {
                     turnSkills = SpecialistMatch.attach(turnSkills, turnSpecs, SkillMatch.cached())
                     groupsOn += "extras"
-                    add(Role.STEP, SpecialistMatch.cardLine(turnSpecs))
                 }
-                SkillMatch.cardLine(turnSkills).takeIf { it.isNotBlank() }?.let { add(Role.STEP, it) }
+                // 0.53.3 (owner: "remove the pills"): which skills / specialist loaded is technical; it goes to the trace, never the chat.
+                try { listOf(SpecialistMatch.cardLine(turnSpecs), SkillMatch.cardLine(turnSkills)).filter { it.isNotBlank() }
+                    .takeIf { it.isNotEmpty() }?.let { android.util.Log.i("BlazeSkills", it.joinToString(" | ")) } } catch (_: Throwable) { }
                 var learnNudged = false
                 // v0.44.0 fewer tools per turn: ToolRouter's groups, then ToolPick (core split into cues, capped).
                 val usedNames = ToolPick.usedNames(history)
@@ -4301,10 +4306,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     thinking = turnThink.toString()
                     // v0.41.0: it turned out to be narration: stop any of it being read out, the reply comes later.
                     if (roundSpoke) { Voice.stopSpeaking(); roundSpoke = false; streamedVoice = false; spokenPrefix = "" }
+                    // 0.53.3 (owner: "tools and answers coming together", Claude-style): the narration stays on screen as text
+                    // between the tool groups (meta NARR); it is still a step, so it never goes back to the model as a reply.
                     if (liveId >= 0) {
-                        if (narr.text.isNotEmpty()) replace(liveId, Role.STEP, narr.text)
+                        if (narr.text.isNotEmpty()) { replace(liveId, Role.STEP, narr.text); markNarration(liveId) }
                         else msgs = msgs.filterNot { it.id == liveId }
-                    } else if (narr.text.isNotEmpty()) add(Role.STEP, narr.text)
+                    } else if (narr.text.isNotEmpty()) markNarration(add(Role.STEP, narr.text))
 
                     mood = Mood.ACTING
                     val shots = mutableListOf<String>()
@@ -5076,7 +5083,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val r = ToolCache.cached(name, args, lastUserText(), isPrivate) { Web.search(args.optString("query")) }
                     if (!r.startsWith("[Cached")) ToolCache.prefetch(r, unmetered(), Settings.lowData, isPrivate) { u -> Web.fetch(u) }
                     if (sideFlag.get() != true) pendingSources.addSearch(r.removePrefix("[Cached]").trimStart())
-                    searches.saw(r)
+                    searches.saw(r); searches.done(args.optString("query"), SearchGuard.okResult(r))
                     r }
                 "fetch_page" -> { add(Role.STEP, "Reading ${args.optString("url").removePrefix("https://").take(50)}")
                     val a = JSONObject(args.toString()).put("url", ToolLeak.fixBlazeUrl(args.optString("url")))

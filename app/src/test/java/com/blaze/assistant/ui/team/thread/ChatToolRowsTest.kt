@@ -97,4 +97,27 @@ class ChatToolRowsTest {
         val t = ChatToolRows.turns(listOf(user(1, 0), step(2, "Calling bank_balance via openrouter", "bank_balance()", 5)), working = true).live!!
         assertEquals("Looking things up", t.steps[0].now)
     }
+
+    // 0.53.3: Claude-style flow: the model's words between grouped runs of the same tool.
+    @Test fun flowInterleavesWordsAndGroupsSameTool() {
+        val ms = listOf(user(1, 0),
+            Msg(2, true, "I'll search first.", com.blaze.assistant.agent.Narration.META, 10),
+            step(3, "Searching the web for a", "web_search(query=dots benchmarks)", 11),
+            step(4, "Searching the web for b", "web_search(query=dots 3 note preview)", 12),
+            step(5, "Reading hf.co", "fetch_page(url=https://hf.co/x)", 13),
+            Msg(6, true, "Found it.", com.blaze.assistant.agent.Narration.META, 14),
+            reply(7, 20))
+        val res = listOf(res("web_search(query=dots benchmarks)", "1. a", 11), ToolTrail.Result("web_search(query=dots 3 note preview)", "Error: blocked", true, 12))
+        val f = ChatToolRows.flows(ms, working = false, results = res).before[7L]!!
+        assertEquals(4, f.segs.size)
+        val search = (f.segs[1] as ChatToolRows.Seg.Tools).run
+        assertEquals(2, search.steps.size)
+        assertEquals("2 \u00b7 1 failed", search.count)
+        assertEquals(listOf("dots benchmarks", "dots 3 note preview"), search.steps.map { it.detail })
+        assertEquals("hf.co/x", (f.segs[2] as ChatToolRows.Seg.Tools).run.steps.single().detail)
+        assertEquals("Found it.", (f.segs[3] as ChatToolRows.Seg.Say).text)
+        // live: the newest call without a result is running
+        val live = ChatToolRows.flows(ms.dropLast(1), working = true, results = res).live!!
+        assertTrue(live.runs.last().running)
+    }
 }

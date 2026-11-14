@@ -106,7 +106,7 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
     // Living reads each step's result, so the trail records while it is open (back to the setting when it closes).
     DisposableEffect(Unit) {
         ToolTrail.on = true
-        onDispose { ToolTrail.on = Settings.toolRows }
+        onDispose { ToolTrail.on = true }
     }
 
     val board = remember(messages, trail, chatHere, working, keep) {

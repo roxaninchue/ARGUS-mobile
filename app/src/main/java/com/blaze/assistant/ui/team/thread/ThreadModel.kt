@@ -35,6 +35,10 @@ object ThreadModel {
         /** The engine marked the change reversible (`undoable: true`), so the card offers Undo. */
         val undoable: Boolean = false,
         val at: Long = 0,
+        /** 0.53.3: what this call was about, one line (the search words, the page, the file), for a grouped row's list. */
+        val detail: String? = null,
+        /** 0.53.3: the tool's own name, so a run of the same tool folds into one row ([ChatToolRows.Run]). */
+        val tool: String = "",
     ) {
         /** The verb line for its state ("Reading a page", "Read a page", "Failed"). */
         val title: String get() = if (state == State.RUNNING || state == State.WAITING) now else done

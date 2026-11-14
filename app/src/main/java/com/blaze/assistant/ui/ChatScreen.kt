@@ -61,6 +61,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
@@ -1268,15 +1269,17 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
         .map { b -> b.log.ifEmpty { listOfNotNull(b.last.takeIf { l -> l.isNotBlank() }) } } }
     // Milestone 4: live, expandable tool rows (group → kind → call, ui/team/thread/ChatToolRows) behind the tool_rows
     // setting; off = the 0.52.1 TaskPill line only.
-    val toolRows = Settings.toolRows
-    LaunchedEffect(toolRows) { com.blaze.assistant.agent.ToolTrail.on = toolRows }
+    // 0.53.3 (owner: Claude-style turns, no pills): every turn is a flow of the model's words and grouped tool rows
+    // (ui/team/thread/TurnFlow.kt), always on; the tool_rows setting only decides whether finished tool rows stay visible.
+    LaunchedEffect(Unit) { com.blaze.assistant.agent.ToolTrail.on = true }
     val trail by com.blaze.assistant.agent.ToolTrail.results.collectAsState()
-    val toolTurns = remember(messages, mood, trail, chatHere, toolRows, keep) {
-        if (!toolRows) null else com.blaze.assistant.ui.team.thread.ChatToolRows.turns(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
+    val toolTurns = remember(messages, mood, trail, chatHere, keep) {
+        com.blaze.assistant.ui.team.thread.ChatToolRows.flows(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
             it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD) || keep?.invoke(it) == false }.map {
             com.blaze.assistant.ui.team.thread.ChatToolRows.Msg(it.id, it.role == Role.STEP, it.text, if (it.role == Role.STEP) it.meta else "", it.at, it.startAt,
                 ack = it.role == Role.BLAZE && it.meta == com.blaze.assistant.agent.Ack.META) }, mood != Mood.IDLE, trail[chatHere].orEmpty())
     }
+    val keepToolRows = Settings.toolRows || !hideDoneSteps
     val idleNow = rememberUpdatedState(mood == Mood.IDLE)
     val toolActions = remember(onFollowup) { com.blaze.assistant.ui.team.thread.ThreadActions(goOn = { if (idleNow.value) onFollowup("Go on") }) }
     val total = items.size + 1 // + working row
@@ -1353,8 +1356,8 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 Column(Modifier.fillMaxWidth()) {
                 if (item is Item.Msg && BubbleDays.startsDay(prevAt, item.at)) DayChip(remember(item.at) { BubbleDays.label(item.at) })
                 // Milestone 4: the finished turn's work chip, just above the message that ended it.
-                if (item is Item.Msg && !hideDoneSteps) toolTurns?.before?.get(item.m.id)?.let { w ->
-                    ToolRowsLocals { com.blaze.assistant.ui.team.thread.WorkChip(w, toolActions) } }
+                if (item is Item.Msg) toolTurns.before[item.m.id]?.let { f ->
+                    ToolRowsLocals { com.blaze.assistant.ui.team.thread.TurnFlowView(f, showTools = keepToolRows) } }
                 Box(Modifier.fillMaxWidth().appearIn(fresh && i >= items.size - 3).padding(top = Bubbles.gapAbove(item.pos, i == 0))) {
                     when (item) {
                         is Item.Steps -> {
@@ -1424,18 +1427,19 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 if (ChatPolicy.STATUS_LINES) { if (chip.isNotBlank() && working && streamId < 0) TaskChip(chip)
                 StepPillRow(pillText, pill?.specialist == true, Modifier.weight(1f, fill = false), inline = true) }
                 }
-                // fix/chat-flat-ui: while the model reasons and no reply row exists yet, its thinking opens here ("Thinking");
-                // once the reply starts streaming the reply row carries it (folded, "Thought for 4s").
-                if (working && streamId < 0 && Settings.showReasoning && live.isNotBlank()) ThoughtSection(-1L - (lastUserId ?: 0L), live, live = true, answerStarted = false, ms = 0L)
-                // 0.52.1 (owner): ONE pill per task, natural text that changes as the work moves on, gone when done.
-                // Milestone 4: while the turn runs, its calls are one live, expandable block instead of the pill.
-                val liveRows = toolTurns?.live?.takeIf { working && it.steps.isNotEmpty() }
-                if (liveRows != null) ToolRowsLocals { com.blaze.assistant.ui.team.thread.LiveToolRows(liveRows) }
-                if (!working && !hideDoneSteps) toolTurns?.tail?.let { w -> ToolRowsLocals { com.blaze.assistant.ui.team.thread.WorkChip(w, toolActions) } }
-                val pillLine = if (liveRows != null) null else com.blaze.assistant.agent.TaskLine.pick(if (working) turnSteps else null, agentLogs)
-                AnimatedVisibility(pillLine != null, enter = MotionTokens.enterUp(), exit = MotionTokens.fadeAway()) {
-                    TaskPill(pillLine ?: "")
-                }
+                // 0.53.3 (owner: "tools and answers coming together", "remove the pills", "stream reasoning"): the running turn is
+                // its flow (the model's words + grouped tool rows, TurnFlow.kt), then the reasoning streaming in under it. No
+                // TaskPill, no "· 15 steps" line, no Skills / Specialist chips.
+                val liveFlow = toolTurns.live?.takeIf { working }
+                if (liveFlow != null) ToolRowsLocals { com.blaze.assistant.ui.team.thread.TurnFlowView(liveFlow) }
+                if (!working) toolTurns.tail?.let { f -> ToolRowsLocals { com.blaze.assistant.ui.team.thread.TurnFlowView(f, showTools = keepToolRows) } }
+                val thinkingNow = working && streamId < 0 && Settings.showReasoning && live.isNotBlank()
+                if (thinkingNow) ThoughtSection(-1L - (lastUserId ?: 0L), live, live = true, answerStarted = false, ms = 0L)
+                // Nothing to show yet (no words, no tool, no reasoning): one quiet shimmering word, not a pill.
+                val runningRow = liveFlow?.runs?.any { it.running } == true
+                if (working && streamId < 0 && !thinkingNow && !runningRow)
+                    ToolRowsLocals { WorkingWord() }
+                @Suppress("UNUSED_VARIABLE") val unusedPill = turnSteps to agentLogs to toolActions
                 // v0.26.0: no "this chat is getting long" banner; long chats compact themselves (AutoCompact).
             } }
         }
@@ -1456,6 +1460,17 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
             }
         }
     }
+}
+
+/** 0.53.3: the only "working" sign before anything else shows: a quiet shimmering word where the next line will be. */
+@Composable
+private fun WorkingWord() {
+    val c = com.blaze.assistant.ui.argus.Argus.colors
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "ww")
+    val a by t.animateFloat(0.35f, 0.9f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(850),
+        androidx.compose.animation.core.RepeatMode.Reverse), label = "a")
+    Text(tr("Thinking"), style = com.blaze.assistant.ui.argus.ArgusType.sub, color = c.mute,
+        modifier = Modifier.padding(vertical = 8.dp).graphicsLayer { alpha = a }.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite })
 }
 
 /** Milestone 4: the A-team kit's colours for the tool rows, whichever look the chat is in. */

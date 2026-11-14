@@ -75,26 +75,38 @@ object ChatToolRows {
     }
 
     /** The calls of a run, with their results and states. In a live run an unanswered call is RUNNING, else DONE. */
-    fun steps(run: List<Msg>, results: List<ToolTrail.Result>, used: BooleanArray, live: Boolean): List<Step> {
-        val out = ArrayList<Step>()
-        for (m in run) {
-            val name = toolOf(m.meta) ?: continue
-            val l = StepTool.label(name)
-            var hit = results.indices.firstOrNull { !used[it] && results[it].exact == m.meta.trim() }
-            if (hit == null) hit = results.indices.firstOrNull { !used[it] && toolOf(results[it].exact) == name && results[it].at >= m.at }
-            hit?.let { used[it] = true }
-            val r = hit?.let { results[it] }
-            val state = when {
-                r != null -> if (r.failed) State.FAILED else State.DONE
-                live -> State.RUNNING
-                else -> State.DONE
-            }
-            val now = StepPill.clean(m.text) ?: l.now
-            out += Step("m${m.id}", now, l.done, l.kind, l.icon, state,
-                command = if (l.kind == StepTool.Kind.COMMAND) commandOf(m.meta) else null,
-                output = r?.output?.takeIf { it.isNotBlank() }, undoable = false, at = m.at)
+    fun steps(run: List<Msg>, results: List<ToolTrail.Result>, used: BooleanArray, live: Boolean): List<Step> =
+        run.mapNotNull { stepOf(it, results, used, live) }
+
+    /** One call message as a [Step] (null for a narration / status line). */
+    fun stepOf(m: Msg, results: List<ToolTrail.Result>, used: BooleanArray, live: Boolean): Step? {
+        val name = toolOf(m.meta) ?: return null
+        val l = StepTool.label(name)
+        var hit = results.indices.firstOrNull { !used[it] && results[it].exact == m.meta.trim() }
+        if (hit == null) hit = results.indices.firstOrNull { !used[it] && toolOf(results[it].exact) == name && results[it].at >= m.at }
+        hit?.let { used[it] = true }
+        val r = hit?.let { results[it] }
+        val state = when {
+            r != null -> if (r.failed) State.FAILED else State.DONE
+            live -> State.RUNNING
+            else -> State.DONE
         }
-        return out
+        val now = StepPill.clean(m.text) ?: l.now
+        return Step("m${m.id}", now, l.done, l.kind, l.icon, state,
+            command = if (l.kind == StepTool.Kind.COMMAND) commandOf(m.meta) else null,
+            output = r?.output?.takeIf { it.isNotBlank() }, undoable = false, at = m.at, detail = detailOf(m.meta), tool = name)
+    }
+
+    private val ARG = Regex("""(?:^|, )(query|q|url|path|file|filename|name|title|app|contact|to|text|prompt|task|action)=([^,]+)""")
+
+    /** One line about what a call was for: a shell's command, else its query / url / path / name … argument. */
+    fun detailOf(meta: String): String? {
+        commandOf(meta)?.let { return it.take(160) }
+        val m = meta.trim()
+        val open = m.indexOf('('); if (open < 0) return null
+        val body = m.substring(open + 1).removeSuffix(")")
+        val v = ARG.find(body)?.groupValues?.get(2) ?: body.substringBefore(", ").substringAfter('=', "")
+        return v.trim().removePrefix("https://").removePrefix("http://").removePrefix("www.").take(160).takeIf { it.isNotBlank() }
     }
 
     private fun start(run: List<Msg>, prevAt: Long): Long =
@@ -112,6 +124,81 @@ object ChatToolRows {
         val cur = steps.lastOrNull { it.state == State.RUNNING }
         val line = run.asReversed().firstNotNullOfOrNull { StepPill.clean(it.text) } ?: cur?.now ?: steps.lastOrNull()?.now ?: "Working"
         return ThreadItem.Live("live-${run.first().id}", line, steps, start(run, prevAt))
+    }
+
+    // ---------------------------------------------------------------- 0.53.3 turn flow (Claude-style)
+
+    /** Consecutive calls of the same tool, drawn as ONE row ("Searched the web · 4"), opened to each call. */
+    data class Run(val key: String, val steps: List<Step>) {
+        val first: Step get() = steps.first()
+        val running: Boolean get() = steps.any { it.state == State.RUNNING || it.state == State.WAITING }
+        val failed: Int get() = steps.count { it.state == State.FAILED }
+        val allFailed: Boolean get() = failed == steps.size
+        /** "Searching the web" while one runs, else "Searched the web" (all failed: "Couldn't search the web"). */
+        val title: String get() = when {
+            running -> steps.lastOrNull { it.state == State.RUNNING || it.state == State.WAITING }?.let { StepTool.label(it.tool).now } ?: first.now
+            else -> first.done
+        }
+        /** "4 searches", "2 of 3 failed" … the quiet words after the title ("" for a single call). */
+        val count: String get() = when {
+            steps.size == 1 -> if (failed == 1) "failed" else ""
+            failed == 0 -> "${steps.size}"
+            else -> "${steps.size} \u00b7 $failed failed"
+        }
+    }
+
+    /** A turn's flow: what the model said between its calls, and the calls folded into [Run]s, in order. */
+    sealed class Seg {
+        abstract val key: String
+        data class Say(override val key: String, val text: String) : Seg()
+        data class Tools(override val key: String, val run: Run) : Seg()
+    }
+
+    data class Flow(val key: String, val segs: List<Seg>, val live: Boolean, val ms: Long, val startAt: Long) {
+        val steps: Int get() = segs.sumOf { (it as? Seg.Tools)?.run?.steps?.size ?: 0 }
+        val runs: List<Run> get() = segs.mapNotNull { (it as? Seg.Tools)?.run }
+    }
+
+    data class Flows(val before: Map<Long, Flow>, val live: Flow?, val tail: Flow?)
+
+    /** Narration steps (Agent marks them [com.blaze.assistant.agent.Narration.META]). */
+    fun isSay(m: Msg): Boolean = com.blaze.assistant.agent.Narration.isNarration(m.meta) && m.text.isNotBlank()
+
+    /** [run]'s messages as a flow: narration → [Seg.Say]; calls of one tool in a row → one [Seg.Tools]. Pure. */
+    fun flowOf(run: List<Msg>, results: List<ToolTrail.Result>, used: BooleanArray, live: Boolean): List<Seg> {
+        val out = ArrayList<Seg>()
+        var cur = ArrayList<Step>()
+        fun flush() { if (cur.isNotEmpty()) { out += Seg.Tools("run-${cur.first().key}", Run("run-${cur.first().key}", cur.toList())); cur = ArrayList() } }
+        for (m in run) {
+            if (isSay(m)) { flush(); out += Seg.Say("say-${m.id}", m.text.trim()); continue }
+            val st = stepOf(m, results, used, live) ?: continue
+            if (cur.isNotEmpty() && cur.last().tool != st.tool) flush()
+            cur += st
+        }
+        flush()
+        return out
+    }
+
+    /** Like [turns], as flows: finished ones keyed by the message that ended them, the running one live. */
+    fun flows(msgs: List<Msg>, working: Boolean, results: List<ToolTrail.Result> = emptyList()): Flows {
+        val used = BooleanArray(results.size)
+        val before = LinkedHashMap<Long, Flow>()
+        var run = ArrayList<Msg>()
+        var prevAt = 0L
+        fun make(r: List<Msg>, live: Boolean, endAt: Long): Flow? {
+            val segs = flowOf(r, results, used, live)
+            if (segs.isEmpty()) return null
+            val s0 = start(r, prevAt)
+            return Flow("flow-${r.first().id}", segs, live, (endAt - s0).coerceAtLeast(0), s0)
+        }
+        for (m in msgs) {
+            if (m.step) { run += m; continue }
+            if (m.ack) continue
+            if (run.isNotEmpty()) { make(run, false, m.at)?.let { before[m.id] = it }; run = ArrayList() }
+            prevAt = m.at
+        }
+        if (run.isEmpty()) return Flows(before, null, null)
+        return if (working) Flows(before, make(run, true, run.last().at), null) else Flows(before, null, make(run, false, run.last().at))
     }
 
     /** The collapsed live block's words: the current line and, with calls, their count ("Reading a page · 3 steps"). */

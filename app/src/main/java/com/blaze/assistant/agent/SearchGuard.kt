@@ -21,13 +21,21 @@ class SearchGuard {
             return x.intersect(y).size.toDouble() / x.union(y).size >= 0.7
         }
         fun dupNote(q: String) = "Not run: \u201c${q.take(60)}\u201d is the third near-identical search in this task. Use what the earlier searches found, read a result with fetch_page, or answer."
+        fun againNote(q: String) = "Not run: \u201c${q.take(60)}\u201d is a near-copy of a search that already returned results in this task. Read the best of those results with fetch_page, search for something different, or answer."
+        /** A search result that counts as "found something". */
+        fun okResult(r: String): Boolean { val t = r.removePrefix("[Cached]").trimStart(); return !t.startsWith("Error") && !t.startsWith("No results") && !t.startsWith("Not run") }
         fun offNote(q: String) = "Not run: \u201c${q.take(60)}\u201d isn't about what the user asked now. Search only for the current request; don't bring back an older task."
     }
 
     private val ran = ArrayList<String>()
+    /** 0.53.3: queries that already came back with results this turn; a near-copy of one is not run again (wasted searches). */
+    private val good = ArrayList<String>()
     private val seenWords = HashSet<String>()
 
-    @Synchronized fun begin() { ran.clear(); seenWords.clear() }
+    @Synchronized fun begin() { ran.clear(); good.clear(); seenWords.clear() }
+
+    /** The search for [q] finished; [ok] = it returned results (not an error or "No results"). */
+    @Synchronized fun done(q: String, ok: Boolean) { if (ok && q.isNotBlank()) good.add(q) }
 
     /** Words from this turn's search results and pages (leads the agent may follow). */
     @Synchronized fun saw(result: String) { seenWords += words(result.take(8_000)) }
@@ -36,6 +44,7 @@ class SearchGuard {
     @Synchronized fun check(q: String, goal: String, older: String = ""): String? {
         if (q.isBlank()) return null
         if (ran.count { similar(it, q) } >= SAME_MAX) return dupNote(q)
+        if (good.any { similar(it, q) }) return againNote(q)
         val qw = words(q)
         val gw = words(goal)
         val ow = words(older) - gw

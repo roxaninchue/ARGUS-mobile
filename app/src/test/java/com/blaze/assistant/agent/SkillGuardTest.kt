@@ -57,4 +57,20 @@ class SkillGuardTest {
         val (two, _) = SkillGuard.Freq.record(skilled, Learn.signature("send the weekly report email", listOf("gmail_send")), "send the weekly report email", 3000)
         assertEquals(2, two.size)
     }
+
+    // 0.53.3 (owner screenshot 23:36): a product name never pulls a skill in.
+    private val lecture = SkillMatch.Cand("lecture-notes", "Turn a lecture recording into clean notes, a short summary and key terms",
+        listOf("student", "notes", "transcription", "summary", "lectures"), "1. …", "bundled")
+
+    @Test fun productNamesPickNoSkill() {
+        val q = "Please look for official benchmarks for Dots 3 Note Preview model"
+        assertEquals("Please look for official benchmarks for model", SkillGuard.unnamed(q))
+        assertFalse(SkillGuard.strongHit(SkillGuard.unnamed(q), lecture))
+        assertTrue(SkillMatch.selectForTurn(q, listOf(lecture, flash, builder)).isEmpty)
+        // a plain everyday word alone ("note") is weak too
+        assertFalse(SkillGuard.strongHit("make a note to buy milk", lecture))
+        // the real ask still gets it
+        assertTrue(SkillGuard.strongHit("make notes from my lecture recording", lecture))
+        assertEquals("Make Notes", SkillGuard.unnamed("Make Notes"))
+    }
 }

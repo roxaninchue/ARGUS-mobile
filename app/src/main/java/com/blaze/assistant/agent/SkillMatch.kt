@@ -169,8 +169,10 @@ object SkillMatch {
      * 0.50.0: the per-turn pick, pure. Nothing unless the message clearly asks for a task ([SkillIntent.taskIntent]); then only
      * strong hits (SkillGuard) scoring ≥ [SkillIntent.TURN_MIN], at most [SkillIntent.MAX_NAMES] in total.
      */
-    fun selectForTurn(query: String, cands: List<Cand>): Result {
-        if (!SkillIntent.taskIntent(query)) return Result.NONE
+    fun selectForTurn(query0: String, cands: List<Cand>): Result {
+        if (!SkillIntent.taskIntent(query0)) return Result.NONE
+        // 0.53.3: product / model names never pick a skill (SkillGuard.unnamed); the user naming a skill still does.
+        val query = SkillGuard.unnamed(query0)
         val r = match(query, cands.filter { SkillGuard.strongHit(query, it) }, minScore = SkillIntent.TURN_MIN, fullMin = FULL_MIN, fullWords = FULL_WORDS, maxOthers = 4)
         val full = r.full.take(SkillIntent.MAX_NAMES)
         return Result(full, r.others.take((SkillIntent.MAX_NAMES - full.size).coerceAtLeast(0)))
@@ -202,8 +204,9 @@ object SkillMatch {
         val cands = VisualRoute.filter(query, cached())
         if (!SkillIntent.taskIntent(query)) SkillIndex.promptBlock(index(cands), "") else {
             // v0.30.5: skills that only share a stray word with the request are never suggested (SkillGuard.strongHit).
-            val weak = cands.filter { !SkillGuard.strongHit(query, it) }.map { it.name }.toSet()
-            SkillIndex.promptBlock(index(cands), query, skip + weak)
+            val q = SkillGuard.unnamed(query)
+            val weak = cands.filter { !SkillGuard.strongHit(q, it) && !SkillGuard.overlap(query, it).named }.map { it.name }.toSet()
+            SkillIndex.promptBlock(index(cands), q, skip + weak)
         }
     } catch (_: Throwable) { "" }
 

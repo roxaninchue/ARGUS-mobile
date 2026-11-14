@@ -2,6 +2,7 @@ package com.blaze.assistant.agent
 
 import com.blaze.assistant.connect.Http
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -27,18 +28,50 @@ object Web {
      * "No results" is said only when every source answered and none had anything.
      */
     suspend fun search(q: String, n: Int = 6): String = withContext(Dispatchers.IO) {
-        val notes = ArrayList<String>()
+        val notes = java.util.Collections.synchronizedList(ArrayList<String>())
         val newsy = SearchChain.newsy(q)
-        for (src in SearchChain.order(newsy)) source(src, q, n, notes)?.let { return@withContext it }
+        // 0.53.3: sources that blocked us recently sit out (WebFix.Health); the first two healthy ones race, the rest follow in order.
+        val order = health.usable(SearchChain.order(newsy)) { it.name }
+        race(order.take(2), q, n, notes)?.let { return@withContext it }
+        for (src in order.drop(2)) tryOne(src, q, n, notes)?.let { return@withContext it }
         // the same sources again with simpler words ("latest news NVIDIA CEO" -> "NVIDIA CEO")
         SearchChain.simpler(q)?.let { s ->
-            for (src in SearchChain.retryOrder(newsy)) source(src, s, n, notes)?.let { return@withContext "Results for \"$s\" (simpler words):\n$it" }
+            for (src in health.usable(SearchChain.retryOrder(newsy)) { it.name }) tryOne(src, s, n, notes)?.let { return@withContext "Results for \"$s\" (simpler words):\n$it" }
         }
-        github(q, n, notes, force = false)?.let { return@withContext it }
-        if (notes.any { it.contains("blocked") || it.startsWith("Error") })
-            "Error: web search is blocked or failing right now (${notes.joinToString("; ")}). This does NOT mean nothing exists. " +
-                "Try another wording, or fetch_page a likely URL directly (for example https://github.com/search?q=${URLEncoder.encode(q, "UTF-8")}&type=repositories)."
+        github(q, n, notes, force = false)?.let { r -> WebFix.relevant(q, r)?.let { return@withContext it } }
+        val all = synchronized(notes) { notes.toList() }
+        if (all.any { WebFix.isBlockNote(it) || it.startsWith("Error") })
+            "Error: web search is blocked or failing right now (${all.joinToString("; ")}). This does NOT mean nothing exists. " +
+                "Don't search the same thing again now: fetch_page a likely URL directly (the official site, or https://github.com/search?q=${URLEncoder.encode(q, "UTF-8")}&type=repositories), or answer from what you have."
+        else if (all.any { it.contains("off-topic") }) "No results about \"$q\" (the sources only returned unrelated pages). Try the exact product or site name, or fetch_page its official site."
         else "No results for \"$q\" on ${SearchChain.NAMES}. Try different words before concluding it doesn't exist."
+    }
+
+    private val health = WebFix.Health()
+
+    /** One source, paced and health-tracked, with off-topic results dropped (WebFix). */
+    private fun tryOne(src: SearchChain.Source, q: String, n: Int, notes: MutableList<String>): String? {
+        val w = WebFix.Pace.wait(src.name); if (w > 0) try { Thread.sleep(w) } catch (_: InterruptedException) { return null }
+        val mine = ArrayList<String>()
+        val r = try { source(src, q, n + 2, mine) } catch (e: Exception) { mine += "Error: ${src.name} ${e.message}"; null }
+        notes.addAll(mine)
+        if (r == null) { if (mine.any { WebFix.isBlockNote(it) }) health.blocked(src.name); return null }
+        health.ok(src.name)
+        val rel = WebFix.relevant(q, r) ?: run { notes += "${src.name}: only off-topic results"; return null }
+        // keep n results
+        val (head, bs) = WebFix.blocks(rel)
+        return head + bs.take(n).withIndex().joinToString("\n", postfix = "\n") { (i, b) -> "${i + 1}. $b" }
+    }
+
+    /** The first non-empty answer of [srcs] run at the same time. */
+    private suspend fun race(srcs: List<SearchChain.Source>, q: String, n: Int, notes: MutableList<String>): String? = kotlinx.coroutines.coroutineScope {
+        if (srcs.isEmpty()) return@coroutineScope null
+        val ch = kotlinx.coroutines.channels.Channel<String?>(srcs.size)
+        val jobs = srcs.map { s -> launch(Dispatchers.IO) { ch.send(tryOne(s, q, n, notes)) } }
+        var out: String? = null
+        repeat(srcs.size) { if (out == null) out = ch.receive() }
+        jobs.forEach { it.cancel() }
+        out
     }
 
     private fun source(src: SearchChain.Source, q: String, n: Int, notes: MutableList<String>): String? = when (src) {
@@ -164,10 +197,40 @@ object Web {
         return out.toString()
     }
 
+    /**
+     * 0.53.3: a Google News link is first turned into the publisher's URL (WebFix.gnId); a page that can't be opened (error,
+     * block code, bot check, empty script shell) is read once through a reader service (setting reader_fallback, on).
+     */
     suspend fun fetch(url: String, max: Int = 9000): String = withContext(Dispatchers.IO) {
+        var u = url.trim()
+        var via = ""
+        WebFix.gnId(u)?.let { id -> gnDecode(id)?.let { real -> u = real; via = "(Google News link opened at $real)\n" } }
+        val first = fetchRaw(u, max)
+        if (!WebFix.readerWorth(first) || !readerOn()) return@withContext via + first
+        val (code, body) = try { Http.req("GET", WebFix.READER + u, headers = mapOf("User-Agent" to UA, "Accept" to "text/plain", "X-Return-Format" to "text"), timeoutMs = 20_000) }
+            catch (_: Exception) { return@withContext via + first }
+        if (code !in 200..299 || body.isBlank()) return@withContext via + first
+        val t = body.trim()
+        via + "(read through a reader service; the site itself refused a direct read)\n" + (if (t.length > max) t.take(max) + "\n…(cut, ${t.length} chars total)" else t)
+    }
+
+    private fun readerOn(): Boolean = try { Settings.bool("reader_fallback", true) } catch (_: Throwable) { true }
+
+    /** The publisher URL behind a Google News article id, or null. */
+    private fun gnDecode(id: String): String? = try {
+        val (c1, page) = Http.req("GET", "https://news.google.com/articles/$id", headers = mapOf("User-Agent" to DESKTOP_UA, "Accept-Language" to "en-US,en;q=0.9"), timeoutMs = 10_000)
+        val p = if (c1 in 200..299) WebFix.gnParams(page) else null
+        if (p == null) null else {
+            val (c2, body) = Http.req("POST", "https://news.google.com/_/DotsSplashUi/data/batchexecute", WebFix.gnRequest(id, p.second, p.first),
+                headers = mapOf("User-Agent" to DESKTOP_UA), contentType = "application/x-www-form-urlencoded;charset=UTF-8", timeoutMs = 10_000)
+            if (c2 in 200..299) WebFix.gnParse(body) else null
+        }
+    } catch (_: Exception) { null }
+
+    private fun fetchRaw(url: String, max: Int): String {
         val (code, body) = try { Http.req("GET", url, headers = mapOf("User-Agent" to UA, "Accept" to "text/html,application/json,text/plain"), timeoutMs = 20_000, strict = false) }
-            catch (e: Exception) { return@withContext "Error: couldn't open $url (${e.message})" }
-        if (code !in 200..299) return@withContext "Error: HTTP $code from $url"
+            catch (e: Exception) { return "Error: couldn't open $url (${e.message})" }
+        if (code !in 200..299) return "Error: HTTP $code from $url"
         val t = body.trimStart()
         val text = if (t.startsWith("{") || t.startsWith("[")) t else {
             val titled = Regex("<title[^>]*>([\\s\\S]*?)</title>", RegexOption.IGNORE_CASE).find(body)?.groupValues?.get(1)?.let { strip(it) }.orEmpty()
@@ -176,7 +239,7 @@ object Web {
             (if (titled.isNotBlank()) "# $titled\n" else "") + strip(main).lines().map { it.trim() }.filter { it.length > 1 }.joinToString("\n")
         }
         val imgs = if (t.startsWith("{") || t.startsWith("[")) "" else images(body, url)
-        (if (text.length > max) text.take(max) + "\n…(cut, ${text.length} chars total)" else text) + imgs
+        return (if (text.length > max) text.take(max) + "\n…(cut, ${text.length} chars total)" else text) + imgs
     }
 
     /**

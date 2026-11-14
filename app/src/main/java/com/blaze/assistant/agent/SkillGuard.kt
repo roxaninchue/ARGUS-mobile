@@ -25,7 +25,39 @@ object SkillGuard {
     /** Distinct request words the skill's name / keywords / description share, and whether a name word is among them. */
     data class Overlap(val words: Int, val nameWord: Boolean, val named: Boolean)
 
-    private val weakName = setOf("phone", "task", "app", "skill", "flow", "speed", "general", "workflow", "blaze", "argus", "helper", "tool", "open")
+    // 0.53.3 (owner screenshot 23:36: "official benchmarks for Dots 3 Note Preview model" loaded lecture-notes): everyday words
+    // that also sit in skill names ("note", "page", "list", "model"…) are weak: alone they never pull a skill in.
+    private val weakName = setOf("phone", "task", "app", "skill", "flow", "speed", "general", "workflow", "blaze", "argus", "helper", "tool", "open",
+        "note", "page", "list", "file", "model", "message", "post", "data", "text", "preview", "review", "card", "report", "builder", "lab", "kit")
+
+    /**
+     * 0.53.3: the request with proper names taken out before skills are matched: a run of 2+ capitalised words / numbers
+     * that doesn't start the sentence ("Dots 3 Note Preview", "Google Pixel 9"), or a quoted name. A product's name says
+     * nothing about which skill to load. When almost nothing is left the request is used as it is.
+     */
+    fun unnamed(request: String): String {
+        val noQuotes = request.replace(Regex("[\"\u201c\u201d][^\"\u201c\u201d]{2,60}[\"\u201c\u201d]"), " ")
+        val tok = Regex("[\\p{L}\\p{N}][\\p{L}\\p{N}.'-]*")
+        val ms = tok.findAll(noQuotes).toList()
+        if (ms.isEmpty()) return request
+        fun cap(t: String) = t[0].isUpperCase() || t[0].isDigit()
+        val drop = HashSet<Int>()
+        var i = 0
+        while (i < ms.size) {
+            if (!cap(ms[i].value)) { i++; continue }
+            var j = i
+            while (j + 1 < ms.size && cap(ms[j + 1].value) && noQuotes.substring(ms[j].range.last + 1, ms[j + 1].range.first).isBlank()) j++
+            val sentenceStart = i == 0 || noQuotes.substring(0, ms[i].range.first).trimEnd().let { it.isEmpty() || it.last() in ".!?\n:" }
+            val len = j - i + 1
+            val words = (i..j).count { ms[it].value.any(Char::isLetter) }
+            // a name: 2+ capitalised tokens with at least one word (a sentence-opening run needs 3, "Make Notes" stays)
+            if (words >= 1 && ((len >= 2 && !sentenceStart) || len >= 3)) { val from = if (sentenceStart && len >= 3) i + 1 else i; for (k in from..j) drop += k }
+            i = j + 1
+        }
+        if (drop.isEmpty()) return noQuotes
+        val kept = ms.withIndex().filter { it.index !in drop }.joinToString(" ") { it.value.value }
+        return if (SkillMatch.words(kept).size >= 1) kept else request
+    }
 
     fun overlap(request: String, c: SkillMatch.Cand): Overlap {
         val q = SkillMatch.words(request)
