@@ -27,3 +27,12 @@ Reported by Finn, 14 Nov 2026 (same "dots3 note preview" task: the agent found t
 2. "Go to the source" rule: when the answer names a likely canonical page (Hugging Face model card, GitHub repo, official docs), fetch_page it before telling the user to look themselves. Never end with "search for X yourself" while a fetch is untried.
 3. When a found page carries a chart/table image relevant to the ask, read it (vision) before concluding the data isn't available.
 4. Measure: log per-search outcome (source, ok/blocked/empty/irrelevant) so success rate is visible in the gateway admin, and track it release to release.
+
+### Search API shortlist (prices checked 14 Nov 2026, from each provider's pricing page)
+| Provider | Free | Paid | Notes |
+|---|---|---|---|
+| Exa | $10 credits every month, no card (~2,500 Lite searches) | Lite search $4 / 1k | Built for agents; page text in results |
+| Brave Search API | $5 credits every month (~1,000 searches); card required | $5 / 1k | Own index (no Google/Bing), fastest in AIMultiple test |
+| Tavily | 1,000 credits / month, no card | $0.008 / credit PAYG, or $30/mo for 4,000 | Agent-oriented, extract endpoint too |
+| Serper (Google results) | 2,500 queries once | $50 for 50k ($1 / 1k), credits last 6 months | Cheapest at volume; scraped Google |
+Proposal: Exa as primary (largest monthly free allowance, no card), keyless chain as fallback. Needs Finn's OK.
