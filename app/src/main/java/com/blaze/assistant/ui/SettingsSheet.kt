@@ -291,22 +291,25 @@ internal fun RevealEye(reveal: Boolean, onToggle: () -> Unit) {
     }
 }
 
-/** v0.45.7 Settings › Language: Auto (match the user) or one fixed reply language. */
+/**
+ * Settings › Language (owner 2026-11-14): the app's language, each listed by its own name. Replies always follow the
+ * language you write in, so there is no reply pick any more.
+ */
 @Composable
 private fun LanguagePage() {
     val c = LocalBlaze.current.mono
-    var sel by remember { mutableStateOf(com.blaze.assistant.agent.ReplyLanguage.current()) }
-    Text("${BrandName.NAME} replies in this language. Auto answers in whatever language you write in.",
+    val sel = com.blaze.assistant.i18n.AppLang.code.value
+    Text(com.blaze.assistant.i18n.tr("The app shows in this language. ${BrandName.NAME} always replies in the language you write in."),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub), modifier = Modifier.padding(vertical = 8.dp))
-    com.blaze.assistant.agent.ReplyLanguage.OPTIONS.forEach { o ->
+    com.blaze.assistant.i18n.AppLang.ALL.forEach { o ->
         val on = o.code == sel
-        Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClickLabel = o.label) {
-                com.blaze.assistant.agent.ReplyLanguage.set(o.code); sel = o.code; FontPick.refresh()
+        Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClickLabel = o.name) {
+                Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, o.code); com.blaze.assistant.i18n.AppLang.apply(o.code); FontPick.refresh()
             }.padding(vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-            // The label in its own script, drawn by the system font (Inter has no Ge'ez or Arabic letters).
-            Text(o.label, modifier = Modifier.weight(1f),
-                style = TextStyle(fontFamily = Type.sansFor(o.label), fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, fontSize = 17.sp, color = c.ink))
-            if (on) androidx.compose.material3.Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = c.accent, modifier = Modifier.size(20.dp))
+            // The name in its own script, drawn by the system font when Inter lacks its letters.
+            Text(o.name, modifier = Modifier.weight(1f),
+                style = TextStyle(fontFamily = Type.sansFor(o.name), fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, fontSize = 17.sp, color = c.ink))
+            if (on) androidx.compose.material3.Icon(Icons.Rounded.Check, contentDescription = com.blaze.assistant.i18n.tr("Selected"), tint = c.accent, modifier = Modifier.size(20.dp))
         }
     }
 }

@@ -116,7 +116,8 @@ fun blazePalette(dark: Boolean, lookAccent: Long? = null): BlazeColors {
 object FontPick {
     val system = androidx.compose.runtime.mutableStateOf(false)
     fun refresh() {
-        system.value = try { com.blaze.assistant.agent.ReplyLanguage.systemFont(com.blaze.assistant.agent.ReplyLanguage.current()) } catch (_: Throwable) { false }
+        // Owner 2026-11-14: the app language decides (replies always follow the user's language)
+        system.value = try { com.blaze.assistant.i18n.AppLang.current.systemFont } catch (_: Throwable) { false }
     }
 }
 
@@ -183,7 +184,12 @@ fun BlazeTheme(content: @Composable () -> Unit) {
         val density = androidx.compose.runtime.remember(base, scale) {
             if (scale == 1f) base else androidx.compose.ui.unit.Density(base.density * scale, base.fontScale * scale)
         }
-        CompositionLocalProvider(LocalBlaze provides c, androidx.compose.ui.platform.LocalDensity provides density, content = content)
+        // Owner 2026-11-14: right-to-left languages (Arabic) lay the whole app out right to left
+        val rtl = com.blaze.assistant.i18n.AppLang.lang(com.blaze.assistant.i18n.AppLang.code.value).rtl
+        androidx.compose.runtime.LaunchedEffect(com.blaze.assistant.i18n.AppLang.code.value) { FontPick.refresh() }
+        CompositionLocalProvider(LocalBlaze provides c, androidx.compose.ui.platform.LocalDensity provides density,
+            androidx.compose.ui.platform.LocalLayoutDirection provides if (rtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr,
+            content = content)
     }
 }
 

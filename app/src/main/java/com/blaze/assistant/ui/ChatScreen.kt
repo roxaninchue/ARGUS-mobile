@@ -1193,9 +1193,12 @@ fun ChatScreen() {
                 },
                 onRetry = { com.blaze.assistant.setup.SetupRunner.retry(ctx) },
                 accountCard = { AccountPage() })
-            BackHandler(enabled = step != com.blaze.assistant.ui.space.SpaceOnboarding.Step.WELCOME) {
-                obStep = if (step == com.blaze.assistant.ui.space.SpaceOnboarding.Step.SETUP && me == null && !Settings.ready)
-                    com.blaze.assistant.ui.space.SpaceOnboarding.Step.SIGN_IN.name else com.blaze.assistant.ui.space.SpaceOnboarding.Step.WELCOME.name
+            BackHandler(enabled = step != com.blaze.assistant.ui.space.SpaceOnboarding.Step.LANGUAGE) {
+                obStep = when {
+                    step == com.blaze.assistant.ui.space.SpaceOnboarding.Step.WELCOME -> com.blaze.assistant.ui.space.SpaceOnboarding.Step.LANGUAGE.name   // owner 2026-11-14
+                    step == com.blaze.assistant.ui.space.SpaceOnboarding.Step.SETUP && me == null && !Settings.ready -> com.blaze.assistant.ui.space.SpaceOnboarding.Step.SIGN_IN.name
+                    else -> com.blaze.assistant.ui.space.SpaceOnboarding.Step.WELCOME.name
+                }
             }
         }
     }

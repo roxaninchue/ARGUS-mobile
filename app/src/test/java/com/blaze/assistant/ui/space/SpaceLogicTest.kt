@@ -251,7 +251,8 @@ class SpaceLogicTest {
     }
 
     @Test fun onboardingIsWelcomeThenOneSetupScreen() {
-        assertEquals(S.WELCOME, SpaceOnboarding.first())
+        assertEquals(S.LANGUAGE, SpaceOnboarding.first())   // owner 2026-11-14: language first
+        assertEquals(S.WELCOME, SpaceOnboarding.next(S.LANGUAGE, signedIn = false))
         assertEquals(S.SETUP, SpaceOnboarding.next(S.WELCOME, signedIn = true))
         assertEquals(S.SIGN_IN, SpaceOnboarding.next(S.WELCOME, signedIn = false))
         assertEquals(S.SETUP, SpaceOnboarding.next(S.SIGN_IN, signedIn = false))

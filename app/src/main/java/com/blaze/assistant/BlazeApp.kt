@@ -21,6 +21,11 @@ class BlazeApp : Application() {
         com.blaze.assistant.device.StartGuard.begin(this)   // 0.45.16: crash-loop detection (safe start)
         com.blaze.assistant.device.MainWatch.start()        // 0.45.16: ANR / stall log with the main thread's stack
         com.blaze.assistant.device.StartGuard.step("Settings.init") { Settings.init(this) }
+        // Owner 2026-11-14: the app language (assets/i18n tables), the saved pick or the phone's language
+        com.blaze.assistant.device.StartGuard.step("AppLang.init") {
+            com.blaze.assistant.i18n.AppLang.init({ c -> try { assets.open("i18n/$c.json").bufferedReader().use { it.readText() } } catch (_: java.io.IOException) { null } },
+                Settings.str(com.blaze.assistant.i18n.AppLang.PREF), java.util.Locale.getDefault().toLanguageTag())
+        }
         com.blaze.assistant.device.StartGuard.step("Agent.preload") { Agent.preload(this) }   // v0.45.0 (#2): the main chat is read and parsed on a background thread while the rest starts
         com.blaze.assistant.device.StartGuard.step("agent.SimpleMode.load") { com.blaze.assistant.agent.SimpleMode.load() }   // v0.39.0 Simple / Advanced
         com.blaze.assistant.device.StartGuard.step("agent.SwipeNav.load") { com.blaze.assistant.agent.SwipeNav.load() }     // v0.39.0 Navigation: Swipe or Classic tabs

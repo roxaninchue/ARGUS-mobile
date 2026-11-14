@@ -6,6 +6,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -125,12 +128,49 @@ fun SpaceOnboardingScreen(
             AnimatedContent(step, transitionSpec = { fadeIn(com.blaze.assistant.ui.MotionTokens.medium()) togetherWith fadeOut(com.blaze.assistant.ui.MotionTokens.fast()) },
                 label = "onboarding") { s ->
                 when (s) {
+                    SpaceOnboarding.Step.LANGUAGE -> LanguageStep(onNext)
                     SpaceOnboarding.Step.WELCOME -> Welcome(onNext)
                     SpaceOnboarding.Step.SIGN_IN -> SignIn(signedIn, onNext, accountCard)
                     SpaceOnboarding.Step.SETUP -> SpaceSetupScreen(setup, onNext, onRetry)
                 }
             }
         }
+    }
+}
+
+/**
+ * Owner 2026-11-14: first run starts with the language, each listed by its own name, the phone's language picked to
+ * begin with. A tap switches the whole app at once; Continue moves on.
+ */
+@Composable
+private fun LanguageStep(onNext: () -> Unit) {
+    val look = SpaceLook.Dark
+    val sel = com.blaze.assistant.i18n.AppLang.code.value
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 18.dp, vertical = 18.dp)) {
+        ArgusLogo(120.dp, Modifier.align(Alignment.CenterHorizontally))
+        Spacer(Modifier.height(18.dp))
+        SpaceHeadline(com.blaze.assistant.i18n.tr("Choose your language"), size = 30.sp)
+        Spacer(Modifier.height(6.dp))
+        Text(com.blaze.assistant.i18n.tr("{0} always replies in the language you write in.", BrandName.UPPER), style = SpaceType.body(15.sp, look.sub))
+        Spacer(Modifier.height(12.dp))
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            for (l in com.blaze.assistant.i18n.AppLang.ALL) {
+                val on = l.code == sel
+                Row(Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                    .selectable(selected = on, role = androidx.compose.ui.semantics.Role.RadioButton) {
+                        com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, l.code)
+                        com.blaze.assistant.i18n.AppLang.apply(l.code); com.blaze.assistant.ui.FontPick.refresh()
+                    }.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(l.name, modifier = Modifier.weight(1f),
+                        style = SpaceType.body(18.sp, if (on) look.ink else look.sub).copy(fontFamily = com.blaze.assistant.ui.Type.sansFor(l.name),
+                            fontWeight = if (on) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal))
+                    if (on) androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Check, contentDescription = null,
+                        tint = look.ink, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        SpacePillButton(com.blaze.assistant.i18n.tr("Continue"), onNext, primary = true, modifier = Modifier.widthIn(max = 420.dp).align(Alignment.CenterHorizontally))
     }
 }
 

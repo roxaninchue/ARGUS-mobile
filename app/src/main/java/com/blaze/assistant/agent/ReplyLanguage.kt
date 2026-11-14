@@ -33,8 +33,8 @@ object ReplyLanguage {
     const val HEADER = "X-Blaze-Reply-Lang"
     fun header(code: String?): Pair<String, String>? = option(code).code.takeIf { it != "auto" }?.let { HEADER to it }
 
-    /** The saved choice ("auto" when unset or unreadable). */
-    fun current(): String = try { option(Settings.str(PREF, "auto")).code } catch (_: Throwable) { "auto" }
+    /** Always Auto since 2026-11-14; Settings › Language is the app's language now (i18n/AppLang). */
+    fun current(): String = "auto"   // owner 2026-11-14: ARGUS always replies in the language you write in (the pick is gone)
 
     fun set(code: String) { Settings.setStr(PREF, option(code).code) }
 

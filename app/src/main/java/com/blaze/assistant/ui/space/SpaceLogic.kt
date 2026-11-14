@@ -351,15 +351,17 @@ object SpaceSettings {
  * notification prompt comes from Android at first launch and every other permission is asked when a task needs it.
  */
 object SpaceOnboarding {
-    enum class Step { WELCOME, SIGN_IN, SETUP }
+    /** Owner 2026-11-14: the language comes first, before anything else is said. */
+    enum class Step { LANGUAGE, WELCOME, SIGN_IN, SETUP }
 
     const val TAGLINE = "Intelligence beyond the interface"
     const val PREF_ONBOARDED = "onboarded"
 
-    fun first(): Step = Step.WELCOME
+    fun first(): Step = Step.LANGUAGE
 
     /** The step after [step]; null = onboarding is over (into the app). */
     fun next(step: Step, signedIn: Boolean): Step? = when (step) {
+        Step.LANGUAGE -> Step.WELCOME
         Step.WELCOME -> if (signedIn) Step.SETUP else Step.SIGN_IN
         Step.SIGN_IN -> Step.SETUP
         Step.SETUP -> null
