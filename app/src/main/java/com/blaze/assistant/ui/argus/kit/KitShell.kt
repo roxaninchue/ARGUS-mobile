@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -179,17 +180,20 @@ fun ArgusComposer(
     modifier: Modifier = Modifier,
     plusOpen: Boolean = false,
     onMicHold: (() -> Unit)? = null,
+    top: (@Composable () -> Unit)? = null,
 ) {
     val c = Argus.colors
     val t = ShellSpec.Composer.trailing(value.text, attachments, streaming)
     // A fixed corner (half the one-line height), not PILL: one line still reads as a pill, but a long prompt grows into a
     // rounded box instead of an oval that cuts across the + and send buttons (owner, 13 Nov 2026).
     val shape = RoundedCornerShape(ShellSpec.Composer.CORNER.dp)
-    Row(
+    // [top] (the model chip) is the surface's first row: one glass, one edge, no seam between chip and field (owner 2026-11-14)
+    Column(
         modifier.fillMaxWidth().padding(horizontal = ShellSpec.Composer.SIDE.dp, vertical = 6.dp)
             .heightIn(min = ShellSpec.Composer.HEIGHT.dp).argusGlass(GlassLevel.CHROME, shape).padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.Bottom,
     ) {
+    if (top != null) Box(Modifier.padding(start = 8.dp)) { top() }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         ComposerDisc(if (plusOpen) "x" else "plus", if (plusOpen) KitA11y.Shell.PLUS_CLOSE else KitA11y.Shell.PLUS, onPlus, ink = false)
         val placeholder = ShellSpec.Composer.placeholder(mode)
         BasicTextField(
@@ -211,6 +215,7 @@ fun ArgusComposer(
         val act = when (t) { ShellSpec.Composer.Trailing.MIC -> onMic; ShellSpec.Composer.Trailing.SEND -> onSend; ShellSpec.Composer.Trailing.STOP -> onStop }
         ComposerDisc(ShellSpec.Composer.trailingIcon(t), ShellSpec.Composer.trailingLabel(t), act,
             ink = t != ShellSpec.Composer.Trailing.MIC, onLong = if (t == ShellSpec.Composer.Trailing.MIC) onMicHold else null)
+    }
     }
 }
 

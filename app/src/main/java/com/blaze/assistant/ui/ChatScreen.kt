@@ -734,7 +734,11 @@ fun ChatScreen() {
             .then(if (swipeMode && p < 1f) Modifier.background(c.paper).glassBackground(c.dark) else Modifier)) {
         // v0.45.8: Design is its own full-screen view: no chat top bar over its canvas.
         val designFull = DesignNav.fullScreen(showing, nav)
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
+        // Owner 2026-11-14: the keyboard only lifts the chat column when it is typing into it; Spotlight, chat search, the
+        // history drawer's search and Settings bring their own field, so the chatbox stays put under them.
+        val lift = com.blaze.assistant.ui.argus.kit.ShellSpec.Composer.liftsWithKeyboard(spotlight = composer.spotlightOpen,
+            search = showSearch, drawer = com.blaze.assistant.ui.team.ChatDrawerUi.showing(), settings = settingsPage != null)
+        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().then(if (lift) Modifier.imePadding() else Modifier)) {
             // v0.39.0 Simple mode: pull down from the top (the bar above the header, or the header itself) for Home.
             // 0.50.0: the chat box's expand arrows maximise the chat (no top bar, no pull handle); Back restores first.
             val maxed = ChatExpand.on && chatBody
@@ -1049,13 +1053,14 @@ fun ChatScreen() {
                 // P1-SH-01: the ARGUS composer (+ · text · mic / send / stop, 5 lines); a message from Team, Life or Desk goes
                 // to ARGUS and opens Chat (routing from Team comes with P1-TM-06).
                 // 0.53.0: the manual model + effort chip sits over the composer (ModelPick; Auto by default).
-                if (argus) androidx.compose.foundation.layout.Column { com.blaze.assistant.ui.argus.kit.ModelChip(Modifier.padding(start = 18.dp))
-                com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
+                // Owner 2026-11-14: chip and chatbox are one surface (the chip is the composer's top row, no edge of its own).
+                if (argus) com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
                     mode = if (nav.inProjectChat) ChatNav.CHAT else nav.tab, streaming = mood != Mood.IDLE, attachments = pending.size,
                     onPlus = { plusOpen = !plusOpen; showViews = false; notchOpen = false }, plusOpen = plusOpen,
                     // P1-TM-06: from Team the router decides (a job or a hand-off stays on Team; conversation opens Chat)
                     onSend = { val t = input.text; send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && navNow().tab != ChatNav.TEAM && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
-                    onMic = { onMic() }, onStop = { Agent.stop() }) }
+                    onMic = { onMic() }, onStop = { Agent.stop() },
+                    top = { com.blaze.assistant.ui.argus.kit.ModelChip(flat = true) })
                 else Composer(input, { input = it; Agent.typing(it.text.isNotEmpty()) }, busy = mood != Mood.IDLE, canSend = input.text.isNotBlank() || pending.isNotEmpty(),
                     plusOpen = plusOpen, chip = modeChip(work, approval), agents = bgAgents.count { it.live },
                     listening = voiceState == Voice.State.LISTENING, speaking = voiceState == Voice.State.SPEAKING,
@@ -1085,6 +1090,9 @@ fun ChatScreen() {
                     onVoice = { startCall() })
             }
         }
+        // Owner 2026-11-14: the history drawer over the whole screen, so the top bar and the chatbox sit under its scrim
+        // instead of reading as parts with their own edges. Empty unless Chat mode is showing.
+        if (argus) com.blaze.assistant.ui.team.ChatDrawerLayer()
         // P1-SH-01: the top bar's New sheet (P1-TM-04: Bot; jobs join it with the job sheet).
         if (argus && newOpen) com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = "New") {
             com.blaze.assistant.ui.argus.kit.MenuRow("bot", "Bot", { newOpen = false; botFlow = com.blaze.assistant.ui.team.BotFlow.New }, sub = "A new bot for your team")

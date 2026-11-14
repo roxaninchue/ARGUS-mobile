@@ -30,6 +30,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.material3.DrawerValue
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
@@ -212,8 +215,7 @@ fun ChatModeFrame(
     val allChats by Agent.chats.collectAsState()
     val projects by Projects.all.collectAsState()
     val deleted by ChatModeRuntime.deleted.collectAsState()
-    var query by remember { mutableStateOf("") }
-    var menuFor by remember { mutableStateOf<ChatDrawerModel.Entry?>(null) }
+    var menuFor by ChatDrawerUi.menuFor
     var renaming by remember { mutableStateOf<ChatDrawerModel.Entry?>(null) }
     val chats = remember(version) { ChatModeRuntime.chats() }
     val msgs = remember(messages) { messages.map(ChatModeRuntime::msg) }
@@ -226,30 +228,14 @@ fun ChatModeFrame(
         if (mood != Mood.IDLE) wasBusy = true
         else if (wasBusy) { wasBusy = false; if (!privateOn) ChatModeRuntime.onIdle(viewing = !drawer.isOpen && !chats.readOnly) }
     }
-    if (drawer.isOpen) BackHandler { scope.launch { drawer.close() } }
-
-    ModalNavigationDrawer(
-        drawerState = drawer,
-        gesturesEnabled = drawer.isOpen,
-        modifier = modifier,
-        drawerContent = {
-            val state = remember(version, msgs, allChats, projects, query, mood) {
-                val pc = allChats.mapNotNull { meta -> Projects.of(meta.id)?.let { p -> ChatDrawerModel.ProjectChat(meta, p.name) } }
-                ChatDrawerModel.state(chats, msgs, pc, System.currentTimeMillis(), zone, query,
-                    replying = if (mood != Mood.IDLE) chats.live else null)
-            }
-            ChatDrawerSheet(state, query, { query = it },
-                onOpen = { e ->
-                    when (val k = e.key) {
-                        is ChatDrawerModel.Key.Manager -> ChatModeRuntime.open(k.g)
-                        is ChatDrawerModel.Key.Project -> onOpenProjectChat(k.chatId)
-                    }
-                    scope.launch { drawer.close() }
-                },
-                onMenu = { e -> menuFor = e },
-                onNew = { ChatModeRuntime.newChat(ctx); scope.launch { drawer.close() } })
-        },
-    ) {
+    // Owner 2026-11-14: the drawer is drawn over the whole screen by [ChatDrawerLayer] (top bar to the composer, one
+    // surface, no seams), so the frame only publishes its drawer and what a pick does.
+    DisposableEffect(drawer) {
+        ChatDrawerUi.drawer.value = drawer
+        onDispose { if (ChatDrawerUi.drawer.value === drawer) ChatDrawerUi.drawer.value = null }
+    }
+    ChatDrawerUi.onOpenProjectChat = onOpenProjectChat
+    run {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -318,6 +304,58 @@ fun ChatModeFrame(
     }
 }
 
+/** The chat drawer's state, shared by [ChatModeFrame] (which owns it) and [ChatDrawerLayer] (which draws it). */
+object ChatDrawerUi {
+    val drawer = mutableStateOf<DrawerState?>(null)
+    val menuFor = mutableStateOf<ChatDrawerModel.Entry?>(null)
+    var onOpenProjectChat: (String) -> Unit = {}
+    /** Open or opening: the keyboard is for the drawer's search, so the composer stays where it is. */
+    fun showing(): Boolean = drawer.value?.let { it.isOpen || it.targetValue == DrawerValue.Open } ?: false
+}
+
+/**
+ * The history drawer over the whole screen (owner 2026-11-14: the top bar, notch, chatbox and model chip must not read as
+ * separate parts with their own edges around it). Draw it last at the screen's root; it is empty while Chat mode is not
+ * showing, and while closed it lets every touch through.
+ */
+@Composable
+fun ChatDrawerLayer(modifier: Modifier = Modifier, zone: ZoneId = ZoneId.systemDefault()) {
+    val drawer = ChatDrawerUi.drawer.value ?: return
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val version by ChatModeRuntime.version.collectAsState()
+    val messages by Agent.messages.collectAsState()
+    val mood by Agent.mood.collectAsState()
+    val allChats by Agent.chats.collectAsState()
+    val projects by Projects.all.collectAsState()
+    var query by remember { mutableStateOf("") }
+    val chats = remember(version) { ChatModeRuntime.chats() }
+    val msgs = remember(messages) { messages.map(ChatModeRuntime::msg) }
+    if (drawer.isOpen) BackHandler { scope.launch { drawer.close() } }
+    ModalNavigationDrawer(
+        drawerState = drawer,
+        gesturesEnabled = drawer.isOpen,
+        modifier = modifier.fillMaxSize(),
+        drawerContent = {
+            val state = remember(version, msgs, allChats, projects, query, mood) {
+                val pc = allChats.mapNotNull { meta -> Projects.of(meta.id)?.let { p -> ChatDrawerModel.ProjectChat(meta, p.name) } }
+                ChatDrawerModel.state(chats, msgs, pc, System.currentTimeMillis(), zone, query,
+                    replying = if (mood != Mood.IDLE) chats.live else null)
+            }
+            ChatDrawerSheet(state, query, { query = it },
+                onOpen = { e ->
+                    when (val k = e.key) {
+                        is ChatDrawerModel.Key.Manager -> ChatModeRuntime.open(k.g)
+                        is ChatDrawerModel.Key.Project -> ChatDrawerUi.onOpenProjectChat(k.chatId)
+                    }
+                    scope.launch { drawer.close() }
+                },
+                onMenu = { e -> ChatDrawerUi.menuFor.value = e },
+                onNew = { ChatModeRuntime.newChat(ctx); scope.launch { drawer.close() } })
+        },
+    ) { Box(Modifier.fillMaxSize()) }
+}
+
 /**
  * The history drawer's sheet, stateless (P1-QA-01 split it out of [ChatModeFrame] so the shots draw it on fixtures):
  * search, the sections of [state] (Pinned / Today / Yesterday / Previous 7 days / Older), and New chat.
@@ -332,7 +370,7 @@ fun ChatDrawerSheet(
     onNew: () -> Unit,
 ) {
     val c = Argus.colors
-    ModalDrawerSheet(drawerContainerColor = c.bg, drawerContentColor = c.ink) {
+    ModalDrawerSheet(drawerShape = RectangleShape, drawerContainerColor = c.bg, drawerContentColor = c.ink) {
         Column(Modifier.fillMaxHeight().padding(horizontal = 12.dp)) {
             Spacer(Modifier.height(12.dp))
             ArgusSearch(query, onQuery, placeholder = "Search chats")

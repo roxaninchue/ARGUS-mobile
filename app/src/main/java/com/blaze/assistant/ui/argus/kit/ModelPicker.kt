@@ -47,17 +47,18 @@ import com.blaze.assistant.ui.argus.icons.Lucide
  * this account (GET /v1/models/live, plan-filtered), then the picked model's efforts when it has any. Nothing else is offered.
  */
 @Composable
-fun ModelChip(modifier: Modifier = Modifier, force: List<LiveModels.Member>? = null) {
+fun ModelChip(modifier: Modifier = Modifier, force: List<LiveModels.Member>? = null, flat: Boolean = false) {
     val c = Argus.colors
     val choice by ModelPick.current.collectAsState()
     var open by remember { mutableStateOf(false) }
     var list by remember { mutableStateOf(force ?: LiveModels.shared.list()) }
     LaunchedEffect(choice, open) { if (force == null) { LiveModelsFeed.touchNow(); kotlinx.coroutines.delay(1_500); list = LiveModels.shared.list() } }
     val label = ModelPick.label(list, choice)
-    Box(modifier.heightIn(min = 44.dp).clickable(role = Role.Button) { open = true }
+    // flat: drawn as the composer's top row (owner 2026-11-14: chip and chatbox one surface), so no pill of its own
+    Box(modifier.heightIn(min = if (flat) 36.dp else 44.dp).clickable(role = Role.Button) { open = true }
         .clearAndSetSemantics { contentDescription = "Model: $label. Change model"; role = Role.Button; onClick { open = true; true } },
         contentAlignment = Alignment.CenterStart) {
-        Row(Modifier.heightIn(min = 30.dp).argusGlass(GlassLevel.RAISED, RoundedCornerShape(ArgusTokens.Radius.PILL.dp), shadow = false)
+        Row(Modifier.heightIn(min = 30.dp).then(if (flat) Modifier else Modifier.argusGlass(GlassLevel.RAISED, RoundedCornerShape(ArgusTokens.Radius.PILL.dp), shadow = false))
             .padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             val logo = if (choice.auto) null else Brands.icon(ModelList.brand(label, choice.key), c.ink)
             if (logo != null) androidx.compose.foundation.Image(logo, null, Modifier.size(14.dp))

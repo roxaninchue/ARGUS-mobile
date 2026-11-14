@@ -49,6 +49,13 @@ object ShellSpec {
          * reproducible from (step, seed). Only a fade, never a slide (the owner gets motion sick); with animations off the
          * field shows the static [placeholder]. Screen readers always hear the static placeholder.
          */
+        /**
+         * Owner 2026-11-14: the keyboard lifts the chat column (and the chatbox with it) only when it types into it.
+         * Spotlight, chat search, the history drawer and Settings bring their own field, so the chatbox stays put under them.
+         */
+        fun liftsWithKeyboard(spotlight: Boolean, search: Boolean, drawer: Boolean, settings: Boolean): Boolean =
+            !(spotlight || search || drawer || settings)
+
         object Hints {
             /** One change every this long, and the lead changes every [LEAD_EVERY] changes. */
             const val INTERVAL_MS = 3_200L

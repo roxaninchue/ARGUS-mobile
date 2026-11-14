@@ -76,4 +76,28 @@ class ShellSpecTest {
         assertTrue("slow enough not to bother anyone", H.INTERVAL_MS >= 2_500L && H.FADE_MS <= 800)
         assertEquals("the static hint is still Ask anything", "Ask anything", ShellSpec.Composer.placeholder("chat"))
     }
+
+    /** Owner 2026-11-14: the chatbox only rides up with the keyboard when the keyboard is for it. */
+    @Test fun keyboardLiftsTheChatboxOnlyForItself() {
+        val C = ShellSpec.Composer
+        assertTrue(C.liftsWithKeyboard(spotlight = false, search = false, drawer = false, settings = false))
+        assertFalse(C.liftsWithKeyboard(spotlight = true, search = false, drawer = false, settings = false))
+        assertFalse(C.liftsWithKeyboard(spotlight = false, search = true, drawer = false, settings = false))
+        assertFalse(C.liftsWithKeyboard(spotlight = false, search = false, drawer = true, settings = false))
+        assertFalse(C.liftsWithKeyboard(spotlight = false, search = false, drawer = false, settings = true))
+        val screen = java.io.File("src/main/java/com/blaze/assistant/ui/ChatScreen.kt").readText()
+        assertTrue(screen.contains("liftsWithKeyboard(") && screen.contains("if (lift) Modifier.imePadding()"))
+    }
+
+    /** Owner 2026-11-14: one continuous surface: drawer over the whole screen, chip and chatbox one glass. */
+    @Test fun shellReadsAsOneSurface() {
+        val screen = java.io.File("src/main/java/com/blaze/assistant/ui/ChatScreen.kt").readText()
+        assertTrue(screen.contains("ChatDrawerLayer()"))
+        assertTrue(screen.contains("ModelChip(flat = true)"))
+        assertFalse("no chip pill over the composer", screen.contains("ModelChip(Modifier.padding(start = 18.dp))"))
+        val drawer = java.io.File("src/main/java/com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
+        assertTrue(drawer.contains("drawerShape = RectangleShape"))
+        val shell = java.io.File("src/main/java/com/blaze/assistant/ui/argus/kit/KitShell.kt").readText()
+        assertTrue(shell.contains("top: (@Composable () -> Unit)? = null"))
+    }
 }
