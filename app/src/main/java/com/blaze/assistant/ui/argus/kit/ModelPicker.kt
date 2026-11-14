@@ -73,7 +73,7 @@ fun ModelChip(modifier: Modifier = Modifier, force: List<LiveModels.Member>? = n
             val logo = if (choice.auto) null else Brands.icon(ModelList.brand(label, choice.key), c.ink)
             if (logo != null) androidx.compose.foundation.Image(logo, null, Modifier.size(14.dp))
             else Icon(Lucide.icon(if (choice.auto) "sparkles" else "cpu", 14), null, Modifier.size(14.dp), tint = c.mute)
-            Text(label, style = ArgusType.statusChip, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(tr(label), style = ArgusType.statusChip, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Icon(Lucide.icon("chevron-down", 14), null, Modifier.size(14.dp), tint = c.mute)
         }
     }

@@ -111,7 +111,7 @@ fun BotChatRow(
                 horizontalArrangement = if (toEnd) Arrangement.Start else Arrangement.End) {
                 val (icon, label) = if (toEnd) (if (model.pinned) "pin-off" to "Unpin" else "pin" to "Pin") else "bell" to (if (model.muted) "Unmute" else "Mute")
                 Icon(Lucide.icon(icon, 20), null, Modifier.size(20.dp), tint = c.mute)
-                Text(label, style = ArgusType.tool, color = c.mute, modifier = Modifier.padding(start = 6.dp))
+                Text(tr(label), style = ArgusType.tool, color = c.mute, modifier = Modifier.padding(start = 6.dp))
             }
         },
     ) { BotChatRowBody(model, onClick, Modifier, onLongClick, onPin, onMute, avatar) }
@@ -208,8 +208,8 @@ fun MenuRow(
             Icon(Lucide.icon(icon, KitSpec.Menu.ICON), null, Modifier.size(KitSpec.Menu.ICON.dp), tint = tint)
         }
         Column(Modifier.weight(1f)) {
-            Text(title, style = ArgusType.bodyStrong, color = tint)
-            if (!sub.isNullOrBlank()) Text(sub, style = ArgusType.preview.copy(fontSize = 13.sp, lineHeight = 18.sp), color = c.mute)
+            Text(tr(title), style = ArgusType.bodyStrong, color = tint)
+            if (!sub.isNullOrBlank()) Text(tr(sub), style = ArgusType.preview.copy(fontSize = 13.sp, lineHeight = 18.sp), color = c.mute)
         }
         trailing?.invoke()
     }
@@ -238,7 +238,7 @@ fun SettingsGroup(
 ) {
     val c = Argus.colors
     Column(modifier.fillMaxWidth()) {
-        if (!title.isNullOrBlank()) Text(title.uppercase(), style = ArgusType.section, color = c.meta,
+        if (!title.isNullOrBlank()) Text(tr(title).uppercase(), style = ArgusType.section, color = c.meta,
             modifier = Modifier.padding(start = 16.dp, bottom = 6.dp).semantics { this.contentDescription = title })
         Column(Modifier.fillMaxWidth().argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp))) {
             items.forEachIndexed { i, it ->
@@ -261,8 +261,8 @@ fun SettingsRow(item: SettingsItem, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Icon(Lucide.icon(item.icon, KitSpec.Settings.ICON), null, Modifier.size(KitSpec.Settings.ICON.dp), tint = c.ink)
-        Text(item.label, style = ArgusType.body, color = c.ink, modifier = Modifier.weight(1f))
-        if (!item.value.isNullOrBlank()) Text(item.value, style = ArgusType.sub, color = c.mute, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(tr(item.label), style = ArgusType.body, color = c.ink, modifier = Modifier.weight(1f))
+        if (!item.value.isNullOrBlank()) Text(tr(item.value), style = ArgusType.sub, color = c.mute, maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (item.chevron && item.onClick != null) Icon(Lucide.icon("chevron-right", 16), null, Modifier.size(16.dp), tint = c.dim)
     }
 }

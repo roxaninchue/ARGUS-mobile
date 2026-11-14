@@ -181,7 +181,7 @@ private fun LifeCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = nul
 private fun SectionHead(text: String, trailing: String? = null, onTrailing: (() -> Unit)? = null) {
     val c = Argus.colors
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text.uppercase(), style = ArgusType.section, color = c.meta, modifier = Modifier.weight(1f).semantics { heading(); contentDescription = text })
+        Text(tr(text).uppercase(), style = ArgusType.section, color = c.meta, modifier = Modifier.weight(1f).semantics { heading(); contentDescription = text })
         if (trailing != null && onTrailing != null) Text(trailing, style = ArgusType.sub, color = c.mute,
             modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onTrailing).heightIn(min = 48.dp).padding(horizontal = 8.dp, vertical = 14.dp))
     }

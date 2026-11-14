@@ -302,7 +302,7 @@ private fun LanguagePage() {
     val sel = com.blaze.assistant.i18n.AppLang.code.value
     Text(com.blaze.assistant.i18n.tr("The app shows in this language. ${BrandName.NAME} always replies in the language you write in."),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub), modifier = Modifier.padding(vertical = 8.dp))
-    com.blaze.assistant.i18n.AppLang.ALL.forEach { o ->
+    com.blaze.assistant.i18n.AppLang.PICKABLE.forEach { o ->
         val on = o.code == sel
         Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClickLabel = o.name) {
                 Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, o.code); com.blaze.assistant.i18n.AppLang.apply(o.code); FontPick.refresh()

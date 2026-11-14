@@ -12,7 +12,7 @@ object ShellSpec {
     val MODES = listOf("team", "chat", "life", "desk")
     val LABELS = mapOf("team" to "Team", "chat" to "Chat", "life" to "Life", "desk" to "Desk")
 
-    fun label(mode: String): String = LABELS[mode] ?: mode.replaceFirstChar { it.uppercase() }
+    fun label(mode: String): String = com.blaze.assistant.i18n.tr(LABELS[mode] ?: mode.replaceFirstChar { it.uppercase() })   // owner 2026-11-14: app language
 
     // ---------------------------------------------------------------- Composer (04 §2.8 #3)
     object Composer {

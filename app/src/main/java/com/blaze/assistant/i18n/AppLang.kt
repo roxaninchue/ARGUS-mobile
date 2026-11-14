@@ -49,15 +49,19 @@ object AppLang {
     const val PREF = "app_language"
     const val DEFAULT = "en"
 
+    /** Languages whose table is not shipped yet; hidden from the pickers so a choice never shows English. */
+    val PENDING = setOf("ja", "id")
+    val PICKABLE get() = ALL.filterNot { it.code in PENDING }
+
     fun lang(code: String?): Lang = ALL.firstOrNull { it.code == code } ?: ALL[0]
 
     /** The phone's language when ARGUS has it (pt-BR → pt, zh-TW → zh), else English. */
     fun fromDevice(tag: String?): String {
         val l = (tag ?: "").lowercase().replace('_', '-')
         if (l.isBlank()) return DEFAULT
-        ALL.firstOrNull { it.code == l }?.let { return it.code }
+        PICKABLE.firstOrNull { it.code == l }?.let { return it.code }
         val base = l.substringBefore('-')
-        return ALL.firstOrNull { it.code == base }?.code ?: DEFAULT
+        return PICKABLE.firstOrNull { it.code == base }?.code ?: DEFAULT
     }
 
     /** The language on screen. Compose state: a composable that reads [tr] redraws when it changes. */

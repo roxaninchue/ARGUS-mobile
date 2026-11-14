@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -78,11 +79,11 @@ fun PageHead(eyebrow: String, title: String, lead: String = "", modifier: Modifi
         Column(Modifier.weight(1f)) {
             Label(eyebrow, color = c.accent, size = 10.sp, maxLines = 1)
             Spacer(Modifier.height(6.dp))
-            Text(title, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 29.sp,
+            Text(tr(title), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 29.sp,
                 letterSpacing = (-0.02).em, color = c.ink))
             if (lead.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
-                Text(lead, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, lineHeight = 20.sp, color = c.sub))
+                Text(tr(lead), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, lineHeight = 20.sp, color = c.sub))
             }
         }
         if (right != null) { Spacer(Modifier.width(12.dp)); right() }
@@ -98,7 +99,7 @@ fun GroupHead(title: String, desc: String = "", modifier: Modifier = Modifier, r
             Label(title, size = 10.sp, modifier = Modifier.weight(1f), maxLines = 1)
             right?.invoke(this)
         }
-        if (desc.isNotBlank()) Text(desc, modifier = Modifier.padding(top = 4.dp),
+        if (desc.isNotBlank()) Text(tr(desc), modifier = Modifier.padding(top = 4.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 18.sp, color = c.sub))
     }
 }
@@ -141,7 +142,7 @@ fun KitRow(title: String, sub: String = "", n: Int = 0, first: Boolean = false, 
 fun Tag(text: String, on: Boolean = false) {
     val c = LocalBlaze.current
     Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.accentSoft else c.faint, BlazeShapes.pill).padding(horizontal = 8.dp, vertical = 2.dp)) {
-        Text(text.sentence(), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 10.5.sp,
+        Text(tr(text).sentence(), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 10.5.sp,
             color = if (on) c.accent else c.sub))
     }
 }
@@ -218,7 +219,7 @@ fun BlazeTextField(value: String, onChange: (String) -> Unit, hint: String, modi
         .padding(horizontal = if (singleLine) 18.dp else 14.dp, vertical = 12.dp),
         contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart) {
         val style = TextStyle(fontFamily = if (mono) Type.Mono else Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.ink)
-        if (value.isEmpty()) Text(hint, maxLines = if (singleLine) 1 else 4, overflow = TextOverflow.Ellipsis, style = style.copy(color = c.weak))
+        if (value.isEmpty()) Text(tr(hint), maxLines = if (singleLine) 1 else 4, overflow = TextOverflow.Ellipsis, style = style.copy(color = c.weak))
         BasicTextField(value, onChange, singleLine = singleLine, enabled = enabled, cursorBrush = SolidColor(c.accent), textStyle = style,
             keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, visualTransformation = visualTransformation,
             modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused })
@@ -258,9 +259,9 @@ fun EmptyState(title: String, body: String, modifier: Modifier = Modifier, mark:
     val c = LocalBlaze.current
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 26.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         if (mark) { DotMark(); Spacer(Modifier.height(14.dp)) }
-        Text(title, textAlign = TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
+        Text(tr(title), textAlign = TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
         Spacer(Modifier.height(4.dp))
-        Text(body, textAlign = TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
+        Text(tr(body), textAlign = TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
         if (action.isNotBlank()) { Spacer(Modifier.height(14.dp)); KitButton(action, Btn.LINE, onClick = onAction) }
     }
 }
@@ -296,7 +297,7 @@ fun KitSearch(value: String, onChange: (String) -> Unit, hint: String, modifier:
         }
         Spacer(Modifier.width(9.dp))
         Box(Modifier.weight(1f)) {
-            if (value.isEmpty()) Text(hint, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = c.weak))
+            if (value.isEmpty()) Text(tr(hint), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = c.weak))
             BasicTextField(value, onChange, singleLine = true, cursorBrush = SolidColor(c.accent),
                 textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = c.ink),
                 modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused })
@@ -318,7 +319,7 @@ fun Segmented(options: List<Pair<String, String>>, value: String, modifier: Modi
             val fill by androidx.compose.animation.animateColorAsState(if (on) c.ink else Color.Transparent, MotionTokens.medium(), label = "seg")
             Box(Modifier.height(30.dp).clip(BlazeShapes.pill).background(fill, BlazeShapes.pill).clickable { onPick(id) }.padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center) {
-                Text(label, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 12.5.sp,
+                Text(tr(label), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 12.5.sp,
                     color = if (on) c.paper else c.sub))
             }
         }
@@ -454,10 +455,10 @@ fun BlazeDialogCard(
         .background(DialogColors.surface, shape)
         .border(1.dp, DialogColors.border, shape)
         .padding(start = SpaceInsets.CARD_PAD_DP.dp, end = SpaceInsets.CARD_PAD_DP.dp, top = SpaceInsets.CARD_PAD_DP.dp, bottom = 16.dp)) {
-        Text(title, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 24.sp, color = DialogColors.title))
+        Text(tr(title), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 24.sp, color = DialogColors.title))
         if (body.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
-            Text(body, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = DialogColors.body))
+            Text(tr(body), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = DialogColors.body))
         }
         content?.let { Spacer(Modifier.height(12.dp)); it() }
         Spacer(Modifier.height(20.dp))
@@ -488,7 +489,7 @@ fun PillButton(text: String, primary: Boolean, warm: Boolean = false, modifier: 
         // 0.52.4: an optional leading icon (Play, Shuffle, Retry…), the shared button-icon size
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) { LeadIcon(icon, fg, size = BlazeIconStyle.buttonIcon); Spacer(Modifier.width(8.dp)) }
-            Text(text, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = fg))
+            Text(tr(text), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = fg))
         }
     }
 }
@@ -525,7 +526,7 @@ fun BlazeMenuCard(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit =
                 if (icon != null) LeadIcon(icon.vector(), DialogColors.title)
                 else if (anyIcon) Spacer(Modifier.width(BlazeIconStyle.rowIcon))
                 if (anyIcon) Spacer(Modifier.width(BlazeIconStyle.gap))
-                Text(label, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = DialogColors.title))
+                Text(tr(label), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = DialogColors.title))
             }
         }
     }
@@ -538,7 +539,7 @@ fun BlazeMenuCard(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit =
 @Composable
 fun ActionText(text: String, color: Color = LocalBlaze.current.sub, size: androidx.compose.ui.unit.TextUnit = 11.sp, modifier: Modifier = Modifier,
                maxLines: Int = 1) {
-    Text(text.sentence(), modifier = Modifier.clip(BlazeShapes.pill).then(modifier).padding(horizontal = 6.dp, vertical = 2.dp), maxLines = maxLines,
+    Text(tr(text).sentence(), modifier = Modifier.clip(BlazeShapes.pill).then(modifier).padding(horizontal = 6.dp, vertical = 2.dp), maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = (size.value + 3f).sp, color = color))
 }
@@ -546,7 +547,7 @@ fun ActionText(text: String, color: Color = LocalBlaze.current.sub, size: androi
 /** v0.24.8: the old uppercase mono "button" text inside a filled box, as sentence-case button text. */
 @Composable
 fun ButtonText(text: String, color: Color = LocalBlaze.current.ink, size: androidx.compose.ui.unit.TextUnit = 14.sp) {
-    Text(text.sentence(), maxLines = 1, overflow = TextOverflow.Ellipsis,
+    Text(tr(text).sentence(), maxLines = 1, overflow = TextOverflow.Ellipsis,
         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = size, color = color))
 }
 
@@ -596,7 +597,7 @@ fun BackTitle(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, 
         Column(Modifier.weight(1f)) {
             if (eyebrow.isNotBlank()) Text(eyebrow, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 style = SpaceType.body(SpaceTypeScale.CAPTION.sp, look.sub, FontWeight.Medium))
-            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.headline(size, look.ink))
+            Text(tr(title), maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.headline(size, look.ink))
         }
         right?.invoke(this)
     }

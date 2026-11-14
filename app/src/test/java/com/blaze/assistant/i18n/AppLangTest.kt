@@ -43,11 +43,26 @@ class AppLangTest {
     @Test fun settingsAndSetupPickTheAppLanguage() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
         val settings = File(root, "com/blaze/assistant/ui/SettingsSheet.kt").readText()
-        assertTrue("AppLang.ALL.forEach" in settings)
+        assertTrue("AppLang.PICKABLE.forEach" in settings)
         assertFalse("ReplyLanguage.OPTIONS" in settings)
         val onboarding = File(root, "com/blaze/assistant/ui/space/SpaceOnboarding.kt").readText()
         assertTrue("SpaceOnboarding.Step.LANGUAGE -> LanguageStep(onNext)" in onboarding)
         val theme = File(root, "com/blaze/assistant/ui/Theme.kt").readText()
         assertTrue("LocalLayoutDirection provides if (rtl)" in theme)
+    }
+
+    /** Every non-English language ships a table; each entry keeps its placeholders and is not blank. */
+    @Test fun everyLanguageShipsATableThatKeepsPlaceholders() {
+        val dir = listOf(File("src/main/assets/i18n"), File("app/src/main/assets/i18n")).first { it.isDirectory }
+        val ph = Regex("""\{\d+\}""")
+        for (l in AppLang.PICKABLE.drop(1)) {
+            val f = File(dir, "${l.code}.json")
+            assertTrue("${l.code} table missing", f.isFile)
+            val t = AppLang.parse(f.readText())
+            assertTrue("${l.code} table is nearly empty (${t.size})", t.size >= 400)
+            for ((k, v) in t) assertEquals("${l.code}: $k", ph.findAll(k).map { it.value }.sorted().toList(), ph.findAll(v).map { it.value }.sorted().toList())
+        }
+        assertFalse(File(dir, "en.json").exists())
+        assertTrue(AppLang.PENDING.none { File(dir, "$it.json").isFile })
     }
 }

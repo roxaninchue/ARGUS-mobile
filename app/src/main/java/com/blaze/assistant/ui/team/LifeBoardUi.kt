@@ -99,7 +99,7 @@ fun LifeFoldHead(text: String, key: String, trailing: String? = null, onTrailing
             .heightIn(min = 48.dp).padding(start = 12.dp, end = 8.dp)
             .semantics(mergeDescendants = true) { heading(); contentDescription = text; stateDescription = if (shut) "Folded" else "Shown" },
             verticalAlignment = Alignment.CenterVertically) {
-            Text(text.uppercase(), style = ArgusType.section, color = c.meta, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(tr(text).uppercase(), style = ArgusType.section, color = c.meta, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (shut && count != null && count > 0) Text("  $count", style = ArgusType.section, color = c.dim)
             Spacer(Modifier.width(6.dp))
             Icon(Lucide.icon(if (shut) "chevron-right" else "chevron-down", 14), null, Modifier.size(14.dp), tint = c.meta)
@@ -119,7 +119,7 @@ fun LifeQuickAccess(onConnect: () -> Unit, onApps: () -> Unit) {
                 .clickable(role = Role.Button, onClick = act).padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Lucide.icon(icon, 16), null, Modifier.size(16.dp), tint = c.ink)
-                Text(label, style = ArgusType.rowTitle, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(tr(label), style = ArgusType.rowTitle, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.weight(1f))
                 Icon(Lucide.icon("plus", 14), null, Modifier.size(14.dp), tint = c.mute)
             }
@@ -169,13 +169,13 @@ fun LifeBoardPanel(w: Widget, d: WidgetData?, actions: LifeBoardActions, onMenu:
             d.error.isNotBlank() -> Text(d.error, style = ArgusType.sub, color = c.dangerText, modifier = Modifier.padding(top = 8.dp))
             else -> {
                 val text = d.change.ifBlank { d.headline.takeIf { it != w.title }.orEmpty() }
-                if (text.isNotBlank()) Text(text, style = ArgusType.sub, color = c.mute, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                if (text.isNotBlank()) Text(tr(text), style = ArgusType.sub, color = c.mute, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
                 for (l in d.lines.take(LINES)) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
                     .then(if (l.url.isNotBlank()) Modifier.clickable(role = Role.Button) { actions.onLine(w, l) } else Modifier)
                     .heightIn(min = 44.dp).padding(vertical = 6.dp)) {
                     Text(l.title, style = ArgusType.body, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     val sub = listOf(l.sub, l.note).filter { it.isNotBlank() }.joinToString(" \u00b7 ")
-                    if (sub.isNotBlank()) Text(sub, style = ArgusType.meta, color = c.meta, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (sub.isNotBlank()) Text(tr(sub), style = ArgusType.meta, color = c.meta, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

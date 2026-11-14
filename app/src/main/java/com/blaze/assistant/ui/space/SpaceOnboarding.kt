@@ -155,7 +155,7 @@ private fun LanguageStep(onNext: () -> Unit) {
         Text(com.blaze.assistant.i18n.tr("{0} always replies in the language you write in.", BrandName.UPPER), style = SpaceType.body(15.sp, look.sub))
         Spacer(Modifier.height(12.dp))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            for (l in com.blaze.assistant.i18n.AppLang.ALL) {
+            for (l in com.blaze.assistant.i18n.AppLang.PICKABLE) {
                 val on = l.code == sel
                 Row(Modifier.fillMaxWidth().heightIn(min = 52.dp)
                     .selectable(selected = on, role = androidx.compose.ui.semantics.Role.RadioButton) {

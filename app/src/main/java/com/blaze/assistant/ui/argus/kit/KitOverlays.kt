@@ -89,7 +89,7 @@ fun ArgusSheet(
         },
     ) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
-            if (!title.isNullOrBlank()) Text(title, style = ArgusType.sheetTitle, color = c.ink,
+            if (!title.isNullOrBlank()) Text(tr(title), style = ArgusType.sheetTitle, color = c.ink,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).semantics { heading() })
             Column(Modifier.fillMaxWidth().weight(1f, fill = false).padding(horizontal = 8.dp), content = content)
             if (primary != null) Row(
@@ -138,7 +138,7 @@ fun MentionPopup(
                     }
                 }
                 Text(if (it.kind == Mention.Kind.COMMAND) "/${it.title}" else it.title, style = ArgusType.bodyStrong, color = c.ink, maxLines = 1)
-                if (it.sub.isNotBlank()) Text(it.sub, style = ArgusType.preview, color = c.mute, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                if (it.sub.isNotBlank()) Text(tr(it.sub), style = ArgusType.preview, color = c.mute, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f))
             }
         }
@@ -200,9 +200,9 @@ fun EmptyState(
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (hero && heroArt != null) heroArt()
         else if (icon != null) Icon(Lucide.icon(icon, KitSpec.Empty.ICON), null, Modifier.size(KitSpec.Empty.ICON.dp), tint = c.ink.copy(alpha = KitSpec.Empty.ICON_ALPHA))
-        Text(title, style = if (hero) ArgusType.serifHello else ArgusType.topTitle, color = c.ink,
+        Text(tr(title), style = if (hero) ArgusType.serifHello else ArgusType.topTitle, color = c.ink,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.semantics { heading() })
-        if (!body.isNullOrBlank()) Text(body, style = ArgusType.body, color = c.mute, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        if (!body.isNullOrBlank()) Text(tr(body), style = ArgusType.body, color = c.mute, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         if (primary != null || secondary != null) Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             // P1-SH-06 Handedness: the primary sits on the thumb's side
             for (isPrimary in com.blaze.assistant.ui.argus.settings.ArgusSettings.buttonOrder(true, false, com.blaze.assistant.ui.argus.settings.ArgusPrefs.hand())) {
@@ -235,7 +235,7 @@ fun ProgressLine(
             .heightIn(min = KitSpec.Progress.HEIGHT.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(label, style = ArgusType.tool, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Text(tr(label), style = ArgusType.tool, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         (detail ?: Progress.percent(fraction))?.let { Text(it, style = ArgusType.meta, color = c.meta, maxLines = 1) }
         Box(Modifier.size(KitSpec.Progress.BAR_W.dp, KitSpec.Progress.BAR_H.dp).clip(CircleShape).background(c.soft)) {
             Box(Modifier.height(KitSpec.Progress.BAR_H.dp).width((KitSpec.Progress.BAR_W * shown.coerceIn(0f, 1f)).dp).clip(CircleShape).background(c.ink))
@@ -271,7 +271,7 @@ fun CloudChip(
         Row(Modifier.heightIn(min = KitSpec.Cloud.HEIGHT.dp).argusGlass(GlassLevel.RAISED, RoundedCornerShape(ArgusTokens.Radius.PILL.dp), shadow = false)
             .padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Box(Modifier.size(7.dp).clip(CircleShape).background(c.success))
-            Text(text, style = ArgusType.statusChip, color = c.ink, maxLines = 1)
+            Text(tr(text), style = ArgusType.statusChip, color = c.ink, maxLines = 1)
         }
     }
 }

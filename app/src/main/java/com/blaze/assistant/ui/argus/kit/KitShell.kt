@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.argus.kit
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -226,7 +227,10 @@ fun ArgusComposer(
 @Composable
 private fun ComposerHint(placeholder: String, rotate: Boolean) {
     val c = Argus.colors
-    if (!rotate || !com.blaze.assistant.ui.MotionTokens.enabled) { Text(placeholder, style = ArgusType.field, color = c.mute, maxLines = 1); return }
+    // Owner 2026-11-14: the rotating "Let's {word}" hints are English word play, so other app languages get the fixed hint
+    if (!rotate || !com.blaze.assistant.ui.MotionTokens.enabled || com.blaze.assistant.i18n.AppLang.code.value != com.blaze.assistant.i18n.AppLang.DEFAULT) {
+        Text(com.blaze.assistant.i18n.tr(placeholder), style = ArgusType.field, color = c.mute, maxLines = 1); return
+    }
     val seed = remember { (System.currentTimeMillis() / 1000L).toInt() }
     var step by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(ShellSpec.Composer.Hints.INTERVAL_MS); step++ } }
@@ -289,7 +293,7 @@ fun ArgusToastHost(modifier: Modifier = Modifier) {
             val text = t?.text.orEmpty()
             Box(Modifier.widthIn(max = maxWidth - 48.dp).padding(bottom = 8.dp).clip(RoundedCornerShape(ArgusTokens.Radius.PILL.dp)).background(c.ink)
                 .padding(horizontal = 16.dp, vertical = 10.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
-                Text(text, style = ArgusType.sub, color = c.onInk)
+                Text(tr(text), style = ArgusType.sub, color = c.onInk)
             }
         }
     }

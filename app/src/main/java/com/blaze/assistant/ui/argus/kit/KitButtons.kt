@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.argus.kit
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -97,7 +98,7 @@ fun ArgusButton(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             if (icon != null) Icon(Lucide.icon(icon, LucideSpec.Size.BUTTON), null, Modifier.size(LucideSpec.Size.BUTTON.dp), tint = fg)
-            Text(text, style = ArgusType.bodyStrong.copy(fontWeight = FontWeight.SemiBold), color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(tr(text), style = ArgusType.bodyStrong.copy(fontWeight = FontWeight.SemiBold), color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
