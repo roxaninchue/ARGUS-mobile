@@ -51,8 +51,17 @@ fun ModelChip(modifier: Modifier = Modifier, force: List<LiveModels.Member>? = n
     val c = Argus.colors
     val choice by ModelPick.current.collectAsState()
     var open by remember { mutableStateOf(false) }
-    var list by remember { mutableStateOf(force ?: LiveModels.shared.list()) }
-    LaunchedEffect(choice, open) { if (force == null) { LiveModelsFeed.touchNow(); kotlinx.coroutines.delay(1_500); list = LiveModels.shared.list() } }
+    // Owner 2026-11-14: re-read the list whenever a fetch lands, and fetch on every return to the app, so the chip never
+    // sits on "unavailable" until the picker is opened.
+    val tick by LiveModels.shared.changes.collectAsState()
+    val list = remember(tick, force) { force ?: LiveModels.shared.list() }
+    LaunchedEffect(choice, open) { if (force == null) LiveModelsFeed.touchNow() }
+    val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(owner, force) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e -> if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME && force == null) LiveModelsFeed.touchNow() }
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs) }
+    }
     val label = ModelPick.label(list, choice)
     // flat: drawn as the composer's top row (owner 2026-11-14: chip and chatbox one surface), so no pill of its own
     Box(modifier.heightIn(min = if (flat) 36.dp else 44.dp).clickable(role = Role.Button) { open = true }

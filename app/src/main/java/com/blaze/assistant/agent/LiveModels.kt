@@ -180,6 +180,12 @@ object LiveModels {
 
         fun due(): Boolean = now() - triedAt >= ttlMs
 
+        /** Ticks after every fetch (good or not), so the chip re-reads the list the moment it lands, not on its next open. */
+        val changes = kotlinx.coroutines.flow.MutableStateFlow(0L)
+
+        /** A list is in hand (owner 2026-11-14: until then a pick is "checking", never "unavailable"). */
+        fun known(): Boolean = list().isNotEmpty()
+
         /** Refreshes when due; returns true when it fetched. */
         @Synchronized fun refresh(fetch: () -> String?): Boolean {
             if (!due()) return false
@@ -187,6 +193,7 @@ object LiveModels {
             val got = try { fetch() } catch (_: Exception) { null }
             val l = parseLive(got)
             if (l.isNotEmpty()) { members = l; goodAt = triedAt }
+            changes.value = changes.value + 1
             return true
         }
 
@@ -195,7 +202,7 @@ object LiveModels {
         /** When the list last came back good (ModelPick: a model hidden after a miss comes back only on a newer list). */
         fun goodAtMs(): Long = goodAt
 
-        fun clear() { members = emptyList(); goodAt = Long.MIN_VALUE / 2; triedAt = Long.MIN_VALUE / 2 }
+        fun clear() { members = emptyList(); goodAt = Long.MIN_VALUE / 2; triedAt = Long.MIN_VALUE / 2; changes.value = changes.value + 1 }
     }
 
     /** The app's one cache (LiveModelsFeed fills it). */

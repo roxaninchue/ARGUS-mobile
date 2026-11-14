@@ -105,6 +105,9 @@ object ModelPick {
     /** "Auto", "Kimi K3 · Medium", "Kimi K3 · unavailable" for the chip. */
     fun label(list: List<LiveModels.Member>, c: Choice = current.value): String {
         if (c.auto) return "Auto"
+        // Owner 2026-11-14: back in the app the list is often not in yet (a killed process starts empty). No list is not
+        // a verdict: show the pick by name until the list lands, and "unavailable" only for a real miss or a list without it.
+        if (list.isEmpty() && !isDown(c.key)) return LiveModels.prettyName(c.key.substringAfter('/'))
         val m = list.firstOrNull { it.key == c.key }?.takeUnless { isDown(it.key) }
             ?: return (list.firstOrNull { it.key == c.key }?.name ?: LiveModels.prettyName(c.key.substringAfter('/'))) + " · unavailable"
         return m.name + (effort(list, c)?.let { " · " + it.replaceFirstChar { ch -> ch.uppercaseChar() } } ?: "")
