@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -239,7 +240,7 @@ private fun SegmentTrack(options: List<Pair<String, String>>, value: String, mod
             val fill by animateColorAsState(if (on) look.selectedFill else Color.Transparent, MotionTokens.medium(), label = "spaceSegment")
             val ink by animateColorAsState(if (on) look.selectedInk else look.sub, MotionTokens.medium(), label = "spaceSegmentInk")
             Box((if (share) Modifier.weight(1f, fill = false) else Modifier).clip(SpaceShapes.pill).background(fill)
-                .clickable(onClickLabel = "Show $label") { onPick(id) }
+                .clickable(onClickLabel = tr("Show {0}", label)) { onPick(id) }
                 .semantics { selected = on; role = Role.Tab }
                 .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
                 Text(label, maxLines = 1, softWrap = false, style = SpaceType.body(SpaceTypeScale.META.sp, ink, FontWeight.Medium))

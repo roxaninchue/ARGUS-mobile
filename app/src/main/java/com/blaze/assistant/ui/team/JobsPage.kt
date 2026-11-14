@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -92,7 +93,7 @@ fun JobsPage(
     val c = Argus.colors
     Box(modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
-            item(key = "search") { ArgusSearch(query, onQuery, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), placeholder = "Search jobs") }
+            item(key = "search") { ArgusSearch(query, onQuery, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), placeholder = tr("Search jobs")) }
             item(key = "filters") { FilterChips(state.chips, state.filter, onFilter, Modifier.padding(vertical = 4.dp)) }
             if (state.botChips.isNotEmpty()) item(key = "bots") { FilterChips(state.botChips, state.bot ?: "", onBot, Modifier.padding(vertical = 4.dp)) }
             state.empty?.let { e ->
@@ -102,7 +103,7 @@ fun JobsPage(
         }
         // the FAB (A-team "+"): 56 dp ink disc, above the composer
         Box(Modifier.align(Alignment.BottomEnd).padding(end = 18.dp, bottom = 22.dp).size(56.dp).clip(CircleShape).background(c.ink)
-            .clickable(role = Role.Button, onClick = onNew).semantics { contentDescription = "New job" }, contentAlignment = Alignment.Center) {
+            .clickable(role = Role.Button, onClick = onNew).semantics { contentDescription = tr("New job") }, contentAlignment = Alignment.Center) {
             Icon(Lucide.icon("plus", 24), null, Modifier.size(24.dp), tint = c.onInk)
         }
     }
@@ -141,17 +142,17 @@ fun JobRow(r: JobRowModel, onOpen: () -> Unit, onDone: () -> Unit, avatar: (@Com
 @Composable
 fun JobSheet(s: JobSheetModel.Sheet, onDismiss: () -> Unit, onRetry: () -> Unit, onDone: () -> Unit, onCancel: () -> Unit) {
     val c = Argus.colors
-    ArgusSheet(onDismiss = onDismiss, title = s.title, primary = s.retry, onPrimary = onRetry, cancel = "Close") {
+    ArgusSheet(onDismiss = onDismiss, title = s.title, primary = s.retry, onPrimary = onRetry, cancel = tr("Close")) {
         Column(Modifier.fillMaxWidth().heightIn(max = 520.dp).verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
             Text(listOfNotNull(s.who, s.due).joinToString(" \u00b7 "), style = ArgusType.meta, color = if (s.overdue) c.dangerText else c.meta)
             Text(s.status, style = ArgusType.bodyStrong, color = c.ink, modifier = Modifier.padding(top = 4.dp))
             s.brief?.let { Text(it, style = ArgusType.body, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
             s.result?.let {
-                Text("RESULT", style = ArgusType.section, color = c.meta, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp))
+                Text(tr("RESULT"), style = ArgusType.section, color = c.meta, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp))
                 Text(it, style = ArgusType.body, color = c.ink)
             }
-            Text("LOG", style = ArgusType.section, color = c.meta, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp))
-            if (s.log.isEmpty()) Text("Nothing yet.", style = ArgusType.body, color = c.mute)
+            Text(tr("LOG"), style = ArgusType.section, color = c.meta, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp))
+            if (s.log.isEmpty()) Text(tr("Nothing yet."), style = ArgusType.body, color = c.mute)
             s.log.forEach { l ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 32.dp).padding(vertical = 3.dp), verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -161,8 +162,8 @@ fun JobSheet(s: JobSheetModel.Sheet, onDismiss: () -> Unit, onRetry: () -> Unit,
                 }
             }
             if (s.canDone || s.canCancel) Row(Modifier.padding(top = 14.dp, bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (s.canDone) ArgusButton("Done", onDone, size = ButtonSize.S, icon = "check")
-                if (s.canCancel) ArgusButton("Cancel job", onCancel, size = ButtonSize.S, kind = ButtonKind.DANGER)
+                if (s.canDone) ArgusButton(tr("Done"), onDone, size = ButtonSize.S, icon = "check")
+                if (s.canCancel) ArgusButton(tr("Cancel job"), onCancel, size = ButtonSize.S, kind = ButtonKind.DANGER)
             }
         }
     }
@@ -174,12 +175,12 @@ fun NewJobSheet(roster: List<Bot>, today: LocalDate, initialBot: String?, onDism
     val c = Argus.colors
     var d by remember { mutableStateOf(NewJob.Draft(botId = initialBot)) }
     val problems = NewJob.problems(d, today)
-    ArgusSheet(onDismiss = onDismiss, title = "New job", primary = "Add", primaryEnabled = problems.isEmpty(), onPrimary = { onAdd(d) }) {
+    ArgusSheet(onDismiss = onDismiss, title = tr("New job"), primary = tr("Add"), primaryEnabled = problems.isEmpty(), onPrimary = { onAdd(d) }) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ArgusField(d.title, { d = d.copy(title = it.take(NewJob.TITLE_MAX + 20)) }, "Title", Modifier.padding(horizontal = 8.dp), placeholder = "What needs doing")
-            Text("WHO", style = ArgusType.section, color = c.meta, modifier = Modifier.padding(start = 12.dp, top = 4.dp))
+            ArgusField(d.title, { d = d.copy(title = it.take(NewJob.TITLE_MAX + 20)) }, "Title", Modifier.padding(horizontal = 8.dp), placeholder = tr("What needs doing"))
+            Text(tr("WHO"), style = ArgusType.section, color = c.meta, modifier = Modifier.padding(start = 12.dp, top = 4.dp))
             FilterChips(NewJob.botChips(roster), d.botId ?: "", { d = d.copy(botId = it.ifBlank { null }) })
-            ArgusField(d.due, { d = d.copy(due = it) }, "Due", Modifier.padding(horizontal = 8.dp), placeholder = "Due: Fri, tomorrow 5pm, 5 Jan (optional)")
+            ArgusField(d.due, { d = d.copy(due = it) }, "Due", Modifier.padding(horizontal = 8.dp), placeholder = tr("Due: Fri, tomorrow 5pm, 5 Jan (optional)"))
             NewJob.dueHint(d, today)?.let { Text(it, style = ArgusType.meta, color = c.meta, modifier = Modifier.padding(start = 12.dp)) }
             Segmented(NewJob.PRIORITIES.map { ChipModel(it, it.replaceFirstChar { ch -> ch.uppercase() }) }, d.priority, { d = d.copy(priority = it) },
                 Modifier.padding(horizontal = 8.dp))

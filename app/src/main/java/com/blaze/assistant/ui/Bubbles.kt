@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -284,7 +285,7 @@ fun FlatReply(modifier: Modifier = Modifier, content: @Composable ColumnScope.()
 fun ErrorBubble(text: String, pos: GroupPos = GroupPos.SINGLE) {
     val c = LocalBlaze.current
     BlazeBubble(pos) {
-        Label("Error", color = GlassTokens.error, size = 9.sp)
+        Label(tr("Error"), color = GlassTokens.error, size = 9.sp)
         Spacer(Modifier.height(4.dp))
         SelectionContainer {
             Text(text, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = BubblePalette.text(c, false)))
@@ -349,7 +350,7 @@ fun BoxScope.UndoBar(text: String, onUndo: () -> Unit, modifier: Modifier = Modi
         .padding(start = 18.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.paper))
         Spacer(Modifier.width(6.dp))
-        Box(Modifier.clip(RoundedCornerShape(20.dp)).clickable(onClick = onUndo).semantics { contentDescription = "Undo clear" }
+        Box(Modifier.clip(RoundedCornerShape(20.dp)).clickable(onClick = onUndo).semantics { contentDescription = tr("Undo clear") }
             .padding(horizontal = 14.dp, vertical = 12.dp)) {
             ButtonText("Undo", color = c.paper)
         }

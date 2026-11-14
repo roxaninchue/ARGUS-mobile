@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.i18n.tr
 import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -184,10 +185,10 @@ private fun Welcome(onStart: () -> Unit) {
         Spacer(Modifier.height(28.dp))
         Text(SpaceOnboarding.TAGLINE, textAlign = TextAlign.Center, style = SpaceType.headline(30.sp, look.ink))
         Spacer(Modifier.height(12.dp))
-        Text("Your assistant for everything on this phone. Ready in a minute, nothing to set up.", textAlign = TextAlign.Center,
+        Text(tr("Your assistant for everything on this phone. Ready in a minute, nothing to set up."), textAlign = TextAlign.Center,
             style = SpaceType.body(16.sp, look.sub))
         Spacer(Modifier.weight(1f))
-        SpacePillButton("Get started", onStart, primary = true, tag = SpaceTags.ONBOARDING_START, modifier = Modifier.widthIn(max = 420.dp))
+        SpacePillButton(tr("Get started"), onStart, primary = true, tag = SpaceTags.ONBOARDING_START, modifier = Modifier.widthIn(max = 420.dp))
     }
 }
 
@@ -199,9 +200,9 @@ private fun SignIn(signedIn: Boolean, onNext: () -> Unit, accountCard: @Composab
             ArgusLogo(120.dp, Modifier.align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(18.dp))
             SpaceCard {
-                SpaceHeadline("Sign in to ${BrandName.UPPER}", size = 30.sp)
+                SpaceHeadline(tr("Sign in to {0}", BrandName.UPPER), size = 30.sp)
                 Spacer(Modifier.height(8.dp))
-                Text("One free account and ${BrandName.NAME} Cloud answers every message with the best brain for it. No keys, no settings.",
+                Text(tr("One free account and {0} Cloud answers every message with the best brain for it. No keys, no settings.", BrandName.NAME),
                     style = SpaceType.body(16.sp, look.sub))
                 Spacer(Modifier.height(8.dp))
                 accountCard()

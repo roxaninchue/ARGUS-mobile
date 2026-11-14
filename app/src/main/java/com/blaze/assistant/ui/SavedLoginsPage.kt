@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
@@ -46,12 +47,12 @@ fun SavedLoginsPage() {
     var draft by remember { mutableStateOf("") }
     var reveal by remember { mutableStateOf(false) }   // v0.45.7: eye on the password being edited
     Spacer(Modifier.height(10.dp))
-    Text("Sign-ins you typed into ${BrandName.NAME}'s secure form. ${BrandName.NAME} fills them in on the same site next time without asking. " +
+    Text(tr("Sign-ins you typed into {0}'s secure form. {1} fills them in on the same site next time without asking. ", BrandName.NAME, BrandName.NAME) +
         "They're encrypted with this phone's Keystore and never shown to the AI.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
     Spacer(Modifier.height(14.dp))
     if (sites.isEmpty()) {
-        Text("Nothing saved yet. When a site asks ${BrandName.NAME} for your email, password, phone or an API key, it's saved here.",
+        Text(tr("Nothing saved yet. When a site asks {0} for your email, password, phone or an API key, it's saved here.", BrandName.NAME),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         return
     }

@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -79,8 +80,8 @@ fun BlazeTopPill(label: String, mood: Mood = Mood.IDLE, onClick: () -> Unit, mod
     val c = LocalBlaze.current
     Box(modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), contentAlignment = Alignment.Center) {
         Row(Modifier.widthIn(max = 240.dp).glass(RoundedCornerShape(18.dp), GlassIntensity.Medium, shadow = false)
-            .clickable(role = Role.Button, onClickLabel = "Open views", onClick = onClick)
-            .semantics { contentDescription = "$label. Tap for views" }
+            .clickable(role = Role.Button, onClickLabel = tr("Open views"), onClick = onClick)
+            .semantics { contentDescription = tr("{0}. Tap for views", label) }
             .padding(start = 8.dp, end = 14.dp, top = 5.dp, bottom = 5.dp), verticalAlignment = Alignment.CenterVertically) {
             BrandMark(mood, 20.dp)
             Spacer(Modifier.width(7.dp))
@@ -99,7 +100,7 @@ fun BlazeTopOverlay(open: Boolean, current: String, options: List<BlazeTopPillMo
     AnimatedVisibility(open, enter = MotionTokens.overlayIn(fromTop = true), exit = MotionTokens.overlayOut(fromTop = true)) {
         Box(Modifier.fillMaxSize().background(com.blaze.assistant.ui.space.SpaceOverlay.scrim)
             .clickable(remember { MutableInteractionSource() }, null, onClick = onDismiss)
-            .semantics { contentDescription = "Close views" }) {
+            .semantics { contentDescription = tr("Close views") }) {
             Column(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 104.dp, start = 24.dp, end = 24.dp)
                 .widthIn(max = 360.dp).fillMaxWidth()
                 .glass(RoundedCornerShape(24.dp), GlassIntensity.High, shadow = false)
@@ -109,7 +110,7 @@ fun BlazeTopOverlay(open: Boolean, current: String, options: List<BlazeTopPillMo
                 options.forEach { o ->
                     val on = o.id == current
                     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(if (on) c.faint else Color.Transparent)
-                        .clickable(role = Role.Button, onClickLabel = "Open ${o.label}") { onPick(o.id) }
+                        .clickable(role = Role.Button, onClickLabel = tr("Open {0}", o.label)) { onPick(o.id) }
                         .padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(34.dp).clip(CircleShape).background(c.faint), contentAlignment = Alignment.Center) {
                             Icon(BlazeTopPillModel.icon(o.id), contentDescription = null, tint = c.ink, modifier = Modifier.size(18.dp))

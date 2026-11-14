@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -168,11 +169,11 @@ fun ThumbChip(path: String?, name: String, size: Dp = 60.dp, onOpen: () -> Unit,
     val shape = RoundedCornerShape(14.dp)
     Box(Modifier.size(size + 6.dp)) {
         Box(Modifier.padding(top = 6.dp, end = 6.dp).size(size).clip(shape).background(c.bubble).border(1.dp, c.hair, shape)
-            .clickable(onClickLabel = "Preview $name") { onOpen() }.semantics { contentDescription = "Picture $name" }) {
+            .clickable(onClickLabel = tr("Preview {0}", name)) { onOpen() }.semantics { contentDescription = tr("Picture {0}", name) }) {
             if (bmp != null) Image(bmp, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
         if (onRemove != null) Box(Modifier.align(Alignment.TopEnd).size(22.dp).clip(CircleShape).background(c.ink).border(1.5.dp, c.paper, CircleShape)
-            .clickable(onClickLabel = "Remove $name") { onRemove() }.semantics { contentDescription = "Remove $name" }, contentAlignment = Alignment.Center) {
+            .clickable(onClickLabel = tr("Remove {0}", name)) { onRemove() }.semantics { contentDescription = tr("Remove {0}", name) }, contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.Close, contentDescription = null, tint = c.paper, modifier = Modifier.size(13.dp))
         }
     }
@@ -188,8 +189,8 @@ fun FileChip(name: String, onRemove: (() -> Unit)? = null) {
         Spacer(Modifier.width(6.dp))
         Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 150.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
-        if (onRemove != null) Box(Modifier.size(30.dp).clip(CircleShape).clickable(onClickLabel = "Remove $name") { onRemove() }
-            .semantics { contentDescription = "Remove $name" }, contentAlignment = Alignment.Center) {
+        if (onRemove != null) Box(Modifier.size(30.dp).clip(CircleShape).clickable(onClickLabel = tr("Remove {0}", name)) { onRemove() }
+            .semantics { contentDescription = tr("Remove {0}", name) }, contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.Close, contentDescription = null, tint = c.sub, modifier = Modifier.size(15.dp))
         }
     }
@@ -209,7 +210,7 @@ fun AttachmentThumbs(files: List<com.blaze.assistant.agent.Attachment>, loading:
             if (f.thumb != null && !AttachView.isPdfName(f.name)) ThumbChip(f.thumb, f.name, onOpen = { preview = f.thumb }, onRemove = { onRemove(f) })
             else FileChip(f.name, onRemove = { onRemove(f) })
         }
-        if (loading) Label("Reading\u2026", color = c.accent, size = 10.sp)
+        if (loading) Label(tr("Reading\u2026"), color = c.accent, size = 10.sp)
     }
     preview?.let { p -> if (pics.size > 1 && p in pics) ImagePager(pics, pics.indexOf(p)) { preview = null } else ImagePreview(p) { preview = null } }
 }
@@ -243,8 +244,8 @@ fun SentBubble(text: String, quoted: String, media: List<String>, files: List<St
                 val shape = RoundedCornerShape(18.dp)
                 Box(Modifier.padding(start = 48.dp).widthIn(min = 120.dp, max = 260.dp).heightIn(min = 90.dp, max = 300.dp)
                     .clip(shape).background(if (bmp == null) c.faint else Color.Transparent)
-                    .clickable(onClickLabel = "Preview picture") { preview = p }
-                    .semantics { contentDescription = "Sent picture 1" }) {
+                    .clickable(onClickLabel = tr("Preview picture")) { preview = p }
+                    .semantics { contentDescription = tr("Sent picture 1") }) {
                     if (bmp != null) Image(bmp, contentDescription = null, contentScale = ContentScale.Fit,
                         modifier = Modifier.widthIn(max = 260.dp).heightIn(max = 300.dp).clip(shape))
                     else Box(Modifier.size(160.dp, 120.dp))
@@ -274,8 +275,8 @@ fun ViewOfferChip(label: String, onOpen: () -> Unit, onDismiss: () -> Unit) {
             Text(label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
         }
         Spacer(Modifier.width(6.dp))
-        Box(Modifier.size(32.dp).glass(CircleShape, GlassIntensity.Low, shadow = false).clickable(onClickLabel = "Not now") { onDismiss() }
-            .semantics { contentDescription = "Not now" }, contentAlignment = Alignment.Center) {
+        Box(Modifier.size(32.dp).glass(CircleShape, GlassIntensity.Low, shadow = false).clickable(onClickLabel = tr("Not now")) { onDismiss() }
+            .semantics { contentDescription = tr("Not now") }, contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.Close, contentDescription = null, tint = c.sub, modifier = Modifier.size(16.dp))
         }
     }

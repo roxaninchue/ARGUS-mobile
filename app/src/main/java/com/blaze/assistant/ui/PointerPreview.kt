@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -50,7 +51,7 @@ fun PointerGlyph(ripple: Float = -1f, pulse: Float = 1f, modifier: Modifier = Mo
 @Composable
 fun PointerStopChip() {
     Box(Modifier.clip(BlazeShapes.pill).background(Color(0xC81D1A16), BlazeShapes.pill).padding(horizontal = 10.dp, vertical = 5.dp)) {
-        Text("Stop", maxLines = 1, softWrap = false, style = TextStyle(fontSize = 12.sp, color = Color.White))
+        Text(tr("Stop"), maxLines = 1, softWrap = false, style = TextStyle(fontSize = 12.sp, color = Color.White))
     }
 }
 

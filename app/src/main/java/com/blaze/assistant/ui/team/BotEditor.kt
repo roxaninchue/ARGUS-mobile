@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -68,7 +69,7 @@ sealed class BotFlow {
 /** New bot: Blank / From a template / Describe it. */
 @Composable
 fun NewBotSheet(onChoice: (NewBotChoice) -> Unit, onDismiss: () -> Unit) {
-    ArgusSheet(onDismiss = onDismiss, title = "New bot") {
+    ArgusSheet(onDismiss = onDismiss, title = tr("New bot")) {
         for (ch in NewBotChoice.entries) MenuRow(ch.icon, ch.title, { onChoice(ch) }, sub = ch.sub)
     }
 }
@@ -77,7 +78,7 @@ fun NewBotSheet(onChoice: (NewBotChoice) -> Unit, onDismiss: () -> Unit) {
 @Composable
 fun TemplateSheet(templates: List<BotTemplate>, onPick: (BotTemplate) -> Unit, onDismiss: () -> Unit) {
     val c = Argus.colors
-    ArgusSheet(onDismiss = onDismiss, title = "From a template") {
+    ArgusSheet(onDismiss = onDismiss, title = tr("From a template")) {
         Column(Modifier.fillMaxWidth().heightIn(max = 520.dp).verticalScroll(rememberScrollState())) {
             var last = ""
             for (t in templates) {
@@ -96,10 +97,10 @@ fun TemplateSheet(templates: List<BotTemplate>, onPick: (BotTemplate) -> Unit, o
 @Composable
 fun DescribeBotSheet(onSend: (String) -> Unit, onDismiss: () -> Unit) {
     var text by remember { mutableStateOf("") }
-    ArgusSheet(onDismiss = onDismiss, title = "Describe your bot", primary = "Ask ${BotRules.MANAGER_NAME}",
+    ArgusSheet(onDismiss = onDismiss, title = tr("Describe your bot"), primary = tr("Ask {0}", BotRules.MANAGER_NAME),
         onPrimary = { if (text.isNotBlank()) onSend(BotEditorModel.describePrompt(text)) }, primaryEnabled = text.isNotBlank()) {
         ArgusField(text, { text = it }, "What should it do?", Modifier.padding(horizontal = 6.dp),
-            placeholder = "Keeps my reading list and reminds me on Sundays", singleLine = false)
+            placeholder = tr("Keeps my reading list and reminds me on Sundays"), singleLine = false)
     }
 }
 
@@ -107,7 +108,7 @@ fun DescribeBotSheet(onSend: (String) -> Unit, onDismiss: () -> Unit) {
 @Composable
 fun ManagerCardSheet(card: ManagerCard, onDismiss: () -> Unit) {
     val c = Argus.colors
-    ArgusSheet(onDismiss = onDismiss, title = card.name, cancel = "Close") {
+    ArgusSheet(onDismiss = onDismiss, title = card.name, cancel = tr("Close")) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             ManagerOrb(OrbSize.LG.dp, contentDescription = null)
@@ -155,11 +156,11 @@ fun BotEditorSheet(
                 BotOrb(d.face?.let { OrbFace.of(it) } ?: OrbFace.forName(d.name), ArgusTokens.botColor(d.color) ?: 0xFFCBD5E1L, OrbSize.LG.dp,
                     contentDescription = "${d.name.ifBlank { "New bot" }}'s look")
             }
-            ArgusField(d.name, { v -> onChange { it.copy(name = v) } }, "Name", placeholder = "Nova")
-            ArgusField(d.label, { v -> onChange { it.copy(label = v) } }, "Label", placeholder = "Research, Sales ops…")
-            ArgusField(d.email, { v -> onChange { it.copy(email = v) } }, "Email", placeholder = "nova@argus.ai")
-            ArgusField(d.portfolio, { v -> onChange { it.copy(portfolio = v) } }, "Portfolio", placeholder = "Accounts, projects, clients this bot owns", singleLine = false)
-            ArgusField(d.instructions, { v -> onChange { it.copy(instructions = v) } }, "Instructions", placeholder = "How this bot should work (optional)", singleLine = false)
+            ArgusField(d.name, { v -> onChange { it.copy(name = v) } }, "Name", placeholder = tr("Nova"))
+            ArgusField(d.label, { v -> onChange { it.copy(label = v) } }, "Label", placeholder = tr("Research, Sales ops…"))
+            ArgusField(d.email, { v -> onChange { it.copy(email = v) } }, "Email", placeholder = tr("nova@argus.ai"))
+            ArgusField(d.portfolio, { v -> onChange { it.copy(portfolio = v) } }, "Portfolio", placeholder = tr("Accounts, projects, clients this bot owns"), singleLine = false)
+            ArgusField(d.instructions, { v -> onChange { it.copy(instructions = v) } }, "Instructions", placeholder = tr("How this bot should work (optional)"), singleLine = false)
 
             Section("Look") {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -195,7 +196,7 @@ fun BotEditorSheet(
             Section("Mode") { Segmented(BotEditorModel.MODE_CHIPS, d.mode, { m -> onChange { it.copy(mode = m) } }) }
 
             for (p in state.problems) Text(p, style = ArgusType.preview, color = c.mute, modifier = Modifier.padding(horizontal = 14.dp))
-            if (state.canDelete) ArgusButton("Delete", onDelete, Modifier.padding(top = 8.dp, start = 8.dp), kind = ButtonKind.DANGER, icon = "trash-2")
+            if (state.canDelete) ArgusButton(tr("Delete"), onDelete, Modifier.padding(top = 8.dp, start = 8.dp), kind = ButtonKind.DANGER, icon = "trash-2")
         }
     }
 }
@@ -283,7 +284,7 @@ fun BotFlowScreen(flow: BotFlow, store: TeamStore, threads: BotThreads, onClose:
             onDismiss = onClose)
         is Step.ConfirmDelete -> {
             val b = team.firstOrNull { it.id == st.s.botId }
-            ArgusSheet(onDismiss = { step = Step.Editor(st.s) }, title = "Delete ${st.s.draft.name}?",
+            ArgusSheet(onDismiss = { step = Step.Editor(st.s) }, title = tr("Delete {0}?", st.s.draft.name),
                 primary = if (b?.kind == com.blaze.assistant.team.BotKind.DOMAIN) "Switch off" else "Delete", primaryKind = ButtonKind.DANGER,
                 onPrimary = {
                     val id = st.s.botId ?: return@ArgusSheet
@@ -307,8 +308,8 @@ fun BotFlowScreen(flow: BotFlow, store: TeamStore, threads: BotThreads, onClose:
 @Composable
 fun PendingDeleteSheet(name: String, onDelete: () -> Unit, onKeep: () -> Unit) {
     val c = Argus.colors
-    ArgusSheet(onDismiss = onKeep, title = "Delete $name?", primary = "Delete", primaryKind = ButtonKind.DANGER, onPrimary = onDelete, cancel = "Keep") {
-        Text("${BotRules.MANAGER_NAME} asked to delete $name. Its open jobs move to Unassigned.", style = ArgusType.body, color = c.mute,
+    ArgusSheet(onDismiss = onKeep, title = tr("Delete {0}?", name), primary = tr("Delete"), primaryKind = ButtonKind.DANGER, onPrimary = onDelete, cancel = tr("Keep")) {
+        Text(tr("{0} asked to delete {1}. Its open jobs move to Unassigned.", BotRules.MANAGER_NAME, name), style = ArgusType.body, color = c.mute,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
     }
 }

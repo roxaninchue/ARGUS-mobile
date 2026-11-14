@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -116,7 +117,7 @@ fun RichChart(ch: RichKit.Chart) {
     val axisStyle = TextStyle(fontFamily = Type.Sans, fontSize = 9.5.sp, color = c.sub)
     val blue = richAccent()
     Column(Modifier.fillMaxWidth().clip(cardShape).background(richFill()).padding(14.dp)
-        .semantics { contentDescription = "Chart: " + ch.title.ifBlank { ch.type.name.lowercase() } + ". Tap a bar or point to read its value." }) {
+        .semantics { contentDescription = tr("Chart: ") + ch.title.ifBlank { ch.type.name.lowercase() } + ". Tap a bar or point to read its value." }) {
         CardTitle(ch.title)
         // The tapped value, in a small solid pill (or a hint until something is tapped).
         val tip = sel?.let { RichKit.tipText(ch, it.first, it.second) }.orEmpty()
@@ -124,7 +125,7 @@ fun RichChart(ch: RichKit.Chart) {
             if (tip.isNotEmpty()) Text(tip, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.clip(pillShape).background(blue).padding(horizontal = 10.dp, vertical = 4.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = richOnAccent()))
-            else Text("Tap the chart to see values", style = small(c.weak))
+            else Text(tr("Tap the chart to see values"), style = small(c.weak))
         }
         when (ch.type) {
             RichKit.ChartType.PIE -> PieChart(ch, sel?.second) { i -> sel = if (i == null) null else 0 to i }
@@ -318,7 +319,7 @@ fun RichChoices(ch: RichKit.Choices) {
                 val enabled = send != null && picked.isEmpty()
                 Text(o.label, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.clip(pillShape).background(if (on) richAccent() else c.accentSoft)
-                        .clickable(enabled = enabled, onClickLabel = "Send \u201c${o.label}\u201d") { picked = o.label; send?.invoke(o.send) }
+                        .clickable(enabled = enabled, onClickLabel = tr("Send \u201c{0}\u201d", o.label)) { picked = o.label; send?.invoke(o.send) }
                         .heightIn(min = 40.dp).padding(horizontal = 16.dp, vertical = 10.dp),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                         color = if (on) richOnAccent() else if (send == null && picked.isEmpty()) c.sub else c.accent))
@@ -466,7 +467,7 @@ fun RichCompare(cp: RichKit.Compare) {
                 Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(if (pick) richAccent() else c.field).padding(horizontal = 10.dp, vertical = 8.dp)) {
                     Text(n, maxLines = 2, overflow = TextOverflow.Ellipsis,
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = if (pick) richOnAccent() else c.ink))
-                    if (pick) Text("Pick", style = TextStyle(fontFamily = Type.Sans, fontSize = 10.5.sp, fontWeight = FontWeight.Medium, color = richOnAccent().copy(alpha = 0.75f)))
+                    if (pick) Text(tr("Pick"), style = TextStyle(fontFamily = Type.Sans, fontSize = 10.5.sp, fontWeight = FontWeight.Medium, color = richOnAccent().copy(alpha = 0.75f)))
                 }
             }
         }

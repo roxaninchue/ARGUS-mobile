@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.argus.kit
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -144,8 +145,8 @@ private fun BotChatRowBody(
             .clearAndSetSemantics {
                 contentDescription = desc
                 role = Role.Button
-                onClick(label = "Open") { onClick(); true }
-                if (onLongClick != null) onLongClick(label = "More") { onLongClick(); true }
+                onClick(label = tr("Open")) { onClick(); true }
+                if (onLongClick != null) onLongClick(label = tr("More")) { onLongClick(); true }
                 if (actions.isNotEmpty()) customActions = actions
             }
             .heightIn(min = KitSpec.Row.MIN_HEIGHT.dp)

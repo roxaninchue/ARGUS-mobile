@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -337,7 +338,7 @@ fun HomeRedesignContent(
             HomeGridV2(s, intro?.takeIf { !it.done }, onWeather = onWeather, onTopic = onTopic, onPickInterests = onPickInterests,
                 onMusic = onMusic, onMusicToggle = onMusicToggle, onTodo = onTodo, onNextUp = onNextUp, onAction = onAction) {
                 Box(Modifier.fillMaxWidth().padding(top = 2.dp), contentAlignment = Alignment.Center) {
-                    Text("All widgets", modifier = Modifier.clip(CircleShape).clickable(role = Role.Button, onClick = onAllWidgets)
+                    Text(tr("All widgets"), modifier = Modifier.clip(CircleShape).clickable(role = Role.Button, onClick = onAllWidgets)
                         .graphicsLayer { alpha = if (intro == null || intro.done) 1f else 0f }.padding(horizontal = 16.dp, vertical = 10.dp),
                         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f)))
                 }

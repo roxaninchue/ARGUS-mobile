@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.i18n.tr
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -119,7 +120,7 @@ fun SpaceSpotlightLayer(
     }
     Box(modifier.fillMaxSize()) {
         // the shared overlay: a 55 % scrim and the panel arrive and leave on one clock
-        SpaceScrim(open, onDismiss = { composer.closeSpotlight() }, label = "Close search", modifier = Modifier.testTag(SpaceTags.SCRIM))
+        SpaceScrim(open, onDismiss = { composer.closeSpotlight() }, label = tr("Close search"), modifier = Modifier.testTag(SpaceTags.SCRIM))
         AnimatedVisibility(open, modifier = Modifier.align(Alignment.TopCenter),
             enter = MotionTokens.overlayIn(fromTop = true), exit = MotionTokens.overlayOut(fromTop = true)) {
             BoxWithConstraints(Modifier.fillMaxWidth().statusBarsPadding().imePadding().padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
@@ -164,12 +165,12 @@ fun SpaceSpotlightPanel(
             .testTag(SpaceTags.SPOTLIGHT)
             // taps on the panel stay in it (the scrim around it closes Spotlight)
             .clickable(remember { MutableInteractionSource() }, indication = null) { }
-            .semantics { contentDescription = "Spotlight" }) {
+            .semantics { contentDescription = tr("Spotlight") }) {
             Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 SearchGlyph(look.accent, 22.dp)
                 Spacer(Modifier.width(12.dp))
                 Box(Modifier.weight(1f).padding(vertical = 14.dp)) {
-                    if (composer.query.isEmpty()) Text("Search apps, actions, settings, chats\u2026", maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.bodyText(look.sub))
+                    if (composer.query.isEmpty()) Text(tr("Search apps, actions, settings, chats\u2026"), maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.bodyText(look.sub))
                     BasicTextField(composer.query, { composer.query = it },
                         singleLine = true, textStyle = SpaceType.bodyText(look.ink),
                         cursorBrush = SolidColor(Color(SpacePalette.ELECTRIC)),
@@ -178,7 +179,7 @@ fun SpaceSpotlightPanel(
                         modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(SpaceTags.SPOTLIGHT_FIELD).semantics { contentDescription = "Spotlight search" })
                 }
                 if (composer.query.isNotEmpty()) Box(Modifier.size(40.dp).clip(CircleShape).clickable { composer.query = "" }
-                    .semantics { contentDescription = "Clear the search"; role = Role.Button }, contentAlignment = Alignment.Center) {
+                    .semantics { contentDescription = tr("Clear the search"); role = Role.Button }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Close, contentDescription = null, tint = look.sub, modifier = Modifier.size(18.dp))
                 }
             }

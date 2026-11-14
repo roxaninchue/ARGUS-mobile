@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
@@ -121,11 +122,11 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(28.dp))
-            Label("CALL", color = c.ink.copy(alpha = 0.55f), size = 10.sp)
+            Label(tr("CALL"), color = c.ink.copy(alpha = 0.55f), size = 10.sp)
             Spacer(Modifier.height(6.dp))
             Text("${BrandName.NAME}", style = TextStyle(fontFamily = Type.Display, fontSize = 30.sp, color = c.ink))
             Spacer(Modifier.height(4.dp))
-            Text("%d:%02d".format(seconds / 60, seconds % 60),
+            Text(tr("%d:%02d").format(seconds / 60, seconds % 60),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink.copy(alpha = 0.6f)))
 
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -151,7 +152,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
                     Box(Modifier.size(76.dp).clip(CircleShape).background(Color(0xFFB4554F)).border(1.dp, Color.White.copy(alpha = 0.22f), CircleShape).clickable { hangUp() },
                         contentAlignment = Alignment.Center) { PhoneGlyph(Color.White, 30.dp, hangUp = true) }
                     Spacer(Modifier.height(8.dp))
-                    Label("End", color = c.ink.copy(alpha = 0.7f), size = 9.sp)
+                    Label(tr("End"), color = c.ink.copy(alpha = 0.7f), size = 9.sp)
                 }
                 CallButton(if (earpiece) "Earpiece" else "Speaker", on = !earpiece, onClick = {
                     Voice.callSpeaker.value = earpiece

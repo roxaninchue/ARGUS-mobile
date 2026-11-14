@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -146,7 +147,7 @@ object HomeFocusBus {
 /** A card's top / header: tapping it focuses the card. Nothing outside a focusable Home. */
 fun header(card: HomeGrid.Card): Modifier = Modifier.composed {
     val f = LocalHomeFocus.current
-    if (f == null) Modifier else Modifier.clickable(role = Role.Button, onClickLabel = "Expand") { f.open(card) }
+    if (f == null) Modifier else Modifier.clickable(role = Role.Button, onClickLabel = tr("Expand")) { f.open(card) }
 }
 
 /** Pure: the rect the frame is drawn at, p = 0 (the grid cell) .. 1 (the focus rect). Reduce motion: always the focus rect. */
@@ -192,7 +193,7 @@ fun HomeFocusOverlay(f: HomeFocusState, s: HomeGridState, backdrop: HomeBackdrop
         Box(Modifier.fillMaxSize().graphicsLayer { alpha = f.progress.value }
             .background(Color(0xFF060A14).copy(alpha = if (backdrop.mode == HomeBackdrop.Mode.SOFTWARE) 0.42f else 0.30f))
             .pointerInput(f) { detectTapGestures { f.close() } }
-            .semantics { contentDescription = "Close card"; onClick(label = "Close card") { f.close(); true } })
+            .semantics { contentDescription = tr("Close card"); onClick(label = tr("Close card")) { f.close(); true } })
         // the frame, grown from the cell's rect to the focus rect (corners never stretch)
         Canvas(Modifier.fillMaxSize().graphicsLayer { alpha = if (motion) 1f else f.progress.value }) {
             val fr = focusRect ?: return@Canvas
@@ -301,7 +302,7 @@ private fun ColumnScope.FocusedContent(card: HomeGrid.Card, s: HomeGridState, cl
             }
             Spacer(Modifier.height(10.dp))
             FocusTile {
-                Text("Sunset", style = style(14.sp, color = HomeGridLook.sub))
+                Text(tr("Sunset"), style = style(14.sp, color = HomeGridLook.sub))
                 Text(WeatherBoard.clock(b.sunset, s.h24).ifBlank { "--:--" }, style = style(32.sp, FontWeight.Bold))
             }
             Spacer(Modifier.height(16.dp))
@@ -313,7 +314,7 @@ private fun ColumnScope.FocusedContent(card: HomeGrid.Card, s: HomeGridState, cl
                 withStyle(SpanStyle(color = HomeGridLook.sub)) { append(" \u00b7 Tracking") }
             }, style = style(19.sp), modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(12.dp))
-            if (s.allTopics.isEmpty()) Text("Tell me what you're into and the latest headlines show up here.", style = style(14.sp, color = HomeGridLook.sub))
+            if (s.allTopics.isEmpty()) Text(tr("Tell me what you're into and the latest headlines show up here."), style = style(14.sp, color = HomeGridLook.sub))
             s.allTopics.forEach { t ->
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(enabled = t.url.isNotBlank(), role = Role.Button) { onTopic(t) }
                     .semantics(mergeDescendants = true) { }.padding(vertical = 7.dp)) {
@@ -355,7 +356,7 @@ private fun ColumnScope.FocusedContent(card: HomeGrid.Card, s: HomeGridState, cl
         }
         HomeGrid.Card.TODO -> {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("To-do", style = style(19.sp, FontWeight.SemiBold), modifier = Modifier.weight(1f).semantics { heading() })
+                Text(tr("To-do"), style = style(19.sp, FontWeight.SemiBold), modifier = Modifier.weight(1f).semantics { heading() })
                 Text("${s.taskCount}", style = style(14.sp, color = HomeGridLook.sub))
             }
             Spacer(Modifier.height(10.dp))
@@ -383,7 +384,7 @@ private fun ColumnScope.FocusedContent(card: HomeGrid.Card, s: HomeGridState, cl
                         tint = Color.White, modifier = Modifier.size(26.dp))
                 }
                 Spacer(Modifier.width(14.dp))
-                Text("Next up", style = style(15.sp, color = HomeGridLook.sub), modifier = Modifier.semantics { heading() })
+                Text(tr("Next up"), style = style(15.sp, color = HomeGridLook.sub), modifier = Modifier.semantics { heading() })
             }
             Spacer(Modifier.height(12.dp))
             Text(if (item == null) "Nothing scheduled" else item.title, style = style(22.sp, FontWeight.SemiBold), maxLines = 3, overflow = TextOverflow.Ellipsis)
@@ -392,7 +393,7 @@ private fun ColumnScope.FocusedContent(card: HomeGrid.Card, s: HomeGridState, cl
             Pill(if (item == null) "Set a reminder" else "Open", primary = true) { close(); onNextUp() }
         }
         HomeGrid.Card.QUICK -> {
-            Text("Quick actions", style = style(19.sp, FontWeight.SemiBold), modifier = Modifier.semantics { heading() })
+            Text(tr("Quick actions"), style = style(19.sp, FontWeight.SemiBold), modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(10.dp))
             s.actions.forEach { a ->
                 FlowRow(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(role = Role.Button, onClickLabel = a.verb) { close(); onAction(a) }

@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -90,9 +91,9 @@ fun ColorWheelPicker(value: String, onChange: (String) -> Unit, modifier: Modifi
                 Box(Modifier.fillMaxWidth().height(44.dp).clip(BlazeShapes.small).background(checker(c.dark)).border(1.dp, c.hair, BlazeShapes.small)) {
                     Box(Modifier.matchParentSize().background(argbColor(argb)))
                 }
-                Label("Brightness", color = c.sub, size = 9.sp)
+                Label(tr("Brightness"), color = c.sub, size = 9.sp)
                 ColorBar(v, Brush.horizontalGradient(listOf(Color.Black, argbColor(DesignPage.hsvToArgb(hue, sat, 1.0)))), "Brightness") { v = it; emit() }
-                Label("Opacity", color = c.sub, size = 9.sp)
+                Label(tr("Opacity"), color = c.sub, size = 9.sp)
                 ColorBar(alpha, Brush.horizontalGradient(listOf(argbColor(argb).copy(alpha = 0f), argbColor(argb).copy(alpha = 1f))), "Opacity", checkered = true) { alpha = it; emit() }
             }
         }
@@ -109,7 +110,7 @@ fun ColorWheelPicker(value: String, onChange: (String) -> Unit, modifier: Modifi
                     textStyle = TextStyle(fontFamily = Type.Mono, fontSize = 14.sp, color = c.ink),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done, autoCorrectEnabled = false),
                     keyboardActions = KeyboardActions(onDone = { hexFocus = false; hex = DesignPage.toHex(DesignPage.hsvToArgb(hue, sat, v, alpha)) }),
-                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Hex colour" }
+                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = tr("Hex colour") }
                         .onFocusChanged { st -> hexFocus = st.isFocused; if (!st.isFocused) hex = DesignPage.toHex(DesignPage.hsvToArgb(hue, sat, v, alpha)) })
             }
             Spacer(Modifier.width(10.dp))
@@ -119,7 +120,7 @@ fun ColorWheelPicker(value: String, onChange: (String) -> Unit, modifier: Modifi
                     Box(Modifier.size(26.dp).clip(BlazeShapes.pill).background(argbColor(p), BlazeShapes.pill)
                         .border(if (p == argb) 2.dp else 1.dp, if (p == argb) c.ink else c.hair, BlazeShapes.pill)
                         .clickable { val h = DesignPage.argbToHsv(p); hue = h[0]; sat = h[1]; v = h[2]; alpha = h[3]; emit() }
-                        .semantics { contentDescription = "Swatch $s" })
+                        .semantics { contentDescription = tr("Swatch {0}", s) })
                 }
             }
         }
@@ -140,7 +141,7 @@ private fun HueWheel(hue: Double, sat: Double, v: Double, modifier: Modifier, on
         .pointerInput(Unit) { detectTapGestures { pick(it, size.width.toFloat(), size.height.toFloat()) } }
         .pointerInput(Unit) { detectDragGestures(onDragStart = { pick(it, size.width.toFloat(), size.height.toFloat()) }) { ch, _ ->
             ch.consume(); pick(ch.position, size.width.toFloat(), size.height.toFloat()) } }
-        .semantics { contentDescription = "Colour wheel" }) {
+        .semantics { contentDescription = tr("Colour wheel") }) {
         val r = min(size.width, size.height) / 2f
         val center = Offset(size.width / 2f, size.height / 2f)
         val hues = (0..12).map { argbColor(DesignPage.hsvToArgb(it * 30.0, 1.0, 1.0)) }

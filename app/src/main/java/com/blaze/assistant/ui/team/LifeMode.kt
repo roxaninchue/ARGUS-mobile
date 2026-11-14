@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -134,10 +135,10 @@ fun LifeMode(
                     LifeQuickAccess(nav.onConnect, nav.onApps)
                 }
                 LifeModel.Section.SIGN_IN -> LifeCard(Modifier.testTag(LifeTags.SIGN_IN)) {
-                    Text("${BrandName.UPPER} can do more", style = ArgusType.title2, color = c.ink)
-                    Text("Sign in to your ${BrandName.NAME} account and it starts working for you right away. No keys, no settings.",
+                    Text(tr("{0} can do more", BrandName.UPPER), style = ArgusType.title2, color = c.ink)
+                    Text(tr("Sign in to your {0} account and it starts working for you right away. No keys, no settings.", BrandName.NAME),
                         style = ArgusType.body, color = c.mute, modifier = Modifier.padding(top = 6.dp, bottom = 12.dp))
-                    ArgusButton("Sign in", nav.onSignIn, kind = ButtonKind.PRIMARY, icon = "user")
+                    ArgusButton(tr("Sign in"), nav.onSignIn, kind = ButtonKind.PRIMARY, icon = "user")
                 }
                 LifeModel.Section.SETUP -> Box(Modifier.padding(horizontal = 12.dp).testTag(LifeTags.SETUP)) {
                     ProgressLine("Finishing setup \u00b7 ${state.setupLeft} left", state.setupPercent / 100f, onClick = nav.onSetup)
@@ -163,8 +164,8 @@ fun LifeMode(
     }
     menuFor?.let { w ->
         com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { menuFor = null }, title = w.title) {
-            com.blaze.assistant.ui.argus.kit.MenuRow("refresh-cw", "Refresh", { menuFor = null; boardActions.onRefresh(w) })
-            com.blaze.assistant.ui.argus.kit.MenuRow("trash-2", "Remove from Life", { menuFor = null; boardActions.onRemove(w) }, danger = true)
+            com.blaze.assistant.ui.argus.kit.MenuRow("refresh-cw", tr("Refresh"), { menuFor = null; boardActions.onRefresh(w) })
+            com.blaze.assistant.ui.argus.kit.MenuRow("trash-2", tr("Remove from Life"), { menuFor = null; boardActions.onRemove(w) }, danger = true)
         }
     }
 }
@@ -193,7 +194,7 @@ private fun TodayStripView(strip: LifeModel.TodayStrip, onOpen: () -> Unit) {
     Column(Modifier.fillMaxWidth().testTag(LifeTags.TODAY)) {
         LifeFoldHead("Today", LifeBoard.SECTION + "Today", "Schedule \u203a", onOpen)
         if (!LocalLifeFold.current.isFolded(LifeBoard.SECTION + "Today")) Column(Modifier.padding(horizontal = 12.dp).fillMaxWidth().argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp))
-            .clickable(role = Role.Button, onClickLabel = "Open Schedule", onClick = onOpen).padding(vertical = 14.dp)) {
+            .clickable(role = Role.Button, onClickLabel = tr("Open Schedule"), onClick = onOpen).padding(vertical = 14.dp)) {
             BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(30.dp)) {
                 val w = maxWidth
                 Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center).background(c.line2))
@@ -207,7 +208,7 @@ private fun TodayStripView(strip: LifeModel.TodayStrip, onOpen: () -> Unit) {
                     Box(Modifier.align(Alignment.CenterStart).offset(x = w * at - 1.dp).width(2.dp).height(18.dp).background(c.brandCobalt))
                 }
             }
-            if (strip.empty) Text("Nothing on today. Ask me to plan something, or add a routine.", style = ArgusType.sub, color = c.mute,
+            if (strip.empty) Text(tr("Nothing on today. Ask me to plan something, or add a routine."), style = ArgusType.sub, color = c.mute,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp))
             else LazyRow(Modifier.fillMaxWidth().padding(top = 8.dp), contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(strip.allDay + strip.timed) { i ->
@@ -274,7 +275,7 @@ private fun Panels(weather: LifeModel.Weather?, answer: SpaceAnswer.Card?, asks:
             }
         }
         answer?.let { a ->
-            LifeCard(onClick = nav.onOpenChat, label = "Open the answer in the chat") {
+            LifeCard(onClick = nav.onOpenChat, label = tr("Open the answer in the chat")) {
                 Text(a.ask, style = ArgusType.meta, color = c.meta, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(if (a.text.isBlank()) "Working on it\u2026" else a.text, style = ArgusType.body, color = c.ink, maxLines = 6, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 6.dp).semantics { liveRegion = LiveRegionMode.Polite })

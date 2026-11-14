@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Context
@@ -113,9 +114,9 @@ fun BrainCard(onSignIn: () -> Unit = {}) {
     }
     val (dot, line) = BrainStatus.of(signedIn, reach)
     Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-        Label("Brain", size = 10.sp)
+        Label(tr("Brain"), size = 10.sp)
         Spacer(Modifier.height(6.dp))
-        Text("${BrandName.NAME} Cloud", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 18.sp, color = c.ink))
+        Text(tr("{0} Cloud", BrandName.NAME), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 18.sp, color = c.ink))
         Text(BrainStatus.TAGLINE, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth().pageGlass(c, PageGlass.row).clickable { if (!signedIn) onSignIn() else tick++ }.padding(14.dp),

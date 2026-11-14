@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -79,7 +80,7 @@ internal fun AppStorePage() {
     }
     Spacer(Modifier.height(14.dp))
     if (upList.isNotEmpty()) {
-        Label("Updates (${upList.size})", modifier = Modifier.padding(bottom = 8.dp))
+        Label(tr("Updates ({0})", upList.size), modifier = Modifier.padding(bottom = 8.dp))
         upList.forEach { a -> AppRow(a, open == a.id, jobs[a.id], installed[a.pkg], updates[a.id], onToggle = { open = if (open == a.id) null else a.id }) }
         Spacer(Modifier.height(8.dp))
     }
@@ -97,7 +98,7 @@ internal fun AppStorePage() {
         .padding(vertical = 12.dp), contentAlignment = Alignment.Center) { ButtonText("Show more (${list.size - shown})", color = Color.White) }
     Spacer(Modifier.height(14.dp))
     Field("VirusTotal key (optional, your own)", vt, { vt = it; AppStore.setVtKey(it) }, "Without one, installs say \"not scanned\"", secret = true)
-    Text("Apps come straight from each project's own GitHub or GitLab releases and land on this phone through Android's installer. " +
+    Text(tr("Apps come straight from each project's own GitHub or GitLab releases and land on this phone through Android's installer. ") +
         "Uninstall them any time from Android's settings. Thanks to every maintainer: star their repos.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 17.sp, color = c.weak))
     Spacer(Modifier.height(18.dp))
@@ -117,7 +118,7 @@ private fun AppRow(a: StoreApp, expanded: Boolean, job: AppStore.Job?, have: Ins
         Text(a.summary, maxLines = if (expanded) 6 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
         Text(StorePolicy.NOTICE, modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = c.weak))
-        if (have != null) Label("Installed ${have.versionName}" + (newer?.let { " · update ${StoreVersions.display(it)}" } ?: ""), size = 10.sp, modifier = Modifier.padding(top = 6.dp))
+        if (have != null) Label(tr("Installed {0}", have.versionName) + (newer?.let { " · update ${StoreVersions.display(it)}" } ?: ""), size = 10.sp, modifier = Modifier.padding(top = 6.dp))
         if (job != null) Label(job.message + (if (job.step == StoreStep.DOWNLOADING && job.total > 0) " · ${storeSize(job.done)} of ${storeSize(job.total)}" else ""),
             color = if (job.step == StoreStep.BLOCKED || job.step == StoreStep.FAILED) c.accent else c.sub, size = 10.sp, modifier = Modifier.padding(top = 6.dp))
         if (expanded) {
@@ -134,7 +135,7 @@ private fun AppRow(a: StoreApp, expanded: Boolean, job: AppStore.Job?, have: Ins
                     }
                 }
             }
-            Text("Release page", modifier = Modifier.padding(top = 8.dp).clip(BlazeShapes.pill).clickable { AppStore.openReleases(ctx, a) }.padding(vertical = 4.dp),
+            Text(tr("Release page"), modifier = Modifier.padding(top = 8.dp).clip(BlazeShapes.pill).clickable { AppStore.openReleases(ctx, a) }.padding(vertical = 4.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))
         }
     }

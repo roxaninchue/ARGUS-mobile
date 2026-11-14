@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
@@ -54,11 +55,11 @@ fun SchedulePage(list0: List<Routine>? = null, adding0: Boolean = false, now: Lo
     PageHead("Schedule", "Routines", "Things ${BrandName.NAME} does on a schedule, even when the app is closed. Or just ask: \u201cevery weekday at 7, brief me on my calendar\u201d.")
     if (adding) {
         Column(Modifier.fillMaxWidth().pageGlass(c, PageGlass.row, strongRim = true).padding(14.dp)) {
-            Label("New routine", size = 10.sp, color = c.accent, modifier = Modifier.padding(bottom = 12.dp))
+            Label(tr("New routine"), size = 10.sp, color = c.accent, modifier = Modifier.padding(bottom = 12.dp))
             Field("Name", name, { name = it }, "Morning brief")
             Field("What should ${BrandName.NAME} do?", prompt, { prompt = it }, "Summarise today's calendar and unread texts")
             Field("Time (24h)", time, { time = it }, "07:00")
-            Label("Days", modifier = Modifier.padding(bottom = 8.dp))
+            Label(tr("Days"), modifier = Modifier.padding(bottom = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 listOf("M", "T", "W", "T", "F", "S", "S").forEachIndexed { i, d ->
                     val on = days and (1 shl i) != 0
@@ -83,7 +84,7 @@ fun SchedulePage(list0: List<Routine>? = null, adding0: Boolean = false, now: Lo
         Spacer(Modifier.height(18.dp))
     }
     if (list.isEmpty()) {
-        if (!adding) Rows { EmptyState("Nothing scheduled yet", "Ask in chat, or add one here.", action = "+ New routine") { adding = true } }
+        if (!adding) Rows { EmptyState(tr("Nothing scheduled yet"), tr("Ask in chat, or add one here."), action = tr("+ New routine")) { adding = true } }
         return
     }
     val onCount = list.count { it.enabled }

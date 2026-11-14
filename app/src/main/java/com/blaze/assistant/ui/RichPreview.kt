@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.core.Animatable
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -214,8 +215,8 @@ fun RichPreviewCard(b: RichReplies.Block, key: String, streaming: Boolean, tail:
         }
         .onGloballyPositioned { co -> if (tail && orb != null) orb.aim(co, Offset(co.size.width / 2f, 0f), card = true) }
         .glass(GlassTokens.cardShape, GlassIntensity.Medium)
-        .clickable(onClickLabel = "Open $kind", role = Role.Button) { open = true }
-        .semantics(mergeDescendants = true) { contentDescription = "$kind: $title. Tap to open." }
+        .clickable(onClickLabel = tr("Open {0}", kind), role = Role.Button) { open = true }
+        .semantics(mergeDescendants = true) { contentDescription = tr("{0}: {1}. Tap to open.", kind, title) }
         .padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -281,7 +282,7 @@ private fun ZoomPanBox(width: Dp, content: @Composable () -> Unit) {
                 else { zoom = 2.5f; pan = clamp((Offset(box.width / 2f, box.height / 2f) - o) * 1.5f, 2.5f) }
             })
         }
-        .semantics { contentDescription = "Pinch to zoom, double-tap to reset" },
+        .semantics { contentDescription = tr("Pinch to zoom, double-tap to reset") },
         contentAlignment = Alignment.Center) {
         Box(Modifier.requiredWidth(width).wrapContentHeight(Alignment.CenterVertically, unbounded = true).onSizeChanged { child = it }
             .graphicsLayer { val s = fit() * zoom; scaleX = s; scaleY = s; translationX = pan.x; translationY = pan.y }) { content() }
@@ -323,9 +324,9 @@ private fun TableWindow(t: RichKit.TableCard) {
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = if (t.title.isBlank()) FontWeight.Normal else FontWeight.Bold,
                     fontSize = if (t.title.isBlank()) 12.sp else 15.sp, color = if (t.title.isBlank()) TableCardStyle.Head else TableCardStyle.Cell))
             fun copy(s: String, what: String) { clip.setText(AnnotatedString(s)); Toast.makeText(ctx, what, Toast.LENGTH_SHORT).show() }
-            Text("Copy", modifier = Modifier.clip(RoundedCornerShape(50)).clickable { copy(RichKit.tablePlain(t), "Copied") }.padding(horizontal = 10.dp, vertical = 6.dp),
+            Text(tr("Copy"), modifier = Modifier.clip(RoundedCornerShape(50)).clickable { copy(RichKit.tablePlain(t), "Copied") }.padding(horizontal = 10.dp, vertical = 6.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TableCardStyle.Head))
-            Text("TSV", modifier = Modifier.clip(RoundedCornerShape(50)).clickable { copy(RichKit.tableTsv(t), "Copied as TSV") }.padding(horizontal = 10.dp, vertical = 6.dp),
+            Text(tr("TSV"), modifier = Modifier.clip(RoundedCornerShape(50)).clickable { copy(RichKit.tableTsv(t), "Copied as TSV") }.padding(horizontal = 10.dp, vertical = 6.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TableCardStyle.Head))
         }
         if (t.headers.isNotEmpty()) {

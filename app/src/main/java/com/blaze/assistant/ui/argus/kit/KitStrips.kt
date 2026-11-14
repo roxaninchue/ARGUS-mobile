@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.argus.kit
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -108,7 +109,7 @@ fun PinStrip(
                     .clickable(role = Role.Button) { onOpen(pin) }
                     .clearAndSetSemantics {
                         contentDescription = KitA11y.pin(pin); role = Role.Button
-                        onClick(label = "Open") { onOpen(pin); true }
+                        onClick(label = tr("Open")) { onOpen(pin); true }
                         if (actions.isNotEmpty()) customActions = actions
                     }
                     .padding(4.dp),

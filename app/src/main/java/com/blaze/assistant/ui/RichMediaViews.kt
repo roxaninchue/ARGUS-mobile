@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -107,7 +108,7 @@ fun RichDoc(d: RichMedia.Doc) {
     val c = LocalBlaze.current
     val ctx = LocalContext.current
     fun file(): File? = File(d.path).takeIf { it.isAbsolute }
-    Row(Modifier.fillMaxWidth().clip(cardShape).background(c.faint).semantics { contentDescription = "Document ${d.title}" }.padding(12.dp),
+    Row(Modifier.fillMaxWidth().clip(cardShape).background(c.faint).semantics { contentDescription = tr("Document {0}", d.title) }.padding(12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(width = 44.dp, height = 54.dp).clip(RoundedCornerShape(8.dp)).background(c.accent.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
             Text(RichMedia.badge(d.format), style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = c.accent))

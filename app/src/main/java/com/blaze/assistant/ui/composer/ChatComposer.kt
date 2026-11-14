@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui.composer
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import com.blaze.assistant.composer.ComposerLook
 import androidx.compose.animation.AnimatedVisibility
@@ -184,17 +185,17 @@ fun BlazeChatBar(state: ComposerState, modifier: Modifier = Modifier, onProfile:
                 .border(1.dp, c.ink.copy(alpha = 0.10f), RoundedCornerShape(50))
                 .padding(start = 18.dp, end = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                    if (state.text.isEmpty()) Text("Message ${BrandName.NAME}", style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.sub))
+                    if (state.text.isEmpty()) Text(tr("Message {0}", BrandName.NAME), style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.sub))
                     BasicTextField(state.text, { state.text = it },
                         textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.ink), cursorBrush = SolidColor(DuoColors.blazeBlue),
                         maxLines = 5, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                         keyboardActions = KeyboardActions(onSend = { if (state.canSend) state.send() }),
-                        modifier = Modifier.fillMaxWidth().focusRequester(state.barFocus).semantics { contentDescription = "Message ${BrandName.NAME}" })
+                        modifier = Modifier.fillMaxWidth().focusRequester(state.barFocus).semantics { contentDescription = tr("Message {0}", BrandName.NAME) })
                 }
                 // The send arrow lives INSIDE the pill and only while there's text.
                 AnimatedVisibility(state.canSend, enter = fadeIn(tween(MotionTokens.ms(MotionTokens.SHORT).toInt())), exit = fadeOut(tween(MotionTokens.ms(MotionTokens.SHORT).toInt()))) {
                     Box(Modifier.size(36.dp).clip(CircleShape).background(DuoColors.blazeBlue).clickable { state.send() }
-                        .semantics { contentDescription = "Send" }, contentAlignment = Alignment.Center) {
+                        .semantics { contentDescription = tr("Send") }, contentAlignment = Alignment.Center) {
                         Icon(Icons.Rounded.ArrowUpward, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -293,7 +294,7 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 8.dp)) {
             if (earlier) item(key = "earlier") {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("Show earlier messages", modifier = Modifier.clip(RoundedCornerShape(50)).background(ComposerLook.solidChip(c))
+                    Text(tr("Show earlier messages"), modifier = Modifier.clip(RoundedCornerShape(50)).background(ComposerLook.solidChip(c))
                         .clickable { state.showEarlier() }.padding(horizontal = 14.dp, vertical = 7.dp),
                         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.ink))
                 }
@@ -418,7 +419,7 @@ fun TypingDots() {
     val solid = LocalComposerSolid.current
     Row(Modifier.clip(RoundedCornerShape(18.dp))
         .then(if (solid) Modifier.background(ComposerLook.blazeBubble(c)) else Modifier.glass(RoundedCornerShape(18.dp), GlassIntensity.High, shadow = false))
-        .semantics { contentDescription = "${BrandName.NAME} is typing" }.padding(horizontal = 14.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        .semantics { contentDescription = tr("{0} is typing", BrandName.NAME) }.padding(horizontal = 14.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         if (!MotionTokens.enabled) repeat(3) { Box(Modifier.size(7.dp).clip(CircleShape).background(c.sub)) }
         else {
             val t = rememberInfiniteTransition(label = "dots")

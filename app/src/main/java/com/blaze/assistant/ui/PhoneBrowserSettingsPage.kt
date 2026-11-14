@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
@@ -35,7 +36,7 @@ fun PhoneBrowserSettingsPage() {
     PhoneBrowser.init(ctx)
     val sites = remember(tick) { PhoneBrowser.sites() }
     Spacer(Modifier.height(10.dp))
-    Text("${BrandName.NAME} Phone is ${BrandName.NAME}'s own phone screen: it browses, signs in and books for you in the background, and you can watch it " +
+    Text(tr("{0} Phone is {1}'s own phone screen: it browses, signs in and books for you in the background, and you can watch it ", BrandName.NAME, BrandName.NAME) +
         "live in the chat or take control. It keeps its sign-ins per site, apart from your own browser." +
         if (!PhoneBrowser.multiProfile) " This phone's WebView can't keep separate profiles, so ${BrandName.NAME} Phone shares cookies with ${BrandName.NAME}'s browser (not its private tabs)." else "",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))

@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.graphics.Bitmap
 import android.widget.Toast
@@ -93,7 +94,7 @@ fun OnThisDayCard(groups: List<Pair<Int, List<Entry>>>, now: Long, onOpen: (Entr
     val c = LocalBlaze.current.mono
     if (groups.isEmpty()) return
     Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
-        Text("On this day", style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = c.ink))
+        Text(tr("On this day"), style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = c.ink))
         Spacer(Modifier.height(6.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             groups.forEach { (year, list) ->
@@ -138,7 +139,7 @@ fun CleanUpDialog(all: List<Entry>, onTrash: (List<Entry>) -> Unit, onDismiss: (
             }
             if (groups.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
-                PillButton("Move ${groups.sumOf { it.size - 1 }} extra copies to Trash (${GalleryModel.size(GalleryTools.savings(groups))})", primary = true, icon = Icons.Rounded.Delete) {
+                PillButton(tr("Move {0} extra copies to Trash ({1})", groups.sumOf { it.size - 1 }, GalleryModel.size(GalleryTools.savings(groups))), primary = true, icon = Icons.Rounded.Delete) {
                     onTrash(groups.flatMap { it.drop(1) }.mapNotNull { byId[it.id] })
                 }
             }
@@ -151,10 +152,10 @@ fun CleanUpDialog(all: List<Entry>, onTrash: (List<Entry>) -> Unit, onDismiss: (
                 } }
             }
             val pick = blur.filter { it.id !in skipBlur }
-            if (pick.isNotEmpty()) PillButton("Move ${pick.size} blurry to Trash", primary = false, icon = Icons.Rounded.Delete) { onTrash(pick.mapNotNull { byId[it.id] }) }
+            if (pick.isNotEmpty()) PillButton(tr("Move {0} blurry to Trash", pick.size), primary = false, icon = Icons.Rounded.Delete) { onTrash(pick.mapNotNull { byId[it.id] }) }
             }
             Spacer(Modifier.height(14.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PillButton("Close", primary = false, onClick = onDismiss) }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PillButton(tr("Close"), primary = false, onClick = onDismiss) }
         }
     }
 }
@@ -168,7 +169,7 @@ fun TrashDialog(onRestorePhone: (android.content.IntentSender) -> Unit, onDismis
     var phone by remember { mutableStateOf<List<android.net.Uri>>(emptyList()) }
     LaunchedEffect(Unit) { phone = withContext(Dispatchers.IO) { GalleryClean.phoneTrash(ctx) } }
     val now = System.currentTimeMillis()
-    BlazeDialog("Trash", "Things stay here for ${GalleryTools.TRASH_DAYS} days, then go for good.", confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
+    BlazeDialog(tr("Trash"), tr("Things stay here for {0} days, then go for good.", GalleryTools.TRASH_DAYS), confirm = tr("Done"), onConfirm = onDismiss, onDismiss = onDismiss) {
         Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
             if (items.isEmpty() && phone.isEmpty()) DText("The Trash is empty.")
             items.sortedByDescending { it.at }.forEach { t ->
@@ -177,15 +178,15 @@ fun TrashDialog(onRestorePhone: (android.content.IntentSender) -> Unit, onDismis
                         DText(t.title.ifBlank { t.original.substringAfterLast('/') }, 13.5f, DialogColors.title)
                         DText("${GalleryTools.daysLeft(t, now)} days left", 11.5f)
                     }
-                    PillButton("Restore", primary = false, icon = Icons.Rounded.Restore) { scope.launch { GalleryClean.restore(ctx, t); items = GalleryClean.trashed(ctx); GalleryRepo.refresh() } }
+                    PillButton(tr("Restore"), primary = false, icon = Icons.Rounded.Restore) { scope.launch { GalleryClean.restore(ctx, t); items = GalleryClean.trashed(ctx); GalleryRepo.refresh() } }
                     Spacer(Modifier.width(4.dp))
-                    PillButton("Delete", primary = false, warm = true, icon = Icons.Rounded.Delete) { GalleryClean.deleteForever(ctx, t); items = GalleryClean.trashed(ctx) }
+                    PillButton(tr("Delete"), primary = false, warm = true, icon = Icons.Rounded.Delete) { GalleryClean.deleteForever(ctx, t); items = GalleryClean.trashed(ctx) }
                 }
             }
             if (phone.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
                 DText("${phone.size} phone photos are in Android's trash.", 13f, DialogColors.title)
-                PillButton("Restore them", primary = false, icon = Icons.Rounded.Restore) { GalleryClean.restorePhoneTrash(ctx, phone)?.let(onRestorePhone) }
+                PillButton(tr("Restore them"), primary = false, icon = Icons.Rounded.Restore) { GalleryClean.restorePhoneTrash(ctx, phone)?.let(onRestorePhone) }
             }
         }
     }
@@ -195,7 +196,7 @@ fun TrashDialog(onRestorePhone: (android.content.IntentSender) -> Unit, onDismis
 @Composable
 fun BackupPlanDialog(all: List<Entry>, onDismiss: () -> Unit) {
     val p = remember(all) { GalleryTools.plan(all, System.currentTimeMillis()) }
-    BlazeDialog("Backup plan", confirm = "OK", onConfirm = onDismiss, onDismiss = onDismiss) {
+    BlazeDialog(tr("Backup plan"), confirm = tr("OK"), onConfirm = onDismiss, onDismiss = onDismiss) {
         Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
             DText("Everything: ${GalleryModel.size(p.totalBytes)}", 14f, DialogColors.title, FontWeight.Medium)
             DText("Photos ${GalleryModel.size(p.photos)} \u00b7 videos ${GalleryModel.size(p.videos)} \u00b7 music ${GalleryModel.size(p.music)}")
@@ -238,15 +239,15 @@ fun PhotoEditor(e: Entry, onDone: () -> Unit) {
         Column(Modifier.fillMaxSize().background(Color.Black).padding(12.dp)) {
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 val p = preview
-                if (p == null) Text("Opening\u2026", style = TextStyle(color = Color.White))
+                if (p == null) Text(tr("Opening\u2026"), style = TextStyle(color = Color.White))
                 else Image(p, "Preview", Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
             }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                PillButton("Rotate", primary = false, icon = Icons.AutoMirrored.Rounded.RotateRight, onDark = true) { rotate = (rotate + 90) % 360 }
+                PillButton(tr("Rotate"), primary = false, icon = Icons.AutoMirrored.Rounded.RotateRight, onDark = true) { rotate = (rotate + 90) % 360 }
                 listOf("Original" to 0f, "Square" to 1f, "4:3" to 4f / 3f, "16:9" to 16f / 9f, "9:16" to 9f / 16f).forEach { (n, r) ->
                     PillButton(n, primary = aspect == r, onDark = true) { aspect = r }
                 }
-                PillButton("Reset", primary = false, icon = Icons.Rounded.RestartAlt, onDark = true) { rotate = 0; aspect = 0f; bright = 0f; contrast = 1f; sat = 1f }
+                PillButton(tr("Reset"), primary = false, icon = Icons.Rounded.RestartAlt, onDark = true) { rotate = 0; aspect = 0f; bright = 0f; contrast = 1f; sat = 1f }
             }
             @Composable fun Knob(label: String, v: Float, range: ClosedFloatingPointRange<Float>, set: (Float) -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -258,7 +259,7 @@ fun PhotoEditor(e: Entry, onDone: () -> Unit) {
             Knob("Contrast", contrast, 0.5f..1.5f) { contrast = it }
             Knob("Colour", sat, 0f..2f) { sat = it }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                PillButton("Cancel", primary = false, onDark = true, onClick = onDone)
+                PillButton(tr("Cancel"), primary = false, onDark = true, onClick = onDone)
                 PillButton(if (saving) "Saving\u2026" else "Save copy", primary = true, onDark = true) {
                     val s = src ?: return@PillButton
                     if (saving) return@PillButton

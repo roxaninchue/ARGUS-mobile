@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -60,11 +61,11 @@ fun RoomCard(m: ChatMessage) {
     Column(Modifier.widthIn(max = 360.dp).fillMaxWidth()
         .glass(GlassTokens.cardShape, if (state == Duo.WAITING) GlassIntensity.High else GlassIntensity.Medium, shadow = false)
         .clickable { Agent.roomOpen.value = m.id }.padding(14.dp)
-        .semantics { contentDescription = "Meeting room. ${roomHead(m.meta)}. Tap to open." }) {
+        .semantics { contentDescription = tr("Meeting room. {0}. Tap to open.", roomHead(m.meta)) }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             DuoMark()
             Spacer(Modifier.width(8.dp))
-            Label("MEETING ROOM · ${BrandName.UPPER} × HALO", color = c.accent, size = 9.sp)
+            Label(tr("MEETING ROOM · {0} × HALO", BrandName.UPPER), color = c.accent, size = 9.sp)
             Spacer(Modifier.weight(1f))
             Label("$talk msg" + if (talk == 1) "" else "s", size = 9.sp)
         }
@@ -81,7 +82,7 @@ fun RoomCard(m: ChatMessage) {
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
             ActionText(if (live) "Watch" else "Open", color = c.accent, size = 10.sp)
-            if (state == Duo.WAITING) Label("They asked you something", size = 9.sp)
+            if (state == Duo.WAITING) Label(tr("They asked you something"), size = 9.sp)
         }
     }
 }
@@ -118,13 +119,13 @@ fun MeetingRoomScreen(roomId: Long, onDismiss: () -> Unit) {
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         DuoMark(); Spacer(Modifier.width(8.dp))
-                        Text("Meeting room", style = TextStyle(fontFamily = Type.Sans, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.ink))
+                        Text(tr("Meeting room"), style = TextStyle(fontFamily = Type.Sans, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.ink))
                     }
                     Text(card?.text?.let { Md.plain(it) }.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
                 ActionText("×", size = 18.sp, modifier = Modifier.clip(CircleShape).clickable(onClick = onDismiss)
-                    .semantics { contentDescription = "Close the meeting room" }.padding(14.dp))
+                    .semantics { contentDescription = tr("Close the meeting room") }.padding(14.dp))
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(c.hair))
             LazyColumn(state = state0, modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
@@ -149,7 +150,7 @@ private fun RoomEntry(m: ChatMessage, live: Boolean) {
     val c = LocalBlaze.current
     when (m.role) {
         Role.USER -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-            Label("YOU", size = 9.sp, modifier = Modifier.padding(end = 4.dp, bottom = 2.dp))
+            Label(tr("YOU"), size = 9.sp, modifier = Modifier.padding(end = 4.dp, bottom = 2.dp))
             Text(m.text, modifier = Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(16.dp)).background(c.faint).padding(horizontal = 12.dp, vertical = 8.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.ink))
         }

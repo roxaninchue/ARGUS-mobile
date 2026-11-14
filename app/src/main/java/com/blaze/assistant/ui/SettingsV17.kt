@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
@@ -132,7 +133,7 @@ fun ConnectionsPage(connected0: Set<String>? = null, online0: Boolean? = null, o
     PageHead("Accounts", "Connected accounts", "Let ${BrandName.NAME} use your apps: tap Connect, approve in your browser, and you're back. Tokens stay encrypted on this phone; sending or posting always asks you first.")
     if (!acct.online) Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).glassInset(c).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(6.dp).background(c.sub, BlazeShapes.pill)); Spacer(Modifier.width(10.dp))
-        Text("Can't reach ${BrandName.NAME}'s sign-in service right now. Check your connection.", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.body))
+        Text(tr("Can't reach {0}'s sign-in service right now. Check your connection.", BrandName.NAME), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.body))
     }
     val states = Connectors.all.map { conn -> conn to (connected0?.contains(conn.id) ?: remember(tick, st) { runCatching { Connectors.connected(conn.id) }.getOrDefault(false) }) }
     GroupHead("Apps \u00b7 %02d".format(states.size), right = { Label("${states.count { it.second }} connected", size = 9.sp, color = c.weak) })
@@ -219,7 +220,7 @@ private fun McpSection() {
     Field("Bearer token or OAuth access token (optional)", tok, { tok = it }, "Optional", secret = true)
     Field("Extra header (optional)", header, { header = it }, "X-Api-Key: \u2026")
     Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Label("Transport", modifier = Modifier.weight(1f))
+        Label(tr("Transport"), modifier = Modifier.weight(1f))
         listOf(McpConfig.AUTO to "Auto", McpConfig.HTTP to "HTTP", McpConfig.SSE to "SSE").forEach { (t, label) ->
             Box(Modifier.clip(BlazeShapes.pill).clickable { transport = t }.padding(8.dp)) { ActionText(label, size = 11.sp, color = if (transport == t) c.accent else c.weak) }
         }
@@ -269,7 +270,7 @@ fun LearningSection() {
         try { com.blaze.assistant.agent.MindReview.schedule(ctx) } catch (_: Throwable) { }
     }
     val waiting = remember { try { com.blaze.assistant.agent.Mind.db()?.unreviewedCount() ?: 0 } catch (_: Exception) { 0 } }
-    if (review && waiting > 0) Label("$waiting turns waiting for review", size = 9.sp, modifier = Modifier.padding(bottom = 6.dp))
+    if (review && waiting > 0) Label(tr("{0} turns waiting for review", waiting), size = 9.sp, modifier = Modifier.padding(bottom = 6.dp))
     ToggleRow("Name chats by topic", "Chats are titled by what most of the conversation is about, not the first message. Chats you rename stay as you named them", titles) { titles = !titles; Settings.autoTitles = titles }
     ToggleRow("Ask before saving", "Changes wait here for your OK instead of saving straight away", ask) { ask = !ask; Settings.learnApproval = ask }
     if (pending.isNotEmpty()) {
@@ -293,7 +294,7 @@ fun LearningSection() {
                     Column(Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(s.name, style = TextStyle(fontFamily = Type.Mono, fontSize = 13.sp, color = c.ink))
-                            if (s.replay != null) androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, contentDescription = "Has a replay",
+                            if (s.replay != null) androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, contentDescription = tr("Has a replay"),
                                 tint = c.sub, modifier = Modifier.padding(start = 6.dp).size(14.dp))
                         }
                         Text(s.description + " · used ${s.uses}×", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
@@ -326,7 +327,7 @@ fun NotificationAccessRow() {
         Box(Modifier.size(6.dp).background(if (on) c.accent else c.weak, BlazeShapes.pill)); Spacer(Modifier.width(10.dp))
         Text(if (on) "Notification access is on" else "Let ${BrandName.NAME} read notifications", modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
-        Label("Open →", color = c.accent)
+        Label(tr("Open →"), color = c.accent)
     }
     Note("Ask \u201cwhat did I miss?\u201d or \u201creply to Mary on WhatsApp\u201d. Kept in memory only, never saved; codes are hidden.", top = 8)
 }

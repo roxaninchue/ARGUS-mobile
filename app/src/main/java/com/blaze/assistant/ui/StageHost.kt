@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import android.app.ActivityManager
 import android.content.Context
 import android.view.ViewGroup
@@ -379,7 +380,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
                                 ghost = null; ghostDx = 0f; ghostDy = 0f
                             }, onDragCancel = { ghost = null; ghostDx = 0f; ghostDy = 0f })
                     }
-                    .clickable(onClickLabel = "Make ${i.kind.label} big") { event(i, StageEvent.Expand) },
+                    .clickable(onClickLabel = tr("Make {0} big", i.kind.label)) { event(i, StageEvent.Expand) },
                 on = { e -> event(i, e) })
         }
 
@@ -423,7 +424,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
                         detectDragGestures(onDrag = { ch, d -> ch.consume(); dragDy += d.y },
                             onDragEnd = { val l = StageReducer.chatCountForDrag(st.chat.count, with(dens) { dragDy.toDp().value }); StageStore.dispatch(StageAction.SetChat(l.mode, l.count)); dragDy = 0f },
                             onDragCancel = { dragDy = 0f })
-                    }.semantics { contentDescription = "Drag to show more or fewer messages" }, contentAlignment = Alignment.Center) {
+                    }.semantics { contentDescription = tr("Drag to show more or fewer messages") }, contentAlignment = Alignment.Center) {
                         Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(LocalBlaze.current.hair))
                     }
                     Box(Modifier.fillMaxWidth().zIndex(StageLayers.CHAT).height((st.chat.count * 64 + 24).dp.coerceAtMost(with(dens) { (stageH * 0.6f).toDp() }))) { chat(Modifier.fillMaxSize()) }
@@ -453,7 +454,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
             }
         }
         // Top bar hidden: a small tab brings it back.
-        if (!st.topBar) Box(Modifier.align(Alignment.TopCenter).zIndex(StageLayers.DOCK).padding(top = 2.dp).clip(RoundedCornerShape(50)).clickable(onClickLabel = "Show the top bar") {
+        if (!st.topBar) Box(Modifier.align(Alignment.TopCenter).zIndex(StageLayers.DOCK).padding(top = 2.dp).clip(RoundedCornerShape(50)).clickable(onClickLabel = tr("Show the top bar")) {
             StageStore.dispatch(StageAction.SetChrome(topBar = true)) }.padding(horizontal = 18.dp, vertical = 4.dp)) {
             Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(LocalBlaze.current.hair))
         }

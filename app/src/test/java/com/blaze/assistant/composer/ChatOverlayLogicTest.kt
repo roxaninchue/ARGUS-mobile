@@ -74,7 +74,7 @@ class ChatOverlayLogicTest {
         assertFalse(all.contains("\"No results"))
         // the chat bar: Message Blaze pill, send arrow inside it, + opens Spotlight
         val bar = src("ui/composer/ChatComposer.kt")
-        assertTrue(bar.contains("\"Message \${BrandName.NAME}\"") && bar.contains("Icons.Rounded.ArrowUpward") && bar.contains("state.openSpotlight()"))
+        assertTrue(bar.contains("tr(\"Message {0}\", BrandName.NAME)") && bar.contains("Icons.Rounded.ArrowUpward") && bar.contains("state.openSpotlight()"))
         // one cached blur, reduce motion respected
         val host = src("ui/composer/ComposerHost.kt")
         assertTrue(host.contains("remember(px) { BlurEffect(") && host.contains("GlassTokens.blurSupported"))

@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.argus.settings
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,26 +78,26 @@ fun YouPage(
     Box(modifier.fillMaxSize().testTag(YouTags.PAGE)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 12.dp, end = 12.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Open Profile") { onPage(ArgusSettings.ACCOUNT_PAGE) }
+            Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = tr("Open Profile")) { onPage(ArgusSettings.ACCOUNT_PAGE) }
                 .testTag(YouTags.NAME).padding(horizontal = 8.dp, vertical = 6.dp)) {
                 Text(name, style = ArgusType.display, color = c.ink, modifier = Modifier.semantics { heading() })
                 Text(listOf(email, planLine).filter { it.isNotBlank() }.joinToString(" \u00b7 "), style = ArgusType.sub, color = c.mute)
             }
             if (query.isBlank()) {
                 Row(Modifier.fillMaxWidth().argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp))
-                    .clickable(role = Role.Button, onClickLabel = "Open Usage and plan") { onPage(ArgusSettings.PLAN_PAGE) }
+                    .clickable(role = Role.Button, onClickLabel = tr("Open Usage and plan")) { onPage(ArgusSettings.PLAN_PAGE) }
                     .testTag(YouTags.PLAN).heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Plan & usage", style = ArgusType.body, color = c.ink, modifier = Modifier.weight(1f))
+                    Text(tr("Plan & usage"), style = ArgusType.body, color = c.ink, modifier = Modifier.weight(1f))
                     Text(planLine.ifBlank { "${BrandName.UPPER} Cloud" }, style = ArgusType.serifHello.copy(fontStyle = FontStyle.Italic, fontSize = ArgusType.title2.fontSize),
                         color = c.mute)
                 }
                 for (g in ArgusSettings.GROUPS) SettingsGroup(g.rows.map { it.item(onPage) }, title = g.title)
-                if (signedIn) ArgusButton("Sign out", onSignOut, Modifier.fillMaxWidth(), kind = ButtonKind.GLASS, icon = "log-out")
+                if (signedIn) ArgusButton(tr("Sign out"), onSignOut, Modifier.fillMaxWidth(), kind = ButtonKind.GLASS, icon = "log-out")
                 if (version.isNotBlank()) Text("${BrandName.UPPER} $version", style = ArgusType.meta, color = c.meta, modifier = Modifier.padding(start = 8.dp))
             } else if (hits.isEmpty()) {
-                EmptyState(title = "Nothing called \u201c${query.trim()}\u201d", icon = "search", body = "Try another word, or ask ${BrandName.NAME} to open it.")
+                EmptyState(title = tr("Nothing called \u201c{0}\u201d", query.trim()), icon = "search", body = tr("Try another word, or ask {0} to open it.", BrandName.NAME))
             } else {
-                SettingsGroup(hits.map { it.item(onPage) }, title = "Results")
+                SettingsGroup(hits.map { it.item(onPage) }, title = tr("Results"))
             }
         }
         ArgusSearch(query, { query = it }, Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
@@ -128,17 +129,17 @@ fun ArgusAppearanceSection(
     val c = Argus.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         SettingsGroup(listOf(SettingsItem("layers", "${BrandName.UPPER} look", if (lookOn) "On" else "Off", chevron = false, onClick = { onLook(!lookOn) })))
-        Text("Off brings back the 0.52 screens. The change shows the next time ${BrandName.NAME} opens.", style = ArgusType.sub, color = c.mute)
+        Text(tr("Off brings back the 0.52 screens. The change shows the next time {0} opens.", BrandName.NAME), style = ArgusType.sub, color = c.mute)
         Head("Theme")
         Segmented(ArgusSettings.ThemeChoice.entries.map { ChipModel(it.mode, it.label) }, ArgusSettings.ThemeChoice.of(themeMode)?.mode.orEmpty(), onTheme)
-        if (ArgusSettings.ThemeChoice.of(themeMode) == null) Text("Auto (dark after sunset) is on. Pick one to change it.", style = ArgusType.sub, color = c.mute)
+        if (ArgusSettings.ThemeChoice.of(themeMode) == null) Text(tr("Auto (dark after sunset) is on. Pick one to change it."), style = ArgusType.sub, color = c.mute)
         Head("Ground")
         Segmented(ArgusSettings.GROUNDS.map { ChipModel(it.first, it.second) }, ground, onGround)
         Head("Handedness")
         Segmented(ArgusSettings.Hand.entries.map { ChipModel(it.value, it.label) }, hand.value, { onHand(ArgusSettings.Hand.of(it)) })
-        Text("Puts the main button of sheets and empty states on your thumb's side.", style = ArgusType.sub, color = c.mute)
+        Text(tr("Puts the main button of sheets and empty states on your thumb's side."), style = ArgusType.sub, color = c.mute)
         SettingsGroup(listOf(SettingsItem("zap", "Reduced motion", if (reduced) "On" else "Off", chevron = false, onClick = { onReduced(!reduced) })))
-        Text("Buttons, orbs and progress bars stop animating. On by itself when the phone's animations are off.", style = ArgusType.sub, color = c.mute)
+        Text(tr("Buttons, orbs and progress bars stop animating. On by itself when the phone's animations are off."), style = ArgusType.sub, color = c.mute)
         Spacer(Modifier.height(4.dp))
     }
 }

@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
 import android.graphics.BitmapFactory
@@ -126,7 +127,7 @@ fun MediaStrip(paths: List<String>) {
                         .clickable { try { ctx.startActivity(Media.viewIntent(f)) } catch (_: Exception) { } }) {
                         if (bmp != null) Image(bmp, contentDescription = f.nameWithoutExtension, modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
                         else Box(Modifier.fillMaxWidth().height(200.dp).shimmer(c.hair.copy(alpha = 0.3f), c.paper.copy(alpha = 0.3f), BlazeShapes.medium),
-                            contentAlignment = Alignment.Center) { Label("Loading picture\u2026", size = 10.sp) }
+                            contentAlignment = Alignment.Center) { Label(tr("Loading picture\u2026"), size = 10.sp) }
                     }
                 }
                 "audio" -> Row(Modifier.widthIn(max = 330.dp).fillMaxWidth().hairline(c.hair).clickable { Player.toggle(p) }.padding(12.dp),
@@ -140,7 +141,7 @@ fun MediaStrip(paths: List<String>) {
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink))
                 }
                 else -> Row(Modifier.hairline(c.hair).clickable { try { ctx.startActivity(Media.viewIntent(f)) } catch (_: Exception) { } }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, contentDescription = "Open", tint = c.ink, modifier = Modifier.size(18.dp))
+                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, contentDescription = tr("Open"), tint = c.ink, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(f.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.ink))
                 }
@@ -167,7 +168,7 @@ fun AttachedThumbs(paths: List<String>) {
             val single = paths.size == 1
             Box(Modifier.then(if (single) Modifier.widthIn(max = 220.dp) else Modifier.size(84.dp)).clip(BlazeShapes.small).background(c.hair.copy(alpha = 0.3f)).border(1.dp, c.hair, BlazeShapes.small)
                 .clickable { try { ctx.startActivity(Media.viewIntent(File(p))) } catch (_: Exception) { } }) {
-                if (bmp != null) Image(bmp, contentDescription = "Attached picture",
+                if (bmp != null) Image(bmp, contentDescription = tr("Attached picture"),
                     modifier = if (single) Modifier.widthIn(max = 220.dp).heightIn(max = 300.dp) else Modifier.fillMaxSize(),
                     contentScale = if (single) ContentScale.Fit else ContentScale.Crop)
                 else Box(Modifier.size(84.dp))

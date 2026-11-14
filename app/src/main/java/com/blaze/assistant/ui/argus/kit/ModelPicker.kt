@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.argus.kit
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,7 +66,7 @@ fun ModelChip(modifier: Modifier = Modifier, force: List<LiveModels.Member>? = n
     val label = ModelPick.label(list, choice)
     // flat: drawn as the composer's top row (owner 2026-11-14: chip and chatbox one surface), so no pill of its own
     Box(modifier.heightIn(min = if (flat) 36.dp else 44.dp).clickable(role = Role.Button) { open = true }
-        .clearAndSetSemantics { contentDescription = "Model: $label. Change model"; role = Role.Button; onClick { open = true; true } },
+        .clearAndSetSemantics { contentDescription = tr("Model: {0}. Change model", label); role = Role.Button; onClick { open = true; true } },
         contentAlignment = Alignment.CenterStart) {
         Row(Modifier.heightIn(min = 30.dp).then(if (flat) Modifier else Modifier.argusGlass(GlassLevel.RAISED, RoundedCornerShape(ArgusTokens.Radius.PILL.dp), shadow = false))
             .padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -86,29 +87,29 @@ fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
     var query by remember { mutableStateOf("") }
     val rows = remember(list, choice) { ModelList.rows(list) { ModelPick.isDown(it) } }
     val shown = remember(rows, query) { ModelList.filter(rows, query) }
-    ArgusSheet(onDismiss = onDismiss, title = "Model") {
+    ArgusSheet(onDismiss = onDismiss, title = tr("Model")) {
         val picked = list.firstOrNull { it.key == choice.key }
         val pickedRow = if (choice.auto) null else ModelList.rowOf(rows, choice.key)
         val pickedDown = !choice.auto && ModelPick.isDown(choice.key)
         if (picked != null && picked.efforts.isNotEmpty()) {
-            Text("Effort", style = ArgusType.meta, color = c.mute, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+            Text(tr("Effort"), style = ArgusType.meta, color = c.mute, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val now = ModelPick.effort(list, choice)
                 for (e in picked.efforts) ArgusButton(e.replaceFirstChar { it.uppercaseChar() }, { ModelPick.set(picked.key, e) }, Modifier.weight(1f),
                     kind = if (e == now) ButtonKind.PRIMARY else ButtonKind.GLASS, size = ButtonSize.S)
             }
         }
-        if (rows.size > 6) ArgusSearch(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), placeholder = "Search models")
+        if (rows.size > 6) ArgusSearch(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), placeholder = tr("Search models"))
         androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-            if (query.isBlank()) MenuRow("sparkles", "Auto", { ModelPick.auto(); onDismiss() }, sub = "The gateway picks the fastest healthy model",
+            if (query.isBlank()) MenuRow("sparkles", tr("Auto"), { ModelPick.auto(); onDismiss() }, sub = tr("The gateway picks the fastest healthy model"),
                 trailing = if (choice.auto) ({ Icon(Lucide.icon("check", 18), null, Modifier.size(18.dp), tint = c.ink) }) else null)
             if (pickedDown && query.isBlank()) MenuRow("triangle-alert", picked?.name ?: LiveModels.prettyName(choice.key.substringAfter('/')), { ModelPick.auto(); onDismiss() },
-                sub = "Didn't answer, so messages go Auto until it's healthy again. Tap to stay on Auto")
+                sub = tr("Didn't answer, so messages go Auto until it's healthy again. Tap to stay on Auto"))
             else if (!choice.auto && picked == null && query.isBlank()) MenuRow("triangle-alert", LiveModels.prettyName(choice.key.substringAfter('/')), { ModelPick.auto(); onDismiss() },
-                sub = "Not healthy right now, so messages go Auto. Tap to switch to Auto")
-            if (list.isEmpty()) Text("No healthy models listed yet. Auto still works.", style = ArgusType.meta, color = c.mute,
+                sub = tr("Not healthy right now, so messages go Auto. Tap to switch to Auto"))
+            if (list.isEmpty()) Text(tr("No healthy models listed yet. Auto still works."), style = ArgusType.meta, color = c.mute,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
-            else if (shown.isEmpty()) Text("No model matches \u201c${query.trim()}\u201d.", style = ArgusType.meta, color = c.mute,
+            else if (shown.isEmpty()) Text(tr("No model matches \u201c{0}\u201d.", query.trim()), style = ArgusType.meta, color = c.mute,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
             for (r in shown) ModelRow(r, on = r == pickedRow) {
                 val m = r.best

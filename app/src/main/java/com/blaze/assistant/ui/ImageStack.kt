@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -140,7 +141,7 @@ fun ImageStackFrame(bitmaps: List<ImageBitmap?>, top: Int, progress: Float, size
     val n = bitmaps.size
     val widthPx = with(LocalDensity.current) { size.toPx() }
     val shape = RoundedCornerShape(20.dp)
-    Box(modifier.padding(horizontal = 22.dp, vertical = 10.dp).size(size).semantics { contentDescription = "Pictures, ${top + 1} of $n. Swipe to flip through." },
+    Box(modifier.padding(horizontal = 22.dp, vertical = 10.dp).size(size).semantics { contentDescription = tr("Pictures, {0} of {1}. Swipe to flip through.", top + 1, n) },
         contentAlignment = Alignment.Center) {
         for (depth in StackMath.layers(n) - 1 downTo 0) {
             val l = StackMath.layer(depth, progress)
@@ -153,7 +154,7 @@ fun ImageStackFrame(bitmaps: List<ImageBitmap?>, top: Int, progress: Float, size
                     shadowElevation = if (depth == 0) 10f else 4f; this.shape = shape; clip = true
                 }
                 .background(c.faint)
-                .then(if (depth == 0) dragModifier.then(if (onTap != null) Modifier.clickable(onClickLabel = "Preview picture") { onTap() } else Modifier) else Modifier)) {
+                .then(if (depth == 0) dragModifier.then(if (onTap != null) Modifier.clickable(onClickLabel = tr("Preview picture")) { onTap() } else Modifier) else Modifier)) {
                 if (bmp != null) Image(bmp, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 if (l.dim > 0f) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = l.dim)))
             }
@@ -166,8 +167,8 @@ fun ImageStackFrame(bitmaps: List<ImageBitmap?>, top: Int, progress: Float, size
             else Row { repeat(n) { i -> if (i > 0) Spacer(Modifier.width(4.dp)); Box(Modifier.size(6.dp).clip(CircleShape).background(Color.White.copy(alpha = if (i == top) 1f else 0.45f))) } }
         }
         if (onExpand != null || onTap == null) Box(Modifier.align(Alignment.TopEnd).padding(8.dp).size(32.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.5f))
-            .then(if (onExpand != null) Modifier.clickable(onClickLabel = "Open full screen") { onExpand() } else Modifier)
-            .semantics { contentDescription = "Open full screen" }, contentAlignment = Alignment.Center) {
+            .then(if (onExpand != null) Modifier.clickable(onClickLabel = tr("Open full screen")) { onExpand() } else Modifier)
+            .semantics { contentDescription = tr("Open full screen") }, contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.OpenInFull, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
         }
     }
@@ -238,7 +239,7 @@ fun ImagePagerFrame(bitmaps: List<ImageBitmap?>, index: Int, progress: Float, zo
                 }, contentAlignment = Alignment.Center) {
                     // Sized to the picture's own shape so the rounded corners sit on the picture, not on empty space.
                     if (bmp != null) Box(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 72.dp), contentAlignment = Alignment.Center) {
-                        Image(bmp, contentDescription = "Picture ${i + 1} of $n", contentScale = ContentScale.Fit,
+                        Image(bmp, contentDescription = tr("Picture {0} of {1}", i + 1, n), contentScale = ContentScale.Fit,
                             modifier = Modifier.aspectRatio(bmp.width.toFloat() / bmp.height.coerceAtLeast(1)).clip(RoundedCornerShape(18.dp)))
                     }
                 }

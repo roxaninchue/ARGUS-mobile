@@ -36,7 +36,7 @@ class SpaceWiringTest {
         val spot = src("ui/space/SpaceSpotlight.kt")
         assertTrue("Spotlight is on the overlay surface", ".overlaySurface(" in spot && "ProvideOverlayInk(" in spot && "SpaceScrim(" in spot)
         assertTrue("rows get the panel's ink", "ink = look.ink, sub = look.sub" in spot)
-        assertTrue("the hint ellipsizes", "chats\\u2026\", maxLines = 1, overflow = TextOverflow.Ellipsis" in spot)
+        assertTrue("the hint ellipsizes", "chats\\u2026\"), maxLines = 1, overflow = TextOverflow.Ellipsis" in spot)
         assertTrue("one overlay motion", "MotionTokens.overlayIn(" in spot && "MotionTokens.overlayOut(" in spot)
         val views = src("ui/Shell.kt").substringAfter("fun ViewsSheet(").substringBefore("\n}\n")
         assertTrue("the views sheet is opaque", ".overlaySurface(" in views && "GlassTokens.bg.copy(alpha" !in views)

@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -269,7 +270,7 @@ internal fun heroDesc(item: StageItem, d: StageData): String = when (item.kind) 
 @Composable
 private fun TimerFace(item: StageItem, t: TimerState?, now: Long, low: Boolean, on: (StageEvent) -> Unit) {
     val c = LocalBlaze.current
-    if (t == null) { Text("Timer", color = c.sub); return }
+    if (t == null) { Text(tr("Timer"), color = c.sub); return }
     val left = StageTimer.remaining(t, now)
     val p = StageTimer.progress(t, now)
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
@@ -364,7 +365,7 @@ private fun SeekBar(posMs: Long, durMs: Long, modifier: Modifier = Modifier, onS
                     onDragCancel = { drag = null }) { ch, dx -> if (durMs > 0) { ch.consume(); drag = ((drag ?: shown) + dx / size.width).coerceIn(0f, 1f) } }
             }
             .semantics {
-                contentDescription = "Seek: ${StageMusicLogic.elapsed(shownMs)} of ${StageMusicLogic.elapsed(durMs)}"
+                contentDescription = tr("Seek: {0} of {1}", StageMusicLogic.elapsed(shownMs), StageMusicLogic.elapsed(durMs))
                 progressBarRangeInfo = ProgressBarRangeInfo(shown, 0f..1f)
                 setProgress { v -> if (durMs > 0) onSeek((v.coerceIn(0f, 1f) * durMs).toLong()); durMs > 0 }
             }) {
@@ -396,7 +397,7 @@ private fun MusicFace(item: StageItem, s: StageMusicLogic.Snapshot, on: (StageEv
         }
         Spacer(Modifier.height(8.dp))
         if (!m.hasService && m.title.isBlank()) {
-            Text("Nothing playing", color = c.ink, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text(tr("Nothing playing"), color = c.ink, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 StageIconButton(Icons.Rounded.PlayArrow, "Play music", primary = true, size = 56.dp) { on(StageEvent.Music("play")) }
@@ -425,14 +426,14 @@ private fun MusicFace(item: StageItem, s: StageMusicLogic.Snapshot, on: (StageEv
 @Composable
 private fun MusicQueue(s: StageMusicLogic.Snapshot, m: StageMusicLogic.Card, modifier: Modifier, on: (StageEvent) -> Unit) {
     val c = LocalBlaze.current
-    if (s.queue.isEmpty()) { Box(modifier, contentAlignment = Alignment.Center) { Text("The queue is empty", color = c.sub, fontSize = 13.sp) }; return }
+    if (s.queue.isEmpty()) { Box(modifier, contentAlignment = Alignment.Center) { Text(tr("The queue is empty"), color = c.sub, fontSize = 13.sp) }; return }
     // Now playing first, then up next in play order (shuffle-aware); every row is the player's own index.
     val rows = listOfNotNull(s.index.takeIf { it in s.queue.indices }) + m.upNext
     LazyColumn(modifier) {
         itemsIndexed(rows, key = { _, i -> i }) { pos, i ->
             val e = s.queue[i]; val now = i == s.index
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (now) c.accent.copy(alpha = 0.12f) else Color.Transparent)
-                .clickable(role = Role.Button, onClickLabel = "Play ${e.title}") { on(StageEvent.Music("at:$i")) }.padding(start = 10.dp, top = 2.dp, bottom = 2.dp),
+                .clickable(role = Role.Button, onClickLabel = tr("Play {0}", e.title)) { on(StageEvent.Music("at:$i")) }.padding(start = 10.dp, top = 2.dp, bottom = 2.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(e.title.ifBlank { "Song ${i + 1}" }, color = if (now) c.accent else c.ink, fontSize = 13.sp, fontWeight = if (now) FontWeight.SemiBold else FontWeight.Normal,
@@ -480,7 +481,7 @@ private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifi
         Column(Modifier.fillMaxSize()) {
             val failed = item.props["failed"].orEmpty()
             if (results.isEmpty()) Text("Nothing found for \u201c${item.props["query"].orEmpty()}\u201d", color = c.sub, fontSize = 13.sp)
-            if (failed.isNotBlank()) Text("Didn't answer: $failed", color = c.sub, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (failed.isNotBlank()) Text(tr("Didn't answer: {0}", failed), color = c.sub, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (err.isNotBlank()) Text(err, color = c.sub, fontSize = 12.sp, maxLines = 2)
             LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                 itemsIndexed(results) { i, r -> MovieRow(r.title, listOf(r.tag, sourceName(r.source)).filter { it.isNotBlank() }.joinToString(" \u00b7 "), busy) { on(StageEvent.Video("pick:$i")) } }
@@ -490,7 +491,7 @@ private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifi
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         if (d.movies.isNotEmpty()) {
-            Text("Continue watching", color = c.ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().semantics { heading() })
+            Text(tr("Continue watching"), color = c.ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().semantics { heading() })
             d.movies.forEachIndexed { i, pr -> MovieRow(pr.play.title, (pr.fraction * 100).toInt().toString() + "% watched", busy) { on(StageEvent.Video("resume:$i")) } }
             if (err.isNotBlank()) Text(err, color = c.sub, fontSize = 12.sp, maxLines = 2)
             Spacer(Modifier.height(6.dp))
@@ -511,7 +512,7 @@ private fun sourceName(id: String): String = when { id == "archive" -> "Internet
 @Composable
 private fun MovieRow(title: String, sub: String, busy: Boolean, onPlay: () -> Unit) {
     val c = LocalBlaze.current
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(enabled = !busy, role = Role.Button, onClickLabel = "Play $title") { onPlay() }
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(enabled = !busy, role = Role.Button, onClickLabel = tr("Play {0}", title)) { onPlay() }
         .padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(start = 4.dp)) {
             Text(title, color = c.ink, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -543,7 +544,7 @@ object StageQuiz {
 private fun QuizFace(item: StageItem, on: (StageEvent) -> Unit) {
     val c = LocalBlaze.current
     val qs = StageTools.questions(item.props["questions"])
-    if (qs.isEmpty()) { Text("No questions", color = c.sub); return }
+    if (qs.isEmpty()) { Text(tr("No questions"), color = c.sub); return }
     val round = StageQuiz.round(item.props, qs.size)
     val at = item.props["at"]?.toIntOrNull() ?: 0
     // 0.46.0 cards kept one "picked" for the question on screen.
@@ -557,8 +558,8 @@ private fun QuizFace(item: StageItem, on: (StageEvent) -> Unit) {
             wrong.forEach { i -> val q = qs[i]
                 Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp)).background(c.faint).padding(10.dp)) {
                     Text(q.q, color = c.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    Text("Answer: " + q.options[q.answer], color = c.accent, fontSize = 13.sp)
-                    ans[i]?.let { a -> Text("You picked: " + q.options.getOrElse(a) { "" }, color = c.sub, fontSize = 12.sp) }
+                    Text(tr("Answer: ") + q.options[q.answer], color = c.accent, fontSize = 13.sp)
+                    ans[i]?.let { a -> Text(tr("You picked: ") + q.options.getOrElse(a) { "" }, color = c.sub, fontSize = 12.sp) }
                 }
             }
             Spacer(Modifier.height(6.dp))
@@ -590,11 +591,11 @@ private fun QuizFace(item: StageItem, on: (StageEvent) -> Unit) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(14.dp))
                     .background(when { right -> c.accent.copy(alpha = 0.22f); wrong -> Color(0x33E5484D); else -> c.faint })
                     .border(1.dp, if (right) c.accent else c.hair, RoundedCornerShape(14.dp))
-                    .clickable(enabled = picked == null, role = Role.Button, onClickLabel = "Answer ${'A' + i}") { on(StageEvent.QuizAnswer(i)) }.padding(horizontal = 12.dp, vertical = 10.dp),
+                    .clickable(enabled = picked == null, role = Role.Button, onClickLabel = tr("Answer {0}", 'A' + i)) { on(StageEvent.QuizAnswer(i)) }.padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically) {
                     Text("${'A' + i}.  $o", color = c.ink, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                    if (right) Icon(Icons.Rounded.Check, contentDescription = "Right answer", tint = c.accent, modifier = Modifier.size(18.dp))
-                    if (wrong) Icon(Icons.Rounded.Close, contentDescription = "Wrong answer", tint = Color(0xFFE5484D), modifier = Modifier.size(18.dp))
+                    if (right) Icon(Icons.Rounded.Check, contentDescription = tr("Right answer"), tint = c.accent, modifier = Modifier.size(18.dp))
+                    if (wrong) Icon(Icons.Rounded.Close, contentDescription = tr("Wrong answer"), tint = Color(0xFFE5484D), modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -615,7 +616,7 @@ private fun CardsFace(item: StageItem, d: StageData, on: (StageEvent) -> Unit) {
     val known = item.props["known"]?.toIntOrNull() ?: 0
     if (d.cardFront.isBlank()) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("All done for now", color = c.ink, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            Text(tr("All done for now"), color = c.ink, fontSize = 18.sp, fontWeight = FontWeight.Medium)
             Text(item.props["deck"].orEmpty() + if (seen > 0) " \u00b7 $known of $seen known" else "", color = c.sub, fontSize = 13.sp)
             Spacer(Modifier.height(8.dp)); StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open Learn") { on(StageEvent.OpenFull) }
         }
@@ -632,7 +633,7 @@ private fun CardsFace(item: StageItem, d: StageData, on: (StageEvent) -> Unit) {
             Box(Modifier.fillMaxWidth(if (total > 0) seen.toFloat() / total else 0f).fillMaxHeight().background(c.accent))
         }
         Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(if (flipped) c.accent.copy(alpha = 0.10f) else c.faint).border(1.dp, c.hair, RoundedCornerShape(18.dp))
-            .clickable(role = Role.Button, onClickLabel = "Flip the card") { on(StageEvent.Flip) }.padding(16.dp), contentAlignment = Alignment.Center) {
+            .clickable(role = Role.Button, onClickLabel = tr("Flip the card")) { on(StageEvent.Flip) }.padding(16.dp), contentAlignment = Alignment.Center) {
             Text(if (flipped) d.cardBack else d.cardFront, color = c.ink, fontSize = if (flipped) 16.sp else 20.sp, textAlign = TextAlign.Center,
                 modifier = Modifier.verticalScroll(rememberScrollState()))
         }
@@ -657,7 +658,7 @@ private fun PlanFace(item: StageItem, on: (StageEvent) -> Unit) {
     if (item.props["editing"] == "true") { PlanEditor(items, done, on); return }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         item.props["text"]?.takeIf { it.isNotBlank() }?.let { Text(it, color = c.body, fontSize = 14.sp); Spacer(Modifier.height(6.dp)) }
-        if (items.isNotEmpty()) Text("${done.count { it in items.indices }} of ${items.size} done", color = c.sub, fontSize = 12.sp)
+        if (items.isNotEmpty()) Text(tr("{0} of {1} done", done.count { it in items.indices }, items.size), color = c.sub, fontSize = 12.sp)
         items.forEachIndexed { i, line ->
             val on1 = i in done
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(role = Role.Checkbox, onClickLabel = if (on1) "Mark not done" else "Mark done") { on(StageEvent.Toggle(i)) }
@@ -688,17 +689,17 @@ private fun PlanEditor(items: List<String>, done: Set<Int>, on: (StageEvent) -> 
             lines.forEachIndexed { k, (old, text) ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     BasicTextField(text, { v -> lines[k] = old to v }, textStyle = field, cursorBrush = SolidColor(c.accent), singleLine = true,
-                        modifier = Modifier.weight(1f).padding(vertical = 8.dp).semantics { contentDescription = "Line ${k + 1}" })
+                        modifier = Modifier.weight(1f).padding(vertical = 8.dp).semantics { contentDescription = tr("Line {0}", k + 1) })
                     StageIconButton(Icons.Rounded.Close, "Delete line ${k + 1}", size = 36.dp) { lines.removeAt(k) }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 8.dp)) {
-                    if (fresh.isEmpty()) Text("New item", color = c.sub, fontSize = 15.sp)
+                    if (fresh.isEmpty()) Text(tr("New item"), color = c.sub, fontSize = 15.sp)
                     BasicTextField(fresh, { fresh = it }, textStyle = field, cursorBrush = SolidColor(c.accent), singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { if (fresh.isNotBlank()) { lines.add(-1 to fresh.trim()); fresh = "" } }),
-                        modifier = Modifier.fillMaxWidth().semantics { contentDescription = "New item" })
+                        modifier = Modifier.fillMaxWidth().semantics { contentDescription = tr("New item") })
                 }
                 StageIconButton(Icons.Rounded.Add, "Add the item", size = 36.dp, enabled = fresh.isNotBlank()) { lines.add(-1 to fresh.trim()); fresh = "" }
             }
@@ -717,7 +718,7 @@ private fun NoteFace(item: StageItem, on: (StageEvent) -> Unit) {
     var text by remember(item.id) { mutableStateOf(item.props["text"].orEmpty()) }
     Column(Modifier.fillMaxSize()) {
         BasicTextField(text, { text = it }, textStyle = TextStyle(color = c.ink, fontSize = 16.sp), cursorBrush = SolidColor(c.accent),
-            modifier = Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.faint).padding(10.dp).semantics { contentDescription = "Note text" })
+            modifier = Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.faint).padding(10.dp).semantics { contentDescription = tr("Note text") })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             StageIconButton(Icons.Rounded.Check, "Save the note", primary = true) { on(StageEvent.Props(mapOf("text" to text, "editing" to ""))) }
         }
@@ -740,7 +741,7 @@ private fun BrowserFace(b: StageBrowserNow, web: (@Composable (Modifier) -> Unit
                 BasicTextField(input, { input = it }, singleLine = true, textStyle = TextStyle(color = c.ink, fontSize = 13.sp), cursorBrush = SolidColor(c.accent),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Uri),
                     keyboardActions = KeyboardActions(onGo = { if (input.isNotBlank()) on(StageEvent.Browser("go:" + input.trim())) }),
-                    modifier = Modifier.weight(1f).semantics { contentDescription = "Address or search" })
+                    modifier = Modifier.weight(1f).semantics { contentDescription = tr("Address or search") })
             }
             StageIconButton(if (b.progress < 100) Icons.Rounded.Close else Icons.Rounded.Refresh, if (b.progress < 100) "Stop loading" else "Reload", size = 38.dp, enabled = b.hasTab) {
                 on(StageEvent.Browser(if (b.progress < 100) "stop" else "reload")) }
@@ -828,7 +829,7 @@ internal fun widgetText(item: StageItem, d: StageData): Pair<String, String> {
 @Composable
 fun StageChatTile(last: String, modifier: Modifier = Modifier, onOpen: () -> Unit) {
     val c = LocalBlaze.current
-    StageCardFrame(modifier.widthIn(min = 140.dp, max = 260.dp).height(52.dp).clickable(role = Role.Button, onClickLabel = "Show the chat") { onOpen() }, desc = "Chat: $last. Tap to show the chat", radius = 16.dp) {
+    StageCardFrame(modifier.widthIn(min = 140.dp, max = 260.dp).height(52.dp).clickable(role = Role.Button, onClickLabel = tr("Show the chat")) { onOpen() }, desc = "Chat: $last. Tap to show the chat", radius = 16.dp) {
         Row(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.AutoMirrored.Rounded.Chat, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
             Text(last.ifBlank { "Chat" }, color = c.ink, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -841,9 +842,9 @@ fun StageChatTile(last: String, modifier: Modifier = Modifier, onOpen: () -> Uni
 fun StageReplyPill(modifier: Modifier = Modifier, onOpen: () -> Unit) {
     val c = LocalBlaze.current
     Box(modifier.clip(RoundedCornerShape(50)).background(stageSurface()).border(1.dp, c.hair, RoundedCornerShape(50))
-        .clickable(role = Role.Button, onClickLabel = "Show the reply bar") { onOpen() }.semantics { contentDescription = "Message ${BrandName.NAME}" }
+        .clickable(role = Role.Button, onClickLabel = tr("Show the reply bar")) { onOpen() }.semantics { contentDescription = tr("Message {0}", BrandName.NAME) }
         .padding(horizontal = 18.dp, vertical = 10.dp)) {
-        Text("Message ${BrandName.NAME}", color = c.sub, fontSize = 14.sp)
+        Text(tr("Message {0}", BrandName.NAME), color = c.sub, fontSize = 14.sp)
     }
 }
 

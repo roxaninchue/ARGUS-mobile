@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,7 +65,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
                 Text(u.name.ifBlank { u.email }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
                 if (u.name.isNotBlank()) Text(u.email, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
                 val how = (u.providers.map { BlazeAccount.title(it) } + if (u.hasPassword) listOf("Email") else emptyList()).distinct()
-                if (how.isNotEmpty()) Label("Signs in with " + how.joinToString(", "), color = c.weak, size = 9.sp, modifier = Modifier.padding(top = 4.dp))
+                if (how.isNotEmpty()) Label(tr("Signs in with ") + how.joinToString(", "), color = c.weak, size = 9.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
         Note("The same account works in ${BrandName.NAME} Desktop and ${BrandName.NAME} CLI, and it is how ${BrandName.NAME} Cloud answers you. Your own skills and MCP servers follow it, so one added on your PC works here and the other way round. Connected accounts stay on this phone.", top = 12)
@@ -137,7 +138,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
             }
             Spacer(Modifier.height(8.dp))
         }
-        if (v.login["google"] == true || v.login["github"] == true) Label("or with email", color = c.weak, size = 9.sp, modifier = Modifier.padding(vertical = 10.dp))
+        if (v.login["google"] == true || v.login["github"] == true) Label(tr("or with email"), color = c.weak, size = 9.sp, modifier = Modifier.padding(vertical = 10.dp))
     }
 
     Spacer(Modifier.height(6.dp))
@@ -156,7 +157,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
     Label(if (signUp) "Have an account? Sign in" else "New to ${BrandName.NAME}? Create an account", color = c.accent, size = 10.sp,
         modifier = Modifier.clickable { signUp = !signUp; err = "" }.padding(vertical = 14.dp))
     if (!signUp && v.features["password_reset"] == true) {
-        Label("Forgot password?", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
+        Label(tr("Forgot password?"), color = c.accent, size = 10.sp, modifier = Modifier.clickable {
             if (busy) return@clickable
             busy = true; err = ""
             scope.launch { err = BlazeAccount.forgotPassword(email); busy = false }
@@ -225,15 +226,15 @@ private fun MfaStep(p: com.blaze.assistant.connect.Mfa.Pending, note: String) {
         }
         if (line.isNotEmpty()) Label(line, color = c.weak, size = 9.sp, modifier = Modifier.padding(top = 6.dp))
     }
-    if (mode != "email" && p.email) Label("Email me a code instead", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
+    if (mode != "email" && p.email) Label(tr("Email me a code instead"), color = c.accent, size = 10.sp, modifier = Modifier.clickable {
         mode = "email"; code = ""; err = ""
         if (!p.emailSent) send()
     }.padding(top = 12.dp))
-    if (mode != "app" && p.app) Label("Use a code from the app instead", color = c.accent, size = 10.sp,
+    if (mode != "app" && p.app) Label(tr("Use a code from the app instead"), color = c.accent, size = 10.sp,
         modifier = Modifier.clickable { mode = "app"; code = ""; err = "" }.padding(top = 12.dp))
-    if (mode != "recovery" && p.recovery) Label("Use a recovery code instead", color = c.accent, size = 10.sp,
+    if (mode != "recovery" && p.recovery) Label(tr("Use a recovery code instead"), color = c.accent, size = 10.sp,
         modifier = Modifier.clickable { mode = "recovery"; code = ""; err = "" }.padding(top = 12.dp))
-    Label("Back to sign-in", color = c.accent, size = 10.sp,
+    Label(tr("Back to sign-in"), color = c.accent, size = 10.sp,
         modifier = Modifier.clickable { BlazeAccount.cancelMfa() }.padding(vertical = 12.dp))
     val shown = err.ifEmpty { if (mode == "email") note else "" }
     if (shown.isNotEmpty()) Note(shown)
@@ -283,7 +284,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
                     busy = true
                     scope.launch { BlazeAccount.emailCodeSend(if (on) "enable" else "disable").onSuccess { sentTo = it.ifBlank { u.email } }.onFailure { msg = it.message ?: "" }; busy = false }
                 }
-                if (!on && u.twoFactorApp) { Spacer(Modifier.height(6.dp)); Label("I'll use a code from the app", color = c.accent, size = 10.sp,
+                if (!on && u.twoFactorApp) { Spacer(Modifier.height(6.dp)); Label(tr("I'll use a code from the app"), color = c.accent, size = 10.sp,
                     modifier = Modifier.clickable { sentTo = "your authenticator app" }.padding(vertical = 6.dp)) }
             } else {
                 Note("Enter the 6-digit code" + (if (sentTo == "your authenticator app") " from your authenticator app." else " we sent to $sentTo. It works for 10 minutes."))
@@ -341,7 +342,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
                     Note("Add ${BrandName.NAME} to your authenticator app with this key, then enter the 6-digit code it shows.")
                     Text(secret.chunked(4).joinToString(" "), modifier = Modifier.padding(bottom = 6.dp),
                         style = TextStyle(fontFamily = Type.Mono, fontSize = 14.sp, color = c.ink))
-                    if (uri.isNotBlank()) Label("Open in authenticator app", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
+                    if (uri.isNotBlank()) Label(tr("Open in authenticator app"), color = c.accent, size = 10.sp, modifier = Modifier.clickable {
                         runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri))) }
                             .onFailure { msg = "No authenticator app on this phone opens that link. Type the key in by hand." }
                     }.padding(bottom = 10.dp))
@@ -371,7 +372,7 @@ private fun UsageSection(onPlan: () -> Unit) {
     LaunchedEffect(Unit) { withContext(Dispatchers.IO) { com.blaze.assistant.connect.Entitlements.refresh(ctx) }; tried = true }
     val snap = s
     Column(Modifier.fillMaxWidth().padding(top = 8.dp).hairline(c.hair).padding(16.dp)) {
-        Text("This month", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
+        Text(tr("This month"), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
         if (snap == null) {
             Text(if (tried) "Can't load your limits right now." else "Loading your limits\u2026", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
             return@Column

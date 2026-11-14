@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -143,7 +144,7 @@ fun CameraGrid(modifier: Modifier = Modifier) {
 @Composable
 fun CameraCountdown(seconds: Int, modifier: Modifier = Modifier) {
     if (seconds <= 0) return
-    Box(modifier.fillMaxSize().semantics { contentDescription = "Taking the photo in $seconds" }, contentAlignment = Alignment.Center) {
+    Box(modifier.fillMaxSize().semantics { contentDescription = tr("Taking the photo in {0}", seconds) }, contentAlignment = Alignment.Center) {
         Text("$seconds", style = CountStyle)
     }
 }
@@ -179,7 +180,7 @@ fun FocusRing(s: CameraProState, a: CameraProActions) {
             val latestFrac by rememberUpdatedState(frac)
             val label = CameraZoom.evLabel(s.evIndex, s.evStep)
             Column(Modifier.offset { IntOffset(sx.roundToInt(), (cy - trackPx / 2 - with(d) { 22.dp.toPx() }).roundToInt()) }.width(34.dp)
-                .semantics { contentDescription = "Exposure"; stateDescription = "$label EV" },
+                .semantics { contentDescription = tr("Exposure"); stateDescription = "$label EV" },
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = if (s.evIndex == 0) Color.White else CamAccent,
                     shadow = Shadow(Color.Black.copy(alpha = 0.6f), Offset(0f, 1f), 4f)))
@@ -236,7 +237,7 @@ fun ZoomPresets(s: CameraProState, a: CameraProActions) {
             val size by animateFloatAsState(if (on) 40f else 32f, MotionTokens.fast(), label = "preset")
             Box(Modifier.size(size.dp).clip(CircleShape).background(if (on) Color.White.copy(alpha = 0.16f) else Color.Transparent)
                 .pointerInput(p, on) { detectTapGestures(onTap = { if (on) a.onDial(true) else a.onPreset(p) }, onLongPress = { a.onDial(true) }) }
-                .semantics { role = Role.Button; selected = on; contentDescription = "Zoom ${CameraZoom.label(p)}" + if (on) ", now ${CameraZoom.label(s.zoom)}. Tap for the zoom dial." else "" },
+                .semantics { role = Role.Button; selected = on; contentDescription = tr("Zoom {0}", CameraZoom.label(p)) + if (on) ", now ${CameraZoom.label(s.zoom)}. Tap for the zoom dial." else "" },
                 contentAlignment = Alignment.Center) {
                 Text(label, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
                     fontSize = if (on) 12.sp else 11.sp, color = if (on) CamAccent else Color.White))
@@ -272,7 +273,7 @@ fun ZoomDial(s: CameraProState, a: CameraProActions, modifier: Modifier = Modifi
     }
 
     Box(modifier.fillMaxWidth().widthIn(max = 380.dp).aspectRatio(1.72f)
-        .semantics { contentDescription = "Zoom dial"; stateDescription = CameraZoom.label(s.zoom) }) {
+        .semantics { contentDescription = tr("Zoom dial"); stateDescription = CameraZoom.label(s.zoom) }) {
         Canvas(Modifier.fillMaxSize()
             .pointerInput(lo, hi) {
                 val pad = 10.dp.toPx()

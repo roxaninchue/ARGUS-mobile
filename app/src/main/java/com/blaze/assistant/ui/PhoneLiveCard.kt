@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -92,13 +93,13 @@ fun PhoneLiveCard() {
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp)
             .shadow(14.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(shape).background(Color(pal.card)).border(1.dp, Color(pal.cardBorder), shape)
-            .clickable(onClickLabel = "Open ${BrandName.NAME} Phone") { PhoneBrowserActivity.open(ctx, control = false) }
+            .clickable(onClickLabel = tr("Open {0} Phone", BrandName.NAME)) { PhoneBrowserActivity.open(ctx, control = false) }
             .semantics { contentDescription = "${BrandName.NAME} Phone: $pill on ${host.ifBlank { "a page" }}. Tap to watch." }
             .padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             PhoneFrame(live.frameNo, Modifier.width(54.dp).height(96.dp), pal)
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
-                Text("${BrandName.NAME} Phone" + if (host.isNotBlank()) " \u00b7 $host" else "", maxLines = 1, overflow = TextOverflow.Ellipsis,
+                Text(tr("{0} Phone", BrandName.NAME) + if (host.isNotBlank()) " \u00b7 $host" else "", maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color(pal.title)))
                 Spacer(Modifier.height(5.dp))
                 StatusPill(pill, working = live.mode == PhonePolicy.Mode.AGENT, chip = Color(pal.chip), onChip = Color(pal.onChip))
@@ -106,7 +107,7 @@ fun PhoneLiveCard() {
                     Spacer(Modifier.height(6.dp))
                     Text(PhoneUiRules.TAKE_CONTROL, maxLines = 1,
                         modifier = Modifier.clip(Glass.pill).background(Color(if (needsUser) pal.strong else pal.button))
-                            .clickable(onClickLabel = "Take control of ${BrandName.NAME} Phone") { PhoneBrowserActivity.open(ctx, control = true) }
+                            .clickable(onClickLabel = tr("Take control of {0} Phone", BrandName.NAME)) { PhoneBrowserActivity.open(ctx, control = true) }
                             .padding(horizontal = 10.dp, vertical = 5.dp),
                         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color(if (needsUser) pal.onStrong else pal.onButton)))
                 }

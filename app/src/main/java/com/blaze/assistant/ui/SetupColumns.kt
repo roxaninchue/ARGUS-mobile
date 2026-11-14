@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Context
@@ -195,11 +196,11 @@ fun AboutPage() {
         Spacer(Modifier.width(14.dp))
         Column {
             Text(BrandName.UPPER, style = ArgusBrand.wordmark(20.sp, c.ink))   // 0.52.1 Argus wordmark
-            Label("Version $v", color = c.weak, size = 10.sp)
+            Label(tr("Version {0}", v), color = c.weak, size = 10.sp)
         }
     }
     Spacer(Modifier.height(16.dp))
-    Text("Your chats, memories, keys and saved logins stay on this phone (keys are synced only when you sign in to a ${BrandName.NAME} account). Private chats are never saved.",
+    Text(tr("Your chats, memories, keys and saved logins stay on this phone (keys are synced only when you sign in to a {0} account). Private chats are never saved.", BrandName.NAME),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     Spacer(Modifier.height(14.dp))
     Label("blazeinchue.pages.dev", color = c.sub, size = 10.sp)
@@ -219,7 +220,7 @@ fun LicencesSection() {
         val f = open ?: return@LaunchedEffect
         text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.ui.space.LegalAssets.read(ctx, f) }
     }
-    Label("Licences", size = 10.sp)
+    Label(tr("Licences"), size = 10.sp)
     Spacer(Modifier.height(6.dp))
     com.blaze.assistant.ui.space.LegalAssets.FILES.forEach { (file, title) ->
         Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClickLabel = title) { open = if (open == file) null else file }

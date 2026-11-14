@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.content.Intent
 import android.net.Uri
@@ -99,7 +100,7 @@ fun SimpleWelcome(name: String, onPick: (String) -> Unit) {
             SimpleHome.starters(hour).forEach { s -> SimpleChip(s.label, onClick = { onPick(s.prompt) }) }
         }
         Spacer(Modifier.height(18.dp))
-        Text("Hold the mic and talk, or tap Type. I'll check with you before anything that matters.",
+        Text(tr("Hold the mic and talk, or tap Type. I'll check with you before anything that matters."),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 22.sp, color = c.sub))
     }
 }
@@ -239,11 +240,11 @@ fun BoxScope.UndoCountdownBar(onUndone: (String) -> Unit) {
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(o.label, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.paper))
-            Text("You have $left seconds to undo", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.paper.copy(alpha = 0.7f)))
+            Text(tr("You have {0} seconds to undo", left), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.paper.copy(alpha = 0.7f)))
         }
         Box(Modifier.clip(RoundedCornerShape(22.dp)).background(c.paper).clickable { UndoCenter.undoNow()?.let(onUndone) }
-            .semantics { contentDescription = "Undo" }.padding(horizontal = 18.dp, vertical = 11.dp)) {
-            Text("Undo", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.ink))
+            .semantics { contentDescription = tr("Undo") }.padding(horizontal = 18.dp, vertical = 11.dp)) {
+            Text(tr("Undo"), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.ink))
         }
     }
 }

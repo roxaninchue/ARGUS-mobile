@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.argus.settings
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -81,8 +82,8 @@ fun ATeamBackupSection(
 ) {
     val c = Argus.colors
     Column(modifier.fillMaxWidth().testTag(BackupTags.SECTION), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("A-TEAM", style = ArgusType.section, color = c.meta, modifier = Modifier.padding(start = 4.dp).semantics { heading() })
-        Text("Bring your A-team bots and jobs into ${BrandName.NAME}: in A-team, Settings \u203a Data \u203a Copy backup (or Export for ${BrandName.UPPER}), " +
+        Text(tr("A-TEAM"), style = ArgusType.section, color = c.meta, modifier = Modifier.padding(start = 4.dp).semantics { heading() })
+        Text(tr("Bring your A-team bots and jobs into {0}: in A-team, Settings \u203a Data \u203a Copy backup (or Export for {1}), ", BrandName.NAME, BrandName.UPPER) +
             "save or copy it, then import it here. Importing the same backup again changes nothing.", style = ArgusType.sub, color = c.mute)
         when (stage) {
             is ATeamStage.Preview -> {
@@ -94,23 +95,23 @@ fun ATeamBackupSection(
                     ArgusButton(if (stage.report.changes == 0) "Done" else "Import", if (stage.report.changes == 0) onCancel else onImport,
                         Modifier.testTag(BackupTags.IMPORT), kind = ButtonKind.PRIMARY, icon = "download")
                 }
-                val secondary: @Composable () -> Unit = { ArgusButton("Cancel", onCancel, Modifier.testTag(BackupTags.CANCEL)) }
+                val secondary: @Composable () -> Unit = { ArgusButton(tr("Cancel"), onCancel, Modifier.testTag(BackupTags.CANCEL)) }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { ArgusSettings.buttonOrder(primary, secondary, hand).forEach { it() } }
             }
             is ATeamStage.Done -> {
                 Lines(ATeamImport.lines(stage.report))
-                ArgusButton("Import another", onCancel, Modifier.testTag(BackupTags.CANCEL))
+                ArgusButton(tr("Import another"), onCancel, Modifier.testTag(BackupTags.CANCEL))
             }
             is ATeamStage.Bad -> {
-                Text("That backup can't be imported, so nothing was changed:", style = ArgusType.body, color = c.dangerText)
+                Text(tr("That backup can't be imported, so nothing was changed:"), style = ArgusType.body, color = c.dangerText)
                 Lines(stage.problems.take(8) + listOfNotNull((stage.problems.size - 8).takeIf { it > 0 }?.let { "and $it more" }))
-                ArgusButton("Try another file", onCancel, Modifier.testTag(BackupTags.CANCEL))
+                ArgusButton(tr("Try another file"), onCancel, Modifier.testTag(BackupTags.CANCEL))
             }
             is ATeamStage.Failed -> {
                 Text(stage.why, style = ArgusType.body, color = c.dangerText, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-                ArgusButton("Try again", onCancel, Modifier.testTag(BackupTags.CANCEL))
+                ArgusButton(tr("Try again"), onCancel, Modifier.testTag(BackupTags.CANCEL))
             }
-            ATeamStage.Working -> Text("Reading\u2026", style = ArgusType.sub, color = c.mute, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            ATeamStage.Working -> Text(tr("Reading\u2026"), style = ArgusType.sub, color = c.mute, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             ATeamStage.Idle -> if (paste == null) {
                 SettingsGroup(listOf(
                     SettingsItem("download", "Import A-team backup", "File", onClick = onPick),
@@ -118,11 +119,11 @@ fun ATeamBackupSection(
                 ), Modifier.testTag(BackupTags.PICK))
             } else {
                 ArgusField(paste, { onPaste(it) }, "A-team backup", Modifier.fillMaxWidth().testTag(BackupTags.FIELD),
-                    placeholder = "Paste the backup text here", singleLine = false)
+                    placeholder = tr("Paste the backup text here"), singleLine = false)
                 val read: @Composable () -> Unit = {
-                    ArgusButton("Read", { onRead(paste) }, Modifier.testTag(BackupTags.READ), kind = ButtonKind.PRIMARY, enabled = paste.isNotBlank())
+                    ArgusButton(tr("Read"), { onRead(paste) }, Modifier.testTag(BackupTags.READ), kind = ButtonKind.PRIMARY, enabled = paste.isNotBlank())
                 }
-                val back: @Composable () -> Unit = { ArgusButton("Cancel", { onPaste(null) }, Modifier.testTag(BackupTags.PASTE)) }
+                val back: @Composable () -> Unit = { ArgusButton(tr("Cancel"), { onPaste(null) }, Modifier.testTag(BackupTags.PASTE)) }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { ArgusSettings.buttonOrder(read, back, hand).forEach { it() } }
             }
         }

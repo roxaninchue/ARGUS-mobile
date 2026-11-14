@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.i18n.tr
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -275,7 +276,7 @@ fun ChatModeFrame(
                 if (deleted != null) Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).clip(RoundedCornerShape(20.dp)).background(c.ink)
                     .padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(ChatDrawerModel.Undo.DELETED, style = ArgusType.sub, color = c.onInk, modifier = Modifier.weight(1f))
-                    ArgusButton("Undo", { ChatModeRuntime.restore() }, kind = ButtonKind.PRIMARY, size = ButtonSize.S)
+                    ArgusButton(tr("Undo"), { ChatModeRuntime.restore() }, kind = ButtonKind.PRIMARY, size = ButtonSize.S)
                 }
             }
             // the left edge opens the drawer; Android's back gesture is kept off this strip (≤ 200 dp, the system's cap)
@@ -290,12 +291,12 @@ fun ChatModeFrame(
     menuFor?.let { e ->
         val k = e.key
         ArgusSheet(onDismiss = { menuFor = null }, title = e.title) {
-            MenuRow("pencil", "Rename", { menuFor = null; renaming = e })
+            MenuRow("pencil", tr("Rename"), { menuFor = null; renaming = e })
             MenuRow(if (e.pinnedAt != null) "pin-off" else "pin", if (e.pinnedAt != null) "Unpin" else "Pin", {
                 menuFor = null
                 when (k) { is ChatDrawerModel.Key.Manager -> ChatModeRuntime.pin(k.g); is ChatDrawerModel.Key.Project -> Agent.pinChat(k.chatId, e.pinnedAt == null) }
             })
-            if (k is ChatDrawerModel.Key.Manager) MenuRow("copy", "Copy", {
+            if (k is ChatDrawerModel.Key.Manager) MenuRow("copy", tr("Copy"), {
                 menuFor = null
                 val t = ChatDrawerModel.transcript(ChatDrawerModel.messagesOf(chats, k.g, msgs), name?.ifBlank { null } ?: "You", BrandName.NAME)
                 val ok = try {
@@ -304,7 +305,7 @@ fun ChatModeFrame(
                 } catch (_: Exception) { false }
                 ArgusToasts.show(if (ok) "Chat copied" else "Couldn\u2019t copy this chat")
             })
-            MenuRow("trash-2", "Delete", {
+            MenuRow("trash-2", tr("Delete"), {
                 menuFor = null
                 when (k) {
                     is ChatDrawerModel.Key.Manager -> ChatModeRuntime.delete(ctx, k.g)
@@ -320,8 +321,8 @@ fun ChatModeFrame(
             when (val k = e.key) { is ChatDrawerModel.Key.Manager -> ChatModeRuntime.rename(k.g, t); is ChatDrawerModel.Key.Project -> Agent.renameChat(k.chatId, t) }
             renaming = null
         }
-        ArgusSheet(onDismiss = { renaming = null }, title = "Rename chat", primary = "Save", onPrimary = save) {
-            ArgusField(t, { v -> t = v.take(ManagerChats.TITLE_MAX) }, label = "Name", onIme = save)
+        ArgusSheet(onDismiss = { renaming = null }, title = tr("Rename chat"), primary = tr("Save"), onPrimary = save) {
+            ArgusField(t, { v -> t = v.take(ManagerChats.TITLE_MAX) }, label = tr("Name"), onIme = save)
         }
     }
 }
@@ -395,7 +396,7 @@ fun ChatDrawerSheet(
     ModalDrawerSheet(drawerShape = RectangleShape, drawerContainerColor = c.bg, drawerContentColor = c.ink) {
         Column(Modifier.fillMaxHeight().padding(horizontal = 12.dp)) {
             Spacer(Modifier.height(12.dp))
-            ArgusSearch(query, onQuery, placeholder = "Search chats")
+            ArgusSearch(query, onQuery, placeholder = tr("Search chats"))
             Spacer(Modifier.height(8.dp))
             LazyColumn(Modifier.weight(1f)) {
                 if (state.empty != null) item { Text(state.empty, style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(16.dp)) }
@@ -407,7 +408,7 @@ fun ChatDrawerSheet(
                 }
             }
             Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.End) {
-                ArgusButton("New chat", onNew, icon = "square-pen")
+                ArgusButton(tr("New chat"), onNew, icon = "square-pen")
             }
         }
     }

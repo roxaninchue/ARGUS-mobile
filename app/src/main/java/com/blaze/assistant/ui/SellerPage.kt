@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,10 +45,10 @@ internal fun SellerPage(digest0: Boolean? = null) {
     var digest by remember { mutableStateOf(digest0 ?: runCatching { Seller.digestOn() }.getOrDefault(false)) }
 
     Spacer(Modifier.height(18.dp))
-    Text("Run and grow your store from here: posts for the week, product listings from a supplier link, ad variants, competitor briefs and replies to customers. Everything follows your brand kit.",
+    Text(tr("Run and grow your store from here: posts for the week, product listings from a supplier link, ad variants, competitor briefs and replies to customers. Everything follows your brand kit."),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     Spacer(Modifier.height(18.dp))
-    Label("Brand kit", modifier = Modifier.padding(bottom = 10.dp))
+    Label(tr("Brand kit"), modifier = Modifier.padding(bottom = 10.dp))
     val swatches = colors.split(',').map { Brand.color(it) }.filter { it.startsWith("#") }
     if (swatches.isNotEmpty()) Row(Modifier.padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         swatches.take(6).forEach { h ->
@@ -68,16 +69,16 @@ internal fun SellerPage(digest0: Boolean? = null) {
         }.padding(horizontal = 18.dp), contentAlignment = Alignment.Center) { ButtonText("Save brand kit", color = Color.White) }
         if (saved.isNotBlank()) Label(saved, color = c.accent, size = 9.sp, modifier = Modifier.padding(start = 12.dp))
     }
-    Text("Or ask ${BrandName.NAME}: \u201cread my brand from homeglow.store\u201d. Kept in ~/.blaze/brand.json, the same shape as ${BrandName.NAME} Desktop's.",
+    Text(tr("Or ask {0}: \u201cread my brand from homeglow.store\u201d. Kept in ~/.blaze/brand.json, the same shape as {1} Desktop's.", BrandName.NAME, BrandName.NAME),
         modifier = Modifier.padding(top = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))
     Spacer(Modifier.height(18.dp))
-    Label("Jobs", modifier = Modifier.padding(bottom = 4.dp))
+    Label(tr("Jobs"), modifier = Modifier.padding(bottom = 4.dp))
     ToggleRow("Weekly store digest", "Every Monday at 08:00: last week's orders (from your store's order emails) and top posts, with the next 3 posts to make", digest) {
         digest = !digest; Seller.setDigest(digest) }
     Spacer(Modifier.height(8.dp))
-    Label("Customer replies from your PC", modifier = Modifier.padding(bottom = 6.dp))
-    Text("${BrandName.NAME} Desktop can draft WhatsApp replies and send them through this phone over ${BrandName.NAME} Link. Every one shows a card here first (even in Autopilot) and only goes when you tap Send.",
+    Label(tr("Customer replies from your PC"), modifier = Modifier.padding(bottom = 6.dp))
+    Text(tr("{0} Desktop can draft WhatsApp replies and send them through this phone over {1} Link. Every one shows a card here first (even in Autopilot) and only goes when you tap Send.", BrandName.NAME, BrandName.NAME),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
-    Text("Skills: content-calendar, product-listing, ad-lab, research-brief, whatsapp-replies, weekly-digest (Settings \u203a Skill library).",
+    Text(tr("Skills: content-calendar, product-listing, ad-lab, research-brief, whatsapp-replies, weekly-digest (Settings \u203a Skill library)."),
         modifier = Modifier.padding(top = 14.dp, bottom = 18.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))
 }

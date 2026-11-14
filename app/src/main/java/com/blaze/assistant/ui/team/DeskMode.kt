@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -90,20 +91,20 @@ fun DeskPage(
         }
     }
     Column(modifier.fillMaxSize()) {
-        Text("Desk", style = ArgusType.display, color = c.ink,
+        Text(tr("Desk"), style = ArgusType.display, color = c.ink,
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 6.dp).semantics { heading() })
         FilterChips(DeskModel.chips(inboxWaiting, needYou, projectsCount), seg.key, { k -> DeskModel.Segment.of(k)?.let { DeskState.show(it) } },
             Modifier.padding(bottom = 6.dp))
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (seg) {
-                DeskModel.Segment.INBOX -> EmptyState(title = "Inbox", icon = "bell", body = DeskModel.inboxBody(inboxWaiting),
+                DeskModel.Segment.INBOX -> EmptyState(title = tr("Inbox"), icon = "bell", body = DeskModel.inboxBody(inboxWaiting),
                     primary = if (inboxWaiting > 0) "Open Chat" to { nav.open(DeskModel.Targets.CHAT) } else null)
                 DeskModel.Segment.JOBS -> when {
                     g != null -> {
                         val actions = remember(g) { JobsActions(JobStore(g.sql), { JobsRuntime.queue() }, { JobsRuntime.kick() }) }
                         JobsPageScreen(g.sql, g.store, g.threads, actions, filter, onFilter = { DeskState.jobsFilter.value = it })
                     }
-                    failed -> EmptyState(title = "Jobs couldn't open", body = "Your jobs are safe. Try again after restarting the app.")
+                    failed -> EmptyState(title = tr("Jobs couldn't open"), body = tr("Your jobs are safe. Try again after restarting the app."))
                 }
                 DeskModel.Segment.PROJECTS -> projects()
                 else -> LinkPage(seg, nav)

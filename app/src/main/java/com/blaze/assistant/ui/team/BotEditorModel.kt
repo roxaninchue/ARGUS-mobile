@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.agent.Specialists
 import com.blaze.assistant.team.Bot
 import com.blaze.assistant.team.BotDraft
@@ -76,10 +77,10 @@ object BotEditorModel {
         for (d in demo) out += BotTemplate("demo:${d[0].lowercase()}", GROUP_DEMO, d[0], d[2],
             BotDraft(name = d[0], email = d[1], label = d[2], portfolio = d[3], color = d[4], face = if (d[0] == "Vega") 1 else null))
         out += BotTemplate("mode:personal", GROUP_MODES, "Personal assistant", "Works for you alone",
-            BotDraft(name = "Assistant", label = "Personal assistant", mode = "personal", color = BotDraft.COLORS[6],
+            BotDraft(name = "Assistant", label = tr("Personal assistant"), mode = "personal", color = BotDraft.COLORS[6],
                 instructions = "You are the user's personal assistant. Keep track of what they ask, follow up, and keep answers short."))
         out += BotTemplate("mode:teammate", GROUP_MODES, "Teammate", "Takes work from the other bots and shares what it learns",
-            BotDraft(name = "Teammate", label = "Teammate", mode = "teammate", color = BotDraft.COLORS[5],
+            BotDraft(name = "Teammate", label = tr("Teammate"), mode = "teammate", color = BotDraft.COLORS[5],
                 instructions = "You are a teammate on the user's bot team. Take the work other bots hand you, finish it, and save what the whole team should know with note_team."))
         return out
     }

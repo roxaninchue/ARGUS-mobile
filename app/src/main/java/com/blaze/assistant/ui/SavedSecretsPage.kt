@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -59,12 +60,12 @@ fun SavedSecretsPage() {
         Spacer(Modifier.width(6.dp))
         Text(com.blaze.assistant.agent.SecretDesk.COPY, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
     }
-    Text("Keys, tokens, logins and cards you gave ${BrandName.NAME} through the Secure Form. They're encrypted with this phone's Keystore and never go into the chat, memory or the AI.",
+    Text(tr("Keys, tokens, logins and cards you gave {0} through the Secure Form. They're encrypted with this phone's Keystore and never go into the chat, memory or the AI.", BrandName.NAME),
         modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
     if (note.isNotBlank()) Text(note, modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.accent))
     Spacer(Modifier.height(14.dp))
     if (items.isEmpty()) {
-        Text("Nothing saved yet. When ${BrandName.NAME} needs a key, password or code, it asks with the Secure Form and keeps it here.",
+        Text(tr("Nothing saved yet. When {0} needs a key, password or code, it asks with the Secure Form and keeps it here.", BrandName.NAME),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         return
     }
@@ -78,7 +79,7 @@ fun SavedSecretsPage() {
                 val shownValue = revealed?.takeIf { it.first == e.id }?.second
                 Text(shownValue ?: e.preview, modifier = Modifier.padding(top = 4.dp),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink))
-                Text("Saved ${SavedSecretsText.date(e.created)} · Last used ${SavedSecretsText.ago(e.lastUsed, now)}",
+                Text(tr("Saved {0} · Last used {1}", SavedSecretsText.date(e.created), SavedSecretsText.ago(e.lastUsed, now)),
                     modifier = Modifier.padding(top = 2.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = c.sub))
             }
             val m = mode?.takeIf { it.first == e.id }?.second

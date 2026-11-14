@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
@@ -42,16 +43,16 @@ fun SkillLibraryPage(rows0: List<SkillLibrary.Row>? = null, open0: String = "", 
     PageHead("Skills", "Skill library", "Methods ${BrandName.NAME} reads before a matching task: research, emails, plans, documents, data, code and more. " +
         "Bundled skills update themselves unless you edit them.")
     if (rows.isEmpty()) {
-        Rows { EmptyState("No skills yet", "After a task, say \u201csave this as a skill\u201d and ${BrandName.NAME} keeps the steps for next time.") }
+        Rows { EmptyState(tr("No skills yet"), tr("After a task, say \u201csave this as a skill\u201d and {0} keeps the steps for next time.", BrandName.NAME)) }
         return
     }
     val on = rows.count { it.installed && it.on }
     KitSearch(query, { query = it }, "Search ${rows.size} skills")
-    Label("${rows.count { it.installed }} installed \u00b7 $on on" + (rows.count { it.update }.takeIf { it > 0 }?.let { " \u00b7 $it to update" } ?: ""),
+    Label(tr("{0} installed \u00b7 {1} on", rows.count { it.installed }, on) + (rows.count { it.update }.takeIf { it > 0 }?.let { " \u00b7 $it to update" } ?: ""),
         size = 9.sp, color = c.weak, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp))
     val q = query.trim()
     val shown = rows.filter { q.isEmpty() || it.name.contains(q, true) || it.shown.contains(q, true) || it.description.contains(q, true) }
-    if (shown.isEmpty()) { Rows { EmptyState("No skill matches \u201c$q\u201d", "Try a word from what the skill does, like \u201cemail\u201d or \u201cplan\u201d.", mark = false) }; return }
+    if (shown.isEmpty()) { Rows { EmptyState(tr("No skill matches \u201c{0}\u201d", q), tr("Try a word from what the skill does, like \u201cemail\u201d or \u201cplan\u201d."), mark = false) }; return }
     val groups = listOf(
         Triple("Core", "Always on: how ${BrandName.NAME} talks, works, codes, uses views and specialists, and saves workflows. Can't be switched off.", shown.filter { it.installed && it.core }),
         Triple("Yours", "Skills you or ${BrandName.NAME} saved on this phone.", shown.filter { it.installed && !it.bundled }),

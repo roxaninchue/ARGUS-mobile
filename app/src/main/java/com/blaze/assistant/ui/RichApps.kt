@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -80,7 +81,7 @@ fun RichApps(card: com.blaze.assistant.ui.RichKit.AppsCard) {
                 val icon by produceState(AppIcons.cached(a.pkg), a.pkg) { if (value == null) value = AppIcons.load(ctx, a.pkg, px) }
                 Column(Modifier.width(72.dp).clip(RoundedCornerShape(16.dp))
                     .combinedClickable(
-                        onClickLabel = "Open ${a.label}",
+                        onClickLabel = tr("Open {0}", a.label),
                         onClick = {
                             val i = try { ctx.packageManager.getLaunchIntentForPackage(a.pkg) } catch (_: Exception) { null }
                             if (i != null) try { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
@@ -102,7 +103,7 @@ fun RichApps(card: com.blaze.assistant.ui.RichKit.AppsCard) {
                 }
             }
         }
-        if (!all) Text("Show all ${card.apps.size}", modifier = Modifier.padding(top = 10.dp).clip(RoundedCornerShape(50))
+        if (!all) Text(tr("Show all {0}", card.apps.size), modifier = Modifier.padding(top = 10.dp).clip(RoundedCornerShape(50))
             .background(c.accentSoft).combinedClickable(onClick = { all = true }).padding(horizontal = 16.dp, vertical = 9.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = c.accent))
     }

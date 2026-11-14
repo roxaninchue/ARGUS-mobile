@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.Manifest
 import android.app.Activity
@@ -136,14 +137,14 @@ fun rememberCameraCapture(onPhoto: (Uri) -> Unit, onPickPhoto: () -> Unit): Came
 
     return CameraCapture(open = { runner.go(false, false) }, dialogs = {
         when (dialog) {
-            Step.RATIONALE -> BlazeDialog(title = "Allow the camera?",
-                body = "Android needs ${BrandName.NAME} to have the Camera permission before any camera can take a picture for your chat. Nothing is recorded unless you press the shutter.",
-                confirm = "Allow", onConfirm = { dialog = null; perm.launch(Manifest.permission.CAMERA) },
-                dismiss = "Pick a photo", onDismiss = { dialog = null; onPickPhoto() })
-            Step.SETTINGS -> BlazeDialog(title = "Camera is off for ${BrandName.NAME}",
-                body = "Camera access was turned off for ${BrandName.NAME}. Switch it on in Settings → Permissions → Camera, then tap Camera again. Or pick a photo you already have.",
-                confirm = "Open Settings", onConfirm = { dialog = null; openAppSettings(ctx) },
-                dismiss = "Pick a photo", onDismiss = { dialog = null; onPickPhoto() })
+            Step.RATIONALE -> BlazeDialog(title = tr("Allow the camera?"),
+                body = tr("Android needs {0} to have the Camera permission before any camera can take a picture for your chat. Nothing is recorded unless you press the shutter.", BrandName.NAME),
+                confirm = tr("Allow"), onConfirm = { dialog = null; perm.launch(Manifest.permission.CAMERA) },
+                dismiss = tr("Pick a photo"), onDismiss = { dialog = null; onPickPhoto() })
+            Step.SETTINGS -> BlazeDialog(title = tr("Camera is off for {0}", BrandName.NAME),
+                body = tr("Camera access was turned off for {0}. Switch it on in Settings → Permissions → Camera, then tap Camera again. Or pick a photo you already have.", BrandName.NAME),
+                confirm = tr("Open Settings"), onConfirm = { dialog = null; openAppSettings(ctx) },
+                dismiss = tr("Pick a photo"), onDismiss = { dialog = null; onPickPhoto() })
             else -> { }
         }
     })

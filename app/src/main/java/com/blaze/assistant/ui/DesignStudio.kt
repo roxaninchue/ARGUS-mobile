@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -159,7 +160,7 @@ private fun SelectionFrame(e: DesignPage.El, s: Float, zoom: Float, dark: Boolea
         .border((1.5f / zoom).dp, blue)
         .pointerInput(e.id) { detectDragGestures { ch, d -> ch.consume(); onDrag(DesignPage.Handle.MOVE, d.x, d.y) } }
         .pointerInput(e.id) { detectTapGestures(onDoubleTap = { onEditText() }) }
-        .semantics { contentDescription = "Selected: ${e.label}. Drag to move." }) {
+        .semantics { contentDescription = tr("Selected: {0}. Drag to move.", e.label) }) {
         val hs = 22f / zoom   // touch size of a handle, dp
         val dot = 11f / zoom
         val handles = listOf(
@@ -170,7 +171,7 @@ private fun SelectionFrame(e: DesignPage.El, s: Float, zoom: Float, dark: Boolea
             val hsPx = with(dens) { hs.dp.toPx() }
             Box(Modifier.offset { IntOffset((w * at.x - hsPx / 2).roundToInt(), (h * at.y - hsPx / 2).roundToInt()) }.size(hs.dp)
                 .pointerInput(e.id, handle) { detectDragGestures { ch, d -> ch.consume(); onDrag(handle, d.x, d.y) } }
-                .semantics { contentDescription = "Resize ${handle.name.lowercase()}" }, contentAlignment = Alignment.Center) {
+                .semantics { contentDescription = tr("Resize {0}", handle.name.lowercase()) }, contentAlignment = Alignment.Center) {
                 Box(Modifier.size(if (corner) dot.dp else (dot * 0.8f).dp).clip(BlazeShapes.pill).background(Color.White, BlazeShapes.pill)
                     .border((1.5f / zoom).dp, blue, BlazeShapes.pill))
             }
@@ -232,7 +233,7 @@ fun CriticChip(cr: DesignPage.Critique, onClick: () -> Unit) {
     val c = LocalBlaze.current
     val tone = when { cr.score >= 85 -> GlassTokens.success; cr.score >= 65 -> GlassTokens.warning; else -> GlassTokens.error }
     Row(Modifier.height(30.dp).clip(BlazeShapes.pill).glass(BlazeShapes.pill, GlassIntensity.Medium, shadow = false).clickable(onClick = onClick)
-        .padding(start = 5.dp, end = 11.dp).semantics { contentDescription = "Design check ${cr.score}: ${cr.note}" }, verticalAlignment = Alignment.CenterVertically) {
+        .padding(start = 5.dp, end = 11.dp).semantics { contentDescription = tr("Design check {0}: {1}", cr.score, cr.note) }, verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(21.dp).clip(BlazeShapes.pill).background(tone, BlazeShapes.pill), contentAlignment = Alignment.Center) {
             Text("${cr.score}", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 10.sp, color = Color(0xFF0B0B0C)))
         }
@@ -292,7 +293,7 @@ fun ColourSheetBody(e: DesignPage.El, target: String, onTarget: (String) -> Unit
     ColorWheelPicker(value, onColour, Modifier.fillMaxWidth())
     if (e.isText) {
         Row(Modifier.fillMaxWidth().padding(top = 10.dp).hairlineTop(c.hair).padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Size", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = c.sub))
+            Text(tr("Size"), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = c.sub))
             Spacer(Modifier.width(12.dp))
             Slider(e.size.toFloat(), { onSize(it.roundToInt().toDouble()) }, valueRange = 8f..240f, modifier = Modifier.weight(1f),
                 colors = SliderDefaults.colors(thumbColor = c.ink, activeTrackColor = Color(0xFF4DA8FF), inactiveTrackColor = c.hair2))

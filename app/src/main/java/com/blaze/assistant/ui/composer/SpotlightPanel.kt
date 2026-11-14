@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.composer
 
+import com.blaze.assistant.i18n.tr
 import android.annotation.SuppressLint
 import com.blaze.assistant.composer.ComposerLook
 import androidx.compose.foundation.background
@@ -131,18 +132,18 @@ fun SpotlightPanel(state: ComposerState, onAct: (Act) -> Unit, modifier: Modifie
         .border(1.dp, Color.White.copy(alpha = if (c.dark) 0.14f else 0.55f), shape)
         // taps on the panel stay in it (the dim around it closes Spotlight)
         .clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { }
-        .semantics { contentDescription = "Spotlight" }) {
+        .semantics { contentDescription = tr("Spotlight") }) {
         // ---- the field: magnifier, big text, the distro picker on the right in "!" mode
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 18.dp, end = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.Search, null, tint = c.sub, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(10.dp))
             Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
-                if (state.query.isEmpty()) Text("Spotlight Search", maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.sub))
+                if (state.query.isEmpty()) Text(tr("Spotlight Search"), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.sub))
                 BasicTextField(state.query, { state.query = it; if (state.preview != null && !it.startsWith("@") && !it.startsWith("!")) state.preview = null },
                     singleLine = true, textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.ink), cursorBrush = SolidColor(DuoColors.blazeBlue),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                     keyboardActions = KeyboardActions(onGo = { result.rows.firstOrNull()?.let { onAct(it.act) } }),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus).semantics { contentDescription = "Spotlight search" })
+                    modifier = Modifier.fillMaxWidth().focusRequester(focus).semantics { contentDescription = tr("Spotlight search") })
             }
             if (result.mode == SpotlightSearch.Mode.TERMINAL && result.distros.isNotEmpty()) DistroPicker(result.distros, state.distro) { state.distro = it.id; if (!it.installed) onAct(Act.OpenView("terminal")) }
         }
@@ -154,7 +155,7 @@ fun SpotlightPanel(state: ComposerState, onAct: (Act) -> Unit, modifier: Modifie
         else LazyColumn(Modifier.fillMaxWidth().heightIn(max = rest.coerceAtMost(430.dp)),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 8.dp)) {
             if (result.mode == SpotlightSearch.Mode.CURATED) item(key = "hint") {
-                Text("Search views, settings, models, your music and video \u00b7 ! runs a command \u00b7 @ opens a view", maxLines = 2,
+                Text(tr("Search views, settings, models, your music and video \u00b7 ! runs a command \u00b7 @ opens a view"), maxLines = 2,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = c.sub))
             }
             itemsIndexed(result.rows, key = { _, r -> r.id }) { i, r -> SpotRow(r, top = i == 0) { onAct(r.act) } }
@@ -207,7 +208,7 @@ private fun DistroPicker(distros: List<SpotlightSearch.Distro>, current: String,
     val d = distros.firstOrNull { it.id == current } ?: distros.first()
     Box {
         Row(Modifier.clip(RoundedCornerShape(50)).background(c.ink.copy(alpha = 0.08f)).clickable { open = !open }
-            .semantics { contentDescription = "Linux: ${d.name}" + (if (d.installed) ", installed" else ", not installed") + ". Tap to pick another" }
+            .semantics { contentDescription = tr("Linux: {0}", d.name) + (if (d.installed) ", installed" else ", not installed") + ". Tap to pick another" }
             .padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(d.name.substringBefore(' '), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.ink))
             Spacer(Modifier.width(4.dp))
@@ -278,7 +279,7 @@ private fun BrowserPreview(url: String, height: androidx.compose.ui.unit.Dp = 36
                 webViewClient = android.webkit.WebViewClient()
                 loadUrl(url); view = this
             }
-        }, modifier = Modifier.fillMaxWidth().height(height).semantics { contentDescription = "Preview browser: $url" })
+        }, modifier = Modifier.fillMaxWidth().height(height).semantics { contentDescription = tr("Preview browser: {0}", url) })
         DisposableEffect(Unit) { onDispose { view?.apply { stopLoading(); destroy() }; view = null } }
     }
 }

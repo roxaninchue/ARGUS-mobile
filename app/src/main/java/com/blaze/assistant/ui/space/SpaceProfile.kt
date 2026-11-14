@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.i18n.tr
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -140,7 +141,7 @@ fun SpaceProfileScreen(
             .semantics { role = Role.Button }.padding(horizontal = SpaceInsets.CARD_PAD_DP.dp), verticalAlignment = Alignment.CenterVertically) {
             SearchGlyph(look.ink, SpaceIcons.ROW_ICON_DP.dp)
             Spacer(Modifier.width(SpaceIcons.GAP_DP.dp))
-            Text("Search", style = SpaceType.bodyText(look.sub))
+            Text(tr("Search"), style = SpaceType.bodyText(look.sub))
         }
     }
 }
@@ -178,12 +179,12 @@ fun SpaceFeedbackPage(version: String) {
     val ctx = LocalContext.current
     var text by remember { mutableStateOf("") }
     Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Text("Tell the ${BrandName.NAME} team what works, what doesn't, or what you'd love next.", style = SpaceType.bodyText(look.sub))
+        Text(tr("Tell the {0} team what works, what doesn't, or what you'd love next.", BrandName.NAME), style = SpaceType.bodyText(look.sub))
         Spacer(Modifier.height(14.dp))
         // Unification 5/9: the shared text field, from SpaceRows.kt
         SpaceField(text, { text = it }, "Your feedback\u2026", singleLine = false, minHeight = 160.dp, desc = "Your feedback")
         Spacer(Modifier.height(16.dp))
-        SpacePillButton("Send feedback", primary = true, enabled = text.isNotBlank(), onClick = {
+        SpacePillButton(tr("Send feedback"), primary = true, enabled = text.isNotBlank(), onClick = {
             val body = SpaceFeedback.body(text, version, android.os.Build.MODEL ?: "", android.os.Build.VERSION.SDK_INT)
             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, SpaceFeedback.SUBJECT).putExtra(Intent.EXTRA_TEXT, body)
             try { ctx.startActivity(Intent.createChooser(send, "Send feedback").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

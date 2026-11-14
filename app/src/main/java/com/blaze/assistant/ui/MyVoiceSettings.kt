@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -133,12 +134,12 @@ fun MyVoiceSection() {
         },
         onUse = {
             if (MyVoice.useCandidate()) { hasVoice = true; candidateSaved = false; chosen = true; geminiChosen = false; geminiOpen = false; setupOpen = false; recorded = null; test = null
-                message = "Done. ${BrandName.NAME} speaks with your voice now." }
-            else message = "Couldn't save your voice. Try recording again."
+                message = tr("Done. {0} speaks with your voice now.", BrandName.NAME) }
+            else message = tr("Couldn't save your voice. Try recording again.")
         },
         onRerecord = { setupOpen = true; recorded = null; test = null; message = "" },
-        onDeleteVoice = { MyVoice.deleteVoice(); hasVoice = false; candidateSaved = false; chosen = false; recorded = null; test = null; message = "Your recording is deleted." },
-        onDeletePack = { MyVoice.deletePack(); chosen = MyVoice.chosen(); message = "Voice model deleted. ${BrandName.NAME} uses the phone voice." },
+        onDeleteVoice = { MyVoice.deleteVoice(); hasVoice = false; candidateSaved = false; chosen = false; recorded = null; test = null; message = tr("Your recording is deleted.") },
+        onDeletePack = { MyVoice.deletePack(); chosen = MyVoice.chosen(); message = tr("Voice model deleted. {0} uses the phone voice.", BrandName.NAME) },
         onQuality = { quality = it; Settings.setStr("myvoice_quality", it) },
         onKeepSlow = { keepSlow = !keepSlow; Settings.setBool("myvoice_keep_slow", keepSlow); if (keepSlow) Settings.setStr("myvoice_slow_at", "0") },
         onOpenAppSettings = {
@@ -194,12 +195,12 @@ fun MyVoiceCard(
                 }
                 is VoicePack.State.Failed -> {
                     Body(p.message, color = c.accent)
-                    PillButton("Download", primary = true, modifier = Modifier.padding(top = 8.dp), onClick = onDownload)
+                    PillButton(tr("Download"), primary = true, modifier = Modifier.padding(top = 8.dp), onClick = onDownload)
                 }
                 else -> {
                     Body("One-time ${ui.downloadMb} MB download (about 220 MB on the phone). Wi-Fi recommended." +
                         if (ui.metered) " You're on mobile data right now." else "")
-                    PillButton("Download", primary = true, modifier = Modifier.padding(top = 8.dp), onClick = onDownload)
+                    PillButton(tr("Download"), primary = true, modifier = Modifier.padding(top = 8.dp), onClick = onDownload)
                 }
             }
 
@@ -213,16 +214,16 @@ fun MyVoiceCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(8.dp).background(c.accent, BlazeShapes.pill))
                     Spacer(Modifier.width(8.dp))
-                    Text("%d:%02d / 0:20".format(ui.seconds.toInt() / 60, ui.seconds.toInt() % 60),
+                    Text(tr("%d:%02d / 0:20").format(ui.seconds.toInt() / 60, ui.seconds.toInt() % 60),
                         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
                     Spacer(Modifier.width(12.dp))
                     Box(Modifier.weight(1f)) { Bar(ui.level) }
                 }
-                PillButton("Stop", primary = true, warm = true, modifier = Modifier.padding(top = 10.dp), onClick = onStop)
+                PillButton(tr("Stop"), primary = true, warm = true, modifier = Modifier.padding(top = 10.dp), onClick = onStop)
             } else {
                 Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PillButton(if (ui.recorded != null) "Re-record" else "Record", primary = ui.recorded == null, onClick = onRecord)
-                    if (ui.recorded != null && ui.recorded.samples.isNotEmpty()) PillButton("Play back", primary = false, onClick = onPlayRecording)
+                    if (ui.recorded != null && ui.recorded.samples.isNotEmpty()) PillButton(tr("Play back"), primary = false, onClick = onPlayRecording)
                 }
             }
             if (ui.micDenied) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -245,7 +246,7 @@ fun MyVoiceCard(
             }
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (canTest && !ui.testing) PillButton(if (ui.test == null) "Try it" else "Again", primary = ui.test == null, onClick = onTest)
-                if (canTest && ui.test?.ok == true) PillButton("Use this voice", primary = true, onClick = onUse)
+                if (canTest && ui.test?.ok == true) PillButton(tr("Use this voice"), primary = true, onClick = onUse)
             }
         }
     }
@@ -253,7 +254,7 @@ fun MyVoiceCard(
     if (ui.message.isNotEmpty()) Body(ui.message, color = c.accent, modifier = Modifier.padding(top = 8.dp))
 
     if (packReady || ui.hasVoice) {
-        Label("My voice quality", modifier = Modifier.padding(top = 16.dp, bottom = 6.dp))
+        Label(tr("My voice quality"), modifier = Modifier.padding(top = 16.dp, bottom = 6.dp))
         Row(Modifier.fillMaxWidth()) {
             listOf("auto" to "Auto", "fast" to "Fast", "balanced" to "Balanced", "best" to "Best").forEach { (v, l) ->
                 Box(Modifier.weight(1f).padding(end = 6.dp).hairline(if (quality == v) c.ink else c.hair)
@@ -294,7 +295,7 @@ fun GeminiVoicePanel(active: Boolean, onReady: () -> Unit) {
         if (!hasKey) {
             Body("Paste your Google AI Studio key. You can get one free at aistudio.google.com. It stays on this phone and in your ${BrandName.NAME} account.")
             BlazeTextField(keyText, { keyText = it.trim() }, "Google AI Studio key", modifier = Modifier.fillMaxWidth().padding(top = 8.dp), mono = true)
-            PillButton("Save key", primary = true, modifier = Modifier.padding(top = 8.dp), onClick = {
+            PillButton(tr("Save key"), primary = true, modifier = Modifier.padding(top = 8.dp), onClick = {
                 if (keyText.length < 20) { note = "That doesn't look like a Google AI Studio key."; noteBad = true }
                 else if (GeminiVoice.saveKey(keyText)) { hasKey = true; keyText = ""; note = ""; hear() }
                 else { note = "Couldn't save the key. Try again."; noteBad = true }

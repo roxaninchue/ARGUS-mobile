@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.ui.graphics.drawscope.clipRect
 
@@ -425,10 +426,10 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             cityFor?.let { id ->
                 var city by remember { mutableStateOf("") }
                 androidx.compose.ui.window.Dialog(onDismissRequest = { cityFor = null }) {
-                    BlazeDialogCard("Which city?", "I'll show the weather there.", confirm = "Show weather", onConfirm = {
+                    BlazeDialogCard(tr("Which city?"), tr("I'll show the weather there."), confirm = tr("Show weather"), onConfirm = {
                         if (city.isNotBlank()) HomeBoard.setConfig(id, mapOf("city" to city.trim(), "use_location" to false))
                         cityFor = null
-                    }, dismiss = "Cancel", onDismiss = { cityFor = null }) {
+                    }, dismiss = tr("Cancel"), onDismiss = { cityFor = null }) {
                         BlazeTextField(city, { city = it }, "e.g. Lagos, Lima, Manila")
                     }
                 }
@@ -436,10 +437,10 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             askChange?.let { w ->
                 var t by remember { mutableStateOf("") }
                 androidx.compose.ui.window.Dialog(onDismissRequest = { askChange = null }) {
-                    BlazeDialogCard("Change \u201c${w.title}\u201d", "Say it in plain words, e.g. \u201cshow Chelsea instead\u201d or \u201cmake it euros\u201d.", confirm = "Ask ${BrandName.NAME}", onConfirm = {
+                    BlazeDialogCard(tr("Change \u201c{0}\u201d", w.title), tr("Say it in plain words, e.g. \u201cshow Chelsea instead\u201d or \u201cmake it euros\u201d."), confirm = tr("Ask {0}", BrandName.NAME), onConfirm = {
                         if (t.isNotBlank()) { onAsk("Change my Home widget \u201c${w.title}\u201d (id ${w.id}): ${t.trim()}"); toast = "Asked ${BrandName.NAME}. The answer is in Chat." }
                         askChange = null
-                    }, dismiss = "Cancel", onDismiss = { askChange = null }) {
+                    }, dismiss = tr("Cancel"), onDismiss = { askChange = null }) {
                         BlazeTextField(t, { t = it }, "What should change?", singleLine = false)
                     }
                 }
@@ -555,7 +556,7 @@ fun HomeBoardView(
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item(key = "head") { BoardHeader(stamp, offline, onCustomise, onCreate) }
         if (order.isEmpty()) item(key = "empty") {
-            EmptyState("Your board is empty", "Add a widget in plain words, like \u201ctrack Bitcoin\u201d or \u201cArsenal scores\u201d.", action = "Create a widget", onAction = onCreate)
+            EmptyState(tr("Your board is empty"), tr("Add a widget in plain words, like \u201ctrack Bitcoin\u201d or \u201cArsenal scores\u201d."), action = tr("Create a widget"), onAction = onCreate)
         }
         itemsIndexed(order.take(shown), key = { _, s -> s.key }) { i, s ->
             val dragging = dragKey == s.key
@@ -586,7 +587,7 @@ fun HomeBoardView(
             }
         }
         if (shown < order.size) item(key = "more") {
-            Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) { Label("Loading more\u2026", size = 11.sp) }
+            Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) { Label(tr("Loading more\u2026"), size = 11.sp) }
         }
     }
 }
@@ -597,7 +598,7 @@ private fun BoardHeader(stamp: String, offline: Boolean, onCustomise: () -> Unit
     Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Home", modifier = Modifier.semantics { heading() },
+                Text(tr("Home"), modifier = Modifier.semantics { heading() },
                     style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, color = c.ink))
                 Text(if (offline) "Offline \u00b7 showing saved cards" else stamp, maxLines = 2,
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, color = c.sub))
@@ -681,12 +682,12 @@ fun StackItem(
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     Box(Modifier.homeSurface(c, LocalGlass.current, GlassTokens.pillShape, GlassIntensity.Low, shadow = false)
-                        .clickable(onClickLabel = "Fold the ${s.category} stack", onClick = onToggle).heightIn(min = 40.dp).padding(horizontal = 16.dp, vertical = 9.dp),
+                        .clickable(onClickLabel = tr("Fold the {0} stack", s.category), onClick = onToggle).heightIn(min = 40.dp).padding(horizontal = 16.dp, vertical = 9.dp),
                         contentAlignment = Alignment.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.KeyboardArrowUp, null, tint = c.ink, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Show less", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.ink))
+                            Text(tr("Show less"), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.ink))
                         }
                     }
                 }
@@ -749,10 +750,10 @@ fun WidgetCard(
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, color = c.ink))
             if (stackCount > 1 && !stackOpen) { Tag("+${stackCount - 1}", on = true); Spacer(Modifier.width(2.dp)) }
             if (stale) { Tag("Stale"); Spacer(Modifier.width(2.dp)) }
-            Box(grip.size(36.dp).clip(CircleShape).semantics { contentDescription = "Drag to reorder" }, contentAlignment = Alignment.Center) {
+            Box(grip.size(36.dp).clip(CircleShape).semantics { contentDescription = tr("Drag to reorder") }, contentAlignment = Alignment.Center) {
                 Icon(Icons.Rounded.DragIndicator, null, tint = c.weak, modifier = Modifier.size(18.dp))
             }
-            Box(Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = "Widget options", onClick = onMenu).semantics { contentDescription = "Options for ${w.title}" },
+            Box(Modifier.size(36.dp).clip(CircleShape).clickable(onClickLabel = tr("Widget options"), onClick = onMenu).semantics { contentDescription = tr("Options for {0}", w.title) },
                 contentAlignment = Alignment.Center) {
                 Icon(Icons.Rounded.MoreHoriz, null, tint = c.sub, modifier = Modifier.size(20.dp))
             }
@@ -762,7 +763,7 @@ fun WidgetCard(
                 d == null || (d.empty && d.error.isBlank() && loading) -> {
                     Box(Modifier.fillMaxWidth(0.55f).height(22.dp).shimmer(c.faint, c.hair))
                     if (size != WidgetSize.S) { Spacer(Modifier.height(8.dp)); Box(Modifier.fillMaxWidth(0.85f).height(12.dp).shimmer(c.faint, c.hair)) }
-                    if (d == null && !loading) Label("Not updated yet", size = 11.sp, modifier = Modifier.padding(top = 6.dp))
+                    if (d == null && !loading) Label(tr("Not updated yet"), size = 11.sp, modifier = Modifier.padding(top = 6.dp))
                 }
                 else -> WidgetBody(w, d, size, onLine)
             }
@@ -788,7 +789,7 @@ fun WidgetCard(
             if (d != null && d.fetched > 0L && size != WidgetSize.S) {
                 Text(if (loading) "Updating\u2026" else Ago.of(d.fetched, now), modifier = Modifier.padding(top = 8.dp),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = c.weak))
-            } else if (loading && d != null && !d.empty) Text("Updating\u2026", modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = c.weak))
+            } else if (loading && d != null && !d.empty) Text(tr("Updating\u2026"), modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = c.weak))
         }
     }
 }
@@ -820,13 +821,13 @@ private fun WidgetBody(w: Widget, d: WidgetData, size: String, onLine: (WidgetLi
         if (hero != null) {
             val img = rememberHomeImage(hero.image)
             Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).glass(GlassTokens.tileShape, GlassIntensity.Low, shadow = false)
-                .clickable(onClickLabel = "Preview ${hero.title}") { onLine(hero) }) {
+                .clickable(onClickLabel = tr("Preview {0}", hero.title)) { onLine(hero) }) {
                 if (img != null) Image(img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().glassSheen(c))
             }
             Spacer(Modifier.height(4.dp))
         }
         d.lines.take(n).forEachIndexed { i, l ->
-            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).let { if (l.url.isNotBlank()) it.clickable(onClickLabel = "Open ${l.title}") { onLine(l) } else it }
+            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).let { if (l.url.isNotBlank()) it.clickable(onClickLabel = tr("Open {0}", l.title)) { onLine(l) } else it }
                 .let { if (i > 0) it.hairlineTopInset(c.hair, 0.dp) else it }.padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(l.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, lineHeight = 18.sp, color = c.ink))
@@ -846,7 +847,7 @@ private fun WidgetBody(w: Widget, d: WidgetData, size: String, onLine: (WidgetLi
                 }
             }
         }
-        if (d.lines.size > n) Label("+${d.lines.size - n} more", size = 10.5.sp, modifier = Modifier.padding(top = 2.dp))
+        if (d.lines.size > n) Label(tr("+{0} more", d.lines.size - n), size = 10.5.sp, modifier = Modifier.padding(top = 2.dp))
     }
 }
 
@@ -867,7 +868,7 @@ fun WidgetMenuCard(w: Widget, onPick: (String) -> Unit) {
         }
         item("Move up", "up"); item("Move down", "down")
         Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Resize", modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.5.sp, color = DialogColors.title))
+            Text(tr("Resize"), modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.5.sp, color = DialogColors.title))
             listOf("S", "M", "L").forEach { s ->
                 val on = WidgetSize.norm(w.size) == s
                 Box(Modifier.padding(start = 6.dp).size(40.dp).glass(CircleShape, if (on) GlassIntensity.High else GlassIntensity.Low, shadow = false)
@@ -899,17 +900,17 @@ fun CustomiseSheet(
     Column(Modifier.fillMaxWidth().heightIn(max = 620.dp).homeSheet(c)
         .navigationBarsPadding().verticalScroll(rememberScrollState()).padding(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Customise", modifier = Modifier.weight(1f).semantics { heading() }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = c.ink))
+            Text(tr("Customise"), modifier = Modifier.weight(1f).semantics { heading() }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = c.ink))
             KitButton("Done", Btn.LINE, onClick = onClose)
         }
         GroupHead("Background")
         Segmented(listOf("glass" to "Glass", "plain" to "Solid", "gradient" to "Gradient", "image" to "Image"), if (bg == "sky" || bg.isBlank()) "glass" else bg) { bg = it; onBackground(it) }
         Spacer(Modifier.height(10.dp))
         when (bg) {
-            "glass", "sky", "" -> Label("Dark frosted glass, black and white. Pick Image to use your own photo.", size = 11.sp)
+            "glass", "sky", "" -> Label(tr("Dark frosted glass, black and white. Pick Image to use your own photo."), size = 11.sp)
             "image" -> Row(verticalAlignment = Alignment.CenterVertically) {
                 if (imagePicker != null) imagePicker() else KitButton("Pick image", Btn.LINE, onClick = onPickImage)
-                Spacer(Modifier.width(10.dp)); Label("Your photo behind glass cards.", size = 11.sp)
+                Spacer(Modifier.width(10.dp)); Label(tr("Your photo behind glass cards."), size = 11.sp)
             }
             "gradient" -> Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 HomeLook.gradients.forEachIndexed { i, (l, d) -> Swatch(Brush.linearGradient(if (c.dark) d else l), bgc == i, "Gradient ${i + 1}") { bgc = i; onBgColor(i) } }
@@ -927,13 +928,13 @@ fun CustomiseSheet(
         Segmented(listOf("1" to "1 h", "3" to "3 h", "6" to "6 h", "12" to "12 h"), hrs.toString()) { hrs = it.toInt(); onHours(it.toInt()) }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Wi-Fi only", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
-                Text("Saves mobile data. Pull down on the board to refresh anytime.", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+                Text(tr("Wi-Fi only"), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
+                Text(tr("Saves mobile data. Pull down on the board to refresh anytime."), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
-            Box(Modifier.semantics { contentDescription = "Wi-Fi only"; stateDescription = if (wifi) "On" else "Off" }) { KitSwitch(wifi) { wifi = !wifi; onWifiOnly(wifi) } }
+            Box(Modifier.semantics { contentDescription = tr("Wi-Fi only"); stateDescription = if (wifi) "On" else "Off" }) { KitSwitch(wifi) { wifi = !wifi; onWifiOnly(wifi) } }
         }
         GroupHead("Widgets", "Order, size and what's shown.", modifier = Modifier.padding(top = 12.dp))
-        if (widgets.isEmpty()) Label("No widgets yet.", size = 12.sp)
+        if (widgets.isEmpty()) Label(tr("No widgets yet."), size = 12.sp)
         widgets.forEachIndexed { i, w ->
             Row(Modifier.fillMaxWidth().let { if (i > 0) it.hairlineTopInset(c.hair, 0.dp) else it }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -943,7 +944,7 @@ fun CustomiseSheet(
                 SizeChips(w.size) { onSize(w.id, it) }
                 SmallIcon(Icons.Rounded.KeyboardArrowUp, "Move ${w.title} up", enabled = i > 0) { onMove(w.id, -1) }
                 SmallIcon(Icons.Rounded.KeyboardArrowDown, "Move ${w.title} down", enabled = i < widgets.size - 1) { onMove(w.id, 1) }
-                Box(Modifier.semantics { contentDescription = "Show ${w.title}"; stateDescription = if (w.hidden) "Hidden" else "Shown" }) { KitSwitch(!w.hidden) { onHidden(w.id, !w.hidden) } }
+                Box(Modifier.semantics { contentDescription = tr("Show {0}", w.title); stateDescription = if (w.hidden) "Hidden" else "Shown" }) { KitSwitch(!w.hidden) { onHidden(w.id, !w.hidden) } }
             }
         }
     }
@@ -987,8 +988,8 @@ fun CreateWidgetSheet(onAdd: (String) -> Unit, onClose: () -> Unit, initial: Str
     var t by remember { mutableStateOf(initial) }
     Column(Modifier.fillMaxWidth().homeSheet(c).navigationBarsPadding()
         .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp)) {
-        Text("Create a widget", modifier = Modifier.semantics { heading() }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = c.ink))
-        Text("Say what you want to see, in plain words.", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+        Text(tr("Create a widget"), modifier = Modifier.semantics { heading() }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = c.ink))
+        Text(tr("Say what you want to see, in plain words."), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         Spacer(Modifier.height(12.dp))
         BlazeTextField(t, { t = it }, "e.g. show me Arsenal scores")
         Spacer(Modifier.height(10.dp))

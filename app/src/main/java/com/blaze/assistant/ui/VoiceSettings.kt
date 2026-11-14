@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
@@ -32,19 +33,19 @@ fun VoiceTuning() {
     LaunchedEffect(Unit) { var n = 0; while (voices.isEmpty() && n++ < 10) { kotlinx.coroutines.delay(500); voices = Voice.voices() } }
 
     Spacer(Modifier.height(22.dp))
-    Label("${BrandName.NAME}'s voice", modifier = Modifier.padding(bottom = 6.dp))
+    Label(tr("{0}'s voice", BrandName.NAME), modifier = Modifier.padding(bottom = 6.dp))
     Row(Modifier.fillMaxWidth().hairline(c.hair).clickable { Voice.preview() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.PlayArrow, contentDescription = null, tint = c.ink, modifier = Modifier.padding(end = 8.dp).size(18.dp))
-        Text("Hear it", modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink))
+        Text(tr("Hear it"), modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink))
         Label(voices.firstOrNull { it.name == voiceName }?.let { nice(it) } ?: "Phone default", size = 10.sp)
     }
 
-    Label("Speed", modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
+    Label(tr("Speed"), modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
     Chips(listOf("0.8" to "Slow", "1.0" to "Normal", "1.2" to "Quick", "1.5" to "Fast"), rate) { rate = it; Settings.setStr("tts_rate", it); Voice.preview() }
-    Label("Pitch", modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
+    Label(tr("Pitch"), modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
     Chips(listOf("0.8" to "Deeper", "1.0" to "Normal", "1.2" to "Higher"), pitch) { pitch = it; Settings.setStr("tts_pitch", it); Voice.preview() }
 
-    Label("Voice", modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
+    Label(tr("Voice"), modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
     val phoneLang = java.util.Locale.getDefault().language
     val list = if (showAll) voices else voices.filter { it.locale.language == phoneLang }.take(12)
     VoiceRow("Phone default", "Whatever your phone's speech engine uses", voiceName.isBlank()) {
@@ -55,9 +56,9 @@ fun VoiceTuning() {
             voiceName = v.name; Settings.setStr("tts_voice", v.name); Voice.preview()
         }
     }
-    if (voices.isEmpty()) Label("Your phone's speech engine is still loading voices.", size = 10.sp, modifier = Modifier.padding(vertical = 8.dp))
+    if (voices.isEmpty()) Label(tr("Your phone's speech engine is still loading voices."), size = 10.sp, modifier = Modifier.padding(vertical = 8.dp))
     Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-        if (!showAll && voices.size > list.size) Label("Show all ${voices.size} voices", color = c.accent, size = 10.sp,
+        if (!showAll && voices.size > list.size) Label(tr("Show all {0} voices", voices.size), color = c.accent, size = 10.sp,
             modifier = Modifier.clickable { showAll = true }.padding(vertical = 10.dp).padding(end = 18.dp))
         ActionText("Get more voices", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
             try { ctx.startActivity(android.content.Intent("com.android.settings.TTS_SETTINGS").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
@@ -65,11 +66,11 @@ fun VoiceTuning() {
         }.padding(vertical = 10.dp))
     }
 
-    Label("Listen in", modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
+    Label(tr("Listen in"), modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
     Chips(listOf("" to "Phone", "en-US" to "English US", "en-GB" to "English UK", "en-ZA" to "English ZA"), lang) { lang = it; Settings.setStr("stt_lang", it) }
 
     Spacer(Modifier.height(22.dp))
-    Label("Calls", modifier = Modifier.padding(bottom = 4.dp))
+    Label(tr("Calls"), modifier = Modifier.padding(bottom = 4.dp))
     var greet by remember { mutableStateOf(Settings.bool("call_greet", true)) }
     var ear by remember { mutableStateOf(Settings.bool("call_earpiece", false)) }
     var bye by remember { mutableStateOf(Settings.bool("call_bye", true)) }

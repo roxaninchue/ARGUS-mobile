@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -48,8 +49,8 @@ fun HoldingPage() {
                 verticalAlignment = Alignment.CenterVertically) {
                 Text(f.text, modifier = Modifier.weight(1f).padding(vertical = 8.dp), style = SpaceType.bodyText(look.ink))
                 Spacer(Modifier.width(8.dp))
-                Text("Unpin", modifier = Modifier.testTag("holding_unpin_${f.id}")
-                    .clickable(onClickLabel = "Unpin ${f.text.take(40)}") { PinnedStore.unpin(f.id) }.padding(12.dp),
+                Text(tr("Unpin"), modifier = Modifier.testTag("holding_unpin_${f.id}")
+                    .clickable(onClickLabel = tr("Unpin {0}", f.text.take(40))) { PinnedStore.unpin(f.id) }.padding(12.dp),
                     style = SpaceType.meta(look.accent))
             }
         }

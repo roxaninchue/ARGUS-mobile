@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.pm.PackageManager
@@ -167,14 +168,14 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
             // v0.33.0 Screen Doctor: "What's this?" over the app you summoned Blaze on.
             if (previewMessages != null && !busy && com.blaze.assistant.assist.ScreenDoctor.fresh()) {   // v0.39.0: the Duo strip has the chip now
                 Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("What's this?", modifier = Modifier.clip(RoundedCornerShape(50)).background(Glass.raised)
+                    Text(tr("What's this?"), modifier = Modifier.clip(RoundedCornerShape(50)).background(Glass.raised)
                         .clickable { Voice.cancelListening(); touched = true
                             val sd = com.blaze.assistant.assist.ScreenDoctor
                             Agent.send(sd.prompt(sd.text, sd.app, text.trim()), attachments = sd.attachments()); sd.clear(); text = "" }
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Glass.cyan))
                     Spacer(Modifier.width(8.dp))
-                    Text("Explain, translate or fix what's on screen", maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    Text(tr("Explain, translate or fix what's on screen"), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
                 }
             }
@@ -264,7 +265,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
             Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).clip(Glass.pill).background(Glass.raised).border(1.dp, Glass.border, Glass.pill)
                     .padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    if (text.isEmpty()) Text("Ask ${BrandName.NAME}", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Glass.weak))
+                    if (text.isEmpty()) Text(tr("Ask {0}", BrandName.NAME), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Glass.weak))
                     AcceptImages(onImage = { uri, mime -> addImage(uri, mime) }) {
                         BasicTextField(text, { text = it; touched = true },
                             textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Glass.text),
@@ -331,7 +332,7 @@ private fun AssistDuoStrip(listening: Boolean, busy: Boolean, partial: String, o
                 Text(l, modifier = Modifier.clip(RoundedCornerShape(50)).background(Glass.raised).clickable { onChip(v.first, v.second) }
                     .padding(horizontal = 12.dp, vertical = 7.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Glass.text))
             }
-            Text("Type instead", modifier = Modifier.clip(RoundedCornerShape(50)).clickable { onType() }.padding(horizontal = 12.dp, vertical = 7.dp),
+            Text(tr("Type instead"), modifier = Modifier.clip(RoundedCornerShape(50)).clickable { onType() }.padding(horizontal = 12.dp, vertical = 7.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = Glass.sub))
         }
     }

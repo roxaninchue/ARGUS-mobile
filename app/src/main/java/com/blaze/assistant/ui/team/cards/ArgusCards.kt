@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team.cards
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,9 +80,9 @@ fun ApprovalCard(card: Card, onAnswer: (CardAnswer) -> Unit, modifier: Modifier 
         Text(card.title, style = ArgusType.rowTitle, color = c.ink)
         if (card.detail.isNotBlank()) Text(card.detail, style = ArgusType.sub, color = c.mute, maxLines = 8, overflow = TextOverflow.Ellipsis)
         Buttons {
-            ArgusButton("Don't allow", { onAnswer(CardAnswer.Deny) }, size = ButtonSize.S)
-            if (card.always) ArgusButton("Always allow", { onAnswer(CardAnswer.Always) }, size = ButtonSize.S)
-            ArgusButton("Allow", { onAnswer(CardAnswer.Allow) }, size = ButtonSize.S,
+            ArgusButton(tr("Don't allow"), { onAnswer(CardAnswer.Deny) }, size = ButtonSize.S)
+            if (card.always) ArgusButton(tr("Always allow"), { onAnswer(CardAnswer.Always) }, size = ButtonSize.S)
+            ArgusButton(tr("Allow"), { onAnswer(CardAnswer.Allow) }, size = ButtonSize.S,
                 kind = if (card.cls == com.blaze.assistant.team.ActionClass.DELETE) ButtonKind.DANGER else ButtonKind.PRIMARY)
         }
     }
@@ -95,19 +96,19 @@ fun DraftCard(card: Card, onAnswer: (CardAnswer) -> Unit, modifier: Modifier = M
     var editing by remember(card.id) { mutableStateOf(false) }
     var text by remember(card.id) { mutableStateOf(d.body) }
     CardFrame(card, card.heading, card.botName, modifier) {
-        Text("To: " + d.to, style = ArgusType.bodyStrong, color = c.ink)
-        d.subject?.let { Text("Subject: $it", style = ArgusType.sub, color = c.ink) }
+        Text(tr("To: ") + d.to, style = ArgusType.bodyStrong, color = c.ink)
+        d.subject?.let { Text(tr("Subject: {0}", it), style = ArgusType.sub, color = c.ink) }
         if (editing) ArgusField(text, { text = it }, "Edit the draft", singleLine = false)
         else Box(Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
             Text(d.body.ifBlank { "(no text)" }, style = ArgusType.body, color = c.ink)
         }
-        Text("Approving sends exactly this, to these recipients only.", style = ArgusType.meta, color = c.mute)
+        Text(tr("Approving sends exactly this, to these recipients only."), style = ArgusType.meta, color = c.mute)
         Buttons {
-            ArgusButton("Discard", { onAnswer(CardAnswer.Discard) }, size = ButtonSize.S)
-            if (editing) ArgusButton("Use my edit", { onAnswer(CardAnswer.Edit(text)) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY, enabled = text.isNotBlank())
+            ArgusButton(tr("Discard"), { onAnswer(CardAnswer.Discard) }, size = ButtonSize.S)
+            if (editing) ArgusButton(tr("Use my edit"), { onAnswer(CardAnswer.Edit(text)) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY, enabled = text.isNotBlank())
             else {
-                ArgusButton("Edit", { editing = true }, size = ButtonSize.S, icon = "pencil")
-                ArgusButton("Send", { onAnswer(CardAnswer.Send) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY)
+                ArgusButton(tr("Edit"), { editing = true }, size = ButtonSize.S, icon = "pencil")
+                ArgusButton(tr("Send"), { onAnswer(CardAnswer.Send) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY)
             }
         }
     }
@@ -124,10 +125,10 @@ fun QuestionCard(card: Card, onAnswer: (CardAnswer) -> Unit, modifier: Modifier 
         q.options.take(Cards.MAX_OPTIONS).forEach { o ->
             ArgusButton(o, { onAnswer(CardAnswer.Reply(o)) }, Modifier.fillMaxWidth(), size = ButtonSize.M)
         }
-        ArgusField(text, { text = it }, "Your answer", placeholder = "Or type your own answer", onIme = { if (text.isNotBlank()) onAnswer(CardAnswer.Reply(text.trim())) })
+        ArgusField(text, { text = it }, "Your answer", placeholder = tr("Or type your own answer"), onIme = { if (text.isNotBlank()) onAnswer(CardAnswer.Reply(text.trim())) })
         Buttons {
-            ArgusButton("Dismiss", { onAnswer(CardAnswer.Dismiss) }, size = ButtonSize.S)
-            ArgusButton("Reply", { onAnswer(CardAnswer.Reply(text.trim())) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY, enabled = text.isNotBlank())
+            ArgusButton(tr("Dismiss"), { onAnswer(CardAnswer.Dismiss) }, size = ButtonSize.S)
+            ArgusButton(tr("Reply"), { onAnswer(CardAnswer.Reply(text.trim())) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY, enabled = text.isNotBlank())
         }
     }
 }
@@ -142,9 +143,9 @@ fun ConnectCard(card: Card, onAnswer: (CardAnswer) -> Unit, onConnect: (String) 
         Text(card.title, style = ArgusType.rowTitle, color = c.ink)
         if (card.detail.isNotBlank()) Text(card.detail, style = ArgusType.sub, color = c.mute)
         Buttons {
-            ArgusButton("Not now", { onAnswer(CardAnswer.NotNow) }, size = ButtonSize.S)
-            if (opened) ArgusButton("I've connected it", { onAnswer(CardAnswer.Connected) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY)
-            else ArgusButton("Connect $app", { opened = true; onConnect(app) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY, icon = "link")
+            ArgusButton(tr("Not now"), { onAnswer(CardAnswer.NotNow) }, size = ButtonSize.S)
+            if (opened) ArgusButton(tr("I've connected it"), { onAnswer(CardAnswer.Connected) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY)
+            else ArgusButton(tr("Connect {0}", app), { opened = true; onConnect(app) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY, icon = "link")
         }
     }
 }
@@ -168,7 +169,7 @@ fun DecisionThreadCard(d: CardModel.Decision, live: Card?, onAnswer: (String, Ca
     val heading = when (d.kind) { "draft" -> "DRAFT"; "question" -> "QUESTION"; "connect" -> "CONNECT AN APP"; else -> "APPROVAL" }
     CardFrame(null, heading, null, modifier) {
         Text(d.title, style = ArgusType.rowTitle, color = c.ink)
-        d.to?.let { Text("To: $it", style = ArgusType.sub, color = c.mute) }
+        d.to?.let { Text(tr("To: {0}", it), style = ArgusType.sub, color = c.mute) }
         d.text?.takeIf { it.isNotBlank() && it != d.title }?.let { Text(it, style = ArgusType.sub, color = c.mute, maxLines = 4, overflow = TextOverflow.Ellipsis) }
         Text(d.stateLabel, style = ArgusType.meta, modifier = Modifier.semantics { stateDescription = d.stateLabel },
             color = when (d.state) { "approved" -> c.successText; "denied" -> c.dangerText; "pending" -> c.waitingText; else -> c.mute })

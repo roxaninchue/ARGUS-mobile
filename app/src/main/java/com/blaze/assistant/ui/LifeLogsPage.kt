@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -86,7 +87,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
     if (explain) {
         Spacer(Modifier.height(14.dp))
         Column(Modifier.fillMaxWidth().hairline(c.accent).padding(14.dp)) {
-            Label("Before you start", color = c.accent, size = 10.sp)
+            Label(tr("Before you start"), color = c.accent, size = 10.sp)
             Text(LifeLogs.EXPLAINER, modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.ink))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -163,7 +164,7 @@ internal fun RepliesPage(previewAccess: Boolean? = null) {
     val convs = remember { Conversations.list().take(12) }
 
     Spacer(Modifier.height(18.dp))
-    Text("${BrandName.NAME} reads your chat notifications (WhatsApp, SMS, Telegram, Messenger and more), keeps a log of each conversation, and can draft and send replies from the notification without opening the app.",
+    Text(tr("{0} reads your chat notifications (WhatsApp, SMS, Telegram, Messenger and more), keeps a log of each conversation, and can draft and send replies from the notification without opening the app.", BrandName.NAME),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     V18Section("Notification access")
     if (access) V18Note("On. Ask \u201cwhat did Gloria say?\u201d or \u201creply to the family group\u201d.")
@@ -196,6 +197,6 @@ internal fun RepliesPage(previewAccess: Boolean? = null) {
         note = "Deleted $n logged messages."
     }
     if (note.isNotBlank()) V18Note(note, top = 8)
-    Text("Tools: notif_conversations, notif_read, notif_reply.", modifier = Modifier.padding(top = 10.dp).clickable { },
+    Text(tr("Tools: notif_conversations, notif_read, notif_reply."), modifier = Modifier.padding(top = 10.dp).clickable { },
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))
 }

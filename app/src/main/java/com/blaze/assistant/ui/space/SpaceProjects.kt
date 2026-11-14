@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -87,7 +88,7 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
         // P1-TM-07: inside Desk (its Projects segment) the Desk title and segment row stand in for the headline
         if (!embedded) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                SpaceHeadline("Projects", Modifier.weight(1f))
+                SpaceHeadline(tr("Projects"), Modifier.weight(1f))
                 // light / dark here too (every screen has the switch; ThemeEverywhereTest)
                 com.blaze.assistant.ui.ThemeSwitch(tint = look.ink)
             }
@@ -99,12 +100,12 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
             BlazeTextField(name, { name = it }, "New project name", modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { create() }))
             Spacer(Modifier.height(12.dp))
-            SpacePillButton("New project", { create() }, primary = true, plus = true, tag = SpaceTags.PROJECT_NEW, enabled = name.isNotBlank())
+            SpacePillButton(tr("New project"), { create() }, primary = true, plus = true, tag = SpaceTags.PROJECT_NEW, enabled = name.isNotBlank())
         }
         projects.forEach { p ->
             val status = SpaceProjectRows.status(p.chats, busy, needsYou)
             Spacer(Modifier.height(12.dp))
-            SpaceCard(tag = SpaceTags.projectRow(p.id), onClick = { onOpen(p.id) }, onClickLabel = "Open ${p.name}") {
+            SpaceCard(tag = SpaceTags.projectRow(p.id), onClick = { onOpen(p.id) }, onClickLabel = tr("Open {0}", p.name)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // 0.52.4: the shared round icon tile (a folder) instead of the name's initial
                     IconTile(Icons.Rounded.Folder, tint = look.accent)
@@ -122,9 +123,9 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
         if (projects.isEmpty()) {
             Spacer(Modifier.height(12.dp))
             SpaceCard {
-                SpaceHeadline("No projects yet", size = SpaceTypeScale.TITLE.sp)
+                SpaceHeadline(tr("No projects yet"), size = SpaceTypeScale.TITLE.sp)
                 Spacer(Modifier.height(6.dp))
-                Text("Name one above to start. Each project keeps its own chats, instructions and brief.", style = SpaceType.bodyText(look.sub))
+                Text(tr("Name one above to start. Each project keeps its own chats, instructions and brief."), style = SpaceType.bodyText(look.sub))
             }
         }
         Spacer(Modifier.height(110.dp))
@@ -150,10 +151,10 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
         BackTitle(open.name, onBack = onBack, modifier = Modifier.padding(top = 4.dp))
         Column(Modifier.fillMaxWidth().padding(horizontal = SpaceInsets.GUTTER_DP.dp)) {
             Spacer(Modifier.height(8.dp))
-            SpacePillButton("New chat in this project", { onNewChat(open.id) }, primary = true, plus = true)
+            SpacePillButton(tr("New chat in this project"), { onNewChat(open.id) }, primary = true, plus = true)
             Spacer(Modifier.height(12.dp))
             SpaceCard {
-                CardHead(Icons.Rounded.EditNote) { SpaceHeadline("Instructions", size = SpaceTypeScale.SECTION.sp) }
+                CardHead(Icons.Rounded.EditNote) { SpaceHeadline(tr("Instructions"), size = SpaceTypeScale.SECTION.sp) }
                 Spacer(Modifier.height(8.dp))
                 BlazeTextField(ins, { ins = it; onInstructions(open.id, it) }, "What ${BrandName.NAME} should know in every chat here",
                     modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 72.dp)
@@ -163,22 +164,22 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconTile(Icons.Rounded.PushPin, tint = look.accent, small = true)
                     Spacer(Modifier.width(10.dp))
-                    SpaceHeadline("Brief", Modifier.weight(1f), size = SpaceTypeScale.SECTION.sp)
+                    SpaceHeadline(tr("Brief"), Modifier.weight(1f), size = SpaceTypeScale.SECTION.sp)
                     // The real count (BlazeDb.tokens) against the hard cap; typing or pasting past it is cut at the cap.
                     val used = P.tokens(brief)
-                    Text("$used / ${P.BRIEF_TOKENS} tokens", style = SpaceType.caption(if (used >= P.BRIEF_TOKENS * 9 / 10) look.accent else look.sub))
+                    Text(tr("{0} / {1} tokens", used, P.BRIEF_TOKENS), style = SpaceType.caption(if (used >= P.BRIEF_TOKENS * 9 / 10) look.accent else look.sub))
                 }
                 Spacer(Modifier.height(8.dp))
                 BlazeTextField(brief, { t -> val fit = P.cutTokens(t, P.BRIEF_TOKENS); cut = fit.length < t.length; brief = fit; onBrief(open.id, fit) },
                     "Pinned brief: purpose and rules first, then key files and what's in progress. ${BrandName.NAME} keeps it up to date.",
                     modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 96.dp)
-                if (cut) Text("The brief is at its 600-token cap, so the rest was cut. Put longer details in Instructions: ${BrandName.NAME} searches them when it needs them.",
+                if (cut) Text(tr("The brief is at its 600-token cap, so the rest was cut. Put longer details in Instructions: {0} searches them when it needs them.", BrandName.NAME),
                     modifier = Modifier.padding(top = 6.dp), style = SpaceType.caption(look.accent))
             }
             Spacer(Modifier.height(12.dp))
             val list = open.chats.mapNotNull { id -> chats.firstOrNull { it.id == id } }
             SpaceCard {
-                CardHead(Icons.Rounded.ChatBubbleOutline) { SpaceHeadline("Chats", size = SpaceTypeScale.SECTION.sp) }
+                CardHead(Icons.Rounded.ChatBubbleOutline) { SpaceHeadline(tr("Chats"), size = SpaceTypeScale.SECTION.sp) }
                 Spacer(Modifier.height(6.dp))
                 list.forEach { ch ->
                     Box {
@@ -187,17 +188,17 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
                             items = listOf("Rename" to { renaming = ch }, "Delete chat" to { deleting = ch }))
                     }
                 }
-                if (list.isEmpty()) Text("No chats yet. Start one with New chat: it keeps this project's instructions and brief.", style = SpaceType.bodyText(look.sub))
+                if (list.isEmpty()) Text(tr("No chats yet. Start one with New chat: it keeps this project's instructions and brief."), style = SpaceType.bodyText(look.sub))
             }
             Spacer(Modifier.height(12.dp))
-            SpacePillButton("Delete project (chats stay)", { onDelete(open.id) }, icon = Icons.Rounded.Delete)
+            SpacePillButton(tr("Delete project (chats stay)"), { onDelete(open.id) }, icon = Icons.Rounded.Delete)
             Spacer(Modifier.height(110.dp))
         }
     }
     renaming?.let { ch -> RenameChatDialog(ch.title, onDone = { t -> renaming = null; if (t.isNotBlank()) onRenameChat(ch.id, t) }, onDismiss = { renaming = null }) }
     deleting?.let { ch -> BlazeDialog(title = "Delete \u201c${ch.title.ifBlank { "this chat" }.take(40)}\u201d?",
-        body = "Its messages are removed from this phone. The project, its instructions and its other chats stay.",
-        confirm = "Delete", onConfirm = { deleting = null; onDeleteChat(ch.id) }, warm = true, dismiss = "Keep", onDismiss = { deleting = null }) }
+        body = tr("Its messages are removed from this phone. The project, its instructions and its other chats stay."),
+        confirm = tr("Delete"), onConfirm = { deleting = null; onDeleteChat(ch.id) }, warm = true, dismiss = tr("Keep"), onDismiss = { deleting = null }) }
 }
 
 /** A project page card's heading with its small icon tile on the left. */

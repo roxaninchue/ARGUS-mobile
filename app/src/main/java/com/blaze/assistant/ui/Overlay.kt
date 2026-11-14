@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import kotlinx.coroutines.flow.first
 import android.Manifest
@@ -566,6 +567,6 @@ fun TaskCard(onOpen: () -> Unit, onStop: () -> Unit, onMinimise: () -> Unit = {}
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = DialogColors.Dark.title))
         }
         Spacer(Modifier.width(8.dp))
-        PillButton("Stop", primary = true, warm = true, onDark = true, onClick = onStop)
+        PillButton(tr("Stop"), primary = true, warm = true, onDark = true, onClick = onStop)
     }
 }

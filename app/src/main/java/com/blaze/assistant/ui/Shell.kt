@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -133,7 +134,7 @@ fun ShellTopBar(
             // v0.29.0: the pill gets the room left over, and shrinks (then turns into icons) on narrow screens / big fonts.
             Box(Modifier.weight(1f)) { if (isPrivate) PrivatePill(onGhost) else Pill(mode, onMode, homeTab) }
             Spacer(Modifier.width(4.dp))
-            Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSearch).semantics { contentDescription = "Search" }, contentAlignment = Alignment.Center) { SearchGlyph(c.ink) }
+            Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSearch).semantics { contentDescription = tr("Search") }, contentAlignment = Alignment.Center) { SearchGlyph(c.ink) }
             // v0.24.4: the router status dot is gone (no router dashboard); the ghost opens / leaves a private chat.
             Box(Modifier.size(40.dp).clip(CircleShape).background(if (isPrivate) c.ink else Color.Transparent).clickable(onClick = onGhost)
                 .semantics { contentDescription = if (isPrivate) "Leave private chat" else "Private chat" }, contentAlignment = Alignment.Center) {
@@ -142,7 +143,7 @@ fun ShellTopBar(
             Spacer(Modifier.width(4.dp))
             Box(Modifier.size(34.dp).glass(CircleShape, GlassIntensity.High, shadow = false)
                 .combinedClickable(onClick = onAvatar, onLongClick = onAvatarLong, onLongClickLabel = if (c.dark) "Switch to light theme" else "Switch to dark theme")
-                .semantics { contentDescription = "Account menu. Long-press to switch light or dark" }, contentAlignment = Alignment.Center) {
+                .semantics { contentDescription = tr("Account menu. Long-press to switch light or dark") }, contentAlignment = Alignment.Center) {
                 Text(avatar.take(1).uppercase().ifBlank { "B" }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
             }
         }
@@ -152,7 +153,7 @@ fun ShellTopBar(
             Spacer(Modifier.width(8.dp))
             Label(viewChip.uppercase(), color = c.ink, size = 10.sp, modifier = Modifier.weight(1f))
             Row(Modifier.glass(RoundedCornerShape(16.dp), GlassIntensity.Low, shadow = false).clickable(onClick = onExit).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Label("✕  Exit", color = c.ink, size = 10.sp)
+                Label(tr("✕  Exit"), color = c.ink, size = 10.sp)
             }
         }
     }
@@ -176,7 +177,7 @@ private fun Pill(mode: String, onMode: (String) -> Unit, homeTab: Boolean = true
                 val fill by androidx.compose.animation.animateColorAsState(if (on) c.ink else Color.Transparent, MotionTokens.medium(), label = "tab")
                 val ink by androidx.compose.animation.animateColorAsState(if (on) c.paper else c.sub, MotionTokens.medium(), label = "tabText")
                 Box(Modifier.clip(RoundedCornerShape(17.dp)).background(fill)
-                    .clickable(onClickLabel = "Switch to $label") { onMode(id) }
+                    .clickable(onClickLabel = tr("Switch to {0}", label)) { onMode(id) }
                     .semantics { selected = on; if (fit.icons) contentDescription = label }
                     .heightIn(min = 34.dp).padding(horizontal = fit.padDp.dp, vertical = 7.dp), contentAlignment = Alignment.Center) {
                     if (fit.icons) androidx.compose.material3.Icon(PillFit.icon(id), contentDescription = null, tint = ink, modifier = Modifier.size(18.dp))
@@ -214,11 +215,11 @@ object PillFit {
 @Composable
 private fun PrivatePill(onLeave: () -> Unit) {
     val c = LocalBlaze.current
-    Row(Modifier.clip(RoundedCornerShape(20.dp)).background(c.ink).clickable(onClickLabel = "Leave private chat", onClick = onLeave)
+    Row(Modifier.clip(RoundedCornerShape(20.dp)).background(c.ink).clickable(onClickLabel = tr("Leave private chat"), onClick = onLeave)
         .padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         GhostGlyph(c.paper, filled = true, size = 14.dp, eyes = c.ink)
         Spacer(Modifier.width(6.dp))
-        Text("Private", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.paper))
+        Text(tr("Private"), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = c.paper))
     }
 }
 
@@ -321,14 +322,14 @@ fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismi
             SearchGlyph(c.sub, 14.dp)
             Spacer(Modifier.width(10.dp))
             Box(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                if (q.isEmpty()) Text("Search views", maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub))
+                if (q.isEmpty()) Text(tr("Search views"), maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub))
                 BasicTextField(q, { q = it }, singleLine = true, cursorBrush = SolidColor(c.accent),
                     textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                     keyboardActions = KeyboardActions(onGo = { rows.firstOrNull()?.let(onPick) }),
                     modifier = Modifier.fillMaxWidth().focusRequester(focus))
             }
-            Box(Modifier.size(36.dp).clip(CircleShape).clickable(onClick = onDismiss).semantics { contentDescription = "Close" }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(36.dp).clip(CircleShape).clickable(onClick = onDismiss).semantics { contentDescription = tr("Close") }, contentAlignment = Alignment.Center) {
                 Text("\u00d7", style = TextStyle(fontFamily = Type.Sans, fontSize = 18.sp, color = c.sub))
             }
         }
@@ -345,7 +346,7 @@ fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismi
                     badges[v.id]?.takeIf { it.isNotBlank() }?.let { Label(it, color = c.accent, size = 9.sp) }
                 }
             }
-            if (rows.isEmpty()) Text("No view matches.", modifier = Modifier.padding(16.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+            if (rows.isEmpty()) Text(tr("No view matches."), modifier = Modifier.padding(16.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         }
     }
 }
@@ -375,17 +376,17 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
                 SearchGlyph(c.sub, 15.dp)
                 Spacer(Modifier.width(10.dp))
                 Box(Modifier.weight(1f)) {
-                    if (q.isEmpty()) Text("Search views, or ask about past chats", maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
+                    if (q.isEmpty()) Text(tr("Search views, or ask about past chats"), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
                     BasicTextField(q, { q = it }, singleLine = true, cursorBrush = SolidColor(c.accent),
                         textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink), modifier = Modifier.fillMaxWidth().focusRequester(focus))
                 }
             }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-            Label("Past conversations", size = 9.sp, modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 8.dp))
+            Label(tr("Past conversations"), size = 9.sp, modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 8.dp))
             if (q.isNotBlank()) SoftPill("Ask ${BrandName.NAME} what you said about \u201c${q.trim().take(40)}\u201d", lead = "↳") {
                 onAsk("Search our past conversations for \u201c${q.trim()}\u201d and tell me what we said.")
-            } else Text("Type a word and ${BrandName.NAME} looks through every conversation you've had, old ones included.",
+            } else Text(tr("Type a word and {0} looks through every conversation you've had, old ones included.", BrandName.NAME),
                 modifier = Modifier.padding(start = 4.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
             Label(if (q.isBlank()) "Views" else "Matching views", size = 9.sp, modifier = Modifier.padding(start = 4.dp, top = 22.dp, bottom = 6.dp))
             views.forEach { v ->
@@ -396,7 +397,7 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
                     Text(v.desc, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
             }
-            if (views.isEmpty()) Text("No view matches.", modifier = Modifier.padding(4.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+            if (views.isEmpty()) Text(tr("No view matches."), modifier = Modifier.padding(4.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         }
     }
     }
@@ -423,9 +424,9 @@ fun ChatRow(ch: ChatMeta, busy: Boolean, current: Boolean = false, chip: String 
         trailing = {
             // Pinned mark sits on the right so every title lines up (v0.15.0).
             if (ch.pinned) { LeadIcon(Icons.Rounded.PushPin, c.accent, size = 14.dp); Spacer(Modifier.width(8.dp)) }
-            if (busy) Label("Working", color = c.accent, size = 9.sp)
+            if (busy) Label(tr("Working"), color = c.accent, size = 9.sp)
             else if (chip.isNotBlank()) Label(chip, color = c.sub, size = 9.sp)
-            if (onMore != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = "Chat options", onClick = onMore)
+            if (onMore != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClickLabel = tr("Chat options"), onClick = onMore)
                 .semantics { contentDescription = "Options for ${ch.title.ifBlank { "this chat" }}" }, contentAlignment = Alignment.Center) {
                 MoreDots(c.sub)
             }
@@ -446,7 +447,7 @@ fun MoreDots(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp) {
 @Composable
 fun RenameChatDialog(current: String, onDone: (String) -> Unit, onDismiss: () -> Unit) {
     var t by remember { mutableStateOf(current) }
-    BlazeDialog(title = "Rename chat", confirm = "Save", onConfirm = { onDone(t.trim()) }, dismiss = "Cancel", onDismiss = onDismiss) {
+    BlazeDialog(title = tr("Rename chat"), confirm = tr("Save"), onConfirm = { onDone(t.trim()) }, dismiss = tr("Cancel"), onDismiss = onDismiss) {
         BlazeTextField(t, { t = it.take(80) }, "Chat name", modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { onDone(t.trim()) }))
     }
@@ -467,8 +468,8 @@ fun ProjectChatHeader(project: String, title: String, onBack: () -> Unit, onRena
     // straight on the space view instead of a glass pill inset 8 dp
     BackTitle(title.ifBlank { "New chat" }, onBack = onBack, eyebrow = project, modifier = Modifier.padding(top = 4.dp)) {
         Box {
-            Box(Modifier.size(com.blaze.assistant.ui.space.SpaceInsets.CONTROL_DP.dp).clip(CircleShape).clickable(onClickLabel = "Chat options") { menu = true }
-                .semantics { contentDescription = "Chat options" }, contentAlignment = Alignment.Center) { MoreDots(c.ink) }
+            Box(Modifier.size(com.blaze.assistant.ui.space.SpaceInsets.CONTROL_DP.dp).clip(CircleShape).clickable(onClickLabel = tr("Chat options")) { menu = true }
+                .semantics { contentDescription = tr("Chat options") }, contentAlignment = Alignment.Center) { MoreDots(c.ink) }
             if (menu) BlazeMenu(true, onDismiss = { menu = false }, items = buildList<Pair<String, () -> Unit>> {
                 add("New chat in this project" to onNewChat)
                 if (canEdit) { add("Rename" to { renaming = true }); add("Delete chat" to { deleting = true }) }
@@ -476,8 +477,8 @@ fun ProjectChatHeader(project: String, title: String, onBack: () -> Unit, onRena
         }
     }
     if (renaming) RenameChatDialog(title, onDone = { t -> renaming = false; if (t.isNotBlank()) onRename(t) }, onDismiss = { renaming = false })
-    if (deleting) BlazeDialog(title = "Delete this chat?", body = "Its messages are removed from this phone. The project and its other chats stay.",
-        confirm = "Delete", onConfirm = { deleting = false; onDelete() }, warm = true, dismiss = "Keep", onDismiss = { deleting = false })
+    if (deleting) BlazeDialog(title = tr("Delete this chat?"), body = tr("Its messages are removed from this phone. The project and its other chats stay."),
+        confirm = tr("Delete"), onConfirm = { deleting = false; onDelete() }, warm = true, dismiss = tr("Keep"), onDismiss = { deleting = false })
 }
 
 // ---------------------------------------------------------------- the one live work card
@@ -695,7 +696,7 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
             .shadow(12.dp, pill, clip = false, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
             .clip(pill).background(ComposerCard.fill(c)).border(1.dp, ComposerCard.rim(c), pill)
             .testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER)
-            .semantics { contentDescription = "Message box" }
+            .semantics { contentDescription = tr("Message box") }
             .padding(start = 6.dp, end = 6.dp, top = 3.dp, bottom = 3.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f).padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp)) {
                 if (empty) androidx.compose.animation.AnimatedContent(targetState = placeholder, label = "hint",
@@ -713,13 +714,13 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
                     keyboardOptions = ComposerKeys.Message,
                     modifier = Modifier.fillMaxWidth().testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_FIELD)
                         .onFocusChanged { focused = it.isFocused; if (it.isFocused) com.blaze.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
-                        .semantics { contentDescription = "Message ${BrandName.NAME}" })
+                        .semantics { contentDescription = tr("Message {0}", BrandName.NAME) })
             }
             if (onExpand != null) ComposerIcon(if (expanded) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
                 if (expanded) "Restore the chat" else "Maximise the chat", size = 36.dp, iconSize = 17.dp, onClick = onExpand)
             if (onSkills != null) ComposerIcon(Icons.Rounded.AutoAwesome, "Skills", onClick = onSkills)
             if (onCall != null) ComposerIcon(Icons.Rounded.RecordVoiceOver, "Voice chat with ${BrandName.NAME}", onClick = onCall)
-            if (onSlash != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSlash).semantics { contentDescription = "Commands" },
+            if (onSlash != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSlash).semantics { contentDescription = tr("Commands") },
                 contentAlignment = Alignment.Center) { Text("/", style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = c.sub)) }
             Box(Modifier.size(38.dp).clip(CircleShape).background(if (plusOpen) c.ink else Color.Transparent)
                 .testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_PLUS).clickable(onClick = onPlus)
@@ -730,9 +731,9 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
             val big = 40.dp
             when {
                 canSend -> Box(Modifier.size(big).clip(CircleShape).background(ComposerCard.send(c)).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_SEND)
-                    .clickable(onClick = onSend).semantics { contentDescription = "Send" }, contentAlignment = Alignment.Center) { SendMark(ComposerCard.sendInk(c), stop = false) }
+                    .clickable(onClick = onSend).semantics { contentDescription = tr("Send") }, contentAlignment = Alignment.Center) { SendMark(ComposerCard.sendInk(c), stop = false) }
                 busy -> Box(Modifier.size(big).clip(CircleShape).background(c.accent).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_SEND)
-                    .clickable(onClick = onStop).semantics { contentDescription = "Stop" }, contentAlignment = Alignment.Center) { SendMark(c.onAccent, stop = true) }
+                    .clickable(onClick = onStop).semantics { contentDescription = tr("Stop") }, contentAlignment = Alignment.Center) { SendMark(c.onAccent, stop = true) }
                 else -> {
                     val micOn = listening || speaking
                     Box(Modifier.size(big).clip(CircleShape).background(if (micOn) c.accent else Color.Transparent).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_MIC)

@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -103,8 +104,8 @@ fun MemoryPage(mems0: List<Mind.Mem>? = null, mode0: String = "", select0: Long 
     if (mems.isEmpty()) {
         PageHead("Memory", "What ${BrandName.NAME} remembers")
         if (notice != null) Text(notice, modifier = Modifier.padding(bottom = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 17.sp, color = c.sub))
-        Rows { EmptyState("Nothing remembered yet",
-            "Tell ${BrandName.NAME} things like \u201cremember my sister is Mary\u201d, or just talk: it saves lasting facts as you go. Each one appears here as a dot, linked to the people and projects it's about.") }
+        Rows { EmptyState(tr("Nothing remembered yet"),
+            tr("Tell {0} things like \u201cremember my sister is Mary\u201d, or just talk: it saves lasting facts as you go. Each one appears here as a dot, linked to the people and projects it's about.", BrandName.NAME)) }
         return
     }
     val graph = remember(mems) { MemGraph(mems).also { it.settle() } }
@@ -157,7 +158,7 @@ fun MemoryPage(mems0: List<Mind.Mem>? = null, mode0: String = "", select0: Long 
                 KitButton("Cancel", Btn.LINE) { picking = false; picked = emptySet(); mergeNote = "" }
             }
         }
-        if (picking) Label("Tap the memories to merge into one line", size = 9.sp, color = c.sub, modifier = Modifier.padding(top = 6.dp))
+        if (picking) Label(tr("Tap the memories to merge into one line"), size = 9.sp, color = c.sub, modifier = Modifier.padding(top = 6.dp))
         if (tidying) Label(tidyNow?.let { (d, t) -> if (t == 0) "Looking for duplicates\u2026" else "Tidying up\u2026 $d of $t" } ?: "Looking for duplicates\u2026",
             size = 9.sp, color = c.sub, modifier = Modifier.padding(top = 6.dp))
         if (mergeNote.isNotEmpty()) Label(mergeNote, size = 9.sp, color = c.accent, modifier = Modifier.padding(top = 6.dp))
@@ -168,7 +169,7 @@ fun MemoryPage(mems0: List<Mind.Mem>? = null, mode0: String = "", select0: Long 
     val selected = mems.firstOrNull { it.id == sel }
     if (mode == "graph") {
         MemoryGraphView(graph, selectedId = sel, matches = matches) { sel = it }
-        if (graph.clipped > 0) Label("Showing the newest ${graph.nodes.size}. The list has all ${mems.size}.", size = 9.sp, modifier = Modifier.padding(top = 8.dp))
+        if (graph.clipped > 0) Label(tr("Showing the newest {0}. The list has all {1}.", graph.nodes.size, mems.size), size = 9.sp, modifier = Modifier.padding(top = 8.dp))
         if (selected != null) {
             // Bring the card into view when a dot is tapped (it sits under the graph on a phone).
             val bring = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
@@ -192,7 +193,7 @@ private fun ForgetAll(n: Int) {
     var armed by remember { mutableStateOf(false) }
     LaunchedEffect(armed) { if (armed) { delay(4000); armed = false } }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("Backups (Settings \u203a Backup) include every memory.", modifier = Modifier.weight(1f),
+        Text(tr("Backups (Settings \u203a Backup) include every memory."), modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 17.sp, color = c.sub))
         Spacer(Modifier.width(10.dp))
         KitButton(if (armed) "Forget all $n?" else "Forget all", if (armed) Btn.INK else Btn.GHOST) {
@@ -452,7 +453,7 @@ private fun dotGrid(ds: DrawScope, c: BlazeColors) = with(ds) {
 @Composable
 private fun MemoryList(mems: List<Mind.Mem>, matches: Set<Long>?, sel: Long, graph: MemGraph, picking: Boolean = false, picked: Set<Long> = emptySet(), onTap: (Long) -> Unit) {
     val shown = mems.filter { matches == null || it.id in matches }
-    if (shown.isEmpty()) { Rows { EmptyState("No memory matches", "Try a name, a place or a word from the memory.", mark = false) }; return }
+    if (shown.isEmpty()) { Rows { EmptyState(tr("No memory matches"), tr("Try a name, a place or a word from the memory."), mark = false) }; return }
     Mind.KINDS.forEach { k ->
         val group = shown.filter { Mind.normKind(it.kind) == k }.sortedByDescending { it.updated.coerceAtLeast(it.created) }
         if (group.isEmpty()) return@forEach
@@ -549,9 +550,9 @@ fun MemoryDetail(m: Mind.Mem, graph: MemGraph, onSelect: (Long) -> Unit, onClose
                 MetaRow("Saved") { MetaText(date(m.created) + if (m.updated > m.created) " \u00b7 updated " + date(m.updated) else "") }
             }
             Spacer(Modifier.height(12.dp))
-            Label("Linked \u00b7 %02d".format(links.size), size = 10.sp)
+            Label(tr("Linked \u00b7 %02d").format(links.size), size = 10.sp)
             Spacer(Modifier.height(6.dp))
-            if (links.isEmpty()) Text("No links yet. Memories link when they share a subject, name each other, or came from the same chat.",
+            if (links.isEmpty()) Text(tr("No links yet. Memories link when they share a subject, name each other, or came from the same chat."),
                 modifier = Modifier.padding(end = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 18.sp, color = c.weak))
             links.take(8).forEach { (j, e) ->
                 val o = graph.nodes[j].mem

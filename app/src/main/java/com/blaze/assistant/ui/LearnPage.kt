@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,12 +57,12 @@ internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Lon
         Review(deck, queue.firstOrNull(), queue.size, reveal, clock, onBack = { deck = "" })
         return
     }
-    Text("Flashcards come back just before you'd forget them. Ask ${BrandName.NAME} to make some from your notes, a PDF or slides (\u201cmake flashcards from my CIT102 notes\u201d), then study here.",
+    Text(tr("Flashcards come back just before you'd forget them. Ask {0} to make some from your notes, a PDF or slides (\u201cmake flashcards from my CIT102 notes\u201d), then study here.", BrandName.NAME),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
     Spacer(Modifier.height(16.dp))
-    Label("Decks", modifier = Modifier.padding(bottom = 8.dp))
+    Label(tr("Decks"), modifier = Modifier.padding(bottom = 8.dp))
     val decks = remember(all) { Flashcards.decks(clock) }
-    if (decks.isEmpty()) Rows { EmptyState("No cards yet", "Ask ${BrandName.NAME} to \u201cmake flashcards from my notes\u201d, or study with the tutor skill. Decks show up here.") }
+    if (decks.isEmpty()) Rows { EmptyState(tr("No cards yet"), tr("Ask {0} to \u201cmake flashcards from my notes\u201d, or study with the tutor skill. Decks show up here.", BrandName.NAME)) }
     decks.forEachIndexed { i, d ->
         Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable { deck = d.name }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Label("%02d".format(i + 1), color = c.weak, size = 10.sp)
@@ -72,18 +73,18 @@ internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Lon
             }
             if (d.due > 0) StatusChip("${d.due} due", c.accent, filled = true)
             if (d.fresh > 0) { Spacer(Modifier.width(6.dp)); StatusChip("${d.fresh} new", c.accent, filled = false) }
-            if (d.due + d.fresh == 0) Label("Done", color = c.weak, size = 9.sp)
+            if (d.due + d.fresh == 0) Label(tr("Done"), color = c.weak, size = 9.sp)
         }
     }
     Spacer(Modifier.height(22.dp))
-    Label("Student tools", modifier = Modifier.padding(bottom = 4.dp))
+    Label(tr("Student tools"), modifier = Modifier.padding(bottom = 4.dp))
     var classroom by remember { mutableStateOf(Classroom.enabled) }
     var low by remember { mutableStateOf(Settings.lowData) }
     ToggleRow("Google Classroom", "Read your courses and assignments, and turn each one into a reminder 24 hours before it's due. Reconnect Google once after switching this on", classroom) {
         classroom = !classroom; Classroom.enabled = classroom }
     ToggleRow("Low-data mode", "Text models only (photos are described once), no screenshots, no instant pictures, and each answer shows the MB it used", low) {
         low = !low; Settings.lowData = low }
-    Text("Study skills: study-planner, tutor, lecture-notes, essay-coach, group-project and classroom-sync (Settings \u203a Skill library).",
+    Text(tr("Study skills: study-planner, tutor, lecture-notes, essay-coach, group-project and classroom-sync (Settings \u203a Skill library)."),
         modifier = Modifier.padding(top = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))
 }
 
@@ -94,14 +95,14 @@ private fun Review(deck: String, card: Card?, left: Int, reveal0: Boolean, now: 
     Row(verticalAlignment = Alignment.CenterVertically) {
         // v0.28.3: the shared round BackButton (was "← Decks" text).
         BackButton(onBack, modifier = Modifier.offset(x = (-4).dp), desc = "Back to decks")
-        Text("Decks", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
+        Text(tr("Decks"), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
         Spacer(Modifier.weight(1f))
         Label(if (card == null) deck else "$deck \u00b7 $left left", color = c.sub, size = 9.sp, maxLines = 1)
     }
     Spacer(Modifier.height(12.dp))
     if (card == null) {
         Box(Modifier.fillMaxWidth().hairline(c.hair).padding(24.dp), contentAlignment = Alignment.Center) {
-            Text("All caught up on this deck. Next cards come back when they're due.", textAlign = TextAlign.Center,
+            Text(tr("All caught up on this deck. Next cards come back when they're due."), textAlign = TextAlign.Center,
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.sub))
         }
         return

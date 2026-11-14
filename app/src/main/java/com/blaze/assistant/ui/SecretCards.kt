@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -79,7 +80,7 @@ fun SavedSecurelyLine(label: String, preview: String) {
         Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Text("Saved securely", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
+            Text(tr("Saved securely"), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
             Text("$label · $preview", maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
         }
     }
@@ -98,11 +99,11 @@ fun SecretForm(kind: SecretVault.Kind, label: String, service: String, hint: Str
     val shown = remember(fields) { mutableStateMapOf<String, Boolean>() }
     val ready = SecretFormRules.ready(kind, fields, values)
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(BlazeShapes.large, GlassIntensity.High).padding(16.dp)
-        .semantics { contentDescription = "Secure form: $label" }) {
+        .semantics { contentDescription = tr("Secure form: {0}", label) }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             LockBadge()
             Spacer(Modifier.width(10.dp))
-            Label("Secure form" + if (service.isNotBlank()) " · ${com.blaze.assistant.agent.SecretUse.displayName(service).take(30)}" else "",
+            Label(tr("Secure form") + if (service.isNotBlank()) " · ${com.blaze.assistant.agent.SecretUse.displayName(service).take(30)}" else "",
                 color = c.accent, size = 10.sp, maxLines = 1, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
@@ -125,10 +126,10 @@ fun SecretForm(kind: SecretVault.Kind, label: String, service: String, hint: Str
                         cursorBrush = SolidColor(c.accent), modifier = Modifier.fillMaxWidth())
                 }
                 // Paste: straight from the clipboard into the field (never through the chat), then the clipboard is cleared.
-                Box(Modifier.size(40.dp).clip(BlazeShapes.pill).clickable(onClickLabel = "Paste") {
+                Box(Modifier.size(40.dp).clip(BlazeShapes.pill).clickable(onClickLabel = tr("Paste")) {
                     clip.getText()?.text?.trim()?.takeIf { it.isNotEmpty() }?.let { values[f.name] = it.replace("\n", ""); clip.setText(AnnotatedString("")) }
                 }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.ContentPaste, contentDescription = "Paste", tint = c.sub, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Rounded.ContentPaste, contentDescription = tr("Paste"), tint = c.sub, modifier = Modifier.size(18.dp))
                 }
                 if (SecretFormRules.canReveal(kind, f)) RevealEye(shown[f.name] == true) { shown[f.name] = shown[f.name] != true }
                 else Spacer(Modifier.width(6.dp))
@@ -174,10 +175,10 @@ fun SecretPasteHold(labels: List<String>, masked: String, onSave: () -> Unit, on
         Row(verticalAlignment = Alignment.CenterVertically) {
             LockBadge()
             Spacer(Modifier.width(10.dp))
-            Text("This looks like a secret", modifier = Modifier.weight(1f),
+            Text(tr("This looks like a secret"), modifier = Modifier.weight(1f),
                 style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
         }
-        Text("Save it securely instead? ${BrandName.NAME} gets a stand-in, never the value." + if (labels.isNotEmpty()) " (${labels.joinToString(", ")})" else "",
+        Text(tr("Save it securely instead? {0} gets a stand-in, never the value.", BrandName.NAME) + if (labels.isNotEmpty()) " (${labels.joinToString(", ")})" else "",
             modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
         Text(masked.take(240), maxLines = 3, modifier = Modifier.padding(top = 8.dp).fillMaxWidth().clip(BlazeShapes.small).background(c.field).padding(10.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))

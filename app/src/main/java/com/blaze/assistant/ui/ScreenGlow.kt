@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.content.Context
 import android.graphics.PixelFormat
@@ -82,7 +83,7 @@ object ScreenGlow {
             gravity = Gravity.TOP or Gravity.START
             if (type == WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY && Build.VERSION.SDK_INT >= 31) alpha = EdgeParticleMath.MAX_PASS_THROUGH_ALPHA
             if (Build.VERSION.SDK_INT >= 28) layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-            title = "${BrandName.NAME} screen glow"
+            title = tr("{0} screen glow", BrandName.NAME)
         }
         val o = OverlayOwner().also { it.start() }
         shown.value = true

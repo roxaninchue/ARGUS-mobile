@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.argus.kit
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -265,7 +266,7 @@ fun CloudChip(
     val c = Argus.colors
     val text = CloudChipSpec.text(costPerHour)
     Box(modifier.heightIn(min = KitSpec.TARGET.dp).clickable(role = Role.Button, onClick = onClick)
-        .clearAndSetSemantics { contentDescription = "$text. Open computers"; role = Role.Button; onClick { onClick(); true } },
+        .clearAndSetSemantics { contentDescription = tr("{0}. Open computers", text); role = Role.Button; onClick { onClick(); true } },
         contentAlignment = Alignment.Center) {
         Row(Modifier.heightIn(min = KitSpec.Cloud.HEIGHT.dp).argusGlass(GlassLevel.RAISED, RoundedCornerShape(ArgusTokens.Radius.PILL.dp), shadow = false)
             .padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

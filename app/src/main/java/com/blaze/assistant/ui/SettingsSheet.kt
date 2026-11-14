@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
@@ -199,7 +200,7 @@ private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
     Spacer(Modifier.height(8.dp))
     ToggleRow("Phone control", "Open apps, tap, type and scroll for you", control) { control = !control; Settings.phoneControl = control }
     // v0.24.5: the pointer is always shown while Blaze controls apps (no switch; the old show_pointer pref is ignored).
-    Text("${BrandName.NAME}'s mascot pointer is always on screen while it controls your phone. It never blocks your taps or ${BrandName.NAME}'s. Tap the small Stop chip at the bottom-left to stop.",
+    Text(tr("{0}'s mascot pointer is always on screen while it controls your phone. It never blocks your taps or {1}'s. Tap the small Stop chip at the bottom-left to stop.", BrandName.NAME, BrandName.NAME),
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.weak))
     Spacer(Modifier.height(12.dp))
     Row(Modifier.fillMaxWidth().hairline(if (a11yOn) c.hair else c.accent).clickable(onClick = onOpenAccessibility).padding(16.dp),
@@ -208,9 +209,9 @@ private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
         Spacer(Modifier.width(10.dp))
         Text(if (a11yOn) "Accessibility access is on" else "Turn on \u201cBlaze phone control\u201d in Accessibility",
             modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
-        Label("Open →", color = c.accent)
+        Label(tr("Open →"), color = c.accent)
     }
-    if (!a11yOn) Text("If Android calls it a restricted setting: App info → ${BrandName.NAME} → ⋮ → Allow restricted settings, then try again.",
+    if (!a11yOn) Text(tr("If Android calls it a restricted setting: App info → {0} → ⋮ → Allow restricted settings, then try again.", BrandName.NAME),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub), modifier = Modifier.padding(top = 8.dp))
     SkillsSection()
     NotificationAccessRow()
@@ -228,7 +229,7 @@ private fun CommandsSection() {
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
     if (list.isNotEmpty()) {
-        Label("Yours", modifier = Modifier.padding(bottom = 8.dp))
+        Label(tr("Yours"), modifier = Modifier.padding(bottom = 8.dp))
         Column(Modifier.fillMaxWidth().hairline(c.hair)) {
             list.forEach { cmd ->
                 Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).padding(start = 14.dp, top = 8.dp, bottom = 8.dp),
@@ -244,7 +245,7 @@ private fun CommandsSection() {
         }
         Spacer(Modifier.height(18.dp))
     }
-    Label("New command", modifier = Modifier.padding(bottom = 8.dp))
+    Label(tr("New command"), modifier = Modifier.padding(bottom = 8.dp))
     Field("Name", name, { name = it }, "standup")
     Spacer(Modifier.height(10.dp))
     Field("Short description", desc, { desc = it }, "Write my daily standup")
@@ -319,7 +320,7 @@ private fun LanguagePage() {
 private fun ProviderPicker(pid: String, onPick: (String) -> Unit) {
     val c = LocalBlaze.current.mono
     var open by remember { mutableStateOf(false) }
-    Label("AI provider", modifier = Modifier.padding(bottom = 8.dp))
+    Label(tr("AI provider"), modifier = Modifier.padding(bottom = 8.dp))
     Row(
         Modifier.fillMaxWidth().hairline(if (open) c.ink else c.hair).clickable { open = !open }
             .padding(horizontal = 14.dp, vertical = 14.dp),
@@ -344,7 +345,7 @@ private fun ProviderPicker(pid: String, onPick: (String) -> Unit) {
                     Spacer(Modifier.width(10.dp))
                     Text(p.name, modifier = Modifier.weight(1f),
                         style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
-                    if (hasKey) Label("Key saved", color = c.accent, size = 9.sp)
+                    if (hasKey) Label(tr("Key saved"), color = c.accent, size = 9.sp)
                 }
             }
         }
@@ -363,7 +364,7 @@ private fun QuotaPanel(key: String, pid: String, model: String, base: String) {
     val prov = Providers.byId(pid)
 
     Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Label("Plan & quota", modifier = Modifier.weight(1f))
+        Label(tr("Plan & quota"), modifier = Modifier.weight(1f))
         Label(if (loading) "Checking" else "Check", color = if (key.isBlank() || loading) c.weak else c.accent, size = 11.sp,
             modifier = Modifier.clickable(enabled = key.isNotBlank() && !loading) {
                 Settings.providerId = pid; Settings.apiKey = key; Settings.model = model
@@ -392,9 +393,9 @@ private fun QuotaPanel(key: String, pid: String, model: String, base: String) {
         }
         if (prov.quotaPage.isNotBlank()) {
             Row(Modifier.fillMaxWidth().clickable { uri.openUri(prov.quotaPage) }.padding(14.dp)) {
-                Text("Full usage dashboard", modifier = Modifier.weight(1f),
+                Text(tr("Full usage dashboard"), modifier = Modifier.weight(1f),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
-                Label("Open →", color = c.accent, size = 11.sp)
+                Label(tr("Open →"), color = c.accent, size = 11.sp)
             }
         }
     }
@@ -449,7 +450,7 @@ private fun VoiceSection() {
     }
 
     Spacer(Modifier.height(22.dp))
-    Label("Voice & assistant", modifier = Modifier.padding(bottom = 4.dp))
+    Label(tr("Voice & assistant"), modifier = Modifier.padding(bottom = 4.dp))
     ToggleRow("Speak replies", "Read answers aloud when you ask by voice", speak) { speak = !speak; Settings.speakReplies = speak }
     ToggleRow(
         "\u201cHey ${BrandName.NAME}\u201d",
@@ -476,10 +477,10 @@ private fun VoiceSection() {
             modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body)
         )
-        Label("Open →", color = c.accent)
+        Label(tr("Open →"), color = c.accent)
     }
     if (!isDefault) Text(
-        "Pick Digital assistant app \u2192 ${BrandName.NAME}. Then long-press power or home to talk to ${BrandName.NAME} instead of the phone's built-in assistant.",
+        tr("Pick Digital assistant app \u2192 {0}. Then long-press power or home to talk to {1} instead of the phone's built-in assistant.", BrandName.NAME, BrandName.NAME),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub),
         modifier = Modifier.padding(top = 8.dp)
     )
@@ -504,9 +505,9 @@ private fun OrbSection() {
         Modifier.fillMaxWidth().padding(top = 10.dp).hairline(c.hair).clickable { Overlay.requestOverlayPermission(ctx) }.padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Allow “Display over other apps” so you can type in the orb's chat", modifier = Modifier.weight(1f),
+        Text(tr("Allow “Display over other apps” so you can type in the orb's chat"), modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
-        Label("Allow →", color = c.accent, size = 11.sp)
+        Label(tr("Allow →"), color = c.accent, size = 11.sp)
     }
 }
 
@@ -517,7 +518,7 @@ private fun PersonaSection() {
     var custom by remember { mutableStateOf(Settings.customPersona) }
     var stream by remember { mutableStateOf(Settings.streamReplies) }
     Spacer(Modifier.height(22.dp))
-    Label("Personality", modifier = Modifier.padding(bottom = 8.dp))
+    Label(tr("Personality"), modifier = Modifier.padding(bottom = 8.dp))
     Column(Modifier.fillMaxWidth().hairline(c.hair)) {
         com.blaze.assistant.agent.Personas.all.forEach { p ->
             Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (p.id == pid) PageGlass.fill(c, 0.10f) else androidx.compose.ui.graphics.Color.Transparent)
@@ -570,16 +571,16 @@ private fun BackupSection() {
         } catch (e: Exception) { "That file isn't a ${BrandName.NAME} backup." }
     }
     Spacer(Modifier.height(22.dp))
-    Label("Backup", modifier = Modifier.padding(bottom = 8.dp))
-    Text("Updates keep everything automatically. Your chats, memory and sign-ins are never copied to Google's cloud backup, " +
+    Label(tr("Backup"), modifier = Modifier.padding(bottom = 8.dp))
+    Text(tr("Updates keep everything automatically. Your chats, memory and sign-ins are never copied to Google's cloud backup, ") +
         "so Export (settings, keys and memory) if you'll reinstall or switch phones. Keep the file private.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
     Spacer(Modifier.height(10.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         Box(Modifier.weight(1f).height(46.dp).hairline(c.hair).clickable { exporter.launch("blaze-backup.json") },
-            contentAlignment = Alignment.Center) { Label("Export", color = c.ink, size = 11.sp) }
+            contentAlignment = Alignment.Center) { Label(tr("Export"), color = c.ink, size = 11.sp) }
         Box(Modifier.weight(1f).height(46.dp).hairline(c.hair).clickable { importer.launch(arrayOf("application/json", "*/*")) },
-            contentAlignment = Alignment.Center) { Label("Import", color = c.ink, size = 11.sp) }
+            contentAlignment = Alignment.Center) { Label(tr("Import"), color = c.ink, size = 11.sp) }
     }
     if (msg.isNotEmpty()) Text(msg, modifier = Modifier.padding(top = 8.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.accent))
@@ -594,7 +595,7 @@ private fun SkillsSection() {
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { tick++ }
     Spacer(Modifier.height(22.dp))
-    Label("Skills", modifier = Modifier.padding(bottom = 8.dp))
+    Label(tr("Skills"), modifier = Modifier.padding(bottom = 8.dp))
     val subs = mapOf("Contacts" to "Find people by name", "Messages" to "Read and send texts (asks before sending)",
         "Calls" to "Recent calls, place calls (asks first)", "Calendar" to "Read and add events")
     com.blaze.assistant.phone.Skills.groups.forEach { (name, perms) ->
@@ -605,7 +606,7 @@ private fun SkillsSection() {
                 android.net.Uri.parse("package:" + ctx.packageName)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }
-    Text("Quick settings (flashlight, volume, battery, Wi-Fi panel) work without any permission.",
+    Text(tr("Quick settings (flashlight, volume, battery, Wi-Fi panel) work without any permission."),
         modifier = Modifier.padding(top = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
 }
 
@@ -623,7 +624,7 @@ private fun UsageSection() {
     }
     Spacer(Modifier.height(22.dp))
     Row(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-        Label("Usage", modifier = Modifier.weight(1f))
+        Label(tr("Usage"), modifier = Modifier.weight(1f))
         ActionText("Reset", color = c.sub, size = 10.sp, modifier = Modifier.clickable { com.blaze.assistant.agent.Usage.reset() })
     }
     Column(Modifier.fillMaxWidth().hairline(c.hair)) {
@@ -634,7 +635,7 @@ private fun UsageSection() {
             }
         }
     }
-    Text("Estimated from your provider's counts and list prices. Free tiers show $0.00.",
+    Text(tr("Estimated from your provider's counts and list prices. Free tiers show $0.00."),
         modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
 }
 
@@ -643,7 +644,7 @@ private fun SecuritySection() {
     var lock by remember { mutableStateOf(Settings.appLock) }
     var risky by remember { mutableStateOf(Settings.confirmRisky) }
     Spacer(Modifier.height(22.dp))
-    Label("Privacy & safety", modifier = Modifier.padding(bottom = 4.dp))
+    Label(tr("Privacy & safety"), modifier = Modifier.padding(bottom = 4.dp))
     ToggleRow("Lock ${BrandName.NAME}", "Fingerprint, face or PIN to open the app", lock) { lock = !lock; Settings.appLock = lock }
     ToggleRow("Ask before risky actions", "${BrandName.NAME} asks before tapping Send, Pay, Buy, Delete or Post", risky) { risky = !risky; Settings.confirmRisky = risky }
 }
@@ -659,7 +660,7 @@ internal fun ExtraKeys(pid: String) {
     Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         extras.forEachIndexed { i, k ->
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Key ${i + 2}  \u2022\u2022\u2022\u2022${k.takeLast(4)}", modifier = Modifier.weight(1f),
+                Text(tr("Key {0}  \u2022\u2022\u2022\u2022{1}", i + 2, k.takeLast(4)), modifier = Modifier.weight(1f),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.ink))
                 ActionText("Remove", color = c.accent, size = 9.sp, modifier = Modifier.clickable {
                     com.blaze.assistant.agent.KeyRing.removeExtra(pid, k); tick++ }.padding(6.dp))

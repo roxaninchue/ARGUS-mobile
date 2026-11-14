@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -72,7 +73,7 @@ fun QuoteChip(text: String, onClick: () -> Unit) {
     val c = LocalBlaze.current
     Row(Modifier.padding(start = 2.dp, bottom = 4.dp).widthIn(max = 300.dp).height(IntrinsicSize.Min)
         .clip(RoundedCornerShape(10.dp)).background(c.accent.copy(alpha = 0.08f)).clickable(onClick = onClick)
-        .semantics { contentDescription = "Replying to: $text. Tap to show it." }) {
+        .semantics { contentDescription = tr("Replying to: {0}. Tap to show it.", text) }) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(c.accent))
         Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 8.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 16.sp, color = c.sub))

@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -69,12 +70,12 @@ fun QuestionView(question: String, options: List<String>, chat: String = "", key
             else Row(Modifier.widthIn(max = 340.dp).fillMaxWidth().glass(RoundedCornerShape(22.dp), GlassIntensity.Low, shadow = false).padding(start = 14.dp, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
-                    if (text.isEmpty()) Text("Your answer", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
+                    if (text.isEmpty()) Text(tr("Your answer"), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
                     BasicTextField(text, { text = it }, textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink),
                         cursorBrush = SolidColor(c.accent), modifier = Modifier.fillMaxWidth())
                 }
                 Box(Modifier.size(40.dp).clip(CircleShape).background(if (text.isBlank()) c.hair else c.accent)
-                    .clickable { if (text.isNotBlank()) onAnswer(text.trim()) }.semantics { contentDescription = "Send answer" }, contentAlignment = Alignment.Center) {
+                    .clickable { if (text.isNotBlank()) onAnswer(text.trim()) }.semantics { contentDescription = tr("Send answer") }, contentAlignment = Alignment.Center) {
                     SendMark(if (text.isBlank()) c.paper else c.onAccent, stop = false)
                 }
             }
@@ -109,10 +110,10 @@ fun ConfirmCard() {
         if (pc.grants) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp).widthIn(max = 340.dp).fillMaxWidth()) {
             Box(Modifier.weight(1f).height(40.dp).glass(RoundedCornerShape(20.dp), GlassIntensity.Low, shadow = false)
                 .clickable { Agent.answerConfirm(true, com.blaze.assistant.agent.CommandPolicy.Grant.CHAT) }, contentAlignment = Alignment.Center) {
-                Label("Allow for this chat", color = c.ink, size = 10.sp) }
+                Label(tr("Allow for this chat"), color = c.ink, size = 10.sp) }
             Box(Modifier.weight(1f).height(40.dp).glass(RoundedCornerShape(20.dp), GlassIntensity.Low, shadow = false)
                 .clickable { Agent.answerConfirm(true, com.blaze.assistant.agent.CommandPolicy.Grant.ALWAYS) }, contentAlignment = Alignment.Center) {
-                Label("Always allow this command", color = c.ink, size = 10.sp) }
+                Label(tr("Always allow this command"), color = c.ink, size = 10.sp) }
         }
     }
 }

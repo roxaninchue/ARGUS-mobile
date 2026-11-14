@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -140,7 +141,7 @@ fun LifeBoardPanel(w: Widget, d: WidgetData?, actions: LifeBoardActions, onMenu:
     LaunchedEffect(w.id) { actions.onVisible(w.id) }
     val shape = RoundedCornerShape(ArgusTokens.Radius.CARD.dp)
     Column(Modifier.padding(horizontal = 12.dp).fillMaxWidth().argusGlass(GlassLevel.SURFACE, shape)
-        .combinedClickable(onClickLabel = "Panel options", onClick = onMenu, onLongClick = onMenu).padding(16.dp)) {
+        .combinedClickable(onClickLabel = tr("Panel options"), onClick = onMenu, onLongClick = onMenu).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Lucide.icon(glyphOf(w.type), 16), null, Modifier.size(16.dp), tint = c.mute)
             Spacer(Modifier.width(8.dp))
@@ -149,7 +150,7 @@ fun LifeBoardPanel(w: Widget, d: WidgetData?, actions: LifeBoardActions, onMenu:
         }
         if (w.type == WidgetTypes.TODO) {
             val items = HomeTodo.items(w.cfg())
-            if (items.isEmpty()) Text("Empty. Ask me to add something.", style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(top = 8.dp))
+            if (items.isEmpty()) Text(tr("Empty. Ask me to add something."), style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(top = 8.dp))
             items.forEachIndexed { i, it ->
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable(role = Role.Checkbox, onClickLabel = if (it.done) "Untick" else "Tick") {
                         actions.onTodo(w, HomeTodo.toggle(items, i)) }
@@ -164,7 +165,7 @@ fun LifeBoardPanel(w: Widget, d: WidgetData?, actions: LifeBoardActions, onMenu:
             return@Column
         }
         when {
-            d == null -> Text("Filling in\u2026", style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(top = 8.dp))
+            d == null -> Text(tr("Filling in\u2026"), style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(top = 8.dp))
             d.error.isNotBlank() -> Text(d.error, style = ArgusType.sub, color = c.dangerText, modifier = Modifier.padding(top = 8.dp))
             else -> {
                 val text = d.change.ifBlank { d.headline.takeIf { it != w.title }.orEmpty() }
@@ -189,11 +190,11 @@ fun LifeCalendarCard(cal: LifeCal, onOpenSchedule: () -> Unit) {
     val c = Argus.colors
     Column(Modifier.padding(horizontal = 12.dp).fillMaxWidth().argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp)).padding(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = "Previous month") { cal.onMonth(-1) }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = tr("Previous month")) { cal.onMonth(-1) }, contentAlignment = Alignment.Center) {
                 Icon(Lucide.icon("chevron-left", 18), "Previous month", Modifier.size(18.dp), tint = c.ink)
             }
             Text(LifeCalendar.title(cal.month), style = ArgusType.rowTitle, color = c.ink, textAlign = TextAlign.Center, modifier = Modifier.weight(1f).semantics { heading() })
-            Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = "Next month") { cal.onMonth(1) }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = tr("Next month")) { cal.onMonth(1) }, contentAlignment = Alignment.Center) {
                 Icon(Lucide.icon("chevron-right", 18), "Next month", Modifier.size(18.dp), tint = c.ink)
             }
         }
@@ -207,7 +208,7 @@ fun LifeCalendarCard(cal: LifeCal, onOpenSchedule: () -> Unit) {
                     val today = day == cal.today
                     Box(Modifier.size(36.dp).clip(CircleShape)
                         .then(if (picked) Modifier.background(c.ink) else if (today) Modifier.background(c.soft) else Modifier)
-                        .clickable(role = Role.Button, onClickLabel = "Show ${LifeCalendar.dayLabel(day, cal.today)}") { cal.onSelect(day) },
+                        .clickable(role = Role.Button, onClickLabel = tr("Show {0}", LifeCalendar.dayLabel(day, cal.today))) { cal.onSelect(day) },
                         contentAlignment = Alignment.Center) {
                         Text(day.dayOfMonth.toString(), style = ArgusType.sub, color = if (picked) c.onInk else if (day.isBefore(cal.today)) c.dim else c.ink)
                     }
@@ -216,10 +217,10 @@ fun LifeCalendarCard(cal: LifeCal, onOpenSchedule: () -> Unit) {
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp, start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(LifeCalendar.dayLabel(cal.selected, cal.today), style = ArgusType.rowTitle, color = c.ink, modifier = Modifier.weight(1f))
-            Text("Schedule \u203a", style = ArgusType.sub, color = c.mute,
+            Text(tr("Schedule \u203a"), style = ArgusType.sub, color = c.mute,
                 modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onOpenSchedule).heightIn(min = 44.dp).padding(horizontal = 8.dp, vertical = 12.dp))
         }
-        if (cal.items.isEmpty()) Text("Nothing planned. Ask me to add something.", style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 4.dp))
+        if (cal.items.isEmpty()) Text(tr("Nothing planned. Ask me to add something."), style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 4.dp))
         else for (i in cal.items) Row(Modifier.fillMaxWidth().heightIn(min = 36.dp).padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             val glyph = when (i.kind) { "event" -> "calendar"; "alarm" -> "bell"; else -> "repeat" }
             Icon(Lucide.icon(glyph, 14), null, Modifier.size(14.dp), tint = c.mute)

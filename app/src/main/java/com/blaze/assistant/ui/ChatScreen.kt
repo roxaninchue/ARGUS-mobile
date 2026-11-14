@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.Manifest
 import android.content.Intent
@@ -744,7 +745,7 @@ fun ChatScreen() {
             val maxed = ChatExpand.on && chatBody
             if (maxed) BackHandler { ChatExpand.restore() }
             if (swipeMode && !designFull && !maxed) Box(Modifier.fillMaxWidth().height(14.dp).draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop)
-                .semantics { contentDescription = "Pull down for Home" }, contentAlignment = Alignment.Center) {
+                .semantics { contentDescription = tr("Pull down for Home") }, contentAlignment = Alignment.Center) {
                 Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.hair))
             }
             if (!designFull && !maxed && (stage.topBar || !stageActive)) Box(if (swipeMode) Modifier.draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop) else Modifier) {
@@ -785,7 +786,7 @@ fun ChatScreen() {
                 privateChat = isPrivate, onLeavePrivate = { confirmLeavePrivate = true })
             }
             // P1-SH-01: a private chat says so under the ARGUS top bar, with the way out
-            if (argus && isPrivate && !designFull && !maxed) com.blaze.assistant.ui.argus.kit.ArgusButton("Private chat \u00b7 Leave", { confirmLeavePrivate = true },
+            if (argus && isPrivate && !designFull && !maxed) com.blaze.assistant.ui.argus.kit.ArgusButton(tr("Private chat \u00b7 Leave"), { confirmLeavePrivate = true },
                 Modifier.padding(start = 12.dp, bottom = 6.dp), size = com.blaze.assistant.ui.argus.kit.ButtonSize.S, icon = "lock")
             if (!designFull && !maxed && showing.isNotEmpty() && nav.tab == ChatNav.CHAT) com.blaze.assistant.ui.space.SpaceChip(
                 (Views.find(showing)?.name ?: showing) + (if (showing == "design") " \u00b7 $DESIGN_BETA" else "") + "  \u2715", { exitView() },
@@ -964,9 +965,9 @@ fun ChatScreen() {
                 // 0.46.3: the on-phone brain's one-time question before its setup uses mobile data
                 val askData by com.blaze.assistant.agent.BackupBrain.askMobile.collectAsState()
                 if (askData) BlazeDialog(com.blaze.assistant.agent.BackupNudge.mobileDataQuestion(com.blaze.assistant.agent.BackupBrain.DOWNLOAD_BYTES),
-                    "Until then, ${BrandName.NAME} answers online. On Wi-Fi this finishes by itself.",
-                    confirm = "Use mobile data", onConfirm = { com.blaze.assistant.agent.BackupBrain.answerMobile(true) },
-                    dismiss = "Wait for Wi-Fi", onDismiss = { com.blaze.assistant.agent.BackupBrain.answerMobile(false) })
+                    tr("Until then, {0} answers online. On Wi-Fi this finishes by itself.", BrandName.NAME),
+                    confirm = tr("Use mobile data"), onConfirm = { com.blaze.assistant.agent.BackupBrain.answerMobile(true) },
+                    dismiss = tr("Wait for Wi-Fi"), onDismiss = { com.blaze.assistant.agent.BackupBrain.answerMobile(false) })
                 // 0.46.3: the one-time phone control explainer (a phone task needed control and it was off).
                 val explain by com.blaze.assistant.phone.flash.PhoneExplainer.requested.collectAsState()
                 if (explain) PhoneExplainerDialog(onOpenSettings = {
@@ -1009,7 +1010,7 @@ fun ChatScreen() {
                 if (pending.isNotEmpty() || loadingFiles) AttachmentThumbs(pending, loadingFiles) { a -> pending = pending - a }
                 if (clipHasImage && pending.isEmpty() && !plusOpen) Row(Modifier.fillMaxWidth()
                     .padding(start = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, end = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp - 8.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Label("Image on your clipboard", size = 10.sp, modifier = Modifier.weight(1f))
+                    Label(tr("Image on your clipboard"), size = 10.sp, modifier = Modifier.weight(1f))
                     ActionText("Paste image", color = c.accent, size = 10.sp, modifier = Modifier.clickable { pasteImage() }.padding(8.dp))
                     ActionText("×", size = 12.sp, modifier = Modifier.clickable { clipHasImage = false }.padding(8.dp))
                 }
@@ -1096,10 +1097,10 @@ fun ChatScreen() {
         // instead of reading as parts with their own edges. Empty unless Chat mode is showing.
         if (argus) com.blaze.assistant.ui.team.ChatDrawerLayer()
         // P1-SH-01: the top bar's New sheet (P1-TM-04: Bot; jobs join it with the job sheet).
-        if (argus && newOpen) com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = "New") {
-            com.blaze.assistant.ui.argus.kit.MenuRow("bot", "Bot", { newOpen = false; botFlow = com.blaze.assistant.ui.team.BotFlow.New }, sub = "A new bot for your team")
-            com.blaze.assistant.ui.argus.kit.MenuRow("notebook", "Project", { newOpen = false; go(navNow().projectsList()) }, sub = "A space with its own chats and files")
-            com.blaze.assistant.ui.argus.kit.MenuRow("lock", "Private chat", { newOpen = false; Agent.enterPrivate(); go(navNow().switchTab(ChatNav.CHAT)) }, sub = "Nothing here is saved or learned")
+        if (argus && newOpen) com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = tr("New")) {
+            com.blaze.assistant.ui.argus.kit.MenuRow("bot", tr("Bot"), { newOpen = false; botFlow = com.blaze.assistant.ui.team.BotFlow.New }, sub = tr("A new bot for your team"))
+            com.blaze.assistant.ui.argus.kit.MenuRow("notebook", tr("Project"), { newOpen = false; go(navNow().projectsList()) }, sub = tr("A space with its own chats and files"))
+            com.blaze.assistant.ui.argus.kit.MenuRow("lock", tr("Private chat"), { newOpen = false; Agent.enterPrivate(); go(navNow().switchTab(ChatNav.CHAT)) }, sub = tr("Nothing here is saved or learned"))
         }
 
         // P1-TM-04: the bot editor (Describe it sends the draft request to ARGUS and opens Chat), and the Delete / Keep
@@ -1154,8 +1155,8 @@ fun ChatScreen() {
         }
         if (confirmLeavePrivate) BlazeDialog(
             title = com.blaze.assistant.agent.PrivateChat.LEAVE_TITLE, body = com.blaze.assistant.agent.PrivateChat.LEAVE_TEXT,
-            confirm = "Leave", onConfirm = { confirmLeavePrivate = false; Agent.leavePrivate(); composer.dismissChat() }, warm = true,
-            dismiss = "Stay", onDismiss = { confirmLeavePrivate = false })
+            confirm = tr("Leave"), onConfirm = { confirmLeavePrivate = false; Agent.leavePrivate(); composer.dismissChat() }, warm = true,
+            dismiss = tr("Stay"), onDismiss = { confirmLeavePrivate = false })
         settingsPage?.let { start ->
             androidx.compose.runtime.key(start) {
                 SettingsScreen(start, a11yOn,
@@ -1436,7 +1437,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
         AnimatedVisibility(!follow && !atBottom, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             enter = MotionTokens.enterUp(), exit = MotionTokens.fadeAway()) {
             Box(Modifier.size(44.dp).glass(CircleShape, GlassIntensity.High).clickable { scope.launch { follow = true; toEnd(true) } }
-                .semantics { contentDescription = "Jump to the newest message" }, contentAlignment = Alignment.Center) {
+                .semantics { contentDescription = tr("Jump to the newest message") }, contentAlignment = Alignment.Center) {
                 Canvas(Modifier.size(14.dp)) {
                     val u = size.width / 7f
                     // v0.24.8: a smooth rounded down-arrow (was pixel squares)
@@ -1670,7 +1671,7 @@ private fun HeadsUpWhy(meta: String) {
     var open by remember(meta) { mutableStateOf(false) }
     val c = LocalBlaze.current
     Text(if (open) "Why: $why" else "Why?", maxLines = 2,
-        modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 2.dp).clickable(onClickLabel = "Why you got this") { open = !open },
+        modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 2.dp).clickable(onClickLabel = tr("Why you got this")) { open = !open },
         style = com.blaze.assistant.ui.space.SpaceType.meta(c.body))
 }
 
@@ -1701,13 +1702,13 @@ private fun TraceDialog(json: String, onClose: () -> Unit) {
     val clip = LocalClipboardManager.current
     val ctx = LocalContext.current
     androidx.compose.material3.AlertDialog(onDismissRequest = onClose,
-        confirmButton = { androidx.compose.material3.TextButton(onClick = onClose) { Text("Close") } },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onClose) { Text(tr("Close")) } },
         dismissButton = { if (t != null) androidx.compose.material3.TextButton(onClick = {
-            clip.setText(AnnotatedString(com.blaze.assistant.agent.TurnTrace.copyText(t))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() }) { Text("Copy") } },
-        title = { Text("What happened") },
+            clip.setText(AnnotatedString(com.blaze.assistant.agent.TurnTrace.copyText(t))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() }) { Text(tr("Copy")) } },
+        title = { Text(tr("What happened")) },
         text = {
             Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
-                if (t == null) { Text("Nothing was recorded for this reply."); return@Column }
+                if (t == null) { Text(tr("Nothing was recorded for this reply.")); return@Column }
                 com.blaze.assistant.agent.TurnTrace.rows(t).forEach { (k, v) ->
                     Text(k, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
                     Text(v, style = TextStyle(fontFamily = if (k == "Request id" || k == "Server-Timing") Type.Mono else Type.Sans, fontSize = 14.sp, color = c.ink),
@@ -1715,7 +1716,7 @@ private fun TraceDialog(json: String, onClose: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                 }
                 if (t.tools.isNotEmpty()) {
-                    Text("Tools", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
+                    Text(tr("Tools"), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
                     t.tools.forEach { x ->
                         Text("${if (x.ok) com.blaze.assistant.agent.Receipt.OK else com.blaze.assistant.agent.Receipt.BAD} ${x.name}(${x.args})", style = TextStyle(fontFamily = Type.Mono, fontSize = 11.sp, color = c.ink))
                         if (x.result.isNotBlank()) Text(x.result, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 16.sp, color = c.body))
@@ -1723,7 +1724,7 @@ private fun TraceDialog(json: String, onClose: () -> Unit) {
                     }
                 }
                 if (t.errors.isNotEmpty()) {
-                    Text("Errors and retries", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
+                    Text(tr("Errors and retries"), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
                     t.errors.forEach { Text(it, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.ink)) }
                 }
             }
@@ -1739,10 +1740,10 @@ private fun QuoteStrip(q: String, onClear: () -> Unit) {
         Box(Modifier.width(3.dp).height(34.dp).clip(RoundedCornerShape(2.dp)).background(c.accent))
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Label("Replying to", color = c.accent, size = 9.sp)
+            Label(tr("Replying to"), color = c.accent, size = 9.sp)
             Text(q, maxLines = 2, style = com.blaze.assistant.ui.space.SpaceType.meta(c.body))
         }
-        ActionText("×", size = 14.sp, modifier = Modifier.clip(CircleShape).clickable(onClick = onClear).semantics { contentDescription = "Cancel reply" }.padding(12.dp))
+        ActionText("×", size = 14.sp, modifier = Modifier.clip(CircleShape).clickable(onClick = onClear).semantics { contentDescription = tr("Cancel reply") }.padding(12.dp))
     }
 }
 
@@ -1777,19 +1778,19 @@ internal fun Welcome(needsSetup: Boolean, onSetup: () -> Unit, onPick: (String) 
         com.blaze.assistant.ui.space.SpaceCard {
             com.blaze.assistant.ui.space.SpaceHeadline(com.blaze.assistant.ui.space.SpaceGreeting.hello(hour, Settings.userName.ifBlank { null }))
             Spacer(Modifier.height(10.dp))
-            Text("Ask anything. ${BrandName.NAME} answers, opens apps, taps and types for you, and checks with you before anything that matters.",
+            Text(tr("Ask anything. {0} answers, opens apps, taps and types for you, and checks with you before anything that matters.", BrandName.NAME),
                 style = com.blaze.assistant.ui.space.SpaceType.bodyText(look.sub))
         }
         if (needsSetup) com.blaze.assistant.ui.space.SpaceCard {
-            com.blaze.assistant.ui.space.SpaceHeadline("${BrandName.UPPER} can do more", size = com.blaze.assistant.ui.space.SpaceTypeScale.TITLE.sp)
+            com.blaze.assistant.ui.space.SpaceHeadline(tr("{0} can do more", BrandName.UPPER), size = com.blaze.assistant.ui.space.SpaceTypeScale.TITLE.sp)
             Spacer(Modifier.height(8.dp))
-            Text("Sign in to your ${BrandName.NAME} account for the best answers, synced across your devices.",
+            Text(tr("Sign in to your {0} account for the best answers, synced across your devices.", BrandName.NAME),
                 style = com.blaze.assistant.ui.space.SpaceType.bodyText(look.ink))
             Spacer(Modifier.height(14.dp))
-            com.blaze.assistant.ui.space.SpacePillButton("Sign in", onSetup, primary = true)
+            com.blaze.assistant.ui.space.SpacePillButton(tr("Sign in"), onSetup, primary = true)
         }
         com.blaze.assistant.ui.space.SpaceCard {
-            Text("Try", style = com.blaze.assistant.ui.space.SpaceType.meta(look.sub))
+            Text(tr("Try"), style = com.blaze.assistant.ui.space.SpaceType.meta(look.sub))
             Spacer(Modifier.height(12.dp))
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf("Set an alarm for 6:30", "Draw a lion wearing sunglasses", "Make me an afro beat", "Open YouTube and play lo-fi music")
@@ -1814,7 +1815,7 @@ private fun ListeningStrip(onStop: () -> Unit) {
     val w by animateFloatAsState(0.15f + level * 0.85f, label = "lvl")
     // v0.45.28: tap the strip to stop listening and send.
     // Unification 6/9: a floating panel at the composer's inset; it was a full-width paper band with a top hairline
-    Column(Modifier.fillMaxWidth().padding(top = 6.dp).composerPanel().clickable(onClickLabel = "Stop listening and send") { onStop() }
+    Column(Modifier.fillMaxWidth().padding(top = 6.dp).composerPanel().clickable(onClickLabel = tr("Stop listening and send")) { onStop() }
         .padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.CARD_PAD_DP.dp, vertical = 14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BlinkLabel("Listening")
@@ -1841,7 +1842,7 @@ private fun AttachmentStrip(files: List<com.blaze.assistant.agent.Attachment>, l
                 Spacer(Modifier.width(6.dp)); Label("×", size = 12.sp)
             }
         }
-        if (loading) Label("Reading…", color = c.accent, size = 10.sp)
+        if (loading) Label(tr("Reading…"), color = c.accent, size = 10.sp)
     }
 }
 

@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.view.View
 import android.webkit.WebView
@@ -103,11 +104,11 @@ fun BrowserLivePreview(onHide: () -> Unit) {
                 f.visibility = if (showLive) View.VISIBLE else View.INVISIBLE
                 if (stepAt >= 0L) hostPage(f, BrowserEngine.tab()?.live, vw, vh, scale)   // v0.45.25: never wakes a sleeping tab
             }, onRelease = { f -> giveBack(f) }, modifier = Modifier.fillMaxSize().onSizeChanged { boxW = it.width })
-            if (tab == null) Text("Starting the browser\u2026", modifier = Modifier.align(Alignment.Center).padding(12.dp),
+            if (tab == null) Text(tr("Starting the browser\u2026"), modifier = Modifier.align(Alignment.Center).padding(12.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = LightColors.sub))
             // Over the page, so taps and drags never reach it; a tap opens the full browser to watch or take over.
-            Box(Modifier.matchParentSize().semantics { contentDescription = "${BrandName.NAME}'s browser, live. Tap to watch." }
-                .clickable(onClickLabel = "Watch in the browser") { BrowserTools.show(ctx) })
+            Box(Modifier.matchParentSize().semantics { contentDescription = tr("{0}'s browser, live. Tap to watch.", BrandName.NAME) }
+                .clickable(onClickLabel = tr("Watch in the browser")) { BrowserTools.show(ctx) })
         })
 }
 

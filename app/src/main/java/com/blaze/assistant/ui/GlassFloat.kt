@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import android.os.Build
 import android.view.WindowManager
 import androidx.compose.animation.core.Animatable
@@ -109,7 +110,7 @@ fun GlassFloatingWindow(title: String, onDismiss: () -> Unit, subtitle: String =
                         else animate(dragY, 0f, animationSpec = spring(0.8f, Spring.StiffnessMedium)) { x, _ -> dragY = x }
                     })) {
                     Box(Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp).size(width = 36.dp, height = 4.dp).clip(CircleShape)
-                        .background(c.ink.copy(alpha = 0.28f)).semantics { contentDescription = "Swipe down to close" })
+                        .background(c.ink.copy(alpha = 0.28f)).semantics { contentDescription = tr("Swipe down to close") })
                     Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 8.dp, top = 2.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis,

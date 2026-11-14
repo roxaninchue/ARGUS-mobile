@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.asImageBitmap
@@ -86,7 +87,7 @@ fun DevicePage() {
     V18Button(if (checking) "Checking…" else "Run self-check") {
         if (!checking) { checking = true; scope.launch { results = SelfCheck.run(ctx); checking = false } }
     }
-    if (results.isNotEmpty()) Label("${results.count { it.ok }} of ${results.size} passed", color = if (results.all { it.ok }) c.accent else c.ink, modifier = Modifier.padding(top = 10.dp))
+    if (results.isNotEmpty()) Label(tr("{0} of {1} passed", results.count { it.ok }, results.size), color = if (results.all { it.ok }) c.accent else c.ink, modifier = Modifier.padding(top = 10.dp))
     if (results.isNotEmpty()) Column(Modifier.fillMaxWidth().padding(top = 10.dp).hairline(c.hair)) {
         results.forEach { r ->
             Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).padding(12.dp), verticalAlignment = Alignment.Top) {
@@ -96,7 +97,7 @@ fun DevicePage() {
                     Text(r.name, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
                     Text(r.detail, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
-                if (!r.ok && r.fix.isNotBlank()) Label("Fix ›", color = c.accent, size = 10.sp,
+                if (!r.ok && r.fix.isNotBlank()) Label(tr("Fix ›"), color = c.accent, size = 10.sp,
                     modifier = Modifier.clickable { com.blaze.assistant.agent.SelfSetup.open(ctx, r.fix) }.padding(4.dp))
                 else Label(if (r.ok) "Pass" else "Fix", color = if (r.ok) c.accent else c.ink, size = 10.sp)
             }
@@ -122,7 +123,7 @@ fun DevicePage() {
     ToggleRow("Haptic ticks", "A light tick when ${BrandName.NAME} taps or types, a double tick when done", hap) { hap = !hap; Settings.haptics = hap }
     var scale by remember { mutableStateOf(Settings.textScale) }
     Spacer(Modifier.height(12.dp))
-    Label("Chat text size", modifier = Modifier.padding(bottom = 8.dp))
+    Label(tr("Chat text size"), modifier = Modifier.padding(bottom = 8.dp))
     Row(Modifier.fillMaxWidth()) {
         listOf(0.9f to "S", 1f to "M", 1.15f to "L", 1.3f to "XL").forEach { (v, l) ->
             Box(Modifier.weight(1f).height(40.dp).then(if (scale == v) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f)).clickable { scale = v; Settings.textScale = v },
@@ -198,7 +199,7 @@ fun TerminalPage() {
     }
     if (!linuxReady) {
         Column(Modifier.fillMaxWidth().hairline(c.accent).padding(12.dp)) {
-            Text("Get a real Linux", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
+            Text(tr("Get a real Linux"), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
             Text(lstatus.ifEmpty { "Alpine Linux, about 3.5 MB to download, no root. Then install anything with apk: python3, nodejs, git, gcc, openjdk17…" },
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub))
             Spacer(Modifier.height(8.dp))
@@ -351,7 +352,7 @@ fun ProactivePage() {
     ToggleRow("Speak up on my own", "Heads-ups with a one-tap action", on) { on = !on; P.enabled = on }
     ToggleRow("Say it out loud", "Read heads-ups aloud when the ringer is on (urgent ones always)", speak) { speak = !speak; P.speak = speak }
     Spacer(Modifier.height(12.dp))
-    Label("Check every", modifier = Modifier.padding(bottom = 8.dp))
+    Label(tr("Check every"), modifier = Modifier.padding(bottom = 8.dp))
     Row(Modifier.fillMaxWidth()) {
         listOf(15, 30, 45, 90, 180).forEach { m ->
             Box(Modifier.weight(1f).height(40.dp).then(if (every == m) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f)).clickable { every = m; P.everyMin = m },
@@ -361,7 +362,7 @@ fun ProactivePage() {
     var qf by remember { mutableStateOf(P.quietFrom) }; var qt by remember { mutableStateOf(P.quietTo) }
     Spacer(Modifier.height(12.dp))
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Label("Quiet hours", modifier = Modifier.weight(1f))
+        Label(tr("Quiet hours"), modifier = Modifier.weight(1f))
         V18Button("%02d:00".format(qf), primary = false, modifier = Modifier.width(84.dp)) { qf = (qf + 1) % 24; P.quietFrom = qf }
         Label("  to  ", size = 10.sp)
         V18Button("%02d:00".format(qt), primary = false, modifier = Modifier.width(84.dp)) { qt = (qt + 1) % 24; P.quietTo = qt }
@@ -370,7 +371,7 @@ fun ProactivePage() {
     // Unreleased after 0.52.3: the proactivity dial, next to quiet hours (ProactiveDial; applied where Proactive.say drops).
     var dial by remember { mutableStateOf(P.level) }
     Spacer(Modifier.height(12.dp))
-    Label("How proactive", modifier = Modifier.padding(bottom = 8.dp))
+    Label(tr("How proactive"), modifier = Modifier.padding(bottom = 8.dp))
     com.blaze.assistant.ui.space.SpaceSegmented(com.blaze.assistant.proactive.ProactiveDial.Level.values().map { it.id to it.label }, dial.id,
         Modifier.fillMaxWidth(), tag = "proactive_level") { id -> dial = com.blaze.assistant.proactive.ProactiveDial.Level.of(id); P.level = dial }
     V18Note(com.blaze.assistant.proactive.ProactiveDial.note(dial) + " Every heads-up says why it came.", top = 6)
@@ -496,7 +497,7 @@ fun SpecialistsPage() {
     var groups by remember { mutableStateOf(setOf("web", "memory")) }
     V18Field("Name, e.g. Shopify helper", name) { name = it }
     V18Field("What it does and how", prompt) { prompt = it }
-    Label("Tools", modifier = Modifier.padding(vertical = 8.dp))
+    Label(tr("Tools"), modifier = Modifier.padding(vertical = 8.dp))
     com.blaze.assistant.agent.Specialists.groupNames.chunked(3).forEach { row ->
         Row(Modifier.fillMaxWidth()) {
             row.forEach { g ->
@@ -534,7 +535,7 @@ fun VoiceExtras() {
     var loop by remember { mutableStateOf(Settings.bool("voice_loop", true)) }
     V18Section("Hands-free")
     var conf by remember { mutableStateOf(Settings.str("wake_conf", "0.88")) }
-    Label("\u201cHey ${BrandName.NAME}\u201d sensitivity", modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
+    Label(tr("\u201cHey {0}\u201d sensitivity", BrandName.NAME), modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
     Row(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
         listOf("0.94" to "Strict", "0.88" to "Normal", "0.78" to "Easy").forEach { (v, l) ->
             Box(Modifier.weight(1f).height(40.dp).background(if (conf == v) LocalBlaze.current.ink else LocalBlaze.current.paper, BlazeShapes.medium).hairline(LocalBlaze.current.hair)

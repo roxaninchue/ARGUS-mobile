@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,7 +73,7 @@ fun SecureForm(site: String, title: String, reason: String, fields: List<SecureI
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(8.dp).clip(BlazeShapes.pill).background(c.accent))
             Spacer(Modifier.width(8.dp))
-            Label("Action required · ${site.take(36)}", color = c.accent, size = 10.sp, maxLines = 1, modifier = Modifier.weight(1f))
+            Label(tr("Action required · {0}", site.take(36)), color = c.accent, size = 10.sp, maxLines = 1, modifier = Modifier.weight(1f))
             ActionText("Watch", color = c.sub, size = 10.sp, modifier = Modifier.clickable(onClick = onWatch).padding(horizontal = 6.dp, vertical = 4.dp))
         }
         Spacer(Modifier.height(8.dp))
@@ -102,9 +103,9 @@ fun SecureForm(site: String, title: String, reason: String, fields: List<SecureI
                 if (save) Text("✓", style = TextStyle(fontSize = 11.sp, color = c.paper))
             }
             Spacer(Modifier.width(10.dp))
-            Text("Save to ${BrandName.NAME}'s vault for $site (encrypted on this phone)", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
+            Text(tr("Save to {0}'s vault for {1} (encrypted on this phone)", BrandName.NAME, site), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
         }
-        Text("Goes straight into the page. ${BrandName.NAME}'s AI never sees it.", modifier = Modifier.padding(top = 8.dp),
+        Text(tr("Goes straight into the page. {0}'s AI never sees it.", BrandName.NAME), modifier = Modifier.padding(top = 8.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
         NotificationsLine(notifPrompt)
         Spacer(Modifier.height(12.dp))
@@ -126,7 +127,7 @@ private fun NotificationsLine(force: Boolean?) {
     if (!ask) return
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted = it }
     Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("Allow notifications so ${BrandName.NAME} can tell you when it needs you.", modifier = Modifier.weight(1f),
+        Text(tr("Allow notifications so {0} can tell you when it needs you.", BrandName.NAME), modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
         ActionText("Allow", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
             if (sdk >= 33) try { launcher.launch("android.permission.POST_NOTIFICATIONS") } catch (_: Exception) { }

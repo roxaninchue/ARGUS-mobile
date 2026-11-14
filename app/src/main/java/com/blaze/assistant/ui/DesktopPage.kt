@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -58,12 +59,12 @@ internal fun DesktopPage() {
     LaunchedEffect(Unit) { DesktopLink.start(); if (DesktopLink.paired) msg = DesktopLink.ping() }
 
     Spacer(Modifier.height(22.dp))
-    Text("Link this phone to ${BrandName.NAME} on your computer. Ask your PC to work on files and code from here, and let ${BrandName.NAME} on the PC text, call and check this phone. Same Wi-Fi, or anywhere when both are on Tailscale.",
+    Text(tr("Link this phone to {0} on your computer. Ask your PC to work on files and code from here, and let {1} on the PC text, call and check this phone. Same Wi-Fi, or anywhere when both are on Tailscale.", BrandName.NAME, BrandName.NAME),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
     Spacer(Modifier.height(18.dp))
 
     if (paired) {
-        Label("Paired computer", modifier = Modifier.padding(bottom = 8.dp))
+        Label(tr("Paired computer"), modifier = Modifier.padding(bottom = 8.dp))
         Row(Modifier.fillMaxWidth().hairline(c.hair).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(DesktopLink.pcName, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
@@ -75,9 +76,9 @@ internal fun DesktopPage() {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Box(Modifier.weight(1f).height(46.dp).hairline(c.hair).clickable(enabled = !busy) {
                 busy = true; msg = "Checking…"; scope.launch { msg = DesktopLink.ping(); busy = false }
-            }, contentAlignment = Alignment.Center) { Label("Check connection", color = c.ink, size = 11.sp) }
+            }, contentAlignment = Alignment.Center) { Label(tr("Check connection"), color = c.ink, size = 11.sp) }
             Box(Modifier.weight(1f).height(46.dp).hairline(c.hair).clickable { DesktopLink.unpair(); msg = "Unpaired." },
-                contentAlignment = Alignment.Center) { Label("Unpair", color = c.ink, size = 11.sp) }
+                contentAlignment = Alignment.Center) { Label(tr("Unpair"), color = c.ink, size = 11.sp) }
         }
         Spacer(Modifier.height(8.dp))
         ToggleRow("Let the PC use this phone", "${BrandName.NAME} on the PC can ask this phone to text, call, check notifications and more. Risky actions still ask you here.", inboxOn) {
@@ -86,23 +87,23 @@ internal fun DesktopPage() {
             if (inboxOn) DesktopLink.start() else DesktopLink.stopInbox()
         }
     } else {
-        Label("Pair a computer", modifier = Modifier.padding(bottom = 8.dp))
-        Text("On the computer, open ${BrandName.NAME} Desktop › Phone › Show pairing QR code, then scan it.",
+        Label(tr("Pair a computer"), modifier = Modifier.padding(bottom = 8.dp))
+        Text(tr("On the computer, open {0} Desktop › Phone › Show pairing QR code, then scan it.", BrandName.NAME),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.body))
         Spacer(Modifier.height(10.dp))
         Box(Modifier.fillMaxWidth().height(50.dp).hairline(c.accent).clickable(enabled = !busy) {
             scanner.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt("Scan the QR code in ${BrandName.NAME} Desktop › Phone")
                 .setBeepEnabled(false).setOrientationLocked(false))
-        }, contentAlignment = Alignment.Center) { Label("Scan QR code", color = c.accent, size = 12.sp) }
+        }, contentAlignment = Alignment.Center) { Label(tr("Scan QR code"), color = c.accent, size = 12.sp) }
         Spacer(Modifier.height(16.dp))
-        Label("Or paste the pairing link", modifier = Modifier.padding(bottom = 6.dp), size = 10.sp)
+        Label(tr("Or paste the pairing link"), modifier = Modifier.padding(bottom = 6.dp), size = 10.sp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             BasicTextField(pasted, { pasted = it }, singleLine = true, cursorBrush = SolidColor(c.accent),
                 textStyle = TextStyle(fontFamily = Type.Mono, fontSize = 12.sp, color = c.ink),
                 modifier = Modifier.weight(1f).hairline(c.hair).padding(12.dp),
-                decorationBox = { inner -> if (pasted.isEmpty()) Text("blaze://pair?…", style = TextStyle(fontFamily = Type.Mono, fontSize = 12.sp, color = c.weak)); inner() })
+                decorationBox = { inner -> if (pasted.isEmpty()) Text(tr("blaze://pair?…"), style = TextStyle(fontFamily = Type.Mono, fontSize = 12.sp, color = c.weak)); inner() })
             Box(Modifier.height(44.dp).hairline(c.hair).clickable(enabled = !busy && pasted.isNotBlank()) { doPair(pasted) }.padding(horizontal = 14.dp),
-                contentAlignment = Alignment.Center) { Label("Pair", color = c.ink, size = 11.sp) }
+                contentAlignment = Alignment.Center) { Label(tr("Pair"), color = c.ink, size = 11.sp) }
         }
     }
     if (msg.isNotEmpty()) Text(msg, modifier = Modifier.padding(top = 10.dp),

@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -84,7 +85,7 @@ fun DeliveryLabel(state: DeliveryState, modifier: Modifier = Modifier, onRetry: 
     Row(modifier.fillMaxWidth().padding(top = 4.dp, end = 6.dp), horizontalArrangement = Arrangement.End) {
         Row(Modifier
             .let { m -> if (failed) m.clip(RoundedCornerShape(10.dp)).background(BubblePalette.capsule(c), RoundedCornerShape(10.dp)) else m }
-            .let { m -> if (failed && onRetry != null) m.clickable(role = Role.Button, onClickLabel = "Retry sending") { onRetry() } else m }
+            .let { m -> if (failed && onRetry != null) m.clickable(role = Role.Button, onClickLabel = tr("Retry sending")) { onRetry() } else m }
             .heightIn(min = if (failed) 32.dp else 0.dp)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite; contentDescription = Delivery.spoken(state) }
             .padding(horizontal = if (failed) 8.dp else 2.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -61,11 +62,11 @@ fun SourcePills(found: ReplySources.Found, modifier: Modifier = Modifier) {
     Row(modifier.horizontalScroll(rememberScrollState()).padding(start = 4.dp, top = 6.dp, bottom = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         found.sources.forEach { s ->
             Row(Modifier.clip(RoundedCornerShape(50)).background(c.faint).border(1.dp, c.hair, RoundedCornerShape(50))
-                .combinedClickable(role = Role.Button, onClickLabel = "Open ${s.domain}",
+                .combinedClickable(role = Role.Button, onClickLabel = tr("Open {0}", s.domain),
                     onLongClick = { clip.setText(AnnotatedString(s.url)); android.widget.Toast.makeText(ctx, "Link copied", android.widget.Toast.LENGTH_SHORT).show() },
                     onClick = { open?.invoke(s.url) ?: runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(s.url))
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } })
-                .semantics { contentDescription = "Source: ${s.label}" }
+                .semantics { contentDescription = tr("Source: {0}", s.label) }
                 .padding(start = 4.dp, end = 10.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Favicon(s.domain)
                 Text(s.label, color = c.ink, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 5.dp).widthIn(max = 150.dp))
@@ -97,9 +98,9 @@ fun ReplyImages(found: ReplySources.Found, low: Boolean, modifier: Modifier = Mo
             if (bmp != null && ReplySources.bigEnough(bmp.width, bmp.height)) {
                 val single = list.size == 1
                 Column(Modifier.widthIn(max = if (single) 300.dp else 180.dp)) {
-                    Image(bmp, contentDescription = "Picture from ${im.domain}", contentScale = ContentScale.Crop,
+                    Image(bmp, contentDescription = tr("Picture from {0}", im.domain), contentScale = ContentScale.Crop,
                         modifier = Modifier.height(if (single) 170.dp else 110.dp).widthIn(min = 120.dp, max = if (single) 300.dp else 180.dp)
-                            .clip(RoundedCornerShape(14.dp)).clickable(role = Role.Image, onClickLabel = "Open the picture") { full = im })
+                            .clip(RoundedCornerShape(14.dp)).clickable(role = Role.Image, onClickLabel = tr("Open the picture")) { full = im })
                     Text(im.domain, color = LocalBlaze.current.sub, fontSize = 10.sp, maxLines = 1, modifier = Modifier.padding(start = 4.dp, top = 2.dp))
                 }
             }
@@ -108,8 +109,8 @@ fun ReplyImages(found: ReplySources.Found, low: Boolean, modifier: Modifier = Mo
     full?.let { im ->
         androidx.compose.ui.window.Dialog(onDismissRequest = { full = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
             Box(Modifier.fillMaxSize().background(Color.Black).clickable { full = null }, contentAlignment = Alignment.Center) {
-                rememberHomeImage(im.url)?.let { Image(it, contentDescription = "Picture from ${im.domain}", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxWidth().heightIn(max = 700.dp)) }
-                Text("From ${im.domain}", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp))
+                rememberHomeImage(im.url)?.let { Image(it, contentDescription = tr("Picture from {0}", im.domain), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxWidth().heightIn(max = 700.dp)) }
+                Text(tr("From {0}", im.domain), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp))
             }
         }
     }

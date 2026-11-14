@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import kotlin.math.roundToInt
 import com.blaze.assistant.BrandName
 import android.content.Intent
@@ -72,11 +73,11 @@ fun DoingPage() {
     val routines by com.blaze.assistant.routine.Routines.all.collectAsState()
     var showAll by remember { mutableStateOf(false) }
     Spacer(Modifier.height(10.dp))
-    Text("Turn any of these off with one tap.", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.sub))
+    Text(tr("Turn any of these off with one tap."), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
-    Label("Coming up")
+    Label(tr("Coming up"))
     Spacer(Modifier.height(6.dp))
-    if (routines.isEmpty()) Text("Nothing scheduled yet. Ask me, for example \u201cevery weekday at 7, read me the morning brief\u201d.",
+    if (routines.isEmpty()) Text(tr("Nothing scheduled yet. Ask me, for example \u201cevery weekday at 7, read me the morning brief\u201d."),
         modifier = Modifier.padding(vertical = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
     routines.sortedByDescending { it.enabled }.forEach { r ->
         ToggleRow(DoingLogic.friendlyName(r.name), DoingLogic.whenLine(r.days, r.hour, r.minute, r.at, r.everyMinutes), r.enabled, icon = MenuIcon.TIMER.vector()) {
@@ -86,7 +87,7 @@ fun DoingPage() {
     Spacer(Modifier.height(22.dp))
     val lines = remember { DoingLogic.today(com.blaze.assistant.agent.Awareness.recent(60)) }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Label("Today I\u2026", modifier = Modifier.weight(1f))
+        Label(tr("Today I\u2026"), modifier = Modifier.weight(1f))
         if (lines.size > 6) ActionText(if (showAll) "Show less" else "See all", modifier = Modifier.clickable { showAll = !showAll }.padding(8.dp))
     }
     Text(DoingLogic.summary(lines), modifier = Modifier.padding(vertical = 8.dp),
@@ -115,7 +116,7 @@ fun LookPage() {
         com.blaze.assistant.ui.argus.settings.ArgusAppearanceLive()
     }
     if (!argus) {
-    Label("Theme")
+    Label(tr("Theme"))
     Spacer(Modifier.height(8.dp))
     val mode = ThemeMode.mode.value
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -127,7 +128,7 @@ fun LookPage() {
             }
         }
     }
-    Text("Auto turns dark after sunset and light in the morning.", modifier = Modifier.padding(vertical = 6.dp),
+    Text(tr("Auto turns dark after sunset and light in the morning."), modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     }
     Spacer(Modifier.height(14.dp))
@@ -135,7 +136,7 @@ fun LookPage() {
     val scale by Look.scale.collectAsState()
     var idx by remember(scale) { mutableStateOf(LookLogic.scaleIndex(scale).toFloat()) }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Label("Size")
+        Label(tr("Size"))
         Spacer(Modifier.weight(1f))
         Text(LookLogic.scaleLabel(LookLogic.SCALES[idx.roundToInt().coerceIn(0, LookLogic.SCALES.lastIndex)]),
             style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
@@ -146,21 +147,21 @@ fun LookPage() {
             steps = LookLogic.SCALES.size - 2,
             // applied on release, so the page doesn't resize under the finger mid-drag
             onValueChangeFinished = { Look.setScale(LookLogic.SCALES[idx.roundToInt().coerceIn(0, LookLogic.SCALES.lastIndex)]) },
-            modifier = Modifier.weight(1f).padding(horizontal = 10.dp).semantics { contentDescription = "App size" })
+            modifier = Modifier.weight(1f).padding(horizontal = 10.dp).semantics { contentDescription = tr("App size") })
         Text("A", style = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.sub))
     }
-    Text("Makes everything in ${BrandName.NAME} smaller or bigger, text included.", modifier = Modifier.padding(vertical = 6.dp),
+    Text(tr("Makes everything in {0} smaller or bigger, text included.", BrandName.NAME), modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     if (!argus) {
     Spacer(Modifier.height(14.dp))
-    Label("Accent")
+    Label(tr("Accent"))
     Spacer(Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         LookLogic.ACCENTS.forEach { (hex, name) ->
             val col = LookLogic.parseAccent(hex)?.let { Color(it) }
             Box(Modifier.size(38.dp).clip(CircleShape).background(col ?: c.accent)
                 .border(if (accent == hex) 3.dp else 1.dp, if (accent == hex) c.ink else c.hair, CircleShape)
-                .clickable { Look.setAccent(hex) }.semantics { contentDescription = "Accent: $name" })
+                .clickable { Look.setAccent(hex) }.semantics { contentDescription = tr("Accent: {0}", name) })
         }
     }
     }

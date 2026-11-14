@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.app.WallpaperManager
 import android.media.MediaPlayer
@@ -347,12 +348,12 @@ fun GalleryScreen(onDismiss: () -> Unit) {
                     Column(Modifier.fillMaxSize().padding(20.dp)) {
                         Rows {
                             when {
-                                query.isNotBlank() -> EmptyState("Nothing called \u201c$query\u201d", "Try another word, or clear the search.")
-                                userAlbum != null -> EmptyState("This album is empty", "Long-press anything in the Gallery, then tap Album to put it here.")
-                                loading -> EmptyState("Loading\u2026", "Looking through ${BrandName.NAME}'s pictures, music and videos.")
-                                tab == "music" -> EmptyState("No music yet", "Songs ${BrandName.NAME} downloads (Music/Blaze) and beats it makes show up here.")
-                                tab == "videos" -> EmptyState("No videos yet", "Videos ${BrandName.NAME} downloads (Movies/Blaze) show up here.")
-                                else -> EmptyState("Nothing here yet", "Ask ${BrandName.NAME} to \u201cdraw a lion in sunglasses\u201d or \u201cmake me an afro beat\u201d. Everything it makes or downloads lands here.")
+                                query.isNotBlank() -> EmptyState(tr("Nothing called \u201c{0}\u201d", query), tr("Try another word, or clear the search."))
+                                userAlbum != null -> EmptyState(tr("This album is empty"), tr("Long-press anything in the Gallery, then tap Album to put it here."))
+                                loading -> EmptyState(tr("Loading\u2026"), tr("Looking through {0}'s pictures, music and videos.", BrandName.NAME))
+                                tab == "music" -> EmptyState(tr("No music yet"), tr("Songs {0} downloads (Music/Blaze) and beats it makes show up here.", BrandName.NAME))
+                                tab == "videos" -> EmptyState(tr("No videos yet"), tr("Videos {0} downloads (Movies/Blaze) show up here.", BrandName.NAME))
+                                else -> EmptyState(tr("Nothing here yet"), tr("Ask {0} to \u201cdraw a lion in sunglasses\u201d or \u201cmake me an afro beat\u201d. Everything it makes or downloads lands here.", BrandName.NAME))
                             }
                         }
                     }
@@ -455,20 +456,20 @@ fun GalleryScreen(onDismiss: () -> Unit) {
         null -> {}
         is GDialog.Delete -> BlazeDialog(
             title = if (d.items.size == 1) "Move \u201c${d.items[0].title.take(40)}\u201d to Trash?" else "Move ${d.items.size} items to Trash?",
-            body = "They stay in the Trash for 30 days (Gallery \u203a \u22ee \u203a Trash), then are deleted for good.",
-            confirm = "Move to Trash", warm = true, dismiss = "Cancel", onDismiss = { dialog = null },
+            body = tr("They stay in the Trash for 30 days (Gallery \u203a \u22ee \u203a Trash), then are deleted for good."),
+            confirm = tr("Move to Trash"), warm = true, dismiss = tr("Cancel"), onDismiss = { dialog = null },
             onConfirm = { dialog = null; GalleryAudio.stop(); doDelete(d.items) })
         is GDialog.Rename -> TextDialog("Rename", d.item.name.substringBeforeLast('.'), "New name", "Rename", onDismiss = { dialog = null }) { t ->
             dialog = null
             scope.launch { GalleryRepo.rename(d.item, t)?.let { Toast.makeText(ctx, it, Toast.LENGTH_LONG).show() } }
         }
         is GDialog.Info -> InfoDialog(d.item) { dialog = null }
-        is GDialog.Wallpaper -> BlazeDialog(title = "Set as wallpaper", body = "Where should this picture go?", confirm = "Both", dismiss = "Cancel",
+        is GDialog.Wallpaper -> BlazeDialog(title = tr("Set as wallpaper"), body = tr("Where should this picture go?"), confirm = tr("Both"), dismiss = tr("Cancel"),
             onDismiss = { dialog = null },
             onConfirm = { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK) }) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PillButton("Home screen", primary = false, icon = Icons.Rounded.Home) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM) }
-                PillButton("Lock screen", primary = false, icon = Icons.Rounded.Lock) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_LOCK) }
+                PillButton(tr("Home screen"), primary = false, icon = Icons.Rounded.Home) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM) }
+                PillButton(tr("Lock screen"), primary = false, icon = Icons.Rounded.Lock) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_LOCK) }
             }
         }
         is GDialog.PickAlbum -> AlbumPicker(d, albums.filter { it.id != d.moveFrom }, onDismiss = { dialog = null }) { target, newName ->
@@ -489,9 +490,9 @@ fun GalleryScreen(onDismiss: () -> Unit) {
         is GDialog.RenameAlbum -> TextDialog("Rename album", d.album.name, "Album name", "Save", onDismiss = { dialog = null }) { t ->
             dialog = null; GalleryRepo.renameAlbum(d.album.id, t)
         }
-        is GDialog.DeleteAlbum -> BlazeDialog(title = "Delete \u201c${d.album.name}\u201d?",
-            body = "Only the album goes. Its pictures, songs and videos stay in the Gallery.", confirm = "Delete album", warm = true,
-            dismiss = "Cancel", onDismiss = { dialog = null },
+        is GDialog.DeleteAlbum -> BlazeDialog(title = tr("Delete \u201c{0}\u201d?", d.album.name),
+            body = tr("Only the album goes. Its pictures, songs and videos stay in the Gallery."), confirm = tr("Delete album"), warm = true,
+            dismiss = tr("Cancel"), onDismiss = { dialog = null },
             onConfirm = { dialog = null; GalleryRepo.deleteAlbum(d.album.id); if (albumId == d.album.id) albumId = null })
     }
 }
@@ -518,7 +519,7 @@ private fun DayHeader(h: GalleryModel.Cell.Header, selecting: Boolean, allOn: Bo
     val c = LocalBlaze.current.mono
     Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 6.dp, top = 14.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(h.label, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = c.ink))
-        if (selecting) Box(Modifier.size(32.dp).clip(BlazeShapes.pill).clickable(onClickLabel = "Select this day", onClick = onToggleDay), contentAlignment = Alignment.Center) {
+        if (selecting) Box(Modifier.size(32.dp).clip(BlazeShapes.pill).clickable(onClickLabel = tr("Select this day"), onClick = onToggleDay), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = if (allOn) c.accent else c.weak, modifier = Modifier.size(22.dp))
         }
     }
@@ -598,9 +599,9 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
                        onOpen: (String) -> Unit, onNew: () -> Unit, onAlbumMenu: (AlbumStore.Album, String) -> Unit, onAllowPhone: () -> Unit) {
     val c = LocalBlaze.current.mono
     LazyVerticalGrid(GridCells.Fixed(2), Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
-        item(span = { GridItemSpan(2) }) { Label("Your albums", color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 4.dp)) }
+        item(span = { GridItemSpan(2) }) { Label(tr("Your albums"), color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 4.dp)) }
         item {
-            Column(Modifier.padding(6.dp).clip(BlazeShapes.medium).clickable(onClickLabel = "New album", onClick = onNew)) {
+            Column(Modifier.padding(6.dp).clip(BlazeShapes.medium).clickable(onClickLabel = tr("New album"), onClick = onNew)) {
                 Box(Modifier.fillMaxWidth().aspectRatio(1f).glassInset(c).border(1.dp, c.hair, BlazeShapes.medium),
                     contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Add, contentDescription = null, tint = c.ink, modifier = Modifier.size(32.dp)) }
                 AlbumCaption("New album", "")
@@ -614,10 +615,10 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
                 BlazeMenu(menu, onDismiss = { menu = false }, items = listOf("Rename" to { onAlbumMenu(a, "rename") }, "Delete album" to { onAlbumMenu(a, "delete") }))
             }
         }
-        item(span = { GridItemSpan(2) }) { Label("On this phone", color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 14.dp, bottom = 4.dp)) }
+        item(span = { GridItemSpan(2) }) { Label(tr("On this phone"), color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 14.dp, bottom = 4.dp)) }
         items(autos, key = { it.id }) { a -> AlbumCard(a.name, a.items.size, a.items.firstOrNull(), onClick = { onOpen(a.id) }, onLongClick = null) }
         if (autos.isEmpty()) item(span = { GridItemSpan(2) }) {
-            Label("Pictures, songs and videos ${BrandName.NAME} makes or downloads get their own albums here.", color = c.weak, size = 11.sp, modifier = Modifier.padding(6.dp))
+            Label(tr("Pictures, songs and videos {0} makes or downloads get their own albums here.", BrandName.NAME), color = c.weak, size = 11.sp, modifier = Modifier.padding(6.dp))
         }
         if (!canPhone) item(span = { GridItemSpan(2) }) {
             Row(Modifier.padding(6.dp).fillMaxWidth().glassInset(c).clickable(onClick = onAllowPhone).padding(14.dp),
@@ -625,8 +626,8 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
                 Icon(Icons.Rounded.Folder, contentDescription = null, tint = c.accent, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Show Screenshots and Camera", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
-                    Text("Lets ${BrandName.NAME} read your phone's photos and videos. ${BrandName.NAME}'s own files show without it.",
+                    Text(tr("Show Screenshots and Camera"), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
+                    Text(tr("Lets {0} read your phone's photos and videos. {1}'s own files show without it.", BrandName.NAME, BrandName.NAME),
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
             }
@@ -719,8 +720,8 @@ private fun GalleryViewer(list: List<Entry>, start: Int, autoplay: String, origi
         if (chrome && !closing) {
             Row(Modifier.fillMaxWidth().graphicsLayer { alpha = anim.value }.background(Brush.verticalGradient(listOf(Color(0xAA000000), Color.Transparent))).statusBarsPadding()
                 .padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(44.dp).clip(BlazeShapes.pill).clickable(onClickLabel = "Close") { close() }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close", tint = Color.White, modifier = Modifier.size(24.dp))
+                Box(Modifier.size(44.dp).clip(BlazeShapes.pill).clickable(onClickLabel = tr("Close")) { close() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Close, contentDescription = tr("Close"), tint = Color.White, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f).padding(start = 4.dp)) {
                     Text(cur.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 16.sp, color = Color.White))
@@ -782,7 +783,7 @@ private fun ZoomImage(e: Entry, current: Boolean, onTap: () -> Unit) {
         val b = full
         if (b != null) Image(b, contentDescription = e.title, contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = scale; scaleY = scale; translationX = offset.x; translationY = offset.y })
-        else Label("Loading picture\u2026", color = Color(0xCCFFFFFF), size = 11.sp)
+        else Label(tr("Loading picture\u2026"), color = Color(0xCCFFFFFF), size = 11.sp)
     }
 }
 
@@ -804,8 +805,8 @@ private fun VideoPage(e: Entry, current: Boolean, autoplay: Boolean) {
             val bmp = rememberEntryThumb(e, 720)
             if (bmp != null) Image(bmp, contentDescription = e.title, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
             else Box(Modifier.size(220.dp).clip(BlazeShapes.large)) { ArtFallback(e, big = true) }
-            Box(Modifier.size(72.dp).clip(BlazeShapes.pill).background(Color(0x99000000)).clickable(onClickLabel = "Play") { playing = true },
-                contentAlignment = Alignment.Center) { Icon(Icons.Rounded.PlayArrow, contentDescription = "Play", tint = Color.White, modifier = Modifier.size(44.dp)) }
+            Box(Modifier.size(72.dp).clip(BlazeShapes.pill).background(Color(0x99000000)).clickable(onClickLabel = tr("Play")) { playing = true },
+                contentAlignment = Alignment.Center) { Icon(Icons.Rounded.PlayArrow, contentDescription = tr("Play"), tint = Color.White, modifier = Modifier.size(44.dp)) }
             val d = GalleryModel.duration(e.durationMs)
             if (d.isNotEmpty()) Text(d, modifier = Modifier.align(Alignment.Center).padding(top = 120.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = Color.White))
@@ -878,7 +879,7 @@ private fun dateLabel(ms: Long): String = if (ms <= 0) "" else SimpleDateFormat(
 @Composable
 private fun TextDialog(title: String, initial: String, hint: String, confirm: String, onDismiss: () -> Unit, onDone: (String) -> Unit) {
     var t by remember { mutableStateOf(initial) }
-    BlazeDialog(title = title, confirm = confirm, onConfirm = { if (t.isNotBlank()) onDone(t.trim()) }, dismiss = "Cancel", onDismiss = onDismiss) {
+    BlazeDialog(title = title, confirm = confirm, onConfirm = { if (t.isNotBlank()) onDone(t.trim()) }, dismiss = tr("Cancel"), onDismiss = onDismiss) {
         BlazeTextField(t, { t = it.take(120) }, hint, modifier = Modifier.fillMaxWidth(),
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { if (t.isNotBlank()) onDone(t.trim()) }))
@@ -896,7 +897,7 @@ private fun InfoDialog(e: Entry, onDismiss: () -> Unit) {
         if (e.durationMs > 0) add("Length" to GalleryModel.duration(e.durationMs))
         add("Where" to (if (e.isFile) "${BrandName.NAME}'s gallery (only ${BrandName.NAME} can see it)" else e.folder.trimEnd('/').ifBlank { "Phone storage" }))
     }
-    BlazeDialog(title = "Info", confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
+    BlazeDialog(title = tr("Info"), confirm = tr("Done"), onConfirm = onDismiss, onDismiss = onDismiss) {
         rows.forEach { (k, v) ->
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Text(k, modifier = Modifier.width(92.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = DialogColors.body))
@@ -910,8 +911,8 @@ private fun InfoDialog(e: Entry, onDismiss: () -> Unit) {
 private fun AlbumPicker(d: GDialog.PickAlbum, albums: List<AlbumStore.Album>, onDismiss: () -> Unit, onPick: (String?, String) -> Unit) {
     var name by remember { mutableStateOf("") }
     val what = if (d.items.size == 1) "it" else "${d.items.size} items"
-    BlazeDialog(title = if (d.moveFrom != null) "Move $what to\u2026" else "Add $what to\u2026", confirm = "Create album",
-        onConfirm = { if (name.isNotBlank()) onPick(null, name) }, dismiss = "Cancel", onDismiss = onDismiss) {
+    BlazeDialog(title = if (d.moveFrom != null) "Move $what to\u2026" else "Add $what to\u2026", confirm = tr("Create album"),
+        onConfirm = { if (name.isNotBlank()) onPick(null, name) }, dismiss = tr("Cancel"), onDismiss = onDismiss) {
         Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
             albums.forEach { a ->
                 Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).clickable { onPick(a.id, a.name) }.padding(horizontal = 6.dp, vertical = 11.dp),

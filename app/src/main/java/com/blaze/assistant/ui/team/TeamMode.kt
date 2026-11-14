@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -98,10 +99,10 @@ fun TeamMode(
         if (state.empty) {
             item(key = "empty") {
                 EmptyState(
-                    title = "Build your team",
-                    body = "Bots that each own a part of your life, with ${BotRules.MANAGER_NAME} as the lead.",
-                    primary = "New bot" to nav.newBot,
-                    secondary = "Demo team" to onDemoTeam,
+                    title = tr("Build your team"),
+                    body = tr("Bots that each own a part of your life, with {0} as the lead.", BotRules.MANAGER_NAME),
+                    primary = tr("New bot") to nav.newBot,
+                    secondary = tr("Demo team") to onDemoTeam,
                     hero = true,
                     heroArt = {
                         Row(horizontalArrangement = Arrangement.spacedBy((-14).dp), verticalAlignment = Alignment.CenterVertically) {
@@ -153,7 +154,7 @@ fun TeamMode(
     }
     confirmDelete?.let { b ->
         ArgusSheet(
-            onDismiss = { confirmDelete = null }, title = "Delete ${b.name}?",
+            onDismiss = { confirmDelete = null }, title = tr("Delete {0}?", b.name),
             primary = if (b.kind == BotKind.DOMAIN) "Switch off" else "Delete", primaryKind = ButtonKind.DANGER,
             onPrimary = { confirmDelete = null; onDelete(b.id) },
         ) {
@@ -225,6 +226,6 @@ fun TeamPage(nav: TeamNav, modifier: Modifier = Modifier) {
     val g = graph
     when {
         g != null -> TeamModeScreen(g.store, g.threads, g.sql, nav, modifier)
-        failed -> EmptyState(title = "Team couldn't open", body = "Your chats are safe. Try again after restarting the app.", modifier = modifier)
+        failed -> EmptyState(title = tr("Team couldn't open"), body = tr("Your chats are safe. Try again after restarting the app."), modifier = modifier)
     }
 }

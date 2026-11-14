@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -79,7 +80,7 @@ fun BankModePage() {
     if (simple && !BankMode.canRestoreA11y(ctx)) {
         Spacer(Modifier.height(18.dp))
         GroupHead("Phone control after banking", "")
-        Text("Bank apps won't open while ${BrandName.NAME} can control the phone, so Bank mode switches that off. When you leave the bank app, ${BrandName.NAME} shows a notification: tap it, then ${BrandName.NAME}'s switch, to turn it back on.",
+        Text(tr("Bank apps won't open while {0} can control the phone, so Bank mode switches that off. When you leave the bank app, {1} shows a notification: tap it, then {2}'s switch, to turn it back on.", BrandName.NAME, BrandName.NAME, BrandName.NAME),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
     }
     if (stopped) {

@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.Manifest
 import android.app.Activity
@@ -238,9 +239,9 @@ fun openAppSettings(ctx: Context) {
 private fun PermissionNeeded(onAllow: () -> Unit, onClose: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Color.Black).windowInsetsPadding(WindowInsets.safeDrawing).padding(28.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Camera access is off", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 20.sp, color = Color.White))
+            Text(tr("Camera access is off"), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 20.sp, color = Color.White))
             Spacer(Modifier.height(10.dp))
-            Text("${BrandName.NAME} needs the Camera permission to take a picture. Nothing is recorded unless you press the shutter.",
+            Text(tr("{0} needs the Camera permission to take a picture. Nothing is recorded unless you press the shutter.", BrandName.NAME),
                 textAlign = TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = Color.White.copy(alpha = 0.75f)))
             Spacer(Modifier.height(22.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -809,7 +810,7 @@ private fun TextCard(words: String, onTranslate: () -> Unit, onAsk: () -> Unit, 
     val ctx = LocalContext.current
     val c = LocalBlaze.current
     ResultSheet(if (words.isBlank()) "No text found" else "Text") {
-        if (words.isBlank()) Text("${BrandName.NAME} couldn't read any words. Move closer, hold steady and try again.",
+        if (words.isBlank()) Text(tr("{0} couldn't read any words. Move closer, hold steady and try again.", BrandName.NAME),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.ink))
         else SelectionContainer(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
             Text(words, style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 21.sp, color = c.ink))
@@ -934,7 +935,7 @@ fun CameraChrome(
             Row(Modifier.fillMaxWidth().padding(10.dp).align(Alignment.TopCenter), verticalAlignment = Alignment.CenterVertically) {
                 CamButton(Icons.Rounded.Close, "Close camera", onClose)
                 Spacer(Modifier.weight(1f))
-                if (modes.isNotEmpty()) Text("${BrandName.NAME} Camera", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.White))
+                if (modes.isNotEmpty()) Text(tr("{0} Camera", BrandName.NAME), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.White))
                 Spacer(Modifier.weight(1f))
                 if (pro != null && pro.tools) {
                     CamTool(if (pro.grid) Icons.Rounded.GridOn else Icons.Rounded.GridOff, if (pro.grid) "Grid on" else "Grid off", pro.grid, proActions.onGrid)
@@ -1040,7 +1041,7 @@ private fun DocumentCrop(f: File, onCancel: () -> Unit, onDone: (List<Pair<Float
     var corners by remember(b) { mutableStateOf(if (b != null) com.blaze.assistant.device.CameraSmart.defaultCorners(b.width, b.height) else emptyList()) }
     androidx.compose.ui.window.Dialog(onDismissRequest = onCancel, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(Color.Black).padding(12.dp)) {
-            Text("Drag the corners onto the page", style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Color.White))
+            Text(tr("Drag the corners onto the page"), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Color.White))
             Spacer(Modifier.height(8.dp))
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 if (b != null) {
@@ -1067,7 +1068,7 @@ private fun DocumentCrop(f: File, onCancel: () -> Unit, onDone: (List<Pair<Float
                             }
                         }
                     }
-                } else Text("Opening\u2026", style = TextStyle(color = Color.White))
+                } else Text(tr("Opening\u2026"), style = TextStyle(color = Color.White))
             }
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp, Alignment.End)) {

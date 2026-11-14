@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,7 +48,7 @@ fun CloudSyncPage(onSignIn: () -> Unit = {}) {
     LaunchedEffect(Unit) { while (true) { delay(20_000); now = System.currentTimeMillis() } }
 
     Spacer(Modifier.height(10.dp))
-    Text("Keep your chats, memory, settings and designs the same on every phone signed in to your ${BrandName.NAME} account.",
+    Text(tr("Keep your chats, memory, settings and designs the same on every phone signed in to your {0} account.", BrandName.NAME),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 21.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
 
@@ -73,7 +74,7 @@ fun CloudSyncPage(onSignIn: () -> Unit = {}) {
 
     // ---------- on ----------
     Spacer(Modifier.height(16.dp))
-    Label("What syncs")
+    Label(tr("What syncs"))
     Spacer(Modifier.height(4.dp))
     for (k in SyncKinds.ALL) {
         val on = k !in v.off
@@ -164,7 +165,7 @@ fun CloudSyncRow(onOpen: () -> Unit) {
     val v by CloudSync.view.collectAsState()
     Row(Modifier.fillMaxWidth().hairline(c.hair).clickable(onClick = onOpen).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
-            Text("Cloud sync", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
+            Text(tr("Cloud sync"), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
             Text(CloudSync.statusLine(v), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         }
         Text("\u203a", style = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.sub))

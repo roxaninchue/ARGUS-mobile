@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -102,9 +103,9 @@ fun TableCardView(t: RichKit.TableCard, modifier: Modifier = Modifier) {
             Text(t.title.ifBlank { " " }, modifier = Modifier.weight(1f).padding(top = 4.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 22.sp, color = TableCardStyle.Cell))
             fun copy(s: String, what: String) { clip.setText(AnnotatedString(s)); Toast.makeText(ctx, what, Toast.LENGTH_SHORT).show() }
-            Text("Copy", modifier = Modifier.clip(RoundedCornerShape(50)).clickable { copy(RichKit.tablePlain(t), "Copied") }.padding(horizontal = 10.dp, vertical = 6.dp),
+            Text(tr("Copy"), modifier = Modifier.clip(RoundedCornerShape(50)).clickable { copy(RichKit.tablePlain(t), "Copied") }.padding(horizontal = 10.dp, vertical = 6.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TableCardStyle.Head))
-            Text("TSV", modifier = Modifier.clip(RoundedCornerShape(50)).clickable { copy(RichKit.tableTsv(t), "Copied as TSV") }.padding(horizontal = 10.dp, vertical = 6.dp),
+            Text(tr("TSV"), modifier = Modifier.clip(RoundedCornerShape(50)).clickable { copy(RichKit.tableTsv(t), "Copied as TSV") }.padding(horizontal = 10.dp, vertical = 6.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TableCardStyle.Head))
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(TableCardStyle.Divider))
@@ -113,7 +114,7 @@ fun TableCardView(t: RichKit.TableCard, modifier: Modifier = Modifier) {
             val narrow = TableCardStyle.stacked(t.cols, maxWidth.value - 8f)
             SelectionContainer { if (narrow) TableStacked(t.copy(rows = rows)) else TableGridCard(t.copy(rows = rows)) }
         }
-        if (!all) Text("Show all ${t.rows.size} rows", modifier = Modifier.padding(start = 10.dp, bottom = 10.dp).clip(RoundedCornerShape(50))
+        if (!all) Text(tr("Show all {0} rows", t.rows.size), modifier = Modifier.padding(start = 10.dp, bottom = 10.dp).clip(RoundedCornerShape(50))
             .clickable { all = true }.padding(horizontal = 8.dp, vertical = 6.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TableCardStyle.Head))
         else Spacer(Modifier.height(8.dp))

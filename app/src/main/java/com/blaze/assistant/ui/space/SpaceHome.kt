@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -103,18 +104,18 @@ fun SpaceHomeScreen(
                         style = SpaceType.bodyText(look.sub))
                 }
                 SpaceHomeCards.Card.SIGN_IN -> SpaceCard(tag = SpaceTags.SIGN_IN) {
-                    SpaceHeadline("${BrandName.UPPER} can do more", size = SpaceTypeScale.TITLE.sp)
+                    SpaceHeadline(tr("{0} can do more", BrandName.UPPER), size = SpaceTypeScale.TITLE.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text("Sign in to your ${BrandName.NAME} account and it starts working for you right away. No keys, no settings.",
+                    Text(tr("Sign in to your {0} account and it starts working for you right away. No keys, no settings.", BrandName.NAME),
                         style = SpaceType.bodyText(look.ink))
                     Spacer(Modifier.height(16.dp))
-                    SpacePillButton("Sign in", onSignIn, primary = true, icon = Icons.AutoMirrored.Rounded.Login)
+                    SpacePillButton(tr("Sign in"), onSignIn, primary = true, icon = Icons.AutoMirrored.Rounded.Login)
                 }
-                SpaceHomeCards.Card.SETUP -> SpaceCard(tag = SpaceTags.SETUP_CARD, onClick = onSetup, onClickLabel = "Show setup") {
+                SpaceHomeCards.Card.SETUP -> SpaceCard(tag = SpaceTags.SETUP_CARD, onClick = onSetup, onClickLabel = tr("Show setup")) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconTile(Icons.Rounded.Downloading, tint = look.accent)
                         Spacer(Modifier.width(BlazeIconStyle.gap))
-                        Text("Finishing setup", modifier = Modifier.weight(1f), style = SpaceType.rowTitle(look.ink))
+                        Text(tr("Finishing setup"), modifier = Modifier.weight(1f), style = SpaceType.rowTitle(look.ink))
                         Text("${state.setupPercent}%", style = SpaceType.rowTitle(look.accent))
                     }
                     Spacer(Modifier.height(12.dp))
@@ -124,7 +125,7 @@ fun SpaceHomeScreen(
                         style = SpaceType.meta(look.sub))
                 }
                 SpaceHomeCards.Card.ANSWER -> state.answer?.let { a ->
-                    SpaceCard(tag = SpaceTags.ANSWER, onClick = onOpenChat, onClickLabel = "Open the answer in the chat") {
+                    SpaceCard(tag = SpaceTags.ANSWER, onClick = onOpenChat, onClickLabel = tr("Open the answer in the chat")) {
                         Text(a.ask, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.meta(look.sub))
                         Spacer(Modifier.height(8.dp))
                         Box(Modifier.fillMaxWidth().clip(SpaceShapes.tile).background(look.tile).padding(16.dp)) {
@@ -136,11 +137,11 @@ fun SpaceHomeScreen(
                     }
                 }
                 SpaceHomeCards.Card.PROJECTS -> SpaceCard(tag = SpaceTags.PROJECTS_CARD) {
-                    SpaceHeadline("Projects", size = SpaceTypeScale.TITLE.sp)
+                    SpaceHeadline(tr("Projects"), size = SpaceTypeScale.TITLE.sp)
                     Spacer(Modifier.height(10.dp))
                     state.projects.take(SpaceHomeCards.MAX_PROJECTS).forEachIndexed { i, (id, name) ->
                         if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(look.hair))
-                        Row(Modifier.fillMaxWidth().clickable(onClickLabel = "Open $name") { onOpenProject(id) }.padding(vertical = SpaceInsets.ROW_PAD_V_DP.dp),
+                        Row(Modifier.fillMaxWidth().clickable(onClickLabel = tr("Open {0}", name)) { onOpenProject(id) }.padding(vertical = SpaceInsets.ROW_PAD_V_DP.dp),
                             verticalAlignment = Alignment.CenterVertically) {
                             // 0.52.4: a folder tile instead of a dot, in the shared icon-tile style
                             IconTile(Icons.Rounded.Folder, tint = look.accent)
@@ -151,21 +152,21 @@ fun SpaceHomeScreen(
                         }
                     }
                     Spacer(Modifier.height(6.dp))
-                    Text("All projects \u203a", modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onOpenProjects).padding(vertical = 6.dp),
+                    Text(tr("All projects \u203a"), modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onOpenProjects).padding(vertical = 6.dp),
                         style = SpaceType.body(SpaceTypeScale.META.sp, look.accent, FontWeight.Medium))
                 }
                 SpaceHomeCards.Card.SUGGESTIONS -> SpaceCard(tag = SpaceTags.SUGGESTIONS) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = look.sub, modifier = Modifier.size(BlazeIconStyle.buttonIcon))
                         Spacer(Modifier.width(8.dp))
-                        Text("Try asking", style = SpaceType.meta(look.sub))
+                        Text(tr("Try asking"), style = SpaceType.meta(look.sub))
                     }
                     Spacer(Modifier.height(12.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         SpaceGreeting.SUGGESTIONS.forEach { s -> SpaceChip(s, { onAsk(s) }) }
                     }
                 }
-                SpaceHomeCards.Card.NEW_CHAT -> SpacePillButton("New project", onOpenProjects, plus = true, tag = SpaceTags.NEW_CHAT)
+                SpaceHomeCards.Card.NEW_CHAT -> SpacePillButton(tr("New project"), onOpenProjects, plus = true, tag = SpaceTags.NEW_CHAT)
             }
         }
     }

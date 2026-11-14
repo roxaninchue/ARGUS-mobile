@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,8 +42,8 @@ fun PlanRow(onOpen: () -> Unit) {
     val c = LocalBlaze.current.mono
     Row(Modifier.fillMaxWidth().hairline(c.hair).clickable(onClick = onOpen).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text("Plan", style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
-            Text("Standard or Pro, monthly or yearly", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+            Text(tr("Plan"), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
+            Text(tr("Standard or Pro, monthly or yearly"), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         }
         Text("\u203a", style = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.sub))
     }
@@ -76,7 +77,7 @@ fun CheckoutPage() {
     Spacer(Modifier.height(10.dp))
     if (m == null) { Text(err.ifBlank { "Loading plans\u2026" }, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub)); return }
     val per = Billing.effective(m, period)
-    me?.let { u -> if (u.plan.isNotBlank()) Text("Your plan: ${Billing.planName(u.plan)}" + (u.daysLeft?.let { " \u00b7 $it days left" } ?: ""),
+    me?.let { u -> if (u.plan.isNotBlank()) Text(tr("Your plan: {0}", Billing.planName(u.plan)) + (u.daysLeft?.let { " \u00b7 $it days left" } ?: ""),
         modifier = Modifier.padding(bottom = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body)) }
     if (Billing.yearlyOffered(m)) Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).hairline(c.hair, PageGlass.row), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
         listOf(Billing.Period.MONTH to "Monthly", Billing.Period.YEAR to "Yearly").forEach { (p, label) ->
@@ -102,7 +103,7 @@ fun CheckoutPage() {
         Column(Modifier.fillMaxWidth().padding(bottom = 8.dp).hairline(if (on) c.ink else c.hair, PageGlass.row).clickable { method = x.id }.padding(14.dp)) {
             Text(x.name, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
             val amt = Billing.amount(x, plan, per)
-            if (amt.isNotBlank()) Text("Pay $amt", style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
+            if (amt.isNotBlank()) Text(tr("Pay {0}", amt), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
             if (on) {
                 x.details.forEach { d -> Text("${d.label}: ${d.value}", style = TextStyle(fontFamily = Type.Mono, fontSize = 12.sp, color = c.body)) }
                 if (x.hint.isNotBlank()) Text(x.hint, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
@@ -129,7 +130,7 @@ fun CheckoutPage() {
     if (err.isNotBlank()) Text(err, modifier = Modifier.padding(top = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
     val pays = me?.payments.orEmpty()
     if (pays.isNotEmpty()) {
-        Text("Payments", modifier = Modifier.padding(top = 18.dp, bottom = 6.dp), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
+        Text(tr("Payments"), modifier = Modifier.padding(top = 18.dp, bottom = 6.dp), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
         pays.forEach { p -> Text(Billing.historyLabel(p) + (if (p.amountLocal.isNotBlank()) " \u00b7 ${p.amountLocal}" else "") + " \u00b7 ${p.status}",
             modifier = Modifier.padding(vertical = 3.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body)) }
     }

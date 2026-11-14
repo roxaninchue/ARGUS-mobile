@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -34,7 +35,7 @@ fun AgentCard(id: String) {
     var text by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     if (bg == null) {
-        Label("Background agent $id (cleared)", size = 9.sp)
+        Label(tr("Background agent {0} (cleared)", id), size = 9.sp)
         return
     }
     val secs = bg.seconds.also { tick }
@@ -52,7 +53,7 @@ fun AgentCard(id: String) {
             // v0.26.2: a specialist's card says which one ("B3 · SHOPPER").
             Label("${bg.id} · " + BgAgents.cardRole(bg) + if (bg.plan) " · PLAN" else "", color = c.accent, size = 9.sp)
             Spacer(Modifier.weight(1f))
-            Label("$time · ${bg.steps} steps", size = 9.sp)
+            Label(tr("{0} · {1} steps", time, bg.steps), size = 9.sp)
         }
         Spacer(Modifier.height(6.dp))
         Text(Md.plain(bg.title), maxLines = 2, overflow = TextOverflow.Ellipsis,

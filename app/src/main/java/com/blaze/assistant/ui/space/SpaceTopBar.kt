@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -80,9 +81,9 @@ fun SpaceTopBar(
         }
         Spacer(Modifier.width(8.dp))
         Box(Modifier.size(SpaceInsets.ROUND_DP.dp).clip(CircleShape).background(Color(SpacePalette.ARGUS_BLUE)).testTag(SpaceTags.AVATAR)
-            .combinedClickable(onClickLabel = "Profile and settings", onClick = onAvatar, onLongClick = onAvatarLong,
+            .combinedClickable(onClickLabel = tr("Profile and settings"), onClick = onAvatar, onLongClick = onAvatarLong,
                 onLongClickLabel = if (look.dark) "Switch to light mode" else "Switch to dark mode")
-            .semantics { contentDescription = "Profile and settings. Long-press to switch light or dark"; role = Role.Button },
+            .semantics { contentDescription = tr("Profile and settings. Long-press to switch light or dark"); role = Role.Button },
             contentAlignment = Alignment.Center) {
             Text(initial.take(1), style = SpaceType.rowTitle(Color.White))
         }
@@ -102,7 +103,7 @@ private fun SegmentedPill(tab: String, onTab: (String) -> Unit) {
                 val fill by animateColorAsState(if (on) look.selectedFill else Color.Transparent, MotionTokens.medium(), label = "segment")
                 val ink by animateColorAsState(if (on) look.selectedInk else look.sub, MotionTokens.medium(), label = "segmentInk")
                 Box(Modifier.clip(SpaceShapes.pill).background(fill).testTag(SpaceTags.tab(id))
-                    .clickable(onClickLabel = "Show $label") { onTab(id) }
+                    .clickable(onClickLabel = tr("Show {0}", label)) { onTab(id) }
                     .semantics { selected = on; role = Role.Tab }
                     .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = fit.padDp.dp), contentAlignment = Alignment.Center) {
                     // 0.52.4: the selected segment shows its icon with the label; the others stay text, as before
@@ -129,12 +130,12 @@ internal fun tabIcon(tab: String): ImageVector = when (tab) {
 @Composable
 private fun PrivatePill(onLeave: () -> Unit) {
     val look = spaceLook()
-    Box(Modifier.clip(SpaceShapes.pill).background(look.selectedFill).clickable(onClickLabel = "Leave private chat", onClick = onLeave)
+    Box(Modifier.clip(SpaceShapes.pill).background(look.selectedFill).clickable(onClickLabel = tr("Leave private chat"), onClick = onLeave)
         .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.Lock, contentDescription = null, tint = look.selectedInk, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(SpacePillFit.ICON_GAP_DP.dp))
-            Text("Private chat", style = SpaceType.body(15.sp, look.selectedInk, FontWeight.Medium))
+            Text(tr("Private chat"), style = SpaceType.body(15.sp, look.selectedInk, FontWeight.Medium))
         }
     }
 }

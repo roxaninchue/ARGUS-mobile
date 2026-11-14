@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -432,14 +433,14 @@ fun TypedText(text: String, intro: HomeIntroClock?, at: Long, style: TextStyle, 
 @Composable
 fun InterestsCardV2(topics: List<InterestsFeed.Topic>, intro: HomeIntroClock?, index: Int, modifier: Modifier = Modifier,
                     onTopic: (InterestsFeed.Topic) -> Unit, onEmpty: () -> Unit) {
-    HomeCard(HomeGrid.Card.INTERESTS, intro, index, modifier, onClick = if (topics.isEmpty()) onEmpty else null, label = "Pick interests") {
+    HomeCard(HomeGrid.Card.INTERESTS, intro, index, modifier, onClick = if (topics.isEmpty()) onEmpty else null, label = tr("Pick interests")) {
         FitTitle(buildAnnotatedString {
             withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = HomeGridLook.ink)) { append("Interests") }
             withStyle(SpanStyle(color = HomeGridLook.sub)) { append(" \u00b7 Tracking") }
         }, Modifier.introType(intro, index, HomeSequence.INT_TITLE_AT, 20).then(header(HomeGrid.Card.INTERESTS)).semantics { heading() })
         Spacer(Modifier.height(5.dp))
         if (topics.isEmpty()) {
-            Text("Tell me what you're into and the latest headlines show up here.", style = style(11.sp, color = HomeGridLook.sub), maxLines = 4)
+            Text(tr("Tell me what you're into and the latest headlines show up here."), style = style(11.sp, color = HomeGridLook.sub), maxLines = 4)
         } else Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             topics.forEachIndexed { i, t ->
                 // the row's rounded clip is a stable layer, off while the chips are larger than the card (intro, at the centre)
@@ -501,7 +502,7 @@ private fun clock(ms: Long): String { if (ms < 0) return "0:00"; val s = ms / 10
 
 @Composable
 fun MusicCardV2(m: HomeMusicNow?, intro: HomeIntroClock?, index: Int, modifier: Modifier = Modifier, onOpen: () -> Unit, onToggle: () -> Unit) {
-    HomeCard(HomeGrid.Card.MUSIC, intro, index, modifier, onClick = onOpen, label = "Open Music") {
+    HomeCard(HomeGrid.Card.MUSIC, intro, index, modifier, onClick = onOpen, label = tr("Open Music")) {
         Text(musicLabel(m), style = style(11.sp, color = HomeGridLook.sub), modifier = header(HomeGrid.Card.MUSIC).fillMaxWidth()
             .introAppear(intro, index, HomeSequence.MUSIC_ART_AT))
         Spacer(Modifier.height(7.dp))
@@ -529,7 +530,7 @@ fun MusicCardV2(m: HomeMusicNow?, intro: HomeIntroClock?, index: Int, modifier: 
  */
 @Composable
 fun MusicCardWide(m: HomeMusicNow?, intro: HomeIntroClock?, index: Int, modifier: Modifier = Modifier, onOpen: () -> Unit, onToggle: () -> Unit) {
-    HomeCard(HomeGrid.Card.MUSIC, intro, index, modifier, onClick = onOpen, label = "Open Music") {
+    HomeCard(HomeGrid.Card.MUSIC, intro, index, modifier, onClick = onOpen, label = tr("Open Music")) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             MusicArt(Modifier.size(44.dp).introAppear(intro, index, HomeSequence.MUSIC_ART_AT), corner = 10.dp)
             Spacer(Modifier.width(12.dp))
@@ -604,9 +605,9 @@ internal fun MusicProgress(m: HomeMusicNow?, times: Boolean = true) {
 
 @Composable
 fun TodoCardV2(tasks: List<TodoFeed.Task>, count: Int, intro: HomeIntroClock?, index: Int, modifier: Modifier = Modifier, onOpen: () -> Unit) {
-    HomeCard(HomeGrid.Card.TODO, intro, index, modifier, onClick = onOpen, label = "Open to-do") {
+    HomeCard(HomeGrid.Card.TODO, intro, index, modifier, onClick = onOpen, label = tr("Open to-do")) {
         Row(header(HomeGrid.Card.TODO).introType(intro, index, 120L, 8), verticalAlignment = Alignment.CenterVertically) {
-            Text("To-do", style = style(12.5.sp, FontWeight.SemiBold), modifier = Modifier.weight(1f).semantics { heading() })
+            Text(tr("To-do"), style = style(12.5.sp, FontWeight.SemiBold), modifier = Modifier.weight(1f).semantics { heading() })
             Text("$count", style = style(11.sp, color = HomeGridLook.sub))
         }
         val firstDone = remember(tasks) { tasks.indexOfFirst { it.done } }
@@ -616,9 +617,9 @@ fun TodoCardV2(tasks: List<TodoFeed.Task>, count: Int, intro: HomeIntroClock?, i
                 Icon(Icons.Rounded.Check, contentDescription = null, tint = HomeGridLook.ink, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.height(10.dp))
-            Text("Nothing to do", style = style(13.sp, FontWeight.SemiBold), maxLines = 1)
+            Text(tr("Nothing to do"), style = style(13.sp, FontWeight.SemiBold), maxLines = 1)
             Spacer(Modifier.height(2.dp))
-            Text("Tap to add a task", style = style(11.sp, color = HomeGridLook.sub), maxLines = 1)
+            Text(tr("Tap to add a task"), style = style(11.sp, color = HomeGridLook.sub), maxLines = 1)
         }
         else Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
             tasks.forEachIndexed { i, t ->
@@ -648,7 +649,7 @@ fun TodoCardV2(tasks: List<TodoFeed.Task>, count: Int, intro: HomeIntroClock?, i
 @Composable
 fun NextUpCardV2(item: NextUp.Item?, now: Long, h24: Boolean, intro: HomeIntroClock?, index: Int, modifier: Modifier = Modifier, onOpen: () -> Unit) {
     val line = if (item == null) "Nothing scheduled" else item.title + " \u00b7 " + NextUp.whenLabel(item.at, now, h24)
-    HomeCard(HomeGrid.Card.NEXT_UP, intro, index, modifier, onClick = onOpen, label = "Open next up") {
+    HomeCard(HomeGrid.Card.NEXT_UP, intro, index, modifier, onClick = onOpen, label = tr("Open next up")) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(37.dp).introAppear(intro, index, 260L).clip(CircleShape).background(HomeGridLook.bell), contentAlignment = Alignment.Center) {
                 Icon(if (item?.kind == NextUp.Kind.CALENDAR) Icons.Rounded.Event else Icons.Rounded.NotificationsNone, contentDescription = null,
@@ -656,7 +657,7 @@ fun NextUpCardV2(item: NextUp.Item?, now: Long, h24: Boolean, intro: HomeIntroCl
             }
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
-                Text("Next up", style = style(11.sp, color = HomeGridLook.sub), modifier = header(HomeGrid.Card.NEXT_UP)
+                Text(tr("Next up"), style = style(11.sp, color = HomeGridLook.sub), modifier = header(HomeGrid.Card.NEXT_UP)
                     .introAppear(intro, index, HomeSequence.NEXT_FILL_AT - 100L, 260L))
                 Text(line, style = style(14.5.sp, FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.introType(intro, index, HomeSequence.NEXT_TEXT_AT, line.length.coerceAtMost(20)))
@@ -673,7 +674,7 @@ fun NextUpCardV2(item: NextUp.Item?, now: Long, h24: Boolean, intro: HomeIntroCl
 @Composable
 fun QuickActionsCardV2(actions: List<QuickActions.Action>, intro: HomeIntroClock?, index: Int, modifier: Modifier = Modifier, onAction: (QuickActions.Action) -> Unit) {
     HomeCard(HomeGrid.Card.QUICK, intro, index, modifier) {
-        Text("Quick actions", style = style(12.sp, FontWeight.SemiBold), modifier = header(HomeGrid.Card.QUICK).semantics { heading() }
+        Text(tr("Quick actions"), style = style(12.sp, FontWeight.SemiBold), modifier = header(HomeGrid.Card.QUICK).semantics { heading() }
             .introType(intro, index, 120L, 13))
         Spacer(Modifier.height(5.dp))
         actions.forEachIndexed { row, a ->

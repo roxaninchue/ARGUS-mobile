@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui.team.thread
 
+import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -194,8 +195,8 @@ fun StepList(steps: List<Step>, modifier: Modifier = Modifier) {
             Text(s.title, style = ArgusType.sub, fontWeight = FontWeight.SemiBold, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false))
             when (s.state) {
-                State.FAILED -> Text("  Failed", style = ArgusType.meta, color = c.dangerText)
-                State.WAITING -> Text("  Waiting for your OK", style = ArgusType.meta, color = c.waitingText)
+                State.FAILED -> Text(tr("  Failed"), style = ArgusType.meta, color = c.dangerText)
+                State.WAITING -> Text(tr("  Waiting for your OK"), style = ArgusType.meta, color = c.waitingText)
                 else -> {}
             }
         }
@@ -278,7 +279,7 @@ fun WorkChip(w: ThreadItem.Work, actions: ThreadActions, modifier: Modifier = Mo
             Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (w.groups.size > 1) Text(w.summary, style = ArgusType.meta, color = c.mute)
                 ToolGroups(w.groups, onUndo = actions.undo)
-                if (w.failed) ArgusButton("Go on", actions.goOn, size = ButtonSize.S)
+                if (w.failed) ArgusButton(tr("Go on"), actions.goOn, size = ButtonSize.S)
             }
         }
     }
@@ -312,7 +313,7 @@ fun ToolCard(s: Step, onUndo: () -> Unit, modifier: Modifier = Modifier) {
                 }
             }
         }
-        if (s.undoable) ArgusButton("Undo", onUndo, Modifier.padding(start = 8.dp, bottom = 8.dp), size = ButtonSize.S, icon = "rotate-ccw")
+        if (s.undoable) ArgusButton(tr("Undo"), onUndo, Modifier.padding(start = 8.dp, bottom = 8.dp), size = ButtonSize.S, icon = "rotate-ccw")
     }
 }
 
@@ -343,7 +344,7 @@ fun JobCard(j: CardModel.Jobs, actions: ThreadActions, modifier: Modifier = Modi
                 textDecoration = if (job.done) TextDecoration.LineThrough else null, modifier = Modifier.weight(1f))
             job.due?.let { Text(it, style = ArgusType.meta, color = c.mute) }
         }
-        if (j.more > 0) Text("+${j.more} more", style = ArgusType.meta, color = c.mute)
+        if (j.more > 0) Text(tr("+{0} more", j.more), style = ArgusType.meta, color = c.mute)
     }
 }
 
@@ -352,12 +353,12 @@ fun JobCard(j: CardModel.Jobs, actions: ThreadActions, modifier: Modifier = Modi
 fun OkCard(o: CardModel.Ok, actions: ThreadActions, modifier: Modifier = Modifier) {
     val c = Argus.colors
     CardBox(modifier) {
-        Text("NEEDS YOUR OK", style = ArgusType.section, color = c.meta, modifier = Modifier.semantics { heading() })
+        Text(tr("NEEDS YOUR OK"), style = ArgusType.section, color = c.meta, modifier = Modifier.semantics { heading() })
         Text(o.title, style = ArgusType.rowTitle, color = c.ink)
         o.due?.let { Text(it, style = ArgusType.meta, color = c.dangerText) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), modifier = Modifier.fillMaxWidth()) {
-            ArgusButton("Tomorrow", { actions.jobTomorrow(o.jobId) }, size = ButtonSize.S)
-            ArgusButton("Done", { actions.jobDone(o.jobId) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY)
+            ArgusButton(tr("Tomorrow"), { actions.jobTomorrow(o.jobId) }, size = ButtonSize.S)
+            ArgusButton(tr("Done"), { actions.jobDone(o.jobId) }, size = ButtonSize.S, kind = ButtonKind.PRIMARY)
         }
     }
 }
@@ -379,9 +380,9 @@ fun FileCard(f: CardModel.File, actions: ThreadActions, modifier: Modifier = Mod
         }
         f.path?.let { p ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ArgusButton("Open", { actions.openFile(p) }, size = ButtonSize.S)
-                ArgusButton("Share", { actions.shareFile(p) }, size = ButtonSize.S)
-                ArgusButton("Save", { actions.saveFile(p) }, size = ButtonSize.S, icon = "download")
+                ArgusButton(tr("Open"), { actions.openFile(p) }, size = ButtonSize.S)
+                ArgusButton(tr("Share"), { actions.shareFile(p) }, size = ButtonSize.S)
+                ArgusButton(tr("Save"), { actions.saveFile(p) }, size = ButtonSize.S, icon = "download")
             }
         }
     }
@@ -405,7 +406,7 @@ fun HandoffCard(h: CardModel.Handoff, actions: ThreadActions, modifier: Modifier
         }
         if (h.text.isNotBlank()) Text(h.text, style = ArgusType.body, color = c.ink)
         h.reply?.let { Text("\u2713 $it", style = ArgusType.sub, color = c.successText) }
-        ArgusButton("Open conversation", { actions.openHandoff(h.fromId, h.toId) }, size = ButtonSize.S)
+        ArgusButton(tr("Open conversation"), { actions.openHandoff(h.fromId, h.toId) }, size = ButtonSize.S)
     }
 }
 

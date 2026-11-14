@@ -1,5 +1,6 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.i18n.tr
 import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -195,7 +196,7 @@ fun RichDeck(imgs: List<RichReplies.Img>, animatorScale: Float = 1f, start: Int 
                         onDragCancel = { drag = 0 },
                     ) { _, dx -> total += dx; drag = (total * 0.35f).roundToInt() }
                 }
-                .semantics { contentDescription = "Picture ${RichReplies.counter(index, n)}: ${imgs[index].alt}. Swipe for the next one." }) {
+                .semantics { contentDescription = tr("Picture {0}: {1}. Swipe for the next one.", RichReplies.counter(index, n), imgs[index].alt) }) {
                 RichPicture(imgs[index], Modifier.fillMaxWidth(), ratio = 4f / 3f)
             }
         }
@@ -277,7 +278,7 @@ fun RichDiagram(d: RichReplies.Block.Diagram, maxH: androidx.compose.ui.unit.Dp 
         when (s) {
             // v0.27.0: a soft shimmer while the diagram is drawn (a plain fill with Remove animations on).
             null -> Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).shimmer(c.faint, c.paper.copy(alpha = 0.35f), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                Text("Drawing the diagram\u2026", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+                Text(tr("Drawing the diagram\u2026"), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
             is DiagramRenderer.Outcome.Picture -> {
                 val ratio = (s.bmp.width.toFloat() / s.bmp.height.coerceAtLeast(1)).coerceIn(0.4f, 4f)

@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui
 
 
+import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
 import android.annotation.SuppressLint
 import android.webkit.WebView
@@ -215,9 +216,9 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
             val failure = rs.failure
             if (url.isBlank()) {
                 Column(Modifier.align(Alignment.Center).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Label("Design")
+                    Label(tr("Design"))
                     Spacer(Modifier.padding(4.dp))
-                    Text("Ask ${BrandName.NAME} for anything visual: a 3D model, a site, an app screen, a diagram, a chart, a poster. It opens here.",
+                    Text(tr("Ask {0} for anything visual: a 3D model, a site, an app screen, a diagram, a chart, a poster. It opens here.", BrandName.NAME),
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub))
                 }
             } else if (!preview && glPage && spec3d == null) {
@@ -302,12 +303,12 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
                 // v0.45.6: until a 3D page proves it drew, say so (never an empty pane).
                 else if (glPage && !rs.ready) Box(Modifier.align(Alignment.Center).clip(BlazeShapes.pill).background(c.menuSurface, BlazeShapes.pill)
                     .border(1.dp, c.hair2, BlazeShapes.pill).padding(horizontal = 14.dp, vertical = 8.dp)) {
-                    Text("Drawing the 3D view\u2026", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
+                    Text(tr("Drawing the 3D view\u2026"), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
                 external?.let { link ->
                     Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(10.dp).clip(BlazeShapes.pill).background(c.ink, BlazeShapes.pill)
                         .padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Link to " + (DesignServe.originOf(link).substringAfter("://").ifBlank { "another site" }), maxLines = 1,
+                        Text(tr("Link to ") + (DesignServe.originOf(link).substringAfter("://").ifBlank { "another site" }), maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.paper))
                         ActionText("Open in browser", color = c.paper, size = 9.sp, modifier = Modifier.clickable { external = null; onOpenInBrowser(link) }.padding(6.dp))
@@ -327,7 +328,7 @@ private fun FailBanner(error: String, sketch: Boolean, onRetry: () -> Unit, modi
         Column(Modifier.weight(1f)) {
             Text(DesignServe.failText(error), maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = GlassTokens.warning))
-            if (sketch) Text("Showing a simple drawing instead: drag to turn, pinch to zoom.",
+            if (sketch) Text(tr("Showing a simple drawing instead: drag to turn, pinch to zoom."),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = GlassTokens.sub))
         }
         Spacer(Modifier.width(8.dp))
@@ -515,7 +516,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                 if (onBack != null) { BackButton(onBack, desc = DesignNav.BACK_LABEL); Spacer(Modifier.width(4.dp)) }
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Design", style = TextStyle(fontFamily = Type.Display, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 24.sp, color = c.ink))
+                        Text(tr("Design"), style = TextStyle(fontFamily = Type.Display, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 24.sp, color = c.ink))
                         Spacer(Modifier.width(8.dp))
                         // v0.45.6: Design is labelled Beta (header and the view chip).
                         Box(Modifier.clip(BlazeShapes.pill).border(1.dp, c.hair2, BlazeShapes.pill).padding(horizontal = 7.dp, vertical = 2.dp)) {
@@ -657,7 +658,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                 }
                 val canSend = ask.isNotBlank() && !busy
                 Box(Modifier.size(36.dp).clip(BlazeShapes.pill).background(if (canSend) c.ink else c.ink.copy(alpha = 0.35f), BlazeShapes.pill)
-                    .clickable(enabled = canSend) { onAsk(studioAsk(ask, mode, sel)); ask = "" }.semantics { contentDescription = "Send" }, contentAlignment = Alignment.Center) {
+                    .clickable(enabled = canSend) { onAsk(studioAsk(ask, mode, sel)); ask = "" }.semantics { contentDescription = tr("Send") }, contentAlignment = Alignment.Center) {
                     androidx.compose.material3.Icon(Icons.Rounded.ArrowUpward, null, tint = c.paper, modifier = Modifier.size(19.dp))
                 }
             }
