@@ -668,6 +668,8 @@ fun ChatScreen() {
         Views.showing.value = ""
         if (over) return
         val n = navNow()
+        // Living UI: Back on Living returns to Chat first
+        if (n.tab == ChatNav.CHAT && !n.inProjectChat && com.blaze.assistant.ui.living.LivingSpec.back()) return
         val up = n.back()
         if ((n.inProjectChat || n.tab == ChatNav.PROJECTS) && up != null && up.tab == ChatNav.PROJECTS) go(up)
         else if (!Agent.privateChat.value) {
@@ -845,7 +847,11 @@ fun ChatScreen() {
                         val dens = LocalDensity.current
                         CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip, LocalOpenLink provides openLink,
                             LocalDensity provides androidx.compose.ui.unit.Density(dens.density, dens.fontScale * Settings.textScale)) {
-                            MessageList(mood, onQuote = { quote = it }, onFollowup = { send(it) }, keep = keep)
+                            // Living UI 0.1.0: Chat | Living over the chatbox; Living draws in Chat's place, Back returns to Chat
+                            val living by com.blaze.assistant.ui.living.LivingSpec.view.collectAsState()
+                            if (living == com.blaze.assistant.ui.living.LivingSpec.View.LIVING) { BackHandler { com.blaze.assistant.ui.living.LivingSpec.back() }
+                                com.blaze.assistant.ui.living.LivingScreen(mood != Mood.IDLE, keep, reducedMotion) }
+                            else MessageList(mood, onQuote = { quote = it }, onFollowup = { send(it) }, keep = keep)
                         }
                     }
                 } else if (!hasMessages && !(stageActive && stage.items.isNotEmpty())) {
@@ -1048,6 +1054,7 @@ fun ChatScreen() {
                 // v0.43.0: who the next message goes to (@blaze / @halo / @all), picked on the arc from the header orb.
                 // 0.51.0 one persona: the Blaze / Halo arc is gone (there is only Blaze).
                 if (arcOpen) BackHandler { arcOpen = false }
+                if (argus && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages) com.blaze.assistant.ui.living.LivingSwitch()
                 // 0.46.0: the reply bar folded into a floating pill by the Stage (never gone): tap for the full bar.
                 if (stageActive && stage.reply == com.blaze.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     StageReplyPill { com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.SetChrome(reply = com.blaze.assistant.stage.ReplyBar.FULL)) }

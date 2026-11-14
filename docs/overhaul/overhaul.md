@@ -1,6 +1,6 @@
 # ARGUS Overhaul
 
-Status: design direction, 14 Nov 2026. Images live next to this file in `docs/overhaul/` (PNG mockups saved as JPG). Living UI v1 (Living UI 0.1.0) ships in app 0.53.3; see "Living UI v1: what shipped" below.
+Status: design direction, 14 Nov 2026. Images live next to this file in `docs/overhaul/` (PNG mockups saved as JPG). Living UI v1 (Living UI 0.1.0) is on `main` (code landed 14 Nov 2026, `[skip ci]`, not built yet); it ships in the next build (app 0.53.3 / versionCode 195 once the owner says "build"). See "Living UI v1: what shipped" below.
 
 ---
 
@@ -72,7 +72,7 @@ Finn, 14 Nov 2026: the new ARGUS browser will look like this Living canvas as we
 ### Reference images
 Finn will attach Living UI reference images; add them here when received.
 
-### Living UI v1: what shipped (Living UI 0.1.0, app 0.53.3 / versionCode 195)
+### Living UI v1: what shipped (Living UI 0.1.0; app 0.53.3 / versionCode 195 at the next build)
 - **Where:** a `Chat | Living` switch centred over the chatbox in Chat mode (main chat; not inside project chats). Chat is the default and the app always opens on Chat; Living draws in Chat's place, the chatbox stays, Back returns to Chat. Team · Chat · Life · Desk and the notch are unchanged.
 - **Canvas:** full screen, faint dot grid (no blueprint), light (soft grey canvas, white rounded cards, soft shadow, thin grey connectors) and dark (near-black canvas, dark cards) from the app theme. One-finger pan, pinch zoom (0.25×–3×), double-tap = fit everything, tap a card = zoom in on it (tap again = back).
 - **Tree:** built from the same stream that drives "Show tool steps" (the chat's step messages with their exact call + `ToolTrail` results). Per turn: your message is the root card; a trunk line with rounded elbows into each step card; several page reads in a row sit side by side (up to 3) as a branch that peeks in from the right. The newest 3 turns are drawn (≤ 48 cards).
@@ -80,7 +80,9 @@ Finn will attach Living UI reference images; add them here when received.
 - **Status pill** at the top: what ARGUS is doing now and the step count ("Reading a page · 3 steps", "Done · 6 steps"), with **Next** to pan to the newest active card. The canvas follows new cards until you pan; Next turns following back on.
 - **Agent marks:** placeholder only (Finn designs the bots): a small dot with a soft glow, pulsing on the card being worked on and in the pill while working.
 - **Performance:** only cards touching the screen are composed; the camera is read only in draw / placement, so a pan or pinch redraws without recomposing; the dot grid thins itself out when zoomed out (≤ 2,400 dots); one animation (the pulse) only on the active card, only while the app is resumed, none with reduced motion; nothing runs while Chat shows.
-- **Code:** `ui/living/LivingSpec.kt` (version, palettes, grid, the Chat | Living state), `LivingModel.kt` (steps → cards, pure), `LivingLayout.kt` (positions, connectors, culling, camera, pure), `LivingScreen.kt` (Compose canvas, cards, pill, switch). ChatScreen.kt: +7 lines. Agent.kt untouched. Tests: `LivingModelTest`, `LivingLayoutTest`.
+- **Results:** Living turns the `ToolTrail` recorder on while it is open (back to the Show tool steps setting when it closes), so a step's page text and output are there even with tool rows off. Steps run while Living was closed and tool rows off show their call without output.
+- **Back:** Living is closed first by Back (`backToChat()` returns to Chat before going to Team; a BackHandler covers the private chat, where Back is the shell's own).
+- **Code:** `ui/living/LivingSpec.kt` (version, palettes, grid, the Chat | Living state), `LivingModel.kt` (steps → cards, pure), `LivingLayout.kt` (positions, connectors, culling, camera, pure), `LivingScreen.kt` (Compose canvas, cards, pill, switch). ChatScreen.kt: +7 lines (the Chat | Living branch in Chat mode, the switch over the chatbox, Back). Agent.kt untouched. Tests: `LivingModelTest` (8) and `LivingLayoutTest` (7), 15/15 on the JVM; the four Living files compile with the Compose compiler (2.0.20) against compose 1.7.5 with stubs for the app classes. Not run: Gradle, Robolectric shots, device.
 
 ### Living UI: deferred (TODO)
 - Browser screenshots: the background browser keeps no per-step screenshot today, so browser cards show the page's text; add low-res thumbnails when the browser captures them (Blaze Phone's `PhoneBrowser.frame` is only for the phone-control browser).
