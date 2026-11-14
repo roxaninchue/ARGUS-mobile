@@ -33,6 +33,10 @@ class ManagerChats private constructor(private val chats: MutableList<Chat>, cur
         val unseen: Boolean = false,
         val del: Long? = null,
         val purged: Boolean = false,
+        /** Owner 2026-11-14: the title ARGUS gives the chat as it goes on ([Titles]); a name you gave ([named]) wins. */
+        val auto: String? = null,
+        /** How many of your messages the chat had when [auto] was given (the next retitle counts from here). */
+        val autoN: Int = 0,
     ) {
         val gone get() = del != null || purged
     }
@@ -163,7 +167,13 @@ class ManagerChats private constructor(private val chats: MutableList<Chat>, cur
     }
 
     /** talks.js `purge`: the Undo window closed. The chat never shows again (its window stays, so later chats keep theirs). */
-    fun purge(g: Int) { update(g) { it.copy(purged = true, pin = null, unseen = false, title = null, named = false) } }
+    fun purge(g: Int) { update(g) { it.copy(purged = true, pin = null, unseen = false, title = null, named = false, auto = null, autoN = 0) } }
+
+    /** Owner 2026-11-14: ARGUS's title for chat [g] after [userTurns] of your messages. A deleted chat keeps none. */
+    fun autoTitle(g: Int, title: String, userTurns: Int) {
+        val t = title.split(Regex("\\s+")).joinToString(" ").trim().take(TITLE_MAX)
+        if (t.isNotEmpty()) update(g) { if (it.gone) it else it.copy(auto = t, autoN = userTurns) }
+    }
 
     /** talks.js `repair`, once per load: deletes an app close interrupted are finished; `cur` points at a live chat. */
     fun repair(): Boolean {
@@ -182,6 +192,7 @@ class ManagerChats private constructor(private val chats: MutableList<Chat>, cur
             if (c.unseen) put("unseen", true)
             if (c.del != null) put("del", c.del)
             if (c.purged) put("purged", true)
+            if (c.auto != null) put("auto", c.auto).put("autoN", c.autoN)
         })
     }).toString()
 
@@ -198,6 +209,19 @@ class ManagerChats private constructor(private val chats: MutableList<Chat>, cur
         /** The store's file in the chats folder (no `.json`: never taken for a chat, never listed or synced). */
         const val FILE = ".manager_chats"
 
+        /**
+         * Owner 2026-11-14 ("chat naming needs to be procedural as the conversation goes on"): a chat is named after its
+         * first exchange, then renamed as it moves on: after 2 more of your messages, then every 3 while it is young (up to
+         * 9), then every 5. A long new message (over 600 characters) can retitle a turn sooner (after 2).
+         */
+        fun titleDue(userTurns: Int, lastAt: Int, hasAuto: Boolean, lastUserChars: Int = 0): Boolean {
+            if (userTurns <= 0) return false
+            if (!hasAuto) return true
+            val since = userTurns - lastAt
+            val step = when { lastAt <= 1 -> 2; lastAt < 9 -> 3; else -> 5 }
+            return since >= step || (since >= 2 && lastUserChars > 600)
+        }
+
         /** talks.js `migrate`: nothing saved yet, so the whole main conversation so far is the first chat. */
         fun fresh(): ManagerChats = ManagerChats(mutableListOf(Chat(0, 0L)), 0)
 
@@ -211,7 +235,8 @@ class ManagerChats private constructor(private val chats: MutableList<Chat>, cur
                     val x = a.optJSONObject(i) ?: continue
                     list += Chat(x.optInt("g", i), x.optLong("c"), x.optString("title").ifEmpty { null }, x.optBoolean("named"),
                         if (x.has("pin")) x.optLong("pin") else null, x.optBoolean("unseen"),
-                        if (x.has("del")) x.optLong("del") else null, x.optBoolean("purged"))
+                        if (x.has("del")) x.optLong("del") else null, x.optBoolean("purged"),
+                        x.optString("auto").ifEmpty { null }, x.optInt("autoN"))
                 }
                 if (list.isEmpty()) return fresh()
                 list.sortWith(compareBy<Chat>({ it.start }, { it.g }))

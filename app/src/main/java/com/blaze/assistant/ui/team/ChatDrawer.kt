@@ -150,6 +150,28 @@ object ChatModeRuntime {
         val c = chats()
         c.replied(c.live, viewing)
         changed()
+        autoTitle(c, c.live)
+    }
+
+    /**
+     * Owner 2026-11-14: the chat's title follows the conversation ([ManagerChats.titleDue]): one small background call
+     * ([Titles.ask]) names it from what most of it is about. Never for a chat you named; a failed call tries next turn.
+     */
+    private fun autoTitle(c: ManagerChats, g: Int) {
+        if (!com.blaze.assistant.agent.Settings.autoTitles) return
+        val ch = c.get(g) ?: return
+        if (ch.named || ch.gone) return
+        val w = c.window(g) ?: return
+        val lines = Agent.messages.value.filter { it.at in w }.map(::msg).filter { it.listable }.map { it.user to it.text }
+        if (lines.lastOrNull()?.first != false) return   // only once the chat ends with ARGUS's answer
+        val n = lines.count { it.first }
+        if (!ManagerChats.titleDue(n, ch.autoN, ch.auto != null, lines.last { it.first }.second.length)) return
+        val current = ch.auto ?: ChatDrawerModel.clean(lines.first { it.first }.second)
+        io.launch {
+            val r = try { com.blaze.assistant.agent.Titles.ask("manager-$g", current, lines) } catch (t: Throwable) { null } ?: return@launch
+            synchronized(this@ChatModeRuntime) { chats().autoTitle(g, r.title, n) }
+            changed()
+        }
     }
 
     fun open(g: Int) { if (chats().open(g)) changed() }

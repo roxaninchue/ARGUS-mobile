@@ -103,4 +103,22 @@ class ManagerChatsTest {
         val back = ManagerChats.read("{\"v\":1,\"cur\":0,\"list\":[{\"g\":0,\"c\":0,\"purged\":true}]}")
         assertEquals(1, back.live); assertEquals(1, back.cur); assertFalse(back.get(1)!!.gone)
     }
+
+    /** Owner 2026-11-14: chat names follow the conversation. */
+    @Test fun autoTitlesComeAfterTheFirstExchangeThenAsTheChatMovesOn() {
+        assertFalse(ManagerChats.titleDue(0, 0, false))
+        assertTrue(ManagerChats.titleDue(1, 0, false))
+        assertFalse(ManagerChats.titleDue(2, 1, true)); assertTrue(ManagerChats.titleDue(3, 1, true))
+        assertFalse(ManagerChats.titleDue(5, 3, true)); assertTrue(ManagerChats.titleDue(6, 3, true))
+        assertTrue(ManagerChats.titleDue(5, 3, true, lastUserChars = 900))
+        assertFalse(ManagerChats.titleDue(13, 9, true)); assertTrue(ManagerChats.titleDue(14, 9, true))
+        val m = ManagerChats.fresh()
+        m.autoTitle(0, "  Weekly   Plans ", 1)
+        val back = ManagerChats.read(m.toJson())
+        assertEquals("Weekly Plans", back.get(0)!!.auto); assertEquals(1, back.get(0)!!.autoN)
+        back.rename(0, "Mine")
+        assertEquals("Mine", back.get(0)!!.title); assertEquals("Weekly Plans", back.get(0)!!.auto)
+        back.purge(0)
+        assertNull(back.get(0)!!.auto)
+    }
 }

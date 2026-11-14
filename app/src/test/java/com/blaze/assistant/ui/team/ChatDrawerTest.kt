@@ -133,4 +133,19 @@ class ChatDrawerTest {
         assertTrue(src.contains("systemGestureExclusion"))
         assertTrue(src.contains("ModalNavigationDrawer"))
     }
+
+    /** Owner 2026-11-14: the drawer shows ARGUS's title once given; a name you gave still wins. */
+    @Test fun drawerShowsTheAutoTitleUnlessNamed() {
+        val zone = java.time.ZoneId.of("Africa/Lusaka")
+        val m = com.blaze.assistant.agent.ManagerChats.fresh()
+        val msgs = listOf(ChatDrawerModel.Msg(true, "What's on for today?", 10L), ChatDrawerModel.Msg(false, "Two meetings.", 11L))
+        fun title() = ChatDrawerModel.state(m, msgs, emptyList(), 20L, zone).sections.flatMap { it.entries }.single().title
+        assertEquals("What's on for today?", title())
+        m.autoTitle(0, "Today's Schedule", 1)
+        assertEquals("Today's Schedule", title())
+        m.rename(0, "Mine")
+        assertEquals("Mine", title())
+        m.rename(0, "")
+        assertEquals("Today's Schedule", title())
+    }
 }

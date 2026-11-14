@@ -95,7 +95,7 @@ object ChatDrawerModel {
         val raw = ArrayList<Pair<Entry, List<String>>>()
         for (a in by.values) {
             if (a.n == 0) continue   // talks.js: only chats with something in them are listed
-            val title = (if (a.c.named) a.c.title else null) ?: clean(a.first.ifEmpty { a.firstA }).ifEmpty { NEW_TITLE }
+            val title = (if (a.c.named) a.c.title else null) ?: a.c.auto ?: clean(a.first.ifEmpty { a.firstA }).ifEmpty { NEW_TITLE }
             val cur = onManager && a.c.g == chats.cur
             raw += Entry(ChatDrawerModel.Key.Manager(a.c.g), title, a.at, a.c.pin, cur, a.c.unseen && !cur, replying == a.c.g) to a.hay
         }
