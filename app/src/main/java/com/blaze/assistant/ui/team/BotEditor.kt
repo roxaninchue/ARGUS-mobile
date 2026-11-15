@@ -79,7 +79,7 @@ fun NewBotSheet(onChoice: (NewBotChoice) -> Unit, onDismiss: () -> Unit) {
 fun TemplateSheet(templates: List<BotTemplate>, onPick: (BotTemplate) -> Unit, onDismiss: () -> Unit) {
     val c = Argus.colors
     ArgusSheet(onDismiss = onDismiss, title = tr("From a template")) {
-        Column(Modifier.fillMaxWidth().heightIn(max = 520.dp).verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(520.dp)).verticalScroll(rememberScrollState())) {
             var last = ""
             for (t in templates) {
                 if (t.group != last) {
@@ -149,7 +149,7 @@ fun BotEditorSheet(
     val d = state.draft
     var wheel by remember { mutableStateOf(false) }
     ArgusSheet(onDismiss = onDismiss, title = state.title, primary = state.primary, onPrimary = onSave, primaryEnabled = state.canSave) {
-        Column(Modifier.fillMaxWidth().heightIn(max = 620.dp).verticalScroll(rememberScrollState()).padding(horizontal = 6.dp),
+        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(620.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 6.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Look first: the orb as it will show
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center) {

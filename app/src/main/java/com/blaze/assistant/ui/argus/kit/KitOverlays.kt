@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui.argus.kit
 
+import androidx.compose.foundation.verticalScroll
+
 import com.blaze.assistant.i18n.tr
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -69,14 +71,21 @@ fun ArgusSheet(
     primaryKind: ButtonKind = ButtonKind.PRIMARY,
     primaryEnabled: Boolean = true,
     cancel: String = "Cancel",
+    bodyMax: androidx.compose.ui.unit.Dp = androidx.compose.ui.unit.Dp.Unspecified,
+    scroll: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Argus.colors
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // Landscape overhaul: never taller than the window under the status bar (a phone on its side is ~360 dp), and the
+    // body scrolls between the title and the pinned action row. [bodyMax] is the cap a sheet was designed with upright;
+    // [scroll] = false for a body that scrolls itself (a list with a sticky search above it).
+    val sheetMax = com.blaze.assistant.ui.common.WindowUi.sheetMaxHeight()
+    val bodyCap = if (bodyMax == androidx.compose.ui.unit.Dp.Unspecified) null else com.blaze.assistant.ui.common.WindowUi.sheetBody(bodyMax)
     val tint = ArgusGlassRule.tint(c.palette, GlassLevel.SHEET, ArgusGlassRule.Mode.TINT)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        modifier = modifier,
+        modifier = modifier.heightIn(max = sheetMax),
         sheetState = state,
         shape = RoundedCornerShape(topStart = ArgusTokens.Radius.SHEET.dp, topEnd = ArgusTokens.Radius.SHEET.dp),
         containerColor = tint?.let { kc(it) } ?: c.sheet,
@@ -91,7 +100,9 @@ fun ArgusSheet(
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
             if (!title.isNullOrBlank()) Text(tr(title), style = ArgusType.sheetTitle, color = c.ink,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).semantics { heading() })
-            Column(Modifier.fillMaxWidth().weight(1f, fill = false).padding(horizontal = 8.dp), content = content)
+            Column(Modifier.fillMaxWidth().weight(1f, fill = false).then(if (bodyCap != null) Modifier.heightIn(max = bodyCap) else Modifier)
+                .then(if (scroll) Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()) else Modifier)
+                .padding(horizontal = 8.dp), content = content)
             if (primary != null) Row(
                 Modifier.fillMaxWidth().heightIn(min = KitSpec.Sheet.ACTION_ROW.dp).padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,

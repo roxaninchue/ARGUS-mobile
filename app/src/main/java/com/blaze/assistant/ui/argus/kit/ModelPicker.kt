@@ -87,7 +87,7 @@ fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
     var query by remember { mutableStateOf("") }
     val rows = remember(list, choice) { ModelList.rows(list) { ModelPick.isDown(it) } }
     val shown = remember(rows, query) { ModelList.filter(rows, query) }
-    ArgusSheet(onDismiss = onDismiss, title = tr("Model")) {
+    ArgusSheet(onDismiss = onDismiss, title = tr("Model"), scroll = false) {
         val picked = list.firstOrNull { it.key == choice.key }
         val pickedRow = if (choice.auto) null else ModelList.rowOf(rows, choice.key)
         val pickedDown = !choice.auto && ModelPick.isDown(choice.key)

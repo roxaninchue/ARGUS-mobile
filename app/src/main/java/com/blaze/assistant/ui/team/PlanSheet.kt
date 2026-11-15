@@ -35,7 +35,7 @@ fun PlanSheet(plan: Router.Plan, instant: Boolean, onInstant: (Boolean) -> Unit,
     ArgusSheet(onDismiss = onCancel, title = PlanSheetModel.TITLE, primary = PlanSheetModel.button(plan), onPrimary = onApply,
         primaryEnabled = PlanSheetModel.enabled(plan)) {
         Text(PlanSheetModel.sub(plan), style = ArgusType.preview, color = c.mute, modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 8.dp))
-        Column(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(360.dp)).verticalScroll(rememberScrollState())) {
             for (l in PlanSheetModel.lines(plan)) Row(
                 Modifier.fillMaxWidth().heightIn(min = KitSpec.TARGET.dp).padding(horizontal = 12.dp, vertical = 6.dp).semantics(mergeDescendants = true) {},
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),

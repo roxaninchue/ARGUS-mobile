@@ -1,5 +1,8 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.readableWidth
+
 
 import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
@@ -333,7 +336,7 @@ fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismi
                 Text("\u00d7", style = TextStyle(fontFamily = Type.Sans, fontSize = 18.sp, color = c.sub))
             }
         }
-        Column(Modifier.fillMaxWidth().heightIn(max = 320.dp).verticalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp)) {
+        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(320.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp)) {
             rows.forEachIndexed { i, v ->
                 Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (i == 0 && q.isNotEmpty()) c.faint else Color.Transparent)
                     .clickable { onPick(v) }.padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -366,7 +369,8 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
     val views = remember(q) { if (q.isBlank()) Views.all.take(6) else Views.filter(q).take(8) }
     // 0.52.2: one ARGUS look (it covers the chat, so it draws its own ground).
     Box(Modifier.fillMaxSize().background(c.paper).glassBackground(c.dark)) {
-    Column(Modifier.fillMaxSize()) {
+    // Landscape overhaul: clear of the cutout, field and results at a readable width; unchanged upright
+    Column(Modifier.fillMaxSize().cutoutSafe().readableWidth()) {
         Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             // v0.28.3: the shared round BackButton.
             BackButton(onDismiss)
@@ -627,7 +631,7 @@ fun PlusMenu(items: List<PlusItem>, onPick: (String) -> Unit) {
     val look = com.blaze.assistant.ui.space.spaceLook()
     // Unification 6/9: a floating card at the composer's inset; it ran edge to edge, top-rounded, dark glass only
     Column(Modifier.fillMaxWidth().padding(bottom = 6.dp).composerPanel(com.blaze.assistant.ui.space.SpaceShapes.card)
-        .heightIn(max = 480.dp).verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
+        .heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(480.dp)).verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
         items.forEach { it ->
             Row(Modifier.fillMaxWidth().clickable { onPick(it.id) }.padding(horizontal = 18.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 // 0.52.4: an icon tile instead of a dot; a mode that is on (Plan, Autopilot) gets the solid tile
