@@ -11,8 +11,8 @@ import java.time.ZoneId
  * Ported from A-team `app/www/talks.js` (branch v2.19-chat-drawer, 0788c808; MIT by owner grant): `index` (one pass
  * over the Manager's messages: first user line, last activity, searchable text up to 8,000 characters), `listable`,
  * `clean` + `title` (60 characters, cut at a word after 36, "New chat" when there is nothing), `listHTML` (search over
- * titles, then message text with a snippet 24 characters before the match and 48 after; Pinned first by pin time, then
- * Today / Yesterday / Previous 7 days / Older by last activity; "No chats match." / "No chats yet…") and `rowHTML`
+ * titles, then message text with a snippet 24 characters before the match and 48 after; then
+ * Today / Yesterday / Previous 7 days / Older by last activity (talks.js put Pinned first; ARGUS has no chat pins); "No chats match." / "No chats yet…") and `rowHTML`
  * (Replying dot over the unseen dot, never on the open chat).
  *
  * Beyond talks.js: the user's project chats (ChatStore) join the same list, marked with their project's name, because
@@ -113,17 +113,16 @@ object ChatDrawerModel {
         val q = query.trim()
         val shown = if (q.isEmpty()) raw.map { it.first } else raw.mapNotNull { (e, hay) -> match(e, hay, q) }
         if (shown.isEmpty()) return State(emptyList(), if (q.isEmpty()) EMPTY else NO_MATCH)
-        val pins = shown.filter { it.pinnedAt != null }.sortedByDescending { it.pinnedAt }
-        val rest = shown.filter { it.pinnedAt == null }.sortedByDescending { it.at }
+        // Owner 2026-11-15: pinning chats was removed. A chat pinned before keeps its pinnedAt in storage, but it is listed
+        // by its last activity like every other chat (no "Pinned" section, nothing stuck at the top that can't be unpinned).
+        val rest = shown.sortedByDescending { it.at }
         val groups = LinkedHashMap<String, MutableList<Entry>>().apply { GROUPS.forEach { put(it, ArrayList()) } }
         for (e in rest) groups[group(e.at, now, zone)]!! += e
         val out = ArrayList<Section>()
-        if (pins.isNotEmpty()) out += Section(PINNED, pins)
         for ((name, l) in groups) if (l.isNotEmpty()) out += Section(name, l)
         return State(out, null)
     }
 
-    const val PINNED = "Pinned"
     val GROUPS = listOf("Today", "Yesterday", "Previous 7 days", "Older")
 
     /** talks.js grouping: local midnight today, the day before, the 7 days before that, then the rest. */

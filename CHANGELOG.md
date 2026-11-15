@@ -1,3 +1,11 @@
+## Unreleased: pinned facts and pins are gone
+
+Owner (2026-11-15): "get rid of useless features".
+
+- **Pinned facts removed** (message Pin went in cea676cd): no typed "pin this" / "pin: …" / "never forget …" / "unpin …" lane in `Agent`, no `/pin`, no pinned list on "What Argus is holding" (it keeps the chat summary, current task and skills), and no pinned block in any prompt (main, specialist, chat lane). `PinnedStore`, `PinnedFacts`, `MemoryIntent.pinAsk/unpinAsk` and `PinnedFactsTest` deleted; the stored `pinned_facts_v1` setting is left as is and never read. "never forget X" now goes to the model like any message.
+- **Chat and bot pins removed**: no Pin / Unpin in the chat drawer's menu, the Team quick sheet (`QuickAction.PIN/UNPIN`, `TeamActions.setPinned`) or the bot row's swipe / TalkBack action (Mute stays). A chat pinned before keeps `pinnedAt` in storage but is listed by its last activity (no "Pinned" section). Bots already pinned (the Manager, Demo team, A-team imports) stay on the Team pin strip.
+- Tests: `HoldingTest` (3, replaces `PinnedFactsTest`); `ChatDrawerTest`, `P1FixturesTest`, `TeamModelTest`, `TeamShotsTest`, `KitShotsTest` updated.
+
 ## Unreleased: the thought streams in, and replies with code and lists read cleanly
 
 Seen (owner, 2026-11-15 22:36 and 23:10, Ministral 8B): a pending reply showed only a big shimmering "Thinking", never the thought; a reply with inline code had tall, square grey blocks that jammed the lines, and wrapped bullet lines went back under the bullet.

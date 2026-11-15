@@ -107,7 +107,7 @@ fun ShellPreview() {
             Column(Modifier.fillMaxSize()) {
                 ArgusTopBar(initial = "F", onMe = {}, onMeLong = {}, onSearch = {}, onBell = {}, bellBadge = true, onPlus = {})
                 Box(Modifier.weight(1f).fillMaxWidth()) {
-                    TeamMode(P1Fixtures.teamState(), P1Fixtures.bots, TeamNav(), { _, _ -> }, {}, {})
+                    TeamMode(P1Fixtures.teamState(), P1Fixtures.bots, TeamNav(), {}, {})
                 }
             }
             // the notch is drawn over the content below, centred in the bar (ChatScreen's overlay)
@@ -125,7 +125,7 @@ fun ShellPreview() {
 fun TeamPreview(empty: Boolean) {
     val s = if (empty) P1Fixtures.emptyTeamState() else P1Fixtures.teamState()
     val bots = if (empty) mapOf(BotRules.MANAGER_ID to P1Fixtures.manager) else P1Fixtures.bots
-    TeamMode(s, bots, TeamNav(), { _, _ -> }, {}, {})
+    TeamMode(s, bots, TeamNav(), {}, {})
 }
 
 /** P1-SH-03 Atlas's thread with a live turn. */

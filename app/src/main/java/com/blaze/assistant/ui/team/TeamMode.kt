@@ -74,7 +74,6 @@ fun TeamMode(
     state: TeamState,
     bots: Map<String, Bot>,
     nav: TeamNav,
-    onPin: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
     onDemoTeam: () -> Unit,
     modifier: Modifier = Modifier,
@@ -130,7 +129,7 @@ fun TeamMode(
             item(key = "manager") { BotChatRow(m, { nav.openBot(m.id) }, onLongClick = { longPress(m.id) }, avatar = avatar(m.id, m.name, OrbSize.MD)) }
         }
         items(state.rows, key = { it.id }) { r ->
-            BotChatRow(r, { nav.openBot(r.id) }, onLongClick = { longPress(r.id) }, onPin = { onPin(r.id, !r.pinned) },
+            BotChatRow(r, { nav.openBot(r.id) }, onLongClick = { longPress(r.id) },
                 avatar = avatar(r.id, r.name, OrbSize.MD))
         }
         item(key = "jobs") {
@@ -149,8 +148,6 @@ fun TeamMode(
                 sheetFor = null
                 when (a) {
                     QuickAction.OPEN -> nav.openBot(b.id)
-                    QuickAction.PIN -> onPin(b.id, true)
-                    QuickAction.UNPIN -> onPin(b.id, false)
                     QuickAction.MEMORY -> nav.memory(b.id)
                     QuickAction.EDIT_SOUL -> nav.editSoul(b.id)
                     QuickAction.DELETE -> confirmDelete = b
@@ -209,7 +206,6 @@ fun TeamModeScreen(
     val s = state ?: return
     TeamMode(
         s, bots, nav,
-        onPin = { id, on -> scope.launch { withContext(Dispatchers.IO) { actions.setPinned(id, on) }; tick++ } },
         onDelete = { id -> scope.launch { withContext(Dispatchers.IO) { actions.delete(id) }; tick++ } },
         onDemoTeam = { scope.launch { withContext(Dispatchers.IO) { actions.addDemoTeam(clock()) }; tick++ } },
         modifier = modifier,

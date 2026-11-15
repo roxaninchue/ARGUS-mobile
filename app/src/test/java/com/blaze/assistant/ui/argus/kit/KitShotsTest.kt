@@ -55,8 +55,8 @@ class KitShotsTest {
             NeedYouBanner(3, listOf("Nova", "Atlas"), {})
             NeedYouBanner(1, listOf("Ledger"), {}, approvalsOnly = true)
             PinStrip(pins, {}, onReorder = {})
-            BotChatRow(argus, {}, onLongClick = {}, onPin = {}, onMute = {})
-            BotChatRow(nova, {}, onLongClick = {}, onPin = {}, onMute = {})
+            BotChatRow(argus, {}, onLongClick = {}, onMute = {})
+            BotChatRow(nova, {}, onLongClick = {}, onMute = {})
             BotChatRow(atlas, {}, onLongClick = {})
             MenuRow("bot", "New bot", {}, sub = "Blank, from a template, or describe it")
             MenuRow("trash", "Delete bot", {}, danger = true)
@@ -132,9 +132,9 @@ class KitShotsTest {
             assertTrue(n.config.contains(SemanticsActions.OnLongClick))
         }
         val novaActions = rule.onNodeWithContentDescription(KitA11y.botRow(nova)).fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label }
-        assertEquals(listOf("Pin", "Mute"), novaActions)
+        assertEquals(listOf("Mute"), novaActions)   // no Pin / Unpin (pins removed, owner 2026-11-15)
         val argusActions = rule.onNodeWithContentDescription(KitA11y.botRow(argus)).fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label }
-        assertEquals(listOf("Unpin", "Mute"), argusActions)
+        assertEquals(listOf("Mute"), argusActions)
         for (p in pins) assertEquals(0, rule.onNodeWithContentDescription(KitA11y.pin(p)).fetchSemanticsNode().children.size)
         assertEquals(0, rule.onNodeWithContentDescription(KitA11y.banner(3, listOf("Nova", "Atlas"))).fetchSemanticsNode().children.size)
         val sel = rule.onNodeWithContentDescription(KitA11y.chip(chips[0], true)).fetchSemanticsNode()

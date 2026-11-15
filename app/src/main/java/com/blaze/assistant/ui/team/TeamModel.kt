@@ -146,21 +146,23 @@ object TeamModel {
     }
 }
 
-/** The long-press quick sheet (A-team bot sheet): Open, Pin / Unpin, Memory, Edit soul, Delete. */
+/**
+ * The long-press quick sheet (A-team bot sheet): Open, Memory, Edit soul, Delete. Pin / Unpin were removed with chat pins
+ * (owner 2026-11-15, "get rid of useless features"); a bot's stored `pinned` (the Manager, Demo team, A-team imports) still
+ * puts it on the PinStrip.
+ */
 enum class QuickAction(val label: String, val icon: String) {
-    OPEN("Open", "message-circle"), PIN("Pin", "pin"), UNPIN("Unpin", "pin-off"), MEMORY("Memory", "brain"),
+    OPEN("Open", "message-circle"), MEMORY("Memory", "brain"),
     EDIT_SOUL("Edit soul", "scroll-text"), DELETE("Delete", "trash");
 
     companion object {
         /**
-         * The actions for [b]. The Manager has no Delete (it can never be deleted) and no Pin / Unpin (it is always pinned:
-         * BotRules locks `pinned`). Groups (ROOM) have no soul to edit.
+         * The actions for [b]. The Manager has no Delete (it can never be deleted). Groups (ROOM) have no soul to edit.
          */
         fun of(b: Bot): List<QuickAction> {
             val mgr = BotRules.isManager(b)
             return buildList {
                 add(OPEN)
-                if (!mgr) add(if (b.pinned) UNPIN else PIN)
                 add(MEMORY)
                 if (b.kind != BotKind.ROOM) add(EDIT_SOUL)
                 if (BotRules.canDelete(b.id)) add(DELETE)
@@ -171,14 +173,6 @@ enum class QuickAction(val label: String, val icon: String) {
 
 /** What the Team screen writes (all through [TeamStore], so the Manager's locks hold). */
 class TeamActions(private val store: TeamStore) {
-    /** Persists pinned on [id]; refused for the Manager (always pinned). */
-    fun setPinned(id: String, pinned: Boolean): TeamStore.Result {
-        val b = store.get(id) ?: return TeamStore.Result.Refused("No bot $id.")
-        if (BotRules.isManager(b)) return TeamStore.Result.Refused("${BotRules.MANAGER_NAME} is always pinned.")
-        if (b.pinned == pinned) return TeamStore.Result.Ok(b)
-        return store.update(b.copy(pinned = pinned))
-    }
-
     fun delete(id: String): TeamStore.Result = store.delete(id)
 
     /**

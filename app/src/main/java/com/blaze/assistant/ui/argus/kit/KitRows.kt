@@ -73,8 +73,8 @@ object KitColors {
 /**
  * P1-SH-02 `BotChatRow` (A-team `crow()`, 04 §2.8 item 7): orb md · name (16/620) + time (12.5 meta) on one baseline ·
  * preview (14 mute; red bold when overdue, green when all clear) · 10 dp unread dot. Manager row: gold tint 7 % + "Lead".
- * Pressed = `glassFill2` + rim. Long-press → [onLongClick] (the quick sheet, P1-TM-03). Swipe toward the end → [onPin],
- * toward the start → [onMute]; the row snaps back, and both are also TalkBack custom actions. One merged node
+ * Pressed = `glassFill2` + rim. Long-press → [onLongClick] (the quick sheet, P1-TM-03). Swipe toward the start → [onMute];
+ * the row snaps back, and it is also a TalkBack custom action. (The pin swipe was removed with pins, owner 2026-11-15.) One merged node
  * ([KitA11y.botRow]). No fixed height, so it grows at 200 % font.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,17 +84,15 @@ fun BotChatRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
-    onPin: (() -> Unit)? = null,
     onMute: (() -> Unit)? = null,
     color: Long? = null,
     avatar: @Composable () -> Unit = { KitAvatar(model.name, model.manager, OrbSize.MD, color) },
 ) {
-    if (onPin == null && onMute == null) { BotChatRowBody(model, onClick, modifier, onLongClick, onPin, onMute, avatar); return }
+    if (onMute == null) { BotChatRowBody(model, onClick, modifier, onLongClick, onMute, avatar); return }
     val state = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
         when (v) {
-            SwipeToDismissBoxValue.StartToEnd -> onPin?.invoke()
-            SwipeToDismissBoxValue.EndToStart -> onMute?.invoke()
-            SwipeToDismissBoxValue.Settled -> Unit
+            SwipeToDismissBoxValue.EndToStart -> onMute()
+            SwipeToDismissBoxValue.StartToEnd, SwipeToDismissBoxValue.Settled -> Unit
         }
         false // never dismiss: the row stays, the action ran
     })
@@ -102,25 +100,23 @@ fun BotChatRow(
     SwipeToDismissBox(
         state = state,
         modifier = modifier,
-        enableDismissFromStartToEnd = onPin != null,
-        enableDismissFromEndToStart = onMute != null,
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true,
         backgroundContent = {
-            if (state.dismissDirection == SwipeToDismissBoxValue.Settled) return@SwipeToDismissBox
-            val toEnd = state.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+            if (state.dismissDirection != SwipeToDismissBoxValue.EndToStart) return@SwipeToDismissBox
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = if (toEnd) Arrangement.Start else Arrangement.End) {
-                val (icon, label) = if (toEnd) (if (model.pinned) "pin-off" to "Unpin" else "pin" to "Pin") else "bell" to (if (model.muted) "Unmute" else "Mute")
-                Icon(Lucide.icon(icon, 20), null, Modifier.size(20.dp), tint = c.mute)
-                Text(tr(label), style = ArgusType.tool, color = c.mute, modifier = Modifier.padding(start = 6.dp))
+                horizontalArrangement = Arrangement.End) {
+                Icon(Lucide.icon("bell", 20), null, Modifier.size(20.dp), tint = c.mute)
+                Text(tr(if (model.muted) "Unmute" else "Mute"), style = ArgusType.tool, color = c.mute, modifier = Modifier.padding(start = 6.dp))
             }
         },
-    ) { BotChatRowBody(model, onClick, Modifier, onLongClick, onPin, onMute, avatar) }
+    ) { BotChatRowBody(model, onClick, Modifier, onLongClick, onMute, avatar) }
 }
 
 @Composable
 private fun BotChatRowBody(
     model: BotRowModel, onClick: () -> Unit, modifier: Modifier, onLongClick: (() -> Unit)?,
-    onPin: (() -> Unit)?, onMute: (() -> Unit)?, avatar: @Composable () -> Unit,
+    onMute: (() -> Unit)?, avatar: @Composable () -> Unit,
 ) {
     val c = Argus.colors
     val p = c.palette
@@ -134,7 +130,6 @@ private fun BotChatRowBody(
     }
     val desc = KitA11y.botRow(model)
     val actions = buildList {
-        if (onPin != null) add(CustomAccessibilityAction(if (model.pinned) "Unpin" else "Pin") { onPin(); true })
         if (onMute != null) add(CustomAccessibilityAction(if (model.muted) "Unmute" else "Mute") { onMute(); true })
     }
     Row(

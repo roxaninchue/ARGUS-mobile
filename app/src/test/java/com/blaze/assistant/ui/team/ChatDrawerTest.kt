@@ -33,18 +33,25 @@ class ChatDrawerTest {
         return m to msgs
     }
 
-    @Test fun groupsPinnedThenTodayYesterdaySevenDaysOlder() {
+    @Test fun groupsTodayYesterdaySevenDaysOlderAndAnOldPinIsJustRecency() {
         val (m, msgs) = five()
-        m.pin(1, now)   // the 8 Nov chat
+        m.pin(1, now)   // the 8 Nov chat, pinned before chat pins were removed (owner 2026-11-15)
         val s = ChatDrawerModel.state(m, msgs, emptyList(), now, zone)
-        assertEquals(listOf("Pinned", "Today", "Yesterday", "Older"), s.sections.map { it.name })
-        assertEquals("Budget for the week", s.sections[0].entries.single().title)
-        assertEquals("Book the dentist", s.sections[1].entries.single().title)
-        assertEquals("Late question", s.sections[2].entries.single().title)
+        assertEquals(listOf("Today", "Yesterday", "Previous 7 days", "Older"), s.sections.map { it.name })
+        assertEquals("Book the dentist", s.sections[0].entries.single().title)
+        assertEquals("Late question", s.sections[1].entries.single().title)
+        assertEquals("Budget for the week", s.sections[2].entries.single().title)
         assertEquals("Old plans for October", s.sections[3].entries.single().title)
         assertFalse(s.entries.any { it.key == Key.Manager(4) })   // the empty newest chat isn't listed
         m.pin(1, now)
-        assertEquals(listOf("Today", "Yesterday", "Previous 7 days", "Older"), ChatDrawerModel.state(m, msgs, emptyList(), now, zone).sections.map { it.name })
+        assertEquals(s.sections.map { it.name to it.entries.map { e -> e.title } },
+            ChatDrawerModel.state(m, msgs, emptyList(), now, zone).sections.map { it.name to it.entries.map { e -> e.title } })
+    }
+
+    @Test fun theDrawerMenuHasNoPin() {
+        val src = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
+            .resolve("com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
+        assertFalse(src.contains("\"Pin\"") || src.contains("\"Unpin\"") || src.contains("pinChat"))
     }
 
     @Test fun groupBoundariesAreLocalMidnights() {

@@ -83,10 +83,10 @@ class P1FixturesTest {
         assertEquals(live.map { it.key }.toSet().size, live.size)
     }
 
-    @Test fun drawerHasPinnedTodayYesterdayOlderAndAProjectChat() {
+    @Test fun drawerHasTodayYesterdayOlderAndAProjectChat() {
         val s = P1Fixtures.drawerState()
         assertNull(s.empty)
-        assertEquals("Pinned", s.sections.first().name)
+        assertFalse(s.sections.any { it.name == "Pinned" })   // chat pins removed (owner 2026-11-15); an old pin is just recency
         assertTrue(s.sections.map { it.name }.containsAll(listOf("Today", "Yesterday")))
         assertTrue(s.entries.any { it.key is ChatDrawerModel.Key.Project })
         assertTrue(s.entries.any { it.live })

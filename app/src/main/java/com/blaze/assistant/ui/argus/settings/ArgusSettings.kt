@@ -37,7 +37,7 @@ object ArgusSettings {
     val GROUPS: List<Group> = listOf(
         Group(null, listOf(
             Row("knows", "What the team knows", "brain", "memory", listOf("memory", "remember", "learned", "profile", "facts")),
-            Row("holding", "What ${BrandName.NAME} is holding", "pin", "holding", listOf("pinned", "summary", "task")),
+            Row("holding", "What ${BrandName.NAME} is holding", "brain", "holding", listOf("summary", "task", "skills")),
             Row("approvals", "Approvals & app lock", "shield-check", "privacy", listOf("security", "approvals", "ask before", "lock", "bank mode", "risky")),
         )),
         Group("Team", listOf(

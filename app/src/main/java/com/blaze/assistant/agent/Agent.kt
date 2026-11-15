@@ -361,12 +361,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     val turnStartAt: Long get() = cur.turnAt
 
     /**
-     * Unreleased after 0.52.3 ("What Argus is holding"): the pinned facts, and from the open chat its LongChat rolling
-     * summary, the GoalPin task and the skills its last turn loaded. Read-only; never builds the placeholder chat.
+     * Unreleased after 0.52.3 ("What Argus is holding"): from the open chat its LongChat rolling summary, the GoalPin task
+     * and the skills its last turn loaded. Read-only; never builds the placeholder chat. (Pinned facts were removed.)
      */
     fun holding(): Holding.Snapshot {
         val s = curRef
-        return Holding.Snapshot(PinnedStore.all(), s?.lcSummary.orEmpty(), s?.turnGoal, s?.turnSkills?.full?.map { it.name }.orEmpty())
+        return Holding.Snapshot(s?.lcSummary.orEmpty(), s?.turnGoal, s?.turnSkills?.full?.map { it.name }.orEmpty())
     }
 
     /** v0.45.0 (#12): idle chats leave memory (SessionTrim); they reload from disk when opened again. */
@@ -992,7 +992,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         sessions[id]?.let { it.title = t.trim().ifEmpty { "Chat" }; it.titleSource = Titles.MANUAL }
         refreshChats()
     }
-    fun pinChat(id: String, p: Boolean) { ChatStore.setPinned(id, p); sessions[id]?.pinned = p; refreshChats() }
 
     /**
      * A reply typed into a notification's Reply box. It goes back to the conversation that notification
@@ -2429,28 +2428,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     persist(); announce()
                     return@launch
                 }
-                // Unreleased after 0.52.3 pinned facts: "pin this" / "pin: X" / "never forget X" / "unpin X" are done on the phone
-                // (PinnedStore; no model call). "pin this" pins the message before it. A private chat keeps nothing.
-                if (single && attachments.isEmpty() && !routine && agentId == null && notificationContext.isNullOrBlank()) {
-                    val pinAsk = MemoryIntent.pinAsk(shown)
-                    val unpinAsk = if (pinAsk == null) MemoryIntent.unpinAsk(shown) else null
-                    if (pinAsk != null || unpinAsk != null) {
-                        val uid = users.first().id
-                        val reply = when {
-                            isPrivate -> "This is a private chat, so nothing from it is kept. Pin it from a regular chat."
-                            unpinAsk != null -> PinnedStore.unpinMatching(unpinAsk)
-                            pinAsk!!.refersBack -> msgs.lastOrNull { it.id < uid && (it.role == Role.BLAZE || it.role == Role.USER) && it.text.isNotBlank() }
-                                ?.let { prev -> PinnedStore.pin(RapidMessages.display(ToolLeak.bubbleText(prev.text))) }
-                                ?: "There's nothing above to pin. Say “pin: …” with what to keep."
-                            else -> PinnedStore.pin(pinAsk?.fact.orEmpty())
-                        }
-                        history.put(JSONObject().put("role", "assistant").put("content", reply))
-                        addReply(-1, reply, "", meta = "⚡ ${BrandName.NAME} itself")
-                        mood = Mood.IDLE
-                        persist(); announce()
-                        return@launch
-                    }
-                }
                 // Fast lane: direct commands run on-device in well under a second.
                 val offline = !FastLane.online(app)
                 // Plan mode and background agents skip the fast lane: it acts on the phone without the tool gate.
@@ -3099,13 +3076,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val sp = specialist
             val sys = if (sp != null) Playbooks.specialistSystem(sp, Playbooks.forSpec(sp), SpecialistMatch.brief(sp, SkillMatch.cached()),
                     SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date()), Memory.promptBlock(lastUserText()), agentId) +
-                    Modes.promptLine(agentPlan) + (if (Settings.longChat && rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") + PinnedStore.block()
+                    Modes.promptLine(agentPlan) + (if (Settings.longChat && rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "")
                 else systemPrompt(lastUserText(), turnSkills.full.map { it.name }.toSet(), id, awareFull,
                     promptGroups, turnView != null || turnDesignNote.isNotEmpty(), promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
                 (if (rung == Mind.Rung.LOOKUP) "\n" + Mind.LOOKUP_RULE + "\n" else "") +
                 cacheBlock +
-                GoalPin.block(turnGoal) + PinnedStore.block() + FollowUpBind.block(turnBind) + TaskMemory.block(turnRef) + (if (agentId == null) TaskMemory.SURFACE_RULE else "") +
+                GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) + TaskMemory.block(turnRef) + (if (agentId == null) TaskMemory.SURFACE_RULE else "") +
                 (agentId?.let { "\nYou are background agent $it, not the main chat. Work alone and finish with the result only." } ?: BgAgents.leadLine()) +
                 (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) + SkillMatch.block(turnSkills) + SpecialistMatch.hint(turnSpecs) +
                 // v0.27.x: "how do I install X" → lead with the action and end with one concrete offer to do it.

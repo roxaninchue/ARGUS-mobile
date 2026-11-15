@@ -181,7 +181,6 @@ object ChatModeRuntime {
 
     fun open(g: Int) { if (chats().open(g)) changed() }
     fun rename(g: Int, t: String) { chats().rename(g, t); changed() }
-    fun pin(g: Int) { val on = chats().pin(g, System.currentTimeMillis()); changed(); ArgusToasts.show(if (on) "Pinned" else "Unpinned") }
 
     /** Delete with Undo (5 s); the window closing purges it. Deleting the newest starts a new one. */
     fun delete(ctx: Context, g: Int) {
@@ -300,10 +299,6 @@ fun ChatModeFrame(
         val k = e.key
         ArgusSheet(onDismiss = { menuFor = null }, title = e.title) {
             MenuRow("pencil", tr("Rename"), { menuFor = null; renaming = e })
-            MenuRow(if (e.pinnedAt != null) "pin-off" else "pin", if (e.pinnedAt != null) "Unpin" else "Pin", {
-                menuFor = null
-                when (k) { is ChatDrawerModel.Key.Manager -> ChatModeRuntime.pin(k.g); is ChatDrawerModel.Key.Project -> Agent.pinChat(k.chatId, e.pinnedAt == null) }
-            })
             if (k is ChatDrawerModel.Key.Manager) MenuRow("copy", tr("Copy"), {
                 menuFor = null
                 val t = ChatDrawerModel.transcript(ChatDrawerModel.messagesOf(chats, k.g, msgs), name?.ifBlank { null } ?: "You", BrandName.NAME)

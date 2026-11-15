@@ -21,7 +21,7 @@ import java.time.ZonedDateTime
 /**
  * P1-TM-03: the Team screen's rules (TeamModel) on a real SQLite team.db. Ports A-team's home checks (ui.test.js rows /
  * header / quick sheet / pins, v215 canDelete): header line, Manager first then recency, pins with overdue dots, the
- * quick sheet (the Manager has no Delete and no Pin toggle), pin / unpin persisting, job counts, empty state, Demo team.
+ * quick sheet (the Manager has no Delete; no Pin toggle since 2026-11-15), stored pins on the strip, job counts, empty state, Demo team.
  */
 class TeamModelTest {
     private val sql = JdbcSql()
@@ -102,25 +102,19 @@ class TeamModelTest {
         assertEquals(listOf(QuickAction.OPEN, QuickAction.MEMORY, QuickAction.EDIT_SOUL), QuickAction.of(m))
         assertFalse(QuickAction.DELETE in QuickAction.of(m))
         val nova = add(bot("nova", "Nova"))
-        assertEquals(listOf(QuickAction.OPEN, QuickAction.PIN, QuickAction.MEMORY, QuickAction.EDIT_SOUL, QuickAction.DELETE), QuickAction.of(nova))
-        assertEquals(QuickAction.UNPIN, QuickAction.of(nova.copy(pinned = true))[1])
+        assertEquals(listOf(QuickAction.OPEN, QuickAction.MEMORY, QuickAction.EDIT_SOUL, QuickAction.DELETE), QuickAction.of(nova))
+        assertEquals(QuickAction.of(nova), QuickAction.of(nova.copy(pinned = true)))   // no Pin / Unpin (owner 2026-11-15)
         assertFalse(QuickAction.EDIT_SOUL in QuickAction.of(bot("room", "Room", BotKind.ROOM)))
         // and the store refuses it anyway
         assertTrue(TeamActions(store).delete(BotRules.MANAGER_ID) is TeamStore.Result.Refused)
         assertTrue(store.get(BotRules.MANAGER_ID) != null)
     }
 
-    @Test fun pinAndUnpinPersist() {
-        add(bot("nova", "Nova"))
-        val actions = TeamActions(store)
-        assertTrue(actions.setPinned("nova", true) is TeamStore.Result.Ok)
-        assertTrue(TeamStore(sql).get("nova")!!.pinned)                       // a fresh store reads it back
+    @Test fun aStoredPinStillReachesThePinStrip() {
+        // Pin / Unpin are gone from the app (owner 2026-11-15); a bot pinned by the Demo team or an A-team import keeps its place.
+        add(bot("nova", "Nova", pinned = true))
         assertEquals(listOf("manager", "nova"), TeamModel.state(null, TeamStore(sql).roster(), emptyList(), JobCounts(), now, zone).pins.map { it.id })
-        assertTrue(actions.setPinned("nova", false) is TeamStore.Result.Ok)
-        assertFalse(TeamStore(sql).get("nova")!!.pinned)
-        assertTrue(actions.setPinned(BotRules.MANAGER_ID, false) is TeamStore.Result.Refused)
         assertTrue(store.get(BotRules.MANAGER_ID)!!.pinned)
-        assertTrue(actions.setPinned("ghost", true) is TeamStore.Result.Refused)
     }
 
     @Test fun jobCounts() {

@@ -48,7 +48,7 @@ object ShotMatrix {
         Screen("team-empty", "P1-TM-03", "Team mode with only the Manager: Build your team + Demo team"),
         Screen("thread", "P1-SH-03", "A bot thread: intro, jobs card, a finished turn's work chip, handoff card, a live turn's activity line"),
         Screen("chat", "P1-SH-04", "Chat mode empty: Manager sphere, serif greeting, suggested asks"),
-        Screen("chat-drawer", "P1-SH-04", "Chat mode history drawer: search, Pinned / Today / Yesterday / Older, unseen and replying dots, project chat"),
+        Screen("chat-drawer", "P1-SH-04", "Chat mode history drawer: search, Today / Yesterday / Older, unseen and replying dots, project chat"),
         Screen("life", "P1-SH-05", "Life mode: day line, Today strip with now mark and all-day chip, life tiles, projects, weather, answer"),
         Screen("settings-you", "P1-SH-06", "Settings You page: name, plan, the three groups, search pill"),
         Screen("settings-appearance", "P1-SH-06", "Appearance: ARGUS look, Theme, Ground, Handedness, Reduced motion"),

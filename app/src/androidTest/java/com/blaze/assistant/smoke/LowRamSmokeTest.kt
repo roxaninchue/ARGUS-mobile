@@ -116,7 +116,7 @@ class LowRamSmokeTest {
                                     profile -> com.blaze.assistant.ui.argus.settings.YouPage("Smoke Test", "smoke@example.com", signedIn = true, planLine = "Pro plan",
                                         onPage = {}, onSignOut = {})
                                     mode == com.blaze.assistant.agent.ChatNav.TEAM -> com.blaze.assistant.ui.team.TeamMode(teamState(), roster.associateBy { it.id },
-                                        com.blaze.assistant.ui.team.TeamNav(), { _, _ -> }, {}, {})
+                                        com.blaze.assistant.ui.team.TeamNav(), {}, {})
                                     mode == com.blaze.assistant.agent.ChatNav.LIFE -> com.blaze.assistant.ui.team.LifeMode(life, com.blaze.assistant.ui.team.LifeNav())
                                     else -> androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize())
                                 }

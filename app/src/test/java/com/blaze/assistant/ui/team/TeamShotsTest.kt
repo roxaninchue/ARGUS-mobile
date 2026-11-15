@@ -30,7 +30,7 @@ import java.time.ZonedDateTime
 /**
  * P1-TM-03 Team mode on Robolectric. Shots (BLAZE_SHOTS=1): the team in light and dark, and the empty "Build your team"
  * state, to build/shots/TeamShotsTest. Always run: the long-press quick sheet offers Delete on a bot and not on the
- * Manager, and a pin toggled from the sheet reaches [onPin].
+ * Manager, and neither sheet offers Pin / Unpin (pins removed, owner 2026-11-15).
  */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -58,10 +58,10 @@ class TeamShotsTest {
     )
     private val jobs = JobCounts(today = 4, overdue = 1, unassigned = 2, open = 8, overdueByBot = mapOf("atlas" to (1 to "Send deck")))
 
-    private fun show(dark: Boolean, roster: List<Bot> = this.roster, onPin: (String, Boolean) -> Unit = { _, _ -> }) {
+    private fun show(dark: Boolean, roster: List<Bot> = this.roster) {
         val s = TeamModel.state("Finn's team", roster, threads, jobs, now, zone)
         rule.setContent {
-            ArgusTheme(dark = dark) { ArgusGround { TeamMode(s, roster.associateBy { it.id }, TeamNav(), onPin, {}, {}) } }
+            ArgusTheme(dark = dark) { ArgusGround { TeamMode(s, roster.associateBy { it.id }, TeamNav(), {}, {}) } }
         }
         rule.mainClock.autoAdvance = false
         rule.mainClock.advanceTimeBy(300); rule.waitForIdle()
@@ -96,14 +96,12 @@ class TeamShotsTest {
         rule.onNodeWithText("Pin").assertDoesNotExist()
     }
 
-    @Test fun botSheetHasDeleteAndPins() {
-        var pinned: Pair<String, Boolean>? = null
-        show(true, onPin = { id, on -> pinned = id to on })
+    @Test fun botSheetHasDeleteAndNoPin() {
+        show(true)
         rule.onNodeWithContentDescription(rowDesc("echo")).performTouchInput { longClick() }
         rule.mainClock.advanceTimeBy(500); rule.waitForIdle()
         rule.onNodeWithText("Delete").assertExists()
-        rule.onNodeWithText("Pin").performClick()
-        rule.mainClock.advanceTimeBy(500); rule.waitForIdle()
-        assertEquals("echo" to true, pinned)
+        rule.onNodeWithText("Pin").assertDoesNotExist()
+        rule.onNodeWithText("Unpin").assertDoesNotExist()
     }
 }
