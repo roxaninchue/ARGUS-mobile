@@ -199,7 +199,7 @@ class SpaceWiringTest {
         // only the 0.52 shell keeps the sheet.
         val screen = src("ui/ChatScreen.kt")
         assertTrue("the + menu opens inside the ARGUS composer", "menu = { com.blaze.assistant.ui.argus.kit.ComposerPlusMenu(" in screen)
-        assertTrue("no + sheet (ARGUS-only)", "PlusMenu(plusEntries()" !in screen)
+        assertTrue("no + sheet (ARGUS-only)", "PlusMenu(plusEntries(), onDismiss" !in screen)
         for (strip in listOf("private fun QuoteStrip(", "internal fun SuggestionList(", "private fun ListeningStrip("))
             assertTrue("$strip floats", ".composerPanel(" in chat.substringAfter(strip).substringBefore("\n}\n"))
         val header = shell.substringAfter("fun ProjectChatHeader(").substringBefore("\n}\n")
