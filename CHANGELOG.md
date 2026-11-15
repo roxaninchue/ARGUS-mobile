@@ -1,3 +1,14 @@
+## Unreleased: the thought streams in, and replies with code and lists read cleanly
+
+Seen (owner, 2026-11-15 22:36 and 23:10, Ministral 8B): a pending reply showed only a big shimmering "Thinking", never the thought; a reply with inline code had tall, square grey blocks that jammed the lines, and wrapped bullet lines went back under the bullet.
+
+- **Why no thought showed:** reasoning only reached the screen from the brain that had already *won* the race (`HedgeRace.Attempt.shows()`), and a brain wins with its first answer word, which comes after its thinking. So every reasoning chunk was dropped until the answer started, for every model. Now the first brain that thinks holds a thinking lane (`Attempt.thoughtShows()`; a dropped one hands it on), its reasoning streams as it arrives, and if another brain wins, the loser's thought is cleared (`takesOverThought`). Ministral 8B itself sends no reasoning (Mistral's API reasons only on its reasoning models), so for it only the small indicator shows.
+- **Every reasoning shape** (`agent/StreamDelta.kt`): `reasoning_content`, `reasoning`, and Mistral's thinking chunks inside a `content` list (streamed and whole), which before could reach the reply as raw JSON. `<think>` tags keep going through `ReplyParts`.
+- **The fold** (`ThoughtSection`, `ThoughtFold.headerShown` / `liveTail`): while it thinks there is no "Thinking" header, just a small breathing brain beside the newest words (a rolling window of ~560 characters); it still folds to "Thought for Ns" once the answer starts, tap to open the whole thought. The waiting sign before any reasoning arrives is a 14 dp brain and a 13 sp muted "Thinking" in the same spot, not the large word.
+- **Inline code** (`ui/MdChips.kt`, `Md.render(rich = true)`, used by chat replies): a rounded 5 dp chip drawn behind the glyphs only (cap height to descender, not the line box), 0.88 em mono, narrow no-break space padding, a light tint (white 10 % dark / black 6 % light, one step over the Argus soft fill). Other places keep the old look.
+- **Lists**: each bullet or numbered item is its own paragraph with a hanging indent (mono marker, wrapped lines start under the text; nested items indent 1.2 em per level). Selecting across list items copies them without line breaks between items (the Copy action copies the original text).
+- Tests: `StreamDeltaTest` (4), `HedgeThoughtTest` (4), `MdChipsTest` (6), `ThoughtFoldTest` (+2).
+
 ## Unreleased: replies that stop mid-list get the room they need, and a cut one says so
 
 Seen (owner, 2026-11-15 19:31): a DeepSeek V4.1 Flash reply stopped at "1. Debonairs Pizza –" and was shown as if finished. The cause: a thinking model spends reasoning tokens out of max_tokens, and chat turns ran on a flat 1,024 (short turns) or the provider's default (the rest, and every Cloud run). Reproduced on the gateway playground: ~7.7K reasoning tokens, then `length` mid-list.

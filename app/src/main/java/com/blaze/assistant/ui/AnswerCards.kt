@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -224,7 +225,11 @@ private const val FADE_STEP = 4
 private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
     val c = LocalBlaze.current
     val codeBg = c.hair.copy(alpha = 0.35f)
-    val shown = remember(md, c.accent, live) { ParseMemo.memo(ParseMemo.md, "${c.accent.value}|${codeBg.value}|" + md, live) { Md.render(md, c.accent, codeBg, live = live) } }
+    // 0.54.2 (owner: "the text layout looks ugly"): rich = inline code as tight rounded chips drawn behind the glyphs
+    // (MdChips) and list items with a hanging indent.
+    val shown = remember(md, c.accent, live) { ParseMemo.memo(ParseMemo.md, "rich|${c.accent.value}|${codeBg.value}|" + md, live) { Md.render(md, c.accent, codeBg, live = live, rich = true) } }
+    val chips = remember(shown) { shown.hasStringAnnotations(MdChips.TAG, 0, shown.length) }
+    val chipFill = MdChips.fill(c.dark)
     // v0.29.9: a soft page-coloured halo inside a bubble, so the words stay crisp with particles drifting across the glass.
     val halo = if (LocalBubble.current != null) GlassBubble.halo(c) else null
     val tracking = tail && live
@@ -262,8 +267,12 @@ private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
             ChatLinks.at(shown, l.getOffsetForPosition(p))?.let { openLink?.invoke(it) }
         })
     }
+    // The chips are drawn under the text from its layout (the lambda changes with the text, so it redraws with it).
+    val mod3 = if (!chips) mod2 else mod2.drawBehind {
+        (holder[1] as? androidx.compose.ui.text.TextLayoutResult)?.let { l -> with(MdChips) { drawCodeChips(l, shown, 15.sp.toPx(), chipFill) } }
+    }
     SelectionContainer {
-        Text(text, modifier = mod2, onTextLayout = { holder[1] = it; if (tracking) aim() },
+        Text(text, modifier = mod3, onTextLayout = { holder[1] = it; if (tracking) aim() },
             style = TextStyle(fontFamily = Type.sansFor(md), fontSize = 15.sp, lineHeight = 23.sp, color = c.body, shadow = halo))
     }
 }

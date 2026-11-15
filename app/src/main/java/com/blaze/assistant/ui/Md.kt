@@ -2,7 +2,10 @@ package com.blaze.assistant.ui
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -42,14 +45,27 @@ object Md {
     }
 
     /** [live] = a reply still streaming: a tag being typed at the very end ("<str") is hidden until it closes. */
-    fun render(src: String, accent: Color, codeBg: Color, live: Boolean = false): AnnotatedString = buildAnnotatedString {
+    /**
+     * [rich] (chat replies, 0.54.2: owner "the text layout looks ugly"): inline code as drawn chips ([MdChips]) and every
+     * bullet / numbered item as its own paragraph with a hanging indent ([MdChips.indentEm]), so a wrapped item's next line
+     * starts under its text, not under the bullet. A paragraph already starts on a new line, so the '\n' next to a list
+     * item is left out (keeping it would add a blank line). Off = the 0.52 output (copy text, speech, cards, tables).
+     */
+    fun render(src: String, accent: Color, codeBg: Color, live: Boolean = false, rich: Boolean = false): AnnotatedString = buildAnnotatedString {
         val lines = src.replace("\r", "").let { if (live) dropLoneMarker(HtmlLite.dropPartialTag(it)) else it }.split('\n')
+        // which lines are list paragraphs (rich only): no '\n' is written on either side of one
+        val item = BooleanArray(lines.size)
+        if (rich) { var code = false; lines.forEachIndexed { k, l ->
+            if (l.trimStart().startsWith("```")) code = !code
+            else if (!code) { val t = tidy(l); item[k] = headingRe.find(t) == null && headingTightRe.find(t) == null && !ruleRe.matches(t) && (bulletRe.find(t) != null || numRe.find(t) != null) }
+        } }
+        fun nl(i: Int) { if (i < lines.lastIndex && !item[i] && !item[i + 1]) append('\n') }
         var inCode = false
         lines.forEachIndexed { i, raw ->
             if (raw.trimStart().startsWith("```")) { inCode = !inCode; return@forEachIndexed }
             if (inCode) {
                 withStyle(SpanStyle(fontFamily = Type.Mono, fontSize = 13.sp, background = codeBg)) { append(raw) }
-                if (i < lines.lastIndex) append('\n'); return@forEachIndexed
+                nl(i); return@forEachIndexed
             }
             var line = tidy(raw)
             val heading = headingRe.find(line) ?: headingTightRe.find(line)
@@ -57,7 +73,7 @@ object Md {
                 heading != null -> {
                     val level = heading.groupValues[1].length
                     withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, fontSize = if (level <= 2) 17.sp else 16.sp)) {
-                        inlines(heading.groupValues[2].trimEnd('#', ' '), accent, codeBg) }
+                        inlines(heading.groupValues[2].trimEnd('#', ' '), accent, codeBg, rich) }
                 }
                 ruleRe.matches(line) -> append("──────────")
                 else -> {
@@ -65,14 +81,25 @@ object Md {
                     val num = numRe.find(line)
                     val quote = quoteRe.find(line)
                     when {
-                        bullet != null -> { append("  ".repeat(bullet.groupValues[1].length / 2) + "•  "); inlines(bullet.groupValues[2], accent, codeBg) }
-                        num != null -> { append("  ".repeat(num.groupValues[1].length / 2) + num.groupValues[2] + ".  "); inlines(num.groupValues[3], accent, codeBg) }
-                        quote != null -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("│ "); inlines(quote.groupValues[1], accent, codeBg) }
-                        else -> inlines(line, accent, codeBg)
+                        item[i] && bullet != null -> listItem(bullet.groupValues[1].length / 2, "\u2022 ", bullet.groupValues[2], accent, codeBg)
+                        item[i] && num != null -> listItem(num.groupValues[1].length / 2, num.groupValues[2] + ". ", num.groupValues[3], accent, codeBg)
+                        bullet != null -> { append("  ".repeat(bullet.groupValues[1].length / 2) + "•  "); inlines(bullet.groupValues[2], accent, codeBg, rich) }
+                        num != null -> { append("  ".repeat(num.groupValues[1].length / 2) + num.groupValues[2] + ".  "); inlines(num.groupValues[3], accent, codeBg, rich) }
+                        quote != null -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("│ "); inlines(quote.groupValues[1], accent, codeBg, rich) }
+                        else -> inlines(line, accent, codeBg, rich)
                     }
                 }
             }
-            if (i < lines.lastIndex) append('\n')
+            if (rich) nl(i) else if (i < lines.lastIndex) append('\n')
+        }
+    }
+
+    /** One list item as its own paragraph: the marker in mono (a known width), wrapped lines hang under the text. */
+    private fun AnnotatedString.Builder.listItem(depth: Int, marker: String, text: String, accent: Color, codeBg: Color) {
+        val (first, rest) = MdChips.indentEm(depth, marker.length)
+        withStyle(ParagraphStyle(textIndent = TextIndent(first.em, rest.em))) {
+            withStyle(SpanStyle(fontFamily = Type.Mono)) { append(marker) }
+            inlines(text, accent, codeBg, chips = true)
         }
     }
 
@@ -92,18 +119,18 @@ object Md {
         append(t.substring(at))
     }
 
-    private fun AnnotatedString.Builder.inlines(s: String, accent: Color, codeBg: Color) {
+    private fun AnnotatedString.Builder.inlines(s: String, accent: Color, codeBg: Color, chips: Boolean = false) {
         var last = 0
         val dark = accent.isUnspecified() || accent.luminance() > 0.5f
         for (m in inline.findAll(s)) {
             plain(s.substring(last, m.range.first), accent)
             val g = m.groupValues
             when {
-                g[1].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { inlines(g[1], accent, codeBg) }
-                g[2].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { inlines(g[2], accent, codeBg) }
-                g[3].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { inlines(g[3], accent, codeBg) }
-                g[4].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { inlines(g[4], accent, codeBg) }
-                g[5].isNotEmpty() -> withStyle(SpanStyle(fontFamily = Type.Mono, fontSize = 13.sp, background = codeBg)) { append(" " + g[5] + " ") }
+                g[1].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { inlines(g[1], accent, codeBg, chips) }
+                g[2].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { inlines(g[2], accent, codeBg, chips) }
+                g[3].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { inlines(g[3], accent, codeBg, chips) }
+                g[4].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { inlines(g[4], accent, codeBg, chips) }
+                g[5].isNotEmpty() -> code(g[5], codeBg, chips)
                 g[6].isNotEmpty() -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(g[6]) }
                 g[8].isNotEmpty() -> {
                     pushStringAnnotation(ChatLinks.TAG, g[8])
@@ -113,9 +140,8 @@ object Md {
                 g[9].isNotEmpty() -> {
                     val inner = g[10]
                     when (g[9]) {
-                        "code", "kbd", "tt", "samp" -> withStyle(SpanStyle(fontFamily = Type.Mono, fontSize = 13.sp, background = codeBg)) {
-                            append(" " + HtmlLite.decodeDisplay(HtmlLite.stripTags(inner)) + " ") }
-                        else -> withStyle(htmlStyle(g[9], accent, dark)) { inlines(inner, accent, codeBg) }
+                        "code", "kbd", "tt", "samp" -> code(HtmlLite.decodeDisplay(HtmlLite.stripTags(inner)), codeBg, chips)
+                        else -> withStyle(htmlStyle(g[9], accent, dark)) { inlines(inner, accent, codeBg, chips) }
                     }
                 }
                 g[11].isNotEmpty() || g[12].isNotEmpty() -> {
@@ -123,12 +149,12 @@ object Md {
                     // only real web / mail links; javascript:, data: and the rest show as plain text
                     if (Regex("^(https?://|mailto:)\\S+$", RegexOption.IGNORE_CASE).matches(href)) {
                         pushStringAnnotation(ChatLinks.TAG, href)
-                        withStyle(SpanStyle(color = accent, textDecoration = TextDecoration.Underline)) { inlines(g[12], accent, codeBg) }
+                        withStyle(SpanStyle(color = accent, textDecoration = TextDecoration.Underline)) { inlines(g[12], accent, codeBg, chips) }
                         pop()
-                    } else inlines(g[12], accent, codeBg)
+                    } else inlines(g[12], accent, codeBg, chips)
                 }
-                g[14].isNotEmpty() -> { val t = HtmlLite.tint(g[13], dark); if (t != null) withStyle(SpanStyle(color = t, fontWeight = FontWeight.Medium)) { inlines(g[14], accent, codeBg) } else inlines(g[14], accent, codeBg) }
-                g[16].isNotEmpty() -> { val t = HtmlLite.tint(g[15], dark); if (t != null) withStyle(SpanStyle(color = t, fontWeight = FontWeight.Medium)) { inlines(g[16], accent, codeBg) } else inlines(g[16], accent, codeBg) }
+                g[14].isNotEmpty() -> { val t = HtmlLite.tint(g[13], dark); if (t != null) withStyle(SpanStyle(color = t, fontWeight = FontWeight.Medium)) { inlines(g[14], accent, codeBg, chips) } else inlines(g[14], accent, codeBg, chips) }
+                g[16].isNotEmpty() -> { val t = HtmlLite.tint(g[15], dark); if (t != null) withStyle(SpanStyle(color = t, fontWeight = FontWeight.Medium)) { inlines(g[16], accent, codeBg, chips) } else inlines(g[16], accent, codeBg, chips) }
                 g[17].isNotEmpty() -> {
                     val hit = ChatLinks.find(g[17]).firstOrNull()
                     if (hit == null) append(g[17]) else {
@@ -143,6 +169,20 @@ object Md {
             last = m.range.last + 1
         }
         plain(s.substring(last), accent)
+    }
+
+    /**
+     * Inline code. The 0.52 look: a mono run with a span background (Compose fills the whole line box, so in chat it read as
+     * a tall square block). [chips] (chat replies, 0.54.2): no span background; the run is tagged [MdChips.TAG] with a
+     * narrow no-break space on each side for padding, a size smaller, and MdText draws a tight rounded chip behind the glyphs.
+     */
+    private fun AnnotatedString.Builder.code(text: String, codeBg: Color, chips: Boolean) {
+        if (!chips) { withStyle(SpanStyle(fontFamily = Type.Mono, fontSize = 13.sp, background = codeBg)) { append(" $text ") }; return }
+        pushStringAnnotation(MdChips.TAG, "")
+        append(MdChips.PAD)
+        withStyle(SpanStyle(fontFamily = Type.Mono, fontSize = MdChips.CODE_EM.em)) { append(text) }
+        append(MdChips.PAD)
+        pop()
     }
 
     private fun Color.isUnspecified() = this == Color.Unspecified
