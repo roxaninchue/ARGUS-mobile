@@ -5179,7 +5179,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             !com.blaze.assistant.terminal.Terminal.risky(cmd) || confirm("Run this command?", cmd.take(200), "Run") })
                         "The user did NOT approve running that command."
                     else if (args.optBoolean("background")) kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.terminal.Terminal.startJob(cmd, args.optBoolean("linux"), args.optInt("max_minutes", 0)) }
-                    else (withMediaScan { com.blaze.assistant.terminal.Terminal.run(cmd, args.optInt("timeout_seconds", 60), args.optBoolean("linux")) } + queryVerify(cmd))   // 0.51.0
+                    else com.blaze.assistant.terminal.StorageAccess.annotate(cmd,   // 0.53.4: say when scoped storage hid the files
+                        withMediaScan { com.blaze.assistant.terminal.Terminal.run(cmd, args.optInt("timeout_seconds", 60), args.optBoolean("linux")) } + queryVerify(cmd),
+                        com.blaze.assistant.terminal.StorageAccess.granted(app))
                 }
                 "run_ussd" -> {
                     val code = args.optString("code")

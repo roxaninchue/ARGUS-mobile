@@ -49,6 +49,10 @@
          storage (Music/Blaze, Movies/Blaze, Download/Blaze, Pictures/Blaze) show without these. -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- 0.53.4 Search the whole phone: audio for Music import/search, and All files access (asked for only by the
+         "Let Argus see all your files?" card) so find / file_search see Downloads, documents and other apps' folders. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />

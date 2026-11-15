@@ -186,6 +186,9 @@ fun fixIntent(ctx: android.content.Context, k: FixCards.Kind): Intent {
     return when (k) {
         FixCards.Kind.PHONE_CONTROL -> try { com.blaze.assistant.phone.PhoneControl.fixIntent(ctx) } catch (_: Throwable) { Intent(k.action) }
         FixCards.Kind.OVERLAY, FixCards.Kind.APP_PERMISSION -> Intent(k.action, pkg)
+        // 0.53.4: the per-app All files access page (Android 11+); Android 8-10 grant storage on the app's page.
+        FixCards.Kind.ALL_FILES -> if (android.os.Build.VERSION.SDK_INT >= 30) Intent(k.action, pkg)
+            else Intent("android.settings.APPLICATION_DETAILS_SETTINGS", pkg)
         else -> Intent(k.action)
     }.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 }

@@ -60,8 +60,8 @@ object DevTools {
                 "file_read" -> read(a)
                 "file_write" -> write(a)
                 "file_edit" -> edit(a)
-                "file_list" -> list(a)
-                "file_search" -> search(a)
+                "file_list" -> shared(a, list(a))
+                "file_search" -> shared(a, search(a))
                 "file_delete" -> delete(a)
                 "run_code" -> runCode(a)
                 "job_input" -> Terminal.jobInput(a.optInt("id"), a.optString("text"), a.optBoolean("enter", true))
@@ -131,6 +131,12 @@ object DevTools {
         if (n >= 300) out.append("[first 300 entries]")
         if (n == 0) out.append("(empty)")
         return out.toString().trimEnd()
+    }
+
+    /** 0.53.4: a listing or search of shared storage while All files access is off says why it looks empty. */
+    private fun shared(a: JSONObject, out: String): String {
+        val path = resolve(a.optString("path", "~")).absolutePath
+        return StorageAccess.annotate(path, out, StorageAccess.granted(app))
     }
 
     private fun search(a: JSONObject): String {

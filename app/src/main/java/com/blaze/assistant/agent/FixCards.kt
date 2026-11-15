@@ -23,6 +23,9 @@ object FixCards {
         OVERLAY("Let ${BrandName.NAME} show over other apps?",
             "This lets me float a small card over the app you're in while I work.",
             "android.settings.action.MANAGE_OVERLAY_PERMISSION"),
+        ALL_FILES("Let ${BrandName.NAME} see all your files?",
+            "Android hides your Downloads, documents and other apps' folders from me until you turn on All files access. I only read what you ask me to.",
+            "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION"),
         APP_PERMISSION("Allow this for ${BrandName.NAME}?",
             "${BrandName.NAME} needs one more permission for that. Turn it on in ${BrandName.NAME}'s app settings, then ask me again.",
             "android.settings.APPLICATION_DETAILS_SETTINGS"),
@@ -38,6 +41,7 @@ object FixCards {
         Regex("(?i)phone control is off|accessibility (service )?(is )?(off|not (on|enabled))|turn on .?(?:argus|blaze) phone control") to Kind.PHONE_CONTROL,
         Regex("(?i)needs usage access|usage access (is )?(off|not granted)") to Kind.USAGE,
         Regex("(?i)(overlay|draw over other apps|display over other apps) (permission )?(is )?(off|not granted|needed)") to Kind.OVERLAY,
+        Regex("(?i)all files access is off|needs all files access") to Kind.ALL_FILES,
         Regex("(?i)\\b(permission (denied|not granted|is off|missing))|(needs the [a-z ]{3,30} permission)") to Kind.APP_PERMISSION,
     )
 
@@ -53,6 +57,7 @@ object FixCards {
         Kind.PHONE_CONTROL -> "I couldn't use your phone for that"
         Kind.USAGE -> "I couldn't see which apps you used"
         Kind.OVERLAY -> "I couldn't show over other apps"
+        Kind.ALL_FILES -> "I couldn't see all your files"
         Kind.APP_PERMISSION -> "I couldn't do that yet"
     }
 
