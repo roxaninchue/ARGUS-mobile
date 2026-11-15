@@ -68,8 +68,9 @@ class SettingsAliasTest {
         assertEquals("secrets", ArgusSettings.parentOf("logins"))
         for (p in listOf("look", "voice", "permissions", "updates", "plan", "sync", "about")) assertNull(p, ArgusSettings.parentOf(p))
         assertNull(ArgusSettings.parentOf(null))
-        assertTrue("argus back uses the ARGUS tree", "else if (argus) page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in sheet)
-        assertTrue("argus_look off keeps the 0.52.3 profile", "com.blaze.assistant.ui.space.SpaceProfileScreen(" in sheet && "com.blaze.assistant.ui.argus.settings.YouPage(" in sheet)
+        assertTrue("Back uses the ARGUS tree", "else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in sheet)
+        assertTrue("the You page is the only root (no 0.52.3 profile)", "com.blaze.assistant.ui.space.SpaceProfileScreen(" !in sheet && "com.blaze.assistant.ui.argus.settings.YouPage(" in sheet)
+        assertTrue("no look switch left in Settings", "Argus.lookOn()" !in sheet)
     }
 
     @Test fun openByNameFromChat() {

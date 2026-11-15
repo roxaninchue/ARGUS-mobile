@@ -101,35 +101,17 @@ fun DoingPage() {
 }
 
 /**
- * Settings › System Preferences › Appearance: Light / Dark / Auto, the accent and Stage. 0.52.2: the living backgrounds
+ * Settings › System Preferences › Appearance: the ARGUS section, Size and Stage. 0.52.2: the living backgrounds
  * and the Living Themes are gone. 0.52.3: the Home's tilt parallax left with the 3D Home (the Home follows Light / Dark).
  */
 @Composable
 fun LookPage() {
     val c = LocalBlaze.current.mono
-    val accent by Look.accent.collectAsState()
     Spacer(Modifier.height(10.dp))
-    // P1-SH-06: in the ARGUS look, Appearance is the ARGUS section (look switch, Match phone / Dark / Light, ground,
-    // handedness, reduced motion; no accent), then Size and Stage below as before.
-    val argus = androidx.compose.runtime.remember { com.blaze.assistant.ui.argus.Argus.lookOn() }
-    if (argus) androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(c.dark)) {
+    // P1-SH-06: Appearance is the ARGUS section (Match phone / Dark / Light, ground, handedness, reduced motion; no
+    // accent), then Size and Stage. The 0.52 Theme row and accent picker left with the look switch, 16 Nov 2026.
+    androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(c.dark)) {
         com.blaze.assistant.ui.argus.settings.ArgusAppearanceLive()
-    }
-    if (!argus) {
-    Label(tr("Theme"))
-    Spacer(Modifier.height(8.dp))
-    val mode = ThemeMode.mode.value
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("light" to "Light", "dark" to "Dark", "auto" to "Auto").forEach { (id, label) ->
-            val on = mode == id || (id == "dark" && mode == "system")
-            Box(Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(22.dp)).let { if (on) it.background(c.ink) else it.glass(RoundedCornerShape(22.dp), GlassIntensity.Low, shadow = false) }
-                .clickable { ThemeMode.set(id) }, contentAlignment = Alignment.Center) {
-                Text(label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = if (on) c.paper else c.ink))
-            }
-        }
-    }
-    Text(tr("Auto turns dark after sunset and light in the morning."), modifier = Modifier.padding(vertical = 6.dp),
-        style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     }
     Spacer(Modifier.height(14.dp))
     // 0.52.4: how big the app draws, for people who find the default too large (or too small).
@@ -152,19 +134,6 @@ fun LookPage() {
     }
     Text(tr("Makes everything in {0} smaller or bigger, text included.", BrandName.NAME), modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
-    if (!argus) {
-    Spacer(Modifier.height(14.dp))
-    Label(tr("Accent"))
-    Spacer(Modifier.height(8.dp))
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        LookLogic.ACCENTS.forEach { (hex, name) ->
-            val col = LookLogic.parseAccent(hex)?.let { Color(it) }
-            Box(Modifier.size(38.dp).clip(CircleShape).background(col ?: c.accent)
-                .border(if (accent == hex) 3.dp else 1.dp, if (accent == hex) c.ink else c.hair, CircleShape)
-                .clickable { Look.setAccent(hex) }.semantics { contentDescription = tr("Accent: {0}", name) })
-        }
-    }
-    }
     Spacer(Modifier.height(14.dp))
     // 0.46.0 Blaze Stage: timers, music, quizzes and other live cards right on the chat (off = Blaze answers in chat / opens views).
     var stageOn by remember { mutableStateOf(com.blaze.assistant.stage.StageStore.enabled) }

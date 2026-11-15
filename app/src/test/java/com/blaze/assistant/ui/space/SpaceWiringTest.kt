@@ -146,8 +146,9 @@ class SpaceWiringTest {
         assertTrue("the profile's Search opens Spotlight", "onSearch = { settingsPage = null; composer.query = \"\"; composer.openSpotlight() }" in call)
         val s = src("ui/SettingsSheet.kt")
         assertTrue("fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> Unit, onDismiss: () -> Unit,\n                   onTab: (String) -> Unit = {}, onSearch: () -> Unit = {})" in s)
-        assertTrue("the root is the profile page", "${S}SpaceProfileScreen(" in s)
-        assertTrue("Back follows the tree", "page = ${S}SpaceSettings.parentOf(p)" in s)
+        // ARGUS-only (16 Nov 2026): the root is the You page and Back follows the ARGUS tree; the 0.52.3 profile is gone
+        assertTrue("the root is the You page", "com.blaze.assistant.ui.argus.settings.YouPage(" in s && "${S}SpaceProfileScreen(" !in s)
+        assertTrue("Back follows the tree", "else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in s)
         assertTrue("${S}SpaceProfile.SYSTEM_PAGE -> ${S}SpaceSystemPage { page = it }" in s)
         assertTrue("${S}SpaceProfile.FEEDBACK_PAGE -> ${S}SpaceFeedbackPage(version)" in s)
         assertTrue("the brain page is only its status", "\"ai\" -> BrainCard { page = \"account\" }" in s)

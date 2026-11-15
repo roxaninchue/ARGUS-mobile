@@ -77,14 +77,12 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val first = remember { settingsStart(start) }
     var page by remember { mutableStateOf(first) }
-    val argus = remember { com.blaze.assistant.ui.argus.Argus.lookOn() }
     // Opened straight onto a page (from a /command or ARGUS): Back from that page closes Settings.
     fun back() {
         val p = page
         if (p == null || (first != null && p == first)) onDismiss()
-        // P1-SH-06: the ARGUS tree (You page) has its own parents; the 0.52.3 tree is unchanged with argus_look off.
-        else if (argus) page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)
-        else page = com.blaze.assistant.ui.space.SpaceSettings.parentOf(p)
+        // P1-SH-06: the ARGUS tree (You page) has its own parents (the only tree since 16 Nov 2026).
+        else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)
     }
     BackHandler { back() }
     val current = settingsPages.firstOrNull { it.id == page }
@@ -97,8 +95,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
     // Landscape overhaul: clear of the camera cutout on its side, and rows stop at a readable width (centred) on a phone
     // on its side or a tablet; an upright phone is narrower than the cap, so it is unchanged.
     Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().cutoutSafe().readableWidth()) {
-        if (page == null && argus) {
-            // P1-SH-06: the You page (04 §4.11) in the ARGUS look; the profile below stays for argus_look off.
+        if (page == null) {
+            // P1-SH-06: the You page (04 §4.11). The 0.52.3 profile (SpaceProfileScreen) left with the look switch, 16 Nov 2026.
             val me = account.user
             val dark = AppTheme.darkNow()
             androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(dark)) {
@@ -114,22 +112,6 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     version = version,
                     pageText = remember { settingsPages.associate { it.id to (it.title + " " + it.sub) } })
             }
-        } else if (page == null) {
-            // The profile page: Hark's top bar (no round button), then the grouped cards.
-            val me = account.user
-            com.blaze.assistant.ui.space.SpaceTopBar(tab = "", onTab = onTab, onLeft = {}, showLeft = false,
-                initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
-                onAvatar = { onDismiss() })
-            com.blaze.assistant.ui.space.SpaceProfileScreen(
-                name = com.blaze.assistant.ui.space.trBrand(com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName)),
-                email = com.blaze.assistant.i18n.tr(com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null)),
-                signedIn = me != null,
-                planLine = ents?.let { com.blaze.assistant.connect.Billing.planName(it.plan) + " plan" }.orEmpty(),
-                onPage = { page = it },
-                onSignOut = { scope.launch { com.blaze.assistant.connect.BlazeAccount.signOut() } },
-                onSearch = onSearch,
-                modifier = Modifier.weight(1f),
-                version = version)
         } else {
             BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),
                 right = { ThemeSwitch() })
@@ -169,15 +151,13 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "specialists" -> SpecialistsPage()
                     "terminal" -> TerminalPage()
                     "dashboard" -> DashboardPage()
-                    // P1-MG-01: in the ARGUS look, Import A-team backup sits under the app's own Export / Import.
+                    // P1-MG-01: Import A-team backup sits under the app's own Export / Import.
                     "backup" -> {
                         BackupSection()
-                        if (com.blaze.assistant.ui.argus.Argus.lookOn()) {
-                            Spacer(Modifier.height(22.dp))
-                            androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
-                                com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
-                                com.blaze.assistant.ui.argus.settings.ATeamBackupLive()
-                            }
+                        Spacer(Modifier.height(22.dp))
+                        androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
+                            com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
+                            com.blaze.assistant.ui.argus.settings.ATeamBackupLive()
                         }
                     }
                     "learn" -> LearnPage()
