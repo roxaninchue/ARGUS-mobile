@@ -3540,7 +3540,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 // 0.53.3 (owner: "remove the pills"): which skills / specialist loaded is technical; it goes to the trace, never the chat.
                 try { listOf(SpecialistMatch.cardLine(turnSpecs), SkillMatch.cardLine(turnSkills)).filter { it.isNotBlank() }
-                    .takeIf { it.isNotEmpty() }?.let { android.util.Log.i("BlazeSkills", it.joinToString(" | ")) } } catch (_: Throwable) { }
+                    .takeIf { it.isNotEmpty() }?.let { android.util.Log.i("BlazeSkills", it.joinToString(" | ")) } } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                 var learnNudged = false
                 // v0.44.0 fewer tools per turn: ToolRouter's groups, then ToolPick (core split into cues, capped).
                 val usedNames = ToolPick.usedNames(history)
