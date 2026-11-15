@@ -84,20 +84,10 @@ class SpaceWiringTest {
         assertTrue("InstalledApps.all(ctx)" in spot && "SpotlightGroups.Said(" in spot)
     }
 
-    @Test fun homeIsTheRootTab() {
-        // P1-SH-01: the 0.52 Home (argus_look off) is the `homePane` lambda, drawn when paneNow == "home"; the ARGUS shell's
-        // Life page replaces it when the look is on (LifeMode, P1-SH-05).
-        assertTrue("homePane()" in after(chat, "if (paneNow == \"home\") {", 200))
-        val home = after(chat, "val homePane: @Composable () -> Unit = {", 900)
-        assertTrue("SpaceHomeLayer(" in home)
-        assertTrue("asking from Home goes to the chat", "onAsk = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) }" in home)
-        assertTrue("onOpenProject = { go(navNow().openProject(it)) }" in home)
-        assertTrue("the setup card opens the setup screen", "onSetup = { setupSheet = true }" in home)
-        val layer = after(chat, "private fun SpaceHomeLayer(", 2_500)
-        assertTrue("${S}SpaceHomeScreen(state" in layer)
-        assertTrue("the answer card reads the chat", "${S}SpaceAnswer.card(" in layer)
-        assertTrue("the greeting is re-read on the hour", "${S}SpaceGreeting.msToNextHour(System.currentTimeMillis())" in layer)
-        assertTrue("projects on the Home are capped", "SpaceHomeCards.MAX_PROJECTS" in layer)
+    @Test fun theOld052HomeIsGone() {
+        // ARGUS-only (16 Nov 2026): the 0.52 Home pane (homePane / SpaceHomeLayer) left with the look switch; Life is the Home
+        assertFalse("homePane" in chat || "SpaceHomeLayer(" in chat || "paneNow == \"home\"" in chat)
+        assertTrue("life = { lifePane() }" in chat)
     }
 
     @Test fun projectsIsTheHarkStyleList() {

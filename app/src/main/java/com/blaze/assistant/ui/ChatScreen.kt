@@ -795,19 +795,8 @@ fun ChatScreen() {
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 // P1-SH-01: Home's board and the main chat as panes of their own, so the ARGUS shell shows them as its Life and
                 // Chat pages and the 0.52 shell keeps them as tabs.
-                val homePane: @Composable () -> Unit = {
-                    // 0.52.3: the Hark-style Home (space/SpaceHome.kt): cards over the space view.
-                    SpaceHomeLayer(name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null }, signedIn = me != null || Settings.ready,
-                        mood = mood, projects = projects, setup = setupState,
-                        onAsk = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) },
-                        onOpenChat = { go(navNow().switchTab(ChatNav.CHAT)) },
-                        onOpenProject = { go(navNow().openProject(it)) },
-                        onOpenProjects = { go(navNow().projectsList()) },
-                        onSignIn = { settingsPage = "account" },
-                        onSetup = { setupSheet = true })
-                }
                 // P1-SH-05: Life mode v1 (day line, Today strip, domain tiles, Projects, the Home's panels) is the ARGUS shell's
-                // Life page; the 0.52 Home above stays for the shell with argus_look off.
+                // Life page. The 0.52 Home pane left with the look switch, 16 Nov 2026.
                 val lifePane: @Composable () -> Unit = {
                     com.blaze.assistant.ui.team.LifePage(
                         com.blaze.assistant.ui.team.LifeNav(
@@ -891,12 +880,10 @@ fun ChatScreen() {
                         onDeleteChat = { deleteProjectChat(it) }, embedded = embedded)
                     LaunchedEffect(Unit) { Agent.refreshChats() }
                 }
-                val pane = when { navShown.inProjectChat -> "pchat"; navShown.tab == ChatNav.PROJECTS -> "projects"; ChatNav.isMode(navShown.tab) -> "modes"; navShown.tab == ChatNav.HOME -> "home"; else -> "chat" }
+                val pane = when { navShown.inProjectChat -> "pchat"; navShown.tab == ChatNav.PROJECTS -> "projects"; ChatNav.isMode(navShown.tab) -> "modes"; else -> "chat" }
                 androidx.compose.animation.Crossfade(pane, modifier = Modifier.fillMaxSize(),
                     animationSpec = MotionTokens.medium(), label = "tab") { paneNow ->
-                if (paneNow == "home") {
-                    homePane()
-                } else if (paneNow == "modes") {
+                if (paneNow == "modes") {
                     ArgusModesPager(navShown.tab, onTab = { m -> if (navNow().tab != m) { notchOpen = false; go(navNow().switchTab(m)) } },
                         team = { com.blaze.assistant.ui.team.TeamPage(teamNav) },
                         chat = { chatPane() },
@@ -1914,27 +1901,3 @@ private fun WaitingCards(listening: Boolean,
     Box(Modifier.fillMaxWidth()) { UndoCountdownBar(onUndone = { line -> Agent.note(line) }) }
 }
 
-/**
- * 0.52.3: the Home as the chat shell shows it (space/SpaceHome.kt). The chat's messages are collected here, not in
- * ChatScreen, so a streaming reply only recomposes the Home's answer card.
- */
-@Composable
-private fun SpaceHomeLayer(name: String?, signedIn: Boolean, mood: Mood, projects: List<com.blaze.assistant.agent.Project>,
-                           setup: Map<String, com.blaze.assistant.setup.SetupPlan.Status>,
-                           onAsk: (String) -> Unit, onOpenChat: () -> Unit, onOpenProject: (String) -> Unit, onOpenProjects: () -> Unit,
-                           onSignIn: () -> Unit, onSetup: () -> Unit) {
-    val messages by Agent.messages.collectAsState()
-    // the hour, re-read at every full hour while Home is composed
-    var hour by remember { androidx.compose.runtime.mutableIntStateOf(com.blaze.assistant.ui.space.SpaceGreeting.hourNow()) }
-    LaunchedEffect(Unit) { while (true) { delay(com.blaze.assistant.ui.space.SpaceGreeting.msToNextHour(System.currentTimeMillis())); hour = com.blaze.assistant.ui.space.SpaceGreeting.hourNow() } }
-    val card = remember(messages, mood) {
-        com.blaze.assistant.ui.space.SpaceAnswer.card(0L, messages.takeLast(40).filter { it.role == Role.USER || it.role == Role.BLAZE }
-            .map { com.blaze.assistant.ui.space.SpaceAnswer.Msg(it.id, it.role == Role.BLAZE, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text)) }, mood != Mood.IDLE)
-    }
-    val state = com.blaze.assistant.ui.space.SpaceHomeState(name = name, hour = hour, signedIn = signedIn, answer = card, working = mood != Mood.IDLE,
-        projects = projects.sortedByDescending { it.updated }.take(com.blaze.assistant.ui.space.SpaceHomeCards.MAX_PROJECTS).map { it.id to it.name },
-        setupLeft = if (com.blaze.assistant.setup.SetupRunner.started()) com.blaze.assistant.setup.SetupPlan.left(setup).size else 0,
-        setupPercent = com.blaze.assistant.setup.SetupPlan.percent(setup))
-    com.blaze.assistant.ui.space.SpaceHomeScreen(state, onAsk = onAsk, onOpenChat = onOpenChat, onOpenProject = onOpenProject,
-        onOpenProjects = onOpenProjects, onSignIn = onSignIn, onSetup = onSetup, bottomPad = 16.dp)
-}

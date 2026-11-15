@@ -153,7 +153,7 @@ class LifeModelTest {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
         val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
         assertTrue("Life's page is LifePage", "life = { lifePane() }" in chat && "com.blaze.assistant.ui.team.LifePage(" in chat)
-        assertTrue("the 0.52 Home stays for argus_look off", "if (paneNow == \"home\") {\n                    homePane()" in chat && "SpaceHomeLayer(" in chat)
+        assertFalse("the 0.52 Home is gone (ARGUS-only)", "homePane()" in chat || "SpaceHomeLayer(" in chat)
         assertTrue("the Today strip opens Schedule", "onOpenSchedule = { Views.find(\"schedule\")?.let { openView(it) } }" in chat)
         val life = File(root, "com/blaze/assistant/ui/team/LifeMode.kt").readText()
         assertTrue("Life reads the same day items as the [context] line", "TurnContextSource.dayEntries(now)" in life && "ScheduleDay.itemsOn(" in life)
