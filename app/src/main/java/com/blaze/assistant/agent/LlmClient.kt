@@ -182,9 +182,13 @@ object LlmClient {
             HedgeRace.run(steps, lim, onText != null,
                 call = { a ->
                     val st = parent.fork()
-                    st.progress = { vis -> if (vis) a.visible() else a.think() }
-                    val gText: ((String) -> Unit)? = onText?.let { f -> { p: String -> if (a.visible()) f(p) } }
-                    val gThink: ((String) -> Unit)? = chatThink?.let { f -> { p: String -> a.think(); if (a.shows()) f(p) } }
+                    // Owner, 15 Nov 2026 ("I want the thought to stream in"): thinking streams while no brain has won yet
+                    // (Attempt.thoughtShows; it used to wait for a.shows(), i.e. the first answer word, so it never streamed).
+                    // When a different brain wins, the loser's thinking is cleared from the screen (takesOverThought).
+                    val won = { if (a.visible()) { if (a.takesOverThought()) chatThink?.invoke(""); true } else false }
+                    st.progress = { vis -> if (vis) won() else a.think() }
+                    val gText: ((String) -> Unit)? = onText?.let { f -> { p: String -> if (won()) f(p) } }
+                    val gThink: ((String) -> Unit)? = chatThink?.let { f -> { p: String -> a.think(); if (a.thoughtShows()) f(p) } }
                     val t0 = System.currentTimeMillis()
                     val v = withContext(st.element()) { when (a.step) {
                         // The on-phone brain: same messages, same tools; its tool calls come back as real tool_calls for the agent loop.
@@ -544,7 +548,8 @@ object LlmClient {
         lastUsage = json.optJSONObject("usage")
         json.optJSONArray("choices")?.optJSONObject(0)?.let { ch -> if (ch.has("finish_reason") && !ch.isNull("finish_reason")) ch.optString("finish_reason").takeIf { it.isNotBlank() }?.let { m.put(FINISH, it) } }
         CallState.current().finish = m.optString(FINISH)   // 0.54.1: CutReply marks a final reply that ended on "length"
-        val r = m.optString("reasoning_content").ifBlank { m.optString("reasoning") }
+        val chunked = StreamDelta.flatten(m)   // Mistral: content as a list of thinking / text chunks
+        val r = m.optString("reasoning_content").ifBlank { m.optString("reasoning") }.ifBlank { chunked }
         m.remove("reasoning_content"); m.remove("reasoning"); m.remove("reasoning_details")
         if (r.isNotBlank() && r != "null") m.put("_reasoning", r)
         m
@@ -608,11 +613,12 @@ object LlmClient {
                 // 0.53.6 (cut-off tool calls): remember why the stream ended; "length" means the output cap cut the reply off.
                 obj.optJSONArray("choices")?.optJSONObject(0)?.let { ch -> if (ch.has("finish_reason") && !ch.isNull("finish_reason")) ch.optString("finish_reason").takeIf { it.isNotBlank() }?.let { finish = it } }
                 val delta = obj.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("delta") ?: continue
-                val rp = listOf("reasoning_content", "reasoning").firstNotNullOfOrNull { k ->
-                    delta.optString(k, "").takeIf { delta.has(k) && !delta.isNull(k) && it.isNotEmpty() } }
+                // reasoning_content / reasoning, or Mistral's thinking chunks inside a content list (StreamDelta)
+                val part = StreamDelta.of(delta)
+                val rp = part.think.ifEmpty { null }
                 if (rp != null) { markFirst(); CallState.current().progress?.invoke(false); think.append(rp); onThink?.invoke(think.toString()) }
-                val piece = delta.optString("content", "").takeIf { delta.has("content") && !delta.isNull("content") }
-                if (!piece.isNullOrEmpty()) {
+                val piece = part.text
+                if (piece.isNotEmpty()) {
                     markFirst(); markText(); CallState.current().progress?.invoke(true)
                     content.append(piece)
                     onText(content.toString()); emitted = content.length

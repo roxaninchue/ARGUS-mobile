@@ -25,6 +25,30 @@ class ThoughtFoldTest {
         assertFalse(ThoughtFold.open(false, live = true, answerStarted = false))
     }
 
+    /** Owner, 15 Nov 2026: "instead of showing thinking I want the thought to stream in". */
+    @Test fun whileItThinksTheWordsReplaceTheHeader() {
+        assertFalse(ThoughtFold.headerShown(open = true, live = true, answerStarted = false))
+        assertTrue("folded by a tap: the header says Thinking", ThoughtFold.headerShown(open = false, live = true, answerStarted = false))
+        assertTrue("answer started: Thought for Ns", ThoughtFold.headerShown(open = false, live = true, answerStarted = true))
+        assertTrue(ThoughtFold.headerShown(open = true, live = false, answerStarted = true))
+        val long = (1..200).joinToString(" ") { "word$it" }
+        val tail = ThoughtFold.liveTail(long)
+        assertTrue(tail.startsWith("\u2026word")); assertTrue(tail.endsWith("word200")); assertTrue(tail.length <= ThoughtFold.LIVE_TAIL + 1)
+        assertEquals("short", ThoughtFold.liveTail("short"))
+    }
+
+    @Test fun liveThoughtStreamsInTheChatAndTheWordStaysSmall() {
+        val chat = src("ui/ChatScreen.kt")
+        assertTrue(chat.contains("val thinkingNow = working && streamId < 0 && ThoughtFold.shows(live, Settings.showReasoning)"))
+        assertTrue(chat.contains("if (thinkingNow) ThoughtSection(-1L - (lastUserId ?: 0L), live, live = true, answerStarted = false, ms = 0L)"))
+        val ww = chat.substringAfter("private fun WorkingWord()").substringBefore("\n}\n")
+        assertFalse("not the big sub style any more", ww.contains("ArgusType.sub"))
+        assertTrue(ww.contains("fontSize = 13.sp"))
+        val sec = src("ui/ThoughtSection.kt")
+        assertTrue(sec.contains("ThoughtFold.headerShown(open, live, answerStarted)"))
+        assertTrue(sec.contains("ThoughtFold.liveTail(body)"))
+    }
+
     @Test fun bodyIsCleaned() {
         assertEquals("a\n\nb", ThoughtFold.body("<think>\r\na\r\n\r\n\r\n\r\nb</think>  "))
         assertFalse(ThoughtFold.shows("  <think></think> ", true))

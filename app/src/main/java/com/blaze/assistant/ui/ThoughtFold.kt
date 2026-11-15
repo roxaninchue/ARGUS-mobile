@@ -35,6 +35,23 @@ object ThoughtFold {
         return if (s < 60) "${s}s" else "${s / 60}m" + (if (s % 60 == 0L) "" else " ${s % 60}s")
     }
 
+    /**
+     * Owner, 15 Nov 2026 ("instead of showing thinking I want the thought to stream in"): while it reasons and the section
+     * is open, the words themselves are the indicator. No "Thinking" header then, only the small breathing brain beside
+     * the streaming text. The header comes back when folded (a tap) or once the answer starts ("Thought for 4s").
+     */
+    fun headerShown(open: Boolean, live: Boolean, answerStarted: Boolean): Boolean = !(open && thinkingNow(live, answerStarted))
+
+    /** While the thought streams, the newest [LIVE_TAIL] characters (cut at a word, "…" in front) so it reads as a rolling
+     *  window under the question instead of pushing the chat away; the whole thought is there once it folds and opens. */
+    fun liveTail(body: String, max: Int = LIVE_TAIL): String {
+        if (body.length <= max) return body
+        val from = body.length - max
+        val cut = body.indexOfAny(charArrayOf(' ', '\n'), from).let { if (it < 0 || it - from > 40) from else it + 1 }
+        return "\u2026" + body.substring(cut).trimStart()
+    }
+    const val LIVE_TAIL = 560
+
     /** Open or not: the user's own tap wins; otherwise open only while it is still thinking. */
     fun open(choice: Boolean?, live: Boolean, answerStarted: Boolean): Boolean = choice ?: thinkingNow(live, answerStarted)
 

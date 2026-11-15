@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
@@ -69,24 +70,42 @@ fun ThoughtSection(key: Long, thinking: String, live: Boolean, answerStarted: Bo
     var choice by rememberSaveable(key) { mutableStateOf<Boolean?>(null) }
     val open = ThoughtFold.open(choice, live, answerStarted)
     val header = ThoughtFold.header(live, answerStarted, if (ms > 0) ms else timed)
+    // Owner 2026-11-14: a brain icon for thoughts. It glows in the accent and breathes slowly while thinking.
+    val brainAlpha = if (now) {
+        val tr = rememberInfiniteTransition(label = "thoughtDot")
+        val pulse by tr.animateFloat(0.45f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "thoughtDotA")
+        if (MotionTokens.enabled) pulse else 1f
+    } else 1f
+    val brainTint = (if (now) c.accent else c.sub).copy(alpha = brainAlpha)
+    // Owner 2026-11-15 ("instead of showing thinking I want the thought to stream in"): while it reasons, the streaming words
+    // are the indicator (no "Thinking" header, ThoughtFold.headerShown); it folds to "Thought for Ns" once the answer starts.
+    val showHeader = ThoughtFold.headerShown(open, live, answerStarted)
+    val textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub)
     Column(modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-        Row(Modifier.clip(RoundedCornerShape(10.dp))
+        if (showHeader) Row(Modifier.clip(RoundedCornerShape(10.dp))
             .clickable(onClickLabel = if (open) "Hide the thinking" else "Show the thinking", role = Role.Button) { choice = !open }
             .semantics { stateDescription = if (open) "Expanded" else "Collapsed" }
             .padding(start = 2.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            // Owner 2026-11-14: a brain icon for thoughts. It glows in the accent and breathes slowly while thinking.
-            val brainAlpha = if (now) {
-                val tr = rememberInfiniteTransition(label = "thoughtDot")
-                val pulse by tr.animateFloat(0.45f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "thoughtDotA")
-                if (MotionTokens.enabled) pulse else 1f
-            } else 1f
-            Icon(Lucide.icon(ThoughtFold.ICON, 16), null, Modifier.size(16.dp), tint = (if (now) c.accent else c.sub).copy(alpha = brainAlpha))
+            Icon(Lucide.icon(ThoughtFold.ICON, 16), null, Modifier.size(16.dp), tint = brainTint)
             Spacer(Modifier.width(6.dp))
             Text(header, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
             val rot by animateFloatAsState(if (open) 180f else 0f, MotionTokens.fast(), label = "thoughtChev")
             Text("\u2304", modifier = Modifier.padding(start = 6.dp).rotate(rot), style = TextStyle(fontSize = 13.sp, color = c.sub))
         }
-        AnimatedVisibility(open, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) {
+        if (!showHeader) {
+            // Live: the small breathing brain beside the newest words of the thought (a rolling window, ThoughtFold.liveTail).
+            val tail = remember(body) { ThoughtFold.liveTail(body) }
+            val spans = remember(tail) { try { GlitchSpans.find(tail, PromptEcho.index()) } catch (_: Throwable) { emptyList() } }
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                .clickable(onClickLabel = "Hide the thinking", role = Role.Button) { choice = false }
+                .semantics { contentDescription = ThoughtFold.LIVE; stateDescription = "Expanded" }
+                .padding(start = 2.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.Top) {
+                Icon(Lucide.icon(ThoughtFold.ICON, 14), null, Modifier.padding(top = 2.5.dp).size(14.dp), tint = brainTint)
+                Spacer(Modifier.width(8.dp))
+                GlitchText(tail, spans, textStyle)
+            }
+        }
+        AnimatedVisibility(open && showHeader, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) {
             val accent = c.accent.copy(alpha = 0.45f)
             Box(Modifier.fillMaxWidth().padding(start = 4.dp, top = 2.dp, bottom = 6.dp)
                 .drawBehind { drawRect(accent, Offset.Zero, Size(2.dp.toPx(), size.height)) }
@@ -94,7 +113,7 @@ fun ThoughtSection(key: Long, thinking: String, live: Boolean, answerStarted: Bo
                 // Glitched parts: the assistant's name, self-reference, and runs that echo the active system prompt.
                 val spans = remember(body) { try { GlitchSpans.find(body, PromptEcho.index()) } catch (_: Throwable) { emptyList() } }
                 SelectionContainer {
-                    GlitchText(body, spans, TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
+                    GlitchText(body, spans, textStyle)
                 }
             }
         }

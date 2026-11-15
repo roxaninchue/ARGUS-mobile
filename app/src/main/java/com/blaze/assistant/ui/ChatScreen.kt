@@ -1454,7 +1454,8 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 val liveFlow = toolTurns.live?.takeIf { working }
                 if (liveFlow != null) ToolRowsLocals { com.blaze.assistant.ui.team.thread.TurnFlowView(liveFlow) }
                 if (!working) toolTurns.tail?.let { f -> ToolRowsLocals { com.blaze.assistant.ui.team.thread.TurnFlowView(f, showTools = keepToolRows) } }
-                val thinkingNow = working && streamId < 0 && Settings.showReasoning && live.isNotBlank()
+                // 0.54.2 (owner, 15 Nov: "I want the thought to stream in"): the reasoning streams here, word by word, as it arrives.
+                val thinkingNow = working && streamId < 0 && ThoughtFold.shows(live, Settings.showReasoning)
                 if (thinkingNow) ThoughtSection(-1L - (lastUserId ?: 0L), live, live = true, answerStarted = false, ms = 0L)
                 // Nothing to show yet (no words, no tool, no reasoning): one quiet shimmering word, not a pill.
                 val runningRow = liveFlow?.runs?.any { it.running } == true
@@ -1483,15 +1484,24 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     }
 }
 
-/** 0.53.3: the only "working" sign before anything else shows: a quiet shimmering word where the next line will be. */
+/**
+ * 0.53.3: the only "working" sign before anything else shows. 0.54.2 (owner, 15 Nov: the big "Thinking" word dominated): a
+ * small breathing brain and a quiet caption, on the same spot and size as the streamed thought that replaces it the moment
+ * the model sends reasoning (ThoughtSection). A model that sends none (e.g. Ministral 8B) keeps only this.
+ */
 @Composable
 private fun WorkingWord() {
     val c = com.blaze.assistant.ui.argus.Argus.colors
     val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "ww")
-    val a by t.animateFloat(0.35f, 0.9f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(850),
+    val a by t.animateFloat(0.35f, 0.8f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900),
         androidx.compose.animation.core.RepeatMode.Reverse), label = "a")
-    Text(tr("Thinking"), style = com.blaze.assistant.ui.argus.ArgusType.sub, color = c.mute,
-        modifier = Modifier.padding(vertical = 8.dp).graphicsLayer { alpha = a }.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite })
+    val alpha = if (MotionTokens.enabled) a else 0.6f
+    Row(Modifier.padding(start = 2.dp, top = 6.dp, bottom = 6.dp).graphicsLayer { this.alpha = alpha }
+        .semantics(mergeDescendants = true) { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }, verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon(ThoughtFold.ICON, 14), null, Modifier.size(14.dp), tint = c.mute)
+        Spacer(Modifier.width(8.dp))
+        Text(tr("Thinking"), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp), color = c.mute)
+    }
 }
 
 /** Milestone 4: the A-team kit's colours for the tool rows, whichever look the chat is in. */

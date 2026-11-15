@@ -54,7 +54,8 @@ object HedgeRace {
 
     /** One brain being asked. The call reports progress through [visible] / [think] (cheap, any thread). */
     class Attempt<S>(val step: S, val index: Int, val startedAt: Long, private val now: () -> Long, private val winner: AtomicReference<Attempt<S>?>,
-                     private val wake: () -> Unit = {}, val capMs: Long = 0L, val retry: Boolean = false) {
+                     private val wake: () -> Unit = {}, val capMs: Long = 0L, val retry: Boolean = false,
+                     private val thinker: AtomicReference<Attempt<S>?> = AtomicReference(null)) {
         @Volatile var visibleAt = 0L; private set
         @Volatile var thinkAt = 0L; private set
         @Volatile var lastAt = 0L; private set
@@ -71,6 +72,29 @@ object HedgeRace {
         fun think() { val t = now(); if (thinkAt == 0L) { thinkAt = t; wake() }; lastAt = t }
         /** May this attempt's output reach the screen right now? */
         fun shows(): Boolean = !dropped && winner.get() === this
+        /**
+         * Owner, 15 Nov 2026 ("I want the thought to stream in"): may this attempt's THINKING reach the screen now? Thinking
+         * comes before the first visible word, so gating it on [shows] (a winner) dropped every reasoning chunk until the
+         * answer started. Before a winner: the first live attempt that thinks holds the thinking lane (a second brain thinking
+         * in parallel stays hidden); a dropped holder hands it to the next one that thinks. After a winner: only the winner.
+         */
+        fun thoughtShows(): Boolean {
+            if (dropped) return false
+            val w = winner.get()
+            if (w != null) return w === this
+            while (true) {
+                val t = thinker.get()
+                if (t === this) return true
+                if (t != null && !t.dropped) return false
+                if (thinker.compareAndSet(t, this)) return true
+            }
+        }
+        /** The winner's first output: true (once) when another attempt's thinking was on screen, so the caller clears it. */
+        fun takesOverThought(): Boolean {
+            if (dropped || winner.get() !== this) return false
+            val t = thinker.get() ?: return false
+            return t !== this && thinker.compareAndSet(t, this)
+        }
         /** Started streaming (any chunk). */
         val streamed: Boolean get() = lastAt > 0L
         internal var job: Deferred<Result<Any?>>? = null
@@ -102,6 +126,7 @@ object HedgeRace {
         try {
             val start = now()
             val winner = AtomicReference<Attempt<S>?>(null)
+            val thinker = AtomicReference<Attempt<S>?>(null)   // whose thinking is on screen before a winner (Attempt.thoughtShows)
             val all = ArrayList<Attempt<S>>()
             var next = 0
             var last: Throwable? = null
@@ -124,7 +149,7 @@ object HedgeRace {
                 if (!parallel && streaming && limits.quietMs > 0 && !a.streamed && !a.retry) a.startedAt + limits.quietMs else Long.MAX_VALUE
 
             fun start(step: S, index: Int, why: String, capMs: Long = 0L) {
-                val a = Attempt(step, index, now(), now, winner, { wake.trySend(Unit) }, capMs, why == "retry")
+                val a = Attempt(step, index, now(), now, winner, { wake.trySend(Unit) }, capMs, why == "retry", thinker)
                 @Suppress("UNCHECKED_CAST")
                 a.job = scope.async(start = CoroutineStart.DEFAULT) {
                     try { Result.success(call(a) as Any?) } catch (e: CancellationException) { throw e } catch (e: Throwable) { Result.failure(e) }
