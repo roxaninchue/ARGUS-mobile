@@ -121,10 +121,11 @@ class ArgusTokensTest {
         assertEquals(80, ArgusTokens.Motion.duration(80, reduced = true))
     }
 
-    /** P1-SH-01 turned it on (06: "`argus_look` default on"); it was off through P0. */
-    @Test fun theLookIsOnByDefault() {
+    /** ARGUS is the only look (16 Nov 2026): always on, whatever an older build stored under `argus_look`. */
+    @Test fun theLookIsAlwaysOn() {
         assertTrue(ArgusLookFlag.DEFAULT)
-        assertEquals("argus_look", ArgusLookFlag.KEY)
+        val theme = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/ui/argus/ArgusTheme.kt").readText()
+        assertTrue("fun lookOn(): Boolean = true" in theme)
     }
 
     @Test fun contrastMathMatchesWcag() {

@@ -299,7 +299,8 @@ object ArgusGlassRule {
     }
 }
 
-/** P0-SH-01: the `argus_look` switch. P1-SH-01: on by default (the ARGUS shell); off = the 0.52 shell. */
+/** P0-SH-01 the `argus_look` switch, retired 16 Nov 2026 (ARGUS is the only look; KEY is no longer read or written).
+ *  GROUND_KEY is still the Appearance ground setting. */
 object ArgusLookFlag {
     const val KEY = "argus_look"
     const val DEFAULT = true

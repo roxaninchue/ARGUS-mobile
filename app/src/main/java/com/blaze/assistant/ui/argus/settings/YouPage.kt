@@ -108,14 +108,12 @@ fun YouPage(
 private fun ArgusSettings.Row.item(onPage: (String) -> Unit) = SettingsItem(icon, label, value, onClick = { onPage(page) })
 
 /**
- * P1-SH-06 Appearance in the ARGUS look (04 §4.11, 06 row 6): the ARGUS look switch (`argus_look`, off = the 0.52
- * shell), Theme (Match phone / Dark / Light), Ground (Plain / Orbit / Cobalt night), Handedness, Reduced motion. No
- * accent: the ARGUS look has none (the 0.52 page keeps its accent picker). [onTheme] writes through ThemeMode.
+ * P1-SH-06 Appearance in the ARGUS look (04 §4.11, 06 row 6): Theme (Match phone / Dark / Light), Ground (Plain /
+ * Orbit / Cobalt night), Handedness, Reduced motion. No look switch (ARGUS is the only look, 16 Nov 2026) and no
+ * accent. [onTheme] writes through ThemeMode.
  */
 @Composable
 fun ArgusAppearanceSection(
-    lookOn: Boolean,
-    onLook: (Boolean) -> Unit,
     themeMode: String,
     onTheme: (String) -> Unit,
     ground: String,
@@ -128,8 +126,6 @@ fun ArgusAppearanceSection(
 ) {
     val c = Argus.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        SettingsGroup(listOf(SettingsItem("layers", "${BrandName.UPPER} look", if (lookOn) "On" else "Off", chevron = false, onClick = { onLook(!lookOn) })))
-        Text(tr("Off brings back the 0.52 screens. The change shows the next time {0} opens.", BrandName.NAME), style = ArgusType.sub, color = c.mute)
         Head("Theme")
         Segmented(ArgusSettings.ThemeChoice.entries.map { ChipModel(it.mode, it.label) }, ArgusSettings.ThemeChoice.of(themeMode)?.mode.orEmpty(), onTheme)
         if (ArgusSettings.ThemeChoice.of(themeMode) == null) Text(tr("Auto (dark after sunset) is on. Pick one to change it."), style = ArgusType.sub, color = c.mute)
@@ -162,13 +158,11 @@ object ArgusPrefs {
 /** The Appearance section wired to the live prefs (LookPage calls it in the ARGUS look). */
 @Composable
 fun ArgusAppearanceLive() {
-    var look by remember { mutableStateOf(Argus.lookOn()) }
     var ground by remember { mutableStateOf(Argus.groundSetting(com.blaze.assistant.ui.argus.Ground.ORBIT).name) }
     var hand by remember { mutableStateOf(ArgusPrefs.hand()) }
     var reduced by remember { mutableStateOf(ArgusPrefs.reducedSetting()) }
     val mode = com.blaze.assistant.ui.ThemeMode.mode.value
     ArgusAppearanceSection(
-        lookOn = look, onLook = { look = it; try { com.blaze.assistant.agent.Settings.setBool(com.blaze.assistant.ui.argus.ArgusLookFlag.KEY, it) } catch (_: Throwable) { } },
         themeMode = mode, onTheme = { com.blaze.assistant.ui.ThemeMode.set(it) },
         ground = ground, onGround = { ground = it; try { com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.ui.argus.ArgusLookFlag.GROUND_KEY, it) } catch (_: Throwable) { } },
         hand = hand, onHand = { hand = it; ArgusPrefs.setHand(it) },

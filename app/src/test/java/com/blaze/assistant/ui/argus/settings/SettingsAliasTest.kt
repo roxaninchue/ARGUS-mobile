@@ -116,10 +116,12 @@ class SettingsAliasTest {
         assertTrue("phone animations off", ArgusSettings.reducedMotion(false, 0f))
         assertFalse(ArgusSettings.reducedMotion(false, 1f))
         assertEquals(com.blaze.assistant.ui.argus.Ground.entries.map { it.name }, ArgusSettings.GROUNDS.map { it.first })
-        // the shell's argus_look switch lives on Appearance in the ARGUS look; no accent there
+        // ARGUS is the only look (16 Nov 2026): no look switch and no accent on Appearance
         val look = File(root, "com/blaze/assistant/ui/SimplePages.kt").readText()
         assertTrue("com.blaze.assistant.ui.argus.settings.ArgusAppearanceLive()" in look)
         val you = File(root, "com/blaze/assistant/ui/argus/settings/YouPage.kt").readText()
-        assertTrue("ArgusLookFlag.KEY" in you && "Accent" !in you.substringAfter("fun ArgusAppearanceSection("))
+        val section = you.substringAfter("fun ArgusAppearanceSection(")
+        assertTrue("no look switch", "ArgusLookFlag.KEY" !in you && "onLook" !in section)
+        assertTrue("no accent", "Accent" !in section)
     }
 }

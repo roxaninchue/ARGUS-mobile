@@ -155,7 +155,7 @@ fun YouPreview() {
 @Composable
 fun AppearancePreview(cell: ShotMatrix.Cell) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 12.dp)) {
-        ArgusAppearanceSection(lookOn = true, onLook = {}, themeMode = if (cell.dark) "dark" else "light", onTheme = {},
+        ArgusAppearanceSection(themeMode = if (cell.dark) "dark" else "light", onTheme = {},
             ground = cell.ground.name, onGround = {}, hand = ArgusSettings.Hand.RIGHT, onHand = {}, reduced = false, onReduced = {})
     }
 }
