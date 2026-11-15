@@ -24,10 +24,15 @@ object BrowserFocus {
 
     fun keeps(name: String): Boolean = name.startsWith("browser_") || name in KEEP
 
-    /** [all] narrowed to the browser set, in the same order (prompt caching); [all] itself when that would leave nothing. */
-    fun subset(all: JSONArray): JSONArray {
+    /**
+     * [all] narrowed to the browser set, in the same order (prompt caching); [all] itself when that would leave nothing.
+     * 0.53.6: [also] (Agent passes the harness core: web, files, terminal, schedule, messages, and the tools the model asked
+     * for) stays too, so a browser task can still write down what it found or answer the user's next ask without a detour
+     * through find_tool ("don't engineer against the model").
+     */
+    fun subset(all: JSONArray, also: Set<String> = emptySet()): JSONArray {
         val out = JSONArray()
-        for (i in 0 until all.length()) { val t = all.opt(i); if (keeps(nameOf(t))) out.put(t) }
+        for (i in 0 until all.length()) { val t = all.opt(i); val n = nameOf(t); if (keeps(n) || n in also) out.put(t) }
         return if (out.length() == 0) all else out
     }
 }

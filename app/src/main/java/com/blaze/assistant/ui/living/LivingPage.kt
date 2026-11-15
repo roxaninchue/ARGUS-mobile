@@ -30,6 +30,17 @@ object LivingPage {
         return title to words(lines)
     }
 
+    /** 0.2.4: the page's address from a browser tool's header ("Opened X (url).", "Page: X — url"), else "". */
+    fun url(out: String): String {
+        for (l in out.trim().lines().take(4)) {
+            val t = l.trim()
+            opened.find(t)?.let { return it.groupValues[2] }
+            pageLine.find(t)?.groupValues?.get(2)?.takeIf { it.isNotBlank() }?.let { return it }
+            if (t.startsWith("URL:", true)) t.substringAfter(':').trim().takeIf { it.startsWith("http") }?.let { return it }
+        }
+        return ""
+    }
+
     private val elementLine = Regex("^\\d{1,3}[.)]\\s*\\[")
 
     /** The page's own words: the model's header lines and element lists ("12. [button] Search") left out. */

@@ -127,6 +127,9 @@ object ToolPick {
             if (n in must) return 9_500
             if (n in used) return 9_000
             if (cueOf[n] != null) return 8_000
+            // 0.53.6: the browser comes whole. HARNESS sends open / read / click / type, and the cap used to drop wait,
+            // scroll, find, back, select, key and tabs, so a model on a slow page had no way to wait (and set a timer).
+            if (n.startsWith("browser_")) return 7_000
             val nameWords = n.lowercase().split('_').filter { it.length >= 3 }
             val direct = nameWords.count { w -> words.any { it.startsWith(w) || w.startsWith(it) } }
             val desc = (t as? JSONObject)?.optJSONObject("function")?.optString("description").orEmpty().lowercase()

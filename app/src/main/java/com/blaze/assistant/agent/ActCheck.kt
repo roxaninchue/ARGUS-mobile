@@ -87,14 +87,38 @@ object UnconfirmedEcho {
         "tap", "search_in_app", "open_url", "navigate_to", "type_text")
     val HONEST = Regex("(?i)\\b(couldn'?t|could not|can'?t confirm|cannot confirm|not confirmed|unconfirmed|isn'?t confirmed|didn'?t|did not|wasn'?t able|unable|failed|still (?:reads|shows|on|there|listed))\\b")
 
-    /** The unconfirmed evidence the reply must own up to, or null. */
-    fun open(done: List<ClaimCheck.Done>): String? {
+    /** The newest unconfirmed action that no later result of the same tool, and no later verified action, settled; or null. */
+    fun openAct(done: List<ClaimCheck.Done>): ClaimCheck.Done? {
         val acts = done.filter { it.name in ACTIONS }
-        // the newest unconfirmed action that no later result of the same tool, and no later verified action, settled
         val i = acts.indices.lastOrNull { k -> acts[k].status == ToolVerify.Status.UNVERIFIED &&
             (k + 1 until acts.size).none { j -> acts[j].name == acts[k].name || acts[j].status == ToolVerify.Status.VERIFIED } } ?: return null
-        return acts[i].why.ifBlank { "the phone didn't read it back" }
+        return acts[i]
     }
+
+    /** The unconfirmed evidence the reply must own up to, or null. */
+    fun open(done: List<ClaimCheck.Done>): String? = openAct(done)?.let { it.why.ifBlank { "the phone didn't read it back" } }
+
+    /** 0.53.6: a reply longer than this (or on several lines) is an answer, not a one-line claim: it is never replaced. */
+    const val SHORT = 160
+
+    /** What each action is about, so a reply on another subject isn't treated as a claim about it. */
+    private val TOPIC: Map<String, Regex> = mapOf(
+        "set_timer" to Regex("(?i)\\b(timers?|countdown)\\b"),
+        "set_alarm" to Regex("(?i)\\b(alarms?|wake)\\b"),
+        "process" to Regex("(?i)\\b(alarms?|timers?|clock|routines?|reminders?)\\b"),
+        "compose_sms" to Regex("(?i)\\b(texts?|sms|messages?)\\b"),
+        "add_contact" to Regex("(?i)\\bcontacts?\\b"),
+        "add_calendar_event" to Regex("(?i)\\b(events?|calendar|meetings?|appointments?|reminders?)\\b"),
+    )
+    private val WHAT: Map<String, String> = mapOf("set_timer" to "the timer", "set_alarm" to "the alarm", "process" to "that change",
+        "compose_sms" to "the text", "add_contact" to "the contact", "add_calendar_event" to "the calendar event", "device_setting" to "the setting",
+        "phone_mode" to "the phone mode", "navigate_to" to "the directions", "open_url" to "the page")
+
+    /** "not checked yet" is our own internal word; the user reads what it means. */
+    fun readable(why: String): String = why.trim().trimEnd('.').let { if (it.isBlank() || it == "not checked yet") "it wasn't read back on the phone" else it }
+
+    /** The one short caveat added under an answer (never in place of it). */
+    fun caveat(name: String, why: String): String = "(I couldn't confirm ${WHAT[name] ?: "the last phone step"} worked: ${readable(why)}.)"
 
     /** A reply that says the thing happened ("Dark mode is now turned on", "Done", "I've switched it off"). */
     val CLAIM = Regex("(?i)\\b(done|all set|it'?s (?:now )?(?:on|off|set|removed|gone)|(?:is|are) (?:now )?(?:turned |switched )?(?:on|off|enabled|disabled|set|removed)|" +
@@ -107,17 +131,26 @@ object UnconfirmedEcho {
      * "I turned it on but couldn't check it; it should be on." ([com.blaze.assistant.phone.StateCheck.honest]).
      */
     fun fix(reply: String, done: List<ClaimCheck.Done>): String {
-        val why = open(done) ?: return reply
+        val act = openAct(done) ?: return reply
+        val why = act.why.ifBlank { "the phone didn't read it back" }
+        // 0.53.6 (Finn's screenshot: a restaurant answer came out as only "I couldn't confirm it: not checked yet."): an answer
+        // (long, several lines) or a reply about something else stays the model's; the honest note goes under it.
+        val r = reply.trim()
+        val related = TOPIC[act.name]?.containsMatchIn(r) ?: true
+        if (r.length > SHORT || r.contains('\n') || !related) {
+            if (related && HONEST.containsMatchIn(r) && !CLAIM.containsMatchIn(r)) return reply
+            return reply.trimEnd() + "\n\n" + caveat(act.name, why)
+        }
         val honestLine = com.blaze.assistant.phone.StateCheck.honestFrom(why)
         val claims = CLAIM.containsMatchIn(reply)
         if (HONEST.containsMatchIn(reply)) {
             // honest already, unless it also claims success (the contradiction): then the one honest line
             if (!claims) return reply
-            return honestLine ?: "I couldn't confirm it: ${why.trim().trimEnd('.')}."
+            return honestLine ?: "I couldn't confirm it: ${readable(why)}."
         }
         if (honestLine != null) return honestLine
-        if (claims) return "I couldn't confirm it: ${why.trim().trimEnd('.')}."
-        return "I couldn't confirm it: ${why.trim().trimEnd('.')}. " + reply.trimStart()
+        if (claims) return "I couldn't confirm it: ${readable(why)}."
+        return "I couldn't confirm it: ${readable(why)}. " + reply.trimStart()
     }
 }
 

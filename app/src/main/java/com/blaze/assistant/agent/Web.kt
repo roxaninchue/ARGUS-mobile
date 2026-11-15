@@ -42,9 +42,13 @@ object Web {
         val all = synchronized(notes) { notes.toList() }
         if (all.any { WebFix.isBlockNote(it) || it.startsWith("Error") })
             "Error: web search is blocked or failing right now (${all.joinToString("; ")}). This does NOT mean nothing exists. " +
-                "Don't search the same thing again now: fetch_page a likely URL directly (the official site, or https://github.com/search?q=${URLEncoder.encode(q, "UTF-8")}&type=repositories), or answer from what you have."
-        else if (all.any { it.contains("off-topic") }) "No results about \"$q\" (the sources only returned unrelated pages). Try the exact product or site name, or fetch_page its official site."
-        else "No results for \"$q\" on ${SearchChain.NAMES}. Try different words before concluding it doesn't exist."
+                "Don't search the same thing again now: open a likely site instead (browser_open, e.g. Google Maps or TripAdvisor for places; fetch_page the official site), or answer from what you have."
+        // 0.53.6: the engines were reached and found nothing usable. Another search with other words rarely helps (it was
+        // four wasted steps on the phone); say what to do instead.
+        else if (all.any { it.contains("off-topic") }) "No results about \"$q\" (the search engines only returned unrelated pages). This does NOT mean nothing exists. " +
+            "Next: open a site that has it (browser_open https://www.google.com/maps/search/… for places, or the official site), or answer from what you have."
+        else "No results for \"$q\" on ${SearchChain.NAMES}. This does NOT mean nothing exists. At most one retry with different words; " +
+            "otherwise open a likely site (browser_open / fetch_page) or answer from what you have."
     }
 
     private val health = WebFix.Health()
@@ -76,6 +80,7 @@ object Web {
 
     private fun source(src: SearchChain.Source, q: String, n: Int, notes: MutableList<String>): String? = when (src) {
         SearchChain.Source.DDG -> ddg(q, n, notes)
+        SearchChain.Source.DDG_LITE -> ddgLite(q, n, notes)
         SearchChain.Source.BING -> rss("Bing", "https://www.bing.com/search?format=rss&setlang=en-US&cc=US&q=", q, n, notes)
         SearchChain.Source.BING_NEWS -> rss("Bing News", "https://www.bing.com/news/search?format=RSS&setlang=en-US&cc=US&q=", q, n, notes)
         SearchChain.Source.GOOGLE_NEWS -> rss("Google News", "https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US:en&q=", q, n, notes)
@@ -91,6 +96,39 @@ object Web {
         val r = parseDdg(html, n)
         if (r == null) notes += "DuckDuckGo: no results"
         return r
+    }
+
+    /** 0.53.6: lite.duckduckgo.com (a plain table page), tried when the HTML endpoint is blocked or empty. */
+    private fun ddgLite(q: String, n: Int, notes: MutableList<String>): String? {
+        val (code, html) = try {
+            Http.req("GET", "https://lite.duckduckgo.com/lite/?q=" + URLEncoder.encode(q, "UTF-8"), headers = mapOf("User-Agent" to DESKTOP_UA), timeoutMs = 8_000)
+        } catch (e: Exception) { notes += "Error: DuckDuckGo Lite ${e.message}"; return null }
+        if (code !in 200..299) { notes += "Error: DuckDuckGo Lite HTTP $code"; return null }
+        if (blocked(html) || (!html.contains("result-link") && (code == 202 || !Regex("(?i)no (?:more )?results").containsMatchIn(html)))) {
+            notes += "DuckDuckGo Lite blocked (bot check)"; return null
+        }
+        val r = parseDdgLite(html, n)
+        if (r == null) notes += "DuckDuckGo Lite: no results"
+        return r
+    }
+
+    /** lite.duckduckgo.com's results (`<a … class='result-link'>` + the `result-snippet` cell under it) as a numbered list. Pure (WebLiteTest). */
+    fun parseDdgLite(html: String, n: Int): String? {
+        val hits = Regex("""<a\b[^>]*class=['"]result-link['"][^>]*>([\s\S]*?)</a>""").findAll(html).toList()
+        val out = StringBuilder()
+        var i = 0
+        for ((k, m) in hits.withIndex()) {
+            var url = Regex("""href=['"]([^'"]+)['"]""").find(m.value)?.groupValues?.get(1)?.replace("&amp;", "&") ?: continue
+            Regex("uddg=([^&]+)").find(url)?.let { url = URLDecoder.decode(it.groupValues[1], "UTF-8") }
+            if (url.startsWith("//")) url = "https:$url"
+            if (url.contains("duckduckgo.com/y.js") || !url.startsWith("http")) continue
+            val end = if (k + 1 < hits.size) hits[k + 1].range.first else html.length
+            val seg = html.substring(m.range.last + 1, end)
+            val snip = Regex("""class=['"]result-snippet['"][^>]*>([\s\S]*?)</td>""").find(seg)?.groupValues?.get(1)?.let { strip(it) }.orEmpty()
+            out.append("${++i}. ${strip(m.groupValues[1])}\n   $url\n   $snip\n")
+            if (i >= n) break
+        }
+        return if (i == 0) null else out.toString()
     }
 
     /** DuckDuckGo's HTML results as a numbered list (pure; tested). */
@@ -273,12 +311,17 @@ object Web {
     val names = setOf("web_search", "fetch_page")
     fun tools(): List<JSONObject> = listOf(
         JSONObject().put("type", "function").put("function", JSONObject().put("name", "web_search")
-            .put("description", "Search the web (no browser needed). Returns titles, links and snippets. Use for news, facts, prices, how-tos.")
-            .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject().put("query", JSONObject().put("type", "string")))
+            .put("description", "Search the web (keyless: DuckDuckGo, Bing, news feeds, Wikipedia; no browser). Returns up to 6 results, each a title, " +
+                "its URL and a snippet. Use for facts, news, prices, how-tos and finding the right page; then fetch_page a result to read it. " +
+                "Local places (restaurants, shops) often have thin results: open Google Maps or a listings site with browser_open instead of searching again.")
+            .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject().put("query", JSONObject().put("type", "string")
+                .put("description", "What to search for, in plain words (e.g. \"restaurants in Ndola\")")))
                 .put("required", JSONArray(listOf("query"))))),
         JSONObject().put("type", "function").put("function", JSONObject().put("name", "fetch_page")
-            .put("description", "Read a web page or JSON API as plain text.")
-            .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject().put("url", JSONObject().put("type", "string")))
+            .put("description", "Read a web page or JSON API by URL, without a browser. Returns the page title and its text (up to ~9,000 characters, " +
+                "cut beyond that) plus up to two of its images; a JSON API comes back as is. Pages that need clicks, logins or JavaScript: use browser_open.")
+            .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject().put("url", JSONObject().put("type", "string")
+                .put("description", "The full URL, https://…")))
                 .put("required", JSONArray(listOf("url")))))
     )
 }

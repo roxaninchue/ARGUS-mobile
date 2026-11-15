@@ -147,14 +147,17 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
             }
         }
     }
-    // 0.2.0: page pictures for the browser cards; a card's window ends at the next page card or the next prompt
+    // 0.2.0: page pictures for the browser cards; a card's window ends at the next page card or the next prompt.
+    // 0.2.4: a card of ARGUS's own browser stands for its tab for the whole turn, so its window runs to the next prompt
+    // (it keeps updating while the turn works, then stops); LivingPage.pick prefers the picture on the card's address.
     val shots by LivingShots.shots.collectAsState()
     val until = remember(board) {
         val all = board.cards
         all.withIndex().filter { it.value.kind == Kind.BROWSER }.associate { (i, c) ->
-            c.key to all.drop(i + 1).firstOrNull { it.kind == Kind.BROWSER || it.kind == Kind.PROMPT }?.at
+            c.key to all.drop(i + 1).firstOrNull { it.kind == Kind.PROMPT || (!c.live && it.kind == Kind.BROWSER) }?.at
         }
     }
+    val glass by LivingSpec.glass.collectAsState()
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val lifeState by lifecycle.currentStateAsState()
@@ -225,7 +228,9 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
                     onDoubleTap = { following = false; zoomedOn = null; glide(LivingLayout.fit(planNow, density, vw, fitH, pad, top)) },
                     onTap = { o ->
                         val b = LivingLayout.hit(planNow, cam, density, o.x, o.y)
-                        if (b == null || zoomedOn == b.key) {
+                        // 0.2.4: a tap on a browser card opens the glass view (watch the agent's page, view only)
+                        if (b != null && b.card.kind == Kind.BROWSER && b.card.live) LivingSpec.openGlass(b.card.url)
+                        else if (b == null || zoomedOn == b.key) {
                             before?.let { glide(it) }; zoomedOn = null; before = null
                         } else {
                             following = false
@@ -263,6 +268,9 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
         StatusPill(board.status, working, p, pulse = animate, onNext = { following = true; goActive() },
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp, start = 16.dp, end = 16.dp)
                 .then(if (wide) Modifier.widthIn(max = (vw / density * 0.44f).dp) else Modifier))
+
+        // 0.2.4: the glass view over everything on the canvas (closed by its Close or Back)
+        glass?.let { g -> GlassPanel(g, working, p, now = board.cards.lastOrNull { it.live && (g.isBlank() || it.url == g) }?.now ?: board.cards.lastOrNull { it.live }?.now.orEmpty()) }
     }
 }
 
@@ -419,12 +427,23 @@ private fun BrowserCard(c: Card, p: LivingSpec.Palette, shots: List<LivingShots.
         Row(Modifier.fillMaxWidth().height(26.dp), verticalAlignment = Alignment.CenterVertically) {
             if (running || live) AgentMark(p, pulse) else StateDot(c.state, p)
             Spacer(Modifier.width(8.dp))
-            Text(if (c.flag) tr("Searching") else tr("Browsing"), color = Color(p.ink), fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                maxLines = 1, modifier = Modifier.weight(1f))
-            if (running) Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color(p.bar)).padding(horizontal = 8.dp, vertical = 3.dp)) {
+            // 0.2.4: the agent's own browser names the site it is on, big enough to read at a glance
+            val head = when {
+                c.flag -> if (c.steps > 1) tr("Searching") + " \u00b7 ${c.steps}" else tr("Searching")
+                c.live -> host.ifBlank { tr("Browser") }
+                else -> tr("Browsing")
+            }
+            Text(head, color = Color(p.ink), fontSize = 14.sp, fontWeight = if (c.live) FontWeight.SemiBold else FontWeight.Medium,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (c.live) Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color(p.bar)).padding(horizontal = 8.dp, vertical = 3.dp)) {
+                Text(tr("Watch"), color = Color(p.mute), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+            } else if (running) Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color(p.bar)).padding(horizontal = 8.dp, vertical = 3.dp)) {
                 Text(tr("Reading\u2026"), color = Color(p.mute), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
             }
         }
+        // 0.2.4: what the agent is doing in the page now (or did last), e.g. "Typing “restaurants” on google.com"
+        if (c.live && c.now.isNotBlank()) Text(c.now, color = Color(if (running) p.ink else p.mute), fontSize = 12.sp, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth().height(18.dp).padding(start = 24.dp))
         Spacer(Modifier.height(6.dp))
         val frame = RoundedCornerShape(10.dp)
         Column(Modifier.fillMaxSize().clip(frame).background(Color(p.bar)).border(1.dp, Color(p.cardEdge), frame)) {

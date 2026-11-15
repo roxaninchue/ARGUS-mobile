@@ -55,9 +55,15 @@ object LivingModel {
         val at: Long = 0L,
         /** Result (0.2.2): what to draw. */
         val result: ResultCard? = null,
+        /** 0.2.4 browser: what the agent is doing in it now ("Typing “restaurants”"), or did last. */
+        val now: String = "",
+        /** 0.2.4: how many calls this card stands for (one browser card per tab takes every step in it; searches in a row fold). */
+        val steps: Int = 1,
+        /** 0.2.4: a card of the agent's own browser (browser_* tools), updated in place; tap opens the glass view. */
+        val live: Boolean = false,
     )
 
-    data class Turn(val key: String, val cards: List<Card>) { val steps: Int get() = cards.sumOf { if (it.kind == Kind.LOG) it.rows.size else if (it.kind == Kind.BROWSER || it.kind == Kind.FILE) 1 else 0 } }
+    data class Turn(val key: String, val cards: List<Card>) { val steps: Int get() = cards.sumOf { if (it.kind == Kind.LOG) it.rows.size else if (it.kind == Kind.BROWSER) it.steps else if (it.kind == Kind.FILE) 1 else 0 } }
 
     data class Board(
         val turns: List<Turn>,
@@ -102,15 +108,24 @@ object LivingModel {
         return out
     }
 
-    enum class Tool { SEARCH, PAGE, FILE_READ, FILE_WRITE, OTHER }
+    enum class Tool { SEARCH, PAGE, BROWSER, FILE_READ, FILE_WRITE, OTHER }
 
-    val pageTools = setOf("fetch_page", "browser_read", "read_page", "fetch_url", "browser", "browser_open", "browser_show", "open_url")
+    val pageTools = setOf("fetch_page", "read_page", "fetch_url", "browser", "open_url")
+
+    /**
+     * 0.2.4 (Finn: "1 browser per agent, I don't want an infinite line of browsers"): every step in ARGUS's own browser
+     * (open, read, click, type, scroll, …) updates ONE card per tab of the turn in place, instead of a new card (or a log
+     * row) per step. A new card only when the model opens a new tab (browser_open new_tab=true).
+     */
+    val browserTools = setOf("browser_open", "browser_read", "browser_show", "browser_click", "browser_type", "browser_scroll", "browser_select",
+        "browser_key", "browser_wait", "browser_find", "browser_back", "browser_tabs", "browser_secure_input")
 
     fun toolKind(name: String): Tool {
         val n = name.lowercase()
         return when {
             n == "web_search" || n == "search_web" || n == "websearch" || n.endsWith("_search") && n.startsWith("web") -> Tool.SEARCH
             // 0.2.0: only tools that land on a page get a page card; clicks, typing, scrolls, waits are steps of the log
+            n in browserTools -> Tool.BROWSER
             n in pageTools -> Tool.PAGE
             n in setOf("file_read", "read_file", "file_view") -> Tool.FILE_READ
             n in setOf("file_write", "file_edit", "write_file", "edit_file", "save_file", "export_file") -> Tool.FILE_WRITE
@@ -142,6 +157,9 @@ object LivingModel {
         // 0.2.2: the turn's finished calls (for its result cards) and the place it found (for the steps' words)
         var calls = ArrayList<ResultCards.Call>()
         var place = ""
+        // 0.2.4: this turn's browser cards, one per tab (tab key → index in the turn's cards), and the tab in use
+        var tabs = LinkedHashMap<Int, Int>()
+        var tab = 0
 
         fun closeLog() {
             val l = log ?: return
@@ -161,7 +179,7 @@ object LivingModel {
                 if (shown.isNotEmpty()) { if (answer != null) c.addAll(c.lastIndex, shown) else c.addAll(shown) }
                 if (c.isNotEmpty()) turns += Turn(curKey, c)
             }
-            cur = null; calls = ArrayList(); place = ""
+            cur = null; calls = ArrayList(); place = ""; tabs = LinkedHashMap(); tab = 0
         }
 
         for (m in msgs) {
@@ -193,10 +211,41 @@ object LivingModel {
                     }
                     when (toolKind(name)) {
                         Tool.SEARCH -> {
-                            closeLog()
                             val q = a["query"] ?: a["q"] ?: a["text"] ?: a.values.firstOrNull().orEmpty()
-                            c += Card("s${m.id}", Kind.BROWSER, state, text = clip(out.trim(), TEXT_MAX), url = unquote(q),
-                                title = if (q.isBlank()) "Search results" else "Results for \u201c${unquote(q)}\u201d", flag = true, at = m.at)
+                            val title = if (q.isBlank()) "Search results" else "Results for \u201c${unquote(q)}\u201d"
+                            val prev = c.lastOrNull()
+                            // 0.2.4: searches one after the other are one Searching card that shows the newest query
+                            if (log == null && prev != null && prev.kind == Kind.BROWSER && prev.flag) {
+                                c[c.lastIndex] = prev.copy(state = state, text = clip(out.trim(), TEXT_MAX).ifBlank { prev.text }, url = unquote(q),
+                                    title = title, steps = prev.steps + 1)
+                            } else {
+                                closeLog()
+                                c += Card("s${m.id}", Kind.BROWSER, state, text = clip(out.trim(), TEXT_MAX), url = unquote(q), title = title, flag = true, at = m.at)
+                            }
+                        }
+                        Tool.BROWSER -> {
+                            val (title, body) = LivingPage.read(out)
+                            val seen = LivingPage.url(out)
+                            val asked = unquote(a["url"] ?: "")
+                            val askedUrl = asked.takeIf { looksLikeUrl(it) }.orEmpty()
+                            if (name == "browser_open" && a["new_tab"]?.trim()?.lowercase() == "true" && tabs.isNotEmpty()) tab = (tabs.keys.maxOrNull() ?: 0) + 1
+                            if (name == "browser_tabs" && out.startsWith("Switched to ")) {
+                                val t = out.removePrefix("Switched to ").trim().removeSuffix(".")
+                                tabs.entries.firstOrNull { c.getOrNull(it.value)?.title == t }?.let { tab = it.key }
+                            }
+                            val i = tabs[tab]
+                            val prev = i?.let { c.getOrNull(it) }
+                            val url = seen.ifBlank { askedUrl }.ifBlank { prev?.url.orEmpty() }
+                            val doing = browserDoing(name, a, state == State.RUNNING, host(url))
+                            if (i != null && prev != null) {
+                                c[i] = prev.copy(state = state, url = url, title = title.ifBlank { prev.title }, now = doing,
+                                    text = if (body.isNotBlank()) clip(body, TEXT_MAX) else prev.text, steps = prev.steps + 1)
+                            } else {
+                                closeLog()
+                                tabs[tab] = c.size
+                                c += Card("w${m.id}", Kind.BROWSER, state, text = clip(body, TEXT_MAX), url = url,
+                                    title = title.ifBlank { if (url.isBlank()) "" else host(url) }, now = doing, at = m.at, live = true)
+                            }
                         }
                         Tool.PAGE -> {
                             val u = unquote(a["url"] ?: a["u"] ?: a["link"] ?: a["address"] ?: "")
@@ -252,7 +301,7 @@ object LivingModel {
         val count = if (n == 1) "1 step" else "$n steps"
         if (!working) return if (n == 0) "Done" else "Done \u00b7 $count"
         val now = when (active?.kind) {
-            Kind.BROWSER -> if (active.flag) "Searching the web" else "Reading a page"
+            Kind.BROWSER -> if (active.flag) "Searching the web" else if (active.live) active.now.ifBlank { "Using the browser" } else "Reading a page"
             Kind.FILE -> if (active.flag) "Writing a file" else "Reading a file"
             Kind.LOG -> active.rows.lastOrNull()?.let { if (it.command) "Running a command" else it.text } ?: "Working"
             Kind.ANSWER -> "Writing the answer"
@@ -275,6 +324,48 @@ object LivingModel {
         val first = t.lineSequence().first().trim()
         val titled = first.removePrefix("Title:").removePrefix("title:").removePrefix("# ").trim()
         return if (first.length <= 120 && t.contains('\n')) titled to t.substringAfter('\n').trim() else "" to t
+    }
+
+    /**
+     * 0.2.4: the browser card's "now" line, in plain words with the thing acted on: "Searching “restaurants Ndola”",
+     * "Typing “restaurants” on google.com", "Clicking “Directions”". A saved secret is never shown ({{secret:…}}).
+     */
+    fun browserDoing(name: String, a: Map<String, String>, running: Boolean, site: String = ""): String {
+        fun q(k: String) = unquote(a[k] ?: "").takeIf { it.isNotBlank() && it != "null" }
+        fun quoted(s: String) = "\u201c" + clip(s.replace(Regex("\\s+"), " "), 40) + "\u201d"
+        fun v(now: String, done: String) = if (running) now else done
+        val on = if (site.isBlank()) "" else " on $site"
+        return when (name) {
+            "browser_open" -> {
+                val u = q("url").orEmpty()
+                if (u.isBlank()) v("Opening a page", "Opened a page")
+                else if (looksLikeUrl(u)) v("Opening ${host(u)}", "Opened ${host(u)}")
+                else v("Searching ${quoted(u)}", "Searched ${quoted(u)}")
+            }
+            "browser_type" -> {
+                val t = q("text").orEmpty()
+                val shown = if (t.contains("{{secret")) "a saved detail" else quoted(t)
+                val submit = a["submit"]?.trim()?.lowercase() == "true"
+                if (submit && !t.contains("{{secret")) v("Searching$on for $shown", "Searched$on for $shown") else v("Typing $shown$on", "Typed $shown$on")
+            }
+            "browser_click" -> q("text")?.let { v("Clicking ${quoted(it)}", "Clicked ${quoted(it)}") } ?: q("number")?.let { v("Clicking item $it$on", "Clicked item $it$on") } ?: v("Clicking$on", "Clicked$on")
+            "browser_select" -> q("option")?.let { v("Choosing ${quoted(it)}", "Chose ${quoted(it)}") } ?: v("Choosing an option", "Chose an option")
+            "browser_key" -> v("Pressing ${q("key") ?: "a key"}", "Pressed ${q("key") ?: "a key"}")
+            "browser_scroll" -> if (q("direction") == "up") v("Scrolling up", "Scrolled up") else v("Scrolling down", "Scrolled down")
+            "browser_find" -> q("query")?.let { v("Finding ${quoted(it)}", "Found ${quoted(it)}") } ?: v("Finding words", "Found words")
+            "browser_wait" -> v("Waiting for the page", "Waited for the page")
+            "browser_back" -> v("Going back", "Went back")
+            "browser_tabs" -> v("Checking tabs", "Checked tabs")
+            "browser_show" -> v("Showing you the page", "Showed you the page")
+            "browser_secure_input" -> v("Waiting for your sign-in", "Got your sign-in")
+            else -> v("Reading the page$on", "Read the page$on")
+        }
+    }
+
+    /** "https://x.y/z", "x.y/z" or "maps.google.com" — not search words. */
+    fun looksLikeUrl(s: String): Boolean {
+        val t = s.trim()
+        return t.isNotEmpty() && !t.contains(' ') && (t.contains("://") || Regex("^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+(/.*)?$").matches(t))
     }
 
     fun host(url: String): String = url.substringAfter("://").substringBefore('/').removePrefix("www.").ifBlank { url }

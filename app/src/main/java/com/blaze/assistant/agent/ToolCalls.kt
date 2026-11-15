@@ -464,6 +464,18 @@ object ToolCalls {
         }
     }
 
+    /**
+     * 0.53.6 (Finn: "there's no way a 201B+ model is failing simple tasks"): only a model whose NAME says it is small gets
+     * slimmed tool descriptions. Before, any ":free" route, all of Groq and the keyless provider were slimmed, and the
+     * "mini" test matched inside "gemini" and "minimax", so big models read tool descriptions cut mid-way. A name with a
+     * parameter count decides by it (under 15B is small); "mini / small / tiny / nano / lite" count only as whole words.
+     */
+    fun smallModel(@Suppress("UNUSED_PARAMETER") pid: String, model: String): Boolean {
+        val m = model.lowercase().substringAfterLast('/')
+        Regex("""(?<![a-z0-9.])(\d+(?:\.\d+)?)b(?![a-z0-9])""").findAll(m).map { it.groupValues[1].toDoubleOrNull() ?: 0.0 }.maxOrNull()?.let { return it < 15.0 }
+        return Regex("""(?<![a-z])(mini|small|tiny|nano|lite)(?![a-z])|flash-8b""").containsMatchIn(m)
+    }
+
     /** Shortens tool descriptions for small models: long text costs tokens and confuses them. */
     fun slim(tools: JSONArray, maxDesc: Int = 420, maxParam: Int = 160): JSONArray {
         val out = JSONArray()
@@ -473,7 +485,7 @@ object ToolCalls {
             if (f == null) { out.put(t); continue }
             f.optString("description").takeIf { it.length > maxDesc }?.let { f.put("description", it.take(maxDesc).substringBeforeLast(". ") + ".") }
             f.optJSONObject("parameters")?.optJSONObject("properties")?.let { p ->
-                p.keys().forEach { k -> p.optJSONObject(k)?.let { q -> q.optString("description").takeIf { it.length > maxParam }?.let { q.put("description", it.take(maxParam)) } } }
+                p.keys().forEach { k -> p.optJSONObject(k)?.let { q -> q.optString("description").takeIf { it.length > maxParam }?.let { q.put("description", it.take(maxParam).substringBeforeLast(' ') + "\u2026") } } }
             }
             out.put(t)
         }
@@ -488,8 +500,7 @@ object ToolCalls {
      * as strings. Free / small-model routes get shorter descriptions.
      */
     fun adapt(tools: JSONArray, pid: String, model: String): JSONArray {
-        val small = pid == Providers.keyless.id || model.endsWith(":free") || pid == "groq" ||
-            Regex("(?i)(mini|small|tiny|nano|\\b[1-9]b\\b|lite|flash-8b)").containsMatchIn(model)
+        val small = smallModel(pid, model)
         val base = if (small && Settings.bool("tool_slim", true)) slim(tools) else tools
         if (pid != "gemini") return base
         val out = JSONArray()

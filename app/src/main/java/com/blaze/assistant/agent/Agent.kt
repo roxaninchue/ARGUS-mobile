@@ -3092,6 +3092,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) + SkillMatch.block(turnSkills) + SpecialistMatch.hint(turnSpecs) +
                 // v0.27.x: "how do I install X" → lead with the action and end with one concrete offer to do it.
                 AnswerStyle.turnHint(lastUserText()) +
+                // 0.53.6: the user said to stop and answer: answer from what was found (WrapUp)
+                (if (WrapUp.asks(lastUserText())) WrapUp.HINT else "") +
                 // v0.28.4: "take me to the blaze-agent repo" / "what version are you": look it up in Blaze's docs, never guess.
                 (if (BlazeDocs.isAboutBlaze(lastUserText())) BlazeDocs.TURN_HINT else "") +
                 // v0.26.1: an in-chat diagram / chart is drawn in the reply itself (no files, preview or use_skill).
@@ -3519,7 +3521,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // v0.45.9 (ToolTruth): every agent request carries the full registered list (gateway 0.8.2 drops calls to tools not in it).
                     // 0.45.29: a browser task's steps carry the browser tools (+ ask / search / memory); asking for another widens again.
                     if (!bulk && com.blaze.assistant.browser.BrowserFocus.active(synchronized(turnTools) { turnTools.toList() })) {
-                        val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
+                        val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools, ToolPick.core(SimpleMode.simple) + widenNames); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
                     if (ToolTruth.full) { sizeLine = "tools all ${allTools.length()}"; return ToolTruth.forRequest(allTools) { allTools } }
                     val diet = ToolRouter.select(allTools, groupsOn)
                     val joinNames = widenNames + ToolTruth.MUST + ToolPick.core(SimpleMode.simple)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
@@ -3574,7 +3576,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 var actedThisTurn = false
                 // v0.27.x: any tool ran (lookups too), corrective re-prompts left this turn (all kinds), designs shown this turn.
                 var lookedThisTurn = false
-                var nudgesLeft = RetryGuard.MAX
+                // 0.53.6: "that's plenty, just give what you found": no guard sends the model back to work (WrapUp)
+                var nudgesLeft = if (WrapUp.asks(lastUserText())) 0 else RetryGuard.MAX
                 Designs.touched.clear()
                 val lastResults = ArrayList<String>()
                 // Autopilot: a bigger step budget and a clock; normal turns keep the old cap.

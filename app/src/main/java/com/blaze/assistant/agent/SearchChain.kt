@@ -11,17 +11,19 @@ package com.blaze.assistant.agent
  * A block (bot check, HTML instead of a feed) moves on to the next source; it is never read as "nothing exists".
  */
 object SearchChain {
-    enum class Source { DDG, BING, BING_NEWS, GOOGLE_NEWS, WIKIPEDIA }
+    /** 0.53.6: DDG_LITE = lite.duckduckgo.com, a separate endpoint that still answers when the HTML one is rate-limited. */
+    enum class Source { DDG, BING, DDG_LITE, BING_NEWS, GOOGLE_NEWS, WIKIPEDIA }
 
-    const val NAMES = "DuckDuckGo, Bing, Bing News, Google News or Wikipedia"
+    const val NAMES = "DuckDuckGo, DuckDuckGo Lite, Bing, Bing News, Google News or Wikipedia"
 
     private val news = Regex("""(?i)\b(?:news|headlines?|breaking|yesterday|this (?:week|morning|evening)|just (?:happened|announced)|announced?|resign(?:s|ed|ation)?|fired|sacked|appointed|ceo|president|prime minister|minister|election|elections|scores?|match|fixtures?|transfer|died|dies|death|scandal|arrested|lawsuit|strike|protests?)\b""")
 
     fun newsy(q: String): Boolean = news.containsMatchIn(q)
 
     fun order(newsy: Boolean): List<Source> =
-        if (newsy) listOf(Source.BING_NEWS, Source.GOOGLE_NEWS, Source.BING, Source.DDG, Source.WIKIPEDIA)
-        else listOf(Source.DDG, Source.BING, Source.BING_NEWS, Source.GOOGLE_NEWS, Source.WIKIPEDIA)
+        if (newsy) listOf(Source.BING_NEWS, Source.GOOGLE_NEWS, Source.BING, Source.DDG, Source.DDG_LITE, Source.WIKIPEDIA)
+        // 0.53.6: Bing's RSS often answers local queries ("Ndola restaurants") with unrelated pages, so DuckDuckGo Lite comes next
+        else listOf(Source.DDG, Source.BING, Source.DDG_LITE, Source.BING_NEWS, Source.GOOGLE_NEWS, Source.WIKIPEDIA)
 
     /** The retry with simpler words skips DuckDuckGo (it blocks repeat queries hardest). */
     fun retryOrder(newsy: Boolean): List<Source> = order(newsy).filter { it != Source.DDG }

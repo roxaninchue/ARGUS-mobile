@@ -153,6 +153,18 @@ object ToolRegistry {
         one("git", d(WRITE_LOCAL, "status" to READ, "log" to READ, "diff" to READ, "push" to WRITE_REMOTE))
     }
 
+    /**
+     * 0.53.6 (Finn: "remove approval for every single click!"): the steps ARGUS takes in its OWN background browser.
+     * They are classed PHYSICAL (hands on a page) but they never touch the phone's screen or another app, so the taint
+     * rule ("Requested after reading a web page / a background agent's report") and the proactive rule don't put a card
+     * on every click, key or field: reading pages is the whole point of the browser. The consequential ones still ask:
+     * BrowserTools asks before a click or Enter on anything that pays, sends, posts or deletes (always = true), sign-ins
+     * go through browser_secure_input's own card, and a bot whose PHYSICAL rule is ASK / NEVER is still obeyed.
+     */
+    val OWN_BROWSER = setOf("browser_click", "browser_key", "browser_select", "browser_type")
+
+    fun ownBrowser(name: String): Boolean = name in OWN_BROWSER
+
     /** Every declared tool name. */
     val names: Set<String> get() = decls.keys
 

@@ -22,7 +22,9 @@ object BrowserTools {
 
     fun definitions(): List<JSONObject> = listOf(
         fn("browser_open", "Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background. No screen control needed. " +
-            "Use it for sites you must interact with: forms, logins, shopping, booking, reading a full page. Returns the page text and numbered elements.",
+            "Use it for sites you must interact with: maps, forms, logins, shopping, booking, reading a full page. Search words (no URL) open a Google search. " +
+            "Returns \"Opened <title> (<url>)\", then the page: what's on screen, numbered links / buttons / fields ([n], use n with browser_click / browser_type) and the text below. " +
+            "The user can watch it live on the Living canvas; clicks and typing don't need their OK (a button that pays, sends, posts or deletes asks them first).",
             JSONObject().put("url", p("string", "URL or search words")).put("new_tab", p("boolean", "Open in a new tab"))
                 .put("show", p("boolean", "Also show the browser to the user"))
                 .put("private", p("boolean", "Open in a private tab: no history, cookies wiped when closed, location masked")), listOf("url")),
@@ -47,8 +49,9 @@ object BrowserTools {
             "scrolls the first one into view. Faster than scrolling and reading.",
             JSONObject().put("query", p("string", "Words to find")), listOf("query")),
         fn("browser_scroll", "Scroll the browser page by a screen; returns what's on screen after.", JSONObject().put("direction", JSONObject().put("type", "string").put("enum", JSONArray(listOf("down", "up"))))),
-        fn("browser_back", "Go back one page in the browser."),
-        fn("browser_tabs", "List browser tabs, or switch with switch_to.", JSONObject().put("switch_to", p("integer", "Tab number to switch to"))),
+        fn("browser_back", "Go back one page in the browser. Returns \"Went back.\" or \"Nothing to go back to.\"; use browser_read to see the page."),
+        fn("browser_tabs", "List the browser's tabs (\"[n] title — url\", * = the current one), or switch to tab n with switch_to. Open a second tab with browser_open new_tab=true.",
+            JSONObject().put("switch_to", p("integer", "Tab number to switch to"))),
         fn(SECURE, "When the page in ${BrandName.NAME}'s background browser needs something only the user has (email, phone, username + password, API key, " +
             "one-time code), call this instead of asking in chat or showing the browser. The user gets a secure form card in the chat (an 'Action required' " +
             "notification if they're away); the browser fills the page from it and (by default) submits. You never see the values: you get placeholders like " +

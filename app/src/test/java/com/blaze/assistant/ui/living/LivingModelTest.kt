@@ -89,11 +89,61 @@ class LivingModelTest {
     }
 
     @Test fun cardCapKeepsThePromptAndTheNewestCards() {
-        val steps = (0 until 80L).map { s(100 + it, "web_search(query=q$it)") }
+        // 0.2.4: searches in a row fold into one card, so the cap is checked with page reads (one card each)
+        val steps = (0 until 80L).map { s(100 + it, "fetch_page(url=https://x.org/q$it)") }
         val b = LivingModel.board(listOf(u(1, "go")) + steps, working = false)
         assertEquals(LivingSpec.MAX_CARDS, b.cards.size)
         assertEquals(Kind.PROMPT, b.cards.first().kind)
-        assertEquals("q79", b.cards.last().url)
+        assertEquals("https://x.org/q79", b.cards.last().url)
+    }
+
+    @Test fun oneBrowserCardPerTabUpdatesInPlace() {
+        val msgs = listOf(
+            u(1, "Find restaurants in Ndola on Google Maps"),
+            s(2, "browser_open(url=https://www.google.com/maps)"),
+            s(3, "browser_type(number=4, text=restaurants Ndola, submit=true)"),
+            s(4, "browser_click(number=2)"),
+            s(5, "browser_scroll(direction=down)"),
+            s(6, "browser_read()"),
+        )
+        val res = listOf(
+            r("browser_open(url=https://www.google.com/maps)", "Opened Google Maps (https://www.google.com/maps).\n\nPage: Google Maps \u2014 https://www.google.com/maps", 21),
+            r("browser_type(number=4, text=restaurants Ndola, submit=true)", "Page: restaurants Ndola - Google Maps \u2014 https://www.google.com/maps/search/restaurants+Ndola", 31),
+            r("browser_click(number=2)", "Page: Pizza Inn - Google Maps \u2014 https://www.google.com/maps/place/pizza-inn", 41),
+            r("browser_scroll(direction=down)", "Scroll: 40%", 51),
+        )
+        val b = LivingModel.board(msgs, working = true, results = res)
+        assertEquals(listOf(Kind.PROMPT, Kind.BROWSER), b.cards.map { it.kind })   // no log rows, no second card
+        val w = b.cards[1]
+        assertTrue(w.live); assertFalse(w.flag)
+        assertEquals("w2", w.key)                       // keyed by where the tab started: the card stays put
+        assertEquals(5, w.steps); assertEquals(5, b.turns[0].steps)
+        assertEquals("https://www.google.com/maps/place/pizza-inn", w.url)
+        assertEquals("Pizza Inn - Google Maps", w.title)
+        assertEquals(State.RUNNING, w.state)            // browser_read has no result yet
+        assertEquals("Reading the page on google.com", w.now)
+        assertEquals("Reading the page on google.com \u00b7 5 steps", b.status)
+        // a new tab is a second card; the first one stops changing
+        val two = LivingModel.board(msgs + s(7, "browser_open(url=https://tripadvisor.com, new_tab=true)"), working = true, results = res)
+        assertEquals(listOf("p1", "w2", "w7"), two.cards.map { it.key })
+        assertEquals(w.url, two.cards[1].url)
+    }
+
+    @Test fun browserWordsSayWhatIsHappening() {
+        assertEquals("Searching on google.com for \u201crestaurants\u201d",
+            LivingModel.browserDoing("browser_type", mapOf("text" to "restaurants", "submit" to "true"), true, "google.com"))
+        assertEquals("Typed a saved detail on github.com", LivingModel.browserDoing("browser_type", mapOf("text" to "{{secret:password}}"), false, "github.com"))
+        assertEquals("Clicking \u201cDirections\u201d", LivingModel.browserDoing("browser_click", mapOf("text" to "Directions"), true))
+        assertEquals("Searching \u201cbest pizza\u201d", LivingModel.browserDoing("browser_open", mapOf("url" to "best pizza"), true))
+        assertEquals("Opened maps.google.com", LivingModel.browserDoing("browser_open", mapOf("url" to "maps.google.com"), false))
+        assertTrue(LivingModel.looksLikeUrl("https://a.b/c")); assertFalse(LivingModel.looksLikeUrl("restaurants Ndola"))
+    }
+
+    @Test fun searchesInARowFoldIntoOneCard() {
+        val msgs = listOf(u(1, "go"), s(2, "web_search(query=a)"), s(3, "web_search(query=b)"), s(4, "web_search(query=c)"))
+        val b = LivingModel.board(msgs, working = false)
+        assertEquals(2, b.cards.size)
+        assertEquals("c", b.cards[1].url); assertEquals(3, b.cards[1].steps); assertEquals("Done \u00b7 3 steps", b.status)
     }
 
     @Test fun stepsBeforeAnyPromptAndEmptyChatsDrawNothing() {

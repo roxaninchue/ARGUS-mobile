@@ -26,7 +26,8 @@ import com.blaze.assistant.team.SendScope
  *  5. A-team's proactive rule: started by a routine, suggestion or another bot, not confirmed, and the task text matches
  *     A-team's RISKY regex (money / send / delete) → card for anything beyond reads and local writes;
  *  6. ConfirmGate's taint: a turn that read untrusted content asks for anything beyond reads and local writes, with
- *     "Requested after reading …" on the card;
+ *     "Requested after reading …" on the card (5 and 6 skip the steps in ARGUS's own browser, [ToolRegistry.OWN_BROWSER]:
+ *     their risky clicks ask in BrowserTools itself);
  *  7. CommandPolicy: a RISKY command asks (no allowance covers it);
  *  8. Mcp.kt Ask / Always / Off (Always runs, Ask asks, the default follows McpConfig.needsApproval);
  *  9. standing policy (policies table: tool × bot, "Always allow"), a bot's per-tool grant, a command allowance → allow;
@@ -167,12 +168,16 @@ object Policy {
             else -> {}
         }
 
+        // 0.53.6: a click / key / field / dropdown in ARGUS's own browser is not a card per step (BrowserTools asks for
+        // the ones that pay, send, post or delete)
+        val ownBrowser = c == ActionClass.PHYSICAL && ToolRegistry.ownBrowser(name)
+
         // 5. proactive work the user hasn't confirmed, whose task reads as money / send / delete
-        if (x.trigger.proactive && !x.confirmed && risky(x.triggerText).isNotEmpty() && !ActionClasses.quiet(c))
+        if (!ownBrowser && x.trigger.proactive && !x.confirmed && risky(x.triggerText).isNotEmpty() && !ActionClasses.quiet(c))
             return Decision.Ask(Reason.PROACTIVE, note = "Started by ${who(x.trigger)}, not by you" + (note?.let { ". $it" } ?: "."))
 
         // 6. taint
-        if (x.tainted != null && ConfirmGate.taintAsks(c)) return Decision.Ask(Reason.TAINTED, note = note)
+        if (!ownBrowser && x.tainted != null && ConfirmGate.taintAsks(c)) return Decision.Ask(Reason.TAINTED, note = note)
 
         // 7. risky commands
         if (x.command == CommandPolicy.Level.RISKY) return Decision.Ask(Reason.RISKY_COMMAND, note = note)

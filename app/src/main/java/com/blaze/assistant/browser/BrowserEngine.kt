@@ -464,6 +464,37 @@ object BrowserEngine {
         } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: agentShot", e) }
     }
 
+    /**
+     * Living UI 0.2.4, the glass view: the tab the agent works in for a card showing [url] (the tab on that address,
+     * else ARGUS's tab, else the current one). Never wakes a sleeping tab.
+     */
+    fun glassTab(url: String): Tab? {
+        val want = url.trim().substringAfter("://").removePrefix("www.").removeSuffix("/").lowercase()
+        fun norm(u: String) = u.trim().substringAfter("://").removePrefix("www.").removeSuffix("/").lowercase()
+        return (if (want.isNotBlank()) tabs.lastOrNull { it.live != null && norm(it.url) == want } else null)
+            ?: tabs.firstOrNull { it.id == agentTabId } ?: tab()
+    }
+
+    /**
+     * Living UI 0.2.4, the glass view: a picture of [t]'s page as it is now, [maxW] px wide at the page's own shape (the
+     * phone's screen when the tab is offscreen), for watching the agent without touching the page. Null when the tab
+     * sleeps or hasn't painted. Main thread; a new bitmap each call (the old one is left to the GC, it may still be drawn).
+     */
+    suspend fun glassFrame(t: Tab, maxW: Int = 720): ImageBitmap? = withContext(Dispatchers.Main) {
+        if (!::app.isInitialized) return@withContext null
+        val w = t.live ?: return@withContext null
+        try {
+            if (w.width <= 0 || w.height <= 0) layoutOffscreen(w)
+            if (w.width <= 0 || w.height <= 0) return@withContext null
+            val tw = minOf(maxW, w.width); val sc = tw.toFloat() / w.width
+            val th = (w.height * sc).toInt().coerceAtLeast(1)
+            val b = Bitmap.createBitmap(tw, th, Bitmap.Config.RGB_565)
+            val c = Canvas(b); c.drawColor(android.graphics.Color.WHITE); c.scale(sc, sc); c.translate(-w.scrollX.toFloat(), -w.scrollY.toFloat())
+            w.draw(c)
+            b.asImageBitmap()
+        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: glassFrame", e); null }
+    }
+
     /** v0.33.3: a transparent 84px spacer at the end of a scrollable page (once), so the floating toolbar never hides its end. */
     const val BOTTOM_PAD_JS = "(function(){try{var b=document.body;if(!b||document.getElementById('__blaze_pad'))return;" +
         "if(document.documentElement.scrollHeight<=window.innerHeight+4)return;var d=document.createElement('div');d.id='__blaze_pad';" +

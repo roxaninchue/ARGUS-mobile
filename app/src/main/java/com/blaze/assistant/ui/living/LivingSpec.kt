@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 object LivingSpec {
     /** Living UI's own version (v0.xz.y: a minor update is y + 1; a major one moves x and/or z). */
-    const val VERSION = "0.2.3"
+    const val VERSION = "0.2.4"
 
     enum class View { CHAT, LIVING }
 
@@ -55,8 +55,21 @@ object LivingSpec {
     /** The floating composer's widest (dp). */
     const val FLOAT_COMPOSER_MAX_DP = 560
 
-    /** Back on Living returns to Chat. True = Back was used here. */
-    fun back(): Boolean = if (_view.value == View.LIVING) { _view.value = View.CHAT; true } else false
+    private val _glass = MutableStateFlow<String?>(null)
+    /**
+     * 0.2.4 the glass view (Finn: "click to get the glass panel to see what the agent is doing without touching or editing
+     * the screen"): the address of the browser card it was opened from ("" = ARGUS's tab), or null when closed.
+     */
+    val glass: StateFlow<String?> = _glass.asStateFlow()
+    fun openGlass(url: String) { _glass.value = url }
+    fun closeGlass() { _glass.value = null }
+
+    /** Back on Living closes the glass view first, then returns to Chat. True = Back was used here. */
+    fun back(): Boolean = when {
+        _glass.value != null -> { _glass.value = null; true }
+        _view.value == View.LIVING -> { _view.value = View.CHAT; true }
+        else -> false
+    }
 
     // ------------------------------------------------------------------ canvas
     /** Dot grid spacing on the canvas (dp at zoom 1) and the dot radius (dp, screen size: dots never grow with zoom). */

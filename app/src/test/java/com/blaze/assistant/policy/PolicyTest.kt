@@ -208,6 +208,25 @@ class PolicyTest {
         assertFalse((Policy.decide(Policy.Call("x", SEND), c()) as Decision.Ask).always)
     }
 
+    @Test fun ownBrowserStepsDontAskPerClick() {
+        // Finn's screenshot: "Requested after reading a background agent's report. Argus wants to use the phone's screen — browser click"
+        for (tool in listOf("browser_click", "browser_type", "browser_key", "browser_select")) {
+            for (taint in listOf("a web page", "a background agent's report", null)) for (p in listOf(act, auto)) {
+                val d = Policy.decide(Policy.Call(tool, PHYSICAL), c(p, tainted = taint))
+                assertTrue("$tool $taint → $d", d is Decision.Allow)
+            }
+            // proactive work whose text reads as money / send still doesn't card each click (BrowserTools asks for the pay button)
+            assertTrue(Policy.decide(Policy.Call(tool, PHYSICAL), c(auto, trigger = Trigger.ROUTINE, text = "order pizza", confirmed = false)) is Decision.Allow)
+            // a bot whose screen rule is NEVER / ASK is still obeyed, and Plan mode still refuses
+            assertTrue(Policy.decide(Policy.Call(tool, PHYSICAL), c(act.copy(actions = rules(PHYSICAL to Rule.NEVER)))) is Decision.Refuse)
+            assertTrue(Policy.decide(Policy.Call(tool, PHYSICAL), c(act.copy(actions = rules(PHYSICAL to Rule.ASK)))) is Decision.Ask)
+            assertTrue(Policy.decide(Policy.Call(tool, PHYSICAL), c(plan = true)) is Decision.Refuse)
+        }
+        // taps on the phone's real screen after outside content still ask
+        assertTrue(Policy.decide(Policy.Call("tap", PHYSICAL), c(auto, tainted = "a web page")) is Decision.Ask)
+        assertTrue(Policy.decide(Policy.Call("open_app", PHYSICAL), c(auto, tainted = "a background agent's report")) is Decision.Ask)
+    }
+
     @Test fun refusalsTellTheBotNotToRetry() {
         for (d in listOf(Policy.decide(Policy.Call("x", SEND), c(plan = true)), Policy.decide(Policy.Call("x", READ), c(mcp = Policy.Mcp("off", true))),
             Policy.decide(Policy.Call("x", SEND), c(act.copy(sendScope = SendScope.NONE))))) {
