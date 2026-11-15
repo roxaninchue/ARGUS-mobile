@@ -1,3 +1,12 @@
+## v0.53.3: Living view, turns that read like a conversation, searches that hold up (versionCode 195)
+
+- Living (Living UI 0.1.0): switch Chat | Living to watch a turn as a canvas: your prompt, browser reads, files, the steps log and the answer as cards, with a status pill and Next. Pan, pinch, fit, focus and follow.
+- Turns read like a conversation: what ARGUS says while it works stays on screen, calls to the same tool in a row fold into one quiet row ("Searched the web · 4 · 1 failed") that opens to each query and its result, and the final reply comes last. Reasoning streams in while it works. The task pill, the step count and the Skills / Specialist chips are gone.
+- Product and model names no longer pull in unrelated skills ("Dots 3 Note Preview" no longer loads lecture notes), and everyday words like note, page or list don't on their own.
+- Web search holds up: a source that blocks takes a break from every search, requests to each source are spaced out, the first two working sources race, off-topic results are dropped, Google News links open the real article, and a page that refuses to load is read once through a reader service (Settings: reader_fallback). Repeating a search that already returned results is skipped.
+- Taps work again in Chat mode (the closed history drawer no longer sits over the screen).
+- More of the app follows your language: the Home greeting, profile rows, onboarding, projects, tabs, chips and the Life day line and tiles.
+
 ## v0.53.2: ARGUS does the work, makes real things, and shows its thinking (versionCode 194)
 
 - ARGUS looks things up, runs commands and uses its tools first, then answers from what they return. Plain questions get the web, files and the terminal too, not just a quick reply from memory.

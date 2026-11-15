@@ -66,8 +66,8 @@ class ThoughtFoldTest {
         assertTrue(chat.contains("ThoughtFold.pick(m.thinking, streamHere, liveThought)"))
         assertTrue(chat.contains("ThoughtSection(m.id, thought, live = streamHere, answerStarted = m.text.isNotBlank(), ms = m.thinkMs)"))
         assertTrue(chat.contains("streamHere = item.m.id == streamId,"))
-        // the existing "Show tool steps" rows are untouched
-        assertTrue(chat.contains("com.blaze.assistant.ui.team.thread.LiveToolRows(liveRows)"))
+        // 0.53.3: tool rows render inside the turn flow (TurnFlow.kt), the live turn included
+        assertTrue(chat.contains("com.blaze.assistant.ui.team.thread.TurnFlowView(liveFlow)"))
         val llm = src("agent/LlmClient.kt")
         assertTrue(llm.contains("val chatThink = if (lane == Lane.MAIN) onThink else null"))
         assertTrue(llm.contains("PromptEcho.note(messages)"))
