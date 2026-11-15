@@ -77,7 +77,7 @@ class LivingModelTest {
     @Test fun plainToolsUseTheLabel() {
         val msgs = listOf(u(1, "remind me"), s(2, "set_alarm(time=7:00)"))
         val b = LivingModel.board(msgs, working = true, label = { n, run -> if (run) "Setting an alarm" else "Set an alarm" })
-        assertEquals("Setting an alarm", b.cards[1].rows[0].text)
+        assertEquals("Setting an alarm \u00b7 7:00", b.cards[1].rows[0].text)   // 0.2.2: the main argument as the detail
         assertFalse(b.cards[1].rows[0].command)
     }
 

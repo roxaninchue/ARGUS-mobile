@@ -15,6 +15,9 @@ import com.blaze.assistant.agent.ToolTrail
  *  - [Kind.LOG]: every other call in a row is one steps log: shell commands as `$ cmd`, other tools in plain words,
  *    each with done / failed / running.
  *  - [Kind.ANSWER]: the reply. An acknowledgement ("On it") is not drawn.
+ *  - [Kind.RESULT] (0.2.2, "show, don't tell"): what a finished call gave back that can be shown (the weather, the
+ *    place, the alarm, the event, the picture, a table; [ResultCards]), placed just before the answer.
+ * 0.2.2: a steps row says what was done with the call's main argument ([LivingSteps.label]) and true duplicates fold.
  *
  * A step message without a call (narration) draws nothing; nothing raw reaches the canvas except a shell command, the
  * page address and the real text of pages and files. Only the newest [LivingSpec.TURNS_SHOWN] turns are kept, and no
@@ -24,7 +27,7 @@ import com.blaze.assistant.agent.ToolTrail
  */
 object LivingModel {
     enum class Role { USER, BLAZE, STEP }
-    enum class Kind { PROMPT, BROWSER, FILE, LOG, ANSWER }
+    enum class Kind { PROMPT, BROWSER, FILE, LOG, ANSWER, RESULT }
     enum class State { RUNNING, DONE, FAILED }
 
     /** What the model needs of a chat message. [ack] = an acknowledgement reply, not drawn. */
@@ -50,6 +53,8 @@ object LivingModel {
         /** Log: its rows. */
         val rows: List<Row> = emptyList(),
         val at: Long = 0L,
+        /** Result (0.2.2): what to draw. */
+        val result: ResultCard? = null,
     )
 
     data class Turn(val key: String, val cards: List<Card>) { val steps: Int get() = cards.sumOf { if (it.kind == Kind.LOG) it.rows.size else if (it.kind == Kind.BROWSER || it.kind == Kind.FILE) 1 else 0 } }
@@ -134,15 +139,30 @@ object LivingModel {
         var log: ArrayList<Row>? = null
         var logKey = ""
         var logAt = 0L
+        // 0.2.2: the turn's finished calls (for its result cards) and the place it found (for the steps' words)
+        var calls = ArrayList<ResultCards.Call>()
+        var place = ""
 
         fun closeLog() {
             val l = log ?: return
             val c = cur ?: return
             val st = when { l.any { it.state == State.RUNNING } -> State.RUNNING; l.last().state == State.FAILED -> State.FAILED; else -> State.DONE }
-            c += Card(logKey, Kind.LOG, st, rows = l.takeLast(LOG_ROWS), at = logAt)
+            c += Card(logKey, Kind.LOG, st, rows = LivingSteps.merge(l).takeLast(LOG_ROWS), at = logAt)
             log = null
         }
-        fun closeTurn() { closeLog(); cur?.let { if (it.isNotEmpty()) turns += Turn(curKey, it) }; cur = null }
+        fun closeTurn() {
+            closeLog()
+            cur?.let { c ->
+                // 0.2.2: the turn's result cards go just before its answer (or at the end while it still works)
+                val answer = c.lastOrNull()?.takeIf { it.kind == Kind.ANSWER }
+                val shown = ResultCards.of(calls, answer?.text).mapIndexed { i, r ->
+                    Card("r${curKey}-${r::class.simpleName}$i", Kind.RESULT, State.DONE, at = answer?.at ?: c.last().at, result = r)
+                }
+                if (shown.isNotEmpty()) { if (answer != null) c.addAll(c.lastIndex, shown) else c.addAll(shown) }
+                if (c.isNotEmpty()) turns += Turn(curKey, c)
+            }
+            cur = null; calls = ArrayList(); place = ""
+        }
 
         for (m in msgs) {
             when (m.role) {
@@ -167,6 +187,10 @@ object LivingModel {
                     }
                     val a = args(m.meta)
                     val out = r?.output.orEmpty()
+                    if (state == State.DONE) {
+                        calls += ResultCards.Call(name, a, out, false)
+                        if (name.equals("get_location", true)) ResultCards.place(out)?.locality?.takeIf { it.isNotBlank() }?.let { place = it }
+                    }
                     when (toolKind(name)) {
                         Tool.SEARCH -> {
                             closeLog()
@@ -198,7 +222,7 @@ object LivingModel {
                         }
                         Tool.OTHER -> {
                             val shell = m.meta.trim().startsWith("$ ")
-                            val text = if (shell) m.meta.trim().take(200) else label(name, state == State.RUNNING)
+                            val text = if (shell) m.meta.trim().take(200) else LivingSteps.label(name, a, state == State.RUNNING, label(name, state == State.RUNNING), place)
                             if (log == null) { log = ArrayList(); logKey = "l${m.id}"; logAt = m.at }
                             log!! += Row(text, shell, state, out.takeIf { it.isNotBlank() }?.let { clip(it.trim(), 200) })
                         }

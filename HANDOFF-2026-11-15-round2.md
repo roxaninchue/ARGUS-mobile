@@ -69,3 +69,25 @@ Not done vs mockup: connected-app icons on the rail (no cheap source), the accen
 the "with N tasks" status, gesture/list buttons in the composer.
 Check on the phone: rotate on Living (rail appears, canvas full height, card stays centred); composer taps/typing and the
 keyboard lift; the cutout side; the drawer from the title and the rail; rotate back (portrait as 0.2.0).
+
+Living UI 0.2.2, "show, don't tell" (owner, 15 Nov 2026, screenshot 10:19 "Weather right now"), pushed with `[skip ci]`,
+**not built**:
+1. `ui/living/ResultCards.kt`: `sealed class ResultCard` (Weather, Place, Alarm, Event, Image, Table) + `ResultCards.PARSERS`
+   (tool name → `Parser`) + `of(calls, answer)` (one per kind per turn, alarms/events one per call, ≤ 3, a place folds into
+   the weather; a markdown table from any tool result, else from the answer). Weather parses `GatewayWeather.forModel`'s
+   text (get_weather returns text to the model, not JSON) and the gateway's JSON; ResultCardsTest pins forModel's wording
+   with a source scan, so a wording change there fails the test instead of silently dropping the card. Place parses
+   `phone/Location.run` ("Location: lat, lon (±n m…)\nNear: address"); alarm/timer/event read the call's arguments;
+   image reads "Gallery as <file>" (drawn from `Media.find`).
+2. `LivingModel`: `Kind.RESULT` cards (Card.result) built at the end of each turn from its finished calls (ToolTrail
+   output), placed just before the answer (at the end while working). `LivingLayout.ordered`: results head the answer
+   column (portrait right column / landscape MAIN), the link from the last result into the answer has an arrow
+   (`shows`). Heights in `resultHeight`. Drawn in LivingScreen `ResultCardView` (sky, pin and clock are drawn on Canvas).
+3. `ui/living/LivingSteps.kt`: row words = own words for tools whose shared StepTool label is generic (get_weather,
+   get_location, calendar, mail, github…) or StepTool's label, + " · " + the main argument (query, title, url host, file
+   name, alarm time, the turn's place for weather/location; never bare numbers). `merge` folds consecutive identical
+   rows into "×2". LivingModelTest's alarm row now reads "Setting an alarm · 7:00".
+Tests: ResultCardsTest (9). Living tests 38/38.
+Check on the phone: ask "weather right now" in Living: a weather card above the answer with an arrow; steps read
+"Found your location · Ndola" / "Checked the weather · Ndola"; an alarm, an event and an image turn; portrait + landscape.
+After an app restart ToolTrail is empty, so old turns show no result cards (words still right).

@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
@@ -366,6 +367,7 @@ private fun CardHost(b: CardBox, cam: () -> Camera, density: Float, p: LivingSpe
                 Kind.FILE -> FileCard(b.card, p)
                 Kind.LOG -> LogCard(b.card, p)
                 Kind.ANSWER -> AnswerCard(b.card, p)
+                Kind.RESULT -> b.card.result?.let { ResultCardView(it, p) }
             }
         }
         if (active) AgentMark(p, pulse, Modifier.align(Alignment.TopEnd).padding(top = 0.dp).graphicsLayer { translationX = 6.dp.toPx(); translationY = -6.dp.toPx() })
@@ -524,6 +526,175 @@ private fun AnswerCard(c: Card, p: LivingSpec.Palette) = Column(Modifier.fillMax
     if (rest.isNotBlank()) {
         Spacer(Modifier.height(6.dp))
         Text(rest, color = Color(p.mute), fontSize = 13.sp, lineHeight = 18.sp, maxLines = LivingLayout.BODY_LINES, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+// ---------------------------------------------------------------------- 0.2.2 result cards ("show, don't tell")
+
+/** A result card (ResultCards): the thing itself, drawn at LivingLayout.resultHeight. */
+@Composable
+private fun ResultCardView(r: ResultCard, p: LivingSpec.Palette) = Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 12.dp)) {
+    when (r) {
+        is ResultCard.Weather -> WeatherResult(r, p)
+        is ResultCard.Place -> PlaceResult(r, p)
+        is ResultCard.Alarm -> {
+            Header(if (r.timer) tr("Timer set") else tr("Alarm set"), p)
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ClockMark(p)
+                Spacer(Modifier.width(10.dp))
+                Text(r.time, color = Color(p.ink), fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            }
+            if (r.label.isNotBlank()) Text(r.label, color = Color(p.mute), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        is ResultCard.Event -> {
+            Header(tr("Added to your calendar"), p)
+            Spacer(Modifier.height(6.dp))
+            Text(r.title, color = Color(p.ink), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(if (r.end.isBlank()) r.start else "${r.start} – ${r.end.substringAfter(' ')}", color = Color(p.mute), fontSize = 12.sp, maxLines = 1,
+                overflow = TextOverflow.Ellipsis)
+            if (r.location.isNotBlank()) { Spacer(Modifier.height(4.dp)); Chip(r.location, p) }
+        }
+        is ResultCard.Image -> {
+            Header(tr("Picture"), p)
+            Spacer(Modifier.height(6.dp))
+            val img by produceState<ImageBitmap?>(null, r.file) {
+                value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        com.blaze.assistant.media.Media.find(r.file)?.let { f ->
+                            val o = android.graphics.BitmapFactory.Options().apply { inSampleSize = 4 }
+                            android.graphics.BitmapFactory.decodeFile(f.absolutePath, o)?.asImageBitmap()
+                        }
+                    } catch (_: Throwable) { null }
+                }
+            }
+            Box(Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)).background(Color(p.bar)), contentAlignment = Alignment.Center) {
+                img?.let { Image(it, contentDescription = r.prompt.ifBlank { r.file }, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                    ?: Text(r.prompt.ifBlank { r.file }, color = Color(p.mute), fontSize = 12.sp, maxLines = 4, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(12.dp))
+            }
+        }
+        is ResultCard.Table -> {
+            Header(tr("Table"), p)
+            Spacer(Modifier.height(6.dp))
+            for ((i, row) in (listOf(r.head) + r.rows).withIndex()) Row(Modifier.fillMaxWidth().height(LivingLayout.TABLE_ROW_H.dp)
+                .then(if (i == 0) Modifier.clip(RoundedCornerShape(6.dp)).background(Color(p.bar)) else Modifier).padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                for (cell in row) Text(cell, color = Color(if (i == 0) p.mute else p.ink), fontSize = 11.sp,
+                    fontWeight = if (i == 0) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 4.dp))
+            }
+            if (r.more > 0) Text(tr("+{0} more rows", r.more.toString()), color = Color(p.mute), fontSize = 11.sp, modifier = Modifier.height(18.dp))
+        }
+    }
+}
+
+/** The weather itself: big temperature, the sky drawn, condition and place, feels-like / humidity / wind, source and time. */
+@Composable
+private fun WeatherResult(w: ResultCard.Weather, p: LivingSpec.Palette) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Header(tr("Weather now"), p)
+        Spacer(Modifier.weight(1f))
+        if (w.source.isNotBlank()) Header(if (w.time.isBlank()) w.source else "${w.source} · ${w.time}", p)
+    }
+    Spacer(Modifier.height(4.dp))
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Text("${w.temp}", color = Color(p.ink), fontSize = 44.sp, lineHeight = 48.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Text(w.unit, color = Color(p.mute), fontSize = 18.sp, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.padding(top = 6.dp))
+            }
+            Text(listOf(w.condition, w.place).filter { it.isNotBlank() }.joinToString(" · "), color = Color(p.ink), fontSize = 13.sp,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        SkyMark(ResultCards.sky(w.condition), w.night, p)
+    }
+    Spacer(Modifier.height(10.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        w.feels?.let { Chip(tr("Feels {0}", "$it°"), p) }
+        w.humidity?.let { Chip("$it%", p) }
+        w.wind?.let { Chip(it, p) }
+    }
+}
+
+/** Where the phone is: a drawn street grid with a pin (no tiles), the locality, the address and the coordinates. */
+@Composable
+private fun PlaceResult(r: ResultCard.Place, p: LivingSpec.Palette) {
+    Header(tr("Your location"), p)
+    Spacer(Modifier.height(6.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        val line = Color(p.link); val pin = Color(p.orb); val ground = Color(p.bar)
+        Canvas(Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)).background(ground)) {
+            val w = size.width; val sw = 1.2f * density
+            for (k in 1..3) { drawLine(line, Offset(0f, w * k / 4f), Offset(w, w * k / 4f - w * 0.08f), sw); drawLine(line, Offset(w * k / 4f, 0f), Offset(w * k / 4f + w * 0.06f, w), sw) }
+            drawCircle(pin.copy(alpha = 0.25f), w * 0.2f, Offset(w / 2f, w / 2f))
+            drawCircle(pin, w * 0.08f, Offset(w / 2f, w / 2f))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(r.locality.ifBlank { tr("Here") }, color = Color(p.ink), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (r.address.isNotBlank()) Text(r.address, color = Color(p.mute), fontSize = 11.sp, lineHeight = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text("%.4f, %.4f".format(java.util.Locale.US, r.lat, r.lon) + (if (r.accuracy.isNotBlank()) "  ${r.accuracy}" else ""),
+                color = Color(p.lineNo), fontSize = 10.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun Chip(text: String, p: LivingSpec.Palette) =
+    Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color(p.bar)).padding(horizontal = 8.dp, vertical = 4.dp)) {
+        Text(text, color = Color(p.ink), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+
+/** The sky drawn (no glyphs): sun or moon, a cloud, rain, snow, a bolt or fog lines. */
+@Composable
+private fun SkyMark(sky: ResultCards.Sky, night: Boolean, p: LivingSpec.Palette) {
+    val sun = Color(if (night) p.mute else 0xFFF5B73B); val cloud = Color(p.mute); val wet = Color(p.orb)
+    Canvas(Modifier.size(56.dp).semantics { contentDescription = sky.name.lowercase() }) {
+        val w = size.width; val sw = 2f * density
+        val showSun = sky == ResultCards.Sky.CLEAR || sky == ResultCards.Sky.PARTLY
+        if (showSun) {
+            val c = if (sky == ResultCards.Sky.CLEAR) Offset(w / 2f, w / 2f) else Offset(w * 0.36f, w * 0.34f)
+            val rr = if (sky == ResultCards.Sky.CLEAR) w * 0.22f else w * 0.16f
+            drawCircle(sun, rr, c)
+            if (night) drawCircle(Color(p.card), rr * 0.8f, Offset(c.x + rr * 0.45f, c.y - rr * 0.3f))
+            else for (i in 0 until 8) {
+                val a = Math.PI * i / 4
+                val x0 = c.x + (rr * 1.35f) * kotlin.math.cos(a).toFloat(); val y0 = c.y + (rr * 1.35f) * kotlin.math.sin(a).toFloat()
+                val x1 = c.x + (rr * 1.75f) * kotlin.math.cos(a).toFloat(); val y1 = c.y + (rr * 1.75f) * kotlin.math.sin(a).toFloat()
+                drawLine(sun, Offset(x0, y0), Offset(x1, y1), sw, StrokeCap.Round)
+            }
+        }
+        if (sky != ResultCards.Sky.CLEAR) {
+            val base = if (sky == ResultCards.Sky.PARTLY) w * 0.66f else w * 0.56f
+            drawCircle(cloud, w * 0.16f, Offset(w * 0.36f, base))
+            drawCircle(cloud, w * 0.21f, Offset(w * 0.56f, base - w * 0.08f))
+            drawCircle(cloud, w * 0.14f, Offset(w * 0.74f, base + w * 0.02f))
+            drawRect(cloud, Offset(w * 0.36f, base), androidx.compose.ui.geometry.Size(w * 0.38f, w * 0.16f))
+        }
+        val low = w * 0.84f
+        when (sky) {
+            ResultCards.Sky.RAIN -> for (i in 0 until 3) drawLine(wet, Offset(w * (0.38f + 0.14f * i), low - w * 0.06f), Offset(w * (0.34f + 0.14f * i), low + w * 0.06f), sw, StrokeCap.Round)
+            ResultCards.Sky.SNOW -> for (i in 0 until 3) drawCircle(wet, w * 0.03f, Offset(w * (0.38f + 0.14f * i), low))
+            ResultCards.Sky.STORM -> {
+                val path = Path().apply { moveTo(w * 0.56f, low - w * 0.1f); lineTo(w * 0.48f, low + w * 0.02f); lineTo(w * 0.56f, low + w * 0.02f); lineTo(w * 0.5f, low + w * 0.14f) }
+                drawPath(path, Color(0xFFF5B73B), style = Stroke(sw, cap = StrokeCap.Round))
+            }
+            ResultCards.Sky.FOG -> for (i in 0 until 2) drawLine(cloud, Offset(w * 0.28f, low - w * 0.04f + i * w * 0.1f), Offset(w * 0.8f, low - w * 0.04f + i * w * 0.1f), sw, StrokeCap.Round)
+            else -> Unit
+        }
+    }
+}
+
+/** A small clock face for alarms and timers. */
+@Composable
+private fun ClockMark(p: LivingSpec.Palette) {
+    val ink = Color(p.orb)
+    Canvas(Modifier.size(28.dp)) {
+        val w = size.width; val sw = 1.8f * density
+        drawCircle(ink, w * 0.42f, Offset(w / 2f, w / 2f), style = Stroke(sw))
+        drawLine(ink, Offset(w / 2f, w / 2f), Offset(w / 2f, w * 0.24f), sw, StrokeCap.Round)
+        drawLine(ink, Offset(w / 2f, w / 2f), Offset(w * 0.7f, w * 0.58f), sw, StrokeCap.Round)
     }
 }
 

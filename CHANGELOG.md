@@ -1,3 +1,9 @@
+## Living UI 0.2.2: show, don't tell (not built yet)
+
+- When ARGUS gets something you can look at, Living draws it beside the answer with an arrow into it: the weather itself (big temperature, the sky drawn, the place, feels-like, humidity and wind, source and time), where you are (a pin, the town, the address), the alarm or timer that was set, the event added to your calendar, a picture that was made, or a table.
+- Steps say what was done: "Found your location · Ndola", "Checked the weather · Ndola", "Searched your mail · invoices", "Set an alarm · 07:00" instead of "Looked things up" twice. The same step twice in a row shows once with ×2.
+- Works the same in portrait and landscape.
+
 ## Landscape overhaul: every screen usable sideways (not built yet)
 
 - Sheets fit a phone on its side: they stop under the status bar and their contents scroll between the title and the buttons (the plan sheet, jobs, the bot editor, quick actions, the model picker, the + menu).

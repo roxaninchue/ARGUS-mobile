@@ -85,11 +85,24 @@ object LivingLayout {
         Kind.BROWSER -> 228f
         Kind.FILE -> 52f + max(1, c.lines.size) * 17f + 12f
         Kind.LOG -> 46f + max(1, c.rows.size) * ROW_H + c.rows.count { result(it) != null } * RESULT_H + 10f
+        Kind.RESULT -> resultHeight(c.result)
         Kind.ANSWER -> {
             val (h, r) = headline(c.text)
             46f + textLines(h, 24, HEAD_LINES) * 23f + (if (r.isBlank()) 0f else 6f + textLines(r, 36, BODY_LINES) * 18f) + 8f
         }
     }
+
+    /** 0.2.2: a result card's height by kind (LivingScreen draws each at exactly this). */
+    fun resultHeight(r: ResultCard?): Float = when (r) {
+        is ResultCard.Weather -> 168f
+        is ResultCard.Place -> 132f
+        is ResultCard.Alarm -> 92f
+        is ResultCard.Event -> if (r.location.isBlank()) 96f else 114f
+        is ResultCard.Image -> 220f
+        is ResultCard.Table -> 44f + (r.rows.size + 1) * TABLE_ROW_H + (if (r.more > 0) 18f else 0f) + 8f
+        null -> 60f
+    }
+    const val TABLE_ROW_H = 24f
 
     const val ROW_H = 26f
     const val RESULT_H = 20f
@@ -131,9 +144,10 @@ object LivingLayout {
             val lastPage = above.takeIf { it !== pb }
 
             // right: the answer first when the turn ended on it, then files and steps as they happened
+            // 0.2.2: the turn's result cards head the column, an arrow from them down into the answer
             val rest = cards.drop(1).filter { it.kind != Kind.BROWSER }
             val answer = rest.lastOrNull()?.takeIf { it.kind == Kind.ANSWER && it === cards.last() }
-            val right = if (answer != null) listOf(answer) + rest.dropLast(1) else rest
+            val right = ordered(rest, answer)
             var ry = top
             var prev: Box? = null
             var first: Box? = null
@@ -141,7 +155,7 @@ object LivingLayout {
             for (c in right) {
                 val b = Box(c, RIGHT_X, if (prev == null) top else ry + GAP_Y, width(c), height(c))
                 boxes += b
-                if (prev != null) links += Link(floatArrayOf(prev.x + 24f, prev.bottom, b.x + 24f, b.y))
+                if (prev != null) links += Link(floatArrayOf(prev.x + 24f, prev.bottom, b.x + 24f, b.y), arrow = shows(prev.card, c))
                 if (first == null) first = b
                 if (c === answer) ab = b
                 prev = b
@@ -184,6 +198,16 @@ object LivingLayout {
         return xs
     }
 
+    /** A column's cards: the result cards first, then the answer (when the turn ended on it), then the rest as they happened. */
+    fun ordered(cards: List<Card>, answer: Card?): List<Card> {
+        val results = cards.filter { it.kind == Kind.RESULT }
+        val others = cards.filter { it.kind != Kind.RESULT && it !== answer }
+        return results + listOfNotNull(answer) + others
+    }
+
+    /** The link from [a] down to [b] shows a result going into the answer (an arrow), not just the next step. */
+    fun shows(a: Card, b: Card): Boolean = a.kind == Kind.RESULT && b.kind == Kind.ANSWER
+
     fun plan(board: Board, wide: Boolean): Plan = if (wide) planWide(board) else plan(board)
 
     private fun elbow(from: Box, to: Box, fromY: Float = port(from), toY: Float = port(to), arrow: Boolean = true): Link {
@@ -220,7 +244,7 @@ object LivingLayout {
             val pages = xs[Col.PAGES]?.let { x -> stack(rest.filter { col(it) == Col.PAGES }, x, WIDE_PAGE_GAP) }.orEmpty()
             val mainCards = rest.filter { col(it) == Col.MAIN }
             val answer = mainCards.lastOrNull()?.takeIf { it.kind == Kind.ANSWER && it === cards.last() }
-            val main = stack(if (answer != null) listOf(answer) + mainCards.dropLast(1) else mainCards, xs.getValue(Col.MAIN), GAP_Y)
+            val main = stack(ordered(mainCards, answer), xs.getValue(Col.MAIN), GAP_Y)
             val checks = xs[Col.CHECK]?.let { x -> stack(rest.filter { col(it) == Col.CHECK }, x, GAP_Y) }.orEmpty()
 
             // the prompt's trunk into every page; the pages' trunk into the answer column (or the checklist when the
@@ -236,7 +260,7 @@ object LivingLayout {
             if (main.isNotEmpty() && checks.isNotEmpty()) links += elbow(main.first(), checks.first())
             for (colBoxes in listOf(main, checks)) for (i in 1 until colBoxes.size) {
                 val a = colBoxes[i - 1]; val b = colBoxes[i]
-                links += Link(floatArrayOf(a.x + 24f, a.bottom, b.x + 24f, b.y))
+                links += Link(floatArrayOf(a.x + 24f, a.bottom, b.x + 24f, b.y), arrow = shows(a.card, b.card))
             }
             maxR = max(maxR, pb.right)
             y = bottom + TURN_GAP

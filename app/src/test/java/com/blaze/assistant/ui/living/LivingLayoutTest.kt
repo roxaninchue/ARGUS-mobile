@@ -187,7 +187,7 @@ class LivingLayoutTest {
         LivingSpec.show(LivingSpec.View.LIVING)
         assertTrue(LivingSpec.back())
         assertEquals(LivingSpec.View.CHAT, LivingSpec.view.value)
-        assertEquals("0.2.1", LivingSpec.VERSION)
+        assertEquals("0.2.2", LivingSpec.VERSION)
     }
 
     // ------------------------------------------------------------------ 0.2.1 landscape
