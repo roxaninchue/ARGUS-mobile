@@ -50,6 +50,20 @@ object PhoneControl {
         return Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
+    /**
+     * 0.53.7: opens the phone-control switch, best page first: the app's own Accessibility page, then the Accessibility
+     * list, then the app's info page. [ctx] should be an Activity when there is one. False when none would open.
+     */
+    fun openSettings(ctx: Context): Boolean {
+        val tries = listOf({ fixIntent(ctx) },
+            { Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) },
+            { Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + ctx.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+        for (t in tries) {
+            try { ctx.startActivity(t()); return true } catch (e: Exception) { com.blaze.assistant.device.CrashLog.write("Phone control settings: ${e.javaClass.simpleName}") }
+        }
+        return false
+    }
+
     /** Last state seen, so a drop is logged once (it lands in the crash report for diagnosis). */
     @Volatile private var last: State? = null
     fun note(s: State) {

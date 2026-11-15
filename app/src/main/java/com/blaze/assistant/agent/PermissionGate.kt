@@ -26,6 +26,21 @@ object PermissionGate {
         "you'll come straight back here. ${BrandName.NAME} still asks before sending, paying or deleting."
     const val ACTION = "Open settings"
 
+    /**
+     * 0.53.7 (Finn: "Open settings doesn't take me anywhere"): the agent used to start Settings from the Application
+     * context on a background coroutine, which Android 14+ may silently refuse, so nothing opened. Now the card's button
+     * starts it from the Activity in the tap ([isCard] tells the card), marks [opened], and the gate only falls back.
+     */
+    @Volatile private var opened = false
+    fun markOpened() { opened = true }
+    /** True once if the card already opened Settings (then resets). */
+    fun takeOpened(): Boolean { val o = opened; opened = false; return o }
+    /** Is this pending card the phone-control one? (a background agent's title carries an "id · " prefix) */
+    fun isCard(title: String, action: String): Boolean = action == ACTION && title.endsWith(TITLE)
+
+    const val NO_SETTINGS = "Not done: Android wouldn't open Accessibility settings from here, so phone control is still off and nothing was tapped or read. " +
+        "Tell the user in one plain line to open Settings › Accessibility › Installed apps › ${BrandName.NAME} and turn it on, then do the task with your browser or other tools if they can."
+
     /** Ask only when the tool needs it, the switch is off, and the user hasn't turned phone control off in Blaze. */
     fun shouldAsk(tool: String, serviceOn: Boolean, phoneControlAllowed: Boolean): Boolean =
         tool in SCREEN_TOOLS && !serviceOn && phoneControlAllowed

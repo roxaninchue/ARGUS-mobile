@@ -1576,6 +1576,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** 0.53.6: tool calls not run this turn (cut off / unreadable), by tool; two of the same tool end the turn (cutStopped). */
         private val cutFails = HashMap<String, Int>()
         @Volatile private var cutStopped = false
+        /** 0.53.7 DeviceLast: the request (its words) an own tool ran for / the screen nudge went out for; per request, not runLoop locals. */
+        @Volatile private var ownToolFor = ""
+        @Volatile private var deviceNudgedFor = ""
         /** 0.53.6: this step's calls that were cut off or unreadable, by call id: answered with an error, never run. */
         @Volatile private var cutCalls: Map<String, ToolCalls.Cut> = emptyMap()
         /** v0.45.13: the alarm / timer results of this turn (TimeEcho checks the reply's time against them). */
@@ -4723,10 +4726,23 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 return PermissionGate.notDone(name, PermissionGate.Outcome.DECLINED)
             val on = { com.blaze.assistant.phone.BlazeAccessibilityService.instance != null }
             com.blaze.assistant.ui.ComeBack.watch(app) { on() }
-            try { app.startActivity(com.blaze.assistant.phone.PhoneControl.fixIntent(app)) }
-            catch (_: Exception) { return PermissionGate.notDone(name, PermissionGate.Outcome.TIMED_OUT) }
+            // 0.53.7: the card's button opens Settings itself (an Activity start from the tap); this is the fallback.
+            if (!PermissionGate.takeOpened() && !com.blaze.assistant.phone.PhoneControl.openSettings(app)) {
+                add(Role.STEP, "Couldn't open Settings")
+                return PermissionGate.NO_SETTINGS
+            }
             val o = PermissionGate.await(on, kotlinx.coroutines.CompletableDeferred<Boolean>().apply { complete(true) })
             return if (o == PermissionGate.Outcome.GRANTED) { add(Role.STEP, "Phone control on"); null } else PermissionGate.notDone(name, o)
+        }
+
+        /** 0.53.7 DeviceLast: own tools before the device's screen (one nudge per request; null = go on). */
+        private fun deviceLast(name: String, args: JSONObject): String? {
+            val req = lastUserText()
+            if (name in DeviceLast.OWN) { ownToolFor = req; return null }
+            val n = DeviceLast.nudge(name, args.toString(), req, ownToolFor == req, deviceNudgedFor == req) ?: return null
+            deviceNudgedFor = req
+            add(Role.STEP, "Using my browser first")
+            return n
         }
 
         private suspend fun screenGate(name: String, args: JSONObject): String? {
@@ -4786,6 +4802,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (com.blaze.assistant.bank.BankMode.active && (name in Orient.acting || name in Orient.looking || name == "open_app" || name == "search_in_app"))
                 return "Bank mode is on: ${BrandName.NAME} has stepped back so the user's banking app works, and doesn't read or use the screen. " +
                     "Tell the user, and offer to turn Bank mode off (bank_mode action=off) when they're done banking."
+            deviceLast(name, args)?.let { return it }
             // 0.45.20 (item 15): phone control is asked for the first time a task needs it, with the reason, not in setup.
             if (PermissionGate.shouldAsk(name, com.blaze.assistant.phone.BlazeAccessibilityService.instance != null, Settings.phoneControl))
                 phoneControlGate(name)?.let { return it }

@@ -1,3 +1,10 @@
+## Unreleased: "Open settings" opens Settings, and Argus's own tools come before the device
+
+Seen (owner, 2026-11-15): "Find 3 good restaurants near me in Ndola" opened the Google Maps app on the phone, then asked to turn on phone control, and "Open settings" did nothing.
+
+- Phone control's **Open settings** now starts Settings from the card tap itself (an Activity start). Before, the agent started it from the Application context on a background coroutine, which Android can silently refuse. It tries the app's Accessibility page, then the Accessibility list, then the app's info page. If none opens, the task says so plainly and points to Settings › Accessibility (`PermissionGate`, `PhoneControl.openSettings`, `ConfirmCard`).
+- **Own tools before the device** (`agent/DeviceLast.kt`, tested in `DeviceLastTest`): the first screen call of a request is sent back to search, the background browser (Maps and YouTube search URLs) or a connected service. It runs when the user named the app or the phone, when an own tool was tried already, or after one nudge. Per-request state is kept on Session fields keyed by the request, so nothing new goes into `runLoop`. The harness prompt opens with "Your tools first, the device last".
+
 ## Unreleased: one live browser card per agent, a glass view to watch it, no OK per click, a harness that trusts the model
 
 Living UI 0.2.4. Seen (owner screenshots): every browser step drew a new "Browsing" card, so a Google Maps search became an endless column; each click asked "Argus wants to use the phone's screen — browser click: number: 2" after a background agent's report; web search said "No results" on every engine; a "Set a timer" step showed up in a restaurant search; and "just give what you found" was answered with only "I couldn't confirm it: not checked yet."
