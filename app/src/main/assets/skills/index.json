@@ -269,8 +269,8 @@
     },
     {
       "name": "blaze-coding-workflow",
-      "version": 1,
-      "sha256": "5e3c929b598907b08a55b374d780347f02adb45f7b8073cdbf1096efa2c59fe5"
+      "version": 2,
+      "sha256": "580c0b5d8c1f538533bd42dce94f0a0187db884fb2e2d68242d1cd461fb55b8b"
     },
     {
       "name": "blaze-views",

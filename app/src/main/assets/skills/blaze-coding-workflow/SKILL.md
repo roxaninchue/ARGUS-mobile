@@ -2,7 +2,7 @@
 name: blaze-coding-workflow
 description: How Argus writes and changes code in the terminal, in repos and in apps. Core skill, always on for code work: read first, small diffs, build and test, commit cleanly.
 tags: [code, coding, programming, bug, fix, script, repo, git, build, compile, test, refactor, python, kotlin, javascript]
-version: 1
+version: 2
 core: true
 ---
 
@@ -20,9 +20,18 @@ core: true
 1. **Understand**: reproduce the problem or restate the feature; find the entry point (file_search, grep); read the surrounding code and tests.
 2. **Plan**: the smallest change that solves it; note files you will touch and how you'll check it.
 3. **Change**: edit with file_edit (not shell heredocs); keep names, formatting and patterns consistent with the file.
-4. **Check**: run the build, tests or the script (run_code / run_shell); read errors fully, fix the cause, rerun. Three honest attempts before asking for help.
+4. **Check**: follow the fast test loop below; read errors fully, fix the cause, rerun. Three honest attempts before asking for help.
 5. **Commit**: git add only what belongs together; message = what + why in the imperative ("Fix crash when list is empty").
 6. **Report**: what changed, why, how you verified it, anything left.
+
+## Fast test loop
+Catch errors in seconds, not at the end. Run the cheapest check that can fail first, and widen only when it passes.
+1. **Baseline first.** Before editing, run the checks once on the untouched code and save the output (e.g. `~/.argus/baseline-<repo>.txt`). Then a red result after your change is clearly yours, and errors that were already there (missing libs, a flaky test) don't hide new ones or send you chasing old ones.
+2. **Narrowest check after every edit.** Syntax/compile only the files you touched (`python -m py_compile f.py`, `node --check f.js`, `tsc --noEmit -p .`, `kotlinc f.kt`, `go vet ./pkg`), then run only the tests for that unit (`pytest tests/test_x.py -k name -x`, `node --test test/x.test.mjs`, `go test ./pkg -run Name`, one JUnit class). Use `-x`/fail-fast so the first failure stops the run.
+3. **Write the test with the change.** New logic gets a small test that would have failed before the fix. Keep logic in plain functions you can test without the UI, network or device; test those directly.
+4. **Diff against the baseline, not the count.** Compare error and failure sets (sort, `diff baseline.txt now.txt`). New lines are yours to fix; never "fix" by deleting or skipping tests.
+5. **Widen before you hand over.** Narrow green, then the whole suite and the full compile/lint once, then diff against the baseline again. Report the real numbers ("214/214 tests, no new compile errors").
+6. **Keep it fast.** Time-box each run (`timeout 120`), cache dependencies, and skip the slow full build until the user asks for it. If a check can't run here (no SDK, no device), say so and say what you ran instead; never claim a pass you didn't see.
 
 ## Safety
 - Destructive commands (rm -rf, force-push, dropping tables, rewriting history) need the user's yes.
