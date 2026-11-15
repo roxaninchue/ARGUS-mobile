@@ -1568,6 +1568,16 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** 0.46.0: table cards built straight from tool results this turn (ToolCards), attached under the final reply. */
         val turnCards = java.util.Collections.synchronizedList(mutableListOf<ToolCards.Card>())
         @Volatile var richRepaired = false
+        // 0.53.7: per-turn flags live on the Session (reset at turn start), not as runLoop locals: every local that lives
+        // across a suspension point is saved and restored at each one, and runLoop hit the JVM's 64 KB method limit.
+        private var claimNudged = false; private var proofNudged = false; private var promiseNudged = false
+        private var emptyNudged = false; private var echoNudged = false; private var leakNudged = false
+        private var refusalNudged = false; private var credGuarded = false; private var ledgerAsks = 0
+        /** 0.53.6: tool calls not run this turn (cut off / unreadable), by tool; two of the same tool end the turn (cutStopped). */
+        private val cutFails = HashMap<String, Int>()
+        @Volatile private var cutStopped = false
+        /** 0.53.6: this step's calls that were cut off or unreadable, by call id: answered with an error, never run. */
+        @Volatile private var cutCalls: Map<String, ToolCalls.Cut> = emptyMap()
         /** v0.45.13: the alarm / timer results of this turn (TimeEcho checks the reply's time against them). */
         val turnSetResults = java.util.Collections.synchronizedList(mutableListOf<String>())
         /** v0.45.13: GoalCheck's one "opening is only step 1" nudge per turn. */
@@ -3317,6 +3327,15 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (inbox.isNotEmpty()) scope.launch { job?.join(); drain() }
         }
 
+        /** 0.53.6: counts this step's cut-off / unreadable calls; the tool that has now failed that way twice this turn, or null. */
+        private fun cutRepeat(): ToolCalls.Cut? {
+            for (c in cutCalls.values) cutFails[c.name] = (cutFails[c.name] ?: 0) + 1
+            CallState.current().errors.add("not run: " + cutCalls.values.joinToString { "${it.name} (${if (it.lengthStop) "cut off" else "unreadable"} at ${it.chars} chars)" })
+            val again = cutCalls.values.firstOrNull { (cutFails[it.name] ?: 0) >= 2 } ?: return null
+            cutStopped = true; cutCalls = emptyMap()
+            return again
+        }
+
         suspend fun runLoop() {
             // Lazy start: blaze.db opens off the main thread; a turn that starts right after launch waits for it (suspends).
             try { Mind.await() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mind.await", e) }
@@ -3464,17 +3483,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 resumeGoal = null
                 var nudgeCount = 0
                 var rewroteClaim = false
-                var claimNudged = false
-                var proofNudged = false
-                var promiseNudged = false   // 0.49.0 (RC5 a): one re-ask when a reply says it is doing something with no tool behind it
-                var emptyNudged = false
-                var echoNudged = false
-                var ledgerAsks = 0   // owed-reply ledger: one follow-up ask per turn (ReplyLedger)
-                var leakNudged = false
-                val cutFails = HashMap<String, Int>()   // 0.53.6: tool calls not run this turn (cut off / unreadable), by tool
-                var cutStopped = false   // 0.53.6: the same tool failed that way twice: the turn ends with a plain line
-                var credGuarded = false   // 0.45.19 CredAsk: one swap per turn
-                var refusalNudged = false
+                // One re-ask each per turn (promiseNudged 0.49.0, ledgerAsks = owed-reply ledger, credGuarded = CredAsk 0.45.19); Session fields (0.53.7).
+                claimNudged = false; proofNudged = false; promiseNudged = false; emptyNudged = false; echoNudged = false
+                leakNudged = false; refusalNudged = false; credGuarded = false; ledgerAsks = 0
+                cutFails.clear(); cutStopped = false; cutCalls = emptyMap()
                 var lastOkStep = ""
                 var savedPath: String? = null   // v0.45.9: a save_file this turn; the final answer names its path
                 var turnToolCalls = 0   // v0.45.9: tools run this turn (ScheduleTruth checks only answers made from the [context] block)
@@ -3811,7 +3823,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // Gatekeeper: a call written as text becomes a real call; glued/typo'd names,
                     // broken JSON and wrong types are repaired before anything runs or is sent back.
                     var unknownCalls: Set<String> = emptySet()
-                    var cutCalls: Map<String, ToolCalls.Cut> = emptyMap()   // 0.53.6: by call id; answered with an error, never run
+                    cutCalls = emptyMap()
                     try {
                         if ((reply.optJSONArray("tool_calls")?.length() ?: 0) == 0) {
                             val txt = reply.opt("content") as? String
@@ -3862,15 +3874,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     }
                     // 0.53.6: a call cut off by the output cap (or with arguments that won't parse) is answered with an error and
                     // never run; the same tool failing that way twice in a turn ends the turn with a plain line instead of a loop.
-                    if (cutCalls.isNotEmpty()) {
-                        for (c in cutCalls.values) cutFails[c.name] = (cutFails[c.name] ?: 0) + 1
-                        CallState.current().errors.add("not run: " + cutCalls.values.joinToString { "${it.name} (${if (it.lengthStop) "cut off" else "unreadable"} at ${it.chars} chars)" })
-                        cutCalls.values.firstOrNull { (cutFails[it.name] ?: 0) >= 2 }?.let { again ->
-                            cutStopped = true; nudgesLeft = 0; cutCalls = emptyMap()
-                            if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
-                            reply.remove("tool_calls")
-                            reply.put("content", ToolCalls.cutStop(again))
-                        }
+                    if (cutCalls.isNotEmpty()) cutRepeat()?.let { again ->
+                        nudgesLeft = 0
+                        if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
+                        reply.remove("tool_calls"); reply.put("content", ToolCalls.cutStop(again))
                     }
                     // 0.45.19 (CredAsk): a page is open and the reply asks the user to type a login into the chat → the secure
                     // form instead, once per turn and inside the per-site limits (3 asks, none after a cancel). Never card numbers.
@@ -4330,7 +4337,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         val name = fn.getString("name")
                         val args = try { JSONObject(fn.optString("arguments", "{}").ifBlank { "{}" }) }
                             catch (_: Exception) { JSONObject() }
-                        val cutNow = cutCalls[call.optString("id")]   // 0.53.6: not run
+                        val cutNow = cutCalls[call.optString("id")]   // 0.53.6: not run (null for every normal call)
                         if (name !in Friendly.selfNarrating && name !in unknownCalls && cutNow == null && i !in preStepped) addStep(Friendly.say(name, args), Friendly.exact(name, args))
                         if (pre.containsKey(i)) autoStepId = -1L
                         val toolT0 = System.currentTimeMillis()
