@@ -205,7 +205,7 @@ class SpaceWiringTest {
         assertTrue("the empty chat is at the gutter", "${S}SpaceInsets.GUTTER_DP.dp" in welcome)
         val shell = src("ui/Shell.kt")
         assertTrue("composerPanel insets like the composer", "fun Modifier.composerPanel(" in shell && "padding(horizontal = ${S}SpaceInsets.COMPOSER_EDGE_DP.dp)" in shell)
-        assertTrue("the + sheet floats", ".composerPanel(" in shell.substringAfter("fun PlusMenu(").substringBefore("\n}\n"))
+        assertTrue("the + menu is a sheet over the screen (owner 2026-11-15)", "ArgusSheet(" in shell.substringAfter("fun PlusMenu(").substringBefore("\n}\n"))
         for (strip in listOf("private fun QuoteStrip(", "internal fun SuggestionList(", "private fun ListeningStrip("))
             assertTrue("$strip floats", ".composerPanel(" in chat.substringAfter(strip).substringBefore("\n}\n"))
         val header = shell.substringAfter("fun ProjectChatHeader(").substringBefore("\n}\n")

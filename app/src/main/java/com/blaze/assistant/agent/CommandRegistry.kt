@@ -9,7 +9,7 @@ import org.json.JSONObject
 /**
  * v0.39.0: Blaze knows every view and every / command and can run them itself (the `blaze_command` tool), in Simple
  * and Advanced alike. A command that names a view opens it (open_view rules); a prompt command gives Blaze its prompt
- * to follow; a few app commands run as if typed. Commands that would cut Blaze's own turn short (/stop, /new, /clear,
+ * to follow; a few app commands run as if typed. Commands that would cut Blaze's own turn short (/stop, /new,
  * /retry) are left to the user. Pure except [tool] (CommandRegistryTest).
  */
 object CommandRegistry {
@@ -18,7 +18,7 @@ object CommandRegistry {
     enum class Kind { VIEW, PROMPT, ACTION, USER_ONLY, UNKNOWN }
 
     /** Commands only the user runs: they would end or wipe the turn Blaze is in. */
-    val USER_ONLY = setOf("stop", "new", "clear", "retry", "copy", "update", "search", "help")
+    val USER_ONLY = setOf("stop", "new", "retry", "copy", "update", "search", "help")
 
     /** App commands Blaze may run as if typed (mode switches, voice, the orb, opening pages). */
     val ACTIONS = setOf("plan", "build", "think", "voice", "orb", "views", "settings", "routines", "memory", "holding", "pin", "usage",
@@ -52,7 +52,7 @@ object CommandRegistry {
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
         .put("description", "Run one of ${BrandName.NAME}'s own / commands as if the user typed it: a view (/music, /gallery, /schedule, /doing, /look …) opens it, " +
             "a prompt command (/summarize, /translate, /brief …) gives you its prompt to follow, an app command (/autopilot, /voice, /orb, /plan …) runs it. " +
-            "/stop, /new, /clear and /retry are for the user only. The full list is in blaze_now.")
+            "/stop, /new and /retry are for the user only. The full list is in blaze_now.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("command", JSONObject().put("type", "string").put("description", "The command without or with the slash, e.g. music or /translate"))
             .put("input", JSONObject().put("type", "string").put("description", "What follows the command, if anything")))

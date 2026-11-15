@@ -896,30 +896,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         m.freshContext(null)
     }
 
-    /** v0.24.0 /clear: the last clear of the visible thread, kept in memory only so the snackbar can undo it. */
-    @Volatile private var lastClear: ClearScreen.Snapshot? = null
-
-    /**
-     * /clear: empties the visible thread so the chat starts empty. Nothing is forgotten: the history stays in the
-     * chat file, the journal (search_chat) and the long-chat index; Blaze starts a new context window there.
-     */
-    fun clearScreen(): ClearScreen.Result {
-        val s = cur
-        if (s.busy) return ClearScreen.Result.BUSY
-        if (ClearScreen.isEmpty(s.msgs)) return ClearScreen.Result.EMPTY
-        lastClear = ClearScreen.Snapshot(s.id, s.msgs, s.ctxFrom, s.lcSummary, s.lcUpto, s.history.length(), System.currentTimeMillis())
-        clearedBefore = s.clearedAt
-        s.clearedAt = System.currentTimeMillis()
-        val w = ClearScreen.window(s.history.length())
-        s.ctxFrom = w.ctxFrom; s.lcSummary = w.lcSummary; s.lcUpto = w.lcUpto
-        s.msgs = emptyList()
-        s.persist(force = true)
-        return ClearScreen.Result.CLEARED
-    }
-
-    /** v0.40.0: the chat's clear time before the last /clear, put back by Undo. */
-    @Volatile private var clearedBefore = 0L
-
     /**
      * v0.40.0 cloud sync: chat [id] changed on another phone (CloudSync merged it into the file). An open, idle chat is
      * read again so the new messages show; a chat that is working keeps going and the next round merges again.
@@ -972,22 +948,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return true
         }
         return false
-    }
-
-    /** True while the last /clear can still be undone (same chat, nothing sent since, within a few seconds). */
-    fun canUndoClear(): Boolean = ClearScreen.canUndo(lastClear, cur.id, cur.msgs, cur.history.length(), System.currentTimeMillis())
-
-    /** Puts the cleared messages and context window back. */
-    fun undoClear(): Boolean {
-        val snap = lastClear ?: return false
-        val s = cur
-        if (!ClearScreen.canUndo(snap, s.id, s.msgs, s.history.length(), System.currentTimeMillis())) return false
-        s.ctxFrom = snap.ctxFrom; s.lcSummary = snap.lcSummary; s.lcUpto = snap.lcUpto
-        s.msgs = ClearScreen.restored(snap, s.msgs)
-        s.clearedAt = clearedBefore
-        lastClear = null
-        s.persist(force = true)
-        return true
     }
 
     /** The model's context window (Settings › context_tokens, else a guess from its name; 0 = unknown). */
@@ -3086,7 +3046,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             job = scope.launch(ctxTag + taint + CallState().element()) { runLoop() }
         }
 
-        /** v0.41.0: what the chat lane reads (the newest turns after a Clear screen), without building the full prompt. */
+        /** v0.41.0: what the chat lane reads (the newest turns in its context window), without building the full prompt. */
         fun liteHistory(): JSONArray {
             val base = ctxFrom.coerceIn(0, history.length())
             val from = maxOf(base, history.length() - 24)

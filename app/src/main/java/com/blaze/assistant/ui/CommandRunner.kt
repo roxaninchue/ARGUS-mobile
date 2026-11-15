@@ -41,8 +41,7 @@ object CommandRunner {
     /**
      * Run a typed command. Returns the text to send to Blaze instead (for prompt commands),
      * "" when the command was handled here, or null when it isn't a command.
-     * [openSettings] opens a settings page by id ("" = list). The chat screen handles /clear itself (with undo);
-     * here it clears without one (the floating orb).
+     * [openSettings] opens a settings page by id ("" = list).
      */
     fun run(ctx: Context, text: String, openSettings: (String) -> Unit, listen: () -> Unit): String? {
         if (!text.startsWith("/") || text.startsWith("//")) return null
@@ -62,7 +61,6 @@ object CommandRunner {
                 }
             }
             "new" -> Agent.clear()
-            "clear" -> if (Agent.clearScreen() == com.blaze.assistant.agent.ClearScreen.Result.BUSY) toast("${BrandName.NAME} is working. Stop it first, then /clear.")
             // v0.25.0: no model or provider choice; old habits get one plain line.
             "model", "provider" -> Agent.note("${BrandName.NAME} picks the best free model for every message by itself. There's nothing to choose.")
             "persona" -> {

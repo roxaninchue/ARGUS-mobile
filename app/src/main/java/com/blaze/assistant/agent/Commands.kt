@@ -14,7 +14,6 @@ data class Command(val name: String, val args: String, val desc: String,
 
 object Commands {
     val actions = listOf(
-        Command("clear", "", "Clear the screen (nothing is forgotten; undo for a few seconds)"),
         Command("new", "", "Fresh start: a new context window (in a project: a new thread)"),
         Command("persona", "<style>", "Change ${BrandName.NAME}'s personality"),
         Command("settings", "", "Open settings"),

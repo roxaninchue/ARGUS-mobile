@@ -1,3 +1,9 @@
+## Unreleased: Kimi-style + menu; Clear screen removed
+
+- The + menu is now a bottom sheet over the whole screen (Kimi-style): a strip of big tiles (Camera, ARGUS Camera, Photos, Files, Call) and then rows with a chevron (Paste image when there's one, Apps & connectors, Skills, @ files, Plan / Build, New chat in a project). It no longer pushes the chatbox up or sits over the Chat | Living switch.
+- Gone from the + menu: Voice (the composer's mic already does it) and Views.
+- Clear screen is removed everywhere: the + row, `/clear`, the slash menu and Spotlight entry, the "Chat cleared · Undo" bar, and Agent.clearScreen / undoClear with ClearScreen.kt and its test. Chats cleared before still stay cleared (the synced cleared-at time is still honoured), and other phones' older clears still merge.
+
 ## Unreleased: every app from your ARGUS gateway, with real icons
 
 - Settings › Apps & connectors now lists every app your ARGUS gateway offers (argus-connect, the gateway admin's Apps tab: 70 apps today) instead of the five built-in accounts. Each row shows the app's real icon, what it does, how many tools it has and whether it is connected; apps are grouped by category and there is a search box.

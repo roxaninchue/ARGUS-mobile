@@ -108,7 +108,7 @@ class Blaze050ShotsTest {
     }
 
     @Test fun slashMenuAll() {
-        frame("slash-menu-all", dark = true, expect = "/clear") {
+        frame("slash-menu-all", dark = true, expect = "/new") {
             SuggestionList(CommandRunner.suggest("/")) {}
             Card("/")
         }

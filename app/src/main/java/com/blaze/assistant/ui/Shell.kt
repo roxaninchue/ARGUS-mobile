@@ -9,6 +9,7 @@ import com.blaze.assistant.BrandName
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.CloseFullscreen
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.OpenInFull
@@ -52,6 +53,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -602,45 +604,81 @@ fun TaskChip(text: String) {
 
 // ---------------------------------------------------------------- composer
 
-/** What the + menu offers. [id] is handled by the screen. */
-data class PlusItem(val id: String, val label: String, val sub: String = "", val on: Boolean = false)
+/**
+ * What the + menu offers. [id] is handled by the screen. [tile] rows are the big buttons in the sheet's top strip
+ * (Camera, Photos, Files, Call…); the rest are list rows under it.
+ */
+data class PlusItem(val id: String, val label: String, val sub: String = "", val on: Boolean = false, val tile: Boolean = false)
 
+/**
+ * Owner 2026-11-15 (Kimi-style + sheet): a strip of big tiles for what you attach or start, then a short list of rows.
+ * No Voice row (the composer's mic is the voice button), no Views row and no Clear screen (removed everywhere).
+ */
 fun plusItems(work: String, approval: String, model: String, hasClipImage: Boolean, inProject: Boolean = false, hasCamera: Boolean = true): List<PlusItem> = buildList {
     // v0.28.x: camera entries only when the phone really has a camera (PackageManager.FEATURE_CAMERA_ANY).
     if (hasCamera) {
-        add(PlusItem("camera", "Camera", "Take a photo"))
-        add(PlusItem("blazecam", "${BrandName.NAME} Camera", "Ask, read text, translate, scan"))
+        add(PlusItem("camera", "Camera", "Take a photo", tile = true))
+        add(PlusItem("blazecam", "${BrandName.NAME} Camera", "Ask, read text, translate, scan", tile = true))
     }
-    add(PlusItem("photos", "Photos", "Pick pictures"))
-    add(PlusItem("files", "Files", "Photos, PDFs, text"))
+    add(PlusItem("photos", "Photos", "Pick pictures", tile = true))
+    add(PlusItem("files", "Files", "Photos, PDFs, text", tile = true))
+    add(PlusItem("call", "Call", "Hands-free voice call with ${BrandName.NAME}", tile = true))
+    if (hasClipImage) add(PlusItem("paste", "Paste image", "The picture on your clipboard"))
+    add(PlusItem("apps", "Apps & connectors", "Connect apps so ${BrandName.NAME} can act in them"))
+    add(PlusItem("skills", "Skills", "Reusable skills for specific tasks"))
     add(PlusItem("atfile", "@ files", "Mention a file from ${BrandName.NAME}'s home"))
-    if (hasClipImage) add(PlusItem("paste", "Paste image", "From the clipboard"))
-    add(PlusItem("voice", "Voice", "Talk instead of typing"))
-    add(PlusItem("call", "Call ${BrandName.NAME}", "Hands-free voice call"))
-    add(PlusItem("plan", if (work == "plan") "Plan mode" else "Build mode", if (work == "plan") "Read and look only · tap for Build" else "Full access · tap for Plan", on = work == "plan"))
+    add(PlusItem("plan", if (work == "plan") "Plan mode" else "Build mode", if (work == "plan") "Read and look only \u00b7 tap for Build" else "Full access \u00b7 tap for Plan", on = work == "plan"))
     // Unreleased (owner): no Auto / Autopilot row; ARGUS is always on Autopilot.
     // v0.25.0: no Model row; Blaze Cloud picks the model for every message.
-    add(PlusItem("views", "Views", "Memory, jobs, design, accounts…"))
-    // One mind: outside projects there is one conversation. v0.24.0: "Clear screen" (/clear) empties it, nothing is forgotten.
     if (inProject) add(PlusItem("new", "New chat", "A new thread in this project"))
-    add(PlusItem("clear", "Clear screen", "Empty this chat · nothing is forgotten"))
 }
 
+/**
+ * Owner 2026-11-15: the + menu is a bottom sheet over the whole screen (Kimi-style), so it never pushes the chatbox up or
+ * sits over the Chat | Living switch. Tiles first, then rows with a chevron. Picking closes it.
+ */
 @Composable
-fun PlusMenu(items: List<PlusItem>, onPick: (String) -> Unit) {
-    val look = com.blaze.assistant.ui.space.spaceLook()
-    // Unification 6/9: a floating card at the composer's inset; it ran edge to edge, top-rounded, dark glass only
-    Column(Modifier.fillMaxWidth().padding(bottom = 6.dp).composerPanel(com.blaze.assistant.ui.space.SpaceShapes.card)
-        .heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(480.dp)).verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
-        items.forEach { it ->
-            Row(Modifier.fillMaxWidth().clickable { onPick(it.id) }.padding(horizontal = 18.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                // 0.52.4: an icon tile instead of a dot; a mode that is on (Plan, Autopilot) gets the solid tile
-                IconTile(plusIcon(it.id, it.on).vector(), small = true, filled = it.on)
-                Spacer(Modifier.width(BlazeIconStyle.gap))
-                Text(it.label, style = com.blaze.assistant.ui.space.SpaceType.body(com.blaze.assistant.ui.space.SpaceTypeScale.META.sp, look.ink, FontWeight.Medium))
-                Spacer(Modifier.width(10.dp))
-                Text(it.sub, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-                    style = com.blaze.assistant.ui.space.SpaceType.caption(look.sub))
+fun PlusMenu(items: List<PlusItem>, onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = onDismiss, title = null) {
+        PlusMenuBody(items) { id -> onDismiss(); onPick(id) }
+    }
+}
+
+/** The + sheet's content: the tile strip (scrolls sideways when it doesn't fit) and the rows. Also drawn alone in shots. */
+@Composable
+fun PlusMenuBody(items: List<PlusItem>, onPick: (String) -> Unit) {
+    val c = com.blaze.assistant.ui.argus.Argus.colors
+    val tiles = items.filter { it.tile }
+    val rows = items.filterNot { it.tile }
+    Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        if (tiles.isNotEmpty()) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            tiles.forEach { t ->
+                val shape = RoundedCornerShape(22.dp)
+                Column(Modifier.size(width = 88.dp, height = 88.dp).clip(shape).background(c.soft)
+                    .clickable { onPick(t.id) }.semantics(mergeDescendants = true) { contentDescription = tr(t.label) }
+                    .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    androidx.compose.material3.Icon(plusIcon(t.id, t.on).vector(), null, Modifier.size(26.dp), tint = c.ink)
+                    Spacer(Modifier.height(8.dp))
+                    Text(tr(t.label), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink))
+                }
+            }
+        }
+        if (tiles.isNotEmpty() && rows.isNotEmpty()) Spacer(Modifier.height(6.dp))
+        rows.forEach { r ->
+            Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(RoundedCornerShape(16.dp)).clickable { onPick(r.id) }
+                .semantics(mergeDescendants = true) {}.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Icon(plusIcon(r.id, r.on).vector(), null, Modifier.size(24.dp), tint = if (r.on) c.cobaltText else c.ink)
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(tr(r.label), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = c.ink))
+                    if (r.sub.isNotBlank()) Text(tr(r.sub), maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.mute))
+                }
+                Spacer(Modifier.width(8.dp))
+                androidx.compose.material3.Icon(Icons.Rounded.ChevronRight, null, Modifier.size(20.dp), tint = c.mute)
             }
         }
     }

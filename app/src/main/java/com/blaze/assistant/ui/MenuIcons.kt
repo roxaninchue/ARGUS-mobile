@@ -251,13 +251,12 @@ fun plusIcon(id: String, on: Boolean = false): MenuIcon = when (id) {
     "files" -> MenuIcon.ATTACH
     "atfile" -> MenuIcon.MENTION
     "paste" -> MenuIcon.PASTE
-    "voice" -> MenuIcon.MIC
     "call" -> MenuIcon.CALL
     "plan" -> if (on) MenuIcon.LIGHTBULB else MenuIcon.EDIT
     "approval" -> if (on) MenuIcon.AUTOPLAY_MODE else MenuIcon.SHIELD
-    "views" -> MenuIcon.DASHBOARD
+    "apps" -> MenuIcon.GRID
+    "skills" -> MenuIcon.LEARN
     "new" -> MenuIcon.NEW_CHAT
-    "clear" -> MenuIcon.CLEAN
     else -> MenuIcon.ADD
 }
 

@@ -12,7 +12,7 @@ class SlashCommandsTest {
     @Test fun menuListsEveryCommandOnce() {
         val all = SlashCommands.entries()
         assertEquals(all.size, all.map { it.name }.distinct().size)
-        assertTrue(all.any { it.name == "clear" } && all.any { it.name == "translate" } && all.any { it.name == "music" })
+        assertTrue(all.any { it.name == "new" } && all.none { it.name == "clear" } && all.any { it.name == "translate" } && all.any { it.name == "music" })
         assertEquals(all, SlashCommands.filter("/"))
     }
 
@@ -27,8 +27,8 @@ class SlashCommandsTest {
     }
 
     @Test fun tapRunsOrInserts() {
-        val clear = SlashCommands.entries().first { it.name == "clear" }
-        assertTrue(clear.runNow); assertEquals("/clear", clear.fill)
+        val fresh = SlashCommands.entries().first { it.name == "new" }
+        assertTrue(fresh.runNow); assertEquals("/new", fresh.fill)
         val tr = SlashCommands.entries().first { it.name == "translate" }
         assertFalse(tr.runNow); assertEquals("/translate ", tr.fill)
     }

@@ -142,7 +142,7 @@ open class ShotsTest {
                 if (plus || views) SheetScrim {}
             }
             if (views) ViewsSheet(mapOf("agents" to "1 LIVE"), onPick = {}, onDismiss = {}, autoFocus = false)
-            if (plus) PlusMenu(plusItems("plan", "autopilot", "Auto (free)", false)) {}
+            if (plus) PlusMenuBody(plusItems("plan", "autopilot", "Auto (free)", false)) {}
             Composer(TextFieldValue(input), {}, busy = busy && !plus && !views, canSend = input.isNotEmpty(), plusOpen = plus, chip = chip, agents = 0,
                 listening = false, speaking = false, onPlus = {}, onMic = {}, onSend = {}, onStop = {}, hints = sampleHints)
         }
@@ -203,7 +203,7 @@ open class ShotsTest {
     }
     @Test fun search() = shot("08-search") { SearchScreen(onView = {}, onAsk = {}, onDismiss = {}, initial = "lamp", autoFocus = false) }
 
-    // v0.24.0: messaging-style chat (idle, typing), /clear with its undo bar, and the ask_user card inline.
+    // v0.24.0: messaging-style chat (idle, typing) and the ask_user card inline.
     @Test fun messaging() = shot("39-messaging") { Chat(busy = false, input = "Thanks!") }
     @Test fun messagingDark() = shot("40-messaging-dark", dark = true) { Chat(busy = false) }
     // v0.27.2: the swipeable selection pill over a message (more actions past the right edge).
@@ -231,17 +231,6 @@ open class ShotsTest {
         Chat(busy = false)
         SelectionPill(androidx.compose.ui.geometry.Rect(60f, 700f, 420f, 760f), SelectionActions.forUnknown(likelyShort = false),
             ink = LocalBlaze.current.ink, paper = LocalBlaze.current.paper, nudge = false) { }
-    }
-    @Test fun clearUndo() = shot("41-clear-undo") {
-        Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {})
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                Welcome(needsSetup = false, onSetup = {}) {}
-                UndoBar("Chat cleared \u00b7 nothing is forgotten", onUndo = {})
-            }
-            Composer(TextFieldValue(""), {}, busy = false, canSend = false, plusOpen = false, chip = "", agents = 0,
-                listening = false, speaking = false, onPlus = {}, onMic = {}, onSend = {}, onStop = {})
-        }
     }
     @Test fun questionInline() = shot("42-question-inline", dark = true) {
         Column(Modifier.fillMaxSize()) {

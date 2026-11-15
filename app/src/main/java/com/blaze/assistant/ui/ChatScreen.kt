@@ -209,8 +209,6 @@ fun ChatScreen() {
     // Blaze opening one of its own settings pages (setup help).
     val askedPage by com.blaze.assistant.agent.SelfSetup.openPage.collectAsState()
     LaunchedEffect(askedPage) { askedPage?.let { settingsPage = it; com.blaze.assistant.agent.SelfSetup.openPage.value = null } }
-    // v0.24.0 /clear: when the last clear happened (0 = no undo bar).
-    var clearedAt by remember { mutableStateOf(0L) }
     var input by remember { mutableStateOf(TextFieldValue("")) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all), typed or spoken.
     var talkTo by rememberSaveable { mutableStateOf("blaze") }
@@ -413,13 +411,6 @@ fun ChatScreen() {
         Views.find(r.id)?.let { openView(it, r.target) }
     }
 
-    fun clearScreen() {
-        when (Agent.clearScreen()) {
-            com.blaze.assistant.agent.ClearScreen.Result.BUSY -> Toast.makeText(ctx, "${BrandName.NAME} is working. Stop it first, then /clear.", Toast.LENGTH_SHORT).show()
-            com.blaze.assistant.agent.ClearScreen.Result.EMPTY -> {}
-            com.blaze.assistant.agent.ClearScreen.Result.CLEARED -> { quote = ""; exitView(); clearedAt = System.currentTimeMillis() }
-        }
-    }
     // P1-TM-06: the "Here's what I'll do" sheet waiting for Apply, and its preview switch.
     var teamPlan by remember { mutableStateOf<com.blaze.assistant.team.Router.Plan?>(null) }
     var teamPlanFromChat by remember { mutableStateOf(false) }
@@ -428,7 +419,6 @@ fun ChatScreen() {
         // v0.45.8: the reply's start is timed from this tap (StartTrace, monotonic).
         com.blaze.assistant.agent.StartTrace.tap(force = true)
         val text = raw.trim()
-        if (com.blaze.assistant.agent.ClearScreen.isCommand(text)) { input = TextFieldValue(""); clearScreen(); return }
         if (callWords.matches(text)) { input = TextFieldValue(""); startCall(); return }
         val cmdName = text.removePrefix("/").substringBefore(' ').lowercase()
         if (text.startsWith("/") && !text.startsWith("//")) {
@@ -484,7 +474,6 @@ fun ChatScreen() {
         if (argus && navNow().tab == ChatNav.CHAT && !navNow().inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value)
             com.blaze.assistant.ui.team.ChatModeRuntime.beforeSend()
         // v0.30.6 rapid messages: no "busy" check; a message sent while Blaze works joins the turn (Agent.send).
-        clearedAt = 0L
         // v0.28.3: a new project chat joins its project with its first message (only from its own screen in Projects).
         val n = navNow()
         if (n.inProjectChat && Agent.chatId.value == n.chat && com.blaze.assistant.agent.Projects.of(n.chat) == null) com.blaze.assistant.agent.Projects.assign(n.chat, n.project)
@@ -560,7 +549,7 @@ fun ChatScreen() {
     val isPrivate by Agent.privateChat.collectAsState()
     var confirmLeavePrivate by remember { mutableStateOf(false) }
     // ---- 0.48.0 RC4: the composer over Home does everything the old chat screen did ----
-    // A message from the bar takes the old screen's send path (slash commands, /clear, call words, quotes, project chats).
+    // A message from the bar takes the old screen's send path (slash commands, call words, quotes, project chats).
     composer.sender = { t, files -> pending = files; send(t) }
     composer.privateChat = isPrivate
     composer.onClosePrivate = { confirmLeavePrivate = true }
@@ -574,11 +563,9 @@ fun ChatScreen() {
             "photos" -> { photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)); true }
             "files" -> { files.launch(arrayOf("*/*")); true }
             "paste" -> { pasteImage(); true }
-            "voice" -> { onMic(); true }
             "call" -> { startCall(); true }
             "plan" -> { com.blaze.assistant.agent.Modes.toggleWork()
                 Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.plan) "Plan mode on: ${BrandName.NAME} plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
-            "clear" -> { clearScreen(); true }
             "views" -> { composer.openSpotlight(); composer.query = "@"; true }
             "profile" -> { settingsPage = ""; true }
             else -> false
@@ -963,14 +950,10 @@ fun ChatScreen() {
                     }
                 } else chatPane()
                 }
-                if (clearedAt > 0L && chatBody) {
-                    LaunchedEffect(clearedAt) { delay(com.blaze.assistant.agent.ClearScreen.UNDO_MS - 3_000); clearedAt = 0L }
-                    UndoBar("Chat cleared \u00b7 nothing is forgotten", onUndo = { Agent.undoClear(); clearedAt = 0L }, onDismiss = { clearedAt = 0L })
-                }
                 // v0.39.0: the 10-second Undo bar for what Blaze just did on Autopilot.
-                if (chatBody && clearedAt == 0L) UndoCountdownBar(onUndone = { line -> Agent.note(line) })
-                // Dim the chat while a sheet (+ menu, /views) is open, so half-cut lines at its edge read as background.
-                if (chatBody && viewShowing.isEmpty() && (plusOpen || showViews || arcOpen)) SheetScrim { plusOpen = false; showViews = false; arcOpen = false }
+                if (chatBody) UndoCountdownBar(onUndone = { line -> Agent.note(line) })
+                // Dim the chat while a sheet (/views, the arc) is open (the + sheet brings its own scrim), so half-cut lines at its edge read as background.
+                if (chatBody && viewShowing.isEmpty() && (showViews || arcOpen)) SheetScrim { showViews = false; arcOpen = false }
             }
             if (chatBody && viewShowing.isEmpty()) {
                 if (voiceState == Voice.State.LISTENING) ListeningStrip(onStop = { Voice.stopByTap() })
@@ -1041,29 +1024,7 @@ fun ChatScreen() {
                     ViewsSheet(badges, onPick = { openView(it) }, onDismiss = { showViews = false })
                 }
                 if (showViews) BackHandler { showViews = false }
-                if (plusOpen) BackHandler { plusOpen = false }
-                AnimatedVisibility(plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) {
-                    val model = ""
-                    PlusMenu(plusItems(work, approval, model, clipHasImage, nav.inProjectChat, hasCamera).filter { com.blaze.assistant.agent.SimpleMode.plusVisible(it.id, simpleMode) }) { id ->
-                        plusOpen = false
-                        when (id) {
-                            "camera" -> cameraCapture.open()
-                            "blazecam" -> if (!com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
-                                Toast.makeText(ctx, "${BrandName.NAME} Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
-                            "photos" -> photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                            "files" -> files.launch(arrayOf("*/*"))
-                            "atfile" -> { val t = input.text.let { if (it.isEmpty() || it.endsWith(" ")) it else "$it " } + "@"; input = TextFieldValue(t, TextRange(t.length)) }
-                            "paste" -> pasteImage()
-                            "voice" -> onMic()
-                            "call" -> startCall()
-                            "plan" -> com.blaze.assistant.agent.Modes.toggleWork()
-                            "model" -> settingsPage = "ai"
-                            "views" -> showViews = true
-                            "new" -> newProjectChat(navNow().project)
-                            "clear" -> clearScreen()
-                        }
-                    }
-                }
+                // Owner 2026-11-15: the + menu is a sheet over the whole screen (drawn after the drawer, below), never in this column.
                 // v0.24.6: pictures straight from the keyboard (Samsung clipboard, GIFs, stickers) attach like picked photos.
                 // 0.52.3: always the composer pill (Simple mode's big hold-to-talk bar is gone with the old chat look).
                 // v0.43.0: who the next message goes to (@blaze / @halo / @all), picked on the arc from the header orb.
@@ -1149,6 +1110,26 @@ fun ChatScreen() {
             com.blaze.assistant.ui.argus.kit.MenuRow("bot", tr("Bot"), { newOpen = false; botFlow = com.blaze.assistant.ui.team.BotFlow.New }, sub = tr("A new bot for your team"))
             com.blaze.assistant.ui.argus.kit.MenuRow("notebook", tr("Project"), { newOpen = false; go(navNow().projectsList()) }, sub = tr("A space with its own chats and files"))
             com.blaze.assistant.ui.argus.kit.MenuRow("lock", tr("Private chat"), { newOpen = false; Agent.enterPrivate(); go(navNow().switchTab(ChatNav.CHAT)) }, sub = tr("Nothing here is saved or learned"))
+        }
+
+        // Owner 2026-11-15 (Kimi-style): the + menu as a bottom sheet over everything, so the chatbox and the
+        // Chat | Living switch stay where they are. Voice, Views and Clear screen are gone from it.
+        if (plusOpen) PlusMenu(plusItems(work, approval, "", clipHasImage, nav.inProjectChat, hasCamera).filter { com.blaze.assistant.agent.SimpleMode.plusVisible(it.id, simpleMode) },
+            onDismiss = { plusOpen = false }) { id ->
+            when (id) {
+                "camera" -> cameraCapture.open()
+                "blazecam" -> if (!com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
+                    Toast.makeText(ctx, "${BrandName.NAME} Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
+                "photos" -> photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                "files" -> files.launch(arrayOf("*/*"))
+                "atfile" -> { val t = input.text.let { if (it.isEmpty() || it.endsWith(" ")) it else "$it " } + "@"; input = TextFieldValue(t, TextRange(t.length)) }
+                "paste" -> pasteImage()
+                "call" -> startCall()
+                "apps" -> settingsPage = "connections"
+                "skills" -> settingsPage = "skills"
+                "plan" -> com.blaze.assistant.agent.Modes.toggleWork()
+                "new" -> newProjectChat(navNow().project)
+            }
         }
 
         // P1-TM-04: the bot editor (Describe it sends the draft request to ARGUS and opens Chat), and the Delete / Keep
@@ -1930,10 +1911,10 @@ const val STREAM_STALE_MS = 2200L
 /**
  * 0.48.0 RC4: what Blaze is waiting on, under the chat over Home (it lived at the bottom of the old chat screen): the
  * listening strip, approvals and drafts (Send / Not now), questions, fix cards, secure forms and secret requests, Blaze
- * Phone's live tile, "Open in Design?", the update banner, and the Undo bars.
+ * Phone's live tile, "Open in Design?", the update banner, and the Undo bar.
  */
 @Composable
-private fun WaitingCards(listening: Boolean, clearedAt: Long, onUndoClear: () -> Unit, onClearedGone: () -> Unit,
+private fun WaitingCards(listening: Boolean,
                          control: com.blaze.assistant.phone.PhoneControl.State, viewOffer: Views.Offer?, showing: String,
                          onOpenOffer: (Views.Offer) -> Unit) {
     val ctx = LocalContext.current
@@ -1954,10 +1935,6 @@ private fun WaitingCards(listening: Boolean, clearedAt: Long, onUndoClear: () ->
     SecretPasteCard()
     PhoneLiveCard()
     viewOffer?.let { o -> if (showing != o.id) ViewOfferChip(Views.offerLabel(o.id), onOpen = { onOpenOffer(o) }, onDismiss = { Views.offer.value = null }) }
-    if (clearedAt > 0L) {
-        LaunchedEffect(clearedAt) { delay(com.blaze.assistant.agent.ClearScreen.UNDO_MS - 3_000); onClearedGone() }
-        Box(Modifier.fillMaxWidth().height(72.dp)) { UndoBar("Chat cleared \u00b7 nothing is forgotten", onUndo = onUndoClear, onDismiss = onClearedGone) }
-    }
     Box(Modifier.fillMaxWidth()) { UndoCountdownBar(onUndone = { line -> Agent.note(line) }) }
 }
 

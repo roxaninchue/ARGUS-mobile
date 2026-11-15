@@ -341,22 +341,6 @@ fun SoftPill(text: String, modifier: Modifier = Modifier, lead: String = "", fil
     }
 }
 
-/** The floating "Chat cleared · Undo" bar (no dialog: /clear only hides the screen). */
-@Composable
-fun BoxScope.UndoBar(text: String, onUndo: () -> Unit, modifier: Modifier = Modifier, onDismiss: () -> Unit = {}) {
-    val c = LocalBlaze.current
-    // v0.25.0: swipe it left, right or down to dismiss (it slides out that way).
-    Row(modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp).swipeAway(onDismiss).clip(RoundedCornerShape(24.dp)).background(c.ink)
-        .padding(start = 18.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.paper))
-        Spacer(Modifier.width(6.dp))
-        Box(Modifier.clip(RoundedCornerShape(20.dp)).clickable(onClick = onUndo).semantics { contentDescription = tr("Undo clear") }
-            .padding(horizontal = 14.dp, vertical = 12.dp)) {
-            ButtonText("Undo", color = c.paper)
-        }
-    }
-}
-
 /** Send: an up arrow; Stop: a soft rounded square (v0.24.8). Drawn so they match the pixel-clean marks elsewhere. */
 @Composable
 fun SendMark(color: Color, stop: Boolean, size: Dp = 16.dp) {
