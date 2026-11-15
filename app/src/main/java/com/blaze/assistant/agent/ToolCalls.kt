@@ -349,12 +349,14 @@ object ToolCalls {
      * every tool_call answered by exactly one tool message right after it, no orphan tool
      * messages, no empty assistant turns.
      */
-    fun clean(msgs: JSONArray): JSONArray {
+    fun clean(msgs: JSONArray, turn: String = ""): JSONArray {
         val out = JSONArray()
         var i = 0
         while (i < msgs.length()) {
             val m = JSONObject(msgs.optJSONObject(i)?.toString() ?: "{}")
+            val think = ReasoningReplay.wire(m, turn)   // 0.54.0: this task's thinking goes back with its calls
             m.keys().asSequence().toList().filter { it.startsWith("_") }.forEach { m.remove(it) }
+            if (think != null && (m.optJSONArray("tool_calls")?.length() ?: 0) > 0) m.put("reasoning_content", think)
             val role = m.optString("role")
             if (role == "tool") {   // a tool message not right after its call
                 out.put(JSONObject().put("role", "user").put("content", "[Tool result${m.optString("name").let { if (it.isBlank()) "" else " from $it" }}]\n" + m.optString("content")))

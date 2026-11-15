@@ -84,7 +84,8 @@ object LlmClient {
         // v0.31.1 jank: cleaning (a full pass over the history JSON) never runs on the main thread.
         // fix/chat-flat-ui: the main turn's system prompt, in memory only, so echoes of it in the thinking are glitched.
         if (lane == Lane.MAIN && onThink != null) try { PromptEcho.note(messages) } catch (_: Exception) { }
-        val clean0 = withContext(kotlinx.coroutines.Dispatchers.Default) { try { ToolCalls.clean(messages) } catch (_: Exception) { messages } }
+        val rTurn = ReasoningReplay.currentTurn()   // 0.54.0: read on the caller (CallState), before the hop
+        val clean0 = withContext(kotlinx.coroutines.Dispatchers.Default) { try { ToolCalls.clean(messages, rTurn) } catch (_: Exception) { messages } }
         // 0.52.1 (gw061): every request is fitted to ~60 KB (tool results trimmed, at most 32 tool schemas, older steps
         // summarised): bigger bodies are what the gateway's 10 ms CPU limit kills (Cloudflare 1102 → "That took too long").
         val fit = withContext(kotlinx.coroutines.Dispatchers.Default) { RequestBudget.fit(clean0, tools) }
@@ -234,9 +235,13 @@ object LlmClient {
     /** 0.53.6: the private key on a reply naming why it ended ("length" = cut off by the output cap). */
     const val FINISH = "_finish"
 
-    /** 0.53.6: output cap sent on every tool turn (Settings "tool_max_tokens" overrides; 8192 is the widest most free routes accept). */
-    const val TOOL_MAX_TOKENS = 8192
-    fun toolMaxTokens(): Int = (try { Settings.str("tool_max_tokens", TOOL_MAX_TOKENS.toString()).toIntOrNull()?.coerceIn(1024, 65_536) } catch (_: Throwable) { null }) ?: TOOL_MAX_TOKENS
+    /** 0.54.0 (harness musts #1): the model's own output limit, fitted to the window (OutputLimit); Settings "tool_max_tokens" > 0 overrides. */
+    fun toolMaxTokens(model: String, messages: JSONArray, tools: JSONArray?): Int {
+        val override = try { Settings.str("tool_max_tokens", "0").toIntOrNull() ?: 0 } catch (_: Throwable) { 0 }
+        val input = (messages.toString().length + (tools?.toString()?.length ?: 0)) / 4
+        val window = try { LongChat.contextWindow(model, Settings.str("context_tokens", "0").toIntOrNull() ?: 0) } catch (_: Throwable) { 0 }
+        return OutputLimit.forCall(model, input, window, override)
+    }
 
     /** A6: the message for gateway 0.8.56's blaze_stream_broken frame (BackupRoute.brokeMidReply matches it). */
     const val STREAM_BROKEN = "${BrandName.NAME} Cloud stopped sending (stream broke mid-reply)."
@@ -456,7 +461,8 @@ object LlmClient {
             if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn && (tools == null || tools.length() == 0)) put("max_tokens", maxOf(1024, SharedPersona.MIN_MAX_TOKENS))
             // 0.53.6: tool turns name their own output cap. Sending none left the provider's default (often ~4K tokens on free
             // tiers), which cut a whole-page design call off inside its html string.
-            if (tools != null && tools.length() > 0) put("max_tokens", toolMaxTokens())
+            // 0.54.0: the model's own limit (OutputLimit), named model first: the manual pick, then this turn's pinned route.
+            if (tools != null && tools.length() > 0) put("max_tokens", toolMaxTokens(manual ?: turnModel?.pin?.ifBlank { null } ?: t.model, messages, tools))
         }
         val who = Providers.byId(t.pid).name
         // v0.45.0 (#5): Stop really ends the request: cancelling this coroutine closes the socket (cancellable), so a blocked
@@ -523,6 +529,10 @@ object LlmClient {
             Cloud.access(code, "$errCode $msg")?.let { throw LlmException(it, code) }
             if (code == 401 || code == 403)
                 throw LlmException("$who rejected its key ($code). Check the $who key on the AI page (Settings, Advanced): ${msg.take(160)}", code)
+            // 0.54.0: a route that refuses our max_tokens names its own; keep it for the model and let the retry ask for that.
+            if (code == 400 || code == 422) body.optInt("max_tokens", 0).takeIf { it > 0 }?.let { sent ->
+                OutputLimit.learn(manual ?: turnModel?.pin?.ifBlank { null } ?: t.model, msg, sent)?.let {
+                    throw LlmException("$who · ${t.model} takes at most $it output tokens. Trying again.", 503) } }
             // v0.42.0: keep the gateway's error code ("in_progress" on 409 is worth waiting for, see Cloud.retryable).
             throw LlmException("$who · ${t.model} said ($code): ${msg.take(300)}" + (if (errCode.isNotBlank() && errCode !in msg) " [$errCode]" else ""), code, retry)
         }

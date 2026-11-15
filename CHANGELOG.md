@@ -1,3 +1,12 @@
+## Unreleased: the model's own output limit, its thinking kept through a task, and no "plan first"
+
+Seen (owner, 2026-11-15, field test T4): "make a one-page site for a coffee shop" on DeepSeek Flash came back as a planning monologue, cut off, with no tool call. The cause was not DeepSeek: we capped every tool turn at 8,192 output tokens (thinking counts toward it), stripped the model's thinking between steps, and build mode told it to "PLAN first". Compared with opencode, these are now harness rules ("⛔ HARNESS MUSTS" in overhaul.md).
+
+- **Output limit** (`agent/OutputLimit.kt`): each call asks for the model's own output limit (models.dev figures: DeepSeek V4 384K capped at 256K, Gemini 2.5/3 64K, unknown 32K), fitted to the room the prompt leaves in the context window, never under 1K. A route that answers 400 with its own lower limit is remembered for that model and the call retries once. Settings "tool_max_tokens" still overrides when set above 0.
+- **Thinking replayed within a task** (`agent/ReasoningReplay.kt`, `ToolCalls.clean(msgs, turn)`): a step that calls tools keeps its `reasoning_content` (last 12K chars) and sends it back on that assistant message for the rest of the turn, as DeepSeek's thinking-with-tools mode expects and opencode does. Earlier turns' thinking is never sent.
+- **Build mode** starts working: plan in the reasoning, first tool call straight away, never a written plan in the reply.
+- Tests: `HarnessMustsTest` (4), `BuildModeTest` updated.
+
 ## Unreleased: "Open settings" opens Settings, and Argus's own tools come before the device
 
 Seen (owner, 2026-11-15): "Find 3 good restaurants near me in Ndola" opened the Google Maps app on the phone, then asked to turn on phone control, and "Open settings" did nothing.

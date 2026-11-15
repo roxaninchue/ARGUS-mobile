@@ -17,10 +17,11 @@ class BuildModeTest {
             "what is a landing page?", "make sense of this", "add a contact for Sam", "create a playlist of chill songs").forEach { assertFalse(it, BuildMode.wants(it)) }
     }
 
-    @Test fun theBlockAsksForPlanDesignSystemReviewAndOneImprovement() {
+    @Test fun theBlockAsksToStartWorkingWithDesignSystemReviewAndOneImprovement() {
         val b = BuildMode.block("make me a landing page for my bakery")
-        listOf("PLAN first", "design system", "type scale", "spacing", "colour tokens", "states", "motion", "SELF-REVIEW", "ONE improvement round", "production-grade")
+        listOf("START WORKING", "first tool call", "design system", "type scale", "spacing", "colour tokens", "states", "motion", "SELF-REVIEW", "ONE improvement round", "production-grade")
             .forEach { assertTrue(it, b.contains(it, ignoreCase = true)) }
+        assertFalse(b.contains("PLAN first"))
         assertEquals("", BuildMode.block("set an alarm for 7"))
         assertTrue(BuildMode.block("make me a quick simple page").contains("quick or simple"))
     }

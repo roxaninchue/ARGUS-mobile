@@ -3800,7 +3800,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         if (LlmClient.lastFirstTextMs > 0 && LlmClient.lastFirstTextMs != LlmClient.lastFirstTokenMs) timer.add("first text", LlmClient.lastFirstTextMs) }
                     timer.mark(if (liteNow) "chat model" else "model")
                     reply.optString("_reasoning").takeIf { it.isNotBlank() }?.let { if (turnThink.isNotEmpty()) turnThink.append("\n\n"); turnThink.append(it) }
-                    reply.remove("_reasoning")
+                    ReasoningReplay.keep(reply)   // 0.54.0: a tool step's thinking goes back next step
                     try { Usage.record(req, reply, LlmClient.lastUsage) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Usage.recordreq reply LlmClient.lastUsag", e) }
                     // v0.33.1 token ledger: where this call's input tokens went (system prompt, schemas per group, results per tool…).
                     run { val r0 = req; val t0 = tools; val pp = if (lite) emptyList() else lastPromptParts

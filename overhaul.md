@@ -3,6 +3,18 @@
 > Living handoff. If you're picking this up mid-way: read **Status** and **Handoff log** first, then the slice docs in `docs/overhaul/`.
 > Rules: commit straight to `main`, every commit title ends with `[skip ci]`, no build until the owner says build.
 
+## ⛔ HARNESS MUSTS — read before adding any guard (owner, 2026-11-15 16:37 CAT)
+
+Owner direction: Argus fails where plain harnesses (opencode, Claude Code, Codex) just work, because of what *we* coded around the model, not because of the models. **No more model-specific patches** (a "DeepSeek cut-off plan" retry was written and shelved for this reason). Every change moves Argus toward a real harness: call the model → run its tool calls → append results → repeat until it answers. Reference: opencode `packages/core/src/session/model-request.ts` (output limit) and `packages/ai/src/protocols/openai-chat.ts` (reasoning replay).
+
+Avoid these, always:
+
+1. **A flat output cap.** Never send one `max_tokens` for every model. Thinking models (DeepSeek, Gemini) spend reasoning tokens from it and get cut off before their tool call; that was field test T4. Ask for the model's own catalog limit fitted to the context window (32K when unknown, 1K floor) → `OutputLimit` (0.54.0, done). A route that names a lower limit in a 400 is learned once, not hard-coded.
+2. **Throwing the model's reasoning away mid-task.** A tool step's `reasoning_content` goes back on that assistant message for the rest of the task, so the model knows why it made the call → `ReasoningReplay` + `ToolCalls.clean(msgs, turn)` (0.54.0, done; capped at 12K chars a step for the gateway's 60 KB request limit, dropped once the turn is over).
+3. **A huge, contradictory system prompt.** About 40 sections a turn today. Target: one short core prompt per model family (opencode's run 0.3–9 KB); everything else is a skill the model loads when it needs it. Never tell the model to write a plan in the reply: BuildMode's "PLAN first" is now "think in your reasoning, start with a tool call" (0.54.0, done). Prompt slimming: **next**.
+4. **Second-guessing every reply.** `runLoop` is 1,171 lines with ~20 guards (RetryGuard, ClaimGuard, EchoGuard, ToolTruth, AutoContinue, CredAsk, ScheduleTruth…) that inject user-role nudges (12 kinds) and rewrite reply text (23 places). No new guard, nudge, or rewrite of what the model said. Errors go back to the model as tool results. Keep only the safety gates: approval for pay / send / post / delete, sign-ins, and secrets. **Next:** a plain loop behind a "Plain harness" toggle, A/B'd with field tests T1–T14 on DeepSeek and Gemini; guards that don't earn their place get deleted.
+5. **A gateway that edits the request.** When the user picked a model, the gateway is a plain pass-through to that provider: no rerouting, no fallback, no `blaze_tools auto` schema dropping, no hidden tool cap. Direct provider keys (AI page, Advanced) already skip the gateway entirely. **Next** (gateway side).
+
 ## ▶ NEXT UP — do this first (owner, 2026-11-15 15:58 CAT)
 
 Four owner asks, in this order. Each is its own commit to `main` (`[skip ci]`), a CHANGELOG "Unreleased" bullet, and a line in the Handoff log. Ship them together in one build round when Finn says build. Section 2's test run is the yardstick before and after.
@@ -178,6 +190,7 @@ Append one line per session: date, who, what changed, what's next.
 - 2026-11-15 · Hark · 0.53.3 (versionCode 195) build round, owner said "build" (07:30): Living UI 0.1.0 (ed042865), chat flow round (b7aefc7e), Chat-mode tap fix, app language model strings (4ffabc32). Version bump + CHANGELOG / STATUS / about.md; SpaceWiringTest version pin 195 / 0.53.3; ThoughtFoldTest needle moved from `LiveToolRows(liveRows)` (removed by the chat flow round) to `TurnFlowView(liveFlow)`. Pre-flight: needle scan over every source-scan test (no other broken needle), owner-name scan clean, NoSquareTest 2/2, do-not-port 0, evals 34/34. Not run: Gradle, Robolectric, device.
 - 2026-11-15 · Hark · Build (08:05): CI run 43681828555 on 2598ac2b red, 1 of 3,429: SecurityP4Test.cleanedFilesHaveNoEmptyCatch (the chat flow round's BlazeSkills log line in Agent.kt had an empty `catch (_: Throwable) { }`). The catch now carries the usual comment; no other empty catch in the cleaned files. Rebuild pushed.
 - 2026-11-15 · Hark · Added "▶ NEXT UP" at the top (owner's four asks: floating Search pill, field tests T1–T14, Apps page for Life, Jarvis persona + hidden check-in schedule). Do that next.
+- 2026-11-15 16:45 CAT: harness audit vs opencode → "⛔ HARNESS MUSTS" at the top. Applied 0.54.0: OutputLimit (model's own output limit, no flat 8192), ReasoningReplay (thinking goes back within a task), BuildMode no longer says "PLAN first". HarnessMustsTest 4/4, BuildModeTest 4/4 (plain-Kotlin, stubs). Next: per-family short prompt, Plain-harness toggle, gateway pass-through.
 
 ## Unified plan
 Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
