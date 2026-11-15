@@ -73,6 +73,7 @@ the rest are usually cascades (one bad paren produced "Unresolved reference 'ass
 |---|---|---|---|
 | before d12934f8 | `compileReleaseKotlin` OOM | Gradle daemon + Kotlin daemon both on a 7 GB runner | Keep the memory settings above |
 | before 4ad444cc | Release unit tests couldn't start Compose tests | `ui-test-manifest` missing on the release test classpath | Keep `ui-test-manifest` on the test classpath; Compose-only tests (`*ShotsTest*`, e.g. `SpaceShotsTest`, `ShotsTest`) are skipped in Release |
+| 5ac5fc5d | `SpaceWiringTest.theVersionIs0530` | Version bumped in app/build.gradle.kts without the test | Every version bump also updates `versionCode`/`versionName` in `SpaceWiringTest.theVersionIs0530`, same commit |
 | 4ad444cc | 35 unit-test failures | Blaze → Argus rename: tests expecting old strings/commands | Commands accept both `Argus` and `Blaze`; when renaming, grep `app/src/test` and `app/src/androidTest` for the old string in the same commit |
 | 4ad444cc | Skill hash / store catalog tests | `assets/skills/**` edited without resyncing hashes and `store/catalog.json` | Any change under `assets/skills/` → regenerate the hashes and catalog in the same commit |
 | 93b65e51 | `compileDebugKotlin`: `ParsedChat` unresolved | A sweeping edit to `ChatJson.kt` deleted a class that was still used | Before deleting a symbol, `git grep -n '\bName\b'` across `app/src` (main, test, androidTest) |
