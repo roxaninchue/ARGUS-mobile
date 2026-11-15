@@ -1,0 +1,16 @@
+{
+  "name": "ARGUS mobile (desktop + Android SDK)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": { "version": "17" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "lts" },
+    "ghcr.io/devcontainers/features/desktop-lite:1": { "password": "vscode", "webPort": "6080", "vncPort": "5901" }
+  },
+  "forwardPorts": [6080],
+  "portsAttributes": { "6080": { "label": "Desktop (open in browser)", "onAutoForward": "openBrowser" } },
+  "containerEnv": { "ANDROID_HOME": "/home/vscode/android-sdk", "ANDROID_SDK_ROOT": "/home/vscode/android-sdk" },
+  "remoteEnv": { "PATH": "${containerEnv:PATH}:/home/vscode/android-sdk/cmdline-tools/latest/bin:/home/vscode/android-sdk/platform-tools" },
+  "postCreateCommand": "bash .devcontainer/setup-android.sh",
+  "hostRequirements": { "cpus": 4, "memory": "16gb" },
+  "customizations": { "vscode": { "extensions": ["mathiasfrohlich.Kotlin", "vscjava.vscode-gradle"] } }
+}
