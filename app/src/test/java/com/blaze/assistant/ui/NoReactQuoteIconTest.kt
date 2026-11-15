@@ -22,4 +22,10 @@ class NoReactQuoteIconTest {
         val line = chat.lines().first { "LocalBubbleMenu provides" in it }
         assertFalse(line.contains("Role.BLAZE"))
     }
+
+    @Test fun messagesHaveNoPin() {
+        val chat = file("src/main/java/com/blaze/assistant/ui/ChatScreen.kt").readText()
+        assertFalse(chat.contains("add(\"Pin\""))
+        assertFalse(chat.contains("fun pinNow("))
+    }
 }
