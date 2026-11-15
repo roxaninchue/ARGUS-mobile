@@ -18,6 +18,12 @@ import kotlin.math.min
  *  - connectors: from the prompt across into the right column, and from the last page of the chain into the answer.
  * The next turn starts under the taller column.
  *
+ * 0.2.1, landscape ([plan] with wide = true, Finn's landscape mockup): up to four columns per turn, each one only when
+ * some turn has cards for it: prompt | pages (a trunk out of the prompt with an elbow into each page) | answer, then
+ * files | the steps checklist on the far right. [followWide] keeps every column across the screen when it can and the
+ * active card in the band between the header and the floating composer; [reanchor] keeps the card you were looking at
+ * in the middle when the phone turns.
+ *
  * Pure: LivingLayoutTest.
  */
 object LivingLayout {
@@ -154,6 +160,90 @@ object LivingLayout {
         return Plan(boxes, links, maxR, max(0f, y - TURN_GAP))
     }
 
+    // ------------------------------------------------------------------ landscape: four columns
+    /** Gap between the landscape columns; the connectors' trunks run down the middle of each gap. */
+    const val WIDE_GAP = 44f
+    const val WIDE_PAGE_GAP = 24f
+    /** The widest columns still read at this zoom when following in landscape (the plan may run off the side below it). */
+    const val WIDE_FOLLOW_MIN = 0.62f
+
+    enum class Col { PROMPT, PAGES, MAIN, CHECK }
+
+    fun col(c: Card): Col = when (c.kind) { Kind.PROMPT -> Col.PROMPT; Kind.BROWSER -> Col.PAGES; Kind.LOG -> Col.CHECK; else -> Col.MAIN }
+
+    /** Each column's x for [board] in landscape; a column no turn uses takes no room. */
+    fun wideColumns(board: Board): Map<Col, Float> {
+        val used = board.turns.flatMap { t -> t.cards.map(::col) }.toSet()
+        val xs = LinkedHashMap<Col, Float>()
+        var x = 0f
+        for (c in Col.values()) {
+            if (c != Col.PROMPT && c != Col.MAIN && c !in used) continue
+            xs[c] = x
+            x += (if (c == Col.PROMPT || c == Col.PAGES) LEFT_W else RIGHT_W) + WIDE_GAP
+        }
+        return xs
+    }
+
+    fun plan(board: Board, wide: Boolean): Plan = if (wide) planWide(board) else plan(board)
+
+    private fun elbow(from: Box, to: Box, fromY: Float = port(from), toY: Float = port(to), arrow: Boolean = true): Link {
+        val gx = to.x - WIDE_GAP / 2f
+        return Link(floatArrayOf(from.right, fromY, gx, fromY, gx, toY, to.x, toY), arrow)
+    }
+
+    private fun planWide(board: Board): Plan {
+        val xs = wideColumns(board)
+        val boxes = ArrayList<Box>()
+        val links = ArrayList<Link>()
+        var y = 0f
+        var maxR = 0f
+        for (turn in board.turns) {
+            val cards = turn.cards
+            if (cards.isEmpty()) continue
+            val top = y
+            val prompt = cards.first()
+            val pb = Box(prompt, xs.getValue(Col.PROMPT), top, width(prompt), height(prompt))
+            boxes += pb
+            var bottom = pb.bottom
+            fun stack(list: List<Card>, x: Float, gap: Float): List<Box> {
+                var cy = top
+                val out = ArrayList<Box>()
+                for (c in list) {
+                    val b = Box(c, x, if (out.isEmpty()) top else cy + gap, width(c), height(c))
+                    out += b; cy = b.bottom
+                    bottom = max(bottom, b.bottom); maxR = max(maxR, b.right)
+                }
+                boxes += out
+                return out
+            }
+            val rest = cards.drop(1)
+            val pages = xs[Col.PAGES]?.let { x -> stack(rest.filter { col(it) == Col.PAGES }, x, WIDE_PAGE_GAP) }.orEmpty()
+            val mainCards = rest.filter { col(it) == Col.MAIN }
+            val answer = mainCards.lastOrNull()?.takeIf { it.kind == Kind.ANSWER && it === cards.last() }
+            val main = stack(if (answer != null) listOf(answer) + mainCards.dropLast(1) else mainCards, xs.getValue(Col.MAIN), GAP_Y)
+            val checks = xs[Col.CHECK]?.let { x -> stack(rest.filter { col(it) == Col.CHECK }, x, GAP_Y) }.orEmpty()
+
+            // the prompt's trunk into every page; the pages' trunk into the answer column (or the checklist when the
+            // answer column is still empty); the answer column into the checklist; down links inside a column
+            val next = main.firstOrNull() ?: checks.firstOrNull()
+            if (pages.isNotEmpty()) {
+                for (pg in pages) links += elbow(pb, pg)
+                if (next != null) {
+                    val enter = min(next.bottom - 12f, port(next) + 22f)
+                    for ((i, pg) in pages.withIndex()) links += elbow(pg, next, toY = enter, arrow = i == pages.lastIndex)
+                }
+            } else if (next != null) links += elbow(pb, next)
+            if (main.isNotEmpty() && checks.isNotEmpty()) links += elbow(main.first(), checks.first())
+            for (colBoxes in listOf(main, checks)) for (i in 1 until colBoxes.size) {
+                val a = colBoxes[i - 1]; val b = colBoxes[i]
+                links += Link(floatArrayOf(a.x + 24f, a.bottom, b.x + 24f, b.y))
+            }
+            maxR = max(maxR, pb.right)
+            y = bottom + TURN_GAP
+        }
+        return Plan(boxes, links, maxR, max(0f, y - TURN_GAP))
+    }
+
     // ------------------------------------------------------------------ camera
     /** screen px = world dp × density × [scale] + ([ox], [oy]). */
     data class Camera(val ox: Float, val oy: Float, val scale: Float) {
@@ -217,6 +307,49 @@ object LivingLayout {
         val oy = if (bBottom - bTop > wantBottom - topPx - padPx) topPx + padPx - bTop else wantBottom - bBottom
         // never scroll the first card below the top
         return Camera(ox, min(oy, topPx + padPx), s)
+    }
+
+    /**
+     * 0.2.1, landscape: follow [b] with every column across the screen when they fit at [WIDE_FOLLOW_MIN] or more (else
+     * the plan runs off the side and slides just enough to show [b] whole), [b] no taller than the band between [topPx]
+     * (the header line) and [bottomPx] (the floating composer), its bottom in that band.
+     */
+    fun followWide(b: Box, plan: Plan, density: Float, viewW: Float, viewH: Float, padPx: Float, topPx: Float, bottomPx: Float): Camera {
+        val availW = viewW - 2 * padPx
+        val band = viewH - topPx - bottomPx - 2 * padPx
+        val sW = if (plan.width > 0f) availW / (plan.width * density) else 1f
+        val sH = if (b.h > 0f) band / (b.h * density) else 1f
+        val s = LivingSpec.clampZoom(minOf(1f, max(sW, WIDE_FOLLOW_MIN), sH))
+        val w = plan.width * density * s
+        var ox = if (w <= availW) (viewW - w) / 2f else padPx
+        val r = b.right * density * s + ox
+        if (r > viewW - padPx) ox -= r - (viewW - padPx)
+        val l = b.x * density * s + ox
+        if (l < padPx) ox += padPx - l
+        val bTop = b.y * density * s
+        val bBottom = b.bottom * density * s
+        val wantBottom = viewH - bottomPx - padPx
+        val oy = if (bBottom - bTop > wantBottom - topPx - padPx) topPx + padPx - bTop else wantBottom - bBottom
+        return Camera(ox, min(oy, topPx + padPx), s)
+    }
+
+    /**
+     * 0.2.1: the camera after the phone turns (or the layout switches between two and four columns): the card nearest the
+     * old screen centre, at the same spot inside it, lands at the new centre at the same zoom. Null when that card is gone.
+     */
+    fun reanchor(old: Plan, cam: Camera, oldW: Float, oldH: Float, new: Plan, newW: Float, newH: Float, density: Float): Camera? {
+        if (old.boxes.isEmpty() || new.boxes.isEmpty()) return null
+        val cx = cam.wx(oldW / 2f, density); val cy = cam.wy(oldH / 2f, density)
+        fun dist(b: Box): Float {
+            val dx = max(0f, max(b.x - cx, cx - b.right)); val dy = max(0f, max(b.y - cy, cy - b.bottom))
+            return dx * dx + dy * dy
+        }
+        val a = old.boxes.minBy(::dist)
+        val n = new.box(a.key) ?: return null
+        val fx = ((cx - a.x) / a.w).coerceIn(0f, 1f); val fy = ((cy - a.y) / a.h).coerceIn(0f, 1f)
+        val wx = n.x + fx * n.w; val wy = n.y + fy * n.h
+        val s = cam.scale
+        return Camera(newW / 2f - wx * density * s, newH / 2f - wy * density * s, s)
     }
 
     /** The card under a screen point, or null. */

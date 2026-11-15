@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -90,7 +91,7 @@ import com.blaze.assistant.ui.living.LivingModel.State
 import kotlinx.coroutines.launch
 
 /**
- * Living UI 0.2.0 (LivingSpec.VERSION): the main chat's work as a canvas, in Chat's place (the chatbox stays).
+ * Living UI (LivingSpec.VERSION): the main chat's work as a canvas, in Chat's place (the chatbox stays).
  *
  *  - One finger pans, two pinch-zoom (0.25×–3×), a double tap fits everything, a tap on a card zooms in on it and a
  *    second tap goes back.
@@ -99,9 +100,15 @@ import kotlinx.coroutines.launch
  *    recomposes when a card enters or leaves); the camera is read in draw and in graphicsLayer, never in composition;
  *    the dot grid thins out when zoomed out; the one animation (the pulse on the active card) runs only while working,
  *    while the app is resumed and without reduced motion. Nothing here runs while Chat shows.
+ *  - 0.2.1 landscape ([wide], Finn's landscape mockup): four columns (LivingLayout.plan wide), one header line (the chat's
+ *    title, [title] or the drawer's name for it, with a dropdown that opens the history ([onTitle]) at the top left, the
+ *    earlier-chat note under it ([note] or ChatModeCopy.READ_ONLY), the status
+ *    pill centred), the canvas under the header and the floating composer, which follow keeps clear
+ *    (LivingLayout.followWide). Turning the phone keeps the card you were looking at in the middle (LivingLayout.reanchor).
  */
 @Composable
-fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMotion: Boolean, modifier: Modifier = Modifier) {
+fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMotion: Boolean, modifier: Modifier = Modifier,
+                 wide: Boolean = false, title: String? = null, note: String? = null, onTitle: (() -> Unit)? = null) {
     val dark = LocalBlaze.current.dark
     val p = remember(dark) { LivingSpec.palette(dark) }
     val messages by Agent.messages.collectAsState()
@@ -122,7 +129,23 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
             }.toList(), working, trail[chatHere].orEmpty(),
             label = { name, running -> StepTool.label(name).let { if (running) it.now else it.done } })
     }
-    val plan = remember(board) { LivingLayout.plan(board) }
+    val plan = remember(board, wide) { LivingLayout.plan(board, wide) }
+    // 0.2.1 landscape header: the open chat's title as the history drawer names it, and the earlier-chat note
+    val chatsVersion by com.blaze.assistant.ui.team.ChatModeRuntime.version.collectAsState()
+    val privateOn by Agent.privateChat.collectAsState()
+    val head = remember(wide, title, note, chatsVersion, messages.size, privateOn) {
+        when {
+            !wide -> null
+            title != null -> title to note
+            privateOn -> tr("Private chat") to null
+            else -> {
+                val chats = com.blaze.assistant.ui.team.ChatModeRuntime.chats()
+                val t = com.blaze.assistant.ui.team.ChatDrawerModel.state(chats, messages.map(com.blaze.assistant.ui.team.ChatModeRuntime::msg), emptyList(),
+                    System.currentTimeMillis(), java.time.ZoneId.systemDefault()).entries.firstOrNull { it.current }?.title
+                (t ?: com.blaze.assistant.ui.team.ChatDrawerModel.NEW_TITLE) to (if (chats.readOnly) com.blaze.assistant.ui.team.ChatModeCopy.READ_ONLY else null)
+            }
+        }
+    }
     // 0.2.0: page pictures for the browser cards; a card's window ends at the next page card or the next prompt
     val shots by LivingShots.shots.collectAsState()
     val until = remember(board) {
@@ -142,8 +165,8 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
         val vw = constraints.maxWidth.toFloat()
         val vh = constraints.maxHeight.toFloat()
         val pad = 16f * density
-        val top = 64f * density      // under the pill
-        val bottom = 24f * density   // a little air above the Chat | Living switch
+        val top = (if (wide) LivingSpec.WIDE_TOP_DP else 64f) * density      // under the pill (0.2.1: the header line)
+        val bottom = (if (wide) LivingSpec.WIDE_BOTTOM_DP else 24f) * density   // air above the switch (0.2.1: the floating composer)
 
         var cam by remember { mutableStateOf(Camera(pad, top + pad, 1f)) }
         var following by remember { mutableStateOf(true) }
@@ -164,11 +187,24 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
         fun goActive() {
             val b = planNow.box(board.active) ?: planNow.boxes.lastOrNull() ?: return
             zoomedOn = null
-            glide(LivingLayout.follow(b, density, vw, vh, pad, top, bottom))
+            glide(if (wide) LivingLayout.followWide(b, planNow, density, vw, vh, pad, top, bottom) else LivingLayout.follow(b, density, vw, vh, pad, top, bottom))
         }
 
         // follow new cards until the user pans
         LaunchedEffect(plan, following, vw, vh) { if (following) goActive() }
+        // 0.2.1: the phone turned (or two columns became four): keep the card in the middle where it was
+        val seen = remember { Seen() }
+        LaunchedEffect(plan, vw, vh, wide) {
+            val old = seen.plan
+            if (old != null && !following && (seen.vw != vw || seen.vh != vh || seen.wide != wide)) {
+                zoomedOn = null; before = null
+                val moved = LivingLayout.reanchor(old, cam, seen.vw, seen.vh, plan, vw, vh, density)
+                if (moved != null) cam = moved else following = true
+            }
+            seen.plan = plan; seen.vw = vw; seen.vh = vh; seen.wide = wide
+        }
+        // 0.2.1: in landscape the floating composer covers the bottom, so fit and focus keep clear of it
+        val fitH = if (wide) vh - bottom else vh
 
         val visible by remember(plan, vw, vh) { derivedStateOf { LivingLayout.visibleKeys(plan, cam, density, vw, vh, 80f * density) } }
 
@@ -185,7 +221,7 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
             }
             .pointerInput(vw, vh) {
                 detectTapGestures(
-                    onDoubleTap = { following = false; zoomedOn = null; glide(LivingLayout.fit(planNow, density, vw, vh, pad, top)) },
+                    onDoubleTap = { following = false; zoomedOn = null; glide(LivingLayout.fit(planNow, density, vw, fitH, pad, top)) },
                     onTap = { o ->
                         val b = LivingLayout.hit(planNow, cam, density, o.x, o.y)
                         if (b == null || zoomedOn == b.key) {
@@ -194,7 +230,7 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
                             following = false
                             if (zoomedOn == null) before = cam
                             zoomedOn = b.key
-                            glide(LivingLayout.focus(b, density, vw, vh, pad, top))
+                            glide(LivingLayout.focus(b, density, vw, fitH, pad, top))
                         }
                     })
             }
@@ -220,8 +256,37 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
         if (plan.boxes.isEmpty()) Text(tr("When {0} works, you watch it here: the pages it reads, the files it writes and what it runs.", com.blaze.assistant.BrandName.NAME),
             color = Color(p.mute), fontSize = 14.sp, modifier = Modifier.align(Alignment.Center).padding(32.dp))
 
+        // 0.2.1 landscape: the chat's title (and the earlier-chat note) at the top left, on the pill's line
+        if (head != null) WideTitle(head.first, head.second, p, onTitle,
+            Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 10.dp).widthIn(max = (vw / density * 0.27f).dp))
         StatusPill(board.status, working, p, pulse = animate, onNext = { following = true; goActive() },
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp, start = 16.dp, end = 16.dp))
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp, start = 16.dp, end = 16.dp)
+                .then(if (wide) Modifier.widthIn(max = (vw / density * 0.44f).dp) else Modifier))
+    }
+}
+
+/** What the canvas last laid out for (0.2.1, to keep the view steady when the phone turns). */
+private class Seen(var plan: LivingLayout.Plan? = null, var vw: Float = 0f, var vh: Float = 0f, var wide: Boolean = false)
+
+/** 0.2.1 landscape header: the chat's title with a small dropdown mark (opens the history), [note] under it. */
+@Composable
+private fun WideTitle(title: String, note: String?, p: LivingSpec.Palette, onTitle: (() -> Unit)?, modifier: Modifier = Modifier) {
+    Row(modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp))
+        .then(if (onTitle != null) Modifier.clickable(onClickLabel = tr("Chat history")) { onTitle() } else Modifier)
+        .padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f, fill = false)) {
+            Text(title, color = Color(p.ink), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (!note.isNullOrBlank()) Text(note, color = Color(p.mute), fontSize = 11.sp, lineHeight = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        if (onTitle != null) {
+            Spacer(Modifier.width(6.dp))
+            val ink = Color(p.mute)
+            Canvas(Modifier.size(12.dp)) {
+                val w = size.width
+                val path = Path().apply { moveTo(w * 0.2f, w * 0.38f); lineTo(w * 0.5f, w * 0.66f); lineTo(w * 0.8f, w * 0.38f) }
+                drawPath(path, ink, style = Stroke(1.6f * density, cap = StrokeCap.Round))
+            }
+        }
     }
 }
 

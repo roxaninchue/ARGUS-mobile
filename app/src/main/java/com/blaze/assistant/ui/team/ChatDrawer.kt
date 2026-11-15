@@ -225,6 +225,8 @@ fun ChatModeFrame(
     onOpenProjectChat: (String) -> Unit,
     modifier: Modifier = Modifier,
     zone: ZoneId = ZoneId.systemDefault(),
+    // Living UI 0.2.1: false in landscape Living, where the rail and the canvas header carry this row and the note
+    chrome: Boolean = true,
     content: @Composable (keep: ((ChatMessage) -> Boolean)?) -> Unit,
 ) {
     val c = Argus.colors
@@ -260,13 +262,13 @@ fun ChatModeFrame(
     run {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (chrome) Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     ArgusIconButton(com.blaze.assistant.ui.argus.icons.ArgusGlyphs.MENU_TAPER, "Chat history", { ChatDrawerUi.open() }, kind = IconButtonKind.FLAT, badge = chats.anyUnseen())
                     Spacer(Modifier.weight(1f))
                     ArgusIconButton("lock", if (privateOn) "Private chat on" else "Private chat", onPrivate, kind = if (privateOn) IconButtonKind.GLASS else IconButtonKind.FLAT)
                     ArgusIconButton("square-pen", "New chat", { ChatModeRuntime.newChat(ctx) }, kind = IconButtonKind.FLAT)
                 }
-                if (chats.readOnly) Text(ChatModeCopy.READ_ONLY, style = ArgusType.meta, color = c.mute,
+                if (chats.readOnly && chrome) Text(ChatModeCopy.READ_ONLY, style = ArgusType.meta, color = c.mute,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), textAlign = TextAlign.Center)
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     if (!hasHere) ChatModeEmpty(if (privateOn) null else name, privateOn, onAsk)

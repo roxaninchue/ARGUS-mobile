@@ -1,3 +1,10 @@
+## Living UI 0.2.1: Living in landscape (not built yet)
+
+- Turn the phone sideways on Living and it takes the whole screen: a slim rail on the left (chat history, search, Living / back to Chat, new chat, your profile) replaces the top bars and the Chat | Living switch, the chat's name sits at the top left (tap it for your chats, with a note when you are in an earlier chat) and the status pill sits centred beside it.
+- Four columns side by side: what you asked, the pages ARGUS read (a line out of your prompt into each one), the answer and files, then the steps checklist on the far right. Following the work keeps every column in view when they fit and the newest card clear of the header and the chatbox.
+- The chatbox floats as a compact pill at the bottom centre, so the canvas runs under it to the bottom of the screen.
+- Turning the phone keeps the card you were looking at in the middle, at the same zoom. Portrait is unchanged.
+
 ## Living UI 0.2.0: pages as pictures, two columns, a canvas that stays in its frame (not built yet)
 
 - Browser cards show the page itself: a "Browsing" card with a live dot and the page's picture in a small browser frame (tab with the site's icon and title, address bar with the site). Pages read without the browser get a masthead instead: the site's icon and name, the title and the first lines. A "Reading…" chip shows while the page loads. No more raw links or "Opened … (https://…)" on the cards.

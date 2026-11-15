@@ -187,6 +187,127 @@ class LivingLayoutTest {
         LivingSpec.show(LivingSpec.View.LIVING)
         assertTrue(LivingSpec.back())
         assertEquals(LivingSpec.View.CHAT, LivingSpec.view.value)
-        assertEquals("0.2.0", LivingSpec.VERSION)
+        assertEquals("0.2.1", LivingSpec.VERSION)
+    }
+
+    // ------------------------------------------------------------------ 0.2.1 landscape
+
+    private val wide = LivingLayout.plan(board, wide = true)
+
+    @Test fun landscapeHasFourColumnsLeftToRight() {
+        val xs = LivingLayout.wideColumns(board)
+        assertEquals(listOf(LivingLayout.Col.PROMPT, LivingLayout.Col.PAGES, LivingLayout.Col.MAIN, LivingLayout.Col.CHECK), xs.keys.toList())
+        val b = wide.boxes
+        assertEquals(7, b.size)
+        val prompt = b.single { it.card.kind == Kind.PROMPT }
+        val pages = b.filter { it.card.kind == Kind.BROWSER }
+        val answer = b.single { it.card.kind == Kind.ANSWER }
+        val log = b.single { it.card.kind == Kind.LOG }
+        // prompt | pages | answer | checklist, each column right of the one before, all starting at the turn's top
+        assertTrue(pages.all { it.x >= prompt.right + LivingLayout.WIDE_GAP - 0.01f })
+        assertTrue(answer.x >= pages.maxOf { it.right } + LivingLayout.WIDE_GAP - 0.01f)
+        assertTrue(log.x >= answer.right + LivingLayout.WIDE_GAP - 0.01f)
+        for (x in listOf(prompt, pages[0], answer, log)) assertEquals(0f, x.y, 0.01f)
+        for (i in 1 until pages.size) assertTrue(pages[i].y > pages[i - 1].bottom)
+        assertEquals(listOf("b2", "b3", "b4", "b5"), pages.map { it.key })
+        noOverlaps(b)
+        // wider and shorter than the portrait plan
+        assertTrue(wide.width > plan.width)
+        assertTrue(wide.height < plan.height)
+        assertTrue(wide.height >= b.maxOf { it.bottom } - 0.5f)
+        // portrait is untouched by the wide flag
+        assertEquals(plan.boxes, LivingLayout.plan(board, wide = false).boxes)
+    }
+
+    @Test fun landscapeConnectorsElbowFromThePromptIntoEachPageAndOn() {
+        val prompt = wide.boxes.first()
+        val pages = wide.boxes.filter { it.card.kind == Kind.BROWSER }
+        val answer = wide.boxes.single { it.card.kind == Kind.ANSWER }
+        val log = wide.boxes.single { it.card.kind == Kind.LOG }
+        fun ends(l: LivingLayout.Link) = l.pts[l.pts.size - 2] to l.pts.last()
+        // a link from the prompt's right edge into each page's left edge, with an arrow
+        for (p in pages) {
+            val l = wide.links.single { it.pts[0] == prompt.right && ends(it).first == p.x && ends(it).second > p.y && ends(it).second < p.bottom }
+            assertTrue(l.arrow)
+            assertEquals(8, l.pts.size)   // out, down the gutter, in: two elbows
+        }
+        // every page joins the answer; one arrowhead
+        val into = wide.links.filter { ends(it).first == answer.x && pages.any { p -> it.pts[0] == p.right } }
+        assertEquals(pages.size, into.size)
+        assertEquals(1, into.count { it.arrow })
+        assertTrue(into.all { ends(it).second > answer.y && ends(it).second < answer.bottom })
+        // the answer column into the checklist
+        assertTrue(wide.links.any { it.pts[0] == answer.right && ends(it).first == log.x })
+        // a turn without pages: no pages column, the prompt links straight to the answer
+        val chat = LivingModel.board(listOf(Msg(1, Role.USER, "Hey hey"), Msg(2, Role.BLAZE, "Hi! What can I do?")), working = false)
+        val cp = LivingLayout.plan(chat, wide = true)
+        assertEquals(listOf(LivingLayout.Col.PROMPT, LivingLayout.Col.MAIN), LivingLayout.wideColumns(chat).keys.toList())
+        assertEquals(1, cp.links.size)
+        assertEquals(cp.boxes[1].x, cp.links[0].pts[cp.links[0].pts.size - 2], 0.01f)
+    }
+
+    @Test fun landscapeLiveTurnLinksPagesToTheChecklist() {
+        val live = LivingLayout.plan(LivingModel.board(msgs.dropLast(1), working = true), wide = true)
+        val log = live.boxes.single { it.card.kind == Kind.LOG }
+        val pages = live.boxes.filter { it.card.kind == Kind.BROWSER }
+        assertTrue(live.links.any { l -> l.pts[0] == pages.last().right && l.pts[l.pts.size - 2] == log.x && l.arrow })
+        noOverlaps(live.boxes)
+        // turns stack downward in landscape too
+        val two = LivingLayout.plan(LivingModel.board(msgs + listOf(Msg(8, Role.USER, "and deploy it"), Msg(9, Role.BLAZE, "Deployed.")), working = false), wide = true)
+        val prompts = two.boxes.filter { it.card.kind == Kind.PROMPT }
+        assertTrue(prompts[1].y > two.boxes.filter { it.y == 0f }.maxOf { it.bottom })
+        noOverlaps(two.boxes)
+    }
+
+    @Test fun landscapeFollowKeepsTheActiveCardClearOfHeaderAndComposer() {
+        // a landscape phone: 2340 × 1080 px at 2.75 (≈ 851 × 393 dp), the rail already taken off the canvas width
+        val d = 2.75f; val w = 2340f - 64f * d; val h = 1080f
+        val pad = 16f * d; val top = LivingSpec.WIDE_TOP_DP * d; val bottom = LivingSpec.WIDE_BOTTOM_DP * d
+        for (b in wide.boxes) {
+            val c = LivingLayout.followWide(b, wide, d, w, h, pad, top, bottom)
+            assertTrue(c.scale >= LivingSpec.MIN_ZOOM && c.scale <= 1f)
+            // whole card across the screen and in the band between the header line and the composer
+            assertTrue("${b.key} left", c.sx(b.x, d) >= pad - 0.5f)
+            assertTrue("${b.key} right", c.sx(b.right, d) <= w - pad + 0.5f)
+            assertTrue("${b.key} top", c.sy(b.y, d) >= top + pad - 0.5f)
+            assertTrue("${b.key} bottom", c.sy(b.bottom, d) <= h - bottom - pad + 0.5f)
+        }
+        // on a tablet-wide window every column is in view at once while following the answer
+        val big = LivingLayout.followWide(wide.boxes.single { it.card.kind == Kind.ANSWER }, wide, 2f, 2560f, 1600f, 32f, 120f, 168f)
+        assertTrue(big.sx(0f, 2f) >= 31.5f && big.sx(wide.width, 2f) <= 2560f - 31.5f)
+    }
+
+    @Test fun turningThePhoneKeepsTheCardInTheMiddle() {
+        val d = 2.75f
+        val pw = 1080f; val ph = 2200f; val lw = 2164f; val lh = 1080f
+        val target = plan.boxes.single { it.card.kind == Kind.ANSWER }
+        // the answer's middle at the portrait screen's centre, at 0.8x
+        val s = 0.8f
+        val cam = Camera(pw / 2f - target.midX * d * s, ph / 2f - (target.y + target.h / 2f) * d * s, s)
+        val turned = LivingLayout.reanchor(plan, cam, pw, ph, wide, lw, lh, d)!!
+        val nb = wide.box(target.key)!!
+        assertEquals(s, turned.scale, 0.0001f)
+        assertEquals(lw / 2f, turned.sx(nb.midX, d), 1f)
+        assertEquals(lh / 2f, turned.sy(nb.y + nb.h / 2f, d), 1f)
+        // and back
+        val back = LivingLayout.reanchor(wide, turned, lw, lh, plan, pw, ph, d)!!
+        assertEquals(cam.ox, back.ox, 1f); assertEquals(cam.oy, back.oy, 1f)
+        // nothing to anchor on
+        assertEquals(null, LivingLayout.reanchor(LivingLayout.Plan(emptyList(), emptyList(), 0f, 0f), cam, pw, ph, wide, lw, lh, d))
+    }
+
+    @Test fun railOnlyForLandscapeLivingOnTheMainChat() {
+        assertTrue(LivingSpec.railOn(landscape = true, argus = true, living = true, mainChat = true, hasMessages = true, viewOpen = false))
+        assertFalse(LivingSpec.railOn(false, true, true, true, true, false))   // portrait never changes
+        assertFalse(LivingSpec.railOn(true, true, false, true, true, false))   // Chat view keeps its chrome
+        assertFalse(LivingSpec.railOn(true, true, true, false, true, false))   // project chats
+        assertFalse(LivingSpec.railOn(true, false, true, true, true, false))   // the old shell
+        assertFalse(LivingSpec.railOn(true, true, true, true, false, false))   // nothing to show yet
+        assertFalse(LivingSpec.railOn(true, true, true, true, true, true))     // a view is open
+        // landscape = wider than tall and at least 560 dp wide
+        assertTrue(com.blaze.assistant.ui.common.Orientation.landscape(851, 393))
+        assertFalse(com.blaze.assistant.ui.common.Orientation.landscape(393, 851))
+        assertFalse(com.blaze.assistant.ui.common.Orientation.landscape(520, 400))   // a small split-screen window
+        assertFalse(com.blaze.assistant.ui.common.Orientation.landscape(800, 1280))  // a tablet held upright
     }
 }

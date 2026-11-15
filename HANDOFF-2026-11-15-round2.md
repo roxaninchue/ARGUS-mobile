@@ -43,3 +43,29 @@ Gateway (separate ask): Apinex free models are out of rotation because Apinex no
 (402 "Daily check-in required… apinex.bond/airdrop?tab=quests"). The gateway classes it as no_balance/provider-wide,
 so the provider rests and probes back off. Fix ideas: check in daily (owner), or treat that 402 as a short
 `checkin` cooldown (15 min) instead of no_balance in `gateway/src/router.ts` + `failure.ts` (Blaze-agent repo).
+
+Living UI 0.2.1, landscape (15 Nov 2026), pushed with `[skip ci]`: **pushed, not built** (owner mockup: landscape Living,
+light theme; the app keeps its dark theme):
+1. `LivingSpec.railOn(landscape, argus, living, mainChat, hasMessages, viewOpen)`: only Living on the main / private
+   chat in the ARGUS shell in landscape gets the new chrome; portrait and Chat view are unchanged.
+2. ChatScreen in rail mode: the ARGUS top bar, the private-chat pill, the mode notch, the chips row, the model chip and the
+   Chat | Living switch are hidden (`if (!railOn) if (!designFull …` keeps DesignNavTest's needle); the chat column is padded
+   by `LivingRailSpace` (cutout + 64 dp) and `LivingRail` (ui/living/LivingRail.kt) is drawn at the start edge: history
+   (dot), search (Spotlight), layers = Living on (tap → Chat, where the notch and top bar come back), lock (private only),
+   new chat, avatar (settings; long-press light/dark). The composer gets `LivingFloat` (a layout modifier: ≤ 560 dp,
+   centred, takes 0 height, drawn upward over the canvas). `ChatModeFrame(chrome = false)` hides its history/ghost/new
+   row and the earlier-chat line (ui/team/ChatDrawer.kt, 3 lines).
+3. LivingScreen(wide = true): `LivingLayout.plan(board, wide = true)` = four columns (prompt | pages | answer + files |
+   steps checklist; a column only when some turn uses it), elbow trunks prompt → each page → answer → checklist;
+   `followWide` keeps all columns in view at ≥ 0.62× (else slides to show the card) and the card between the header line
+   (60 dp) and the composer (84 dp); fit/focus keep clear of the composer. Header: chat title (drawer's name for it,
+   "Private chat", + the earlier-chat note) with a dropdown → history drawer, status pill centred (≤ 44 % wide).
+4. Rotation: MainActivity handles orientation itself, so state survives; `LivingLayout.reanchor` keeps the card nearest
+   the centre in the middle at the same zoom when the size or the column count changes (when following, follow re-runs).
+5. Shared helper (new): `ui/common/Orientation.kt` — `Orientation.landscape(wDp, hDp)` (wider than tall and ≥ 560 dp) +
+   `@Composable isLandscape()`.
+Tests: LivingLayoutTest +6 (four columns, connectors, live turn, followWide band, reanchor round trip, railOn/Orientation).
+Not done vs mockup: connected-app icons on the rail (no cheap source), the accent card ("Alerts"), "Next ^" wording,
+the "with N tasks" status, gesture/list buttons in the composer.
+Check on the phone: rotate on Living (rail appears, canvas full height, card stays centred); composer taps/typing and the
+keyboard lift; the cutout side; the drawer from the title and the rail; rotate back (portrait as 0.2.0).

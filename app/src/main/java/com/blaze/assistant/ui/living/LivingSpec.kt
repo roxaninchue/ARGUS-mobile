@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 object LivingSpec {
     /** Living UI's own version (v0.xz.y: a minor update is y + 1; a major one moves x and/or z). */
-    const val VERSION = "0.2.0"
+    const val VERSION = "0.2.1"
 
     enum class View { CHAT, LIVING }
 
@@ -28,6 +28,21 @@ object LivingSpec {
     val view: StateFlow<View> = _view.asStateFlow()
 
     fun show(v: View) { _view.value = v }
+
+    /**
+     * 0.2.1: the landscape Living chrome (Finn's landscape mockup): a slim left rail in place of the top bars and the
+     * Chat | Living switch, one header line on the canvas, the composer floating at the bottom. Only for Living on the
+     * main chat (or a private chat) in the ARGUS shell, with no view (Design, Gallery…) open; portrait never changes.
+     */
+    fun railOn(landscape: Boolean, argus: Boolean, living: Boolean, mainChat: Boolean, hasMessages: Boolean, viewOpen: Boolean): Boolean =
+        landscape && argus && living && mainChat && hasMessages && !viewOpen
+
+    /** Rail width (dp), the landscape header line's height and the floating composer's room at the bottom (dp). */
+    const val RAIL_DP = 64
+    const val WIDE_TOP_DP = 60f
+    const val WIDE_BOTTOM_DP = 84f
+    /** The floating composer's widest (dp). */
+    const val FLOAT_COMPOSER_MAX_DP = 560
 
     /** Back on Living returns to Chat. True = Back was used here. */
     fun back(): Boolean = if (_view.value == View.LIVING) { _view.value = View.CHAT; true } else false
