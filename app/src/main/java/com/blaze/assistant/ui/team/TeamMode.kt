@@ -1,5 +1,8 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.withGutter
+
 import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -87,7 +90,9 @@ fun TeamMode(
     }
     val longPress: (String) -> Unit = { id -> bots[id]?.let { sheetFor = it } }
 
-    LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
+    // Landscape overhaul: clear of the cutout, rows centred at a readable width; 0 gutter upright
+    com.blaze.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize().cutoutSafe()) { gutter ->
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = contentPadding.withGutter(gutter)) {
         item(key = "header") {
             Box(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 10.dp)) {
                 androidx.compose.foundation.layout.Column {
@@ -135,6 +140,7 @@ fun TeamMode(
             }
             SettingsGroup(items, Modifier.padding(horizontal = 12.dp, vertical = 12.dp))
         }
+    }
     }
 
     sheetFor?.let { b ->

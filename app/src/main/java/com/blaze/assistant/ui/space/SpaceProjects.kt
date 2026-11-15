@@ -1,5 +1,8 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.readableWidth
+
 import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -71,7 +74,8 @@ fun SpaceProjectsScreen(
     embedded: Boolean = false,
 ) {
     val open = projects.firstOrNull { it.id == openId }
-    Box(Modifier.fillMaxSize().testTag(SpaceTags.PROJECTS)) {
+    // Landscape overhaul: clear of the cutout; the list and a project page read at a readable width, centred
+    Box(Modifier.fillMaxSize().cutoutSafe().testTag(SpaceTags.PROJECTS)) {
         if (open == null) ProjectList(projects, chats, busy, needsYou, onOpen, onCreate, embedded)
         else ProjectPage(open, chats, busy, needsYou, onBack, onChat, onNewChat, onInstructions, onDelete, onBrief, onRenameChat, onDeleteChat)
     }
@@ -84,7 +88,7 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
     var name by remember { mutableStateOf("") }
     val existing = remember(chats) { chats.map { it.id }.toSet() }
     fun create() { if (name.isNotBlank()) { onCreate(name.trim()); name = "" } }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).readableWidth().padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
         // P1-TM-07: inside Desk (its Projects segment) the Desk title and segment row stand in for the headline
         if (!embedded) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -147,7 +151,7 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
     val P = com.blaze.assistant.agent.Projects
     // Unification 6/9: the header spans the screen so its back circle sits at the gutter like the top bar's round
     // button (it sat ~34 dp in when the whole column was padded); the cards under it take the gutter themselves.
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).readableWidth()) {
         BackTitle(open.name, onBack = onBack, modifier = Modifier.padding(top = 4.dp))
         Column(Modifier.fillMaxWidth().padding(horizontal = SpaceInsets.GUTTER_DP.dp)) {
             Spacer(Modifier.height(8.dp))

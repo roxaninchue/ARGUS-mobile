@@ -1,5 +1,10 @@
 package com.blaze.assistant.ui.team
 
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.verticalScroll
+
 import com.blaze.assistant.i18n.tr
 import android.content.Context
 import androidx.activity.compose.BackHandler
@@ -406,7 +411,9 @@ fun ChatDrawerSheet(
     val c = Argus.colors
     ModalDrawerSheet(drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),   // NoSquareTest: the outer edge is rounded
          drawerContainerColor = c.bg, drawerContentColor = c.ink) {
-        Column(Modifier.fillMaxHeight().padding(horizontal = 12.dp)) {
+        // Landscape overhaul: the drawer opens on the left, where a phone on its side may have its camera cutout
+        Column(Modifier.fillMaxHeight().windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.displayCutout
+            .only(androidx.compose.foundation.layout.WindowInsetsSides.Start)).padding(horizontal = 12.dp)) {
             Spacer(Modifier.height(12.dp))
             ArgusSearch(query, onQuery, placeholder = tr("Search chats"))
             Spacer(Modifier.height(8.dp))
@@ -458,8 +465,12 @@ fun ChatModeEmpty(name: String?, privateOn: Boolean, onAsk: (String) -> Unit, ho
     val c = Argus.colors
     val clock = remember { java.time.LocalTime.now().hour }
     val hr = hour ?: clock
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        ManagerOrb(size = 72.dp, contentDescription = null)
+    // Landscape overhaul: centred while it fits, scrolls when it doesn't (a phone on its side), with a smaller orb there
+    val orb = com.blaze.assistant.ui.common.WindowLayout.heroOrbDp(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState()).heightIn(min = if (constraints.hasBoundedHeight) maxHeight else 0.dp).padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        ManagerOrb(size = orb.dp, contentDescription = null)
         Spacer(Modifier.height(18.dp))
         Text(ChatModeCopy.greeting(hr, name), style = ArgusType.serifHello, color = c.ink, textAlign = TextAlign.Center)
         if (privateOn) Text(ChatModeCopy.PRIVATE_ON, style = ArgusType.meta, color = c.mute, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
@@ -467,5 +478,6 @@ fun ChatModeEmpty(name: String?, privateOn: Boolean, onAsk: (String) -> Unit, ho
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             for (a in ChatModeCopy.ASKS) ArgusButton(a, { onAsk(a) }, size = ButtonSize.S)
         }
+    }
     }
 }

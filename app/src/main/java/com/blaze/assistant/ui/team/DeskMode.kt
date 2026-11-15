@@ -1,5 +1,8 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.readableWidth
+
 import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,11 +93,21 @@ fun DeskPage(
             delay(10_000)
         }
     }
-    Column(modifier.fillMaxSize()) {
-        Text(tr("Desk"), style = ArgusType.display, color = c.ink,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 6.dp).semantics { heading() })
-        FilterChips(DeskModel.chips(inboxWaiting, needYou, projectsCount), seg.key, { k -> DeskModel.Segment.of(k)?.let { DeskState.show(it) } },
-            Modifier.padding(bottom = 6.dp))
+    // Landscape overhaul: on a short window (a phone on its side) the title and the segment chips share one row, so the
+    // page keeps its height for the jobs; upright it is the title over the chips as before.
+    val compact = com.blaze.assistant.ui.common.WindowLayout.compactHeader(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
+    Column(modifier.fillMaxSize().cutoutSafe()) {
+        val chips = DeskModel.chips(inboxWaiting, needYou, projectsCount)
+        val pick: (String) -> Unit = { k -> DeskModel.Segment.of(k)?.let { DeskState.show(it) } }
+        if (compact) androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text(tr("Desk"), style = ArgusType.topTitle, color = c.ink, modifier = Modifier.padding(start = 20.dp, end = 4.dp).semantics { heading() })
+            FilterChips(chips, seg.key, pick, Modifier.weight(1f))
+        } else {
+            Text(tr("Desk"), style = ArgusType.display, color = c.ink,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 6.dp).semantics { heading() })
+            FilterChips(chips, seg.key, pick, Modifier.padding(bottom = 6.dp))
+        }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (seg) {
                 DeskModel.Segment.INBOX -> EmptyState(title = tr("Inbox"), icon = "bell", body = DeskModel.inboxBody(inboxWaiting),
@@ -117,7 +130,7 @@ fun DeskPage(
 @Composable
 private fun LinkPage(seg: DeskModel.Segment, nav: DeskNav) {
     val c = Argus.colors
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).readableWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
         Text(DeskModel.intro(seg), style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
         for (l in DeskModel.links(seg)) MenuRow(l.icon, l.title, { nav.open(l.target) }, sub = l.sub)
         Spacer(Modifier.height(120.dp))

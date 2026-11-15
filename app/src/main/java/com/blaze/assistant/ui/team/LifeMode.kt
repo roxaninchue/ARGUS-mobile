@@ -1,5 +1,8 @@
 package com.blaze.assistant.ui.team
 
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.withGutter
+
 import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -112,7 +115,9 @@ fun LifeMode(
     val c = Argus.colors
     var menuFor by remember { mutableStateOf<com.blaze.assistant.home.Widget?>(null) }
     androidx.compose.runtime.CompositionLocalProvider(LocalLifeFold provides fold) {
-    LazyColumn(modifier.fillMaxSize().testTag(LifeTags.PAGE), contentPadding = contentPadding, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    // Landscape overhaul: clear of the cutout, cards centred at a readable width; 0 gutter upright
+    com.blaze.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize().cutoutSafe()) { gutter ->
+    LazyColumn(Modifier.fillMaxSize().testTag(LifeTags.PAGE), contentPadding = contentPadding.withGutter(gutter), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         for (s in state.sections) {
             // Owner 2026-11-14: what ARGUS keeps on the dashboard, one folding header per category, a panel per item
             if (s == LifeModel.Section.BOARD) {
@@ -161,6 +166,7 @@ fun LifeMode(
             }
             }
         }
+    }
     }
     }
     menuFor?.let { w ->
@@ -233,7 +239,11 @@ private fun DomainGrid(domains: List<LifeModel.DomainTile>, onTap: (LifeModel.Do
     Column(Modifier.fillMaxWidth().testTag(LifeTags.DOMAINS)) {
         LifeFoldHead("Your life", LifeBoard.SECTION + "Your life", tr(LifeModel.SET_UP) + " \u203a", onTrailing = { onTap(null) })
         if (!LocalLifeFold.current.isFolded(LifeBoard.SECTION + "Your life")) Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            for (pair in domains.chunked(2)) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Landscape overhaul: two tiles a row upright, three or four when the page is wide
+            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val cols = com.blaze.assistant.ui.common.WindowLayout.cardColumns(maxWidth.value, 200f, maxCols = 4).coerceAtLeast(2)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            for (pair in domains.chunked(cols)) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 for (d in pair) {
                     val hue = Color(d.color)
                     Column(Modifier.weight(1f).argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp), shadow = false)
@@ -250,7 +260,9 @@ private fun DomainGrid(domains: List<LifeModel.DomainTile>, onTap: (LifeModel.Do
                         Text(tr(d.line), style = ArgusType.sub, color = c.mute, maxLines = 2, modifier = Modifier.padding(top = 8.dp))
                     }
                 }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
+                repeat(cols - pair.size) { Spacer(Modifier.weight(1f)) }
+            }
+            }
             }
         }
     }

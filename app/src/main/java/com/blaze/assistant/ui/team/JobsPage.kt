@@ -1,5 +1,11 @@
 package com.blaze.assistant.ui.team
 
+import androidx.compose.foundation.layout.fillMaxHeight
+import com.blaze.assistant.ui.common.cutoutSafe
+
+import androidx.compose.ui.semantics.heading
+import com.blaze.assistant.ui.common.withGutter
+
 import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -91,8 +97,10 @@ fun JobsPage(
     modifier: Modifier = Modifier,
 ) {
     val c = Argus.colors
-    Box(modifier.fillMaxSize()) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
+    // Landscape overhaul: rows centred at a readable width (0 gutter upright); the FAB stays at the rows' edge
+    com.blaze.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize()) { gutter ->
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp).withGutter(gutter)) {
             item(key = "search") { ArgusSearch(query, onQuery, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), placeholder = tr("Search jobs")) }
             item(key = "filters") { FilterChips(state.chips, state.filter, onFilter, Modifier.padding(vertical = 4.dp)) }
             if (state.botChips.isNotEmpty()) item(key = "bots") { FilterChips(state.botChips, state.bot ?: "", onBot, Modifier.padding(vertical = 4.dp)) }
@@ -102,10 +110,11 @@ fun JobsPage(
             items(state.rows, key = { it.id }) { r -> JobRow(r, { onOpen(r.id) }, { onDone(r.id) }, avatar(r.botId)) }
         }
         // the FAB (A-team "+"): 56 dp ink disc, above the composer
-        Box(Modifier.align(Alignment.BottomEnd).padding(end = 18.dp, bottom = 22.dp).size(56.dp).clip(CircleShape).background(c.ink)
+        Box(Modifier.align(Alignment.BottomEnd).padding(end = 18.dp + gutter, bottom = 22.dp).size(56.dp).clip(CircleShape).background(c.ink)
             .clickable(role = Role.Button, onClick = onNew).semantics { contentDescription = tr("New job") }, contentAlignment = Alignment.Center) {
             Icon(Lucide.icon("plus", 24), null, Modifier.size(24.dp), tint = c.onInk)
         }
+    }
     }
 }
 
@@ -143,7 +152,40 @@ fun JobRow(r: JobRowModel, onOpen: () -> Unit, onDone: () -> Unit, avatar: (@Com
 fun JobSheet(s: JobSheetModel.Sheet, onDismiss: () -> Unit, onRetry: () -> Unit, onDone: () -> Unit, onCancel: () -> Unit) {
     val c = Argus.colors
     ArgusSheet(onDismiss = onDismiss, title = s.title, primary = s.retry, onPrimary = onRetry, cancel = tr("Close")) {
-        Column(Modifier.fillMaxWidth().heightIn(max = 520.dp).verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
+        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(520.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
+            JobSheetBody(s, onDone, onCancel)
+        }
+    }
+}
+
+/**
+ * Landscape overhaul: the job's detail beside the list when the page is wide ([com.blaze.assistant.ui.common.WindowLayout.twoPane]),
+ * the same lines as [JobSheet] with its title and Retry on top. [s] null = nothing picked yet.
+ */
+@Composable
+fun JobDetailPane(s: JobSheetModel.Sheet?, onRetry: () -> Unit, onDone: () -> Unit, onCancel: () -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier) {
+    val c = Argus.colors
+    if (s == null) {
+        com.blaze.assistant.ui.argus.kit.EmptyState(title = tr("Pick a job"), icon = "list-checks", body = tr("Its status, brief, result and log show here."), modifier = modifier)
+        return
+    }
+    Column(modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(s.title, style = ArgusType.sheetTitle, color = c.ink, modifier = Modifier.weight(1f).semantics { heading() })
+            com.blaze.assistant.ui.argus.kit.ArgusIconButton("x", tr("Close"), onClose)
+        }
+        JobSheetBody(s, onDone, onCancel)
+        s.retry?.let { r -> ArgusButton(r, onRetry, Modifier.padding(top = 12.dp), kind = ButtonKind.PRIMARY) }
+        Spacer(Modifier.height(120.dp))
+    }
+}
+
+/** The job's lines (who · due, status, brief, result, log, Done / Cancel job), shared by the sheet and the side pane. */
+@Composable
+private fun JobSheetBody(s: JobSheetModel.Sheet, onDone: () -> Unit, onCancel: () -> Unit) {
+    val c = Argus.colors
+    run {
+        run {
             Text(listOfNotNull(s.who, s.due).joinToString(" \u00b7 "), style = ArgusType.meta, color = if (s.overdue) c.dangerText else c.meta)
             Text(s.status, style = ArgusType.bodyStrong, color = c.ink, modifier = Modifier.padding(top = 4.dp))
             s.brief?.let { Text(it, style = ArgusType.body, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
@@ -226,6 +268,11 @@ fun JobsPageScreen(
     val state = JobsPageModel.state(all, bots, filter, query, bot, today())
     LaunchedEffect(state.needsYou) { onNeedYou(state.needsYou) }
     fun act(f: () -> Unit) { scope.launch { withContext(Dispatchers.IO) { runCatching(f) }; tick++ } }
+    // Landscape overhaul: list | detail side by side on a wide page (a phone on its side, a tablet); the sheet otherwise
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+    val split = com.blaze.assistant.ui.common.WindowLayout.twoPane(maxWidth.value, maxHeight.value)
+    val listW = com.blaze.assistant.ui.common.WindowLayout.listPaneWidth(maxWidth.value)
+    Row(Modifier.fillMaxSize()) {
     JobsPage(
         state, query, { query = it }, onFilter, { bot = it },
         onOpen = { id -> scope.launch { sheet = withContext(Dispatchers.IO) { jobs.get(id)?.let { JobSheetModel.of(it, jobs.steps(id), bots, today(), zone) } } } },
@@ -240,12 +287,21 @@ fun JobsPageScreen(
                 else -> null
             }
         },
+        modifier = if (split) Modifier.width(listW.dp) else Modifier,
     )
-    sheet?.let { s ->
+    if (split) {
+        val s = sheet
+        Box(Modifier.width(1.dp).fillMaxHeight().background(Argus.colors.line2))
+        JobDetailPane(s, onRetry = { s?.let { act { actions.retry(it.id) } } }, onDone = { s?.let { act { actions.done(it.id) } } },
+            onCancel = { s?.let { act { actions.cancel(it.id) } } }, onClose = { sheet = null }, modifier = Modifier.weight(1f).fillMaxHeight().cutoutSafe())
+    }
+    }
+    if (!split) sheet?.let { s ->
         JobSheet(s, onDismiss = { sheet = null },
             onRetry = { act { actions.retry(s.id) } },
             onDone = { act { actions.done(s.id) } },
             onCancel = { act { actions.cancel(s.id) } })
+    }
     }
     if (newOpen) NewJobSheet(roster, today(), initialBot = if (state.filter == JobsFilter.BY_BOT) state.bot else null,
         onDismiss = { newOpen = false },
