@@ -172,11 +172,30 @@ object ChatToolRows {
         for (m in run) {
             if (isSay(m)) { flush(); out += Seg.Say("say-${m.id}", m.text.trim()); continue }
             val st = stepOf(m, results, used, live) ?: continue
-            if (cur.isNotEmpty() && cur.last().tool != st.tool) flush()
+            // 0.53.4 (owner): calls that read the same ("Used the browser" for open, read, click) share one row too
+            if (cur.isNotEmpty() && !sameRow(cur.last(), st)) flush()
             cur += st
         }
         flush()
         return out
+    }
+
+    /** Two calls in a row share a row when they are the same tool or their rows would read the same. */
+    fun sameRow(a: Step, b: Step): Boolean = a.tool == b.tool || (a.done.isNotBlank() && a.done == b.done)
+
+    /**
+     * 0.53.4 (owner screenshot 09:05, "tools can become clustered, add another foldable to hide all steps"): a turn with
+     * more than one row gets one fold over all of them. Live it stays open; a finished turn starts folded.
+     */
+    fun folds(flow: Flow): Boolean = flow.runs.size >= 2
+
+    /** The fold's words: "Used 3 tools · 6 steps", "Working · 4 steps", "6 steps · 2 failed". */
+    fun foldTitle(flow: Flow): String {
+        val runs = flow.runs
+        val n = flow.steps
+        val failed = runs.sumOf { it.failed }
+        val head = if (flow.live && runs.any { it.running }) "Working" else "Used ${runs.map { it.first.done }.distinct().size} tools"
+        return "$head \u00b7 ${ThreadModel.count(n)}" + if (failed > 0) " \u00b7 $failed failed" else ""
     }
 
     /** Like [turns], as flows: finished ones keyed by the message that ended them, the running one live. */

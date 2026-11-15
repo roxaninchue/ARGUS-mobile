@@ -441,6 +441,29 @@ object BrowserEngine {
         } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: snapshot", e) }
     }
 
+    /**
+     * 0.53.4 Living UI: a picture of the page ARGUS is on (its tab, else the current one), for the browser card. Works
+     * offscreen: a background tab is laid out at the phone's size (see [layoutOffscreen]). A flat, unpainted picture
+     * is dropped. Main thread.
+     */
+    suspend fun agentShot() = withContext(Dispatchers.Main) {
+        if (!::app.isInitialized) return@withContext
+        val t = tabs.firstOrNull { it.id == agentTabId } ?: tab() ?: return@withContext
+        val w = t.live ?: return@withContext
+        try {
+            if (w.width <= 0 || w.height <= 0) layoutOffscreen(w)
+            if (w.width <= 0 || w.height <= 0) return@withContext
+            val tw = com.blaze.assistant.ui.living.LivingShots.W; val th = com.blaze.assistant.ui.living.LivingShots.H
+            val sc = tw.toFloat() / w.width
+            val b = Bitmap.createBitmap(tw, th, Bitmap.Config.RGB_565)
+            val c = Canvas(b); c.drawColor(android.graphics.Color.WHITE); c.scale(sc, sc); c.translate(-w.scrollX.toFloat(), -w.scrollY.toFloat())
+            w.draw(c)
+            val samples = IntArray(25) { i -> b.getPixel((i % 5) * (tw - 1) / 4, (i / 5) * (th - 1) / 4) }
+            if (com.blaze.assistant.ui.living.LivingPage.blank(samples)) { b.recycle(); return@withContext }
+            com.blaze.assistant.ui.living.LivingShots.add(com.blaze.assistant.ui.living.LivingShots.Shot(t.url, t.title, System.currentTimeMillis(), b.asImageBitmap()))
+        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: agentShot", e) }
+    }
+
     /** v0.33.3: a transparent 84px spacer at the end of a scrollable page (once), so the floating toolbar never hides its end. */
     const val BOTTOM_PAD_JS = "(function(){try{var b=document.body;if(!b||document.getElementById('__blaze_pad'))return;" +
         "if(document.documentElement.scrollHeight<=window.innerHeight+4)return;var d=document.createElement('div');d.id='__blaze_pad';" +

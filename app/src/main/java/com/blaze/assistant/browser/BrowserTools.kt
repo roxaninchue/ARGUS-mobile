@@ -93,7 +93,15 @@ object BrowserTools {
 
     fun show(ctx: Context) = ctx.startActivity(Intent(ctx, BrowserActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
 
-    suspend fun run(ctx: Context, name: String, a: JSONObject): String = try {
+    /** 0.53.4 Living UI: the browser steps after which the page's picture is taken for its card. */
+    private val shotAfter = setOf("browser_open", "browser_read", "browser_click", "browser_type", "browser_scroll", "browser_select",
+        "browser_key", "browser_wait", "browser_back", "browser_find")
+
+    suspend fun run(ctx: Context, name: String, a: JSONObject): String = runStep(ctx, name, a).also {
+        if (name in shotAfter) try { BrowserEngine.agentShot() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Throwable) { }
+    }
+
+    private suspend fun runStep(ctx: Context, name: String, a: JSONObject): String = try {
         // v0.30.5: Home's live preview window shows the page while Blaze works in it.
         if (name != "browser_vpn" && name != "browser_tabs") BrowserLive.mark(describe(name, a))
         when (name) {

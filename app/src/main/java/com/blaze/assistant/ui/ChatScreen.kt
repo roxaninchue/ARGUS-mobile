@@ -236,7 +236,7 @@ fun ChatScreen() {
         loadingFiles = true
         scope.launch {
             val loaded = uris.take(5).mapNotNull { Attachments.load(ctx, it, mimeHint) }
-            if (loaded.size < uris.take(5).size) Toast.makeText(ctx, "Some files couldn't be read (photos, PDFs and text work).", Toast.LENGTH_SHORT).show()
+            if (loaded.size < uris.take(5).size) Toast.makeText(ctx, "Some files couldn't be attached (512 MB at most).", Toast.LENGTH_SHORT).show()
             pending = pending + loaded
             loadingFiles = false
         }
@@ -572,7 +572,7 @@ fun ChatScreen() {
             "camera" -> { cameraCapture.open(); true }
             "blazecam" -> { com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value); true }
             "photos" -> { photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)); true }
-            "files" -> { files.launch(arrayOf("image/*", "application/pdf", "text/*")); true }
+            "files" -> { files.launch(arrayOf("*/*")); true }
             "paste" -> { pasteImage(); true }
             "voice" -> { onMic(); true }
             "call" -> { startCall(); true }
@@ -1038,7 +1038,7 @@ fun ChatScreen() {
                             "blazecam" -> if (!com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
                                 Toast.makeText(ctx, "${BrandName.NAME} Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
                             "photos" -> photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                            "files" -> files.launch(arrayOf("image/*", "application/pdf", "text/*"))
+                            "files" -> files.launch(arrayOf("*/*"))
                             "atfile" -> { val t = input.text.let { if (it.isEmpty() || it.endsWith(" ")) it else "$it " } + "@"; input = TextFieldValue(t, TextRange(t.length)) }
                             "paste" -> pasteImage()
                             "voice" -> onMic()

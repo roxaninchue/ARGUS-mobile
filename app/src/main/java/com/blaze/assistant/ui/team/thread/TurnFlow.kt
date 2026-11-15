@@ -70,11 +70,35 @@ import com.blaze.assistant.ui.team.thread.ThreadModel.Step
  */
 @Composable
 fun TurnFlowView(flow: Flow, modifier: Modifier = Modifier, showTools: Boolean = true) {
+    // 0.53.4: one fold over all of a turn's rows (open while it runs, folded once it's done); the model's words stay out.
+    val fold = showTools && ChatToolRows.folds(flow)
+    var open by rememberSaveable(flow.key, flow.live) { mutableStateOf(flow.live) }
     Column(modifier.fillMaxWidth().padding(vertical = 2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (fold) FoldRow(ChatToolRows.foldTitle(flow), open, running = flow.live && flow.runs.any { it.running }) { open = !open }
         for (s in flow.segs) when (s) {
             is Seg.Say -> SayText(s.text)
-            is Seg.Tools -> if (showTools) RunRow(s.run, live = flow.live)
+            is Seg.Tools -> if (showTools) {
+                if (!fold) RunRow(s.run, live = flow.live)
+                else AnimatedVisibility(open) { RunRow(s.run, live = flow.live, modifier = Modifier.padding(start = 12.dp)) }
+            }
         }
+    }
+}
+
+/** The turn's fold: layers icon · "Used 3 tools · 6 steps" · chevron. */
+@Composable
+private fun FoldRow(title: String, open: Boolean, running: Boolean, onToggle: () -> Unit) {
+    val c = Argus.colors
+    Row(Modifier.fillMaxWidth().heightIn(min = 36.dp).clickable(role = Role.Button) { onToggle() }
+        .semantics(mergeDescendants = true) { contentDescription = title; stateDescription = if (open) "Expanded" else "Collapsed" },
+        verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+            if (running) CircularProgressIndicator(Modifier.size(13.dp), color = c.mute, strokeWidth = 1.5.dp)
+            else Icon(Lucide.icon("layers", 16), null, Modifier.size(16.dp), tint = c.mute)
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(title, style = ArgusType.sub, color = c.mute, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+        Icon(Lucide.icon(if (open) "chevron-down" else "chevron-right", 14), null, Modifier.padding(start = 6.dp).size(14.dp), tint = c.dim)
     }
 }
 

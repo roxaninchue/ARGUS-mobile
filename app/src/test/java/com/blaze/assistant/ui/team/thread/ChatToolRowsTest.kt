@@ -120,4 +120,22 @@ class ChatToolRowsTest {
         val live = ChatToolRows.flows(ms.dropLast(1), working = true, results = res).live!!
         assertTrue(live.runs.last().running)
     }
+
+    // 0.53.4 (owner screenshot 09:05): "Used the browser" ×3 is one row, and a turn with several rows gets one fold.
+    @Test fun sameLabelsShareARowAndClustersFold() {
+        val ms = listOf(user(1, 0),
+            step(2, "Browsing", "browser_open(url=https://www.google.com/maps)", 5),
+            step(3, "Clicking", "browser_click(text=Keep using web)", 6),
+            step(4, "Reading", "browser_read()", 7),
+            step(5, "Searching", "web_search(query=lusaka cafes)", 8),
+            reply(6, 20))
+        val f = ChatToolRows.flows(ms, working = false).before[6L]!!
+        val first = f.runs.first()
+        if (StepTool.label("browser_open").done == StepTool.label("browser_click").done) assertEquals(3, first.steps.size)
+        assertTrue(ChatToolRows.folds(f))
+        assertTrue(ChatToolRows.foldTitle(f).endsWith("4 steps"))
+        assertTrue(ChatToolRows.foldTitle(f).startsWith("Used "))
+        val one = ChatToolRows.flows(listOf(user(1, 0), step(2, "Searching", "web_search(query=x)", 5), reply(3, 9)), working = false).before[3L]!!
+        assertFalse(ChatToolRows.folds(one))
+    }
 }

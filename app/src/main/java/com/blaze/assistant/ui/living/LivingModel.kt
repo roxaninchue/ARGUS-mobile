@@ -99,11 +99,14 @@ object LivingModel {
 
     enum class Tool { SEARCH, PAGE, FILE_READ, FILE_WRITE, OTHER }
 
+    val pageTools = setOf("fetch_page", "browser_read", "read_page", "fetch_url", "browser", "browser_open", "browser_show", "open_url")
+
     fun toolKind(name: String): Tool {
         val n = name.lowercase()
         return when {
             n == "web_search" || n == "search_web" || n == "websearch" || n.endsWith("_search") && n.startsWith("web") -> Tool.SEARCH
-            n == "fetch_page" || n == "browser_read" || n == "read_page" || n == "fetch_url" || n == "browser" || n.startsWith("browser_") -> Tool.PAGE
+            // 0.2.0: only tools that land on a page get a page card; clicks, typing, scrolls, waits are steps of the log
+            n in pageTools -> Tool.PAGE
             n in setOf("file_read", "read_file", "file_view") -> Tool.FILE_READ
             n in setOf("file_write", "file_edit", "write_file", "edit_file", "save_file", "export_file") -> Tool.FILE_WRITE
             else -> Tool.OTHER
@@ -172,11 +175,18 @@ object LivingModel {
                                 title = if (q.isBlank()) "Search results" else "Results for \u201c${unquote(q)}\u201d", flag = true, at = m.at)
                         }
                         Tool.PAGE -> {
-                            closeLog()
-                            val u = a["url"] ?: a["u"] ?: a["link"] ?: a["address"] ?: a.values.firstOrNull().orEmpty()
-                            val (title, body) = page(out)
-                            c += Card("b${m.id}", Kind.BROWSER, state, text = clip(body, TEXT_MAX), url = unquote(u),
-                                title = title.ifBlank { host(unquote(u)) }, at = m.at)
+                            val u = unquote(a["url"] ?: a["u"] ?: a["link"] ?: a["address"] ?: "")
+                            val (title, body) = LivingPage.read(out)
+                            // 0.2.0: reading the page that is already open updates its card instead of drawing a second one
+                            val prev = c.lastOrNull()
+                            if (log == null && u.isBlank() && prev != null && prev.kind == Kind.BROWSER && !prev.flag) {
+                                c[c.lastIndex] = prev.copy(state = state, text = if (body.isNotBlank()) clip(body, TEXT_MAX) else prev.text,
+                                    title = title.ifBlank { prev.title })
+                            } else {
+                                closeLog()
+                                c += Card("b${m.id}", Kind.BROWSER, state, text = clip(body, TEXT_MAX), url = u,
+                                    title = title.ifBlank { host(u).ifBlank { "Page" } }, at = m.at)
+                            }
                         }
                         Tool.FILE_READ, Tool.FILE_WRITE -> {
                             closeLog()

@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 /** Turns a picked photo, PDF or text file into content the model can read. */
 object Attachments {
@@ -54,7 +55,7 @@ object Attachments {
                         Bitmap.createBitmap(480, (480f * pg.height / pg.width).toInt(), Bitmap.Config.ARGB_8888).also { b -> b.eraseColor(Color.WHITE); pg.render(b, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY) } } } } } catch (_: Exception) { null }
                     Attachment(name, parts, first?.let { saveThumb(ctx, it, name) })
                 }
-                mime.startsWith("text/") || name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".csv") || name.endsWith(".json") -> {
+                mime.startsWith("text/") || AnyFile.isText(name, mime) -> {
                     // 0.49.0 tiered memory: a big text file is streamed into the cache tier (never loaded whole) and the
                     // message carries a reference; a small one is sent as before.
                     val size = try { cr.openFileDescriptor(uri, "r")?.use { it.statSize } ?: -1L } catch (_: Exception) { -1L }
@@ -68,7 +69,18 @@ object Attachments {
                         Attachment(name, listOf(text("File $name:\n$body")))
                     }
                 }
-                else -> null
+                // 0.53.4: any other file (zip, apk, audio, video, office, binaries) is saved into ARGUS's home and the
+                // message says where, so the tools (run_shell: unzip, apksigner…; file_*) can open it. A zip lists its entries.
+                else -> {
+                    val dir = File(ctx.filesDir, "home/" + AnyFile.DIR).apply { mkdirs() }
+                    val out = AnyFile.target(dir, name)
+                    val size = cr.openInputStream(uri)?.use { inp -> out.outputStream().use { o -> AnyFile.copyCapped(inp, o, AnyFile.MAX_BYTES) } } ?: return@withContext null
+                    if (size < 0) { out.delete(); return@withContext null }
+                    val listing = if (AnyFile.isZip(name, mime)) try {
+                        java.util.zip.ZipFile(out).use { z -> AnyFile.zipListing(z.entries().asSequence().map { it.name to it.size }.toList()) }
+                    } catch (_: Exception) { "" } else ""
+                    Attachment(name, listOf(text(AnyFile.note(name, mime, size, "~/" + AnyFile.DIR + "/" + out.name, listing))))
+                }
             }
         } catch (_: Exception) { null }
     }
