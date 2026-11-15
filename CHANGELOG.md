@@ -1,3 +1,9 @@
+## Sign-in lands in the chat, real Google and GitHub logos (not built yet)
+
+- After signing in or finishing setup, ARGUS opens the chat. The old Home ("Good morning…", "Finishing setup", "Try asking", "New project") never shows again, whichever way you got there; setup still finishes in the background and shows on Life.
+- "Continue with Google" and "Continue with GitHub" show the real Google G and GitHub logos, on white (light) or near-black (dark) buttons in Google's style.
+- First run fits a phone held sideways: the language list sits beside its heading and Continue, and the welcome screen scrolls.
+
 ## Living UI 0.2.2: show, don't tell (not built yet)
 
 - When ARGUS gets something you can look at, Living draws it beside the answer with an arrow into it: the weather itself (big temperature, the sky drawn, the place, feels-like, humidity and wind, source and time), where you are (a pin, the town, the address), the alarm or timer that was set, the event added to your calendar, a picture that was made, or a table.

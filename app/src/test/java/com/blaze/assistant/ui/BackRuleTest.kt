@@ -146,7 +146,8 @@ class BackRuleTest {
     /** RC2 (HomeRoute): with the new Home as root, Home keeps its own Back and everything else, the plain chat included, goes Home. */
     @Test fun homeIsTheRootWithTheNewHome() = fiveTimes("home root") {
         assertEquals(BackRule.Action.OWN, BackRule.action(BackRule.Shell(swipeHome = true, homeRoot = true)))
-        assertEquals(BackRule.Action.TO_CHAT, BackRule.action(BackRule.Shell(homeRoot = true)))
+        // owner 2026-11-15: the 0.52.3 Home is retired (its tab is Chat), so in the 0.52 shell the plain chat keeps its Back
+        assertEquals(BackRule.Action.OWN, BackRule.action(BackRule.Shell(homeRoot = true)))
         for (o in listOf(BackRule.Shell(settingsPage = "memory", homeRoot = true), BackRule.Shell(view = "design", homeRoot = true),
             BackRule.Shell(gallery = true, homeRoot = true), BackRule.Shell(tab = ChatNav.PROJECTS, homeRoot = true)))
             assertEquals("$o", BackRule.Action.TO_CHAT, BackRule.action(o))

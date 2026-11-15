@@ -154,5 +154,6 @@ cold-start check in run-smoke.sh.
   (LegalAssetsTest pins the copy too). When the root LICENSE.md or THIRD_PARTY_NOTICES.md changes, copy both again.
 - **Renames:** ArgusHome* / ArgusSpotlight* tests and checks were replaced, not kept; `run-smoke.sh` still expects
   `OK (7 tests)` (`f_argusHome` became `f_spaceHome`), and the warm-up draws the space shell (same SwiftShader reason as above).
+  2026-11-15: `f_spaceHome` became `f_argusShell` (the ARGUS shell; the 0.52.3 Home is retired), still 7 tests; the warm-up draws the ARGUS shell.
 - **Setup downloads on CI:** SetupRunner only starts from the onboarding's setup step or (BlazeApp, 30 s after the first
   frame) for people already onboarded. A fresh emulator install is neither, so no smoke or device check downloads anything.

@@ -9,6 +9,10 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.readableWidth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -147,14 +151,18 @@ fun SpaceOnboardingScreen(
 private fun LanguageStep(onNext: () -> Unit) {
     val look = SpaceLook.Dark
     val sel = com.blaze.assistant.i18n.AppLang.code.value
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 18.dp, vertical = 18.dp)) {
-        ArgusLogo(120.dp, Modifier.align(Alignment.CenterHorizontally))
-        Spacer(Modifier.height(18.dp))
-        SpaceHeadline(com.blaze.assistant.i18n.tr("Choose your language"), size = 30.sp)
+    // Landscape audit 2026-11-15: on a phone held sideways (under 480 dp tall) the logo and heading took most of the
+    // height and left the list a sliver, so the heading and Continue sit on the left and the list scrolls on the right.
+    val short = com.blaze.assistant.ui.common.WindowUi.short()
+    val head: @Composable androidx.compose.foundation.layout.ColumnScope.(Dp) -> Unit = { logo ->
+        ArgusLogo(logo, if (short) Modifier else Modifier.align(Alignment.CenterHorizontally))
+        Spacer(Modifier.height(if (short) 10.dp else 18.dp))
+        SpaceHeadline(com.blaze.assistant.i18n.tr("Choose your language"), size = if (short) 24.sp else 30.sp)
         Spacer(Modifier.height(6.dp))
         Text(com.blaze.assistant.i18n.tr("{0} always replies in the language you write in.", BrandName.UPPER), style = SpaceType.body(15.sp, look.sub))
-        Spacer(Modifier.height(12.dp))
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+    }
+    val list: @Composable (Modifier) -> Unit = { m ->
+        Column(m.verticalScroll(rememberScrollState())) {
             for (l in com.blaze.assistant.i18n.AppLang.PICKABLE) {
                 val on = l.code == sel
                 Row(Modifier.fillMaxWidth().heightIn(min = 52.dp)
@@ -170,6 +178,19 @@ private fun LanguageStep(onNext: () -> Unit) {
                 }
             }
         }
+    }
+    val frame = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe()
+    if (short) Row(frame.padding(horizontal = 18.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) {
+            head(72.dp)
+            Spacer(Modifier.height(14.dp))
+            SpacePillButton(com.blaze.assistant.i18n.tr("Continue"), onNext, primary = true, modifier = Modifier.widthIn(max = 420.dp))
+        }
+        list(Modifier.weight(1f).fillMaxHeight())
+    } else Column(frame.padding(horizontal = 18.dp, vertical = 18.dp).readableWidth()) {
+        head(120.dp)
+        Spacer(Modifier.height(12.dp))
+        list(Modifier.weight(1f))
         Spacer(Modifier.height(12.dp))
         SpacePillButton(com.blaze.assistant.i18n.tr("Continue"), onNext, primary = true, modifier = Modifier.widthIn(max = 420.dp).align(Alignment.CenterHorizontally))
     }
@@ -178,26 +199,35 @@ private fun LanguageStep(onNext: () -> Unit) {
 @Composable
 private fun Welcome(onStart: () -> Unit) {
     val look = SpaceLook.Dark
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 28.dp, vertical = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.weight(0.9f))
-        ArgusLogo(260.dp)
-        Spacer(Modifier.height(28.dp))
-        Text(tr(SpaceOnboarding.TAGLINE), textAlign = TextAlign.Center, style = SpaceType.headline(30.sp, look.ink))
-        Spacer(Modifier.height(12.dp))
-        Text(tr("Your assistant for everything on this phone. Ready in a minute, nothing to set up."), textAlign = TextAlign.Center,
-            style = SpaceType.body(16.sp, look.sub))
-        Spacer(Modifier.weight(1f))
-        SpacePillButton(tr("Get started"), onStart, primary = true, tag = SpaceTags.ONBOARDING_START, modifier = Modifier.widthIn(max = 420.dp))
+    // Landscape audit 2026-11-15: Welcome scrolls (a 260 dp logo plus the tagline did not fit a phone on its side, and
+    // nothing scrolled). The column is at least the screen's height, so the upright layout (weights) is unchanged; on a
+    // short window the logo is smaller.
+    val short = com.blaze.assistant.ui.common.WindowUi.short()
+    BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe()) {
+        val minH = maxHeight
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = minH)
+            .padding(horizontal = 28.dp, vertical = if (short) 12.dp else 24.dp).readableWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(Modifier.weight(0.9f))
+            ArgusLogo(if (short) 140.dp else 260.dp)
+            Spacer(Modifier.height(if (short) 14.dp else 28.dp))
+            Text(tr(SpaceOnboarding.TAGLINE), textAlign = TextAlign.Center, style = SpaceType.headline(if (short) 24.sp else 30.sp, look.ink))
+            Spacer(Modifier.height(12.dp))
+            Text(tr("Your assistant for everything on this phone. Ready in a minute, nothing to set up."), textAlign = TextAlign.Center,
+                style = SpaceType.body(16.sp, look.sub))
+            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(if (short) 12.dp else 0.dp))
+            SpacePillButton(tr("Get started"), onStart, primary = true, tag = SpaceTags.ONBOARDING_START, modifier = Modifier.widthIn(max = 420.dp))
+        }
     }
 }
 
 @Composable
 private fun SignIn(signedIn: Boolean, onNext: () -> Unit, accountCard: @Composable () -> Unit) {
     val look = SpaceLook.Dark
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 18.dp, vertical = 18.dp)) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe().padding(horizontal = 18.dp, vertical = 18.dp).readableWidth()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            ArgusLogo(120.dp, Modifier.align(Alignment.CenterHorizontally))
+            ArgusLogo(if (com.blaze.assistant.ui.common.WindowUi.short()) 72.dp else 120.dp, Modifier.align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(18.dp))
             SpaceCard {
                 SpaceHeadline(tr("Sign in to {0}", BrandName.UPPER), size = 30.sp)

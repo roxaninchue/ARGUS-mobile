@@ -75,8 +75,12 @@ object BackRule {
     /** Fronts that keep their own Back. Everything else goes to the chat. */
     val OWN_BACK = setOf(CHAT, "setup", "setup-gate", "call")
 
-    /** With [Shell.homeRoot]: Home (not the chat) is where Back stops; everything else, the plain chat included, goes there. */
-    val OWN_BACK_HOME_ROOT = setOf("home", "setup", "setup-gate", "call")
+    /**
+     * With [Shell.homeRoot] (the 0.52 shell, `argus_look` off): Home and, since the owner retired the 0.52.3 Home on
+     * 2026-11-15 (ChatNav.tabOf: the Home tab is Chat now), the plain chat are where Back stops; everything else goes
+     * there. Without the chat here, Back on it would "go Home", land on the same chat and never leave the app.
+     */
+    val OWN_BACK_HOME_ROOT = setOf("home", CHAT, "setup", "setup-gate", "call")
 
     /** P1-SH-01, the ARGUS shell: Team is the root; Chat, Life, Desk and everything over them go back to Team. */
     val OWN_BACK_ARGUS = setOf("team", "setup", "setup-gate", "call")

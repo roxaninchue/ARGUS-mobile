@@ -80,7 +80,15 @@ data class ChatNav(
         const val DESK = "desk"
         val MODES = listOf(TEAM, CHAT, LIFE, DESK)
 
-        fun tabOf(s: String?): String = when (s) { PROJECTS -> PROJECTS; HOME -> HOME; TEAM -> TEAM; LIFE -> LIFE; DESK -> DESK; else -> CHAT }
+        /**
+         * Owner 2026-11-15 ("I don't ever want this screen to show again"): the 0.52.3 Home (SpaceHome: the greeting
+         * card, "Finishing setup", "Try asking", "+ New project") is never a tab any more. Every way that used to reach
+         * it (finishing onboarding or sign-in, a tab restored after process death, the remembered `shell_tab`, the 0.52
+         * shell's Home pill and root) goes through here or [rootTab] / [startTab], and lands on Chat. [HOME] stays as a
+         * name only so old saved state and callers still resolve. Setup keeps running in the background (Life's Setup
+         * section and the setup sheet show it).
+         */
+        fun tabOf(s: String?): String = when (s) { PROJECTS -> PROJECTS; TEAM -> TEAM; LIFE -> LIFE; DESK -> DESK; else -> CHAT }
 
         /** True for the four ARGUS modes (Projects, a project chat and the old Home are not modes). */
         fun isMode(tab: String): Boolean = tab in MODES
@@ -94,8 +102,8 @@ data class ChatNav(
          */
         fun argusTab(tab: String): String = if (tab == HOME) LIFE else tab
 
-        /** The tab Back stops at: Team in the ARGUS shell, Home in the old one. */
-        fun rootTab(argus: Boolean): String = if (argus) TEAM else HOME
+        /** The tab Back stops at and a fresh start opens on: Team in the ARGUS shell, Chat in the old one (its Home is retired). */
+        fun rootTab(argus: Boolean): String = if (argus) TEAM else CHAT
 
         /** `/team`, `/chat`, `/life`, `/desk` (alone, any case) → that mode; anything else null. */
         fun modeCommand(text: String): String? {
@@ -104,8 +112,9 @@ data class ChatNav(
             return t.removePrefix("/").takeIf { it in MODES }
         }
 
-        /** The tab to open on start: Home when the user last left it there (remembered), else Chat (the default on first run). */
-        fun startTab(remembered: String?): String = if (remembered == HOME) HOME else CHAT
+        /** The tab to open on start: Chat (a remembered Home no longer counts: it is retired, see [tabOf]). */
+        @Suppress("UNUSED_PARAMETER")
+        fun startTab(remembered: String?): String = CHAT
         const val MAIN: String = Mind.MAIN
         private const val SEP = "\u001f"
 

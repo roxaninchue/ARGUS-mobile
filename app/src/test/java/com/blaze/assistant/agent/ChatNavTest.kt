@@ -111,7 +111,7 @@ class ChatNavTest {
         }
         assertFalse(ChatNav.isMode(ChatNav.PROJECTS)); assertFalse(ChatNav.isMode(ChatNav.HOME))
         assertEquals(listOf(0, 1, 2, 3, -1), listOf("team", "chat", "life", "desk", "projects").map { ChatNav.modeIndex(it) })
-        assertEquals(ChatNav.TEAM, ChatNav.rootTab(true)); assertEquals(ChatNav.HOME, ChatNav.rootTab(false))
+        assertEquals(ChatNav.TEAM, ChatNav.rootTab(true)); assertEquals("the old Home is retired (OldHomeGoneTest)", ChatNav.CHAT, ChatNav.rootTab(false))
         assertEquals(ChatNav.LIFE, ChatNav.argusTab(ChatNav.HOME)); assertEquals(ChatNav.PROJECTS, ChatNav.argusTab(ChatNav.PROJECTS))
         assertEquals("team", ChatNav.modeCommand("/team")); assertEquals("desk", ChatNav.modeCommand(" /DESK "))
         assertEquals("life", ChatNav.modeCommand("/life")); assertEquals("chat", ChatNav.modeCommand("/chat"))

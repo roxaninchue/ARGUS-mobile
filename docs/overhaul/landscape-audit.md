@@ -48,7 +48,7 @@ to the Living agent (its `isLandscape()`); this round does not touch it.
 | Chat mode empty (ChatModeEmpty) | Orb + serif greeting + asks centred in a non-scrolling column clip | Scrolls when it doesn't fit, smaller orb on a short window | fixed |
 | Chat history drawer | Opens on the left under the camera cutout | Start cutout inset | fixed |
 | Chat thread / Living / composer | (owned elsewhere) | | other agent |
-| Old 0.52 space Home (Good morning / Finishing setup / Try asking) | (owned elsewhere) | | onboarding agent |
+| Old 0.52 space Home (Good morning / Finishing setup / Try asking) | Retired by the owner 2026-11-15: never shown (ChatNav has no Home tab) | Onboarding agent | fixed |
 
 ## Settings (You page + every settings page)
 
@@ -69,7 +69,7 @@ to the Living agent (its `isLandscape()`); this round does not touch it.
 | Gallery (GalleryScreen) | Fixed 3 columns → 280 dp tiles, one row visible; albums fixed 2 | Columns scale with width (`gridColumns`, pinch still sets the upright count); albums 2 → up to 6; cutout | fixed |
 | Gallery viewer | Full-bleed pager, bars inset | none | ok |
 | Glass window (links), Assist panel, Stage, Design studio | Full-bleed / own BoxWithConstraints sizing; Assist list already compact | none | ok |
-| Setup progress / onboarding steps (SpaceOnboarding) | Language and Welcome steps don't fit 360 dp (Welcome has no scroll) | Not touched: owned by the onboarding agent (handed over) | onboarding agent |
+| Setup progress / onboarding steps (SpaceOnboarding) | Language and Welcome steps don't fit 360 dp (Welcome has no scroll) | Onboarding agent: Language splits heading + Continue / list when short; Welcome scrolls (min-height column, upright unchanged); Language, Welcome, Sign-in cutout-safe and readable width | fixed |
 
 ## Separate activities
 
@@ -87,4 +87,3 @@ to the Living agent (its `isLandscape()`); this round does not touch it.
 - Music now-playing as a true two-pane (art left, controls right) on its side; this round only caps the art.
 - Gallery viewer bars and Video store hero (230 dp) are fine but not tuned for 1280 dp.
 - Shell chrome on Team / Life / Desk / Projects in landscape: the other agent's rail (requested).
-- Onboarding steps (Language, Welcome) in landscape: onboarding agent.

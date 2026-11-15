@@ -38,6 +38,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 
 /** Settings › Account: the Blaze account shared with Blaze Desktop. */
 @Composable
@@ -132,10 +139,9 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
         Note("Finish signing in with ${BlazeAccount.title(v.pending)} in your browser, then come back.")
         AccountButton("Cancel", primary = false) { BlazeAccount.cancel() }
     } else {
-        for (p in listOf("google", "github")) if (v.login[p] == true) {
-            AccountButton("Continue with ${BlazeAccount.title(p)}", primary = false) {
-                err = BlazeAccount.signInWith(ctx, p)
-            }
+        // 2026-11-15: the real Google G and GitHub mark on brand-style buttons (SignInBrand)
+        for (p in SignInBrand.PROVIDERS) if (v.login[p] == true) {
+            ProviderButton(p) { err = BlazeAccount.signInWith(ctx, p) }
             Spacer(Modifier.height(8.dp))
         }
         if (v.login["google"] == true || v.login["github"] == true) Label(tr("or with email"), color = c.weak, size = 9.sp, modifier = Modifier.padding(vertical = 10.dp))
@@ -178,6 +184,37 @@ private fun AccountButton(text: String, primary: Boolean = true, onClick: () -> 
     val c = LocalBlaze.current.mono
     Box(Modifier.fillMaxWidth().height(44.dp).then(if (primary) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f))
         .clickable(onClick = onClick), contentAlignment = Alignment.Center) { ButtonText(text, color = if (primary) c.paper else c.ink, size = 13.sp) }
+}
+
+/**
+ * "Continue with Google" / "Continue with GitHub" in the providers' own button style ([SignInBrand]): white (light) or
+ * #131314 (dark) with a thin outline, the brand mark at the start, the label centred, Roboto (the system sans) Medium.
+ */
+@Composable
+private fun ProviderButton(provider: String, onClick: () -> Unit) {
+    val dark = LocalBlaze.current.dark
+    val st = SignInBrand.style(dark)
+    val shape = RoundedCornerShape(50)
+    val label = tr(SignInBrand.label(provider))
+    Box(Modifier.fillMaxWidth().height(SignInBrand.HEIGHT_DP.dp).clip(shape).background(androidx.compose.ui.graphics.Color(st.fill), shape)
+        .border(SignInBrand.OUTLINE_DP.dp, androidx.compose.ui.graphics.Color(st.outline), shape)
+        .clickable(onClickLabel = label, onClick = onClick)
+        .semantics(mergeDescendants = true) { contentDescription = label; role = Role.Button }
+        .padding(horizontal = SignInBrand.START_DP.dp), contentAlignment = Alignment.Center) {
+        val logo = when (provider) {
+            SignInBrand.GOOGLE -> com.blaze.assistant.R.drawable.logo_google_g
+            SignInBrand.GITHUB -> com.blaze.assistant.R.drawable.logo_github_mark
+            else -> 0
+        }
+        if (logo != 0) {
+            val tint = SignInBrand.logoTint(provider, dark)
+            Image(painterResource(logo), contentDescription = null, modifier = Modifier.align(Alignment.CenterStart).size(SignInBrand.LOGO_DP.dp),
+                colorFilter = tint?.let { androidx.compose.ui.graphics.ColorFilter.tint(androidx.compose.ui.graphics.Color(it)) })
+        }
+        Text(label, maxLines = 1, modifier = Modifier.padding(horizontal = (SignInBrand.LOGO_DP + SignInBrand.GAP_DP).dp),
+            style = TextStyle(fontFamily = androidx.compose.ui.text.font.FontFamily.Default, fontWeight = FontWeight.Medium,
+                fontSize = SignInBrand.TEXT_SP.sp, color = androidx.compose.ui.graphics.Color(st.text)))
+    }
 }
 
 /** v0.45.3: the second sign-in step when the account has two-step verification on (5 minutes, 5 tries; codes by app, email or recovery). */
