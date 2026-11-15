@@ -490,7 +490,11 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
             Spacer(Modifier.height(12.dp))
             // Large art; swipe it sideways to skip (left = next, right = previous).
             var dx by remember { mutableFloatStateOf(0f) }
-            Box(Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) {
+            // Landscape overhaul: on a short window the art box is capped (a full-width square would push the controls a
+            // screen away); upright it is the full-width square as before.
+            val shortWin = com.blaze.assistant.ui.common.WindowLayout.isShort(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
+            val artBox = if (shortWin) Modifier.fillMaxWidth().height((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.6f).dp) else Modifier.fillMaxWidth().aspectRatio(1f)
+            Box(artBox, contentAlignment = Alignment.Center) {
                 when (view) {
                     "queue" -> QueueList(ctl, np)
                     "lyrics" -> LyricsView(t, np.pos)

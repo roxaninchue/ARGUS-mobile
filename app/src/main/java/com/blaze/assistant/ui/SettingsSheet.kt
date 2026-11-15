@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.readableWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -92,7 +94,9 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
     val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty() }
 
     com.blaze.assistant.ui.space.SpaceBackdrop {
-    Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+    // Landscape overhaul: clear of the camera cutout on its side, and rows stop at a readable width (centred) on a phone
+    // on its side or a tablet; an upright phone is narrower than the cap, so it is unchanged.
+    Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().cutoutSafe().readableWidth()) {
         if (page == null && argus) {
             // P1-SH-06: the You page (04 §4.11) in the ARGUS look; the profile below stays for argus_look off.
             val me = account.user

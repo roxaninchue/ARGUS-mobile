@@ -1,5 +1,8 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.readableWidth
+
 
 import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
@@ -114,7 +117,8 @@ fun MeetingRoomScreen(roomId: Long, onDismiss: () -> Unit) {
     Box(Modifier.fillMaxSize().background(c.paper)
         // swallow taps so nothing under the room reacts
         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
+        // Landscape overhaul: clear of the cutout, the room at a readable width; unchanged upright
+        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().cutoutSafe().readableWidth()) {
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

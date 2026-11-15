@@ -1,3 +1,13 @@
+## Landscape overhaul: every screen usable sideways (not built yet)
+
+- Sheets fit a phone on its side: they stop under the status bar and their contents scroll between the title and the buttons (the plan sheet, jobs, the bot editor, quick actions, the model picker, the + menu).
+- Team, Life, Desk, Jobs and Projects keep clear of the camera cutout and sit at a readable width instead of stretching edge to edge; Life shows three or four tiles a row when there is room.
+- Desk on its side puts its title and tabs on one line, and Jobs opens a job beside the list instead of over it.
+- Settings (every page, Backup & import included), Spotlight, Search and the meeting room read at a readable width, clear of the cutout.
+- A voice call on its side puts the orb on the left and the caption and buttons on the right, so End is always on screen.
+- The Gallery and the Music / Video store add columns when the screen is wider, so tiles keep their size; the Music player's cover no longer pushes the controls off screen.
+- The empty Chat greeting scrolls when it doesn't fit, and the chat history drawer stays clear of the cutout. Upright phones are unchanged.
+
 ## Living UI 0.2.1: Living in landscape (not built yet)
 
 - Turn the phone sideways on Living and it takes the whole screen: a slim rail on the left (chat history, search, Living / back to Chat, new chat, your profile) replaces the top bars and the Chat | Living switch, the chat's name sits at the top left (tap it for your chats, with a note when you are in an earlier chat) and the status pill sits centred beside it.

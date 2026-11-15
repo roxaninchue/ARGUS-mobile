@@ -1,5 +1,9 @@
 package com.blaze.assistant.ui
 
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.verticalScroll
+import com.blaze.assistant.ui.common.cutoutSafe
+
 
 import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
@@ -119,8 +123,11 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
             if (voice == Voice.State.SPEAKING && !muted) { Voice.stopSpeaking(); Voice.conversationListen() }
             else if (voice == Voice.State.IDLE && mood == Mood.IDLE && !muted) Voice.conversationListen()
         }) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally) {
+        // Landscape overhaul: on a phone on its side the name and the orb sit left, the caption, cards and the call
+        // buttons right (stacked they need ~600 dp); upright it is the one column as before.
+        val cfg = androidx.compose.ui.platform.LocalConfiguration.current
+        val side = com.blaze.assistant.ui.common.WindowLayout.sideBySide(cfg.screenWidthDp.toFloat(), cfg.screenHeightDp.toFloat())
+        val head: @Composable () -> Unit = {
             Spacer(Modifier.height(28.dp))
             Label(tr("CALL"), color = c.ink.copy(alpha = 0.55f), size = 10.sp)
             Spacer(Modifier.height(6.dp))
@@ -129,9 +136,8 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
             Text(tr("%d:%02d").format(seconds / 60, seconds % 60),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink.copy(alpha = 0.6f)))
 
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CallOrb(240.dp, mood, voice, level, muted)
-            }
+        }
+        val tail: @Composable () -> Unit = {
 
             Label(status.uppercase(), color = c.accent, size = 10.sp)
             Spacer(Modifier.height(10.dp))
@@ -158,6 +164,25 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
                     Voice.callSpeaker.value = earpiece
                 }) { col -> SpeakerGlyph(col, !earpiece) }
             }
+        }
+        if (side) Row(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe().padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                head()
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CallOrb((cfg.screenHeightDp * 0.45f).coerceAtMost(240f).dp, mood, voice, level, muted)
+                }
+            }
+            Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { tail() }
+        }
+        else Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            head()
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CallOrb(240.dp, mood, voice, level, muted)
+            }
+            tail()
         }
     }
 }

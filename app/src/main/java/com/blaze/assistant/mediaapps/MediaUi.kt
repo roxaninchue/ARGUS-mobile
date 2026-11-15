@@ -452,7 +452,7 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
     }
 
     val square = state.results.isNotEmpty() && state.results.all { it.square }
-    LazyVerticalGrid(GridCells.Fixed(if (square) 3 else 2), Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 96.dp),
+    LazyVerticalGrid(GridCells.Fixed(com.blaze.assistant.ui.common.WindowLayout.gridColumns(if (square) 3 else 2, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat())), Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 96.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (sources.size > 1) item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

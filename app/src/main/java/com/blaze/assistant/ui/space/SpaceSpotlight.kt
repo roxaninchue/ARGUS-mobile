@@ -1,5 +1,8 @@
 package com.blaze.assistant.ui.space
 
+import com.blaze.assistant.ui.common.cutoutSafe
+import com.blaze.assistant.ui.common.readableWidth
+
 import com.blaze.assistant.i18n.tr
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -123,7 +126,8 @@ fun SpaceSpotlightLayer(
         SpaceScrim(open, onDismiss = { composer.closeSpotlight() }, label = tr("Close search"), modifier = Modifier.testTag(SpaceTags.SCRIM))
         AnimatedVisibility(open, modifier = Modifier.align(Alignment.TopCenter),
             enter = MotionTokens.overlayIn(fromTop = true), exit = MotionTokens.overlayOut(fromTop = true)) {
-            BoxWithConstraints(Modifier.fillMaxWidth().statusBarsPadding().imePadding().padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
+            // Landscape overhaul: clear of the cutout and at a readable width when the window is wide; unchanged upright
+            BoxWithConstraints(Modifier.fillMaxWidth().statusBarsPadding().imePadding().cutoutSafe().readableWidth().padding(horizontal = SpaceInsets.GUTTER_DP.dp, vertical = 10.dp)) {
                 SpaceSpotlightPanel(composer, appList, saidList, recent, hour, focus, onRow = { runRow(it) }, maxListHeight = maxHeight * 0.75f)
             }
         }

@@ -1,5 +1,7 @@
 package com.blaze.assistant.ui
 
+import com.blaze.assistant.ui.common.cutoutSafe
+
 
 import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
@@ -290,7 +292,7 @@ fun GalleryScreen(onDismiss: () -> Unit) {
     // 0.52.2: one ARGUS look. Unification: the shell's space background, the shared header (BackTitle, matched to the
     // top bar) and the shell's segmented pill.
     SpaceBackdrop {
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe()) {
             // ---------------- header
             if (selected.isNotEmpty()) {
                 BackTitle("${selected.size} selected", onBack = { selected = emptySet() }) {
@@ -359,7 +361,8 @@ fun GalleryScreen(onDismiss: () -> Unit) {
                     }
                 } else {
                     val otd = remember(all, now) { if (tab == "all") com.blaze.assistant.media.GalleryTools.onThisDay(all, now) else emptyList() }
-                    LazyVerticalGrid(GridCells.Fixed(cols), Modifier.fillMaxSize().padding(horizontal = 2.dp)
+                    // Landscape overhaul: the pinch picks the upright column count; a wider window adds columns so tiles keep their size
+                    LazyVerticalGrid(GridCells.Fixed(com.blaze.assistant.ui.common.WindowLayout.gridColumns(cols, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat())), Modifier.fillMaxSize().padding(horizontal = 2.dp)
                         .pointerInput(Unit) {
                             // v0.34.0 pinch the grid: two fingers apart = bigger tiles, together = more columns (2 to 6).
                             awaitEachGesture {
@@ -598,8 +601,8 @@ private fun GalleryTile(e: Entry, selecting: Boolean, isSelected: Boolean, onPla
 private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStore.Album>, all: Map<String, Entry>, canPhone: Boolean,
                        onOpen: (String) -> Unit, onNew: () -> Unit, onAlbumMenu: (AlbumStore.Album, String) -> Unit, onAllowPhone: () -> Unit) {
     val c = LocalBlaze.current.mono
-    LazyVerticalGrid(GridCells.Fixed(2), Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
-        item(span = { GridItemSpan(2) }) { Label(tr("Your albums"), color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 4.dp)) }
+    LazyVerticalGrid(GridCells.Fixed(com.blaze.assistant.ui.common.WindowLayout.gridColumns(2, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat(), maxCols = 6)), Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
+        item(span = { GridItemSpan(maxLineSpan) }) { Label(tr("Your albums"), color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 4.dp)) }
         item {
             Column(Modifier.padding(6.dp).clip(BlazeShapes.medium).clickable(onClickLabel = tr("New album"), onClick = onNew)) {
                 Box(Modifier.fillMaxWidth().aspectRatio(1f).glassInset(c).border(1.dp, c.hair, BlazeShapes.medium),
@@ -615,12 +618,12 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
                 BlazeMenu(menu, onDismiss = { menu = false }, items = listOf("Rename" to { onAlbumMenu(a, "rename") }, "Delete album" to { onAlbumMenu(a, "delete") }))
             }
         }
-        item(span = { GridItemSpan(2) }) { Label(tr("On this phone"), color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 14.dp, bottom = 4.dp)) }
+        item(span = { GridItemSpan(maxLineSpan) }) { Label(tr("On this phone"), color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 14.dp, bottom = 4.dp)) }
         items(autos, key = { it.id }) { a -> AlbumCard(a.name, a.items.size, a.items.firstOrNull(), onClick = { onOpen(a.id) }, onLongClick = null) }
-        if (autos.isEmpty()) item(span = { GridItemSpan(2) }) {
+        if (autos.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
             Label(tr("Pictures, songs and videos {0} makes or downloads get their own albums here.", BrandName.NAME), color = c.weak, size = 11.sp, modifier = Modifier.padding(6.dp))
         }
-        if (!canPhone) item(span = { GridItemSpan(2) }) {
+        if (!canPhone) item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.padding(6.dp).fillMaxWidth().glassInset(c).clickable(onClick = onAllowPhone).padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Folder, contentDescription = null, tint = c.accent, modifier = Modifier.size(22.dp))
@@ -632,7 +635,7 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
                 }
             }
         }
-        item(span = { GridItemSpan(2) }) { Spacer(Modifier.height(16.dp)) }
+        item(span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(16.dp)) }
     }
 }
 
