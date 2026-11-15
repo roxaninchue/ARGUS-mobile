@@ -48,6 +48,8 @@ class CallState(val parent: CallState? = null) {
     /** v0.45.3: ms from sending to the response headers (the gateway answered), and to the first visible word (not reasoning). */
     /** v0.45.3: the longest pause between two text chunks of the last streamed reply (stall diagnosis in the speed line). */
     @Volatile var maxGapMs = 0L
+    /** 0.54.1: why the last call's reply ended ("stop", "tool_calls", "length", "dropped" = closed with neither a finish_reason nor [DONE]). */
+    @Volatile var finish = ""
     @Volatile var headersMs = 0L
     @Volatile var firstTextMs = 0L
     @Volatile var firstTextAt = 0L
@@ -72,7 +74,7 @@ class CallState(val parent: CallState? = null) {
         val p = parent ?: return
         p.usage = usage; p.route = route; p.servedBy = servedBy; p.servedKey = servedKey
         p.firstTokenMs = firstTokenMs; p.firstTokenAt = firstTokenAt; p.callHeaders = callHeaders
-        p.maxGapMs = maxGapMs; p.headersMs = headersMs; p.firstTextMs = firstTextMs; p.firstTextAt = firstTextAt
+        p.maxGapMs = maxGapMs; p.finish = finish; p.headersMs = headersMs; p.firstTextMs = firstTextMs; p.firstTextAt = firstTextAt
         if (gw.isNotEmpty()) p.gw = gw
         p.requestIds.addAll(requestIds.filter { it !in p.requestIds }); p.errors.addAll(errors)
         p.chunkAt.accumulateAndGet(chunkAt.get()) { a, b -> maxOf(a, b) }

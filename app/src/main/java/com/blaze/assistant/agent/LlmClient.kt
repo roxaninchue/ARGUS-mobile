@@ -235,7 +235,7 @@ object LlmClient {
     /** 0.53.6: the private key on a reply naming why it ended ("length" = cut off by the output cap). */
     const val FINISH = "_finish"
 
-    /** 0.54.0 (harness musts #1): the model's own output limit, fitted to the window (OutputLimit); Settings "tool_max_tokens" > 0 overrides. */
+    /** 0.54.0 (harness musts #1): the model's own output limit, fitted to the window (OutputLimit); Settings "tool_max_tokens" > 0 overrides. 0.54.1: every call. */
     fun toolMaxTokens(model: String, messages: JSONArray, tools: JSONArray?): Int {
         val override = try { Settings.str("tool_max_tokens", "0").toIntOrNull() ?: 0 } catch (_: Throwable) { 0 }
         val input = (messages.toString().length + (tools?.toString()?.length ?: 0)) / 4
@@ -456,13 +456,13 @@ object LlmClient {
                 // "remember that my NET exam is on 3 November" and "what do you remember about my exams?" 10 of 10.
                 if (t.pid == Providers.GATEWAY && ToolWire.mayTrim(messages, choice, manual != null)) put("blaze_tools", "auto")   // 0.53.1: full tools unless small talk
             }
-            // v0.45.5 (#10): reasoning models (gpt-oss) need room to reason and still answer; short turns get a floor of
-            // 1024 (≥ SharedPersona.MIN_MAX_TOKENS). Longer turns keep the provider's own limit (no cap, as before).
-            if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn && (tools == null || tools.length() == 0)) put("max_tokens", maxOf(1024, SharedPersona.MIN_MAX_TOKENS))
             // 0.53.6: tool turns name their own output cap. Sending none left the provider's default (often ~4K tokens on free
             // tiers), which cut a whole-page design call off inside its html string.
             // 0.54.0: the model's own limit (OutputLimit), named model first: the manual pick, then this turn's pinned route.
-            if (tools != null && tools.length() > 0) put("max_tokens", toolMaxTokens(manual ?: turnModel?.pin?.ifBlank { null } ?: t.model, messages, tools))
+            // 0.54.1: every call, chat turns too. Short chat turns had a flat 1024 and longer ones the provider's default; a
+            // thinking model (reasoning counts toward max_tokens) spent that and the reply stopped mid-list ("1. Debonairs Pizza –").
+            // Gateway 0.9.17 lowers it per model to what that model accepts.
+            put("max_tokens", toolMaxTokens(manual ?: turnModel?.pin?.ifBlank { null } ?: t.model, messages, tools))
         }
         val who = Providers.byId(t.pid).name
         // v0.45.0 (#5): Stop really ends the request: cancelling this coroutine closes the socket (cancellable), so a blocked
@@ -543,6 +543,7 @@ object LlmClient {
             ?: throw LlmException("$who · ${t.model} sent an empty reply. Trying again.", 503)
         lastUsage = json.optJSONObject("usage")
         json.optJSONArray("choices")?.optJSONObject(0)?.let { ch -> if (ch.has("finish_reason") && !ch.isNull("finish_reason")) ch.optString("finish_reason").takeIf { it.isNotBlank() }?.let { m.put(FINISH, it) } }
+        CallState.current().finish = m.optString(FINISH)   // 0.54.1: CutReply marks a final reply that ended on "length"
         val r = m.optString("reasoning_content").ifBlank { m.optString("reasoning") }
         m.remove("reasoning_content"); m.remove("reasoning"); m.remove("reasoning_details")
         if (r.isNotBlank() && r != "null") m.put("_reasoning", r)
@@ -589,6 +590,7 @@ object LlmClient {
         var emitted = 0
         var lastText = 0L
         var finish = ""
+        var sawDone = false
         CallState.current().maxGapMs = 0
         input.bufferedReader().useLines { lines ->
             for (raw in lines) {
@@ -596,7 +598,7 @@ object LlmClient {
                 lastChunkAt = System.currentTimeMillis()
                 if (!line.startsWith("data:")) continue
                 val data = line.removePrefix("data:").trim()
-                if (data == "[DONE]") break
+                if (data == "[DONE]") { sawDone = true; break }
                 val obj = try { JSONObject(data) } catch (_: Exception) { continue }
                 obj.optJSONObject("usage")?.let { lastUsage = it }
                 obj.optJSONObject("error")?.let {
@@ -664,7 +666,10 @@ object LlmClient {
         val msg = JSONObject().put("role", "assistant").put("content", if (content.isEmpty() && calls.isNotEmpty()) JSONObject.NULL else content.toString())
         if (think.isNotEmpty()) msg.put("_reasoning", think.toString())
         // 0.53.6: why the stream ended ("stop", "tool_calls", "length"...). Private key: ToolCalls.clean drops it before a request.
+        // 0.54.1: a stream that closed with neither a finish_reason nor [DONE] ended early: "dropped" (CutReply marks it).
+        if (finish.isBlank() && !sawDone && (content.isNotEmpty() || calls.isNotEmpty())) finish = CutReply.DROPPED
         if (finish.isNotBlank()) msg.put(FINISH, finish)
+        CallState.current().finish = finish
         if (calls.isNotEmpty()) {
             val arr = JSONArray()
             val seen = HashSet<String>()

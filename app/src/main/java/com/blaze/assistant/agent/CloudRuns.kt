@@ -210,6 +210,9 @@ object CloudRuns {
     fun createBody(clientId: String, messages: JSONArray, tools: JSONArray?, task: String): JSONObject = JSONObject()
         .put("client_msg_id", clientId).put("messages", messages).put("task", task).apply {
             tz().takeIf { it.isNotBlank() }?.let { put("tz", it) }
+            // 0.54.1: the reply budget on every run (the model's own output limit; the gateway caps a run at 32,768 and
+            // lowers it per model). Sending none left each provider's default, which a thinking model spent mid-answer.
+            put("max_tokens", try { LlmClient.toolMaxTokens(Settings.model, messages, tools) } catch (_: Throwable) { OutputLimit.FALLBACK })
             // 0.53.0 (gateway 0.9.12): the manual model + effort pick rides on the run and is preferred on every step.
             if (LiveModelsFeed.on()) ModelPick.route(LiveModels.shared.list(), tools != null && tools.length() > 0, task == "vision")?.let { pick ->
                 put("blaze_pick", pick); ModelPick.effort(LiveModels.shared.list())?.let { put("reasoning_effort", it) } }
@@ -274,6 +277,8 @@ object CloudRuns {
         var reply: String? = null
         var provider = ""
         var model = ""
+        /** 0.54.1 (gateway 0.9.17): "length" / "dropped" when the reply was cut; "" = it ended properly. */
+        var cut = ""
         var errorCode = ""
         var errorMessage = ""
         /** Contract §3 `failed{reason, try}`: the honest words for the person. */
@@ -300,7 +305,7 @@ object CloudRuns {
                 // 0.45.19: a reset with no step drops all partial text (never a re-sent copy left beside the new one).
                 "reset" -> if (ev.has("step")) texts.remove(ev.optInt("step")) else texts.clear()
                 "tool_calls" -> if (ev.optString("where", "device") == "device") { calls = ev.optJSONArray("calls"); callsStep = ev.optInt("step", -1) }
-                "done" -> { reply = ev.optString("reply"); provider = ev.optString("provider"); model = ev.optString("model") }
+                "done" -> { reply = ev.optString("reply"); provider = ev.optString("provider"); model = ev.optString("model"); cut = ev.optString("cut") }
                 "error" -> { errorCode = ev.optString("code"); errorMessage = ev.optString("message") }
                 "failed" -> { errorCode = ev.optString("code").ifBlank { errorCode }; failReason = ev.optString("reason"); failTry = ev.optString("try") }
                 "ack" -> if (ack == null) ack = ackText(ev)
@@ -752,7 +757,8 @@ object CloudRuns {
                         LlmClient.lastServedBy = listOf(t.red.provider, t.red.model).filter { it.isNotBlank() }.joinToString(" · ")
                         LlmClient.lastServedKey = if (t.red.model.isNotBlank()) "${t.red.provider}/${t.red.model}" else ""
                     }
-                    return JSONObject().put("role", "assistant").put("content", reply)
+                    CallState.current().finish = t.red.cut   // 0.54.1: CutReply marks a cut reply
+                    return JSONObject().put("role", "assistant").put("content", reply).apply { if (t.red.cut.isNotBlank()) put(LlmClient.FINISH, t.red.cut) }
                 }
                 "needs_device" -> {
                     var calls = t.red.calls

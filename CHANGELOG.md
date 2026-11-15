@@ -1,3 +1,11 @@
+## Unreleased: replies that stop mid-list get the room they need, and a cut one says so
+
+Seen (owner, 2026-11-15 19:31): a DeepSeek V4.1 Flash reply stopped at "1. Debonairs Pizza –" and was shown as if finished. The cause: a thinking model spends reasoning tokens out of max_tokens, and chat turns ran on a flat 1,024 (short turns) or the provider's default (the rest, and every Cloud run). Reproduced on the gateway playground: ~7.7K reasoning tokens, then `length` mid-list.
+
+- **Output limit on every call** (`LlmClient`, `CloudRuns.createBody`): chat turns and Cloud runs now ask for the model's own output limit (`OutputLimit`), as tool turns already did. Gateway 0.9.17 passes it through and lowers it per model to what that model accepts.
+- **A cut reply is marked, not passed off as finished** (`agent/CutReply.kt`): a final reply that ended on `length`, or on a stream that closed with neither a finish reason nor [DONE] (`dropped`; Cloud runs send it as `cut` on `done`), gets a visible "Cut off here" line and a Continue chip first. Nothing re-prompts the model on its own and the reply text isn't rewritten. `CallState.finish` carries why the last call ended.
+- Tests: `CutReplyTest` (6).
+
 ## Unreleased: the model's own output limit, its thinking kept through a task, and no "plan first"
 
 Seen (owner, 2026-11-15, field test T4): "make a one-page site for a coffee shop" on DeepSeek Flash came back as a planning monologue, cut off, with no tool call. The cause was not DeepSeek: we capped every tool turn at 8,192 output tokens (thinking counts toward it), stripped the model's thinking between steps, and build mode told it to "PLAN first". Compared with reference agent harnesses, these are now harness rules ("⛔ HARNESS MUSTS" in overhaul.md).

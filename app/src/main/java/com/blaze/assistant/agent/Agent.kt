@@ -1963,6 +1963,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // v0.30.6 rapid messages: "[re:m7] …" / "[re:m7,m8] …" say which message(s) each reply answers; separate answers
             // to unrelated messages become separate bubbles. The reasoning line goes on the first, chips, media and
             // follow-ups on the last. A reply with no marker is one bubble, as before.
+            // 0.54.1: a model reply (the only addReply with a "What happened" trace) that ended on its output limit or a closed
+            // stream is shown as cut, with a Continue chip (CutReply). Read once, then cleared for the next reply.
+            val cut = if (how.isNotEmpty()) CutReply.reason(CallState.current().finish) else null
+            CallState.current().finish = ""
             val known = msgs.filter { it.role == Role.USER }.map { it.id }.toSet()
             val parts = RapidMessages.split(p.text, known)
             parts.forEachIndexed { i, part ->
@@ -1971,10 +1975,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val isLast = i == parts.size - 1
                 // 0.46.2: links a source pill shows are taken out of the text (they'd show twice).
                 val text = Duo.clean(part.text).let { if (isLast && !found.isEmpty) ReplySources.stripInline(it, found) else it }.ifEmpty { "I didn't get an answer that time. Tap Retry." }
+                    .let { if (isLast) CutReply.mark(it, cut) else it }
                 val src2 = if (isLast) ReplySources.encode(found) else ""
                 val th = if (isFirst) think else ""
                 val ms = if (isFirst) tms else 0L
-                val fu2 = if (isLast) QuickReplies.filter(p.followups, lastUserText()) else emptyList()
+                val fu2 = if (isLast) CutReply.chips(QuickReplies.filter(p.followups, lastUserText()), cut) else emptyList()
                 val meta2 = if (isLast) meta else ""
                 val media2 = if (isLast) media else emptyList()
                 val rc2 = if (isLast) receipt else ""
