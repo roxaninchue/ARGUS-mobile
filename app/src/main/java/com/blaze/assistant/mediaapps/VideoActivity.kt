@@ -51,6 +51,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.VideoLibrary
@@ -1286,6 +1287,16 @@ private fun VideoLibrary(a: VideoActivity) {
         }
     }
 
+    // 0.53.4 Import: pick video files anywhere on the phone; they join All videos in place (no copy).
+    val importer = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) scope.launch {
+            val r = withContext(Dispatchers.IO) { MediaLib.importFiles(ctx, uris, "video") }
+            Toast.makeText(ctx, r.text("video"), Toast.LENGTH_SHORT).show()
+            if (r.added > 0) q = ""
+        }
+    }
+    val importVideos = { runCatching { importer.launch(MediaImport.mimes("video")) }.onFailure { Toast.makeText(ctx, "No file picker on this phone", Toast.LENGTH_SHORT).show() }; Unit }
+
     Column(Modifier.fillMaxSize()) {
     if (selecting) SelectionBar(LibrarySelection.label(sel), LibrarySelection.allSelected(sel, shownKeys),
         onClose = { sel = LibrarySelection.clear() }, onSelectAll = { sel = LibrarySelection.selectAll(sel, shownKeys) },
@@ -1352,7 +1363,12 @@ private fun VideoLibrary(a: VideoActivity) {
                 }
             }
         }
-        item(span = { GridItemSpan(maxLineSpan) }) { MText(if (q.isBlank()) "All videos \u00b7 ${videos.size}" else "Results", 15.sp, c.ink, FontWeight.SemiBold) }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                MText(if (q.isBlank()) "All videos \u00b7 ${videos.size}" else "Results", 15.sp, c.ink, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                if (!selecting) PillButton("Import", primary = false, icon = Icons.Rounded.Add) { importVideos() }
+            }
+        }
         if (shown.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
             EmptyState(if (q.isBlank()) "No videos yet" else "No match",
                 if (q.isBlank()) "Films you download in the Store, and videos in ${BrandName.NAME}'s Gallery, show up here and play offline." else "Nothing matches \u201c$q\u201d.")
@@ -1376,6 +1392,10 @@ private fun VideoLibrary(a: VideoActivity) {
                     if (t.source == "download" && !selecting) Box {
                         RoundIcon(Icons.Rounded.MoreVert, "More", size = 36, tint = c.sub) { menu = true }
                         BlazeMenu(menu, { menu = false }, export.menu({ listOf(t) }, true) + ("Delete from phone" to { confirmDel = t }))
+                    }
+                    if (t.source == ImportRules.SOURCE && !selecting) Box {
+                        RoundIcon(Icons.Rounded.MoreVert, "More", size = 36, tint = c.sub) { menu = true }
+                        BlazeMenu(menu, { menu = false }, listOf("Remove from library" to { scope.launch { withContext(Dispatchers.IO) { MediaLib.removeImports(ctx, listOf(t.key)) } }; Unit }))
                     }
                 }
             }

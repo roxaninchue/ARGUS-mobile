@@ -60,7 +60,7 @@ object MediaLib {
     /** Re-reads the Gallery and drops downloads the user deleted elsewhere. Call off the main thread when possible. */
     fun refresh() {
         val c = app ?: return
-        val kept = downloads.filter { MediaFiles.exists(c, it.uri) }
+        val kept = downloads.filter { if (it.source == ImportRules.SOURCE) MediaImport.readable(c, it.uri) else MediaFiles.exists(c, it.uri) }
         if (kept.size != downloads.size) { downloads = kept; saveTracks() }
         val gallery = try {
             com.blaze.assistant.media.Media.init(c)
@@ -101,6 +101,47 @@ object MediaLib {
         }
     }
 
+    /**
+     * 0.53.4 Import: files the user picked join the library where they are (no copy). Already-imported or downloaded
+     * files are skipped; files of the other kind are skipped. One save and one refresh for the lot. Off the main thread.
+     */
+    fun importFiles(ctx: Context, uris: List<Uri>, kind: String): MediaImport.Result {
+        ensure(ctx)
+        val now = System.currentTimeMillis()
+        var already = 0; var skipped = 0
+        val have = synchronized(lock) { downloads.map { it.key }.toHashSet() } + (_songs.value + _videos.value).map { it.key }
+        val fresh = mutableListOf<Track>()
+        uris.distinct().forEachIndexed { i, u ->
+            if (u.toString() in have) { already++; return@forEachIndexed }
+            val t = MediaImport.track(ctx, u, kind, now - i)
+            if (t == null) skipped++ else fresh += t
+        }
+        if (fresh.isNotEmpty()) {
+            synchronized(lock) { downloads = fresh + downloads.filter { d -> fresh.none { it.key == d.key } } }
+            saveTracks(); refresh()
+        }
+        return MediaImport.Result(fresh.size, already, skipped)
+    }
+
+    /** 0.53.4: takes imports out of the library; the user's files stay where they are. */
+    fun removeImports(ctx: Context, keys: Collection<String>): Int {
+        val want = keys.toHashSet()
+        val gone = downloads.filter { it.key in want && it.source == ImportRules.SOURCE }
+        if (gone.isEmpty()) return 0
+        gone.forEach { MediaImport.release(ctx, it.uri) }
+        val goneKeys = gone.map { it.key }.toHashSet()
+        synchronized(lock) { downloads = downloads.filter { it.key !in goneKeys } }
+        var pls = _playlists.value
+        goneKeys.forEach { pls = PlaylistOps.forget(pls, it) }
+        if (pls != _playlists.value) setPlaylists(pls)
+        if (_liked.value.any { it in goneKeys }) {
+            _liked.value = _liked.value.filter { it !in goneKeys }
+            app?.let { write(f(it, "liked.json"), JSONArray(_liked.value).toString()) }
+        }
+        saveTracks(); refresh()
+        return gone.size
+    }
+
     // ---- v0.34.0 play log (smart playlists, daily mixes, Wrapped, Blaze DJ) ----
     private val _plays = MutableStateFlow<List<PlayEvent>>(emptyList())
     val plays: StateFlow<List<PlayEvent>> = _plays
@@ -129,6 +170,7 @@ object MediaLib {
     /** Removes a downloaded file from the phone (gallery files are the Gallery's to delete). */
     fun deleteDownload(ctx: Context, key: String): Boolean {
         val t = downloads.firstOrNull { it.key == key } ?: return false
+        if (t.source == ImportRules.SOURCE) return removeImports(ctx, listOf(key)) > 0   // 0.53.4: never the user's own file
         MediaFiles.delete(ctx, t.uri)
         synchronized(lock) { downloads = downloads.filter { it.key != key } }
         setPlaylists(PlaylistOps.forget(_playlists.value, key))
@@ -143,8 +185,9 @@ object MediaLib {
      */
     fun deleteDownloads(ctx: Context, keys: Collection<String>): Int {
         val want = keys.toHashSet()
+        val imported = removeImports(ctx, want)   // 0.53.4: imports leave the library only
         val gone = downloads.filter { it.key in want }
-        if (gone.isEmpty()) return 0
+        if (gone.isEmpty()) return imported
         gone.forEach { MediaFiles.delete(ctx, it.uri) }
         val goneKeys = gone.map { it.key }.toHashSet()
         synchronized(lock) { downloads = downloads.filter { it.key !in goneKeys } }
@@ -156,7 +199,7 @@ object MediaLib {
             app?.let { write(f(it, "liked.json"), JSONArray(_liked.value).toString()) }
         }
         saveTracks(); refresh()
-        return gone.size
+        return gone.size + imported
     }
 
     // ---- playlists ----

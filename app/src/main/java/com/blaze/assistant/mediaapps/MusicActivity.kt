@@ -762,6 +762,16 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
         }
     }
 
+    // 0.53.4 Import: pick audio files anywhere on the phone; they join Songs in place (no copy).
+    val importer = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) scope.launch {
+            val r = withContext(Dispatchers.IO) { MediaLib.importFiles(ctx, uris, "audio") }
+            Toast.makeText(ctx, r.text("audio"), Toast.LENGTH_SHORT).show()
+            if (r.added > 0) { section = "songs"; group = null; openList = null; q = "" }
+        }
+    }
+    val importMusic = { runCatching { importer.launch(MediaImport.mimes("audio")) }.onFailure { Toast.makeText(ctx, "No file picker on this phone", Toast.LENGTH_SHORT).show() }; Unit }
+
     BackHandler(group != null || openList != null) { group = null; openList = null }
     // Registered after the group handler, so Back leaves selection mode first.
     BackHandler(LibrarySelection.backClears(sel)) { sel = LibrarySelection.clear() }
@@ -786,6 +796,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         if (pIndex < playlist.keys.size - 1) add("Move down" to { MediaLib.setPlaylists(PlaylistOps.move(lists, playlist.id, pIndex, pIndex + 1, System.currentTimeMillis())) })
                     }
                     if (t.source == "download") { addAll(export.menu({ listOf(t) }, false)); add("Delete from phone" to { confirmDel = t }) }
+                    if (t.source == ImportRules.SOURCE) add("Remove from library" to { scope.launch { withContext(Dispatchers.IO) { MediaLib.removeImports(ctx, listOf(t.key)) } }; Unit })
                 })
             }
         }
@@ -820,6 +831,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
         }
         // 0.46.4: list / grid and sort.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            PillButton("Import", primary = false, icon = Icons.Rounded.Add) { importMusic() }
             Spacer(Modifier.weight(1f))
             Box {
                 RoundIcon(Icons.Rounded.SwapVert, "Sort: ${sortBy.label}", size = 40, tint = c.sub) { sortMenu = true }
