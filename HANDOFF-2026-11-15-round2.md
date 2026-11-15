@@ -14,16 +14,27 @@ Pushed WIP, NOT built (`2ea1a89f`, `[skip ci]`), on main:
   - Done, not drawn yet: `LivingShots` (page pictures) + `BrowserEngine.agentShot()` called after browser steps in
     `BrowserTools.run`; `LivingPage.pick` chooses a card's picture by time window + URL.
 
-To do next (Living UI, owner screenshots 08:56/08:58 + mockups 1000177232/1000177234):
-1. `LivingScreen`: add `.clipToBounds()` on the root BoxWithConstraints (cards draw over the top bar and the Chat|Living
-   switch today). Keep cards clear of the pill.
-2. `BrowserCard`: draw the picture (`LivingShots.shots` + `LivingPage.pick(refs, card.url, card.at, nextBrowserCard.at)`),
-   else a masthead (site icon `LivingShots.icon(host)` + site name) with title and lead text, like the mockups;
-   "Reading…" chip while running.
-3. `LivingLayout`: two columns like the mockups: left = prompt then page cards stacked with down arrows; right = answer
-   (headline style), files, steps as a checklist; connector from prompt to right column and from page chain to answer.
-   Update LivingLayoutTest (old tests assert the side-by-side row layout and TRUNK_X).
-4. Bump `LivingSpec.VERSION` to 0.2.0 (LivingLayoutTest checks it), CHANGELOG, then one push without `[skip ci]`.
+Living UI 0.2.0, DONE (15 Nov 2026) in `a960c3bc`, pushed with `[skip ci]`: **pushed, not built; awaiting owner go-ahead to build**
+(owner screenshots 08:55–08:58, mockups 1000177232/1000177233/1000177234):
+1. Done: `LivingScreen` root BoxWithConstraints has `.clipToBounds()`: cards no longer draw over the top bar or the
+   Chat | Living switch / composer (those are siblings below the chat pane's `Box(weight(1f))` in ChatScreen). Follow keeps
+   24 dp above the bottom edge; the status pill ("Done · N steps", "Next →") stays on top of the cards.
+2. Done: `BrowserCard` like the mockup: "Browsing"/"Searching" header with the live dot, a "Reading…" chip while running,
+   then a small browser frame (tab: site icon `LivingShots.icon(host)` + page title; address bar: the host only) holding
+   the page picture (`LivingShots.shots` + `LivingPage.pick(refs, card.url, card.at, until)`, until = the next page card
+   or the next prompt), else a masthead (icon + site name, title, `LivingPage.lead`). No raw URLs or tool words.
+   `LivingPage.read` fix: with no tool header the title line is no longer repeated in the body (LivingModelTest was red).
+3. Done: `LivingLayout` two columns: left = prompt then page cards stacked with down arrows (`Link.arrow`); right = the
+   answer first when the turn ended on it (`headline()`: first sentence, 17 sp semibold), files, steps as a checklist
+   (`$ cmd` with its first result line under a green check, `result()`, `RESULT_H`); connectors prompt → right column
+   and last page → answer through `GUTTER_X`. `follow()` centres the active card's column at reading zoom, the other
+   column peeking in from the side (mockup). LivingLayoutTest rewritten (no TRUNK_X / side-by-side row); new LivingPageTest.
+4. Done: `LivingSpec.VERSION` = "0.2.0", CHANGELOG entry. NOT built (owner: no build without the go-ahead). The next
+   build push must drop `[skip ci]` (or re-run Build APK) once the owner says go.
+
+Check on the phone after the build: pictures appear on browser cards after a browser step (fetch_page cards get the
+masthead); icons load (Google favicon service); the two columns at 1x on a ~400 dp screen (one column fills the width);
+nothing draws over the top bar / switch while pinching; arrowheads and the gutter connectors line up.
 
 Verification used: kotlinc 2.0.20 on the pure files + JUnit (all new tests pass). Full-module type-check baseline:
 `/workspace/work/tc.sh` (base = 9216 error lines from missing libs; compare error sets, not counts).
