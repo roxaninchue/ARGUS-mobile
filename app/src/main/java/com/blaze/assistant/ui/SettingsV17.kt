@@ -120,38 +120,27 @@ fun StepsModelSection() {
 @Composable
 fun ConnectionsPage(connected0: Set<String>? = null, online0: Boolean? = null, open0: String = "") {
     val c = LocalBlaze.current.mono
-    val ctx = LocalContext.current
-    val scope = rememberCoroutineScope()
     val st by Connectors.state.collectAsState()
     var open by remember { mutableStateOf(open0) }
     var tick by remember { mutableStateOf(0) }
-    val acct0 by com.blaze.assistant.connect.BlazeAccount.view.collectAsState()
-    val acct = if (online0 != null) acct0.copy(online = online0, connectors = Connectors.all.associate { it.id to online0 }) else acct0
     if (connected0 == null) LaunchedEffect(Unit) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { com.blaze.assistant.connect.BlazeAccount.refreshProviders(true) } }
     }
-    PageHead("Accounts", "Connected accounts", "Let ${BrandName.NAME} use your apps: tap Connect, approve in your browser, and you're back. Tokens stay encrypted on this phone; sending or posting always asks you first.")
-    if (!acct.online) Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).glassInset(c).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(6.dp).background(c.sub, BlazeShapes.pill)); Spacer(Modifier.width(10.dp))
-        Text(tr("Can't reach {0}'s sign-in service right now. Check your connection.", BrandName.NAME), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.body))
-    }
-    val states = Connectors.all.map { conn -> conn to (connected0?.contains(conn.id) ?: remember(tick, st) { runCatching { Connectors.connected(conn.id) }.getOrDefault(false) }) }
-    GroupHead("Apps \u00b7 %02d".format(states.size), right = { Label("${states.count { it.second }} connected", size = 9.sp, color = c.weak) })
-    Rows {
-        states.forEachIndexed { i, (conn, on) ->
-            val one = acct.connectors[conn.id] == true
-            val tag = when { on -> "Connected"; one -> "Connect"; acct.online -> "Soon"; else -> "Offline" }
-            KitRow(conn.name, st[conn.id]?.takeIf { it.isNotBlank() } ?: conn.blurb, first = i == 0, pill = tag, pillOn = on,
-                onClick = { open = if (open == conn.id) "" else conn.id }, lead = { Box(Modifier.size(7.dp).background(if (on) c.accent else c.hair2, BlazeShapes.pill)) })
-            if (open == conn.id) Column(Modifier.fillMaxWidth().glassInset(c).hairlineTop(c.hair).padding(start = 33.dp, end = 14.dp, top = 10.dp, bottom = 12.dp)) {
-                when {
-                    on -> KitButton("Disconnect", Btn.LINE) { Connectors.disconnect(conn.id); tick++ }
-                    one -> {
-                        Note("${BrandName.NAME} opens ${conn.name} in your browser. Approve, and you're back here connected.")
-                        KitButton("Connect ${conn.name}", Btn.ACCENT) { scope.launch { Connectors.connect(ctx, conn.id); tick++ } }
-                    }
-                    acct.online -> Note("One-tap Connect for ${conn.name} is coming soon.")
-                    else -> Note("Connect needs ${BrandName.NAME}'s sign-in service, which can't be reached right now.")
+    PageHead("Accounts", "Apps & connectors", "Every app your ${BrandName.NAME} gateway offers. Tap one to connect it: approve in your browser or paste a key. Keys stay encrypted on your gateway; sending or posting always asks you first.")
+    // 2026-11-15: the full catalogue from the gateway (argus-connect) replaces the five built-in accounts.
+    GatewayAppsSection(apps0 = if (connected0 != null) com.blaze.assistant.connect.ArgusAppsModel.preview else null)
+    // Accounts connected the old way on this phone keep working; they are listed only so they can be disconnected.
+    val legacy = Connectors.all.map { conn -> conn to (connected0?.contains(conn.id) ?: remember(tick, st) { runCatching { Connectors.connected(conn.id) }.getOrDefault(false) }) }
+        .filter { it.second }
+    if (legacy.isNotEmpty()) {
+        Spacer(Modifier.height(14.dp))
+        GroupHead("On this phone \u00b7 %02d".format(legacy.size), desc = "Connected before the gateway list. They keep working until you disconnect them.")
+        Rows {
+            legacy.forEachIndexed { i, (conn, _) ->
+                KitRow(conn.name, st[conn.id]?.takeIf { it.isNotBlank() } ?: conn.blurb, first = i == 0, pill = "Connected", pillOn = true,
+                    onClick = { open = if (open == conn.id) "" else conn.id }, lead = { Box(Modifier.size(7.dp).background(c.accent, BlazeShapes.pill)) })
+                if (open == conn.id) Column(Modifier.fillMaxWidth().glassInset(c).hairlineTop(c.hair).padding(start = 33.dp, end = 14.dp, top = 10.dp, bottom = 12.dp)) {
+                    KitButton("Disconnect", Btn.LINE) { Connectors.disconnect(conn.id); tick++ }
                 }
             }
         }

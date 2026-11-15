@@ -1,3 +1,11 @@
+## Unreleased: every app from your ARGUS gateway, with real icons
+
+- Settings › Apps & connectors now lists every app your ARGUS gateway offers (argus-connect, the gateway admin's Apps tab: 70 apps today) instead of the five built-in accounts. Each row shows the app's real icon, what it does, how many tools it has and whether it is connected; apps are grouped by category and there is a search box.
+- Tap an app to connect it: browser sign-in where your gateway has the OAuth client set up, otherwise paste a key (and any extra fields the app needs), then it runs the app's own test call. Connected apps get Test, Turn off and Disconnect; keyless apps (weather, Wikipedia, Hacker News…) just turn on or off.
+- Connections belong to your ARGUS account and are kept encrypted on the gateway, not on the phone. Signed out, the page asks you to sign in. Accounts connected the old way on this phone are listed under "On this phone" so they can still be disconnected.
+- Icons ship in the app (assets/connect-icons, 66 brand icons, 96 px); an app without one gets a letter tile, or the icon URL the gateway sends once argus-connect adds one.
+- Not yet: the agent doesn't call gateway app tools from the phone (next step: load `/v1/me/tools` and run them through `/v1/me/execute`).
+
 ## v0.53.5: landscape everywhere with a side rail, Living shows the result itself, sign-in lands in the chat (versionCode 197)
 
 Living UI 0.2.3. Includes the entries below down to v0.53.4.
