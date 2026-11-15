@@ -1,3 +1,10 @@
+## Living UI 0.2.0: pages as pictures, two columns, a canvas that stays in its frame (not built yet)
+
+- Browser cards show the page itself: a "Browsing" card with a live dot and the page's picture in a small browser frame (tab with the site's icon and title, address bar with the site). Pages read without the browser get a masthead instead: the site's icon and name, the title and the first lines. A "Reading…" chip shows while the page loads. No more raw links or "Opened … (https://…)" on the cards.
+- Two columns: what you asked, then the pages ARGUS read stacked under it with arrows; on the right the answer (its first sentence as a headline), files, and the steps as a checklist, commands with their result under a green check. Lines run from your prompt and from the last page into the answer. Following the work reads one column at full size, the other peeking in from the side.
+- The canvas stays inside its frame: cards no longer draw over the top bar, the Chat | Living switch or the chatbox when you pan or zoom.
+- Only reading, opening and fetching pages makes page cards; clicks, typing and scrolls are steps.
+
 ## v0.53.4: search the whole phone, GitHub through your connection, import music and videos, no screen swiping (versionCode 196)
 
 - File searches see the whole phone: ARGUS asks for All files access (a card opens the right Android page), so Downloads, documents and other apps' folders no longer come back empty. When access is off, a search says so instead of looking empty.

@@ -22,16 +22,20 @@ object LivingPage {
             pageLine.find(t)?.let { if (title.isBlank()) title = it.groupValues[1].trim() }
             if (t.startsWith("Title:", true) && title.isBlank()) title = t.substringAfter(':').trim()
         }
-        val body = lines.map { it.trim() }.filter { it.isNotEmpty() && !modelLines.containsMatchIn(it) }
-            // element lists the model reads ("12. [button] Search") are not the page's words
-            .filterNot { Regex("^\\d{1,3}[.)]\\s*\\[").containsMatchIn(it) }
-            .joinToString("\n")
         if (title.isBlank()) {
+            // no tool header: the first short line is the title (LivingModel.page), the rest is the page's words
             val (t, b) = LivingModel.page(out)
-            return t to (if (body.isNotBlank()) body else b)
+            return t to words(b.lines()).ifBlank { b }
         }
-        return title to body
+        return title to words(lines)
     }
+
+    private val elementLine = Regex("^\\d{1,3}[.)]\\s*\\[")
+
+    /** The page's own words: the model's header lines and element lists ("12. [button] Search") left out. */
+    private fun words(lines: List<String>): String = lines.map { it.trim() }
+        .filter { it.isNotEmpty() && !modelLines.containsMatchIn(it) && !elementLine.containsMatchIn(it) }
+        .joinToString("\n")
 
     /** Site name for the masthead: "gsmarena.com" → "GSMArena" stays as the host, without www. and m. */
     fun site(url: String): String = LivingModel.host(url).removePrefix("m.").ifBlank { url }

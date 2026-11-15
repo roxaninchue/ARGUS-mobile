@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,6 +40,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -47,10 +49,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
@@ -58,6 +62,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -85,7 +90,7 @@ import com.blaze.assistant.ui.living.LivingModel.State
 import kotlinx.coroutines.launch
 
 /**
- * Living UI v1 (LivingSpec.VERSION): the main chat's work as a canvas, in Chat's place (the chatbox stays).
+ * Living UI 0.2.0 (LivingSpec.VERSION): the main chat's work as a canvas, in Chat's place (the chatbox stays).
  *
  *  - One finger pans, two pinch-zoom (0.25×–3×), a double tap fits everything, a tap on a card zooms in on it and a
  *    second tap goes back.
@@ -118,18 +123,27 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
             label = { name, running -> StepTool.label(name).let { if (running) it.now else it.done } })
     }
     val plan = remember(board) { LivingLayout.plan(board) }
+    // 0.2.0: page pictures for the browser cards; a card's window ends at the next page card or the next prompt
+    val shots by LivingShots.shots.collectAsState()
+    val until = remember(board) {
+        val all = board.cards
+        all.withIndex().filter { it.value.kind == Kind.BROWSER }.associate { (i, c) ->
+            c.key to all.drop(i + 1).firstOrNull { it.kind == Kind.BROWSER || it.kind == Kind.PROMPT }?.at
+        }
+    }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val lifeState by lifecycle.currentStateAsState()
     val animate = working && !reducedMotion && lifeState.isAtLeast(Lifecycle.State.RESUMED)
 
-    BoxWithConstraints(modifier.fillMaxSize().background(Color(p.canvas))) {
+    // 0.2.0: clipped, so cards panned or zoomed past the edge never draw over the top bar or the Chat | Living switch
+    BoxWithConstraints(modifier.fillMaxSize().clipToBounds().background(Color(p.canvas))) {
         val density = LocalDensity.current.density
         val vw = constraints.maxWidth.toFloat()
         val vh = constraints.maxHeight.toFloat()
         val pad = 16f * density
         val top = 64f * density      // under the pill
-        val bottom = 12f * density
+        val bottom = 24f * density   // a little air above the Chat | Living switch
 
         var cam by remember { mutableStateOf(Camera(pad, top + pad, 1f)) }
         var following by remember { mutableStateOf(true) }
@@ -188,14 +202,18 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
         ) {
             dots(cam, density, dotColor)
             val stroke = Stroke(width = (1.2f * density).coerceAtLeast(1f), cap = StrokeCap.Round)
-            for (l in plan.links) drawPath(linkPath(l, cam, density), linkColor, style = stroke)
+            for (l in plan.links) {
+                drawPath(linkPath(l, cam, density), linkColor, style = stroke)
+                if (l.arrow) arrowHead(l, cam, density, linkColor, stroke.width)
+            }
         }
 
         // the cards (only those touching the screen)
         for (b in plan.boxes) {
             if (b.key !in visible) continue
             key(b.key) {
-                CardHost(b, { cam }, density, p, active = b.key == board.active && working, pulse = animate)
+                CardHost(b, { cam }, density, p, active = b.key == board.active && working, pulse = animate,
+                    shots = if (b.card.kind == Kind.BROWSER) shots else emptyList(), until = until[b.key])
             }
         }
 
@@ -217,6 +235,23 @@ private fun DrawScope.dots(cam: Camera, density: Float, color: Color) {
         var y = ((cam.oy % step) + step) % step
         while (y <= size.height) { drawCircle(color, r, Offset(x, y)); y += step }
         x += step
+    }
+}
+
+/** A small open arrowhead at a connector's end, pointing along its last segment. */
+private fun DrawScope.arrowHead(l: LivingLayout.Link, cam: Camera, density: Float, color: Color, width: Float) {
+    val n = l.pts.size / 2
+    if (n < 2) return
+    val x1 = cam.sx(l.pts[2 * n - 2], density); val y1 = cam.sy(l.pts[2 * n - 1], density)
+    val x0 = cam.sx(l.pts[2 * n - 4], density); val y0 = cam.sy(l.pts[2 * n - 3], density)
+    val d = kotlin.math.hypot(x1 - x0, y1 - y0)
+    if (d < 0.5f) return
+    val ux = (x1 - x0) / d; val uy = (y1 - y0) / d
+    val len = 6f * density * cam.scale
+    for (side in floatArrayOf(1f, -1f)) {
+        val ex = x1 - ux * len - uy * len * 0.6f * side
+        val ey = y1 - uy * len + ux * len * 0.6f * side
+        drawLine(color, Offset(ex, ey), Offset(x1, y1), width, StrokeCap.Round)
     }
 }
 
@@ -246,7 +281,8 @@ private fun linkPath(l: LivingLayout.Link, cam: Camera, density: Float): Path {
 // ---------------------------------------------------------------------- cards
 
 @Composable
-private fun CardHost(b: CardBox, cam: () -> Camera, density: Float, p: LivingSpec.Palette, active: Boolean, pulse: Boolean) {
+private fun CardHost(b: CardBox, cam: () -> Camera, density: Float, p: LivingSpec.Palette, active: Boolean, pulse: Boolean,
+                     shots: List<LivingShots.Shot> = emptyList(), until: Long? = null) {
     val shape = RoundedCornerShape(if (b.card.kind == Kind.PROMPT) 18.dp else 14.dp)
     Box(Modifier
         .graphicsLayer {
@@ -261,7 +297,7 @@ private fun CardHost(b: CardBox, cam: () -> Camera, density: Float, p: LivingSpe
             .clip(shape).background(Color(p.card)).border(1.dp, Color(p.cardEdge), shape)) {
             when (b.card.kind) {
                 Kind.PROMPT -> PromptCard(b.card, p)
-                Kind.BROWSER -> BrowserCard(b.card, p)
+                Kind.BROWSER -> BrowserCard(b.card, p, shots, until, live = active, pulse = pulse)
                 Kind.FILE -> FileCard(b.card, p)
                 Kind.LOG -> LogCard(b.card, p)
                 Kind.ANSWER -> AnswerCard(b.card, p)
@@ -296,20 +332,78 @@ private fun PromptCard(c: Card, p: LivingSpec.Palette) = Column(Modifier.fillMax
     Text(c.text, color = Color(p.ink), fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, maxLines = 5, overflow = TextOverflow.Ellipsis)
 }
 
+/**
+ * 0.2.0, like Finn's mockup: a "Browsing" header with a live dot, then the page in a small browser frame (tab with the
+ * site's icon and the page title, an address bar with the site) showing the page's picture when one was taken while
+ * this was the open page ([LivingPage.pick]), else a masthead: the site's icon and name, the title and the lead text.
+ * Never a raw URL or the tool's own words.
+ */
 @Composable
-private fun BrowserCard(c: Card, p: LivingSpec.Palette) = Column(Modifier.fillMaxSize()) {
-    Row(Modifier.fillMaxWidth().padding(8.dp).clip(RoundedCornerShape(10.dp)).background(Color(p.bar)).padding(horizontal = 10.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        StateDot(c.state, p)
-        Spacer(Modifier.width(8.dp))
-        Text(c.url.ifBlank { tr("Search") }, color = Color(p.ink), fontSize = 12.sp, fontFamily = if (c.flag) FontFamily.Default else FontFamily.Monospace,
-            maxLines = 1, overflow = TextOverflow.Ellipsis)
+private fun BrowserCard(c: Card, p: LivingSpec.Palette, shots: List<LivingShots.Shot>, until: Long?, live: Boolean, pulse: Boolean) {
+    val host = if (c.flag) "" else LivingModel.host(c.url)
+    val site = if (c.flag) tr("Web search") else LivingPage.site(c.url).ifBlank { tr("Page") }
+    val shot = remember(shots, c.url, c.at, until, c.flag) {
+        if (c.flag) null else LivingPage.pick(LivingShots.refs(shots), c.url, c.at, until)?.let { shots.getOrNull(it) }
     }
-    Column(Modifier.padding(horizontal = 14.dp)) {
-        Text(c.title, color = Color(p.ink), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(4.dp))
-        Text(c.text.ifBlank { if (c.state == State.RUNNING) tr("Loading\u2026") else "" }, color = Color(p.mute), fontSize = 12.sp, lineHeight = 16.sp,
-            maxLines = 8, overflow = TextOverflow.Ellipsis)
+    val icon by produceState<ImageBitmap?>(null, host) { value = if (host.isBlank()) null else LivingShots.icon(host) }
+    val running = c.state == State.RUNNING
+    val title = c.title.ifBlank { shot?.title.orEmpty() }.ifBlank { site }
+    Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 10.dp)) {
+        Row(Modifier.fillMaxWidth().height(26.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (running || live) AgentMark(p, pulse) else StateDot(c.state, p)
+            Spacer(Modifier.width(8.dp))
+            Text(if (c.flag) tr("Searching") else tr("Browsing"), color = Color(p.ink), fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                maxLines = 1, modifier = Modifier.weight(1f))
+            if (running) Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color(p.bar)).padding(horizontal = 8.dp, vertical = 3.dp)) {
+                Text(tr("Reading\u2026"), color = Color(p.mute), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        val frame = RoundedCornerShape(10.dp)
+        Column(Modifier.fillMaxSize().clip(frame).background(Color(p.bar)).border(1.dp, Color(p.cardEdge), frame)) {
+            // tab: icon + page title
+            Row(Modifier.fillMaxWidth().height(22.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                SiteIcon(icon, site, p, 12)
+                Spacer(Modifier.width(6.dp))
+                Text(title, color = Color(p.ink), fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            // address bar: the site only
+            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp).height(20.dp).clip(RoundedCornerShape(10.dp)).background(Color(p.card))
+                .padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Canvas(Modifier.size(8.dp)) { drawCircle(Color(p.lineNo), size.minDimension / 2f, style = Stroke(1.2f * density)) }
+                Spacer(Modifier.width(6.dp))
+                Text(if (c.flag) c.url else host.ifBlank { site }, color = Color(p.mute), fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Spacer(Modifier.height(4.dp))
+            Box(Modifier.fillMaxSize().background(Color(p.card))) {
+                if (shot != null) Image(shot.image, contentDescription = title, contentScale = ContentScale.Crop, alignment = Alignment.TopCenter,
+                    modifier = Modifier.fillMaxSize())
+                else Column(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 8.dp)) {
+                    // the masthead: the site's icon and name, then the title and the lead
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        SiteIcon(icon, site, p, 16)
+                        Spacer(Modifier.width(6.dp))
+                        Text(site, color = Color(p.mute), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Spacer(Modifier.height(5.dp))
+                    Text(title, color = Color(p.ink), fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(3.dp))
+                    val lead = if (c.flag) c.text else LivingPage.lead(c.text)
+                    Text(lead.ifBlank { if (running) tr("Loading\u2026") else "" }, color = Color(p.mute), fontSize = 11.sp, lineHeight = 15.sp,
+                        maxLines = if (c.flag) 4 else 3, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+    }
+}
+
+/** The site's icon, or its first letter in a soft circle while the icon loads (or when there is none). */
+@Composable
+private fun SiteIcon(icon: ImageBitmap?, site: String, p: LivingSpec.Palette, sizeDp: Int) {
+    if (icon != null) Image(icon, contentDescription = null, modifier = Modifier.size(sizeDp.dp).clip(RoundedCornerShape(3.dp)))
+    else Box(Modifier.size(sizeDp.dp).clip(CircleShape).background(Color(p.link)), contentAlignment = Alignment.Center) {
+        Text(site.firstOrNull { it.isLetterOrDigit() }?.uppercase().orEmpty(), color = Color(p.ink), fontSize = (sizeDp * 0.6f).sp,
+            fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -331,23 +425,41 @@ private fun FileCard(c: Card, p: LivingSpec.Palette) = Column(Modifier.fillMaxSi
     }
 }
 
+/** 0.2.0: the steps as a checklist, like a terminal: `$ command` lines with their first result line under a green check. */
 @Composable
 private fun LogCard(c: Card, p: LivingSpec.Palette) = Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp)) {
     Header(tr("Steps"), p)
     Spacer(Modifier.height(6.dp))
-    for (r in c.rows) Row(Modifier.height(26.dp), verticalAlignment = Alignment.CenterVertically) {
-        StateDot(r.state, p)
-        Spacer(Modifier.width(8.dp))
-        Text(r.text, color = Color(if (r.state == State.FAILED) p.fail else p.ink), fontSize = 12.sp,
-            fontFamily = if (r.command) FontFamily.Monospace else FontFamily.Default, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    for (r in c.rows) {
+        val res = LivingLayout.result(r)
+        Row(Modifier.height(LivingLayout.ROW_H.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (r.command) Text("$", color = Color(p.mute), fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(14.dp))
+            else { StateDot(r.state, p); Spacer(Modifier.width(8.dp)) }
+            Text(if (r.command) r.text.removePrefix("$ ") else r.text, color = Color(if (r.state == State.FAILED && !r.command) p.fail else p.ink), fontSize = 12.sp,
+                fontFamily = if (r.command) FontFamily.Monospace else FontFamily.Default, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false))
+            if (r.command && res == null) { Spacer(Modifier.width(6.dp)); StateDot(r.state, p) }
+        }
+        if (res != null) Row(Modifier.height(LivingLayout.RESULT_H.dp).padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            StateDot(r.state, p)
+            Spacer(Modifier.width(6.dp))
+            Text(res, color = Color(if (r.state == State.FAILED) p.fail else p.code), fontSize = 11.sp, fontFamily = FontFamily.Monospace,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 
 @Composable
 private fun AnswerCard(c: Card, p: LivingSpec.Palette) = Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 12.dp)) {
+    val (head, rest) = remember(c.text) { LivingLayout.headline(c.text) }
     Header(tr("Answer"), p)
     Spacer(Modifier.height(4.dp))
-    Text(c.text, color = Color(p.ink), fontSize = 13.sp, lineHeight = 19.sp, maxLines = 9, overflow = TextOverflow.Ellipsis)
+    Text(head, color = Color(p.ink), fontSize = 17.sp, lineHeight = 23.sp, fontWeight = FontWeight.SemiBold,
+        maxLines = LivingLayout.HEAD_LINES, overflow = TextOverflow.Ellipsis)
+    if (rest.isNotBlank()) {
+        Spacer(Modifier.height(6.dp))
+        Text(rest, color = Color(p.mute), fontSize = 13.sp, lineHeight = 18.sp, maxLines = LivingLayout.BODY_LINES, overflow = TextOverflow.Ellipsis)
+    }
 }
 
 /** Done = a check, failed = a cross, running = a ring (drawn, no glyphs). */
@@ -382,7 +494,7 @@ private fun StatusPill(status: String, working: Boolean, p: LivingSpec.Palette, 
         Text(status, color = Color(p.ink), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
         Box(Modifier.clip(RoundedCornerShape(20.dp)).clickable(onClickLabel = tr("Go to the newest step")) { onNext() }
             .background(Color(p.bar)).padding(horizontal = 14.dp, vertical = 9.dp)) {
-            Text(tr("Next"), color = Color(p.ink), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text(tr("Next") + " \u2192", color = Color(p.ink), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }

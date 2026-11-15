@@ -10,21 +10,27 @@ import kotlin.math.min
  * Living UI: where each card sits on the canvas (world units = dp at zoom 1), the connectors between them, which
  * cards touch the screen, and the camera (pan, pinch zoom, fit everything, zoom in on a card, follow the newest).
  *
- * On a phone the tree flows down: each turn's prompt at the left edge, a trunk line down its left side and a rounded
- * elbow into every step card, which sit one column in. Page reads in a row (up to [BRANCH]) sit side by side, the
- * later ones peeking in from the right edge (reached by panning). The next turn starts under the last.
+ * 0.2.0, two columns per turn (Finn's mockups, 15 Nov 2026):
+ *  - left ([LEFT_X], [LEFT_W]): your prompt ("You asked"), then the pages ARGUS read stacked under it, a down arrow
+ *    from the prompt into the first page and between pages;
+ *  - right ([RIGHT_X], [RIGHT_W]): the answer first when the turn ended on it (headline style), then files and the
+ *    steps checklist in the order they happened;
+ *  - connectors: from the prompt across into the right column, and from the last page of the chain into the answer.
+ * The next turn starts under the taller column.
  *
  * Pure: LivingLayoutTest.
  */
 object LivingLayout {
-    const val CARD_W = 300f
-    const val PROMPT_W = 280f
-    const val INDENT = 36f
-    const val TRUNK_X = 18f
-    const val GAP_Y = 26f
-    const val GAP_X = 24f
+    const val LEFT_X = 0f
+    const val LEFT_W = 240f
+    const val PROMPT_W = LEFT_W
+    const val COL_GAP = 40f
+    const val RIGHT_X = LEFT_X + LEFT_W + COL_GAP
+    const val RIGHT_W = 264f
+    /** The gutter between the columns where the connectors run down. */
+    const val GUTTER_X = LEFT_X + LEFT_W + COL_GAP / 2f
+    const val GAP_Y = 30f
     const val TURN_GAP = 56f
-    const val BRANCH = 3
     /** Corner radius of a connector's elbow. */
     const val ELBOW = 12f
 
@@ -32,10 +38,11 @@ object LivingLayout {
         val key: String get() = card.key
         val right: Float get() = x + w
         val bottom: Float get() = y + h
+        val midX: Float get() = x + w / 2f
     }
 
-    /** A connector: a polyline (x0, y0, x1, y1, …) drawn with rounded elbows. */
-    class Link(val pts: FloatArray)
+    /** A connector: a polyline (x0, y0, x1, y1, …) drawn with rounded elbows; [arrow] = an arrowhead at its end. */
+    class Link(val pts: FloatArray, val arrow: Boolean = false)
 
     data class Plan(val boxes: List<Box>, val links: List<Link>, val width: Float, val height: Float) {
         fun box(key: String?): Box? = key?.let { k -> boxes.firstOrNull { it.key == k } }
@@ -49,18 +56,48 @@ object LivingLayout {
         return min(cap, n)
     }
 
-    /** Each card's height (dp). The screen draws cards at exactly this size, so layout and drawing agree. */
-    fun height(c: Card): Float = when (c.kind) {
-        Kind.PROMPT -> 46f + textLines(c.text, 34, 5) * 20f
-        Kind.BROWSER -> 236f
-        Kind.FILE -> 52f + max(1, c.lines.size) * 17f + 12f
-        Kind.LOG -> 46f + max(1, c.rows.size) * 26f + 10f
-        Kind.ANSWER -> 46f + textLines(c.text, 38, 9) * 19f + 8f
+    const val HEAD_LINES = 3
+    const val BODY_LINES = 8
+    const val HEAD_MAX = 140
+
+    /** The answer as a headline (its first sentence, or first line) and the rest. The screen draws exactly this. */
+    fun headline(text: String): Pair<String, String> {
+        val t = text.trim()
+        if (t.isEmpty()) return "" to ""
+        val line = t.substringBefore('\n').trim()
+        val end = Regex("[.!?](\\s|$)").find(line)?.range?.first
+        return when {
+            end != null && end < HEAD_MAX -> line.substring(0, end + 1) to t.substring(end + 1).trim()
+            line.length <= HEAD_MAX -> line to t.substring(line.length).trim()
+            else -> LivingModel.clip(line, HEAD_MAX) to t.substring(HEAD_MAX - 1).trim()
+        }
     }
 
-    fun width(c: Card): Float = if (c.kind == Kind.PROMPT) PROMPT_W else CARD_W
+    /** Each card's height (dp). The screen draws cards at exactly this size, so layout and drawing agree. */
+    fun height(c: Card): Float = when (c.kind) {
+        Kind.PROMPT -> 46f + textLines(c.text, 28, 5) * 20f
+        Kind.BROWSER -> 228f
+        Kind.FILE -> 52f + max(1, c.lines.size) * 17f + 12f
+        Kind.LOG -> 46f + max(1, c.rows.size) * ROW_H + c.rows.count { result(it) != null } * RESULT_H + 10f
+        Kind.ANSWER -> {
+            val (h, r) = headline(c.text)
+            46f + textLines(h, 24, HEAD_LINES) * 23f + (if (r.isBlank()) 0f else 6f + textLines(r, 36, BODY_LINES) * 18f) + 8f
+        }
+    }
 
-    // ------------------------------------------------------------------ the tree
+    const val ROW_H = 26f
+    const val RESULT_H = 20f
+
+    /** A command's result line under it in the steps card (`200 OK`, "Container gatus started"), or null. */
+    fun result(r: LivingModel.Row): String? =
+        if (!r.command) null else r.output?.lineSequence()?.map { it.trim() }?.firstOrNull { it.isNotEmpty() }?.let { LivingModel.clip(it, 80) }
+
+    fun width(c: Card): Float = when (c.kind) { Kind.PROMPT, Kind.BROWSER -> LEFT_W; else -> RIGHT_W }
+
+    /** Where a connector meets a card's side: a little under its top, so links line up across the columns. */
+    private fun port(b: Box): Float = b.y + min(28f, b.h / 2f)
+
+    // ------------------------------------------------------------------ the two columns
     fun plan(board: Board): Plan {
         val boxes = ArrayList<Box>()
         val links = ArrayList<Link>()
@@ -69,47 +106,50 @@ object LivingLayout {
         for (turn in board.turns) {
             val cards = turn.cards
             if (cards.isEmpty()) continue
+            val top = y
             val prompt = cards.first()
-            val pb = Box(prompt, 0f, y, width(prompt), height(prompt))
+            val pb = Box(prompt, LEFT_X, top, width(prompt), height(prompt))
             boxes += pb
-            maxR = max(maxR, pb.right)
-            y = pb.bottom + GAP_Y
-            val trunkTop = pb.bottom
-            var lastMid = trunkTop
-            var i = 1
-            while (i < cards.size) {
-                val c = cards[i]
-                // a run of page reads → one row, side by side
-                val row = ArrayList<Card>()
-                row += c
-                if (c.kind == Kind.BROWSER) {
-                    var j = i + 1
-                    while (j < cards.size && row.size < BRANCH && cards[j].kind == Kind.BROWSER) { row += cards[j]; j++ }
-                }
-                var x = INDENT
-                var rowH = 0f
-                var prev: Box? = null
-                for (rc in row) {
-                    val b = Box(rc, x, y, width(rc), height(rc))
-                    boxes += b
-                    rowH = max(rowH, b.h)
-                    maxR = max(maxR, b.right)
-                    val midY = b.y + min(36f, b.h / 2f)
-                    if (prev == null) {
-                        // trunk down, rounded elbow into the card's left edge
-                        links += Link(floatArrayOf(TRUNK_X, lastMid, TRUNK_X, midY, b.x, midY))
-                        lastMid = midY
-                    } else {
-                        // the branch: from the previous card's right edge across into this one
-                        links += Link(floatArrayOf(prev.right, midY, b.x, midY))
-                    }
-                    prev = b
-                    x = b.right + GAP_X
-                }
-                y += rowH + GAP_Y
-                i += row.size
+
+            // left: the page chain under the prompt, a down arrow into each page
+            var ly = pb.bottom
+            var above = pb
+            for (c in cards.drop(1)) {
+                if (c.kind != Kind.BROWSER) continue
+                val b = Box(c, LEFT_X, ly + GAP_Y, width(c), height(c))
+                boxes += b
+                links += Link(floatArrayOf(above.midX, above.bottom, b.midX, b.y), arrow = true)
+                above = b
+                ly = b.bottom
             }
-            y += TURN_GAP - GAP_Y
+            val lastPage = above.takeIf { it !== pb }
+
+            // right: the answer first when the turn ended on it, then files and steps as they happened
+            val rest = cards.drop(1).filter { it.kind != Kind.BROWSER }
+            val answer = rest.lastOrNull()?.takeIf { it.kind == Kind.ANSWER && it === cards.last() }
+            val right = if (answer != null) listOf(answer) + rest.dropLast(1) else rest
+            var ry = top
+            var prev: Box? = null
+            var first: Box? = null
+            var ab: Box? = null
+            for (c in right) {
+                val b = Box(c, RIGHT_X, if (prev == null) top else ry + GAP_Y, width(c), height(c))
+                boxes += b
+                if (prev != null) links += Link(floatArrayOf(prev.x + 24f, prev.bottom, b.x + 24f, b.y))
+                if (first == null) first = b
+                if (c === answer) ab = b
+                prev = b
+                ry = b.bottom
+                maxR = max(maxR, b.right)
+            }
+            // prompt → the right column, page chain → the answer
+            first?.let { f -> links += Link(floatArrayOf(pb.right, port(pb), GUTTER_X, port(pb), GUTTER_X, port(f), f.x, port(f)), arrow = true) }
+            if (lastPage != null && ab != null) {
+                val enter = min(ab.bottom - 12f, port(ab) + 22f)
+                links += Link(floatArrayOf(lastPage.right, port(lastPage), GUTTER_X, port(lastPage), GUTTER_X, enter, ab.x, enter), arrow = true)
+            }
+            maxR = max(maxR, pb.right)
+            y = max(ly, ry) + TURN_GAP
         }
         return Plan(boxes, links, maxR, max(0f, y - TURN_GAP))
     }
@@ -165,13 +205,12 @@ object LivingLayout {
     }
 
     /**
-     * Follow the newest work at the reading zoom (1×, or less on a narrow screen): the main column fits the width and
-     * [b]'s bottom sits in view, so the tree grows up the screen.
+     * Follow the newest work at the reading zoom (1×, or less on a narrow screen): [b]'s column fills the width and the
+     * other column peeks in from the side (Finn's mockup); [b]'s bottom sits in view, so the work grows up the screen.
      */
     fun follow(b: Box, density: Float, viewW: Float, viewH: Float, padPx: Float, topPx: Float, bottomPx: Float): Camera {
-        val colW = (INDENT + CARD_W) * density
-        val s = LivingSpec.clampZoom(min(1f, (viewW - 2 * padPx) / colW))
-        val ox = padPx
+        val s = LivingSpec.clampZoom(min(1f, (viewW - 2 * padPx) / (b.w * density)))
+        val ox = (viewW - b.w * density * s) / 2f - b.x * density * s
         val wantBottom = viewH - bottomPx - padPx
         val bTop = b.y * density * s
         val bBottom = b.bottom * density * s

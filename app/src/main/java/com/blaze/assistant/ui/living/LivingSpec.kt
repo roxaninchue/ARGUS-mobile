@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 object LivingSpec {
     /** Living UI's own version (v0.xz.y: a minor update is y + 1; a major one moves x and/or z). */
-    const val VERSION = "0.1.0"
+    const val VERSION = "0.2.0"
 
     enum class View { CHAT, LIVING }
 
