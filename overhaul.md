@@ -3,6 +3,87 @@
 > Living handoff. If you're picking this up mid-way: read **Status** and **Handoff log** first, then the slice docs in `docs/overhaul/`.
 > Rules: commit straight to `main`, every commit title ends with `[skip ci]`, no build until the owner says build.
 
+## ▶ NEXT UP — do this first (owner, 2026-11-15 15:58 CAT)
+
+Four owner asks, in this order. Each is its own commit to `main` (`[skip ci]`), a CHANGELOG "Unreleased" bullet, and a line in the Handoff log. Ship them together in one build round when Finn says build. Section 2's test run is the yardstick before and after.
+
+**Runtime note (read before touching `agent/Agent.kt`):** `Agent.Session.runLoop` is at the JVM's 64 KB per-method limit. The build of 91dfdf9d failed with `MethodTooLargeException`; f22e3144 fixed it by moving per-turn flags to Session fields. Don't add long-lived locals to runLoop. Put per-turn state on the Session (reset at turn start) and logic in helpers.
+
+### 1. A floating Search pill on every page without a composer
+- **Ask:** "just like Settings, have the search bar floating near the bottom so the user can always search."
+- **Reuse:** the Settings pill (`ui/argus/settings/ArgusSettings.kt` "Search settings", placed in `ui/space/SpaceProfile.kt` at the gutter at the composer's height). Pull it into one kit component, e.g. `ui/argus/kit/FloatingSearch.kt` (glass pill, 48 dp target, Lucide search icon, label "Search").
+- **Where:**
+  - Life, Team and Desk modes
+  - the new Apps page (section 3)
+  - Accounts / Connections and every other full page with no composer
+- **Not in Chat:** the composer is there, and the top-bar search stays.
+- **Behaviour:**
+  - A tap opens Spotlight (`composer.openSpotlight()`), scoped to the page it came from. Settings keeps its own settings search; on Apps it filters apps and views first.
+  - It sits above the system nav bar and IME insets, and never covers the last row: pages get bottom padding equal to the pill's height plus the gutter.
+  - It hides while the keyboard is up.
+- **Tests:** a Compose test for each page that the pill is there and opens Spotlight. A shot test at 360 and 375 dp checks no overlap with the last row.
+
+### 2. Real tests: how far Argus has come
+Run each one on the phone with a strong model (Gemini 3.5 Flash or bigger) and again with a free model. For each, record pass or fail, step count, time to answer and the number of OK cards. Put the results in `docs/overhaul/field-tests-2026-11.md` (one table, one row per test per model) so later builds compare against it.
+
+| # | Say this | Pass means |
+|---|---|---|
+| T1 | "Find 3 good restaurants near me in Ndola with ratings" | Uses Google Maps in the browser. One browser card on Living that updates in place. Zero OK cards for clicks. 3 named places with ratings. Under 15 steps, under 3 min. |
+| T2 | During T1: tap the browser card | The glass panel opens with the live page and the current step. Touches don't reach the page. Back closes it. |
+| T3 | Mid-task: "that's plenty, just give me what you found" | The next reply answers from what was found. No "couldn't confirm" line and no more tool steps. |
+| T4 | "Build me a one-page site for a coffee shop with a menu and hours" (a long tool output) | No `{}` tool runs. If output is cut off, it switches to edits or append. It never loops; after two cut-offs it says so plainly. |
+| T5 | "What's the weather in Lusaka tomorrow and should I take an umbrella?" | One search or weather call, a direct answer, 3 steps or fewer. |
+| T6 | "Set a timer for 10 minutes and remind me at 6pm to call mum" | Both are really set and read back. No ClaimGuard rewrite. |
+| T7 | "Open YouTube and play lo-fi beats" | It plays. No approval for in-app browser clicks; a phone-screen tap after outside content still asks. |
+| T8 | "Buy the cheapest USB-C cable on Takealot" (stop at pay) | It does the browsing freely, then asks once at the pay step. |
+| T9 | "Read the top Hacker News story and summarise it in 3 bullets" | The right story, a real summary, 4 steps or fewer. |
+| T10 | "Compare iPhone 16 vs Pixel 9 battery and price in Zambia" | Web search returns results (DDG Lite fallback) or it opens a site. Never "no results, try different words". |
+| T11 | Fresh install, nothing connected: "Hi" | A Jarvis-style greeting that offers once to connect calendar and email (section 4). No list of generic options. |
+| T12 | Leave the app for 2 hours | At most one batched check-in notification, at a fixed check time. None while the app is open or was used in the last 45 min (section 4). |
+| T13 | A multi-tab task: "open BBC and Al Jazeera and tell me the top story on each" | Two browser cards, one per tab, each with the right picture. |
+| T14 | Run T1 to T3 back to back in one chat | No slowdown, no crash, and no runaway memory in the glass panel (watch the RAM graph). |
+
+**Also run:** `./gradlew :app:testReleaseUnitTest` plus the shot tests in CI, and the gateway eval set under `evals/` against the same two models.
+
+### 3. Life's Apps button opens a real Apps page, not Spotlight
+- **Now:** `LifeQuickAccess` → "Apps" → `onApps = { composer.openSpotlight() }` (`ui/ChatScreen.kt` ~L824, `ui/team/LifeBoardUi.kt` L114–117). It drops the user into the search list ("Views > Music · Open the full view").
+- **New:** `ui/argus/apps/AppsPage.kt`, a full page:
+  - **Top bar:** top left, a glass X inside a circle (closes; Back does the same). Top right, the user icon (opens the profile, as on Home).
+  - **Body:** a grid of view tiles: Music, Video, Browser, Terminal, Design, Camera, Files, Calendar / Schedule, Notes, Maps, Store, and the rest. Read them from `Views` and the existing views sheet, never a hard-coded copy. Each tile is a Lucide icon in a glass tile with its label. A tap opens the view (`openView`). Long-press pins it to Life.
+  - Optional second section: the user's installed apps (`InstalledApps`), behind a "Phone apps" header.
+  - The floating Search pill from section 1 sits at the bottom, filtering the tiles.
+- **Wire:** `onApps = { appsPage = true }`. The "views" shortcut in `ChatScreen.kt` L569 opens the page too, not Spotlight with "@".
+- **Tests:** a pure model test that the tiles match the `Views` registry. A Compose test that X and Back close it and the user icon opens the profile. Shots at 360 and 375 dp.
+
+### 4. Argus is the main assistant: Jarvis, not a chatbot; fewer, smarter notifications
+**Persona (Manager prompt + first-run):**
+- Argus speaks as the user's own assistant who wants into their life to make it easier, like Jarvis: calm, capable, a step ahead, warm, brief. Never needy, never a menu of generic options.
+- The greeting in Finn's screenshot ("want the weather, or should I spin up something (an image, a beat, some code)?") is the anti-pattern.
+- **Connect offers:** no connectors (calendar, email, messages, music) means Argus offers to connect them, tied to what the user just asked or the time of day. Example: "Want me to keep an eye on your day? Connect your calendar and I'll handle the rest."
+  - At most once per day, and at most once per connector per 3 days after a "not now".
+  - It stops for a connector the user said "no" to, until the user brings it up.
+  - Gate it in code (a small `ConnectNudge` pure object with tests), not by asking the model to remember.
+- **Code:** the persona block in the Manager or system prompt in `agent/` (where "You are ${BrandName}" is built). Clear, positive instructions plus the list of what is and isn't connected (from the Accounts / Connections state), so the model knows what it can offer. Don't add guards that rewrite its words: offer rules live in the prompt plus `ConnectNudge`'s gate.
+
+**Notifications:**
+1. **Fewer:**
+   - Audit every caller of `Notifier` / `Proactive.say` (`notify/Notifier.kt`, `notify/MoneyRadar.kt`, `proactive/*`, `connect/Mcp.kt`, `policy/PolicyRuntime.kt`, `phone/*`, `stage/StageStore.kt`, `terminal/JobKeeper.kt`, `voice/WakeWordService.kt`).
+   - Anything not urgent and not asked for by the user goes into the next check-in digest instead of its own notification.
+   - **Still immediate:** alarms, timers, reminders and follow-ups the user set; incoming calls and messages the user opted into; security (ScamShield); a running task that needs the user's OK.
+2. **A fixed, hidden check schedule:**
+   - A new `proactive/CheckIns.kt` with a constant `val SLOTS = listOf(LocalTime(8, 30), LocalTime(13, 0), LocalTime(18, 30))`, local time.
+   - It is not a setting and never appears anywhere in the app: no Settings row, no "why" text naming the schedule, no tool or prompt that reveals or changes it. `ProactiveDial` Off still silences it.
+   - At each slot, one WorkManager run (`enqueueUniquePeriodicWork`, flex window ±20 min) does a background check: calendar, email and messages if connected; follow-ups due; habit offers; news the user follows. It sends at most one batched notification, and only if something is worth flagging.
+   - **Runs only when** the app is not in the foreground (`Agent.inForeground == false`) and the user hasn't been in the app recently: store `lastForegroundAt` in `MainActivity.onPause`, and skip if it was less than 45 min ago (also a hidden constant).
+   - A skipped slot is not made up later.
+   - Replace the ad-hoc periodic proactive work this supersedes, e.g. the hourly `MindReview` notifications. MindReview itself can keep running silently.
+- **Tests:**
+  - `CheckInsTest` (pure): slot selection across midnight and DST; skips when in the foreground or seen <45 min ago; one digest per slot; Dial Off means nothing sent.
+  - `ConnectNudgeTest`: once per day, a 3-day back-off per connector, stop after "no".
+  - A grep test that no UI string mentions the slot times.
+
+**Done when:** T11 and T12 pass on the phone, and a normal day leaves at most 3 Argus notifications plus the ones the user explicitly set.
+
 ## Goal
 One unified ARGUS app (this repo, `argus-mobile`, Kotlin + Compose) that contains:
 1. **Everything in Argus-mobile** today (Blaze Android: chat, voice, orb, phone control, terminal, browser, media, memory, life logs, routines…).
@@ -96,6 +177,7 @@ Append one line per session: date, who, what changed, what's next.
 - 2026-11-15 · Hark · App language, model strings (02:15 CAT, scheduled): display-point `tr()` for SpaceLogic, LifeModel and kit chip / composer labels (see the "Owner round 14 Nov (7)" Deviations row). ja/id translations blocked by the Workers AI daily free limit (error 4006), so ja/id stay hidden and no table changed. Local JVM: AppLangTest 6/6, ShellSpecTest 7/7, LifeModelTest 15/15 (three separate kotlinc + JUnit runs). Full main compile: same 5,123 errors as b7aefc7e, identical error set. Test needles 0 broken. do-not-port 0. Evals 34/34. Not run: Gradle, Robolectric (LifeShotsTest, SpaceShotsTest), SpaceLogicTest (needs more of the app), a device.
 - 2026-11-15 · Hark · 0.53.3 (versionCode 195) build round, owner said "build" (07:30): Living UI 0.1.0 (ed042865), chat flow round (b7aefc7e), Chat-mode tap fix, app language model strings (4ffabc32). Version bump + CHANGELOG / STATUS / about.md; SpaceWiringTest version pin 195 / 0.53.3; ThoughtFoldTest needle moved from `LiveToolRows(liveRows)` (removed by the chat flow round) to `TurnFlowView(liveFlow)`. Pre-flight: needle scan over every source-scan test (no other broken needle), owner-name scan clean, NoSquareTest 2/2, do-not-port 0, evals 34/34. Not run: Gradle, Robolectric, device.
 - 2026-11-15 · Hark · Build (08:05): CI run 43681828555 on 2598ac2b red, 1 of 3,429: SecurityP4Test.cleanedFilesHaveNoEmptyCatch (the chat flow round's BlazeSkills log line in Agent.kt had an empty `catch (_: Throwable) { }`). The catch now carries the usual comment; no other empty catch in the cleaned files. Rebuild pushed.
+- 2026-11-15 · Hark · Added "▶ NEXT UP" at the top (owner's four asks: floating Search pill, field tests T1–T14, Apps page for Life, Jarvis persona + hidden check-in schedule). Do that next.
 
 ## Unified plan
 Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
