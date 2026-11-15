@@ -1,3 +1,13 @@
+## Unreleased: a tool call cut off mid-stream is never run empty
+
+- Seen: DeepSeek Flash was down, Auto handed the turn to a free model, it wrote the whole landing page into one design call, and the provider's default output cap (no `max_tokens` on tool turns) cut the stream off inside the `html` string. The reader never looked at `finish_reason`, `parseArgs` couldn't close the string, `normalize` swapped in `{}` and ran it anyway: a design with no content and a 0-byte `index.html`, and the model resent the same oversized call in a loop.
+- `LlmClient.readSse` (and the non-streamed path) now keeps `finish_reason` on the reply (`_finish`, private, dropped before any request).
+- `ToolCalls.normalize` never runs a call whose arguments didn't parse, or whose arguments are still open when the reply ended on `length` (a brace-repaired fragment doesn't count). The call stays in the history with `{}` so it pairs, and is answered with a plain error: "cut off at N characters … write something shorter, or build it in parts (design: update with edits; files: append)".
+- Tool turns now send an explicit `max_tokens` (8192; Settings key `tool_max_tokens` overrides, 1024 to 65536).
+- The same tool cut off / unreadable twice in one turn ends the turn with a plain line ("I couldn't finish this…") instead of looping; no nudges or Autopilot after it.
+- Self-talk beside a tool call ("Let me…", "I need to…") is no longer shown as a chat line.
+- Test: CutOffCallsTest.
+
 ## Unreleased: Kimi-style + menu; Clear screen removed
 
 - The + menu is now a bottom sheet over the whole screen (Kimi-style): a strip of big tiles (Camera, ARGUS Camera, Photos, Files, Call) and then rows with a chevron (Paste image when there's one, Apps & connectors, Skills, @ files, Plan / Build, New chat in a project). It no longer pushes the chatbox up or sits over the Chat | Living switch.

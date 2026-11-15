@@ -3469,6 +3469,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 var echoNudged = false
                 var ledgerAsks = 0   // owed-reply ledger: one follow-up ask per turn (ReplyLedger)
                 var leakNudged = false
+                val cutFails = HashMap<String, Int>()   // 0.53.6: tool calls not run this turn (cut off / unreadable), by tool
+                var cutStopped = false   // 0.53.6: the same tool failed that way twice: the turn ends with a plain line
                 var credGuarded = false   // 0.45.19 CredAsk: one swap per turn
                 var refusalNudged = false
                 var lastOkStep = ""
@@ -3806,6 +3808,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // Gatekeeper: a call written as text becomes a real call; glued/typo'd names,
                     // broken JSON and wrong types are repaired before anything runs or is sent back.
                     var unknownCalls: Set<String> = emptySet()
+                    var cutCalls: Map<String, ToolCalls.Cut> = emptyMap()   // 0.53.6: by call id; answered with an error, never run
                     try {
                         if ((reply.optJSONArray("tool_calls")?.length() ?: 0) == 0) {
                             val txt = reply.opt("content") as? String
@@ -3834,6 +3837,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         val rep = ToolCalls.normalize(reply, allTools)
                         unknownCalls = rep.unknown
                         repairedThisStep = rep.repaired
+                        cutCalls = rep.cut
                         // v0.45.13 round 3: a split switch tap (tap{text} + tap{want}) runs as one tap with want, so it's read back.
                         if (ToolTruth.mergeTaps(reply) > 0) add(Role.STEP, "Combined the switch tap")
                         // 0.45.15: the named flow tool alone on its step (no blind run_plan beside open_settings), and
@@ -3852,6 +3856,18 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         com.blaze.assistant.device.CrashLog.error("tool gatekeeper", e)
                         // 0.45.15 (review 22 Oct #6): a reply the gatekeeper choked on never goes on with broken calls.
                         try { ToolCalls.dropMalformed(reply, allTools).takeIf { it > 0 }?.let { CallState.current().errors.add("dropped $it malformed tool call(s)") } } catch (_: Throwable) { reply.remove("tool_calls") }
+                    }
+                    // 0.53.6: a call cut off by the output cap (or with arguments that won't parse) is answered with an error and
+                    // never run; the same tool failing that way twice in a turn ends the turn with a plain line instead of a loop.
+                    if (cutCalls.isNotEmpty()) {
+                        for (c in cutCalls.values) cutFails[c.name] = (cutFails[c.name] ?: 0) + 1
+                        CallState.current().errors.add("not run: " + cutCalls.values.joinToString { "${it.name} (${if (it.lengthStop) "cut off" else "unreadable"} at ${it.chars} chars)" })
+                        cutCalls.values.firstOrNull { (cutFails[it.name] ?: 0) >= 2 }?.let { again ->
+                            cutStopped = true; nudgesLeft = 0; cutCalls = emptyMap()
+                            if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
+                            reply.remove("tool_calls")
+                            reply.put("content", ToolCalls.cutStop(again))
+                        }
                     }
                     // 0.45.19 (CredAsk): a page is open and the reply asks the user to type a login into the chat → the secure
                     // form instead, once per turn and inside the per-site limits (3 asks, none after a cancel). Never card numbers.
@@ -3904,7 +3920,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // v0.45.3: Autopilot sends another turn by itself only when the task is really unfinished (AutoContinue):
                     // the model's <<continue>> marker, a stated plan with steps left, or a failed check. A complete answer, a
                     // question or an offer to the user, chit-chat and <<done>> end the turn. Never after a question; at most 3.
-                    if ((calls == null || calls.length() == 0) && autopilot && step < maxSteps - 2) {
+                    if ((calls == null || calls.length() == 0) && autopilot && !cutStopped && step < maxSteps - 2) {
                         val rawText = rawContent.ifBlank { textOut }
                         val ac = AutoContinue.decide(rawText, autoReplies, synchronized(turnTools) { turnTools.size }, actedThisTurn && Autonomy.lastFailed(lastResults))
                         if (ac.go) {
@@ -4261,7 +4277,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         break
                     }
                     // Text that came with tool calls is narration, shown as a step; its reasoning joins the turn's.
-                    val narr = ReplyParts.split(textOut).let { it.copy(text = Friendly.plain(RapidMessages.display(it.text))) }
+                    // 0.53.6: self-talk ("Let me…", "I need to…") isn't shown as a chat line (Narration.selfTalk).
+                    val narr = ReplyParts.split(textOut).let { it.copy(text = Friendly.plain(RapidMessages.display(it.text))) }.let { if (Narration.selfTalk(it.text)) it.copy(text = "") else it }
                     if (narr.thinking.isNotEmpty()) { if (turnThink.isNotEmpty()) turnThink.append("\n\n"); turnThink.append(narr.thinking) }
                     thinking = turnThink.toString()
                     // v0.41.0: it turned out to be narration: stop any of it being read out, the reply comes later.
@@ -4288,7 +4305,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val preStepped = HashSet<Int>()
                     val pre: Map<Int, String> = run {
                         val pick = (0 until calls.length()).filter { i -> val n = callName(i)
-                            com.blaze.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && i !in refusedCmds && surfaceNote(n, quiet = true) == null &&
+                            com.blaze.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && calls.getJSONObject(i).optString("id") !in cutCalls && i !in refusedCmds && surfaceNote(n, quiet = true) == null &&
                                 loopGuard.check(n, callArgs(i)) == null && oneShot.earlier(n, callArgs(i)) == null && com.blaze.assistant.policy.PolicyRuntime.quiet(id, n, callArgs(i).toString(), agentPlan) }   // 0.53.1: a call that may card stays in order
                         if (pick.size < 2 || !Settings.bool("parallel_tools", true)) return@run emptyMap()
                         val tcs = pick.map { i -> com.blaze.assistant.orchestra.ToolScheduler.Call(calls.getJSONObject(i).optString("id", "call_$step$i"), callName(i), callArgs(i)) }
@@ -4310,10 +4327,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         val name = fn.getString("name")
                         val args = try { JSONObject(fn.optString("arguments", "{}").ifBlank { "{}" }) }
                             catch (_: Exception) { JSONObject() }
-                        if (name !in Friendly.selfNarrating && name !in unknownCalls && i !in preStepped) addStep(Friendly.say(name, args), Friendly.exact(name, args))
+                        val cutNow = cutCalls[call.optString("id")]   // 0.53.6: not run
+                        if (name !in Friendly.selfNarrating && name !in unknownCalls && cutNow == null && i !in preStepped) addStep(Friendly.say(name, args), Friendly.exact(name, args))
                         if (pre.containsKey(i)) autoStepId = -1L
                         val toolT0 = System.currentTimeMillis()
                         var result = if (pre.containsKey(i)) pre.getValue(i) else if (i in refusedCmds) "The user did NOT approve this command (they refused the card for this step's commands). Don't run it; ask how they'd like to go on."
+                        else if (cutNow != null) ToolCalls.cutNote(cutNow)
                         else if (name in unknownCalls) {
                             val close = ToolCalls.names(allTools).sortedBy { n -> levGuess(n, name) }.take(4)
                             "Error: there is no tool called \"$name\". Closest real tools: ${close.joinToString(", ")}. Call one of those (exact name), or find_tool to search. Every tool is available from your next step."
@@ -4337,10 +4356,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 com.blaze.assistant.orchestra.KeyedLocks.shared.with(com.blaze.assistant.orchestra.ToolScheduler.Resources.lockClaims(
                                     com.blaze.assistant.orchestra.ToolScheduler.Resources.claims(name, args))) { runTool(name, args, shots) } }
                                 .also { r -> oneShot.record(name, args, r) })
-                        if (!result.startsWith("Not run:")) loopGuard.record(name, args, result)
+                        if (!result.startsWith("Not run:") && cutNow == null) loopGuard.record(name, args, result)
                         // 0.52.1: a sign-in wall on a web surface is remembered with the task (so "I signed you in" finds it).
                         try { TaskMemory.signInWall(name, args, result).takeIf { it.isNotBlank() }?.let { turnSignInWall = it } } catch (e: Throwable) { android.util.Log.w("Blaze", "signInWall: ${e.message}") }
                         ToolStats.add(name, when {
+                            cutNow != null -> "cut"
                             name in unknownCalls -> "unknown"
                             repairedThisStep.any { it.startsWith(name) || it.contains("→ $name") || (it.startsWith("split") && it.contains(name)) } -> "repaired"
                             result.startsWith("Error") || result.startsWith("Couldn't") -> "error"
@@ -4364,7 +4384,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         val vt0 = System.currentTimeMillis()
                         if (book.openUnverified > 0 && VerifyBook.isModelCheck(name, args)) { book.stats.model(System.currentTimeMillis() - toolT0); book.openUnverified = 0 }
                         var pendingCheck: kotlinx.coroutines.Deferred<ToolVerify.Verdict>? = null
-                        val verdict = if (name in setOf("find_tool", "load_tools") || name in unknownCalls) null else try {
+                        val verdict = if (name in setOf("find_tool", "load_tools") || name in unknownCalls || cutNow != null) null else try {
                             when (vMode) {
                                 VerifyPolicy.Mode.QUICK_THEN_BACKGROUND -> {
                                     val full = VerifyBook.scope.async {

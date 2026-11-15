@@ -231,6 +231,13 @@ object LlmClient {
         return out.value.first
     }
 
+    /** 0.53.6: the private key on a reply naming why it ended ("length" = cut off by the output cap). */
+    const val FINISH = "_finish"
+
+    /** 0.53.6: output cap sent on every tool turn (Settings "tool_max_tokens" overrides; 8192 is the widest most free routes accept). */
+    const val TOOL_MAX_TOKENS = 8192
+    fun toolMaxTokens(): Int = (try { Settings.str("tool_max_tokens", TOOL_MAX_TOKENS.toString()).toIntOrNull()?.coerceIn(1024, 65_536) } catch (_: Throwable) { null }) ?: TOOL_MAX_TOKENS
+
     /** A6: the message for gateway 0.8.56's blaze_stream_broken frame (BackupRoute.brokeMidReply matches it). */
     const val STREAM_BROKEN = "${BrandName.NAME} Cloud stopped sending (stream broke mid-reply)."
 
@@ -447,6 +454,9 @@ object LlmClient {
             // v0.45.5 (#10): reasoning models (gpt-oss) need room to reason and still answer; short turns get a floor of
             // 1024 (≥ SharedPersona.MIN_MAX_TOKENS). Longer turns keep the provider's own limit (no cap, as before).
             if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn && (tools == null || tools.length() == 0)) put("max_tokens", maxOf(1024, SharedPersona.MIN_MAX_TOKENS))
+            // 0.53.6: tool turns name their own output cap. Sending none left the provider's default (often ~4K tokens on free
+            // tiers), which cut a whole-page design call off inside its html string.
+            if (tools != null && tools.length() > 0) put("max_tokens", toolMaxTokens())
         }
         val who = Providers.byId(t.pid).name
         // v0.45.0 (#5): Stop really ends the request: cancelling this coroutine closes the socket (cancellable), so a blocked
@@ -522,6 +532,7 @@ object LlmClient {
         val m = json?.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")
             ?: throw LlmException("$who · ${t.model} sent an empty reply. Trying again.", 503)
         lastUsage = json.optJSONObject("usage")
+        json.optJSONArray("choices")?.optJSONObject(0)?.let { ch -> if (ch.has("finish_reason") && !ch.isNull("finish_reason")) ch.optString("finish_reason").takeIf { it.isNotBlank() }?.let { m.put(FINISH, it) } }
         val r = m.optString("reasoning_content").ifBlank { m.optString("reasoning") }
         m.remove("reasoning_content"); m.remove("reasoning"); m.remove("reasoning_details")
         if (r.isNotBlank() && r != "null") m.put("_reasoning", r)
@@ -567,6 +578,7 @@ object LlmClient {
         val slotOf = HashMap<Int, Int>()
         var emitted = 0
         var lastText = 0L
+        var finish = ""
         CallState.current().maxGapMs = 0
         input.bufferedReader().useLines { lines ->
             for (raw in lines) {
@@ -581,6 +593,8 @@ object LlmClient {
                     // A6 (gateway 0.8.56): a stream that broke mid-reply says so; the next brain's reply replaces the partial one
                     if (it.optString("code") == "blaze_stream_broken") throw LlmException(STREAM_BROKEN, 0)
                     throw LlmException("The AI service said: " + it.optString("message").take(300)) }
+                // 0.53.6 (cut-off tool calls): remember why the stream ended; "length" means the output cap cut the reply off.
+                obj.optJSONArray("choices")?.optJSONObject(0)?.let { ch -> if (ch.has("finish_reason") && !ch.isNull("finish_reason")) ch.optString("finish_reason").takeIf { it.isNotBlank() }?.let { finish = it } }
                 val delta = obj.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("delta") ?: continue
                 val rp = listOf("reasoning_content", "reasoning").firstNotNullOfOrNull { k ->
                     delta.optString(k, "").takeIf { delta.has(k) && !delta.isNull(k) && it.isNotEmpty() } }
@@ -639,6 +653,8 @@ object LlmClient {
         if (content.length != emitted) onText(content.toString())
         val msg = JSONObject().put("role", "assistant").put("content", if (content.isEmpty() && calls.isNotEmpty()) JSONObject.NULL else content.toString())
         if (think.isNotEmpty()) msg.put("_reasoning", think.toString())
+        // 0.53.6: why the stream ended ("stop", "tool_calls", "length"...). Private key: ToolCalls.clean drops it before a request.
+        if (finish.isNotBlank()) msg.put(FINISH, finish)
         if (calls.isNotEmpty()) {
             val arr = JSONArray()
             val seen = HashSet<String>()

@@ -170,7 +170,33 @@ object ToolCalls {
 
     // ---------- normalize one reply ----------
 
-    data class Report(val repaired: List<String>, val unknown: Set<String>)
+    /**
+     * 0.53.6: a call that must not run: its arguments were cut off by the output cap ([lengthStop]) or are not JSON that
+     * can be repaired. [chars] is how much argument text arrived.
+     */
+    data class Cut(val name: String, val chars: Int, val lengthStop: Boolean)
+
+    /** [cut]: calls (by final id) that are answered with [cutNote] and never run. */
+    data class Report(val repaired: List<String>, val unknown: Set<String>, val cut: Map<String, Cut> = emptyMap())
+
+    /** 0.53.6: the plain line the user gets when the same tool was cut off / unreadable twice in one turn (the turn stops). */
+    fun cutStop(c: Cut): String = if (c.lengthStop)
+        "I couldn't finish this. My ${c.name} call was cut off twice (about ${c.chars} characters in), because the model hit its " +
+            "output limit, so nothing was saved. Ask for something shorter, or pick a stronger model and try again."
+    else
+        "I couldn't finish this. My ${c.name} call came out as broken JSON twice, so nothing was run or saved. " +
+            "Pick a stronger model, or ask for something smaller, and try again."
+
+    /** 0.53.6: the tool result for a call that was not run, plain enough that the model changes course instead of resending. */
+    fun cutNote(c: Cut): String = if (c.lengthStop)
+        "Error: NOT run. Your ${c.name} call was cut off at ${c.chars} characters: your reply hit the output limit before its arguments " +
+            "were finished, so nothing was written or changed. Don't send the same call again, it will be cut off the same way. " +
+            "Write something shorter (well under ${c.chars} characters), or build it in parts: a short first version, then add the rest " +
+            "with follow-up calls (design: action update with edits; files: append)."
+    else
+        "Error: NOT run. The arguments of your ${c.name} call (${c.chars} characters) weren't valid JSON and couldn't be repaired, " +
+            "so nothing was run. Send it again with complete, valid JSON arguments; if it is long, make it shorter or build it in parts " +
+            "(design: action update with edits; files: append)."
 
     /**
      * Repairs the tool_calls of an assistant reply in place, against [all] tools (loaded or not).
@@ -183,15 +209,19 @@ object ToolCalls {
         val known = names(all)
         val repaired = ArrayList<String>()
         val unknown = HashSet<String>()
+        val cut = LinkedHashMap<String, Cut>()
+        // 0.53.6: the stream ended on the output cap, so a call whose arguments aren't one whole JSON value was cut off.
+        val lengthStop = reply.optString(LlmClient.FINISH) == "length"
         val out = JSONArray()
         val ids = HashSet<String>()
-        fun add(src: JSONObject, name: String, args: JSONObject, n: Int) {
+        fun add(src: JSONObject, name: String, args: JSONObject, n: Int): String {
             var id = src.optString("id", "").ifBlank { "call_${System.nanoTime() % 100000}_$n" }
             if (!ids.add(id)) { id = "${id}_$n"; ids.add(id) }
             val c = JSONObject().put("id", id).put("type", "function")
                 .put("function", JSONObject().put("name", name).put("arguments", args.toString()))
             src.optJSONObject("extra_content")?.let { c.put("extra_content", it) }
             out.put(c)
+            return id
         }
         for (i in 0 until calls.length()) {
             val c = calls.optJSONObject(i) ?: continue
@@ -203,9 +233,18 @@ object ToolCalls {
             if (name != null) {
                 val parsed = parseArgs(rawArgs)
                 if (name != rawName) repaired += "$rawName → $name"
-                if (parsed == null) repaired += "$name: unreadable arguments"
-                val args = coerce(parsed ?: JSONObject(), params(all, name))
-                if (parsed != null && args.toString() != parsed.toString()) repaired += "$name: argument types"
+                // 0.53.6: never run a call whose arguments didn't parse, or that the output cap cut off (a brace-closed
+                // fragment would run with half its content). It stays in the reply with {} arguments so its error answer pairs.
+                val rawText = if (rawArgs is JSONObject) "" else rawArgs?.toString().orEmpty()
+                val open = lengthStop && rawArgs !is JSONObject && rawText.isNotBlank() && !completeJson(rawText)
+                if (parsed == null || open) {
+                    repaired += "$name: " + (if (open) "cut off" else "unreadable arguments")
+                    val cid = add(c, name, JSONObject(), i)
+                    cut[cid] = Cut(name, rawText.length, open || lengthStop)
+                    continue
+                }
+                val args = coerce(parsed, params(all, name))
+                if (args.toString() != parsed.toString()) repaired += "$name: argument types"
                 add(c, name, args, i)
                 continue
             }
@@ -227,7 +266,7 @@ object ToolCalls {
         }
         if (out.length() == 0) { reply.remove("tool_calls"); if (reply.isNull("content")) reply.put("content", "") }
         else reply.put("tool_calls", out)
-        return Report(repaired, unknown)
+        return Report(repaired, unknown, cut)
     }
 
     /**
