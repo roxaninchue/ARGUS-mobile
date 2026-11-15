@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 object LivingSpec {
     /** Living UI's own version (v0.xz.y: a minor update is y + 1; a major one moves x and/or z). */
-    const val VERSION = "0.2.2"
+    const val VERSION = "0.2.3"
 
     enum class View { CHAT, LIVING }
 
@@ -37,8 +37,19 @@ object LivingSpec {
     fun railOn(landscape: Boolean, argus: Boolean, living: Boolean, mainChat: Boolean, hasMessages: Boolean, viewOpen: Boolean): Boolean =
         landscape && argus && living && mainChat && hasMessages && !viewOpen
 
+    /**
+     * 0.2.3: the shell rail in every mode of the ARGUS shell on a phone on its side (Team, Chat, Life, Desk, Projects),
+     * in place of the top bar and the notch: landscape, the ARGUS shell, no full-screen view (Design), the chat not
+     * maximised and the top bar not hidden by the Stage. [railOn] (Living's own chrome) is a case of it.
+     */
+    fun shellRail(landscape: Boolean, argus: Boolean, designFull: Boolean, maxed: Boolean, topBar: Boolean): Boolean =
+        landscape && argus && !designFull && !maxed && topBar
+
+    /** The rail's modes, in notch order, with their icons. */
+    val SHELL_MODES: List<Pair<String, String>> = listOf("team" to "users", "chat" to "message-circle", "life" to "sun", "desk" to "briefcase")
+
     /** Rail width (dp), the landscape header line's height and the floating composer's room at the bottom (dp). */
-    const val RAIL_DP = 64
+    const val RAIL_DP = 52
     const val WIDE_TOP_DP = 60f
     const val WIDE_BOTTOM_DP = 84f
     /** The floating composer's widest (dp). */

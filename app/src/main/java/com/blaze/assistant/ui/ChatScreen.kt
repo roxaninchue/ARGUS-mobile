@@ -599,7 +599,11 @@ fun ChatScreen() {
     // Living UI 0.2.1: landscape Living on the main chat trades the top bars, the Chat | Living switch and the full-width
     // composer for a left rail, one header line on the canvas and a floating composer (LivingSpec.railOn, LivingRail)
     val livingView by com.blaze.assistant.ui.living.LivingSpec.view.collectAsState()
-    val railOn = com.blaze.assistant.ui.living.LivingSpec.railOn(com.blaze.assistant.ui.common.isLandscape(), argus,
+    // Living UI 0.2.3: on its side the rail is the shell's chrome in every mode (Team, Chat, Life, Desk, Projects)
+    val landscapeNow = com.blaze.assistant.ui.common.isLandscape()
+    val landRail = com.blaze.assistant.ui.living.LivingSpec.shellRail(landscapeNow, argus, DesignNav.fullScreen(showing, nav),
+        ChatExpand.on && (nav.tab == ChatNav.CHAT || nav.inProjectChat), stage.topBar || !stageActive)
+    val railOn = landRail && com.blaze.assistant.ui.living.LivingSpec.railOn(landscapeNow, argus,
         livingView == com.blaze.assistant.ui.living.LivingSpec.View.LIVING,
         nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty),
         hasMessages, showing.isNotEmpty())
@@ -750,7 +754,7 @@ fun ChatScreen() {
         val lift = com.blaze.assistant.ui.argus.kit.ShellSpec.Composer.liftsWithKeyboard(spotlight = composer.spotlightOpen,
             search = showSearch, drawer = com.blaze.assistant.ui.team.ChatDrawerUi.showing(), settings = settingsPage != null)
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().then(if (lift) Modifier.imePadding() else Modifier)
-            .then(if (railOn) com.blaze.assistant.ui.living.LivingRailSpace else Modifier)) {
+            .then(com.blaze.assistant.ui.living.shellPad(landRail))) {
             // v0.39.0 Simple mode: pull down from the top (the bar above the header, or the header itself) for Home.
             // 0.50.0: the chat box's expand arrows maximise the chat (no top bar, no pull handle); Back restores first.
             val maxed = ChatExpand.on && chatBody
@@ -759,7 +763,7 @@ fun ChatScreen() {
                 .semantics { contentDescription = tr("Pull down for Home") }, contentAlignment = Alignment.Center) {
                 Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.hair))
             }
-            if (!railOn) if (!designFull && !maxed && (stage.topBar || !stageActive)) Box(if (swipeMode) Modifier.draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop) else Modifier) {
+            if (!landRail) if (!designFull && !maxed && (stage.topBar || !stageActive)) Box(if (swipeMode) Modifier.draggable(sheetDrag, Orientation.Vertical, onDragStarted = onSheetStart, onDragStopped = onSheetStop) else Modifier) {
             // 0.52.3 (Hark design): round button (+ on Home, search in Chat, the menu in Projects), the Home | Chat | Projects
             // pill, the avatar (profile and settings; long-press = light / dark). A view (Gallery, Design…) shows an Exit chip.
             // P1-SH-01: the ARGUS top bar (me · notch · search · bell · +); the notch itself is drawn over the content below.
@@ -797,7 +801,7 @@ fun ChatScreen() {
                 privateChat = isPrivate, onLeavePrivate = { confirmLeavePrivate = true })
             }
             // P1-SH-01: a private chat says so under the ARGUS top bar, with the way out
-            if (argus && isPrivate && !designFull && !maxed && !railOn) com.blaze.assistant.ui.argus.kit.ArgusButton(tr("Private chat \u00b7 Leave"), { confirmLeavePrivate = true },
+            if (argus && isPrivate && !designFull && !maxed && !landRail) com.blaze.assistant.ui.argus.kit.ArgusButton(tr("Private chat \u00b7 Leave"), { confirmLeavePrivate = true },
                 Modifier.padding(start = 12.dp, bottom = 6.dp), size = com.blaze.assistant.ui.argus.kit.ButtonSize.S, icon = "lock")
             if (!designFull && !maxed && showing.isNotEmpty() && nav.tab == ChatNav.CHAT) com.blaze.assistant.ui.space.SpaceChip(
                 (Views.find(showing)?.name ?: showing) + (if (showing == "design") " \u00b7 $DESIGN_BETA" else "") + "  \u2715", { exitView() },
@@ -852,7 +856,7 @@ fun ChatScreen() {
                     // P1-SH-04 Chat mode: the Manager's chats (history drawer, ✎ new chat, ghost toggle, greeting) on the main chat
                     com.blaze.assistant.ui.team.ChatModeFrame(name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null },
                         privateOn = isPrivate, onPrivate = { if (isPrivate) confirmLeavePrivate = true else Agent.enterPrivate() },
-                        onAsk = { send(it) }, onOpenProjectChat = { openProjectChat(it) }, chrome = !railOn) { keep ->
+                        onAsk = { send(it) }, onOpenProjectChat = { openProjectChat(it) }, chrome = !landRail, note = !railOn) { keep ->
                         val dens = LocalDensity.current
                         CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip, LocalOpenLink provides openLink,
                             LocalDensity provides androidx.compose.ui.unit.Density(dens.density, dens.fontScale * Settings.textScale)) {
@@ -1016,7 +1020,7 @@ fun ChatScreen() {
                 }
                 if (quote.isNotBlank()) QuoteStrip(quote) { quote = "" }
                 // P1-SH-01: the mode's chips 10 dp over the composer (hidden while attachments wait or a sheet is open)
-                if (argus && !railOn && input.text.isEmpty() && com.blaze.assistant.ui.argus.kit.ShellSpec.Chips.visible(pending.size, plusOpen || showViews || newOpen))
+                if (argus && !landRail && input.text.isEmpty() && com.blaze.assistant.ui.argus.kit.ShellSpec.Chips.visible(pending.size, plusOpen || showViews || newOpen))
                     com.blaze.assistant.ui.argus.kit.ChipsRow(com.blaze.assistant.ui.argus.kit.ShellSpec.Chips.of(nav.tab), onChip = { k ->
                         when (k) {
                             "job" -> input = com.blaze.assistant.ui.argus.kit.composerFill("Add a job: ")
@@ -1065,7 +1069,7 @@ fun ChatScreen() {
                 // v0.43.0: who the next message goes to (@blaze / @halo / @all), picked on the arc from the header orb.
                 // 0.51.0 one persona: the Blaze / Halo arc is gone (there is only Blaze).
                 if (arcOpen) BackHandler { arcOpen = false }
-                if (argus && !railOn && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages) com.blaze.assistant.ui.living.LivingSwitch()
+                if (argus && !landRail && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages) com.blaze.assistant.ui.living.LivingSwitch()
                 // 0.46.0: the reply bar folded into a floating pill by the Stage (never gone): tap for the full bar.
                 if (stageActive && stage.reply == com.blaze.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     StageReplyPill { com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.SetChrome(reply = com.blaze.assistant.stage.ReplyBar.FULL)) }
@@ -1082,8 +1086,8 @@ fun ChatScreen() {
                     onSend = { val t = input.text; send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && navNow().tab != ChatNav.TEAM && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
                     onMic = { onMic() }, onStop = { Agent.stop() },
                     // Living UI 0.2.1: a compact pill floating over the canvas in landscape Living (no chip row)
-                    modifier = if (railOn) com.blaze.assistant.ui.living.LivingFloat else Modifier,
-                    top = if (railOn) null else ({ com.blaze.assistant.ui.argus.kit.ModelChip(flat = true) }))
+                    modifier = if (railOn) com.blaze.assistant.ui.living.LivingFloat else if (landRail) com.blaze.assistant.ui.living.LivingCompact else Modifier,
+                    top = if (railOn || (landRail && nav.tab != ChatNav.CHAT)) null else ({ com.blaze.assistant.ui.argus.kit.ModelChip(flat = true) }))
                 else Composer(input, { input = it; Agent.typing(it.text.isNotEmpty()) }, busy = mood != Mood.IDLE, canSend = input.text.isNotBlank() || pending.isNotEmpty(),
                     plusOpen = plusOpen, chip = modeChip(work, approval), agents = bgAgents.count { it.live },
                     listening = voiceState == Voice.State.LISTENING, speaking = voiceState == Voice.State.SPEAKING,
@@ -1095,16 +1099,21 @@ fun ChatScreen() {
                 }
             }
         }
-        // Living UI 0.2.1: the landscape Living rail at the start edge (the chat column is padded for it: LivingRailSpace)
-        if (railOn) {
+        // Living UI 0.2.3: the landscape shell rail at the start edge in every mode (the column is padded for it: shellPad)
+        if (landRail) {
             val chatsV by com.blaze.assistant.ui.team.ChatModeRuntime.version.collectAsState()
             val unseen = remember(chatsV) { com.blaze.assistant.ui.team.ChatModeRuntime.chats().anyUnseen() }
+            val inChat = nav.tab == ChatNav.CHAT && !nav.inProjectChat
             com.blaze.assistant.ui.living.LivingRail(
+                mode = if (ChatNav.isMode(nav.tab) && !nav.inProjectChat) nav.tab else "",
+                onMode = { m -> notchOpen = false; exitView(); composer.closeSpotlight(); go(navNow().switchTab(m)) },
+                chat = inChat, livingShown = inChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages,
+                livingOn = livingView == com.blaze.assistant.ui.living.LivingSpec.View.LIVING,
                 initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
                 historyBadge = unseen, privateOn = isPrivate,
                 onHistory = { com.blaze.assistant.ui.team.ChatDrawerUi.open() },
                 onSearch = { notchOpen = false; composer.query = ""; composer.openSpotlight() },
-                onNewChat = { com.blaze.assistant.ui.team.ChatModeRuntime.newChat(ctx) },
+                onNew = { if (inChat) com.blaze.assistant.ui.team.ChatModeRuntime.newChat(ctx) else { notchOpen = false; newOpen = true } },
                 onLeavePrivate = { confirmLeavePrivate = true },
                 onMe = { notchOpen = false; settingsPage = "" },
                 onMeLong = {
@@ -1119,7 +1128,7 @@ fun ChatScreen() {
 
         // P1-SH-01: the notch, centred in the ARGUS top bar and drawn over the page so its pill drops over it. A tap outside
         // or Back closes the pill; pulling on past it opens Voice (the call screen).
-        if (argus && !railOn && showing != "design" && !(ChatExpand.on && chatBody)) {
+        if (argus && !landRail && showing != "design" && !(ChatExpand.on && chatBody)) {
             if (notchOpen) {
                 Box(Modifier.fillMaxSize().clickable(remember { MutableInteractionSource() }, indication = null) { notchOpen = false })
                 BackHandler { notchOpen = false }

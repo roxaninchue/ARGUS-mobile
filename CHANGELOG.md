@@ -1,3 +1,9 @@
+## Living UI 0.2.3: the side rail on every screen in landscape (not built yet)
+
+- On its side the whole app uses the slim left rail instead of the top bar and the mode notch: Team, Chat, Life and Desk are one tap each on the rail, with search, New and your profile at the bottom, so every page gets the full height. In Chat the rail also holds the chat history and the Chat / Living switch.
+- The chatbox sits centred at a comfortable width in landscape instead of running edge to edge (in Living it floats).
+- The camera cutout is kept clear once for the whole screen, so pages beside the rail don't add a second gap. Upright phones are unchanged.
+
 ## Sign-in lands in the chat, real Google and GitHub logos (not built yet)
 
 - After signing in or finishing setup, ARGUS opens the chat. The old Home ("Good morning…", "Finishing setup", "Try asking", "New project") never shows again, whichever way you got there; setup still finishes in the background and shows on Life.

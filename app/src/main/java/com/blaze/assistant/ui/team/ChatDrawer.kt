@@ -232,6 +232,8 @@ fun ChatModeFrame(
     zone: ZoneId = ZoneId.systemDefault(),
     // Living UI 0.2.1: false in landscape Living, where the rail and the canvas header carry this row and the note
     chrome: Boolean = true,
+    // Living UI 0.2.3: the earlier-chat line on its own (landscape Chat keeps it, landscape Living draws it in its header)
+    note: Boolean = chrome,
     content: @Composable (keep: ((ChatMessage) -> Boolean)?) -> Unit,
 ) {
     val c = Argus.colors
@@ -273,7 +275,7 @@ fun ChatModeFrame(
                     ArgusIconButton("lock", if (privateOn) "Private chat on" else "Private chat", onPrivate, kind = if (privateOn) IconButtonKind.GLASS else IconButtonKind.FLAT)
                     ArgusIconButton("square-pen", "New chat", { ChatModeRuntime.newChat(ctx) }, kind = IconButtonKind.FLAT)
                 }
-                if (chats.readOnly && chrome) Text(ChatModeCopy.READ_ONLY, style = ArgusType.meta, color = c.mute,
+                if (chats.readOnly && note) Text(ChatModeCopy.READ_ONLY, style = ArgusType.meta, color = c.mute,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), textAlign = TextAlign.Center)
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     if (!hasHere) ChatModeEmpty(if (privateOn) null else name, privateOn, onAsk)

@@ -187,7 +187,7 @@ class LivingLayoutTest {
         LivingSpec.show(LivingSpec.View.LIVING)
         assertTrue(LivingSpec.back())
         assertEquals(LivingSpec.View.CHAT, LivingSpec.view.value)
-        assertEquals("0.2.2", LivingSpec.VERSION)
+        assertEquals("0.2.3", LivingSpec.VERSION)
     }
 
     // ------------------------------------------------------------------ 0.2.1 landscape
@@ -304,6 +304,14 @@ class LivingLayoutTest {
         assertFalse(LivingSpec.railOn(true, false, true, true, true, false))   // the old shell
         assertFalse(LivingSpec.railOn(true, true, true, true, false, false))   // nothing to show yet
         assertFalse(LivingSpec.railOn(true, true, true, true, true, true))     // a view is open
+        // 0.2.3: the shell rail in every mode on its side, unless a full-screen view, a maximised chat or the Stage hides the bar
+        assertTrue(LivingSpec.shellRail(landscape = true, argus = true, designFull = false, maxed = false, topBar = true))
+        assertFalse(LivingSpec.shellRail(false, true, false, false, true))
+        assertFalse(LivingSpec.shellRail(true, false, false, false, true))
+        assertFalse(LivingSpec.shellRail(true, true, true, false, true))
+        assertFalse(LivingSpec.shellRail(true, true, false, true, true))
+        assertFalse(LivingSpec.shellRail(true, true, false, false, false))
+        assertEquals(listOf("team", "chat", "life", "desk"), LivingSpec.SHELL_MODES.map { it.first })   // ChatNav.MODES order
         // landscape = wider than tall and at least 560 dp wide
         assertTrue(com.blaze.assistant.ui.common.Orientation.landscape(851, 393))
         assertFalse(com.blaze.assistant.ui.common.Orientation.landscape(393, 851))

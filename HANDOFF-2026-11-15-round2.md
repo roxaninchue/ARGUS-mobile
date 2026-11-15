@@ -91,3 +91,21 @@ Tests: ResultCardsTest (9). Living tests 38/38.
 Check on the phone: ask "weather right now" in Living: a weather card above the answer with an arrow; steps read
 "Found your location · Ndola" / "Checked the weather · Ndola"; an alarm, an event and an image turn; portrait + landscape.
 After an app restart ToolTrail is empty, so old turns show no result cards (words still right).
+
+Living UI 0.2.3, shell rail in every landscape mode (asked by the landscape specialist, 15 Nov 2026), `[skip ci]`, not built:
+- `LivingSpec.shellRail(landscape, argus, designFull, maxed, topBar)` = `landRail` in ChatScreen: the rail replaces the ARGUS
+  top bar, the notch, the private pill, the chips row and the Chat | Living switch in Team / Chat / Life / Desk /
+  Projects / project chats. `railOn` (Living's floating composer + canvas header) is now `landRail && railOn(...)`.
+- `LivingRail` (ui/living/LivingRail.kt) rewritten: modes (users / message-circle / sun / briefcase, `SHELL_MODES`, the open one
+  filled), in Chat: history + Living toggle (Chat ↔ Living); bottom: search, lock (private), New (new chat in Chat, the
+  New sheet elsewhere), avatar. 36 dp items (fits 9 items in ~345 dp; scrolls if not). Width 52 dp.
+- `shellPad(rail)` on the shell column: the display cutout's horizontal sides ALWAYS (consumed, so the pages' own
+  `cutoutSafe()` pads 0) + the rail width. Composer: `LivingCompact` (centred ≤ 560 dp) in landscape, `LivingFloat` in Living;
+  the model chip row only in landscape Chat (not Team/Life/Desk, not Living).
+- ChatModeFrame: `chrome = !landRail` (its history/ghost/new row goes to the rail), new `note` param (= chrome by default)
+  keeps the earlier-chat line in landscape Chat; Living shows it in its header.
+- Helpers: `ui/common/Orientation.kt` (mine, `landscape` = wider than tall and ≥ 560 dp) sits beside the specialist's
+  `WindowLayout.kt` / `WindowLayoutUi.kt` (`cutoutSafe`, `readableWidth`, `Shape.short`); not merged (different rule:
+  the rail keys on landscape, theirs on short height), both fine.
+Check on the phone: rotate on Team, Life, Desk, Projects (rail, no top bar, no notch, mode taps), the New sheet and
+Spotlight from the rail, the cutout side (no double gap), project chat header beside the rail.
