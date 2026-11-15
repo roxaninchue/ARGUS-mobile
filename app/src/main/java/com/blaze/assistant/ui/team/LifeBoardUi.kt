@@ -95,9 +95,9 @@ fun LifeFoldHead(text: String, key: String, trailing: String? = null, onTrailing
     val fold = LocalLifeFold.current
     val shut = fold.isFolded(key)
     Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Row(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClickLabel = if (shut) "Show $text" else "Fold $text") { fold.onToggle(key) }
+        Row(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClickLabel = if (shut) tr("Show {0}", tr(text)) else tr("Fold {0}", tr(text))) { fold.onToggle(key) }
             .heightIn(min = 48.dp).padding(start = 12.dp, end = 8.dp)
-            .semantics(mergeDescendants = true) { heading(); contentDescription = text; stateDescription = if (shut) "Folded" else "Shown" },
+            .semantics(mergeDescendants = true) { heading(); contentDescription = tr(text); stateDescription = if (shut) tr("Folded") else tr("Shown") },
             verticalAlignment = Alignment.CenterVertically) {
             Text(tr(text).uppercase(), style = ArgusType.section, color = c.meta, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (shut && count != null && count > 0) Text("  $count", style = ArgusType.section, color = c.dim)
@@ -208,7 +208,7 @@ fun LifeCalendarCard(cal: LifeCal, onOpenSchedule: () -> Unit) {
                     val today = day == cal.today
                     Box(Modifier.size(36.dp).clip(CircleShape)
                         .then(if (picked) Modifier.background(c.ink) else if (today) Modifier.background(c.soft) else Modifier)
-                        .clickable(role = Role.Button, onClickLabel = tr("Show {0}", LifeCalendar.dayLabel(day, cal.today))) { cal.onSelect(day) },
+                        .clickable(role = Role.Button, onClickLabel = tr("Show {0}", tr(LifeCalendar.dayLabel(day, cal.today)))) { cal.onSelect(day) },
                         contentAlignment = Alignment.Center) {
                         Text(day.dayOfMonth.toString(), style = ArgusType.sub, color = if (picked) c.onInk else if (day.isBefore(cal.today)) c.dim else c.ink)
                     }
@@ -216,7 +216,7 @@ fun LifeCalendarCard(cal: LifeCal, onOpenSchedule: () -> Unit) {
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp, start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(LifeCalendar.dayLabel(cal.selected, cal.today), style = ArgusType.rowTitle, color = c.ink, modifier = Modifier.weight(1f))
+            Text(tr(LifeCalendar.dayLabel(cal.selected, cal.today)), style = ArgusType.rowTitle, color = c.ink, modifier = Modifier.weight(1f))
             Text(tr("Schedule \u203a"), style = ArgusType.sub, color = c.mute,
                 modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onOpenSchedule).heightIn(min = 44.dp).padding(horizontal = 8.dp, vertical = 12.dp))
         }

@@ -68,7 +68,7 @@ fun SpaceTopBar(
     val look = spaceLook()
     Row(modifier.fillMaxWidth().testTag(SpaceTags.TOP_BAR).padding(horizontal = SpaceInsets.EDGE_DP.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         val left = SpaceTabs.leftButton(tab)
-        if (showLeft) SpaceRoundButton(SpaceTabs.leftLabel(left), onLeft, tag = SpaceTags.LEFT_BUTTON, size = SpaceInsets.ROUND_DP.dp) {
+        if (showLeft) SpaceRoundButton(tr(SpaceTabs.leftLabel(left)), onLeft, tag = SpaceTags.LEFT_BUTTON, size = SpaceInsets.ROUND_DP.dp) {
             when (left) {
                 SpaceTabs.Left.PLUS -> PlusMark(look.ink, 20.dp)
                 SpaceTabs.Left.SEARCH -> SearchGlyph(look.ink, 19.dp)
@@ -103,7 +103,7 @@ private fun SegmentedPill(tab: String, onTab: (String) -> Unit) {
                 val fill by animateColorAsState(if (on) look.selectedFill else Color.Transparent, MotionTokens.medium(), label = "segment")
                 val ink by animateColorAsState(if (on) look.selectedInk else look.sub, MotionTokens.medium(), label = "segmentInk")
                 Box(Modifier.clip(SpaceShapes.pill).background(fill).testTag(SpaceTags.tab(id))
-                    .clickable(onClickLabel = tr("Show {0}", label)) { onTab(id) }
+                    .clickable(onClickLabel = tr("Show {0}", tr(label))) { onTab(id) }
                     .semantics { selected = on; role = Role.Tab }
                     .heightIn(min = SpaceInsets.SEGMENT_DP.dp).padding(horizontal = fit.padDp.dp), contentAlignment = Alignment.Center) {
                     // 0.52.4: the selected segment shows its icon with the label; the others stay text, as before
@@ -112,7 +112,7 @@ private fun SegmentedPill(tab: String, onTab: (String) -> Unit) {
                             Icon(tabIcon(id), contentDescription = null, tint = ink, modifier = Modifier.size(SpacePillFit.iconDp(fit.fontSp).dp))
                             Spacer(Modifier.width(SpacePillFit.ICON_GAP_DP.dp))
                         }
-                        Text(label, maxLines = 1, softWrap = false, style = SpaceType.body(fit.fontSp.sp, ink, FontWeight.Medium))
+                        Text(tr(label), maxLines = 1, softWrap = false, style = SpaceType.body(fit.fontSp.sp, ink, FontWeight.Medium))
                     }
                 }
             }

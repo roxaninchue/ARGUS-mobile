@@ -207,7 +207,7 @@ internal fun KitChip(chip: ChipModel, on: Boolean, modifier: Modifier = Modifier
         flat -> Modifier.clip(shape)
         else -> Modifier.argusGlass(GlassLevel.RAISED, shape, shadow = false)
     }
-    val desc = KitA11y.chip(chip, on)
+    val desc = KitA11y.chip(chip.copy(label = tr(chip.label)), on)   // owner 2026-11-14: app language where drawn
     Box(
         modifier.heightIn(min = KitSpec.TARGET.dp).widthIn(min = KitSpec.TARGET.dp)
             .clickable(src, indication = null, role = Role.Tab, onClick = onClick)
@@ -216,7 +216,7 @@ internal fun KitChip(chip: ChipModel, on: Boolean, modifier: Modifier = Modifier
     ) {
         Row(look.kitPress(src).heightIn(min = KitSpec.Chips.HEIGHT.dp).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally)) {
-            Text(chip.label, style = ArgusType.chip, color = fg, maxLines = 1)
+            Text(tr(chip.label), style = ArgusType.chip, color = fg, maxLines = 1)
             Chips.countText(chip)?.let { Text(it, style = ArgusType.chip, color = fg.copy(alpha = KitSpec.Chips.COUNT_ALPHA), maxLines = 1) }
         }
     }

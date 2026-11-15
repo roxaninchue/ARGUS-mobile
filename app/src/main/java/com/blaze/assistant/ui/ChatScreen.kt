@@ -1798,7 +1798,7 @@ internal fun Welcome(needsSetup: Boolean, onSetup: () -> Unit, onPick: (String) 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         com.blaze.assistant.ui.space.SpaceCard {
-            com.blaze.assistant.ui.space.SpaceHeadline(com.blaze.assistant.ui.space.SpaceGreeting.hello(hour, Settings.userName.ifBlank { null }))
+            com.blaze.assistant.ui.space.SpaceHeadline(com.blaze.assistant.ui.space.SpaceGreeting.hello(hour, Settings.userName.ifBlank { null }) { com.blaze.assistant.i18n.tr(it) })
             Spacer(Modifier.height(10.dp))
             Text(tr("Ask anything. {0} answers, opens apps, taps and types for you, and checks with you before anything that matters.", BrandName.NAME),
                 style = com.blaze.assistant.ui.space.SpaceType.bodyText(look.sub))

@@ -200,7 +200,7 @@ fun ArgusComposer(
         BasicTextField(
             value = value, onValueChange = onValueChange,
             modifier = Modifier.weight(1f).heightIn(min = KitSpec.target(ShellSpec.Composer.PLUS).dp).padding(horizontal = 8.dp)
-                .semantics { contentDescription = placeholder.trimEnd('\u2026') },
+                .semantics { contentDescription = tr(placeholder).trimEnd('\u2026') },
             textStyle = ArgusType.field.copy(color = c.ink),
             cursorBrush = SolidColor(c.ink),
             maxLines = ShellSpec.Composer.MAX_LINES,
@@ -252,7 +252,7 @@ private fun ComposerDisc(icon: String, label: String, onClick: () -> Unit, ink: 
     val d = ShellSpec.Composer.PLUS.dp
     Box(
         Modifier.size(KitSpec.target(ShellSpec.Composer.PLUS).dp).kitCombinedClick(src, onClick, onLong)
-            .clearAndSetSemantics { contentDescription = label; role = Role.Button; onClick { onClick(); true } },
+            .clearAndSetSemantics { contentDescription = tr(label); role = Role.Button; onClick { onClick(); true } },
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.size(d).kitPress(src).then(if (ink) Modifier.clip(CircleShape).background(c.ink) else Modifier.argusGlass(GlassLevel.RAISED, CircleShape, shadow = false)),

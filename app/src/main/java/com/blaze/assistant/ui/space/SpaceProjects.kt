@@ -94,7 +94,7 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
             }
             Spacer(Modifier.height(6.dp))
         }
-        Text(SpaceProjectRows.INTRO, style = SpaceType.bodyText(look.sub))
+        Text(trBrand(SpaceProjectRows.INTRO), style = SpaceType.bodyText(look.sub))
         Spacer(Modifier.height(16.dp))
         SpaceCard {
             BlazeTextField(name, { name = it }, "New project name", modifier = Modifier.fillMaxWidth(),
@@ -112,10 +112,10 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
                     Spacer(Modifier.width(BlazeIconStyle.gap))
                     Column(Modifier.weight(1f)) {
                         Text(p.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.section(look.ink))
-                        Text(SpaceProjectRows.countLabel(SpaceProjectRows.count(p.chats, existing)), style = SpaceType.meta(look.sub))
+                        Text(SpaceProjectRows.count(p.chats, existing).let { n -> if (n == 1) tr("1 chat") else tr("{0} chats", n) }, style = SpaceType.meta(look.sub))
                     }
                     val chip = SpaceProjectRows.chip(status)
-                    if (chip.isNotEmpty()) StatusPill(chip, filled = status == SpaceProjectRows.Status.NEEDS_YOU)
+                    if (chip.isNotEmpty()) StatusPill(tr(chip), filled = status == SpaceProjectRows.Status.NEEDS_YOU)
                     else ChevronMark(look.ink)
                 }
             }

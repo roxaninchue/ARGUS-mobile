@@ -152,8 +152,9 @@ fun SpaceProfileScreen(
  */
 @Composable
 private fun ProfileRow(r: SpaceProfile.Row, showIcon: Boolean = true, chevron: Boolean = true, icon: ImageVector? = null, onClick: () -> Unit) {
-    SpaceRow(r.label, icon = if (showIcon) icon ?: r.icon.vector() else null, size = SpaceRowSize.LARGE, chevron = chevron,
-        tag = SpaceTags.profileRow(r.id), onClickLabel = r.label, onClick = onClick)
+    val label = trBrand(r.label)   // owner 2026-11-14: app language, at the point the row is drawn
+    SpaceRow(label, icon = if (showIcon) icon ?: r.icon.vector() else null, size = SpaceRowSize.LARGE, chevron = chevron,
+        tag = SpaceTags.profileRow(r.id), onClickLabel = label, onClick = onClick)
 }
 
 /** System Preferences: one grouped card of the pages it holds (appearance, language, voice, permissions, updates). */

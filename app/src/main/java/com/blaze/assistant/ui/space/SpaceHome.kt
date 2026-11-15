@@ -98,9 +98,9 @@ fun SpaceHomeScreen(
         for (card in cards) item(key = card.name) {
             when (card) {
                 SpaceHomeCards.Card.HERO -> SpaceCard(tag = SpaceTags.HERO) {
-                    SpaceHeadline(SpaceGreeting.hello(state.hour, state.name))
+                    SpaceHeadline(SpaceGreeting.hello(state.hour, state.name) { tr(it) })
                     Spacer(Modifier.height(8.dp))
-                    Text(SpaceGreeting.sub(state.working), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    Text(trBrand(SpaceGreeting.sub(state.working)), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         style = SpaceType.bodyText(look.sub))
                 }
                 SpaceHomeCards.Card.SIGN_IN -> SpaceCard(tag = SpaceTags.SIGN_IN) {
@@ -163,7 +163,7 @@ fun SpaceHomeScreen(
                     }
                     Spacer(Modifier.height(12.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SpaceGreeting.SUGGESTIONS.forEach { s -> SpaceChip(s, { onAsk(s) }) }
+                        SpaceGreeting.SUGGESTIONS.forEach { s -> SpaceChip(tr(s), { onAsk(tr(s)) }) }
                     }
                 }
                 SpaceHomeCards.Card.NEW_CHAT -> SpacePillButton(tr("New project"), onOpenProjects, plus = true, tag = SpaceTags.NEW_CHAT)

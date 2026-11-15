@@ -183,7 +183,7 @@ private fun Welcome(onStart: () -> Unit) {
         Spacer(Modifier.weight(0.9f))
         ArgusLogo(260.dp)
         Spacer(Modifier.height(28.dp))
-        Text(SpaceOnboarding.TAGLINE, textAlign = TextAlign.Center, style = SpaceType.headline(30.sp, look.ink))
+        Text(tr(SpaceOnboarding.TAGLINE), textAlign = TextAlign.Center, style = SpaceType.headline(30.sp, look.ink))
         Spacer(Modifier.height(12.dp))
         Text(tr("Your assistant for everything on this phone. Ready in a minute, nothing to set up."), textAlign = TextAlign.Center,
             style = SpaceType.body(16.sp, look.sub))
@@ -209,7 +209,7 @@ private fun SignIn(signedIn: Boolean, onNext: () -> Unit, accountCard: @Composab
             }
         }
         Spacer(Modifier.height(12.dp))
-        SpacePillButton(SpaceOnboarding.signInButton(signedIn), onNext, primary = signedIn)
+        SpacePillButton(tr(SpaceOnboarding.signInButton(signedIn)), onNext, primary = signedIn)
     }
 }
 
@@ -269,7 +269,7 @@ fun SpaceSetupScreen(setup: Map<String, SetupPlan.Status>, onContinue: () -> Uni
             }
         }
         Spacer(Modifier.height(12.dp))
-        SpacePillButton(SpaceOnboarding.setupButton(done), onContinue, primary = true, tag = SpaceTags.SETUP_CONTINUE)
+        SpacePillButton(trBrand(SpaceOnboarding.setupButton(done)), onContinue, primary = true, tag = SpaceTags.SETUP_CONTINUE)
     }
 }
 

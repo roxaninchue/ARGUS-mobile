@@ -252,6 +252,16 @@ fun SpaceCard(modifier: Modifier = Modifier, tag: String? = null, onClick: (() -
 }
 
 /** A card's serif headline ("hark can do more" in the reference). */
+/**
+ * Owner 2026-11-14 (app language): tr() for a model string that carries the brand ("Start using ARGUS"): its table key
+ * has {0} where the brand is ("Start using {0}"), so translations never touch the name.
+ */
+fun trBrand(s: String): String = when {
+    com.blaze.assistant.BrandName.UPPER in s -> com.blaze.assistant.i18n.tr(s.replace(com.blaze.assistant.BrandName.UPPER, "{0}"), com.blaze.assistant.BrandName.UPPER)
+    com.blaze.assistant.BrandName.NAME in s -> com.blaze.assistant.i18n.tr(s.replace(com.blaze.assistant.BrandName.NAME, "{0}"), com.blaze.assistant.BrandName.NAME)
+    else -> com.blaze.assistant.i18n.tr(s)
+}
+
 @Composable
 fun SpaceHeadline(text: String, modifier: Modifier = Modifier, size: TextUnit = SpaceTypeScale.DISPLAY.sp, color: Color = spaceLook().ink) {
     Text(text, modifier = modifier.semantics { heading() }, style = SpaceType.headline(size, color))

@@ -94,6 +94,8 @@ object LifeModel {
         val setupLeft: Int,
         val setupPercent: Int,
         val sections: List<Section>,
+        /** The day line's template, for the app language (null in older fixtures: [dayLine] is shown as is). */
+        val day: DayLine? = null,
     )
 
     // ---------------- day line ----------------
@@ -110,18 +112,35 @@ object LifeModel {
      * 04 §6.4 the day line, one serif sentence: "Thursday — three things today.", "Thursday — three things today, one still
      * ahead.", "Thursday — nothing left today." once all of them are over, "Thursday — nothing on today." with none.
      */
-    fun dayLine(date: LocalDate, items: List<ScheduleDay.Item>, now: LocalTime?): String {
-        val day = weekday(date)
+    fun dayLine(date: LocalDate, items: List<ScheduleDay.Item>, now: LocalTime?): String = english(dayLineOf(date, items, now))
+
+    /**
+     * Owner 2026-11-14 (app language): the day line as a template and its numbers, so the screen can show it through
+     * tr() ([dayLine] with a translator). {0} = the weekday, {1} = how many things, {2} = how many still ahead.
+     */
+    data class DayLine(val template: String, val day: java.time.DayOfWeek, val counts: List<Int>)
+
+    fun dayLineOf(date: LocalDate, items: List<ScheduleDay.Item>, now: LocalTime?): DayLine {
         val list = counted(items)
-        if (list.isEmpty()) return "$day \u2014 nothing on today."
+        val d = date.dayOfWeek
+        if (list.isEmpty()) return DayLine("{0} \u2014 nothing on today.", d, emptyList())
         val ahead = list.count { !it.passed(now) }
-        val things = if (list.size == 1) "one thing today" else "${count(list.size)} things today"
         return when {
-            ahead == 0 -> "$day \u2014 nothing left today."
-            ahead == list.size -> "$day \u2014 $things."
-            else -> "$day \u2014 $things, ${count(ahead)} still ahead."
+            ahead == 0 -> DayLine("{0} \u2014 nothing left today.", d, emptyList())
+            ahead == list.size -> if (list.size == 1) DayLine("{0} \u2014 one thing today.", d, emptyList())
+                else DayLine("{0} \u2014 {1} things today.", d, listOf(list.size))
+            else -> DayLine("{0} \u2014 {1} things today, {2} still ahead.", d, listOf(list.size, ahead))
         }
     }
+
+    private fun fillIn(t: String, args: List<String>): String { var s = t; args.forEachIndexed { i, a -> s = s.replace("{$i}", a) }; return s }
+
+    /** English: the weekday and the counts spelled out ("Thursday \u2014 three things today."). */
+    fun english(d: DayLine): String = fillIn(d.template, listOf(d.day.getDisplayName(TextStyle.FULL, Locale.ENGLISH)) + d.counts.map { count(it) })
+
+    /** Another app language: [t] translates the template (tr), the weekday in [locale], the counts as digits. */
+    fun dayLine(d: DayLine, locale: Locale, t: (String, Array<out Any?>) -> String): String =
+        t(d.template, (listOf<Any?>(d.day.getDisplayName(TextStyle.FULL, locale)) + d.counts.map { it.toString() }).toTypedArray())
 
     // ---------------- Today strip ----------------
 
@@ -203,6 +222,7 @@ object LifeModel {
         setupLeft = setupLeft.coerceAtLeast(0),
         setupPercent = setupPercent.coerceIn(0, 100),
         sections = sections(signedIn, setupLeft, board),
+        day = dayLineOf(date, items, now),
     )
 }
 

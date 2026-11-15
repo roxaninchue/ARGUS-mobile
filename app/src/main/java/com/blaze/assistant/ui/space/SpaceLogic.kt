@@ -188,10 +188,13 @@ object SpaceGreeting {
         else -> "Still up"
     }
 
-    /** "Good evening, Gaby" when a first name is known (only the first word of [name], never an e-mail). */
-    fun hello(hour: Int, name: String?): String {
+    /**
+     * "Good evening, Gaby" when a first name is known (only the first word of [name], never an e-mail). The screen passes
+     * [greet] = tr so the greeting follows the app language (owner 2026-11-14); the name is never translated.
+     */
+    fun hello(hour: Int, name: String?, greet: (String) -> String = { it }): String {
         val first = name.orEmpty().trim().substringBefore(' ').takeIf { it.isNotBlank() && '@' !in it && it.length <= 24 }
-        return if (first == null) hello(hour) else hello(hour) + ", " + first
+        return if (first == null) greet(hello(hour)) else greet(hello(hour)) + ", " + first
     }
 
     /** The local hour (0..23) at [epochMs] in [zone]: kept out of the composable so tests can pin it. */

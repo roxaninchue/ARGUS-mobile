@@ -130,7 +130,8 @@ fun LifeMode(
                     if (!fold.isFolded(LifeBoard.SECTION + "Calendar")) LifeCalendarCard(cal, nav.onOpenSchedule)
                 }
                 LifeModel.Section.DAY_LINE -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(state.dayLine, style = ArgusType.serifHello, color = c.ink,
+                    Text(state.day?.takeIf { com.blaze.assistant.i18n.AppLang.code.value != com.blaze.assistant.i18n.AppLang.DEFAULT }
+                        ?.let { LifeModel.dayLine(it, java.util.Locale.getDefault()) { s, a -> tr(s, *a) } } ?: state.dayLine, style = ArgusType.serifHello, color = c.ink,
                         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp).testTag(LifeTags.DAY).semantics { heading() })
                     LifeQuickAccess(nav.onConnect, nav.onApps)
                 }
@@ -141,7 +142,7 @@ fun LifeMode(
                     ArgusButton(tr("Sign in"), nav.onSignIn, kind = ButtonKind.PRIMARY, icon = "user")
                 }
                 LifeModel.Section.SETUP -> Box(Modifier.padding(horizontal = 12.dp).testTag(LifeTags.SETUP)) {
-                    ProgressLine("Finishing setup \u00b7 ${state.setupLeft} left", state.setupPercent / 100f, onClick = nav.onSetup)
+                    ProgressLine(tr("Finishing setup \u00b7 {0} left", state.setupLeft), state.setupPercent / 100f, onClick = nav.onSetup)
                 }
                 LifeModel.Section.TODAY -> TodayStripView(state.strip, nav.onOpenSchedule)
                 LifeModel.Section.DOMAINS -> DomainGrid(state.domains, nav.onSetUpLife)
@@ -192,7 +193,7 @@ private fun SectionHead(text: String, trailing: String? = null, onTrailing: (() 
 private fun TodayStripView(strip: LifeModel.TodayStrip, onOpen: () -> Unit) {
     val c = Argus.colors
     Column(Modifier.fillMaxWidth().testTag(LifeTags.TODAY)) {
-        LifeFoldHead("Today", LifeBoard.SECTION + "Today", "Schedule \u203a", onOpen)
+        LifeFoldHead("Today", LifeBoard.SECTION + "Today", tr("Schedule \u203a"), onOpen)
         if (!LocalLifeFold.current.isFolded(LifeBoard.SECTION + "Today")) Column(Modifier.padding(horizontal = 12.dp).fillMaxWidth().argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp))
             .clickable(role = Role.Button, onClickLabel = tr("Open Schedule"), onClick = onOpen).padding(vertical = 14.dp)) {
             BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(30.dp)) {
@@ -214,10 +215,10 @@ private fun TodayStripView(strip: LifeModel.TodayStrip, onOpen: () -> Unit) {
                 items(strip.allDay + strip.timed) { i ->
                     val glyph = when (i.kind) { "event" -> "calendar"; "alarm" -> "bell"; else -> "repeat" }
                     Row(Modifier.clip(RoundedCornerShape(ArgusTokens.Radius.PILL.dp)).background(c.soft).padding(horizontal = 10.dp, vertical = 6.dp)
-                        .semantics(mergeDescendants = true) { contentDescription = listOfNotNull(i.time ?: "All day", i.title, if (i.passed) "done" else null).joinToString(", ") },
+                        .semantics(mergeDescendants = true) { contentDescription = listOfNotNull(i.time ?: tr("All day"), i.title, if (i.passed) tr("done") else null).joinToString(", ") },
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Lucide.icon(glyph, 14), null, Modifier.size(14.dp), tint = if (i.passed) c.dim else c.mute)
-                        Text((i.time ?: "All day") + "  " + i.title, style = ArgusType.sub, color = if (i.passed) c.dim else c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text((i.time ?: tr("All day")) + "  " + i.title, style = ArgusType.sub, color = if (i.passed) c.dim else c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -230,23 +231,23 @@ private fun TodayStripView(strip: LifeModel.TodayStrip, onOpen: () -> Unit) {
 private fun DomainGrid(domains: List<LifeModel.DomainTile>, onTap: (LifeModel.DomainTile?) -> Unit) {
     val c = Argus.colors
     Column(Modifier.fillMaxWidth().testTag(LifeTags.DOMAINS)) {
-        LifeFoldHead("Your life", LifeBoard.SECTION + "Your life", LifeModel.SET_UP + " \u203a", onTrailing = { onTap(null) })
+        LifeFoldHead("Your life", LifeBoard.SECTION + "Your life", tr(LifeModel.SET_UP) + " \u203a", onTrailing = { onTap(null) })
         if (!LocalLifeFold.current.isFolded(LifeBoard.SECTION + "Your life")) Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             for (pair in domains.chunked(2)) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 for (d in pair) {
                     val hue = Color(d.color)
                     Column(Modifier.weight(1f).argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.CARD.dp), shadow = false)
-                        .clickable(role = Role.Button, onClickLabel = LifeModel.SET_UP) { onTap(d) }
-                        .semantics(mergeDescendants = true) { contentDescription = "${d.label}. ${d.line}" }
+                        .clickable(role = Role.Button, onClickLabel = tr(LifeModel.SET_UP)) { onTap(d) }
+                        .semantics(mergeDescendants = true) { contentDescription = "${tr(d.label)}. ${tr(d.line)}" }
                         .testTag(LifeTags.domain(d.key)).heightIn(min = 48.dp).padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(28.dp).clip(CircleShape).background(hue.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
                                 Icon(Lucide.icon(d.glyph, 16), null, Modifier.size(16.dp), tint = hue)
                             }
                             Spacer(Modifier.width(10.dp))
-                            Text(d.label, style = ArgusType.rowTitle, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(tr(d.label), style = ArgusType.rowTitle, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                        Text(d.line, style = ArgusType.sub, color = c.mute, maxLines = 2, modifier = Modifier.padding(top = 8.dp))
+                        Text(tr(d.line), style = ArgusType.sub, color = c.mute, maxLines = 2, modifier = Modifier.padding(top = 8.dp))
                     }
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
@@ -277,12 +278,12 @@ private fun Panels(weather: LifeModel.Weather?, answer: SpaceAnswer.Card?, asks:
         answer?.let { a ->
             LifeCard(onClick = nav.onOpenChat, label = tr("Open the answer in the chat")) {
                 Text(a.ask, style = ArgusType.meta, color = c.meta, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(if (a.text.isBlank()) "Working on it\u2026" else a.text, style = ArgusType.body, color = c.ink, maxLines = 6, overflow = TextOverflow.Ellipsis,
+                Text(if (a.text.isBlank()) tr("Working on it\u2026") else a.text, style = ArgusType.body, color = c.ink, maxLines = 6, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 6.dp).semantics { liveRegion = LiveRegionMode.Polite })
             }
         }
         FlowRow(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            asks.forEach { s -> ArgusButton(s, { nav.onAsk(s) }, size = ButtonSize.S) }
+            asks.forEach { s -> ArgusButton(s, { nav.onAsk(tr(s)) }, size = ButtonSize.S) }
         }
     }
 }

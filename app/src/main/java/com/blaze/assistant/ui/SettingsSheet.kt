@@ -100,8 +100,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
             androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(dark)) {
                 BackTitle("You", onBack = { onDismiss() }, modifier = Modifier.padding(vertical = 2.dp), right = { ThemeSwitch() })
                 com.blaze.assistant.ui.argus.settings.YouPage(
-                    name = com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName),
-                    email = com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null),
+                    name = com.blaze.assistant.ui.space.trBrand(com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName)),
+                    email = com.blaze.assistant.i18n.tr(com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null)),
                     signedIn = me != null,
                     planLine = ents?.let { com.blaze.assistant.connect.Billing.planName(it.plan) }.orEmpty(),
                     onPage = { page = it },
@@ -117,8 +117,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                 initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
                 onAvatar = { onDismiss() })
             com.blaze.assistant.ui.space.SpaceProfileScreen(
-                name = com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName),
-                email = com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null),
+                name = com.blaze.assistant.ui.space.trBrand(com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName)),
+                email = com.blaze.assistant.i18n.tr(com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null)),
                 signedIn = me != null,
                 planLine = ents?.let { com.blaze.assistant.connect.Billing.planName(it.plan) + " plan" }.orEmpty(),
                 onPage = { page = it },
