@@ -210,7 +210,7 @@ object ToolRouter {
         if (!enabled) return all
         // 0.53.4: a connected account's tools ride along like the browser does, so GitHub isn't read through the browser
         // just because the request didn't say "github" (only connected accounts' tools exist, so this stays small).
-        val accounts = try { if (com.blaze.assistant.connect.Connectors.connectedCount() > 0) setOf("apps") else emptySet() } catch (_: Throwable) { emptySet() }
+        val accounts: Set<String> = try { if (com.blaze.assistant.connect.Connectors.connectedCount() > 0) setOf("apps") else emptySet() } catch (_: Throwable) { emptySet() }
         val groupsOn = (if (harness) groupsOn0 + HARNESS else groupsOn0) + accounts
         val out = JSONArray()
         for (i in 0 until all.length()) {

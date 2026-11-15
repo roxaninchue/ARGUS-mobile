@@ -918,8 +918,9 @@ fun ChatScreen() {
                                 projectsCount = projects.size,
                                 projects = { projectsPane(true) })
                         },
-                        // no mode swipe while a view (Design), a sheet or the maximised chat owns the screen
-                        swipe = showing.isEmpty() && !ChatExpand.on && !plusOpen && !showViews)
+                        // 0.53.4 (owner): no swiping between screens at all; it fought scrolling through the chat. The notch,
+                        // the tabs and /team /chat /life /desk still switch modes (the pager scrolls by itself).
+                        swipe = false)
                 } else if (paneNow == "projects") {
                     projectsPane(false)
                 } else if (paneNow == "pchat") {

@@ -1,3 +1,10 @@
+## v0.53.4: search the whole phone, GitHub through your connection, import music and videos, no screen swiping (versionCode 196)
+
+- File searches see the whole phone: ARGUS asks for All files access (a card opens the right Android page), so Downloads, documents and other apps' folders no longer come back empty. When access is off, a search says so instead of looking empty.
+- GitHub through your connection: with GitHub connected, ARGUS reads your repos, files, commits, code and pull requests with your token (private repos included) instead of the browser or web search. GitHub links are read through the connection, and connected accounts' tools are always on hand.
+- Import in Music and Video: pick audio or video files from any folder (several at once, m4a, opus, flac, mkv and more). They play where they are, with no copy; names like "Artist - Title (Official Video)" are cleaned up, and Remove from library never deletes your file.
+- No more sliding between screens: swiping no longer switches modes, so scrolling the chat stays put. The notch, tabs and commands still switch.
+
 ## v0.53.3: Living view, turns that read like a conversation, searches that hold up (versionCode 195)
 
 - Living (Living UI 0.1.0): switch Chat | Living to watch a turn as a canvas: your prompt, browser reads, files, the steps log and the answer as cards, with a status pill and Next. Pan, pinch, fit, focus and follow.
