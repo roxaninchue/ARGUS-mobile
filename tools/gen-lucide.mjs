@@ -18,7 +18,9 @@ const LUCIDE_VERSION = '0.460.0';
 // 04 §2.7 key icon semantics: every one must exist in the output.
 export const REQUIRED = ['bot', 'message-circle', 'bell', 'plus', 'search', 'brain', 'scroll-text', 'cpu', 'blocks', 'monitor', 'repeat',
   'list-checks', 'library', 'shield-check', 'users', 'workflow', 'square-terminal', 'globe', 'cloud', 'mic', 'audio-lines', 'hand', 'flag',
-  'sparkles', 'heart-pulse', 'wallet', 'briefcase', 'house', 'graduation-cap', 'plane', 'palette', 'notebook-pen', 'smartphone'];
+  'sparkles', 'heart-pulse', 'wallet', 'briefcase', 'house', 'graduation-cap', 'plane', 'palette', 'notebook-pen', 'smartphone',
+  // the composer's + menu (owner 2026-11-15): Camera, Scan, Photos, Files, @ files, Plan mode
+  'camera', 'scan-text', 'image', 'paperclip', 'at-sign', 'lightbulb'];
 
 const n = s => {
   const v = Number(s);

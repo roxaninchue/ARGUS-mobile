@@ -1,3 +1,11 @@
+## Unreleased: the + menu opens out of the chat box
+
+Seen (owner, 2026-11-15 23:50): the + sheet "looks ugly and not a part of the whole page because it sits on top of the chatbox icons disconnected" (tiles cut to "Argus C…" and Files cut at the edge, the sheet over the composer, the Chat | Living switch and the model chip).
+
+- **+ menu inside the composer** (`ui/argus/kit/KitPlusMenu.kt` `ComposerPlusMenu`, `PlusMenuSpec`, `ArgusComposer(menu = …)`): with the ARGUS look the menu is no longer a sheet. The composer's own glass grows upward (same surface, same 29 dp corner, MotionTokens expand / collapse), the + turns 45° into ×, the model chip and the Chat | Living switch fold away while it is open, and the keyboard goes down. Tiles (Camera, **Scan** — was "Argus Camera" —, Photos, Files, Call) share the row's width: as many per row as their measured labels allow, wrapping into even rows on narrow phones or big fonts; labels never ellipsize. Rows (Paste image, Apps & connectors, Skills, @ files, Plan / Build, New chat) are compact Lucide rows; the menu is capped at half the screen (landscape too) and scrolls inside. Back, a tap on the thread above it, focusing the field, or a pick closes it. Every action runs from one handler (`plusPick`). The 0.52 shell (ARGUS look off) keeps its sheet. `plusItems` / `PlusItem` moved unchanged to `ui/PlusItems.kt`.
+- Lucide: camera, scan-text, image, paperclip, at-sign, lightbulb added (`tools/gen-lucide.mjs` REQUIRED; regenerated, deterministic).
+- Tests: `PlusMenuSpecTest` (5); `SpaceWiringTest` updated.
+
 ## Unreleased: pinned facts and pins are gone
 
 Owner (2026-11-15): "get rid of useless features".

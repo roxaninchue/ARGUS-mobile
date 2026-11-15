@@ -605,37 +605,9 @@ fun TaskChip(text: String) {
 // ---------------------------------------------------------------- composer
 
 /**
- * What the + menu offers. [id] is handled by the screen. [tile] rows are the big buttons in the sheet's top strip
- * (Camera, Photos, Files, Call…); the rest are list rows under it.
- */
-data class PlusItem(val id: String, val label: String, val sub: String = "", val on: Boolean = false, val tile: Boolean = false)
-
-/**
- * Owner 2026-11-15 (Kimi-style + sheet): a strip of big tiles for what you attach or start, then a short list of rows.
- * No Voice row (the composer's mic is the voice button), no Views row and no Clear screen (removed everywhere).
- */
-fun plusItems(work: String, approval: String, model: String, hasClipImage: Boolean, inProject: Boolean = false, hasCamera: Boolean = true): List<PlusItem> = buildList {
-    // v0.28.x: camera entries only when the phone really has a camera (PackageManager.FEATURE_CAMERA_ANY).
-    if (hasCamera) {
-        add(PlusItem("camera", "Camera", "Take a photo", tile = true))
-        add(PlusItem("blazecam", "${BrandName.NAME} Camera", "Ask, read text, translate, scan", tile = true))
-    }
-    add(PlusItem("photos", "Photos", "Pick pictures", tile = true))
-    add(PlusItem("files", "Files", "Photos, PDFs, text", tile = true))
-    add(PlusItem("call", "Call", "Hands-free voice call with ${BrandName.NAME}", tile = true))
-    if (hasClipImage) add(PlusItem("paste", "Paste image", "The picture on your clipboard"))
-    add(PlusItem("apps", "Apps & connectors", "Connect apps so ${BrandName.NAME} can act in them"))
-    add(PlusItem("skills", "Skills", "Reusable skills for specific tasks"))
-    add(PlusItem("atfile", "@ files", "Mention a file from ${BrandName.NAME}'s home"))
-    add(PlusItem("plan", if (work == "plan") "Plan mode" else "Build mode", if (work == "plan") "Read and look only \u00b7 tap for Build" else "Full access \u00b7 tap for Plan", on = work == "plan"))
-    // Unreleased (owner): no Auto / Autopilot row; ARGUS is always on Autopilot.
-    // v0.25.0: no Model row; Blaze Cloud picks the model for every message.
-    if (inProject) add(PlusItem("new", "New chat", "A new thread in this project"))
-}
-
-/**
- * Owner 2026-11-15: the + menu is a bottom sheet over the whole screen (Kimi-style), so it never pushes the chatbox up or
- * sits over the Chat | Living switch. Tiles first, then rows with a chevron. Picking closes it.
+ * The 0.52 shell's + menu (the ARGUS look off): a bottom sheet over the whole screen. Tiles first, then rows with a chevron.
+ * Picking closes it. With the ARGUS look on (owner 2026-11-15) the + menu instead grows out of the composer itself
+ * ([com.blaze.assistant.ui.argus.kit.ComposerPlusMenu] inside ArgusComposer), never as a sheet over it.
  */
 @Composable
 fun PlusMenu(items: List<PlusItem>, onDismiss: () -> Unit, onPick: (String) -> Unit) {

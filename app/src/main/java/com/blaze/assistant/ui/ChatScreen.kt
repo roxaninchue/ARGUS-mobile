@@ -712,6 +712,25 @@ fun ChatScreen() {
         )
     }
     ArgusShellLocals(argus, c.dark) {
+    // The + menu's entries and what a pick does (the composer's own menu with the ARGUS look, the sheet without it).
+    fun plusEntries(): List<PlusItem> = plusItems(work, approval, "", clipHasImage, nav.inProjectChat, hasCamera)
+        .filter { com.blaze.assistant.agent.SimpleMode.plusVisible(it.id, simpleMode) }
+    fun plusPick(id: String) {
+        when (id) {
+            "camera" -> cameraCapture.open()
+            "blazecam" -> if (!com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
+                Toast.makeText(ctx, "${BrandName.NAME} Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
+            "photos" -> photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            "files" -> files.launch(arrayOf("*/*"))
+            "atfile" -> { val t = input.text.let { if (it.isEmpty() || it.endsWith(" ")) it else "$it " } + "@"; input = TextFieldValue(t, TextRange(t.length)) }
+            "paste" -> pasteImage()
+            "call" -> startCall()
+            "apps" -> settingsPage = "connections"
+            "skills" -> settingsPage = "skills"
+            "plan" -> com.blaze.assistant.agent.Modes.toggleWork()
+            "new" -> newProjectChat(navNow().project)
+        }
+    }
     Box(Modifier.fillMaxSize().testTag(com.blaze.assistant.ui.space.SpaceTags.ROOT).onSizeChanged { sheetH = it.height.toFloat() }) {
         // 0.52.3: the space view (dark) or the light ARGUS ground behind every tab. Not while the first-run onboarding is up:
         // it draws its own opaque space view over everything, so a second full-screen backdrop (and image draw) under it
@@ -954,6 +973,9 @@ fun ChatScreen() {
                 if (chatBody) UndoCountdownBar(onUndone = { line -> Agent.note(line) })
                 // Dim the chat while a sheet (/views, the arc) is open (the + sheet brings its own scrim), so half-cut lines at its edge read as background.
                 if (chatBody && viewShowing.isEmpty() && (showViews || arcOpen)) SheetScrim { showViews = false; arcOpen = false }
+                // Owner 2026-11-15: a tap anywhere above the opened chat box closes its + menu (no dimming: it is part of the page).
+                if (argus && plusOpen) Box(Modifier.matchParentSize().testTag(com.blaze.assistant.ui.argus.kit.PlusMenuSpec.SCRIM_TAG)
+                    .clickable(remember { MutableInteractionSource() }, indication = null) { plusOpen = false })
             }
             if (chatBody && viewShowing.isEmpty()) {
                 if (voiceState == Voice.State.LISTENING) ListeningStrip(onStop = { Voice.stopByTap() })
@@ -1024,13 +1046,16 @@ fun ChatScreen() {
                     ViewsSheet(badges, onPick = { openView(it) }, onDismiss = { showViews = false })
                 }
                 if (showViews) BackHandler { showViews = false }
-                // Owner 2026-11-15: the + menu is a sheet over the whole screen (drawn after the drawer, below), never in this column.
+                // Owner 2026-11-15: with the ARGUS look the + menu opens inside the composer below (ArgusComposer menu = ComposerPlusMenu).
                 // v0.24.6: pictures straight from the keyboard (Samsung clipboard, GIFs, stickers) attach like picked photos.
                 // 0.52.3: always the composer pill (Simple mode's big hold-to-talk bar is gone with the old chat look).
                 // v0.43.0: who the next message goes to (@blaze / @halo / @all), picked on the arc from the header orb.
                 // 0.51.0 one persona: the Blaze / Halo arc is gone (there is only Blaze).
                 if (arcOpen) BackHandler { arcOpen = false }
-                if (argus && !landRail && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages) com.blaze.assistant.ui.living.LivingSwitch()
+                // Owner 2026-11-15: the switch folds away while the + menu is open, so nothing sits over the opened chat box.
+                if (argus && !landRail && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages)
+                    androidx.compose.animation.AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.blaze.assistant.ui.living.LivingSwitch() }
+                if (argus && plusOpen) BackHandler { plusOpen = false }
                 // 0.46.0: the reply bar folded into a floating pill by the Stage (never gone): tap for the full bar.
                 if (stageActive && stage.reply == com.blaze.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     StageReplyPill { com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.SetChrome(reply = com.blaze.assistant.stage.ReplyBar.FULL)) }
@@ -1043,6 +1068,8 @@ fun ChatScreen() {
                 if (argus) com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
                     mode = if (nav.inProjectChat) ChatNav.CHAT else nav.tab, streaming = mood != Mood.IDLE, attachments = pending.size,
                     onPlus = { plusOpen = !plusOpen; showViews = false; notchOpen = false }, plusOpen = plusOpen,
+                    // Owner 2026-11-15: the + menu grows out of this chat box (same glass), never a sheet over it
+                    menu = { com.blaze.assistant.ui.argus.kit.ComposerPlusMenu(plusEntries(), onPick = { id -> plusOpen = false; plusPick(id) }) },
                     // P1-TM-06: from Team the router decides (a job or a hand-off stays on Team; conversation opens Chat)
                     onSend = { val t = input.text; send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && navNow().tab != ChatNav.TEAM && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
                     onMic = { onMic() }, onStop = { Agent.stop() },
@@ -1112,25 +1139,9 @@ fun ChatScreen() {
             com.blaze.assistant.ui.argus.kit.MenuRow("lock", tr("Private chat"), { newOpen = false; Agent.enterPrivate(); go(navNow().switchTab(ChatNav.CHAT)) }, sub = tr("Nothing here is saved or learned"))
         }
 
-        // Owner 2026-11-15 (Kimi-style): the + menu as a bottom sheet over everything, so the chatbox and the
-        // Chat | Living switch stay where they are. Voice, Views and Clear screen are gone from it.
-        if (plusOpen) PlusMenu(plusItems(work, approval, "", clipHasImage, nav.inProjectChat, hasCamera).filter { com.blaze.assistant.agent.SimpleMode.plusVisible(it.id, simpleMode) },
-            onDismiss = { plusOpen = false }) { id ->
-            when (id) {
-                "camera" -> cameraCapture.open()
-                "blazecam" -> if (!com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
-                    Toast.makeText(ctx, "${BrandName.NAME} Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
-                "photos" -> photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                "files" -> files.launch(arrayOf("*/*"))
-                "atfile" -> { val t = input.text.let { if (it.isEmpty() || it.endsWith(" ")) it else "$it " } + "@"; input = TextFieldValue(t, TextRange(t.length)) }
-                "paste" -> pasteImage()
-                "call" -> startCall()
-                "apps" -> settingsPage = "connections"
-                "skills" -> settingsPage = "skills"
-                "plan" -> com.blaze.assistant.agent.Modes.toggleWork()
-                "new" -> newProjectChat(navNow().project)
-            }
-        }
+        // The 0.52 shell (ARGUS look off) keeps the + bottom sheet; with the ARGUS look the + menu grows out of the composer
+        // (owner 2026-11-15: the sheet "sits on top of the chatbox icons disconnected"), see ArgusComposer's menu above.
+        if (plusOpen && !argus) PlusMenu(plusEntries(), onDismiss = { plusOpen = false }) { id -> plusPick(id) }
 
         // P1-TM-04: the bot editor (Describe it sends the draft request to ARGUS and opens Chat), and the Delete / Keep
         // sheet while agent_delete waits for the user's answer (a yes typed in the chat works too).

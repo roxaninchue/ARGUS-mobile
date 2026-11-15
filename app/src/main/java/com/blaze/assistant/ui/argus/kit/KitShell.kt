@@ -48,6 +48,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -166,6 +168,10 @@ fun NotchSwitcher(
  * P1-SH-01 `Composer` (04 §2.8 #3, AT `.cmd`): 58 dp glass pill, `[+]` 42 dp disc, 16 sp field growing to 5 lines then
  * scrolling, and mic → send ↑ → stop ■ ([ShellSpec.Composer.trailing]). Hold the mic = push-to-talk ([onMicHold]),
  * tap = [onMic]. Sits above the keyboard (the caller's column carries imePadding), so the thread never jumps.
+ *
+ * Owner 2026-11-15: with [plusOpen] the + [menu] ([ComposerPlusMenu]) grows out of this same glass above the field row
+ * (MotionTokens expand / collapse), the + turns 45° into ×, the [top] row (the model chip) folds away so it
+ * can't sit over the menu, and the keyboard goes down; focusing the field closes the menu again ([PlusMenuSpec]).
  */
 @Composable
 fun ArgusComposer(
@@ -182,6 +188,7 @@ fun ArgusComposer(
     plusOpen: Boolean = false,
     onMicHold: (() -> Unit)? = null,
     top: (@Composable () -> Unit)? = null,
+    menu: (@Composable () -> Unit)? = null,
 ) {
     val c = Argus.colors
     val t = ShellSpec.Composer.trailing(value.text, attachments, streaming)
@@ -193,13 +200,22 @@ fun ArgusComposer(
         modifier.fillMaxWidth().padding(horizontal = ShellSpec.Composer.SIDE.dp, vertical = 6.dp)
             .heightIn(min = ShellSpec.Composer.HEIGHT.dp).argusGlass(GlassLevel.CHROME, shape).padding(horizontal = 4.dp, vertical = 4.dp),
     ) {
-    if (top != null) Box(Modifier.padding(start = 8.dp)) { top() }
+    val menuOpen = plusOpen && menu != null
+    if (menu != null) AnimatedVisibility(menuOpen, enter = com.blaze.assistant.ui.MotionTokens.expand(), exit = com.blaze.assistant.ui.MotionTokens.collapse()) { menu() }
+    if (top != null) AnimatedVisibility(!menuOpen, enter = com.blaze.assistant.ui.MotionTokens.expand(), exit = com.blaze.assistant.ui.MotionTokens.collapse()) {
+        Box(Modifier.padding(start = 8.dp)) { top() }
+    }
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
+    val turn by androidx.compose.animation.core.animateFloatAsState(if (plusOpen) PlusMenuSpec.PLUS_TURN else 0f,
+        com.blaze.assistant.ui.MotionTokens.medium(), label = "plusTurn")
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        ComposerDisc(if (plusOpen) "x" else "plus", if (plusOpen) KitA11y.Shell.PLUS_CLOSE else KitA11y.Shell.PLUS, onPlus, ink = false)
+        ComposerDisc(if (menu != null) "plus" else if (plusOpen) "x" else "plus", if (plusOpen) KitA11y.Shell.PLUS_CLOSE else KitA11y.Shell.PLUS,
+            { if (!plusOpen && menu != null) focus.clearFocus(); onPlus() }, ink = false, rotation = if (menu != null) turn else 0f)
         val placeholder = ShellSpec.Composer.placeholder(mode)
         BasicTextField(
             value = value, onValueChange = onValueChange,
             modifier = Modifier.weight(1f).heightIn(min = KitSpec.target(ShellSpec.Composer.PLUS).dp).padding(horizontal = 8.dp)
+                .onFocusChanged { if (it.isFocused && menuOpen) onPlus() }   // typing closes the + menu
                 .semantics { contentDescription = tr(placeholder).trimEnd('\u2026') },
             textStyle = ArgusType.field.copy(color = c.ink),
             cursorBrush = SolidColor(c.ink),
@@ -246,7 +262,7 @@ private fun ComposerHint(placeholder: String, rotate: Boolean) {
 }
 
 @Composable
-private fun ComposerDisc(icon: String, label: String, onClick: () -> Unit, ink: Boolean, onLong: (() -> Unit)? = null) {
+private fun ComposerDisc(icon: String, label: String, onClick: () -> Unit, ink: Boolean, onLong: (() -> Unit)? = null, rotation: Float = 0f) {
     val c = Argus.colors
     val src = remember { MutableInteractionSource() }
     val d = ShellSpec.Composer.PLUS.dp
@@ -257,7 +273,7 @@ private fun ComposerDisc(icon: String, label: String, onClick: () -> Unit, ink: 
     ) {
         Box(Modifier.size(d).kitPress(src).then(if (ink) Modifier.clip(CircleShape).background(c.ink) else Modifier.argusGlass(GlassLevel.RAISED, CircleShape, shadow = false)),
             contentAlignment = Alignment.Center) {
-            Icon(Lucide.icon(icon, KitSpec.IconButton.ICON), null, Modifier.size(KitSpec.IconButton.ICON.dp), tint = if (ink) c.onInk else c.ink)
+            Icon(Lucide.icon(icon, KitSpec.IconButton.ICON), null, Modifier.size(KitSpec.IconButton.ICON.dp).rotate(rotation), tint = if (ink) c.onInk else c.ink)
         }
     }
 }
