@@ -1584,12 +1584,13 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
     val entryClip = LocalClipboardManager.current
     val bubbleTime = remember(m.at, pos) { if (pos.ends) BubbleDays.time(m.at) else "" }
     CompositionLocalProvider(LocalBubbleTime provides bubbleTime,
-        LocalBubbleMenu provides (if (m.role == Role.USER || m.role == Role.BLAZE || m.role == Role.ERROR) ({ menu.value = true }) else null)) {
+        LocalBubbleMenu provides (if (m.role == Role.USER || m.role == Role.ERROR) ({ menu.value = true }) else null)) {
+    // Owner 2026-11-15: a long-press on a reply shows only the text-selection pill (Copy, Quote, Select all, Search), not the menu column too.
     BubbleMenu(menu.value, buildList<Pair<String, (() -> Unit)?>> {
         add("Copy" to { entryClip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(entryCtx, "Copied", Toast.LENGTH_SHORT).show() })
         if (m.role != Role.ERROR) add("Quote" to { onQuote(if (m.role == Role.BLAZE) com.blaze.assistant.agent.ToolLeak.forDisplay(m.text) else splitQuote(m.text).second) })
         add("Retry" to (if (canAct) ({ Agent.retry(m.id) }) else null))
-        if (m.role == Role.BLAZE && !live) add("React \uD83D\uDC4D" to { reactNow(entryCtx, m, Reactions.DOUBLE_TAP) })
+        // Owner 2026-11-15: no reactions (no React item, no double-tap, no emoji chips or picker).
         // Unreleased after 0.52.3: pin this message's words as a fact Argus keeps in every chat (PinnedStore).
         if ((m.role == Role.BLAZE || m.role == Role.USER) && !live) add("Pin" to { pinNow(entryCtx, m) })
     }) { menu.value = false }
@@ -1604,9 +1605,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
         Role.BLAZE -> if (m.meta == com.blaze.assistant.update.Updater.CARD) UpdateCard()
         else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) Unit   // 0.52.1: agents show only in the one TaskPill
         else if (m.meta.startsWith(com.blaze.assistant.agent.Duo.ROOM_CARD)) RoomCard(m)   // v0.32.0 meeting room
-        else SwipeToQuote(true, onQuote = { onQuote(com.blaze.assistant.agent.ToolLeak.forDisplay(m.text)) }) { Column(Modifier.fillMaxWidth()
-            // v0.45.0 reactions: double-tap a finished reply for 👍 (taps, long-press and swipes still reach the bubble).
-            .doubleTapToReact(!live) { reactNow(entryCtx, m, Reactions.DOUBLE_TAP) }) {
+        else SwipeToQuote(true, onQuote = { onQuote(com.blaze.assistant.agent.ToolLeak.forDisplay(m.text)) }) { Column(Modifier.fillMaxWidth()) {
             // v0.31.0: no "Thought it through · 4 s" line; the droplet was the status while it thought.
             // v0.28.3: old saved replies may hold raw leaked tool syntax; it's hidden when drawn too.
             val shown = remember(m.text, live) { ParseMemo.memo(ParseMemo.bubble, m.text, live) { com.blaze.assistant.agent.ToolLeak.bubbleText(m.text) } }
@@ -1645,7 +1644,6 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
             if (showActs || followups.isNotEmpty()) Actions(m, Side.BLAZE, "", canAct, onQuote, allowQuote = true,
                 orbSlot = if (hadLive) ({ co -> tracker.aimRest(co) }) else null, reactable = !live)
             else {
-                if (!live && m.reactions.isNotEmpty()) { val rc = LocalContext.current; ReactionChips(m.reactions, mine = false) { e -> reactNow(rc, m, e) } }
                 if (com.blaze.assistant.agent.ReplyChips.shown(m.meta).isNotBlank()) Actions(m, Side.BLAZE, "", canAct, onQuote, allowQuote = true, chipOnly = true)
             }
             if (followups.isNotEmpty()) Followups(followups, onFollowup)
@@ -1691,9 +1689,6 @@ private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, o
     val clip = LocalClipboardManager.current
     val ctx = LocalContext.current
     val showTrace = remember(m.id) { mutableStateOf(false) }
-    val picker = remember(m.id) { mutableStateOf(false) }
-    // v0.45.0 reactions: under the reply, then "React" in the footer opens the small picker.
-    if (reactable && !chipOnly && m.reactions.isNotEmpty()) ReactionChips(m.reactions, mine = side == Side.ME) { e -> reactNow(ctx, m, e) }
     val usedUp = m.meta.startsWith("usedup:")
     // v0.24.4: technical parts of the chip (timings, data, model ids) are hidden unless Show technical details is on.
     val chip = if (usedUp) "" else com.blaze.assistant.agent.ReplyChips.shown(m.meta)
@@ -1701,19 +1696,17 @@ private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, o
     if (chipOnly) { MetaLine(side, "", emptyList(), chip, chip.startsWith("⚡")); HeadsUpWhy(m.meta); return }
     val acts = buildList<Pair<String, (() -> Unit)?>> {
         add("Copy" to { clip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() })
-        if (allowQuote) add("Quote" to { onQuote(m.text) })
+        // Owner 2026-11-15: no Quote icon under replies (long-press menu and swipe still quote).
         add("Retry" to (if (canAct) ({ Agent.retry(m.id) }) else null))
         // 0.53.2: no "What I did" button or sheet (owner, 14 Nov 2026: "remove the what I did cards"). Receipts are still
         // stored with the reply; the live tool rows (Show tool steps) are where steps show.
         // v0.45.5 (#1): "What happened": model, route, tools, timings, errors, request id. 0.45.19: never shown to users
         // (which model replied is never shown); developers only, behind DevFlags.modelInfo (off by default, debug builds).
         if (m.role == Role.BLAZE && m.trace.isNotBlank() && com.blaze.assistant.agent.DevFlags.modelInfo()) add("What happened" to { showTrace.value = true })
-        if (reactable && m.role == Role.BLAZE) add("React" to { picker.value = true })
     }
     MetaLine(side, time, acts, chip, chip.startsWith("⚡"), orbSlot = orbSlot)
     HeadsUpWhy(m.meta)
     if (showTrace.value && com.blaze.assistant.agent.DevFlags.modelInfo()) TraceDialog(m.trace) { showTrace.value = false }
-    if (picker.value) ReactionPicker(m.reactions, onPick = { e -> picker.value = false; reactNow(ctx, m, e) }, onDismiss = { picker.value = false })
 }
 
 /** Unreleased after 0.52.3: the small "Why?" under a heads-up; a tap shows what set it off (ProactiveDial.whyOf). */
