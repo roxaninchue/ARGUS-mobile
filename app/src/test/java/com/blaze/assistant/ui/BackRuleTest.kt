@@ -173,8 +173,8 @@ class BackRuleTest {
         assertEquals("life", BackRule.front(BackRule.shellFor(Views.find("home")!!, a)!!))
         // ChatScreen: Back with nothing over a mode lands on Team in the ARGUS shell
         val btc = src("ui/ChatScreen.kt").substringAfter("fun backToChat() {").substringBefore("\n    }\n")
-        assertTrue(btc.contains("if (argus) go(n.switchTab(ChatNav.TEAM))"))
+        assertTrue(btc.contains("go(n.switchTab(ChatNav.TEAM))") && !btc.contains("ChatNav.HOME"))
         assertTrue(btc.contains("notchOpen = false; newOpen = false"))
-        assertTrue(src("ui/ChatScreen.kt").contains("homeRoot = !Agent.privateChat.value, argus = argus)"))
+        assertTrue(src("ui/ChatScreen.kt").contains("homeRoot = !Agent.privateChat.value, argus = true)"))
     }
 }

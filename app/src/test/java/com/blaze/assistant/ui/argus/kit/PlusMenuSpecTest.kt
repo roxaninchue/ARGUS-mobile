@@ -90,8 +90,8 @@ class PlusMenuSpecTest {
 
         val screen = src("ui/ChatScreen.kt")
         assertTrue("the ARGUS composer gets the menu", "menu = { com.blaze.assistant.ui.argus.kit.ComposerPlusMenu(plusEntries(), onPick = { id -> plusOpen = false; plusPick(id) }) }" in screen)
-        assertTrue("no sheet over the ARGUS composer", "if (plusOpen && !argus) PlusMenu(" in screen)
-        assertTrue("Back closes it", "if (argus && plusOpen) BackHandler { plusOpen = false }" in screen)
+        assertTrue("no sheet over the ARGUS composer", "PlusMenu(plusEntries()" !in screen)
+        assertTrue("Back closes it", "if (plusOpen) BackHandler { plusOpen = false }" in screen)
         assertTrue("a tap outside closes it", "PlusMenuSpec.SCRIM_TAG" in screen && "indication = null) { plusOpen = false }" in screen)
         assertTrue("the Chat | Living switch folds away", "AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.blaze.assistant.ui.living.LivingSwitch() }" in screen)
         // every action still runs from the one handler

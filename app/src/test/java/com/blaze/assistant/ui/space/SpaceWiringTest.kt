@@ -72,14 +72,13 @@ class SpaceWiringTest {
 
     @Test fun theShellIsTheSpaceViewWithHarksTopBar() {
         assertTrue("testTag(${S}SpaceTags.ROOT)" in chat)
-        assertTrue("${S}SpaceBackdrop()" in chat)
-        val bar = after(chat, "${S}SpaceTopBar(tab = shellMode,", 2_200)
-        assertTrue("the pill switches tabs", "go(navNow().switchTab(m))" in bar)
-        assertTrue("the menu button opens the projects list", "${S}SpaceTabs.Left.MENU -> go(navNow().projectsList())" in bar)
-        assertTrue("+ and search open Spotlight", "composer.openSpotlight()" in bar)
-        assertTrue("the avatar opens the profile page", "onAvatar = { settingsPage = \"\" }" in bar)
+        // ARGUS-only (16 Nov 2026): the ARGUS ground and top bar; the 0.52 SpaceBackdrop / SpaceTopBar are gone from the shell
+        assertTrue("if (!onboard) com.blaze.assistant.ui.argus.ArgusGround {}" in chat && "${S}SpaceTopBar(" !in chat)
+        val bar = after(chat, "com.blaze.assistant.ui.argus.kit.ArgusTopBar(", 1_400)
+        assertTrue("search opens Spotlight", "composer.openSpotlight()" in bar)
+        assertTrue("me opens the You page", "onMe = { notchOpen = false; settingsPage = \"\" }" in bar)
         assertTrue("long-press = light / dark", "LightDark.toggle(c.dark)" in bar)
-        assertTrue("private chats show the Private pill", "privateChat = isPrivate" in bar)
+        assertTrue("private chats show the way out", "if (isPrivate && !designFull" in chat)
         // Spotlight sits over everything, fed the phone's apps and what was said
         val spot = after(chat, "${S}SpaceSpotlightLayer(composer", 700)
         assertTrue("InstalledApps.all(ctx)" in spot && "SpotlightGroups.Said(" in spot)
@@ -112,8 +111,8 @@ class SpaceWiringTest {
 
     @Test fun everyRouteHomeAndBackLandOnTheHomeTab() {
         val homeReq = after(chat, "LaunchedEffect(homeReq)", 1_200)
-        // P1-SH-01: the Home board is Life's page in the ARGUS shell, the Home tab with argus_look off
-        assertTrue("go(navNow().switchTab(if (argus) ChatNav.LIFE else ChatNav.HOME))" in homeReq)
+        // P1-SH-01: the Home board is Life's page (the only shell since 16 Nov 2026)
+        assertTrue("go(navNow().switchTab(ChatNav.LIFE))" in homeReq)
         assertTrue("views and pages close on the way home", "settingsPage = null" in homeReq && "Views.showing.value = \"\"" in homeReq && "composer.closeSpotlight()" in homeReq)
         assertTrue("open_view home / /home", "\"home\" -> homeRequests.value++" in chat)
         val m = src("MainActivity.kt")
@@ -122,7 +121,7 @@ class SpaceWiringTest {
         val back = chat.substringAfter("fun backToChat() {").substringBefore("\n    }\n")
         // P1-SH-01: with nothing over the tab, Back goes Home in the 0.52 shell and to Team (the root) in the ARGUS shell
         assertTrue("with nothing over the tab, Back goes Home", "else if (!Agent.privateChat.value) {" in back)
-        assertTrue("if (argus) go(n.switchTab(ChatNav.TEAM)) else go(n.switchTab(ChatNav.HOME))" in back)
+        assertTrue("go(n.switchTab(ChatNav.TEAM))" in back && "ChatNav.HOME" !in back)
         assertTrue("projects step back inside Projects first", "up.tab == ChatNav.PROJECTS) go(up)" in back)
         val shell = after(chat, "BackRule.shellNow = {\n", 1_200)
         assertTrue("homeRoot = !Agent.privateChat.value" in shell)
@@ -210,7 +209,7 @@ class SpaceWiringTest {
         // only the 0.52 shell keeps the sheet.
         val screen = src("ui/ChatScreen.kt")
         assertTrue("the + menu opens inside the ARGUS composer", "menu = { com.blaze.assistant.ui.argus.kit.ComposerPlusMenu(" in screen)
-        assertTrue("the + sheet is only the 0.52 shell's", "if (plusOpen && !argus) PlusMenu(" in screen)
+        assertTrue("no + sheet (ARGUS-only)", "PlusMenu(plusEntries()" !in screen)
         for (strip in listOf("private fun QuoteStrip(", "internal fun SuggestionList(", "private fun ListeningStrip("))
             assertTrue("$strip floats", ".composerPanel(" in chat.substringAfter(strip).substringBefore("\n}\n"))
         val header = shell.substringAfter("fun ProjectChatHeader(").substringBefore("\n}\n")

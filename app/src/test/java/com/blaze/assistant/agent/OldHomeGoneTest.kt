@@ -57,7 +57,7 @@ class OldHomeGoneTest {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
         val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
         assertTrue("navShown.tab == ChatNav.HOME -> \"home\"" in chat)
-        assertTrue("ChatNav(tab = ChatNav.rootTab(argus))" in chat)
+        assertTrue("ARGUS-only: the shell starts on Team", "ChatNav(tab = ChatNav.TEAM)" in chat)
         val direct = Regex("""ChatNav\(\s*(tab\s*=\s*)?(ChatNav\.)?HOME\b|copy\(\s*tab\s*=\s*(ChatNav\.)?HOME\b|ChatNav\(\s*"home"""")
         val hits = root.walkTopDown().filter { it.isFile && it.name.endsWith(".kt") }
             .filter { direct.containsMatchIn(it.readText()) }.map { it.name }.toList()

@@ -59,8 +59,8 @@ class ThemeEverywhereTest {
         assertEquals("Appearance", com.blaze.assistant.ui.space.SpaceSettings.SYSTEM_ROWS.toMap()["look"])
         assertEquals(com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE, com.blaze.assistant.ui.space.SpaceSettings.parentOf("look"))
         assertTrue("\"look\" -> LookPage()" in src("ui/SettingsSheet.kt"))
-        assertTrue("onAvatar = { settingsPage = \"\" }" in src("ui/ChatScreen.kt"))
-        assertTrue("LightDark.toggle(c.dark)" in src("ui/ChatScreen.kt") && "onAvatarLong" in src("ui/space/SpaceTopBar.kt"))
+        assertTrue("onMe = { notchOpen = false; settingsPage = \"\" }" in src("ui/ChatScreen.kt"))
+        assertTrue("LightDark.toggle(c.dark)" in src("ui/ChatScreen.kt") && "onMeLong" in src("ui/ChatScreen.kt"))
         assertTrue("themeMenu()" in src("terminal/BlazeTerminalActivity.kt"))
         // Every switcher writes through ThemeMode.
         assertTrue("AppTheme.toggle()" in src("ui/AppTheme.kt") && "ThemeMode.set(m)" in src("ui/AppTheme.kt"))

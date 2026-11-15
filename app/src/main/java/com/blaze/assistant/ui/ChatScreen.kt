@@ -347,10 +347,8 @@ fun ChatScreen() {
     // Main Chat always shows the main thread; project chats open inside Projects and never replace it.
     // v0.29.0: Home joins the pill; the last tab (Home or Chat) is remembered, Chat on first run.
     // 0.52.3 (Hark design): the app opens on Home (Home | Chat | Projects in the top bar's pill).
-    // P1-SH-01: the ARGUS shell (Team · Chat · Life · Desk) behind `argus_look` (on by default); off = the 0.52 shell below.
-    // Read once per screen: switching it applies the next time the app opens.
-    val argus = remember { com.blaze.assistant.ui.argus.Argus.lookOn() }
-    var navS by rememberSaveable { mutableStateOf(ChatNav(tab = ChatNav.rootTab(argus)).encode()) }
+    // P1-SH-01: the ARGUS shell (Team · Chat · Life · Desk), the only shell since 16 Nov 2026 (the look switch is gone).
+    var navS by rememberSaveable { mutableStateOf(ChatNav(tab = ChatNav.TEAM).encode()) }
     val nav = ChatNav.decode(navS)
     fun navNow(): ChatNav = ChatNav.decode(navS)
     fun go(n: ChatNav) { navS = n.encode() }
@@ -426,7 +424,7 @@ fun ChatScreen() {
             if (cmdName == "search") { input = TextFieldValue(""); showSearch = true; return }
             if (cmdName == "projects") { input = TextFieldValue(""); go(navNow().projectsList()); return }
             // P1-SH-01: /team /chat /life /desk switch modes in the ARGUS shell
-            if (argus) ChatNav.modeCommand(text)?.let { m -> input = TextFieldValue(""); exitView(); go(navNow().switchTab(m)); return }
+            ChatNav.modeCommand(text)?.let { m -> input = TextFieldValue(""); exitView(); go(navNow().switchTab(m)); return }
             if (cmdName in setOf("jobs", "schedule", "accounts", "doctor", "design", "router", "skills", "gallery", "browser", "terminal", "music", "video", "doing", "look", "home", "sync") && !text.contains(' ')) {
                 input = TextFieldValue(""); Views.find(cmdName)?.let { openView(it) }; return
             }
@@ -436,7 +434,7 @@ fun ChatScreen() {
         // and is sent as before (routed = true).
         val nowNav = navNow()
         val where = when {
-            !argus || routed || pending.isNotEmpty() || quote.isNotBlank() || text.startsWith("/") || text.isEmpty() -> null
+            routed || pending.isNotEmpty() || quote.isNotBlank() || text.startsWith("/") || text.isEmpty() -> null
             nowNav.tab == ChatNav.TEAM -> com.blaze.assistant.team.Router.Where.Team
             nowNav.tab == ChatNav.CHAT && !nowNav.inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value &&
                 com.blaze.assistant.team.TeamCommands.maybeTeam(text) -> com.blaze.assistant.team.Router.Where.Thread(com.blaze.assistant.team.BotRules.MANAGER_ID)
@@ -471,7 +469,7 @@ fun ChatScreen() {
         val full = if (quote.isNotBlank()) quote.lines().joinToString("\n") { "> $it" } + "\n\n" + body else body
         if (full.isBlank() && pending.isEmpty()) return
         // P1-SH-04: Chat mode sends to the newest Manager chat (an older one is read-only)
-        if (argus && navNow().tab == ChatNav.CHAT && !navNow().inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value)
+        if (navNow().tab == ChatNav.CHAT && !navNow().inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value)
             com.blaze.assistant.ui.team.ChatModeRuntime.beforeSend()
         // v0.30.6 rapid messages: no "busy" check; a message sent while Blaze works joins the turn (Agent.send).
         // v0.28.3: a new project chat joins its project with its first message (only from its own screen in Projects).
@@ -579,7 +577,7 @@ fun ChatScreen() {
     // v0.28.3: the thread + composer show on main Chat and on a project chat screen; views (Design…) belong to main Chat.
     val chatBody = nav.tab == ChatNav.CHAT || nav.inProjectChat
     // 0.52.3: the floating composer is on Home too (Hark's "Message ARGUS"); a message from Home opens the Chat tab.
-    val composerShown = chatBody || nav.tab == ChatNav.HOME || (argus && ChatNav.isMode(nav.tab))
+    val composerShown = chatBody || nav.tab == ChatNav.HOME || ChatNav.isMode(nav.tab)
     // 0.46.0 Blaze Stage: the main chat is one playground (heroes, widgets, a movable chat, top / reply bars that can hide).
     val stage by com.blaze.assistant.stage.StageStore.state.collectAsState()
     val stageActive = com.blaze.assistant.stage.StageStore.enabled && nav.tab == ChatNav.CHAT && !nav.inProjectChat && showing.isEmpty()
@@ -588,9 +586,9 @@ fun ChatScreen() {
     val livingView by com.blaze.assistant.ui.living.LivingSpec.view.collectAsState()
     // Living UI 0.2.3: on its side the rail is the shell's chrome in every mode (Team, Chat, Life, Desk, Projects)
     val landscapeNow = com.blaze.assistant.ui.common.isLandscape()
-    val landRail = com.blaze.assistant.ui.living.LivingSpec.shellRail(landscapeNow, argus, DesignNav.fullScreen(showing, nav),
+    val landRail = com.blaze.assistant.ui.living.LivingSpec.shellRail(landscapeNow, true, DesignNav.fullScreen(showing, nav),
         ChatExpand.on && (nav.tab == ChatNav.CHAT || nav.inProjectChat), stage.topBar || !stageActive)
-    val railOn = landRail && com.blaze.assistant.ui.living.LivingSpec.railOn(landscapeNow, argus,
+    val railOn = landRail && com.blaze.assistant.ui.living.LivingSpec.railOn(landscapeNow, true,
         livingView == com.blaze.assistant.ui.living.LivingSpec.View.LIVING,
         nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty),
         hasMessages, showing.isNotEmpty())
@@ -639,7 +637,7 @@ fun ChatScreen() {
             settingsPage = null; showViews = false; plusOpen = false; avatarMenu = false; showSearch = false; Views.showing.value = ""
             composer.closeSpotlight()
             // P1-SH-01: in the ARGUS shell the Home board is Life's page
-            if (!swipeMode) go(navNow().switchTab(if (argus) ChatNav.LIFE else ChatNav.HOME)) else {
+            if (!swipeMode) go(navNow().switchTab(ChatNav.LIFE)) else {
                 // RC2: every route home (open_view home, /home, Back out of Music / Video / Browser...) lands on the new Home, views closed
                 settingsPage = null; showViews = false; plusOpen = false; arcOpen = false; avatarMenu = false; showSearch = false
                 GalleryUi.open.value = false; Views.showing.value = ""
@@ -673,7 +671,7 @@ fun ChatScreen() {
         if ((n.inProjectChat || n.tab == ChatNav.PROJECTS) && up != null && up.tab == ChatNav.PROJECTS) go(up)
         else if (!Agent.privateChat.value) {
             // P1-SH-01: Team is the ARGUS shell's root (Chat, Life and Desk go back to it)
-            if (argus) go(n.switchTab(ChatNav.TEAM)) else go(n.switchTab(ChatNav.HOME))
+            go(n.switchTab(ChatNav.TEAM))
         }
     }
     SideEffect {
@@ -686,7 +684,7 @@ fun ChatScreen() {
                 viewsSheet = showViews, plusMenu = plusOpen || composer.spotlightOpen || notchOpen || newOpen, arc = arcOpen, avatarMenu = avatarMenu, search = showSearch,
                 gallery = GalleryUi.open.value, room = Agent.roomOpen.value >= 0,
                 // 0.52.3: Home is where Back stops (a private chat asks before leaving itself)
-                homeRoot = !Agent.privateChat.value, argus = argus)
+                homeRoot = !Agent.privateChat.value, argus = true)
         }
         BackRule.toChat = { backToChat() }
     }
@@ -711,7 +709,7 @@ fun ChatScreen() {
             allJobs = { com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS, com.blaze.assistant.ui.team.JobsFilter.ALL); go(navNow().switchTab(ChatNav.DESK)) },
         )
     }
-    ArgusShellLocals(argus, c.dark) {
+    ArgusShellLocals(true, c.dark) {
     // The + menu's entries and what a pick does (the composer's own menu with the ARGUS look, the sheet without it).
     fun plusEntries(): List<PlusItem> = plusItems(work, approval, "", clipHasImage, nav.inProjectChat, hasCamera)
         .filter { com.blaze.assistant.agent.SimpleMode.plusVisible(it.id, simpleMode) }
@@ -736,7 +734,7 @@ fun ChatScreen() {
         // it draws its own opaque space view over everything, so a second full-screen backdrop (and image draw) under it
         // only added first-frame work (CI fix, low-RAM smoke cold start).
         // P1-SH-01: the ARGUS shell's ground (Orbit, SpaceBackdrop's space view, unless Appearance picks another).
-        if (!onboard) { if (argus) com.blaze.assistant.ui.argus.ArgusGround {} else com.blaze.assistant.ui.space.SpaceBackdrop() }
+        if (!onboard) com.blaze.assistant.ui.argus.ArgusGround {}
         // 0.52.3 CI fix (low-RAM smoke): while the first-run onboarding is up it covers everything with its own opaque space
         // view, so the shell under it (Home, top bar, chat, Projects, Spotlight) is not composed at all. Composing it anyway
         // cost ~636 ms of first-frame layout on the low-RAM emulator. It composes the moment onboarding ends.
@@ -773,7 +771,7 @@ fun ChatScreen() {
             // 0.52.3 (Hark design): round button (+ on Home, search in Chat, the menu in Projects), the Home | Chat | Projects
             // pill, the avatar (profile and settings; long-press = light / dark). A view (Gallery, Design…) shows an Exit chip.
             // P1-SH-01: the ARGUS top bar (me · notch · search · bell · +); the notch itself is drawn over the content below.
-            if (argus) com.blaze.assistant.ui.argus.kit.ArgusTopBar(
+            com.blaze.assistant.ui.argus.kit.ArgusTopBar(
                 initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
                 onMe = { notchOpen = false; settingsPage = "" },
                 onMeLong = {
@@ -787,27 +785,9 @@ fun ChatScreen() {
                 onBell = { notchOpen = false; exitView(); go(navNow().switchTab(ChatNav.CHAT)) },
                 bellBadge = question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null,
                 onPlus = { notchOpen = false; newOpen = true })
-            else com.blaze.assistant.ui.space.SpaceTopBar(tab = shellMode,
-                onTab = { m -> plusOpen = false; showViews = false; exitView(); composer.closeSpotlight(); go(navNow().switchTab(m)) },
-                onLeft = {
-                    when (com.blaze.assistant.ui.space.SpaceTabs.leftButton(shellMode)) {
-                        com.blaze.assistant.ui.space.SpaceTabs.Left.MENU -> go(navNow().projectsList())
-                        else -> { composer.query = ""; composer.openSpotlight() }
-                    }
-                },
-                initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
-                onAvatar = { settingsPage = "" },
-                // v0.45.2: long-press the profile icon = light / dark, with a haptic tick and a short note.
-                onAvatarLong = {
-                    val (m, note) = LightDark.toggle(c.dark)
-                    ThemeMode.set(m)
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    Toast.makeText(ctx, note, Toast.LENGTH_SHORT).show()
-                },
-                privateChat = isPrivate, onLeavePrivate = { confirmLeavePrivate = true })
             }
             // P1-SH-01: a private chat says so under the ARGUS top bar, with the way out
-            if (argus && isPrivate && !designFull && !maxed && !landRail) com.blaze.assistant.ui.argus.kit.ArgusButton(tr("Private chat \u00b7 Leave"), { confirmLeavePrivate = true },
+            if (isPrivate && !designFull && !maxed && !landRail) com.blaze.assistant.ui.argus.kit.ArgusButton(tr("Private chat \u00b7 Leave"), { confirmLeavePrivate = true },
                 Modifier.padding(start = 12.dp, bottom = 6.dp), size = com.blaze.assistant.ui.argus.kit.ButtonSize.S, icon = "lock")
             if (!designFull && !maxed && showing.isNotEmpty() && nav.tab == ChatNav.CHAT) com.blaze.assistant.ui.space.SpaceChip(
                 (Views.find(showing)?.name ?: showing) + (if (showing == "design") " \u00b7 $DESIGN_BETA" else "") + "  \u2715", { exitView() },
@@ -858,7 +838,7 @@ fun ChatScreen() {
                         home = try { com.blaze.assistant.terminal.Terminal.home() } catch (_: Exception) { null },
                         onBack = { Views.showing.value = DesignNav.back(Views.showing.value) })
                     BackHandler { Views.showing.value = DesignNav.back(Views.showing.value) }
-                } else if (argus && nav.tab == ChatNav.CHAT && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty)) {
+                } else if (nav.tab == ChatNav.CHAT && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty)) {
                     // P1-SH-04 Chat mode: the Manager's chats (history drawer, ✎ new chat, ghost toggle, greeting) on the main chat
                     com.blaze.assistant.ui.team.ChatModeFrame(name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null },
                         privateOn = isPrivate, onPrivate = { if (isPrivate) confirmLeavePrivate = true else Agent.enterPrivate() },
@@ -896,8 +876,8 @@ fun ChatScreen() {
                 // P1-SH-01: in the ARGUS shell the four modes are one pager ("modes"); Projects and project chats show over it.
                 // P1-TM-07: the Projects list is Desk's Projects segment in the ARGUS shell (DeskRoute); a project page and a
                 // project chat still show over the pager.
-                val navShown = com.blaze.assistant.ui.team.DeskRoute.shown(nav, argus)
-                LaunchedEffect(nav) { com.blaze.assistant.ui.team.DeskRoute.segment(nav, argus)?.let { com.blaze.assistant.ui.team.DeskState.show(it); go(navShown) } }
+                val navShown = com.blaze.assistant.ui.team.DeskRoute.shown(nav, true)
+                LaunchedEffect(nav) { com.blaze.assistant.ui.team.DeskRoute.segment(nav, true)?.let { com.blaze.assistant.ui.team.DeskState.show(it); go(navShown) } }
                 val projectsPane: @Composable (Boolean) -> Unit = { embedded ->
                     val needs = remember(question, allChats) { question?.let { q -> allChats.filter { it.title == q.chat }.map { it.id }.toSet() } ?: emptySet() }
                     com.blaze.assistant.ui.space.SpaceProjectsScreen(projects, allChats, busyChats, needs, if (embedded) "" else nav.project,
@@ -911,7 +891,7 @@ fun ChatScreen() {
                         onDeleteChat = { deleteProjectChat(it) }, embedded = embedded)
                     LaunchedEffect(Unit) { Agent.refreshChats() }
                 }
-                val pane = when { navShown.inProjectChat -> "pchat"; navShown.tab == ChatNav.PROJECTS -> "projects"; argus && ChatNav.isMode(navShown.tab) -> "modes"; navShown.tab == ChatNav.HOME -> "home"; else -> "chat" }
+                val pane = when { navShown.inProjectChat -> "pchat"; navShown.tab == ChatNav.PROJECTS -> "projects"; ChatNav.isMode(navShown.tab) -> "modes"; navShown.tab == ChatNav.HOME -> "home"; else -> "chat" }
                 androidx.compose.animation.Crossfade(pane, modifier = Modifier.fillMaxSize(),
                     animationSpec = MotionTokens.medium(), label = "tab") { paneNow ->
                 if (paneNow == "home") {
@@ -974,7 +954,7 @@ fun ChatScreen() {
                 // Dim the chat while a sheet (/views, the arc) is open (the + sheet brings its own scrim), so half-cut lines at its edge read as background.
                 if (chatBody && viewShowing.isEmpty() && (showViews || arcOpen)) SheetScrim { showViews = false; arcOpen = false }
                 // Owner 2026-11-15: a tap anywhere above the opened chat box closes its + menu (no dimming: it is part of the page).
-                if (argus && plusOpen) Box(Modifier.matchParentSize().testTag(com.blaze.assistant.ui.argus.kit.PlusMenuSpec.SCRIM_TAG)
+                if (plusOpen) Box(Modifier.matchParentSize().testTag(com.blaze.assistant.ui.argus.kit.PlusMenuSpec.SCRIM_TAG)
                     .clickable(remember { MutableInteractionSource() }, indication = null) { plusOpen = false })
             }
             if (chatBody && viewShowing.isEmpty()) {
@@ -1018,14 +998,14 @@ fun ChatScreen() {
             if (nav.tab == ChatNav.CHAT) viewOffer?.let { o -> if (showing != o.id) ViewOfferChip(Views.offerLabel(o.id),
                 onOpen = { Views.offer.value = null; Views.find(o.id)?.let { openView(it, o.target) } }, onDismiss = { Views.offer.value = null }) }
             if (composerShown && viewShowing.isEmpty()) {
-                if (argus) com.blaze.assistant.ui.argus.kit.ArgusToastHost()
+                com.blaze.assistant.ui.argus.kit.ArgusToastHost()
                 val sugg = remember(input.text) { fileSuggestions(input.text).ifEmpty { CommandRunner.suggest(input.text) } }
                 if (sugg.isNotEmpty() && !showViews) SuggestionList(sugg) { s ->
                     if (s.runNow) send(s.fill) else input = TextFieldValue(s.fill, TextRange(s.fill.length))
                 }
                 if (quote.isNotBlank()) QuoteStrip(quote) { quote = "" }
                 // P1-SH-01: the mode's chips 10 dp over the composer (hidden while attachments wait or a sheet is open)
-                if (argus && !landRail && input.text.isEmpty() && com.blaze.assistant.ui.argus.kit.ShellSpec.Chips.visible(pending.size, plusOpen || showViews || newOpen))
+                if (!landRail && input.text.isEmpty() && com.blaze.assistant.ui.argus.kit.ShellSpec.Chips.visible(pending.size, plusOpen || showViews || newOpen))
                     com.blaze.assistant.ui.argus.kit.ChipsRow(com.blaze.assistant.ui.argus.kit.ShellSpec.Chips.of(nav.tab), onChip = { k ->
                         when (k) {
                             "job" -> input = com.blaze.assistant.ui.argus.kit.composerFill("Add a job: ")
@@ -1053,9 +1033,9 @@ fun ChatScreen() {
                 // 0.51.0 one persona: the Blaze / Halo arc is gone (there is only Blaze).
                 if (arcOpen) BackHandler { arcOpen = false }
                 // Owner 2026-11-15: the switch folds away while the + menu is open, so nothing sits over the opened chat box.
-                if (argus && !landRail && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages)
+                if (!landRail && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages)
                     androidx.compose.animation.AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.blaze.assistant.ui.living.LivingSwitch() }
-                if (argus && plusOpen) BackHandler { plusOpen = false }
+                if (plusOpen) BackHandler { plusOpen = false }
                 // 0.46.0: the reply bar folded into a floating pill by the Stage (never gone): tap for the full bar.
                 if (stageActive && stage.reply == com.blaze.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     StageReplyPill { com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.SetChrome(reply = com.blaze.assistant.stage.ReplyBar.FULL)) }
@@ -1065,7 +1045,7 @@ fun ChatScreen() {
                 // to ARGUS and opens Chat (routing from Team comes with P1-TM-06).
                 // 0.53.0: the manual model + effort chip sits over the composer (ModelPick; Auto by default).
                 // Owner 2026-11-14: chip and chatbox are one surface (the chip is the composer's top row, no edge of its own).
-                if (argus) com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
+                com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
                     mode = if (nav.inProjectChat) ChatNav.CHAT else nav.tab, streaming = mood != Mood.IDLE, attachments = pending.size,
                     onPlus = { plusOpen = !plusOpen; showViews = false; notchOpen = false }, plusOpen = plusOpen,
                     // Owner 2026-11-15: the + menu grows out of this chat box (same glass), never a sheet over it
@@ -1076,14 +1056,6 @@ fun ChatScreen() {
                     // Living UI 0.2.1: a compact pill floating over the canvas in landscape Living (no chip row)
                     modifier = if (railOn) com.blaze.assistant.ui.living.LivingFloat else if (landRail) com.blaze.assistant.ui.living.LivingCompact else Modifier,
                     top = if (railOn || (landRail && nav.tab != ChatNav.CHAT)) null else ({ com.blaze.assistant.ui.argus.kit.ModelChip(flat = true) }))
-                else Composer(input, { input = it; Agent.typing(it.text.isNotEmpty()) }, busy = mood != Mood.IDLE, canSend = input.text.isNotBlank() || pending.isNotEmpty(),
-                    plusOpen = plusOpen, chip = modeChip(work, approval), agents = bgAgents.count { it.live },
-                    listening = voiceState == Voice.State.LISTENING, speaking = voiceState == Voice.State.SPEAKING,
-                    onPlus = { plusOpen = !plusOpen; showViews = false }, onMic = { onMic() },
-                    onSend = { val t = input.text; send(t); if (navNow().tab == ChatNav.HOME && t.isNotBlank()) go(navNow().switchTab(ChatNav.CHAT)) },
-                    onStop = { Agent.stop() },
-                    // 0.52.3 Hark pill: + and the mic / send / stop only (no model picker, no extra icons)
-                    onChip = { plusOpen = true }, hints = hints, animateHints = !reducedMotion)
                 }
             }
         }
@@ -1116,7 +1088,7 @@ fun ChatScreen() {
 
         // P1-SH-01: the notch, centred in the ARGUS top bar and drawn over the page so its pill drops over it. A tap outside
         // or Back closes the pill; pulling on past it opens Voice (the call screen).
-        if (argus && !landRail && showing != "design" && !(ChatExpand.on && chatBody)) {
+        if (!landRail && showing != "design" && !(ChatExpand.on && chatBody)) {
             if (notchOpen) {
                 Box(Modifier.fillMaxSize().clickable(remember { MutableInteractionSource() }, indication = null) { notchOpen = false })
                 BackHandler { notchOpen = false }
@@ -1131,24 +1103,22 @@ fun ChatScreen() {
         }
         // Owner 2026-11-14: the history drawer over the whole screen, so the top bar and the chatbox sit under its scrim
         // instead of reading as parts with their own edges. Empty unless Chat mode is showing.
-        if (argus) com.blaze.assistant.ui.team.ChatDrawerLayer()
+        com.blaze.assistant.ui.team.ChatDrawerLayer()
         // P1-SH-01: the top bar's New sheet (P1-TM-04: Bot; jobs join it with the job sheet).
-        if (argus && newOpen) com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = tr("New")) {
+        if (newOpen) com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = tr("New")) {
             com.blaze.assistant.ui.argus.kit.MenuRow("bot", tr("Bot"), { newOpen = false; botFlow = com.blaze.assistant.ui.team.BotFlow.New }, sub = tr("A new bot for your team"))
             com.blaze.assistant.ui.argus.kit.MenuRow("notebook", tr("Project"), { newOpen = false; go(navNow().projectsList()) }, sub = tr("A space with its own chats and files"))
             com.blaze.assistant.ui.argus.kit.MenuRow("lock", tr("Private chat"), { newOpen = false; Agent.enterPrivate(); go(navNow().switchTab(ChatNav.CHAT)) }, sub = tr("Nothing here is saved or learned"))
         }
 
-        // The 0.52 shell (ARGUS look off) keeps the + bottom sheet; with the ARGUS look the + menu grows out of the composer
-        // (owner 2026-11-15: the sheet "sits on top of the chatbox icons disconnected"), see ArgusComposer's menu above.
-        if (plusOpen && !argus) PlusMenu(plusEntries(), onDismiss = { plusOpen = false }) { id -> plusPick(id) }
+        // The + menu grows out of the composer (owner 2026-11-15); the 0.52 + bottom sheet left with the look switch (16 Nov 2026).
 
         // P1-TM-04: the bot editor (Describe it sends the draft request to ARGUS and opens Chat), and the Delete / Keep
         // sheet while agent_delete waits for the user's answer (a yes typed in the chat works too).
-        if (argus) com.blaze.assistant.ui.team.BotFlowHost(botFlow, onClose = { botFlow = null },
+        com.blaze.assistant.ui.team.BotFlowHost(botFlow, onClose = { botFlow = null },
             onDescribe = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) })
         val askDelete = pendingDelete
-        if (argus && askDelete != null) com.blaze.assistant.ui.team.PendingDeleteSheet(askDelete.name,
+        if (askDelete != null) com.blaze.assistant.ui.team.PendingDeleteSheet(askDelete.name,
             onDelete = { scope.launch { val r = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.team.JobsRuntime.manager()?.confirmByButton(askDelete.botId) }
                 com.blaze.assistant.ui.argus.kit.ArgusToasts.show(if (r == null || r.startsWith("Error:")) (r?.removePrefix("Error: ") ?: "Team isn't ready yet.") else "Bot removed") } },
             onKeep = { scope.launch { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.team.JobsRuntime.manager()?.keep(askDelete.botId) }
