@@ -64,7 +64,7 @@ object Modes {
         "recent_notifications", "read_messages", "recent_calls", "find_contact", "calendar_events",
         "gcal_events", "gmail_search", "gmail_read", "drive_search", "gcontacts_search", "classroom_courses", "classroom_coursework", "brand_kit", "flashcards",
         "notif_conversations", "notif_read", "life_logs",
-        "github_issues", "github_my_prs", "github_my_repos", "github_notifications", "github_search_repos", "github_ci",
+        "github_repo", "github_read", "github_commits", "github_search_code", "github_pr", "github_issues", "github_my_prs", "github_my_repos", "github_notifications", "github_search_repos", "github_ci",
         "notion_search", "slack_read", "slack_channels", "spotify_now_playing",
         "file_read", "file_list", "file_search", "terminal_status", "terminal_jobs",
         "processes", "list_routines", "list_triggers", "use_skill", "find_skill", "skill_file",

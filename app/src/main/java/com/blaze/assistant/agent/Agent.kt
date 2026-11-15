@@ -5015,6 +5015,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         suspend fun runToolRaw(name: String, args: JSONObject, shots: MutableList<String>): String {
             turnTools.add(name)
+            // 0.53.4: with GitHub connected, a GitHub link is read through the connection (private repos too), never scraped.
+            if (name in com.blaze.assistant.connect.GitHubRoute.redirectFrom) {
+                val u = args.optString("url").ifBlank { args.optString("target") }
+                val gh = try { com.blaze.assistant.connect.Connectors.githubUrl(app, u) } catch (e: CancellationException) { throw e } catch (_: Throwable) { null }
+                if (gh != null) { add(Role.STEP, "Checking GitHub"); return gh }
+            }
             // v0.45.1: a tool that may change the screen (anything but a read) makes the next screen read walk the tree again.
             if (name != "read_screen" && name != "look_at_screen") com.blaze.assistant.phone.BlazeAccessibilityService.touched()
             val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance

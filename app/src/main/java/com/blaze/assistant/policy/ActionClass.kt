@@ -76,7 +76,7 @@ object ToolRegistry {
             "browser_tabs", "browser_wait", "cache_read", "cache_search", "cache_summarize", "cache_toc", "calendar_events", "camera_math",
             "check_agent", "classroom_courses", "classroom_coursework", "classroom_sync", "device_status", "drive_search", "fetch_page",
             "file_list", "file_read", "file_search", "find_contact", "find_skill", "find_tool", "gcal_events", "gcontacts_search", "get_location",
-            "get_weather", "github_ci", "github_issues", "github_my_prs", "github_my_repos", "github_notifications", "github_search_repos",
+            "get_weather", "github_ci", "github_repo", "github_read", "github_commits", "github_search_code", "github_pr", "github_issues", "github_my_prs", "github_my_repos", "github_notifications", "github_search_repos",
             "gmail_read", "gmail_search", "group_brain", "home_widget_list", "list_agents", "list_apps", "list_routines", "list_triggers",
             "load_tools", "look_at_screen", "memory_search", "notif_conversations", "notif_read", "notion_search", "open_view", "phone_health",
             "phone_read", "phone_screenshot", "phone_status", "phone_wait", "processes", "project_docs_read", "project_docs_search",

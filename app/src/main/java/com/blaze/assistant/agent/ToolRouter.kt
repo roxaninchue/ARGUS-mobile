@@ -109,7 +109,7 @@ object ToolRouter {
             r("""\b(shell|terminal|linux|command|script|code|coding|python|node|js|javascript|npm|pip|git|github|repo|clone|commit|push|pull|branch|api|json|csv|http|curl|download|install|file|files|folder|termux|run|compile|build|debug|server|program|calculate|convert)\b"""),
             { it in setOf("run_shell", "linux_install", "terminal_jobs", "terminal_stop", "termux_run", "git", "schedule_command", "preview_server") || it in com.blaze.assistant.terminal.DevTools.names }),
         Group("apps", "GitHub, Notion, Slack, Spotify connectors",
-            r("""\b(github|repo|issue|pull request|pr|notion|slack|spotify|playlist|song|music)\b"""),
+            r("""\b(github|repo|repos|repository|commits?|branch(?:es)?|issue|pull request|pr|notion|slack|spotify|playlist|song|music)\b|github\.com"""),
             { it.startsWith("github_") || it.startsWith("notion_") || it.startsWith("slack_") || it.startsWith("spotify_") }),
         Group("media", "play ${BrandName.NAME} Music (music_ops: play, pause, next, playlists; never the terminal or screen control), make images (generate_image), beats and other media, the Gallery",
             r("""\b(movies?|films?|watch(?:ing|list)?|jellyfin|aperture|shutter|iso|depth of field|hyperfocal|nd filter|receipt|prices?|subtitles?|captions?|recap|episodes?|series|videos?|autoplay|playlists?|equali[sz]er|crossfade|lyrics|karaoke|wrapped|daily mix\w*|dj|duplicates?|blurry|trash|on this day|declutter|download\w*|songs?|albums?|hum\w*|beat lab|reels?|clip studio|edit (?:my |a |the )?videos?|tiktok|status video|montage|cover art|covers?|thumbnails?|album art|image|images|picture|pictures|pic|photo|draw|drawing|paint|art|artwork|logo|icon|wallpaper|poster|illustration|generate|create|design|beat|beats|instrumental|music|song|melody|audio|sound|wav|mp3|gallery|meme|sticker|avatar)\b"""),
@@ -208,7 +208,10 @@ object ToolRouter {
     /** The tools to send this step. */
     fun select(all: JSONArray, groupsOn0: Set<String>): JSONArray {
         if (!enabled) return all
-        val groupsOn = if (harness) groupsOn0 + HARNESS else groupsOn0
+        // 0.53.4: a connected account's tools ride along like the browser does, so GitHub isn't read through the browser
+        // just because the request didn't say "github" (only connected accounts' tools exist, so this stays small).
+        val accounts = try { if (com.blaze.assistant.connect.Connectors.connectedCount() > 0) setOf("apps") else emptySet() } catch (_: Throwable) { emptySet() }
+        val groupsOn = (if (harness) groupsOn0 + HARNESS else groupsOn0) + accounts
         val out = JSONArray()
         for (i in 0 until all.length()) {
             val t = all.opt(i)

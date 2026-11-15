@@ -89,7 +89,7 @@ object Friendly {
             "gmail_search", "gmail_read" -> "Checking your email"
             "gmail_send" -> "Sending an email"
             "drive_search" -> "Searching your Drive"
-            "github_my_repos", "github_issues", "github_my_prs", "github_notifications", "github_search_repos" -> "Checking GitHub"
+            "github_repo", "github_read", "github_commits", "github_search_code", "github_pr", "github_my_repos", "github_issues", "github_my_prs", "github_notifications", "github_search_repos" -> "Checking GitHub"
             "github_create_issue" -> "Opening a GitHub issue"
             "github_create_repo" -> "Creating the GitHub repo"
             "github_ci" -> "Waiting for the app to build"

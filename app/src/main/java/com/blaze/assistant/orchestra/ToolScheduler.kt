@@ -49,7 +49,7 @@ object ToolScheduler {
         /** Network calls and reads of the user's data: no claim at all. */
         val free = setOf("web_search", "fetch_page", "http_request", "recall_memory", "memory_search", "search_past_chats", "search_chat", "gmail_search", "gmail_read",
             "gcal_events", "calendar_events", "drive_search", "gcontacts_search", "find_contact", "recent_notifications", "read_messages", "recent_calls",
-            "device_status", "battery_level", "github_issues", "github_my_prs", "github_my_repos", "github_notifications", "github_search_repos", "github_ci",
+            "device_status", "battery_level", "github_repo", "github_read", "github_commits", "github_search_code", "github_pr", "github_issues", "github_my_prs", "github_my_repos", "github_notifications", "github_search_repos", "github_ci",
             "notion_search", "slack_read", "slack_channels", "search_screen_memory", "spotify_now_playing", "list_apps", "list_routines", "list_triggers",
             "list_agents", "check_agent", "app_usage", "notif_conversations", "notif_read", "cache_read", "cache_search", "cache_toc", "cache_summarize",
             "read_artifact", "read_turn", "find_skill", "terminal_status", "terminal_jobs", "classroom_courses", "classroom_coursework", "processes",

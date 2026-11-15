@@ -52,7 +52,7 @@ object Connectors {
             needsSecret = true,
             help = "1. Open Google Cloud Console → APIs & Services, create a project.\n2. Enable Gmail API, Google Calendar API, Google Drive API and People API.\n3. OAuth consent screen: External, add yourself as a test user.\n4. Credentials → Create OAuth client ID → type \"Desktop app\".\n5. Paste the client ID and client secret here, then Connect.",
             setupUrl = "https://console.cloud.google.com/apis/credentials"),
-        Connector("github", "GitHub", Kind.DEVICE, "Notifications, issues, pull requests, repos",
+        Connector("github", "GitHub", Kind.DEVICE, "Repos, code, commits, issues, pull requests, CI, releases",
             "https://github.com/login/device/code", "https://github.com/login/oauth/access_token", "repo notifications read:user",
             help = "1. github.com → Settings → Developer settings → OAuth Apps → New OAuth App (any homepage/callback URL).\n2. Tick \"Enable Device Flow\".\n3. Paste the Client ID here, then Connect and enter the code ${BrandName.NAME} shows.",
             setupUrl = "https://github.com/settings/developers"),
@@ -268,6 +268,18 @@ object Connectors {
                 JSONObject().put("repo", s("owner/name")).put("branch", s("Optional, default the repo's default branch")).put("wait_seconds", i("0-150, default 120")), listOf("repo")),
             fn("github_install_apk", "Download the APK from a repo's latest GitHub release and open Android's installer for it (the user taps Install).",
                 JSONObject().put("repo", s("owner/name")), listOf("repo")),
+            // 0.53.4: read the user's code through the connection (private repos too) instead of the browser or web search.
+            fn("github_repo", "Overview of one GitHub repo through the user's connection (private ones too): description, default branch, languages, latest release, top-level files and the README. A bare repo name means the user's own repo.",
+                JSONObject().put("repo", s("owner/name, or just name for the user's own repo")), listOf("repo")),
+            fn("github_read", "Read a file or list a folder in a GitHub repo through the user's connection (private repos too). Empty path = the repo root.",
+                JSONObject().put("repo", s("owner/name, or just name for the user's own repo")).put("path", s("File or folder path, e.g. app/src/main/AndroidManifest.xml")).put("ref", s("Branch, tag or commit; default the default branch"))
+                    .put("start_line", i("First line to show, default 1")).put("lines", i("How many lines, default 600")), listOf("repo")),
+            fn("github_commits", "Recent commits in a GitHub repo (optionally one branch or one path), or one commit's details and changed files when sha is given.",
+                JSONObject().put("repo", s("owner/name, or just name")).put("branch", s("Optional branch")).put("path", s("Optional file/folder")).put("sha", s("Optional: one commit")).put("max", i("Default 15")), listOf("repo")),
+            fn("github_search_code", "Search code in the user's GitHub repos (or one repo) through the connection.",
+                JSONObject().put("query", s("Words or a symbol name")).put("repo", s("Optional owner/name to search only there")), listOf("query")),
+            fn("github_pr", "One pull request or issue in a repo: title, state, body, comments count, and for a PR its branches and changed files.",
+                JSONObject().put("repo", s("owner/name, or just name")).put("number", i("PR or issue number")), listOf("repo", "number")),
         ),
         "spotify" to listOf(
             fn("spotify_now_playing", "What's playing on the user's Spotify right now."),
@@ -297,7 +309,8 @@ object Connectors {
     /** Short summary for the system prompt. */
     fun promptBlock(): String {
         val on = all.filter { connected(it.id) }
-        return if (on.isEmpty()) "" else "\nConnected accounts you can use with tools: " + on.joinToString(", ") { "${it.name} (${it.blurb})" } + ".\n"
+        return if (on.isEmpty()) "" else "\nConnected accounts you can use with tools: " + on.joinToString(", ") { "${it.name} (${it.blurb})" } + ".\n" +
+            (if (on.any { it.id == "github" }) GitHubRoute.promptLine(githubLogin()) else "")
     }
 
     fun describe(name: String): String = when {
@@ -463,7 +476,7 @@ object Connectors {
                     val n = l.getJSONObject(k); "${n.optJSONObject("repository")?.optString("full_name")} · ${n.optString("reason")} · ${n.optJSONObject("subject")?.optString("title")}" }
             }
             "github_my_prs" -> {
-                val me = get("$api/user", t, h).optString("login")
+                val me = githubMe(t, h)
                 fun q(qs: String) = get("$api/search/issues?per_page=15&q=" + Http.enc(qs), t, h).optJSONArray("items") ?: JSONArray()
                 val mine = q("is:pr is:open author:$me"); val review = q("is:pr is:open review-requested:$me")
                 fun fmt(l: JSONArray) = (0 until l.length()).joinToString("\n") { k -> val p = l.getJSONObject(k); "  #${p.optInt("number")} ${p.optString("title")} (${p.optString("repository_url").substringAfter("repos/")})" }.ifEmpty { "  none" }
@@ -495,11 +508,104 @@ object Connectors {
                 val l = get("$api/search/repositories?per_page=8&q=" + Http.enc(a.optString("query")), t, h).optJSONArray("items") ?: JSONArray()
                 (0 until l.length()).joinToString("\n") { k -> val r = l.getJSONObject(k); "${r.optString("full_name")} ★${r.optInt("stargazers_count")} · ${r.optString("description").take(90)}" }.ifEmpty { "Nothing found." }
             }
+            "github_repo", "github_read", "github_commits", "github_search_code", "github_pr" -> githubRead(name, a, t, api, h)
             "github_create_repo" -> GitHubApps.createRepo(a, t)
             "github_ci" -> GitHubApps.ci(a, t)
             "github_install_apk" -> GitHubApps.installApk(ctx, a, t)
             else -> "Unknown tool"
         }
+    }
+
+    /** 0.53.4 The signed-in GitHub login, cached so the prompt line needs no network call. */
+    fun githubLogin(): String = Settings.str("gh_login")
+    private fun githubMe(t: String, h: Map<String, String>): String = githubLogin().ifBlank {
+        get("https://api.github.com/user", t, h).optString("login").also { if (it.isNotBlank()) Settings.setStr("gh_login", it) } }
+    /** "name" alone means the user's own repo. */
+    private fun ghRepo(r: String, t: String, h: Map<String, String>): String {
+        val x = r.trim().removePrefix("https://github.com/").removeSuffix(".git").trim('/')
+        return if (x.contains('/')) x else "${githubMe(t, h)}/$x"
+    }
+
+    private fun githubRead(name: String, a: JSONObject, t: String, api: String, h: Map<String, String>): String {
+        val repo = ghRepo(a.optString("repo"), t, h)
+        return when (name) {
+            "github_repo" -> {
+                val r = get("$api/repos/$repo", t, h)
+                val langs = try { get("$api/repos/$repo/languages", t, h).let { o -> o.keys().asSequence().take(5).joinToString(", ") } } catch (_: Exception) { "" }
+                val rel = try { get("$api/repos/$repo/releases/latest", t, h).let { "${it.optString("tag_name")} (${it.optString("published_at").take(10)})" } } catch (_: Exception) { "none" }
+                val root = try { get("$api/repos/$repo/contents", t, h).optJSONArray("items") ?: JSONArray() } catch (_: Exception) { JSONArray() }
+                val files = (0 until root.length()).joinToString(", ") { k -> root.getJSONObject(k).let { o -> o.optString("name") + if (o.optString("type") == "dir") "/" else "" } }
+                val readme = try {
+                    val o = get("$api/repos/$repo/readme", t, h)
+                    String(Base64.decode(o.optString("content"), Base64.DEFAULT)).take(3000)
+                } catch (_: Exception) { "" }
+                "${r.optString("full_name")}${if (r.optBoolean("private")) " · private" else ""} · default branch ${r.optString("default_branch")} · pushed ${r.optString("pushed_at").take(10)}\n" +
+                    r.optString("description").takeIf { it.isNotBlank() && it != "null" }.orEmpty() + "\nLanguages: ${langs.ifBlank { "?" }} · latest release: $rel · open issues: ${r.optInt("open_issues_count")}\n" +
+                    "Top level: $files" + if (readme.isNotBlank()) "\n--- README ---\n$readme" else ""
+            }
+            "github_read" -> {
+                val path = GitHubRoute.cleanPath(a.optString("path"))
+                val ref = a.optString("ref").trim()
+                val url = "$api/repos/$repo/contents/" + path.split('/').joinToString("/") { Http.enc(it) } + if (ref.isNotBlank()) "?ref=" + Http.enc(ref) else ""
+                val o = get(url, t, h)
+                val items = o.optJSONArray("items")
+                if (items != null) {
+                    "$repo/${path}${if (ref.isNotBlank()) " @ $ref" else ""}\n" + (0 until items.length()).joinToString("\n") { k ->
+                        val e = items.getJSONObject(k); if (e.optString("type") == "dir") e.optString("name") + "/" else "${e.optString("name")}  ${e.optLong("size")} B" }.ifEmpty { "(empty)" }
+                } else {
+                    val size = o.optLong("size")
+                    val raw = if (o.optString("encoding") == "base64" && o.optString("content").isNotBlank()) Base64.decode(o.optString("content"), Base64.DEFAULT)
+                        else { val (c, b) = Http.req("GET", url, null, bearer(t) + mapOf("Accept" to "application/vnd.github.raw")); if (c !in 200..299) throw Exception("($c) ${b.take(200)}"); b.toByteArray() }
+                    if (raw.take(4096).any { it == 0.toByte() }) "$repo/$path is a binary file ($size bytes)."
+                    else "$repo/$path${if (ref.isNotBlank()) " @ $ref" else ""} " + GitHubRoute.slice(String(raw), a.optInt("start_line", 1), a.optInt("lines", 600))
+                }
+            }
+            "github_commits" -> {
+                val sha = a.optString("sha").trim()
+                if (sha.isNotBlank()) {
+                    val c = get("$api/repos/$repo/commits/" + Http.enc(sha), t, h)
+                    val f = c.optJSONArray("files") ?: JSONArray()
+                    "${c.optString("sha").take(8)} ${c.optJSONObject("commit")?.optJSONObject("author")?.optString("date")?.take(16)} ${c.optJSONObject("commit")?.optString("message")?.take(600)}\n" +
+                        "Files (${f.length()}):\n" + (0 until minOf(f.length(), 60)).joinToString("\n") { k -> f.getJSONObject(k).let { "  ${it.optString("status")} ${it.optString("filename")} +${it.optInt("additions")} -${it.optInt("deletions")}" } }
+                } else {
+                    val q = StringBuilder("?per_page=${a.optInt("max", 15).coerceIn(1, 50)}")
+                    a.optString("branch").takeIf { it.isNotBlank() }?.let { q.append("&sha=").append(Http.enc(it)) }
+                    a.optString("path").takeIf { it.isNotBlank() }?.let { q.append("&path=").append(Http.enc(GitHubRoute.cleanPath(it))) }
+                    val l = get("$api/repos/$repo/commits$q", t, h).optJSONArray("items") ?: JSONArray()
+                    if (l.length() == 0) "No commits found." else "$repo commits:\n" + (0 until l.length()).joinToString("\n") { k -> val c = l.getJSONObject(k)
+                        "${c.optString("sha").take(8)} ${c.optJSONObject("commit")?.optJSONObject("author")?.optString("date")?.take(10)} ${c.optJSONObject("commit")?.optString("message")?.lineSequence()?.firstOrNull()?.take(120)}" }
+                }
+            }
+            "github_search_code" -> {
+                val scope = a.optString("repo").trim().let { if (it.isNotBlank()) "repo:" + ghRepo(it, t, h) else "user:" + githubMe(t, h) }
+                val l = get("$api/search/code?per_page=20&q=" + Http.enc(a.optString("query") + " " + scope), t, h).optJSONArray("items") ?: JSONArray()
+                if (l.length() == 0) "No code matched in $scope." else (0 until l.length()).joinToString("\n") { k -> val c = l.getJSONObject(k)
+                    "${c.optJSONObject("repository")?.optString("full_name")}/${c.optString("path")}" }
+            }
+            "github_pr" -> {
+                val n = a.optInt("number")
+                val i = get("$api/repos/$repo/issues/$n", t, h)
+                val isPr = i.has("pull_request")
+                val head = "${if (isPr) "PR" else "Issue"} #$n ${i.optString("title")} · ${i.optString("state")} · by ${i.optJSONObject("user")?.optString("login")} · ${i.optInt("comments")} comments\n" +
+                    i.optString("body").takeIf { it != "null" }.orEmpty().take(2500)
+                if (!isPr) head else {
+                    val p = get("$api/repos/$repo/pulls/$n", t, h)
+                    val f = get("$api/repos/$repo/pulls/$n/files?per_page=60", t, h).optJSONArray("items") ?: JSONArray()
+                    "$head\n${p.optJSONObject("head")?.optString("ref")} → ${p.optJSONObject("base")?.optString("ref")} · merged ${p.optBoolean("merged")} · +${p.optInt("additions")} -${p.optInt("deletions")}\nFiles:\n" +
+                        (0 until f.length()).joinToString("\n") { k -> f.getJSONObject(k).let { "  ${it.optString("status")} ${it.optString("filename")}" } }
+                }
+            }
+            else -> "Unknown tool"
+        }
+    }
+
+    /** 0.53.4: a GitHub link given to fetch_page / browser_open, read through the connection; null = not GitHub or not connected. */
+    suspend fun githubUrl(ctx: Context, url: String): String? {
+        if (!connected("github")) return null
+        val target = GitHubRoute.parse(url) ?: return null
+        val (tool, m) = GitHubRoute.toolFor(target)
+        val r = run(ctx, tool, JSONObject(m))
+        return "[Read through the user's GitHub connection with $tool; use the github_* tools for GitHub from now on.]\n$r"
     }
 
     private suspend fun spotify(name: String, a: JSONObject, t: String): String {
