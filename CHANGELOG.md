@@ -7,6 +7,7 @@ Owner (2026-11-16): ARGUS is the only look; the old 0.52 screens go. The first, 
 - **Shell** (`ChatScreen`): no `argus` flag. The app starts on Team; the ARGUS ground, top bar, composer (+ menu inside it) are the only ones; Back from Chat, Life or Desk goes to Team; every route home opens Life. The 0.52 `SpaceTopBar`, `SpaceBackdrop` behind the shell, the old `Composer`, the + bottom sheet and the 0.52 Home pane (`homePane`, `SpaceHomeLayer`) are gone.
 - **Deleted**: `ui/space/SpaceTopBar.kt`; `SpaceHomeScreen` / `SpaceHomeState` (`SpaceHome.kt` keeps `SpaceNav` and `SpaceProgressBar`).
 - **Checks**: `SpaceHomeCheck` (home-focus-check.yml) now runs the ARGUS ground and top bar with Life and Projects; the 0.52 Home and top-bar shots left `SpaceShotsTest`.
+- `BackRuleTest` wiring check: `backToChat` ends on `switchTab(ChatNav.TEAM)` (it still asked for the removed Home tab and failed build #68).
 - Tests updated: `ArgusTokensTest`, `SettingsAliasTest`, `P1Previews`, `SpaceWiringTest`, `OldHomeGoneTest`, `BackRuleTest`, `ThemeEverywhereTest`, `PlusMenuSpecTest`, `LifeModelTest`, `SpaceShotsTest`.
 - Still to do: the Team pin strip, leftover chat-pin data, the floating orb pin, Simple view only, Halo leftovers, and /think, /bank, /logs, prompt shortcuts and both /brainstorm entries.
 
