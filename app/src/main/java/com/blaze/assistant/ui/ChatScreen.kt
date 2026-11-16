@@ -358,8 +358,8 @@ fun ChatScreen() {
     var showSearch by remember { mutableStateOf(false) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all) and whether the keyboard composer is out.
     val simpleMode by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
-    // 0.52.3: Home was the root tab; the old Home under a swipe-up chat sheet is
-    // gone, so the Swipe setting no longer applies (HomeRoute keeps its rule for the RC2 redesign behind HomeRedesign).
+    // The old Home under a swipe-up chat sheet is gone (and since 16 Nov 2026 the 0.52 Home too), so the Swipe setting
+    // no longer applies (HomeRoute keeps its rule for the RC2 redesign behind HomeRedesign).
     val swipeMode = HomeRoute.swipe(false, HomeRedesign.enabled)
     var typing by rememberSaveable { mutableStateOf(false) }
     var avatarMenu by remember { mutableStateOf(false) }
