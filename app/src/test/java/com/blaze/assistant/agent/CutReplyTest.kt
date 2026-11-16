@@ -57,4 +57,21 @@ class CutReplyTest {
         LlmClient.readSse((chunk("1. Debonairs", "length") + "data: [DONE]\n\n").byteInputStream(), { }, null)
         assertEquals("length", CutReply.reason(CallState.current().finish))
     }
+
+    @Test fun replyLeftMidSentenceIsMarked() {
+        assertEquals(CutReply.STOPPED, CutReply.unfinished("I'll save that so the discovery ("))
+        assertEquals(CutReply.STOPPED, CutReply.unfinished("Here are the options:"))
+        assertEquals(CutReply.STOPPED, CutReply.unfinished("1. Debonairs Pizza \u2013 "))
+        assertTrue(CutReply.mark("so the discovery (", CutReply.STOPPED).endsWith(CutReply.STOPPED_LINE))
+        assertEquals("Continue", CutReply.chips(emptyList(), CutReply.STOPPED).first())
+    }
+
+    @Test fun finishedOrCodeRepliesAreNotMarked() {
+        assertNull(CutReply.unfinished("Done."))
+        assertNull(CutReply.unfinished("Want me to go on?"))
+        assertNull(CutReply.unfinished("It works (mostly)"))
+        assertNull(CutReply.unfinished("```kotlin\nval x = listOf(\n```"))
+        assertNull(CutReply.unfinished("```\nfoo(\n"))
+        assertNull(CutReply.unfinished(""))
+    }
 }

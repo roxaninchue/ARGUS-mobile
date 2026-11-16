@@ -1964,7 +1964,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // follow-ups on the last. A reply with no marker is one bubble, as before.
             // 0.54.1: a model reply (the only addReply with a "What happened" trace) that ended on its output limit or a closed
             // stream is shown as cut, with a Continue chip (CutReply). Read once, then cleared for the next reply.
-            val cut = if (how.isNotEmpty()) CutReply.reason(CallState.current().finish) else null
+            // 0.54.2: a reply the model left mid-sentence (it stopped at "discovery (" to call a tool) is marked the same way;
+            // one that shows media under it ("Here it is:") is not.
+            val cut = if (how.isNotEmpty()) CutReply.reason(CallState.current().finish) ?: (if (media.isEmpty()) CutReply.unfinished(p.text) else null) else null
             CallState.current().finish = ""
             val known = msgs.filter { it.role == Role.USER }.map { it.id }.toSet()
             val parts = RapidMessages.split(p.text, known)
