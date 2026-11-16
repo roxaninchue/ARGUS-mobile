@@ -28,8 +28,8 @@ object PrefCoerce {
         "learned_router", "life_logs_record", "long_chat", "look_music", "look_still", "low_data", "mh_teach_intro_seen", "mind_review", "mode_bar",
         "morning_brief", "myvoice_keep_slow", "onboarded", "orb_pinned", "particles", "pc_inbox", "persona_merged_051", "phone_control", "proactive", "proactive_speak",
         "prompt_stable_order", "quick_think", "rich_replies", "router_autostart", "screen_memory", "secrets_dropped_told", "show_reasoning",
-        "show_route", "show_steps", "show_taps", "skill_starters_done", "sounds", "speak_replies", "speak_streaming", "specialists_on",
-        "speculative_fetch", "speed_mode", "stream", "task_card", "terminal_tools", "token_ledger", "tool_cache", "tool_diet", "tool_lean", "tool_rows",
+        "show_route", "show_steps", "show_taps", "skill_starters_done", "sounds", "speak_replies", "speak_streaming",
+        "speculative_fetch", "speed_mode", "stream", "task_card", "token_ledger", "tool_cache", "tool_diet", "tool_lean", "tool_rows",
         "tool_slim", "v19_fl_min", "voice_loop", "wake_charging", "wake_gate", "wake_pocket", "wake_screen_off", "wake_word")
 
     private val yes = setOf("true", "1", "yes", "on")

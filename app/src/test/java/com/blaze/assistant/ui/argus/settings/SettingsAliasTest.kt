@@ -23,20 +23,22 @@ class SettingsAliasTest {
 
     private val PRE_053 = listOf("system", "feedback", "look", "language", "doing", "bank", "voice", "permissions", "account", "updates",
         "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "watches", "secrets", "logins",
-        "phonebrowser", "proactive", "commands", "orb", "logs", "replies", "usage", "device", "backup", "ai", "terminal", "memory",
-        "routines", "specialists", "skills", "learn", "appstore", "seller", "dashboard", "plan", "sync",
+        "phonebrowser", "proactive", "commands", "orb", "logs", "replies", "usage", "device", "backup", "ai", "memory",
+        "routines", "skills", "learn", "appstore", "seller", "dashboard", "plan", "sync",
         // old aliases (0.52.3 declutter)
         "router", "backup_brain",
         // the 0.52.3 profile's row ids
         "profile", "scheduled", "accounts", "wallet", "security")
-    private val TO_ROOT = setOf("advanced", "settings", "")
+    // 16 Nov 2026 (Finn): Team & bots and Jobs left Settings; their old ids open the root.
+    private val TO_ROOT = setOf("advanced", "settings", "", "specialists", "terminal")
 
     /** SettingsScreen draws [page]: a `"page" ->` branch, or the System / Feedback constants. */
     private fun drawn(page: String) = "\"$page\" ->" in sheet ||
         (page == "system" && "SpaceProfile.SYSTEM_PAGE -> " in sheet) || (page == "feedback" && "SpaceProfile.FEEDBACK_PAGE -> " in sheet)
 
     @Test fun everyPre053IdOpensAPage() {
-        assertEquals(42, settingsPages.size)
+        assertEquals(40, settingsPages.size)
+        assertTrue(settingsPages.none { it.id == "specialists" || it.id == "terminal" })
         for (id in PRE_053) {
             val p = settingsStart(id)
             assertTrue("$id opens nothing", p != null)
@@ -61,6 +63,7 @@ class SettingsAliasTest {
         assertEquals(ArgusSettings.ROWS.size, ArgusSettings.ROWS.map { it.id }.toSet().size)
         assertEquals("rows open different pages", ArgusSettings.ROWS.size, ArgusSettings.ROWS.map { it.page }.toSet().size)
         assertEquals("Automatic", ArgusSettings.ROWS.first { it.page == "ai" }.value)
+        assertTrue("no Team & bots or Jobs row", ArgusSettings.ROWS.none { it.page == "specialists" || it.page == "terminal" })
         for (r in ArgusSettings.ROWS) assertTrue("${r.icon} is a Lucide icon", r.icon in com.blaze.assistant.ui.argus.icons.LucidePaths.ICONS)
     }
 
@@ -74,14 +77,15 @@ class SettingsAliasTest {
     }
 
     @Test fun openByNameFromChat() {
-        val cases = mapOf("voice" to "voice", "settings voice" to "voice", "team and bots" to "specialists", "Team & bots" to "specialists",
+        val cases = mapOf("voice" to "voice", "settings voice" to "voice", 
             "approvals" to "privacy", "appearance" to "look", "handedness" to "look", "reduced motion" to "look",
-            "open notifications settings" to "proactive", "computers" to "terminal", "apps & connectors" to "connections",
+            "open notifications settings" to "proactive", "apps & connectors" to "connections",
             "models and engines" to "ai", "sync & devices" to "sync", "diagnostics" to "device", "wallet" to "secrets",
-            "linux" to "terminal", "lock" to "privacy", "submit feedback" to "feedback")
+            "lock" to "privacy", "submit feedback" to "feedback")
         for ((said, page) in cases) assertEquals(said, page, settingsPageByName(said))
         assertEquals("", settingsPageByName("the"))
         assertEquals("", settingsPageByName("zzzz"))
+        for (gone in listOf("team and bots", "Team & bots", "computers", "linux", "jobs")) assertEquals(gone, "", settingsPageByName(gone))
         // agent.settingsPageFor (QuickRules, open_settings) is the same function
         val self = File(root, "com/blaze/assistant/agent/SelfSetup.kt").readText()
         assertTrue("fun settingsPageFor(raw: String): String = com.blaze.assistant.ui.settingsPageByName(raw)" in self)

@@ -1363,15 +1363,16 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(SecretDesk.toolDef())   // 0.46.6 Secure form
         com.blaze.assistant.appstore.StoreTools.definitions().forEach { t.put(it) }   // 0.45.19 App Store
         com.blaze.assistant.browser.phone.PhoneBrowserTools.definitions().forEach { t.put(it) }   // 0.45.19 Blaze Phone browser
-        if (Settings.bool("terminal_tools", true)) com.blaze.assistant.terminal.Terminal.tools(app).forEach { t.put(it) }
-        if (Settings.bool("terminal_tools", true)) com.blaze.assistant.terminal.DevTools.tools().forEach { t.put(it) }
-        if (Settings.bool("terminal_tools", true)) t.put(com.blaze.assistant.terminal.Git.tool())
+        // 16 Nov 2026 (Finn): the terminal and the specialists are always on (their switches left Settings with Jobs and Team & bots).
+        com.blaze.assistant.terminal.Terminal.tools(app).forEach { t.put(it) }
+        com.blaze.assistant.terminal.DevTools.tools().forEach { t.put(it) }
+        t.put(com.blaze.assistant.terminal.Git.tool())
         com.blaze.assistant.phone.PimEdit.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.device.SelfCheck.tool())
         t.put(com.blaze.assistant.phone.Location.tool())
         t.put(GatewayWeather.tool())   // v0.45.5 (#7b)
         t.put(SaveFile.tool())   // v0.45.9: save the last code block to Downloads
-        if (Settings.bool("specialists_on", true)) { t.put(Specialists.tool()); t.put(Specialists.createTool()) }
+        t.put(Specialists.tool()); t.put(Specialists.createTool())
         Learning.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.update.Updater.tool())
         t.put(com.blaze.assistant.ui.Views.tool())
@@ -3379,7 +3380,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val dSpecs = par.async {
                     val userNow = SkillGuard.unnamed(userNow)   // 0.53.3: a product name picks no specialist either
                     // 0.50.0: no specialist (and so none of its skill packs) for a message that doesn't ask for a task (SkillIntent).
-                    if (routine || stateQ0 || selfQ0 || plainDev0 || agentId != null || !Settings.bool("specialists_on", true) || !SkillIntent.taskIntent(userNow)) emptyList()
+                    if (routine || stateQ0 || selfQ0 || plainDev0 || agentId != null || !SkillIntent.taskIntent(userNow)) emptyList()
                     else try { SpecialistMatch.match(userNow, Specialists.all()) } catch (e: CancellationException) { throw e } catch (_: Exception) { emptyList() }
                 }
                 val dPlan = par.async {

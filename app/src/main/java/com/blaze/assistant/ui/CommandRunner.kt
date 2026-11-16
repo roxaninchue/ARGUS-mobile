@@ -89,7 +89,7 @@ object CommandRunner {
             }
             "look", "theme" -> openSettings("look")
             "sync" -> openSettings("sync")
-            "linux" -> openSettings("terminal")   // wave B-4: the on-phone Linux desktop is gone; /linux opens the terminal
+            "linux" -> com.blaze.assistant.terminal.BlazeTerminalActivity.open(ctx)   // wave B-4: /linux opens the terminal (16 Nov 2026: the Jobs page left Settings)
             "agent" -> if (arg.isEmpty()) toast("Type the task after /agent") else Agent.startAgentFromUser(arg)
             "agents" -> Agent.note(com.blaze.assistant.agent.BgAgents.run("list_agents", org.json.JSONObject(), ""), asReply = true)
             "remember" -> if (arg.isNotEmpty()) { Memory.add(arg); Agent.note("Remembered: $arg") } else openSettings("memory")

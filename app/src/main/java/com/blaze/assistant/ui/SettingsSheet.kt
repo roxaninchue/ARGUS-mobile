@@ -154,8 +154,6 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "privacy" -> { SecuritySection(); Spacer(Modifier.height(18.dp)); BankModePage() }
                     "device" -> DevicePage()
                     "proactive" -> ProactivePage()
-                    "specialists" -> SpecialistsPage()
-                    "terminal" -> TerminalPage()
                     "dashboard" -> DashboardPage()
                     // P1-MG-01: Import A-team backup sits under the app's own Export / Import.
                     "backup" -> {

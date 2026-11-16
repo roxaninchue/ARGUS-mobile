@@ -28,7 +28,7 @@ class ViewsTest {
         assertEquals("schedule", Views.find("/routines")?.id)
         assertEquals("brain", Views.find("models")?.id)
         assertEquals("router", Views.find("blazerouter")?.id)
-        assertEquals("terminal", Views.find("Terminal")?.id); assertEquals("terminal", Views.find("termux")?.id); assertEquals("jobs", Views.find("jobs")?.id)
+        assertEquals("terminal", Views.find("Terminal")?.id); assertEquals("terminal", Views.find("termux")?.id); assertEquals("terminal", Views.find("jobs")?.id)   // 16 Nov 2026: the Jobs page left Settings; jobs live in the terminal
         assertEquals("music", Views.find("music")?.id); assertEquals("music", Views.find("/songs")?.id)
         assertEquals("video", Views.find("movies")?.id); assertEquals("video", Views.find("Video")?.id)
         assertNull(Views.find("nope"))

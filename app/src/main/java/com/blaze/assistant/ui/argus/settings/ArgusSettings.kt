@@ -41,11 +41,9 @@ object ArgusSettings {
             Row("approvals", "Approvals & app lock", "shield-check", "privacy", listOf("security", "approvals", "ask before", "lock", "bank mode", "risky")),
         )),
         Group("Team", listOf(
-            Row("team", "Team & bots", "bot", "specialists", listOf("agents", "bots", "templates", "specialists", "delegate")),
             Row("apps", "Apps & connectors", "plug", "connections", listOf("accounts", "google", "github", "slack", "notion", "spotify", "connectors")),
             Row("skills", "Skills", "sparkles", "skills"),
             Row("models", "Models & engines", "cpu", "ai", listOf("brain", "model", "cloud"), value = "Automatic"),
-            Row("computers", "Computers & workspace", "monitor", "terminal", listOf("terminal", "shell", "linux", "jobs", "workspace")),
             Row("routines", "Scheduled tasks", "repeat", "routines", listOf("routines", "schedule", "reminders")),
         )),
         Group("You & phone", listOf(
@@ -82,8 +80,8 @@ object ArgusSettings {
     /** "Open by name" words for the new rows (added to settingsPageByName's aliases). */
     val NAME_ALIASES: Map<String, String> = mapOf(
         "approvals" to "privacy", "approval" to "privacy", "notifications" to "proactive", "proactivity" to "proactive",
-        "wallet" to "secrets", "bots" to "specialists", "team" to "specialists", "connectors" to "connections",
-        "engines" to "ai", "computers" to "terminal", "workspace" to "terminal", "devices" to "sync",
+        "wallet" to "secrets", "connectors" to "connections",
+        "engines" to "ai", "devices" to "sync",
         "handedness" to "look", "motion" to "look", "ground" to "look", "appearance" to "look", "knows" to "memory",
         "feedback" to "feedback", "diagnostics" to "device", "ateam" to "backup", "a-team" to "backup",
     )

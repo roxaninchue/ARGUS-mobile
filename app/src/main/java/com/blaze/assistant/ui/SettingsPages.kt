@@ -63,10 +63,8 @@ val advancedPages = listOf(
  */
 val viewPages = listOf(
     SettingsPage("ai", "Brain", "${BrandName.NAME} Cloud picks the best model for every message"),
-    SettingsPage("terminal", "Jobs", "A real shell, jobs, Linux, Termux"),
     SettingsPage("memory", "Memory", "What ${BrandName.NAME} remembers and has learned"),
     SettingsPage("routines", "Scheduled Tasks", "Things ${BrandName.NAME} does on a schedule"),
-    SettingsPage("specialists", "Agents", "Sub-agents ${BrandName.NAME} can delegate to"),
     SettingsPage("skills", "Skills", "Research, email, plans, docs, code: on, off, restore"),
     SettingsPage("learn", "Learn", "Flashcards, Google Classroom, low-data mode"),
     SettingsPage("appstore", "App Store", "Free open-source apps from their developers' own releases"),
@@ -80,6 +78,8 @@ val settingsPages = topPages + advancedPages + viewPages
 
 /** 0.52.3: page ids from before the declutter that now land on another page ("" = the profile). */
 internal val settingsAliases = mapOf("router" to "ai", "backup_brain" to "ai", "advanced" to "", "settings" to "") +
+    // 16 Nov 2026 (Finn): Team & bots (specialists, always on) and Jobs (the terminal page) left Settings; old ids open the root.
+    mapOf("specialists" to "", "terminal" to "") +
     // P1-SH-06: the 0.52.3 profile's row ids (they were ids of rows, not pages) open the page the row opened.
     mapOf("profile" to "account", "scheduled" to "routines", "accounts" to "connections", "wallet" to "secrets", "security" to "privacy")
 
@@ -101,7 +101,6 @@ fun settingsPageByName(raw: String): String {
     val ids = settingsPages.map { it.id }
     val alias = mapOf("router" to "ai", "blazerouter" to "ai", "update" to "updates", "upgrade" to "updates", "permission" to "permissions", "version" to "about", "brain" to "ai", "model" to "ai", "models" to "ai", "keys" to "ai", "provider" to "ai",
         "wake" to "voice", "speech" to "voice", "tts" to "voice", "call" to "voice", "mic" to "voice", "speak" to "voice",
-        "term" to "terminal", "shell" to "terminal", "termux" to "terminal", "linux" to "terminal",
         "look" to "feel", "theme" to "feel", "sounds" to "feel", "accounts" to "connections", "connected" to "connections",
         "personality" to "persona", "phone" to "control", "accessibility" to "control", "skills" to "control",
         "library" to "skills", "signin" to "account", "login" to "account", "signup" to "account", "lock" to "privacy", "safety" to "privacy", "diagnostics" to "device", "health" to "device", "export" to "backup",
