@@ -98,11 +98,11 @@ fun AppIcon(app: App, size: Dp = 28.dp) {
 
 /**
  * Settings › Apps & connectors: every app the ARGUS gateway offers (argus-connect), with its real icon, grouped by
- * category, searchable. Tap a row for Connect (browser sign-in, or paste a key), Test, Disconnect, or On / Off for
+ * category, searchable from the top bar's magnifier. Tap a row for Connect (browser sign-in, or paste a key), Test, Disconnect, or On / Off for
  * keyless apps. [apps0] is for screenshots and tests (no network).
  */
 @Composable
-fun GatewayAppsSection(apps0: List<App>? = null) {
+fun GatewayAppsSection(apps0: List<App>? = null, query: String = SettingsSearch.query.value) {
     val c = LocalBlaze.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -111,7 +111,6 @@ fun GatewayAppsSection(apps0: List<App>? = null) {
     val acct by BlazeAccount.view.collectAsState()
     if (apps0 == null) LaunchedEffect(acct.user?.id) { ArgusApps.loadCached(); ArgusApps.refresh() }
     val apps = apps0 ?: v.apps
-    var query by remember { mutableStateOf("") }
     var open by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf("") }
     val inputs = remember { mutableStateMapOf<String, String>() }
@@ -124,7 +123,7 @@ fun GatewayAppsSection(apps0: List<App>? = null) {
     if (v.error.isNotBlank() && apps0 == null) Note2(v.error)
     if (apps.isEmpty()) { Note2(if (v.loading) tr("Loading your gateway's apps\u2026") else tr("No apps yet.")); return }
 
-    Field(tr("Search apps"), query, { query = it }, tr("Gmail, GitHub, weather\u2026"))
+    // 16 Nov 2026: the search box moved to the top bar's magnifier (SearchTitle); [query] is its words.
     val groups = ArgusAppsModel.grouped(apps, query)
     GroupHead("Apps \u00b7 %02d".format(apps.size), right = {
         Label("${apps.count { it.connected }} connected", size = 9.sp, color = c.weak)

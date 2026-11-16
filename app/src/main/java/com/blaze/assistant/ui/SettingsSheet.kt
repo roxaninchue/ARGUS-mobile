@@ -84,7 +84,9 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
         // P1-SH-06: the ARGUS tree (You page) has its own parents (the only tree since 16 Nov 2026).
         else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)
     }
-    BackHandler { back() }
+    BackHandler { if (SettingsSearch.open.value) SettingsSearch.close() else back() }
+    // A new page starts with the search closed and empty.
+    LaunchedEffect(page) { SettingsSearch.close() }
     val current = settingsPages.firstOrNull { it.id == page }
     val account by com.blaze.assistant.connect.BlazeAccount.view.collectAsState()
     val ents by com.blaze.assistant.connect.Entitlements.snap.collectAsState()
@@ -100,7 +102,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
             val me = account.user
             val dark = AppTheme.darkNow()
             androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(dark)) {
-                BackTitle("You", onBack = { onDismiss() }, modifier = Modifier.padding(vertical = 2.dp), right = { ThemeSwitch() })
+                // 16 Nov 2026: a magnifier in the top bar that slides open to the left (no floating pill).
+                SearchTitle("You", onBack = { onDismiss() }, placeholder = "Search settings", modifier = Modifier.padding(vertical = 2.dp), right = { ThemeSwitch() })
                 com.blaze.assistant.ui.argus.settings.YouPage(
                     name = com.blaze.assistant.ui.space.trBrand(com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName)),
                     email = com.blaze.assistant.i18n.tr(com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null)),
@@ -110,10 +113,13 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     onSignOut = { scope.launch { com.blaze.assistant.connect.BlazeAccount.signOut() } },
                     modifier = Modifier.weight(1f),
                     version = version,
+                    query = SettingsSearch.query.value,
                     pageText = remember { settingsPages.associate { it.id to (it.title + " " + it.sub) } })
             }
         } else {
-            BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),
+            if (page == "connections") SearchTitle(current?.title ?: "Settings", onBack = { back() }, placeholder = "Gmail, GitHub, weather\u2026",
+                modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp), right = { ThemeSwitch() })
+            else BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),
                 right = { ThemeSwitch() })
             Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
                 when (page) {

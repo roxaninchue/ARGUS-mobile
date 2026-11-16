@@ -56,8 +56,7 @@ object YouTags {
 
 /**
  * P1-SH-06 the You page (04 §4.11), the root of Settings in the ARGUS look: name (tap = Profile) and e-mail · plan, the
- * plan card, the four groups of [ArgusSettings.GROUPS], Sign out, version, and the floating "Search settings" pill that
- * filters the rows in place ([ArgusSettings.search]). [onPage] opens a settings page by id.
+ * plan card, the groups of [ArgusSettings.GROUPS], Sign out and version; the top bar's magnifier filters the rows in place ([ArgusSettings.search]). [onPage] opens a settings page by id.
  */
 @Composable
 fun YouPage(
@@ -70,13 +69,13 @@ fun YouPage(
     modifier: Modifier = Modifier,
     version: String = "",
     pageText: Map<String, String> = emptyMap(),
-    query0: String = "",
+    /** The words in the top bar's search (SearchTitle); blank shows the whole tree. */
+    query: String = "",
 ) {
     val c = Argus.colors
-    var query by remember { mutableStateOf(query0) }
     val hits = remember(query, pageText) { ArgusSettings.search(query, pageText) }
     Box(modifier.fillMaxSize().testTag(YouTags.PAGE)) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 12.dp, end = 12.dp, bottom = 110.dp),
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = tr("Open Profile")) { onPage(ArgusSettings.ACCOUNT_PAGE) }
                 .testTag(YouTags.NAME).padding(horizontal = 8.dp, vertical = 6.dp)) {
@@ -100,8 +99,6 @@ fun YouPage(
                 SettingsGroup(hits.map { it.item(onPage) }, title = tr("Results"))
             }
         }
-        ArgusSearch(query, { query = it }, Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 12.dp).fillMaxWidth().testTag(YouTags.SEARCH), placeholder = "Search settings")
     }
 }
 
