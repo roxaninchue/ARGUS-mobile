@@ -1,6 +1,7 @@
 package com.blaze.assistant.agent
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,6 +21,9 @@ class ModelListTest {
         assertEquals("GPT 4o", LiveModels.prettyName("gpt-4o-2024-08-06"))
         assertEquals("Qwen3 235b A22b", LiveModels.prettyName("qwen3-235b-a22b-20250701"))
         assertEquals("GPT OSS 120b", LiveModels.prettyName("openai/gpt-oss-120b:free"))
+        // Owner 16 Nov 2026: no "Free" in a model's name.
+        assertFalse(LiveModels.prettyName("deepseek-v4-1-flash-free").contains("Free"))
+        assertFalse(LiveModels.prettyName("free-gemma-7b").contains("Free"))
     }
 
     @Test fun sameModelFromTwoProvidersIsOneRowAndTheHealthierFasterOneWins() {

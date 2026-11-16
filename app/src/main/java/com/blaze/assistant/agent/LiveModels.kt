@@ -56,11 +56,13 @@ object LiveModels {
     private val DATE_STAMP = Regex("^(\\d{4}|\\d{6}|\\d{8})$")
     private val VERSION_PART = Regex("^[A-Za-z]?\\d{1,2}(\\.\\d{1,2})*$")
 
-    /** "openai/gpt-oss-120b:free" → "GPT OSS 120b"; "claude-opus-5-5" → "Claude Opus 5.5"; "mimo-v2-6-pro" → "Mimo V2.6 Pro". */
+    /** "openai/gpt-oss-120b:free" → "GPT OSS 120b"; "deepseek-v4-1-flash-free" → "Deepseek V4.1 Flash"; "claude-opus-5-5" → "Claude Opus 5.5"; "mimo-v2-6-pro" → "Mimo V2.6 Pro". */
     fun prettyName(model: String?): String {
         val m = model.orEmpty()
         val last = m.substringAfterLast('/').replace(Regex(":free$", RegexOption.IGNORE_CASE), "")
         val words = last.split(Regex("[-_\\s]+")).filter { it.isNotEmpty() }.toMutableList()
+        // Owner 16 Nov 2026 ("avoid showing free, need to look professional"): a "free" tier word is never part of the name.
+        if (words.size > 1) words.removeAll { it.equals("free", ignoreCase = true) }
         // Owner 21:10 screenshot, "Deepseek V4 1 Flash 1017": a release date stamp (1017, 2507, 20251017, 2024-08-06) is not part of the name.
         if (words.size > 3 && words.takeLast(3).let { (y, m, d) -> y.length == 4 && m.length == 2 && d.length == 2 && (y + m + d).all { it.isDigit() } }) repeat(3) { words.removeAt(words.size - 1) }
         while (words.size > 1 && DATE_STAMP.matches(words.last())) words.removeAt(words.size - 1)
