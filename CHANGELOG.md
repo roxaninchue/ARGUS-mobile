@@ -1,4 +1,6 @@
-## Unreleased: model-first (the model reads every message)
+## v0.53.6: model-first, the model reads every message, and Argus acts as an agent (versionCode 198)
+
+Includes the entries below down to v0.53.5.
 
 2026-11-16, owner rule, now docs/MODEL-FIRST.md: build the system around the model; no keyword routers guessing intent, no contradictory prompt orders.
 - A message sent while ARGUS is working always goes to the model (joins the running turn, or restarts a reply that has barely begun). The old stop/steer/side regex is no longer consulted; the Stop button stops.
