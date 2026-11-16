@@ -27,9 +27,6 @@
 # v0.30.1 Blaze Music / Video: the download worker is created by WorkManager by class name.
 -keep class com.blaze.assistant.mediaapps.MediaDownloadWorker { <init>(...); }
 
-# v0.33.0 Offline Brain (MediaPipe LLM Inference): JNI + protobuf-lite annotations.
--keep class com.google.mediapipe.** { *; }
--dontwarn com.google.mediapipe.**
 -dontwarn com.google.protobuf.Internal$ProtoMethodMayReturnNull
 -dontwarn com.google.protobuf.Internal$ProtoNonnullApi
 -dontwarn com.google.protobuf.ProtoField

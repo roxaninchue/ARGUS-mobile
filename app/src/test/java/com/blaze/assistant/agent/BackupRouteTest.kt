@@ -7,26 +7,12 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.45.26: Blaze Cloud first, the on-device backup second, the Nous reserve last; when to move on. */
+/** The gateway's two brains (Blaze Cloud, the Nous reserve) and when to move on. Owner 16 Nov 2026: no on-device brain. */
 class BackupRouteTest {
-    @Test fun orderAndReserveHeaders() {
-        assertEquals(listOf(BackupRoute.Step.CLOUD, BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE), BackupRoute.plan(true))
-        assertEquals(listOf(BackupRoute.Step.CLOUD), BackupRoute.plan(false))
-        // With the backup ready, the first call keeps the reserve for later; without it the gateway adds it itself.
-        assertEquals("skip", BackupRoute.reserveHeader(BackupRoute.Step.CLOUD, true))
-        assertEquals("", BackupRoute.reserveHeader(BackupRoute.Step.CLOUD, false))
-        assertEquals("only", BackupRoute.reserveHeader(BackupRoute.Step.RESERVE, true))
-    }
-
-    @Test fun firstChunkDeadlineIsConfigurable() {
-        assertEquals(15_000L, BackupRoute.ttftMs(true, null))
-        assertEquals(45_000L, BackupRoute.ttftMs(false, null))
-        assertEquals(8_000L, BackupRoute.ttftMs(true, 8_000))
-        assertEquals(24_000L, BackupRoute.ttftMs(false, 8_000))
-        assertEquals(3_000L, BackupRoute.ttftMs(true, 500))          // floor
-        assertEquals(120_000L, BackupRoute.ttftMs(true, 999_999))    // cap
-        assertEquals(0L, BackupRoute.ttftMs(true, 0))                // 0 = errors only
-        assertEquals(15_000L, BackupRoute.ttftMs(true, -5))
+    @Test fun stepsAndReserveHeaders() {
+        assertEquals(listOf(BackupRoute.Step.CLOUD, BackupRoute.Step.RESERVE), BackupRoute.Step.values().toList())
+        assertEquals("skip", BackupRoute.reserveHeader(BackupRoute.Step.CLOUD))
+        assertEquals("only", BackupRoute.reserveHeader(BackupRoute.Step.RESERVE))
     }
 
     @Test fun tooSlowOnlyBeforeAnySignOfLife() {
@@ -52,21 +38,19 @@ class BackupRouteTest {
         assertFalse(BackupRoute.moveOn(429, "quota_exceeded"))
     }
 
-    // v0.45.28: Rocky on 4G without the backup brain saw "Blaze Cloud is busy" and the Nous reserve was never asked.
-    @Test fun noBackupBusyStillGoesToTheReserve() {
+    // v0.45.28: Rocky on 4G saw "Blaze Cloud is busy" and the Nous reserve was never asked.
+    @Test fun busyStillGoesToTheReserve() {
         val R = listOf(BackupRoute.Step.RESERVE)
-        assertEquals(R, BackupRoute.fallbacks(false, 503, Cloud.BUSY, false))
-        assertEquals(R, BackupRoute.fallbacks(false, 429, Cloud.BUSY, false))                 // busy, not the allowance
-        assertEquals(R, BackupRoute.fallbacks(false, 0, Cloud.UNREACHABLE, false))
-        assertEquals(R, BackupRoute.fallbacks(false, 0, "${BrandName.NAME} Cloud too slow (no first chunk in 15s)", false))
-        assertEquals(R, BackupRoute.fallbacks(false, 502, "${BrandName.NAME} · blaze-auto said (502): upstream", false))
-        // with the backup ready: backup first, then the reserve
-        assertEquals(listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE), BackupRoute.fallbacks(true, 503, Cloud.BUSY, false))
+        assertEquals(R, BackupRoute.fallbacks(503, Cloud.BUSY, false))
+        assertEquals(R, BackupRoute.fallbacks(429, Cloud.BUSY, false))                 // busy, not the allowance
+        assertEquals(R, BackupRoute.fallbacks(0, Cloud.UNREACHABLE, false))
+        assertEquals(R, BackupRoute.fallbacks(0, "${BrandName.NAME} Cloud too slow (no first chunk in 15s)", false))
+        assertEquals(R, BackupRoute.fallbacks(502, "${BrandName.NAME} · blaze-auto said (502): upstream", false))
         // never for what no other brain can fix, nor a request the services refuse as such
-        assertTrue(BackupRoute.fallbacks(false, 401, Cloud.SIGNED_OUT, false).isEmpty())
-        assertTrue(BackupRoute.fallbacks(true, 403, Cloud.WAITLISTED, false).isEmpty())
-        assertTrue(BackupRoute.fallbacks(false, 429, "You've used today's free messages. They come back tomorrow.", false).isEmpty())
-        assertTrue(BackupRoute.fallbacks(true, 400, "bad tool shape", true).isEmpty())
+        assertTrue(BackupRoute.fallbacks(401, Cloud.SIGNED_OUT, false).isEmpty())
+        assertTrue(BackupRoute.fallbacks(403, Cloud.WAITLISTED, false).isEmpty())
+        assertTrue(BackupRoute.fallbacks(429, "You've used today's free messages. They come back tomorrow.", false).isEmpty())
+        assertTrue(BackupRoute.fallbacks(400, "bad tool shape", true).isEmpty())
     }
 
     @Test fun partialStreamFailureFallsBack() {
@@ -74,17 +58,17 @@ class BackupRouteTest {
         assertTrue(BackupRoute.brokeMidReply(broke))
         assertTrue(BackupRoute.brokeMidReply("unexpected end of stream on https://gateway"))
         assertFalse(BackupRoute.brokeMidReply(Cloud.SIGNED_OUT))
-        assertEquals(listOf(BackupRoute.Step.RESERVE), BackupRoute.fallbacks(false, 0, broke, false))
-        assertEquals(listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE), BackupRoute.fallbacks(true, 0, broke, false))
+        assertEquals(listOf(BackupRoute.Step.RESERVE), BackupRoute.fallbacks(0, broke, false))
         // the reserve call is the gateway call with X-Blaze-Reserve: only
-        assertEquals("only", BackupRoute.reserveHeader(BackupRoute.Step.RESERVE, false))
+        assertEquals("only", BackupRoute.reserveHeader(BackupRoute.Step.RESERVE))
     }
 
-    @Test fun llmClientNeverSkipsTheReserveWithoutBackup() {
+    @Test fun llmClientRacesTheGatewayBrains() {
         val src = HideModels19Test.srcFile("java/com/blaze/assistant/agent/LlmClient.kt").readText()
         assertFalse(src.contains("if (e is TooSlow && !backupReady) throw"))
-        // 0.46.4: every call of the loop runs through the hedged race (BrainRace order: Nous / Blaze Cloud always, phone when warm)
+        // 0.46.4: every call of the loop runs through the hedged race (BrainRace order: Nous / Blaze Cloud)
         assertTrue(src.contains("HedgeRace.run("))
-        assertTrue(src.contains("BrainRace.order(kind, warm, token.isNotBlank(), "))
+        assertTrue(src.contains("BrainRace.order(kind, true, "))
+        assertFalse(src.contains("BackupBrain") || src.contains("OfflineBrain"))
     }
 }

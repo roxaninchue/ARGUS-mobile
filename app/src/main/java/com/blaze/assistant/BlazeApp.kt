@@ -51,7 +51,6 @@ class BlazeApp : Application() {
         // v0.33.0 Safe Walk survives a reboot / process restart; sealed time capsules keep their wake-up. (After the first frame.)
         com.blaze.assistant.device.StartLater.add("phone.SafeWalk.handle") { com.blaze.assistant.phone.SafeWalk.handle(this, android.content.Intent.ACTION_BOOT_COMPLETED) }
         com.blaze.assistant.device.StartLater.add("phone.CallCopilot.init") { com.blaze.assistant.phone.CallCopilot.init(this) }
-        try { com.blaze.assistant.agent.OfflineBrain.init(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: OfflineBrain.i", e) }
         // v1.9.10 fix: a leftover "Auto" steps model silently sent phone steps through the free chain
         // even after the user picked a specific model. Clear it once; they can set it again.
         if (Settings.str("mig_steps_auto", "").isEmpty()) {
@@ -173,8 +172,6 @@ class BlazeApp : Application() {
         super.onTrimMemory(level)
         if (com.blaze.assistant.device.MemoryTrim.shouldDropCaches(level)) {
             try { com.blaze.assistant.device.MemoryTrim.dropCaches() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("onTrimMemory", e) }
-            // v0.45.23 perf: also give back the offline model's ~500 MB if it isn't answering (it reloads on demand).
-            try { com.blaze.assistant.agent.OfflineBrain.trim() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("onTrimMemory", e) }
         }
     }
 
@@ -182,6 +179,5 @@ class BlazeApp : Application() {
     override fun onLowMemory() {
         super.onLowMemory()
         try { com.blaze.assistant.device.MemoryTrim.dropCaches() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("onLowMemory", e) }
-        try { com.blaze.assistant.agent.OfflineBrain.trim() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("onLowMemory", e) }
     }
 }

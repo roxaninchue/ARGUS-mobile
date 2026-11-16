@@ -23,16 +23,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Now every model call goes through [HedgeRace] with deadlines by [Kind], brains in [order]:
  *  - CHAT (no tools, and every Halo side reply): hedged after 3 s, first visible token within 8 s or the next brain,
  *    thinking never counts and is not shown. (0.46.4–0.46.5 also put short tool turns here, fastest brain first.)
- *  - TASK / CODING: the 0.46.3 order (on-phone brain → Nous → Blaze Cloud), first token 20 s (thinking may stretch it to
+ *  - TASK / CODING: Blaze Cloud then Nous, first token 20 s (thinking may stretch it to
  *    45 s), hedged after 6 s.
  *  - Every kind: 30 s without any chunk once answering → next brain, with the same messages.
- * The on-phone brain is only in the list when it is warm ([BackupBrain.warm]: installed, server running, last health check
- * good, not resting); a cold one is started in the background and the call starts at Nous / Blaze Cloud at once.
- *
  * 0.46.6 brain routing fix (handoff 27 Oct):
- *  - The order is always the standing one, on-phone brain → Nous (:free) → Blaze cloud gateway ([order]). Measured speed
- *    or reliability no longer moves Nous behind the gateway (that is how Nous got skipped); a brain is left out only when
- *    it can't answer right now (the on-phone brain not warm, or every on-phone model resting, [BrainRest]).
+ *  - The order is the standing one ([order]); measured speed or reliability no longer moves Nous behind the gateway.
+ *    (Owner 16 Nov 2026: the on-phone brain that used to lead it was removed.)
  *  - No chat fast lane for tool turns: a call that offers tools is never CHAT ([kind]) however short the message, and it
  *    runs one brain at a time ([parallel] false: no hedge, no first-answer-wins, see [HedgeRace]).
  *  - Plain chat (no tools) keeps the hedge; nothing in it can act.
@@ -47,8 +43,7 @@ object BrainRace {
     // 0.46.5: firstMs / hedgeMs only start the next brain in parallel (never cancel one); wholeMs is the outer cap for a
     // brain that shows nothing at all, thinkMs while it is still sending thinking (HedgeRace).
     // 0.46.6: quietMs = in a one-at-a-time race (tool turns) a brain that sent no chunk at all by then gives way to the next
-    // (thinking counts as a chunk, so a slow but working brain is never cut by it). 45 s matches the on-phone brain's own
-    // first-chunk cap ([BackupBrain.FIRST_CHUNK_MS]).
+    // (thinking counts as a chunk, so a slow but working brain is never cut by it).
     val CHAT_LIMITS = HedgeRace.Limits(firstMs = 8_000L, hedgeMs = 3_000L, stallMs = 30_000L, thinkMs = 60_000L, wholeMs = 60_000L, quietMs = 20_000L)
     // 0.52.1 (gw061): quietMs 60 s for tool turns: the gateway buffers a tool step until it is complete (nothing, not even
     // thinking, arrives before that) and since 0.8.62 gives first output or a clean error within 40 s.
@@ -85,21 +80,19 @@ object BrainRace {
     fun parallel(toolCount: Int): Boolean = toolCount == 0
 
     /** First-token guesses (ms) before the phone has measured a brain. */
-    val DEFAULT_TTFT = mapOf(BackupRoute.Step.RESERVE to 3_000L, BackupRoute.Step.CLOUD to 3_200L, BackupRoute.Step.BACKUP to 6_000L)
+    val DEFAULT_TTFT = mapOf(BackupRoute.Step.RESERVE to 3_000L, BackupRoute.Step.CLOUD to 3_200L)
 
     /**
-     * The brains for one call, in the standing order: on-phone brain → Nous → Blaze cloud gateway. [warm] = the on-phone
-     * brain can answer right now (never "will be ready"); signed out, only the on-phone brain.
+     * The brains for one call, in the standing order (signed out: none). Owner 16 Nov 2026: the on-phone brain is gone.
      * 0.46.6: [kind], [ttft] and [reliability] no longer reorder it (0.46.5 sorted by reliability band, and chat by speed,
      * which put the gateway before Nous so Nous was never asked). A failing brain costs little in order: errors move on at
      * once and silence is cut by [HedgeRace.Limits.quietMs].
      */
     @Suppress("UNUSED_PARAMETER")
-    fun order(kind: Kind, warm: Boolean, signedIn: Boolean, ttft: (BackupRoute.Step) -> Long? = { null },
+    fun order(kind: Kind, signedIn: Boolean, ttft: (BackupRoute.Step) -> Long? = { null },
               reliability: (BackupRoute.Step) -> Double? = { null }): List<BackupRoute.Step> = buildList {
-        if (warm) add(BackupRoute.Step.BACKUP)
         // 0.52.1 (gw061): on tool turns Blaze Cloud goes before the Nous reserve (the reserve is the same gateway with the
-        // same body on the slowest path, 60 s per attempt); plain chat keeps on-phone → Nous → Cloud.
+        // same body on the slowest path, 60 s per attempt); plain chat keeps Nous → Cloud.
         if (signedIn) { if (kind == Kind.CHAT) { add(BackupRoute.Step.RESERVE); add(BackupRoute.Step.CLOUD) } else { add(BackupRoute.Step.CLOUD); add(BackupRoute.Step.RESERVE) } }
     }
 

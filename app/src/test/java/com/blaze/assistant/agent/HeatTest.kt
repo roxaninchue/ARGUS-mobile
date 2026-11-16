@@ -22,7 +22,7 @@ class HeatTest {
         assertEquals(Thermal.HOT, Thermal.policy(4, false))             // CRITICAL
         assertEquals(Thermal.HOT, Thermal.policy(0, true))              // Battery Saver
         val h = Thermal.HOT
-        assertFalse(h.hedge); assertFalse(h.animate); assertFalse(h.blur); assertFalse(h.warmPhoneBrain)
+        assertFalse(h.hedge); assertFalse(h.animate); assertFalse(h.blur)
     }
 
     @Test fun thermalSwitchTurnsOffHedging() {
@@ -35,18 +35,10 @@ class HeatTest {
         Thermal.set(0, false); assertEquals(6_000L, BrainRace.limits(BrainRace.Kind.TASK).hedgeMs)
     }
 
-    @Test fun phoneBrainNeverRestartsWhileIdle() {
-        val b = src("agent/BackupBrain.kt")
-        // the 10-min probe only looks at a running server (it used to start it: healthCheck())
-        assertTrue(b.contains("if (proc?.isAlive == true) runCatching { val ok = healthy()"))
-        assertFalse(b.contains("if (!healthy()) healthCheck() else"))
-        // setup doesn't start the server, warm-up is skipped when hot, the process really ends
-        assertTrue(b.contains("Thermal.now().warmPhoneBrain"))
-        assertTrue(b.contains("p.destroyForcibly()"))
-        assertTrue(b.contains("BackupHeat.mayTry(autoFails"))
-        assertEquals(5 * 60_000L, BackupBrain.IDLE_MS)
-        // a turn never starts it unless it's the only brain (signed out)
-        assertTrue(b.contains("if (!cold) { prewarm(); throw LlmClient.LlmException(\"backup: warming up\", 503) }"))
+    @Test fun noPhoneBrainLeft() {
+        // Owner 16 Nov 2026: the on-device brains (the OpenCode backup and the MediaPipe Offline Brain) are removed
+        for (f in listOf("agent/BackupBrain.kt", "agent/BackupBridge.kt", "agent/BackupHeat.kt", "agent/OfflineBrain.kt", "agent/BrainRest.kt"))
+            assertFalse(f, listOf(File("src/main/java/com/blaze/assistant/$f"), File("app/src/main/java/com/blaze/assistant/$f")).any { it.exists() })
     }
 
     @Test fun phoneControlIdlesOutsideATask() {

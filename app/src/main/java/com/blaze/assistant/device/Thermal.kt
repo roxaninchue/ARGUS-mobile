@@ -14,17 +14,16 @@ import kotlinx.coroutines.flow.StateFlow
  * (PowerManager thermal status MODERATE or worse, API 29+) or Battery Saver is on, Blaze does less:
  *  - no hedged second model request (one brain at a time, deadlines still apply),
  *  - animations (particles, edge dots, orb wobble, Halo glow) freeze to a still frame and glass blur is skipped,
- *  - the on-phone brain is not warmed up (a running one may still answer; nothing new is started).
  * [policy] is pure (ThermalTest); [hot] is the app-wide switch the UI and the brains read.
  */
 object Thermal {
     /** PowerManager.THERMAL_STATUS_MODERATE (2). */
     const val MODERATE = 2
 
-    data class Policy(val hedge: Boolean, val animate: Boolean, val blur: Boolean, val warmPhoneBrain: Boolean)
+    data class Policy(val hedge: Boolean, val animate: Boolean, val blur: Boolean)
 
-    val COOL = Policy(hedge = true, animate = true, blur = true, warmPhoneBrain = true)
-    val HOT = Policy(hedge = false, animate = false, blur = false, warmPhoneBrain = false)
+    val COOL = Policy(hedge = true, animate = true, blur = true)
+    val HOT = Policy(hedge = false, animate = false, blur = false)
 
     fun policy(thermalStatus: Int, batterySaver: Boolean): Policy = if (thermalStatus >= MODERATE || batterySaver) HOT else COOL
 

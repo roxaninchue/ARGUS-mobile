@@ -123,13 +123,10 @@ object LlmClient {
      */
     private suspend fun completeRaw(messages: JSONArray, tools: JSONArray?, onText: ((String) -> Unit)?,
                          onThink: ((String) -> Unit)?, lane: Lane): JSONObject {
-        // v0.33.0 Offline Brain: no internet + the on-device model downloaded = answer on the phone.
-        if (lane == Lane.MAIN) OfflineBrain.maybe(messages, onText)?.let { lastRoute = "Offline Brain"; return it }
         val token = Settings.gatewayToken()
-        // 0.46.3 brain order (BrainOrder): the on-device OpenCode brain first when it's ready, then the Nous reserve, then
-        // Blaze Cloud last. Signed out, the on-device brain still answers when it's ready.
-        val backupReady = try { BackupBrain.ready() } catch (_: Throwable) { false }
-        if (token.isBlank() && !backupReady) throw LlmException(Cloud.SIGNED_OUT, 401)
+        // Brains (BrainRace.order): the gateway's Nous reserve and Blaze Cloud. Owner 16 Nov 2026: the on-device backup brain
+        // was removed, so signed out there is nothing to ask.
+        if (token.isBlank()) throw LlmException(Cloud.SIGNED_OUT, 401)
         val t = Target(Providers.GATEWAY, Providers.GATEWAY_BASE, token, Cloud.MODEL)
         var msgs = messages
         // v0.44.0: an action turn asks for the strong (agent) lineup with the weak routes last (ModelRoute).
@@ -149,7 +146,6 @@ object LlmClient {
                     try { com.blaze.assistant.device.CrashLog.write("${BrandName.NAME} Cloud: $lastCloudError (reasoning only / no content)") } catch (_: Throwable) { } })
         }
         val coding = BrainOrder.coding(msgs)
-        val gdata = BrainOrder.googleData(msgs)
         // A3: once the gateway Worker looks killed (Cloudflare 1102, CPU limit), later gateway calls go slim, after a short pause.
         var workerKilled = false
         suspend fun viaGatewayWith(reserve: String, txt: ((String) -> Unit)?, thk: ((String) -> Unit)?): JSONObject {
@@ -161,25 +157,17 @@ object LlmClient {
             if (ReserveBody.PAUSE_MS > 0) kotlinx.coroutines.delay(ReserveBody.PAUSE_MS)
             return gateway(reserve, shrink(msgs, keep = ReserveBody.KEEP), ReserveBody.slimForReserve(tools, msgs), txt, thk)
         }
-        // 0.46.4 hotfix (BrainRace): brains in order, each with hard deadlines; the on-phone brain only when it is warm (never
-        // waits on its setup or start). 0.46.6: always on-phone → Nous → Blaze Cloud; a call that offers tools runs ONE brain
+        // 0.46.4 hotfix (BrainRace): brains in order, each with hard deadlines. 0.46.6: a call that offers tools runs ONE brain
         // at a time (no hedge, no first answer wins: a tool call is never returned by two brains); plain chat may hedge.
         val parent = CallState.current()
         val kind = BrainRace.kind(liteTurn, heavyTurn, tools?.length() ?: 0, coding, BrainRace.userChars(msgs), parent.raceKind)
-        val warm = backupReady && try { BackupBrain.warm() } catch (_: Throwable) { false }
-        if (backupReady && !warm) try { BackupBrain.prewarm() } catch (_: Throwable) { }
-        // signed out with only the on-phone brain: it may still have to start (the one case that waits for it)
-        val cold = token.isBlank() && backupReady && !warm
-        val steps = if (cold) listOf(BackupRoute.Step.BACKUP) else BrainRace.order(kind, warm, token.isNotBlank(), { BrainLedger.app.ttft(it) }, { BrainLedger.app.reliability(it) })
+        val steps = BrainRace.order(kind, true, { BrainLedger.app.ttft(it) }, { BrainLedger.app.reliability(it) })
         // fix/chat-flat-ui (owner, 14 Nov 2026): chat turns stream their thinking too (the folded "Thinking" section above the
         // reply); only the brain whose answer is shown passes it on (gThink checks a.shows()).
         val chatThink = if (lane == Lane.MAIN) onThink else null
         var cloudErr: Throwable? = null
         val out = try {
-            // the cold on-phone brain (the only brain when signed out) gets its start time on top
-            val lim0 = BrainRace.limits(kind)
-            val lim = if (cold) lim0.copy(firstMs = 45_000L, thinkMs = 60_000L, wholeMs = 120_000L) else lim0
-            HedgeRace.run(steps, lim, onText != null,
+            HedgeRace.run(steps, BrainRace.limits(kind), onText != null,
                 call = { a ->
                     val st = parent.fork()
                     // Owner, 15 Nov 2026 ("I want the thought to stream in"): thinking streams while no brain has won yet
@@ -191,12 +179,8 @@ object LlmClient {
                     val gThink: ((String) -> Unit)? = chatThink?.let { f -> { p: String -> a.think(); if (a.thoughtShows()) f(p) } }
                     val t0 = System.currentTimeMillis()
                     val v = withContext(st.element()) { when (a.step) {
-                        // The on-phone brain: same messages, same tools; its tool calls come back as real tool_calls for the agent loop.
-                        BackupRoute.Step.BACKUP -> BackupBrain.complete(msgs, tools, gText, gThink, coding, gdata, chat = kind == BrainRace.Kind.CHAT, cold = cold).also {
-                            lastServedBy = ""; lastServedKey = ""; lastRoute = "On-phone brain" + (if (coding) " · coder" else "")
-                        }
                         // Nous (the gateway's reserve, free models only)
-                        BackupRoute.Step.RESERVE -> viaGatewayWith(BackupRoute.reserveHeader(BackupRoute.Step.RESERVE, true), gText, gThink).also { lastRoute = "Nous reserve" }
+                        BackupRoute.Step.RESERVE -> viaGatewayWith(BackupRoute.reserveHeader(BackupRoute.Step.RESERVE), gText, gThink).also { lastRoute = "Nous reserve" }
                         // Blaze Cloud; its own reserve is asked separately, so the gateway skips it
                         // 0.46.5: inside the race a busy / CPU-killed / 5xx Cloud fails at once (no backoff tries) so the race moves on
                         BackupRoute.Step.CLOUD -> withContext(Cloud.FastFail) { viaGatewayWith("skip", gText, gThink) }
@@ -214,7 +198,6 @@ object LlmClient {
                     if (step == BackupRoute.Step.CLOUD) cloudErr = e
                     parent.errors.add(step.name.lowercase() + ": " + e.message.orEmpty().take(200))
                     if (step == BackupRoute.Step.CLOUD && (e as? LlmException)?.code != 401) try { com.blaze.assistant.device.CrashLog.write("${BrandName.NAME} Cloud failed: ${lastCloudError.ifBlank { e.message.orEmpty() }}") } catch (_: Throwable) { }
-                    if (step == BackupRoute.Step.BACKUP) try { com.blaze.assistant.device.CrashLog.write("Backup brain failed: ${e.message.orEmpty().take(200)}") } catch (_: Throwable) { }
                 },
                 // a brain that lost the race without a word is at least that slow (the chat router learns the faster one)
                 onLose = { step, ms -> if (onText != null) BrainLedger.app.ttft(step, ms) },
@@ -224,11 +207,10 @@ object LlmClient {
                 allFailed = { last, fatal -> BrainRace.finalError(steps, fatal, cloudErr, last) },
                 switching = BrainRace.SWITCHING,
                 retryPick = { s -> BrainRace.retryPick(s) { BrainLedger.app.reliability(it) } },
-                retryMs = if (cold) 0L else BrainRace.RETRY_MS,
+                retryMs = BrainRace.RETRY_MS,
                 parallel = BrainRace.parallel(tools?.length() ?: 0))
         } catch (e: LlmException) {
-            // A4: every final failure leaves a line on whether the on-device brain could run
-            try { com.blaze.assistant.device.CrashLog.write("All brains failed (${e.code}): " + BackupBrain.diag()) } catch (_: Throwable) { }
+            try { com.blaze.assistant.device.CrashLog.write("All brains failed (${e.code}): ${e.message.orEmpty().take(200)}") } catch (_: Throwable) { }
             throw e
         } finally { BrainLedger.save() }
         out.value.second.publish()
@@ -414,7 +396,7 @@ object LlmClient {
             heavyTurn, tools != null && tools.length() > 0, avoid)?.let { conn.setRequestProperty(TurnModel.PREFER_HEADER, TurnModel.safe(it)) } }
         // v0.45.8 (Site): the reply-language picker as a header (BCP-47); none for Auto.
         if (t.pid == Providers.GATEWAY) ReplyLanguage.header(ReplyLanguage.current())?.let { (k, v) -> conn.setRequestProperty(k, v) }
-        // v0.45.26: where the gateway's Nous reserve goes (BackupRoute): "skip" while the on-device backup is next, "only" last.
+        // v0.45.26: where the gateway's Nous reserve goes (BackupRoute): "skip" on Blaze Cloud (the reserve is asked on its own), "only" for the reserve.
         if (t.pid == Providers.GATEWAY && reserve.isNotBlank()) conn.setRequestProperty("X-Blaze-Reserve", reserve)
 
         val body = JSONObject().apply {
@@ -436,7 +418,7 @@ object LlmClient {
             }
             if (t.pid == Providers.GATEWAY) Cloud.tag(this, task ?: Cloud.task(messages, tools, liteTurn))
             // 0.47 chat composer: the model family picked on the composer's chip (Auto sends nothing). Read-only hint; the brain
-            // order (on-phone brain → Nous → gateway) is unchanged and the gateway strips every blaze_* field before a provider.
+            // order (Nous / gateway) is unchanged and the gateway strips every blaze_* field before a provider.
             // 0.51.0: a call can carry its own family (BlazeQuery's judge uses the tier the user picked, Auto → Flare).
             if (t.pid == Providers.GATEWAY) (CallState.current().family?.let { it.ifBlank { null } } ?: com.blaze.assistant.composer.ModelChoice.wire())?.let { put("blaze_family", it) }
             // v0.45.3: a hint for short / plain turns that the first visible word matters more than long reasoning. The

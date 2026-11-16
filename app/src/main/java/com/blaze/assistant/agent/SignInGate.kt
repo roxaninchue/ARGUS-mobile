@@ -3,8 +3,7 @@ package com.blaze.assistant.agent
 
 import com.blaze.assistant.BrandName
 /**
- * v0.45.4: a chat message sent while signed out of Blaze Cloud, with no other model that could answer (the Offline
- * Brain only answers with no internet), no longer ends in an error. The turn stops at its first model call, the chat
+ * v0.45.4: a chat message sent while signed out of Blaze Cloud no longer ends in an error. The turn stops at its first model call, the chat
  * shows a "Sign in" card instead, the message stays where it is, and it is sent by itself once sign-in completes.
  * Direct commands that need no model ("open WhatsApp", the time, a timer) still run signed out, because the card only
  * replaces the failure of a real model call.
@@ -20,9 +19,8 @@ object SignInGate {
     /** The model call failed only because there is no Blaze session (LlmClient: Cloud.SIGNED_OUT, 401). */
     fun isSignedOut(code: Int, message: String?): Boolean = code == 401 && message == Cloud.SIGNED_OUT
 
-    /** The card replaces the error when the failure was "signed out" and no other model could have answered. */
-    fun applies(code: Int, message: String?, offlineBrainAnswers: Boolean): Boolean =
-        isSignedOut(code, message) && !offlineBrainAnswers
+    /** The card replaces the error when the failure was "signed out" (16 Nov 2026: no on-phone model can answer instead). */
+    fun applies(code: Int, message: String?): Boolean = isSignedOut(code, message)
 
     /** A chat waiting on sign-in: its id and the card's message id (the user's message sits just above the card). */
     data class Held(val chatId: String, val cardId: Long)

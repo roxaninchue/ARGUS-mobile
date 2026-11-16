@@ -32,9 +32,8 @@ class ReserveBodyTest {
     }
 
     @Test fun fallbacksStillRunAfterTheHealedRetry() {
-        assertEquals(listOf(BackupRoute.Step.RESERVE), BackupRoute.fallbacks(false, 400, "The model rejected the request: x", shapeError = true, afterHeal = true))
-        assertEquals(listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE), BackupRoute.fallbacks(true, 400, "The model rejected the request: x", shapeError = true, afterHeal = true))
-        assertEquals(emptyList<BackupRoute.Step>(), BackupRoute.fallbacks(true, 400, "The model rejected the request: x", shapeError = true))
+        assertEquals(listOf(BackupRoute.Step.RESERVE), BackupRoute.fallbacks(400, "The model rejected the request: x", shapeError = true, afterHeal = true))
+        assertEquals(emptyList<BackupRoute.Step>(), BackupRoute.fallbacks(400, "The model rejected the request: x", shapeError = true))
     }
 
     @Test fun crashGuardShowsPlainWordsNeverAClassName() {

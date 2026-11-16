@@ -82,8 +82,13 @@ object ProviderCatalog {
     fun isChatText(id: String): Boolean {
         val l = id.lowercase()
         // 0.46.3: never NVIDIA (Nemotron) or System One (Jev) models, whatever a list offers
-        return l.isNotBlank() && NON_CHAT.none { l.contains(it) } && !BackupModels.excluded(id)
+        return l.isNotBlank() && NON_CHAT.none { l.contains(it) } && !excluded(id)
     }
+
+    /** System One (Jev) and NVIDIA (Nemotron / nvidia) models are never used; nor a bare "test" model. */
+    private val EXCLUDED = Regex("""(^|[/_.\-])(jev|nemotron|nvidia)([/_.\-0-9]|$)|^test$""", RegexOption.IGNORE_CASE)
+    fun excluded(id: String, name: String = ""): Boolean =
+        EXCLUDED.containsMatchIn(id) || EXCLUDED.containsMatchIn(name.replace(' ', '-')) || name.contains("nvidia", true)
 
     private val KNOWN_TOOLS = Regex(
         """(?i)(llama-?3\.[13]|llama3\.[13]|llama-?4|qwen-?3|qwen2\.5|qwq|gpt-oss|kimi|deepseek-(v[3-9]|chat)|glm-?[4-9]|""" +

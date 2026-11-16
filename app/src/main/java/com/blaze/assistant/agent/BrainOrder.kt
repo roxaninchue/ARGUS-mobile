@@ -5,33 +5,16 @@ import com.blaze.assistant.BrandName
 import org.json.JSONArray
 
 /**
- * 0.46.3 brain order (owner decision 26 Oct 2026, 18:00; replaces "Blaze Cloud first, on-device backup second"):
- *  1. the on-device OpenCode brain (free models, through the bundled opencode server) when it is ready;
- *  2. Nous (the gateway's Nous reserve, free `:free` models only);
- *  3. Blaze Cloud (the gateway's own lineup) last.
- * Until OpenCode is ready (first-run setup still running, or switched off) the order starts at Nous, silently.
- * Coding jobs (code, repos, terminal, Exam Coach coding questions, REA) ask OpenCode for the strong free coders first;
- * requests carrying Google data (Gmail, Calendar, Drive, Contacts) only go to OpenCode's zero-retention models.
- * Never NVIDIA (Nemotron), Jev or System One models anywhere ([BackupModels.excluded]). Pure (BrainOrderTest).
+ * Brain order and the per-brain ledger. Owner 16 Nov 2026: the on-device backup brain was removed, so the order is the
+ * gateway's two brains: plain chat asks the Nous reserve then Blaze Cloud; tool turns Blaze Cloud then the reserve
+ * ([BrainRace.order]). [coding] still marks coding jobs for the race's limits. Pure (BrainOrderTest).
  */
 object BrainOrder {
-    /** The strong free coders, in order (zero-retention, 200K context, ~32K output; free for a limited time, OpenCode only). */
-    val CODERS = listOf("deepseek-v4.1-flash-free", "glm-5.3-flash-free")
-    /** OpenCode free models known to keep no data (the only ones a Google-data request may use). */
-    val ZERO_RETENTION = setOf("deepseek-v4.1-flash-free", "glm-5.3-flash-free")
-    /** First-token cap for an OpenCode model before the next one (GLM free has shown 7 to 196 s): then fail over. */
-    const val FIRST_TOKEN_MS = 20_000L
-    /** Health probe of the on-device brain: at start and this often. */
-    const val PROBE_EVERY_MS = 10 * 60_000L
-
-    fun plan(backupReady: Boolean, signedIn: Boolean = true): List<BackupRoute.Step> = buildList {
-        if (backupReady) add(BackupRoute.Step.BACKUP)
-        if (signedIn) { add(BackupRoute.Step.RESERVE); add(BackupRoute.Step.CLOUD) }
-    }
+    fun plan(signedIn: Boolean = true): List<BackupRoute.Step> =
+        if (signedIn) listOf(BackupRoute.Step.RESERVE, BackupRoute.Step.CLOUD) else emptyList()
 
     /** Display names for Settings › Brains. */
     fun label(s: BackupRoute.Step): String = when (s) {
-        BackupRoute.Step.BACKUP -> "On-phone brain"
         BackupRoute.Step.RESERVE -> "Nous reserve"
         BackupRoute.Step.CLOUD -> "${BrandName.NAME} Cloud"
     }
@@ -56,29 +39,6 @@ object BrainOrder {
         }
         return false
     }
-
-    private val googleTools = Regex("""^(gmail|gcal|gdrive|drive_|gcontacts|google_|gdocs|gsheets)""")
-
-    /** The request carries Google user data (a Google tool ran in this conversation). */
-    fun googleData(messages: JSONArray): Boolean {
-        for (i in 0 until messages.length()) {
-            val m = messages.optJSONObject(i) ?: continue
-            if (m.optString("role") == "tool" && googleTools.containsMatchIn(m.optString("name"))) return true
-            val calls = m.optJSONArray("tool_calls") ?: continue
-            for (j in 0 until calls.length()) if (googleTools.containsMatchIn(calls.optJSONObject(j)?.optJSONObject("function")?.optString("name").orEmpty())) return true
-        }
-        return false
-    }
-
-    /**
-     * The OpenCode models for this job, from the server's ordered free list [ordered]: coders first for a coding job (asked
-     * for even when the live list hasn't shown them yet), then the rest; only zero-retention models with Google data.
-     */
-    fun models(ordered: List<String>, coding: Boolean, googleData: Boolean): List<String> {
-        val clean = ordered.filter { !BackupModels.excluded(it) }
-        val base = if (coding) (CODERS + clean.filter { it !in CODERS }) else clean
-        return (if (googleData) base.filter { it in ZERO_RETENTION }.ifEmpty { CODERS } else base).distinct()
-    }
 }
 
 /** 0.46.3: usage and health per brain, recorded on the phone (the daily effort meter will read it). Pure core. */
@@ -100,7 +60,9 @@ class BrainLedger(private val now: () -> Long = { System.currentTimeMillis() }) 
     @Synchronized fun toJson(): String = org.json.JSONObject().also { o -> rows.forEach { (k, r) -> o.put(k.name, org.json.JSONObject().put("calls", r.calls).put("fails", r.fails).put("ms", r.ms)
         .put("lastOk", r.lastOk).put("lastFail", r.lastFail).put("err", r.lastError).put("ttft", r.ttft).put("rel", r.rel)) } }.toString()
     @Synchronized fun load(json: String) { try { val o = org.json.JSONObject(json); o.keys().forEach { k -> val r = o.getJSONObject(k)
-        rows[BackupRoute.Step.valueOf(k)] = Row(r.optInt("calls"), r.optInt("fails"), r.optLong("ms"), r.optLong("lastOk"), r.optLong("lastFail"), r.optString("err"), r.optLong("ttft"), r.optDouble("rel", -1.0)) } } catch (_: Exception) { } }
+        // 16 Nov 2026: rows of removed brains (the on-phone "BACKUP") are skipped, the rest still load
+        val step = BackupRoute.Step.values().firstOrNull { it.name == k } ?: return@forEach
+        rows[step] = Row(r.optInt("calls"), r.optInt("fails"), r.optLong("ms"), r.optLong("lastOk"), r.optLong("lastFail"), r.optString("err"), r.optLong("ttft"), r.optDouble("rel", -1.0)) } } catch (_: Exception) { } }
 
     companion object {
         /** The app's ledger (saved in Settings "brain_usage_v1"). */

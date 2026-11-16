@@ -3589,10 +3589,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // v0.42.0 Cloud runs: a normal chat turn goes to the gateway once, as a run it keeps until the phone has the
                 // reply. Private chats, background agents, specialists, routines and Halo turns stay on the local loop.
                 // 0.45.20: offline no longer forces the local loop: the run's send waits for the network with the bubble at
-                // Sending (contract §1), unless the Offline Brain can answer here and now.
-                val offlineBrain = try { OfflineBrain.on && OfflineBrain.ready() } catch (_: Throwable) { false }
+                // Sending (contract §1).
                 // 0.46.4 (BrainRace): only long work goes as a Cloud run; short turns go direct through the hedged brain race.
-                cloudTurn = if (!bulk && voice != Duo.Who.HALO && BrainRace.cloudRunFor(lite, longWork) && CloudRuns.eligible(agentId == null, isPrivate, FastLane.online(app) || !offlineBrain))
+                cloudTurn = if (!bulk && voice != Duo.Who.HALO && BrainRace.cloudRunFor(lite, longWork) && CloudRuns.eligible(agentId == null, isPrivate, true))
                     CloudRuns.Turn(id, "t-$id-$turnFrom-$turnStart") else null
                 val ct = cloudTurn
                 val turnGids = msgs.dropWhile { it.id != turnFrom }.filter { it.role == Role.USER }.map { it.gid }
@@ -4472,8 +4471,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 keepForResume()
                 // v0.45.4: signed out of Blaze Cloud with nothing else to answer: a Sign in card, the message waits and is
                 // sent by itself once the account lands (SignInGate).
-                val offline = try { OfflineBrain.on && OfflineBrain.ready() && !OfflineBrain.online() } catch (_: Throwable) { false }
-                if (SignInGate.applies(e.code, e.message, offline)) {
+                if (SignInGate.applies(e.code, e.message)) {
                     val cid = add(Role.ERROR, SignInGate.LINE)
                     msgs = msgs.map { if (it.id == cid) it.copy(meta = SignInGate.CARD) else it }
                     signInHolds.hold(id, cid)

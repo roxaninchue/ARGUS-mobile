@@ -232,14 +232,14 @@ class HedgeRaceTest {
             when (a.step) {
                 B.NOUS -> if (++nousCalls == 1) { delay(300); throw Busy() } else { delay(50_000); a.visible(); "late but fine" }   // 0.52.1: RETRY_MS is 60 s (was 90 s); a slow 50 s retry still lands
                 else -> { delay(200); throw Busy() }
-            } }, retryPick = { BrainRace.retryPick(listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE, BackupRoute.Step.CLOUD)) { s -> if (s == BackupRoute.Step.RESERVE) 0.95 else 0.2 }
-                ?.let { s -> B.values()[listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE, BackupRoute.Step.CLOUD).indexOf(s)] } },
+            } }, retryPick = { BrainRace.retryPick(listOf(BackupRoute.Step.RESERVE, BackupRoute.Step.CLOUD)) { s -> if (s == BackupRoute.Step.RESERVE) 0.95 else 0.2 }
+                ?.let { s -> if (s == BackupRoute.Step.RESERVE) B.NOUS else B.CLOUD } },
             retryMs = BrainRace.RETRY_MS, now = { testScheduler.currentTime })
         assertEquals(B.NOUS, o.step); assertTrue(o.retried); assertEquals("late but fine", o.value); assertEquals(2, nousCalls)
     }
 
     @Test fun everythingFailsEvenTheRetryGivesTheCalmLine() = runTest {
-        val steps = listOf(BackupRoute.Step.BACKUP, BackupRoute.Step.RESERVE, BackupRoute.Step.CLOUD)
+        val steps = listOf(BackupRoute.Step.RESERVE, BackupRoute.Step.CLOUD)
         try {
             HedgeRace.run(steps, chat, true, call = { _ -> delay(100); throw LlmClient.LlmException(Cloud.BUSY, 503) },
                 allFailed = { last, fatal -> BrainRace.finalError(steps, fatal, last, last) },

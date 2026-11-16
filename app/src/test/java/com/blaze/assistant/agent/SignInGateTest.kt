@@ -9,18 +9,14 @@ import org.junit.Test
 class SignInGateTest {
     @Test fun signedOutFailureGetsTheCard() {
         assertTrue(SignInGate.isSignedOut(401, Cloud.SIGNED_OUT))
-        assertTrue(SignInGate.applies(401, Cloud.SIGNED_OUT, offlineBrainAnswers = false))
+        assertTrue(SignInGate.applies(401, Cloud.SIGNED_OUT))
     }
 
     @Test fun otherFailuresStayErrors() {
-        assertFalse(SignInGate.applies(401, Cloud.EXPIRED, false))
-        assertFalse(SignInGate.applies(500, Cloud.SIGNED_OUT, false))
-        assertFalse(SignInGate.applies(0, Cloud.UNREACHABLE, false))
-        assertFalse(SignInGate.applies(401, null, false))
-    }
-
-    @Test fun anotherModelThatAnswersMeansNoCard() {
-        assertFalse(SignInGate.applies(401, Cloud.SIGNED_OUT, offlineBrainAnswers = true))
+        assertFalse(SignInGate.applies(401, Cloud.EXPIRED))
+        assertFalse(SignInGate.applies(500, Cloud.SIGNED_OUT))
+        assertFalse(SignInGate.applies(0, Cloud.UNREACHABLE))
+        assertFalse(SignInGate.applies(401, null))
     }
 
     @Test fun releasedOnlyWhenSignInCompletes() {

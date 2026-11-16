@@ -258,7 +258,6 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-dash:$media3")
     implementation("androidx.media3:media3-transformer:$media3")   // v0.33.0 Clip Studio
     implementation("androidx.media3:media3-effect:$media3")
-    implementation("com.google.mediapipe:tasks-genai:0.10.24")   // v0.33.0 Offline Brain
     implementation(project(":storeapi"))
     // 0.46.2 Movies: user-added provider modules run in QuickJS (dokar3/quickjs-kt, Apache-2.0; 1.0.0-alpha13 is the last build on
     // Kotlin 2.0) with a Jsoup-backed cheerio shim (Jsoup, MIT). Unit tests swap in the JVM build (natives for linux x64/arm64).

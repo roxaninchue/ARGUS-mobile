@@ -3,8 +3,7 @@ package com.blaze.assistant.agent
 /**
  * 0.46.3 (reports on 0.46.2: "Blaze Cloud is busy right now. Tap Retry", then "Something went wrong (t8: …)" mid-task).
  * The rule: while any brain is left, nobody sees a busy or provider error. One model call of the agent loop, at ANY turn
- * (the first or the eighth), goes through the brains in [BrainOrder.plan] order (on-device OpenCode, Nous reserve,
- * Blaze Cloud), each with the same messages and tools, so the task goes on with its context. Only when every one failed
+ * (the first or the eighth), goes through the brains in [BrainOrder.plan] order (Nous reserve, Blaze Cloud), each with the same messages and tools, so the task goes on with its context. Only when every one failed
  * is an error thrown (shown with Retry). [onSwitch] gets one plain status line when a later brain took over a call.
  * A sign-in / allowance / malformed-request refusal from Blaze Cloud is final ([fixable]). Pure (FailoverTest).
  */
@@ -51,11 +50,4 @@ object Failover {
         val err = cloudErr ?: last!!
         throw if (err is LlmClient.TooSlow || err !is LlmClient.LlmException) LlmClient.LlmException(Cloud.BUSY, 503) else err
     }
-
-    /** The 0.46.3-early shape (cloud first): kept for callers that pass explicit lambdas; same order rule as [BrainOrder]. */
-    suspend fun <T> run(cloud: suspend () -> T, backupReady: Boolean, backup: suspend () -> T, reserve: suspend () -> T,
-                        shapeError: (Throwable) -> Boolean = { false }, onSwitch: (String) -> Unit = {},
-                        onFail: (BackupRoute.Step, Throwable) -> Unit = { _, _ -> }): Outcome<T> =
-        run(BrainOrder.plan(backupReady), { s -> when (s) { BackupRoute.Step.BACKUP -> backup(); BackupRoute.Step.RESERVE -> reserve(); BackupRoute.Step.CLOUD -> cloud() } },
-            shapeError, onSwitch, onFail)
 }

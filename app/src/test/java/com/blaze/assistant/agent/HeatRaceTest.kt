@@ -42,15 +42,6 @@ class HeatRaceTest {
         assertFalse(o.hedged); assertEquals(B.CLOUD, o.step); assertTrue(o.firstVisibleMs in 21_000L..21_001L)
     }
 
-    @Test fun setupBackoffNeverLoops() {
-        assertTrue(BackupHeat.mayTry(0, 0, 1_000))
-        assertFalse(BackupHeat.mayTry(1, 0 + 1, 5 * 60_000L))
-        assertTrue(BackupHeat.mayTry(1, 1, 10 * 60_000L + 1))
-        assertEquals(20 * 60_000L, BackupHeat.waitMs(2))
-        assertEquals(6 * 3600_000L, BackupHeat.waitMs(9))
-        assertFalse("stops after 3 failures", BackupHeat.mayTry(3, 1, Long.MAX_VALUE / 2))
-    }
-
     @Test fun screenshotsAreRateCapped() {
         assertEquals(0, com.blaze.assistant.phone.ScreenHeat.shotWait(0, 5_000))
         assertEquals(500, com.blaze.assistant.phone.ScreenHeat.shotWait(1_000, 1_200))

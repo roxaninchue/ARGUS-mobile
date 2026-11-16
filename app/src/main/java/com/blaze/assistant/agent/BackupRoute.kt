@@ -1,50 +1,20 @@
 package com.blaze.assistant.agent
 
 /**
- * v0.45.26, pure (BackupRouteTest): the order Blaze asks for an answer in, and when it moves on.
- *
- *  1. Blaze Cloud (the gateway's normal routing) — always first.
- *  2. The on-device backup brain ([BackupBrain]: OpenCode's free models, strongest first) — only when Blaze Cloud
- *     failed with an error worth working around, or was too slow to start answering ([ttftMs]).
- *  3. The Nous reserve on the gateway (`X-Blaze-Reserve: only`, the owner's key, slower but consistent) — last.
- *
- * When the backup brain isn't ready (32-bit phone, Linux not installed, still downloading, server down) step 2 is
- * skipped and the gateway puts its reserve after its own lineup in the same call (no header = "auto"), so a phone
- * without the backup still ends on the reserve. The person never sees which step answered: the route chip says
- * "Blaze Cloud" for all three.
+ * Pure (BackupRouteTest): the brains Argus asks for an answer, and when it moves on. Two, both on the gateway:
+ *  - Blaze Cloud (the gateway's own lineup);
+ *  - the Nous reserve (`X-Blaze-Reserve: only`, free models, slower but consistent).
+ * Owner 16 Nov 2026: the on-device backup brain (OpenCode under Alpine) was removed; nothing runs a model on the phone.
+ * The person never sees which one answered beyond the route chip.
  */
 object BackupRoute {
-    enum class Step { CLOUD, BACKUP, RESERVE }
+    enum class Step { CLOUD, RESERVE }
 
-    /** The `X-Blaze-Reserve` header value for a gateway call at [step] ("" = none: the gateway's default, auto). */
-    fun reserveHeader(step: Step, backupReady: Boolean): String = when {
-        step == Step.RESERVE -> "only"
-        step == Step.CLOUD && backupReady -> "skip"
-        else -> ""
-    }
-
-    /** The steps for one request. */
-    fun plan(backupReady: Boolean): List<Step> = if (backupReady) listOf(Step.CLOUD, Step.BACKUP, Step.RESERVE) else listOf(Step.CLOUD)
-
-    /** Defaults for "too slow": no first chunk (text, thinking or a tool call) within this long. */
-    const val DEFAULT_TTFT_MS = 15_000L
-    const val DEFAULT_TTFT_NOSTREAM_MS = 45_000L
-    const val MIN_TTFT_MS = 3_000L
-    const val MAX_TTFT_MS = 120_000L
+    /** The `X-Blaze-Reserve` header value for a gateway call at [step]: "only" for the reserve, "skip" for Cloud (the reserve is asked on its own). */
+    fun reserveHeader(step: Step): String = if (step == Step.RESERVE) "only" else "skip"
 
     /**
-     * The first-chunk deadline for Blaze Cloud before the backup takes over. [setting] is the saved value in ms
-     * (Settings "backup_ttft_ms"; null/blank = default; 0 = never switch for slowness, only for errors). A
-     * non-streaming call's first chunk is its whole answer, so it gets the longer default (or 3× the setting).
-     */
-    fun ttftMs(streaming: Boolean, setting: Long?): Long {
-        if (setting == 0L) return 0L
-        val base = setting?.takeIf { it > 0 }?.coerceIn(MIN_TTFT_MS, MAX_TTFT_MS)
-        return if (streaming) base ?: DEFAULT_TTFT_MS else (base?.let { (it * 3).coerceAtMost(MAX_TTFT_MS) } ?: DEFAULT_TTFT_NOSTREAM_MS)
-    }
-
-    /**
-     * Should the next step run after Blaze Cloud (or the backup) failed with [code] / [message]? Not for what no other
+     * Should the next step run after a brain failed with [code] / [message]? Not for what no other
      * brain can fix: a sign-in problem, the waiting list, today's allowance used up, a request the user cancelled.
      */
     fun moveOn(code: Int, message: String): Boolean {
@@ -57,16 +27,14 @@ object BackupRoute {
     }
 
     /**
-     * v0.45.28: what runs after Blaze Cloud's own call failed for good, in order. The Nous reserve on the gateway
+     * v0.45.28: what runs after Blaze Cloud's own call failed for good. The Nous reserve on the gateway
      * (`X-Blaze-Reserve: only`) ALWAYS gets a turn for a failure another brain can fix (busy, 5xx, 429 that isn't the
-     * allowance, too slow, no answer, a stream that died mid-reply), also when the backup brain isn't ready: before this,
-     * a phone without the backup showed "Blaze Cloud is busy" without ever asking the reserve. [shapeError] (the request
-     * itself was refused) and what [moveOn] rules out (sign-in, waiting list, allowance) get nothing.
+     * allowance, too slow, no answer, a stream that died mid-reply). [shapeError] (the request itself was refused) and
+     * what [moveOn] rules out (sign-in, waiting list, allowance) get nothing.
      */
-    fun fallbacks(backupReady: Boolean, code: Int, message: String, shapeError: Boolean, afterHeal: Boolean = false): List<Step> = when {
+    fun fallbacks(code: Int, message: String, shapeError: Boolean, afterHeal: Boolean = false): List<Step> = when {
         // A1: after the flattened retry a 400 is a model / provider quirk, not the request's shape: the fallbacks still run
         (shapeError && !afterHeal) || !moveOn(code, message) -> emptyList()
-        backupReady -> listOf(Step.BACKUP, Step.RESERVE)
         else -> listOf(Step.RESERVE)
     }
 
