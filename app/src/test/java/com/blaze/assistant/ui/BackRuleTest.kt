@@ -118,8 +118,8 @@ class BackRuleTest {
         val btc = chat.substringAfter("fun backToChat() {").substringBefore("\n    }\n")
         for (k in listOf("settingsPage = null", "showViews = false", "plusOpen = false", "arcOpen = false", "avatarMenu = false", "showSearch = false",
             "GalleryUi.open.value = false", "Agent.roomOpen.value = -1L", "Views.showing.value = \"\"",
-            // 0.52.3: Spotlight closes too, and with nothing over the tab Back lands on the Home tab (Home is the root)
-            "composer.closeSpotlight()", "switchTab(ChatNav.HOME)")) assertTrue("backToChat: $k", btc.contains(k))
+            // Spotlight closes too, and with nothing over the tab Back lands on Team (the ARGUS root; the 0.52 Home is gone)
+            "composer.closeSpotlight()", "switchTab(ChatNav.TEAM)")) assertTrue("backToChat: $k", btc.contains(k))
         // Back from Chat no longer drops to Home (that loop made Back unable to leave Blaze).
         assertFalse(chat.contains("BackHandler(enabled = swipeMode && sheetP > 0.5f && nav.tab == ChatNav.CHAT && !nav.inProjectChat) { settleTo(0f) }"))
         // openView handles exactly the specials BackRule knows.

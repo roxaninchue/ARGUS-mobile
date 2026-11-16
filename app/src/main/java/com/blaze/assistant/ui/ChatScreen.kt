@@ -654,8 +654,8 @@ fun ChatScreen() {
     // longer goes down to Home (that made Home and Chat a loop Back could never leave). The shell publishes what is
     // in front and how to close it; BackRule's window interceptor acts on it before any nested BackHandler.
     fun backToChat() {
-        // 0.52.3: Home is the root. Back closes what is over the current tab (a page, a sheet, Spotlight, a view); with
-        // nothing over it, a project chat goes to its project, Projects to its list, and Chat / Projects to Home.
+        // Team is the root. Back closes what is over the current tab (a page, a sheet, Spotlight, a view); with
+        // nothing over it, a project chat goes to its project, Projects to its list, and Chat / Life / Desk to Team.
         val over = settingsPage != null || showViews || plusOpen || arcOpen || avatarMenu || showSearch || GalleryUi.open.value ||
             Agent.roomOpen.value >= 0L || Views.showing.value.isNotEmpty() || composer.spotlightOpen || notchOpen || newOpen
         composer.closeSpotlight()
