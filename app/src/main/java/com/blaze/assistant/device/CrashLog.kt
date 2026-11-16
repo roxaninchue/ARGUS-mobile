@@ -26,7 +26,11 @@ object CrashLog {
         try { if (com.blaze.assistant.agent.SecretVault.file == null) com.blaze.assistant.agent.SecretVault.file = File(ctx.filesDir, "secret_vault.json") } catch (_: Throwable) { }
         val prev = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
-            try { writeNow("CRASH on ${t.name}: ${android.util.Log.getStackTraceString(e).take(6000)}"); markPending() } catch (_: Throwable) { }
+            // 0.54.2: an OutOfMemoryError can fail the full trace (16 Nov report: "CRASH (previous run, crash)" and no line);
+            // then at least its type and top frames are written.
+            try { writeNow("CRASH on ${t.name}: ${android.util.Log.getStackTraceString(e).take(6000)}"); markPending() } catch (_: Throwable) {
+                try { writeNow("CRASH on " + t.name + ": " + e.javaClass.name + " at " + e.stackTrace.take(8).joinToString(" < ")); markPending() } catch (_: Throwable) { }
+            }
             prev?.uncaughtException(t, e)
         }
         // 0.46.5: a crash with no Java stack (native: the provider engine) leaves no CRASH line. On the next start, read

@@ -180,6 +180,16 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
           retention-days: 14
 
+      # 0.54.2: the R8 map, so a STALL / CRASH stack from a phone report (x4.L2.z0…) can be read back as real names.
+      - name: Upload R8 mapping
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-${{ github.sha }}
+          path: app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: ignore
+          retention-days: 90
+
       # Preview screenshots (Robolectric, ui/ShotsTest). 0.53.2: only on a commit/PR titled with [shots] or a manual run, and after
       # the APK upload, so the APK never waits ~6 min on pictures. Never blocks a release; the PNGs and the log go to the `shots` branch.
       - name: Screenshots
