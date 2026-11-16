@@ -46,7 +46,7 @@ object SelfMap {
     val SETTINGS = listOf(
         Entry("setting:theme", Kind.SETTING, "Light or dark", "Light / Dark / Auto and accent colour", "look", listOf("dark mode", "light mode", "theme", "accent", "colour", "color")),
         Entry("setting:voice", Kind.SETTING, "Voice", "Hey ${BrandName.NAME}, spoken replies", "voice", listOf("wake word", "speech", "read aloud")),
-        Entry("setting:brain", Kind.SETTING, "Brain", "On-phone brain and ${BrandName.NAME} Cloud", "brain", listOf("models", "ai", "on-phone brain")),
+        Entry("setting:brain", Kind.SETTING, "Brain", "${BrandName.NAME} Cloud and models", "brain", listOf("models", "ai")),
         Entry("setting:sync", Kind.SETTING, "Cloud sync", "Keep phones the same", "sync", listOf("backup")),
         Entry("setting:logins", Kind.SETTING, "Saved logins", "Sign-ins from the secure form", "logins", listOf("passwords", "vault")),
         Entry("setting:control", Kind.SETTING, "Phone control", "Accessibility and permissions", "control", listOf("permissions", "accessibility")),

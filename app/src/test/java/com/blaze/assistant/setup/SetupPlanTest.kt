@@ -18,7 +18,7 @@ class SetupPlanTest {
     private fun all(ph: Phase) = SetupPlan.ITEMS.associate { it.id to Status(ph) }
 
     @Test fun theListIsEverythingArgusDownloads() {
-        assertEquals(listOf("linux", "tools", "skills", "brain", "voice", "quick"), SetupPlan.ITEMS.map { it.id })
+        assertEquals(listOf("linux", "tools", "skills", "voice", "quick"), SetupPlan.ITEMS.map { it.id })
         assertEquals(SetupPlan.ITEMS.size, SetupPlan.ITEMS.map { it.title }.toSet().size)
         for (i in SetupPlan.ITEMS) {
             assertTrue(i.id, i.mb > 0)
@@ -26,7 +26,7 @@ class SetupPlanTest {
             i.after?.let { a -> assertTrue("${i.id} after $a", SetupPlan.ITEMS.indexOfFirst { it.id == a } < SetupPlan.ITEMS.indexOf(i)) }
         }
         // the big downloads wait for Wi-Fi; Linux and its tools don't (they're small enough and needed for tasks)
-        assertEquals(setOf("brain", "voice", "quick"), SetupPlan.ITEMS.filter { it.wifi }.map { it.id }.toSet())
+        assertEquals(setOf("voice", "quick"), SetupPlan.ITEMS.filter { it.wifi }.map { it.id }.toSet())
         assertNull(SetupPlan.item("nope"))
         assertEquals("tools", SetupPlan.item("tools")!!.id)
     }
@@ -38,12 +38,12 @@ class SetupPlanTest {
         val total = SetupPlan.ITEMS.sumOf { it.mb }.toFloat()
         assertEquals(60f / total, SetupPlan.overall(st("tools" to Phase.DONE)), 0.0001f)
         // a running item counts its own progress
-        val half = mapOf("brain" to Status(Phase.RUNNING, 50))
-        assertEquals(39f / total, SetupPlan.overall(half), 0.0001f)
-        assertEquals(0f, SetupPlan.overall(mapOf("brain" to Status(Phase.RUNNING, -1))), 0f)
+        val half = mapOf("voice" to Status(Phase.RUNNING, 50))
+        assertEquals(20f / total, SetupPlan.overall(half), 0.0001f)
+        assertEquals(0f, SetupPlan.overall(mapOf("voice" to Status(Phase.RUNNING, -1))), 0f)
         // skipped items leave the total
-        val skipBrain = st("brain" to Phase.SKIPPED, "tools" to Phase.DONE)
-        assertEquals(60f / (total - 78f), SetupPlan.overall(skipBrain), 0.0001f)
+        val skipVoice = st("voice" to Phase.SKIPPED, "tools" to Phase.DONE)
+        assertEquals(60f / (total - 40f), SetupPlan.overall(skipVoice), 0.0001f)
         assertEquals((60f / total * 100f).toInt(), SetupPlan.percent(st("tools" to Phase.DONE)))
         // it only goes up as items finish
         var s = emptyMap<String, Status>(); var last = 0f
@@ -65,15 +65,15 @@ class SetupPlanTest {
     @Test fun headlinesAndRowLines() {
         assertEquals("ARGUS is ready", SetupPlan.headline(all(Phase.DONE)))
         assertEquals("Setting up ARGUS\u2026", SetupPlan.headline(st("linux" to Phase.RUNNING)))
-        assertEquals("Waiting for Wi-Fi to finish", SetupPlan.headline(all(Phase.DONE) + st("brain" to Phase.WAITING_WIFI, "voice" to Phase.WAITING_WIFI)))
+        assertEquals("Waiting for Wi-Fi to finish", SetupPlan.headline(all(Phase.DONE) + st("voice" to Phase.WAITING_WIFI, "quick" to Phase.WAITING_WIFI)))
         assertEquals("Waiting for a connection", SetupPlan.headline(all(Phase.OFFLINE)))
-        val brain = SetupPlan.item("brain")!!
+        val brain = SetupPlan.item("voice")!!
         assertEquals("Waiting", SetupPlan.line(brain, null))
         assertEquals("42%", SetupPlan.line(brain, Status(Phase.RUNNING, 42)))
         assertEquals("Unpacking", SetupPlan.line(brain, Status(Phase.RUNNING, -1, "Unpacking")))
         assertEquals("Working\u2026", SetupPlan.line(brain, Status(Phase.RUNNING)))
         assertEquals("Ready", SetupPlan.line(brain, Status(Phase.DONE)))
-        assertEquals("On Wi-Fi \u00b7 78 MB", SetupPlan.line(brain, Status(Phase.WAITING_WIFI)))
+        assertEquals("On Wi-Fi \u00b7 40 MB", SetupPlan.line(brain, Status(Phase.WAITING_WIFI)))
         assertEquals("When you're online", SetupPlan.line(brain, Status(Phase.OFFLINE)))
         assertEquals("Retrying soon", SetupPlan.line(brain, Status(Phase.FAILED)))
         assertEquals("Not needed on this phone", SetupPlan.line(brain, Status(Phase.SKIPPED)))
@@ -88,9 +88,10 @@ class SetupPlanTest {
         assertEquals(listOf("linux", "skills"), ids(emptyMap(), true, false))
         // offline: nothing
         assertEquals(emptyList<String>(), ids(emptyMap(), false, true))
-        // tools and the backup brain follow Linux
-        assertEquals(listOf("tools", "skills", "brain", "voice", "quick"), ids(st("linux" to Phase.DONE), true, true))
-        assertTrue("brain" in ids(st("linux" to Phase.SKIPPED), true, true))
+        // the tools follow Linux (Owner 16 Nov 2026: the on-device backup brain is gone from the list)
+        assertEquals(listOf("tools", "skills", "voice", "quick"), ids(st("linux" to Phase.DONE), true, true))
+        assertTrue("tools" in ids(st("linux" to Phase.SKIPPED), true, true))
+        assertNull(SetupPlan.item("brain"))
         // running and settled items are not started again
         assertFalse("linux" in ids(st("linux" to Phase.RUNNING), true, true))
         assertFalse("skills" in ids(st("skills" to Phase.DONE), true, true))
@@ -114,7 +115,7 @@ class SetupPlanTest {
     }
 
     @Test fun waitingRowsSayWhy() {
-        val brain = SetupPlan.item("brain")!!; val linux = SetupPlan.item("linux")!!
+        val brain = SetupPlan.item("voice")!!; val linux = SetupPlan.item("linux")!!
         assertEquals(Phase.OFFLINE, SetupPlan.waiting(linux, null, online = false, unmetered = false)!!.phase)
         assertEquals(Phase.WAITING_WIFI, SetupPlan.waiting(brain, null, online = true, unmetered = false)!!.phase)
         assertNull(SetupPlan.waiting(linux, null, online = true, unmetered = false))
@@ -124,7 +125,7 @@ class SetupPlanTest {
     }
 
     @Test fun onlySettledResultsAreKeptForResume() {
-        val s = st("linux" to Phase.DONE, "voice" to Phase.SKIPPED, "brain" to Phase.RUNNING, "quick" to Phase.FAILED)
+        val s = st("linux" to Phase.DONE, "voice" to Phase.SKIPPED, "tools" to Phase.RUNNING, "quick" to Phase.FAILED)
         val raw = SetupPlan.encode(s)
         assertEquals("linux=DONE,voice=SKIPPED", raw)
         assertEquals(st("linux" to Phase.DONE, "voice" to Phase.SKIPPED), SetupPlan.decode(raw))
@@ -148,7 +149,7 @@ class SetupPlanTest {
     }
 
     @Test fun mobileDataLetsTheWifiItemsFinish() {
-        val left = st("linux" to Phase.DONE, "tools" to Phase.DONE, "skills" to Phase.DONE, "brain" to Phase.DONE,
+        val left = st("linux" to Phase.DONE, "tools" to Phase.DONE, "skills" to Phase.DONE,
             "voice" to Phase.WAITING_WIFI, "quick" to Phase.WAITING_WIFI)
         // on mobile data the Wi-Fi items wait...
         assertTrue(SetupPlan.runnable(left, online = true, unmetered = false, now = 0L).isEmpty())

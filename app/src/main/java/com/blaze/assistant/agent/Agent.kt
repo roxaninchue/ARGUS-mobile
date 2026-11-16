@@ -4478,11 +4478,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     msgs = msgs.map { if (it.id == cid) it.copy(meta = SignInGate.CARD) else it }
                     signInHolds.hold(id, cid)
                 } else {
-                    // v0.45.27: Blaze Cloud and every fallback failed on a phone that could have the backup brain but
-                    // doesn't yet: a normal Blaze line with the way out (Wi-Fi for the one-time download) instead of
-                    // the plain error (BackupNudge). Sign-in, waiting list and today's allowance keep their own lines.
-                    val nudge = if (agentId == null) try { BackupBrain.nudgeFor(e.code, e.message.orEmpty()) } catch (_: Throwable) { null } else null
-                    if (nudge != null) add(Role.BLAZE, nudge) else add(Role.ERROR, e.message ?: "Something went wrong.")
+                    add(Role.ERROR, e.message ?: "Something went wrong.")
                 }
             } catch (e: Exception) {
                 com.blaze.assistant.device.CrashLog.error("agent loop", e)

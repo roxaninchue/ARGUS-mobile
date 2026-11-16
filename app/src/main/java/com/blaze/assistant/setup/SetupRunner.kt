@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 /**
  * 0.52.3 one-screen setup, the phone's side of [SetupPlan]: starts every item by itself with the code that already did
- * each job (Linux.install, LinuxReadyRunner.ensure, SkillLibrary.seed, BackupBrain.autoSetup, WakeModel.download,
+ * each job (Linux.install, LinuxReadyRunner.ensure, SkillLibrary.seed, WakeModel.download,
  * FastLane.download), one at a time per item, Wi-Fi items only on Wi-Fi, failures retried with a back-off. It runs in
  * the app's own scope, so leaving the setup screen (or the app) doesn't stop it; settled results are saved and the next
  * start resumes what is left ([later], from BlazeApp's after-first-frame queue, about 30 s after the first frame).
@@ -35,11 +35,10 @@ object SetupRunner {
     fun useData(): Boolean = try { Settings.bool(SetupPlan.PREF_MOBILE_DATA, false) } catch (_: Throwable) { false }
 
     /**
-     * 0.52.4 "Download now on mobile data": the Wi-Fi items start on the current network. The backup brain's own
-     * mobile-data switch is turned on too, since its installer checks that, not this.
+     * 0.52.4 "Download now on mobile data": the Wi-Fi items start on the current network.
      */
     fun useMobileData(ctx: Context) {
-        try { Settings.setBool(SetupPlan.PREF_MOBILE_DATA, true); Settings.setBool("backup_brain_mobile_data", true); Settings.setBool("backup_mobile_asked", true) } catch (_: Throwable) { }
+        try { Settings.setBool(SetupPlan.PREF_MOBILE_DATA, true) } catch (_: Throwable) { }
         start(ctx)
         kick.trySend(Unit)
     }
@@ -117,12 +116,6 @@ object SetupRunner {
                 com.blaze.assistant.agent.FastLane.ready(app) -> Status(Phase.DONE)
                 else -> null
             }
-            "brain" -> when {
-                !Settings.bool("backup_brain", true) -> Status(Phase.SKIPPED, note = "Turned off")
-                com.blaze.assistant.agent.BackupBrain.initialized() && !com.blaze.assistant.agent.BackupBrain.supported() -> Status(Phase.SKIPPED, note = "Not available on this phone")
-                com.blaze.assistant.agent.BackupBrain.initialized() && com.blaze.assistant.agent.BackupBrain.installed() -> Status(Phase.DONE)
-                else -> null
-            }
             else -> null
         }
     } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("SetupRunner.probe $id", t); null }
@@ -153,13 +146,6 @@ object SetupRunner {
                 if (marker.exists()) Status(Phase.DONE) else fail("The Linux tools didn't finish")
             }
             "skills" -> { com.blaze.assistant.agent.SkillLibrary.seed(app); Status(Phase.DONE) }
-            "brain" -> {
-                var waited = 0
-                while (!com.blaze.assistant.agent.BackupBrain.initialized() && waited < 60) { delay(1_000); waited++ }
-                if (!com.blaze.assistant.agent.BackupBrain.initialized()) return fail("Waiting for ${com.blaze.assistant.BrandName.NAME} to finish starting")
-                com.blaze.assistant.agent.BackupBrain.autoSetup()
-                probe(i.id)?.takeIf { SetupPlan.settled(it) } ?: fail("The backup brain didn't finish downloading")
-            }
             "voice" -> {
                 val watch = scope.launch { com.blaze.assistant.voice.WakeModel.progress.collect { p -> if (p in 0..100) set(i.id, Status(Phase.RUNNING, p)) } }
                 val r = try { com.blaze.assistant.voice.WakeModel.download(app) } finally { watch.cancel() }

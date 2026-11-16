@@ -132,9 +132,7 @@ object SelfControl {
         "wake_gate" to "wake sound gate", "wake_screen_off" to "listen with screen off", "wake_charging" to "listen while charging", "wake_pocket" to "pause in pocket",
         "digest_mode" to "save non-urgent heads-ups for the briefs", "evening_brief" to "evening brief", "morning_brief" to "morning brief", "home_headsups" to "heads-ups about new things on Home", "speed_mode" to "speed mode (no animations)",
         "tool_cache" to "reuse identical web lookups", "speculative_fetch" to "prefetch top search results on Wi-Fi", "learned_router" to "learned tool router",
-        "adaptive_think" to "adaptive thinking budget", "token_ledger" to "token ledger",
-        // v0.45.26: the on-device backup brain (answers when Blaze Cloud is down or slow).
-        "backup_brain" to "on-phone brain", "backup_brain_mobile_data" to "let the on-phone brain's one-time setup use mobile data")
+        "adaptive_think" to "adaptive thinking budget", "token_ledger" to "token ledger")
 
     private fun setSetting(key: String, value: String): String {
         val k = key.trim().lowercase()
@@ -143,14 +141,7 @@ object SelfControl {
             Settings.setBool(k, v); return "${boolKeys[k]} is now ${if (v) "on" else "off"}."
         }
         if (k == "wake_conf") { Settings.setStr("wake_conf", value); return "Wake sensitivity set." }
-        // v0.45.26: seconds Blaze Cloud gets to start answering before the backup brain takes over (0 = only on errors).
-        if (k == "backup_ttft_ms" || k == "backup_wait") {
-            val sec = value.trim().removeSuffix("s").trim().toDoubleOrNull() ?: return "Give a number of seconds (0 = switch only on errors)."
-            val ms = if (k == "backup_ttft_ms" && sec > 300) sec.toLong() else (sec * 1000).toLong()
-            Settings.setStr("backup_ttft_ms", ms.toString())
-            return if (ms == 0L) "The on-phone brain now takes over only when ${BrandName.NAME} Cloud fails." else "${BrandName.NAME} Cloud now gets ${BackupRoute.ttftMs(true, ms) / 1000} s to start answering before the backup brain takes over."
-        }
-        return "I can't change \u201c$key\u201d. I can change: ${boolKeys.keys.joinToString()}, wake_conf, backup_wait (seconds)."
+        return "I can't change \u201c$key\u201d. I can change: ${boolKeys.keys.joinToString()}, wake_conf."
     }
 
     fun status(ctx: Context): String {
@@ -171,7 +162,7 @@ object SelfControl {
                 "voice_on", "voice_off", "status", "setup_check", "open", "install", "crash_log", "speed_stats", "tool_stats", "token_ledger", "set_model", "set_persona", "set_setting"))))
             .put("provider", JSONObject().put("type", "string")).put("model", JSONObject().put("type", "string"))
             .put("persona", JSONObject().put("type", "string"))
-            .put("target", JSONObject().put("type", "string").put("description", "open: accessibility, overlay, app_permissions, battery, notification_access, assistant, exact_alarms, or ONE ${BrandName.NAME} settings page id: ai, voice, control, terminal, connections, feel, persona, memory, routines, privacy, device, orb, backup, backup_brain"))
+            .put("target", JSONObject().put("type", "string").put("description", "open: accessibility, overlay, app_permissions, battery, notification_access, assistant, exact_alarms, or ONE ${BrandName.NAME} settings page id: ai, voice, control, terminal, connections, feel, persona, memory, routines, privacy, device, orb, backup"))
             .put("what", JSONObject().put("type", "string").put("description", "install: linux, wake_model or fast_lane"))
             .put("key", JSONObject().put("type", "string")).put("value", JSONObject().put("type", "string")))
             .put("required", JSONArray(listOf("action")))))

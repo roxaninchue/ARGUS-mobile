@@ -18,7 +18,6 @@ object SetupPlan {
         Item("linux", "Linux workspace", "A small Linux for files, scripts and code", 4, wifi = false),
         Item("tools", "Python, git and tools", "Ready for the tasks ${BrandName.NAME} runs", 60, wifi = false, after = "linux"),
         Item("skills", "Skills", "Research, docs, plans, code and more", 1, wifi = false),
-        Item("brain", "On-device backup brain", "Answers when the cloud is out of reach", 78, wifi = true, after = "linux"),
         Item("voice", "Offline voice model", "\u201cHey ${BrandName.NAME}\u201d, captions and voice notes", 40, wifi = true),
         Item("quick", "Quick commands", "Instant offline phone commands", 35, wifi = true),
     )

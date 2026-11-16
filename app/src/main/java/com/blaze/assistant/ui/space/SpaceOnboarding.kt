@@ -38,7 +38,6 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.SignalCellularAlt
@@ -308,7 +307,6 @@ internal fun setupIcon(id: String): ImageVector = when (id) {
     "linux" -> Icons.Rounded.Terminal
     "tools" -> Icons.Rounded.Build
     "skills" -> Icons.Rounded.AutoAwesome
-    "brain" -> Icons.Rounded.Psychology
     "voice" -> Icons.Rounded.RecordVoiceOver
     "quick" -> Icons.Rounded.Bolt
     else -> Icons.Rounded.Download

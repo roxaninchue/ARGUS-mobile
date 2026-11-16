@@ -106,12 +106,17 @@ class BlazeApp : Application() {
         // Wake word starts from the screen (MainActivity/assistant) and at boot: starting a
         // microphone service while Blaze is in the background makes Android 12+ kill the app.
         com.blaze.assistant.device.StartGuard.step("terminal.Terminal.init") { com.blaze.assistant.terminal.Terminal.init(this) }
-        // v0.45.26: the on-device backup brain (installs quietly on Wi-Fi, starts only when Blaze Cloud struggles) and
-        // "ready out of the box" Linux tools for Linuxes installed before this version. Both wait a minute after start.
         // 0.46.6: low-RAM phones keep a smaller picture cache (provider engines run one at a time everywhere)
         try { com.blaze.assistant.movies.ProviderSandbox.Gate.configure(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: Gate.configure", e) }
         com.blaze.assistant.device.StartLater.add("device.Thermal.init") { com.blaze.assistant.device.Thermal.init(this) }
-        if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("agent.BackupBrain.init") { com.blaze.assistant.agent.BackupBrain.init(this) }
+        // Owner 16 Nov 2026: the on-device backup brain is gone; once after the update, free what it left (its server, downloads, prefs).
+        if (!com.blaze.assistant.device.StartGuard.safeStart && !Settings.bool(com.blaze.assistant.agent.PhoneBrainCleanup.PREF_DONE, false)) {
+            val app = this
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {
+                kotlinx.coroutines.delay(30_000)
+                com.blaze.assistant.agent.PhoneBrainCleanup.runOnce(app)
+            }
+        }
         // Wave B-4: the on-phone Linux desktop was removed; once after the update, free what it left (packages, caches, prefs).
         if (!com.blaze.assistant.device.StartGuard.safeStart && !Settings.bool(com.blaze.assistant.terminal.LinuxDesktopCleanup.PREF_DONE, false)) {
             val app = this
@@ -120,7 +125,7 @@ class BlazeApp : Application() {
                 com.blaze.assistant.terminal.LinuxDesktopCleanup.runOnce(app)
             }
         }
-        // 0.52.3 one-screen setup: for people past onboarding, what is left (Linux, tools, skills, backup brain, voice, quick
+        // 0.52.3 one-screen setup: for people past onboarding, what is left (Linux, tools, skills, voice, quick
         // commands) downloads by itself about 30 s after the first frame (setup/SetupRunner.later). Never in safe start.
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("setup.SetupRunner.later") { com.blaze.assistant.setup.SetupRunner.later(this) }
         com.blaze.assistant.device.StartGuard.step("agent.SkillLibrary.init") { com.blaze.assistant.agent.SkillLibrary.init(this) }
