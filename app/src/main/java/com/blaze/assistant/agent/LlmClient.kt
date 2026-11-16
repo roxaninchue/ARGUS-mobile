@@ -327,7 +327,8 @@ object LlmClient {
                     c.setRequestProperty("Authorization", "Bearer $tok"); c.setRequestProperty("Content-Type", "application/json")
                     c.outputStream.use { it.write("{}".toByteArray()) }
                     val code = c.responseCode
-                    (if (code in 200..299) c.inputStream else c.errorStream)?.use { it.readBytes() }
+                    val b = (if (code in 200..299) c.inputStream else c.errorStream)?.use { it.readBytes() }
+                    com.blaze.assistant.connect.AccountGate.report(code, b?.let { String(it) })   // account lock: a refused session
                 } catch (_: Exception) { }
             }.start()
             return
@@ -498,6 +499,7 @@ object LlmClient {
         conn.disconnect()
 
         if (code !in 200..299) {
+            com.blaze.assistant.connect.AccountGate.report(code, text)   // account lock: any 401, or 403 account_locked
             val msg = try {
                 val o = if (text.trimStart().startsWith("[")) JSONArray(text).getJSONObject(0) else JSONObject(text)
                 val e = o.opt("error")

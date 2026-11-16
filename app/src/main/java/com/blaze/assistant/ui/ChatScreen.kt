@@ -198,7 +198,8 @@ fun ChatScreen() {
     var settingsPage by rememberSaveable { mutableStateOf<String?>(null) }
     // 0.52.3 first run (space/SpaceOnboarding): logo + tagline, sign-in when needed, then the one setup screen. People who
     // already set ARGUS up never see it.
-    var onboard by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.show(Settings.bool("onboarded", false), Settings.ready, hasMessages)) }
+    // Account lock: signing in on the lock screen of a first run still leads into the language step and setup.
+    var onboard by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.show(Settings.bool("onboarded", false), Settings.ready && !com.blaze.assistant.connect.AccountGate.firstRun(), hasMessages)) }
     var obStep by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.first().name) }
     val galleryOpen by GalleryUi.open.collectAsState()
     LaunchedEffect(Unit) { if (!onboard) Settings.setBool("onboarded", true) }

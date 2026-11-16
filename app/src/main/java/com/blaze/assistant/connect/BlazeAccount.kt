@@ -65,7 +65,9 @@ object BlazeAccount {
                     /** v0.45.3: a sign-in waiting for its 6-digit / recovery code (blaze-auth 0.9.0 2FA). */
                     val mfa: Mfa.Pending? = null,
                     /** v0.45.3: /v1/providers feature flags (web_login, password_reset, two_factor); missing = off. */
-                    val features: Map<String, Boolean> = emptyMap()) {
+                    val features: Map<String, Boolean> = emptyMap(),
+                    /** Account lock (blaze-auth 0.10.0): a sign-up or sign-in waiting for the code emailed to confirm the address. */
+                    val verify: SignupCode.Pending? = null) {
         val signedIn get() = user != null
     }
 
@@ -127,6 +129,11 @@ object BlazeAccount {
             "already_enabled" -> "Two-step verification is already on."
             "not_enabled" -> "Two-step verification is already off."
             "setup_required" -> "Start the set-up again: tap Turn on."
+            // Account lock (blaze-auth 0.10.0)
+            "disposable_email" -> ThrowawayEmail.MESSAGE
+            "email_unverified" -> "Confirm your email first: sign in with your password to get a code."
+            "account_locked" -> AccountLock.message(AccountLock.Reason.EMAIL_UNVERIFIED)
+            "verify_expired" -> SignupCode.EXPIRED
             else -> "Sign-in failed (${e.code})."
         }
         else -> e.message ?: e.javaClass.simpleName
@@ -179,6 +186,7 @@ object BlazeAccount {
             val p = call("GET", "/v1/providers")
             _view.value = _view.value.copy(online = true, login = boolMap(p.optJSONObject("login")), connectors = boolMap(p.optJSONObject("connectors")),
                 features = featureFlags(p))
+            AccountGate.verifyOn(p.optBoolean("signup_verify", false))   // account lock: the server asks for confirmed emails
         } catch (_: Exception) {
             _view.value = _view.value.copy(online = false)
         }
@@ -189,10 +197,13 @@ object BlazeAccount {
         val tok = Settings.secret(SESSION)
         if (tok.isBlank()) { if (_view.value.user != null) setSession(null, null); return }
         try {
-            User.from(call("GET", "/v1/me", tok).optJSONObject("user"))?.let { setSession(tok, it) }
+            User.from(call("GET", "/v1/me", tok).optJSONObject("user"))?.let { setSession(tok, it); AccountGate.meOk() }
         } catch (e: ApiError) {
             if (e.status == 401) setSession(null, null)
-        } catch (_: Exception) { /* offline: keep the cached user */ }
+            // Account lock: blaze-auth 0.10.0 refuses an unconfirmed / throwaway account (403 account_locked). The session
+            // can't be used, so it ends here too; signing in again sends the code (or says the address can't be used).
+            AccountLock.lockedReason(e.body)?.let { r -> endSession(tok); setSession(null, null); AccountGate.refused(r) }
+        } catch (_: Exception) { /* offline: keep the cached user (the 7-day grace counts from the last yes) */ }
     }
 
     /** v0.45.3: blaze-auth 0.9.0 flags; an older server has none, so every new feature stays hidden. */
@@ -213,6 +224,7 @@ object BlazeAccount {
             Settings.setSecret(SESSION, ""); Settings.setStr(USER, "")
             _view.value = _view.value.copy(user = null)
             if (had) runCatching { com.blaze.assistant.terminal.CliAuth.signedOut() }   // RC4: the terminal's CLI signs out too
+            AccountGate.recompute()   // account lock: signed out locks ARGUS
             return
         }
         val fresh = Settings.secret(SESSION) != token
@@ -258,24 +270,77 @@ object BlazeAccount {
         val tok = o.optString("token"); val u = User.from(o.optJSONObject("user"))
         if (tok.isBlank() || u == null) throw ApiError(502, "no_session")
         setSession(tok, u)
+        AccountGate.meOk()   // account lock: a fresh session is blaze-auth saying yes
     }
 
     // ---------------- email + password ----------------
 
-    /** Signs in, or creates an account when [signUp]. Returns "" on success, else a plain sentence. */
+    /**
+     * Signs in, or creates an account when [signUp]. Returns "" on success (or when the email code step opened, see
+     * [View.verify]), else a plain sentence. Account lock (blaze-auth 0.10.0): a sign-up answers 202 with a code step
+     * instead of a session, and a password sign-in on an unconfirmed account answers 403 email_unverified with the same
+     * step. A sign-up carries this install's [DeviceId]; a throwaway address is refused before anything is sent.
+     */
     suspend fun email(signUp: Boolean, name: String, email: String, password: String): String = withContext(Dispatchers.IO) {
         val e = email.trim()
         if (e.isEmpty() || password.isEmpty()) return@withContext "Enter your email and password."
         if (signUp && password.length < 8) return@withContext "Use a password of at least 8 characters."
+        if (signUp) ThrowawayEmail.check(e).takeIf { it.isNotEmpty() }?.let { return@withContext it }
         try {
             val body = JSONObject().put("email", e).put("password", password).put("client", CLIENT)
-            if (signUp) body.put("name", name.trim())
-            takeSession(call("POST", if (signUp) "/v1/auth/signup" else "/v1/auth/login", body = body))
+            if (signUp) body.put("name", name.trim()).put("device", DeviceId.get())
+            val (status, o) = callRaw("POST", if (signUp) "/v1/auth/signup" else "/v1/auth/login", body = body)
+            SignupCode.pendingOf(status, o, System.currentTimeMillis(), e)?.let { p ->
+                _view.value = _view.value.copy(verify = p, mfa = null, pending = "", message = "We sent a code to ${p.sentTo}. It works for 10 minutes.")
+                return@withContext ""
+            }
+            if (status >= 400) {
+                Mfa.tokenOf(status, o)?.let { throw MfaRequired(it, o) }
+                val err = o.optString("error").ifBlank { "http_$status" }
+                if (err == "not_configured") throw NotConfigured
+                throw ApiError(status, err, o)
+            }
+            takeSession(o)   // an older blaze-auth answers a sign-up with a session straight away
             ""
         } catch (m: MfaRequired) {
             startMfa(m, "email"); ""
         } catch (x: Exception) { message(x) }
     }
+
+    // ---------------- email code (account lock, blaze-auth 0.10.0) ----------------
+
+    /** Checks the emailed code. "" when signed in (or on to the two-step code); otherwise a plain sentence. */
+    suspend fun verifySignup(code: String): String = withContext(Dispatchers.IO) {
+        val p = _view.value.verify ?: return@withContext SignupCode.EXPIRED
+        when (val r = SignupCode.verify(p, code, System.currentTimeMillis(), CLIENT) { path, b -> callRaw("POST", path, body = b) }) {
+            is SignupCode.Outcome.Signed -> {
+                try { takeSession(r.body) } catch (x: Exception) { return@withContext message(x) }
+                _view.value = _view.value.copy(verify = null, message = "Email confirmed. Signed in as " + (_view.value.user?.email ?: ""))
+                ""
+            }
+            is SignupCode.Outcome.TwoStep -> {
+                _view.value = _view.value.copy(verify = null)
+                startMfa(MfaRequired(Mfa.tokenOf(401, r.body).orEmpty(), r.body), "email"); ""
+            }
+            is SignupCode.Outcome.Retry -> { if (_view.value.verify?.token == p.token) _view.value = _view.value.copy(verify = r.pending); r.message }
+            is SignupCode.Outcome.Restart -> { cancelVerify(r.message); r.message }
+            is SignupCode.Outcome.Error -> r.message
+        }
+    }
+
+    /** Mails a new code (at most 3 per step, the first included; the server's 429 ends the sending). */
+    suspend fun resendSignup(): String = withContext(Dispatchers.IO) {
+        val p = _view.value.verify ?: return@withContext SignupCode.EXPIRED
+        when (val r = SignupCode.resend(p, System.currentTimeMillis()) { path, b -> callRaw("POST", path, body = b) }) {
+            is SignupCode.Outcome.Retry -> { if (_view.value.verify?.token == p.token) _view.value = _view.value.copy(verify = r.pending, message = r.message); "" }
+            is SignupCode.Outcome.Restart -> { cancelVerify(r.message); r.message }
+            is SignupCode.Outcome.Error -> r.message
+            else -> ""
+        }
+    }
+
+    /** Leaves the code step (Back to sign-in, or it ran out). */
+    fun cancelVerify(message: String = "") { _view.value = _view.value.copy(verify = null, message = message) }
 
     // ---------------- two-step verification (v0.45.3, blaze-auth 0.9.0) ----------------
 

@@ -13,6 +13,7 @@ import android.provider.OpenableColumns
 class MovieOpenActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         val uri: Uri? = when (intent?.action) {
             Intent.ACTION_VIEW -> intent.data
             Intent.ACTION_SEND -> @Suppress("DEPRECATION") (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri)

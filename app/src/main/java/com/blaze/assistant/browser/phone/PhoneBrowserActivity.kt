@@ -88,6 +88,7 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         PhoneBrowser.init(this)
         // Opened by the user with nothing running: their own Blaze Phone session, in control from the start.
         if (!PhoneBrowser.hasPage()) { PhoneBrowser.openForUser(this); take() }

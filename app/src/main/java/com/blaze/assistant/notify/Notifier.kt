@@ -72,8 +72,9 @@ object Notifier {
         }
     }
 
-    private fun allowed() = Build.VERSION.SDK_INT < 33 ||
-        ContextCompat.checkSelfPermission(app, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    // Account lock: nothing posts while ARGUS is locked (AccountGate.notice is the one sign-in line).
+    private fun allowed() = !com.blaze.assistant.connect.AccountGate.locked() && (Build.VERSION.SDK_INT < 33 ||
+        ContextCompat.checkSelfPermission(app, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
 
     private fun openApp(): PendingIntent = PendingIntent.getActivity(
         app, 0, Intent(app, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
@@ -429,6 +430,9 @@ class ActionReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(ctx: Context, intent: Intent) {
+        // Account lock: only the buttons that stop something (Stop, Stop Magic Hand, Don't) still work.
+        val gate = com.blaze.assistant.connect.AccountGate
+        if (!com.blaze.assistant.connect.AccountLock.actionAllowed(gate.locked(), intent.action)) { gate.notice(ctx); return }
         when (intent.action) {
             STOP -> Notifier.stopEverything()
             STOP_HAND -> com.blaze.assistant.phone.MagicHand.stop()

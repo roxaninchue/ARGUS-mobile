@@ -366,14 +366,15 @@ object SpaceOnboarding {
     fun next(step: Step, signedIn: Boolean): Step? = when (step) {
         Step.LANGUAGE -> Step.WELCOME
         Step.WELCOME -> if (signedIn) Step.SETUP else Step.SIGN_IN
-        Step.SIGN_IN -> Step.SETUP
+        Step.SIGN_IN -> if (signedIn) Step.SETUP else Step.SIGN_IN   // account lock: no way past it signed out
         Step.SETUP -> null
     }
 
     /** First run only: someone who already used ARGUS (onboarded, signed in, or with a chat) never sees it. */
     fun show(onboarded: Boolean, signedIn: Boolean, hasMessages: Boolean): Boolean = !onboarded && !signedIn && !hasMessages
 
-    fun signInButton(signedIn: Boolean): String = if (signedIn) "Continue" else "Skip for now"
+    /** Account lock: no "Skip for now" any more; the button only shows once signed in ([signInButton] null = none). */
+    fun signInButton(signedIn: Boolean): String? = if (signedIn) "Continue" else null
 
     fun setupButton(complete: Boolean): String = if (complete) "Start using ${BrandName.UPPER}" else "Continue \u00b7 finishes in the background"
 }

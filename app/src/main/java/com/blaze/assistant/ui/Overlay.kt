@@ -155,6 +155,7 @@ object Overlay {
     fun showOrb(ctx: Context): Boolean {
         // v0.43.0: nothing floats over other apps while Bank mode is on.
         if (com.blaze.assistant.bank.BankMode.active) return false
+        if (com.blaze.assistant.connect.AccountGate.locked()) return false   // account lock: the orb stays hidden (its pin is kept)
         if (orbView != null) return true
         val (hc, type) = host(ctx) ?: return false
         val wm = hc.getSystemService(WindowManager::class.java)
@@ -306,6 +307,8 @@ object Overlay {
 
     /** Open the chat panel over the current app: the assistant session if Blaze is the assistant, else an overlay. */
     fun openPanel(ctx: Context, listen: Boolean) {
+        // Account lock: no panel over other apps; the lock screen instead.
+        if (com.blaze.assistant.connect.AccountGate.locked()) { try { ctx.startActivity(com.blaze.assistant.connect.AccountGate.lockIntent(ctx)) } catch (_: Exception) { }; return }
         com.blaze.assistant.agent.LlmClient.prewarm()
         if (BlazeInteractionService.showPanel(listen)) return
         if (panelView != null) return

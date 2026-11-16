@@ -359,6 +359,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge()
         intent?.getStringExtra(MusicActivity.EXTRA_TAB)?.takeIf { it.isNotBlank() }?.let { tab.value = VideoNav.normalize(it); if (tab.value != "player") browse.value = tab.value }
         com.blaze.assistant.mediaapps.store.JamendoSource.init(this)
@@ -802,6 +803,8 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
     }
 
     override fun onDestroy() {
+        // Account lock: an onCreate that went to the lock screen never made the player.
+        if (!::player.isInitialized) { super.onDestroy(); return }
         if (live === this) live = null
         savePos()
         if (current.value != null) com.blaze.assistant.agent.AwarenessHooks.videoLeft(player, current.value, clear = true)

@@ -114,7 +114,7 @@ fun ArgusLogo(width: Dp, modifier: Modifier = Modifier) {
 
 /**
  * 0.52.3 first run, always on the space view: [SpaceOnboarding.Step.WELCOME] (logo, tagline, Get started),
- * [SpaceOnboarding.Step.SIGN_IN] (the account card, skippable) and [SpaceOnboarding.Step.SETUP] (the one progress screen).
+ * [SpaceOnboarding.Step.SIGN_IN] (the account card; account lock: no skipping) and [SpaceOnboarding.Step.SETUP] (the one progress screen).
  * [accountCard] is the existing account sign-in UI; [setup] the live setup state ([com.blaze.assistant.setup.SetupRunner]).
  */
 @Composable
@@ -238,7 +238,7 @@ private fun SignIn(signedIn: Boolean, onNext: () -> Unit, accountCard: @Composab
             }
         }
         Spacer(Modifier.height(12.dp))
-        SpacePillButton(tr(SpaceOnboarding.signInButton(signedIn)), onNext, primary = signedIn)
+        SpaceOnboarding.signInButton(signedIn)?.let { SpacePillButton(tr(it), onNext, primary = true) }   // account lock: no Skip
     }
 }
 

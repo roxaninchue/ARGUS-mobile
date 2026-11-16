@@ -30,6 +30,8 @@ class RoutineReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         if (intent.action != FIRE) { Routines.scheduleAll(); return }
         val id = intent.getIntExtra("id", -1)
+        // Account lock: the routine is skipped (a repeating one stays scheduled for its next time).
+        if (com.blaze.assistant.connect.AccountGate.locked()) { Routines.ran(id); com.blaze.assistant.connect.AccountGate.notice(ctx); return }
         val svc = Intent(ctx, RoutineService::class.java).putExtra("id", id)
         try {
             if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(svc) else ctx.startService(svc)
@@ -51,6 +53,7 @@ class RoutineService : Service() {
     companion object {
         suspend fun runRoutine(id: Int) {
             val r = Routines.get(id) ?: return
+            if (com.blaze.assistant.connect.AccountGate.locked()) { Routines.ran(id); return }   // account lock (locked on the way)
             if (r.isCommand) {
                 val out = try { com.blaze.assistant.terminal.Terminal.run(r.command, 600, r.linux, distro = "alpine") } catch (e: Exception) { "exit 1\nError: ${e.message}" }
                 val failed = !out.startsWith("exit 0")

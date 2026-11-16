@@ -11,6 +11,7 @@ import android.os.Bundle
 class AddSourceActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         AddSourceLink.parse(intent?.dataString)?.let { url ->
             Movies.init(this)
             startActivity(android.content.Intent(this, com.blaze.assistant.mediaapps.VideoActivity::class.java)

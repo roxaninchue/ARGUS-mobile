@@ -39,6 +39,7 @@ class WakeWordService : Service() {
         /** Start, or (when already running) re-promote from the foreground so Android gives the mic back. */
         fun start(ctx: Context) {
             if (!Settings.wakeWord || !WakeModel.ready(ctx)) return
+            if (com.blaze.assistant.connect.AccountGate.locked()) return   // account lock: the wake word stays off
             if (com.blaze.assistant.life.LifeLogs.active) return   // life logs hold the mic (v0.19.0)
             try { ContextCompat.startForegroundService(ctx, Intent(ctx, WakeWordService::class.java).setAction(if (running) ACT_REFRESH else null)) } catch (_: Exception) { }
         }
@@ -112,6 +113,7 @@ class WakeWordService : Service() {
                 })
         }
         if (!goForeground()) { running = false; stopSelf(); return }
+        if (com.blaze.assistant.connect.AccountGate.locked()) { running = false; stopSelf(); return }   // account lock (a sticky restart)
         Thread {
             try {
                 model = Model(WakeModel.dir(this).absolutePath)
@@ -266,6 +268,7 @@ class WakeWordService : Service() {
     private fun stopListening() { listening = false; thread = null; main.post { note() } }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (com.blaze.assistant.connect.AccountGate.locked()) { stopListening(); stopSelf(); return START_NOT_STICKY }   // account lock
         when (intent?.action) {
             ACT_PAUSE -> { paused = true; pausedAt = System.currentTimeMillis(); stopListening() }
             ACT_RESUME -> { paused = false; note(); main.postDelayed({ startListening() }, 350) }

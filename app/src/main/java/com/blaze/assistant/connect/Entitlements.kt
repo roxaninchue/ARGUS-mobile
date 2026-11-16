@@ -150,6 +150,7 @@ object Entitlements {
             if (body != null) { c.doOutput = true; c.setRequestProperty("Content-Type", "application/json"); c.outputStream.use { it.write(body.toByteArray()) } }
             val code = c.responseCode
             val text = ((if (code in 200..299) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }).orEmpty()
+            AccountGate.report(code, text)   // account lock: any 401, or 403 account_locked
             return code to text
         } finally { c.disconnect() }
     }

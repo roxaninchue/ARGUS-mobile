@@ -158,6 +158,7 @@ class CameraActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge()
         val path = intent.getStringExtra(EXTRA_PATH)
         val origin = if (path != null) Origin.CHAT_ATTACH

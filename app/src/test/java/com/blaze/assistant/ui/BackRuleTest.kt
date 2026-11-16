@@ -112,7 +112,8 @@ class BackRuleTest {
     @Test fun theRuleIsWiredInOnePlace() = fiveTimes("wiring") {
         val app = src("BlazeApp.kt"); val main = src("MainActivity.kt"); val chat = src("ui/ChatScreen.kt")
         assertTrue(app.contains("com.blaze.assistant.ui.BackRule.install(this)"))
-        assertTrue(main.contains("BackRule.Shelled") && main.contains("BackRule.shellTakesBack(locked.value)"))
+        // Account lock: the lock screen is a lock too, so Back never goes past it to the shell.
+        assertTrue(main.contains("BackRule.Shelled") && main.contains("BackRule.shellTakesBack(locked.value || gate.value != null)"))
         assertTrue(chat.contains("BackRule.shellNow = {") && chat.contains("BackRule.toChat = { backToChat() }"))
         // backToChat closes everything the Shell can name.
         val btc = chat.substringAfter("fun backToChat() {").substringBefore("\n    }\n")

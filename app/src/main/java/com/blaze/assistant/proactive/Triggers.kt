@@ -118,6 +118,7 @@ object Triggers {
 
     private fun fire(t: Trigger, detail: String) {
         if (System.currentTimeMillis() - t.lastFired < 60_000) return   // no storms
+        if (com.blaze.assistant.connect.AccountGate.locked()) { com.blaze.assistant.connect.AccountGate.notice(); return }   // account lock: skipped
         save(all.value.map { if (it.id == t.id) it.copy(lastFired = System.currentTimeMillis()) else it })
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             Agent.runRoutine("⚡ ${t.name}", "[Trigger fired: $detail]\n${t.prompt}")

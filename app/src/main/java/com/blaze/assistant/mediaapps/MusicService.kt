@@ -17,6 +17,7 @@ import androidx.media3.exoplayer.source.ShuffleOrder
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionCommands
 import androidx.media3.session.SessionResult
 import android.os.Bundle
 import com.google.common.collect.ImmutableList
@@ -63,6 +64,15 @@ class MusicService : MediaLibraryService() {
 
         /** A Store result played without downloading (url from the source; expires, so never saved). */
         fun streamItem(t: Track, url: String): MediaItem = item(t.copy(uri = url))
+
+        /** Account lock (main thread): playback pauses and Android Auto and other apps are let go. */
+        fun lockPause() {
+            val s = current ?: return
+            if (s::player.isInitialized) s.player.pause()
+            // Already connected (Android Auto mid-drive): it keeps no commands, so nothing more plays from there.
+            s.session?.let { ss -> ss.connectedControllers.filter { it.packageName != s.packageName }.forEach { c ->
+                runCatching { ss.setAvailableCommands(c, SessionCommands.EMPTY, Player.Commands.EMPTY) } } }
+        }
 
         // v0.33.0: shuffle and loop buttons in the media notification, lock screen and quick-settings player.
         const val CMD_SHUFFLE = "blaze.music.SHUFFLE"
@@ -476,6 +486,12 @@ class MusicService : MediaLibraryService() {
             Futures.immediateFuture(mediaItems.map { m -> if (m.localConfiguration != null) m else MediaLib.find(m.mediaId)?.let { item(it) } ?: m }.toMutableList())
 
         override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
+            // Account lock: Android Auto (and any other app) is turned away; playback pauses.
+            if (!com.blaze.assistant.connect.AccountLock.mediaAccepts(com.blaze.assistant.connect.AccountGate.locked(), controller.packageName, packageName)) {
+                if (player.isPlaying) player.pause()
+                com.blaze.assistant.connect.AccountGate.notice(this@MusicService)
+                return MediaSession.ConnectionResult.reject()
+            }
             val cmds = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
                 .add(SessionCommand(CMD_SHUFFLE, Bundle.EMPTY)).add(SessionCommand(CMD_REPEAT, Bundle.EMPTY)).build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session).setAvailableSessionCommands(cmds).build()

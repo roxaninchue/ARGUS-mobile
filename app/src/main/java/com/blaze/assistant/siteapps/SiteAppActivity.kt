@@ -53,6 +53,7 @@ class SiteAppActivity : ComponentActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         val id = intent.getStringExtra(EXTRA_ID) ?: intent.data?.lastPathSegment.orEmpty()
         val app = SiteInstaller.find(this, id)
         if (app == null) { Toast.makeText(this, "This app was uninstalled.", Toast.LENGTH_SHORT).show(); finishAndRemoveTask(); return }

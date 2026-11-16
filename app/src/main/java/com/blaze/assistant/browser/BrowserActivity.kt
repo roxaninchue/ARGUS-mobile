@@ -160,6 +160,7 @@ class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.blaze.assi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.auto(AColor.TRANSPARENT, AColor.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(AColor.TRANSPARENT, AColor.TRANSPARENT))
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)

@@ -39,6 +39,11 @@ class BlazeWidget : AppWidgetProvider() {
     override fun onUpdate(ctx: Context, mgr: AppWidgetManager, ids: IntArray) = update(ctx)
 
     override fun onReceive(ctx: Context, intent: Intent) {
+        // Account lock: Ask and the mic open the lock screen.
+        if ((intent.action == ASK || intent.action == MIC) && com.blaze.assistant.connect.AccountGate.locked()) {
+            try { ctx.startActivity(com.blaze.assistant.connect.AccountGate.lockIntent(ctx)) } catch (_: Exception) { com.blaze.assistant.connect.AccountGate.notice(ctx) }
+            return
+        }
         when (intent.action) {
             ASK -> Overlay.openPanel(ctx, listen = false)
             MIC -> Overlay.openPanel(ctx, listen = true)

@@ -72,6 +72,7 @@ class BlazeApp : Application() {
         com.blaze.assistant.device.StartGuard.step("agent.Learning.init") { com.blaze.assistant.agent.Learning.init(this) }
         com.blaze.assistant.device.StartGuard.step("connect.Mcp.load") { com.blaze.assistant.connect.Mcp.load() }
         com.blaze.assistant.device.StartGuard.step("connect.BlazeAccount.start") { com.blaze.assistant.connect.BlazeAccount.start() }
+        com.blaze.assistant.device.StartGuard.step("connect.AccountGate.start") { com.blaze.assistant.connect.AccountGate.start(this) }   // account lock
         // v0.40.0 Cloud sync: off by default; when on, live end-to-end encrypted sync with your other phones.
         try { com.blaze.assistant.connect.CloudSync.init(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: CloudSync.in", e) }
         com.blaze.assistant.device.StartGuard.step("agent.Traces.init") { com.blaze.assistant.agent.Traces.init(this) }

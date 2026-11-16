@@ -11,7 +11,9 @@ import com.blaze.assistant.MainActivity
 class BlazeTile : TileService() {
     @SuppressLint("StartActivityAndCollapseDeprecated")
     override fun onClick() {
-        val i = com.blaze.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
+        // Account lock: the tile opens the lock screen (no listening).
+        val i = if (com.blaze.assistant.connect.AccountGate.locked()) com.blaze.assistant.connect.AccountGate.lockIntent(this)
+        else com.blaze.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(MainActivity.EXTRA_LISTEN, true))
         if (Build.VERSION.SDK_INT >= 34) {

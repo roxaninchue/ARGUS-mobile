@@ -29,6 +29,8 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     private val videoPip = mutableStateOf(false)
     /** When Blaze last opened one of its own screens (that is not "leaving Blaze"). */
     private var ownLaunchAt = 0L
+    /** Account lock: why ARGUS is locked (the lock screen shows), or null. Read on the main thread by Back and PiP. */
+    private val gate = mutableStateOf<com.blaze.assistant.connect.AccountLock.Reason?>(null)
 
     companion object { const val EXTRA_LISTEN = "listen"; const val ACTION_CALL = "com.blaze.assistant.CALL" }
 
@@ -44,6 +46,8 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
         )
         locked.value = com.blaze.assistant.agent.Settings.appLock
+        gate.value = com.blaze.assistant.connect.AccountGate.recompute()
+        lifecycleScope.launch { com.blaze.assistant.connect.AccountGate.lock.collect { gate.value = it } }
         setContent { BlazeTheme {
             // 0.45.19 fix 4: in picture-in-picture only Blaze Phone's live view is drawn; the chat stays composed (its
             // draft, attachments and scroll survive) but is not placed, so nothing of it shows in the small window.
@@ -51,16 +55,19 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
                 androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize().layout { m, c ->
                     val p = m.measure(c); layout(p.width, p.height) { if (!pip.value) p.place(0, 0) }
                 }) {
-                    if (locked.value) com.blaze.assistant.ui.LockScreen { unlock() } else ChatScreen()
+                    // Account lock: the lock screen comes before anything else (the first-run language step included).
+                    val acct = gate.value
+                    if (acct != null) com.blaze.assistant.ui.AccountLockRoute(acct)
+                    else if (locked.value) com.blaze.assistant.ui.LockScreen { unlock() } else ChatScreen()
                 }
-                if (pip.value && !locked.value) { if (videoPip.value) com.blaze.assistant.ui.StageVideoPip() else com.blaze.assistant.browser.phone.PhonePipView() }
+                if (pip.value && !locked.value && gate.value == null) { if (videoPip.value) com.blaze.assistant.ui.StageVideoPip() else com.blaze.assistant.browser.phone.PhonePipView() }
                 // 0.46.5: after a crash (also a native one, read on the next start), offer the local report once; the user chooses
                 val crash = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(com.blaze.assistant.device.CrashLog.pendingReport()) }
                 androidx.compose.runtime.DisposableEffect(Unit) {
                     com.blaze.assistant.device.CrashLog.pendingChanged = { runOnUiThread { crash.value = com.blaze.assistant.device.CrashLog.pendingReport() } }
                     onDispose { com.blaze.assistant.device.CrashLog.pendingChanged = null }
                 }
-                if (crash.value && !locked.value && !pip.value) com.blaze.assistant.ui.BlazeDialog(CRASH_TITLE, CRASH_BODY, confirm = "Send crash report",
+                if (crash.value && !locked.value && !pip.value && gate.value == null) com.blaze.assistant.ui.BlazeDialog(CRASH_TITLE, CRASH_BODY, confirm = "Send crash report",
                     onConfirm = { com.blaze.assistant.device.CrashLog.dismissReport(); crash.value = false
                         try { com.blaze.assistant.device.CrashLog.shareIntent(this@MainActivity)?.let { startActivity(it) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("crash report share", e) } },
                     dismiss = "Not now", onDismiss = { com.blaze.assistant.device.CrashLog.dismissReport(); crash.value = false })
@@ -135,7 +142,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     }
 
     // 0.45.19 fix 7: Back goes to the chat from any view the shell has in front (BackRule); never past the app lock.
-    override fun backTakesToChat(): Boolean = com.blaze.assistant.ui.BackRule.shellTakesBack(locked.value) && !pip.value
+    override fun backTakesToChat(): Boolean = com.blaze.assistant.ui.BackRule.shellTakesBack(locked.value || gate.value != null) && !pip.value
     override fun backToChat() { com.blaze.assistant.ui.BackRule.toChat?.invoke() }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -158,6 +165,12 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     private fun handle(i: android.content.Intent?) {
         i ?: return
         if (authLink(i)) return
+        // Account lock: nothing an intent asks for (listen, call, share, open a chat) happens while locked; the lock screen shows.
+        if (com.blaze.assistant.connect.AccountGate.locked()) {
+            i.removeExtra(Notifier.EXTRA_OPEN_FORM); i.removeExtra(Notifier.EXTRA_OPEN_CHAT); i.removeExtra(EXTRA_LISTEN); i.removeExtra(IntentKey.EXTRA)
+            i.removeExtra(com.blaze.assistant.connect.AccountGate.EXTRA_LOCK); i.action = null
+            return
+        }
         // RC2 (HomeRoute): Back out of Music / Video / Browser / Terminal / Blaze Phone lands on the new Home
         if (i.getBooleanExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME, false)) {
             i.removeExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME)
@@ -222,9 +235,9 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         val own = android.os.SystemClock.uptimeMillis() - ownLaunchAt < 1500
-        val phone = com.blaze.assistant.browser.phone.PhonePipHost.enterOnLeave(this, locked.value, own)
+        val phone = com.blaze.assistant.browser.phone.PhonePipHost.enterOnLeave(this, locked.value || gate.value != null, own)
         // 0.46.1: a Stage video playing follows the user out in picture-in-picture (not while Blaze Phone has the window).
-        if (!phone && !own && !locked.value && !isInPictureInPictureMode && com.blaze.assistant.ui.StageVideo.playing() &&
+        if (!phone && !own && !locked.value && gate.value == null && !isInPictureInPictureMode && com.blaze.assistant.ui.StageVideo.playing() &&
             !com.blaze.assistant.browser.phone.PhonePipHost.working() && com.blaze.assistant.browser.phone.PhonePipHost.supported(this)) {
             videoPip.value = true
             val ok = try { enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational(16, 9)).build()) }
@@ -254,6 +267,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     override fun onResume() {
         com.blaze.assistant.ui.MotionTokens.refresh(this)   // v0.27.0: follow "Remove animations"
         super.onResume(); Agent.inForeground = true
+        gate.value = com.blaze.assistant.connect.AccountGate.recompute()   // account lock: the 7-day grace may have run out
         com.blaze.assistant.agent.SelfControl.activity = java.lang.ref.WeakReference(this)
         Notifier.clearReplies(); Notifier.visible(true)
         com.blaze.assistant.voice.WakeWordService.start(this)

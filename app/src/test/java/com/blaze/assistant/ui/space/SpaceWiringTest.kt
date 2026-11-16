@@ -289,7 +289,8 @@ class SpaceWiringTest {
         assertTrue("${S}SpaceOnboardingScreen(step" in ob)
         assertTrue("setup starts on the setup step", "LaunchedEffect(step) { if (step == ${S}SpaceOnboarding.Step.SETUP) com.blaze.assistant.setup.SetupRunner.start(ctx) }" in ob)
         assertTrue("finishing marks onboarded and leaves for the Home tab, which ChatNav.tabOf turns into Chat (owner 2026-11-15, OldHomeGoneTest)", "Settings.setBool(${S}SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME))" in ob)
-        assertTrue("only for people who never used ARGUS", "${S}SpaceOnboarding.show(Settings.bool(\"onboarded\", false), Settings.ready, hasMessages)" in chat)
+        // Account lock: a first run's sign-in on the lock screen still leads into onboarding
+        assertTrue("only for people who never used ARGUS", "${S}SpaceOnboarding.show(Settings.bool(\"onboarded\", false), Settings.ready && !com.blaze.assistant.connect.AccountGate.firstRun(), hasMessages)" in chat)
         for (gone in listOf("SetupFlow(", "SetupGateScreen(", "SetupRow(")) nowhere(gone)
         val o = src("ui/space/SpaceOnboarding.kt")
         assertTrue("SpaceOnboarding.TAGLINE" in o && "R.drawable.argus_logo" in o)

@@ -11,6 +11,7 @@ import android.service.voice.VoiceInteractionSessionService
 import android.speech.RecognitionService
 import com.blaze.assistant.MainActivity
 import android.view.View
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import com.blaze.assistant.agent.Agent
@@ -81,7 +82,11 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
 
     override fun onCreateContentView(): View = composeView(context, owner) {
         val n by listen
-        androidx.compose.runtime.key(n) {
+        // Account lock: the long-press shows only a Sign in card (it opens the lock screen).
+        val lock by com.blaze.assistant.connect.AccountGate.lock.collectAsState()
+        val locked = lock
+        if (locked != null) com.blaze.assistant.ui.AccountLockCard(locked, onSignIn = { openApp(); hide() }, onClose = { hide() })
+        else androidx.compose.runtime.key(n) {
             AssistPanel(
                 autoListen = autoListen,
                 onClose = { hide() },
@@ -95,6 +100,8 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
         super.onShow(args, showFlags)
         // Long-press of home/power arrives with SHOW_WITH_ASSIST; start listening right away.
         autoListen = args?.getBoolean("listen", true) ?: true
+        // Account lock: no listening and no screen reading while locked (the panel is just the Sign in card).
+        if (com.blaze.assistant.connect.AccountGate.locked()) { autoListen = false; ScreenDoctor.clear() }
         Agent.overlayOpen = true
         listen.value = listen.value + 1
     }
@@ -109,6 +116,7 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
 
     // v0.33.0 Screen Doctor: the screen's text and a screenshot, only when the user summons Blaze over an app.
     override fun onHandleAssist(state: AssistState) {
+        if (com.blaze.assistant.connect.AccountGate.locked()) return   // account lock: the screen isn't read
         try { ScreenDoctor.clear(); ScreenDoctor.onStructure(state.assistStructure) } catch (_: Throwable) { }
     }
     @Deprecated("pre-29 path")
@@ -116,20 +124,24 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
         if (Build.VERSION.SDK_INT < 29) try { ScreenDoctor.clear(); ScreenDoctor.onStructure(structure) } catch (_: Throwable) { }
     }
     override fun onHandleScreenshot(screenshot: android.graphics.Bitmap?) {
+        if (com.blaze.assistant.connect.AccountGate.locked()) return
         try { ScreenDoctor.onScreenshot(screenshot) } catch (_: Throwable) { }
     }
 
     private fun openApp() {
-        val i = Intent(context, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val i = if (com.blaze.assistant.connect.AccountGate.locked()) com.blaze.assistant.connect.AccountGate.lockIntent(context)
+            else Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         try { if (Build.VERSION.SDK_INT >= 29) startAssistantActivity(i) else context.startActivity(i) }
         catch (_: Exception) { try { context.startActivity(i) } catch (_: Exception) { } }
     }
 }
 
-/** Android requires an assistant to name a recognizer; Blaze uses the phone's own. */
+/** Android requires an assistant to name a recognizer; Blaze uses the phone's own. Account lock: it refuses too. */
 class BlazeRecognitionService : RecognitionService() {
-    override fun onStartListening(intent: Intent?, cb: Callback?) { cb?.error(android.speech.SpeechRecognizer.ERROR_CLIENT) }
+    override fun onStartListening(intent: Intent?, cb: Callback?) {
+        if (com.blaze.assistant.connect.AccountGate.locked()) { com.blaze.assistant.connect.AccountGate.notice(this); cb?.error(android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS); return }
+        cb?.error(android.speech.SpeechRecognizer.ERROR_CLIENT)
+    }
     override fun onCancel(cb: Callback?) {}
     override fun onStopListening(cb: Callback?) {}
 }

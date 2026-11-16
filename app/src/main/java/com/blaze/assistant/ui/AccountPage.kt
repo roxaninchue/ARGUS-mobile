@@ -126,6 +126,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
 
     // ---------- signed out ----------
     v.mfa?.let { MfaStep(it, v.message); return }
+    v.verify?.let { VerifyStep(it, v.message); return }   // account lock: the code emailed to confirm the address
     var signUp by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -150,6 +151,8 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
     Spacer(Modifier.height(6.dp))
     if (signUp) Field("Name", name, { name = it }, "Optional")
     Field("Email", email, { email = it }, "you@example.com")
+    // Account lock: a throwaway address is named before anything is sent (blaze-auth refuses it anyway).
+    if (signUp && com.blaze.assistant.connect.ThrowawayEmail.isThrowaway(email)) Note(com.blaze.assistant.connect.ThrowawayEmail.MESSAGE)
     Field("Password", pass, { pass = it }, if (signUp) "At least 8 characters" else "Your password", secret = true)
     AccountButton(if (busy) "One moment…" else if (signUp) "Create account" else "Sign in") {
         if (busy) return@AccountButton
@@ -274,6 +277,48 @@ private fun MfaStep(p: com.blaze.assistant.connect.Mfa.Pending, note: String) {
     Label(tr("Back to sign-in"), color = c.accent, size = 10.sp,
         modifier = Modifier.clickable { BlazeAccount.cancelMfa() }.padding(vertical = 12.dp))
     val shown = err.ifEmpty { if (mode == "email") note else "" }
+    if (shown.isNotEmpty()) Note(shown)
+}
+
+/**
+ * Account lock (blaze-auth 0.10.0): the 6-digit code emailed after a sign-up, or after a password sign-in on an account
+ * whose email isn't confirmed yet. Verify, and Resend (3 mails per step, the first included; then the server says no).
+ */
+@Composable
+private fun VerifyStep(p: com.blaze.assistant.connect.SignupCode.Pending, note: String) {
+    val c = LocalBlaze.current.mono
+    val scope = rememberCoroutineScope()
+    var code by remember(p.token) { mutableStateOf("") }
+    var busy by remember(p.token) { mutableStateOf(false) }
+    var err by remember(p.token) { mutableStateOf("") }
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(p.token) {
+        while (true) {
+            now = System.currentTimeMillis()
+            if (p.expired(now)) { BlazeAccount.cancelVerify(com.blaze.assistant.connect.SignupCode.EXPIRED); break }
+            kotlinx.coroutines.delay(1_000)
+        }
+    }
+    Note("Confirm your email to finish. We sent a 6-digit code to ${p.sentTo}. Check your spam folder if it isn't there.")
+    Label(com.blaze.assistant.connect.SignupCode.stateLine(p, now), color = c.weak, size = 9.sp, modifier = Modifier.padding(bottom = 8.dp))
+    Field("Code", code, { code = it }, "123456")
+    AccountButton(if (busy) "One moment…" else "Verify") {
+        if (busy) return@AccountButton
+        busy = true; err = ""
+        scope.launch { err = BlazeAccount.verifySignup(code); if (err.isNotEmpty()) code = ""; busy = false }
+    }
+    Spacer(Modifier.height(8.dp))
+    val line = com.blaze.assistant.connect.SignupCode.resendLine(p, now)
+    AccountButton("Resend", primary = false) {
+        if (busy) return@AccountButton
+        if (!p.canResend(now)) { err = line; return@AccountButton }
+        busy = true; err = ""
+        scope.launch { err = BlazeAccount.resendSignup(); busy = false }
+    }
+    if (line.isNotEmpty()) Label(line, color = c.weak, size = 9.sp, modifier = Modifier.padding(top = 6.dp))
+    Label(tr("Back to sign-in"), color = c.accent, size = 10.sp,
+        modifier = Modifier.clickable { BlazeAccount.cancelVerify() }.padding(vertical = 12.dp))
+    val shown = err.ifEmpty { note }
     if (shown.isNotEmpty()) Note(shown)
 }
 

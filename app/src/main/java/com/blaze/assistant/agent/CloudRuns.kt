@@ -411,7 +411,9 @@ object CloudRuns {
                 // v0.45.5: request id + route / timing headers for the "What happened" sheet.
                 try { val g = TurnTrace.pick(c.headerFields); if (g.isNotEmpty()) CallState.current().let { st ->
                     st.gw = st.gw + g; g["x-request-id"]?.let { if (it !in st.requestIds) st.requestIds.add(it) } } } catch (_: Throwable) { }
-                val s = (if (code in 200..299) c.inputStream else c.errorStream) ?: java.io.ByteArrayInputStream(ByteArray(0))
+                var s = (if (code in 200..299) c.inputStream else c.errorStream) ?: java.io.ByteArrayInputStream(ByteArray(0))
+                // Account lock: a 401 / 403 body is short; read it for the lock check, then hand the same bytes on.
+                if (code == 401 || code == 403) { val b = s.use { it.readBytes() }; com.blaze.assistant.connect.AccountGate.report(code, String(b)); s = java.io.ByteArrayInputStream(b) }
                 val hs = c.getHeaderField("Retry-After")?.let { mapOf("retry-after" to it) } ?: emptyMap()
                 return Response(code, c.contentType.orEmpty(), s.bufferedReader(), onClose = { c.disconnect() }, headers = hs)
             } catch (e: IOException) { c.disconnect(); throw e }

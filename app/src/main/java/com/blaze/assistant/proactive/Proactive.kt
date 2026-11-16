@@ -88,6 +88,7 @@ object Proactive {
     /** Called by the loop and the alarm. Skips if a check ran recently. */
     fun tick(force: Boolean = false) {
         if (!::app.isInitialized || !enabled || !Settings.ready) return
+        if (com.blaze.assistant.connect.AccountGate.locked()) return   // account lock: no checks, nothing raised
         if (!ProactiveDial.runsChecks(level)) return   // dial at Off: nothing this check could raise would be shown
         if (!force && System.currentTimeMillis() - lastCheck < everyMin * 60_000L * 0.8) return
         scope.launch { check() }
