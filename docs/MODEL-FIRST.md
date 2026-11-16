@@ -53,15 +53,24 @@ The owner sent "Let's login to Instagram", then "Oh wait", then "Google first", 
 longer consulted in `send()`). The keyword-triggered lookup lane is gone from the chat, and the model calls `web_search`
 itself. `ChatBurst.RULE` and `laneLine` were deleted. The guard test is `ModelFirstTest`.
 
+## Round 2: the other pre-routers (owner: "yes remove them all", 16 Nov 2026 22:58 CAT)
+
+Removed from the turn in `Agent.kt`:
+
+- **The fast lane while online.** `FastLane.tryHandle`'s instant rules now run only offline, when no model is reachable.
+- **`Media.directPrompt`.** "Draw a …" no longer goes straight to the image service. The model calls `generate_image`.
+- **`MemoryIntent.isListRequest`.** "Show me your memories" no longer gets a canned dump. The model uses `memory_search` / `recall_memory`.
+- **The no-tools chat lane (`ChatLane.fits`).** It was a regex stack deciding that "hi" or a short question needed no tools. `lite` is now always false, so every turn gets the full lane.
+- **Lane guesses by `ToolTruth.toolShaped` / `Duo.kindFor`** in `startTurn` and the side lane.
+- **The `web_search` refusals.** `SearchRoute.webNote` refused "this is about ARGUS" questions, and `SearchGuard.check` refused queries that drifted off the guessed subject. The model's query now runs as written.
+- **`runLookup`** and its helpers, which the chat no longer used.
+
 ## Still to retire (owner to schedule; don't add more)
 
-These are the pre-routers left in the main chat. Each one guesses intent before the model does:
-
-- `FastLane.tryHandle` instant rules online (`agent/Agent.kt`, fast lane before the model call)
-- `Media.directPrompt`, where "draw a …" goes straight to the image service
-- `ToolTruth.toolShaped` / `Duo.route` tags deciding lanes
-- `SearchRoute.webNote` and the search guard rewriting `web_search` calls
-- `BusyRoute` / `LookupLane` objects, now unused by the chat (delete them once nothing else needs them)
+- **The `ToolRouter.guess` / `ToolPick.pick` keyword tool diet.** The model only sees the tool groups a regex guessed, plus `load_tool`. It exists because of the gateway's 60 KB request limit, so replacing it needs a design: a short core set, with everything else loaded by the model (opencode-style skills). This ties to HARNESS MUSTS #3.
+- **The loop guards in `runLoop`** (RetryGuard, ClaimGuard, EchoGuard, ToolTruth.NUDGE / refusal, AutoContinue…). These are HARNESS MUSTS #4, the "Plain harness" toggle.
+- **Small guesses:** `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
+- **The `BusyRoute` / `LookupLane` / `SmallTalk` / `ChatLane.fits` objects.** These are now unused by the chat turn. `LookupLane` is still used by BlazeQuery (`QueryRuntime`). Delete each one when nothing else needs it.
 
 When you touch one of these, replace it with structure plus the model's own decision, and add a line to
 `ModelFirstTest`.

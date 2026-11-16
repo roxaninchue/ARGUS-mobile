@@ -4,7 +4,8 @@
 - A message sent while ARGUS is working always goes to the model (joins the running turn, or restarts a reply that has barely begun). The old stop/steer/side regex is no longer consulted; the Stop button stops.
 - "google …", "search …" and "look up …" no longer trigger the quick-lookup lane in the chat; the model calls web_search itself. Seen: "Google first" (meaning do the Google sign-in first) became a search for "first Instagram".
 - Removed the prompt lines "Answer EVERY user message… never leave one out" and "answer every one of them"; they made the model re-answer a request the user had already called off. Nothing is dropped: the queue guarantees it.
-- Tests: new ModelFirstTest, ChatBurstTest updated. Not built.
+- Round 2 ("remove them all"): online, every message now reaches the model. The instant fast-lane rules run only offline. "Draw …" no longer jumps to the image service, and "show me your memories" no longer gets a canned dump. The no-tools chat lane is gone, the lane guesses by keyword are gone, and web_search runs the model's own query (no webNote or SearchGuard refusals).
+- Tests: new ModelFirstTest; ChatBurstTest, BusyRouteTest and ToolTruthTest updated. Not built.
 
 ## Unreleased: account lock (no ARGUS without a confirmed, real email)
 

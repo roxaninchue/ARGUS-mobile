@@ -29,6 +29,16 @@ class ModelFirstTest {
         assertFalse(src.contains("runLookup(SearchRoute.query("))
     }
 
+    /** Round 2 (owner: "yes remove them all"): the other pre-routers in front of the model are gone too. */
+    @Test fun noOtherPreRoutersInTheTurn() {
+        val src = agentSrc()
+        for (gone in listOf("Media.directPrompt(", "MemoryIntent.isListRequest(", "SearchRoute.webNote(", "searches.check(",
+                "ChatLane.fits(", "ToolTruth.toolShaped(", "Duo.kindFor(", "private suspend fun runLookup("))
+            assertFalse(gone, src.contains(gone))
+        assertTrue("fast-lane rules only when no model is reachable", src.contains("if (offline && single && attachments.isEmpty() && !routine"))
+        assertTrue(src.contains("var lite = false"))
+    }
+
     @Test fun noShoutingRulesInTheChatPrompt() {
         val shouts = listOf("Answer EVERY user message", "never leave one out", "answer every one of them")
         val files = listOf("RapidMessages.kt", "ChatBurst.kt", "ChatLane.kt").map { File(root(), "app/src/main/java/com/blaze/assistant/agent/$it").readText() }

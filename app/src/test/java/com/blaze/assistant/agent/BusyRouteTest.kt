@@ -86,13 +86,14 @@ class BusyRouteTest {
         assertEquals(listOf("HALO: " + BusyRoute.steered("task"), "HALO: " + BusyRoute.STOPPED), l.replies.map { it.second })
     }
 
-    @Test fun agentRoutesBusyMessagesBeforeTheQueue() {
+    /** 2026-11-16 model-first (docs/MODEL-FIRST.md): BusyRoute's regex no longer decides; a busy message goes to the model first. */
+    @Test fun agentSendsBusyMessagesToTheModelBeforeTheQueue() {
         val src = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/agent/Agent.kt").readText()
         val send = src.substring(src.indexOf("        fun send(text: String, byVoice: Boolean = false, attachments: List<Attachment> = emptyList(), notificationContext"))
-        val route = send.indexOf("BusyRoute.route(")
+        val follow = send.indexOf("ChatBurstLive.follow(this, shown, byVoice, untrusted)")
         val queue = send.indexOf("RapidMessages.route(")
-        assertTrue(route in 1 until queue)
-        assertTrue(send.contains("BusyRoute.Kind.STEER -> { steer(shown); return }"))
+        assertTrue(follow in 1 until queue)
+        assertFalse(send.substring(0, queue).contains("BusyRoute.route("))
         assertTrue(src.contains("BusyRoute.status(runningTask(), status, currentStep)"))
         assertTrue(src.contains("private fun markSent(id: Long)"))
     }

@@ -2196,60 +2196,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             try { msgs.firstOrNull { it.id == id }?.gid?.let { Delivery.tracker().apply(listOf(it), Delivery.Ev.LOCAL_PICKUP) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: markSent", e) }
         }
 
-        /**
-         * 0.46.3: the lookup lane for this turn. True = answered (the answer is in the chat with its source pills and a
-         * Go deeper chip; a bounded background check may update it in place). False = escalated: the normal loop (with the
-         * browser) takes the turn, told why.
-         */
-        private suspend fun runLookup(q: String): Boolean {
-            mood = Mood.ACTING
-            val cfg = LookupLane.Config()
-            val t0 = System.currentTimeMillis()
-            var escalated = ""
-            val state = try {
-                LookupLane.first(q, LookupRoutes.net, LookupRoutes.brain, cfg, { System.currentTimeMillis() }) { ev ->
-                    when (ev) {
-                        is LookupLane.Event.Progress -> { val l = LookupLane.line(ev); scope.launch { status = l }; if (ev.step <= 2) add(Role.STEP, ev.line) }
-                        is LookupLane.Event.Escalate -> escalated = ev.reason
-                        is LookupLane.Event.First -> { }
-                    }
-                }
-            } catch (e: CancellationException) { throw e } catch (e: Exception) { escalated = "lookup failed: ${e.message.orEmpty().take(80)}"; null }
-            if (state == null) {
-                history.put(JSONObject().put("role", "user").put("content", "[Quick lookup didn't settle it: $escalated. Use web_search / fetch_page, or the browser if a sign-in or a click is needed.]"))
-                return false
-            }
-            val found = LookupRoutes.sources(state.pages, state.answer.supporting)
-            val text = ReplySources.stripInline(state.answer.text, found)
-            history.put(JSONObject().put("role", "assistant").put("content", text + "\n[Answered from ${state.pages.size} pages: " + state.pages.joinToString(", ") { it.url } +
-                ". If the user says Go deeper: do a full browse with the browser tools.]"))
-            val id = ids.getAndIncrement()
-            val ms = System.currentTimeMillis() - t0
-            msgs = msgs + ChatMessage(id, Role.BLAZE, text, followups = listOf(LookupLane.GO_DEEPER), meta = "\u26A1 quick lookup \u00b7 %.1f s".format(ms / 1000.0),
-                speaker = speakerOf(voice), sources = ReplySources.encode(found))
-            // the background check: off the turn (it never holds the chat busy), bounded, edits the same bubble when it changes
-            scope.launch {
-                val u = try { LookupLane.verify(state, LookupRoutes.net, LookupRoutes.brain, cfg) } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
-                if (u != null && u.changed && u.answer.text.isNotBlank()) {
-                    val f2 = LookupRoutes.sources(u.pages, u.answer.supporting)
-                    val t2 = ReplySources.stripInline(u.answer.text, f2)
-                    msgs = msgs.map { if (it.id == id) it.copy(text = t2, sources = ReplySources.encode(f2), meta = LookupLane.UPDATED + " \u00b7 checked ${u.pages.size} sources") else it }
-                    history.put(JSONObject().put("role", "assistant").put("content", "[Updated after checking more pages:] $t2"))
-                    persist()
-                }
-            }
-            return true
-        }
-
-        /** 0.46.3: the two user messages before this turn (a follow-up's subject is still the current one) and Blaze's last reply. */
-        private fun recentAsks(): String = msgs.filter { it.role == Role.USER && it.id < turnFrom }.takeLast(2).joinToString(" ") { it.text.take(300) } + " " +
-            msgs.lastOrNull { it.role == Role.BLAZE && it.id < turnFrom }?.text.orEmpty().take(600)
-
-        /** 0.46.3: earlier subjects of this chat (older user messages) and saved memories, for the search guard's bleed check. */
-        private fun olderSubjects(): String = try {
-            msgs.filter { it.role == Role.USER && it.id < turnFrom }.takeLast(20).joinToString(" ") { it.text.take(300) } + " " +
-                Memory.facts.value.takeLast(80).joinToString(" ") { it.toString().take(200) }
-        } catch (_: Throwable) { "" }
 
         /** 0.46.3: what the running task was asked (its first message), for Halo's read-only status and the steer line. */
         private fun runningTask(): String = msgs.firstOrNull { it.id == turnFrom && it.role == Role.USER }?.text.orEmpty()
@@ -2311,7 +2257,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val said0 = users0.joinToString("\n") { it.text }
             val freeReply = duoOk && !route.explicit && route.mode != Duo.Mode.TEAM && !Duo.isCommand(said0) && users0.all { it.attachments.isEmpty() }
             val resumeRoom = if (freeReply) waitingRoom() else null
-            val resumeChat = freeReply && resumeRoom == null && !ToolTruth.toolShaped(said0) && duoChatOpenAt > 0 && System.currentTimeMillis() - duoChatOpenAt < 2 * 3600_000L
+            val resumeChat = freeReply && resumeRoom == null && duoChatOpenAt > 0 && System.currentTimeMillis() - duoChatOpenAt < 2 * 3600_000L
             if (route.explicit) {
                 // A tag starts something new: a room left waiting is closed, an open duo chat ends.
                 waitingRoom()?.let { rid -> setCard(rid, Duo.cardMeta(Duo.STOPPED)) }
@@ -2322,7 +2268,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 resumeChat -> Duo.Kind.CHAT
                 route.mode == Duo.Mode.TEAM -> Duo.Kind.ROOM
                 // v0.45.9: the duo chat sends no tools, so a tool-shaped @all request goes to the full lane.
-                route.mode == Duo.Mode.ALL -> Duo.kindFor(route.text).takeUnless { it == Duo.Kind.CHAT && ToolTruth.toolShaped(route.text) }
+                route.mode == Duo.Mode.ALL -> null   // 2026-11-16 model-first: no keyword guess at the lane; the full lane has every tool
                 else -> null
             }
             if (duoKind != null) voice = Duo.Who.BLAZE
@@ -2401,44 +2347,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     runConversation(duoKind!!, shown.let { s -> if (route.explicit) Duo.route(s, false).text else s }, resumeRoom ?: -1L, users.first().id)
                     return@launch
                 }
-                // v0.27.x: "show me your memories" / "what do you know about me" is answered straight from the memory table:
-                // grouped, with how to change or delete a line. No model call, no tool loop, no Design.
-                if (single && attachments.isEmpty() && !routine && agentId == null && notificationContext.isNullOrBlank() && MemoryIntent.isListRequest(shown)) {
-                    mood = Mood.ACTING
-                    add(Role.STEP, "Looking through what I remember")
-                    val reply = kotlinx.coroutines.withContext(Dispatchers.IO) {
-                        try { if (Mind.db() != null) MemoryIntent.format(Mind.all()) else MemoryIntent.formatPlain(Memory.facts.value) }
-                        catch (_: Exception) { MemoryIntent.formatPlain(Memory.facts.value) }
-                    }
-                    history.put(JSONObject().put("role", "assistant").put("content", reply))
-                    addReply(-1, reply, "")
-                    mood = Mood.IDLE
-                    persist(); announce()
-                    return@launch
-                }
+                // 2026-11-16 model-first: "what do you remember" goes to the model, which has memory_search / recall_memory.
                 // Fast lane: direct commands run on-device in well under a second.
                 val offline = !FastLane.online(app)
                 // Plan mode and background agents skip the fast lane: it acts on the phone without the tool gate.
-                // v0.45.8: online, the fast lane only uses its instant rules and the intent cache (FastLane.useModel); the
-                // on-device model (a process start plus inference, seconds) runs only offline, so it never delays the request.
-                if (single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && notificationContext.isNullOrBlank()) {
+                // 2026-11-16 model-first: the fast lane's rules only run offline, when no model can be reached; online the model reads every message.
+                if (offline && single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && notificationContext.isNullOrBlank()) {
                     mood = Mood.THINKING
                     val fast = try { kotlinx.coroutines.withContext(ConfirmGate.Direct) { FastLane.tryHandle(app, shown, offline, key = turnUser) { t, d, a -> confirm(t, d, a) } } } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
-                    // "Draw a lion in sunglasses": straight to the free image service, no model call needed.
-                    val pic = if (fast == null && !offline && !Settings.lowData) com.blaze.assistant.media.Media.directPrompt(shown) else null
-                    if (pic != null) {
-                        mood = Mood.ACTING
-                        add(Role.STEP, "Drawing \u201c${pic.take(60)}\u201d")
-                        val t0 = System.currentTimeMillis()
-                        val r = com.blaze.assistant.media.Media.generate(pic)
-                        val reply = r.fold({ f -> synchronized(pendingMedia) { pendingMedia += f.absolutePath }; "Here you go. It's saved in your Gallery." },
-                            { "I couldn't reach the image service just now (${it.message}). Try again in a moment." })
-                        history.put(JSONObject().put("role", "assistant").put("content", if (r.isSuccess) "[Generated an image of: $pic, shown to the user and saved in their Gallery]" else reply))
-                        addReply(-1, reply, "", meta = "\uD83C\uDFA8 free image · %.1f s".format((System.currentTimeMillis() - t0) / 1000.0))
-                        mood = Mood.IDLE
-                        persist(); announce()
-                        return@launch
-                    }
                     if (fast != null) {
                         history.put(JSONObject().put("role", "assistant").put("content", fast.reply))
                         addReply(-1, fast.reply, "", meta = if (fast.ms < 60) "⚡ instant · ${fast.ms} ms" else "⚡ on-device · ${fast.ms} ms")
@@ -2724,7 +2640,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val sched = TurnContext.scheduleAsk(text) || TurnContext.scheduleFollowUp(text, lastReply)
             // v0.45.9 (ToolTruth): the side lane runs only research tools, so a tool-shaped message goes to Blaze's full lane
             // (it joins the running task at its next step, or starts the next turn), never "I can't" from Halo.
-            if (!sched && ToolTruth.toolShaped(text) && !ToolTruth.chatOnly(text)) {
+            if (!sched) {   // 2026-11-16 model-first: no keyword guess; every side message joins the full lane with its tools
                 live.end("")
                 synchronized(sideHist) { sideHist.remove(user) }
                 sideIds -= mid
@@ -3537,10 +3453,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 var orientSent = false
                 // Chat lane: small talk and plain questions = one light call with no tools.
                 val lastBlaze = msgs.lastOrNull { it.role == Role.BLAZE }?.text.orEmpty()
-                var lite = !bulk && !resuming && voice != Duo.Who.HALO && planHint.isEmpty() && history.optJSONObject(history.length() - 1)?.opt("content") is String &&
-                    ChatLane.fits(lastUserText(), lastBlaze) && turnView == null && turnSkills.full.isEmpty() &&
-                    // 0.49.0: a cached document in the recent turns needs the cache tools, which the chat lane doesn't send.
-                    !com.blaze.assistant.memory.CacheTier.referenced(liteHistory())
+                var lite = false   // 2026-11-16 model-first: no regex picks a no-tools "chat" lane; every turn gets the full lane
                 var firstMs = -1L
                 // v0.45.3 speed_stats: when the first words appeared on screen, and the gateway's time to answer headers.
                 var shownAt = -1L; var hdrMs = -1L
@@ -5049,7 +4962,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 // v0.33.1 content-hash cache (identical lookups reused, private chats never) + speculative fetch of the top results on Wi-Fi.
                 // 0.50.0: no web search for a question about Blaze, this chat or the user's own data (SearchRoute).
-                "web_search" -> (if (agentId == null && specialistId == null && !lastUserText().startsWith("[Scheduled routine")) SearchRoute.webNote(lastUserText()) else null) ?: searches.check(args.optString("query"), GoalPin.of(lastUserText()).request + " " + runningTask() + " " + recentAsks(), olderSubjects()) ?: run {
+                "web_search" -> run {   // 2026-11-16 model-first: the model's query runs as it wrote it (no webNote / SearchGuard refusals)
                     add(Role.STEP, "Searching the web for \u201c${args.optString("query").take(50)}\u201d")
                     val r = ToolCache.cached(name, args, lastUserText(), isPrivate) { Web.search(args.optString("query")) }
                     if (!r.startsWith("[Cached")) ToolCache.prefetch(r, unmetered(), Settings.lowData, isPrivate) { u -> Web.fetch(u) }
