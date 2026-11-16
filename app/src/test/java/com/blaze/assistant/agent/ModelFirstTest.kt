@@ -39,6 +39,15 @@ class ModelFirstTest {
         assertTrue(src.contains("var lite = false"))
     }
 
+    /** Round 3: the tools a turn gets don't depend on the message's words; the model loads the rest. */
+    @Test fun noWordGuessedToolGroups() {
+        val src = agentSrc()
+        for (gone in listOf("ToolRouter.guess(", "LearnedRoutes.predict(", "ToolRouter.fallback(", "TurnContext.scheduleAsk(userNow)",
+                "PromptProfile.simpleGroupOk(", "ExecRoute.route(lu"))
+            assertFalse(gone, src.contains(gone))
+        assertTrue(src.contains("addAll(ToolPick.ALWAYS_GROUPS); addAll(ToolRouter.usedIn(history))"))
+    }
+
     @Test fun noShoutingRulesInTheChatPrompt() {
         val shouts = listOf("Answer EVERY user message", "never leave one out", "answer every one of them")
         val files = listOf("RapidMessages.kt", "ChatBurst.kt", "ChatLane.kt").map { File(root(), "app/src/main/java/com/blaze/assistant/agent/$it").readText() }

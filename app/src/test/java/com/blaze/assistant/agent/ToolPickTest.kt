@@ -23,12 +23,13 @@ class ToolPickTest {
         assertTrue(out.size < selected.length())
     }
 
-    @Test fun cuesComeBackOnWordsHistoryOrLoad() {
-        assertTrue(names(ToolPick.pick(selected, "do this in the background while I wait", emptySet(), emptySet())).contains("start_agent"))
-        assertTrue(names(ToolPick.pick(selected, "what did you say earlier about rent", emptySet(), emptySet())).contains("search_chat"))
-        assertTrue(names(ToolPick.pick(selected, "cancel my 7am alarm", emptySet(), emptySet())).contains("processes"))
+    /** 2026-11-16 model-first: cues come back on this chat's use or the model's own load, never on the request's words. */
+    @Test fun cuesComeBackOnHistoryOrLoadNotWords() {
+        assertFalse(names(ToolPick.pick(selected, "do this in the background while I wait", emptySet(), emptySet())).contains("start_agent"))
+        assertFalse(names(ToolPick.pick(selected, "what did you say earlier about rent", emptySet(), emptySet())).contains("search_chat"))
         assertTrue(names(ToolPick.pick(selected, "ok", setOf("check_agent"), emptySet())).contains("list_agents"))
         assertTrue(names(ToolPick.pick(selected, "ok", emptySet(), setOf("history"))).contains("read_turn"))
+        assertTrue(names(ToolPick.pick(selected, "ok", emptySet(), setOf("agents"))).contains("start_agent"))
         assertEquals(setOf("self"), ToolPick.cuesIn("Matching tools (now loaded): blaze_docs_search: search docs"))
     }
 
@@ -36,13 +37,16 @@ class ToolPickTest {
         assertEquals(selected.length(), ToolPick.pick(selected, "x", emptySet(), emptySet(), keepAll = true).length())
     }
 
-    @Test fun capRanksByTheRequest() {
-        val many = arr(ToolPick.ESSENTIAL + (1..60).map { "extra_tool_$it" } + listOf("set_alarm"))
-        val out = names(ToolPick.pick(many, "set an alarm", setOf("extra_tool_59"), emptySet(), max = 25))
+    /** Over the cap, structure decides: core, must, used, then the registry's order; the request's words don't. */
+    @Test fun capRanksByStructureNotWords() {
+        val many = arr(ToolPick.ESSENTIAL + (1..60).map { "extra_tool_$it" } + listOf("set_volume", "calendar_events_x"))
+        val out = names(ToolPick.pick(many, "turn the volume up", setOf("extra_tool_59"), emptySet(), max = 25, must = setOf("calendar_events_x")))
         assertEquals(25, out.size)
-        assertTrue(out.containsAll(ToolPick.ESSENTIAL)); assertTrue(out.contains("set_alarm")); assertTrue(out.contains("extra_tool_59"))
+        assertTrue(out.containsAll(ToolPick.ESSENTIAL)); assertTrue(out.contains("extra_tool_59")); assertTrue(out.contains("calendar_events_x"))
+        assertFalse("the word volume no longer ranks set_volume", out.contains("set_volume"))
+        assertTrue(out.contains("extra_tool_1"))
         // Order is kept as given.
-        assertTrue(out.indexOf("set_alarm") > out.indexOf("extra_tool_59"))
+        assertTrue(out.indexOf("extra_tool_59") < out.indexOf("calendar_events_x"))
     }
 
     @Test fun loadToolOffersTheCues() {

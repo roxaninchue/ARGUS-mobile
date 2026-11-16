@@ -65,9 +65,19 @@ Removed from the turn in `Agent.kt`:
 - **The `web_search` refusals.** `SearchRoute.webNote` refused "this is about ARGUS" questions, and `SearchGuard.check` refused queries that drifted off the guessed subject. The model's query now runs as written.
 - **`runLookup`** and its helpers, which the chat no longer used.
 
+## Round 3: tools by structure, not words (16 Nov 2026 23:06 CAT)
+
+Which tools a turn gets no longer depends on the message's words.
+
+- **Every turn sends:** the core (`ToolPick.ESSENTIAL` + `HARNESS`); `ToolRouter.HARNESS` groups (terminal, screen, device, messages, google, browser); `ToolPick.ALWAYS_GROUPS` (`schedule`: calendar, reminders and routines, so an agent can check commitments itself); the groups this chat already used; and the Stage while it shows cards.
+- **The model loads anything else itself.** `load_tools` lists every group, and `find_tool` searches every tool. A call to a tool it wasn't sent widens the set.
+- **Gone from the turn:** `ToolRouter.guess`, `LearnedRoutes.predict`, `ToolRouter.fallback`, `TurnContext.scheduleAsk`/`scheduleFollowUp` as group switches, the `ExecRoute.route` terminal guess, Simple mode's word-based group removal, and FastActions' group swap.
+- **In `ToolPick`:** the cue regexes are no longer read, and over the cap, structure decides (core, then must, which includes the schedule tools, then used, then cue, then the registry's order), never word overlap.
+- **The 60 KB gateway limit is unchanged:** `MAX_TOOLS` stays at 48.
+
 ## Still to retire (owner to schedule; don't add more)
 
-- **The `ToolRouter.guess` / `ToolPick.pick` keyword tool diet.** The model only sees the tool groups a regex guessed, plus `load_tool`. It exists because of the gateway's 60 KB request limit, so replacing it needs a design: a short core set, with everything else loaded by the model (opencode-style skills). This ties to HARNESS MUSTS #3.
+- **`ViewRouter.route` / `SkillMatch` / `SpecialistMatch`** still pick views, skill packs and specialists from the message's words (they add the `make` / `extras` groups). Next candidate: list them in the prompt and let the model load one.
 - **The loop guards in `runLoop`** (RetryGuard, ClaimGuard, EchoGuard, ToolTruth.NUDGE / refusal, AutoContinue…). These are HARNESS MUSTS #4, the "Plain harness" toggle.
 - **Small guesses:** `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
 - **The `BusyRoute` / `LookupLane` / `SmallTalk` / `ChatLane.fits` objects.** These are now unused by the chat turn. `LookupLane` is still used by BlazeQuery (`QueryRuntime`). Delete each one when nothing else needs it.

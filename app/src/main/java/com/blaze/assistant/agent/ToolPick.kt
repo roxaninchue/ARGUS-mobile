@@ -16,6 +16,11 @@ import org.json.JSONObject
  * Then the turn is capped at [MAX_TOOLS]: tools the request names or this chat used come first, the rest of a guessed
  * group fills what's left. Nothing becomes unreachable: find_tool searches every tool and loads its cue or group.
  *
+ * 2026-11-16 model-first (docs/MODEL-FIRST.md): no tool is sent or ranked because of the words in the message. A turn gets
+ * the core ([ESSENTIAL] + [HARNESS]), the [ALWAYS_GROUPS], what this chat already used, and what the model loads itself
+ * (load_tools / find_tool, whose descriptions list every group). Over the cap, structure decides (core, must, used, cue,
+ * then the registry's order), never word overlap with the request. The cues' regexes are no longer consulted.
+ *
  * Pure Kotlin; ToolPickTest. Prompt size before/after is logged per turn (BlazeSpeed / speed log: "tools a/b, c→d chars").
  */
 object ToolPick {
@@ -41,6 +46,9 @@ object ToolPick {
     val TERMINAL_CORE = setOf("http_request", "run_shell", "run_code", "file_read", "file_write", "file_edit", "file_list")
 
     /** The names that join every turn from the full list: [ESSENTIAL] + [HARNESS] (Simple mode without the terminal ones). */
+    /** Groups sent every turn whatever the words: the user's calendar and reminders (an agent checks commitments itself). */
+    val ALWAYS_GROUPS = setOf("schedule")
+
     fun core(simple: Boolean): Set<String> = ESSENTIAL + (if (simple) HARNESS - TERMINAL_CORE else HARNESS)
 
     data class Cue(val id: String, val about: String, val names: Set<String>, val match: Regex)
@@ -93,13 +101,11 @@ object ToolPick {
 
     /** The cues this request turns on. */
     fun cues(userText: String, used: Set<String>, groupsOn: Set<String>): Set<String> =
-        CUES.filter { c -> c.id in groupsOn || c.match.containsMatchIn(userText) || c.names.any { it in used } }.map { it.id }.toSet()
+        CUES.filter { c -> c.id in groupsOn || c.names.any { it in used } }.map { it.id }.toSet()   // 2026-11-16: [userText] no longer read
 
     /** Cues of the tool names mentioned in [text] (find_tool's answer), so a found core tool is sent next step. */
     fun cuesIn(text: String): Set<String> = cueOf.filterKeys { Regex("""\b${Regex.escape(it)}\b""").containsMatchIn(text) }.values.toSet()
 
-    private val word = Regex("[a-z0-9]{3,}")
-    private val stop = setOf("the", "and", "for", "you", "your", "with", "this", "that", "what", "can", "please", "from", "into", "about", "have", "are")
 
     /**
      * The tools to send: [selected] (ToolRouter's pick) minus cue tools that aren't on, capped at [max].
@@ -118,23 +124,16 @@ object ToolPick {
             if (n in ESSENTIAL || n in HARNESS || c == null || c in on) kept += i to t
         }
         if (kept.size <= max) return JSONArray().apply { kept.forEach { put(it.second) } }
-        // Over the cap: essentials, tools this chat used and tools the request names keep their place; the rest is
-        // ranked by how many of the request's words its name and description share.
-        val words = word.findAll(userText.lowercase()).map { it.value }.filter { it !in stop }.toSet()
+        // Over the cap: structure decides (2026-11-16 model-first: no ranking by the request's words).
         fun score(t: Any?): Int {
             val n = nameOf(t)
             if (n in ESSENTIAL || n in HARNESS) return 10_000
             if (n in must) return 9_500
             if (n in used) return 9_000
             if (cueOf[n] != null) return 8_000
-            // 0.53.6: the browser comes whole. HARNESS sends open / read / click / type, and the cap used to drop wait,
-            // scroll, find, back, select, key and tabs, so a model on a slow page had no way to wait (and set a timer).
+            // 0.53.6: the browser comes whole (wait, scroll, find, back, select, key and tabs with open / read / click / type).
             if (n.startsWith("browser_")) return 7_000
-            val nameWords = n.lowercase().split('_').filter { it.length >= 3 }
-            val direct = nameWords.count { w -> words.any { it.startsWith(w) || w.startsWith(it) } }
-            val desc = (t as? JSONObject)?.optJSONObject("function")?.optString("description").orEmpty().lowercase()
-            val inDesc = words.count { desc.contains(it) }
-            return direct * 100 + inDesc
+            return 0
         }
         val chosen = kept.sortedWith(compareByDescending<Pair<Int, Any?>> { score(it.second) }.thenBy { it.first }).take(max).map { it.first }.toSet()
         return JSONArray().apply { kept.filter { it.first in chosen }.forEach { put(it.second) } }

@@ -5,7 +5,8 @@
 - "google …", "search …" and "look up …" no longer trigger the quick-lookup lane in the chat; the model calls web_search itself. Seen: "Google first" (meaning do the Google sign-in first) became a search for "first Instagram".
 - Removed the prompt lines "Answer EVERY user message… never leave one out" and "answer every one of them"; they made the model re-answer a request the user had already called off. Nothing is dropped: the queue guarantees it.
 - Round 2 ("remove them all"): online, every message now reaches the model. The instant fast-lane rules run only offline. "Draw …" no longer jumps to the image service, and "show me your memories" no longer gets a canned dump. The no-tools chat lane is gone, the lane guesses by keyword are gone, and web_search runs the model's own query (no webNote or SearchGuard refusals).
-- Tests: new ModelFirstTest; ChatBurstTest, BusyRouteTest and ToolTruthTest updated. Not built.
+- Round 3: the tools a turn gets no longer depend on the message's words. Every turn has the core, the harness groups, calendar and reminders, and whatever this chat already used; the model loads anything else with load_tools / find_tool. Still 48 tools at most.
+- Tests: new ModelFirstTest; ChatBurstTest, BusyRouteTest, ToolTruthTest, ToolPickTest and Halo0459Test updated. Not built.
 
 ## Unreleased: account lock (no ARGUS without a confirmed, real email)
 

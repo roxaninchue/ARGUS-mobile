@@ -3287,28 +3287,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (routine || bulk || agentId != null || isPrivate || !Settings.phoneControl || ToolTruth.directPhone(userNow)) ""
                     else try { TapLoop.Plans.find(userNow)?.let { TapLoop.hint(it) } ?: "" } catch (e: CancellationException) { throw e } catch (_: Exception) { "" }
                 }
-                // Speed plan step 1: core tools + the groups this request (and this chat) needs.
+                // 2026-11-16 model-first (docs/MODEL-FIRST.md): no word-guessed tool groups. The core, the always-on groups, what this
+                // chat already used and the Stage while it shows; the model loads anything else itself (load_tools / find_tool).
                 val groupsOn = HashSet<String>().apply {
                     if (bulk) addAll(ToolRouter.groups.map { it.id })
-                    val lu = userNow
-                    val g0 = kotlinx.coroutines.withContext(Dispatchers.Default) { ToolRouter.guess(lu) + ToolRouter.usedIn(history) }
-                    addAll(g0)
-                    // v0.33.1 learned tool router: groups this phone's own past turns say these words need (adds only).
-                    if (!bulk && agentId == null && !isPrivate) addAll(kotlinx.coroutines.withContext(Dispatchers.Default) { LearnedRoutes.predict(lu, g0) })
-                    // v0.45.0 (#20): a request in another language that no English cue matched still gets the core action groups.
-                    if (!bulk) addAll(ToolRouter.fallback(lu, this))
-                    // 0.46.0: while cards are on the Stage, the Stage tools stay on hand ("pause it", "make the music small").
+                    addAll(ToolPick.ALWAYS_GROUPS); addAll(ToolRouter.usedIn(history))
                     if (com.blaze.assistant.stage.StageStore.state.value.items.isNotEmpty()) add("stage")
-                    // v0.45.9: a calendar / meetings / schedule question always gets the calendar and reminder tools.
-                    if (!bulk && TurnContext.scheduleAsk(lu)) add("schedule")
-                    // 0.51.0 terminal-first: a task that is easy as a command gets the terminal tools (adds only; low-RAM → HTTP tools).
-                    turnExec = if (bulk || agentId != null) ExecRoute.Exec.ANY else ExecRoute.route(lu, true, try { com.blaze.assistant.device.BlazeCamera.lowRam(app) } catch (_: Throwable) { false })
-                    addAll(ExecRoute.groups(turnExec))
-                    // v0.45.9: "@halo Yes" to "I can check your Google Calendar, want me to?" gets them too.
-                    if (!bulk && TurnContext.scheduleFollowUp(lu, msgs.lastOrNull { it.role == Role.BLAZE }?.text.orEmpty())) add("schedule")
-                    // v0.45.0 (#13): Simple mode keeps the tools, but terminal / PC / connectors load only on a strong match
-                    // (or when this chat already used them).
-                    if (!bulk && SimpleMode.simple) { val usedG = ToolRouter.usedIn(history); removeAll { it !in usedG && !PromptProfile.simpleGroupOk(it, lu) } }
+                    turnExec = ExecRoute.Exec.ANY
                 }
                 timer.mark("route"); if (agentId == null) StartTrace.stage("route")
                 // v0.45.1 speed: the memory block (kept per turn by PromptMemo) and the orient screen read start now, while
@@ -3387,8 +3372,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val plainDev = plainDev0
                 if (plainDev) {
                     turnSkills = dLearned.await() ?: SkillMatch.learnedOnly(userNow)
-                    groupsOn.removeAll(FastActions.heavyGroups - ToolRouter.usedIn(history) - (turnView?.groups ?: emptyList()).toSet())
-                    groupsOn += "screen"; groupsOn += "device"
                 }
                 // v0.24.3 specialists: the matching specialist(s) bring their skill packs and the delegate tool.
                 val lateSteps = ArrayList<String>()   // v0.45.3: optional look-ups that missed their PreBudget
@@ -3419,13 +3402,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools, ToolPick.core(SimpleMode.simple) + widenNames); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
                     if (ToolTruth.full) { sizeLine = "tools all ${allTools.length()}"; return ToolTruth.forRequest(allTools) { allTools } }
                     val diet = ToolRouter.select(allTools, groupsOn)
+                    fun allNamesIn(g: Set<String>) = ToolPick.names(allTools).filter { ToolRouter.groupOf(it) in g }.toSet()
                     val joinNames = widenNames + ToolTruth.MUST + ToolPick.core(SimpleMode.simple)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
                     val diet2 = JSONArray().apply {
                         val have = ToolPick.names(diet).toSet(); for (i in 0 until diet.length()) put(diet.opt(i))
                         val allNames = ToolPick.names(allTools)
                         for (i in 0 until allTools.length()) { val n = allNames[i]; if (n in joinNames && n !in have) put(allTools.opt(i)) } }
                     val sent = ToolPick.keepOrder(sentOrder, ToolPick.pick(diet2, userNow, usedNames + synchronized(turnTools) { turnTools.toSet() }, groupsOn, keepAll = bulk,
-                        must = (if (TurnContext.scheduleAsk(userNow)) TurnContext.SCHEDULE_TOOLS else emptySet()) + widenNames + joinNames, max = ToolPick.MAX_TOOLS + widenNames.size))
+                        must = allNamesIn(ToolPick.ALWAYS_GROUPS) + widenNames + joinNames, max = ToolPick.MAX_TOOLS + widenNames.size))
                     sizeLine = ToolPick.sizeLine(sent, allTools, diet)
                     sentOrder = ToolPick.names(sent)
                     return sent

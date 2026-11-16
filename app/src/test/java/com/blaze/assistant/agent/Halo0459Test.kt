@@ -207,6 +207,8 @@ class Halo0459Test {
         // Wired: the side lane and the main @halo turn both add them.
         val src = listOf(java.io.File("src/main/java/com/blaze/assistant/agent/Agent.kt"), java.io.File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         assertTrue(src.contains("roomTools(if (sched) Duo.SIDE_SCHEDULE_TOOLS else emptySet())"))
-        assertTrue(src.contains("TurnContext.scheduleFollowUp(lu,"))
+        // 2026-11-16 model-first: the main turn sends the schedule group every turn (ToolPick.ALWAYS_GROUPS), no word guess.
+        assertTrue(src.contains("addAll(ToolPick.ALWAYS_GROUPS)"))
+        assertTrue("schedule" in ToolPick.ALWAYS_GROUPS)
     }
 }
