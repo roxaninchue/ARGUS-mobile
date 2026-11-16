@@ -72,11 +72,8 @@ fun SearchTitle(
     modifier: Modifier = Modifier,
     right: (@Composable RowScope.() -> Unit)? = null,
 ) {
-    val c = LocalBlaze.current.mono
     var open by SettingsSearch.open
-    var query by SettingsSearch.query
     val focus = remember { FocusRequester() }
-    val fm = LocalFocusManager.current
     Row(modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = BackTitleEdge, end = BackTitleEdge),
         verticalAlignment = Alignment.CenterVertically) {
         BackButton({ if (open) SettingsSearch.close() else onBack() })
@@ -84,27 +81,7 @@ fun SearchTitle(
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             if (!open) Text(tr(title), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth().align(Alignment.CenterStart),
                 style = com.blaze.assistant.ui.space.SpaceType.headline(com.blaze.assistant.ui.space.SpaceTypeScale.SECTION.sp, spaceLook().ink))
-            AnimatedVisibility(open, enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
-                exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut()) {
-                Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(CircleShape).border(1.dp, c.hair, CircleShape)
-                    .padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Search, contentDescription = null, tint = c.sub, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Box(Modifier.weight(1f)) {
-                        if (query.isEmpty()) Text(tr(placeholder), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
-                        BasicTextField(query, { query = it }, singleLine = true, cursorBrush = SolidColor(LocalBlaze.current.accent),
-                            textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = { fm.clearFocus() }),
-                            modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(SettingsSearch.FIELD_TAG))
-                    }
-                    Box(Modifier.size(36.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = tr("Close search")) { SettingsSearch.close() }
-                        .semantics { contentDescription = "Close search" }, contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Close, contentDescription = null, tint = c.sub, modifier = Modifier.size(18.dp))
-                    }
-                }
-            }
+            SearchBox(open, focus, placeholder)
         }
         if (!open) Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = tr("Search")) { open = true }
             .semantics { contentDescription = "Search" }.testTag(SettingsSearch.ICON_TAG), contentAlignment = Alignment.Center) {
@@ -113,4 +90,36 @@ fun SearchTitle(
         right?.invoke(this)
     }
     LaunchedEffect(open) { if (open) runCatching { focus.requestFocus() } }
+}
+
+/**
+ * The sliding search box. Kept out of [SearchTitle]'s Row/Box lambdas: called there, AnimatedVisibility resolved to the
+ * RowScope overload through the outer implicit receiver, which Compose's @LayoutScopeMarker forbids (compile error).
+ */
+@Composable
+private fun SearchBox(open: Boolean, focus: FocusRequester, placeholder: String) {
+    val c = LocalBlaze.current.mono
+    var query by SettingsSearch.query
+    val fm = LocalFocusManager.current
+    AnimatedVisibility(open, enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
+        exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut()) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(CircleShape).border(1.dp, c.hair, CircleShape)
+            .padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Search, contentDescription = null, tint = c.sub, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Box(Modifier.weight(1f)) {
+                if (query.isEmpty()) Text(tr(placeholder), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
+                BasicTextField(query, { query = it }, singleLine = true, cursorBrush = SolidColor(LocalBlaze.current.accent),
+                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { fm.clearFocus() }),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag(SettingsSearch.FIELD_TAG))
+            }
+            Box(Modifier.size(36.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = tr("Close search")) { SettingsSearch.close() }
+                .semantics { contentDescription = "Close search" }, contentAlignment = Alignment.Center) {
+                Icon(Icons.Rounded.Close, contentDescription = null, tint = c.sub, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
 }
