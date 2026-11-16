@@ -20,7 +20,9 @@ object SecretDesk {
     const val COPY = "Only on this phone. ${BrandName.NAME} uses it without seeing it."
 
     data class Request(val id: Long, val kind: SecretVault.Kind, val label: String, val service: String, val hint: String,
-                       val hosts: List<String>, val fields: List<SecretVault.FieldSpec>, val answer: CompletableDeferred<Map<String, String>?>)
+                       val hosts: List<String>, val fields: List<SecretVault.FieldSpec>, val answer: CompletableDeferred<Map<String, String>?>,
+                       /** Owner 16 Nov 2026: what Argus will do with it, in the model's own words ("For: …" on the card). */
+                       val purpose: String = "")
 
     data class Saved(val label: String, val preview: String, val at: Long)
 
@@ -48,7 +50,8 @@ object SecretDesk {
                 .put("description", "api_key/token, password/login (username + password), card (number, expiry, CVC), code (one-time code), generic"))
             .put("label", p("string", "What the user sees, e.g. 'Cloudflare API token'"))
             .put("service", p("string", "The service it is for, e.g. cloudflare, gitlab, github, openai, or a domain"))
-            .put("hint", p("string", "One short line: why it's needed or where to find it"))
+            .put("purpose", p("string", "One short line in your words: what you'll do with it, e.g. 'deploy your site to Cloudflare Pages'. Shown on the card as 'For: …'"))
+            .put("hint", p("string", "One short line: where to find it or which scopes to pick"))
             .put("hosts", JSONObject().put("type", "array").put("items", JSONObject().put("type", "string"))
                 .put("description", "Hosts it may be sent to (default: the service's API hosts)"))
             .put("fields", JSONObject().put("type", "array").put("items", JSONObject().put("type", "string")).put("description", "Field names, only for generic"))
@@ -61,20 +64,33 @@ object SecretDesk {
             .put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(listOf("kind", "label")))))
     }
 
-    /** The request a tool call describes. */
-    fun requestOf(args: JSONObject): Request {
+    /** A label that names no service ("API key", "Token", "Password"): the card puts the service in front. */
+    private val bareLabel = Regex("""(?i)^(?:(?:an?|the|your)\s+)?(?:api[\s_-]?key|key|token|access token|api token|secret|password|login|credentials?|code|card|personal access token)$""")
+
+    /**
+     * The request a tool call describes. Owner 16 Nov 2026: the card names the service and what it's for. What the
+     * model wrote always wins; only what it left out is filled in, from its own label/hint/purpose first and then
+     * [context] (the user's message), so the card never contradicts the model.
+     */
+    fun requestOf(args: JSONObject, context: String = ""): Request {
         val kind = SecretVault.Kind.parse(args.optString("kind").ifBlank { args.optString("type") }.ifBlank { args.optString("label") })
-        val rawService = args.optString("service").ifBlank { args.optString("label") }.let { s ->
-            if (args.optString("service").isBlank()) SecretUse.serviceNames.keys.firstOrNull { s.lowercase().contains(it) }.orEmpty() else s }
+        val given = args.optString("service").trim()
+        val rawService = given.ifBlank {
+            SecretUse.serviceIn(args.optString("label")).ifBlank { SecretUse.serviceIn(args.optString("purpose") + "\n" + args.optString("hint")) }
+                .ifBlank { SecretUse.serviceIn(context) } }
         val service = SecretUse.serviceId(rawService)
-        val label = args.optString("label").trim().ifBlank { (if (service.isNotBlank()) SecretUse.displayName(service) + " " else "") + kind.title.lowercase() }.take(60)
+        val asked = args.optString("label").trim()
+        val base = asked.ifBlank { kind.title }
+        val label = (if (service.isBlank() || (asked.isNotBlank() && !bareLabel.matches(asked))) base
+            else SecretUse.displayName(service) + " " + base.replaceFirstChar { it.lowercase() }.replace(Regex("(?i)^api(?=[\\s_-])"), "API")).take(60)
         val hostsArg = args.optJSONArray("hosts")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
         val custom = args.optJSONArray("fields")?.let { a -> (0 until minOf(a.length(), 4)).mapNotNull { i ->
             (a.optJSONObject(i)?.optString("name") ?: a.optString(i)).takeIf { it.isNotBlank() } } } ?: emptyList()
         val fields = if (kind == SecretVault.Kind.GENERIC && custom.isNotEmpty())
             custom.map { n -> SecretVault.FieldSpec(SecretVault.slug(n), n.replace('_', ' ').replaceFirstChar { it.uppercase() }, !Regex("(?i)user|email|name|account|id$").containsMatchIn(n)) }
             else SecretVault.fieldsFor(kind, label)
-        return Request(ids.getAndIncrement(), kind, label, service, args.optString("hint").take(140), SecretUse.hostsFor(rawService, hostsArg), fields, CompletableDeferred())
+        return Request(ids.getAndIncrement(), kind, label, service, args.optString("hint").take(140), SecretUse.hostsFor(rawService, hostsArg), fields, CompletableDeferred(),
+            args.optString("purpose").trim().removePrefix("For:").trim().take(140))
     }
 
     /** The text the model gets back: handles, preview and where it may go. Never a value. */
@@ -93,8 +109,8 @@ object SecretDesk {
      * The request_secret tool. [step] adds a chat step line; [away] tells the user when Blaze isn't on screen.
      * Returns the model's result (handles only).
      */
-    suspend fun run(args: JSONObject, step: (String) -> Unit = {}, away: (String) -> Unit = {}): String {
-        val req = requestOf(args)
+    suspend fun run(args: JSONObject, step: (String) -> Unit = {}, away: (String) -> Unit = {}, context: String = ""): String {
+        val req = requestOf(args, context)
         if (!args.optBoolean("fresh") && req.kind != SecretVault.Kind.CODE && req.service.isNotBlank()) {
             SecretVault.findFor(req.service, req.kind)?.let { step("Using your saved ${it.label}"); return summary(it, reused = true) }
         }

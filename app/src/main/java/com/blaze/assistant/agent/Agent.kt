@@ -5373,7 +5373,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 com.blaze.assistant.browser.BrowserTools.SECURE -> secureInput(args)
                 SecretDesk.TOOL -> {
                     mood = Mood.IDLE
-                    val r = SecretDesk.run(args, { add(Role.STEP, it) }) { label -> if (!inForeground) Notifier.actionRequired(label, "Secure form") }
+                    val r = SecretDesk.run(args, { add(Role.STEP, it) }, away = { label -> if (!inForeground) Notifier.actionRequired(label, "Secure form") }, context = lastUserText())
                     mood = Mood.ACTING
                     r
                 }

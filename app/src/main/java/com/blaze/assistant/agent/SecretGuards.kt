@@ -63,6 +63,22 @@ object SecretAsk {
             Want(kind, s, n + " " + when (kind) { SecretVault.Kind.API_KEY -> if (Regex("(?i)$s[^.\\n]{0,20}key").containsMatchIn(both)) "API key" else "token"; else -> kind.title.lowercase() }) }
     }
 
+    private val soThat = Regex("""(?i)\b(?:so (?:that )?(?:you|we|i|it|${BrandName.NAME}) (?:can|could|will)|in order to|to be able to)\s+([^.?!\n]{3,90})""")
+
+    /** What the key is for, taken from the user's words or the reply ("so you can deploy" -> "deploy"), else "". */
+    fun purposeOf(reply: String, userText: String = ""): String {
+        val m = soThat.find(userText) ?: soThat.find(reply) ?: return ""
+        return m.groupValues[1].trim().trimEnd(',', ';', ':').replace(Regex("""(?i)\b(?:your|my)\b"""), "your").take(90)
+    }
+
+    /** The reply's own sentence about this service (e.g. which scopes to tick), so the card repeats the model, never contradicts it. */
+    fun scopeLine(reply: String, service: String): String {
+        if (service.isBlank()) return ""
+        val name = SecretUse.displayName(service)
+        return reply.split(Regex("""(?<=[.!?])\s+|\n+""")).map { it.trim().trimStart('-', '*', '•', ' ').trim() }
+            .firstOrNull { it.contains(name, ignoreCase = true) && it.length in 12..160 && !asks(it) }.orEmpty()
+    }
+
     /**
      * The request_secret calls to run instead of showing [reply], or null to show it. [guarded] = this turn already
      * swapped one reply; [known] = tools this request may call.
@@ -73,7 +89,9 @@ object SecretAsk {
         val calls = JSONArray()
         wants(reply, userText).forEachIndexed { i, w ->
             val args = JSONObject().put("kind", w.kind.id).put("label", w.label).put("service", w.service)
-                .put("hint", "So ${BrandName.NAME} can use it without it going through the chat.")
+            // Owner 16 Nov 2026: the card says what it's for in the user's or the model's own words, never a stock line
+            purposeOf(reply, userText).takeIf { it.isNotBlank() }?.let { args.put("purpose", it) }
+            scopeLine(reply, w.service).takeIf { it.isNotBlank() }?.let { args.put("hint", it) }
             calls.put(JSONObject().put("id", "secretask_$i").put("type", "function")
                 .put("function", JSONObject().put("name", SecretRules.TOOL).put("arguments", args.toString())))
         }

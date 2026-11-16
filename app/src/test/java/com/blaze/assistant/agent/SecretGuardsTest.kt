@@ -120,4 +120,26 @@ class SecretGuardsTest {
         assertTrue(SecretRules.PROMPT.contains("request_secret"))
         assertTrue(SecretRules.PROMPT.contains("never ask the user to type"))
     }
+
+    /** Owner 16 Nov 2026: key cards name the service and what it's for, in the user's or model's own words. */
+    @Test fun cardsSayServiceAndPurpose() {
+        val user = "Can I give you my Cloudflare and GitLab API tokens so you can deploy?"
+        val calls = SecretAsk.decide(seen, user, false, known)!!
+        val a0 = JSONObject(calls.getJSONObject(0).getJSONObject("function").getString("arguments"))
+        assertEquals("deploy", a0.getString("purpose"))
+        assertTrue(a0.getString("hint").startsWith("For Cloudflare, tick only"))
+        assertFalse(a0.has("hint") && a0.getString("hint").contains("without it going through the chat"))
+
+        // a bare "API key" label gets the service in front; the service comes from the user's words when the model left it out
+        val r = SecretDesk.requestOf(JSONObject().put("kind", "api_key").put("label", "API key").put("purpose", "deploy your site"), "use my cloudflare account")
+        assertEquals("cloudflare", r.service)
+        assertEquals("Cloudflare API key", r.label)
+        assertEquals("deploy your site", r.purpose)
+        // what the model wrote always wins
+        val m = SecretDesk.requestOf(JSONObject().put("kind", "api_key").put("label", "Deploy token").put("service", "gitlab"), "cloudflare")
+        assertEquals("gitlab", m.service); assertEquals("Deploy token", m.label)
+        // nothing to go on: no service, and the card says so
+        assertEquals("", SecretDesk.requestOf(JSONObject().put("kind", "api_key").put("label", "API key"), "hello").service)
+        assertEquals("openai", SecretUse.serviceIn("my ChatGPT key"))
+    }
 }

@@ -66,6 +66,16 @@ object SecretUse {
         return SecretVault.slug(s.substringBefore('/')).take(32)
     }
 
+    /** Owner 16 Nov 2026: the first known service a text names ("my Cloudflare token" -> cloudflare), else "". */
+    fun serviceIn(text: String): String {
+        val t = text.lowercase()
+        if (t.isBlank()) return ""
+        val names = serviceNames.keys.map { it to Regex("""\b$it\b""").find(t) } +
+            listOf("hugging face" to Regex("""\bhugging ?face\b""").find(t), "chatgpt" to Regex("""\bchatgpt\b""").find(t), "claude" to Regex("""\bclaude\b""").find(t))
+        val hit = names.filter { it.second != null }.minByOrNull { it.second!!.range.first } ?: return ""
+        return serviceId(hit.first)
+    }
+
     fun displayName(service: String): String = serviceNames[serviceId(service)] ?: service.trim().replaceFirstChar { it.uppercase() }
 
     /** The hosts a secret for [service] may go to: given [hosts] first, else the service's known hosts, else the service if it looks like a domain. */
