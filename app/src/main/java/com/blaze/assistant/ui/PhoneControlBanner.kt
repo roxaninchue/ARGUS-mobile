@@ -8,6 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -21,6 +27,16 @@ fun PhoneControlBanner(state: PhoneControl.State, onFix: () -> Unit) {
     val c = LocalBlaze.current
     val (text, action) = PhoneControl.banner(state)
     if (text.isEmpty()) return
+    // Owner 16 Nov 2026: "Reconnecting…" goes after a few seconds (it stays listed in the Inbox under Not working).
+    var shown by remember(state) { mutableStateOf(PhoneControl.showBanner(state, PhoneControl.reconnectingSince, System.currentTimeMillis())) }
+    LaunchedEffect(state) {
+        if (state == PhoneControl.State.RECONNECTING && shown) {
+            val since = PhoneControl.reconnectingSince.takeIf { it > 0L } ?: System.currentTimeMillis()
+            delay((PhoneControl.RECONNECTING_SHOW_MS - (System.currentTimeMillis() - since)).coerceAtLeast(0L))
+            shown = false
+        }
+    }
+    if (!shown) return
     Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).glass(GlassTokens.tileShape, GlassIntensity.Medium, shadow = false).padding(horizontal = 14.dp, vertical = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Label(text, size = 10.sp, modifier = Modifier.weight(1f))

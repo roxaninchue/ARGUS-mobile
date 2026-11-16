@@ -42,6 +42,7 @@ object Notifier {
 
     fun init(ctx: Context) {
         app = ctx.applicationContext
+        try { Inbox.init(app) } catch (_: Throwable) { }
         // v0.24.4: update downloads ride in the one status line (with Stop).
         try {
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main).launch {
@@ -234,6 +235,8 @@ object Notifier {
              why: String = "") {
         if (!::app.isInitialized) return
         val text = com.blaze.assistant.ui.Md.plain(raw)
+        // Owner 16 Nov 2026: every line Argus sends (and your replies to it) also lands in the Inbox, even with notifications off.
+        if (text.isNotBlank()) try { Inbox.message(text, chatId, fromUser = kind == BlazeThread.Kind.USER) } catch (_: Throwable) { }
         if (text.isBlank() || !allowed()) return
         val lines = synchronized(thread) { BlazeThread.push(thread, BlazeThread.Msg(System.currentTimeMillis(), text, kind)) }
         val chips = QuickReplies.forMessage(text, kind)

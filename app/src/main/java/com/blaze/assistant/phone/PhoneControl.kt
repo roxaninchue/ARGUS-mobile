@@ -69,6 +69,34 @@ object PhoneControl {
     fun note(s: State) {
         val prev = last; last = s
         if (prev != null && prev != s) com.blaze.assistant.device.CrashLog.write("Phone control: $prev -> $s")
+        if (s == State.RECONNECTING && prev != State.RECONNECTING) reconnectingSince = System.currentTimeMillis()
+        // Owner 16 Nov 2026: a drop is listed in the Inbox under "Not working" and marked fixed when control is back.
+        if (prev != s) try {
+            when (s) {
+                State.CONNECTED -> com.blaze.assistant.notify.Inbox.resolved(INBOX_KEY)
+                State.RECONNECTING -> com.blaze.assistant.notify.Inbox.problem(INBOX_KEY, "Phone control is reconnecting. Tap Fix if it doesn't come back.")
+                State.OFF -> com.blaze.assistant.notify.Inbox.problem(INBOX_KEY, "Phone control is off. $TIP")
+            }
+        } catch (_: Throwable) { }
+    }
+
+    const val INBOX_KEY = "phone_control"
+
+    /** When the current reconnecting spell began (ms; 0 = not reconnecting yet). */
+    @Volatile var reconnectingSince: Long = 0L
+        private set
+
+    /** Owner 16 Nov 2026 ("after a few seconds that phone control reconnecting should disappear"): how long it shows. */
+    const val RECONNECTING_SHOW_MS = 5_000L
+
+    /**
+     * Pure rule (tested): Off always shows (it needs you); Reconnecting shows for [RECONNECTING_SHOW_MS] from [since], then
+     * it lives in the Inbox; Connected never shows.
+     */
+    fun showBanner(s: State, since: Long, now: Long): Boolean = when (s) {
+        State.CONNECTED -> false
+        State.OFF -> true
+        State.RECONNECTING -> since <= 0L || now - since < RECONNECTING_SHOW_MS
     }
 
     const val TIP = "Usually Android or Device care stopped ${BrandName.NAME} in the background. Setting ${BrandName.NAME}'s battery to Unrestricted helps it stay on."
