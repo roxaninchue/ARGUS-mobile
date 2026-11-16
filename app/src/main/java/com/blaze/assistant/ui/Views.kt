@@ -45,7 +45,6 @@ object Views {
         BlazeView("secrets", "Saved secrets", "Keys, tokens, logins and cards from the Secure Form", page = "secrets", aliases = listOf("saved secrets", "api keys", "tokens", "secrets")),
         BlazeView("proactive", "Proactive", "Speak up on its own, triggers", page = "proactive", aliases = listOf("triggers")),
         BlazeView("desktop", "${BrandName.NAME} Desktop", "Pair with ${BrandName.NAME} on your computer", page = "desktop", aliases = listOf("pc", "pair")),
-        BlazeView("commands", "Commands", "Slash commands and prompt skills", page = "commands"),
         BlazeView("dashboard", "Dashboard", "Local web dashboard", page = "dashboard"),
         BlazeView("account", "${BrandName.NAME} account", "Sign in, shared with Desktop", page = "account"),
         // v0.40.0: optional end-to-end encrypted live sync between your phones (off by default).

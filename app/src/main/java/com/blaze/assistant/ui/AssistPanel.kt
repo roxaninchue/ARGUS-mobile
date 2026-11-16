@@ -147,11 +147,8 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
     }
     fun submit() {
         if (text.isBlank() && pending.isEmpty()) return
-        val cmd = if (text.isBlank()) null else CommandRunner.run(ctx, text.trim(), openSettings = {
-            ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }, listen = { })
-        if (cmd == "") { text = ""; return }
-        // v0.30.6 rapid messages: sending while Blaze works is fine (the message joins the turn).
-        Agent.send(cmd ?: text, attachments = pending); text = ""; pending = emptyList()
+        // v0.30.6 rapid messages: sending while Blaze works is fine (the message joins the turn). 16 Nov 2026: no "/" commands.
+        Agent.send(text, attachments = pending); text = ""; pending = emptyList()
     }
 
     val card = RoundedCornerShape(28.dp)

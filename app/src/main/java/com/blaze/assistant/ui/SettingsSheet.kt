@@ -142,7 +142,6 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "desktop" -> DesktopPage()
                     "persona" -> PersonaSection()
                     "control" -> ControlPage(a11yOn, onOpenAccessibility)
-                    "commands" -> CommandsSection()
                     "skills" -> SkillLibraryPage()
                     "voice" -> { VoiceSection(); MyVoiceSection(); VoiceTuning(); VoiceExtras() }
                     "orb" -> OrbSection()
@@ -202,47 +201,6 @@ private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub), modifier = Modifier.padding(top = 8.dp))
     SkillsSection()
     NotificationAccessRow()
-}
-
-@Composable
-private fun CommandsSection() {
-    val c = LocalBlaze.current.mono
-    var list by remember { mutableStateOf(com.blaze.assistant.agent.Commands.custom()) }
-    var name by remember { mutableStateOf("") }
-    var desc by remember { mutableStateOf("") }
-    var prompt by remember { mutableStateOf("") }
-    Spacer(Modifier.height(12.dp))
-    Text("Type / in the chat box to see every command. Make your own: ${BrandName.NAME} swaps {input} for whatever you type after it.",
-        style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
-    Spacer(Modifier.height(14.dp))
-    if (list.isNotEmpty()) {
-        Label(tr("Yours"), modifier = Modifier.padding(bottom = 8.dp))
-        Column(Modifier.fillMaxWidth().hairline(c.hair)) {
-            list.forEach { cmd ->
-                Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).padding(start = 14.dp, top = 8.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("/" + cmd.name, style = TextStyle(fontFamily = Type.Mono, fontSize = 14.sp, color = c.ink))
-                        Text(cmd.prompt.orEmpty().take(80), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
-                    }
-                    Box(Modifier.clip(BlazeShapes.pill).clickable { com.blaze.assistant.agent.Commands.deleteCustom(cmd.name); list = com.blaze.assistant.agent.Commands.custom() }
-                        .padding(12.dp)) { Label("×", size = 14.sp) }
-                }
-            }
-        }
-        Spacer(Modifier.height(18.dp))
-    }
-    Label(tr("New command"), modifier = Modifier.padding(bottom = 8.dp))
-    Field("Name", name, { name = it }, "standup")
-    Spacer(Modifier.height(10.dp))
-    Field("Short description", desc, { desc = it }, "Write my daily standup")
-    Spacer(Modifier.height(10.dp))
-    Field("Prompt", prompt, { prompt = it }, "Turn these notes into a 3-line standup: {input}")
-    Spacer(Modifier.height(10.dp))
-    Box(Modifier.fillMaxWidth().height(46.dp).clip(BlazeShapes.pill).glassButton(c).clickable {
-        com.blaze.assistant.agent.Commands.saveCustom(name, desc, prompt)
-        list = com.blaze.assistant.agent.Commands.custom(); name = ""; desc = ""; prompt = ""
-    }, contentAlignment = Alignment.Center) { ButtonText("Save command", color = Color.White) }
 }
 
 @Composable

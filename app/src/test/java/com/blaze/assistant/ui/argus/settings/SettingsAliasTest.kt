@@ -23,21 +23,21 @@ class SettingsAliasTest {
 
     private val PRE_053 = listOf("system", "feedback", "look", "language", "doing", "bank", "voice", "permissions", "account", "updates",
         "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "watches", "secrets", "logins",
-        "phonebrowser", "proactive", "commands", "orb", "logs", "replies", "usage", "backup", "ai", "memory",
+        "phonebrowser", "proactive", "orb", "logs", "replies", "usage", "backup", "ai", "memory",
         "routines", "skills", "learn", "appstore", "seller", "dashboard", "plan", "sync",
         // old aliases (0.52.3 declutter)
         "router", "backup_brain",
         // the 0.52.3 profile's row ids
         "profile", "scheduled", "accounts", "wallet", "security")
     // 16 Nov 2026 (Finn): Team & bots and Jobs left Settings; their old ids open the root.
-    private val TO_ROOT = setOf("advanced", "settings", "", "specialists", "terminal", "device")
+    private val TO_ROOT = setOf("advanced", "settings", "", "specialists", "terminal", "device", "commands")
 
     /** SettingsScreen draws [page]: a `"page" ->` branch, or the System / Feedback constants. */
     private fun drawn(page: String) = "\"$page\" ->" in sheet ||
         (page == "system" && "SpaceProfile.SYSTEM_PAGE -> " in sheet) || (page == "feedback" && "SpaceProfile.FEEDBACK_PAGE -> " in sheet)
 
     @Test fun everyPre053IdOpensAPage() {
-        assertEquals(39, settingsPages.size)
+        assertEquals(38, settingsPages.size)
         assertTrue(settingsPages.none { it.id == "specialists" || it.id == "terminal" || it.id == "device" })
         for (id in PRE_053) {
             val p = settingsStart(id)

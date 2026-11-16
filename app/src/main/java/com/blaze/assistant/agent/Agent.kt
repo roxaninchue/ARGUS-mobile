@@ -2404,16 +2404,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     runConversation(duoKind!!, shown.let { s -> if (route.explicit) Duo.route(s, false).text else s }, resumeRoom ?: -1L, users.first().id)
                     return@launch
                 }
-                // 0.50.0: "what / commands do I have?" is answered from the slash-command registry (the same list as the
-                // composer's "/" menu). No model call, no web search (it used to search the web and answer about Windows).
-                if (single && attachments.isEmpty() && !routine && agentId == null && notificationContext.isNullOrBlank() && SearchRoute.isCommandsAsk(shown)) {
-                    val reply = SlashCommands.answer()
-                    history.put(JSONObject().put("role", "assistant").put("content", reply))
-                    addReply(-1, reply, "", meta = "\u26A1 from ${BrandName.NAME}'s command list")
-                    mood = Mood.IDLE
-                    persist(); announce()
-                    return@launch
-                }
                 // v0.27.x: "show me your memories" / "what do you know about me" is answered straight from the memory table:
                 // grouped, with how to change or delete a line. No model call, no tool loop, no Design.
                 if (single && attachments.isEmpty() && !routine && agentId == null && notificationContext.isNullOrBlank() && MemoryIntent.isListRequest(shown)) {

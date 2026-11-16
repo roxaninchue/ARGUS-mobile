@@ -422,23 +422,13 @@ fun ChatScreen() {
         com.blaze.assistant.agent.StartTrace.tap(force = true)
         val text = raw.trim()
         if (callWords.matches(text)) { input = TextFieldValue(""); startCall(); return }
-        val cmdName = text.removePrefix("/").substringBefore(' ').lowercase()
-        if (text.startsWith("/") && !text.startsWith("//")) {
-            if (cmdName == "views") { input = TextFieldValue(""); showViews = true; return }
-            if (cmdName == "search") { input = TextFieldValue(""); showSearch = true; return }
-            if (cmdName == "projects") { input = TextFieldValue(""); go(navNow().projectsList()); return }
-            // P1-SH-01: /team /chat /life /desk switch modes in the ARGUS shell
-            ChatNav.modeCommand(text)?.let { m -> input = TextFieldValue(""); exitView(); go(navNow().switchTab(m)); return }
-            if (cmdName in setOf("jobs", "schedule", "accounts", "design", "router", "skills", "gallery", "browser", "terminal", "music", "video", "doing", "look", "home", "sync") && !text.contains(' ')) {
-                input = TextFieldValue(""); Views.find(cmdName)?.let { openView(it) }; return
-            }
-        }
+        // 16 Nov 2026 (Finn): no "/" commands. A message that starts with "/" is just a message.
         // P1-TM-06 routing v1: from the Team composer every message is routed (@bot, a bot's name, commands, `$ cmd`,
         // else ARGUS); in the ARGUS chat only what looks like one of those. What isn't for the team comes back as Chat
         // and is sent as before (routed = true).
         val nowNav = navNow()
         val where = when {
-            routed || pending.isNotEmpty() || quote.isNotBlank() || text.startsWith("/") || text.isEmpty() -> null
+            routed || pending.isNotEmpty() || quote.isNotBlank() || text.isEmpty() -> null
             nowNav.tab == ChatNav.TEAM -> com.blaze.assistant.team.Router.Where.Team
             nowNav.tab == ChatNav.CHAT && !nowNav.inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value &&
                 com.blaze.assistant.team.TeamCommands.maybeTeam(text) -> com.blaze.assistant.team.Router.Where.Thread(com.blaze.assistant.team.BotRules.MANAGER_ID)
@@ -467,9 +457,7 @@ fun ChatScreen() {
             }
             return
         }
-        val cmd = CommandRunner.run(ctx, text, openSettings = { settingsPage = it }, listen = { onMic() })
-        if (cmd == "") { input = TextFieldValue(""); return }
-        val body = if (cmd == null) com.blaze.assistant.agent.SimpleHome.tagged(text, talkTo) else cmd
+        val body = com.blaze.assistant.agent.SimpleHome.tagged(text, talkTo)
         val full = if (quote.isNotBlank()) quote.lines().joinToString("\n") { "> $it" } + "\n\n" + body else body
         if (full.isBlank() && pending.isEmpty()) return
         // P1-SH-04: Chat mode sends to the newest Manager chat (an older one is read-only)
@@ -988,7 +976,7 @@ fun ChatScreen() {
                 onOpen = { Views.offer.value = null; Views.find(o.id)?.let { openView(it, o.target) } }, onDismiss = { Views.offer.value = null }) }
             if (composerShown && viewShowing.isEmpty()) {
                 com.blaze.assistant.ui.argus.kit.ArgusToastHost()
-                val sugg = remember(input.text) { fileSuggestions(input.text).ifEmpty { CommandRunner.suggest(input.text) } }
+                val sugg = remember(input.text) { fileSuggestions(input.text) }
                 if (sugg.isNotEmpty() && !showViews) SuggestionList(sugg) { s ->
                     if (s.runNow) send(s.fill) else input = TextFieldValue(s.fill, TextRange(s.fill.length))
                 }

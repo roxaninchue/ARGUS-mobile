@@ -13,7 +13,7 @@ class ViewsTest {
     @Test fun everyOldPageStillHasAView() {
         // The sidebar's pages before 0.12, and Desktop's /views list: none may disappear.
         // v0.24.0: "chats" (the Archive chat list) left with the conversation switcher.
-        listOf("gallery", "browser", "routines", "memory", "commands", "usage", "settings",
+        listOf("gallery", "browser", "routines", "memory", "usage", "settings",
             "jobs", "schedule", "accounts", "design", "router", "skills", "learn").forEach {
             assertNotNull("missing view $it", Views.find(it))
         }
@@ -21,7 +21,7 @@ class ViewsTest {
 
     @Test fun removedSettingsViewsAreGone() {
         // 16 Nov 2026 (Finn): Team & bots (agents) and Device & diagnostics (doctor) left Settings.
-        assertNull(Views.find("agents")); assertNull(Views.find("doctor"))
+        assertNull(Views.find("agents")); assertNull(Views.find("doctor")); assertNull(Views.find("commands"))
     }
 
     @Test fun noConversationListView() {

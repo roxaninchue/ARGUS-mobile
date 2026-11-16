@@ -48,7 +48,6 @@ val advancedPages = listOf(
     SettingsPage("logins", "Saved logins", "Sign-ins from ${BrandName.NAME}'s secure form, encrypted on this phone"),
     SettingsPage("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: sign out of sites, clear its data"),
     SettingsPage("proactive", "Proactive & triggers", "Speak up on its own, when-X-do-Y"),
-    SettingsPage("commands", "Slash commands", "Your own /commands and prompt skills"),
     SettingsPage("orb", "Floating orb", "Keep ${BrandName.NAME} over other apps"),
     SettingsPage("logs", "Life logs", "Transcribe what the mic hears into memory, brainstorms"),
     SettingsPage("replies", "Notification replies", "Chat logs and replies from notifications, auto-reply"),
@@ -78,7 +77,7 @@ val settingsPages = topPages + advancedPages + viewPages
 /** 0.52.3: page ids from before the declutter that now land on another page ("" = the profile). */
 internal val settingsAliases = mapOf("router" to "ai", "backup_brain" to "ai", "advanced" to "", "settings" to "") +
     // 16 Nov 2026 (Finn): Team & bots (specialists, always on) and Jobs (the terminal page) left Settings; old ids open the root.
-    mapOf("specialists" to "", "terminal" to "", "device" to "") +
+    mapOf("specialists" to "", "terminal" to "", "device" to "", "commands" to "") +
     // P1-SH-06: the 0.52.3 profile's row ids (they were ids of rows, not pages) open the page the row opened.
     mapOf("profile" to "account", "scheduled" to "routines", "accounts" to "connections", "wallet" to "secrets", "security" to "privacy")
 
