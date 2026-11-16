@@ -97,7 +97,7 @@ object LifeTags {
 /**
  * P1-SH-05 Life mode v1 (04 §4.12): serif day line, Today strip, domain tiles ("Set up my life team" until P5),
  * Projects, Panels (weather, latest answer, suggested asks). Stateless; [LifePage] feeds it from the live app.
- * The AM Home's cards (SpaceHome.kt) are here by [LifeModel.HOME_CARDS]; SpaceHome itself stays for `argus_look` off.
+ * The AM Home's cards are here by [LifeModel.HOME_CARDS]; the 0.52 SpaceHome screen is gone (ARGUS-only, 16 Nov 2026).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

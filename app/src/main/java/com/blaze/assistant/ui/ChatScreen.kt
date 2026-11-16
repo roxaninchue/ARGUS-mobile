@@ -358,7 +358,7 @@ fun ChatScreen() {
     var showSearch by remember { mutableStateOf(false) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all) and whether the keyboard composer is out.
     val simpleMode by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
-    // 0.52.3: Home (space/SpaceHome.kt) is the root tab; the old Home under a swipe-up chat sheet is
+    // 0.52.3: Home was the root tab; the old Home under a swipe-up chat sheet is
     // gone, so the Swipe setting no longer applies (HomeRoute keeps its rule for the RC2 redesign behind HomeRedesign).
     val swipeMode = HomeRoute.swipe(false, HomeRedesign.enabled)
     var typing by rememberSaveable { mutableStateOf(false) }
@@ -709,7 +709,7 @@ fun ChatScreen() {
             allJobs = { com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS, com.blaze.assistant.ui.team.JobsFilter.ALL); go(navNow().switchTab(ChatNav.DESK)) },
         )
     }
-    ArgusShellLocals(true, c.dark) {
+    ArgusShellLocals(c.dark) {
     // The + menu's entries and what a pick does (the composer's own menu with the ARGUS look, the sheet without it).
     fun plusEntries(): List<PlusItem> = plusItems(work, approval, "", clipHasImage, nav.inProjectChat, hasCamera)
         .filter { com.blaze.assistant.agent.SimpleMode.plusVisible(it.id, simpleMode) }
@@ -1208,8 +1208,7 @@ fun ChatScreen() {
  * own Material colours until their tickets move them).
  */
 @Composable
-private fun ArgusShellLocals(on: Boolean, dark: Boolean, content: @Composable () -> Unit) {
-    if (!on) { content(); return }
+private fun ArgusShellLocals(dark: Boolean, content: @Composable () -> Unit) {
     CompositionLocalProvider(
         com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(dark),
         com.blaze.assistant.ui.argus.LocalArgusGround provides com.blaze.assistant.ui.argus.Argus.groundSetting(com.blaze.assistant.ui.argus.Ground.ORBIT),

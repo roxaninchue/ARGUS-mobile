@@ -55,11 +55,14 @@ class SpaceWiringTest {
     }
 
     @Test fun theSpaceFilesAreThereAndTheArgusHomeIsGone() {
-        for (f in listOf("SpaceLogic", "SpaceTheme", "SpaceTopBar", "SpaceHome", "SpaceSpotlight", "SpaceProfile", "SpaceOnboarding", "SpaceProjects", "SpaceLegal", "SpaceRows")) {
+        for (f in listOf("SpaceLogic", "SpaceTheme", "SpaceHome", "SpaceSpotlight", "SpaceProfile", "SpaceOnboarding", "SpaceProjects", "SpaceLegal", "SpaceRows")) {
             val file = File(root, "com/blaze/assistant/ui/space/$f.kt")
             assertTrue(f, file.isFile)
             assertTrue("$f package", file.readText().startsWith("package com.blaze.assistant.ui.space\n"))
         }
+        // ARGUS-only (16 Nov 2026): the 0.52 top bar and Home screen are gone
+        assertFalse("SpaceTopBar.kt was removed", File(root, "com/blaze/assistant/ui/space/SpaceTopBar.kt").exists())
+        for (gone in listOf("SpaceTopBar(", "SpaceHomeScreen(", "SpaceHomeState(")) nowhere(gone)
         for (f in listOf("SetupPlan", "SetupRunner")) assertTrue(f, File(root, "com/blaze/assistant/setup/$f.kt").isFile)
         // the 3D Home's ui/argus files stay gone (P0-SH-01 reuses the package for the ARGUS tokens)
         for (f in listOf("ArgusHomeLogic", "ArgusGl", "ArgusSceneView", "ArgusHome", "ArgusSpotlight"))
@@ -178,7 +181,7 @@ class SpaceWiringTest {
         // Unification 6/9: Home, the profile, Projects, Spotlight, the empty chat and the thread sit at the one gutter (the
         // round button's edge), with no ad-hoc text nudges; headlines and text take SpaceType steps; the composer's panels
         // (the + sheet, reply-to, listening, slash list) float at the composer's inset instead of running edge to edge.
-        for (f in listOf("SpaceHome.kt", "SpaceProfile.kt", "SpaceProjects.kt", "SpaceSpotlight.kt")) {
+        for (f in listOf("SpaceProfile.kt", "SpaceProjects.kt", "SpaceSpotlight.kt")) {
             val t = src("ui/space/$f")
             assertTrue("$f uses the gutter", "SpaceInsets.GUTTER_DP.dp" in t)
             assertFalse("$f has no 6 dp text nudge", "padding(start = 6.dp" in t)

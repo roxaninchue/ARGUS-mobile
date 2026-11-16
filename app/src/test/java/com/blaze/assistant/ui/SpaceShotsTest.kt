@@ -22,8 +22,6 @@ import com.blaze.assistant.setup.SetupPlan
 import com.blaze.assistant.ui.space.SpaceAnswer
 import com.blaze.assistant.ui.space.SpaceBackdrop
 import com.blaze.assistant.ui.space.SpaceGreeting
-import com.blaze.assistant.ui.space.SpaceHomeScreen
-import com.blaze.assistant.ui.space.SpaceHomeState
 import com.blaze.assistant.ui.space.SpaceOnboarding
 import com.blaze.assistant.ui.space.SpaceOnboardingScreen
 import com.blaze.assistant.ui.space.SpaceProfile
@@ -31,7 +29,6 @@ import com.blaze.assistant.ui.space.SpaceProfileScreen
 import com.blaze.assistant.ui.space.SpaceProjectsScreen
 import com.blaze.assistant.ui.space.SpaceTabs
 import com.blaze.assistant.ui.space.SpaceTags
-import com.blaze.assistant.ui.space.SpaceTopBar
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -81,56 +78,17 @@ class SpaceShotsTest {
     private fun px(b: Bitmap, xDp: Float, yDp: Float): Int { val d = b.width / 360f; return b.getPixel((xDp * d).toInt().coerceIn(0, b.width - 1), (yDp * d).toInt().coerceIn(0, b.height - 1)) }
     private fun lum(p: Int) = ((p shr 16) and 0xFF) + ((p shr 8) and 0xFF) + (p and 0xFF)
 
-    private val sample = SpaceHomeState(name = "Gaby", hour = 19, signedIn = true,
-        answer = SpaceAnswer.Card("What's on today?", "Two meetings this afternoon and a parcel arriving before six.", false),
-        projects = listOf("p1" to "ARGUS mobile", "p2" to "Valera market"), setupLeft = 2, setupPercent = 64)
-
     /** The shell as ChatScreen draws it: the space view, the top bar, then the tab's content. */
     @androidx.compose.runtime.Composable
     private fun Shell(dark: Boolean, tab: String, content: @androidx.compose.runtime.Composable () -> Unit) {
         CompositionLocalProvider(LocalBlaze provides if (dark) DarkColors else LightColors) {
             SpaceBackdrop {
-                Column(Modifier.statusBarsPadding()) {
-                    SpaceTopBar(tab = tab, onTab = {}, onLeft = {}, initial = SpaceTabs.initial("Gaby", null), onAvatar = {})
-                    content()
-                }
+                Column(Modifier.statusBarsPadding()) { content() }
             }
         }
     }
 
-    private fun home(dark: Boolean, state: SpaceHomeState = sample): @androidx.compose.runtime.Composable () -> Unit = {
-        Shell(dark, SpaceTabs.HOME) {
-            SpaceHomeScreen(state, onAsk = {}, onOpenChat = {}, onOpenProject = {}, onOpenProjects = {}, onSignIn = {}, onSetup = {})
-        }
-    }
-
-    @Test fun homeDark() {
-        val b = capture("space-home-dark", home(dark = true))
-        rule.onNodeWithText(SpaceGreeting.hello(19, "Gaby")).assertIsDisplayed()
-        for (t in listOf(SpaceTags.BACKDROP, SpaceTags.TOP_BAR, SpaceTags.LEFT_BUTTON, SpaceTags.PILL, SpaceTags.AVATAR, SpaceTags.HOME, SpaceTags.HERO))
-            rule.onNodeWithTag(t, useUnmergedTree = true).assertExists()
-        for (id in listOf(SpaceTabs.HOME, SpaceTabs.CHAT, SpaceTabs.PROJECTS)) rule.onNodeWithTag(SpaceTags.tab(id), useUnmergedTree = true).assertExists()
-        // the space view: a dark sky at the top edge
-        assertTrue("dark sky (${Integer.toHexString(px(b, 4f, 4f))})", lum(px(b, 4f, 4f)) < 3 * 60)
-    }
-
-    @Test fun homeLight() {
-        val b = capture("space-home-light", home(dark = false))
-        rule.onNodeWithText(SpaceGreeting.hello(19, "Gaby")).assertIsDisplayed()
-        assertTrue("light ground (${Integer.toHexString(px(b, 4f, 4f))})", lum(px(b, 4f, 4f)) > 3 * 200)
-    }
-
-    @Test fun homeSignedOutWithTheSetupCard() {
-        capture("space-home-signed-out", home(dark = true, sample.copy(signedIn = false, answer = null, projects = emptyList())))
-        rule.onNodeWithTag(SpaceTags.SIGN_IN, useUnmergedTree = true).assertExists()
-        rule.onNodeWithTag(SpaceTags.SETUP_CARD, useUnmergedTree = true).assertExists()
-        rule.onNodeWithTag(SpaceTags.ANSWER, useUnmergedTree = true).assertDoesNotExist()
-    }
-
-    @Test fun theGreetingFollowsThePinnedHour() {
-        capture("space-home-morning", home(dark = true, sample.copy(hour = 8)))
-        rule.onNodeWithText("Good morning, Gaby").assertIsDisplayed()
-    }
+    // ARGUS-only (16 Nov 2026): the 0.52 Home and top bar shots left with those screens (SpaceHomeScreen, SpaceTopBar).
 
     @Test fun profileDark() {
         var opened = ""
@@ -138,7 +96,6 @@ class SpaceShotsTest {
             CompositionLocalProvider(LocalBlaze provides DarkColors) {
                 SpaceBackdrop {
                     Column(Modifier.statusBarsPadding()) {
-                        SpaceTopBar(tab = "", onTab = {}, onLeft = {}, showLeft = false, initial = "G", onAvatar = {})
                         SpaceProfileScreen("Gaby Alarcon", "gaby@example.com", signedIn = true, planLine = "Pro plan",
                             onPage = { opened = it }, onSignOut = {}, onSearch = {}, version = "0.52.3")
                     }
@@ -200,23 +157,5 @@ class SpaceShotsTest {
         for (i in SetupPlan.ITEMS) rule.onNodeWithTag(SpaceTags.setupRow(i.id), useUnmergedTree = true).assertExists()
         rule.onNodeWithTag(SpaceTags.SETUP_CONTINUE, useUnmergedTree = true).assertExists()
         rule.onNodeWithText(SpaceOnboarding.setupButton(false)).assertIsDisplayed()
-    }
-
-    @Test fun narrowScreenLargeFontPillStillFits() {
-        capture("space-topbar-narrow") {
-            val d = androidx.compose.ui.platform.LocalDensity.current
-            CompositionLocalProvider(LocalBlaze provides DarkColors,
-                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, fontScale = 1.3f)) {
-                SpaceBackdrop {
-                    Column(Modifier.width(300.dp)) {
-                        SpaceTopBar(tab = SpaceTabs.CHAT, onTab = {}, onLeft = {}, initial = "G", onAvatar = {})
-                        Spacer(Modifier.height(8.dp))
-                        Text("narrow")
-                    }
-                }
-            }
-        }
-        for (id in listOf(SpaceTabs.HOME, SpaceTabs.CHAT, SpaceTabs.PROJECTS)) rule.onNodeWithTag(SpaceTags.tab(id), useUnmergedTree = true).assertIsDisplayed()
-        rule.onNodeWithText("Projects").assertIsDisplayed()
     }
 }

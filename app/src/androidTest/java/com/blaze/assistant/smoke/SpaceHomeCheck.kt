@@ -22,14 +22,13 @@ import com.blaze.assistant.agent.Project
 import com.blaze.assistant.ui.DarkColors
 import com.blaze.assistant.ui.LightColors
 import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.space.SpaceAnswer
-import com.blaze.assistant.ui.space.SpaceBackdrop
-import com.blaze.assistant.ui.space.SpaceHomeScreen
-import com.blaze.assistant.ui.space.SpaceHomeState
-import com.blaze.assistant.ui.space.SpaceProfileScreen
+import com.blaze.assistant.ui.argus.ArgusColors
+import com.blaze.assistant.ui.argus.ArgusGround
+import com.blaze.assistant.ui.argus.LocalArgusColors
+import com.blaze.assistant.ui.argus.kit.ArgusTopBar
 import com.blaze.assistant.ui.space.SpaceProjectsScreen
-import com.blaze.assistant.ui.space.SpaceTabs
-import com.blaze.assistant.ui.space.SpaceTopBar
+import com.blaze.assistant.ui.team.LifeNav
+import com.blaze.assistant.ui.team.LifePage
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,10 +36,10 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * 0.52.3 local check (NOT part of the official low-RAM gate, which runs LowRamSmokeTest): the ARGUS x Hark shell live on
- * the low-RAM emulator with animations on, in dark (the space view, decoded at the screen's size) and light. Each round
- * goes Home (idle) -> Home working with the answer card -> Home with the sign-in and setup cards -> the profile page ->
- * Projects -> Home, switching through the top bar's state like the shell does, under the same 50 ms main-thread monitor
+ * Local check (NOT part of the official low-RAM gate, which runs LowRamSmokeTest): the ARGUS shell live on the low-RAM
+ * emulator with animations on, in dark and light. ARGUS-only (16 Nov 2026): the ARGUS ground and top bar with Life (the
+ * Home) instead of the 0.52 space Home. Each round goes Life (idle) -> Life working -> Life with the sign-in and setup
+ * cards -> Projects -> Life, under the same 50 ms main-thread monitor
  * and 700 ms limit as the other checks (the first round of each mode is a warm-up: classes, the space image decode and
  * the emulator's software-GL programs). A screenshot of every screen goes to the app's files (space/) for the reviewers.
  * Run by .github/workflows/home-focus-check.yml. Replaces ArgusHomeCheck (the 3D Home is gone).
@@ -83,10 +82,10 @@ class SpaceHomeCheck {
         Log.i(tag, "SHOT $name ${if (b != null) "saved" else "failed"}")
     }
 
-    private val calm = SpaceHomeState(name = "Gaby", hour = 19, signedIn = true, projects = listOf("p1" to "ARGUS mobile"))
+    private data class Life(val signedIn: Boolean = true, val working: Boolean = false, val setupLeft: Int = 0, val setupPercent: Int = 100)
+    private val calm = Life()
     private val home = mutableStateOf(calm)
-    private val tab = mutableStateOf(SpaceTabs.HOME)
-    private val profile = mutableStateOf(false)
+    private val tab = mutableStateOf(LIFE)
     private val chats = listOf(ChatMeta("c1", "Store copy", 0L, false, ""), ChatMeta("c2", "Price list", 0L, false, ""))
     private val projects = listOf(Project("p1", "ARGUS mobile", chats = listOf("c1")), Project("p2", "Valera market", chats = listOf("c2")))
 
@@ -100,19 +99,15 @@ class SpaceHomeCheck {
                 navigationBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
             a.window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(0xFF000000.toInt()))
             a.setContent {
-                val h by home; val t by tab; val p by profile
-                CompositionLocalProvider(LocalBlaze provides if (dark) DarkColors else LightColors) {
-                    SpaceBackdrop {
+                val h by home; val t by tab
+                CompositionLocalProvider(LocalBlaze provides if (dark) DarkColors else LightColors, LocalArgusColors provides ArgusColors.of(dark)) {
+                    ArgusGround {
                         Column(Modifier.statusBarsPadding()) {
-                            SpaceTopBar(tab = if (p) "" else t, onTab = { tab.value = it; profile.value = false }, onLeft = {},
-                                initial = SpaceTabs.initial("Gaby", null), onAvatar = { profile.value = true }, showLeft = !p)
-                            when {
-                                p -> SpaceProfileScreen("Gaby Alarcon", "gaby@example.com", signedIn = true, planLine = "Pro plan",
-                                    onPage = {}, onSignOut = {}, onSearch = {}, version = "0.52.3")
-                                t == SpaceTabs.PROJECTS -> SpaceProjectsScreen(projects, chats, busy = setOf("c1"), needsYou = emptySet(), openId = "",
-                                    onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
-                                else -> SpaceHomeScreen(h, onAsk = {}, onOpenChat = {}, onOpenProject = {}, onOpenProjects = {}, onSignIn = {}, onSetup = {})
-                            }
+                            ArgusTopBar(initial = "G", onMe = {}, onMeLong = {}, onSearch = {}, onBell = {}, bellBadge = false, onPlus = {})
+                            if (t == PROJECTS) SpaceProjectsScreen(projects, chats, busy = setOf("c1"), needsYou = emptySet(), openId = "",
+                                onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
+                            else LifePage(LifeNav(), projects = listOf("p1" to "ARGUS mobile"), signedIn = h.signedIn, working = h.working,
+                                setupLeft = h.setupLeft, setupPercent = h.setupPercent)
                         }
                     }
                 }
@@ -126,13 +121,11 @@ class SpaceHomeCheck {
         fun step(name: String, ms: Long = 1_200, change: () -> Unit) {
             main.post(change); SystemClock.sleep(ms); mark("$p $name"); if (measured) shot("$mode-$name")
         }
-        step("home") { profile.value = false; tab.value = SpaceTabs.HOME; home.value = calm }
-        step("home-working") { home.value = calm.copy(working = true, answer = SpaceAnswer.Card("What's on today?", "", true)) }
-        step("home-answer") { home.value = calm.copy(answer = SpaceAnswer.Card("What's on today?", "Two meetings this afternoon and a parcel before six.", false)) }
-        step("home-signed-out-setup") { home.value = calm.copy(signedIn = false, setupLeft = 3, setupPercent = 40) }
-        step("profile") { profile.value = true }
-        step("projects") { profile.value = false; tab.value = SpaceTabs.PROJECTS }
-        step("back-home", 1_000) { tab.value = SpaceTabs.HOME; home.value = calm }
+        step("life") { tab.value = LIFE; home.value = calm }
+        step("life-working") { home.value = calm.copy(working = true) }
+        step("life-signed-out-setup") { home.value = calm.copy(signedIn = false, setupLeft = 3, setupPercent = 40) }
+        step("projects") { tab.value = PROJECTS }
+        step("back-life", 1_000) { tab.value = LIFE; home.value = calm }
     }
 
     private fun mode(dark: Boolean) {
@@ -144,6 +137,8 @@ class SpaceHomeCheck {
         sc.close()
         SystemClock.sleep(500); mark("warm-up $m close")
     }
+
+    private companion object { const val LIFE = "life"; const val PROJECTS = "projects" }
 
     @Test fun spaceShellThroughEveryScreenStaysUnder700ms() {
         monitor()
