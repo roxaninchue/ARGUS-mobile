@@ -60,4 +60,14 @@ class InboxTest {
         assertFalse(PhoneControl.showBanner(PhoneControl.State.CONNECTED, t0, t0))
         assertEquals(5_000L, PhoneControl.RECONNECTING_SHOW_MS)
     }
+
+    @Test fun inboxWords() {
+        val now = 10_000_000L
+        assertEquals("now", com.blaze.assistant.ui.InboxText.ago(now - 5_000, now))
+        assertEquals("3 min ago", com.blaze.assistant.ui.InboxText.ago(now - 180_000, now))
+        assertEquals("2 h ago", com.blaze.assistant.ui.InboxText.ago(now - 7_200_000, now))
+        assertEquals("Chat", com.blaze.assistant.ui.InboxText.threadTitle(""))
+        assertEquals("Chat", com.blaze.assistant.ui.InboxText.threadTitle(com.blaze.assistant.agent.Mind.MAIN))
+        assertEquals("Another chat", com.blaze.assistant.ui.InboxText.threadTitle("p_123"))
+    }
 }

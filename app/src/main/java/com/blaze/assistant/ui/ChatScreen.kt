@@ -367,6 +367,10 @@ fun ChatScreen() {
     // P1-SH-01: the notch's mode pill and the top bar's New sheet (ARGUS shell only).
     var notchOpen by remember { mutableStateOf(false) }
     var newOpen by remember { mutableStateOf(false) }
+    // Owner 16 Nov 2026: the Inbox sheet (bell) and its unread count
+    var inboxOpen by remember { mutableStateOf(false) }
+    val inboxItems by com.blaze.assistant.notify.Inbox.items.collectAsState()
+    val inboxUnread = remember(inboxItems) { com.blaze.assistant.notify.Inbox.unread(inboxItems) }
     val showing by Views.showing.collectAsState()
     val designTarget by Views.designTarget.collectAsState()
     val viewOffer by Views.offer.collectAsState()
@@ -781,9 +785,13 @@ fun ChatScreen() {
                     com.blaze.assistant.ui.argus.kit.ArgusToasts.show(note)
                 },
                 onSearch = { notchOpen = false; composer.query = ""; composer.openSpotlight() },
-                // the Inbox is Desk's (P1-TM-07); until then the bell opens Chat, where what waits on you is answered
-                onBell = { notchOpen = false; exitView(); go(navNow().switchTab(ChatNav.CHAT)) },
-                bellBadge = question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null,
+                // Owner 16 Nov 2026: the bell opens the Inbox; while something in the chat waits on you (a question, an OK, a form) it opens Chat first
+                onBell = {
+                    notchOpen = false
+                    if (question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
+                    else inboxOpen = true
+                },
+                bellBadge = question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null || inboxUnread > 0,
                 onPlus = { notchOpen = false; newOpen = true })
             }
             // P1-SH-01: a private chat says so under the ARGUS top bar, with the way out
@@ -1091,6 +1099,7 @@ fun ChatScreen() {
         // Owner 2026-11-14: the history drawer over the whole screen, so the top bar and the chatbox sit under its scrim
         // instead of reading as parts with their own edges. Empty unless Chat mode is showing.
         com.blaze.assistant.ui.team.ChatDrawerLayer()
+        if (inboxOpen) InboxSheet(onDismiss = { inboxOpen = false })
         // P1-SH-01: the top bar's New sheet (P1-TM-04: Bot; jobs join it with the job sheet).
         if (newOpen) com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = tr("New")) {
             com.blaze.assistant.ui.argus.kit.MenuRow("bot", tr("Bot"), { newOpen = false; botFlow = com.blaze.assistant.ui.team.BotFlow.New }, sub = tr("A new bot for your team"))
