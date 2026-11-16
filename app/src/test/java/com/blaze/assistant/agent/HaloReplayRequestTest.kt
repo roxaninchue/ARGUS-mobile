@@ -109,7 +109,7 @@ class HaloReplayRequestTest {
                 .put("proof", JSONArray(listOf("process"))).put("must_not_say", JSONArray(if (variant == "not_confirmed") listOf("removed", "deleted", "turned off", "is off", "cancelled") else emptyList()))
                 .put("turns", JSONArray().put(pturn("remove the alarm"))))
         assertTrue("phone tools in the list: $missed", names.containsAll(listOf("set_alarm", "set_timer", "compose_sms", "search_in_app", "tap", "read_screen", "open_app", "process", "processes", "add_calendar_event", "add_contact", "device_setting", "open_settings_page")))
-        val out = JSONObject().put("persona", persona()).put("persona_version", "1.0.1").put("kind", "model-side").put("scenarios", scen)
+        val out = JSONObject().put("persona", persona()).put("persona_version", AgentPersona.VERSION).put("kind", "model-side").put("scenarios", scen)
         val dir = File(System.getProperty("user.dir"), "build/qa").apply { mkdirs() }
         File(dir, "replay-phone.json").writeText(out.toString(1))
     }
@@ -186,7 +186,7 @@ class HaloReplayRequestTest {
         assertTrue(choiceOf("memory-save").contains("memory_save") && choiceOf("memory-recall").contains("memory_search"))
         assertTrue(choiceOf("web-search") == "auto" && choiceOf("prior-tool-history") == "auto" && choiceOf("halo-tool-terminal").contains("run_shell"))
         assertTrue(choiceOf("linux-browser") == "auto" && choiceOf("open-settings").contains("open_view") && choiceOf("open-design").contains("open_view"))
-        val out = JSONObject().put("persona", persona()).put("persona_version", "1.0.1").put("scenarios", scenarios)
+        val out = JSONObject().put("persona", persona()).put("persona_version", AgentPersona.VERSION).put("scenarios", scenarios)
         val dir = File(System.getProperty("user.dir"), "build/qa").apply { mkdirs() }
         File(dir, "replay-0459.json").writeText(out.toString(1))
         // Sanity: the date lines are right before anything goes to a model.

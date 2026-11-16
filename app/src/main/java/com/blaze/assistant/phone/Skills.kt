@@ -64,7 +64,7 @@ object Skills {
             JSONObject().put("limit", p("integer", "How many, default 10"))),
         fn("call_number", "Place a phone call. The user is asked to approve first.",
             JSONObject().put("to", p("string", "Phone number or contact name")), listOf("to")),
-        fn("calendar_events", "List calendar events from now for the next N days.",
+        fn("calendar_events", "List the phone calendar's events from about an hour ago through the next N days (title, time, place). Find an event here before move_event reschedules it or delete_event removes it (for example one that is over or cancelled).",
             JSONObject().put("days", p("integer", "Days ahead, default 1 (today)"))),
         fn("add_calendar_event", "Add an event to the user's calendar.",
             JSONObject().put("title", p("string", "Event title"))

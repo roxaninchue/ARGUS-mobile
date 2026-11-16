@@ -75,6 +75,36 @@ Which tools a turn gets no longer depends on the message's words.
 - **In `ToolPick`:** the cue regexes are no longer read, and over the cap, structure decides (core, then must, which includes the schedule tools, then used, then cue, then the registry's order), never word overlap.
 - **The 60 KB gateway limit is unchanged:** `MAX_TOOLS` stays at 48.
 
+## Agent-first persona (16 Nov 2026, owner: "a goal, not something to hardcode")
+
+Seen: "I've completed my CIT exam 🥳" got only "Nice work! 🎉 CIT done and dusted." plus a memory save. The exam could have
+been on the calendar or in reminders, and something else may have been next. The model wasn't wrong: what it was given
+told it to treat such a message as small talk ("small talk needs no tools", "on small talk offer 1 to 3 next steps",
+"answer the question first, that is the whole reply").
+
+The fix is what the model receives. Nothing detects "exam", "completed" or "finished", and nothing rewrites the reply.
+
+- **One short core persona, `AgentPersona.CORE` (1.6 KB; it was 2.6 KB bundled and 4.5 KB in the remote copy phones had cached).**
+  It says who ARGUS is (an agent that acts on the user's phone and accounts) and how it works: notice what a message touches
+  in the user's commitments, check before assuming, act or offer, then reply briefly and warmly. It contains no absolutes
+  and no capitals. It is the default personality's first system message (`assets/persona-v1.json`, byte-identical,
+  version 2.0.0 so it wins over the remote 1.0.x copy). A personality the user picked keeps its own voice and gets
+  `AgentPersona.PICKED` (the agent role + how it works + the shared basics + identity).
+- **Situational facts already there:** the `[context]` block on every turn has today's schedule (passed items marked) and
+  the next item after today. Calendar, reminder and routine tools go out every turn (round 3).
+- **Tool descriptions say what they can do with a finished or stale entry:** `calendar_events` finds an event before
+  `move_event` / `delete_event`; `list_routines` finds a reminder before `delete_routine` or `process` changes it;
+  `delete_routine` and `delete_event` name a done or cancelled entry as a use. There is no separate "complete" state:
+  done means delete, or leave a past one-off as it is.
+- **Deleted because they fought the goal:** the persona's "on greetings, small talk… offer 1 to 3 next steps",
+  "every reply… ends with a concrete, named offer", the duplicated schedule and weather lines, and its NEVER lines;
+  `Duo.ASSISTANT_RULES`' "ASSISTANT, NOT A CHAT BUDDY… on small talk… offer 1 to 3" block; the same small-talk sentence
+  at the end of `TurnContext.RULE`; and "and small talk" in `HarnessPrompt.CORE`'s "need no tools" line.
+- Whether a message is actionable is still the model's call. Guard: `ModelFirstTest.agentFirstPersonaIsShortCalmAndShared`
+  and `theModelSeesTodayAndNextEveryTurn`.
+- **Open:** the remote `https://blazeinchue.pages.dev/persona.json` (1.0.7) should be replaced with this core, or retired.
+  The app ignores it until it publishes a version above 2.0.0.
+
 ## Still to retire (owner to schedule; don't add more)
 
 - **`ViewRouter.route` / `SkillMatch` / `SpecialistMatch`** still pick views, skill packs and specialists from the message's words (they add the `make` / `extras` groups). Next candidate: list them in the prompt and let the model load one.

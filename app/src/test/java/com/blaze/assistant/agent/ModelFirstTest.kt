@@ -54,6 +54,51 @@ class ModelFirstTest {
         for (f in files) for (s in shouts) assertFalse(s, f.lines().any { s in it && !it.trimStart().startsWith("*") && !it.trimStart().startsWith("//") })
     }
 
+    /**
+     * Agent-first persona (owner, 16 Nov 2026: "I've completed my CIT exam" got only a congratulation). The fix is what the
+     * model is given, not a detector: a short core that says ARGUS is an agent and how it works, the [context] block with
+     * today and what's next, and calendar / reminder tools that say what they find, change and delete.
+     */
+    @Test fun agentFirstPersonaIsShortCalmAndShared() {
+        val core = AgentPersona.CORE
+        assertTrue("persona core stays small: ${core.length}", core.length <= 2_000)
+        assertTrue(core.contains("not a chatbot") && core.contains("Check before you assume") && core.contains("act or offer"))
+        val absolutes = Regex("\\b(always|never|must|every)\\b", RegexOption.IGNORE_CASE)
+        for (p in listOf(core, AgentPersona.PICKED.substringBefore(Duo.IDENTITY_RULES)))
+            assertFalse("no absolutes or shouting in the persona: " + absolutes.find(p)?.value, absolutes.containsMatchIn(p))
+        assertFalse("no capitals-only orders", Regex("\\b[A-Z]{4,}\\b").containsMatchIn(core.replace("ARGUS", "")))
+        // The default personality's first system message is this core, byte for byte, and new enough to win over a cached remote copy.
+        val asset = org.json.JSONObject(File(root(), "app/src/main/assets/persona-v1.json").readText())
+        assertTrue(asset.getString("system") == core.replace(com.blaze.assistant.BrandName.NAME, "Argus"))
+        assertTrue(SharedPersona.VersionCmp.compare(asset.getString("version"), "1.0.7") > 0)
+        // A picked personality gets the same agent role and way of working.
+        assertTrue(agentSrc().contains("s(\"assistant\", AgentPersona.PICKED)"))
+        assertTrue(AgentPersona.PICKED.contains(AgentPersona.HOW) && AgentPersona.PICKED.contains(Duo.IDENTITY_RULES))
+        // Gone: the lines that read news as small talk and asked for stock offers instead of a look at the user's plans.
+        for (gone in listOf("small talk need no tools", "offer 1 to 3 concrete next steps", "NOT A CHAT BUDDY"))
+            assertFalse(gone, (HarnessPrompt.CORE + TurnContext.RULE + Duo.ASSISTANT_RULES + core).contains(gone))
+        // Nothing detects the words: no regex or keyword list in the persona.
+        val src = File(root(), "app/src/main/java/com/blaze/assistant/agent/AgentPersona.kt").readText()
+        assertFalse(src.contains("Regex(") || src.contains("containsMatchIn") || src.contains(".contains("))
+    }
+
+    @Test fun theModelSeesTodayAndNextEveryTurn() {
+        val zone = java.time.ZoneId.of("Africa/Lusaka")
+        val now = java.time.ZonedDateTime.of(2026, 11, 16, 22, 59, 0, 0, zone)
+        val exam = ScheduleDay.Entry("CIT exam", "event", ScheduleDay.Rule.Span(now.withHour(9).withMinute(0).toInstant(), now.withHour(11).withMinute(0).toInstant(), false))
+        val next = ScheduleDay.Entry("NET class", "reminder", ScheduleDay.Rule.Once(now.plusDays(2).withHour(8).withMinute(0).toInstant()))
+        val b = TurnContext.block(TurnContext.Inputs(now, schedule = listOf(exam, next), dates = ScheduleDay.datesAsked("I've completed my CIT exam", now.toLocalDate())))
+        assertTrue(b, b.contains("now: Mon 16 Nov 2026 22:59") && b.contains("CIT exam") && b.contains("(passed)") && b.contains(TurnContext.NEXT) && b.contains("NET class"))
+        // It rides on every main-chat request, whatever the message says.
+        assertTrue(agentSrc().contains("\"\\n\" + TurnContextSource.block(lastUserText())"))
+        // The tools say what they can do with a finished or stale entry.
+        fun main(f: String) = File(root(), "app/src/main/java/com/blaze/assistant/$f").readText()
+        assertTrue(main("phone/Skills.kt").contains("before move_event reschedules it or delete_event removes it"))
+        assertTrue(main("routine/Routines.kt").contains("Delete a reminder or routine by name, for example one whose event has happened"))
+        assertTrue(main("routine/Routines.kt").contains("before delete_routine removes it or process (by its ID) pauses or reschedules it"))
+        assertTrue(main("phone/PimEdit.kt").contains("Delete a phone calendar event, for example one that is cancelled"))
+    }
+
     @Test fun theRuleIsWrittenDownForOtherAgents() {
         val doc = File(root(), "docs/MODEL-FIRST.md")
         assertTrue(doc.isFile)

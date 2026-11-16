@@ -1322,7 +1322,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // v0.45.9: the assistant rules and how to use the [context] block (static). The block itself goes at the very
             // end of this message (requestMessages), after the Halo identity and turn hints (Site persona v1.0.1).
             // The shared persona (first system message) already carries the assistant rules; then only the identity rules are added.
-            if (SharedPersona.applies(Settings.personaId) && SharedPersona.get() != null) s("identity", Duo.IDENTITY_RULES) else s("assistant", Duo.ASSISTANT_RULES)
+            if (SharedPersona.applies(Settings.personaId) && SharedPersona.get() != null) s("identity", Duo.IDENTITY_RULES) else s("assistant", AgentPersona.PICKED)
             s("context_rule", TurnContext.RULE)
         }
         val stable = Settings.bool("prompt_stable_order", true)

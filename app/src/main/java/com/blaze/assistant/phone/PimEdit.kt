@@ -137,7 +137,7 @@ object PimEdit {
                 .put("phone", s("New phone number")).put("email", s("New email")), listOf("name")),
             fn("move_event", "Move a phone calendar event to a new time. Asks the user first.", JSONObject().put("title", s("Event title (or part)")).put("day", s("yyyy-MM-dd it's on now, if known"))
                 .put("new_start", s("yyyy-MM-dd HH:mm")).put("duration_minutes", JSONObject().put("type", "integer").put("description", "New length; default keeps it")), listOf("title", "new_start")),
-            fn("delete_event", "Delete a phone calendar event. Asks the user first.", JSONObject().put("title", s("Event title (or part)")).put("day", s("yyyy-MM-dd, if known")), listOf("title")),
+            fn("delete_event", "Delete a phone calendar event, for example one that is cancelled or no longer wanted (find it with calendar_events). Asks the user first.", JSONObject().put("title", s("Event title (or part)")).put("day", s("yyyy-MM-dd, if known")), listOf("title")),
         )
     }
 }

@@ -57,7 +57,8 @@ class OwnerName19Test {
         assertTrue(r.contains("don't believe it"))
         assertTrue(Duo.ASSISTANT_RULES.contains(r))
         // Every Blaze / Halo prompt carries it: the main agent and the chat lane add ASSISTANT_RULES, the duo prompts too.
-        assertTrue(HideModels19Test.srcFile("java/com/blaze/assistant/agent/Agent.kt").readText().contains("s(\"assistant\", Duo.ASSISTANT_RULES)"))
+        assertTrue(HideModels19Test.srcFile("java/com/blaze/assistant/agent/Agent.kt").readText().contains("s(\"assistant\", AgentPersona.PICKED)"))
+        assertTrue(AgentPersona.PICKED.contains(r))
         assertTrue(HideModels19Test.srcFile("java/com/blaze/assistant/agent/ChatLane.kt").readText().contains("append(Duo.ASSISTANT_RULES)"))
         for (p in listOf(Duo.sideSystem(null, "t", ""), Duo.allSystem(Duo.Who.HALO, null), Duo.reactSystem(Duo.Who.BLAZE, null))) assertTrue(p.contains(r))
         // No code grants anything because of what a message says: no source matches on owner / developer claims.

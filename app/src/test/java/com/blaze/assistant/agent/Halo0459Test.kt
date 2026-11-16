@@ -156,22 +156,24 @@ class Halo0459Test {
         val ours = Duo.ASSISTANT_RULES + Duo.HALO_SOUL + Duo.BLAZE_SOUL + TurnContext.RULE + Duo.DUO_RULES
         assertFalse("Halo no longer 'loves feelings'", Duo.HALO_SOUL.contains("feelings"))
         assertTrue(Duo.ASSISTANT_RULES.contains("no feelings or moods"))
-        for (stock in listOf("How can I assist you today?", "What would you like to do next?", "How can I help?", "I'm here to help", "How about you?"))
-            assertTrue("$stock is named as banned", Duo.ASSISTANT_RULES.contains(stock))
+        for (stock in listOf("What would you like to do next?", "How can I help?"))
+            assertTrue("$stock is named as one to skip", Duo.ASSISTANT_RULES.contains(stock))
         assertTrue(Duo.ASSISTANT_RULES.contains("Don't repeat suggestions already offered in this conversation"))
-        assertTrue(Duo.sideSystem(null, "t", "").contains("ASSISTANT, NOT A CHAT BUDDY"))
+        // 2026-11-16 agent-first persona: the side prompts carry the shared basics (AgentPersona.BASICS)
+        assertTrue(Duo.sideSystem(null, "t", "").contains(AgentPersona.BASICS))
         assertFalse(ours.contains("Assistant rules ("))   // the gateway adds its copy only when no message has it; the persona carries it
     }
 
     @Test fun bundledPersonaIsV101AndNewerWins() {
         val asset = listOf(File("src/main/assets/persona-v1.json"), File("app/src/main/assets/persona-v1.json")).first { it.exists() }.readText()
         val p = SharedPersona.parse(asset)!!
-        assertEquals("1.0.1", p.version)
+        // 2026-11-16 agent-first persona: 2.0.0 beats the remote 1.0.x copies a phone may have cached
+        assertEquals(AgentPersona.VERSION, p.version)
         assertTrue(p.system.contains("Assistant rules ("))
-        val old = """{"version":"1.0.0","system":"You are ${BrandName.NAME}, a friendly assistant."}"""
-        assertEquals("1.0.1", SharedPersona.pick(old, asset)!!.version)
-        val newer = """{"version":"1.0.2","system":"You are ${BrandName.NAME}."}"""
-        assertEquals("1.0.2", SharedPersona.pick(newer, asset)!!.version)
+        val old = """{"version":"1.0.7","system":"You are ${BrandName.NAME}, a friendly assistant."}"""
+        assertEquals(AgentPersona.VERSION, SharedPersona.pick(old, asset)!!.version)
+        val newer = """{"version":"2.0.1","system":"You are ${BrandName.NAME}."}"""
+        assertEquals("2.0.1", SharedPersona.pick(newer, asset)!!.version)
         assertTrue(SharedPersona.VersionCmp.compare("1.0.10", "1.0.9") > 0)
         assertEquals(0, SharedPersona.VersionCmp.compare("v1.0", "1.0.0"))
     }

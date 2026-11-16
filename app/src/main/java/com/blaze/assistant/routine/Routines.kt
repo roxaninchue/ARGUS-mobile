@@ -186,8 +186,8 @@ object Routines {
                     .put("linux", JSONObject().put("type", "boolean").put("description", "Run inside Alpine Linux"))
                     .put("notify", JSONObject().put("type", "string").put("enum", JSONArray(listOf("always", "on_failure", "never")))),
                 listOf("name", "command")),
-            fn("list_routines", "List the user's scheduled routines and scheduled shell jobs."),
-            fn("delete_routine", "Delete a routine by name.", JSONObject().put("name", p("Routine name")), listOf("name"))
+            fn("list_routines", "List the user's reminders and routines (with their next time) and scheduled shell jobs. Use it to find one that is done, changed or no longer needed before delete_routine removes it or process (by its ID) pauses or reschedules it."),
+            fn("delete_routine", "Delete a reminder or routine by name, for example one whose event has happened or that the user no longer needs.", JSONObject().put("name", p("Routine name")), listOf("name"))
         )
     }
 

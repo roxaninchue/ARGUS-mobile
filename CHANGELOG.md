@@ -8,6 +8,14 @@
 - Round 3: the tools a turn gets no longer depend on the message's words. Every turn has the core, the harness groups, calendar and reminders, and whatever this chat already used; the model loads anything else with load_tools / find_tool. Still 48 tools at most.
 - Tests: new ModelFirstTest; ChatBurstTest, BusyRouteTest, ToolTruthTest, ToolPickTest and Halo0459Test updated. Not built.
 
+## Unreleased: agent-first persona
+
+2026-11-16, owner: ARGUS is an agent, not a chatbot. Seen: "I've completed my CIT exam 🥳" got only a congratulation.
+- New `AgentPersona` core (1.6 KB): who ARGUS is, plus how it works: notice what a message touches in the user's plans, check, act or offer, then reply briefly and warmly. No keyword detection and no absolutes. It is the bundled persona 2.0.0 (beats the cached remote 1.0.7, 4.5 KB). Picked personalities get the same role and way of working.
+- Removed the lines that read news as small talk: the "offer 1 to 3 next steps on small talk" lines in the persona, `Duo.ASSISTANT_RULES` and `TurnContext.RULE`; "small talk needs no tools"; and the persona's NEVER lines.
+- The calendar and reminder tool descriptions now say they find, move and delete finished or stale entries (`calendar_events`, `delete_event`, `list_routines`, `delete_routine`).
+- Tests: ModelFirstTest (+2); Halo0459Test, OwnerName19Test and HaloReplayRequestTest updated. Not built.
+
 ## Unreleased: account lock (no ARGUS without a confirmed, real email)
 
 2026-11-16: nobody uses ARGUS without a signed-in account with a confirmed, real email address. blaze-auth 0.10.0 and the gateway 0.9.22 enforce it (both prepared, not deployed); the app mirrors it so nothing of ARGUS runs for an account the servers refused. Redone from the spec after the first sandbox copy was lost.

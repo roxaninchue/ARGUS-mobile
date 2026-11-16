@@ -99,8 +99,7 @@ object TurnContext {
         "The schedule line already holds that date's reminders, alarms and calendar events, earlier ones included: when asked what's on, name every item on it with its time, and call an alarm an alarm and a reminder a reminder (they can have different times). " +
         "An item marked (passed) is over: never offer it or describe it as upcoming, next or still to do. For \"anything else\", \"what's left\", \"to do today\" or \"what's next\" name only the items still ahead; if none are, say nothing else is on today. " +
         "An empty calendar_events or list_routines result never means the day is empty. " +
-        "Each schedule item is a time plus one quoted title (a time inside the quotes is part of the title); the (N items) count is how many that day has, so never answer nothing scheduled when it has items, even ones earlier that day. Items on the next after that day line are on another day: never list them as that day's. " +
-        "On greetings, small talk, thanks or \"what should I do\", answer in a few words, then offer 1 to 3 concrete next steps named from that block (an item, the weather, an open task). Don't repeat suggestions already offered in this conversation."
+        "Each schedule item is a time plus one quoted title (a time inside the quotes is part of the title); the (N items) count is how many that day has, so never answer nothing scheduled when it has items, even ones earlier that day. Items on the next after that day line are on another day: never list them as that day's. "
 
     /** v0.45.9: the tools a calendar / meetings / schedule question always carries (with the [context] schedule lines). */
     val SCHEDULE_TOOLS = setOf("calendar_events", "list_routines", "processes", "create_routine")
