@@ -683,7 +683,7 @@ fun ChatScreen() {
                 settingsPage = settingsPage, view = if (n.inProjectChat) "" else Views.showing.value,
                 viewsSheet = showViews, plusMenu = plusOpen || composer.spotlightOpen || notchOpen || newOpen, arc = arcOpen, avatarMenu = avatarMenu, search = showSearch,
                 gallery = GalleryUi.open.value, room = Agent.roomOpen.value >= 0,
-                // 0.52.3: Home is where Back stops (a private chat asks before leaving itself)
+                // Team is where Back stops (a private chat asks before leaving itself)
                 homeRoot = !Agent.privateChat.value, argus = true)
         }
         BackRule.toChat = { backToChat() }
