@@ -20,7 +20,7 @@ class SearchRouteTest {
     @Test fun slashCommandsQuestionNeverSearches() {
         listOf("what \"/\" commands do I have available?", "what / commands do I have", "What slash commands are there?",
             "which commands can I use here?", "list the / commands", "what commands do you have?", "/help").forEach {
-            assertEquals(it, SearchRoute.Route.COMMANDS, SearchRoute.route(it))
+            assertEquals(it, SearchRoute.Route.LOCAL, SearchRoute.route(it))   // 16 Nov 2026: no "/" commands; answered from context
             assertFalse(it, LookupLane.isLookup(it))
             assertNotNull(it, SearchRoute.webNote(it))
         }

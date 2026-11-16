@@ -38,10 +38,4 @@ class SlashCommandsTest {
         assertFalse(SlashCommands.menuFor("/clear now")); assertFalse(SlashCommands.menuFor("hello /")); assertFalse(SlashCommands.menuFor("//x"))
     }
 
-    @Test fun answerUsesTheSameList() {
-        val a = SlashCommands.answer()
-        SlashCommands.entries().forEach { assertTrue(it.name, a.contains("/" + it.name)) }
-        assertFalse(a.contains("Windows"))
-        assertEquals(SearchRoute.Route.COMMANDS, SearchRoute.route("what \"/\" commands do I have available?"))
-    }
 }

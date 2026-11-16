@@ -30,8 +30,8 @@ class CommandRegistryTest {
     @Test fun awarenessReportKnowsEveryViewAndCommand() {
         Awareness.reset()
         val r = Awareness.report(Views.all.map { Triple(it.name, it.id, it.desc) }, commands = CommandRegistry.catalog())
-        Views.all.forEach { assertTrue("view ${it.id}", r.contains("(/${it.id})")) }
-        assertTrue(r.contains("- /translate")); assertFalse(r.contains("desktop_task")); assertTrue(r.contains("open_view view=home"))
+        Views.all.forEach { assertTrue("view ${it.id}", r.contains("(${it.id})")) }
+        assertFalse(r.contains("desktop_task")); assertTrue(r.contains("open_view view=home"))
     }
 
     @Test fun openViewToolCoversEveryView() {

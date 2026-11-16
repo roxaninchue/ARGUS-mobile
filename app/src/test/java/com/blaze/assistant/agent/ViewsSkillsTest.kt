@@ -47,7 +47,7 @@ class ViewsSkillsTest {
             // 0.46.0: the Stage is the chat itself (no separate screen); its cards each have "Open in full view".
             else if (s.id == "stage") assertTrue(ViewRouter.hint(s).contains("stage_show"))
             else assertTrue("no view ${s.id}", Views.find(s.id) != null)
-            assertTrue("prompt misses ${s.name}", ViewRouter.PROMPT.contains("${s.name} (/${s.id})"))
+            assertTrue("prompt misses ${s.name}", ViewRouter.PROMPT.contains("${s.name} (${s.id})"))
             assertTrue(ViewRouter.hint(s).startsWith("\nREQUIRED VIEW THIS TURN: ${s.name}"))
         }
         assertTrue(ViewRouter.PROMPT.contains("HARD RULE"))

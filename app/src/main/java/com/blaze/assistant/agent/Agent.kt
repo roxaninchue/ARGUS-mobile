@@ -1389,8 +1389,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         // v0.29.0 Home board: Blaze adds / changes / removes / lists the user's widgets.
         com.blaze.assistant.home.HomeTools.tools().forEach { t.put(it) }
         t.put(BlazeRouter.tool())
-        // v0.39.0: every / command for Blaze itself. (The on-phone Linux desktop tools were removed in wave B-4.)
-        t.put(CommandRegistry.tool())
+        // 16 Nov 2026 (Finn): no "/" commands, so no blaze_command tool (views open with open_view).
         if (Settings.longChat || Mind.ready) LongChat.tools().forEach { t.put(it) }
         com.blaze.assistant.memory.CacheTier.tools().forEach { t.put(it) }   // 0.49.0 cache tier
         t.put(Flashcards.tool())
@@ -5069,26 +5068,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val a = JSONObject(args.toString()).put("url", ToolLeak.fixBlazeUrl(args.optString("url")))
                     ToolCache.cached(name, a, lastUserText(), isPrivate) { Web.fetch(a.optString("url")) }.also { if (sideFlag.get() != true) pendingSources.addFetch(a.optString("url"), it); searches.saw(it) } }
                 "blazerouter" -> { add(Role.STEP, "BlazeRouter: " + args.optString("action")); BlazeRouter.run(app, args) }
-                CommandRegistry.TOOL -> {
-                    val cn = args.optString("command").trim().removePrefix("/").substringBefore(' ').lowercase()
-                    val input = args.optString("input").ifBlank { args.optString("command").trim().substringAfter(' ', "") }.trim()
-                    add(Role.STEP, "Running /$cn")
-                    when (CommandRegistry.kind(cn)) {
-                        CommandRegistry.Kind.USER_ONLY -> "/$cn is for the user to run (it would end or wipe this turn). Tell them they can type /$cn."
-                        CommandRegistry.Kind.UNKNOWN -> "No /$cn command. The list is in blaze_now."
-                        CommandRegistry.Kind.PROMPT -> Commands.all().firstOrNull { it.name == cn && it.prompt != null }?.let { "Follow this now: " + Commands.expand(it, input) } ?: "No /$cn command."
-                        CommandRegistry.Kind.VIEW -> {
-                            val v = com.blaze.assistant.ui.Views.find(cn)!!
-                            val opened = if (agentId == null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Views.openOrOffer(v.id, input, lastUserText(), true) } else false
-                            if (opened) "Opened ${v.name}." else "Couldn't open ${v.name} from a background agent."
-                        }
-                        CommandRegistry.Kind.ACTION -> if (agentId != null) "App commands run only in the main chat." else kotlinx.coroutines.withContext(Dispatchers.Main) {
-                            val r = com.blaze.assistant.ui.CommandRunner.run(app, "/$cn" + (if (input.isNotBlank()) " $input" else ""),
-                                openSettings = { pg -> SelfSetup.openPage.value = pg }, listen = { com.blaze.assistant.voice.Voice.listenRequests.value++ })
-                            when { r == null -> "No /$cn command."; r.isBlank() -> "Ran /$cn."; else -> "Ran /$cn. Follow this now: $r" }
-                        }
-                    }
-                }
                 in com.blaze.assistant.home.HomeTools.NAMES -> { add(Role.STEP, com.blaze.assistant.home.HomeTools.step(name, args)); kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.home.HomeBoard.runTool(name, args) } }
                 BlazeDocs.TOOL_SEARCH -> { add(Role.STEP, "Looking it up in ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.search(args) } }
                 BlazeDocs.TOOL_READ -> { add(Role.STEP, "Reading ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.read(args) } }
@@ -5097,7 +5076,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 com.blaze.assistant.proactive.FollowUps.TOOL -> { add(Role.STEP, "Checking what you need to get back to"); com.blaze.assistant.proactive.FollowUps.run(args) }
                 com.blaze.assistant.bank.BankMode.TOOL -> { add(Role.STEP, if (args.optString("action") == "off") "Turning Bank mode off" else if (args.optString("action") == "on") "Turning Bank mode on" else "Checking Bank mode"); com.blaze.assistant.bank.BankMode.runTool(app, args) }
                 com.blaze.assistant.proactive.Jarvis.TOOL -> { add(Role.STEP, "Changing how often I reach out"); com.blaze.assistant.proactive.Jarvis.run(args) }
-                Awareness.TOOL -> { add(Role.STEP, "Checking what's going on"); kotlinx.coroutines.withContext(Dispatchers.IO) { Awareness.report(com.blaze.assistant.ui.Views.all.map { Triple(it.name, it.id, it.desc) }, commands = CommandRegistry.catalog()) } }
+                Awareness.TOOL -> { add(Role.STEP, "Checking what's going on"); kotlinx.coroutines.withContext(Dispatchers.IO) { Awareness.report(com.blaze.assistant.ui.Views.all.map { Triple(it.name, it.id, it.desc) }) } }
                 SelfKnowledge.TOOL -> { add(Role.STEP, "Checking my own setup"); kotlinx.coroutines.withContext(Dispatchers.IO) { SelfKnowledge.report(app, args.optString("section")) } }
                 com.blaze.assistant.ui.Views.TOOL -> {
                     val v = com.blaze.assistant.ui.Views.find(args.optString("view"))

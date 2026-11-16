@@ -126,7 +126,7 @@ object ViewRouter {
         append("HARD RULE: output that fits a view is CREATED in that view with its tool, then the view is opened (open_view) or named so the user can tap it, ")
         append("and the chat reply is one or two short lines (what you made, where). Never dump it as text in chat instead. ")
         append("You don't need the user to say \"use the view\": every turn, pick the view that fits.\n")
-        for (s in specs) append("- ${s.name} (/${s.id}): ${s.holds}. Write with ${s.tools.filter { it != "open_view" }.ifEmpty { listOf("open_view") }.joinToString(" / ")}.\n")
+        for (s in specs) append("- ${s.name} (${s.id}): ${s.holds}. Write with ${s.tools.filter { it != "open_view" }.ifEmpty { listOf("open_view") }.joinToString(" / ")}.\n")
         append("- Flashcards, \"quiz me\", \"test me\", study or revision → Learn: flashcards action=add (deck, cards=[{front, back}]), then open_view view=learn. Never write Q: / A: lists in chat.\n")
         append("- Anything visual or interactive → Design (it is not only for art and sites): 3D models and scenes (design action=create kind=3d parts=[…], three.js with orbit controls), " +
             "2D art (svg), sites, UI mockups, diagrams, charts, posters, slides, floor plans, product mockups, games (html). The Design view opens by itself. " +

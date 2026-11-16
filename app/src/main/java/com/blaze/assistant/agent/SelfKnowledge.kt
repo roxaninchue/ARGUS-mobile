@@ -103,10 +103,10 @@ object SelfKnowledge {
                 append("Wake word model: ").append(safe { if (com.blaze.assistant.voice.WakeModel.ready(ctx)) "installed" else "not installed" }).append(".\n\n")
             }
             if (on("views")) {
-                append("## Views (/views, or open_view)\n")
-                append(com.blaze.assistant.ui.Views.all.joinToString("\n") { "- ${it.name} (/${it.id}): ${it.desc}" }).append("\n")
+                append("## Views (open_view)\n")
+                append(com.blaze.assistant.ui.Views.all.joinToString("\n") { "- ${it.name} (${it.id}): ${it.desc}" }).append("\n")
                 append("${BrandName.NAME} uses its views on its own, every turn, without being asked: output that fits a view (flashcards → Learn, anything visual or interactive (3D scenes, 2D art, sites, UI mockups, diagrams, charts, posters, slides, floor plans) → Design via the design tool, with follow-on edits changing the same design, reminders → Schedule, pictures and beats → Gallery, methods → Skills, facts → Memory) is made there, opened or linked, and answered briefly in chat. Matching skills are looked up before every turn.\n")
-                append("Commands: ").append(safe { Commands.all().take(60).joinToString(" ") { "/" + it.name } }).append("\n\n")
+                append("\n")
             }
             // 0.47 Spotlight v2: the self-map (the same registry Spotlight searches); only when asked for, it is long.
             if (want == "map") { append("## Self-map\n").append(safe { com.blaze.assistant.composer.SelfMap.describe() }).append("\n\n") }

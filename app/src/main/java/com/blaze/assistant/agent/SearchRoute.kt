@@ -10,7 +10,7 @@ import com.blaze.assistant.BrandName
  *  - [Route.LOCAL]: questions about Blaze itself, the app, its commands, this conversation, or the user's own data (memory,
  *    phone, files, calendar…) are answered from local context and the bundled docs (about_blaze, blaze_docs_search,
  *    memory_search, the command registry). web_search is refused for them ([webNote]).
- *  - [Route.COMMANDS]: "what / commands do I have" is answered straight from the slash-command registry ([SlashCommands]).
+ *  - "what / commands do I have" is [Route.LOCAL]: the app has no "/" commands (16 Nov 2026), so the model answers from its context.
  *  - [Route.WEATHER]: weather goes to get_weather (the weather tool), not the web lane.
  *  - [Route.SEARCH]: the user explicitly asked to search ("search the web for…", "google…", "look up … online"): the quick
  *    lookup lane runs, with a query built from the conversation ([query]), not the raw sentence.
@@ -20,7 +20,7 @@ import com.blaze.assistant.BrandName
  * Pure (SearchRouteTest).
  */
 object SearchRoute {
-    enum class Route { LOCAL, COMMANDS, WEATHER, SEARCH, CHAT, MODEL }
+    enum class Route { LOCAL, WEATHER, SEARCH, CHAT, MODEL }
 
     /** The model's rule (every prompt): search only when it needs the outside world, and search for the conversation's subject. */
     const val PROMPT = "\nWEB SEARCH: call web_search only when the answer needs fresh or external facts you don't have (news, prices, scores, " +
@@ -85,7 +85,8 @@ object SearchRoute {
     fun route(text: String): Route {
         val t = text.trim()
         if (t.isEmpty()) return Route.CHAT
-        if (isCommandsAsk(t)) return Route.COMMANDS
+        // 16 Nov 2026: the app has no "/" commands; asking about them is a question about the app (never the web).
+        if (isCommandsAsk(t)) return Route.LOCAL
         if (SmallTalk.ruleChat(t)) return Route.CHAT
         if (explicitTopic(t) != null && !isLocal(t)) return Route.SEARCH
         if (isLocal(t)) return Route.LOCAL
@@ -104,8 +105,7 @@ object SearchRoute {
         val t = request.trim()
         if (t.isEmpty() || t.startsWith("[")) return null
         return when (route(t)) {
-            Route.COMMANDS -> "Not run: the user asked about ${BrandName.NAME}'s own / commands. Answer from this list, not the web:\n" + SlashCommands.answer()
-            Route.LOCAL -> if (t.length <= 200 && !t.contains('\n') && questionShape.containsMatchIn(t) && !worldFact.containsMatchIn(t))
+            Route.LOCAL -> if (isCommandsAsk(t) || t.length <= 200 && !t.contains('\n') && questionShape.containsMatchIn(t) && !worldFact.containsMatchIn(t))
                 "Not run: this is about ${BrandName.NAME}, this conversation or the user's own data, which the web doesn't know. " +
                     "Answer from your context, about_blaze, blaze_docs_search, memory_search or the phone tools." else null
             // small talk never reaches the tools (ChatLane); a bare "yes" / "ok" may approve a search Blaze offered, so it is not refused here
