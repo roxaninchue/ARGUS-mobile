@@ -1,5 +1,9 @@
 # Blaze agents (0.52.0): background agents, parallel tools, blueprint orchestration
 
+> **Standing rule (16 Nov 2026): read [MODEL-FIRST.md](MODEL-FIRST.md).** Build the system around the model; no keyword
+> routers that guess intent, no contradictory prompt orders. The BusyRoute stop/steer/side split below is retired: every
+> mid-turn message goes to the model.
+
 Blaze is one conversation agent that **never blocks**. Work that takes more than a couple of tool steps goes to
 background agents; the chat keeps answering. The chat shows only replies and work pills.
 

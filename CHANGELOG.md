@@ -1,3 +1,11 @@
+## Unreleased: model-first (the model reads every message)
+
+2026-11-16, owner rule, now docs/MODEL-FIRST.md: build the system around the model; no keyword routers guessing intent, no contradictory prompt orders.
+- A message sent while ARGUS is working always goes to the model (joins the running turn, or restarts a reply that has barely begun). The old stop/steer/side regex is no longer consulted; the Stop button stops.
+- "google …", "search …" and "look up …" no longer trigger the quick-lookup lane in the chat; the model calls web_search itself. Seen: "Google first" (meaning do the Google sign-in first) became a search for "first Instagram".
+- Removed the prompt lines "Answer EVERY user message… never leave one out" and "answer every one of them"; they made the model re-answer a request the user had already called off. Nothing is dropped: the queue guarantees it.
+- Tests: new ModelFirstTest, ChatBurstTest updated. Not built.
+
 ## Unreleased: account lock (no ARGUS without a confirmed, real email)
 
 2026-11-16: nobody uses ARGUS without a signed-in account with a confirmed, real email address. blaze-auth 0.10.0 and the gateway 0.9.22 enforce it (both prepared, not deployed); the app mirrors it so nothing of ARGUS runs for an account the servers refused. Redone from the spec after the first sandbox copy was lost.

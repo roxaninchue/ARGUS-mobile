@@ -90,8 +90,7 @@ object ChatLane {
             // v0.30.6: no [m7] message ids here (this short prompt has no rule about them).
             .map { m -> JSONObject().put("role", m.optString("role")).put("content", m.optString("content").let { c -> if (m.optString("role") == "user") RapidMessages.untag(c) else c }.let { c -> if (c.length > 1500) c.take(1500) + "…" else c }) }
             .takeLast(8).dropWhile { it.optString("role") != "user" }
-        // 2026-11-13 double-text fix: several messages since the last reply all get answered (ChatBurst).
-        ChatBurst.laneLine(ChatBurst.trailingUsers(turns.map { it.optString("role") })).takeIf { it.isNotEmpty() }?.let { out.getJSONObject(0).put("content", sys + it) }
+        // 2026-11-16 model-first: no "answer every one of them" line; the model sees every message in order and decides.
         turns.forEach { out.put(it) }
         return out
     }

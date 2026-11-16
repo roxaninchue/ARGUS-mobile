@@ -2146,14 +2146,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (text.isBlank() && attachments.isEmpty()) return
             val shown = text.trim().ifEmpty { "Take a look at this." }
             val busyNow = job?.isActive == true
-            // 0.46.3: a message during a running task is never queued behind the loop (BusyRoute): stop, steer, or Halo on the side.
-            if (busyNow && attachments.isEmpty() && notificationContext.isNullOrBlank() && agentId == null && specialistId == null) {
-                when (BusyRoute.route(shown, ToolTruth.toolShaped(shown) && !ToolTruth.chatOnly(shown))) {
-                    BusyRoute.Kind.STOP -> { val id = post(shown, emptyList()); markSent(id); stop(); sideLine(BusyRoute.STOPPED); persist(); return }
-                    BusyRoute.Kind.STEER -> { steer(shown); return }
-                    BusyRoute.Kind.SIDE -> if (SelfControl.match(shown) == null) { ChatBurstLive.follow(this, shown, byVoice, untrusted); return }   // 2026-11-13 double-text fix: never the side lane (ChatBurst)
-                }
-            }
+            // 2026-11-16 model-first (docs/MODEL-FIRST.md): a message during a running turn goes to the model as it is; no keyword
+            // rule decides whether it means stop, steer or chat (BusyRoute's regex read "Oh wait" / "Google first" wrongly). The Stop button stops.
+            if (busyNow && attachments.isEmpty() && notificationContext.isNullOrBlank() && agentId == null && specialistId == null &&
+                SelfControl.match(shown) == null) { ChatBurstLive.follow(this, shown, byVoice, untrusted); return }
             // v0.32.0 split: Blaze is busy with a task, so Halo takes this one (unless it's "@blaze …": that steers Blaze).
             // v0.45.28: and the other way round: while Halo works on a task, Blaze takes your messages ("@halo …" steers Halo).
             if (busyNow && soloRunning && attachments.isEmpty() && notificationContext.isNullOrBlank() && agentId == null && specialistId == null &&
@@ -2453,13 +2449,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         return@launch
                     }
                 }
-                // 0.46.3 lookup fast lane: search → the top pages in parallel → the answer first, checked in the background (LookupLane).
-                if (!offline && single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && specialistId == null &&
-                    notificationContext.isNullOrBlank() && voice == Duo.Who.BLAZE && Settings.bool("lookup_lane", true) && LookupLane.isLookup(shown)) {
-                    // 0.50.0: the query comes from the conversation (subject of the last turns), not the raw sentence.
-                    val ctxTurns = msgs.filter { (it.role == Role.USER || it.role == Role.BLAZE) && it.id < turnFrom }.takeLast(4).map { it.text.take(300) }
-                    if (runLookup(SearchRoute.query(shown, ctxTurns))) { mood = Mood.IDLE; persist(); announce(); return@launch }
-                }
+                // 2026-11-16 model-first: no keyword-triggered lookup lane; the model calls web_search itself when it wants to.
                 if (offline && !Settings.customBase.contains("127.0.0.1") && !Settings.customBase.contains("localhost")) {
                     add(Role.ERROR, "You're offline. I can still do direct commands like \u201copen WhatsApp\u201d, \u201cflashlight on\u201d or \u201cset a timer for 5 minutes\u201d.")
                     mood = Mood.IDLE; persist(); return@launch

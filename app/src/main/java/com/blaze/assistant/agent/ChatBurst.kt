@@ -20,6 +20,9 @@ package com.blaze.assistant.agent
  * rule: once more than that is on screen, the reply stands and the follow-up is answered right after it. A burst
  * restarts at most [MAX_RESTARTS] times within [CHAIN_MS], so a stream of texts can't keep a reply from ever finishing.
  *
+ * 2026-11-16 model-first (docs/MODEL-FIRST.md): the prompt lines that ordered the model to "answer EVERY message" are gone;
+ * nothing is dropped because the queue guarantees it, not because the prompt shouts.
+ *
  * Pure Kotlin (ChatBurstTest). The Android glue is [ChatBurstLive]; Agent.kt calls it from one line in send().
  */
 object ChatBurst {
@@ -67,16 +70,6 @@ object ChatBurst {
     fun stale(ids: List<Pair<Long, Boolean>>, from: Long, upTo: Long): Set<Long> =
         ids.filter { (id, user) -> !user && id > from && id <= upTo }.map { it.first }.toSet()
 
-    /** Full prompt (appended to [RapidMessages.PROMPT_RULE]). Static, so it stays in the cached prefix. */
-    const val RULE = " Answer EVERY user message, including ones sent while you were replying; never leave one out. " +
-        "Keep it short, like texting: one short bubble per message at most, and fewer when one answer covers several " +
-        "(never more bubbles than messages)."
-
     /** User turns at the end of [roles] (oldest first) since the last assistant line. */
     fun trailingUsers(roles: List<String>): Int = roles.takeLastWhile { it == "user" }.size
-
-    /** The chat lane's line (no message ids there): only when several messages wait since the last reply. */
-    fun laneLine(waiting: Int): String = if (waiting < 2) "" else
-        " The user sent $waiting messages in a row since your last reply: answer every one of them in one short reply " +
-            "(one or two sentences), never just the last one."
 }

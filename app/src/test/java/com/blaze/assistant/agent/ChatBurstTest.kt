@@ -60,26 +60,25 @@ class ChatBurstTest {
         assertEquals(setOf(6L, 8L), ChatBurst.stale(ids, 5, 8))
     }
 
-    @Test fun promptAsksForEveryMessageInShortBubbles() {
-        assertTrue(RapidMessages.PROMPT_RULE.endsWith(ChatBurst.RULE))
-        assertTrue(ChatBurst.RULE.contains("Answer EVERY user message"))
-        assertTrue(ChatBurst.RULE.contains("never more bubbles than messages"))
+    /** 2026-11-16 model-first (docs/MODEL-FIRST.md): no prompt line orders the model to answer every message. */
+    @Test fun promptStatesFactsWithoutOrders() {
+        assertFalse(RapidMessages.PROMPT_RULE.contains("Answer EVERY user message"))
+        assertFalse(RapidMessages.PROMPT_RULE.contains("never leave one out"))
+        assertTrue(RapidMessages.PROMPT_RULE.contains("[re:m7]"))
         assertEquals(2, ChatBurst.trailingUsers(listOf("user", "assistant", "user", "user")))
         assertEquals(0, ChatBurst.trailingUsers(listOf("user", "assistant")))
-        assertEquals("", ChatBurst.laneLine(1))
-        assertTrue(ChatBurst.laneLine(2).contains("answer every one of them"))
     }
 
     /** Owner rule: the logic lives here; Agent.kt only calls it, from send() and the side lane's safety net. */
     @Test fun agentRoutesBusyFollowUpsThroughChatBurst() {
         val src = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/agent/Agent.kt").readText()
         val send = src.substring(src.indexOf("        fun send(text: String, byVoice: Boolean = false"))
-        val side = send.lines().first { "BusyRoute.Kind.SIDE ->" in it }
-        assertTrue(side, side.contains("ChatBurstLive.follow(this, shown, byVoice, untrusted); return"))
-        assertFalse(side, side.contains("sideSend"))
+        val busy = send.lines().first { "ChatBurstLive.follow(" in it }
+        assertTrue(busy, busy.contains("ChatBurstLive.follow(this, shown, byVoice, untrusted); return"))
+        assertFalse(busy, busy.contains("sideSend"))
         assertTrue(src.contains("if (relay || ChatBurst.dropped(shownText)) {"))
         assertFalse(src.contains("lost the connection.\"); return }"))
         val lane = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/agent/ChatLane.kt").readText()
-        assertTrue(lane.contains("ChatBurst.laneLine("))
+        assertFalse(lane.contains("ChatBurst.laneLine("))
     }
 }
