@@ -50,7 +50,7 @@ The other workflows also pass `-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspa
 | `shots` | Mobile build | `./gradlew :app:testDebugUnitTest --tests` ShotsTest, Shots375Test, StageShotsTest, MoviesShotsTest, MediaRevampShotsTest, SecretCardsShotsTest, HomeRedesignShotsTest, ComposerShotsTest, Blaze050ShotsTest, SpaceShotsTest |
 | `app-template` | Mobile build | builds the android-app-builder skill template |
 | `smoke` | Low-RAM smoke gate | `assembleRelease assembleDebug assembleDebugAndroidTest`, then API 31 emulator, 1.5 GB RAM, 192 MB heap |
-| `focus` | Home focus check | `assembleDebug assembleDebugAndroidTest`, `SpaceHomeCheck` on the low-RAM emulator (0.52.2: ArgusHomeCheck) |
+| `focus` | Home focus check | `assembleDebug assembleDebugAndroidTest`, `SpaceHomeCheck` on the low-RAM emulator: the ARGUS ground, top bar, Life and Projects since the ARGUS-only redo (0.52.2: ArgusHomeCheck) |
 | `intro` | Home intro check | same, `SpaceOnboardingCheck` via tools/smoke/run-space-onboarding.sh (0.52.2: ArgusSpotlightCheck) |
 
 Note: **any** test source that fails to compile fails `unit-tests`, `shots`, `build` and `build-without-youtube`

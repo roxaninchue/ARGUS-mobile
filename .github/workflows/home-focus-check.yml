@@ -1,7 +1,7 @@
 # Local check (not the release gate) on the same low-RAM emulator as lowram-smoke.yml, with animations ON (the gate disables
 # them), same 700 ms main-stall limit. 0.52.2: the old Home's card focus (HomeFocusCheck) and screenshots (Rc4ShotsCheck)
-# are gone with the old Home. 0.52.3: this runs SpaceHomeCheck: the ARGUS x Hark shell (space view, top bar, the Home's
-# cards, the profile page, Projects) in dark and light, with a screenshot of each screen (ArgusHomeCheck left with the 3D Home). The official gate
+# are gone with the old Home. This runs SpaceHomeCheck: since the ARGUS-only redo (2026-11-16) the ARGUS ground, top bar,
+# Life (the Home) and Projects in dark and light, with a screenshot of each screen (ArgusHomeCheck left with the 3D Home). The official gate
 # (LowRamSmokeTest, 7 scenarios) is separate. File name kept so existing links / required checks still match.
 name: Home focus check (ARGUS Home, space shell)
 
