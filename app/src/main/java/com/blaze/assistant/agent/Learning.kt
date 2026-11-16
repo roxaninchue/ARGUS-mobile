@@ -236,7 +236,15 @@ $skillRule"""
                 else -> if (Memory.facts.value.size < 250) Memory.add(o.optString("fact"))
             }
             "skill" -> upsertSkill(o.optString("name"), o.optString("description"), o.optString("when"), o.optString("steps"), o.optJSONArray("replay"))
+            "curator" -> ChatCurator.applyHeld(o)
         }
+    }
+
+    /** Owner 16 Nov 2026: holds changes from the whole-chat review (ChatCurator) for the user's OK; ids are given here. */
+    fun queue(ops: List<Pending>) {
+        if (ops.isEmpty()) return
+        var id = maxOf(System.currentTimeMillis(), (_pending.value.maxOfOrNull { it.id } ?: 0L) + 1)
+        savePending(_pending.value + ops.map { it.copy(id = id++) })
     }
 
     fun approve(id: Long) { _pending.value.firstOrNull { it.id == id }?.let { apply(it) }; savePending(_pending.value.filterNot { it.id == id }) }
