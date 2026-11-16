@@ -38,7 +38,6 @@ object Views {
         BlazeView("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made", special = "gallery"),
         BlazeView("browser", "Browser", "${BrandName.NAME}'s own browser and tabs", special = "browser"),
         BlazeView("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: watch it log in and book, take control, hand back", special = "phonebrowser", aliases = listOf("blaze phone", "phone browser", "blaze phone browser", "blaze's phone")),
-        BlazeView("doctor", "Doctor", "Phone health, self-check, crash report", page = "device", aliases = listOf("device", "diagnostics")),
         BlazeView("usage", "Usage", "Tokens and estimated cost", page = "usage", aliases = listOf("cost")),
         BlazeView("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, call", page = "voice"),
         BlazeView("control", "Phone control", "Accessibility, permissions", page = "control"),

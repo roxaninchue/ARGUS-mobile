@@ -16,7 +16,7 @@ object SlashCommands {
         val fill: String get() = "/" + name + if (args.isNotBlank()) " " else ""
     }
 
-    private val viewCommands = setOf("projects", "design", "jobs", "terminal", "music", "video", "schedule", "accounts", "doctor", "router",
+    private val viewCommands = setOf("projects", "design", "jobs", "terminal", "music", "video", "schedule", "accounts", "router",
         "skills", "gallery", "browser", "home", "doing", "look", "sync", "views", "settings", "memory", "routines")
 
     fun groupOf(c: Command): Group = when {

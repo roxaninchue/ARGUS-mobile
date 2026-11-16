@@ -429,7 +429,7 @@ fun ChatScreen() {
             if (cmdName == "projects") { input = TextFieldValue(""); go(navNow().projectsList()); return }
             // P1-SH-01: /team /chat /life /desk switch modes in the ARGUS shell
             ChatNav.modeCommand(text)?.let { m -> input = TextFieldValue(""); exitView(); go(navNow().switchTab(m)); return }
-            if (cmdName in setOf("jobs", "schedule", "accounts", "doctor", "design", "router", "skills", "gallery", "browser", "terminal", "music", "video", "doing", "look", "home", "sync") && !text.contains(' ')) {
+            if (cmdName in setOf("jobs", "schedule", "accounts", "design", "router", "skills", "gallery", "browser", "terminal", "music", "video", "doing", "look", "home", "sync") && !text.contains(' ')) {
                 input = TextFieldValue(""); Views.find(cmdName)?.let { openView(it) }; return
             }
         }

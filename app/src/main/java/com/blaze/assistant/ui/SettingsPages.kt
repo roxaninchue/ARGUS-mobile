@@ -53,7 +53,6 @@ val advancedPages = listOf(
     SettingsPage("logs", "Life logs", "Transcribe what the mic hears into memory, brainstorms"),
     SettingsPage("replies", "Notification replies", "Chat logs and replies from notifications, auto-reply"),
     SettingsPage("usage", "Usage", "Tokens and estimated cost"),
-    SettingsPage("device", "Device & diagnostics", "Phone health, self-check, crash report"),
     SettingsPage("backup", "Backup", "Export or import everything"),
 )
 
@@ -79,7 +78,7 @@ val settingsPages = topPages + advancedPages + viewPages
 /** 0.52.3: page ids from before the declutter that now land on another page ("" = the profile). */
 internal val settingsAliases = mapOf("router" to "ai", "backup_brain" to "ai", "advanced" to "", "settings" to "") +
     // 16 Nov 2026 (Finn): Team & bots (specialists, always on) and Jobs (the terminal page) left Settings; old ids open the root.
-    mapOf("specialists" to "", "terminal" to "") +
+    mapOf("specialists" to "", "terminal" to "", "device" to "") +
     // P1-SH-06: the 0.52.3 profile's row ids (they were ids of rows, not pages) open the page the row opened.
     mapOf("profile" to "account", "scheduled" to "routines", "accounts" to "connections", "wallet" to "secrets", "security" to "privacy")
 
@@ -103,7 +102,7 @@ fun settingsPageByName(raw: String): String {
         "wake" to "voice", "speech" to "voice", "tts" to "voice", "call" to "voice", "mic" to "voice", "speak" to "voice",
         "look" to "feel", "theme" to "feel", "sounds" to "feel", "accounts" to "connections", "connected" to "connections",
         "personality" to "persona", "phone" to "control", "accessibility" to "control", "skills" to "control",
-        "library" to "skills", "signin" to "account", "login" to "account", "signup" to "account", "lock" to "privacy", "safety" to "privacy", "diagnostics" to "device", "health" to "device", "export" to "backup",
+        "library" to "skills", "signin" to "account", "login" to "account", "signup" to "account", "lock" to "privacy", "safety" to "privacy", "export" to "backup",
         "brainstorm" to "logs", "lifelogs" to "logs", "transcripts" to "logs", "autoreply" to "replies") + com.blaze.assistant.ui.argus.settings.ArgusSettings.NAME_ALIASES
     val words = raw.lowercase().replace("settings", " ").split(Regex("[^a-z_]+")).filter { it.isNotBlank() && it !in com.blaze.assistant.ui.argus.settings.ArgusSettings.STOP_WORDS }
     if (words.isEmpty()) return ""

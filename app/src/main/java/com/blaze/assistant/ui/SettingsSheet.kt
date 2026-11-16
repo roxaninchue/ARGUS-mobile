@@ -152,7 +152,6 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "usage" -> { UsageSection(); CostCap() }
                     // 0.52.3 Security: app lock and approvals, then Bank mode (it left the top list).
                     "privacy" -> { SecuritySection(); Spacer(Modifier.height(18.dp)); BankModePage() }
-                    "device" -> DevicePage()
                     "proactive" -> ProactivePage()
                     "dashboard" -> DashboardPage()
                     // P1-MG-01: Import A-team backup sits under the app's own Export / Import.

@@ -45,7 +45,6 @@ object Commands {
         Command("video", "", "Open ${BrandName.NAME} Video (player, library, store)"),
         Command("schedule", "", "Routines and timed tasks"),
         Command("accounts", "", "Connected apps"),
-        Command("doctor", "", "Phone health and self-check"),
         Command("router", "", "BlazeRouter: models and keys"),
         Command("skills", "", "Skill library"),
         Command("gallery", "", "Things ${BrandName.NAME} made"),
