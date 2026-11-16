@@ -2,7 +2,6 @@ package com.blaze.assistant
 
 import com.blaze.assistant.agent.Awareness
 import com.blaze.assistant.agent.CommandPolicy
-import com.blaze.assistant.agent.Commands
 import com.blaze.assistant.agent.ToolRouter
 import com.blaze.assistant.agent.ToolTruth
 import com.blaze.assistant.agent.ToolVerify
@@ -61,11 +60,9 @@ class WaveB4NoLinuxTest {
         listOf("linux", "xfce", "vnc", "linux desktop", "view desktop").forEach { assertNull(it, Views.find(it)) }
         assertTrue(Views.find("desktop") != null)   // Blaze Desktop pairing
         assertFalse(Views.offerLabel("linux").contains("View desktop"))
-        assertTrue(Commands.all().none { it.name == "linux" })
         assertTrue(com.blaze.assistant.ui.settingsPages.none { it.id == "linux" })
-        // 16 Nov 2026: the Jobs page left Settings; /linux opens the terminal itself, an old "linux" page id lands on the root.
+        // 16 Nov 2026: the Jobs page left Settings and "/" commands are gone; an old "linux" page id lands on the root.
         assertEquals("", com.blaze.assistant.agent.settingsPageFor("linux"))
-        assertTrue(src("ui/CommandRunner.kt").contains("\"linux\" -> com.blaze.assistant.terminal.BlazeTerminalActivity.open(ctx)"))
         listOf("ui/Shell.kt", "ui/ChatScreen.kt", "ui/SettingsSheet.kt", "ui/SettingsV18.kt").forEach { f ->
             val t = src(f)
             assertFalse(f, t.contains("PlusItem(\"linux\"")); assertFalse(f, t.contains("LinuxDesktopPage")); assertFalse(f, t.contains("KeepDesktopRow"))

@@ -235,6 +235,5 @@ class PhoneControlSweepTest {
         assertFalse("no drop before the read-back", pr.contains("dismissAlarm(ctx, p); drop(p.id)"))
         assertTrue(src("agent/ToolVerify.kt").contains("Opening an app or a settings page is only the first step"))
         assertTrue(src("phone/PhoneTools.kt").contains("Alarm set for \${"))
-        assertTrue(src("ui/CommandRunner.kt").contains("\"phoneqa\" ->"))
     }
 }

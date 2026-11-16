@@ -113,9 +113,6 @@ class ChatNavTest {
         assertEquals(listOf(0, 1, 2, 3, -1), listOf("team", "chat", "life", "desk", "projects").map { ChatNav.modeIndex(it) })
         assertEquals(ChatNav.TEAM, ChatNav.rootTab(true)); assertEquals("the old Home is retired (OldHomeGoneTest)", ChatNav.CHAT, ChatNav.rootTab(false))
         assertEquals(ChatNav.LIFE, ChatNav.argusTab(ChatNav.HOME)); assertEquals(ChatNav.PROJECTS, ChatNav.argusTab(ChatNav.PROJECTS))
-        assertEquals("team", ChatNav.modeCommand("/team")); assertEquals("desk", ChatNav.modeCommand(" /DESK "))
-        assertEquals("life", ChatNav.modeCommand("/life")); assertEquals("chat", ChatNav.modeCommand("/chat"))
-        for (no in listOf("team", "/team now", "/teams", "//team", "/projects", "")) assertNull(no, ChatNav.modeCommand(no))
         // Projects keeps its place when you switch modes and come back
         val inP = ChatNav(tab = ChatNav.TEAM).openProject("p1").openChat("p1", "pc1")
         assertEquals(inP.copy(tab = ChatNav.PROJECTS), inP.switchTab(ChatNav.LIFE).switchTab(ChatNav.PROJECTS))

@@ -105,13 +105,6 @@ data class ChatNav(
         /** The tab Back stops at and a fresh start opens on: Team in the ARGUS shell, Chat in the old one (its Home is retired). */
         fun rootTab(argus: Boolean): String = if (argus) TEAM else CHAT
 
-        /** `/team`, `/chat`, `/life`, `/desk` (alone, any case) → that mode; anything else null. */
-        fun modeCommand(text: String): String? {
-            val t = text.trim().lowercase()
-            if (!t.startsWith("/") || t.contains(' ')) return null
-            return t.removePrefix("/").takeIf { it in MODES }
-        }
-
         /** The tab to open on start: Chat (a remembered Home no longer counts: it is retired, see [tabOf]). */
         @Suppress("UNUSED_PARAMETER")
         fun startTab(remembered: String?): String = CHAT

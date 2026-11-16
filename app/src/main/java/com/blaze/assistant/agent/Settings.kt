@@ -370,7 +370,7 @@ object Settings {
         get() = b("followups", true)
         set(v) = prefs.edit().putBoolean("followups", v).apply()
 
-    /** User-made slash commands: JSON array of {name, desc, prompt}. */
+    /** User-made slash commands (retired 16 Nov 2026 with every "/" command; the pref stays on disk, unread). */
     var userCommands: String
         get() = s("user_commands", "[]") ?: "[]"
         set(v) = prefs.edit().putString("user_commands", v).apply()

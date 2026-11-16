@@ -93,6 +93,5 @@ class DeskModelTest {
     @Test fun modesUnchanged() {
         assertEquals(listOf("team", "chat", "life", "desk"), ChatNav.MODES)
         assertTrue(ChatNav.isMode(DeskRoute.shown(ChatNav().projectsList(), true).tab))
-        assertEquals("desk", ChatNav.modeCommand("/desk"))
     }
 }

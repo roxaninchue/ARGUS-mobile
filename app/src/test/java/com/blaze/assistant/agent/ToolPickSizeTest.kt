@@ -51,7 +51,6 @@ class ToolPickSizeTest {
         add("ProjectDocs") { ProjectDocs.tools() }
         add("HomeTools") { com.blaze.assistant.home.HomeTools.tools() }
         add("BlazeRouter") { BlazeRouter.tool() }
-        add("CommandRegistry") { CommandRegistry.tool() }
         add("LongChat") { LongChat.tools() }
         add("Flashcards") { Flashcards.tool() }
         add("Designs") { Designs.tool() }

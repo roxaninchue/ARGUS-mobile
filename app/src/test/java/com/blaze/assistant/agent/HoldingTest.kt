@@ -44,8 +44,6 @@ class HoldingTest {
         assertEquals(emptyList<String>(), hits)
         // no typed "pin this" lane in the agent, no /pin command
         assertFalse(src("agent/Agent.kt").contains("\"pin this\""))
-        assertFalse(Regex("""Command\("pin",""").containsMatchIn(src("agent/Commands.kt")))
-        assertFalse(src("ui/CommandRunner.kt").contains("\"pin\" ->"))
         assertFalse(src("ui/HoldingPage.kt").contains("Unpin"))
     }
 }

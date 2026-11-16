@@ -76,6 +76,5 @@ class CloudTest {
         assertEquals(Providers.GATEWAY, Settings.providerId)
         Settings.providerId = "gemini"; Settings.model = "gemini-3-pro-preview"
         assertEquals(Providers.GATEWAY, Settings.providerId); assertEquals(Cloud.MODEL, Settings.model)
-        assertTrue(Commands.actions.none { it.name == "model" || it.name == "provider" })
     }
 }

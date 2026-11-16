@@ -100,20 +100,6 @@ class Blaze050ShotsTest {
         assertTrue(rule.onAllNodes(hasContentDescription("Restore the chat")).fetchSemanticsNodes().isNotEmpty())
     }
 
-    @Test fun slashMenuFiltered() {
-        frame("slash-menu", dark = true, expect = "/translate") {
-            SuggestionList(CommandRunner.suggest("/tr")) {}
-            Card("/tr")
-        }
-    }
-
-    @Test fun slashMenuAll() {
-        frame("slash-menu-all", dark = true, expect = "/new") {
-            SuggestionList(CommandRunner.suggest("/")) {}
-            Card("/")
-        }
-    }
-
     @Test fun edgeParticles() {
         MotionTokens.setEnabledForTests(false)
         rule.setContent {

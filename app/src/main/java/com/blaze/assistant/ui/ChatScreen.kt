@@ -1209,9 +1209,12 @@ private fun ArgusShellLocals(dark: Boolean, content: @Composable () -> Unit) {
 }
 
 /** "@ind" → files in Blaze's home whose path matches, to mention in the message. */
+/** A row in the composer's pop-up list (the @file picker). */
+data class Suggestion(val title: String, val sub: String, val fill: String, val runNow: Boolean)
+
 private fun fileSuggestions(text: String): List<Suggestion> {
     val tok = text.substringAfterLast(' ').substringAfterLast('\n')
-    if (!tok.startsWith("@") || text.startsWith("/")) return emptyList()
+    if (!tok.startsWith("@")) return emptyList()
     val q = tok.removePrefix("@").lowercase()
     val home = try { com.blaze.assistant.terminal.Terminal.home() } catch (_: Exception) { return emptyList() }
     val found = home.walkTopDown().maxDepth(3).onEnter { !it.name.startsWith(".") || it == home }
