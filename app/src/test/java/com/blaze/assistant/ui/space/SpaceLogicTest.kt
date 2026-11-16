@@ -286,6 +286,9 @@ class SpaceLogicTest {
         assertTrue(b.endsWith("ARGUS 0.52.3 \u00b7 Pixel 7 \u00b7 Android API 34"))
         assertTrue(SpaceFeedback.body("x", "", "", 26).endsWith("ARGUS ? \u00b7 Android \u00b7 Android API 26"))
         assertEquals("ARGUS feedback", SpaceFeedback.SUBJECT)
+        // 16 Nov 2026: straight to the team's Gmail
+        assertEquals("blazecoderhue@gmail.com", SpaceFeedback.TO)
+        assertEquals("mailto:blazecoderhue@gmail.com?subject=ARGUS%20feedback&body=a%20%26%20b%0A", SpaceFeedback.mailto("a & b\n"))
     }
 
     @Test fun testTagsAreUniqueAndNamespaced() {

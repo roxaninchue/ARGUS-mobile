@@ -408,6 +408,13 @@ object SpaceProjectRows {
 /** Submit Feedback's note: the user's words plus the version and the phone (nothing personal, nothing else). */
 object SpaceFeedback {
     const val SUBJECT = "${BrandName.UPPER} feedback"
+    /** 16 Nov 2026 (Finn): feedback goes straight to this inbox by e-mail (no share sheet). */
+    const val TO = "blazecoderhue@gmail.com"
+
+    /** A mailto: link with the address, subject and body filled in (RFC 6068, spaces as %20). */
+    fun mailto(body: String): String = "mailto:$TO?subject=" + enc(SUBJECT) + "&body=" + enc(body)
+
+    private fun enc(s: String): String = java.net.URLEncoder.encode(s, "UTF-8").replace("+", "%20")
 
     fun body(text: String, version: String, model: String, sdk: Int): String =
         text.trim() + "\n\n\u2014\n" + BrandName.UPPER + " " + version.ifBlank { "?" } + " \u00b7 " + model.ifBlank { "Android" } + " \u00b7 Android API " + sdk

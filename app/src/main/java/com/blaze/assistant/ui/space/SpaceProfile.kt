@@ -187,9 +187,20 @@ fun SpaceFeedbackPage(version: String) {
         Spacer(Modifier.height(16.dp))
         SpacePillButton(tr("Send feedback"), primary = true, enabled = text.isNotBlank(), onClick = {
             val body = SpaceFeedback.body(text, version, android.os.Build.MODEL ?: "", android.os.Build.VERSION.SDK_INT)
-            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, SpaceFeedback.SUBJECT).putExtra(Intent.EXTRA_TEXT, body)
-            try { ctx.startActivity(Intent.createChooser(send, "Send feedback").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-            catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("feedback share", t) }
+            // 16 Nov 2026 (Finn): straight to the team's inbox in the mail app, addressed and filled in.
+            val mail = Intent(Intent.ACTION_SENDTO, android.net.Uri.parse(SpaceFeedback.mailto(body)))
+                .putExtra(Intent.EXTRA_EMAIL, arrayOf(SpaceFeedback.TO)).putExtra(Intent.EXTRA_SUBJECT, SpaceFeedback.SUBJECT).putExtra(Intent.EXTRA_TEXT, body)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try { ctx.startActivity(mail) }
+            catch (t: Throwable) {
+                // No mail app: copy the note so nothing is lost, and say where it goes.
+                com.blaze.assistant.device.CrashLog.quiet("feedback mail", t)
+                runCatching {
+                    val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("feedback", body))
+                    android.widget.Toast.makeText(ctx, tr("No mail app. Copied: send it to {0}", SpaceFeedback.TO), android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
         })
     }
 }
