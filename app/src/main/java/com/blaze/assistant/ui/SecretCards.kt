@@ -56,7 +56,7 @@ fun SecretRequestCard() {
     val saved by SecretDesk.saved.collectAsState()
     val req = p
     if (req != null) {
-        SecretForm(req.kind, req.label, req.service, req.hint, req.fields, onSave = { SecretDesk.answer(it) }, onCancel = { SecretDesk.answer(null) })
+        SecretForm(req.kind, req.label, req.service, req.hint, req.fields, purpose = req.purpose, onSave = { SecretDesk.answer(it) }, onCancel = { SecretDesk.answer(null) })
         return
     }
     val s = saved ?: return
@@ -92,7 +92,7 @@ fun SavedSecurelyLine(label: String, preview: String) {
  */
 @Composable
 fun SecretForm(kind: SecretVault.Kind, label: String, service: String, hint: String, fields: List<SecretVault.FieldSpec>,
-               onSave: (Map<String, String>) -> Unit, onCancel: () -> Unit) {
+               onSave: (Map<String, String>) -> Unit, onCancel: () -> Unit, purpose: String = "") {
     val c = LocalBlaze.current
     val clip = LocalClipboardManager.current
     val values = remember(fields) { mutableStateMapOf<String, String>() }
@@ -108,6 +108,11 @@ fun SecretForm(kind: SecretVault.Kind, label: String, service: String, hint: Str
         }
         Spacer(Modifier.height(8.dp))
         Text(label, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, lineHeight = 23.sp, color = c.ink))
+        // Owner 16 Nov 2026: what it's for, in the model's own words; when no service is named, the card says so plainly
+        if (purpose.isNotBlank()) Text(tr("For: {0}", purpose), modifier = Modifier.padding(top = 4.dp),
+            style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 18.sp, color = c.ink))
+        if (service.isBlank() && kind != SecretVault.Kind.CODE) Text(tr("{0} didn't say which service this is for.", BrandName.NAME), modifier = Modifier.padding(top = 4.dp),
+            style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 16.sp, color = c.sub))
         if (hint.isNotBlank()) Text(hint, modifier = Modifier.padding(top = 4.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
         Spacer(Modifier.height(10.dp))
         fields.forEachIndexed { i, f ->
