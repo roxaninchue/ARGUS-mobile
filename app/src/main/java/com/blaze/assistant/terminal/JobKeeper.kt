@@ -41,7 +41,7 @@ class JobKeeper : Service() {
         val nm = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("blaze_jobs", "${BrandName.NAME} background jobs", NotificationManager.IMPORTANCE_MIN))
         return NotificationCompat.Builder(this, "blaze_jobs").setSmallIcon(R.drawable.ic_stat_blaze)
-            .setContentTitle("${BrandName.NAME} is running jobs").setContentText(text).setOngoing(true).build()
+            .setContentTitle(if (Servers.has()) "${BrandName.NAME} servers: ${Servers.noteLine()}".take(80) else "${BrandName.NAME} is running jobs").setContentText(text).setOngoing(true).build()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,7 +58,8 @@ class JobKeeper : Service() {
                 try { getSystemService(NotificationManager::class.java).notify(78, note("$left running")) } catch (_: Exception) { }
             }
         }
-        return START_NOT_STICKY
+        // 0.53.7: with kept servers, Android restarts this service after killing the app; Terminal.init brings the servers back.
+        return if (Servers.has()) START_STICKY else START_NOT_STICKY
     }
 
     override fun onDestroy() { loop?.cancel(); super.onDestroy() }

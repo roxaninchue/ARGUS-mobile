@@ -51,6 +51,7 @@ object Friendly {
             "terminal_jobs", "terminal_status", "job_input", "job_log" -> "Checking a background job"
             "terminal_stop" -> "Stopping a background job"
             "preview_server" -> "Opening the preview"
+            "servers" -> when (v("action")) { "start" -> "Starting " + or(v("name"), "a") + " server"; "stop" -> "Stopping a server"; "restart" -> "Restarting a server"; "logs" -> "Reading a server's log"; else -> "Checking the servers" }
             "read_screen", "look_at_screen" -> "Looking at your screen"
             "open_app" -> "Opening " + or(v("app"), v("name"), v("package"), "an app")
             "tap" -> "Tapping " + or(v("text"), "the screen")

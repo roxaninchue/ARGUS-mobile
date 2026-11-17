@@ -32,7 +32,12 @@ object Terminal {
     private fun busybox() = File(app.applicationInfo.nativeLibraryDir, "libbusybox.so")
     fun hasBusybox() = ::app.isInitialized && busybox().exists()
 
-    fun init(ctx: Context) { app = ctx.applicationContext; Linux.init(ctx); LinuxReadyRunner.init(ctx) }
+    fun init(ctx: Context) {
+        app = ctx.applicationContext; Linux.init(ctx); LinuxReadyRunner.init(ctx)
+        // 0.53.7: kept servers (Servers) come back after the app was killed; off the main thread, after start-up settles.
+        try { Servers.init(ctx) } catch (_: Throwable) { }
+        if (Servers.has()) scope.launch { kotlinx.coroutines.delay(4000); try { Servers.resume() } catch (_: Throwable) { } }
+    }
 
     /**
      * v0.29.8: false when BusyBox can't run on this phone (the start-up probe failed), so the phone tab uses Android's own
@@ -338,6 +343,9 @@ object Terminal {
     data class Job(val id: Int, val cmd: String, val proc: Process, val log: StringBuilder, val started: Long, val maxMs: Long = 0, var reported: Boolean = false, val pid: String = "")
     private val jobs = LinkedHashMap<Int, Job>()
     private var nextJob = 1
+    /** The id [startJob] gave its newest job (0 = none). Servers reads it right after starting one. */
+    @Volatile var lastJob = 0
+        private set
 
     fun startJob(cmd: String, linux: Boolean = false, maxMinutes: Int = 0, distro: String? = null): String {
         setup()
@@ -347,6 +355,7 @@ object Terminal {
         val p = try { if (linux) ProcessBuilder(Linux.command(wrapped, distro = dist)).directory(home()).redirectErrorStream(true)
                 .also { it.environment().putAll(env()); it.environment().putAll(Linux.env()) }.start() else builder(wrapped).start() } catch (e: Exception) { return "Error: ${e.message}" }
         val jid = nextJob++
+        lastJob = jid
         val pid = com.blaze.assistant.agent.Processes.register("job", cmd.take(50), jid.toString(), props = org.json.JSONObject().put("command", cmd).put("max_minutes", maxMinutes))
         val j = Job(jid, cmd, p, StringBuilder(), System.currentTimeMillis(), maxMinutes * 60_000L, pid = pid)
         synchronized(jobs) { jobs[j.id] = j }
@@ -376,6 +385,8 @@ object Terminal {
                 val code = try { j.proc.exitValue() } catch (_: Exception) { -1 }
                 val tail = synchronized(j.log) { j.log.toString().trim().lines().takeLast(3).joinToString(" | ") }.take(200)
                 report("Job ${j.pid.ifBlank { j.id.toString() }} ${if (code == 0) "finished" else "failed (exit $code)"}: ${j.cmd.take(50)}${if (tail.isNotBlank()) "\n$tail" else ""}")
+                // 0.53.7: a kept server that stopped is started again (Servers restart budget).
+                try { Servers.onJobEnded(j.id)?.let(report) } catch (_: Throwable) { }
             }
         }
     }
@@ -454,7 +465,7 @@ object Terminal {
 
     // ---------- Tool definitions ----------
 
-    val names = setOf("run_shell", "terminal_jobs", "terminal_stop", "termux_run", "linux_install", "preview_server")
+    val names = setOf("run_shell", "terminal_jobs", "terminal_stop", "termux_run", "linux_install", "preview_server", Servers.NAME)
     private fun fn(name: String, desc: String, props: JSONObject, req: List<String>) = JSONObject().put("type", "function").put("function",
         JSONObject().put("name", name).put("description", desc).put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(req))))
     private fun p(t: String, d: String) = JSONObject().put("type", t).put("description", d)
@@ -470,7 +481,7 @@ object Terminal {
     fun tools(ctx: Context): List<JSONObject> = shellTools() + listOfNotNull(if (termuxInstalled(ctx)) termuxTool() else null)
 
     internal fun shellTools(): List<JSONObject> = buildList {
-        add(fn("run_shell", "Run a shell command on the phone (Android sh + BusyBox: ls, cat, grep, sed, awk, wget, curl-less http via wget, tar, unzip, vi, nc, httpd, find, ps, top, df, du...). Working dir is ${BrandName.NAME}'s home (~). Set background=true for servers, downloads, scraping or anything over ~30 s: it keeps running if ${BrandName.NAME} is closed and the user gets a notification when it finishes or fails (optionally limit it with max_minutes). Returns exit code, current folder and output. The shell remembers cd between calls; put exports in ~/.blaze_env to keep them. For writing files use file_write, not echo/heredocs.",
+        add(fn("run_shell", "Run a shell command on the phone (Android sh + BusyBox: ls, cat, grep, sed, awk, wget, curl-less http via wget, tar, unzip, vi, nc, httpd, find, ps, top, df, du...). Working dir is ${BrandName.NAME}'s home (~). For a server the user will keep using (a site, a music or file server, an API), use the servers tool instead: it is named, kept running and restarted. Set background=true for downloads, scraping, one-off dev servers or anything over ~30 s: it keeps running if ${BrandName.NAME} is closed and the user gets a notification when it finishes or fails (optionally limit it with max_minutes). Returns exit code, current folder and output. The shell remembers cd between calls; put exports in ~/.blaze_env to keep them. For writing files use file_write, not echo/heredocs.",
             JSONObject().put("command", p("string", "Shell command")).put("timeout_seconds", p("integer", "Max seconds (default 60)")).put("background", p("boolean", "Run as a background job")).put("max_minutes", p("integer", "Time budget for a background job; 0 = none"))
             .put("linux", p("boolean", try { linuxParam() } catch (_: Throwable) { "Run inside ${BrandName.NAME}'s Linux instead of the phone shell" })), listOf("command")))
         add(fn("linux_install", "Download and set up Alpine Linux inside ${BrandName.NAME} (one time, ~3.5 MB, no root).", JSONObject(), emptyList()))
@@ -479,6 +490,7 @@ object Terminal {
         add(fn("preview_server", "Open a local server running on the phone (e.g. a dev server started as a background job) in ${BrandName.NAME}'s built-in browser and show it to the user.",
             JSONObject().put("port", p("integer", "Port, e.g. 8000")).put("path", p("string", "Optional path, e.g. /index.html")), listOf("port")))
         add(fn("terminal_stop", "Stop a background shell job.", JSONObject().put("id", p("integer", "Job number")), listOf("id")))
+        add(Servers.tool())
     }
 
     private fun termuxTool(): JSONObject = fn("termux_run", "Run a command in the Termux app and get its output back. Only when the user wants Termux; ${BrandName.NAME}'s own Linux (run_code/run_shell) is the default. Sets itself up (permission pop-up, copies the one-line fix if Termux blocks it).",

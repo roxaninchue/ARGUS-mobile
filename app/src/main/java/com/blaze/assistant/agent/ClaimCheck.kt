@@ -34,7 +34,7 @@ object ClaimCheck {
         r("""\b(?:is|are|it's|they're)\s+(?:now\s+|already\s+|all\s+)?(?:running|up and running|listening|started|booted)\b|""" +
             """\b(?:i|i've|i have|i just|i've just)\s+(?:also\s+|now\s+|just\s+|successfully\s+)?(?:started|launched|booted|brought up|spun up|fired up)\b|""" +
             """^\s*(?:started|launched|booted)\b"""),
-        setOf("run_shell", "termux_run", "preview_server", "linux_install", "open_app", "start_agent", "ask_pc",
+        setOf("run_shell", "termux_run", "preview_server", "servers", "linux_install", "open_app", "start_agent", "ask_pc",
             "process", "terminal_jobs", "browser_open", "open_url"),
         r("""\b(start|launch|run|running|boot|linux|server|serve)\b"""))
 

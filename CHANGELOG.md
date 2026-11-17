@@ -1,3 +1,11 @@
+## Unreleased: servers have a home (kept running, restarted, and named in every turn)
+
+2026-11-17 19:07, owner: "Argus seems to have lost the context of the server … create somewhere Argus can leave servers to run in the background" (asked "Is the server still running??", the agent found nothing on any port).
+- New `servers` tool (`terminal/Servers.kt`): start / list / stop / restart / logs. A server gets a name, command, port, folder and Linux or phone shell, saved in files/servers.json, so it outlives the app process and the chat.
+- Kept servers come back: JobKeeper returns START_STICKY while any are kept, Terminal.init resumes them 4 s after start, and a server whose process dies is restarted (3 times per 30 min, then the user is told). The ongoing notification names them ("ARGUS servers: music :8080").
+- Every turn's prompt carries a SERVERS block with each one's real state, checked by connecting to its port, so "is it still running?" is answered from the record. run_shell and the TERMINAL rule point servers the user keeps at the new tool.
+- `start` waits up to 10 s for the port to answer and says plainly when it didn't. Tests: ServersTest. Not built.
+
 ## Unreleased: the coding skill covers building something the user will use
 
 2026-11-17, owner: "First real task completed, visually isn't great though and functionality not working fully … help my agent produce functional results too" (a music server whose player sat at 0:00).

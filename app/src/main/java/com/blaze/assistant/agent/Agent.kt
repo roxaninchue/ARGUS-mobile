@@ -1300,12 +1300,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // v0.37.0: what's playing / on screen / just happened (changing tail only). v0.42.0: the full block only when the
             // turn can use it (phone, screen or media tools, or words like "this song"); otherwise a 2–3 line summary.
             tail("awareness") { if (fullAware) Awareness.promptBlock() else Awareness.summaryBlock() }
+            // 0.53.7: kept servers and whether each really answers, so "is it still running?" is read from the record.
+            tail("servers") { try { com.blaze.assistant.terminal.Servers.promptBlock() } catch (_: Throwable) { "" } }
             s("phone_state", PhoneState.RULE)
             // v0.45.0 (#13, #16): TERMINAL / MAKE THINGS in full only on coding or content-making turns in Advanced;
             // Simple gets one plain line and no paths or commands.
             if (prof.terminal) {
                 turn("terminal", "\nTERMINAL: check terminal_status before assuming a tool exists. Write files with file_write/file_edit (never echo or heredocs), read with file_read, find with file_search. " +
-                    "Run programs with run_code (it installs Python/Node and packages itself). Anything over ~30 s or a server goes in background (run_shell background=true), then terminal_jobs id=N / job_input; preview web servers with preview_server; repeat scripts on a schedule with schedule_command. " +
+                    "Run programs with run_code (it installs Python/Node and packages itself). A server the user will keep using goes in the servers tool (named, kept running, restarted; check it with servers action=list before saying whether it runs). Other work over ~30 s goes in background (run_shell background=true), then terminal_jobs id=N / job_input; preview web servers with preview_server; repeat scripts on a schedule with schedule_command. " +
                     "Use the git tool for repos (already signed in to their GitHub). Call APIs with http_request. On an error, read it, fix the cause and retry (up to 3 times) before telling the user; a [hint] line tells you what to try. Give the user results with export_file.")
                 turn("make", "\nMAKE THINGS IN THE BACKGROUND, NOT ON THE SCREEN: you CAN create images (generate_image, free) and you have a real Linux terminal with Python. " +
                     "For anything that produces or processes content (pictures, beats and music, charts, documents, conversions, edits, calculations, data, downloads), do it in the terminal with run_code instead of opening apps and tapping. " +
@@ -5088,6 +5090,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 "self_test" -> { add(Role.STEP, "Running a self-check"); com.blaze.assistant.device.SelfCheck.report(app) }
                 "terminal_stop" -> com.blaze.assistant.terminal.Terminal.stopJob(args.optInt("id"))
+                com.blaze.assistant.terminal.Servers.NAME -> {
+                    add(Role.STEP, when (args.optString("action")) { "start" -> "Starting the ${args.optString("name").ifBlank { "" }} server".replace("  ", " "); "stop" -> "Stopping a server"; "restart" -> "Restarting a server"; "logs" -> "Reading a server's log"; else -> "Checking the servers" })
+                    kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.terminal.Servers.run(args) }
+                }
                 "termux_run" -> { add(Role.STEP, "Termux: " + args.optString("command").take(60)); com.blaze.assistant.terminal.Terminal.runInTermux(app, args.optString("command"), args.optBoolean("background", true)) }
                 "delegate" -> delegate(args)
                 "create_specialist" -> createSpecialist(args)
