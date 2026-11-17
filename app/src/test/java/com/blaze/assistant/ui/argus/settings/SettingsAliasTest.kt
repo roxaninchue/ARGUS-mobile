@@ -37,7 +37,7 @@ class SettingsAliasTest {
         (page == "system" && "SpaceProfile.SYSTEM_PAGE -> " in sheet) || (page == "feedback" && "SpaceProfile.FEEDBACK_PAGE -> " in sheet)
 
     @Test fun everyPre053IdOpensAPage() {
-        assertEquals(38, settingsPages.size)
+        assertEquals(39, settingsPages.size)   // P2-SF-04 added "policy" (Approvals & permissions)
         assertTrue(settingsPages.none { it.id == "specialists" || it.id == "terminal" || it.id == "device" })
         for (id in PRE_053) {
             val p = settingsStart(id)

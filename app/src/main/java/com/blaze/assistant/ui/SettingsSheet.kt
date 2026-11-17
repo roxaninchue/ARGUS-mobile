@@ -166,7 +166,20 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "holding" -> HoldingPage()
                     "usage" -> { UsageSection(); CostCap() }
                     // 0.52.3 Security: app lock and approvals, then Bank mode (it left the top list).
-                    "privacy" -> { SecuritySection(); Spacer(Modifier.height(18.dp)); BankModePage() }
+                    "privacy" -> {
+                        SecuritySection(); Spacer(Modifier.height(18.dp))
+                        // P2-SF-04: Approvals & permissions (standing allows, autonomy, send scope, SpendGuard)
+                        androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
+                            com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
+                            com.blaze.assistant.ui.argus.kit.SettingsGroup(listOf(com.blaze.assistant.ui.argus.kit.SettingsItem("shield-check",
+                                "Approvals & permissions", onClick = { page = "policy" })))
+                        }
+                        Spacer(Modifier.height(18.dp)); BankModePage()
+                    }
+                    "policy" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
+                        com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
+                        com.blaze.assistant.ui.argus.settings.PermissionsLive()
+                    }
                     "proactive" -> ProactivePage()
                     "dashboard" -> DashboardPage()
                     // P1-MG-01: Import A-team backup sits under the app's own Export / Import.
