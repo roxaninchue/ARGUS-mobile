@@ -1,5 +1,14 @@
 package com.blaze.assistant.ui.argus.kit
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Velocity
 import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -100,7 +109,21 @@ fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
             }
         }
         if (rows.size > 6) ArgusSearch(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), placeholder = tr("Search models"))
-        androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        // 2026-11-17 (owner): scrolling the list only scrolls it. A fling that reaches the top no longer pulls the sheet
+        // down; the sheet moves when the user drags the title or the search bar, or starts a new drag down while the
+        // list is already at the top.
+        val listScroll = rememberScrollState()
+        val atTopOnDown = remember { booleanArrayOf(true) }
+        val keepSheet = remember(listScroll) { ModelSheetScroll.connection { atTopOnDown[0] } }
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth()
+            .pointerInput(listScroll) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    atTopOnDown[0] = listScroll.value == 0
+                }
+            }
+            .nestedScroll(keepSheet)
+            .verticalScroll(listScroll)) {
             if (query.isBlank()) MenuRow("sparkles", tr("Auto"), { ModelPick.auto(); onDismiss() }, sub = tr("The gateway picks the fastest healthy model"),
                 trailing = if (choice.auto) ({ Icon(Lucide.icon("check", 18), null, Modifier.size(18.dp), tint = c.ink) }) else null)
             if (pickedDown && query.isBlank()) MenuRow("triangle-alert", picked?.name ?: LiveModels.prettyName(choice.key.substringAfter('/')), { ModelPick.auto(); onDismiss() },
@@ -116,6 +139,24 @@ fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
                 ModelPick.set(m.key, if (pickedRow == r) choice.effort else ""); if (m.efforts.isEmpty()) onDismiss()
             }
         }
+    }
+}
+
+/**
+ * The model list's hold on the sheet: what the list doesn't use of a drag or fling stays with the list, so the sheet
+ * never slides because a scroll ran into the top. Only a drag that began with the list at the top ([startedAtTop])
+ * passes on to the sheet, so pulling down from the top still closes it.
+ */
+internal object ModelSheetScroll {
+    fun leftoverForSheet(startedAtTop: Boolean, source: NestedScrollSource, available: Offset): Offset =
+        if (startedAtTop && source == NestedScrollSource.UserInput) Offset.Zero else available
+
+    fun connection(startedAtTop: () -> Boolean): NestedScrollConnection = object : NestedScrollConnection {
+        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset =
+            leftoverForSheet(startedAtTop(), source, available)
+        // The sheet only moved if the drag began at the top; then it must settle itself, so its fling is left to it.
+        override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+            if (startedAtTop()) Velocity.Zero else available
     }
 }
 

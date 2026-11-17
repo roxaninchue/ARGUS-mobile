@@ -1,3 +1,9 @@
+## Unreleased: the model sheet only scrolls
+
+2026-11-17, owner: "in model selection sometimes I scroll down and when I try scrolling up the whole sheet tries to go down … make it only scrolling; to leave, grab the search bar and pull down, or scroll to the top and pull down".
+- `ModelSheet`'s list keeps what a drag or fling doesn't use (`ModelSheetScroll`), so scrolling back up into the top no longer slides the sheet. A drag that starts with the list already at the top still pulls the sheet down, and the title and search bar drag it as before.
+- Tests: new ModelSheetScrollTest. Not built.
+
 ## Unreleased: friendlier bot icons
 
 2026-11-17, owner: "change agent icons to these kinds of shapes, they look friendlier" (the A-team blobs with two eyes).
