@@ -49,6 +49,8 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         gate.value = com.blaze.assistant.connect.AccountGate.recompute()
         lifecycleScope.launch { com.blaze.assistant.connect.AccountGate.lock.collect { gate.value = it } }
         setContent { BlazeTheme {
+            // Owner 2026-11-18: the status bar icons follow ARGUS's own light / dark, not the phone's (SystemBarIcons.kt)
+            com.blaze.assistant.ui.SyncSystemBarIcons(com.blaze.assistant.ui.LocalBlaze.current.dark)
             // 0.45.19 fix 4: in picture-in-picture only Blaze Phone's live view is drawn; the chat stays composed (its
             // draft, attachments and scroll survive) but is not placed, so nothing of it shows in the small window.
             androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {

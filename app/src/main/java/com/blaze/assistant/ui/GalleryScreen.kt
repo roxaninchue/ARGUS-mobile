@@ -696,6 +696,7 @@ private fun GalleryViewer(list: List<Entry>, start: Int, autoplay: String, origi
         }
     }
     BackHandler { close() }
+    DarkSystemBars()   // the viewer is black in both themes: keep the status bar icons light over it
     Box(Modifier.fillMaxSize().onSizeChanged { size = it }) {
         Box(Modifier.fillMaxSize().graphicsLayer { alpha = anim.value }.background(Color.Black))
         HorizontalPager(pager, Modifier.fillMaxSize().graphicsLayer {

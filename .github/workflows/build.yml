@@ -4,7 +4,7 @@ on:
   push:
     # 0.52.2: the ARGUS living 3D Home branch builds and tests here too (it never publishes: the publish steps are main-only).
     # 0.52.3: + the ARGUS x Hark design branch (same rules: tests, shots, a test-signed APK, never published).
-    branches: [main, feat/argus-3d-home, feat/argus-hark-design]
+    branches: [main, feat/argus-3d-home, feat/argus-hark-design, fix/status-bar-tab-flash]
     # The Blaze Gateway Worker (gateway/) has its own workflow; changes only there don't rebuild the app.
     paths-ignore: ['gateway/**', '.github/workflows/gateway.yml', '**/*.md', 'docs/**']
   # Pull requests (including from forks) only build; they never publish, sign a release or edit issues.
