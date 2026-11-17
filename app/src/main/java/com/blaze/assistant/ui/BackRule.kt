@@ -135,6 +135,12 @@ object BackRule {
     /** What the chat shell has in front, read at the moment Back is pressed (set by ChatScreen). */
     @Volatile var shellNow: () -> Shell = { Shell() }
     @Volatile var toChat: (() -> Unit)? = null
+    /**
+     * 2026-11-17: the open Settings takes one step back inside itself (closes its search, or goes from a page to the You
+     * page) and says true; false when Back should close Settings (on the You page, or opened straight onto this page).
+     * Set by SettingsScreen while it is shown; backToChat asks it first, so the phone's Back matches the top-bar arrow.
+     */
+    @Volatile var settingsBack: (() -> Boolean)? = null
 
     /** MainActivity: Back goes to the chat now (the shell has something in front and knows how to close it). */
     fun shellTakesBack(locked: Boolean): Boolean = !locked && toChat != null && action(shellNow()) == Action.TO_CHAT

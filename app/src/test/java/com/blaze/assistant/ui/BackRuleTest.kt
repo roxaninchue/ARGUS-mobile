@@ -121,6 +121,10 @@ class BackRuleTest {
             "GalleryUi.open.value = false", "Agent.roomOpen.value = -1L", "Views.showing.value = \"\"",
             // Spotlight closes too, and with nothing over the tab Back lands on Team (the ARGUS root; the 0.52 Home is gone)
             "composer.closeSpotlight()", "switchTab(ChatNav.TEAM)")) assertTrue("backToChat: $k", btc.contains(k))
+        // 2026-11-17: in Settings the phone's Back steps page → You page first (same as the top-bar arrow)
+        assertTrue(btc.contains("if (settingsPage != null && BackRule.settingsBack?.invoke() == true) return"))
+        val sheet = src("ui/SettingsSheet.kt")
+        assertTrue(sheet.contains("BackRule.settingsBack = {") && sheet.contains("onDispose { BackRule.settingsBack = null }"))
         // Back from Chat no longer drops to Home (that loop made Back unable to leave Blaze).
         assertFalse(chat.contains("BackHandler(enabled = swipeMode && sheetP > 0.5f && nav.tab == ChatNav.CHAT && !nav.inProjectChat) { settleTo(0f) }"))
         // openView handles exactly the specials BackRule knows.

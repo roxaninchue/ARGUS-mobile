@@ -1,3 +1,9 @@
+## Unreleased: the phone's Back steps back inside Settings
+
+2026-11-17, owner: "when on a setting page and I hit back with my device's commands, not the Argus back arrow, I'm taken to chat but the user should go back to settings".
+- BackRule's window interceptor caught the phone's Back before Settings' own BackHandler and closed Settings outright. New `BackRule.settingsBack`, set by `SettingsScreen` while it is shown; `backToChat` asks it first. Back now closes Settings' search, then goes from a page to the You page (keeping its scroll), and only then closes Settings. A page opened straight from chat or a command still closes on Back, as before.
+- Tests: BackRuleTest checks the wiring. Not built.
+
 ## Unreleased: Settings keeps its place when you come back from a page
 
 2026-11-17, owner: "when I scroll in settings and open a setting and return I'm always taken back to the top … only if I went into a setting; back to chat and open settings again can start from the top".

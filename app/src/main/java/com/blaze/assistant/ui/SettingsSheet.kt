@@ -88,6 +88,18 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
         else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)
     }
     BackHandler { if (SettingsSearch.open.value) SettingsSearch.close() else back() }
+    // BackRule's window interceptor sees the phone's Back before this BackHandler; it asks here first (backToChat).
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        BackRule.settingsBack = {
+            val p = page
+            when {
+                SettingsSearch.open.value -> { SettingsSearch.close(); true }
+                p == null || (first != null && p == first) -> false
+                else -> { page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p); true }
+            }
+        }
+        onDispose { BackRule.settingsBack = null }
+    }
     // A new page starts with the search closed and empty.
     LaunchedEffect(page) { SettingsSearch.close() }
     val current = settingsPages.firstOrNull { it.id == page }

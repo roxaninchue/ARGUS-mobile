@@ -649,6 +649,8 @@ fun ChatScreen() {
     fun backToChat() {
         // Team is the root. Back closes what is over the current tab (a page, a sheet, Spotlight, a view); with
         // nothing over it, a project chat goes to its project, Projects to its list, and Chat / Life / Desk to Team.
+        // Inside Settings, the phone's Back steps back like the top-bar arrow (page → You page), then closes Settings.
+        if (settingsPage != null && BackRule.settingsBack?.invoke() == true) return
         val over = settingsPage != null || showViews || plusOpen || arcOpen || avatarMenu || showSearch || GalleryUi.open.value ||
             Agent.roomOpen.value >= 0L || Views.showing.value.isNotEmpty() || composer.spotlightOpen || notchOpen || newOpen
         composer.closeSpotlight()
