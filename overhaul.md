@@ -201,19 +201,19 @@ Append one line per session: date, who, what changed, what's next.
 Full detail, ticket tables and the coverage matrix: [`docs/overhaul/06-team-plan.md`](docs/overhaul/06-team-plan.md). Inputs: [01 Bot HQ](docs/overhaul/01-bothq-inventory.md) · [02 A-team](docs/overhaul/02-ateam-inventory.md) · [03 Argus-mobile map](docs/overhaul/03-argus-mobile-map.md) · [04 Design + IA](docs/overhaul/04-design-ia.md) · [05 Agent ecosystem](docs/overhaul/05-agent-ecosystem.md).
 
 ### In one paragraph
-Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). A-team's look and team-of-bots-as-chats become the product shape; Bot HQ's multi-agent UX and safety mechanics (rows, in-call approvals, bot-to-bot, rooms, watch/take-over, voice hand-off) are ported natively; Argus-mobile's runtime (agent loop, BgAgents, Orchestra, Mind, phone control, terminal, browser, media) is the engine of **every** bot. Every bot is data — identity + soul + memory + skills + tools + engine + apps + computer + permissions — run by one runtime, with **ARGUS (the Manager)** as the front door routing to **14 life-domain agents** (Tempo, Inbox, Pulse, Ledger, Career, Forge, Hearth, Pantry, Atlas, Circle, Tutor, Clerk, Scout, Studio) that spin up short-lived workers. The app has four modes — **Team · Chat · Life · Desk** — switched by the A-team notch. Zero-budget by default: paid services (Composio, xAI, Orgo) are optional adapters.
+Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). A-team's look and team-of-bots-as-chats become the product shape; Bot HQ's multi-agent UX and safety mechanics (rows, in-call approvals, bot-to-bot, rooms, watch/take-over, voice hand-off) are ported natively; Argus-mobile's runtime (agent loop, BgAgents, Orchestra, Mind, phone control, terminal, browser, media) is the engine of **every** bot. Every bot is data — identity + soul + memory + skills + tools + engine + apps + computer + permissions — run by one runtime, with **ARGUS (the Manager)** as the front door routing to **14 life-domain agents** (Tempo, Inbox, Pulse, Ledger, Career, Forge, Hearth, Pantry, Atlas, Circle, Tutor, Clerk, Scout, Studio) that spin up short-lived workers. The app has four modes — **Team · Chat · Life · Desk** — switched by the A-team notch. Zero-budget by default: paid services (Composio, Orgo, X API reads) are optional adapters; no external agent engine or third-party model is a dependency (P11).
 
 ### Architecture
 ```
  ARGUS app (Kotlin/Compose)
  ├ ui/argus  A-team tokens · Lucide · BotOrb · Notch[Team|Chat|Life|Desk] · Composer(@bot /cmd $ #file mic) · Inbox · Voice
  ├ team/     Bot = persistent Spec · Rows · Jobs queue · ManagerTools · TeamBus (hop≤3) · Rooms · 14 Domains
- ├ agent/    BotEngine → LocalEngine (Agent.Session, frozen) · CloudRunEngine · HermesEngine (1.1)
+ ├ agent/    BotEngine → LocalEngine (Agent.Session, frozen) · CloudRunEngine · ToolCatalog(runsAt) (P11)
  ├ policy/   Policy.decide(ActionClass, taint, autonomy) → approval/draft/question/connect cards → audit_log
  ├ memory    Mind/blaze.db + mem_scope · SOUL.md / MEMORY.md / USER.md projections
  ├ proactive SignalBus → domain proposers → ARGUS arbiter (caps, quiet hours, one dial) · routines per bot
  ├ computer/ LocalBrowser · Codespaces · self-hosted desk · Orgo (leases)   terminal/ Alpine system + Ubuntu workspace, home+tmux per bot
- └ connect/  argus-connect · MCP client · device OAuth · CloudSync (E2E) · TeamSync          voice/ on-device · Gemini · xAI (opt.)
+ └ connect/  argus-connect · MCP client · device OAuth · CloudSync (E2E) · TeamSync          voice/ on-device · Gemini
         │ bz_ token everywhere
         ├─▶ Blaze Gateway (models, /v1/runs, live models, relay)      ├─▶ argus-connect (apps, skills, triggers; Composio optional, server-side)
         └─▶ argus-agents-api v2 (D1, REST+MCP, PATs, approvals, events) ◀─ Desktop / Claude / Cursor     └─▶ cloud desk (confirmed only)
@@ -230,9 +230,9 @@ Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). 
 | P5 Team talk & life | **0.57.0** | bot-to-bot + Handoff cards, rooms + huddle, 14 domain agents + setup picker, routing v2, Life mode, People graph, Compose graph |
 | P6 Proactive team | **0.58.0** | routines per bot, SignalBus + arbiter + one dial, check-ins/brief/Today, pop-up + edge glow, widgets/QS/share/deep links |
 | P7 Computers | **0.59.0** | Ubuntu workspace per bot, Terminal tabs, Library, code review, cloud desk leases, Computer viewer + take-over |
-| P8 Voice & everywhere | **0.60.0** | voice two-agent calls, X search (optional key), agents-api v2 + sync + remote approvals, MCP relay, A-team v2.20 "Move to ARGUS" |
+| P8 Voice & everywhere | **0.60.0** | voice two-agent calls, X search (native X connector, P11-CN-02..04), agents-api v2 + sync + remote approvals, MCP relay, A-team v2.20 "Move to ARGUS" |
 | P9 ARGUS 1.0 | **1.0.0** | every AM surface on the new look, domain wiring, A-team retired, full release gate |
-| P10 Open engines | 1.1.0 | Hermes engine, cloud routines, optional paid adapters, targetSdk 35 |
+| P10 Open engines | 1.1.0 | ~~Hermes engine~~ (retired, P11 N10), cloud routines (read-only slice pulled into P11, N8), optional paid adapters, targetSdk 35 |
 
 ### Workstreams and owners
 | Code | Workstream | Owner | Code | Workstream | Owner |
@@ -254,12 +254,12 @@ Argus-mobile stays the host (package `com.blaze.assistant`, one `:app` module). 
 | D4 | Alpine stays system; Ubuntu 24.04 opt-in workspace (~800 MB) shared by all bots, a home each | Yes |
 | D5 | Third-party apps through argus-connect (credentials server-side); on-phone tokens only for device-bound apps; Composio never in the app | Yes |
 | D6 | Automatic models; per-bot Depth + optional own Gemini key; no model-id picker | Yes. **Superseded by D13 (Finn, 2026-11-13)** |
-| D7 | Hermes engine after 1.0 (1.1.0) | Defer |
+| D7 | Hermes engine after 1.0 (1.1.0) | Defer. **Retired by P11 N10 (Argus, 2026-11-17):** no Hermes engine; `EngineKind.HERMES` / `ComputerKind.HERMES_HOST` stay as enum values for stored data only, never offered |
 | D8 | Cloud desk: Codespaces default; self-hosted desk on your PC (Desktop link) second; Orgo optional | Yes |
 | D9 | Cloud routines with the phone off: after 1.0 | Defer |
 | D10 | Retire A-team after migration (v2.20 "Move to ARGUS", archived at 1.0) | Retire |
 | D11 | Confirm reversing the 0.51 "Halo merged" single-persona decision (bots are personas on one engine) | Confirm |
-| D12 | Gateway work (relay, voice token, x-search) goes to `Blaze-agent`; we need access or an owner there | Give access |
+| D12 | Gateway work (relay, server tool loop, run control; X via the native connector, P11) goes to `Blaze-agent`; we need access or an owner there | Give access |
 
 | D13 | **Finn's choice (2026-11-13):** manual model + effort selection. The app shows only the models the gateway lists as healthy for the account's plan (`GET /v1/models/live`: probe-verified, plan-filtered) and only the efforts each model takes. Auto stays the default first option. Claude Opus 5.5 and Claude Fable 5.2 are hidden on free plans (gateway model gates). A-team model routing is on by default: live list, pick kept per turn, X-Blaze-Prefer, Auto as last resort. Apinex (apinex.bond) is a gateway provider. | Decided |
 | D15 | **Finn's correction (2026-11-13, 19:30):** from Apinex, only its free models, for every plan including paid; anything not free (Opus 5.5, Fable 5.2 and every other paid or subscription-only model) stays off. NVIDIA's fast Nemotron models (3.5 Lightning, Bolt and the like) are on, the free tier included. Gateway 0.9.13 (Blaze-agent e3716678; CF version 47301f66; rollback = baf9eb93, 0.9.12): `modelgate.freeOnlyBlocks` (Apinex: `free/*` only, no `free/claude-*`), NVIDIA no longer in `auto_exclude` (D1 setting updated too), `registry.NVIDIA_FAST` allowlist + 4 s probe cap. First probes: 3.5 Bolt 277 ms, 3.5 Lightning 511 ms, 3.5 Super VL 1.2 s in lanes; Nano Omni 770 ms; 3 Super denied by NIM. vitest 774/774. | Decided |
@@ -757,22 +757,24 @@ Flags: `server_tools`, `x_connector`, `x_browser`, `heavy_research`, `bot_rules`
 
 The 27 tickets come to about 47 agent-days (9 S ≈ 0.75, 15 M ≈ 2, 3 L ≈ 3.5). The X connector alone (CN-02, CN-03, CN-04, SF-01) is about 6; the server tool loop (AG-01, API-01, API-02, CN-01) about 8.
 
-### P11.12 Open decisions for Argus (recommended answer in brackets)
+### P11.12 Decisions for Argus (recommended answer in brackets)
+**All N1–N13 DECIDED 2026-11-17 by Argus = the recommended option** ("approved all recommendations").
+
 | # | Decision | Recommended |
 |---|---|---|
-| N1 | Which release turns the P11 flags on by default | The minor after waves 2–3 pass N1–N4, N6 and N10; Heavy and run control the one after N5 and N8 pass |
-| N2 | Code execution: phone sandbox only, or also a cloud sandbox (e.g. Cloudflare Containers on the owner's account) | Phone sandbox now; a cloud sandbox only after a price check and only for paid plans |
-| N3 | Collections in the cloud | Local by default; cloud copy per collection by opt-in; never for private-domain bots without a second consent |
-| N4 | Who pays for X API reads | The user's own X developer credits through argus-connect (BYO) by default; an ARGUS-paid pool only on paid plans, capped per user per day |
-| N5 | Reading X in the ARGUS browser when the API isn't connected | Yes, off by default, user's own signed-in session, human pace, personal reading only (X's terms restrict automated access) |
-| N6 | Posting to X; an ARGUS @mention bot on X | Posting only through draft cards, never automatic; no public @mention bot now |
-| N7 | Budget defaults | X 100 post reads a bot a day; Heavy 60 tool calls / 10 min / 3 cloud runs a job; cloud routines ≤ 6 runs a day on the free plan |
-| N8 | Pull read-only cloud routines (phone off) forward from P10-PR-01 / D9 | Yes, read-only only; writes wait as approvals on the phone |
-| N9 | Heavy worker count | 4 by default (phone, RAM-capped), up to 8 with cloud runs on paid plans |
-| N10 | Retire HermesEngine (P10-AG-01, D7) and the Hermes host / computer kinds | Retire; keep the `EngineKind.HERMES` / `ComputerKind.HERMES_HOST` enum values for stored data (append-only) but never offer them |
-| N11 | Realtime voice | No new backend in P11; on-device stays the default; a gateway-hosted realtime voice is a later phase |
-| N12 | Telegram / Discord surfaces | Not now; if wanted later, an ARGUS bot served by gateway webhooks after agents-api v2, behind the same cards |
-| N13 | An LLM "smart approval" reviewer (Grok Auto Review / Hermes smart approvals) | No (HARNESS MUSTS #4); Ask first / Allow rules + taint cover it; revisit only if field tests show a need |
+| N1 | Which release turns the P11 flags on by default | The minor after waves 2–3 pass N1–N4, N6 and N10; Heavy and run control the one after N5 and N8 pass — **DECIDED 2026-11-17 by Argus** |
+| N2 | Code execution: phone sandbox only, or also a cloud sandbox (e.g. Cloudflare Containers on the owner's account) | Phone sandbox now; a cloud sandbox only after a price check and only for paid plans — **DECIDED 2026-11-17 by Argus** |
+| N3 | Collections in the cloud | Local by default; cloud copy per collection by opt-in; never for private-domain bots without a second consent — **DECIDED 2026-11-17 by Argus** |
+| N4 | Who pays for X API reads | The user's own X developer credits through argus-connect (BYO) by default; an ARGUS-paid pool only on paid plans, capped per user per day — **DECIDED 2026-11-17 by Argus** |
+| N5 | Reading X in the ARGUS browser when the API isn't connected | Yes, off by default, user's own signed-in session, human pace, personal reading only (X's terms restrict automated access) — **DECIDED 2026-11-17 by Argus** |
+| N6 | Posting to X; an ARGUS @mention bot on X | Posting only through draft cards, never automatic; no public @mention bot now — **DECIDED 2026-11-17 by Argus** |
+| N7 | Budget defaults | X 100 post reads a bot a day; Heavy 60 tool calls / 10 min / 3 cloud runs a job; cloud routines ≤ 6 runs a day on the free plan — **DECIDED 2026-11-17 by Argus** |
+| N8 | Pull read-only cloud routines (phone off) forward from P10-PR-01 / D9 | Yes, read-only only; writes wait as approvals on the phone — **DECIDED 2026-11-17 by Argus** |
+| N9 | Heavy worker count | 4 by default (phone, RAM-capped), up to 8 with cloud runs on paid plans — **DECIDED 2026-11-17 by Argus** |
+| N10 | Retire HermesEngine (P10-AG-01, D7) and the Hermes host / computer kinds | Retire; keep the `EngineKind.HERMES` / `ComputerKind.HERMES_HOST` enum values for stored data (append-only) but never offer them — **DECIDED 2026-11-17 by Argus** |
+| N11 | Realtime voice | No new backend in P11; on-device stays the default; a gateway-hosted realtime voice is a later phase — **DECIDED 2026-11-17 by Argus** |
+| N12 | Telegram / Discord surfaces | Not now; if wanted later, an ARGUS bot served by gateway webhooks after agents-api v2, behind the same cards — **DECIDED 2026-11-17 by Argus** |
+| N13 | An LLM "smart approval" reviewer (Grok Auto Review / Hermes smart approvals) | No (HARNESS MUSTS #4); Ask first / Allow rules + taint cover it; revisit only if field tests show a need — **DECIDED 2026-11-17 by Argus** |
 
 ### P11.13 Reference appendix (sources, checked 2026-11-17)
 - **Grok Bot (xAI product, launched 2026-08-11):** durable bots on a shared cloud computer, per-bot memory + dated work log, primary bot, skills (teach by demo) and routines (schedule, Slack / GitHub / Linear / Sentry / PagerDuty, email, webhook), Auto Review + ≤ 20 Ask first / ≤ 20 Allow rules, only the user's messages are instructions, surfaces app / mobile / Slack / email / X. [overview](https://docs.x.ai/grok-bot/overview) · [how it works](https://docs.x.ai/grok-bot/how-grok-bot-works) · [bots](https://docs.x.ai/grok-bot/bots) · [skills & routines](https://docs.x.ai/grok-bot/skills-routines-and-automations) · [approvals](https://docs.x.ai/grok-bot/approvals-security-and-privacy) · [tag on X](https://docs.x.ai/grok-bot/tag-on-x)
