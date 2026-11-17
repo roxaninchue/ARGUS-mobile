@@ -1,3 +1,8 @@
+## Unreleased: the coding skill covers building something the user will use
+
+2026-11-17, owner: "First real task completed, visually isn't great though and functionality not working fully … help my agent produce functional results too" (a music server whose player sat at 0:00).
+- `blaze-coding-workflow` v3: a section "Building something the user will use": a one-line done-from-the-user's-side spec and the parts likely to break (for media: Range/206, Content-Type per extension, odd file names, staying alive), a real server over netcat loops, real requests that check every promise, preview_server + look_at_screen to judge the look on a phone, and an honest report of what holds. One Pinned bullet points at it. index.json sha updated. Not built.
+
 ## Unreleased: shell errors no longer stop a task; narration keeps its words; the permission card names the permission
 
 2026-11-17, owner: "before asking done it was doing fine but then it stopped", "there was more text but then it was like taken and cut into that sentence", "that permission card is not descriptive and I don't know what Argus needs".
