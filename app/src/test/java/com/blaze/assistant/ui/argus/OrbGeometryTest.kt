@@ -72,4 +72,24 @@ class OrbGeometryTest {
     @Test fun sizes() {
         assertEquals(listOf(18f, 34f, 50f, 72f, 84f, 120f), OrbSize.ALL)
     }
+
+    @Test fun friendlyBodiesOnePerFaceInsideTheBox() {
+        assertEquals(BotShape.entries.toSet(), OrbFace.entries.map { OrbGeometry.shape(it) }.toSet())
+        assertEquals(BotShape.BLOB, OrbGeometry.shape(OrbFace.ORBIT)); assertEquals(BotShape.DROP, OrbGeometry.shape(OrbFace.STEEP))
+        for (sh in BotShape.entries) OrbGeometry.bodyRect(sh)?.let { r ->
+            assertTrue(sh.name, r.l >= OrbGeometry.BODY_L - 1 && r.t >= OrbGeometry.BODY_T && r.r <= OrbGeometry.BODY_R2 + 1 && r.b <= OrbGeometry.BODY_B)
+            for (cr in listOf(r.tl, r.tr, r.br, r.bl)) assertTrue(cr <= minOf(r.r - r.l, r.b - r.t) / 2)
+        }
+        assertNull(OrbGeometry.bodyRect(BotShape.DROP)); assertNull(OrbGeometry.bodyRect(BotShape.CLOUD))
+        for (q in OrbGeometry.DROP_PATH) for (v in q) assertTrue(v in 0f..OrbGeometry.BOX)
+        for (ci in OrbGeometry.CLOUD_CIRCLES) assertTrue(ci[0] - ci[2] >= 0f && ci[1] - ci[2] >= 0f && ci[0] + ci[2] <= OrbGeometry.BOX)
+        // the eyes sit inside every body
+        for (e in OrbGeometry.EYES) assertTrue(e.x - e.w / 2 - OrbGeometry.EYE_LOOK_MAX > 14f && e.x + e.w / 2 + OrbGeometry.EYE_LOOK_MAX < 50f && e.y - e.h / 2 > 20f)
+    }
+
+    @Test fun eyesGlanceOnlyWhileWorking() {
+        assertEquals(0f, OrbGeometry.eyeShift(OrbState.IDLE, 600), 0f)
+        assertEquals(OrbGeometry.EYE_LOOK_MAX, OrbGeometry.eyeShift(OrbState.WORKING, OrbGeometry.EYE_LOOK_MS / 4L), 0.001f)
+        assertEquals(0f, OrbGeometry.eyeShift(OrbState.WORKING, 600, reducedMotion = true), 0f)
+    }
 }
