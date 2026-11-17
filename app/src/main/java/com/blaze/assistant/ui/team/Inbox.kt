@@ -124,7 +124,7 @@ object NeedsYouFeed {
             else -> CardAnswer.Allow
         }
         if (allow && NeedsYou.needsBiometric(item)) {
-            com.blaze.assistant.ui.DeviceUnlock.ask(ctx, tr("Allow: {0}", item.title)) { ok, _ -> done(ok && PolicyRuntime.answer(item.id, a)) }
+            com.blaze.assistant.ui.DeviceUnlock.ask(ctx, tr("Allow: {0}", item.title), subtitle = tr("Inbox")) { ok, _ -> done(ok && PolicyRuntime.answer(item.id, a)) }
         } else done(PolicyRuntime.answer(item.id, a))
     }
 

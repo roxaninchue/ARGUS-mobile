@@ -117,7 +117,7 @@ fun SavedSecretsPage() {
 object DeviceUnlock {
     private const val AUTH = androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK or androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
-    fun ask(ctx: android.content.Context, title: String, allowWithoutLock: Boolean = false, done: (Boolean, String) -> Unit) {
+    fun ask(ctx: android.content.Context, title: String, allowWithoutLock: Boolean = false, subtitle: String = "Saved secrets", done: (Boolean, String) -> Unit) {
         val act = generateSequence(ctx) { (it as? android.content.ContextWrapper)?.baseContext }.firstOrNull { it is androidx.fragment.app.FragmentActivity }
             as? androidx.fragment.app.FragmentActivity
         val can = try { androidx.biometric.BiometricManager.from(ctx).canAuthenticate(AUTH) } catch (_: Throwable) { -1 }
@@ -129,7 +129,7 @@ object DeviceUnlock {
             androidx.biometric.BiometricPrompt(act, androidx.core.content.ContextCompat.getMainExecutor(act), object : androidx.biometric.BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(r: androidx.biometric.BiometricPrompt.AuthenticationResult) = done(true, "")
                 override fun onAuthenticationError(code: Int, msg: CharSequence) = done(false, "Not unlocked.")
-            }).authenticate(androidx.biometric.BiometricPrompt.PromptInfo.Builder().setTitle(title).setSubtitle("Saved secrets").setAllowedAuthenticators(AUTH).build())
+            }).authenticate(androidx.biometric.BiometricPrompt.PromptInfo.Builder().setTitle(title).setSubtitle(subtitle).setAllowedAuthenticators(AUTH).build())
         } catch (_: Throwable) { done(false, "Couldn't ask for the screen lock.") }
     }
 }
