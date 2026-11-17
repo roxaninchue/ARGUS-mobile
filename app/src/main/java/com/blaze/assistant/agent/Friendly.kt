@@ -48,7 +48,6 @@ object Friendly {
             "run_code" -> "Running " + or(v("language"), "some") + " code"
             "git" -> "Checking the project history"
             "linux_install" -> "Setting up the Linux terminal"
-            "blaze_command" -> "Opening /" + v("command").removePrefix("/").substringBefore(' ')
             "terminal_jobs", "terminal_status", "job_input", "job_log" -> "Checking a background job"
             "terminal_stop" -> "Stopping a background job"
             "preview_server" -> "Opening the preview"

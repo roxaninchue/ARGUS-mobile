@@ -97,7 +97,7 @@ class AwarenessTest {
 
     @Test fun reportListsFeatures() {
         val r = Awareness.report(listOf(Triple("Learn", "learn", "flashcards")))
-        assertTrue(r.contains("## Live now") && r.contains("${BrandName.NAME} Music") && r.contains("- Learn (/learn): flashcards"))
+        assertTrue(r.contains("## Live now") && r.contains("${BrandName.NAME} Music") && r.contains("- Learn (learn): flashcards"))
         assertEquals(Awareness.TOOL, Awareness.tool().getJSONObject("function").getString("name"))
     }
 

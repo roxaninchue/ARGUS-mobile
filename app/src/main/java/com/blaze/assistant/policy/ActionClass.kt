@@ -126,7 +126,7 @@ object ToolRegistry {
         all(SPEND, "run_ussd")   // USSD codes buy airtime / bundles and move mobile money
 
         // ---------------- SETTINGS: the phone's or ARGUS's settings, installs ----------------
-        all(SETTINGS, "blaze_command", "device_setting", "github_install_apk", "install_skill", "jarvis_mode", "linux_install",
+        all(SETTINGS, "device_setting", "github_install_apk", "install_skill", "jarvis_mode", "linux_install",
             "phone_mode", "store_install", "store_update", "update_blaze", "browser_vpn", "toggle_setting")
         one("blaze_self", d(SETTINGS, "setup_check" to READ, "status" to READ))
         one("blazerouter", d(SETTINGS, "status" to READ, "dashboard" to READ))

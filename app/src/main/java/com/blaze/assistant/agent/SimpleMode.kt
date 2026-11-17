@@ -17,7 +17,7 @@ object SimpleMode {
     const val ADVANCED = "advanced"
 
     /** Views (ui/Views ids) that only show in Advanced lists. */
-    val TECH_VIEWS = setOf("terminal", "jobs", "router", "brain", "dashboard", "usage", "commands", "skills", "agents")
+    val TECH_VIEWS = setOf("terminal", "jobs", "router", "brain", "dashboard", "usage", "skills")   // "commands" and "agents" are no longer views (16 Nov 2026)
 
     /** Settings pages (SettingsSheet ids) that only show in Advanced lists. */
     val TECH_PAGES = setOf("ai", "terminal", "dashboard", "usage", "commands", "skills", "specialists")

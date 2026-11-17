@@ -15,7 +15,7 @@ class SimpleModeTest {
     }
 
     @Test fun simpleHidesOnlyTechnicalViews() {
-        listOf("terminal", "jobs", "router", "brain", "dashboard", "usage", "commands", "skills", "agents").forEach {
+        listOf("terminal", "jobs", "router", "brain", "dashboard", "usage", "skills").forEach {
             assertFalse(it, SimpleMode.viewVisible(it, simple = true)); assertTrue(it, SimpleMode.viewVisible(it, simple = false))
         }
         // No feature is removed: the everyday views all stay in Simple.
