@@ -5,6 +5,9 @@
 
 ## main, v0.53.6 (versionCode 198, owner said build 2026-11-16 23:23): model-first rounds 1 to 3 (4bba04de, 882e33e5, fffd9b94) and the agent-first persona (9b77444e). The SearchTitle.kt compile error was already fixed in 2c21746a. Pure tests ran locally; CI (GitHub mirror) is the full run. Not run: Gradle locally, Robolectric, device.
 
+## branch overhaul/p2-sf-05-audit (stacked on p2-sf-04), unreleased (2026-11-17, pushed [skip ci], not merged)
+- **P2-SF-05 audit log + spend ledger + Activity** (0d6bc94, d96c315, 21c53b3): hash-chained audit_log for every non-read call the policy decided (args redacted by PasteGuard), spend_ledger writer for approved payments with an amount, Ctx.spend filled, Settings › Security › Activity (by bot / team, chain check, CSV / JSON export). Ran: AuditChainTest 10, AuditStoreTest 2, PolicyTest + SpendGuardTest + PermissionsTest + ApprovalsTest + CardFlowTest 48, SettingsAliasTest + NoSquareTest 8, SpaceLogicTest 22, all OK. Not run: Gradle (PolicyRuntime.kt and ActivityPage.kt not compiled), Compose, device.
+
 ## branch overhaul/p2-sf-04-permissions, unreleased (2026-11-17, pushed [skip ci], not merged)
 - **P2-SF-04 Approvals & permissions + SpendGuard** (1dcfcd1, 121e0bd): Settings › Security › Approvals & permissions (standing allows per bot × tool with Ask again, autonomy, send scope, monthly cap default 0 + largest payment, what always asks on Autopilot). Every payment still asks; SpendGuard adds the over-limit line. Ran: SpendGuardTest 7, PermissionsTest 7, PolicyTest 11, TeamJsonTest 10, SettingsAliasTest + NoSquareTest 8, all OK. Not run: Gradle, Compose, device.
 

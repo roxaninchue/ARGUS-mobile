@@ -1,3 +1,11 @@
+## Unreleased: Activity and the audit log (P2-SF-05)
+
+2026-11-17, ticket P2-SF-05 (06-team-plan §6.3).
+- `policy/Audit.kt`: one hash-chained `audit_log` row (team.db v1 table, no migration) per non-read tool call the policy decided: decision (allowed / asked / refused / you approved / you declined / not answered), args with secret-looking values cut out by PasteGuard (SecretGuards), how it ended. `Audit.verify` finds the first changed, deleted or reordered row. Written by `PolicyRuntime` around the policy gate; nothing reaches the model.
+- `spend_ledger` now has a writer: an approved payment that completed with an amount in its args (`amount_minor` or `amount`). `PolicyRuntime` fills `Ctx.spend` from that amount and this month's ledger, so the card's over-limit line works. Every payment still asks.
+- Settings › Security › Activity (`ui/argus/settings/ActivityPage.kt`, page id `activity`): by bot or team, filter, "Chain verified ✓ / broken at #n", Export CSV / JSON.
+- Tests: AuditChainTest 10, AuditStoreTest 2 (sqlite-jdbc); SettingsAliasTest page count 40. Not built.
+
 ## Unreleased: Approvals & permissions (P2-SF-04)
 
 2026-11-17, ticket P2-SF-04 (06-team-plan §6.3).
