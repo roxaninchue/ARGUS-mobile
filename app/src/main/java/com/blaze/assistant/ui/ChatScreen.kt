@@ -357,6 +357,8 @@ fun ChatScreen() {
     LaunchedEffect(nav.tab) { Settings.setStr("shell_tab", nav.tab) }
     var showViews by remember { mutableStateOf(false) }
     var appsOpen by remember { mutableStateOf(false) }
+    // 2026-11-17: the bot whose own thread is open over the shell (null = none)
+    var botThread by remember { mutableStateOf<String?>(null) }
     var showSearch by remember { mutableStateOf(false) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all) and whether the keyboard composer is out.
     val simpleMode by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
@@ -452,7 +454,7 @@ fun ChatScreen() {
                     is com.blaze.assistant.team.Router.Outcome.Delegated -> { toast(o.handed.line); if (!fromTeam) Agent.note(o.handed.line + " \u2192 " + text.take(200), asReply = true) }
                     is com.blaze.assistant.team.Router.Outcome.Open ->
                         if (com.blaze.assistant.team.BotRules.isManager(o.bot)) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
-                        else toast("${o.bot.name}'s thread comes in the next update. Say \u201c@${o.bot.name.substringBefore(' ')} \u2026\u201d to hand it a job.")
+                        else { botThread = o.bot.id }
                     is com.blaze.assistant.team.Router.Outcome.Done -> {
                         toast(com.blaze.assistant.ui.team.PlanSheetModel.done(o.applied))
                         if (!fromTeam) Agent.note(o.applied.lines.joinToString("\n") { "\u2713 $it" }, asReply = true)
@@ -655,6 +657,7 @@ fun ChatScreen() {
         // nothing over it, a project chat goes to its project, Projects to its list, and Chat / Life / Desk to Team.
         // Inside Settings, the phone's Back steps back like the top-bar arrow (page → You page), then closes Settings.
         if (settingsPage != null && BackRule.settingsBack?.invoke() == true) return
+        if (botThread != null && settingsPage == null) { botThread = null; return }   // a bot's thread closes back to Team
         val over = settingsPage != null || showViews || plusOpen || arcOpen || avatarMenu || showSearch || GalleryUi.open.value ||
             Agent.roomOpen.value >= 0L || Views.showing.value.isNotEmpty() || composer.spotlightOpen || notchOpen || newOpen
         composer.closeSpotlight()
@@ -683,7 +686,7 @@ fun ChatScreen() {
                 viewsSheet = showViews, plusMenu = plusOpen || composer.spotlightOpen || notchOpen || newOpen, arc = arcOpen, avatarMenu = avatarMenu, search = showSearch,
                 gallery = GalleryUi.open.value, room = Agent.roomOpen.value >= 0,
                 // Team is where Back stops (a private chat asks before leaving itself)
-                homeRoot = !Agent.privateChat.value, argus = true)
+                homeRoot = !Agent.privateChat.value, argus = true, botThread = botThread != null)
         }
         BackRule.toChat = { backToChat() }
     }
@@ -697,9 +700,9 @@ fun ChatScreen() {
     // bots' threads and the jobs lists come with P1-SH-03 / P1-TM-05 and say so until then. P1-TM-04: Edit soul and New
     // bot open the bot editor.
     val teamNav = remember {
-        val later = { com.blaze.assistant.ui.argus.kit.ArgusToasts.show("That comes in the next update.") }
         com.blaze.assistant.ui.team.TeamNav(
-            openBot = { id -> if (id == com.blaze.assistant.team.BotRules.MANAGER_ID) go(navNow().switchTab(ChatNav.CHAT)) else later() },
+            // 2026-11-17: every other bot opens its own thread (BotThreadScreen)
+            openBot = { id -> if (id == com.blaze.assistant.team.BotRules.MANAGER_ID) go(navNow().switchTab(ChatNav.CHAT)) else { botThread = id } },
             memory = { settingsPage = "memory" },
             editSoul = { id -> botFlow = com.blaze.assistant.ui.team.BotFlow.Edit(id) },
             newBot = { botFlow = com.blaze.assistant.ui.team.BotFlow.New },
@@ -1100,6 +1103,10 @@ fun ChatScreen() {
 
         // P1-TM-04: the bot editor (Describe it sends the draft request to ARGUS and opens Chat), and the Delete / Keep
         // sheet while agent_delete waits for the user's answer (a yes typed in the chat works too).
+        // 2026-11-17: a bot's own chat, over the shell (Back or the arrow returns to Team)
+        com.blaze.assistant.ui.team.BotThreadHost(botThread, onClose = { botThread = null },
+            onEditSoul = { id -> botFlow = com.blaze.assistant.ui.team.BotFlow.Edit(id) },
+            onOpenJob = { _ -> botThread = null; com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS, com.blaze.assistant.ui.team.JobsFilter.ALL); go(navNow().switchTab(ChatNav.DESK)) })
         com.blaze.assistant.ui.team.BotFlowHost(botFlow, onClose = { botFlow = null },
             onDescribe = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) })
         val askDelete = pendingDelete

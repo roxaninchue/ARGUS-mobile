@@ -50,7 +50,11 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
 
     // ---------------- seeding / repair ----------------
 
-    fun ensure(): Ensured = sql.tx {
+    /**
+     * [seedDomains] = false (the app since 2026-11-17, owner: "users find Tempo and Inbox on start, remove that"): a new
+     * team starts with ARGUS alone; the user makes the bots they want. Tests keep the old day-one seeds.
+     */
+    fun ensure(seedDomains: Boolean = true): Ensured = sql.tx {
         val now = clock()
         val (bots, bad) = read()
         var seeded = false; var repaired = false; var adopted = 0
@@ -82,11 +86,30 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
             write(b.copy(reportsTo = BotRules.MANAGER_ID, u = now)); adopted++
         }
         // 5. Tempo and Inbox, once: a row that exists (even switched off) is never touched again
-        for (s in BotRules.seeds(now)) if (s.id !in ids && s.id !in bad) {
+        if (seedDomains) for (s in BotRules.seeds(now)) if (s.id !in ids && s.id !in bad) {
             if (bots.any { it.name.trim().equals(s.name, true) }) continue   // the user already has a bot by that name
             write(s); writeSoul(s.id, 1, BotRules.SEED_SOULS[s.id].orEmpty(), "seed", now); domains += s.id
         }
         Ensured(seeded, repaired, adopted, domains, demoted, renamed, bad.filter { it != BotRules.MANAGER_ID })
+    }
+
+    /**
+     * 2026-11-17: Tempo and Inbox that an older build seeded and the user never used (still the seed soul, no thread
+     * rows, no jobs) are switched off and hidden, like deleting a domain bot, so they leave the Team list. One the user
+     * talked to, gave a job or edited stays. Returns the ids it retired.
+     */
+    fun retireUnusedSeeds(): List<String> = sql.tx {
+        val out = ArrayList<String>()
+        val now = clock()
+        for (b in read().first) {
+            if (b.id !in BotRules.SEED_SOULS.keys || !b.enabled || b.hidden) continue
+            val souls = sql.query("SELECT count(*), coalesce(max(version),0) FROM bot_soul_versions WHERE bot_id=? AND by<>'seed'", b.id) { it.long(0) }.firstOrNull() ?: 0L
+            val rows = sql.query("SELECT count(*) FROM rows WHERE bot_id=?", b.id) { it.long(0) }.firstOrNull() ?: 0L
+            val jobs = sql.query("SELECT count(*) FROM jobs WHERE bot_id=?", b.id) { it.long(0) }.firstOrNull() ?: 0L
+            if (souls > 0 || rows > 0 || jobs > 0) continue
+            write(b.copy(enabled = false, hidden = true, pinned = false, u = now)); out += b.id
+        }
+        out
     }
 
     // ---------------- writes ----------------

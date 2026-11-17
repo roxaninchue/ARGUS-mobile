@@ -189,6 +189,8 @@ fun ArgusComposer(
     onMicHold: (() -> Unit)? = null,
     top: (@Composable () -> Unit)? = null,
     menu: (@Composable () -> Unit)? = null,
+    /** 2026-11-17: a fixed hint instead of [mode]'s (a bot's thread: "Message Tempo…"); it doesn't rotate. */
+    hint: String? = null,
 ) {
     val c = Argus.colors
     val t = ShellSpec.Composer.trailing(value.text, attachments, streaming)
@@ -211,7 +213,7 @@ fun ArgusComposer(
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         ComposerDisc(if (menu != null) "plus" else if (plusOpen) "x" else "plus", if (plusOpen) KitA11y.Shell.PLUS_CLOSE else KitA11y.Shell.PLUS,
             { if (!plusOpen && menu != null) focus.clearFocus(); onPlus() }, ink = false, rotation = if (menu != null) turn else 0f)
-        val placeholder = ShellSpec.Composer.placeholder(mode)
+        val placeholder = hint ?: ShellSpec.Composer.placeholder(mode)
         BasicTextField(
             value = value, onValueChange = onValueChange,
             modifier = Modifier.weight(1f).heightIn(min = KitSpec.target(ShellSpec.Composer.PLUS).dp).padding(horizontal = 8.dp)
@@ -224,7 +226,7 @@ fun ArgusComposer(
             decorationBox = { inner ->
                 // Same height as the + and mic discs' touch targets, so one line sits on their centre line (owner 2026-11-14).
                 Box(Modifier.heightIn(min = KitSpec.target(ShellSpec.Composer.PLUS).dp).padding(vertical = 10.dp), contentAlignment = Alignment.CenterStart) {
-                    if (value.text.isEmpty()) ComposerHint(placeholder, rotate = mode != "team" && mode != "life" && mode != "desk")
+                    if (value.text.isEmpty()) ComposerHint(placeholder, rotate = hint == null && mode != "team" && mode != "life" && mode != "desk")
                     inner()
                 }
             },

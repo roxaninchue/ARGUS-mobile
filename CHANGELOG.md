@@ -1,3 +1,12 @@
+## Unreleased: bots open their own chat; no Tempo and Inbox on start
+
+2026-11-17, owner: "I can create them but when I click them I get a message about coming in the next update", "keep the shapes", "users find Tempo and Inbox on start, remove that".
+- Tapping a bot on Team (or `@Name` that opens it) opens its own chat, `ui/team/BotThreadScreen.kt`: back arrow, the bot's own friendly shape (glancing while it works), name and what it's doing, New conversation and Edit, its thread (`ThreadList` over `BotThreads.rows`, live as rows land), and the composer ("Message Tempo…", Stop while it works). Back returns to Team (`BackRule.Shell.botThread`). Turns keep running if you leave.
+- On-phone bots now have an engine: `TeamGraph` hands `BotThreads` the phone's agent loop (`AgentSessionDriver.engine`) for LOCAL bots, so a bot answers in its hidden chat with its soul and tools.
+- A new team starts with ARGUS alone (`TeamStore.ensure(seedDomains = false)`). Tempo and Inbox from an older build that were never used (seed soul, no rows, no jobs) are switched off and hidden (`retireUnusedSeeds`); one you've used stays.
+- `ArgusComposer` takes an optional fixed `hint`.
+- Tests: NoSeedBotsTest, BotThreadOpenTest. Not built.
+
 ## Unreleased: Home's Apps opens ARGUS's apps
 
 2026-11-17, owner: "clicking apps shows the spotlight search which makes no sense, clicking apps should show the ARGUS view apps (music, video) all with appropriate icons, positioning and navigation".

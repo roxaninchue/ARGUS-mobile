@@ -60,8 +60,8 @@ class TeamSql(private val db: SQLiteDatabase) : Sql {
 
 /**
  * P1-SH-01: the app's one team graph (store + threads over team.db), opened on first use off the main thread. The Team
- * screen reads it; bot turns aren't wired here yet ([BotThreads] gets no engines: P1-SH-03 / P1-TM-04 add them), so
- * nothing here runs a model.
+ * screen reads it. Since 2026-11-17 a LOCAL bot's turns run on [com.blaze.assistant.agent.engines.AgentSessionDriver]
+ * (the bot's thread screen sends them); other engines have none yet.
  */
 object TeamGraph {
     class Graph(val sql: Sql, val store: TeamStore, val threads: BotThreads)
@@ -73,8 +73,12 @@ object TeamGraph {
         g ?: run {
             val sql = TeamSql(TeamDb.get(context).writableDatabase)
             val store = TeamStore(sql)
-            store.ensure()
-            Graph(sql, store, BotThreads(sql, store, ChatStore.argus { ChatNav.MAIN }, engineFor = { null }))
+            store.ensure(seedDomains = false)   // 2026-11-17: no Tempo / Inbox on start
+            runCatching { store.retireUnusedSeeds() }
+            // 2026-11-17 (owner: bots open their own chat): every on-phone bot runs on the phone's agent loop. The Manager's
+            // thread is the main Chat, so BotThreads never sends for it here.
+            Graph(sql, store, BotThreads(sql, store, ChatStore.argus { ChatNav.MAIN }, engineFor = { b ->
+                if (b.engine.kind == com.blaze.assistant.team.EngineKind.LOCAL) com.blaze.assistant.agent.engines.AgentSessionDriver.engine else null }))
         }.also { g = it }
     }
 }
