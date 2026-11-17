@@ -5,6 +5,10 @@
 
 ## main, v0.53.6 (versionCode 198, owner said build 2026-11-16 23:23): model-first rounds 1 to 3 (4bba04de, 882e33e5, fffd9b94) and the agent-first persona (9b77444e). The SearchTitle.kt compile error was already fixed in 2c21746a. Pure tests ran locally; CI (GitHub mirror) is the full run. Not run: Gradle locally, Robolectric, device.
 
+## branch overhaul/p2-sf-03-inbox, unreleased: Inbox + one needs-you query (P2-SF-03, 2026-11-17, pushed [skip ci])
+- **What:** `policy/NeedsYou.kt` (pure) + `ui/team/Inbox.kt` (NeedsYouFeed StateFlow, InboxList) + `ui/team/InboxModel.kt`; bell dot (ChatScreen), NeedYouBanner (Desk), bell Inbox sheet and Desk → Inbox read it; decisions via PolicyRuntime.answer.
+- **Ran:** NeedsYouTest 9, InboxModelTest 5, NeedsYouSourceTest 5 = 19 OK (kotlinc 2.0.21). **Not run:** Compose (Inbox.kt, DeskMode.kt, InboxSheet.kt, ChatScreen.kt edits) not compiled.
+
 ## main, unreleased after 0.53.5: agent-first persona (2026-11-16, pushed [skip ci])
 - **What:** new `agent/AgentPersona.kt` (CORE 1,631 chars = `assets/persona-v1.json` system, version 2.0.0; PICKED for user-picked personalities). Removed the small-talk/offer and NEVER lines from the persona, `Duo.ASSISTANT_RULES` (1,270 → 868 chars), `TurnContext.RULE` (1,408 → 1,169) and `HarnessPrompt.CORE` ("and small talk"). Calendar and reminder tool descriptions now say find / move / delete. Agent.kt: one line (`s("assistant", AgentPersona.PICKED)`), same length.
 - **Ran (kotlinc 2.0.21 + JDK 17, JUnit 4; Duo constants copied into a stub, android-all.jar on the classpath):** ModelFirstTest + HarnessPromptTest 12 OK; the changed Halo0459Test / OwnerName19Test / Wip0456Test / LocalLanguagesTest assertions re-run as a scratch test, OK. check-do-not-port 0 hits; evals 34 pass. **Not run:** Gradle, Halo0459Test / OwnerName19Test / HaloReplayRequestTest as whole classes, Robolectric, device, live model.

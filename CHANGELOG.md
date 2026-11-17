@@ -1,3 +1,9 @@
+## Unreleased: Inbox, one list of what needs you (P2-SF-03)
+
+- The bell's Inbox and Desk → Inbox show one urgency-sorted list of what waits on you: approvals (money, delete and passwords first, then by time left of their 25 minutes), questions, connect requests, failed jobs and suggestions, with All / Approvals / Questions / Connect / Failed / Suggestions chips. Allow / Deny / Always answer through the same path as the card in the bot's chat, so its row there changes too. Money and delete ask for the screen lock; swipe right to allow only reading or local changes; bulk only for one bot and one kind, never money or delete.
+- The bell dot and the "N need you" banner on Desk read that same list (`policy/NeedsYou.kt`, `ui/team/Inbox.kt`). The Inbox never opens by itself on start.
+- Tests: NeedsYouTest, InboxModelTest, NeedsYouSourceTest. Not built.
+
 ## Unreleased: bots open their own chat; no Tempo and Inbox on start
 
 2026-11-17, owner: "I can create them but when I click them I get a message about coming in the next update", "keep the shapes", "users find Tempo and Inbox on start, remove that".
