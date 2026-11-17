@@ -31,7 +31,8 @@ import com.blaze.assistant.ui.argus.kit.ButtonSize
 /**
  * Owner 16 Nov 2026: the bell opens the Inbox. "Not working" first (each with its Fix), then Argus's messages as one
  * thread per chat, with a reply box under each: the reply goes into that chat, like a reply from the notification.
- * Opening it marks everything read.
+ * Opening it marks everything read. P2-SF-03: "Needs you" (the one [com.blaze.assistant.policy.NeedsYou] list, drawn by
+ * the shared InboxList) comes first.
  */
 @Composable
 fun InboxSheet(onDismiss: () -> Unit) {
@@ -42,8 +43,16 @@ fun InboxSheet(onDismiss: () -> Unit) {
     LaunchedEffect(Unit) { Inbox.markAllRead() }
     val problems = remember(items) { Inbox.problems(items) }
     val threads = remember(items) { Inbox.threads(items) }
+    // P2-SF-03: what waits on you (approvals, questions, connects, failed jobs, suggestions), the same list as Desk → Inbox
+    val needs = com.blaze.assistant.ui.team.rememberNeedsYou()
     ArgusSheet(onDismiss = onDismiss, title = tr("Inbox")) {
-        if (problems.isEmpty() && threads.isEmpty())
+        if (needs.isNotEmpty()) {
+            Text(tr("Needs you"), style = ArgusType.meta, color = c.mute, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            com.blaze.assistant.ui.team.InboxList(needs, onOpen = {
+                com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS); onDismiss()
+            })
+        }
+        if (needs.isEmpty() && problems.isEmpty() && threads.isEmpty())
             Text(tr("Nothing here yet. Messages {0} sends you while you're away, and anything that isn't working, show up here.", BrandName.NAME),
                 style = ArgusType.meta, color = c.mute, modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp))
         if (problems.isNotEmpty()) {

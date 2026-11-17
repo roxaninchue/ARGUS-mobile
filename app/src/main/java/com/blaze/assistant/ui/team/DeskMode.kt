@@ -97,7 +97,9 @@ fun DeskPage(
     // page keeps its height for the jobs; upright it is the title over the chips as before.
     val compact = com.blaze.assistant.ui.common.WindowLayout.compactHeader(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
     Column(modifier.fillMaxSize().cutoutSafe()) {
-        val chips = DeskModel.chips(inboxWaiting, needYou, projectsCount)
+        // P2-SF-03: the Inbox chip, the banner and the Inbox segment all read the one needs-you list
+        val needs = rememberNeedsYou()
+        val chips = DeskModel.chips(com.blaze.assistant.policy.NeedsYou.count(needs), needYou, projectsCount)
         val pick: (String) -> Unit = { k -> DeskModel.Segment.of(k)?.let { DeskState.show(it) } }
         if (compact) androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -108,10 +110,20 @@ fun DeskPage(
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 6.dp).semantics { heading() })
             FilterChips(chips, seg.key, pick, Modifier.padding(bottom = 6.dp))
         }
+        if (seg != DeskModel.Segment.INBOX) com.blaze.assistant.policy.NeedsYou.banner(needs).let { b ->
+            com.blaze.assistant.ui.argus.kit.NeedYouBanner(b.count, b.bots, { DeskState.show(DeskModel.Segment.INBOX) },
+                Modifier.padding(bottom = 6.dp), approvalsOnly = b.approvalsOnly)
+        }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (seg) {
-                DeskModel.Segment.INBOX -> EmptyState(title = tr("Inbox"), icon = "bell", body = DeskModel.inboxBody(inboxWaiting),
-                    primary = if (inboxWaiting > 0) "Open Chat" to { nav.open(DeskModel.Targets.CHAT) } else null)
+                DeskModel.Segment.INBOX -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    // what the main Chat itself is asking (a question / OK there) is answered in Chat
+                    if (inboxWaiting > 0) com.blaze.assistant.ui.argus.kit.ArgusButton(tr("Chat is waiting on you \u00b7 Open"),
+                        { nav.open(DeskModel.Targets.CHAT) }, Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        size = com.blaze.assistant.ui.argus.kit.ButtonSize.S, icon = "message-circle")
+                    InboxList(needs, onOpen = { DeskState.show(DeskModel.Segment.JOBS) })
+                    Spacer(Modifier.height(24.dp))
+                }
                 DeskModel.Segment.JOBS -> when {
                     g != null -> {
                         val actions = remember(g) { JobsActions(JobStore(g.sql), { JobsRuntime.queue() }, { JobsRuntime.kick() }) }

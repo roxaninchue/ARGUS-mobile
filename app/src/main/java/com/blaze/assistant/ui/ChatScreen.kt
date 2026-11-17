@@ -375,6 +375,8 @@ fun ChatScreen() {
     var inboxOpen by remember { mutableStateOf(false) }
     val inboxItems by com.blaze.assistant.notify.Inbox.items.collectAsState()
     val inboxUnread = remember(inboxItems) { com.blaze.assistant.notify.Inbox.unread(inboxItems) }
+    // P2-SF-03: the bell dot reads the one needs-you list (approvals, questions, connects, failed jobs, suggestions)
+    val needsYou = com.blaze.assistant.ui.team.rememberNeedsYou()
     val showing by Views.showing.collectAsState()
     val designTarget by Views.designTarget.collectAsState()
     val viewOffer by Views.offer.collectAsState()
@@ -786,10 +788,11 @@ fun ChatScreen() {
                 // Owner 16 Nov 2026: the bell opens the Inbox; while something in the chat waits on you (a question, an OK, a form) it opens Chat first
                 onBell = {
                     notchOpen = false
-                    if (question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
+                    // P2-SF-03: policy cards (approvals, questions, connects) are in the Inbox's one needs-you list, not counted here
+                    if (question != null || pendingConfirmLegacy != null || fixNow != null || formNow != null || secretNow != null) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
                     else inboxOpen = true
                 },
-                bellBadge = question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null || inboxUnread > 0,
+                bellBadge = question != null || pendingConfirmLegacy != null || fixNow != null || formNow != null || secretNow != null || inboxUnread > 0 || com.blaze.assistant.policy.NeedsYou.dot(needsYou),
                 onPlus = { notchOpen = false; newOpen = true })
             }
             // P1-SH-01: a private chat says so under the ARGUS top bar, with the way out
