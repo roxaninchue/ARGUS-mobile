@@ -210,7 +210,8 @@ class PolicyTest {
 
     @Test fun ownBrowserStepsDontAskPerClick() {
         // Finn's screenshot: "Requested after reading a background agent's report. Argus wants to use the phone's screen — browser click"
-        for (tool in listOf("browser_click", "browser_type", "browser_key", "browser_select")) {
+        // 0.53.7: ARGUS Phone's browser too (phone_read taints the turn; PhonePolicy.gate asks for pay / book / send / submit)
+        for (tool in listOf("browser_click", "browser_type", "browser_key", "browser_select", "phone_open", "phone_act", "phone_handoff")) {
             for (taint in listOf("a web page", "a background agent's report", null)) for (p in listOf(act, auto)) {
                 val d = Policy.decide(Policy.Call(tool, PHYSICAL), c(p, tainted = taint))
                 assertTrue("$tool $taint → $d", d is Decision.Allow)

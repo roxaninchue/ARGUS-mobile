@@ -285,6 +285,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         com.blaze.assistant.connect.CloudSync.foreground(false)
         if (Agent.mood.value != com.blaze.assistant.agent.Mood.IDLE) Notifier.working(Agent.lastStep())
         Notifier.visible(false)
+        com.blaze.assistant.policy.PolicyRuntime.onBackground()   // 0.53.7: an approval left unanswered goes to the shade (Approve / Deny)
         super.onPause()
     }
 }

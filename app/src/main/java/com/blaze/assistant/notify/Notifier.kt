@@ -370,21 +370,39 @@ object Notifier {
 
     fun clearReplies() = try { NotificationManagerCompat.from(app).cancel(BlazeThread.NOTIF_ID); NotificationManagerCompat.from(app).cancel(ID_PROACTIVE) } catch (_: Throwable) { }
 
-    /** Approval request with Allow / Don't buttons. */
-    fun confirm(title: String, detail0: String, action: String) {
+    /**
+     * Approval request with Approve / Deny buttons (0.53.7, Finn: "a notification that shows why and what the model wants
+     * and two buttons approve or deny"). [title] = what ARGUS wants to do; [why] = the request it is working on, in the
+     * user's words; [detail0] = the specifics (the site, the button, the draft). [action] names the step in the body
+     * ("Tap", "Send"); the buttons are always Approve / Deny so the answer is the same everywhere.
+     */
+    fun confirm(title: String, detail0: String, action: String, why: String? = null) {
         val detail = com.blaze.assistant.ui.Md.plain(detail0)
         needs(title)
         if (!allowed()) return
+        val text = approvalText(why?.let { com.blaze.assistant.ui.Md.plain(it) }, detail, action)
         val n = NotificationCompat.Builder(app, CH_REPLY)
             .setSmallIcon(R.drawable.ic_stat_blaze).setColor(ACCENT)
-            .setContentTitle(title).setContentText(detail)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
+            .setContentTitle(title).setContentText(text.lineSequence().firstOrNull().orEmpty())
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(NotificationCompat.PRIORITY_HIGH).setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentIntent(openApp()).setAutoCancel(true)
-            .addAction(0, action, broadcast(ActionReceiver.ALLOW))
-            .addAction(0, "Don't", broadcast(ActionReceiver.DENY))
+            .addAction(0, APPROVE, broadcast(ActionReceiver.ALLOW))
+            .addAction(0, DENY, broadcast(ActionReceiver.DENY))
             .build()
         try { NotificationManagerCompat.from(app).notify(ID_CONFIRM, n) } catch (_: SecurityException) { }
+    }
+
+    const val APPROVE = "Approve"
+    const val DENY = "Deny"
+
+    /** The approval notification's body: "Why: <request>", then what exactly it will do. Pure. */
+    fun approvalText(why: String?, detail: String, action: String): String {
+        val w = why?.replace(Regex("\\s+"), " ")?.trim()?.take(160).orEmpty()
+        val d = detail.trim()
+        val what = if (d.isEmpty()) action.trim() else d
+        return listOfNotNull(w.takeIf { it.isNotEmpty() }?.let { "Why: $it" }, what.takeIf { it.isNotEmpty() }?.let { "What: $it" }).joinToString("\n")
     }
 
     fun clearConfirm() { needs(""); NotificationManagerCompat.from(app).cancel(ID_CONFIRM) }

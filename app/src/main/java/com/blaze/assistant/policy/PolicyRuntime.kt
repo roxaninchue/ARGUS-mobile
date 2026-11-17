@@ -203,10 +203,25 @@ object PolicyRuntime {
         if (Agent.inForeground) return
         runCatching {
             notified = c.id
+            val why = Agent.taskOf(c.chatId)
             when (c.kind) {
-                Cards.Kind.APPROVAL -> com.blaze.assistant.notify.Notifier.confirm(c.title, listOfNotNull(c.note, c.detail).joinToString("\n"), "Allow")
-                Cards.Kind.DRAFT -> com.blaze.assistant.notify.Notifier.confirm(c.title, "To ${c.draft?.to}\n\n${c.draft?.body.orEmpty()}", "Send")
+                Cards.Kind.APPROVAL -> com.blaze.assistant.notify.Notifier.confirm(c.title, listOfNotNull(c.note, c.detail).joinToString("\n"), "Allow", why)
+                Cards.Kind.DRAFT -> com.blaze.assistant.notify.Notifier.confirm(c.title, "Send to ${c.draft?.to}\n\n${c.draft?.body.orEmpty()}", "Send", why)
                 Cards.Kind.QUESTION, Cards.Kind.CONNECT -> com.blaze.assistant.notify.Notifier.actionRequired(c.title, c.botName, c.detail.take(300))
+            }
+        }
+    }
+
+    /**
+     * 0.53.7: ARGUS just left the screen. A card that went up while the user was looking at the app had no notification,
+     * so leaving the app with it unanswered left the task stuck until they came back. Post it now (the oldest pending one;
+     * Approve / Deny answer it), and the old confirm card the same way.
+     */
+    fun onBackground() {
+        runCatching {
+            if (notified == null) center.shown.value.firstOrNull { it.state == Cards.State.PENDING }?.let { notify(it) }
+            if (notified == null) Agent.pendingConfirm.value?.let { p ->
+                com.blaze.assistant.notify.Notifier.confirm(p.title, p.detail, p.action, Agent.taskOf(null))
             }
         }
     }

@@ -161,7 +161,12 @@ object ToolRegistry {
      * BrowserTools asks before a click or Enter on anything that pays, sends, posts or deletes (always = true), sign-ins
      * go through browser_secure_input's own card, and a bot whose PHYSICAL rule is ASK / NEVER is still obeyed.
      */
-    val OWN_BROWSER = setOf("browser_click", "browser_key", "browser_select", "browser_type")
+    val OWN_BROWSER = setOf("browser_click", "browser_key", "browser_select", "browser_type",
+        // 0.53.7 (Finn: "for basically every browser tap I have to click an allow card"): ARGUS Phone's own off-screen
+        // browser is the same case. phone_read taints the turn, so every phone_open / phone_act after it put a "use the
+        // phone's screen" card up. PhoneBrowserTools asks for what matters (PhonePolicy.gate: pay, book, send, submit,
+        // delete), card fields are refused, and phone_handoff is the user taking control themselves.
+        "phone_open", "phone_act", "phone_handoff")
 
     fun ownBrowser(name: String): Boolean = name in OWN_BROWSER
 

@@ -1,3 +1,11 @@
+## Unreleased: approvals only for what matters, Approve / Deny from the notification
+
+2026-11-17, owner: "for basically every browser tap I have to click an allow card … the user only has to approve or disapprove what matters, and a notification that shows why and what the model wants with approve or deny (if the user is not in the app)".
+- Confirmed the cause: ARGUS Phone's browser tools (`phone_open`, `phone_act`, `phone_handoff`) are classed PHYSICAL and weren't in `ToolRegistry.OWN_BROWSER`. `phone_read` marks the turn as having read a web page, so the taint rule put a "wants to use the phone's screen" card on every tap, key and field after the first read. They now join the 0.53.6 own-browser exemption. What matters still asks: `PhonePolicy.gate` (pay, book, order, send, submit, delete, confirm), `BrowserTools` risky clicks, card fields refused, sign-ins through the secure input, and a bot whose screen rule is ASK / NEVER. Taps on the phone's real screen (`tap`, `open_app` …) after outside content still ask.
+- The approval notification now reads "Why: <the request ARGUS is working on>" and "What: <exactly what it will do>", with **Approve** and **Deny** buttons (was the step's verb and "Don't"), private on the lock screen. New `Agent.taskOf(chatId)`.
+- A card that went up while the app was open and was left unanswered when the user left now posts its notification on leaving (`PolicyRuntime.onBackground`, from `MainActivity.onPause`), for policy cards and the old confirm card.
+- Tests: PolicyTest `ownBrowserStepsDontAskPerClick` covers the phone tools. Not built.
+
 ## v0.53.6: model-first, the model reads every message, and Argus acts as an agent (versionCode 198)
 
 Includes the entries below down to v0.53.5.

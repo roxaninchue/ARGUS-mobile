@@ -228,7 +228,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         tag?.let { BgAgents.setWaiting(it.id, true) }
         val pc = if (grants != null) PendingConfirm(title, detail, action, d, true, grants) else PendingConfirm(title, detail, action, d)
         _confirm.value = pc
-        if (!inForeground) Notifier.confirm(title, detail, action)
+        if (!inForeground) Notifier.confirm(title, detail, action, why = taskOf(null))
         // P2-SF-02: the card goes however the wait ends (a stopped task used to leave it up until its 2-minute timeout)
         val ok = try { kotlinx.coroutines.withTimeoutOrNull(120_000) { d.await() } ?: false } finally {
             tag?.let { BgAgents.setWaiting(it.id, false) }
@@ -1071,6 +1071,15 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     /** Messages of any chat (for the dashboard). */
     fun messagesOf(id: String): List<ChatMessage>? = load(id)?.msgs
+
+    /**
+     * 0.53.7: why ARGUS is doing what an approval asks, in the user's words: the request the chat's running task started
+     * from (else the chat's last message from the user). The approval notification shows it as "Why: …".
+     */
+    fun taskOf(chatId: String?): String = try {
+        val s = chatId?.let { sessions[it] } ?: cur
+        s.runningTaskText().ifBlank { s.lastUserText() }
+    } catch (_: Throwable) { "" }
 
     fun lastStep(): String = cur.status.ifBlank { cur.msgs.lastOrNull { it.role == Role.STEP }?.text ?: Friendly.between(null) }
 
@@ -2199,6 +2208,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         /** 0.46.3: what the running task was asked (its first message), for Halo's read-only status and the steer line. */
         private fun runningTask(): String = msgs.firstOrNull { it.id == turnFrom && it.role == Role.USER }?.text.orEmpty()
+        fun runningTaskText(): String = runningTask()
 
         /** 0.46.3: one plain line from Halo beside the running task (not part of its history until it ends). */
         private fun sideLine(text: String) {
