@@ -1,3 +1,10 @@
+## Unreleased: Approvals & permissions (P2-SF-04)
+
+2026-11-17, ticket P2-SF-04 (06-team-plan §6.3).
+- Settings › Security › Approvals & permissions (`ui/argus/settings/PermissionsPage.kt`, page id `policy`): actions set to Always allow, grouped by bot, each with Ask again; per bot Assist / Act / Autopilot, who it may send to (Never / Drafts / Contacts / Anyone), a monthly spending cap (default 0: every payment asks) and a largest single payment; the list of what always asks even on Autopilot, computed from `Policy.decide`.
+- `policy/SpendGuard.kt`: cap + per-payment maximum against this month's spend_ledger rows. A payment still always shows its card; one over a limit says so on the card. `Permissions.spendPerTxMaxMinor` (team JSON key `spendPerTxMaxMinor`, default 0).
+- Tests: SpendGuardTest, PermissionsTest; SettingsAliasTest page count 39. Not built.
+
 ## Unreleased: bots open their own chat; no Tempo and Inbox on start
 
 2026-11-17, owner: "I can create them but when I click them I get a message about coming in the next update", "keep the shapes", "users find Tempo and Inbox on start, remove that".
