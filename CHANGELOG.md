@@ -1,3 +1,10 @@
+## Unreleased: Home's Apps opens ARGUS's apps
+
+2026-11-17, owner: "clicking apps shows the spotlight search which makes no sense, clicking apps should show the ARGUS view apps (music, video) all with appropriate icons, positioning and navigation".
+- Home's **Apps** button opens a new Apps sheet (`ui/argus/kit/AppsSheet.kt`): a four-wide launcher grid of rounded icon tiles, media first: Music, Video, Browser, ARGUS Phone, Gallery, Design, Projects, Terminal, Learn, Seller, Schedule, App Store. A tap closes the sheet and opens the app through `openView` (the same path as open_view and Spotlight); Back or a pull down closes it. Spotlight still opens from Search.
+- New line icons in `ArgusGlyphs`: clapperboard (Video), folder (Projects), shopping-bag (Seller).
+- Tests: new ArgusAppsTest; LifeModelTest follows the new wiring. Not built.
+
 ## Unreleased: the model sheet only scrolls
 
 2026-11-17, owner: "in model selection sometimes I scroll down and when I try scrolling up the whole sheet tries to go down … make it only scrolling; to leave, grab the search bar and pull down, or scroll to the top and pull down".

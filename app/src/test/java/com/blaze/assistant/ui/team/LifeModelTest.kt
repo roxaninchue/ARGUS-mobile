@@ -198,7 +198,7 @@ class LifeModelTest {
     @Test fun lifeWiresTheBoardCalendarFoldsAndQuickAccess() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
         val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
-        assertTrue("onConnect = { settingsPage = \"connections\" }" in chat && "onApps = { composer.openSpotlight() }" in chat)
+        assertTrue("onConnect = { settingsPage = \"connections\" }" in chat && "onApps = { appsOpen = true }" in chat && "AppsSheet(" in chat)
         val life = File(root, "com/blaze/assistant/ui/team/LifeMode.kt").readText()
         assertTrue("LifeBoard.groups(widgets)" in life && "LifeCalendarCard(" in life && "LifeQuickAccess(" in life)
         for (h in listOf("Today", "Your life", "Projects", "Panels", "Calendar")) assertTrue(h, "LifeFoldHead(\"$h\"" in life)

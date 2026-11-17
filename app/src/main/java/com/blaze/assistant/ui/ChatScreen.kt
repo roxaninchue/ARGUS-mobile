@@ -356,6 +356,7 @@ fun ChatScreen() {
     val shellMode = nav.tab
     LaunchedEffect(nav.tab) { Settings.setStr("shell_tab", nav.tab) }
     var showViews by remember { mutableStateOf(false) }
+    var appsOpen by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all) and whether the keyboard composer is out.
     val simpleMode by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
@@ -413,6 +414,9 @@ fun ChatScreen() {
         Views.request.value = null
         Views.find(r.id)?.let { openView(it, r.target) }
     }
+    // 2026-11-17: Home's Apps button opens ARGUS's apps launcher (was Spotlight). A sheet, so it draws over any page.
+    if (appsOpen) com.blaze.assistant.ui.argus.kit.AppsSheet(
+        onOpen = { id -> appsOpen = false; Views.find(id)?.let { openView(it) } }, onDismiss = { appsOpen = false })
 
     // P1-TM-06: the "Here's what I'll do" sheet waiting for Apply, and its preview switch.
     var teamPlan by remember { mutableStateOf<com.blaze.assistant.team.Router.Plan?>(null) }
@@ -808,7 +812,7 @@ fun ChatScreen() {
                             onOpenSchedule = { Views.find("schedule")?.let { openView(it) } },
                             onSetUpLife = { d -> send(com.blaze.assistant.ui.team.LifeModel.setUpAsk(d)); go(navNow().switchTab(ChatNav.CHAT)) },
                             onConnect = { settingsPage = "connections" },
-                            onApps = { composer.openSpotlight() }),
+                            onApps = { appsOpen = true }),
                         projects = projects.sortedByDescending { it.updated }.take(com.blaze.assistant.ui.space.SpaceHomeCards.MAX_PROJECTS).map { it.id to it.name },
                         signedIn = me != null || Settings.ready, working = mood != Mood.IDLE,
                         setupLeft = if (com.blaze.assistant.setup.SetupRunner.started()) com.blaze.assistant.setup.SetupPlan.left(setupState).size else 0,
