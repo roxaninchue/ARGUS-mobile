@@ -74,6 +74,7 @@ class SettingsAliasTest {
         assertTrue("Back uses the ARGUS tree", "else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in sheet)
         assertTrue("the You page is the only root (no 0.52.3 profile)", "com.blaze.assistant.ui.space.SpaceProfileScreen(" !in sheet && "com.blaze.assistant.ui.argus.settings.YouPage(" in sheet)
         assertTrue("no look switch left in Settings", "Argus.lookOn()" !in sheet)
+        assertTrue("Back from a page keeps the You page's scroll", "val youScroll = rememberScrollState()" in sheet && "scroll = youScroll)" in sheet)
     }
 
     @Test fun openByNameFromChat() {

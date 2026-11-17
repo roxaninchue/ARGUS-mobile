@@ -1,3 +1,9 @@
+## Unreleased: Settings keeps its place when you come back from a page
+
+2026-11-17, owner: "when I scroll in settings and open a setting and return I'm always taken back to the top … only if I went into a setting; back to chat and open settings again can start from the top".
+- The You page's scroll is now held by `SettingsScreen` (`youScroll`) and passed to `YouPage(scroll = …)`, so Back from a row's page lands at the same spot. Closing Settings drops it, so opening Settings again starts at the top.
+- Tests: SettingsAliasTest checks the wiring. Not built.
+
 ## Unreleased: no Models & engines in Settings
 
 2026-11-17, owner: "remove models and engines from settings as we are already always using Argus cloud".

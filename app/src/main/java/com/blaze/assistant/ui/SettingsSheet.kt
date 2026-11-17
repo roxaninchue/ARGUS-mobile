@@ -77,6 +77,9 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val first = remember { settingsStart(start) }
     var page by remember { mutableStateOf(first) }
+    // 2026-11-17: the You page keeps its scroll while a row's page is open, so Back lands where the user was. It lives
+    // as long as this Settings does: closing Settings (back to chat) and opening it again starts at the top.
+    val youScroll = rememberScrollState()
     // Opened straight onto a page (from a /command or ARGUS): Back from that page closes Settings.
     fun back() {
         val p = page
@@ -114,7 +117,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     modifier = Modifier.weight(1f),
                     version = version,
                     query = SettingsSearch.query.value,
-                    pageText = remember { settingsPages.associate { it.id to (it.title + " " + it.sub) } })
+                    pageText = remember { settingsPages.associate { it.id to (it.title + " " + it.sub) } },
+                    scroll = youScroll)
             }
         } else {
             if (page == "connections") SearchTitle(current?.title ?: "Settings", onBack = { back() }, placeholder = "Gmail, GitHub, weather\u2026",

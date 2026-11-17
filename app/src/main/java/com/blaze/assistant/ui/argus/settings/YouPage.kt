@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -71,11 +72,13 @@ fun YouPage(
     pageText: Map<String, String> = emptyMap(),
     /** The words in the top bar's search (SearchTitle); blank shows the whole tree. */
     query: String = "",
+    /** Held by Settings, so the page comes back where it was after opening a row; a fresh Settings starts at the top. */
+    scroll: ScrollState = rememberScrollState(),
 ) {
     val c = Argus.colors
     val hits = remember(query, pageText) { ArgusSettings.search(query, pageText) }
     Box(modifier.fillMaxSize().testTag(YouTags.PAGE)) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 24.dp),
+        Column(Modifier.fillMaxSize().verticalScroll(scroll).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = tr("Open Profile")) { onPage(ArgusSettings.ACCOUNT_PAGE) }
                 .testTag(YouTags.NAME).padding(horizontal = 8.dp, vertical = 6.dp)) {
