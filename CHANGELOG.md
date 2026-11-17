@@ -1,3 +1,12 @@
+## Unreleased: effort and text assist on the composer
+
+2026-11-18, owner: "move effort levels from the model selector and add them to the chatbox (same level and size as the model selector)", effort on the right, "add text assist … off, low, med, high, full", "I prefer selection rather than switch with tap", "an extension of chat rather than detached".
+- The composer's top row is `ComposerTopRow` (ui/argus/kit/ModelPicker.kt): the model chip on the left, the effort chip centred, text assist on the right, all flat and the same size. The effort chip shows only when the picked model lists efforts (never on Auto); the model chip shows the name only (`ModelPick.label`, new `efforts` / `effortLabel`). The effort section is gone from the model sheet, and switching models carries the effort over (a model that lacks it uses its default).
+- Effort and text assist open a short list that grows out of the chat box above the row, like the + menu, content-width under its chip. A pick, a second tap or Back closes it.
+- Text assist (`agent/TextAssist.kt`, saved setting `text_assist`): Off, Low (spelling and grammar), Med (also vague references), High (also implied constraints and format), Full (a structured brief). One shared prompt line plus one per level; a plain one-shot call on the picked model (background lane on Auto) with the recent chat as context.
+- Model-first: with assist on, the first tap on send puts the improved text in the box (Undo puts the typed text back); the second tap sends what the box holds. Nothing is rewritten unseen; Off sends as before.
+- Tests: TextAssistTest (new), ModelPickTest (effort chip), ModelFirstTest (assist never sends unseen text), ShellSpecTest. No APK built (owner: "don't initiate an apk build").
+
 ## Unreleased: servers have a home (kept running, restarted, and named in every turn)
 
 2026-11-17 19:07, owner: "Argus seems to have lost the context of the server … create somewhere Argus can leave servers to run in the background" (asked "Is the server still running??", the agent found nothing on any port).

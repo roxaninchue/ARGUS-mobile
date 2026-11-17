@@ -35,7 +35,9 @@ class ModelPickTest {
         ModelPick.set("ap/free/kimi-k3", "high")
         assertEquals("ap/free/kimi-k3", ModelPick.route(list, tools = true))
         assertEquals("high", ModelPick.effort(list))
-        assertEquals("Kimi K3 · High", ModelPick.label(list))
+        assertEquals("Kimi K3", ModelPick.label(list))           // 18 Nov 2026: the effort has its own chip
+        assertEquals("High", ModelPick.effortLabel(list))
+        assertEquals(listOf("low", "medium", "high"), ModelPick.efforts(list))
         assertEquals(ModelPick.Choice("ap/free/kimi-k3", "high"), ModelPick.current.value)   // Settings needs a Context on Gradle
     }
 
@@ -47,6 +49,23 @@ class ModelPickTest {
         ModelPick.set("ap/free/gemini-3.8-flash", "high")
         assertNull(ModelPick.effort(list))
         assertEquals("Gemini 3.8 Flash", ModelPick.label(list))
+        assertNull("no efforts listed, no effort chip", ModelPick.effortLabel(list))
+    }
+
+    /** 18 Nov 2026 (owner): the effort chip shows only what the picked model lists, never on Auto, and the pick survives a switch. */
+    @Test fun effortChipFollowsThePickedModel() {
+        ModelPick.auto()
+        assertEquals(emptyList<String>(), ModelPick.efforts(list))
+        assertNull(ModelPick.effortLabel(list))
+        ModelPick.set("ap/free/kimi-k3", "low")
+        assertEquals("Low", ModelPick.effortLabel(list))
+        ModelPick.set("ap/free/gemini-3.8-flash", ModelPick.current.value.effort)   // the sheet carries the effort over
+        assertNull(ModelPick.effortLabel(list))
+        ModelPick.set("ap/free/kimi-k3", ModelPick.current.value.effort)
+        assertEquals("Low", ModelPick.effortLabel(list))
+        ModelPick.set("ap/claude-opus-5.5", "high")
+        assertEquals(emptyList<String>(), ModelPick.efforts(list))
+        ModelPick.auto()
     }
 
     @Test fun aPickThatDoesNotFitOrLeftTheListGoesAuto() {

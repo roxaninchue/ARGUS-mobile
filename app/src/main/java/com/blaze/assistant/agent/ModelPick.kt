@@ -102,7 +102,7 @@ object ModelPick {
         return true
     }
 
-    /** "Auto", "Kimi K3 · Medium", "Kimi K3 · unavailable" for the chip. */
+    /** "Auto", "Kimi K3", "Kimi K3 · unavailable" for the model chip (the effort has its own chip since 18 Nov 2026). */
     fun label(list: List<LiveModels.Member>, c: Choice = current.value): String {
         if (c.auto) return "Auto"
         // Owner 2026-11-14: back in the app the list is often not in yet (a killed process starts empty). No list is not
@@ -110,8 +110,21 @@ object ModelPick {
         if (list.isEmpty() && !isDown(c.key)) return LiveModels.prettyName(c.key.substringAfter('/'))
         val m = list.firstOrNull { it.key == c.key }?.takeUnless { isDown(it.key) }
             ?: return (list.firstOrNull { it.key == c.key }?.name ?: LiveModels.prettyName(c.key.substringAfter('/'))) + " · unavailable"
-        return m.name + (effort(list, c)?.let { " · " + it.replaceFirstChar { ch -> ch.uppercaseChar() } } ?: "")
+        return m.name
     }
+
+    /**
+     * 18 Nov 2026 (owner): the effort has its own chip on the composer, centred, so the model chip shows the name only.
+     * The efforts that chip offers: the picked model's own list, or none (Auto, off the list, down), and then no chip.
+     */
+    fun efforts(list: List<LiveModels.Member>, c: Choice = current.value): List<String> {
+        if (c.auto || isDown(c.key)) return emptyList()
+        return list.firstOrNull { it.key == c.key }?.efforts.orEmpty()
+    }
+
+    /** "Low", "Medium", "High" for the effort chip; null when there is no effort to show. */
+    fun effortLabel(list: List<LiveModels.Member>, c: Choice = current.value): String? =
+        if (efforts(list, c).isEmpty()) null else effort(list, c)?.replaceFirstChar { it.uppercaseChar() }
 
     /** One picker row's detail: "Apinex · 1.3 s · tools · vision". */
     fun detail(m: LiveModels.Member): String = buildList {

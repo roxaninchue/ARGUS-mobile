@@ -108,4 +108,16 @@ class ModelFirstTest {
         assertTrue(File(root(), "overhaul.md").readText().contains("docs/MODEL-FIRST.md"))
         assertTrue(File(root(), "docs/AGENTS.md").readText().contains("MODEL-FIRST.md"))
     }
+
+    /**
+     * 18 Nov 2026 text assist: the user's words are never rewritten unseen. The improved text goes into the chat box
+     * (composerFill) and the send that follows reads the box; nothing rewrites the text between the tap and the model.
+     */
+    @Test fun textAssistNeverSendsUnseenText() {
+        val screen = File(root(), "app/src/main/java/com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val block = screen.substring(screen.indexOf("TextAssist.rewrite(t, lines)")).let { it.substring(0, it.indexOf("return@send")) }
+        assertTrue(block.contains("input = com.blaze.assistant.ui.argus.kit.composerFill(better)"))
+        assertFalse("assist never sends by itself", block.contains("send("))
+        assertFalse("Agent.kt never calls text assist", agentSrc().contains("TextAssist."))
+    }
 }

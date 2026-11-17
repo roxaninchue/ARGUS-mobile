@@ -93,7 +93,10 @@ class ShellSpecTest {
     @Test fun shellReadsAsOneSurface() {
         val screen = java.io.File("src/main/java/com/blaze/assistant/ui/ChatScreen.kt").readText()
         assertTrue(screen.contains("ChatDrawerLayer()"))
-        assertTrue(screen.contains("ModelChip(flat = true)"))
+        // 18 Nov 2026: the chip row (model · effort · text assist) is the composer's top row; the model chip stays flat in it
+        assertTrue(screen.contains("ComposerTopRow("))
+        val picker = java.io.File("src/main/java/com/blaze/assistant/ui/argus/kit/ModelPicker.kt").readText()
+        assertTrue(picker.contains("ModelChip(force = force, flat = true)"))
         assertFalse("no chip pill over the composer", screen.contains("ModelChip(Modifier.padding(start = 18.dp))"))
         val drawer = java.io.File("src/main/java/com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
         assertTrue("drawer edge rounded (NoSquareTest)", drawer.contains("drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)"))

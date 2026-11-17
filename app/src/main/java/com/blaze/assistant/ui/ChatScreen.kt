@@ -211,6 +211,10 @@ fun ChatScreen() {
     val askedPage by com.blaze.assistant.agent.SelfSetup.openPage.collectAsState()
     LaunchedEffect(askedPage) { askedPage?.let { settingsPage = it; com.blaze.assistant.agent.SelfSetup.openPage.value = null } }
     var input by remember { mutableStateOf(TextFieldValue("")) }
+    // 18 Nov 2026 text assist (TextAssist): the draft as typed once assist has improved it (null = not yet), so the next tap
+    // sends what the box holds and Undo can put the typed text back. The user always sees what is sent (docs/MODEL-FIRST.md).
+    var assistedFrom by remember { mutableStateOf<String?>(null) }
+    var assistJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all), typed or spoken.
     var talkTo by rememberSaveable { mutableStateOf("blaze") }
     // v0.45.28: "Halo x Blaze" is no longer a pick (it joins in by itself): a restored "all" becomes Blaze.
@@ -1030,19 +1034,40 @@ fun ChatScreen() {
                 else AcceptImages(onImage = { uri, mime -> addUris(listOf(uri), mime) }) {
                 // P1-SH-01: the ARGUS composer (+ · text · mic / send / stop, 5 lines); a message from Team, Life or Desk goes
                 // to ARGUS and opens Chat (routing from Team comes with P1-TM-06).
-                // 0.53.0: the manual model + effort chip sits over the composer (ModelPick; Auto by default).
+                // 0.53.0: the manual model chip sits over the composer (ModelPick; Auto by default); 18 Nov 2026: effort and text assist beside it.
                 // Owner 2026-11-14: chip and chatbox are one surface (the chip is the composer's top row, no edge of its own).
-                com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; Agent.typing(it.text.isNotEmpty()) },
+                val topRow = !(railOn || (landRail && nav.tab != ChatNav.CHAT))
+                com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; if (it.text.isEmpty()) assistedFrom = null; Agent.typing(it.text.isNotEmpty()) },
                     mode = if (nav.inProjectChat) ChatNav.CHAT else nav.tab, streaming = mood != Mood.IDLE, attachments = pending.size,
                     onPlus = { plusOpen = !plusOpen; showViews = false; notchOpen = false }, plusOpen = plusOpen,
                     // Owner 2026-11-15: the + menu grows out of this chat box (same glass), never a sheet over it
                     menu = { com.blaze.assistant.ui.argus.kit.ComposerPlusMenu(plusEntries(), onPick = { id -> plusOpen = false; plusPick(id) }) },
                     // P1-TM-06: from Team the router decides (a job or a hand-off stays on Team; conversation opens Chat)
-                    onSend = { val t = input.text; send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && navNow().tab != ChatNav.TEAM && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
+                    onSend = send@{
+                        val t = input.text
+                        if (assistJob?.isActive == true) return@send   // the improved text is on its way
+                        // 18 Nov 2026 text assist: the first tap puts the improved text in the box; the next tap sends it
+                        if (topRow && com.blaze.assistant.agent.TextAssist.shouldRewrite(com.blaze.assistant.agent.TextAssist.level.value, t, assistedFrom)) {
+                            assistJob = scope.launch {
+                                val lines = Agent.messages.value.filter { it.role == Role.USER || it.role == Role.BLAZE }.map { (it.role == Role.USER) to it.text }
+                                val better = com.blaze.assistant.agent.TextAssist.rewrite(t, lines)
+                                if (input.text != t) return@launch   // the user kept typing; their text stays
+                                assistedFrom = t
+                                if (better != null) input = com.blaze.assistant.ui.argus.kit.composerFill(better)
+                                else com.blaze.assistant.ui.argus.kit.ArgusToasts.show(tr("Couldn't improve that. Tap send to send it as written."))
+                            }
+                            return@send
+                        }
+                        assistedFrom = null
+                        send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && navNow().tab != ChatNav.TEAM && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
                     onMic = { onMic() }, onStop = { Agent.stop() },
                     // Living UI 0.2.1: a compact pill floating over the canvas in landscape Living (no chip row)
                     modifier = if (railOn) com.blaze.assistant.ui.living.LivingFloat else if (landRail) com.blaze.assistant.ui.living.LivingCompact else Modifier,
-                    top = if (railOn || (landRail && nav.tab != ChatNav.CHAT)) null else ({ com.blaze.assistant.ui.argus.kit.ModelChip(flat = true) }))
+                    // 18 Nov 2026: model · effort · text assist on one row (ComposerTopRow, the flat model chip on the left)
+                    top = if (!topRow) null else ({
+                        val from = assistedFrom
+                        com.blaze.assistant.ui.argus.kit.ComposerTopRow(undo = if (from != null && input.text != from) ({ input = com.blaze.assistant.ui.argus.kit.composerFill(from) }) else null)
+                    }))
                 }
             }
         }
