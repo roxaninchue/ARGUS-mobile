@@ -114,4 +114,24 @@ class AuditChainTest {
         assertEquals("error", Audit.resultOf("Error: timed out", true))
         assertEquals("ok", Audit.resultOf("Sent.", true))
     }
+
+    @Test fun activityGroupsFiltersAndExports() {
+        val c = chain(6)   // even rows bot "argus", odd rows "b_mail"; rows 0 and 3 APPROVED
+        val byBot = AuditView.group(c, AuditView.By.BOT, AuditView.Filter.ALL, { it.uppercase() }, { null })
+        assertEquals(listOf("b_mail", "argus"), byBot.map { it.key })      // newest row (seq 6) is b_mail's
+        assertEquals(listOf(6L, 4L, 2L), byBot[0].rows.map { it.seq })
+        assertEquals("B_MAIL", byBot[0].title)
+        val byTeam = AuditView.group(c, AuditView.By.TEAM, AuditView.Filter.ALL, { it }, { if (it == "b_mail") "t_ops" else null })
+        assertEquals(setOf("t_ops", "argus"), byTeam.map { it.key }.toSet())
+        val asked = AuditView.group(c, AuditView.By.BOT, AuditView.Filter.ASKED, { it }, { null }).flatMap { it.rows }.map { it.seq }.sorted()
+        assertEquals(listOf(1L, 4L), asked)
+        assertEquals("Chain verified ✓", AuditView.chainLine(c))
+        assertEquals("Chain broken at #3", AuditView.chainLine(c.toMutableList().also { it[2] = it[2].copy(tool = "x") }))
+        val csv = AuditView.csv(c).split("\r\n").filter { it.isNotEmpty() }
+        assertEquals(7, csv.size)
+        assertTrue(csv[1].contains("\"{\"\"to\"\":\"\"ann@example.com\"\",\"\"n\"\":0}\""))
+        val arr = org.json.JSONArray(AuditView.json(c))
+        assertEquals(6, arr.length()); assertEquals(c[5].hash, arr.getJSONObject(5).getString("hash"))
+        assertTrue(arr.getJSONObject(0).isNull("cost_minor")); assertEquals(1250L, arr.getJSONObject(2).getLong("cost_minor"))
+    }
 }

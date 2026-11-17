@@ -69,7 +69,7 @@ object ArgusSettings {
     val TREE: Set<String> get() = ROWS.map { it.page }.toSet() + ACCOUNT_PAGE + PLAN_PAGE
 
     /** Pages that open from another page; everything else goes back to the You page. */
-    val PARENT: Map<String, String> = mapOf("logins" to "secrets", "policy" to "privacy")   // P2-SF-04: Approvals & permissions opens from Privacy
+    val PARENT: Map<String, String> = mapOf("logins" to "secrets", "policy" to "privacy", "activity" to "privacy")   // P2-SF-04 / P2-SF-05: Approvals & permissions and Activity open from Privacy
 
     fun parentOf(page: String?): String? = page?.let { PARENT[it] }
 

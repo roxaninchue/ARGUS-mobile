@@ -172,13 +172,19 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                         androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
                             com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
                             com.blaze.assistant.ui.argus.kit.SettingsGroup(listOf(com.blaze.assistant.ui.argus.kit.SettingsItem("shield-check",
-                                "Approvals & permissions", onClick = { page = "policy" })))
+                                "Approvals & permissions", onClick = { page = "policy" }),
+                                // P2-SF-05: Activity (audit log)
+                                com.blaze.assistant.ui.argus.kit.SettingsItem("list-checks", "Activity", onClick = { page = "activity" })))
                         }
                         Spacer(Modifier.height(18.dp)); BankModePage()
                     }
                     "policy" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
                         com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
                         com.blaze.assistant.ui.argus.settings.PermissionsLive()
+                    }
+                    "activity" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
+                        com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
+                        com.blaze.assistant.ui.argus.settings.ActivityLive()
                     }
                     "proactive" -> ProactivePage()
                     "dashboard" -> DashboardPage()

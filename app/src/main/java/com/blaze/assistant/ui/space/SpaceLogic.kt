@@ -332,7 +332,7 @@ object SpaceSettings {
 
     /** Pages that open from another page (Back returns there); everything else returns to the profile. */
     val PARENT: Map<String, String> = SYSTEM_ROWS.associate { it.first to SpaceProfile.SYSTEM_PAGE } +
-        mapOf("sync" to "account", "plan" to "account", "logins" to "secrets", "policy" to "privacy")
+        mapOf("sync" to "account", "plan" to "account", "logins" to "secrets", "policy" to "privacy", "activity" to "privacy")
 
     fun parentOf(page: String?): String? = page?.let { PARENT[it] }
 

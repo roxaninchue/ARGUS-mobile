@@ -119,3 +119,73 @@ object Audit {
         return Amount(minor, cur, redact(merchant).take(80))
     }
 }
+
+/**
+ * P2-SF-05: what Settings › Activity shows of the audit log, pure (AuditChainTest): rows grouped by bot or by team,
+ * filtered by what was decided, the chain line, and the CSV / JSON export.
+ */
+object AuditView {
+    enum class By { BOT, TEAM }
+
+    /** The page's decision filter. */
+    enum class Filter(val label: String, val decisions: Set<Audit.Decision>) {
+        ALL("All", Audit.Decision.values().toSet()),
+        ASKED("Asked you", setOf(Audit.Decision.ASK, Audit.Decision.APPROVED, Audit.Decision.DENIED, Audit.Decision.STOPPED)),
+        REFUSED("Not run", setOf(Audit.Decision.DENY, Audit.Decision.DENIED, Audit.Decision.STOPPED)),
+        RAN("Ran", setOf(Audit.Decision.ALLOW, Audit.Decision.APPROVED)),
+    }
+
+    data class Group(val key: String, val title: String, val rows: List<Audit.Entry>)
+
+    /**
+     * Newest first, grouped by bot, or by the team a bot belongs to ([teamOf] = its parent team's id, null = on its own:
+     * grouped under the bot itself). Groups are ordered by their newest row.
+     */
+    fun group(entries: List<Audit.Entry>, by: By, filter: Filter, nameOf: (String) -> String, teamOf: (String) -> String?): List<Group> =
+        entries.filter { it.decision in filter.decisions }
+            .groupBy { e -> if (by == By.TEAM) teamOf(e.botId) ?: e.botId else e.botId }
+            .map { (k, rows) -> Group(k, nameOf(k), rows.sortedByDescending { it.seq }) }
+            .sortedByDescending { g -> g.rows.first().seq }
+
+    /** "Chain verified ✓" or "Chain broken at #n" (n = the row's seq, or its position when the seq is off). */
+    fun chainLine(entries: List<Audit.Entry>): String {
+        val i = Audit.verify(entries)
+        return if (i < 0) "Chain verified ✓" else "Chain broken at #${entries[i].seq}"
+    }
+
+    /** What the decision reads as on a row. */
+    fun decisionLabel(d: Audit.Decision): String = when (d) {
+        Audit.Decision.ALLOW -> "Allowed"; Audit.Decision.ASK -> "Asked"; Audit.Decision.DENY -> "Refused"
+        Audit.Decision.APPROVED -> "You approved"; Audit.Decision.DENIED -> "You declined"; Audit.Decision.STOPPED -> "Not answered"
+    }
+
+    fun icon(d: Audit.Decision): String = when (d) {
+        Audit.Decision.ALLOW -> "check"; Audit.Decision.ASK -> "hand"; Audit.Decision.DENY, Audit.Decision.DENIED -> "x"
+        Audit.Decision.APPROVED -> "circle-check"; Audit.Decision.STOPPED -> "clock"
+    }
+
+    private val COLS = listOf("seq", "at", "bot_id", "chain", "trigger", "tool", "action_class", "args_redacted", "decision", "decided_by",
+        "result", "cost_minor", "prev_hash", "hash")
+
+    private fun cells(e: Audit.Entry): List<Any?> = listOf(e.seq, e.at, e.botId, e.chain.joinToString(","), e.trigger, e.tool, e.actionClass,
+        e.argsRedacted, e.decision.name, e.decidedBy, e.result, e.costMinor, e.prevHash, e.hash)
+
+    /** RFC 4180 CSV, one row per entry in chain order (so a reader can re-verify it). Args are already redacted. */
+    fun csv(entries: List<Audit.Entry>): String {
+        fun q(v: Any?): String { val s = v?.toString() ?: ""; return if (s.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) "\"" + s.replace("\"", "\"\"") + "\"" else s }
+        val sb = StringBuilder(COLS.joinToString(",")).append("\r\n")
+        entries.sortedBy { it.seq }.forEach { e -> sb.append(cells(e).joinToString(",") { q(it) }).append("\r\n") }
+        return sb.toString()
+    }
+
+    /** JSON array of the same rows. */
+    fun json(entries: List<Audit.Entry>): String {
+        val a = org.json.JSONArray()
+        entries.sortedBy { it.seq }.forEach { e ->
+            val o = org.json.JSONObject()
+            COLS.zip(cells(e)).forEach { (k, v) -> o.put(k, v ?: org.json.JSONObject.NULL) }
+            a.put(o)
+        }
+        return a.toString(1)
+    }
+}
