@@ -8,6 +8,7 @@ import com.blaze.assistant.agent.TeamHooks
 import com.blaze.assistant.connect.Mcp
 import com.blaze.assistant.connect.McpConfig
 import com.blaze.assistant.store.Sql
+import com.blaze.assistant.team.ActionClass
 import com.blaze.assistant.team.BotRules
 import com.blaze.assistant.team.BotThreads
 import com.blaze.assistant.team.JobsRuntime
@@ -42,6 +43,8 @@ object PolicyRuntime {
     @Volatile private var policies: PolicyStore? = null
     @Volatile private var team: TeamStore? = null
     @Volatile private var threads: BotThreads? = null
+    /** P2-SF-05: team.db audit_log + spend_ledger. */
+    @Volatile private var audit: AuditStore? = null
 
     val approvals = Approvals(sink = object : Approvals.Sink {
         override fun put(a: com.blaze.assistant.team.Approval) { store?.put(a) }
@@ -87,8 +90,12 @@ object PolicyRuntime {
         return answer(id, a)
     }
 
+    /** P2-SF-05: the decision [gate] made for a request (by identity) until its audit row is written. */
+    private val decided = java.util.Collections.synchronizedMap(java.util.IdentityHashMap<PolicyGate.Request, Pair<Policy.Decision, Approvals.Status?>>())
+
     private val gate = PolicyGate(approvals,
         presenter = flow.presenter,
+        observer = { r, d, s -> if (audit != null && r.call.cls != ActionClass.READ) decided[r] = d to s },
         saveAlways = { tool, bot -> policies?.set(tool, bot, Rule.ALLOW) },
         pass = { r, d -> flow.pass(r, d) },
         outcome = { id -> flow.outcome(id) })
@@ -97,7 +104,7 @@ object PolicyRuntime {
     fun init(sql: Sql, botThreads: BotThreads? = null) {
         val s = ApprovalStore(sql)
         runCatching { s.expireLeftovers() }
-        store = s; policies = PolicyStore(sql); team = TeamStore(sql); threads = botThreads
+        store = s; policies = PolicyStore(sql); team = TeamStore(sql); threads = botThreads; audit = AuditStore(sql)
         TeamHooks.onUserMessage = { chat, bot -> approvals.userMessage(chat, bot?.takeIf { it != BotRules.MANAGER_ID }) }
     }
 
@@ -128,7 +135,61 @@ object PolicyRuntime {
             return if (binding != null && binding.botId != BotRules.MANAGER_ID) "Error: $tool wasn't checked, so it didn't run. Tell the user." else block()
         }
         if (r == null) return block()
-        return gate.run(r, block)
+        return audited(r, block)
+    }
+
+    /**
+     * P2-SF-05: [gate].run plus one audit_log row for every non-read call (decision, redacted args, how it ended), and a
+     * spend_ledger row for an approved SPEND that completed with an amount. Nothing here reaches the model: the tool's
+     * result is returned unchanged.
+     */
+    private suspend fun audited(r: PolicyGate.Request, block: suspend () -> String): String {
+        val a = audit
+        if (a == null || r.call.cls == ActionClass.READ) return gate.run(r, block)
+        var ran = false; var out: String? = null; var approvalId: String? = null; var status = "error"
+        try {
+            val res = gate.run(r) { ran = true; approvalId = coroutineContext[ConfirmGate.PolicyOk]?.approvalId; block().also { out = it } }
+            status = Audit.resultOf(out, ran)
+            return res
+        } catch (e: Throwable) {
+            status = if (e is CancellationException) "cancelled" else "error"
+            throw e
+        } finally {
+            record(a, r, decided.remove(r), status, approvalId)
+        }
+    }
+
+    private fun record(a: AuditStore, r: PolicyGate.Request, ds: Pair<Policy.Decision, Approvals.Status?>?, status: String, approvalId: String?) {
+        runCatching {
+            val (d, s) = ds ?: (null to null)
+            val decision = when (d) {
+                null -> Audit.Decision.DENY   // the policy itself failed, so the call was stopped unchecked
+                is Policy.Decision.Allow -> Audit.Decision.ALLOW
+                is Policy.Decision.Refuse -> Audit.Decision.DENY
+                is Policy.Decision.Ask -> when (s) {
+                    null -> Audit.Decision.ASK
+                    Approvals.Status.ALLOWED, Approvals.Status.ALWAYS -> Audit.Decision.APPROVED
+                    Approvals.Status.DENIED -> Audit.Decision.DENIED
+                    else -> Audit.Decision.STOPPED
+                }
+            }
+            val by = if (s != null) "user:${s.name.lowercase()}" else "policy:${d?.reason?.name?.lowercase() ?: "error"}"
+            val amt = if (r.call.cls == ActionClass.SPEND && decision == Audit.Decision.APPROVED && status == "ok") Audit.amountOf(r.argsFull) else null
+            val now = System.currentTimeMillis()
+            a.append(Audit.Draft(now, r.botId, r.chain, r.ctx.trigger.name.lowercase(), r.tool, r.call.cls.name, r.argsFull, decision, by, status, amt?.minor))
+            if (amt != null && approvalId != null) a.spend(r.botId, approvalId, amt.minor, amt.currency ?: r.ctx.perms.currency, amt.merchant, now)
+        }.onFailure { com.blaze.assistant.device.CrashLog.quiet("PolicyRuntime.audit", it) }
+    }
+
+    /** P2-SF-04 gap closed by P2-SF-05: what a SPEND call's args say it pays, against this month's spend_ledger. */
+    private fun spendCheck(cls: ActionClass, args: String, botId: String, currency: String): SpendGuard.Check? {
+        if (cls != ActionClass.SPEND) return null
+        val amt = Audit.amountOf(args) ?: return null
+        val rows = runCatching { audit?.ledger() }.getOrNull().orEmpty()
+        val spent = SpendGuard.spentThisMonth(rows, System.currentTimeMillis(), java.time.ZoneId.systemDefault(), currency, botId)
+        // a payment in another currency can't be held against these limits (no conversion): unknown amount, card as usual
+        val minor = amt.minor.takeIf { amt.currency == null || amt.currency.equals(currency, true) }
+        return SpendGuard.Check(minor, spent)
     }
 
     /**
@@ -162,15 +223,16 @@ object PolicyRuntime {
         val c = PolicyCalls.classify(tool, args, mcp?.let { it.tool.readOnly to it.tool.destructive })
         val chain = origin.chain.mapNotNull { id -> ts?.get(id) }.map { PolicyCalls.permsOf(it, autopilot) }
         val allowed = c.commandKey?.let { k -> k in Agent.cmdGrants.chat(chatId) || k in Agent.cmdGrants.always() } ?: false
+        val perms = PolicyCalls.permsOf(bot, autopilot)
         val ctx = Policy.Ctx(
-            botId = botId, perms = PolicyCalls.permsOf(bot, autopilot), chain = chain, trigger = trigger, triggerText = origin.text,
+            botId = botId, perms = perms, chain = chain, trigger = trigger, triggerText = origin.text,
             confirmed = origin.confirmed, plan = Modes.plan || agentPlan, tainted = coroutineContext[ConfirmGate.Taint]?.source,
             standing = policies?.rule(tool, botId), grant = PolicyCalls.grantOf(bot, tool),
             mcp = mcp?.let { Policy.Mcp(it.override.orEmpty(), McpConfig.needsApproval(it.override, it.tool.risk, autopilot)) },
-            command = c.command, commandAllowed = allowed)
+            command = c.command, commandAllowed = allowed, spend = spendCheck(c.call.cls, args, botId, perms.currency))
         val scrubbed = SecretVault.scrub(args)
         return PolicyGate.Request(chatId, botId, bot?.name ?: botName(botId), jobId, tool, scrubbed.take(600), c.call, ctx, enforce = true,
-            argsFull = scrubbed.take(ARGS_FULL_MAX))
+            argsFull = scrubbed.take(ARGS_FULL_MAX), chain = origin.chain)
     }
 
     const val ARGS_FULL_MAX = 20_000
