@@ -2,7 +2,8 @@
 
 2026-11-17, owner: "change agent icons to these kinds of shapes, they look friendlier" (the A-team blobs with two eyes).
 - `BotOrb` now draws a friendly body with two slanted eyes and a top-left gloss instead of the ringed glass sphere: Orbit → blob, Tilt → rounded square, Steep → drop, Pure → pebble, Twin → cloud, Polar → leaf (`OrbGeometry.shape`). Face names and 0..5 indices are unchanged, so saved bots, A-team exports and Manager tools keep working. Pale colours get dark eyes.
-- Working: the eyes glance side to side (2.4 s) instead of the ring turning; Talking still breathes; Away, the status dot and reduced motion are unchanged. The Manager keeps the cobalt sphere with the ARGUS "A".
+- Working: the eyes glance side to side (2.4 s) instead of the ring turning; Talking still breathes; Away, the status dot and reduced motion are unchanged.
+- Owner: "yes Argus too please". The Manager (ARGUS, the lead) is a cobalt blob with eyes and its blue glow (`OrbGeometry.MANAGER_FACE`), no longer the sphere with the "A"; its eyes glance while it works.
 - Tests: OrbGeometryTest checks every face has a shape inside the box and the eye motion. Not built.
 
 ## Unreleased: the phone's Back steps back inside Settings

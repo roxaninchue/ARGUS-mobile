@@ -156,7 +156,8 @@ object OrbGeometry {
 
     // ---------------- Manager (04 §2.7: only the Manager uses cobalt) ----------------
 
-    /** The Manager's sphere: a ringless (Pure) cobalt orb with the ARGUS "A" inside and a blue glow. */
+    /** The Manager's body: a cobalt blob with eyes and a blue glow (was the ringless sphere with the "A" until 2026-11-17). */
+    val MANAGER_FACE = OrbFace.ORBIT
     fun managerColor(p: ArgusPalette): Long = p.brandCobalt
     const val MANAGER_MARK_FILL = 0.50f
     const val MANAGER_GLOW = 0x733B82F6L   // rgba(59,130,246,.45)

@@ -30,7 +30,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.ui.drawArgusMark
 
 /**
  * P0-SH-02: a bot's avatar (04 §2.7). Since 2026-11-17 a friendly body with two eyes instead of the ringed orb: [face]
@@ -54,16 +53,24 @@ fun BotOrb(face: OrbFace, color: Long, size: Dp = OrbSize.MD.dp, state: OrbState
     }
 }
 
-/** The Manager: the cobalt sphere with the ARGUS "A" (A-team's img/manager.png redrawn, not copied). */
+/**
+ * The Manager (ARGUS, the lead). Since 2026-11-17 (owner: "yes Argus too please") a friendly cobalt blob with two eyes,
+ * like the bots, with its blue glow; only the Manager uses cobalt (04 §2.7).
+ */
 @Composable
-fun ManagerOrb(size: Dp = OrbSize.MD.dp, state: OrbState = OrbState.IDLE, contentDescription: String? = "Manager", modifier: Modifier = Modifier) {
+fun ManagerOrb(size: Dp = OrbSize.MD.dp, state: OrbState = OrbState.IDLE, contentDescription: String? = "Manager", modifier: Modifier = Modifier,
+               reducedMotion: Boolean = com.blaze.assistant.ui.argus.settings.ArgusPrefs.reducedNow()) {
     val p = LocalArgusColors.current.palette
+    val look = if (state == OrbState.WORKING && !reducedMotion) {
+        val t = rememberInfiniteTransition(label = "manager")
+        val v by t.animateFloat(0f, OrbGeometry.EYE_LOOK_MS.toFloat(), infiniteRepeatable(tween(OrbGeometry.EYE_LOOK_MS, easing = LinearEasing), RepeatMode.Restart), label = "eyes")
+        v
+    } else 0f
     val sem = if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier
     Canvas(modifier.size(size).then(sem)) {
         val glowR = size.toPx() / 2f
         drawCircle(Brush.radialGradient(listOf(c(OrbGeometry.MANAGER_GLOW), Color.Transparent), center = center, radius = glowR), radius = glowR)
-        drawBotOrb(OrbFace.PURE, OrbGeometry.managerColor(p), 0f, 1f)
-        drawArgusMark(center, this.size.minDimension * (OrbGeometry.BODY_R * 2 / OrbGeometry.BOX), fill = OrbGeometry.MANAGER_MARK_FILL)
+        drawBotBody(OrbGeometry.MANAGER_FACE, OrbGeometry.managerColor(p), OrbGeometry.eyeShift(state, look.toLong(), reducedMotion), 1f)
         OrbGeometry.dotColor(state, p)?.let { drawStatusDot(it, OrbGeometry.dotDp(size.value).dp.toPx(), p) }
     }
 }
@@ -122,7 +129,7 @@ fun DrawScope.drawBotBody(face: OrbFace, color: Long, eyeShift: Float, bodyScale
     }
 }
 
-/** botSVG in a 64-unit box scaled to this canvas (the ringed orb; the Manager sphere still uses it, ringless). */
+/** botSVG in a 64-unit box scaled to this canvas (the old ringed orb, kept for reference shots). */
 fun DrawScope.drawBotOrb(face: OrbFace, color: Long, ringDeg: Float, bodyScale: Float) {
     val k = size.minDimension / OrbGeometry.BOX
     val col = OrbGeometry.colors(color)

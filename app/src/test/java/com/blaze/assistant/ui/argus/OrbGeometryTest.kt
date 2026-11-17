@@ -87,6 +87,13 @@ class OrbGeometryTest {
         for (e in OrbGeometry.EYES) assertTrue(e.x - e.w / 2 - OrbGeometry.EYE_LOOK_MAX > 14f && e.x + e.w / 2 + OrbGeometry.EYE_LOOK_MAX < 50f && e.y - e.h / 2 > 20f)
     }
 
+    @Test fun theManagerIsAFriendlyBlobToo() {
+        assertEquals(BotShape.BLOB, OrbGeometry.shape(OrbGeometry.MANAGER_FACE))
+        val src = java.io.File(listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }, "com/blaze/assistant/ui/argus/BotOrb.kt").readText()
+        val mgr = src.substringAfter("fun ManagerOrb(").substringBefore("\n}\n")
+        assertTrue(mgr.contains("drawBotBody(OrbGeometry.MANAGER_FACE") && !mgr.contains("drawArgusMark"))
+    }
+
     @Test fun eyesGlanceOnlyWhileWorking() {
         assertEquals(0f, OrbGeometry.eyeShift(OrbState.IDLE, 600), 0f)
         assertEquals(OrbGeometry.EYE_LOOK_MAX, OrbGeometry.eyeShift(OrbState.WORKING, OrbGeometry.EYE_LOOK_MS / 4L), 0.001f)
