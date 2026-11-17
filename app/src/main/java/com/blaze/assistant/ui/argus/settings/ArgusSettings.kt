@@ -12,7 +12,8 @@ import com.blaze.assistant.BrandName
  *
  * Where 04's labels would promise something the page doesn't hold yet, the row says what the page holds (Deviations
  * in overhaul.md): "Approvals & app lock" (Security: app lock, approvals, Bank mode), "Wallet & logins", no People row
- * until the People graph (P5).
+ * until the People graph (P5). No "Models & engines" row (2026-11-17): every message goes through ARGUS Cloud, so there
+ * is nothing to pick.
  */
 object ArgusSettings {
     data class Row(
@@ -43,7 +44,6 @@ object ArgusSettings {
         Group("Team", listOf(
             Row("apps", "Apps & connectors", "plug", "connections", listOf("accounts", "google", "github", "slack", "notion", "spotify", "connectors")),
             Row("skills", "Skills", "sparkles", "skills"),
-            Row("models", "Models & engines", "cpu", "ai", listOf("brain", "model", "cloud"), value = "Automatic"),
             Row("routines", "Scheduled tasks", "repeat", "routines", listOf("routines", "schedule", "reminders")),
         )),
         Group("You & phone", listOf(
@@ -80,7 +80,7 @@ object ArgusSettings {
     val NAME_ALIASES: Map<String, String> = mapOf(
         "approvals" to "privacy", "approval" to "privacy", "notifications" to "proactive", "proactivity" to "proactive",
         "wallet" to "secrets", "connectors" to "connections",
-        "engines" to "ai", "devices" to "sync",
+        "devices" to "sync",
         "handedness" to "look", "motion" to "look", "ground" to "look", "appearance" to "look", "knows" to "memory",
         "feedback" to "feedback", "ateam" to "backup", "a-team" to "backup",
     )

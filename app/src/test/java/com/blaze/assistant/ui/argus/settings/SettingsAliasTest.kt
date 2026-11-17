@@ -62,7 +62,7 @@ class SettingsAliasTest {
         assertEquals(listOf(null, "Team", "You & phone", "System"), ArgusSettings.GROUPS.map { it.title })
         assertEquals(ArgusSettings.ROWS.size, ArgusSettings.ROWS.map { it.id }.toSet().size)
         assertEquals("rows open different pages", ArgusSettings.ROWS.size, ArgusSettings.ROWS.map { it.page }.toSet().size)
-        assertEquals("Automatic", ArgusSettings.ROWS.first { it.page == "ai" }.value)
+        assertTrue("no Models & engines row: always ARGUS Cloud", ArgusSettings.ROWS.none { it.page == "ai" || it.id == "models" })
         assertTrue("no Team & bots or Jobs row", ArgusSettings.ROWS.none { it.page == "specialists" || it.page == "terminal" })
         for (r in ArgusSettings.ROWS) assertTrue("${r.icon} is a Lucide icon", r.icon in com.blaze.assistant.ui.argus.icons.LucidePaths.ICONS)
     }
@@ -80,7 +80,7 @@ class SettingsAliasTest {
         val cases = mapOf("voice" to "voice", "settings voice" to "voice", 
             "approvals" to "privacy", "appearance" to "look", "handedness" to "look", "reduced motion" to "look",
             "open notifications settings" to "proactive", "apps & connectors" to "connections",
-            "models and engines" to "ai", "sync & devices" to "sync", "wallet" to "secrets",
+            "sync & devices" to "sync", "wallet" to "secrets",
             "lock" to "privacy", "submit feedback" to "feedback")
         for ((said, page) in cases) assertEquals(said, page, settingsPageByName(said))
         assertEquals("", settingsPageByName("the"))

@@ -1,3 +1,9 @@
+## Unreleased: no Models & engines in Settings
+
+2026-11-17, owner: "remove models and engines from settings as we are already always using Argus cloud".
+- The You page's TEAM group no longer has the "Models & engines · Automatic" row, and "engines" no longer opens a page by name. The Brain page itself stays for its view links (`/views`, open_view).
+- Tests: SettingsAliasTest checks the row is gone. Not built.
+
 ## Unreleased: approvals only for what matters, Approve / Deny from the notification
 
 2026-11-17, owner: "for basically every browser tap I have to click an allow card … the user only has to approve or disapprove what matters, and a notification that shows why and what the model wants with approve or deny (if the user is not in the app)".
