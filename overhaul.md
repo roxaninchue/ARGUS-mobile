@@ -482,3 +482,431 @@ Each line is a place the work differs from this file or 06-team-plan, or a choic
 | 8 | ✓ P0-IL-02 repo hygiene, notices, ask for a-team LICENSE — done (daa6cbe0; A-team MIT grant recorded) | IL |
 | 9 | ✓ P0-IL-03 do-not-port register — done (60818dab) | IL |
 | 10 | ✓ P0-IL-01 release 0.52.4 — CI green (d35d26f7) | IL |
+
+---
+
+## P11 · Grok bot agents (xAI) + Hermes desktop agents — plan (Hark, 2026-11-17 for Argus/Finn)
+
+> Plan only; no code in this commit. Research came from primary sources on 2026-11-17: docs.x.ai fetched as Markdown, and the Hermes Agent source read at commit `40d1e95f` (2026-11-17). Where a fact is secondary or unverified, it says so.
+> Ticket IDs follow 06-team-plan §6 (`P11-<WS>-NN`; columns ID · Ticket · Files · Acceptance · Deps · Eff · Covers).
+> Fits these rules: the **HARNESS MUSTS** at the top of this file and docs/MODEL-FIRST.md (no keyword routers, no flat output cap, reasoning replay, no new guards); `Agent.kt` stays untouched, because runLoop is at the 64 KB method limit; pure Kotlin first, with JVM tests; every commit ends with `[skip ci]`; no Grok, Bot HQ or Hermes artwork (`do-not-port.md`).
+
+### P11.1 How Grok bot agents work (November 2026)
+
+xAI's docs now carry the **SpaceXSI** name. The API is still `https://api.x.ai/v1`, with an optional US-only endpoint at `https://us.api.x.ai/v1` (1.1× price). "Grok bot" means three different things today.
+
+**A. The xAI API "agent" stack (what we can build on).**
+- **Responses API is the main path.** `POST /v1/responses`, with SSE when `stream: true`. Chat Completions is listed as "Legacy / Deprecated". Responses stores state for 30 days, so a conversation can continue with `previous_response_id` (`store` defaults to true), and it adds `include: ["reasoning.encrypted_content"]`. `grok-4.7` *always* returns encrypted reasoning. Other request fields: `max_output_tokens`, `max_turns` (caps server-side tool turns per request), `parallel_tool_calls` (on by default), `tool_choice`, `reasoning.effort`, `text.format` (structured output), `prompt_cache_key` (sent as `x-grok-conv-id`), `safety_identifier` (since 2026-09-25), `guidelines` (custom moderation, since 2026-10-27), `service_tier` (`priority` costs 2×). `background` is marked **unsupported**. Other endpoints: compaction (`POST /v1/responses/compact`) and a WebSocket mode (`wss://api.x.ai/v1/responses`, `response.create`). Sources: [comparison](https://docs.x.ai/developers/model-capabilities/text/comparison), [REST reference](https://docs.x.ai/developers/rest-api-reference/inference/responses), [WebSocket mode](https://docs.x.ai/developers/advanced-api-usage/websocket-mode), [compaction](https://docs.x.ai/developers/advanced-api-usage/context-compaction).
+- **Agent Tools: server-side tools that xAI runs inside one request.** The model loops across several turns, often in parallel, and returns an answer plus typed items (`web_search_call`, `x_search_call`, `code_interpreter_call`, `file_search_call`, `mcp_call`). Billing counts only successful calls (`usage.server_side_tool_usage*`). Tool names: `web_search` (`allowed_domains` / `excluded_domains`, `enable_image_understanding`, `enable_image_search`); `x_search` (handle allow/deny lists, `from_date` / `to_date`, image and video understanding; keyword, semantic, user and thread-fetch modes); `code_execution` (alias `code_interpreter`, Python sandbox); `collections_search` (alias `file_search`, RAG over uploaded Collections); `attachment_search`; `image_generation`; `mcp`. Launched 2025-11-19 with Grok 4.1 Fast and generally available since; client and server tools can be mixed since 2025-11-07. Sources: [tools overview](https://docs.x.ai/developers/tools/overview), [launch post](https://x.ai/news/grok-4-1-fast), [tool usage details](https://docs.x.ai/developers/tools/tool-usage-details).
+- **Function calling** uses the flat Responses shape `{"type":"function","name","description","parameters"}`. The parameters root must be an object. When the model calls *our* function, the server stops its loop and returns `function_call` items (`call_id`, `name`, `arguments`). We continue with `{"type":"function_call_output","call_id","output"}`, either with `previous_response_id` or by resending the history. Each client round starts the `max_turns` count again ([function calling](https://docs.x.ai/developers/tools/function-calling), [mixing tools](https://docs.x.ai/developers/tools/advanced-usage)).
+- **Remote MCP** tool entry: `{"type":"mcp","server_url","server_label","server_description?","allowed_tools?","authorization?","headers?"}`. It works over Streamable HTTP or SSE only. xAI's servers make the MCP calls. **`require_approval` and `connector_id` are not supported**, so xAI can't pause before an MCP write ([remote MCP](https://docs.x.ai/developers/tools/remote-mcp)).
+- **Multi-agent ("Heavy").** Model `grok-4.20-multi-agent` (dated id `grok-4.20-multi-agent-0309`), beta. A *leader* agent synthesizes the work of **4 agents** (`reasoning.effort` low or medium) or **16 agents** (high or xhigh). Only the leader's tool calls and answer come back; sub-agent state is encrypted. It takes **no client-side function tools**: built-ins and remote MCP only. Responses API only, no `max_tokens`, and every agent's tokens and tools are billed ([multi-agent](https://docs.x.ai/developers/model-capabilities/text/multi-agent)).
+- **Models and prices** per 1M tokens, input / cached / output ([models](https://docs.x.ai/developers/models), [pricing](https://docs.x.ai/developers/pricing)):
+
+| Model | Context | Price | Notes |
+|---|---|---|---|
+| `grok-4.7` (2026-09-21) | 500k | $2 / $0.50 / $6; ≥200k prompt: $4 / $1 / $12 | Effort low / medium / high (default) / xhigh. Text and image in, text out. Knowledge cutoff May 2026. |
+| `grok-4.6`, `grok-4.5` | 500k | Same tier | |
+| `grok-4.3`, `grok-4.20-0309-reasoning`, `grok-4.20-0309-non-reasoning`, `grok-4.20-multi-agent-0309` | 1M | $1.25 / $0.20 / $2.50 | |
+| `grok-build-0.1` (coding) | 256k | $1 / $0.20 / $2 | |
+
+  - Batch: −20%. Priority: 2×. US endpoint: 1.1×.
+  - Every response carries **`usage.cost_in_usd_ticks`** (1 USD = 10¹⁰ ticks) ([cost tracking](https://docs.x.ai/developers/cost-tracking)).
+- **Tool prices:**
+
+| Tool | Price |
+|---|---|
+| `web_search`, `code_execution`, `attachment_search` | $5 per 1k calls |
+| `x_search` | $5 per 1k posts and $10 per 1k profiles fetched (per item since 2026-09-21) |
+| `collections_search` | $2.50 per 1k calls |
+| Remote MCP, `view_image`, `view_x_video` | Tokens only |
+| Collections storage | $0.10 / GiB / day |
+| A pre-generation usage-guideline violation | $0.05 fee |
+
+- **Rate limits**, per team tier. Tiers come from cumulative spend since 2026-01-01: T0 $0, T1 $50, T2 $250, T3 $1k, T4 $5k.
+
+| Model | T0 limit |
+|---|---|
+| `grok-4.7` | 150 RPS / 50M TPM |
+| `grok-4.20-multi-agent` | 9 RPS / 2.5M TPM |
+| `grok-voice-3.0` | 10 concurrent sessions |
+
+  - Over the limit returns 429 → back off exponentially ([rate limits](https://docs.x.ai/developers/rate-limits)).
+- **Structured outputs:** JSON schema, `strict`. Structured output *with tools* works on the Grok 4 family. **Streaming** is SSE on every model.
+- **Data and auth.** Auth is a Bearer API key (`xai-…`). Inputs and outputs are kept **30 days**, encrypted, for abuse audits. xAI doesn't train on them without permission. Teams can opt into **ZDR**, which disables stateful Responses (`previous_response_id`), Files, Collections, Batch, deferred completions and voice history ([security FAQ](https://docs.x.ai/developers/faq/security)).
+- **SDKs:** the native xAI SDK (gRPC), the OpenAI SDK (`base_url=https://api.x.ai/v1`) and the Vercel AI SDK. Anthropic-SDK compatibility is **not in the current docs**, so treat it as absent.
+- **Voice (realtime agent).** Socket: `wss://api.x.ai/v1/realtime?model=grok-voice-latest`. Since 2026-10-14, `grok-voice-latest` points to `grok-voice-3.0`; 2.0 is deprecated.
+  - Set up with `session.update`: `voice`, `instructions`, `turn_detection: {type:"server_vad"}`.
+  - Audio: `audio/pcm` at a configurable rate (24 kHz in the examples), or `pcmu`, `pcma`, `opus`. PCM can go as binary frames.
+  - Tools: `function`, `web_search`, `x_search`, `file_search`, `mcp`. A function call arrives as `response.function_call_arguments.done`; we answer with `conversation.item.create` carrying a `function_call_output`.
+  - Browser and mobile clients use **ephemeral tokens**: `POST /v1/realtime/client_secrets` with `{"expires_after":{"seconds":300}}`.
+  - Price: $0.08 a minute plus $0.004 per text input. Speech-to-text costs $0.10 an hour (REST) or $0.20 (streaming); text-to-speech costs $15 per 1M characters. Custom voices are available ([speech to speech](https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech), [ephemeral tokens](https://docs.x.ai/developers/model-capabilities/audio/ephemeral-tokens)).
+
+**B. "Grok Bot", xAI's product** (launched 2026-08-11; runs on the Cursor account stack; desktop, iOS and Android). Sources: [overview](https://docs.x.ai/grok-bot/overview), [how it works](https://docs.x.ai/grok-bot/how-grok-bot-works).
+- **Bots are durable teammates on one shared, persistent cloud computer** with a browser, filesystem and terminal. Each bot has its own screen; you can watch it and use *Take control*.
+- **Memory:** each bot has its own memory (rules, preferences, a dated work log). A few user facts, such as name and time zone, are shared by all bots. Logins and cards stay in a **Vault** and are filled into the page, never shown to the bot. 1Password and Secure Forms cover the rest ([bots](https://docs.x.ai/grok-bot/bots)).
+- **Team shape:** a **primary Bot** coordinates. Bots message each other to hand off work. Group chats use @mentions, with one owner per step ([chat](https://docs.x.ai/grok-bot/chat-and-collaboration)).
+- **Skills and routines** ([skills & routines](https://docs.x.ai/grok-bot/skills-routines-and-automations)):
+  - A **skill** is reusable instructions, which can be taught by demonstration.
+  - A **routine** runs on a schedule or on a trigger: Slack, GitHub, Linear, Sentry, PagerDuty, email to the bot's address, or a webhook with a Bearer key.
+- **Approvals:** **Auto Review**, a model-based check, sits before every action, plus **Custom Rules** (up to 20 *Ask first* and 20 *Allow automatically*; *Ask first* wins). Approval cards offer *Always allow*. **Only the user's own messages count as instructions**; page text is not an instruction ([approvals](https://docs.x.ai/grok-bot/approvals-security-and-privacy)).
+- **Connections:** connectors plus custom MCP / API plugins.
+- **Surfaces:** desktop, mobile, Slack (team bots), email, and **X**.
+  - On X you tag **@bot** in a post; @bot replies only with a confirmation and the work stays in the app. Not offered in the UK, EU, EEA or Australia ([tag on X](https://docs.x.ai/grok-bot/tag-on-x)).
+  - Since 2026-08-29 there is also an X plugin: search, timeline, mentions, bookmarks ([news](https://x.ai/news/grok-bot-and-x)).
+
+**C. Grok in consumer surfaces.**
+- **@grok on X** is the public mention-reply bot. Replies are selective, based on relevance and capacity, under a published short-reply system prompt. This rests on secondary sources: the official @grok post of 2026-08-30 and xai-org/grok-prompts.
+- **Grok Automations** (2026-07-16, formerly "Tasks") are scheduled or email-triggered jobs on grok.com and in the apps. They have **no API** ([news](https://x.ai/news/grok-automations)).
+- **Companions** (Ani, etc.) were retired 2026-09-01 (secondary sources).
+- **Telegram:** no official Grok Bot connector. Third-party "Grok bots" are BotFather bots that call the xAI API, or community bridges.
+
+**What ARGUS takes from this:**
+- ARGUS already has the *product* shape of Grok Bot (bots as chats, a Manager as the primary bot, `send_to_bot`, Vault and Secure Forms, approval cards, routines, a computer you can watch and take over). That came through Bot HQ.
+- What's missing is the **xAI engine side**: Responses protocol, server-side tools, Heavy multi-agent, Grok Voice, and xAI-side cost metering.
+- One safety idea is worth adopting from Grok Bot: *only the user's messages are instructions*. It maps onto `ConfirmGate` taint.
+
+### P11.2 How Hermes desktop agents work (NousResearch/hermes-agent @ `40d1e95f`, 2026-11-17)
+
+**Licence: MIT** (© 2025 Nous Research). Porting ideas and code is allowed with the notice. Add it to THIRD_PARTY_NOTICES, next to Bot HQ's MIT entry, before any code is ported. We port no artwork or branding.
+
+Hermes is one Python agent core with many surfaces: CLI, TUI, the Electron **Hermes Desktop** (`apps/desktop/`), a web dashboard, ACP editors, a messaging gateway with 25+ platform plugins, and an OpenAI-compatible API server. It also has a signed Termux APT package for aarch64 Android. Module by module:
+
+| Area | Where | How it works | ARGUS takeaway |
+|---|---|---|---|
+| Agent loop | `run_agent.py` (`AIAgent` facade), `agent/conversation_loop.py::run_conversation`, phases in `agent/turn_*.py` (preflight, request assembly, API call, tool round, overflow, truncation, recovery, stop gates, finalizer) | A plain synchronous loop: call the model → run its tool calls → append the results → repeat, until there are no tool calls, `max_iterations` (500, shared with subagents) runs out, or the iteration budget ends. One grace call at the end. Messages are in OpenAI shape, with reasoning kept in `assistant_msg["reasoning"]`. Agent-level tools (`todo`, `memory`) are handled through a table (`agent/inline_tool_executors.py`). | This is the "real harness" HARNESS MUSTS #4 asks for. It's the reference for the **Plain harness toggle**, as much as opencode is. Copy the phase split into helpers instead of growing `runLoop`. |
+| Prompt-cache invariant | `agent/AGENTS.md` "Message-flow invariants", `tests/ci/test_prompt_surface.py` | The system prompt and `tools[]` are **byte-stable for the whole conversation**. Mid-chat injections ride a user message or a tool result. Strict role alternation; `/steer` is a user row after a tool result. Compression is the only sanctioned break. A CI snapshot guards the prompt surface. | Exactly what HARNESS MUSTS #3 and #6 need. Port it as a `PromptSurface` snapshot test, plus a rule that ToolPick may not change a chat's tool set mid-chat. Matters for Grok too: xAI bills cached input at a 75% discount. |
+| Provider layer | `providers/` (`ProviderProfile`), `plugins/model-providers/xai/__init__.py` (`api_mode="codex_responses"`, `base_url=https://api.x.ai/v1`, `XAI_API_KEY`), `agent/codex_responses_adapter.py`, `agent/anthropic_adapter.py` | Each provider declares its wire protocol (`api_mode`): Chat Completions, Responses or Anthropic. The adapters convert at the boundary; the loop stays in OpenAI shape. | **Hermes runs xAI over Responses.** That confirms the P11-API-01 design: a `Provider.protocol` field plus a boundary adapter. |
+| Tools | `tools/registry.py` (registration on import, `check_fn` TTL-cached availability, JSON-string results, multimodal envelope), `toolsets.py` (`TOOLSETS`, `_HERMES_CORE_TOOLS`), `model_tools.py::handle_function_call` | A "footprint ladder": extend existing code → CLI + skill → service-gated tool → plugin → MCP → new core tool. Tool descriptions must never name tools from other toolsets. | We already have ToolRegistry and ActionClass. Adopt the **no cross-toolset names in descriptions** rule (a ToolRegistryTest case), and treat new core tools as a last resort. |
+| Approvals | `tools/approval*.py` (shell-token parsing, floors, YOLO, `approval_smart.py` = an auxiliary-LLM risk review with the command wrapped as untrusted input) | Run approvals offer choices `once` / `session` / `always` / `deny`; rooms get only `once` / `deny` (`gateway/platforms/api_server_runs.py::_handle_run_approval`). | Map these onto our Cards. Never offer `always` for SPEND / DELETE / CREDENTIAL / COMPUTE_PAID. A smart reviewer is optional: no new guard unless the owner asks (HARNESS MUSTS #4). |
+| Memory | `tools/memory_tool.py` + `memory_tool_store.py` | `MEMORY.md` (agent notes, 2,200 characters by default) and `USER.md` (profile, 1,375). A **frozen snapshot** enters the system prompt at session start; writes mid-session go to disk but never change the prompt. One `memory` tool with add / patch / remove or batched operations. Memory providers are plugins; Honcho handles user modelling. | ARGUS already projects SOUL.md / MEMORY.md / USER.md (05, P3). Adopt the frozen snapshot at session start (cache-safe) and the size budgets. |
+| Session search | `hermes_state_fts.py`, `session_search` toolset | SQLite FTS5 over past sessions, with LLM-summarized recall. | `search_past_chats` exists. FTS5 in blaze.db is a cheap upgrade (side table only; never the `memories` schema). |
+| Learning loop | `agent/background_review.py`, `agent/curator.py` + `curator_backup.py`, `skills/AGENTS.md` | After a turn, a **forked agent** replays the snapshot with a tool whitelist and asks "save or update any memory or skill?", writing to the stores while the live chat and its cache stay untouched. The **curator** reviews skills when idle (interval, stale days), with archive, restore, pin and a tar.gz backup before each run. SKILL.md frontmatter: `name`, `description` (≤ 60 characters), `version`, `platforms`, `metadata.hermes.*`. Compatible with agentskills.io. | P3 auto-learn should run as this kind of **fork after the turn**, never inside the turn. Accept Hermes / agentskills SKILL.md files in skill import. |
+| Delegation | `tools/delegate_tool*.py`, `agent/delegation_provider.py` | `delegate_task` runs one goal or a batch in isolated context. Roles: `leaf` (no delegate, clarify, memory, send_message or cronjob) and `orchestrator` (gated, bounded by `max_spawn_depth`). `background=true` returns an id; the result comes back through a completion queue, and units can report together by `group`. Docs and code differ on defaults: concurrency 3 in the docs, 10 in `delegate_tool_config.py`; depth 2 in the docs, `MAX_DEPTH = 1` in the code. | P5 Workers (P5-TM-03) and TeamBus already cap hops at 3. Take the **leaf / orchestrator role split** and **grouped background completions** for Jobs. |
+| Scheduling | `cron/jobs.py`, `cron/scheduler.py`, `cron/occurrences.py`, `cron/jobs_time.py` | The `cronjob` tool and the CLI. Schedules: durations, "every" phrases, 5-field cron, ISO one-shots. Per job: skills, model pin, pre-run `script`, `context_from` chaining, `timezone` pin, `grace_minutes`. **Invariants:** `next_run_at` advances before dispatch (at most once), a `pending_slot` stamp plus a ledger prevent double fires, catch-up = half the period (clamped 2 min–2 h), a 600 s idle watchdog, and memory is skipped in cron sessions. | Port the invariants to `routine/Routines.kt` and P6 routines: at-most-once, timezone pin, catch-up window, idle watchdog. CheckIns' "a skipped slot is not made up" stays as owner policy. |
+| Work queue | `hermes_cli/kanban*.py`, `tools/kanban_tools.py` | A durable SQLite board shared by profiles, with a dispatcher loop (60 s) that claims, promotes and spawns workers. | Same role as the ARGUS JobQueue; nothing new to port. |
+| Messaging gateways | `gateway/run.py` + `gateway/platforms/base.py`, adapters in `plugins/platforms/` (telegram, discord, slack, whatsapp, signal, matrix, email, sms, teams, …) | One process serves many platforms and profiles. It has two busy guards, so approval and stop commands bypass the queue, plus a prefix-stable streaming contract. | ARGUS shouldn't host bot gateways on a phone. **A user's Hermes host reaches Telegram, Discord and other platforms for free**: the cheapest honest answer to "Telegram bot" (open decision G9). |
+| API server | `gateway/platforms/api_server*.py` (default port **8642**, `API_SERVER_KEY`) | `/v1/chat/completions`, `/v1/responses`, `/v1/models`, `/v1/capabilities`, **`/v1/runs`** (202 + `run_id`), `/v1/runs/{id}/events` (SSE: `run.*`, `message.delta`, `tool.started / progress / completed / failed`, `approval.request / responded`), `/v1/runs/{id}/approval` (`{"choice": "once / session / always / deny"}`), `/clarify`, `/steer`, `/stop`; per-profile prefix `/p/<profile>/`. | This is the clean engine seam: `BotEngine.turn / steer / cancel` maps 1:1 onto runs / steer / stop, and approval events become ARGUS cards. It replaces the `/v1/responses`-only design in P10-AG-01. |
+| Desktop app and Bot Mode | `apps/desktop/` (Electron; renderer, Electron and backend each own their own state), `apps/desktop/src/plugins/hermes-bots/` | **One bot = one profile = one canonical forever-chat**, found by its title ("Bot Chat"), never by a stored session-id pointer. Hermes lost history five times through pointer bugs before settling on this. Group chats follow a generated contract. | ARGUS D1 (one thread per bot) is the same idea. Adopt the lesson: a bot's thread is found by its natural key (bot id + kind), never by a cached session pointer. |
+| Computer use | `tools/computer_use/` (`cua-driver`; one `computer_use` tool, actions capture / click / drag / scroll / type / key / set_value / list_apps / focus_app; capture modes `som` (numbered overlays + accessibility tree), `vision`, `ax`) | Any tool-capable model can drive it. Capture is free; actions need approval unless auto-approved. | The phone tools already work this way (read_screen / tap). Take the **SoM numbered-element capture** for `look_at_screen` / `phone_act`. |
+| Bot Desktop | `tools/bot_desktop/` (`runtime.py` Xvnc + Xfce per profile, `lease.py`, `rfb_filter.py`) | A headless desktop per profile, watched over RFB. The **lease** decides whether the agent or exactly one human drives; while a human holds it, even screenshots are refused (they may be typing a password). An epoch bumps on every handover. | P7 Computers (take-over) and the browser glass panel: port the lease (pure Kotlin, epoch, refuse while the human holds). |
+| Terminal backends | `tools/environments/` (local, docker, ssh, modal, daytona, vercel) | Pluggable sandboxes behind one env builder. | P7 cloud desks: same idea as our leases. |
+
+### P11.3 Goals and non-goals
+**Goals**
+1. A user with an xAI key can make any bot a **Grok bot**. It runs on Grok over the Responses API, with xAI's server-side tools (web, X, code, MCP, collections) when the user allows them, and keeps every ARGUS local tool (phone, browser, terminal, memory) behind ARGUS's own policy cards.
+2. **Heavy research** as a job: a Grok multi-agent run, costed up front, that reports back with sources.
+3. **Grok Voice** as the realtime backend of the planned voice calls (P8-VC-01), with ephemeral tokens.
+4. **Real cost control**: per-bot and total budgets read from xAI's own `cost_in_usd_ticks`, with caps checked before a call goes out.
+5. **Hermes bots**: a bot can run on a user's Hermes host (PC, VPS, or opt-in inside ARGUS's Ubuntu workspace) through the `/v1/runs` API. Hermes approvals become ARGUS cards.
+6. **Port Hermes's proven harness patterns** into the ARGUS runtime: a byte-stable prompt surface, a frozen memory snapshot, a learning fork after the turn, cron invariants, the computer lease, and SoM capture.
+
+**Non-goals (this phase)**
+- Copying Grok Bot's cloud computer: ARGUS's computers are P7.
+- Posting to X as the user, or running a public @mention bot. See G8.
+- Hosting Telegram, Discord or other bot gateways on the phone. Covered through a Hermes host instead; see G9.
+- Grok Companions: retired upstream.
+- Grok Automations: no API exists.
+- Anthropic-SDK compatibility on xAI.
+- The xAI Batch API: routines are small and latency matters.
+- Porting Hermes's Electron app or its Python code wholesale. We port patterns and Kotlin re-implementations under MIT notice.
+- Any new keyword router or guard (MODEL-FIRST).
+
+### P11.4 Architecture
+```
+ agent/LlmClient.call ── Provider.protocol ──┬─ CHAT (today, every provider)            /chat/completions
+                                              └─ RESPONSES (xai, flag xai_responses) ──▶ agent/xai/XaiClient ──▶ POST api.x.ai/v1/responses (SSE)
+                                                   XaiWire (pure: messages⇄input items, tools, reasoning items, usage, cost)
+ team/  Bot.engine.xai: XaiSpec? (server tools, budget, heavy)      TeamBus.send_to_bot unchanged · ThreadBudget charges cost
+ agent/engines/ LocalEngine (Grok bots run here: phone loop + xAI model)   HermesEngine (P11-AG-04: /v1/runs SSE ⇄ Rows/Cards)
+ policy/ ToolRegistry += grok_research, x_search, xai_collection_add, hermes_* ; XaiToolPolicy (server tools = turn-level COMPUTE_PAID grant)
+ voice/xai/ XaiRealtime (wss realtime, ephemeral secret, function tools = voice two-agent tools)
+ agent/xai/ XaiLedger (ticks → spend per bot/day/month; caps; 429 backoff by tier)        ui/argus  Engine tab · cost chip · cloud-tool rows · Heavy card
+```
+
+**1. Protocol adapter (P11-API-01).**
+- `Provider` gains `val protocol: Protocol = Protocol.CHAT`. For `xai`, set `RESPONSES` when the flag `xai_responses` is on (default off until QA).
+- `LlmClient.call` hands off to `XaiClient.call(t, messages, tools, onText, onThink, …)` and gets back the **same OpenAI-shape assistant `JSONObject`**, so `runLoop`, ToolCalls, ToolScheduler and CutReply don't change.
+- Pure `agent/xai/XaiWire.kt`:
+
+```kotlin
+object XaiWire {
+  fun request(model: String, messages: JSONArray, tools: JSONArray?, server: List<ServerTool>, effort: String?,
+              maxOut: Int, stream: Boolean, cacheKey: String, safetyId: String, maxTurns: Int?): JSONObject
+  // messages → input: system/user/assistant {role,content}; assistant.tool_calls → {"type":"function_call","call_id","name","arguments"};
+  // role:tool → {"type":"function_call_output","call_id","output"}; image parts → input_image; kept reasoning items (private key
+  // "_xai_reasoning": [{"type":"reasoning","encrypted_content":…}]) are replayed in order within the task (ReasoningReplay rule, cap 12K chars/step).
+  // chat tools {"type":"function","function":{name,description,parameters}} → flat {"type":"function",name,description,parameters}
+  fun reply(resp: JSONObject): Reply   // output items → content, tool_calls[], serverCalls[], reasoning[], usage, costTicks, finish
+  data class Reply(val msg: JSONObject /* OpenAI shape */, val server: List<ServerCall>, val costTicks: Long, val finish: String)
+}
+```
+
+- Decided defaults:
+  - `store:false`, with no `previous_response_id`. ARGUS keeps the history, which works under ZDR and matches the loop.
+  - `prompt_cache_key` = the thread id, for cached-input discounts.
+  - `max_output_tokens` from `OutputLimit` (never a flat cap).
+  - `safety_identifier` = a SHA-256 of the install id.
+  - `parallel_tool_calls` left at its default.
+  - `status:"incomplete"` + `max_output_tokens` → finish `"length"`, so CutReply's existing path applies.
+- `XaiSse.kt` (pure) parses Responses SSE events into text, thinking, function-call deltas and output items. Event names are OpenResponses-standard (`response.output_text.delta`, `response.function_call_arguments.delta`, `response.output_item.done`, `response.completed`, `error`). **Verify them against a captured stream before merge**: the xAI reference documents the object, not the event list.
+- `keyOwner` learns the `xai-` prefix. The `Usage` price table reads `XaiModels`.
+
+**2. Grok bots in the team (P11-TM-01, P11-AG-02).**
+- A Grok bot is an ordinary `Bot` with `engine.model.pinned = "xai:<model>"` and a new optional, append-only field `EngineSpec.xai: XaiSpec? = null`:
+
+```kotlin
+data class XaiSpec(val serverTools: Set<String> = emptySet(),  // "web_search","x_search","code_execution","collections_search"
+                   val mcp: List<String> = emptyList(),         // McpConfig server ids passed as server-side mcp (READ tools only)
+                   val collections: List<String> = emptyList(), val effort: String = "high",
+                   val dailyCapMicros: Long = 1_000_000, val maxTurns: Int = 6, val heavy: Boolean = false)
+```
+
+- TeamJson reads a missing field as null; no team.db schema change.
+- **Server tool vs local tool.** When `web_search` is on as a server tool, the bot's local `web_search` / `fetch_page` are left out of *that bot's* tool list. This is structural, decided per bot when the chat starts, never by reading the message (MODEL-FIRST), and it doesn't change mid-chat (Hermes cache invariant). Phone, browser, terminal, memory and card tools stay local.
+- **TeamBus.** `send_to_bot` to or from a Grok bot doesn't change. `ThreadBudget.charge` adds the turn's xAI cost to the thread's spend line. The hop cap of 3 holds.
+- **Routing.** Grok bots appear in @mention like any bot. "@grok" resolves only to a bot the user *named* Grok (no keyword route).
+- **Domains** (P5-AG-01 is still on branch `overhaul/p5-ag-01`). No domain defaults to Grok. The setup picker *offers* "Run on Grok" for Scout and Pulse when a key exists (G11). The private domains Pulse, Ledger and Clerk need an extra per-bot "send this bot's memory to xAI" consent.
+
+**3. Heavy mode (P11-AG-03).** A local tool, `grok_research(question, depth: "4"|"16", tools: ["web","x","code"], focus?)`.
+- It runs as a **Job** with a progress row and calls `grok-4.20-multi-agent` with built-in tools only, with effort low (4 agents) or high (16).
+- It returns the leader's answer plus a citation list.
+- Before the run, the card shows an estimate: tokens × price × agents, plus `maxTurns` × tool price. It always needs a COMPUTE_PAID card unless the bot's session grant covers it and the estimate fits the remaining budget.
+- Any bot can call it, not only Grok bots, provided an xAI key exists.
+
+**4. Remote MCP through xAI (P11-CN-01).** For a Grok bot, servers in `McpConfig` can ride as server-side `mcp` entries:
+- **only** with `allowed_tools` = the tools Mcp marks READ-only;
+- with `authorization` resolved from a vault handle when the request is built (never stored in the bot);
+- every write or destructive tool stays client-side through `connect/Mcp.kt` as a normal function tool, so ARGUS's cards still apply.
+
+Reason: xAI does not support `require_approval`.
+
+**5. X search (P11-CN-02; carries out P8-CN-01's on-device path).**
+- `x_search(query, handles?, from?, to?, images?, video?)` as a local tool for *any* bot. It makes a one-shot Responses call with only `x_search`, a small model (`grok-4.3`) and `max_turns` 2, then returns posts and links as source rows.
+- Without a key, the honest fallback that P8-CN-01 already describes stays (`site:x.com` web search, labelled).
+
+**6. Voice (P11-VC-01, under P8-VC-01).**
+- `voice/xai/XaiRealtime.kt` is the third backend after on-device and Gemini.
+- Flow: mint an ephemeral secret (`POST /v1/realtime/client_secrets`, 300 s) with the user's key, open the WS with the secret, then `session.update` (voice, instructions from the bot's SOUL, `server_vad`, `audio/pcm` 24 kHz in and out).
+- Tools: P8-VC-01's two-agent tools (`send_task`, `peek_activity`, `recall_text_messages`, `search_conversations`, `end_the_call`) as `function` tools, and server-side `web_search` / `x_search` when the bot allows them.
+- Barge-in follows the server VAD events. Cost runs on a per-minute meter.
+- Needs a WebSocket client: **add OkHttp** (Apache-2.0; G10). The app has none today, and Android has no `java.net.http`.
+
+**7. Scheduled Grok work (P11-PR-01).**
+- Grok Automations have no API, so Grok bots use ARGUS routines (`routine/Routines.kt` today, P6 routines per bot).
+- New templates: "X watch" (an Overheard-style digest: search handles and terms, post a digest only when something clears the bar, never post) and "Morning research". Results go into the CheckIns digest, not their own notifications (NEXT UP §4).
+
+**8. Hermes engine (P11-AG-04; supersedes the transport in P10-AG-01).**
+- `agent/engines/HermesEngine.kt` implements `BotEngine` against a Hermes API server:
+
+| BotEngine | Hermes API |
+|---|---|
+| `turn` | `POST {base}/v1/runs` (`{"input", "session_id": bot.threadId, "instructions"?}`), then `GET /v1/runs/{id}/events` (SSE) |
+| `steer` | `POST /steer` |
+| `cancel` | `POST /stop` |
+
+- Events become Rows:
+
+| Hermes event | ARGUS row |
+|---|---|
+| `message.delta` / `message.started` | message row (seq / updatedSeq) |
+| `tool.started` / `progress` / `completed` / `failed` | tool-call row with a "ran on Hermes" badge |
+| `approval.request` | **policy card**: the ActionClass is set by `HermesTools.classOf(tool, args)` (terminal → CommandPolicy; file write → WRITE_REMOTE, since the host isn't the phone; send_message → SEND), and the answer goes back on `/approval` as `once` / `session` / `deny` (`always` only for READ / WRITE_LOCAL, never for guarded classes) |
+| `clarify` | question card |
+
+- **Where the host lives:** `EngineSpec.hermesUrl` + `hermesSecretRef` (the vault id of `API_SERVER_KEY`, already in Models.kt). Base: a PC or VPS through the Desktop link or Tailscale (UrlSafety: https, or http only to LAN / Tailscale), or `http://127.0.0.1:8642` inside the Ubuntu workspace (P11-CP-01).
+- Capabilities come from `/v1/capabilities`. A profile prefix `/p/<profile>/` maps to one bot.
+- The ARGUS phone tools are *not* exposed to Hermes in this phase. That needs P8-API-03's MCP relay, as P10 planned.
+
+**9. Hermes patterns ported into ARGUS's own runtime (P11-AG-05, P11-PR-02, P11-SF-04, P11-TM-02).** Pure Kotlin re-implementations with tests:
+- `PromptSurface` snapshot plus a per-chat **frozen tool set**.
+- `MemorySnapshot`: frozen at chat start, writes go to disk.
+- `LearnFork`: a review run after the turn in a BACKGROUND lane with a tool whitelist (memory_save / skill write only) that never touches the live chat.
+- A `SkillCurator` lifecycle: stale → archive, pin, restore.
+- SKILL.md frontmatter import.
+- Cron invariants in Routines.
+- `ScreenLease` (agent / human, epoch, refuse while the human holds) for the browser glass panel and P7 take-over.
+- SoM capture for `look_at_screen`.
+
+### P11.5 ActionClass for every new tool (into `policy/ActionClass.kt` ToolRegistry; ToolRegistryTest stays green)
+| Tool / item | Class | Why / rule |
+|---|---|---|
+| `grok_research` | COMPUTE_PAID | Paid multi-agent run. A card with an estimate, or the bot's *session* grant within budget. Never a standing "Always" (`ActionClasses.noStanding`). |
+| `x_search` (local) | READ, priced → COMPUTE_PAID when the per-day xAI budget is ≤ 20% left | Read-only; cost is metered. |
+| `xai_collection_add` (upload files to a Collection) | WRITE_REMOTE | Data leaves the phone and storage is paid. Always a card that names the files. |
+| `xai_collection_remove` | DELETE | |
+| Server tool `web_search` / `x_search` / `collections_search` on a Grok turn | Turn-level **COMPUTE_PAID grant** (`XaiToolPolicy.turnGrant`) | xAI runs these inside one request, so ARGUS can't card each call. Turning them on for a bot is the approval, scoped *per session* (allowed for COMPUTE_PAID) and bounded by the bot's daily cap and `max_turns`. Results **taint** the turn (`TurnInput.untrusted = "xai:web"`), so a later SEND / SPEND / DELETE always asks (Grok Bot's "only your messages are instructions"). |
+| Server tool `code_execution` | Same grant, COMPUTE_PAID | Runs in xAI's sandbox: no effect on the phone. The data sent is already in the prompt. |
+| Server `mcp` entries | READ only (`allowed_tools` filter) | Write tools never go server-side (no `require_approval`). |
+| Server `image_generation` | Not enabled; ARGUS keeps `generate_image` (WRITE_LOCAL) | Avoids a second paid path. |
+| `hermes_run` (internal: a turn on a Hermes bot) | WRITE_LOCAL (start) | The work inside is carded through Hermes approvals. |
+| Hermes `approval.request` | Classified by `HermesTools.classOf` | Terminal / exec → `CommandPolicy.actionClass`; host file writes → WRITE_REMOTE; `send_message` / messaging → SEND; `computer_use` actions → PHYSICAL; browser actions on a host → WRITE_REMOTE. `always` is never sent for SEND / SPEND / DELETE / CREDENTIAL / COMPUTE_PAID. |
+| `hermes_host_setup` (install Hermes in the Ubuntu workspace) | SETTINGS | About 1 GB on disk, a network download; one card. |
+| Voice: `send_task`, `peek_activity`, … | As P8-VC-01 declares | Money and delete approvals are never voice-only. |
+
+### P11.6 Security, keys and data
+- **Keys.**
+  - The xAI key stays where it is today: `KeyRing` / `Settings.secret("key_xai")`, sealed with the Android Keystore AES-GCM key (`Secrets.encrypt`) and synced only through the existing KeySync.
+  - The Hermes `API_SERVER_KEY` is a `SecretVault` entry, referenced by `hermesSecretRef`.
+  - Neither ever appears in a prompt, a Row, logs or audit; SecretLeakTest covers the new files.
+  - Voice uses **ephemeral** secrets (300 s), so the long-lived key never rides the socket.
+- **Gateway.** By default **BYO key, direct**: no Blaze Gateway in the path (HARNESS MUSTS #5). A gateway-held xAI path is G2.
+- **Data disclosure.**
+  - The first time a bot is switched to Grok, a one-screen notice (shown once per bot) explains: prompts and the bot's memory go to xAI; xAI keeps them 30 days, encrypted, for abuse audits; no training without permission; ZDR is optional.
+  - **Private domain bots** (Pulse, Ledger, Clerk) need an extra toggle before their memory may go to xAI.
+  - A team with ZDR on is supported by default (`store:false`). Collections are disabled when the user marks "my xAI team uses ZDR".
+- **Prompt injection.** Every server-side result taints the turn (above). Hermes runs are tainted as `untrusted = "hermes:<host>"`, since their tools touched outside content.
+- **Remote MCP** goes server-side only with READ tools. Authorization tokens are resolved from the vault per request.
+- **Hermes host safety.**
+  - http only to localhost, LAN or Tailscale (UrlSafety); the API key is required.
+  - "Hermes inside ARGUS" binds to 127.0.0.1 only.
+  - The lease rule: while a human holds the screen, no agent screenshots.
+- **safety_identifier** = a hashed install id, so xAI attributes any policy hit to the user, not to the key.
+
+### P11.7 Cost controls
+- `agent/xai/XaiLedger.kt` (pure + a prefs store) adds up `cost_in_usd_ticks` per bot, per day and per month, in micro-USD.
+  - Defaults (G5): $1 per bot per day and $10 per month in total; Heavy needs a card every time.
+  - **Checked before the call:** `estimateMicros(model, promptTokens, maxOut, serverTools, maxTurns)`. If it's over the remaining cap, a COMPUTE_PAID card offers "raise today's cap by $X" or "run without server tools".
+  - After the call, the real ticks replace the estimate.
+  - x_search is capped by item count: `maxTurns` ≤ 2 for the local tool, and a daily post ceiling.
+- **Rate limits:** `Budget` meters are seeded with the published T0 limits per model. On 429: backoff 1-2-4-8-16 s, honour `Retry-After`, then a plain message. No silent switch to another provider; the user picked Grok.
+- **Visibility:**
+  - Settings › Models & engines › xAI shows month spend, per-bot spend, caps, tier hint and region.
+  - The thread's WorkChip shows "· $0.004" when the turn used xAI.
+  - The **cost chip** on a Grok bot's header uses a Lucide `coins` icon plus the amount, no label.
+
+### P11.8 UI (ARGUS kit only: shared mono type, liquid-glass surfaces, Lucide icons over text, 48 dp targets)
+- **Bot profile › Engine tab:**
+  - An "xAI" row with a Lucide `sparkles` icon and the model chip from the live list or `XaiModels`.
+  - A row of **icon toggles** for server tools: `globe` web, `at-sign` X, `square-terminal` code, `database` collections, `plug` MCP. Each has a tooltip and TalkBack label.
+  - An effort pill (low / medium / high / xhigh).
+  - Cap stepper.
+  - "Heavy" switch with a `layers` icon.
+- **Thread:**
+  - Server-side calls render as tool rows with a small cloud badge (`cloud`) and citations that open in the in-app browser.
+  - Heavy runs show one glass progress card ("4 agents · 2m 10s · $0.31"), never a wall of text.
+  - Hermes rows get a `server` badge with the host name.
+- **Cards:** the existing approval, draft and question cards, plus a cost line. The Hermes approval card shows host · tool · args, with Once / This session / Deny.
+- **Settings:** `ui/argus/settings` › Models & engines › **xAI** (key status, spend, caps, region global / US, "my team uses ZDR") and › **Hermes hosts** (URL, key from the vault, test connection, capabilities, "Install in Ubuntu workspace").
+- **Voice:** the Voice mode backend picker gets "Grok Voice" (`audio-lines` icon) and a voice list from `GET /v1/tts/voices`, behind the key.
+- **No Grok, X, Hermes or Bot HQ artwork or logos.** Provider names appear as text only (do-not-port register). Every string goes through `tr()`.
+
+### P11.9 Failure modes
+| Failure | Handling |
+|---|---|
+| 401 / bad key | The connect card ("xAI key needs a fix") opens Settings › xAI. The bot pauses Grok and isn't silently re-routed. |
+| 429 | Backoff ladder, then a plain notice. Job → WAITING with `JobFailure` backoff. |
+| Model retired or renamed (xAI retired models on 2026-05-15) | Model pinned by alias (`grok-4.7`). A 404 → pick the newest in the same `XaiModels` family and tell the user once. |
+| Responses stream drops | Same as `STREAM_BROKEN`: the partial reply is replaced on retry. The idempotent retry is the whole request, since `store:false`. |
+| Output cut (`incomplete` / max_output_tokens) | finish `"length"` → the existing CutReply path (switch to edits or append; say so after two cuts). |
+| Server tool fails | Not billed. The model sees the failure in its own loop; ARGUS shows the row as failed. |
+| Budget hit mid-task | The next call is held with a cost card; the task resumes after a yes. |
+| Multi-agent beta API changes | `grok_research` sits behind its own flag; a parse failure falls back to a single `grok-4.7` research call, labelled as such. |
+| MCP server unreachable from xAI (private LAN) | Detect a failed `mcp_call` → offer to run that server client-side instead. |
+| Voice socket drops | Reconnect once with a new ephemeral secret; then hand off to on-device voice (as GeminiVoice does today). |
+| Hermes host down / version mismatch | `/v1/health` + `/v1/capabilities` probe at bot open. The bot row shows "host offline" (`server-off` icon). Turns queue as Jobs, not lost. |
+| Hermes approval timeout | Card expires → `deny` is sent. A Row notes it. |
+
+### P11.10 Testing and evals
+- **JVM (pure, sandbox-runnable):**
+  - `XaiWireTest`: golden request JSON per model and tool mix; history → input items, incl. tool round trips and reasoning replay; reply → OpenAI shape; usage and ticks.
+  - `XaiSseTest`: fixtures from a captured real stream, kept in `test/resources/xai/`.
+  - `XaiLedgerTest`: estimates, caps, ticks maths, day and month roll-over in CAT.
+  - `XaiToolPolicyTest`: grant scope, taint, no standing COMPUTE_PAID, MCP READ filter.
+  - `XaiModelsTest`.
+  - `HermesEventsTest`: SSE fixture → Rows and Cards; approval choice mapping, never `always` for guarded classes.
+  - `HermesToolsClassTest`.
+  - `PromptSurfaceTest`.
+  - `MemorySnapshotTest`.
+  - `RoutineInvariantsTest`: at-most-once, timezone pin, catch-up window, idle watchdog.
+  - `ScreenLeaseTest`.
+  - `SkillFrontmatterTest`: Hermes and agentskills SKILL.md import.
+- **Contract tests:**
+  - ToolRegistryTest: every new tool declared.
+  - SecretLeakTest: new files.
+  - ModelFirstTest: no keyword route to Grok.
+  - do-not-port check: no artwork.
+- **Field tests** (phone, appended to `docs/overhaul/field-tests-2026-11.md`):
+
+| # | Test | Pass means |
+|---|---|---|
+| G1 | Grok bot: "what are people on X saying about the Zambian budget today?" | x_search used, ≥ 3 cited posts, cost shown, ≤ 2 steps |
+| G2 | Same bot: "and text that summary to mum" | Draft card (taint), no auto-send |
+| G3 | "Research 16-agent: best solar inverter for a 3-bedroom house in Lusaka" | Estimate card first, Job progress, cited answer |
+| G4 | Budget at $0.05 left | The next turn is held by a card |
+| G5 | Grok Voice call: ask the weather, then "add a reminder" | Voice answer, the reminder task lands in the thread |
+| G6 | Hermes bot on a PC: "run the tests in ~/proj" | Approval card on the phone, Once → the result streams into the bot's thread |
+| G7 | Kill the Hermes host mid-run | "Host offline", the job is kept |
+| G8 | ZDR mode on | No `previous_response_id`, collections hidden |
+
+- **Evals:** add a `grok` lane to `evals/` with the same suite as the gateway evals (T1–T14), run with `grok-4.7` and `grok-4.3`, recording steps, time and cost.
+
+### P11.11 Rollout
+Flags: `xai_responses`, `grok_bots`, `grok_heavy`, `grok_voice`, `hermes_engine`, all default off.
+
+| Wave | Tickets | What happens |
+|---|---|---|
+| 1 (invisible) | API-01, AG-01, SF-01, API-02, QA-01 (JVM) | Responses adapter, catalog, keys, ledger |
+| 2 | SF-02, AG-02, TM-01, SH-01, SH-02, CN-02 | Grok bots usable for people with a key. Field tests G1, G2, G4, G8. |
+| 3 | AG-03, CN-01, PR-01 | Heavy, MCP via xAI, Grok routines |
+| 4 (rides P8) | VC-01 | Grok Voice |
+| H1 | AG-05, PR-02, SF-04, TM-02 | Hermes patterns, owner-independent, any time |
+| H2 | AG-04, SF-03, SH-03, CP-01 | Hermes engine, then hosts inside the Ubuntu workspace (P7) |
+
+- Version: each wave is a patch on the current minor while its flag is off. The minor that turns on `grok_bots` by default for key holders is the owner's call (G1).
+
+### P11.12 Tickets
+| ID | Ticket | Files / packages | Acceptance | Deps | Eff | Covers |
+|---|---|---|---|---|---|---|
+| **P11-API-01** | xAI Responses protocol adapter: `Provider.protocol`, `XaiWire` (pure: messages ⇄ input items, flat function tools, server tools, reasoning replay, usage / ticks, finish mapping), `XaiSse` (pure), `XaiClient` glue; `LlmClient.call` branches for `xai` behind `xai_responses`; `keyOwner` knows `xai-`. Captured-stream fixture checked in. | `agent/xai/XaiWire.kt, XaiSse.kt, XaiClient.kt; agent/Providers.kt, agent/LlmClient.kt (≤ 25 lines)` | XaiWireTest + XaiSseTest green. Agent.kt untouched. A T5 / T9 smoke against api.x.ai on a phone with a key. No flat output cap. | — | M | NEW (Grok engine) |
+| **P11-AG-01** | xAI model catalog: ids, context, prices, efforts, caps (`clientTools`, `multiAgent`), alias handling and newest-in-family on 404; ProviderCatalog defaults for `xai`; OutputLimit and Usage prices read it; model picker lists Grok models when a key exists (D13: manual pick, Auto stays first). | `agent/xai/XaiModels.kt, agent/ProviderCatalog.kt, agent/OutputLimit.kt, agent/Usage.kt` | XaiModelsTest: prices match the 2026-10-10 table; multi-agent never offered client tools. | API-01 | S | — |
+| **P11-SF-01** | Keys and data: key path audit (KeyRing / Keystore), `safety_identifier` hash, `store:false` default, "my team uses ZDR" switch, per-bot first-use disclosure, private-domain consent. | `agent/xai/XaiPrivacy.kt, ui/argus/settings/XaiPage.kt (stub)` | SecretLeakTest covers agent/xai. Disclosure shown once per bot. ZDR on → no stateful fields. | API-01 | S | — |
+| **P11-API-02** | XaiLedger: ticks → micro-USD per bot / day / month (CAT); `estimateMicros`; caps; card on breach; Budget meters seeded from tier T0; 429 ladder + Retry-After. | `agent/xai/XaiLedger.kt, agent/Budget.kt (seed only)` | XaiLedgerTest (≥ 12 cases incl. roll-over, estimate → actual). The G4 field test passes. | API-01 | M | — |
+| **P11-SF-02** | Policy for xAI: ToolRegistry entries (§P11.5), `XaiToolPolicy` (turn-level COMPUTE_PAID session grant, taint `xai:*`, MCP READ filter, no standing grant), COMPUTE_PAID card with the estimate line. | `policy/ActionClass.kt (append), policy/XaiToolPolicy.kt, policy/Cards.kt (cost line)` | XaiToolPolicyTest; ToolRegistryTest; G2 passes (draft after tainted research). | API-02, P2-SF-01 ✓ | M | — |
+| **P11-AG-02** | Server-side tools per bot: `XaiSpec` (append-only on EngineSpec + TeamJson), tool-list composition frozen per chat (server web replaces local web for that bot), server-call rows with citations and a cloud badge. | `team/Models.kt (append field), team/TeamJson.kt, agent/xai/XaiTools.kt, ui/team/thread/*` | XaiToolsTest: tool list stable across a chat; rows render (shots). | API-01, SF-02 | M | — |
+| **P11-TM-01** | Grok bots in the team: "Grok" bot template (create a bot with the xAI engine), TeamBus interop (ThreadBudget charges cost), domain picker offer for Scout / Pulse (no default switch), @mention by bot name only. | `team/Bot.kt, team/ManagerTools.kt, team/Domains.kt (offer flag), team/TeamBus.kt (charge)` | TeamBusTest + new GrokBotTest; ModelFirstTest unchanged. | AG-02, P5-TM-01, P5-AG-01 (branch) | M | — |
+| **P11-AG-03** | Heavy mode: `grok_research` tool as a Job (multi-agent 4 / 16, built-in tools, leader answer + citations, estimate card, fallback to single-model research labelled). | `agent/xai/GrokResearch.kt, team/Jobs.kt (kind), policy/ActionClass.kt` | GrokResearchTest with a fake response; G3 field test. | SF-02, API-02 | M | — |
+| **P11-CN-01** | Remote MCP via xAI: READ-only `allowed_tools` from McpConfig risk, vault-resolved authorization, write tools stay client-side, unreachable-server fallback. | `connect/McpXai.kt, connect/McpConfig.kt (read hints)` | McpXaiTest: no WRITE / DELETE tool ever server-side. | AG-02, SF-02 | S | — |
+| **P11-CN-02** | X search tool (implements P8-CN-01 on-device): one-shot Responses with `x_search` (handles, dates, media), source rows, honest no-key fallback, `/x` command. | `agent/query/XSearch.kt, agent/Web.kt` | XSearchTest (label without a key); G1. | API-01, API-02 | S | BH-39, MM-16 |
+| **P11-SH-01** | Bot profile › Engine: xAI section (model chip, server-tool icon toggles, effort pill, cap stepper, Heavy switch), header cost chip, Heavy progress card, cloud badges. ARGUS kit only. | `ui/team/BotEditor.kt, ui/team/BotEditorModel.kt, ui/argus/kit/*` | Pure model tests + KitShotsTest cells at 360 / 375 dp; TalkBack labels on every icon. | AG-02 | M | — |
+| **P11-SH-02** | Settings › Models & engines › xAI page (key status, month and per-bot spend, caps, region global / US, ZDR switch). | `ui/argus/settings/XaiPage.kt, ArgusSettings.kt` | SettingsAliasTest; shots. | API-02, SF-01 | S | — |
+| **P11-PR-01** | Grok routines: "X watch" and "Morning research" templates on routines; results into the CheckIns digest; never post. | `routine/Routines.kt, proactive/CheckIns.kt (digest input)` | RoutineTemplateTest; no immediate notification from these routines. | CN-02, NEXT UP §4 | S | — |
+| **P11-VC-01** | Grok Voice backend: `XaiRealtime` (OkHttp WS, ephemeral secret, `session.update`, server VAD, PCM 24 kHz, function tools = the voice two-agent tools, server web / X search, reconnect once then on-device). | `voice/xai/XaiRealtime.kt, voice/xai/XaiVoiceWire.kt (pure), app/build.gradle.kts (OkHttp)` | XaiVoiceWireTest (events ⇄ JSON); G5 on a phone. | P8-VC-01 seams, G10 | L | BH-69 (xAI backend) |
+| **P11-QA-01** | QA for P11: captured fixtures, evals `grok` lane, field tests G1–G8 rows, low-RAM smoke unchanged. | `evals/grok/*, docs/overhaul/field-tests-2026-11.md, app/src/test/resources/xai/*` | Fixtures replay green; evals run recorded. | API-01 → all | M | — |
+| **P11-AG-04** | HermesEngine over `/v1/runs` (start, SSE events → Rows, steer, stop, clarify), `/v1/capabilities` + `/v1/health` probe, profile prefix per bot, Jobs keep work when the host is offline. Supersedes the transport of P10-AG-01 (memory projection and relay stay there). | `agent/engines/HermesEngine.kt, agent/engines/HermesWire.kt (pure)` | HermesEventsTest with an SSE fixture from a local Hermes; G6, G7. | P0-AG-01 ✓, SF-03 | L | BH-29, BH-33 (partial) |
+| **P11-SF-03** | Hermes approvals → ARGUS cards: `HermesTools.classOf`, choice mapping (once / session / deny; `always` only for quiet classes), timeout → deny, taint `hermes:<host>`. | `policy/HermesTools.kt, policy/Cards.kt` | HermesToolsClassTest; never `always` for guarded classes. | P2-SF-02 ✓ | S | — |
+| **P11-SH-03** | Hermes hosts page (URL, vault key, test, capabilities) + "host offline" row state + Hermes badges. | `ui/argus/settings/HermesHostsPage.kt, ui/team/*` | Shots; test-connection model test. | AG-04 | S | — |
+| **P11-CP-01** | Hermes inside the Ubuntu workspace (opt-in): install script (Hermes's Termux / aarch64 path or pip), `hermes` API server on 127.0.0.1:8642 kept alive by JobKeeper, key minted into the vault, disk shown. | `terminal/HermesHost.kt, assets/hermes/setup.sh` | Install + one run on a real phone (A-class RAM); SETTINGS card. | AG-04, P7 Ubuntu | M | NEW |
+| **P11-AG-05** | Hermes harness patterns in ARGUS: `PromptSurface` snapshot test + per-chat frozen tool set; `MemorySnapshot` (frozen at chat start); `LearnFork` (review after the turn in the BACKGROUND lane, whitelist memory_save / skill write); SKILL.md (Hermes / agentskills) frontmatter import; "no cross-toolset names in tool descriptions" registry rule. | `agent/PromptSurface.kt, memory/MemorySnapshot.kt, agent/LearnFork.kt, agent/SkillFrontmatter.kt` | PromptSurfaceTest, MemorySnapshotTest, SkillFrontmatterTest; the prompt byte-stable within a chat. | — (P3 for LearnFork wiring) | M | HARNESS MUSTS #3, #4 |
+| **P11-PR-02** | Cron invariants in Routines: advance-before-dispatch (at most once), pending-slot stamp, timezone pin, catch-up = half period clamped 2 min–2 h (CheckIns keep "no make-up"), idle watchdog 600 s for routine turns. | `routine/Routines.kt, routine/RoutineTime.kt (pure)` | RoutineInvariantsTest (DST, crash mid-run, pinned zone). | — | S | — |
+| **P11-SF-04** | `ScreenLease` (agent / human, epoch, refuse even screenshots while the human holds) for the browser glass panel and P7 take-over; SoM numbered-element capture mode for `look_at_screen`. | `computer/ScreenLease.kt, phone/ScreenSom.kt` | ScreenLeaseTest; T2 still passes (touches don't reach the page). | — | M | AT G-series, BH-52 |
+| **P11-TM-02** | Delegation semantics for Workers: leaf vs orchestrator role, depth bound, grouped background completions into one Job result. | `team/Workers.kt (P5-TM-03), team/JobQueue.kt` | WorkersRoleTest. | P5-TM-03 | S | — |
+| **P11-IL-01** | Docs and notices: THIRD_PARTY_NOTICES (Hermes Agent MIT, OkHttp Apache-2.0), do-not-port rows (no Grok, X or Hermes artwork; `@grok` / `@bot` never used as our names), CHANGELOG, Status. | `THIRD_PARTY_NOTICES*, docs/overhaul/do-not-port.md` | `check-do-not-port` 0 hits. | first P11 code | S | — |
+
+The 24 tickets come to about 37 agent-days (11 S ≈ 0.75, 11 M ≈ 2, 2 L ≈ 3.5). The Grok core (waves 1–2, 11 tickets) is about 17.
+
+### P11.13 Open decisions for Argus (recommended answer in brackets)
+| # | Decision | Recommended |
+|---|---|---|
+| G1 | Which release turns `grok_bots` on by default for key holders | The minor after waves 1–2 pass G1–G4 and G8. Voice rides P8 (0.60.0). |
+| G2 | BYO xAI key direct only, or also a gateway-held xAI route on Blaze-agent (needs D12 access; the gateway would mint voice secrets) | BYO direct now; gateway later |
+| G3 | Default Grok model | `grok-4.7` for chat turns; `grok-4.3` (1M context, ~half price) for routines, x_search and background |
+| G4 | Stateless (`store:false`, ARGUS keeps history) vs xAI-stateful (`previous_response_id`) | Stateless (works with ZDR; one source of truth) |
+| G5 | Budget defaults | $1 per bot per day, $10 per month total, Heavy always asks |
+| G6 | Remote MCP through xAI limited to READ tools | Yes |
+| G7 | Allow uploads to xAI Collections at all | Off by default; opt-in per bot |
+| G8 | An X surface: posting as the user, or an ARGUS @mention bot on X | Not now; X stays read-only (search) |
+| G9 | Telegram / Discord bots | Not on the phone. Through a Hermes host's gateway (`plugins/platforms/telegram`) for users who run one. |
+| G10 | Add OkHttp for WebSockets (Grok Voice; Hermes WS later) vs a hand-written WS client | Add OkHttp |
+| G11 | Domains offered "Run on Grok" | Scout and Pulse offered; none switched by default; private domains need consent |
+| G12 | Offer the US regional endpoint (1.1×) | Setting, off |
+| G13 | Pull HermesEngine forward from P10 (1.1.0) into P11 (H2), on `/v1/runs` instead of `/v1/responses` | Yes, behind `hermes_engine`; the relay of ARGUS phone tools to Hermes stays in P8 / P10 |
+| G14 | Ship "Hermes inside ARGUS" (Ubuntu workspace, ~1 GB) or only remote hosts | Remote hosts first; in-app host after P7's Ubuntu workspace is stable |
+| G15 | Port Hermes's LLM "smart approval" reviewer | No (HARNESS MUSTS #4: no new guards); revisit only if the field tests show a need |
+
+**Unverified items carried into tickets:**
+- The exact Responses SSE event names on xAI. P11-API-01 captures a real stream before merge.
+- The multi-agent effort → agent count on the REST API (from the docs table).
+- The X search and web search parameter limits (secondary source).
+- @grok reply rules (secondary source).
+- Hermes delegation defaults: the docs and the code disagree, so the plan relies on the code.
