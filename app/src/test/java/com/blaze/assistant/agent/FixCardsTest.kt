@@ -21,4 +21,20 @@ class FixCardsTest {
         assertEquals("I couldn't read your messages", FixCards.headline("read_notifications", FixCards.Kind.NOTIFICATIONS))
         assertEquals("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS", FixCards.Kind.NOTIFICATIONS.action)
     }
+
+    @Test fun linuxPermissionDeniedIsNotAnAndroidPermission() {
+        assertNull(FixCards.kindOf("cp: can't create '/data/music_server.py': Permission denied", "run_shell"))
+        assertNull(FixCards.kindOf("PermissionError: [Errno 13] Permission denied", "run_code"))
+        assertEquals(FixCards.Kind.ALL_FILES, FixCards.kindOf("[All files access is off: Android hides other apps' files]", "run_shell"))
+        assertEquals(FixCards.Kind.APP_PERMISSION, FixCards.kindOf("Error: permission denied for contacts", "find_contact"))
+    }
+
+    @Test fun permissionCardNamesThePermission() {
+        assertEquals("Contacts", FixCards.permissionOf("Error: permission denied for contacts"))
+        assertEquals("Camera", FixCards.permissionOf("SecurityException: requires android.permission.CAMERA"))
+        assertEquals("Microphone", FixCards.permissionOf("this needs the microphone permission"))
+        val f = FixCards.Fix(FixCards.Kind.APP_PERMISSION, "", "Camera")
+        assertEquals("Allow Camera for ${BrandName.NAME}?", f.title)
+        assertEquals("", FixCards.permissionOf("permission denied"))
+    }
 }

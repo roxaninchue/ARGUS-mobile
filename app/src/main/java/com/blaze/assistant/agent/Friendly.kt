@@ -156,6 +156,21 @@ object Friendly {
         return if (s.length > 80) s.take(79).trimEnd() + "…" else s
     }
 
+    /**
+     * 0.53.7 (owner: "there was more text but then it was like taken and cut into that sentence that makes no complete
+     * sense"): narration that stays on screen between tool groups keeps every sentence. Code blocks and prompt lines go;
+     * inline code keeps its words (a folder name is part of the sentence), only the backticks go. [plain] stays the
+     * one-line status.
+     */
+    fun narration(text: String, max: Int = 1200): String {
+        var t = fence.replace(text, "\n")
+        t = promptLine.replace(t, "")
+        t = t.replace(Regex("`([^`\n]*)`"), "$1")
+        t = t.replace(Regex("[ \t]+\n"), "\n").replace(Regex("\n{3,}"), "\n\n").trim()
+        if (t.count { it.isLetter() } < 4) return ""
+        return if (t.length > max) t.take(max - 1).trimEnd() + "…" else t
+    }
+
     /** What Blaze is doing while the model reads the result of [lastTool] (null = the user's message). */
     fun between(lastTool: String?): String = when {
         lastTool == null -> "Reading your message"

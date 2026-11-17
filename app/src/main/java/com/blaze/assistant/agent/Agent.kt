@@ -4161,7 +4161,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     }
                     // Text that came with tool calls is narration, shown as a step; its reasoning joins the turn's.
                     // 0.53.6: self-talk ("Let me…", "I need to…") isn't shown as a chat line (Narration.selfTalk).
-                    val narr = ReplyParts.split(textOut).let { it.copy(text = Friendly.plain(RapidMessages.display(it.text))) }.let { if (Narration.selfTalk(it.text)) it.copy(text = "") else it }
+                    val narr = ReplyParts.split(textOut).let { it.copy(text = Friendly.narration(RapidMessages.display(it.text))) }.let { if (Narration.selfTalk(it.text)) it.copy(text = "") else it }
                     if (narr.thinking.isNotEmpty()) { if (turnThink.isNotEmpty()) turnThink.append("\n\n"); turnThink.append(narr.thinking) }
                     thinking = turnThink.toString()
                     // v0.41.0: it turned out to be narration: stop any of it being read out, the reply comes later.
@@ -4697,7 +4697,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 catch (e: Throwable) { com.blaze.assistant.device.CrashLog.error("tool $name", e); ToolGuide.crash(name, e) })
             // v0.39.0: a finished undoable action under Autopilot gets the 10-second Undo bar; a missing access gets a fix card.
             if (agentId == null && this === curRef) try { UndoCenter.afterTool(name, args, r0, Modes.autopilot || ackGate?.tracked == true, undoBefore) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: UndoCenter.afterToolname args r0 Modes.a", e) }
-            val fix = if (agentId == null) FixCards.kindOf(r0) else null
+            val fix = if (agentId == null) FixCards.kindOf(r0, name) else null
             if (fix != null) FixCards.afterTool(name, r0)
             val r = if (fix != null) r0 + FixCards.NOTE else r0
             if (recName in planTools) {

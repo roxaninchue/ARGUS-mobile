@@ -203,9 +203,9 @@ fun FixCard() {
     GlassCard(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 4.dp).appearIn(true), intensity = GlassIntensity.High) {
         Text(f.headline, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         Spacer(Modifier.height(4.dp))
-        Text(f.kind.title, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 23.sp, color = c.ink))
+        Text(f.title, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 23.sp, color = c.ink))
         Spacer(Modifier.height(4.dp))
-        Text(f.kind.body, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.body))
+        Text(f.body, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.body))
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SimpleChip("Turn it on", primary = true) {

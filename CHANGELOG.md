@@ -1,3 +1,11 @@
+## Unreleased: shell errors no longer stop a task; narration keeps its words; the permission card names the permission
+
+2026-11-17, owner: "before asking done it was doing fine but then it stopped", "there was more text but then it was like taken and cut into that sentence", "that permission card is not descriptive and I don't know what Argus needs".
+- A Linux "Permission denied" from the terminal, code or file tools (`FixCards.linuxTools`) no longer raises "Allow this for ARGUS?" or the note that told the model to stop; the error goes back to the model as it is, with Terminal's own hint. Real Android permission walls still get the card, and its note now says to carry on with what doesn't need it.
+- The app-permission card names the permission (`FixCards.permissionOf`: android.permission.X, "needs the X permission", "permission denied for X") as Settings words it ("Allow Camera for ARGUS?"), and says where to tap.
+- Narration between tool groups uses `Friendly.narration`: every sentence stays, inline code keeps its words (a folder path stays in the sentence), code blocks and prompt lines go. `Friendly.plain` stays the one-line status.
+- Tests: FixCardsTest (two new), NarrationKeepsTextTest. Not built.
+
 ## Unreleased: bots open their own chat; no Tempo and Inbox on start
 
 2026-11-17, owner: "I can create them but when I click them I get a message about coming in the next update", "keep the shapes", "users find Tempo and Inbox on start, remove that".
