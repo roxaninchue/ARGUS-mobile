@@ -70,6 +70,46 @@ class LifeTodoTest {
         assertTrue("still the checklist", com.blaze.assistant.setup.SetupChecklist.isChecklist(s.all().first().cfg()))
     }
 
+    @Test fun argusPutsTheSetupChecklistInLifeWithSetup() {
+        val s = store()
+        s.add(Widget("", WidgetTypes.NEWS, "Tech", "News"), now = 1)
+        val CL = com.blaze.assistant.setup.SetupChecklist
+        var seeded = 0
+        val changed = ArrayList<String>()
+        val r = HomeTools.run(s, LifeTodo.TOOL, JSONObject().put("action", "setup"), now = 2, onChange = { changed += it },
+            setupDone = { mapOf("notifications" to true) }, onSeeded = { seeded++ })
+        assertTrue(r, r.startsWith("Put the \u201cSet up ARGUS\u201d checklist at the top of Life."))
+        val top = s.all().first()
+        assertTrue("at the top of Life, marked as the checklist", CL.isChecklist(top.cfg()))
+        assertEquals(CL.TITLE, top.title)
+        val items = HomeTodo.items(top.cfg())
+        assertEquals("every setup step, keyed and opening its screen", CL.STEPS.map { it.key }, items.map { it.key })
+        assertTrue(items.all { it.open.isNotBlank() })
+        assertEquals("what the phone already has is ticked", listOf("notifications"), items.filter { it.done }.map { it.key })
+        assertEquals(1, seeded); assertEquals(listOf(top.id), changed)
+        // again: no second list, only ticks what the phone now reports
+        val again = HomeTools.run(s, LifeTodo.TOOL, JSONObject().put("action", "setup"), now = 3,
+            setupDone = { mapOf("notifications" to true, "assistant" to true) }, onSeeded = { seeded++ })
+        assertTrue(again, again.contains("already in Life"))
+        assertEquals(1, seeded)
+        assertEquals(1, s.all().count { CL.isChecklist(it.cfg()) })
+        assertTrue(HomeTodo.items(s.get(top.id)!!.cfg()).first { it.key == "assistant" }.done)
+        assertEquals("Putting the setup checklist in Life", HomeTools.step(LifeTodo.TOOL, JSONObject().put("action", "setup")))
+        assertTrue(LifeTodo.tool().toString().contains("setup"))
+    }
+
+    @Test fun plainAddsNeverLandOnTheSetupChecklist() {
+        val s = store()
+        com.blaze.assistant.setup.SetupChecklist.applyTo(s, emptyMap(), seededBefore = false, now = 1)
+        val r = run(s, "action" to "add", "item" to "Buy milk")
+        assertTrue(r, r.startsWith("Added 1 item(s) to \u201cTo-do\u201d"))
+        assertEquals(listOf("Buy milk"), items(s, "To-do").map { it.text })
+        assertTrue(items(s, com.blaze.assistant.setup.SetupChecklist.TITLE).none { it.text == "Buy milk" })
+        // naming the checklist still reaches it
+        run(s, "action" to "add", "item" to "Try a voice chat", "list_title" to "Set up ARGUS")
+        assertTrue(items(s, com.blaze.assistant.setup.SetupChecklist.TITLE).any { it.text == "Try a voice chat" })
+    }
+
     @Test fun theToolIsDeclaredAndInTheBoardGroup() {
         assertTrue(LifeTodo.TOOL in HomeTools.NAMES)
         assertTrue(HomeTools.tools().any { it.getJSONObject("function").getString("name") == LifeTodo.TOOL })

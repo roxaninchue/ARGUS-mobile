@@ -1073,13 +1073,16 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
      * 2026-11-18 first run (setup/FirstRun): ARGUS's first message. The model writes it in a hidden turn from [kickoff] (the
      * app's facts about the moment, not the user's words) through the normal loop; its reply lands in the chat on screen as
      * ARGUS's. With no reply in [FirstRunIntro.TIMEOUT_MS] (offline, an error) the fixed [fallback] is posted instead.
+     * [tools] ride with the hidden turn whatever the diet picks (life_todo: ARGUS puts the setup checklist in Life);
+     * [beforePost] runs after the turn and before the message lands (FirstRun makes sure the checklist is there).
      */
-    fun introduce(kickoff: String, fallback: String) { scope.launch {
-        val s = Session(newId()).also { it.title = "First run"; sessions[it.id] = it }
+    fun introduce(kickoff: String, fallback: String, tools: Set<String> = emptySet(), beforePost: suspend () -> Unit = {}) { scope.launch {
+        val s = Session(newId()).also { it.title = "First run"; it.pinTools = tools; sessions[it.id] = it }
         val text = try { kotlinx.coroutines.withTimeoutOrNull(com.blaze.assistant.setup.FirstRunIntro.TIMEOUT_MS) { s.send(kickoff); s.job?.join()
             s.msgs.lastOrNull { (it.role == Role.BLAZE && it.meta != Ack.META) || it.role == Role.ERROR }?.takeIf { it.role == Role.BLAZE }?.text } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce", e); null }
         try { s.job?.cancel(); ChatStore.delete(s.id) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce cleanup", e) }
         sessions.remove(s.id)
+        try { beforePost() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce beforePost", e) }
         val c = cur; c.add(Role.BLAZE, com.blaze.assistant.setup.FirstRunIntro.pick(text, fallback)); c.persist(); refreshChats()
     } }
 
@@ -1612,6 +1615,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         @Volatile var goalNudged = false
         /** v0.45.0 (#13, #16): the tool groups on for the call being built (PromptProfile picks the prompt blocks from them). */
         @Volatile var promptGroups: Set<String> = emptySet()
+        /** 2026-11-18 first run (introduce): tools this chat always carries, whatever the diet picks (life_todo for the setup checklist). */
+        @Volatile var pinTools: Set<String> = emptySet()
         /** v0.45.1: this turn's start (0 = none): the system prompt's live tail is kept per turn (PromptParts.LiveSnap). */
         @Volatile var promptTurn: Long = 0L
         /** v0.45.0 "What I did": every tool call this turn with its args summary, result, status and evidence (Receipt). */
@@ -3435,7 +3440,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val pinned = ToolPick.pinnedCues(lastRung, ctxFrom); groupsOn += pinned
                     val diet = ToolRouter.select(allTools, groupsOn)
                     fun allNamesIn(g: Set<String>) = ToolPick.names(allTools).filter { ToolRouter.groupOf(it) in g }.toSet()
-                    val joinNames = widenNames + ToolTruth.MUST + ToolPick.core(SimpleMode.simple) + ToolPick.cueNames(pinned)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
+                    val joinNames = widenNames + pinTools + ToolTruth.MUST + ToolPick.core(SimpleMode.simple) + ToolPick.cueNames(pinned)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
                     val diet2 = JSONArray().apply {
                         val have = ToolPick.names(diet).toSet(); for (i in 0 until diet.length()) put(diet.opt(i))
                         val allNames = ToolPick.names(allTools)

@@ -13,12 +13,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
- * 2026-11-18 first run, after sign-in: the "Set up ARGUS" checklist goes to the top of Life ([SetupChecklist]), then ARGUS
- * introduces itself in the chat ([com.blaze.assistant.agent.Agent.introduce], model-written, [FirstRunIntro]). Once per
- * install ([PREF_WELCOMED]). Life keeps the list in step with the phone ([sync], on each visit) and a tap on a step opens
- * its screen ([open]).
+ * 2026-11-18 first run, after sign-in (owner's spec): ARGUS introduces itself in the chat and puts the "Set up ARGUS"
+ * checklist in Life itself, with its life_todo tool (action setup) in the same hidden turn
+ * ([com.blaze.assistant.agent.Agent.introduce], model-written, [FirstRunIntro]). When no model answers (offline, an
+ * error, the timeout) or the model left it out, the app puts the same checklist there before the message lands, so the
+ * fixed introduction's "it's in Life" is true. Once per install ([PREF_WELCOMED]). Life keeps the list in step with the
+ * phone ([sync], on each visit) and a tap on a step opens its screen ([open]).
  */
 object FirstRun {
     const val PREF_WELCOMED = "first_run_welcomed"
@@ -48,17 +51,25 @@ object FirstRun {
         return HomeBoard.ready
     }
 
-    /** Onboarding finished: the checklist, then the introduction. Runs once per install. */
+    /**
+     * Onboarding finished: ARGUS introduces itself and makes the checklist (life_todo setup); the app's checklist is only
+     * the fallback. Runs once per install.
+     */
     fun welcome(ctx: Context) {
         val app = ctx.applicationContext
         if (Settings.bool(PREF_WELCOMED, false)) return
         Settings.setBool(PREF_WELCOMED, true)
         scope.launch {
-            val items = if (board(app)) HomeBoard.checklist(SetupChecklist.detected(probe(app)))?.items.orEmpty() else emptyList()
-            val open = if (items.isNotEmpty()) SetupChecklist.open(items) else SetupChecklist.STEPS.map { it.text }
+            val open = SetupChecklist.open(SetupChecklist.fresh(SetupChecklist.detected(probe(app))))
             val lang = com.blaze.assistant.i18n.AppLang.current.english
-            com.blaze.assistant.agent.Agent.introduce(FirstRunIntro.kickoff(open, lang), com.blaze.assistant.i18n.tr(FirstRunIntro.FALLBACK))
+            com.blaze.assistant.agent.Agent.introduce(FirstRunIntro.kickoff(open, lang), com.blaze.assistant.i18n.tr(FirstRunIntro.FALLBACK),
+                tools = FirstRunIntro.TOOLS, beforePost = { withContext(Dispatchers.IO) { ensureChecklist(app) } })
         }
+    }
+
+    /** After the introduction's turn: the checklist ARGUS made is kept in step; with none (and none removed before), the app adds it. */
+    private suspend fun ensureChecklist(app: Context) {
+        if (board(app)) HomeBoard.checklist(SetupChecklist.detected(probe(app)))
     }
 
     /** Life on screen: ticks the steps the phone now reports done (never unticks). Nothing when there is no checklist. */

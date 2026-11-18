@@ -209,7 +209,7 @@ private fun LanguageStep(onNext: () -> Unit) {
         // The pill: the language in use, centred
         val name = com.blaze.assistant.i18n.AppLang.lang(sel).name
         Row(Modifier.align(Alignment.Center).height(LanguagePick.PILL_H.dp)
-            .widthIn(min = 150.dp, max = LanguagePick.pillMax(w).dp)
+            .widthIn(min = LanguagePick.pillMin(w).dp, max = LanguagePick.pillMax(w).dp)
             .onSizeChanged { pillW = with(density) { it.width.toDp().value } }
             .graphicsLayer { alpha = if (t > 0.02f) 0f else 1f }
             .clip(SpaceShapes.pill).background(look.card).border(1.dp, look.hair, SpaceShapes.pill)

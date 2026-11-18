@@ -429,8 +429,14 @@ object LanguagePick {
         return Box(top, h)
     }
 
-    /** The pill's widest: it never reaches the continue button at the screen's edge (nor its twin space on the other side). */
-    fun pillMax(avail: Float): Float = (avail - 2 * (NEXT + NEXT_EDGE + 8f)).coerceAtMost(MAX_W).coerceAtLeast(140f)
+    /**
+     * The pill's widest: it never reaches the continue button at the screen's edge (nor its twin space on the other side),
+     * down to a 280 dp window (split screen); the name ellipsizes before the pill touches the arrow.
+     */
+    fun pillMax(avail: Float): Float = (avail - 2 * (NEXT + NEXT_EDGE + 8f)).coerceAtMost(MAX_W).coerceAtLeast(96f)
+
+    /** The pill's narrowest: 150 dp, never wider than [pillMax] (a narrow window would otherwise push it into the arrow). */
+    fun pillMin(avail: Float): Float = 150f.coerceAtMost(pillMax(avail))
 
     /** The list's width: the room there is, at most [MAX_W]. */
     fun width(avail: Float): Float = (avail - 2 * MARGIN).coerceAtMost(MAX_W).coerceAtLeast(PILL_H)

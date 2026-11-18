@@ -314,6 +314,12 @@ class SpaceLogicTest {
         val w = 360f
         val pillRight = w / 2f + L.pillMax(w) / 2f
         assertTrue("pill clear of the arrow", pillRight <= w - L.NEXT_EDGE - L.NEXT)
+        // the pill's narrowest never passes its widest, so a narrow window can't push it into the arrow
+        for (aw in listOf(280f, 320f, 360f, 411f, 800f)) {
+            assertTrue(L.pillMin(aw) <= L.pillMax(aw))
+            assertTrue("clear of the arrow at $aw", aw / 2f + L.pillMin(aw) / 2f <= aw - L.NEXT_EDGE - L.NEXT)
+        }
+        assertEquals(150f, L.pillMin(411f), 0.01f)
         // opening scrolls so the language in use sits mid-list
         assertEquals(0, L.firstRow(2, 9)); assertEquals(6, L.firstRow(10, 9))
         assertEquals(5f, L.lerp(0f, 10f, 0.5f), 0.001f); assertEquals(0f, L.lerp(0f, 10f, 0f), 0.001f)

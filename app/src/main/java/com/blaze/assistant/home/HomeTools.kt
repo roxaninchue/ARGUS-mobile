@@ -87,7 +87,9 @@ object HomeTools {
             (d?.let { if (it.error.isNotBlank()) "problem: ${it.error}" else Ago.of(it.fetched, now).lowercase() } ?: "not updated yet") + " · config ${w.config}"
 
     /** Runs a tool. [onChange] receives the id that was added / changed ("" for a removal). */
-    fun run(store: HomeStore, name: String, args: JSONObject, now: Long = System.currentTimeMillis(), onChange: (String) -> Unit = {}): String = when (name) {
+    /** [setupDone] / [onSeeded]: life_todo's setup action ([LifeTodo.run]); the board passes what the phone reports. */
+    fun run(store: HomeStore, name: String, args: JSONObject, now: Long = System.currentTimeMillis(),
+            setupDone: () -> Map<String, Boolean> = { emptyMap() }, onSeeded: () -> Unit = {}, onChange: (String) -> Unit = {}): String = when (name) {
         ADD -> {
             val type = WidgetTypes.norm(args.optString("type")) ?: WidgetTypes.CUSTOM
             val title = args.optString("title").trim().take(60)
@@ -148,7 +150,7 @@ object HomeTools {
             if (all.isEmpty()) "The Home board is empty. Add widgets with $ADD."
             else "Home board, top to bottom (${all.size}):\n" + all.joinToString("\n") { line(it, data[it.id], now) }
         }
-        LifeTodo.TOOL -> LifeTodo.run(store, args, now, onChange)
+        LifeTodo.TOOL -> LifeTodo.run(store, args, now, setupDone, onSeeded, onChange)
         else -> "Unknown Home tool."
     }
 }

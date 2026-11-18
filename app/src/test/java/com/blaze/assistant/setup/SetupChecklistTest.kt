@@ -108,11 +108,28 @@ class SetupChecklistTest {
         assertTrue(k.contains("Introduce yourself"))
         // docs/MODEL-FIRST.md: plain facts, no shouting
         for (w in listOf("ALWAYS", "NEVER", "MUST", "EVERY")) assertFalse(w, Regex("\\b$w\\b").containsMatchIn(k))
+        // ARGUS makes the checklist itself, with its tool, in the same turn as the introduction
+        assertTrue(k.contains("life_todo tool (action setup)"))
+        assertEquals(setOf(com.blaze.assistant.home.LifeTodo.TOOL), FirstRunIntro.TOOLS)
         assertTrue(FirstRunIntro.kickoff(emptyList(), "").contains("They picked English"))
         assertTrue(FirstRunIntro.FALLBACK.contains("Set up ARGUS") && FirstRunIntro.FALLBACK.contains("Life"))
         assertEquals("Hello there", FirstRunIntro.pick("  Hello there ", "fb"))
         assertEquals("fb", FirstRunIntro.pick("   ", "fb"))
         assertEquals("fb", FirstRunIntro.pick(null, "fb"))
         assertTrue(FirstRunIntro.TIMEOUT_MS in 10_000L..120_000L)
+    }
+
+    /** Owner's spec: after sign-in ARGUS introduces itself and makes the checklist with life_todo; the app's list is only the fallback. */
+    @Test fun argusMakesTheChecklistInTheIntroTurn() {
+        fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
+        val fr = src("setup/FirstRun.kt")
+        val welcome = fr.substring(fr.indexOf("fun welcome("), fr.indexOf("fun sync("))
+        assertTrue("the hidden turn carries life_todo", welcome.contains("tools = FirstRunIntro.TOOLS"))
+        assertTrue("the app's checklist only after the turn, before the message", welcome.contains("beforePost = {") && welcome.contains("ensureChecklist(app)"))
+        assertFalse("no checklist before ARGUS's turn", welcome.substring(0, welcome.indexOf("Agent.introduce")).contains("HomeBoard.checklist"))
+        val agent = src("agent/Agent.kt")
+        assertTrue(agent.contains("val joinNames = widenNames + pinTools +"))
+        assertTrue(agent.contains("it.pinTools = tools"))
+        assertTrue(agent.indexOf("beforePost()") < agent.indexOf("FirstRunIntro.pick(text, fallback)"))
     }
 }
