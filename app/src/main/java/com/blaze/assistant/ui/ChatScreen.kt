@@ -379,6 +379,8 @@ fun ChatScreen() {
     var inboxOpen by remember { mutableStateOf(false) }
     val inboxItems by com.blaze.assistant.notify.Inbox.items.collectAsState()
     val inboxUnread = remember(inboxItems) { com.blaze.assistant.notify.Inbox.unread(inboxItems) }
+    // P2-SF-03: the bell dot reads the one needs-you list (approvals, questions, connects, failed jobs, suggestions)
+    val needsYou = com.blaze.assistant.ui.team.rememberNeedsYou()
     val showing by Views.showing.collectAsState()
     val designTarget by Views.designTarget.collectAsState()
     val viewOffer by Views.offer.collectAsState()
@@ -790,10 +792,11 @@ fun ChatScreen() {
                 // Owner 16 Nov 2026: the bell opens the Inbox; while something in the chat waits on you (a question, an OK, a form) it opens Chat first
                 onBell = {
                     notchOpen = false
-                    if (question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
+                    // P2-SF-03: policy cards (approvals, questions, connects) are in the Inbox's one needs-you list, not counted here
+                    if (question != null || pendingConfirmLegacy != null || fixNow != null || formNow != null || secretNow != null) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
                     else inboxOpen = true
                 },
-                bellBadge = question != null || pendingConfirmNow != null || fixNow != null || formNow != null || secretNow != null || inboxUnread > 0,
+                bellBadge = question != null || pendingConfirmLegacy != null || fixNow != null || formNow != null || secretNow != null || inboxUnread > 0 || com.blaze.assistant.policy.NeedsYou.dot(needsYou),
                 onPlus = { notchOpen = false; newOpen = true })
             }
             // P1-SH-01: a private chat says so under the ARGUS top bar, with the way out
@@ -825,7 +828,11 @@ fun ChatScreen() {
                         setupLeft = if (com.blaze.assistant.setup.SetupRunner.started()) com.blaze.assistant.setup.SetupPlan.left(setupState).size else 0,
                         setupPercent = com.blaze.assistant.setup.SetupPlan.percent(setupState))
                 }
-                val chatPane: @Composable () -> Unit = {
+                // Owner 2026-11-18: [modePage] is true when this is the ARGUS shell's Chat page inside the mode pager. That page
+                // keeps drawing Chat mode (the Manager's current chat) while the pager slides or the panes cross-fade to another
+                // tab; keying it on nav.tab dropped it to the whole main thread for a frame or two, so an old chat flashed on
+                // the way from a new chat to Life / Team / Desk.
+                val chatPane: @Composable (Boolean) -> Unit = { modePage ->
                 if (nav.chat.isNotBlank() && currentChat == nav.chat) {
                     // Main Chat never draws a project chat's thread (the agent is switching back to main).
                     Box(Modifier.fillMaxSize())
@@ -837,7 +844,7 @@ fun ChatScreen() {
                         home = try { com.blaze.assistant.terminal.Terminal.home() } catch (_: Exception) { null },
                         onBack = { Views.showing.value = DesignNav.back(Views.showing.value) })
                     BackHandler { Views.showing.value = DesignNav.back(Views.showing.value) }
-                } else if (nav.tab == ChatNav.CHAT && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty)) {
+                } else if ((modePage || nav.tab == ChatNav.CHAT) && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty)) {
                     // P1-SH-04 Chat mode: the Manager's chats (history drawer, ✎ new chat, ghost toggle, greeting) on the main chat
                     com.blaze.assistant.ui.team.ChatModeFrame(name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null },
                         privateOn = isPrivate, onPrivate = { if (isPrivate) confirmLeavePrivate = true else Agent.enterPrivate() },
@@ -896,7 +903,7 @@ fun ChatScreen() {
                 if (paneNow == "modes") {
                     ArgusModesPager(navShown.tab, onTab = { m -> if (navNow().tab != m) { notchOpen = false; go(navNow().switchTab(m)) } },
                         team = { com.blaze.assistant.ui.team.TeamPage(teamNav) },
-                        chat = { chatPane() },
+                        chat = { chatPane(true) },
                         life = { lifePane() },
                         // P1-TM-07: Desk v1 (Inbox placeholder · Jobs · Routines · Library · Projects · Computers)
                         desk = {
@@ -944,7 +951,7 @@ fun ChatScreen() {
                             }
                         }
                     }
-                } else chatPane()
+                } else chatPane(false)
                 }
                 // v0.39.0: the 10-second Undo bar for what Blaze just did on Autopilot.
                 if (chatBody) UndoCountdownBar(onUndone = { line -> Agent.note(line) })
@@ -1203,6 +1210,7 @@ fun ChatScreen() {
         // 0.52.3: what is left of setup (the Home's "Finishing setup" card), as the same one-screen progress view.
         if (setupSheet && !onboard) {
             CompositionLocalProvider(LocalBlaze provides DarkColors) {
+                DarkSystemBars()   // always dark: keep the status bar icons light over it
                 com.blaze.assistant.ui.space.SpaceBackdrop(forceDark = true) {
                     com.blaze.assistant.ui.space.SpaceSetupScreen(setupState, onContinue = { setupSheet = false },
                         onRetry = { com.blaze.assistant.setup.SetupRunner.retry(ctx) })

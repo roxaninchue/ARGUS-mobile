@@ -53,6 +53,10 @@ val advancedPages = listOf(
     SettingsPage("replies", "Notification replies", "Chat logs and replies from notifications, auto-reply"),
     SettingsPage("usage", "Usage", "Tokens and estimated cost"),
     SettingsPage("backup", "Backup", "Export or import everything"),
+    // P2-SF-04: opens from Security (Privacy); standing allows, autonomy, send scope and spending limits per bot.
+    SettingsPage("policy", "Approvals & permissions", "Always-allowed actions, autonomy, sending and spending limits per bot"),
+    // P2-SF-05: opens from Security (Privacy); the audit log by bot / team, its hash chain, export.
+    SettingsPage("activity", "Activity", "What each bot did or asked to do, verified log, export"),
 )
 
 /**

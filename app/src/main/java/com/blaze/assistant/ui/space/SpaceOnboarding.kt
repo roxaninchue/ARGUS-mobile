@@ -128,6 +128,7 @@ fun SpaceOnboardingScreen(
     modifier: Modifier = Modifier,
 ) {
     CompositionLocalProvider(LocalBlaze provides DarkColors) {
+        com.blaze.assistant.ui.DarkSystemBars()   // always dark: keep the status bar icons light over it
         SpaceBackdrop(modifier.testTag(SpaceTags.ONBOARDING), forceDark = true) {
             AnimatedContent(step, transitionSpec = { fadeIn(com.blaze.assistant.ui.MotionTokens.medium()) togetherWith fadeOut(com.blaze.assistant.ui.MotionTokens.fast()) },
                 label = "onboarding") { s ->

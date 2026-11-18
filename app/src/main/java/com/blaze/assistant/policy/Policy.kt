@@ -82,6 +82,8 @@ object Policy {
         val mcp: Mcp? = null,
         val command: CommandPolicy.Level? = null,
         val commandAllowed: Boolean = false,
+        /** P2-SF-04: the payment's amount and this month's spend (spend_ledger), null when unknown. */
+        val spend: SpendGuard.Check? = null,
     )
 
     enum class Reason {
@@ -123,6 +125,7 @@ object Policy {
             autonomy = all.minByOrNull { it.autonomy.ordinal }!!.autonomy,
             actions = rules,
             spendCapMonthlyMinor = all.minOf { it.spendCapMonthlyMinor },
+            spendPerTxMaxMinor = all.map { it.spendPerTxMaxMinor }.filter { it > 0 }.minOrNull() ?: 0,
             sendScope = all.minByOrNull { it.sendScope.ordinal }!!.sendScope,
             maxHops = all.minOf { it.maxHops },
         )
@@ -158,7 +161,7 @@ object Policy {
 
         // 4. always-card classes
         when (c) {
-            SPEND -> return Decision.Ask(Reason.SPEND, note = note)
+            SPEND -> return Decision.Ask(Reason.SPEND, note = spendNote(eff, x.spend, note))
             DELETE -> return Decision.Ask(Reason.DELETE, note = note)
             CREDENTIAL -> return Decision.Ask(Reason.CREDENTIAL, note = note)
             ActionClass.COMPUTE_PAID -> return Decision.Ask(Reason.COMPUTE_PAID, note = note)   // asks each session (P7 adds the session)
@@ -204,6 +207,30 @@ object Policy {
         // 12.
         return Decision.Ask(Reason.ASK, always = alwaysOk)
     }
+
+    /**
+     * P2-SF-04: SPEND still always asks; SpendGuard only adds the over-limit line to the card (cap 0 = no budget, every
+     * spend asks with no extra line).
+     */
+    private fun spendNote(eff: Permissions, spend: SpendGuard.Check?, note: String?): String? {
+        if (spend == null) return note
+        val limits = spendLimits(eff)
+        val over = SpendGuard.note(SpendGuard.decide(spend, limits), limits) ?: return note
+        return if (note == null) over else "$over $note"
+    }
+
+    fun spendLimits(p: Permissions) = SpendGuard.Limits(p.spendCapMonthlyMinor, p.spendPerTxMaxMinor, p.currency)
+
+    /**
+     * P2-SF-04: what still asks (or is refused) on Autopilot, read from the steps of [decide] above so the Permissions
+     * page can't drift: the always-card classes of step 4, SEND's draft, then the taint / proactive / risky-command steps.
+     */
+    val AUTOPILOT_ALWAYS_ASK: List<ActionClass> by lazy {
+        val open = Permissions(Autonomy.AUTOPILOT, ActionClass.values().associateWith { Rule.ALLOW }, sendScope = SendScope.ANY)
+        ActionClass.values().filter { decide(Call("_", it), Ctx(perms = open)) !is Decision.Allow }
+    }
+    val AUTOPILOT_ALWAYS_ASK_REASONS: List<Reason> = listOf(Reason.SPEND, Reason.DELETE, Reason.CREDENTIAL, Reason.COMPUTE_PAID,
+        Reason.SEND, Reason.PROACTIVE, Reason.TAINTED, Reason.RISKY_COMMAND, Reason.MCP_ASK)
 
     const val MCP_ASK = "ask"
     const val MCP_ALWAYS = "always"

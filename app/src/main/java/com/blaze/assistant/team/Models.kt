@@ -60,7 +60,8 @@ data class Permissions(
     val spendCapMonthlyMinor: Long = 0, val currency: String = "ZMW",
     val sendScope: SendScope = SendScope.DRAFT_ONLY,
     val dataScopes: Set<String> = setOf("user:core", "team"),
-    val maxStepsPerTurn: Int = 40, val maxJobMinutes: Int = 30, val maxHops: Int = 3
+    val maxStepsPerTurn: Int = 40, val maxJobMinutes: Int = 30, val maxHops: Int = 3,
+    val spendPerTxMaxMinor: Long = 0,   // P2-SF-04 SpendGuard: largest single payment (0 = only the monthly cap)
 )
 
 data class Bot(

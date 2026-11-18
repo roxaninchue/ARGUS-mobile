@@ -48,7 +48,9 @@ class PolicyGate(
     data class Request(val chatId: String, val botId: String, val botName: String, val jobId: String?, val tool: String,
                        val argsRedacted: String, val call: Policy.Call, val ctx: Policy.Ctx, val enforce: Boolean, val callId: String = "",
                        /** P2-SF-02: the whole scrubbed args (a draft card shows every word it approves). */
-                       val argsFull: String = argsRedacted)
+                       val argsFull: String = argsRedacted,
+                       /** P2-SF-05: the bots the request came through (bot → bot), for its audit row. */
+                       val chain: List<String> = emptyList())
 
     sealed class Verdict {
         /** Run the tool; [approvalId] = the card the user answered yes on (null = no card). */

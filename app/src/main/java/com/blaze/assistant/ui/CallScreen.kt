@@ -46,6 +46,7 @@ import kotlinx.coroutines.delay
 /** v0.31: the call screen is always the dark glass look (whatever the app theme). */
 @Composable
 fun CallScreen(onHangUp: () -> Unit) {
+    DarkSystemBars()   // always dark: keep the status bar icons light over it
     androidx.compose.runtime.CompositionLocalProvider(LocalBlaze provides DarkColors.mono) { CallScreenBody(onHangUp) }
 }
 

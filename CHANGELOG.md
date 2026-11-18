@@ -1,3 +1,28 @@
+## Unreleased: status bar icons follow ARGUS's light / dark; far tab switches no longer flash the chat
+
+2026-11-18, branch fix/status-bar-tab-flash merged. `ui/SystemBarIcons.kt`: the status and navigation bar icons follow ARGUS's own theme (dark icons on light pages), and always-dark screens (call, photo viewer, onboarding, account lock, setup) keep them light. The mode pager jumps straight to a mode two or more pages away, and the pager's Chat page stays in Chat mode while leaving. Test: SystemBarIconsTest.
+
+## Unreleased: Activity and the audit log (P2-SF-05)
+
+2026-11-17, ticket P2-SF-05 (06-team-plan §6.3).
+- `policy/Audit.kt`: one hash-chained `audit_log` row (team.db v1 table, no migration) per non-read tool call the policy decided: decision (allowed / asked / refused / you approved / you declined / not answered), args with secret-looking values cut out by PasteGuard (SecretGuards), how it ended. `Audit.verify` finds the first changed, deleted or reordered row. Written by `PolicyRuntime` around the policy gate; nothing reaches the model.
+- `spend_ledger` now has a writer: an approved payment that completed with an amount in its args (`amount_minor` or `amount`). `PolicyRuntime` fills `Ctx.spend` from that amount and this month's ledger, so the card's over-limit line works. Every payment still asks.
+- Settings › Security › Activity (`ui/argus/settings/ActivityPage.kt`, page id `activity`): by bot or team, filter, "Chain verified ✓ / broken at #n", Export CSV / JSON.
+- Tests: AuditChainTest 10, AuditStoreTest 2 (sqlite-jdbc); SettingsAliasTest page count 40. Merged to main 2026-11-18; unit tests run locally.
+
+## Unreleased: Approvals & permissions (P2-SF-04)
+
+2026-11-17, ticket P2-SF-04 (06-team-plan §6.3).
+- Settings › Security › Approvals & permissions (`ui/argus/settings/PermissionsPage.kt`, page id `policy`): actions set to Always allow, grouped by bot, each with Ask again; per bot Assist / Act / Autopilot, who it may send to (Never / Drafts / Contacts / Anyone), a monthly spending cap (default 0: every payment asks) and a largest single payment; the list of what always asks even on Autopilot, computed from `Policy.decide`.
+- `policy/SpendGuard.kt`: cap + per-payment maximum against this month's spend_ledger rows. A payment still always shows its card; one over a limit says so on the card. `Permissions.spendPerTxMaxMinor` (team JSON key `spendPerTxMaxMinor`, default 0).
+- Tests: SpendGuardTest, PermissionsTest; SettingsAliasTest page count 39. Merged to main 2026-11-18; unit tests run locally.
+
+## Unreleased: Inbox, one list of what needs you (P2-SF-03)
+
+- The bell's Inbox and Desk → Inbox show one urgency-sorted list of what waits on you: approvals (money, delete and passwords first, then by time left of their 25 minutes), questions, connect requests, failed jobs and suggestions, with All / Approvals / Questions / Connect / Failed / Suggestions chips. Allow / Deny / Always answer through the same path as the card in the bot's chat, so its row there changes too. Money and delete ask for the screen lock; swipe right to allow only reading or local changes; bulk only for one bot and one kind, never money or delete.
+- The bell dot and the "N need you" banner on Desk read that same list (`policy/NeedsYou.kt`, `ui/team/Inbox.kt`). The Inbox never opens by itself on start.
+- Tests: NeedsYouTest, InboxModelTest, NeedsYouSourceTest. Merged to main 2026-11-18; unit tests run locally.
+
 ## Unreleased: routines live on the calendar and survive offline
 
 2026-11-18, owner: "it would make more sense to me if the routine would add a reminder to my calendar not in app … say I'm offline, how will I receive routines?", then "if it's available then yes Google calendar if not we go ARGUS calendar".

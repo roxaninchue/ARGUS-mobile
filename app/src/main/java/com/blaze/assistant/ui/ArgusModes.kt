@@ -32,7 +32,14 @@ internal fun ArgusModesPager(
     val report = rememberUpdatedState(onTab)
     val cur = rememberUpdatedState(tab)
     val want = ChatNav.modeIndex(tab)
-    LaunchedEffect(want) { if (want >= 0 && pager.currentPage != want) pager.animateScrollToPage(want) }
+    // Owner 2026-11-18: a switch slides straight to the asked mode. A jump of two or more (Team to Life, Chat to Desk)
+    // used to scroll through every page between, so the Chat page (and its chat) flashed past on the way; now it lands
+    // on the target directly and only a neighbour (one page away) slides.
+    LaunchedEffect(want) {
+        if (want >= 0 && pager.currentPage != want) {
+            if (kotlin.math.abs(want - pager.currentPage) > 1) pager.scrollToPage(want) else pager.animateScrollToPage(want)
+        }
+    }
     LaunchedEffect(pager) {
         androidx.compose.runtime.snapshotFlow { pager.settledPage }.collect { p ->
             val m = ChatNav.MODES[p]

@@ -120,7 +120,8 @@ object TeamJson {
     private fun permissionsMap(p: Permissions) = linkedMapOf<String, Any?>("autonomy" to p.autonomy.name,
         "actions" to ActionClass.values().filter { it in p.actions }.associateTo(LinkedHashMap<String, Any?>()) { it.name to p.actions.getValue(it).name },
         "spendCapMonthlyMinor" to p.spendCapMonthlyMinor, "currency" to p.currency, "sendScope" to p.sendScope.name,
-        "dataScopes" to p.dataScopes.toList(), "maxStepsPerTurn" to p.maxStepsPerTurn, "maxJobMinutes" to p.maxJobMinutes, "maxHops" to p.maxHops)
+        "dataScopes" to p.dataScopes.toList(), "maxStepsPerTurn" to p.maxStepsPerTurn, "maxJobMinutes" to p.maxJobMinutes, "maxHops" to p.maxHops,
+        "spendPerTxMaxMinor" to p.spendPerTxMaxMinor)
     private fun permissionsOf(o: Map<String, Any?>): Permissions {
         val d = Permissions()
         val actions = LinkedHashMap(DEFAULT_RULES)
@@ -132,7 +133,8 @@ object TeamJson {
             o.longOr("spendCapMonthlyMinor", d.spendCapMonthlyMinor), o.strOr("currency", d.currency),
             enumOr(o["sendScope"], SendScope.NONE, missing = d.sendScope),
             if (o.containsKey("dataScopes")) strings(o["dataScopes"]).toSet() else d.dataScopes,
-            o.intOr("maxStepsPerTurn", d.maxStepsPerTurn), o.intOr("maxJobMinutes", d.maxJobMinutes), o.intOr("maxHops", d.maxHops))
+            o.intOr("maxStepsPerTurn", d.maxStepsPerTurn), o.intOr("maxJobMinutes", d.maxJobMinutes), o.intOr("maxHops", d.maxHops),
+            spendPerTxMaxMinor = o.longOr("spendPerTxMaxMinor", d.spendPerTxMaxMinor))
     }
 
     private fun grantMap(m: Map<String, Rule>) = m.entries.associateTo(LinkedHashMap<String, Any?>()) { it.key to it.value.name }

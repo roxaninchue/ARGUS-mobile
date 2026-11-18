@@ -66,6 +66,7 @@ fun AccountLockRoute(reason: AccountLock.Reason, modifier: Modifier = Modifier) 
         }
     }
     CompositionLocalProvider(LocalBlaze provides DarkColors) {
+        DarkSystemBars()   // always dark: keep the status bar icons light over it
         SpaceBackdrop(modifier.testTag(ACCOUNT_LOCK_TAG), forceDark = true) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe().padding(horizontal = 18.dp, vertical = 18.dp).readableWidth()) {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
