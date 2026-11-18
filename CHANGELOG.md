@@ -7,6 +7,12 @@
 - `add_calendar_event` and `gcal_create` take `reminder_minutes` (an alert) and `repeat` (daily, weekdays, weekends, or days). `add_calendar_event` falls back to the ARGUS calendar when the phone has no writable one. Tool descriptions say what each does; the model chooses (docs/MODEL-FIRST.md).
 - Tests: RoutineCalendarTest (new). No APK built (owner).
 
+## Unreleased: Life › Apps opens a full Apps page; installed sites land there
+
+- Life's Apps button (and the "views" shortcut) opens a full Apps page instead of the old sheet: glass X top left (Back closes it too), your avatar top right (opens your profile), a 4-wide grid of ARGUS's apps (Music, Video, Browser, Blaze Phone, Gallery, Design, Projects, Learn, Seller, Terminal, Schedule, App Store), read from the Views registry (`app = true`), never Settings or Chat. A floating Search pill filters the tiles.
+- Browser › Install app now adds the site to the Apps page ("Your site apps"); "Also add to Home screen" is an option. Long-press a site app on the Apps page to open it, add it to the Home screen, or remove it.
+- Removed `AppsSheet` / `ArgusAppsTest`; new `AppsPageModel` + `AppsPageModelTest` (8).
+
 ## Unreleased: effort and text assist on the composer
 
 2026-11-18, owner: "move effort levels from the model selector and add them to the chatbox (same level and size as the model selector)", effort on the right, "add text assist … off, low, med, high, full", "I prefer selection rather than switch with tap", "an extension of chat rather than detached".
