@@ -3418,7 +3418,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // 0.53.3 (owner: "remove the pills"): which skills / specialist loaded is technical; it goes to the trace, never the chat.
                 try { listOf(SpecialistMatch.cardLine(turnSpecs), SkillMatch.cardLine(turnSkills)).filter { it.isNotBlank() }
                     .takeIf { it.isNotEmpty() }?.let { android.util.Log.i("BlazeSkills", it.joinToString(" | ")) } } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
-                var learnNudged = false
                 // v0.44.0 fewer tools per turn: ToolRouter's groups, then ToolPick (core split into cues, capped).
                 val usedNames = ToolPick.usedNames(history)
                 if (turnView != null) groupsOn += "make"
@@ -3842,32 +3841,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             continue
                         }
                     }
-                    // Views first (v0.23.0): flashcards or a quiz written as text on a Learn turn become a Learn deck,
-                    // or the model is asked once to make the deck itself.
-                    if ((calls == null || calls.length() == 0) && !routine && turnView?.id == "learn") {
-                        val called = synchronized(turnTools) { Flashcards.TOOL in turnTools }
-                        when (ViewRouter.shouldConvert(lastUserText(), ReplyParts.split(textOut, final = true).text, called, learnNudged)) {
-                            ViewRouter.Fix.CONVERT -> {
-                                val cards = ViewRouter.cardsFrom(ReplyParts.split(textOut, final = true).text)
-                                val deck = ViewRouter.deckName(lastUserText())
-                                val n = kotlinx.coroutines.withContext(Dispatchers.IO) { Flashcards.add(deck, cards) }
-                                add(Role.STEP, "Made the \u201c$deck\u201d deck in Learn")
-                                turnTools.add(Flashcards.TOOL)
-                                turnOk += ClaimGuard.Call(Flashcards.TOOL)
-                                textOut = ViewRouter.converted(deck, n, cards.size)
-                                reply.put("content", textOut)
-                                if (agentId == null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Views.openOrOffer("learn", "", lastUserText(), Modes.autopilot) }
-                            }
-                            ViewRouter.Fix.REPROMPT -> if (nudgesLeft > 0 && step < maxSteps - 3) {
-                                learnNudged = true; nudgesLeft--
-                                if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
-                                add(Role.STEP, "Putting the cards in Learn")
-                                history.put(JSONObject().put("role", "user").put("content", ViewRouter.NUDGE))
-                                continue
-                            }
-                            ViewRouter.Fix.NONE -> {}
-                        }
-                    }
+                    // 2026-11-18 (model-first): the keyword Learn safety net that turned a text reply into a deck is gone; the flashcards tool rides every turn.
                     // v0.45.9 (ToolTruth): "I don't have the capability…" / desktop advice while the list has the tool → one re-prompt.
                     if ((calls == null || calls.length() == 0) && !routine && !refusalNudged && nudgesLeft > 0 && tools.length() > 0 && step < maxSteps - 2 &&
                         ModelPick.refused(ToolTruth.refusal(ReplyParts.split(textOut, final = true).text))) {

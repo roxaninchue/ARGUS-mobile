@@ -33,7 +33,8 @@ class ModelFirstTest {
     @Test fun noOtherPreRoutersInTheTurn() {
         val src = agentSrc()
         for (gone in listOf("Media.directPrompt(", "MemoryIntent.isListRequest(", "SearchRoute.webNote(", "searches.check(",
-                "ChatLane.fits(", "ToolTruth.toolShaped(", "Duo.kindFor(", "private suspend fun runLookup("))
+                "ChatLane.fits(", "ToolTruth.toolShaped(", "Duo.kindFor(", "private suspend fun runLookup(",
+                "ViewRouter.shouldConvert(", "ViewRouter.cardsFrom("))
             assertFalse(gone, src.contains(gone))
         assertTrue("fast-lane rules only when no model is reachable", src.contains("if (offline && single && attachments.isEmpty() && !routine"))
         assertTrue(src.contains("var lite = false"))

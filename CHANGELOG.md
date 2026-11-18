@@ -1,3 +1,12 @@
+## Unreleased: flashcards redesign, phase 1 (two thumbs, icons first, undo)
+
+2026-11-18, owner's screenshots of Learn and a NET103 card ("just two icons, thumbs up and down"; "icons are important and easy to read, not just long words").
+- **Study screen** (`ui/LearnPage.kt`): tap the card to flip it (a flip icon on the card, a big eye button under it). Two big round grade icons replace Again / Hard / Good / Easy: thumbs down (back in 10 min, and asked again before the session ends) and thumbs up (spaced out), each with its next wait under it. A progress bar and "3 / 12". Undo, Edit and Delete are icons in the header; Delete is no longer a text link under the card. Edit changes both sides in place and keeps the schedule. A done screen shows thumbs up / down counts and when the next cards come back.
+- **Learn home**: decks first. A Study all button (play icon + count) runs every deck's due and new cards; "All caught up · 2 d" when nothing waits. Each deck has a ⋯ with icon actions: study, rename (merges into an existing deck), delete (Undo icon beside Decks). The explainer only shows when there are no decks.
+- **Store** (`agent/Flashcards.kt`): `FORGOT` / `KNEW`, `undo()` + `undoable` (one step: grade, edit, delete, delete_deck, rename), `edit`, `renameDeck`, `next` (session re-asks), `queue(ALL)`, `waiting`, `nextDue`, `until`. Bug fix: a missed card (Again resets reps) no longer counts as New again (`Card.isNew` = never studied). Deck names drop control characters. The `flashcards` tool gains `rename_deck`.
+- **Model-first**: removed the keyword Learn safety net from `Agent.kt` (text replies turned into decks / one re-prompt, `learnNudged`); the flashcards tool rides every turn. `ModelFirstTest` guards it.
+- Tests: new `FlashcardsRedesignTest` (7); StudentPackTest's two flashcard tests rerun. Not run: Compose compile of LearnPage (no Gradle here), ShotsTest 12-learn / 13-flashcard, device.
+
 ## 0.53.8 (versionCode 200, 2026-11-18): cinematic first run, ARGUS introduces itself, Life to-dos
 
 Owner's spec 2026-11-18 (branch feat/onboarding-cinematic).

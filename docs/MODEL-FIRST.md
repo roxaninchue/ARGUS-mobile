@@ -105,6 +105,8 @@ The fix is what the model receives. Nothing detects "exam", "completed" or "fini
 - **Open:** the remote `https://blazeinchue.pages.dev/persona.json` (1.0.7) should be replaced with this core, or retired.
   The app ignores it until it publishes a version above 2.0.0.
 
+- 2026-11-18: the Learn safety net (`ViewRouter.shouldConvert` / `cardsFrom` turning a text reply into a deck, plus its re-prompt) is gone from the turn; `ViewRouter`'s helpers stay only for their old tests.
+
 ## Still to retire (owner to schedule; don't add more)
 
 - **`ViewRouter.route` / `SkillMatch` / `SpecialistMatch`** still pick views, skill packs and specialists from the message's words (they add the `make` / `extras` groups). Next candidate: list them in the prompt and let the model load one.
