@@ -18,20 +18,20 @@ class StudentPackTest {
     private val now = 1_760_000_000_000L
 
     @Test fun spacedRepetitionGrowsAndResets() {
+        // 2026-11-18 phase 2: FSRS 4.5 replaced SM-2 (FlashcardsRedesignTest has the scheduler's details).
         var c = Card("c1", "CIT102", "range(3)?", "0, 1, 2")
-        c = Flashcards.review(c, Flashcards.GOOD, now); assertEquals(1, c.interval); assertEquals(now + day, c.due)
-        c = Flashcards.review(c, Flashcards.GOOD, now); assertEquals(6, c.interval)
-        c = Flashcards.review(c, Flashcards.GOOD, now); assertEquals(15, c.interval)   // 6 × 2.5
-        val easy = Flashcards.review(c, Flashcards.EASY, now)
-        assertTrue(easy.interval > Flashcards.review(c, Flashcards.GOOD, now).interval)
-        val again = Flashcards.review(c, Flashcards.AGAIN, now)
-        assertEquals(0, again.reps); assertEquals(1, again.lapses); assertEquals(now + 600_000L, again.due)
-        assertTrue(again.ease >= 1.3 && again.ease < c.ease)
-        var hard = Card("c2", "d", "f", "b", ease = 1.3)
-        repeat(5) { hard = Flashcards.review(hard, Flashcards.HARD, now) }
-        assertEquals(1.3, hard.ease, 1e-9)
-        assertEquals("10 min", Flashcards.label(c, Flashcards.AGAIN, now))
-        assertEquals("1 mo", Flashcards.label(c, Flashcards.GOOD, now))
+        c = Flashcards.review(c, Flashcards.GOOD, now); assertEquals(4, c.interval); assertEquals(now + 4 * day, c.due)
+        val i1 = c.interval
+        c = Flashcards.review(c, Flashcards.GOOD, now + 4 * day); assertTrue(c.interval > i1)
+        val i2 = c.interval
+        c = Flashcards.review(c, Flashcards.GOOD, now + (4 + i2) * day); assertTrue(c.interval > i2)
+        val t = now + (4 + i2 + c.interval) * day
+        val easy = Flashcards.review(c, Flashcards.EASY, t)
+        assertTrue(easy.interval > Flashcards.review(c, Flashcards.GOOD, t).interval)
+        val again = Flashcards.review(c, Flashcards.AGAIN, t)
+        assertEquals(0, again.reps); assertEquals(1, again.lapses); assertEquals(t + 60_000L, again.due)
+        assertTrue(again.stability < c.stability && again.difficulty > c.difficulty)
+        assertEquals("1 min", Flashcards.label(c, Flashcards.AGAIN, t))
     }
 
     @Test fun decksQueueAndToolOnDisk() {

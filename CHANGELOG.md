@@ -1,3 +1,12 @@
+## Unreleased: flashcards phase 2, smarter spacing (FSRS) and a daily new-card limit
+
+2026-11-18 night (owner: keep the daily limit, "Study more" past it).
+- **FSRS 4.5 scheduler** (`agent/Flashcards.kt`): each card keeps a stability (days until recall falls to 90 %) and a difficulty (1 to 10), with FSRS's published default weights. A review's interval depends on how long it actually waited, so a card reviewed late grows more. Thumbs up on a new card: 4 days (was 1).
+- **Relearning steps:** a miss brings the card back in 1 min, then 10 min, before it is spaced out again with a lower stability and a higher difficulty.
+- **20 new cards a deck a day** (`NEW_PER_DAY`, counted by the day a card was first studied, local midnight). Deck chips show today's new; the done screen offers "+ 20 more" when more are waiting.
+- **Migration:** cards saved by the SM-2 scheduler get a stability from their interval and a difficulty from their ease on load; new fields (s, d, step, first, last) are written back.
+- Tests: FlashcardsRedesignTest 12 (5 new: recall at stability, relearning steps, late reviews grow more, SM-2 migration round trip, daily limit + study more); StudentPackTest's scheduler test rewritten for FSRS (behaviour change, not a threshold). Not run: Compose compile of LearnPage, ShotsTest, device.
+
 ## Unreleased: flashcards redesign, phase 1 (two thumbs, icons first, undo)
 
 2026-11-18, owner's screenshots of Learn and a NET103 card ("just two icons, thumbs up and down"; "icons are important and easy to read, not just long words").

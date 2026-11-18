@@ -24,8 +24,8 @@ class FlashcardsRedesignTest {
     @Test fun twoGradesMapToAgainAndGood() {
         assertEquals(Flashcards.AGAIN, Flashcards.FORGOT); assertEquals(Flashcards.GOOD, Flashcards.KNEW)
         val c = Card("a", "D", "q", "a")
-        assertEquals("10 min", Flashcards.label(c, Flashcards.FORGOT, now))
-        assertEquals("1 d", Flashcards.label(c, Flashcards.KNEW, now))
+        assertEquals("1 min", Flashcards.label(c, Flashcards.FORGOT, now))
+        assertEquals("4 d", Flashcards.label(c, Flashcards.KNEW, now))
     }
 
     @Test fun undoTakesBackTheLastChangeOnly() {
@@ -52,7 +52,7 @@ class FlashcardsRedesignTest {
         Flashcards.answer(id, Flashcards.KNEW, now)
         assertTrue(Flashcards.edit(id, "  new q ", ""))
         val c = Flashcards.load().single()
-        assertEquals("new q", c.front); assertEquals("a", c.back); assertEquals(1, c.reps); assertEquals(now + day, c.due)
+        assertEquals("new q", c.front); assertEquals("a", c.back); assertEquals(1, c.reps); assertEquals(now + 4 * day, c.due)
         assertFalse(Flashcards.edit("nope", "x", "y"))
         assertTrue(Flashcards.undo()); assertEquals("q", Flashcards.load().single().front)
     }
@@ -69,7 +69,7 @@ class FlashcardsRedesignTest {
     @Test fun studyAllCoversEveryDeckDueFirst() {
         Flashcards.add("A", listOf("a1" to "x")); Flashcards.add("B", listOf("b1" to "y", "b2" to "z"))
         val b1 = Flashcards.load().single { it.front == "b1" }.id
-        Flashcards.answer(b1, Flashcards.KNEW, now - 2 * day)   // due a day ago
+        Flashcards.answer(b1, Flashcards.KNEW, now - 5 * day)   // 4 days, so due a day ago
         val q = Flashcards.queue(Flashcards.ALL, now)
         assertEquals(3, q.size); assertEquals("b1", q.first().front)
         assertEquals(3, Flashcards.waiting(now))
@@ -81,11 +81,65 @@ class FlashcardsRedesignTest {
         Flashcards.add("D", listOf("q" to "a"))
         val id = Flashcards.load().single().id
         Flashcards.answer(id, Flashcards.FORGOT, now)
-        assertTrue(Flashcards.queue("D", now).isEmpty())         // its 10 minutes aren't up
+        assertTrue(Flashcards.queue("D", now).isEmpty())         // its relearning minute isn't up
         assertEquals(id, Flashcards.next("D", listOf(id), now)?.id)   // but the session asks it again
         Flashcards.answer(id, Flashcards.KNEW, now)
         assertNull(Flashcards.next("D", emptyList(), now))
-        assertEquals(now + day, Flashcards.nextDue("D", now)); assertEquals(now + day, Flashcards.nextDue(Flashcards.ALL, now))
+        assertEquals(now + 600_000L, Flashcards.nextDue("D", now)); assertEquals(now + 600_000L, Flashcards.nextDue(Flashcards.ALL, now))
+    }
+
+    // ---------------- phase 2: FSRS, relearning steps, daily new limit ----------------
+
+    @Test fun recallIsNinetyPercentAtTheStability() {
+        assertEquals(0.9, Flashcards.recall(10.0, 10.0), 1e-9)
+        assertTrue(Flashcards.recall(30.0, 10.0) < 0.9 && Flashcards.recall(1.0, 10.0) > 0.9)
+    }
+
+    @Test fun aMissRelearnsInOneThenTenMinutes() {
+        var c = Flashcards.review(Card("a", "D", "q", "a"), Flashcards.KNEW, now)
+        val t = now + c.interval * day
+        c = Flashcards.review(c, Flashcards.FORGOT, t)
+        assertEquals(1, c.step); assertEquals(t + 60_000L, c.due)
+        c = Flashcards.review(c, Flashcards.KNEW, t + 60_000L)
+        assertEquals(2, c.step); assertEquals(t + 660_000L, c.due)
+        c = Flashcards.review(c, Flashcards.KNEW, t + 660_000L)
+        assertEquals(0, c.step); assertTrue(c.interval >= 1); assertEquals(1, c.lapses)
+        // a harder card after a miss: its next good review spaces less than a never-missed one
+        assertTrue(c.difficulty > Flashcards.review(Card("b", "D", "q", "a"), Flashcards.KNEW, now).difficulty)
+    }
+
+    @Test fun waitingLongerGrowsTheIntervalMore() {
+        val c = Flashcards.review(Card("a", "D", "q", "a"), Flashcards.KNEW, now)
+        val onTime = Flashcards.review(c, Flashcards.KNEW, now + 4 * day).interval
+        val late = Flashcards.review(c, Flashcards.KNEW, now + 12 * day).interval
+        assertTrue("$late > $onTime", late > onTime)
+    }
+
+    @Test fun oldSm2CardsMigrateOnLoad() {
+        val f = Flashcards.fileOverride!!
+        f.parentFile.mkdirs()
+        f.writeText("""{"format":1,"cards":[{"id":"x","deck":"D","front":"q","back":"a","due":$now,"interval":15,"ease":2.5,"reps":3,"lapses":0},
+            {"id":"y","deck":"D","front":"q2","back":"a2","due":0,"interval":0,"ease":2.5,"reps":0,"lapses":0}]}""")
+        Flashcards.reset()
+        val x = Flashcards.load().single { it.id == "x" }
+        assertEquals(15.0, x.stability, 1e-9); assertEquals(6.0, x.difficulty, 1e-9); assertEquals(now - 15 * day, x.last)
+        assertTrue(Flashcards.load().single { it.id == "y" }.isNew)
+        val next = Flashcards.review(x, Flashcards.KNEW, now)
+        assertTrue(next.interval > 15)
+        Flashcards.answer("x", Flashcards.KNEW, now); Flashcards.reset()
+        assertEquals(Flashcards.load().single { it.id == "x" }.stability, next.stability, 1e-6)   // round-trips with its FSRS fields
+    }
+
+    @Test fun twentyNewCardsADayThenStudyMore() {
+        Flashcards.add("Big", (1..30).map { "q$it" to "a$it" })
+        assertEquals(20, Flashcards.queue("Big", now).size)
+        assertEquals(20, Flashcards.decks(now).single().today); assertEquals(30, Flashcards.decks(now).single().fresh)
+        Flashcards.queue("Big", now).take(5).forEach { Flashcards.answer(it.id, Flashcards.KNEW, now) }
+        assertEquals(15, Flashcards.newLeft("Big", now)); assertEquals(15, Flashcards.queue("Big", now).size)
+        assertEquals(10, Flashcards.heldBack("Big", now)); assertEquals(15, Flashcards.waiting(now))
+        assertEquals(20, Flashcards.queue("Big", now, more = true).size)
+        val tomorrow = Flashcards.dayStart(now) + day + 3_600_000L
+        assertEquals(20, Flashcards.newLeft("Big", tomorrow))
     }
 
     @Test fun waitsReadShort() {

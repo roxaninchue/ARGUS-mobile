@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
@@ -63,9 +64,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
  *
  * 2026-11-18 redesign (owner: "just two icons, thumbs up and down"; "icons are important and easy to read, not
  * just long words"): decks first with one Study all button; each deck has a ⋯ with icon actions (study, rename,
- * delete). Studying: tap the card (or the eye) to flip, then thumbs down (back in 10 min, and again before this
+ * delete). Studying: tap the card (or the eye) to flip, then thumbs down (back in 1 min, and again before this
  * session ends) or thumbs up (spaced out); a progress bar; Undo, Edit and Delete as icons in the header; a done
- * screen with how many you knew and when the next cards come back.
+ * screen with how many you knew, when the next cards come back, and (phase 2) "+ 20 more" past the daily new-card limit.
  */
 @Composable
 internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Long? = null) {
@@ -148,8 +149,8 @@ private fun DeckRow(d: Flashcards.Deck, onStudy: () -> Unit) {
                 Text(tr("{0} cards", d.total.toString()), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
             if (d.due > 0) StatusChip("${d.due} due", c.accent, filled = true)
-            if (d.fresh > 0) { Spacer(Modifier.width(6.dp)); StatusChip("${d.fresh} new", c.accent, filled = false) }
-            if (d.due + d.fresh == 0) Icon(Icons.Rounded.CheckCircle, contentDescription = tr("Done for now"), tint = c.weak, modifier = Modifier.size(20.dp))
+            if (d.today > 0) { Spacer(Modifier.width(6.dp)); StatusChip("${d.today} new", c.accent, filled = false) }
+            if (d.due + d.today == 0) Icon(Icons.Rounded.CheckCircle, contentDescription = tr("Done for now"), tint = c.weak, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
             GlassIconButton(Icons.Rounded.MoreHoriz, tr("Deck options"), size = 36.dp) { open = !open; renaming = false }
         }
@@ -181,9 +182,10 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
     var seen by remember(deck) { mutableStateOf(0) }
     var knew by remember(deck) { mutableStateOf(0) }
     var last by remember(deck) { mutableStateOf<Pair<String, Int>?>(null) }
+    var more by remember(deck) { mutableStateOf(false) }   // Study more: past today's 20 new cards
     val missed = forgot.toList()
-    val card = remember(all, deck, missed) { Flashcards.next(deck, missed, clock) }
-    val left = remember(all, deck, missed) { (Flashcards.queue(deck, clock).map { it.id } + missed).distinct().size }
+    val card = remember(all, deck, missed, more) { Flashcards.next(deck, missed, clock, more) }
+    val left = remember(all, deck, missed, more) { (Flashcards.queue(deck, clock, more).map { it.id } + missed).distinct().size }
     val title = if (deck == Flashcards.ALL) tr("All decks") else deck
 
     fun grade(id: String, g: Int) {
@@ -225,7 +227,7 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
     Spacer(Modifier.height(14.dp))
 
     if (card == null) {
-        DoneCard(deck, seen, knew, clock, onBack)
+        DoneCard(deck, seen, knew, clock, onBack, onMore = { more = true })
         return
     }
 
@@ -284,9 +286,10 @@ private fun GradeButton(icon: ImageVector, desc: String, wait: String, bg: Color
 
 /** End of a session: how many you knew, and when the next cards come back. */
 @Composable
-private fun DoneCard(deck: String, seen: Int, knew: Int, now: Long, onBack: () -> Unit) {
+private fun DoneCard(deck: String, seen: Int, knew: Int, now: Long, onBack: () -> Unit, onMore: () -> Unit) {
     val c = LocalBlaze.current.mono
     val next = remember(deck, seen) { Flashcards.nextDue(deck, now) }
+    val held = remember(deck, seen) { Flashcards.heldBack(deck, now) }
     Column(Modifier.fillMaxWidth().hairline(c.hair).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = c.accent, modifier = Modifier.size(56.dp))
@@ -298,6 +301,15 @@ private fun DoneCard(deck: String, seen: Int, knew: Int, now: Long, onBack: () -
         }
         if (next != null) IconLine(Icons.Rounded.Schedule, tr("Next cards in {0}", Flashcards.until(next - now)), c.sub)
         Spacer(Modifier.height(4.dp))
-        BackButton(onBack, desc = "Back to decks")
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            BackButton(onBack, desc = "Back to decks")
+            // Today's 20 new cards are done; more are waiting: one tap studies another 20 (owner 2026-11-18: keep the limit, soft).
+            if (held > 0) Row(Modifier.height(48.dp).clip(BlazeShapes.pill).background(c.accent, BlazeShapes.pill)
+                .clickable(onClickLabel = tr("Study more")) { onMore() }.padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(6.dp))
+                ButtonText(tr("{0} more", minOf(held, Flashcards.NEW_PER_DAY).toString()), color = Color.White, size = 14.sp)
+            }
+        }
     }
 }
