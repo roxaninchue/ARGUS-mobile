@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Flip
+import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Schedule
@@ -56,6 +58,11 @@ import androidx.compose.material.icons.rounded.ThumbUp
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.border
+import kotlinx.coroutines.launch
+import com.blaze.assistant.agent.Agent
+import com.blaze.assistant.agent.StudyNudge
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -67,6 +74,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * delete). Studying: tap the card (or the eye) to flip, then thumbs down (back in 1 min, and again before this
  * session ends) or thumbs up (spaced out); a progress bar; Undo, Edit and Delete as icons in the header; a done
  * screen with how many you knew, when the next cards come back, and (phase 2) "+ 20 more" past the daily new-card limit.
+ * Phase 3: a keyboard icon to type an answer the model checks by meaning (its pick gets a ring), each card's source under
+ * the answer, and the Study reminder switch (StudyNudge).
  */
 @Composable
 internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Long? = null) {
@@ -115,6 +124,10 @@ internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Lon
     var low by remember { mutableStateOf(Settings.lowData) }
     ToggleRow("Google Classroom", "Read your courses and assignments, and turn each one into a reminder 24 hours before it's due. Reconnect Google once after switching this on", classroom) {
         classroom = !classroom; Classroom.enabled = classroom }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var nudge by remember { mutableStateOf(StudyNudge.enabled) }
+    ToggleRow("Study reminder", "A notification at 6 pm when flashcards are waiting, and none when they aren't", nudge) {
+        nudge = !nudge; StudyNudge.enabled = nudge; StudyNudge.schedule(ctx) }
     ToggleRow("Low-data mode", "Text models only (photos are described once), no screenshots, no instant pictures, and each answer shows the MB it used", low) {
         low = !low; Settings.lowData = low }
     Text(tr("Study skills: study-planner, tutor, lecture-notes, essay-coach, group-project and classroom-sync (Settings \u203a Skill library)."),
@@ -247,6 +260,22 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
     }
 
     var reveal by remember(card.id) { mutableStateOf(reveal0) }
+    // Phase 3: type an answer and the model checks it by meaning; its pick gets a ring, the user still taps.
+    val scope = rememberCoroutineScope()
+    var typing by remember(card.id) { mutableStateOf(false) }
+    var typed by remember(card.id) { mutableStateOf("") }
+    var checking by remember(card.id) { mutableStateOf(false) }
+    var verdict by remember(card.id) { mutableStateOf<Boolean?>(null) }
+    var note by remember(card.id) { mutableStateOf("") }
+    fun check() {
+        if (typed.isBlank() || checking) return
+        checking = true
+        scope.launch {
+            val r = try { Agent.ask("Flashcard check", Flashcards.gradePrompt(card, typed)) } catch (_: Throwable) { "" }
+            verdict = Flashcards.verdict(r); note = if (r.isBlank()) tr("Couldn't check it right now.") else Flashcards.verdictNote(r)
+            checking = false; typing = false; reveal = true
+        }
+    }
     Column(Modifier.fillMaxWidth().heightIn(min = 240.dp).clip(BlazeShapes.medium).hairline(c.ink.copy(alpha = 0.35f))
         .clickable(onClickLabel = if (reveal) tr("Show the question") else tr("Show the answer")) { reveal = !reveal }.padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -258,27 +287,53 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
         if (reveal) {
             Box(Modifier.fillMaxWidth().height(1.dp).background(c.hair))
             Text(card.back, style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, lineHeight = 23.sp, color = c.body))
+            if (card.source.isNotEmpty()) Label(card.source, color = c.weak, size = 10.sp, maxLines = 1)
+        }
+    }
+    if (typed.isNotBlank() && (checking || note.isNotEmpty())) {
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.Top) {
+            Icon(when (verdict) { true -> Icons.Rounded.ThumbUp; false -> Icons.Rounded.ThumbDown; null -> Icons.Rounded.Keyboard },
+                contentDescription = null, tint = when (verdict) { true -> c.accent; false -> FORGOT_RED; null -> c.sub }, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(if (checking) tr("Checking\u2026") else "\u201c${typed.trim()}\u201d \u00b7 $note",
+                style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
+        }
+    }
+    if (typing) {
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BlazeTextField(typed, { typed = it }, tr("Your answer"), modifier = Modifier.weight(1f), enabled = !checking,
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { check() }),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done))
+            Spacer(Modifier.width(8.dp))
+            GlassIconButton(Icons.AutoMirrored.Rounded.Send, tr("Check my answer"), size = 48.dp, bg = c.accent, tint = Color.White,
+                enabled = typed.isNotBlank() && !checking) { check() }
         }
     }
     Spacer(Modifier.height(20.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Top) {
         if (!reveal) {
+            if (!typing) GlassIconButton(Icons.Rounded.Keyboard, tr("Type your answer"), size = 56.dp) { typing = true }
             GlassIconButton(Icons.Rounded.Visibility, tr("Show the answer"), size = 72.dp, bg = c.accent, tint = Color.White) { reveal = true }
         } else {
-            GradeButton(Icons.Rounded.ThumbDown, tr("Forgot it"), Flashcards.label(card, Flashcards.FORGOT, clock), FORGOT_RED.copy(alpha = 0.20f), FORGOT_RED) {
-                grade(card.id, Flashcards.FORGOT) }
-            GradeButton(Icons.Rounded.ThumbUp, tr("Knew it"), Flashcards.label(card, Flashcards.KNEW, clock), c.accent, Color.White) {
-                grade(card.id, Flashcards.KNEW) }
+            GradeButton(Icons.Rounded.ThumbDown, tr("Forgot it"), Flashcards.label(card, Flashcards.FORGOT, clock), FORGOT_RED.copy(alpha = 0.20f), FORGOT_RED,
+                picked = verdict == false) { grade(card.id, Flashcards.FORGOT) }
+            GradeButton(Icons.Rounded.ThumbUp, tr("Knew it"), Flashcards.label(card, Flashcards.KNEW, clock), c.accent, Color.White,
+                picked = verdict == true) { grade(card.id, Flashcards.KNEW) }
         }
     }
 }
 
 /** A big round grade icon with its next wait under it ("10 min", "6 d"). */
 @Composable
-private fun GradeButton(icon: ImageVector, desc: String, wait: String, bg: Color, tint: Color, onClick: () -> Unit) {
+private fun GradeButton(icon: ImageVector, desc: String, wait: String, bg: Color, tint: Color, picked: Boolean = false, onClick: () -> Unit) {
     val c = LocalBlaze.current.mono
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        GlassIconButton(icon, desc, size = 72.dp, bg = bg, tint = tint, onClick = onClick)
+        // The model's pick after a typed answer gets a ring; the user still decides.
+        Box(Modifier.size(82.dp).then(if (picked) Modifier.border(3.dp, if (bg.alpha >= 0.99f) bg else tint, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
+            GlassIconButton(icon, desc, size = 72.dp, bg = bg, tint = tint, onClick = onClick)
+        }
         Spacer(Modifier.height(6.dp))
         Text(wait, maxLines = 1, style = TextStyle(fontFamily = Type.Mono, fontSize = 11.sp, color = c.sub))
     }

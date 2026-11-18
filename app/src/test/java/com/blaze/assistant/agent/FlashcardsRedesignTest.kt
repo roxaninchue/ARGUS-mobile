@@ -142,6 +142,42 @@ class FlashcardsRedesignTest {
         assertEquals(20, Flashcards.newLeft("Big", tomorrow))
     }
 
+    // ---------------- phase 3: sources, typed answers, the study reminder ----------------
+
+    @Test fun cardsKeepTheirSource() {
+        val out = Flashcards.run(JSONObject().put("action", "add").put("deck", "NET103").put("cards", org.json.JSONArray()
+            .put(JSONObject().put("front", "TCP is?").put("back", "Connection-oriented").put("source", "NET103.pdf p. 4"))
+            .put(JSONObject().put("front", "UDP is?").put("back", "Connectionless"))))
+        assertTrue(out, out.startsWith("Added 2 cards"))
+        Flashcards.reset()
+        assertEquals("NET103.pdf p. 4", Flashcards.load().single { it.front == "TCP is?" }.source)
+        assertEquals("", Flashcards.load().single { it.front == "UDP is?" }.source)
+        assertTrue(Flashcards.tool().toString().contains("source"))
+    }
+
+    @Test fun theModelsVerdictIsRead() {
+        assertEquals(true, Flashcards.verdict("Right. Connection-oriented services confirm delivery."))
+        assertEquals(true, Flashcards.verdict("**Correct**: same idea."))
+        assertEquals(false, Flashcards.verdict("wrong - that's UDP, which is connectionless."))
+        assertEquals(null, Flashcards.verdict("Hmm, partly."))
+        assertEquals("that's UDP, which is connectionless.", Flashcards.verdictNote("wrong - that's UDP, which is connectionless."))
+        val p = Flashcards.gradePrompt(Card("a", "D", "Which is more reliable?", "Connection-oriented"), "  tcp style ")
+        assertTrue(p.contains("Expected answer: Connection-oriented") && p.contains("Student's answer: tcp style") && p.contains("right or wrong"))
+    }
+
+    @Test fun theReminderFiresAtSixAndOnlyWhenCardsWait() {
+        val tz = java.util.TimeZone.getTimeZone("Africa/Lusaka")
+        val noon = 1_800_000_000_000L.let { Flashcards.dayStart(it, tz) + 12 * 3_600_000L }
+        assertEquals(Flashcards.dayStart(noon, tz) + 18 * 3_600_000L, Flashcards.nudgeAt(noon, tz = tz))
+        val evening = noon + 7 * 3_600_000L
+        assertEquals(Flashcards.dayStart(noon, tz) + day + 18 * 3_600_000L, Flashcards.nudgeAt(evening, tz = tz))
+        assertNull(Flashcards.nudgeText(now))
+        Flashcards.add("NET103", listOf("q" to "a", "q2" to "a2"))
+        assertEquals("2 cards waiting in NET103", Flashcards.nudgeText(now))
+        Flashcards.add("CIT102", listOf("q" to "a"))
+        assertEquals("3 cards waiting in 2 decks", Flashcards.nudgeText(now))
+    }
+
     @Test fun waitsReadShort() {
         assertEquals("now", Flashcards.until(0)); assertEquals("10 min", Flashcards.until(600_000))
         assertEquals("3 h", Flashcards.until(3 * 3_600_000L)); assertEquals("2 d", Flashcards.until(2 * day))

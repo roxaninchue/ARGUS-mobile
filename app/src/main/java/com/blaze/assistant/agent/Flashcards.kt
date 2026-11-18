@@ -26,18 +26,21 @@ data class Card(val id: String, val deck: String, val front: String, val back: S
                 /** Relearning step after a miss: 0 = none, 1 = back in 1 min, 2 = back in 10 min. */
                 val step: Int = 0,
                 /** When it was first studied ([Flashcards.NEW_PER_DAY] counts these) and last reviewed. 0 = never. */
-                val first: Long = 0L, val last: Long = 0L) {
+                val first: Long = 0L, val last: Long = 0L,
+                /** Where the card came from ("NET103.pdf p. 4", "lecture 3 slides"), shown under the answer. "" = unknown. */
+                val source: String = "") {
     /** Never studied. A missed card (Again resets reps to 0) is not new again: it waits its step like a review. */
     val isNew: Boolean get() = reps == 0 && lapses == 0
     fun toJson(): JSONObject = JSONObject().put("id", id).put("deck", deck).put("front", front).put("back", back)
         .put("due", due).put("interval", interval).put("ease", ease).put("reps", reps).put("lapses", lapses)
         .put("s", stability).put("d", difficulty).put("step", step).put("first", first).put("last", last)
+        .apply { if (source.isNotEmpty()) put("source", source) }
     companion object {
         private fun num(o: JSONObject, k: String, def: Double) = o.optDouble(k, def).let { if (it.isNaN()) def else it }
         fun from(o: JSONObject): Card {
             val c = Card(o.optString("id"), o.optString("deck", "Cards"), o.optString("front"), o.optString("back"),
                 o.optLong("due"), o.optInt("interval"), num(o, "ease", 2.5), o.optInt("reps"), o.optInt("lapses"),
-                num(o, "s", 0.0), num(o, "d", 0.0), o.optInt("step"), o.optLong("first"), o.optLong("last"))
+                num(o, "s", 0.0), num(o, "d", 0.0), o.optInt("step"), o.optLong("first"), o.optLong("last"), o.optString("source"))
             return if (o.has("s")) c else Flashcards.migrate(c)
         }
     }
@@ -232,11 +235,13 @@ object Flashcards {
     /** A deck name as stored: no control characters (so nothing can collide with [ALL]), trimmed, at most 60 chars. */
     private fun clean(name: String) = name.filterNot { it.isISOControl() }.trim().take(60)
 
-    fun add(deck: String, pairs: List<Pair<String, String>>): Int {
+    /** Adds cards to [deck]; [sources] (same order as [pairs], may be shorter) says where each came from. */
+    fun add(deck: String, pairs: List<Pair<String, String>>, sources: List<String> = emptyList()): Int {
         val d = clean(deck).ifBlank { "Cards" }
         val have = load().filter { it.deck == d }.map { it.front.trim().lowercase() }.toMutableSet()
-        val new = pairs.filter { it.first.isNotBlank() && it.second.isNotBlank() && have.add(it.first.trim().lowercase()) }
-            .map { (f, b) -> Card("c" + java.util.UUID.randomUUID().toString().replace("-", "").take(12), d, f.trim().take(600), b.trim().take(1500)) }
+        val new = pairs.withIndex().filter { (_, p) -> p.first.isNotBlank() && p.second.isNotBlank() && have.add(p.first.trim().lowercase()) }
+            .map { (i, p) -> Card("c" + java.util.UUID.randomUUID().toString().replace("-", "").take(12), d, p.first.trim().take(600), p.second.trim().take(1500),
+                source = sources.getOrNull(i).orEmpty().trim().take(120)) }
         if (new.isNotEmpty()) save(load() + new)
         return new.size
     }
@@ -260,26 +265,59 @@ object Flashcards {
         return n
     }
 
+    // ---------------- phase 3: typed answers and the study reminder (pure parts) ----------------
+
+    /** What the model is asked when the user types an answer: it compares meaning, not wording. */
+    fun gradePrompt(c: Card, typed: String): String =
+        "Grade a flashcard answer by meaning, not wording or spelling. Start your reply with the word right or wrong, then " +
+            "give one short sentence the student can learn from.\nQuestion: ${c.front}\nExpected answer: ${c.back}\nStudent's answer: ${typed.trim()}"
+
+    /** The model's verdict from its reply: true = right, false = wrong, null = it didn't say. */
+    fun verdict(reply: String): Boolean? {
+        val w = reply.trim().trimStart('*', '_', '"', '\u201c').takeWhile { it.isLetter() }.lowercase()
+        return when (w) { "right", "correct", "yes" -> true; "wrong", "incorrect", "no" -> false; else -> null }
+    }
+
+    /** The one sentence after the verdict word, for the card. */
+    fun verdictNote(reply: String): String =
+        reply.trim().trimStart('*', '_', '"', '\u201c').dropWhile { it.isLetter() }.trimStart('*', '_', '"', '\u201d', '.', ',', ':', '!', ' ', '-', '\u2014').trim().take(240)
+
+    /** The study reminder's hour (local), and the next time it fires after [now]. */
+    const val NUDGE_HOUR = 18
+    fun nudgeAt(now: Long, hour: Int = NUDGE_HOUR, tz: java.util.TimeZone = java.util.TimeZone.getDefault()): Long {
+        val today = dayStart(now, tz) + hour * 3_600_000L
+        return if (today > now) today else java.util.Calendar.getInstance(tz).apply { timeInMillis = dayStart(now, tz); add(java.util.Calendar.DAY_OF_YEAR, 1) }.timeInMillis + hour * 3_600_000L
+    }
+
+    /** The reminder's text, or null when nothing waits (no notification then). */
+    fun nudgeText(now: Long = System.currentTimeMillis()): String? {
+        val d = decks(now).filter { it.due + it.today > 0 }
+        val n = d.sumOf { it.due + it.today }
+        if (n == 0) return null
+        return if (d.size == 1) "$n card${if (n == 1) "" else "s"} waiting in ${d[0].name}" else "$n cards waiting in ${d.size} decks"
+    }
+
     // ---------------- tool ----------------
 
     const val TOOL = "flashcards"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "The user's flashcards in the Learn view (spaced repetition). add: create a Learn deck or add cards to one (deck name + cards [{front, back}]) whenever the user wants flashcards, a quiz or something to study, then open_view view=learn; never write the cards in chat instead. " +
+        .put("description", "The user's flashcards in the Learn view (spaced repetition). add: create a Learn deck or add cards to one (deck name + cards [{front, back, source}]; source says where it came from, e.g. 'NET103.pdf p. 4'; for fill-in-the-blank put ___ in the front) whenever the user wants flashcards, a quiz or something to study, then open_view view=learn; never write the cards in chat instead. " +
             "list: decks with due counts; due: cards due now in a deck (to quiz the user in chat); rename_deck (deck, to); delete_deck.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("add", "list", "due", "rename_deck", "delete_deck"))))
             .put("deck", JSONObject().put("type", "string").put("description", "Deck name, e.g. 'CIT102 loops'"))
             .put("to", JSONObject().put("type", "string").put("description", "New deck name (rename_deck)"))
             .put("cards", JSONObject().put("type", "array").put("items", JSONObject().put("type", "object").put("properties", JSONObject()
-                .put("front", JSONObject().put("type", "string")).put("back", JSONObject().put("type", "string"))))))
+                .put("front", JSONObject().put("type", "string")).put("back", JSONObject().put("type", "string")).put("source", JSONObject().put("type", "string"))))))
             .put("required", JSONArray(listOf("action")))))
 
     fun run(a: JSONObject): String = when (a.optString("action")) {
         "add" -> {
             val arr = a.optJSONArray("cards") ?: JSONArray()
-            val pairs = (0 until arr.length()).mapNotNull { arr.optJSONObject(it) }.map { it.optString("front") to it.optString("back") }
-            val n = add(a.optString("deck"), pairs)
+            val items = (0 until arr.length()).mapNotNull { arr.optJSONObject(it) }
+            val pairs = items.map { it.optString("front") to it.optString("back") }
+            val n = add(a.optString("deck"), pairs, items.map { it.optString("source") })
             "Added $n card${if (n == 1) "" else "s"} to \u201c${a.optString("deck").ifBlank { "Cards" }}\u201d" +
                 (if (n < pairs.size) " (${pairs.size - n} skipped: empty or already there)" else "") + ". The user reviews them in the Learn view (/learn)."
         }

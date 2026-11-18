@@ -46,6 +46,7 @@ class BlazeApp : Application() {
             try { com.blaze.assistant.life.LifeLogWorker.resumePending(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: LifeLogWorker.r", e) }
             try { com.blaze.assistant.notify.MoneyRadar.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: MoneyRadar.sc", e) }
             try { com.blaze.assistant.agent.TimeCapsule.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: TimeCapsule.sc", e) }
+            try { com.blaze.assistant.agent.StudyNudge.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: StudyNudge.sch", e) }
             try { com.blaze.assistant.agent.MindReview.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: MindReview.sch", e) }
         }, "blaze-start-bg").start()
         // v0.33.0 Safe Walk survives a reboot / process restart; sealed time capsules keep their wake-up. (After the first frame.)

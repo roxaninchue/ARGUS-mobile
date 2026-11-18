@@ -1,3 +1,11 @@
+## Unreleased: flashcards phase 3, card sources, typed answers checked by the model, study reminder
+
+2026-11-18 night, last part of the owner's flashcards redesign.
+- **Type your answer** (`ui/LearnPage.kt`): a keyboard icon beside the eye opens one field; send asks the model (`Agent.ask`, a hidden turn of the normal loop) to compare it with the card by meaning. The reveal shows its one-line note with a thumb icon, and its pick gets a ring on that thumb; the user still taps the grade. `Flashcards.gradePrompt` / `verdict` / `verdictNote`.
+- **Cards keep their source:** `Card.source` ("NET103.pdf p. 4"), filled by the `flashcards` tool's new `source` field and shown small under the answer. The tool description also says fill-in-the-blank cards put ___ in the front.
+- **Study reminder** (`agent/StudyNudge.kt`, WorkManager, scheduled from BlazeApp): at 6 pm local, "12 cards waiting in NET103 session 1" only when cards wait. Learn › Student tools › Study reminder turns it off (on by default).
+- Tests: FlashcardsRedesignTest 15 (3 new: sources round trip, verdict parsing, reminder time and text). Not run: Compose / Android compile of LearnPage and StudyNudge, a live model check, the notification on a device.
+
 ## Unreleased: flashcards phase 2, smarter spacing (FSRS) and a daily new-card limit
 
 2026-11-18 night (owner: keep the daily limit, "Study more" past it).
