@@ -16,7 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,6 +48,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /*
+ * 2026-11-18: Install app adds the site to ARGUS's Apps page (Life › Apps); "Also add to Home screen" pins it as well.
  * v0.33.2 Blaze browser › "Add to Home screen / Install app" (the site's real icon, its name, then a pinned launcher
  * icon that opens it as its own app) and › "Installed apps" (open or uninstall).
  */
@@ -67,6 +71,8 @@ internal fun ColumnScope.InstallSiteBody(url: String, onDone: () -> Unit) {
     var status by remember { mutableStateOf("Reading the site…") }
     var name by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    // Owner 2026-11-18: an installed site always lands on ARGUS's Apps page; the phone's Home screen is an option.
+    var toHome by remember { mutableStateOf(false) }
     LaunchedEffect(url) {
         val (r, why) = SiteInstaller.inspect(url)
         ins = r; name = r?.app?.name.orEmpty(); status = if (r == null) why else ""
@@ -74,7 +80,7 @@ internal fun ColumnScope.InstallSiteBody(url: String, onDone: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
         Text("Install app", style = st(20, w = FontWeight.SemiBold))
         Spacer(Modifier.height(4.dp))
-        Text("Adds this site to your home screen. It opens on its own, like an app: no address bar, its own window and sign-ins.", style = st(13, Glass.sub))
+        Text("Adds this site to your Apps. It opens on its own, like an app: no address bar, its own window and sign-ins.", style = st(13, Glass.sub))
         Spacer(Modifier.height(16.dp))
         val i = ins
         if (i == null) Text(status, style = st(14, Glass.sub))
@@ -90,13 +96,20 @@ internal fun ColumnScope.InstallSiteBody(url: String, onDone: () -> Unit) {
                     Text(SiteLogic.hostOf(i.app.startUrl) + if (i.iconSource == "letter") " · no icon on the site" else "", style = st(12, Glass.sub))
                 }
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                .toggleable(value = toHome, role = Role.Switch, onValueChange = { toHome = it }).padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Text("Also add to Home screen", style = st(15), modifier = Modifier.weight(1f))
+                Switch(checked = toHome, onCheckedChange = null)
+            }
+            Spacer(Modifier.height(12.dp))
             if (status.isNotEmpty()) { Text(status, style = st(14, Glass.sub)); Spacer(Modifier.height(10.dp)) }
             Row {
-                Btn(if (busy) "Adding…" else "Add to Home screen", primary = true) {
+                Btn(if (busy) "Adding…" else "Add to Apps", primary = true) {
                     if (busy) return@Btn
                     busy = true
-                    scope.launch { status = SiteInstaller.installOnPhone(ctx, i, name); busy = false }
+                    scope.launch { status = SiteInstaller.installOnPhone(ctx, i, name, home = toHome); busy = false }
                 }
                 Spacer(Modifier.width(10.dp))
                 Btn("Close") { onDone() }

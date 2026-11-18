@@ -420,9 +420,6 @@ fun ChatScreen() {
         Views.request.value = null
         Views.find(r.id)?.let { openView(it, r.target) }
     }
-    // 2026-11-17: Home's Apps button opens ARGUS's apps launcher (was Spotlight). A sheet, so it draws over any page.
-    if (appsOpen) com.blaze.assistant.ui.argus.kit.AppsSheet(
-        onOpen = { id -> appsOpen = false; Views.find(id)?.let { openView(it) } }, onDismiss = { appsOpen = false })
 
     // P1-TM-06: the "Here's what I'll do" sheet waiting for Apply, and its preview switch.
     var teamPlan by remember { mutableStateOf<com.blaze.assistant.team.Router.Plan?>(null) }
@@ -567,7 +564,7 @@ fun ChatScreen() {
             "call" -> { startCall(); true }
             "plan" -> { com.blaze.assistant.agent.Modes.toggleWork()
                 Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.plan) "Plan mode on: ${BrandName.NAME} plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
-            "views" -> { composer.openSpotlight(); composer.query = "@"; true }
+            "views" -> { appsOpen = true; true }   // 2026-11-18: the views shortcut opens the Apps page
             "profile" -> { settingsPage = ""; true }
             else -> false
         }
@@ -638,6 +635,7 @@ fun ChatScreen() {
         if (homeReq > 0) {
             // 0.52.3: every route home (open_view home, /home, the Home tab, Back out of Music / Video / Browser...) shows Home
             settingsPage = null; showViews = false; plusOpen = false; avatarMenu = false; showSearch = false; Views.showing.value = ""
+            appsOpen = false
             composer.closeSpotlight()
             // P1-SH-01: in the ARGUS shell the Home board is Life's page
             if (!swipeMode) go(navNow().switchTab(ChatNav.LIFE)) else {
@@ -662,6 +660,8 @@ fun ChatScreen() {
         // Inside Settings, the phone's Back steps back like the top-bar arrow (page → You page), then closes Settings.
         if (settingsPage != null && BackRule.settingsBack?.invoke() == true) return
         if (botThread != null && settingsPage == null) { botThread = null; return }   // a bot's thread closes back to Team
+        // 2026-11-18: the Apps page closes on Back once nothing is over it (Settings opened from its avatar closes first)
+        if (appsOpen && settingsPage == null && !composer.spotlightOpen) { appsOpen = false; return }
         val over = settingsPage != null || showViews || plusOpen || arcOpen || avatarMenu || showSearch || GalleryUi.open.value ||
             Agent.roomOpen.value >= 0L || Views.showing.value.isNotEmpty() || composer.spotlightOpen || notchOpen || newOpen
         composer.closeSpotlight()
@@ -688,7 +688,7 @@ fun ChatScreen() {
                 tab = n.tab, inProjectChat = n.inProjectChat, swipeHome = swipe && sheetP < 0.5f,
                 settingsPage = settingsPage, view = if (n.inProjectChat) "" else Views.showing.value,
                 viewsSheet = showViews, plusMenu = plusOpen || composer.spotlightOpen || notchOpen || newOpen, arc = arcOpen, avatarMenu = avatarMenu, search = showSearch,
-                gallery = GalleryUi.open.value, room = Agent.roomOpen.value >= 0,
+                gallery = GalleryUi.open.value, room = Agent.roomOpen.value >= 0, appsPage = appsOpen,
                 // Team is where Back stops (a private chat asks before leaving itself)
                 homeRoot = !Agent.privateChat.value, argus = true, botThread = botThread != null)
         }
@@ -1184,6 +1184,13 @@ fun ChatScreen() {
             title = com.blaze.assistant.agent.PrivateChat.LEAVE_TITLE, body = com.blaze.assistant.agent.PrivateChat.LEAVE_TEXT,
             confirm = tr("Leave"), onConfirm = { confirmLeavePrivate = false; Agent.leavePrivate(); composer.dismissChat() }, warm = true,
             dismiss = tr("Stay"), onDismiss = { confirmLeavePrivate = false })
+        // 2026-11-18 (overhaul.md NEXT UP 3): Life's Apps opens a full Apps page (ARGUS's apps + installed site apps),
+        // under Settings so its avatar can open the profile over it. A tile closes the page and opens the app.
+        if (appsOpen) com.blaze.assistant.ui.argus.apps.AppsPage(
+            initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
+            onClose = { appsOpen = false },
+            onProfile = { settingsPage = "" },
+            onOpenView = { id -> appsOpen = false; Views.find(id)?.let { openView(it) } })
         settingsPage?.let { start ->
             androidx.compose.runtime.key(start) {
                 SettingsScreen(start, a11yOn,

@@ -43,6 +43,8 @@ object BackRule {
         val room: Boolean = false,
         /** 2026-11-17: a bot's own thread is open over Team (Back closes it). */
         val botThread: Boolean = false,
+        /** 2026-11-18: Life's Apps page is open (Back closes it). */
+        val appsPage: Boolean = false,
         /** The Home is the root (0.52.2: the ARGUS Home), so the plain chat goes back to Home and Home keeps its own Back. */
         val homeRoot: Boolean = false,
         /** P1-SH-01: the ARGUS shell (Team · Chat · Life · Desk): Team is where Back stops; the other modes go to Team. */
@@ -58,6 +60,7 @@ object BackRule {
         s.inCall -> "call"
         s.settingsPage != null -> "page:" + s.settingsPage.ifBlank { "settings" }
         s.botThread -> "bot-thread"
+        s.appsPage -> "apps-page"
         s.room -> "meeting-room"
         s.gallery -> "gallery"
         s.search -> "search"
