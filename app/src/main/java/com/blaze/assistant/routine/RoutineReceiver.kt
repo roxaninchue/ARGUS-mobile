@@ -39,7 +39,7 @@ class RoutineReceiver : BroadcastReceiver() {
             // Android refused a background service: run it in the broadcast's short window instead.
             val pending = goAsync()
             CoroutineScope(SupervisorJob() + Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard).launch {
-                withTimeoutOrNull(55_000) { RoutineService.runRoutine(id) }
+                withTimeoutOrNull(55_000) { RoutineService.runRoutine(ctx, id) }
                 pending.finish()
             }
         }
@@ -51,7 +51,8 @@ class RoutineService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard)
 
     companion object {
-        suspend fun runRoutine(id: Int) {
+        /** [due] > 0: a run that waited for the network (RoutineLater); the prompt says when it was due. */
+        suspend fun runRoutine(ctx: Context, id: Int, due: Long = 0L) {
             val r = Routines.get(id) ?: return
             if (com.blaze.assistant.connect.AccountGate.locked()) { Routines.ran(id); return }   // account lock (locked on the way)
             if (r.isCommand) {
@@ -65,12 +66,20 @@ class RoutineService : Service() {
                 Routines.ran(id)
                 return
             }
+            // 18 Nov 2026 (owner: "say I'm offline, how will I receive routines?"): the calendar alert (RoutineCalendar) has
+            // already reached the user; ARGUS's own part needs a model, so offline it waits for the network and runs then.
+            if (due == 0L && !com.blaze.assistant.agent.FastLane.online(ctx)) {
+                RoutineLater.queue(ctx, id, System.currentTimeMillis())
+                com.blaze.assistant.notify.Notifier.proactive(RoutineLater.offlineNote(r.name), "", false)
+                Routines.ran(id)
+                return
+            }
             // Let anything already running finish first.
             withTimeoutOrNull(120_000) { while (Agent.mood.value != Mood.IDLE) delay(1000) }
-            Agent.runRoutine(r.name, r.prompt)
+            Agent.runRoutine(r.name, if (due > 0) RoutineLater.latePrompt(r.prompt, due) else r.prompt)
             delay(500)
             withTimeoutOrNull(180_000) { while (Agent.mood.value != Mood.IDLE) delay(700) }
-            Routines.ran(id)
+            if (due == 0L) Routines.ran(id)
         }
     }
 
@@ -89,7 +98,7 @@ class RoutineService : Service() {
             else startForeground(77, n)
         } catch (_: Exception) { }
         scope.launch {
-            runRoutine(id)
+            runRoutine(this@RoutineService, id)
             stopSelf()
         }
         return START_NOT_STICKY

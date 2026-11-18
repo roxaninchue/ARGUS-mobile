@@ -251,7 +251,9 @@ object Connectors {
             fn("gmail_read", "Read one Gmail message by id (from gmail_search).", JSONObject().put("id", s("Message id")), listOf("id")),
             fn("gmail_send", "Send an email from the user's Gmail. The user approves first.", JSONObject().put("to", s("Email address")).put("subject", s("Subject")).put("body", s("Plain-text body")), listOf("to", "subject", "body")),
             fn("gcal_events", "List events on the user's Google Calendar for the next N days.", JSONObject().put("days", i("Days ahead, default 1"))),
-            fn("gcal_create", "Create a Google Calendar event.", JSONObject().put("title", s("Title")).put("start", s("yyyy-MM-dd HH:mm local")).put("end", s("yyyy-MM-dd HH:mm, optional")).put("location", s("Optional")), listOf("title", "start")),
+            fn("gcal_create", "Create a Google Calendar event. With reminder_minutes Google alerts the user itself, offline and on every device; repeat makes it recurring.", JSONObject().put("title", s("Title")).put("start", s("yyyy-MM-dd HH:mm local")).put("end", s("yyyy-MM-dd HH:mm, optional")).put("location", s("Optional"))
+                .put("reminder_minutes", JSONObject().put("type", "integer").put("description", "Optional: alert this many minutes before (0 = at the start)"))
+                .put("repeat", s("Optional: daily, weekdays, weekends, or days like 'mon,wed,fri'")), listOf("title", "start")),
             fn("drive_search", "Search the user's Google Drive files by name or content.", JSONObject().put("query", s("Words")), listOf("query")),
             fn("gcontacts_search", "Search the user's Google Contacts.", JSONObject().put("query", s("Name, email or number")), listOf("query")),
         ) + Classroom.tools { n, d, p, r -> fn(n, d, p, r) },
@@ -414,7 +416,12 @@ object Connectors {
                 val tz = TimeZone.getDefault().id
                 val e = send("POST", "https://www.googleapis.com/calendar/v3/calendars/primary/events", JSONObject().put("summary", a.optString("title"))
                     .put("location", a.optString("location")).put("start", JSONObject().put("dateTime", rfc(st)).put("timeZone", tz))
-                    .put("end", JSONObject().put("dateTime", rfc(en)).put("timeZone", tz)), t)
+                    .put("end", JSONObject().put("dateTime", rfc(en)).put("timeZone", tz)).also { body ->
+                        // 18 Nov 2026: alerts and repeats, so a reminder reaches the user from Google itself
+                        com.blaze.assistant.routine.RoutineCalendar.repeatRule(a.optString("repeat"))?.let { body.put("recurrence", JSONArray().put("RRULE:$it")) }
+                        if (a.has("reminder_minutes")) body.put("reminders", JSONObject().put("useDefault", false).put("overrides",
+                            JSONArray().put(JSONObject().put("method", "popup").put("minutes", a.optInt("reminder_minutes", 0).coerceAtLeast(0)))))
+                    }, t)
                 val pid = com.blaze.assistant.agent.Processes.register("gevent", a.optString("title"), e.optString("id"), st.time,
                     JSONObject().put("location", a.optString("location")).put("link", e.optString("htmlLink")))
                 "Added \"${a.optString("title")}\" to Google Calendar. [ID $pid] ${e.optString("htmlLink")}"

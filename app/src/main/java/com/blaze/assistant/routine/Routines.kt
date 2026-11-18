@@ -20,10 +20,12 @@ data class Routine(val id: Int, val name: String, val prompt: String, val hour: 
                    /** Shell job instead of a prompt: runs the command directly, no AI involved. */
                    val command: String = "", val linux: Boolean = false, val notify: String = "always", val everyMinutes: Int = 0,
                    /** v0.16.0: a one-off on a set date and time (epoch ms; 0 = by time of day and [days]). Assignment reminders use it. */
-                   val at: Long = 0L) {
+                   val at: Long = 0L,
+                   /** 18 Nov 2026: its event on the user's calendar (RoutineCalendar); 0 = none. */
+                   val eventId: Long = 0L) {
     fun toJson() = JSONObject().put("id", id).put("name", name).put("prompt", prompt).put("hour", hour)
         .put("minute", minute).put("days", days).put("enabled", enabled)
-        .put("command", command).put("linux", linux).put("notify", notify).put("every_minutes", everyMinutes).put("at", at)
+        .put("command", command).put("linux", linux).put("notify", notify).put("every_minutes", everyMinutes).put("at", at).put("event_id", eventId)
     val isCommand get() = command.isNotBlank()
 
     fun daysLabel(): String = if (at > 0) java.text.SimpleDateFormat("EEE d MMM", java.util.Locale.getDefault()).format(java.util.Date(at)) else if (everyMinutes > 0) "Every ${if (everyMinutes % 60 == 0) "${everyMinutes / 60} h" else "$everyMinutes min"}" else when (days) {
@@ -51,6 +53,7 @@ object Routines {
         Thread({
             try { _all.value = load() } finally { loaded.countDown() }
             try { scheduleAll() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Routines.scheduleAll", e) }
+            try { calendarAll() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Routines.calendarAll", e) }
             try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }
         }, "blaze-routines").start()
     }
@@ -60,7 +63,7 @@ object Routines {
         (0 until a.length()).map { val o = a.getJSONObject(it)
             Routine(o.getInt("id"), o.getString("name"), o.getString("prompt"), o.getInt("hour"), o.getInt("minute"),
                 o.optInt("days", 127), o.optBoolean("enabled", true), o.optString("command"), o.optBoolean("linux"),
-                o.optString("notify", "always"), o.optInt("every_minutes", 0), o.optLong("at", 0L)) }
+                o.optString("notify", "always"), o.optInt("every_minutes", 0), o.optLong("at", 0L), o.optLong("event_id", 0L)) }
     } catch (_: Exception) { emptyList() }
 
     /** The routines, once read (waits at most 3 s right after start, so a change never overwrites routines not read yet). */
@@ -75,10 +78,36 @@ object Routines {
 
     fun get(id: Int) = cur().firstOrNull { it.id == id }
 
+    /**
+     * 18 Nov 2026 (owner): a routine's event on the user's calendar follows it (RoutineCalendar): made when it's added,
+     * renamed and retimed with it, removed when it's paused or deleted. Off the main thread, one at a time, in order.
+     */
+    private val calendarQueue by lazy { java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "argus-routine-calendar") } }
+
+    private fun calendar(id: Int) {
+        if (!::app.isInitialized) return
+        calendarQueue.execute {
+            val r = get(id) ?: return@execute
+            val ev = RoutineCalendar.sync(app, r) ?: return@execute
+            if (ev != r.eventId) synchronized(this) { _all.value.let { l -> saveQuiet(l.map { if (it.id == id) it.copy(eventId = ev) else it }) } }
+        }
+    }
+
+    private fun uncalendar(eventId: Long) {
+        if (eventId <= 0 || !::app.isInitialized) return
+        calendarQueue.execute { RoutineCalendar.remove(app, eventId) }
+    }
+
+    /** Saves without touching alarms (only the calendar link changed). */
+    private fun saveQuiet(list: List<Routine>) {
+        _all.value = list
+        prefs.edit().putString("routines", JSONArray(list.map { it.toJson() }).toString()).apply()
+    }
+
     fun add(name: String, prompt: String, hour: Int, minute: Int, days: Int): Routine {
         val r = Routine((cur().maxOfOrNull { it.id } ?: 0) + 1, name.trim().ifEmpty { "Routine" }, prompt.trim(),
             hour.coerceIn(0, 23), minute.coerceIn(0, 59), days)
-        save(cur() + r); return r
+        save(cur() + r); calendar(r.id); return r
     }
 
     /** A one-off on a date (v0.16.0), e.g. "CIT102 lab 3 is due tomorrow". */
@@ -86,7 +115,7 @@ object Routines {
         val c = Calendar.getInstance().apply { timeInMillis = at }
         val r = Routine((cur().maxOfOrNull { it.id } ?: 0) + 1, name.trim().ifEmpty { "Reminder" }, prompt.trim(),
             c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), 0, at = at)
-        save(cur() + r); return r
+        save(cur() + r); calendar(r.id); return r
     }
 
     fun addCommand(name: String, command: String, hour: Int, minute: Int, days: Int, linux: Boolean, notify: String, everyMinutes: Int): Routine {
@@ -95,15 +124,22 @@ object Routines {
         save(cur() + r); return r
     }
 
-    fun rename(id: Int, name: String) = save(cur().map { if (it.id == id) it.copy(name = name.trim()) else it })
-    fun retime(id: Int, h: Int, m: Int) = save(cur().map { if (it.id == id) it.copy(hour = h, minute = m, at = 0L) else it })
-    fun setEnabled(id: Int, on: Boolean) = save(cur().map { if (it.id == id) it.copy(enabled = on) else it })
-    fun delete(id: Int) { cancel(id); save(cur().filterNot { it.id == id }) }
-    /** v0.39.0 Undo: puts a deleted routine back as it was (same id when free). */
-    fun restore(r: Routine) { if (get(r.id) == null) save(cur() + r) else save(cur() + r.copy(id = (cur().maxOfOrNull { it.id } ?: 0) + 1)) }
+    fun rename(id: Int, name: String) { save(cur().map { if (it.id == id) it.copy(name = name.trim()) else it }); calendar(id) }
+    fun retime(id: Int, h: Int, m: Int) { save(cur().map { if (it.id == id) it.copy(hour = h, minute = m, at = 0L) else it }); calendar(id) }
+    /** Pausing takes it off the calendar; switching it back on puts it back. */
+    fun setEnabled(id: Int, on: Boolean) { save(cur().map { if (it.id == id) it.copy(enabled = on) else it }); calendar(id) }
+    fun delete(id: Int) { val ev = get(id)?.eventId ?: 0L; cancel(id); save(cur().filterNot { it.id == id }); uncalendar(ev) }
+    /** v0.39.0 Undo: puts a deleted routine back as it was (same id when free), with a fresh calendar event. */
+    fun restore(r: Routine) {
+        val back = if (get(r.id) == null) r.copy(eventId = 0L) else r.copy(id = (cur().maxOfOrNull { it.id } ?: 0) + 1, eventId = 0L)
+        save(cur() + back); calendar(back.id)
+    }
 
-    /** After a one-time routine runs it switches off. */
-    fun ran(id: Int) { get(id)?.let { if ((it.days == 0 && it.everyMinutes == 0) || it.at > 0) setEnabled(id, false) else scheduleAll() } }
+    /** After a one-time routine runs it switches off; its calendar event stays as the record of when it was. */
+    fun ran(id: Int) { get(id)?.let { if ((it.days == 0 && it.everyMinutes == 0) || it.at > 0) save(cur().map { r -> if (r.id == id) r.copy(enabled = false) else r }) else scheduleAll() } }
+
+    /** Routines made before 18 Nov 2026 (or while calendar access was off) get their event; called at start. */
+    fun calendarAll() { cur().filter { RoutineCalendar.wanted(it) && it.eventId == 0L }.forEach { calendar(it.id) } }
 
     /** Parses "daily", "weekdays", "weekends", "once", or names like "mon,wed,fri". */
     fun parseDays(s: String): Int {
@@ -171,7 +207,7 @@ object Routines {
                 .put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(req))))
         fun p(d: String) = JSONObject().put("type", "string").put("description", d)
         return listOf(
-            fn("create_routine", "Schedule something ${BrandName.NAME} does by itself at a time, once or repeating, e.g. a morning brief, a reminder, checking messages. The result arrives as a notification.",
+            fn("create_routine", "Schedule something ${BrandName.NAME} does by itself at a time, once or repeating, e.g. a morning brief, a reminder, checking messages. It also goes on the user's calendar with an alert (their Google calendar, else an ARGUS calendar), so the reminder arrives even offline and on their other devices; ${BrandName.NAME}'s own result arrives as a notification when it can run.",
                 JSONObject().put("name", p("Short name, e.g. 'Morning brief'"))
                     .put("prompt", p("What ${BrandName.NAME} should do when it runs, written as an instruction to ${BrandName.NAME}"))
                     .put("time", p("24h time HH:mm"))
@@ -197,7 +233,7 @@ object Routines {
             val date = a.optString("date").trim()
             val at = if (date.isNotBlank()) try { java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).parse("$date %02d:%02d".format(h, m))?.time ?: 0L } catch (_: Exception) { 0L } else 0L
             val r = if (at > 0) addAt(a.getString("name"), a.getString("prompt"), at) else add(a.getString("name"), a.getString("prompt"), h, m, parseDays(a.optString("days", "daily")))
-            "Created routine \"${r.name}\" at ${r.timeLabel()}, ${r.daysLabel()}. [ID ${com.blaze.assistant.agent.Processes.idFor("routine", r.id.toString())}]"
+            "Created routine \"${r.name}\" at ${r.timeLabel()}, ${r.daysLabel()}${if (RoutineCalendar.allowed(app)) ", with an alert on the calendar" else "; calendar access is off, so it isn't on the calendar"}. [ID ${com.blaze.assistant.agent.Processes.idFor("routine", r.id.toString())}]"
         }
         "schedule_command" -> {
             val every = a.optInt("every_minutes", 0)

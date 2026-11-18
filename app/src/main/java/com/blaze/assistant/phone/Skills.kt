@@ -66,11 +66,14 @@ object Skills {
             JSONObject().put("to", p("string", "Phone number or contact name")), listOf("to")),
         fn("calendar_events", "List the phone calendar's events from about an hour ago through the next N days (title, time, place). Find an event here before move_event reschedules it or delete_event removes it (for example one that is over or cancelled).",
             JSONObject().put("days", p("integer", "Days ahead, default 1 (today)"))),
-        fn("add_calendar_event", "Add an event to the user's calendar.",
+        // 18 Nov 2026 (owner): a reminder belongs on the calendar, where it reaches the user offline and on every device.
+        fn("add_calendar_event", "Add an event to the user's calendar. With reminder_minutes the calendar app alerts the user itself, offline and on their other devices; repeat makes it recurring.",
             JSONObject().put("title", p("string", "Event title"))
                 .put("start", p("string", "Start, local time, format yyyy-MM-dd HH:mm"))
                 .put("end", p("string", "End, yyyy-MM-dd HH:mm (optional, default 1 hour)"))
-                .put("location", p("string", "Optional")), listOf("title", "start")),
+                .put("location", p("string", "Optional"))
+                .put("reminder_minutes", p("integer", "Optional: alert this many minutes before (0 = at the start)"))
+                .put("repeat", p("string", "Optional: daily, weekdays, weekends, or days like 'mon,wed,fri'")), listOf("title", "start")),
         fn("device_setting", "Quick settings: flashlight on/off, volume up/down/mute/0-100, battery level, or open the Wi-Fi, Bluetooth, mobile data, Do Not Disturb, or brightness panel for the user.",
             JSONObject().put("setting", JSONObject().put("type", "string").put("enum",
                 JSONArray(listOf("flashlight", "volume", "battery", "wifi", "bluetooth", "mobile_data", "do_not_disturb", "brightness", "airplane"))))
@@ -284,18 +287,25 @@ object Skills {
             var first: Long? = null; var primary: Long? = null
             while (it.moveToNext()) { if (first == null) first = it.getLong(0); if (it.getInt(1) == 1) primary = it.getLong(0) }
             primary ?: first
-        } ?: return "No writable calendar on this phone."
+        } ?: com.blaze.assistant.routine.RoutineCalendar.calendarId(ctx) ?: return "No writable calendar on this phone."   // 18 Nov 2026: else the ARGUS calendar
+        val rule = com.blaze.assistant.routine.RoutineCalendar.repeatRule(a.optString("repeat"))
+        val remind = if (a.has("reminder_minutes")) a.optInt("reminder_minutes", -1) else -1
         val v = ContentValues().apply {
             put(CalendarContract.Events.CALENDAR_ID, calId)
             put(CalendarContract.Events.TITLE, a.getString("title"))
-            put(CalendarContract.Events.DTSTART, start); put(CalendarContract.Events.DTEND, end)
+            put(CalendarContract.Events.DTSTART, start)
+            if (rule != null) { put(CalendarContract.Events.RRULE, rule); put(CalendarContract.Events.DURATION, "PT${((end - start) / 60_000L).coerceAtLeast(1)}M") }
+            else put(CalendarContract.Events.DTEND, end)
             put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().id)
+            if (remind >= 0) put(CalendarContract.Events.HAS_ALARM, 1)
             a.optString("location").takeIf { it.isNotBlank() }?.let { put(CalendarContract.Events.EVENT_LOCATION, it) }
         }
         val uri = ctx.contentResolver.insert(CalendarContract.Events.CONTENT_URI, v) ?: return "The calendar refused the event."
+        if (remind >= 0) com.blaze.assistant.routine.RoutineCalendar.alert(ctx, android.content.ContentUris.parseId(uri), remind)
         val pid = com.blaze.assistant.agent.Processes.register("event", a.getString("title"), android.content.ContentUris.parseId(uri).toString(), start,
             JSONObject().put("location", a.optString("location")).put("start", a.getString("start")).put("end", a.optString("end")))
-        return "Added \"${a.getString("title")}\" on ${SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault()).format(Date(start))}. [ID $pid]"
+        return "Added \"${a.getString("title")}\" on ${SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault()).format(Date(start))}" +
+            (if (rule != null) ", repeating ($rule)" else "") + (if (remind >= 0) ", alert $remind min before" else "") + ". [ID $pid]"
     }
 
     // ---------- Quick settings ----------

@@ -1,8 +1,11 @@
-## Unreleased: Life › Apps opens a full Apps page; installed sites land there
+## Unreleased: routines live on the calendar and survive offline
 
-- Life's Apps button (and the "views" shortcut) opens a full Apps page instead of the old sheet: glass X top left (Back closes it too), your avatar top right (opens your profile), a 4-wide grid of ARGUS's apps (Music, Video, Browser, Blaze Phone, Gallery, Design, Projects, Learn, Seller, Terminal, Schedule, App Store), read from the Views registry (`app = true`), never Settings or Chat. A floating Search pill filters the tiles.
-- Browser › Install app now adds the site to the Apps page ("Your site apps"); "Also add to Home screen" is an option. Long-press a site app on the Apps page to open it, add it to the Home screen, or remove it.
-- Removed `AppsSheet` / `ArgusAppsTest`; new `AppsPageModel` + `AppsPageModelTest` (8).
+2026-11-18, owner: "it would make more sense to me if the routine would add a reminder to my calendar not in app … say I'm offline, how will I receive routines?", then "if it's available then yes Google calendar if not we go ARGUS calendar".
+- Every prompt routine is also a calendar event with an alert (`routine/RoutineCalendar.kt`): repeating like the routine (RRULE daily / weekly by day), linked by `Routine.eventId`, renamed, retimed, paused (removed) and deleted with it. Undo puts it back with a fresh event. Routines made before this get their event at start. Shell jobs and every-N-minutes routines stay off the calendar.
+- Calendar: the phone's Google calendar when a Google account is signed in on the phone (primary first), else a local "ARGUS" calendar ARGUS creates. The calendar app delivers the alert offline, with ARGUS closed, and on the user's other devices.
+- Offline at fire time: the routine's AI part waits for the network (`routine/RoutineLater.kt`, WorkManager, network constraint, one per routine) and runs on reconnect, saying it was due earlier; the user gets one note that it's waiting.
+- `add_calendar_event` and `gcal_create` take `reminder_minutes` (an alert) and `repeat` (daily, weekdays, weekends, or days). `add_calendar_event` falls back to the ARGUS calendar when the phone has no writable one. Tool descriptions say what each does; the model chooses (docs/MODEL-FIRST.md).
+- Tests: RoutineCalendarTest (new). No APK built (owner).
 
 ## Unreleased: effort and text assist on the composer
 
