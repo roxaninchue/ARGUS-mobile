@@ -121,9 +121,9 @@ object ToolRouter {
             r("""\b(pc|computer|laptop|desktop|my mac|macbook|on windows)\b"""),
             { it == "ask_pc" }),
         // v0.29.0 Home board widgets.
-        Group("home", "the Home board: add, change, remove and list widgets (weather, news, creators, sports scores, prices, calendar, routines, deadlines, GitHub, most-used apps, custom cards)",
+        Group("home", "the Home board: add, change, remove and list widgets (weather, news, creators, sports scores, prices, calendar, routines, deadlines, GitHub, most-used apps, custom cards); to-do lists in Life (life_todo: add, tick off, list)",
             r("""\b(widgets?|home ?board|home tab|on (?:my )?home|board|dashboard|track(?:ing)?|follow(?:ing)?|keep an eye|scores?|fixtures|new videos|uploads|crypto|bitcoin|exchange rate|stock price)\b"""),
-            { it.startsWith("home_widget_") }),
+            { it.startsWith("home_widget_") || it == com.blaze.assistant.home.LifeTodo.TOOL }),
         // 0.46.0 Blaze Stage: change, move, close and arrange cards and the chat / top bar / reply bar on the chat Stage.
         Group("stage", "the chat Stage: update / move / close cards (timer, music, video, quiz, flashcards, plan), hide or dock the chat, top bar, reply bar, layouts",
             r("""\b(stage|hero|widgets?|mini ?player|timer|pomodoro|countdown|stopwatch|focus (?:mode|session|timer)|study (?:for )?\d+|\d+ ?(?:min|mins|minutes|hours?) (?:of )?(?:study|focus|work)|pause (?:it|the timer|the music)|make (?:it|the \w+) (?:big|bigger|small|smaller)|hide (?:the )?(?:chat|top bar|reply bar)|show (?:the )?(?:chat|top bar)|reset (?:the )?layout|move (?:the )?\w+ (?:to|up|down))\b"""),

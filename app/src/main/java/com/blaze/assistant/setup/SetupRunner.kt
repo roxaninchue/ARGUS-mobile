@@ -80,7 +80,7 @@ object SetupRunner {
 
     /**
      * BlazeApp, after the first frame: for people past onboarding (or who started setup before), what is left is set up
-     * by itself [SetupPlan.LATER_MS] later, so it never competes with start-up. First-run users get it from the setup screen.
+     * by itself [SetupPlan.LATER_MS] later, so it never competes with start-up. First-run users get it when onboarding finishes.
      */
     fun later(ctx: Context) {
         val app = ctx.applicationContext

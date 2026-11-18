@@ -46,10 +46,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -113,30 +120,32 @@ fun ArgusLogo(width: Dp, modifier: Modifier = Modifier) {
 }
 
 /**
- * 0.52.3 first run, always on the space view: [SpaceOnboarding.Step.WELCOME] (logo, tagline, Get started),
- * [SpaceOnboarding.Step.SIGN_IN] (the account card; account lock: no skipping) and [SpaceOnboarding.Step.SETUP] (the one progress screen).
- * [accountCard] is the existing account sign-in UI; [setup] the live setup state ([com.blaze.assistant.setup.SetupRunner]).
+ * First run, owner 2026-11-18 ([SpaceOnboarding]): [SpaceOnboarding.Step.INTRO] the logo clip on black ([IntroStep]),
+ * [SpaceOnboarding.Step.LANGUAGE] the language pill on the space view, [SpaceOnboarding.Step.SIGN_IN] the account card
+ * (account lock: no skipping). [accountCard] is the existing account sign-in UI. The setup downloads run in the background
+ * (SetupRunner); their screen ([SpaceSetupScreen]) opens from Life's "Finishing setup" card.
  */
 @Composable
 fun SpaceOnboardingScreen(
     step: SpaceOnboarding.Step,
     signedIn: Boolean,
-    setup: Map<String, SetupPlan.Status>,
     onNext: () -> Unit,
-    onRetry: () -> Unit,
     accountCard: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     CompositionLocalProvider(LocalBlaze provides DarkColors) {
         com.blaze.assistant.ui.DarkSystemBars()   // always dark: keep the status bar icons light over it
         SpaceBackdrop(modifier.testTag(SpaceTags.ONBOARDING), forceDark = true) {
-            AnimatedContent(step, transitionSpec = { fadeIn(com.blaze.assistant.ui.MotionTokens.medium()) togetherWith fadeOut(com.blaze.assistant.ui.MotionTokens.fast()) },
+            AnimatedContent(step, transitionSpec = {
+                    // the clip dissolves slowly into the space view; the other steps cross-fade as before
+                    if (initialState == SpaceOnboarding.Step.INTRO && com.blaze.assistant.ui.MotionTokens.enabled)
+                        fadeIn(androidx.compose.animation.core.tween(520)) togetherWith fadeOut(androidx.compose.animation.core.tween(420))
+                    else fadeIn(com.blaze.assistant.ui.MotionTokens.medium()) togetherWith fadeOut(com.blaze.assistant.ui.MotionTokens.fast()) },
                 label = "onboarding") { s ->
                 when (s) {
+                    SpaceOnboarding.Step.INTRO -> IntroStep(onNext)
                     SpaceOnboarding.Step.LANGUAGE -> LanguageStep(onNext)
-                    SpaceOnboarding.Step.WELCOME -> Welcome(onNext)
                     SpaceOnboarding.Step.SIGN_IN -> SignIn(signedIn, onNext, accountCard)
-                    SpaceOnboarding.Step.SETUP -> SpaceSetupScreen(setup, onNext, onRetry)
                 }
             }
         }
@@ -144,80 +153,117 @@ fun SpaceOnboardingScreen(
 }
 
 /**
- * Owner 2026-11-14: first run starts with the language, each listed by its own name, the phone's language picked to
- * begin with. A tap switches the whole app at once; Continue moves on.
+ * Fresh install, account locked (MainActivity): the clip and the language step come before the lock screen's sign-in
+ * ([SpaceOnboarding.beforeLock]). [onDone] runs when the language step moves on; the lock screen then shows.
+ */
+@Composable
+fun SpaceFirstRunBeforeLock(onDone: () -> Unit) {
+    var step by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(SpaceOnboarding.Step.INTRO.name) }
+    val s = SpaceOnboarding.Step.valueOf(step)
+    SpaceOnboardingScreen(s, signedIn = false, onNext = {
+        val nx = SpaceOnboarding.next(s, signedIn = false)
+        if (SpaceOnboarding.introSeen(s, nx)) com.blaze.assistant.agent.Settings.setBool(SpaceOnboarding.PREF_INTRO_SEEN, true)
+        if (nx == null || nx == SpaceOnboarding.Step.SIGN_IN) onDone() else step = nx.name
+    }, accountCard = {})
+}
+
+/**
+ * Owner 2026-11-18: the language step is one clean pill in the middle of the screen with the language in use (the
+ * phone's to begin with, [com.blaze.assistant.i18n.AppLang.initial] at start). A tap grows it into a box, up and down at once, holding every
+ * language by its own name in a smooth list (no typing); picking one switches the app and folds the box back into the
+ * pill. The round arrow at the far right of the screen, apart from the pill, moves on. Springs, the space view's colours.
  */
 @Composable
 private fun LanguageStep(onNext: () -> Unit) {
     val look = SpaceLook.Dark
     val sel = com.blaze.assistant.i18n.AppLang.code.value
-    // Landscape audit 2026-11-15: on a phone held sideways (under 480 dp tall) the logo and heading took most of the
-    // height and left the list a sliver, so the heading and Continue sit on the left and the list scrolls on the right.
-    val short = com.blaze.assistant.ui.common.WindowUi.short()
-    val head: @Composable androidx.compose.foundation.layout.ColumnScope.(Dp) -> Unit = { logo ->
-        ArgusLogo(logo, if (short) Modifier else Modifier.align(Alignment.CenterHorizontally))
-        Spacer(Modifier.height(if (short) 10.dp else 18.dp))
-        SpaceHeadline(com.blaze.assistant.i18n.tr("Choose your language"), size = if (short) 24.sp else 30.sp)
-        Spacer(Modifier.height(6.dp))
-        Text(com.blaze.assistant.i18n.tr("{0} always replies in the language you write in.", BrandName.UPPER), style = SpaceType.body(15.sp, look.sub))
+    val langs = com.blaze.assistant.i18n.AppLang.PICKABLE
+    var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    val motion = com.blaze.assistant.ui.MotionTokens.enabled
+    val t by androidx.compose.animation.core.animateFloatAsState(if (open) 1f else 0f,
+        if (motion) androidx.compose.animation.core.spring(dampingRatio = 0.82f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)
+        else androidx.compose.animation.core.snap(), label = "language")
+    androidx.activity.compose.BackHandler(enabled = open) { open = false }
+    val pick: (String) -> Unit = { code ->
+        com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, code)
+        com.blaze.assistant.i18n.AppLang.apply(code); com.blaze.assistant.ui.FontPick.refresh()
+        open = false
     }
-    val list: @Composable (Modifier) -> Unit = { m ->
-        Column(m.verticalScroll(rememberScrollState())) {
-            for (l in com.blaze.assistant.i18n.AppLang.PICKABLE) {
-                val on = l.code == sel
-                Row(Modifier.fillMaxWidth().heightIn(min = 52.dp)
-                    .selectable(selected = on, role = androidx.compose.ui.semantics.Role.RadioButton) {
-                        com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, l.code)
-                        com.blaze.assistant.i18n.AppLang.apply(l.code); com.blaze.assistant.ui.FontPick.refresh()
-                    }.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(l.name, modifier = Modifier.weight(1f),
-                        style = SpaceType.body(18.sp, if (on) look.ink else look.sub).copy(fontFamily = com.blaze.assistant.ui.Type.sansFor(l.name),
-                            fontWeight = if (on) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal))
-                    if (on) androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Check, contentDescription = null,
-                        tint = look.ink, modifier = Modifier.size(20.dp))
+    val short = com.blaze.assistant.ui.common.WindowUi.short()
+    val rtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var pillW by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(200f) }
+    BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe()) {
+        val w = maxWidth.value; val h = maxHeight.value
+        // The heading over the pill (it steps back while the list is open)
+        Column(Modifier.align(Alignment.TopCenter).padding(top = if (short) 10.dp else 44.dp, start = 24.dp, end = 24.dp)
+            .graphicsLayer { alpha = 1f - 0.7f * t.coerceIn(0f, 1f) }, horizontalAlignment = Alignment.CenterHorizontally) {
+            ArgusLogo(if (short) 56.dp else 96.dp)
+            Spacer(Modifier.height(if (short) 8.dp else 16.dp))
+            Text(tr("Choose your language"), textAlign = TextAlign.Center, style = SpaceType.headline(if (short) 22.sp else 28.sp, look.ink))
+        }
+        Text(tr("{0} always replies in the language you write in.", BrandName.UPPER), textAlign = TextAlign.Center,
+            style = SpaceType.body(14.sp, look.sub),
+            modifier = Modifier.align(Alignment.Center).offset(y = (LanguagePick.PILL_H / 2f + 30f).dp).padding(horizontal = 40.dp)
+                .graphicsLayer { alpha = 1f - t.coerceIn(0f, 1f) })
+        // The pill: the language in use, centred
+        val name = com.blaze.assistant.i18n.AppLang.lang(sel).name
+        Row(Modifier.align(Alignment.Center).height(LanguagePick.PILL_H.dp)
+            .widthIn(min = LanguagePick.pillMin(w).dp, max = LanguagePick.pillMax(w).dp)
+            .onSizeChanged { pillW = with(density) { it.width.toDp().value } }
+            .graphicsLayer { alpha = if (t > 0.02f) 0f else 1f }
+            .clip(SpaceShapes.pill).background(look.card).border(1.dp, look.hair, SpaceShapes.pill)
+            .clickable(enabled = !open, onClickLabel = tr("Change language")) { open = true }
+            .semantics { role = androidx.compose.ui.semantics.Role.Button; contentDescription = tr("Language: {0}", name) }
+            .testTag(SpaceTags.LANGUAGE_PILL).padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("globe", 18), null, Modifier.size(18.dp), tint = look.sub)
+            Spacer(Modifier.width(10.dp))
+            Text(name, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                style = SpaceType.body(19.sp, look.ink, FontWeight.Medium).copy(fontFamily = com.blaze.assistant.ui.Type.sansFor(name)))
+            Spacer(Modifier.width(10.dp))
+            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("chevron-down", 16), null, Modifier.size(16.dp), tint = look.sub)
+        }
+        // The continue button: its own round button at the far right, level with the pill
+        SpaceRoundButton(tr("Continue"), onNext, Modifier.align(Alignment.CenterEnd).padding(end = LanguagePick.NEXT_EDGE.dp)
+            .graphicsLayer { alpha = 1f - t.coerceIn(0f, 1f) }, tag = SpaceTags.LANGUAGE_NEXT, size = LanguagePick.NEXT.dp, fill = look.primaryFill) {
+            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("arrow-right", 22), null,
+                Modifier.size(22.dp).graphicsLayer { scaleX = if (rtl) -1f else 1f }, tint = look.primaryInk)
+        }
+        // The open list: grows out of the pill (up and down), then the rows fade in
+        if (t > 0.001f) {
+            val target = LanguagePick.box(h / 2f, h, LanguagePick.contentHeight(langs.size))
+            val top = LanguagePick.lerp(h / 2f - LanguagePick.PILL_H / 2f, target.top, t)
+            val bh = LanguagePick.lerp(LanguagePick.PILL_H, target.height, t)
+            val bw = LanguagePick.lerp(pillW, LanguagePick.width(w), t)
+            val shape = androidx.compose.foundation.shape.RoundedCornerShape(LanguagePick.lerp(LanguagePick.PILL_H / 2f, 26f, t.coerceIn(0f, 1f)).dp)
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f * t.coerceIn(0f, 1f)))
+                .clickable(interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null, onClickLabel = tr("Close")) { open = false })
+            val list = androidx.compose.foundation.lazy.rememberLazyListState()
+            val at = langs.indexOfFirst { it.code == sel }.coerceAtLeast(0)
+            androidx.compose.runtime.LaunchedEffect(open) {
+                if (open) list.scrollToItem(LanguagePick.firstRow(at, (target.height / LanguagePick.ROW_H).toInt()))
+            }
+            Box(Modifier.align(Alignment.TopCenter).offset(y = top.dp).size(bw.dp, bh.dp).clip(shape).background(look.menu)
+                .border(1.dp, look.hair, shape).testTag(SpaceTags.LANGUAGE_LIST)) {
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize().graphicsLayer { alpha = ((t - 0.35f) / 0.65f).coerceIn(0f, 1f) },
+                    state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = LanguagePick.PAD.dp)) {
+                    items(langs.size, key = { langs[it].code }) { i ->
+                        val l = langs[i]
+                        val on = l.code == sel
+                        Row(Modifier.fillMaxWidth().height(LanguagePick.ROW_H.dp)
+                            .selectable(selected = on, enabled = open, role = androidx.compose.ui.semantics.Role.RadioButton) { pick(l.code) }
+                            .padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(l.name, modifier = Modifier.weight(1f), maxLines = 1,
+                                style = SpaceType.body(18.sp, if (on) look.ink else look.sub).copy(fontFamily = com.blaze.assistant.ui.Type.sansFor(l.name),
+                                    fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal))
+                            if (on) androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Check, contentDescription = null,
+                                tint = look.ink, modifier = Modifier.size(20.dp))
+                        }
+                    }
                 }
             }
-        }
-    }
-    val frame = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe()
-    if (short) Row(frame.padding(horizontal = 18.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) {
-            head(72.dp)
-            Spacer(Modifier.height(14.dp))
-            SpacePillButton(com.blaze.assistant.i18n.tr("Continue"), onNext, primary = true, modifier = Modifier.widthIn(max = 420.dp))
-        }
-        list(Modifier.weight(1f).fillMaxHeight())
-    } else Column(frame.padding(horizontal = 18.dp, vertical = 18.dp).readableWidth()) {
-        head(120.dp)
-        Spacer(Modifier.height(12.dp))
-        list(Modifier.weight(1f))
-        Spacer(Modifier.height(12.dp))
-        SpacePillButton(com.blaze.assistant.i18n.tr("Continue"), onNext, primary = true, modifier = Modifier.widthIn(max = 420.dp).align(Alignment.CenterHorizontally))
-    }
-}
-
-@Composable
-private fun Welcome(onStart: () -> Unit) {
-    val look = SpaceLook.Dark
-    // Landscape audit 2026-11-15: Welcome scrolls (a 260 dp logo plus the tagline did not fit a phone on its side, and
-    // nothing scrolled). The column is at least the screen's height, so the upright layout (weights) is unchanged; on a
-    // short window the logo is smaller.
-    val short = com.blaze.assistant.ui.common.WindowUi.short()
-    BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe()) {
-        val minH = maxHeight
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = minH)
-            .padding(horizontal = 28.dp, vertical = if (short) 12.dp else 24.dp).readableWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.weight(0.9f))
-            ArgusLogo(if (short) 140.dp else 260.dp)
-            Spacer(Modifier.height(if (short) 14.dp else 28.dp))
-            Text(tr(SpaceOnboarding.TAGLINE), textAlign = TextAlign.Center, style = SpaceType.headline(if (short) 24.sp else 30.sp, look.ink))
-            Spacer(Modifier.height(12.dp))
-            Text(tr("Your assistant for everything on this phone. Ready in a minute, nothing to set up."), textAlign = TextAlign.Center,
-                style = SpaceType.body(16.sp, look.sub))
-            Spacer(Modifier.weight(1f))
-            Spacer(Modifier.height(if (short) 12.dp else 0.dp))
-            SpacePillButton(tr("Get started"), onStart, primary = true, tag = SpaceTags.ONBOARDING_START, modifier = Modifier.widthIn(max = 420.dp))
         }
     }
 }

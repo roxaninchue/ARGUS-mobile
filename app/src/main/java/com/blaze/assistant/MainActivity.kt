@@ -31,6 +31,8 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     private var ownLaunchAt = 0L
     /** Account lock: why ARGUS is locked (the lock screen shows), or null. Read on the main thread by Back and PiP. */
     private val gate = mutableStateOf<com.blaze.assistant.connect.AccountLock.Reason?>(null)
+    /** Owner 2026-11-18: a fresh install plays the clip and the language step before the lock screen (SpaceOnboarding.beforeLock). */
+    private val preLock = mutableStateOf(false)
 
     companion object { const val EXTRA_LISTEN = "listen"; const val ACTION_CALL = "com.blaze.assistant.CALL" }
 
@@ -47,6 +49,8 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         )
         locked.value = com.blaze.assistant.agent.Settings.appLock
         gate.value = com.blaze.assistant.connect.AccountGate.recompute()
+        preLock.value = try { com.blaze.assistant.ui.space.SpaceOnboarding.beforeLock(com.blaze.assistant.agent.Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, false),
+            com.blaze.assistant.agent.Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, false)) } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("MainActivity preLock", t); false }
         lifecycleScope.launch { com.blaze.assistant.connect.AccountGate.lock.collect { gate.value = it } }
         setContent { BlazeTheme {
             // Owner 2026-11-18: the status bar icons follow ARGUS's own light / dark, not the phone's (SystemBarIcons.kt)
@@ -57,9 +61,11 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
                 androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize().layout { m, c ->
                     val p = m.measure(c); layout(p.width, p.height) { if (!pip.value) p.place(0, 0) }
                 }) {
-                    // Account lock: the lock screen comes before anything else (the first-run language step included).
+                    // Account lock: the lock screen comes before the app. On a fresh install the opening clip and the language
+                    // step come first (owner 2026-11-18, SpaceOnboarding.beforeLock), then the lock screen is the sign-in.
                     val acct = gate.value
-                    if (acct != null) com.blaze.assistant.ui.AccountLockRoute(acct)
+                    if (acct != null && preLock.value) com.blaze.assistant.ui.space.SpaceFirstRunBeforeLock { preLock.value = false }
+                    else if (acct != null) com.blaze.assistant.ui.AccountLockRoute(acct)
                     else if (locked.value) com.blaze.assistant.ui.LockScreen { unlock() } else ChatScreen()
                 }
                 if (pip.value && !locked.value && gate.value == null) { if (videoPip.value) com.blaze.assistant.ui.StageVideoPip() else com.blaze.assistant.browser.phone.PhonePipView() }

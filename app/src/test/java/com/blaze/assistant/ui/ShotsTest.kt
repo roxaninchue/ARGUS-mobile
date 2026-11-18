@@ -449,13 +449,10 @@ open class ShotsTest {
             onPage = {}, onSignOut = {}, onSearch = {}, version = "0.52.3")
     }
 
-    // 0.52.3: first run is the welcome (logo + tagline) and one setup screen; this is the setup screen mid-download.
+    // owner 2026-11-18: first run is the logo clip, the language pill, then sign-in; this is the language step.
     @Test fun onboarding() = shot("22-onboarding") {
-        com.blaze.assistant.ui.space.SpaceOnboardingScreen(com.blaze.assistant.ui.space.SpaceOnboarding.Step.SETUP, signedIn = true,
-            setup = mapOf("linux" to com.blaze.assistant.setup.SetupPlan.Status(com.blaze.assistant.setup.SetupPlan.Phase.DONE),
-                "tools" to com.blaze.assistant.setup.SetupPlan.Status(com.blaze.assistant.setup.SetupPlan.Phase.RUNNING, 55),
-                "brain" to com.blaze.assistant.setup.SetupPlan.Status(com.blaze.assistant.setup.SetupPlan.Phase.WAITING_WIFI)),
-            onNext = {}, onRetry = {}, accountCard = {})
+        com.blaze.assistant.ui.space.SpaceOnboardingScreen(com.blaze.assistant.ui.space.SpaceOnboarding.Step.LANGUAGE, signedIn = true,
+            onNext = {}, accountCard = {})
     }
 
     @Test fun accounts() = shot("23-accounts") {

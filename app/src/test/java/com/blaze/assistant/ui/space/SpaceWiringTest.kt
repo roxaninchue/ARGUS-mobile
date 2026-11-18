@@ -14,7 +14,7 @@ import java.io.File
  *    switches to Chat;
  *  - the avatar opens the profile page (the root of Settings), whose rows reach the decluttered pages; the old list,
  *    Advanced, the brain switches and the backup / offline brain sections are gone, and so is the model picker;
- *  - first run is the welcome + one setup screen, the old SetupFlow / dependency gate are gone, and BlazeApp starts what
+ *  - first run is the logo clip, the language pill and sign-in (owner 2026-11-18), the old SetupFlow / dependency gate are gone, and BlazeApp starts what
  *    is left of setup after the first frame;
  *  - the app icon is the ARGUS mark with no duplicate launcher resources; the old Home board stays in the tree.
  * Rendering is SpaceShotsTest's; on a phone, SpaceHomeCheck and SpaceOnboardingCheck.
@@ -287,17 +287,28 @@ class SpaceWiringTest {
         assertFalse("argus_parallax" in look); assertFalse("stays dark" in look)
     }
 
-    @Test fun firstRunIsTheWelcomeAndOneSetupScreen() {
-        val ob = after(chat, "if (onboard) {", 1_600)
+    @Test fun firstRunIsTheClipTheLanguagePillAndSignIn() {
+        val ob = after(chat, "if (onboard) {", 2_400)
         assertTrue("${S}SpaceOnboardingScreen(step" in ob)
-        assertTrue("setup starts on the setup step", "LaunchedEffect(step) { if (step == ${S}SpaceOnboarding.Step.SETUP) com.blaze.assistant.setup.SetupRunner.start(ctx) }" in ob)
-        assertTrue("finishing marks onboarded and leaves for the Home tab, which ChatNav.tabOf turns into Chat (owner 2026-11-15, OldHomeGoneTest)", "Settings.setBool(${S}SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME))" in ob)
+        // owner 2026-11-18: finishing marks onboarded, leaves for the Home tab (ChatNav.tabOf turns it into Chat, OldHomeGoneTest),
+        // starts the downloads in the background and hands over to FirstRun (checklist in Life + ARGUS's introduction)
+        assertTrue("Settings.setBool(${S}SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME))" in ob)
+        assertTrue("com.blaze.assistant.setup.SetupRunner.start(ctx); com.blaze.assistant.setup.FirstRun.welcome(ctx)" in ob)
+        assertTrue("signed in: the sign-in step moves on by itself", "if (${S}SpaceOnboarding.autoNext(step, signedIn)) advance()" in ob)
+        assertTrue("the language step marks the clip as seen", "Settings.setBool(${S}SpaceOnboarding.PREF_INTRO_SEEN, true)" in ob)
+        assertTrue("onboarding resumes after the lock screen", "${S}SpaceOnboarding.first(Settings.bool(${S}SpaceOnboarding.PREF_INTRO_SEEN, false))" in chat)
         // Account lock: a first run's sign-in on the lock screen still leads into onboarding
         assertTrue("only for people who never used ARGUS", "${S}SpaceOnboarding.show(Settings.bool(\"onboarded\", false), Settings.ready && !com.blaze.assistant.connect.AccountGate.firstRun(), hasMessages)" in chat)
-        for (gone in listOf("SetupFlow(", "SetupGateScreen(", "SetupRow(")) nowhere(gone)
+        for (gone in listOf("SetupFlow(", "SetupGateScreen(", "SetupRow(", "private fun Welcome(")) nowhere(gone)
         val o = src("ui/space/SpaceOnboarding.kt")
-        assertTrue("SpaceOnboarding.TAGLINE" in o && "R.drawable.argus_logo" in o)
-        assertTrue("one overall bar", "SetupPlan.overall(" in o || "SetupPlan.percent(" in o)
+        assertTrue("the still logo and tagline stand in for the clip", "SpaceOnboarding.TAGLINE" in src("ui/space/SpaceIntro.kt") && "R.drawable.argus_logo" in o)
+        assertTrue("the clip ships", File(main, "res/raw/argus_intro.mp4").isFile && File(main, "res/raw/argus_intro.mp4").length() in 100_000L..1_600_000L)
+        assertTrue("R.raw.argus_intro" in src("ui/space/SpaceIntro.kt"))
+        assertTrue("setup screen keeps one overall bar", "SetupPlan.overall(" in o || "SetupPlan.percent(" in o)
+        // a fresh install: the clip and the language before the lock screen
+        val m = src("MainActivity.kt")
+        assertTrue("if (acct != null && preLock.value) ${S}SpaceFirstRunBeforeLock { preLock.value = false }" in m)
+        assertTrue(m.indexOf("SpaceFirstRunBeforeLock") < m.indexOf("AccountLockRoute(acct)"))
         // BlazeApp: what is left starts by itself after the first frame, for people past onboarding
         val app = src("BlazeApp.kt").substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
         assertTrue("if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add(\"setup.SetupRunner.later\") { com.blaze.assistant.setup.SetupRunner.later(this) }" in app)
@@ -329,9 +340,9 @@ class SpaceWiringTest {
         }
     }
 
-    @Test fun theVersionIs0536() {
+    @Test fun theVersionIs0538() {
         val g = listOf(File("build.gradle.kts"), File("app/build.gradle.kts")).first { it.isFile && it.readText().contains("versionCode") }.readText()
-        assertTrue("versionCode = 199" in g)
-        assertTrue("versionName = \"0.53.7\"" in g)
+        assertTrue("versionCode = 200" in g)
+        assertTrue("versionName = \"0.53.8\"" in g)
     }
 }

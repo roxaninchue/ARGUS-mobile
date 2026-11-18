@@ -164,10 +164,15 @@ object Ago {
 
 /**
  * Owner 2026-11-14: a to-do list on the Life dashboard. Its items live in the widget's config (`items`: strings or
- * `{t, done}`), so ARGUS adds or ticks them with home_widget_update and a tap on Life ticks them too. Nothing is fetched.
+ * `{t, done}`), so ARGUS adds or ticks them with home_widget_update or [LifeTodo] (life_todo) and a tap on Life ticks
+ * them too. Nothing is fetched.
+ *
+ * 2026-11-18 (first-run checklist): an item may carry a [Item.key] (`k`, a stable id the app matches on, e.g. the
+ * "Set up ARGUS" steps of [com.blaze.assistant.setup.SetupChecklist]) and an [Item.open] (`open`, what a tap on the row
+ * opens: a [com.blaze.assistant.agent.SelfSetup.open] target). Both are optional and kept through every edit.
  */
 object HomeTodo {
-    data class Item(val text: String, val done: Boolean)
+    data class Item(val text: String, val done: Boolean, val key: String = "", val open: String = "")
 
     const val MAX = 50
 
@@ -175,18 +180,51 @@ object HomeTodo {
         val a = cfg.optJSONArray("items") ?: return emptyList()
         return (0 until a.length()).mapNotNull { i ->
             when (val x = a.opt(i)) {
-                is JSONObject -> Item(x.optString("t").ifBlank { x.optString("title").ifBlank { x.optString("text") } }.trim(), x.optBoolean("done", false))
+                is JSONObject -> Item(x.optString("t").ifBlank { x.optString("title").ifBlank { x.optString("text") } }.trim(), x.optBoolean("done", false),
+                    x.optString("k").trim(), x.optString("open").trim())
                 is String -> Item(x.trim(), false)
                 else -> null
             }
         }.filter { it.text.isNotBlank() }.take(MAX)
     }
 
-    fun toJson(items: List<Item>): JSONArray = JSONArray(items.map { JSONObject().put("t", it.text).put("done", it.done) })
+    fun toJson(items: List<Item>): JSONArray = JSONArray(items.map { i ->
+        JSONObject().put("t", i.text).put("done", i.done).also { o -> if (i.key.isNotBlank()) o.put("k", i.key); if (i.open.isNotBlank()) o.put("open", i.open) }
+    })
 
     /** The list with item [index] ticked or unticked. */
     fun toggle(items: List<Item>, index: Int): List<Item> =
         items.mapIndexed { i, it -> if (i == index) it.copy(done = !it.done) else it }
+
+    private fun norm(s: String) = s.trim().lowercase().replace(Regex("\\s+"), " ")
+
+    /** [texts] added at the end (blank ones and ones already on the list, in any case, left out), at most [MAX] items. */
+    fun add(items: List<Item>, texts: List<String>): List<Item> {
+        val out = items.toMutableList()
+        for (t in texts.map { it.trim().take(200) }) {
+            if (t.isBlank() || out.any { norm(it.text) == norm(t) } || out.size >= MAX) continue
+            out += Item(t, false)
+        }
+        return out
+    }
+
+    /**
+     * The item [ref] names: its number on the list (1 = the first), its text (any case), or a part of the text that only
+     * one item has. -1 when nothing matches or the part matches several.
+     */
+    fun find(items: List<Item>, ref: String): Int {
+        val r = norm(ref)
+        if (r.isEmpty()) return -1
+        r.removePrefix("#").toIntOrNull()?.let { n -> return if (n in 1..items.size) n - 1 else -1 }
+        items.indexOfFirst { norm(it.text) == r || (it.key.isNotBlank() && it.key == r) }.let { if (it >= 0) return it }
+        val part = items.withIndex().filter { r in norm(it.value.text) }
+        return if (part.size == 1) part[0].index else -1
+    }
+
+    /** Item [index] marked [done] (nothing changes for an index off the list). */
+    fun set(items: List<Item>, index: Int, done: Boolean): List<Item> = items.mapIndexed { i, it -> if (i == index) it.copy(done = done) else it }
+
+    fun remove(items: List<Item>, index: Int): List<Item> = items.filterIndexed { i, _ -> i != index }
 
     /** The card's content: open items first, done ones after; the headline counts what is left. */
     fun data(w: Widget): WidgetData {

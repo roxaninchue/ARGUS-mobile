@@ -268,11 +268,28 @@ object HomeBoard {
         scope.launch { refreshAll(onlyDue = true) }
     }
 
+    // ---------------- first-run checklist ----------------
+
+    /**
+     * 2026-11-18 first run: the "Set up ARGUS" checklist ([com.blaze.assistant.setup.SetupChecklist]) on this board, added once or
+     * kept in step with what the phone reports ([done]). Null while the board is still opening. Call it off the main thread.
+     */
+    fun checklist(done: Map<String, Boolean>): com.blaze.assistant.setup.SetupChecklist.Result? {
+        val s = store ?: return null
+        val r = com.blaze.assistant.setup.SetupChecklist.applyTo(s, done, Settings.bool(com.blaze.assistant.setup.SetupChecklist.PREF_SEEDED, false))
+        if (r.added) Settings.setBool(com.blaze.assistant.setup.SetupChecklist.PREF_SEEDED, true)
+        reload()
+        return r
+    }
+
     // ---------------- tools ----------------
 
     fun runTool(name: String, args: JSONObject): String {
         val s = store ?: return "The Home board is still starting. Try again in a moment."
-        return HomeTools.run(s, name, args) { id -> reload(); schedule(); if (id.isNotBlank()) refresh(id) }
+        return HomeTools.run(s, name, args, onChange = { id -> reload(); schedule(); if (id.isNotBlank()) refresh(id) },
+            // 2026-11-18: life_todo setup (ARGUS puts the first-run checklist in Life) ticks what the phone already has
+            setupDone = { com.blaze.assistant.setup.SetupChecklist.detected(com.blaze.assistant.setup.FirstRun.probe(app)) },
+            onSeeded = { Settings.setBool(com.blaze.assistant.setup.SetupChecklist.PREF_SEEDED, true) })
     }
 }
 

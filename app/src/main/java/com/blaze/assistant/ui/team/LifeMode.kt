@@ -92,6 +92,8 @@ object LifeTags {
     const val SIGN_IN = "life-sign-in"
     const val SETUP = "life-setup"
     fun domain(key: String) = "life-domain-$key"
+    /** A to-do panel's row [i] (2026-11-18: the first-run checklist is tapped in tests and device checks by these). */
+    fun todo(widget: String, i: Int) = "life-todo-$widget-$i"
 }
 
 /**
@@ -363,6 +365,13 @@ fun LifePage(
     val cal = LifeCal(month, picked, today, dayItems, onSelect = { picked = it }, onMonth = { d -> month = month.plusMonths(d.toLong()) })
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val actions = remember { liveBoardActions(ctx) }
+    // 2026-11-18: the first-run checklist ticks the steps done outside ARGUS (a permission in Android's settings) on each visit.
+    val life = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(life) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e -> if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) com.blaze.assistant.setup.FirstRun.sync(ctx) }
+        life.lifecycle.addObserver(obs)
+        onDispose { life.lifecycle.removeObserver(obs) }
+    }
     val state = LifeModel.state(now.toLocalDate(), now.toLocalTime(), items, projects, weather, answer, signedIn, setupLeft, setupPercent,
         board = groups.size)
     LifeMode(state, nav, modifier, board = groups, boardData = board, boardActions = actions, cal = cal, fold = fold)
