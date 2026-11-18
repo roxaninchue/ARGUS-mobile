@@ -85,6 +85,8 @@ object ToolRegistry {
             "spotify_now_playing", "store_info", "store_search", "store_status", "terminal_jobs", "terminal_status", "use_skill", "wait",
             "web_search")
         one("ask_user", Decl(READ, selfCard = true))
+        // 2026-11-18: a PDF from this chat shown again (PdfPages); the Ask sheet's page tools (PageAgent) read like browser_*.
+        all(READ, "pdf_page", "page_read", "page_find", "page_scroll", "page_wait", "page_back")
 
         // ---------------- WRITE_LOCAL: ARGUS's own data on this phone ----------------
         all(WRITE_LOCAL, "add_job", "agent_create", "agent_delegate", "agent_progress", "agent_update", "cancel_agent", "cover_art",
@@ -106,6 +108,7 @@ object ToolRegistry {
         one("gallery_ops", d(WRITE_LOCAL, "on_this_day" to READ, "backup_plan" to READ, "trash" to DELETE))
         one("skill_manage", d(WRITE_LOCAL, "delete" to DELETE))
         one("money", d(READ, "add_bill" to WRITE_LOCAL, "add_receipt" to WRITE_LOCAL, "remove_bill" to DELETE, "enable" to SETTINGS, "disable" to SETTINGS))
+        one("servers", d(WRITE_LOCAL, "list" to READ, "logs" to READ))   // keeps named servers running on the phone
         one("clipboard", d(WRITE_LOCAL, "get" to READ, "get_image" to READ, "history" to READ))
 
         // ---------------- DELETE: something is gone ----------------
@@ -142,6 +145,7 @@ object ToolRegistry {
         one("browser_secure_input", Decl(CREDENTIAL, selfCard = true))
 
         // ---------------- PHYSICAL: hands on the phone's screen and apps ----------------
+        all(PHYSICAL, "page_click", "page_key", "page_select", "page_type")   // PageAgent: acts on the open page, like browser_*
         all(PHYSICAL, "blaze_camera", "browser_click", "browser_key", "browser_select", "browser_type", "compose_sms", "dial", "do_actions",
             "media_control", "navigate_to", "open_app", "open_camera", "open_settings", "open_settings_page", "open_url", "phone_act",
             "phone_handoff", "phone_open", "phone_task", "press_button", "run_plan", "scroll", "search_in_app", "set_volume", "spotify_control",

@@ -1,5 +1,7 @@
 ## 0.53.7 (versionCode 199, 2026-11-18): the "Unreleased" entries below down to 0.53.6
 
+CI fix (build #77 failed 6 of 3,656 release unit tests): `pdf_page`, the Ask sheet's `page_*` tools and `servers` now have an ActionClass (reads READ, page_click/type/select/key PHYSICAL like browser_*, servers WRITE_LOCAL with list/logs READ); BrowserEngine's Google-account catches log via CrashLog.quiet; PromptCacheBench counts the `servers` tail; BackRuleTest and SpaceWiringTest read the shell / Security page as they are now (botThread arg, Approvals & Activity before Bank mode). Same version, no APK was produced by #77.
+
 ## Unreleased: PDF pages readable again, agent links keep your Google account
 
 2026-11-18, the two open items from the context-loss fix.

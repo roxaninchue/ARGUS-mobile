@@ -896,11 +896,11 @@ object BrowserEngine {
     private var googleLoaded = false
     private fun noteGoogle(url: String) {
         loadGoogle()
-        if (GoogleAccount.seen(url)) try { app.getSharedPreferences("browser", Context.MODE_PRIVATE).edit().putInt(GOOGLE_PREF, GoogleAccount.last).apply() } catch (_: Exception) { }
+        if (GoogleAccount.seen(url)) try { app.getSharedPreferences("browser", Context.MODE_PRIVATE).edit().putInt(GOOGLE_PREF, GoogleAccount.last).apply() } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: save Google account", e) }
     }
     private fun loadGoogle() {
         if (googleLoaded) return
-        try { GoogleAccount.last = app.getSharedPreferences("browser", Context.MODE_PRIVATE).getInt(GOOGLE_PREF, GoogleAccount.last); googleLoaded = true } catch (_: Exception) { }
+        try { GoogleAccount.last = app.getSharedPreferences("browser", Context.MODE_PRIVATE).getInt(GOOGLE_PREF, GoogleAccount.last); googleLoaded = true } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: load Google account", e) }
     }
 
     suspend fun open(ctx: Context, url0: String, newTab: Boolean, isPrivate: Boolean = false): String {

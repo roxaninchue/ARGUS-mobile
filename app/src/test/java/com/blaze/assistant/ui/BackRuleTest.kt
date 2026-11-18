@@ -180,6 +180,6 @@ class BackRuleTest {
         val btc = src("ui/ChatScreen.kt").substringAfter("fun backToChat() {").substringBefore("\n    }\n")
         assertTrue(btc.contains("go(n.switchTab(ChatNav.TEAM))") && !btc.contains("ChatNav.HOME"))
         assertTrue(btc.contains("notchOpen = false; newOpen = false"))
-        assertTrue(src("ui/ChatScreen.kt").contains("homeRoot = !Agent.privateChat.value, argus = true)"))
+        assertTrue(src("ui/ChatScreen.kt").contains("homeRoot = !Agent.privateChat.value, argus = true"))
     }
 }
