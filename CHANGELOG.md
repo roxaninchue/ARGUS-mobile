@@ -1,3 +1,5 @@
+## 0.53.7 (versionCode 199, 2026-11-18): the "Unreleased" entries below down to 0.53.6
+
 ## Unreleased: PDF pages readable again, agent links keep your Google account
 
 2026-11-18, the two open items from the context-loss fix.
