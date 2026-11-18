@@ -122,6 +122,14 @@ class ScheduleDayTest {
         assertEquals((0..4).map { wed.plusDays(it.toLong()) }, d("what's my schedule this week"))
         assertEquals(listOf(wed.plusDays(3), sun), d("anything on this weekend?"))
         assertTrue(d("doing good thanks!").isEmpty())
+        // 18 Nov 2026 (phone 10:51 CAT): "my week" phrasing is the seven days from today, today first.
+        val week = (0..6).map { wed.plusDays(it.toLong()) }
+        assertEquals(week, d("how's my week looking?"))
+        assertEquals(week, d("what do I have for the week ahead"))
+        assertEquals(week, d("anything on the coming week?"))
+        assertEquals((0..4).map { wed.plusDays(it.toLong()) }, d("what's left for the rest of the week"))
+        assertEquals((0..6).map { wed.plusDays(5L + it) }, d("what's my schedule next week"))
+        assertTrue(d("I had a long week").isEmpty())
         assertTrue(d("I sat down for lunch").isEmpty())
         assertTrue(d("well as the assistant shouldn't you be telling me?").isEmpty())
     }

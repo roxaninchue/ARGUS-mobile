@@ -238,20 +238,19 @@ object Skills {
         val b = CalendarContract.Instances.CONTENT_URI.buildUpon()
         android.content.ContentUris.appendId(b, now - 3_600_000)
         android.content.ContentUris.appendId(b, endCal.timeInMillis)
-        val out = mutableListOf<String>()
+        val evs = mutableListOf<EventLines.Event>()
         ctx.contentResolver.query(b.build(),
             arrayOf(CalendarContract.Instances.TITLE, CalendarContract.Instances.BEGIN, CalendarContract.Instances.END,
                 CalendarContract.Instances.ALL_DAY, CalendarContract.Instances.EVENT_LOCATION),
             null, null, "${CalendarContract.Instances.BEGIN} ASC")?.use {
-            val f = SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault())
-            while (it.moveToNext() && out.size < 40) {
-                val time = if (it.getInt(3) == 1) "All day " + SimpleDateFormat("EEE d MMM", Locale.getDefault()).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date(it.getLong(1)))
-                    else f.format(Date(it.getLong(1))) + "–" + SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(it.getLong(2)))
-                val loc = it.getString(4)?.takeIf { l -> l.isNotBlank() }?.let { l -> " @ $l" } ?: ""
-                out += "$time: ${it.getString(0)}$loc"
+            while (it.moveToNext() && evs.size < 40) {
+                evs += EventLines.Event(it.getString(0).orEmpty(), it.getLong(1), it.getLong(2), it.getInt(3) == 1, it.getString(4))
             }
         }
-        return eventsResult(out)
+        // 18 Nov 2026: the result opens with today's date and marks each event's day (today / tomorrow / in N days), so
+        // the first listed day is never read as today (EventLines).
+        val nowZ = java.time.ZonedDateTime.now()
+        return eventsResult(EventLines.lines(evs, nowZ), nowZ)
     }
 
     /**
@@ -265,8 +264,11 @@ object Skills {
      * v0.45.9 replay fix (live 0.8.7, "View calendar" 1 of 5 answered only "Open the calendar?"): the result says what to do
      * with the events, so the reply lists them. Pure; HaloReplayRequestTest builds its fixture with it.
      */
-    fun eventsResult(lines: List<String>): String =
-        if (lines.isEmpty()) EVENTS_NONE else "Calendar events (tell the user each one with its time and place):\n" + lines.joinToString("\n")
+    fun eventsResult(lines: List<String>, now: java.time.ZonedDateTime? = null): String {
+        // 18 Nov 2026: with [now], the result starts with "Today is Wed 18 Nov 2026, 10:51 (Africa/Lusaka)." (EventLines.header).
+        val head = now?.let { EventLines.header(it) + "\n" }.orEmpty()
+        return if (lines.isEmpty()) head + EVENTS_NONE else head + "Calendar events (tell the user each one with its time and place):\n" + lines.joinToString("\n")
+    }
 
     private fun addEvent(ctx: Context, a: JSONObject): String {
         val f = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)

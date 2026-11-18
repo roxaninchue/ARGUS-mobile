@@ -2986,7 +2986,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val sp = specialist
             val sys = if (sp != null) Playbooks.specialistSystem(sp, Playbooks.forSpec(sp), SpecialistMatch.brief(sp, SkillMatch.cached()),
                     SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date()), Memory.promptBlock(lastUserText()), agentId) +
-                    Modes.promptLine(agentPlan) + (if (Settings.longChat && rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "")
+                    Modes.promptLine(agentPlan) + (if (Settings.longChat && rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") +
+                    // 18 Nov 2026: the [context] block (now: line with the zone, the dates asked) closed only the else branch
+                    // below (Kotlin reads `if … else a + … + block` as the else's sum), so a specialist turn never had it.
+                    "\n" + TurnContextSource.block(lastUserText())
                 else systemPrompt(lastUserText(), turnSkills.full.map { it.name }.toSet(), id, awareFull,
                     promptGroups, turnView != null || turnDesignNote.isNotEmpty(), promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
