@@ -196,11 +196,12 @@ fun ChatScreen() {
     val composer = com.blaze.assistant.ui.composer.rememberComposerState()
 
     var settingsPage by rememberSaveable { mutableStateOf<String?>(null) }
-    // 0.52.3 first run (space/SpaceOnboarding): logo + tagline, sign-in when needed, then the one setup screen. People who
-    // already set ARGUS up never see it.
-    // Account lock: signing in on the lock screen of a first run still leads into the language step and setup.
+    // First run (space/SpaceOnboarding, owner 2026-11-18): the logo clip, the language pill, then sign-in; the downloads run in
+    // the background afterwards. People who already set ARGUS up never see it.
+    // Account lock: a fresh install sees the clip and the language before the lock screen (MainActivity), so after signing in
+    // there onboarding starts at the sign-in step, which moves on by itself.
     var onboard by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.show(Settings.bool("onboarded", false), Settings.ready && !com.blaze.assistant.connect.AccountGate.firstRun(), hasMessages)) }
-    var obStep by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.first().name) }
+    var obStep by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.first(Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, false)).name) }
     val galleryOpen by GalleryUi.open.collectAsState()
     LaunchedEffect(Unit) { if (!onboard) Settings.setBool("onboarded", true) }
     // 0.52.3: no dependency gate any more; what has to be downloaded is set up by itself (setup/SetupRunner) and the
@@ -1224,24 +1225,26 @@ fun ChatScreen() {
             said = { Agent.messages.value.takeLast(300).filter { it.role == Role.USER || it.role == Role.BLAZE }
                 .map { com.blaze.assistant.composer.SpotlightGroups.Said(it.id, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text), it.role == Role.USER) } })
         } // !onboard
-        // 0.52.3 first run: logo + tagline, sign-in when needed, then the one setup screen (everything downloads by itself).
+        // First run (owner 2026-11-18): the clip, the language pill, then sign-in. Finishing starts the downloads (they finish
+        // in the background; Life shows what is left) and lands in the chat, where ARGUS introduces itself (setup/FirstRun).
         if (onboard) {
             val step = com.blaze.assistant.ui.space.SpaceOnboarding.Step.valueOf(obStep)
-            LaunchedEffect(step) { if (step == com.blaze.assistant.ui.space.SpaceOnboarding.Step.SETUP) com.blaze.assistant.setup.SetupRunner.start(ctx) }
-            com.blaze.assistant.ui.space.SpaceOnboardingScreen(step, signedIn = me != null || Settings.ready, setup = setupState,
-                onNext = {
-                    val nx = com.blaze.assistant.ui.space.SpaceOnboarding.next(step, me != null || Settings.ready)
-                    if (nx != null) obStep = nx.name
-                    else { Settings.setBool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME)) }
-                },
-                onRetry = { com.blaze.assistant.setup.SetupRunner.retry(ctx) },
-                accountCard = { AccountPage() })
-            BackHandler(enabled = step != com.blaze.assistant.ui.space.SpaceOnboarding.Step.LANGUAGE) {
-                obStep = when {
-                    step == com.blaze.assistant.ui.space.SpaceOnboarding.Step.WELCOME -> com.blaze.assistant.ui.space.SpaceOnboarding.Step.LANGUAGE.name   // owner 2026-11-14
-                    step == com.blaze.assistant.ui.space.SpaceOnboarding.Step.SETUP && me == null && !Settings.ready -> com.blaze.assistant.ui.space.SpaceOnboarding.Step.SIGN_IN.name
-                    else -> com.blaze.assistant.ui.space.SpaceOnboarding.Step.WELCOME.name
-                }
+            val signedIn = me != null || Settings.ready
+            val finish: () -> Unit = {
+                Settings.setBool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME))
+                com.blaze.assistant.setup.SetupRunner.start(ctx); com.blaze.assistant.setup.FirstRun.welcome(ctx)
+            }
+            val advance: () -> Unit = {
+                val nx = com.blaze.assistant.ui.space.SpaceOnboarding.next(step, signedIn)
+                if (com.blaze.assistant.ui.space.SpaceOnboarding.introSeen(step, nx)) Settings.setBool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, true)
+                if (nx != null) obStep = nx.name else finish()
+            }
+            // Signed in (here or on the lock screen): the sign-in step moves on by itself.
+            LaunchedEffect(step, signedIn) { if (com.blaze.assistant.ui.space.SpaceOnboarding.autoNext(step, signedIn)) advance() }
+            if (!com.blaze.assistant.ui.space.SpaceOnboarding.autoNext(step, signedIn))
+                com.blaze.assistant.ui.space.SpaceOnboardingScreen(step, signedIn = signedIn, onNext = advance, accountCard = { AccountPage() })
+            BackHandler(enabled = com.blaze.assistant.ui.space.SpaceOnboarding.back(step) != null) {
+                com.blaze.assistant.ui.space.SpaceOnboarding.back(step)?.let { obStep = it.name }
             }
         }
     }

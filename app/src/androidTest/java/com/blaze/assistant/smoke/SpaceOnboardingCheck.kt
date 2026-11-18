@@ -14,8 +14,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.blaze.assistant.setup.SetupPlan
-import com.blaze.assistant.setup.SetupPlan.Phase as S
 import com.blaze.assistant.ui.space.SpaceOnboarding
 import com.blaze.assistant.ui.space.SpaceOnboardingScreen
 import org.junit.Assert.assertEquals
@@ -26,13 +24,13 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * 0.52.3 local check (NOT part of the official low-RAM gate): the new first run on the low-RAM emulator with animations on
- * and real touches injected into the window. Three rounds of: the welcome (logo + "Intelligence beyond the interface"),
- * a finger tap on Get started -> the one setup screen, every item moving through waiting / downloading / ready (the states
- * SetupRunner publishes; nothing is really downloaded here) with the overall bar and its percentage, then a tap on the
- * Continue pill -> onboarding over. Same 50 ms main-thread monitor and 700 ms limit as the other checks (round 1 is a
- * warm-up: classes, the logo and the space image decode); screenshots go to the app's files (space-onboarding/). A tap
- * that lands while the screen is still fading in is retried (BUILDING.md: a device check never hangs on one gesture).
+ * Local check (NOT part of the official low-RAM gate), redone for the cinematic onboarding (owner 2026-11-18): the first
+ * run on the low-RAM emulator with animations on and real touches injected into the window. Three rounds of: the logo
+ * clip (a tap skips it) -> the language pill, a tap on the pill opens the list (it grows up and down out of the pill), a
+ * tap on the dimmed space folds it, then a tap on the round arrow at the far right -> onboarding over (signed in, so no
+ * sign-in step). Same 50 ms main-thread monitor and 700 ms limit as the other checks (round 1 is a warm-up: classes, the
+ * logo, the clip and the space image decode); screenshots go to the app's files (space-onboarding/). A tap that lands
+ * while the screen is still fading in is retried (BUILDING.md: a device check never hangs on one gesture).
  * Run by .github/workflows/home-intro-check.yml (tools/smoke/run-space-onboarding.sh). Replaces ArgusSpotlightCheck.
  */
 @RunWith(AndroidJUnit4::class)
@@ -81,8 +79,11 @@ class SpaceOnboardingCheck {
 
     private fun tap(x: Float, y: Float) { val down = SystemClock.uptimeMillis(); touch(MotionEvent.ACTION_DOWN, x, y, down); SystemClock.sleep(60); touch(MotionEvent.ACTION_UP, x, y, down) }
 
-    /** The bottom pill's centre: [padDp] above the navigation bar, 56 dp tall (Get started: 24 dp; Continue: 18 dp). */
-    private fun pillY(padDp: Int) = h - bottomInset - (padDp + 28) * density
+    private var topInset = 0
+    /** The middle of the window between the bars: where the language pill sits. */
+    private fun midY() = topInset + (h - topInset - bottomInset) / 2f
+    /** The round arrow: 24 dp from the right edge, 56 dp across, level with the pill. */
+    private fun arrowX() = w - (24 + 28) * density
 
     private fun waitFor(what: String, ms: Long = 2_500, cond: () -> Boolean): Boolean {
         val end = SystemClock.uptimeMillis() + ms
@@ -99,22 +100,10 @@ class SpaceOnboardingCheck {
         Log.i(tag, "ONBOARD $what did not take effect after $tries tries"); return false
     }
 
-    private val step = mutableStateOf(SpaceOnboarding.Step.WELCOME)
-    private val setup = mutableStateOf<Map<String, SetupPlan.Status>>(emptyMap())
+    private val step = mutableStateOf(SpaceOnboarding.Step.INTRO)
     @Volatile private var finished = 0
 
-    /** The setup screen's states, as SetupRunner publishes them: Linux first, the Wi-Fi items waiting, then everything ready. */
-    private fun frames(): List<Map<String, SetupPlan.Status>> {
-        fun s(p: SetupPlan.Phase, pr: Int = -1) = SetupPlan.Status(p, pr)
-        val waiting = SetupPlan.ITEMS.associate { it.id to if (it.wifi) s(S.WAITING_WIFI) else s(S.PENDING) }
-        return listOf(waiting,
-            waiting + ("linux" to s(S.RUNNING, 30)) + ("skills" to s(S.RUNNING)),
-            waiting + ("linux" to s(S.DONE)) + ("skills" to s(S.DONE)) + ("tools" to s(S.RUNNING, 45)),
-            waiting + ("linux" to s(S.DONE)) + ("skills" to s(S.DONE)) + ("tools" to s(S.DONE)) + ("brain" to s(S.RUNNING, 60)) + ("voice" to s(S.RUNNING, 20)) + ("quick" to s(S.FAILED)),
-            SetupPlan.ITEMS.associate { it.id to s(S.DONE) } + ("quick" to SetupPlan.Status(S.SKIPPED, note = "Not available on this phone")))
-    }
-
-    @Test fun welcomeThenOneSetupScreenThreeTimesUnder700ms() {
+    @Test fun clipLanguagePillAndArrowThreeTimesUnder700ms() {
         val sc = ActivityScenario.launch(ComponentActivity::class.java)
         sc.onActivity { a ->
             a.enableEdgeToEdge(
@@ -122,10 +111,10 @@ class SpaceOnboardingCheck {
                 navigationBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
             a.window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(0xFF000000.toInt()))
             a.setContent {
-                val s by step; val st by setup
-                SpaceOnboardingScreen(s, signedIn = true, setup = st,
+                val s by step
+                SpaceOnboardingScreen(s, signedIn = true,
                     onNext = { val nx = SpaceOnboarding.next(step.value, signedIn = true); if (nx != null) step.value = nx else finished++ },
-                    onRetry = {}, accountCard = {})
+                    accountCard = {})
             }
         }
         SystemClock.sleep(2_500)
@@ -134,24 +123,23 @@ class SpaceOnboardingCheck {
             val v = a.window.decorView
             w = v.width; h = v.height
             bottomInset = v.rootWindowInsets?.systemWindowInsetBottom ?: 0
+            topInset = v.rootWindowInsets?.systemWindowInsetTop ?: 0
         }
-        Log.i(tag, "ONBOARD window ${w}x$h px, density $density, nav bar $bottomInset px")
+        Log.i(tag, "ONBOARD window ${w}x$h px, density $density, bars $topInset / $bottomInset px")
         monitor()
         var failures = 0
         try {
             for (round in 0 until 3) {
                 val measured = round > 0
                 val r = "round ${round + 1}"
-                main.post { step.value = SpaceOnboarding.Step.WELCOME; setup.value = emptyMap() }
-                SystemClock.sleep(1_200); mark("$r welcome", measured); if (round == 1) shot("welcome")
-                if (!attempt("setup after Get started", act = { tap(w / 2f, pillY(24)) }) { step.value == SpaceOnboarding.Step.SETUP }) failures++
-                SystemClock.sleep(800); mark("$r into setup", measured)
-                frames().forEachIndexed { i, f ->
-                    main.post { setup.value = f }
-                    SystemClock.sleep(700); mark("$r setup ${SetupPlan.percent(f)}%", measured); if (round == 1) shot("setup-$i")
-                }
+                main.post { step.value = SpaceOnboarding.Step.INTRO }
+                SystemClock.sleep(1_200); mark("$r clip", measured); if (round == 1) shot("clip")
+                if (!attempt("language after a tap on the clip", act = { tap(w / 2f, h / 2f) }) { step.value == SpaceOnboarding.Step.LANGUAGE }) failures++
+                SystemClock.sleep(900); mark("$r language", measured); if (round == 1) shot("language")
+                tap(w / 2f, midY()); SystemClock.sleep(700); mark("$r list open", measured); if (round == 1) shot("language-open")
+                tap(w / 2f, topInset + 8 * density); SystemClock.sleep(700); mark("$r list folded", measured)
                 val before = finished
-                if (!attempt("done after Continue", act = { tap(w / 2f, pillY(18)) }) { finished > before }) failures++
+                if (!attempt("done after the arrow", act = { tap(arrowX(), midY()) }) { finished > before }) failures++
                 SystemClock.sleep(400); mark("$r continue", measured)
             }
         } finally { running = false; sc.close() }

@@ -65,4 +65,14 @@ class AppLangTest {
         assertFalse(File(dir, "en.json").exists())
         assertTrue(AppLang.PENDING.none { File(dir, "$it.json").isFile })
     }
+
+    /** Owner 2026-11-18: the language pill opens on the saved choice, else the phone's language when ARGUS has it, else English. */
+    @Test fun theFirstLanguageIsTheSavedOneElseThePhones() {
+        assertEquals("fr", AppLang.initial(null, "fr-FR"))
+        assertEquals("pt", AppLang.initial("", "pt_BR"))
+        assertEquals("en", AppLang.initial(null, "ko-KR"))
+        assertEquals("en", AppLang.initial(null, null))
+        assertEquals("sw", AppLang.initial("sw", "fr-FR"))
+        assertEquals("an unknown saved code falls back to English", "en", AppLang.initial("xx", "fr-FR"))
+    }
 }

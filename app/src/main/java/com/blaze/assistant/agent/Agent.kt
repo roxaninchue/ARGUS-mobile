@@ -1069,6 +1069,20 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         return out
     }
 
+    /**
+     * 2026-11-18 first run (setup/FirstRun): ARGUS's first message. The model writes it in a hidden turn from [kickoff] (the
+     * app's facts about the moment, not the user's words) through the normal loop; its reply lands in the chat on screen as
+     * ARGUS's. With no reply in [FirstRunIntro.TIMEOUT_MS] (offline, an error) the fixed [fallback] is posted instead.
+     */
+    fun introduce(kickoff: String, fallback: String) { scope.launch {
+        val s = Session(newId()).also { it.title = "First run"; sessions[it.id] = it }
+        val text = try { kotlinx.coroutines.withTimeoutOrNull(com.blaze.assistant.setup.FirstRunIntro.TIMEOUT_MS) { s.send(kickoff); s.job?.join()
+            s.msgs.lastOrNull { (it.role == Role.BLAZE && it.meta != Ack.META) || it.role == Role.ERROR }?.takeIf { it.role == Role.BLAZE }?.text } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce", e); null }
+        try { s.job?.cancel(); ChatStore.delete(s.id) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce cleanup", e) }
+        sessions.remove(s.id)
+        val c = cur; c.add(Role.BLAZE, com.blaze.assistant.setup.FirstRunIntro.pick(text, fallback)); c.persist(); refreshChats()
+    } }
+
     /** Messages of any chat (for the dashboard). */
     fun messagesOf(id: String): List<ChatMessage>? = load(id)?.msgs
 

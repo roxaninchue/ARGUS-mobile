@@ -348,27 +348,46 @@ object SpaceSettings {
 }
 
 /**
- * 0.52.3 first run (replaces SetupFlow, the dependency gate and the old intro): the ARGUS logo with the tagline, the
- * account sign-in only when not signed in yet (skippable: the cloud brain needs it, nothing else does), then ONE setup
- * screen where everything downloads by itself ([com.blaze.assistant.setup.SetupPlan]). No permission screens: the
- * notification prompt comes from Android at first launch and every other permission is asked when a task needs it.
+ * First run (owner 2026-11-18, the cinematic onboarding; it replaced 0.52.3's logo + tagline welcome and the setup screen):
+ * [Step.INTRO] the ARGUS logo clip (full screen, tap skips; the still logo when motion is off or the clip can't play,
+ * [IntroClip]), [Step.LANGUAGE] one pill with the app language (the phone's to begin with, AppLang.initial) that opens into the list
+ * ([LanguagePick]), then [Step.SIGN_IN] (account lock: no way past it signed out). On a fresh install the account lock
+ * screen is the sign-in, so MainActivity plays INTRO and LANGUAGE before it ([beforeLock]) and ChatScreen finishes
+ * onboarding after it. Finishing starts the downloads ([com.blaze.assistant.setup.SetupPlan]), which finish in the
+ * background (Life shows "Finishing setup"; nothing waits on them), and hands over to
+ * [com.blaze.assistant.setup.FirstRun]: the "Set up ARGUS" checklist in Life and ARGUS's own introduction in the chat.
+ * No permission screens: every permission is asked when a task needs it, or from the checklist.
  */
 object SpaceOnboarding {
-    /** Owner 2026-11-14: the language comes first, before anything else is said. */
-    enum class Step { LANGUAGE, WELCOME, SIGN_IN, SETUP }
+    /** Owner 2026-11-18: the clip, then the language, then the sign-in. */
+    enum class Step { INTRO, LANGUAGE, SIGN_IN }
 
     const val TAGLINE = "Intelligence beyond the interface"
     const val PREF_ONBOARDED = "onboarded"
+    /** Set once the clip and the language step were shown (before the lock screen or in onboarding): never shown twice. */
+    const val PREF_INTRO_SEEN = "onboarding_intro_seen"
 
-    fun first(): Step = Step.LANGUAGE
+    /** Where onboarding starts: the clip, or the sign-in when the clip and the language were already shown. */
+    fun first(introSeen: Boolean = false): Step = if (introSeen) Step.SIGN_IN else Step.INTRO
 
     /** The step after [step]; null = onboarding is over (into the app). */
     fun next(step: Step, signedIn: Boolean): Step? = when (step) {
-        Step.LANGUAGE -> Step.WELCOME
-        Step.WELCOME -> if (signedIn) Step.SETUP else Step.SIGN_IN
-        Step.SIGN_IN -> if (signedIn) Step.SETUP else Step.SIGN_IN   // account lock: no way past it signed out
-        Step.SETUP -> null
+        Step.INTRO -> Step.LANGUAGE
+        Step.LANGUAGE -> if (signedIn) null else Step.SIGN_IN
+        Step.SIGN_IN -> if (signedIn) null else Step.SIGN_IN   // account lock: no way past it signed out
     }
+
+    /** Back: the sign-in returns to the language; the clip is never replayed, and Back on the language does nothing. */
+    fun back(step: Step): Step? = if (step == Step.SIGN_IN) Step.LANGUAGE else null
+
+    /** Signed in on the sign-in step (here or on the lock screen): onboarding moves on by itself. */
+    fun autoNext(step: Step, signedIn: Boolean): Boolean = step == Step.SIGN_IN && signedIn
+
+    /** Leaving [step] for [to] means the clip and the language were shown. */
+    fun introSeen(step: Step, to: Step?): Boolean = step == Step.LANGUAGE && to != Step.LANGUAGE
+
+    /** Fresh install, locked: the clip and the language come before the lock screen's sign-in. */
+    fun beforeLock(onboarded: Boolean, introSeen: Boolean): Boolean = !onboarded && !introSeen
 
     /** First run only: someone who already used ARGUS (onboarded, signed in, or with a chat) never sees it. */
     fun show(onboarded: Boolean, signedIn: Boolean, hasMessages: Boolean): Boolean = !onboarded && !signedIn && !hasMessages
@@ -376,7 +395,95 @@ object SpaceOnboarding {
     /** Account lock: sign-in can no longer be skipped; the button only shows once signed in ([signInButton] null = none). */
     fun signInButton(signedIn: Boolean): String? = if (signedIn) "Continue" else null
 
+    /** The setup screen (now only opened from Life's "Finishing setup" card). */
     fun setupButton(complete: Boolean): String = if (complete) "Start using ${BrandName.UPPER}" else "Continue \u00b7 finishes in the background"
+}
+
+/**
+ * Owner 2026-11-18: the language step's pill and the list it opens into, as numbers (dp) so tests pin the geometry. The
+ * list grows out of the pill, up and down at once, and slides to stay on screen.
+ */
+object LanguagePick {
+    const val PILL_H = 56f
+    const val ROW_H = 52f
+    const val PAD = 8f
+    const val MARGIN = 24f
+    const val MAX_W = 340f
+    /** The continue button's size and its gap from the screen's right edge. */
+    const val NEXT = 56f
+    const val NEXT_EDGE = 24f
+
+    fun contentHeight(rows: Int): Float = rows.coerceAtLeast(1) * ROW_H + 2 * PAD
+
+    data class Box(val top: Float, val height: Float)
+
+    /**
+     * The open list: [content] tall at most and never shorter than the pill, centred on the pill's centre [anchorY] (it
+     * grows up and down equally) and moved to stay [MARGIN] inside [avail].
+     */
+    fun box(anchorY: Float, avail: Float, content: Float): Box {
+        val maxH = (avail - 2 * MARGIN).coerceAtLeast(PILL_H)
+        val h = content.coerceAtLeast(PILL_H).coerceAtMost(maxH)
+        val lo = MARGIN.coerceAtMost(avail - MARGIN - h)
+        val top = (anchorY - h / 2f).coerceIn(lo, (avail - MARGIN - h).coerceAtLeast(lo))
+        return Box(top, h)
+    }
+
+    /** The pill's widest: it never reaches the continue button at the screen's edge (nor its twin space on the other side). */
+    fun pillMax(avail: Float): Float = (avail - 2 * (NEXT + NEXT_EDGE + 8f)).coerceAtMost(MAX_W).coerceAtLeast(140f)
+
+    /** The list's width: the room there is, at most [MAX_W]. */
+    fun width(avail: Float): Float = (avail - 2 * MARGIN).coerceAtMost(MAX_W).coerceAtLeast(PILL_H)
+
+    /** The first row to show when it opens, so the language in use sits in the middle. */
+    fun firstRow(index: Int, visibleRows: Int): Int = (index - visibleRows / 2).coerceAtLeast(0)
+
+    /** Between the pill ([t] = 0) and the open list ([t] = 1). */
+    fun lerp(a: Float, b: Float, t: Float): Float = a + (b - a) * t
+}
+
+/**
+ * Owner 2026-11-18: the opening clip (res/raw/argus_intro.mp4, 1110 x 830, 5.16 s, the chrome ARGUS logo on a blue tech
+ * background). The logo fills almost the whole frame, so filling a phone screen would cut it off: the clip is fitted and
+ * zoomed only as far as keeps [KEEP_W] of its width and [KEEP_H] of its height on screen, on black.
+ */
+object IntroClip {
+    const val VIDEO_W = 1110
+    const val VIDEO_H = 830
+    const val DURATION_MS = 5_163L
+    const val KEEP_W = 0.88f
+    const val KEEP_H = 0.92f
+    /** Not playing by then (a slow decoder, an error): the still logo instead. */
+    const val START_TIMEOUT_MS = 2_500L
+    /** How long the still logo shows (motion off, or the clip failed). */
+    const val STILL_MS = 1_400L
+    /** Whatever happens, onboarding moves on after this. */
+    const val MAX_MS = 9_000L
+    /** The clip's sound, kept (a designed sting with a fade) at this volume while the ringer is on. */
+    const val VOLUME = 0.7f
+
+    enum class Mode { CLIP, STILL }
+
+    fun mode(motionOn: Boolean, failed: Boolean): Mode = if (motionOn && !failed) Mode.CLIP else Mode.STILL
+
+    /** Silent or vibrate, or something else already playing (the user's music): the clip plays muted. */
+    fun volume(ringerNormal: Boolean, otherAudio: Boolean = false): Float = if (ringerNormal && !otherAudio) VOLUME else 0f
+
+    /** How much larger than "fit" the clip is drawn on a [w] x [h] screen (1 = fitted). */
+    fun zoom(w: Float, h: Float, vw: Float = VIDEO_W.toFloat(), vh: Float = VIDEO_H.toFloat()): Float {
+        if (w <= 0f || h <= 0f || vw <= 0f || vh <= 0f) return 1f
+        val fit = minOf(w / vw, h / vh)
+        val fill = maxOf(w / vw, h / vh) / fit
+        val keep = minOf(w / (vw * fit * KEEP_W), h / (vh * fit * KEEP_H))
+        return minOf(fill, keep).coerceAtLeast(1f)
+    }
+
+    /** The clip's drawn size (same unit as [w] / [h]): fitted, then [zoom]ed; centred, what spills over is cut. */
+    fun size(w: Float, h: Float): Pair<Float, Float> {
+        val fit = minOf(w / VIDEO_W, h / VIDEO_H)
+        val z = zoom(w, h)
+        return (VIDEO_W * fit * z) to (VIDEO_H * fit * z)
+    }
 }
 
 /**
@@ -452,6 +559,11 @@ object SpaceTags {
     const val ONBOARDING = "space_onboarding"
     const val ONBOARDING_LOGO = "space_onboarding_logo"
     const val ONBOARDING_START = "space_onboarding_start"
+    /** Owner 2026-11-18: the opening clip, the language pill, the list it opens into, and the round continue button. */
+    const val ONBOARDING_INTRO = "space_onboarding_intro"
+    const val LANGUAGE_PILL = "space_language_pill"
+    const val LANGUAGE_LIST = "space_language_list"
+    const val LANGUAGE_NEXT = "space_language_next"
     const val SETUP = "space_setup"
     const val SETUP_PROGRESS = "space_setup_progress"
     const val SETUP_ROW_PREFIX = "space_setup_row_"
@@ -467,7 +579,7 @@ object SpaceTags {
 
     val FIXED = listOf(ROOT, BACKDROP, TOP_BAR, LEFT_BUTTON, PILL, AVATAR, HOME, HERO, ANSWER, PROJECTS_CARD, SUGGESTIONS, NEW_CHAT,
         SETUP_CARD, SIGN_IN, COMPOSER, COMPOSER_FIELD, COMPOSER_PLUS, COMPOSER_MIC, COMPOSER_SEND, SPOTLIGHT, SPOTLIGHT_FIELD, SCRIM,
-        PROFILE, PROFILE_SEARCH, ONBOARDING, ONBOARDING_LOGO, ONBOARDING_START, SETUP, SETUP_PROGRESS, SETUP_CONTINUE,
+        PROFILE, PROFILE_SEARCH, ONBOARDING, ONBOARDING_LOGO, ONBOARDING_START, ONBOARDING_INTRO, LANGUAGE_PILL, LANGUAGE_LIST, LANGUAGE_NEXT, SETUP, SETUP_PROGRESS, SETUP_CONTINUE,
         PROJECTS, PROJECT_NEW)
 }
 

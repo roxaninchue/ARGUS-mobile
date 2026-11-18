@@ -14,7 +14,8 @@ object HomeTools {
     const val UPDATE = "home_widget_update"
     const val REMOVE = "home_widget_remove"
     const val LIST = "home_widget_list"
-    val NAMES = setOf(ADD, UPDATE, REMOVE, LIST)
+    /** 2026-11-18: life_todo ([LifeTodo]) rides with the board tools (same dispatch, group and store). */
+    val NAMES = setOf(ADD, UPDATE, REMOVE, LIST, LifeTodo.TOOL)
 
     private val typesDoc = "weather {city? | use_location:true, units?: c|f}; news {query (\"\" = top stories) , locale? e.g. en-GB} or {feed: RSS/Atom URL}; " +
         "creators {channel: @handle | YouTube channel URL | TikTok/Instagram URL}; sports {team}; " +
@@ -48,12 +49,14 @@ object HomeTools {
             listOf("id")),
         fn(REMOVE, "Remove a widget from the Home board by id (from $LIST).", JSONObject().put("id", s("Widget id")), listOf("id")),
         fn(LIST, "List the widgets on the user's Home board (id, type, title, stack, size, shown or hidden, last update).", JSONObject(), emptyList()),
+        LifeTodo.tool(),
     )
 
     fun step(name: String, args: JSONObject): String = when (name) {
         ADD -> "Adding \u201c${args.optString("title").ifBlank { WidgetTypes.label(WidgetTypes.norm(args.optString("type")) ?: "custom") }}\u201d to Home"
         UPDATE -> "Changing a Home widget"
         REMOVE -> "Removing a Home widget"
+        LifeTodo.TOOL -> LifeTodo.step(args)
         else -> "Checking your Home board"
     }
 
@@ -145,6 +148,7 @@ object HomeTools {
             if (all.isEmpty()) "The Home board is empty. Add widgets with $ADD."
             else "Home board, top to bottom (${all.size}):\n" + all.joinToString("\n") { line(it, data[it.id], now) }
         }
+        LifeTodo.TOOL -> LifeTodo.run(store, args, now, onChange)
         else -> "Unknown Home tool."
     }
 }

@@ -72,8 +72,14 @@ object AppLang {
     /** Android: where tables come from (assets) and the saved choice. Called once at start. */
     fun init(loadTable: (String) -> String?, saved: String?, deviceTag: String?) {
         source = loadTable
-        apply(if (saved.isNullOrBlank()) fromDevice(deviceTag) else lang(saved).code)
+        apply(initial(saved, deviceTag))
     }
+
+    /**
+     * The language the app opens in (and onboarding's language pill shows first, owner 2026-11-18): the saved choice,
+     * else the phone's when ARGUS has it, else English.
+     */
+    fun initial(saved: String?, deviceTag: String?): String = if (saved.isNullOrBlank()) fromDevice(deviceTag) else lang(saved).code
 
     /** Switches the app to [c] (the caller saves it). Dates and numbers follow too. */
     fun apply(c: String) {

@@ -27,6 +27,7 @@ import com.blaze.assistant.ui.space.SpaceOnboardingScreen
 import com.blaze.assistant.ui.space.SpaceProfile
 import com.blaze.assistant.ui.space.SpaceProfileScreen
 import com.blaze.assistant.ui.space.SpaceProjectsScreen
+import com.blaze.assistant.ui.space.SpaceSetupScreen
 import com.blaze.assistant.ui.space.SpaceTabs
 import com.blaze.assistant.ui.space.SpaceTags
 import org.junit.Assert.assertEquals
@@ -137,13 +138,15 @@ class SpaceShotsTest {
         rule.onNodeWithText("Working").assertIsDisplayed()
     }
 
-    @Test fun welcome() {
-        val b = capture("space-onboarding-welcome") {
-            SpaceOnboardingScreen(SpaceOnboarding.Step.WELCOME, signedIn = false, setup = emptyMap(), onNext = {}, onRetry = {}, accountCard = {})
+    // owner 2026-11-18: the language step is one pill on the space view with a round continue button apart from it
+    @Test fun language() {
+        val b = capture("space-onboarding-language") {
+            SpaceOnboardingScreen(SpaceOnboarding.Step.LANGUAGE, signedIn = false, onNext = {}, accountCard = {})
         }
-        rule.onNodeWithText(SpaceOnboarding.TAGLINE).assertIsDisplayed()
-        rule.onNodeWithTag(SpaceTags.ONBOARDING_START, useUnmergedTree = true).assertExists()
-        assertTrue("the welcome is on the space view", lum(px(b, 4f, 4f)) < 3 * 60)
+        rule.onNodeWithTag(SpaceTags.LANGUAGE_PILL, useUnmergedTree = true).assertExists()
+        rule.onNodeWithTag(SpaceTags.LANGUAGE_NEXT, useUnmergedTree = true).assertExists()
+        rule.onNodeWithTag(SpaceTags.LANGUAGE_LIST, useUnmergedTree = true).assertDoesNotExist()
+        assertTrue("the language step is on the space view", lum(px(b, 4f, 4f)) < 3 * 60)
     }
 
     @Test fun setupMidDownload() {
@@ -151,7 +154,7 @@ class SpaceShotsTest {
             "skills" to SetupPlan.Status(SetupPlan.Phase.DONE), "brain" to SetupPlan.Status(SetupPlan.Phase.WAITING_WIFI),
             "voice" to SetupPlan.Status(SetupPlan.Phase.RUNNING, 10), "quick" to SetupPlan.Status(SetupPlan.Phase.SKIPPED, note = "Not available on this phone"))
         capture("space-setup") {
-            SpaceOnboardingScreen(SpaceOnboarding.Step.SETUP, signedIn = true, setup = st, onNext = {}, onRetry = {}, accountCard = {})
+            SpaceBackdrop(forceDark = true) { SpaceSetupScreen(st, onContinue = {}, onRetry = {}) }
         }
         rule.onNodeWithTag(SpaceTags.SETUP_PROGRESS, useUnmergedTree = true).assertExists()
         for (i in SetupPlan.ITEMS) rule.onNodeWithTag(SpaceTags.setupRow(i.id), useUnmergedTree = true).assertExists()

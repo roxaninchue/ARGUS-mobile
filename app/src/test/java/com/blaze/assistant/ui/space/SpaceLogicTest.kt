@@ -250,14 +250,32 @@ class SpaceLogicTest {
         assertFalse("ai" in SpaceSettings.TREE); assertFalse("backup_brain" in SpaceSettings.TREE)
     }
 
-    @Test fun onboardingIsWelcomeThenOneSetupScreen() {
-        assertEquals(S.LANGUAGE, SpaceOnboarding.first())   // owner 2026-11-14: language first
-        assertEquals(S.WELCOME, SpaceOnboarding.next(S.LANGUAGE, signedIn = false))
-        assertEquals(S.SETUP, SpaceOnboarding.next(S.WELCOME, signedIn = true))
-        assertEquals(S.SIGN_IN, SpaceOnboarding.next(S.WELCOME, signedIn = false))
+    @Test fun onboardingIsTheClipThenLanguageThenSignIn() {
+        // owner 2026-11-18: the cinematic clip replaces the welcome; the setup screen left the flow (downloads run in the background)
+        assertEquals(listOf(S.INTRO, S.LANGUAGE, S.SIGN_IN), S.values().toList())
+        assertEquals(S.INTRO, SpaceOnboarding.first())
+        assertEquals(S.INTRO, SpaceOnboarding.first(introSeen = false))
+        assertEquals("the clip and the language were shown before the lock screen", S.SIGN_IN, SpaceOnboarding.first(introSeen = true))
+        assertEquals(S.LANGUAGE, SpaceOnboarding.next(S.INTRO, signedIn = false))
+        assertEquals(S.LANGUAGE, SpaceOnboarding.next(S.INTRO, signedIn = true))
+        assertEquals(S.SIGN_IN, SpaceOnboarding.next(S.LANGUAGE, signedIn = false))
+        assertNull("signed in already: the language is the last step", SpaceOnboarding.next(S.LANGUAGE, signedIn = true))
         assertEquals("account lock: no way past sign-in signed out", S.SIGN_IN, SpaceOnboarding.next(S.SIGN_IN, signedIn = false))
-        assertEquals(S.SETUP, SpaceOnboarding.next(S.SIGN_IN, signedIn = true))
-        assertNull(SpaceOnboarding.next(S.SETUP, signedIn = true))
+        assertNull(SpaceOnboarding.next(S.SIGN_IN, signedIn = true))
+        // Back: sign-in returns to the language; the clip never replays and Back on the language does nothing
+        assertEquals(S.LANGUAGE, SpaceOnboarding.back(S.SIGN_IN))
+        assertNull(SpaceOnboarding.back(S.LANGUAGE)); assertNull(SpaceOnboarding.back(S.INTRO))
+        // signed in on the sign-in step (or on the lock screen): it moves on by itself
+        assertTrue(SpaceOnboarding.autoNext(S.SIGN_IN, signedIn = true))
+        assertFalse(SpaceOnboarding.autoNext(S.SIGN_IN, signedIn = false))
+        assertFalse(SpaceOnboarding.autoNext(S.LANGUAGE, signedIn = true)); assertFalse(SpaceOnboarding.autoNext(S.INTRO, signedIn = true))
+        // the clip and the language count as seen once the language step moves on
+        assertTrue(SpaceOnboarding.introSeen(S.LANGUAGE, S.SIGN_IN)); assertTrue(SpaceOnboarding.introSeen(S.LANGUAGE, null))
+        assertFalse(SpaceOnboarding.introSeen(S.INTRO, S.LANGUAGE)); assertFalse(SpaceOnboarding.introSeen(S.SIGN_IN, null))
+        // a fresh install plays them before the lock screen; never again after
+        assertTrue(SpaceOnboarding.beforeLock(onboarded = false, introSeen = false))
+        assertFalse(SpaceOnboarding.beforeLock(onboarded = false, introSeen = true))
+        assertFalse(SpaceOnboarding.beforeLock(onboarded = true, introSeen = false))
         assertEquals("Intelligence beyond the interface", SpaceOnboarding.TAGLINE)
         assertTrue(SpaceOnboarding.show(onboarded = false, signedIn = false, hasMessages = false))
         assertFalse(SpaceOnboarding.show(true, false, false))
@@ -268,6 +286,59 @@ class SpaceLogicTest {
         assertEquals("Start using ARGUS", SpaceOnboarding.setupButton(true))
         assertTrue(SpaceOnboarding.setupButton(false).contains("background"))
         assertEquals("onboarded", SpaceOnboarding.PREF_ONBOARDED)
+        assertEquals("onboarding_intro_seen", SpaceOnboarding.PREF_INTRO_SEEN)
+    }
+
+    @Test fun theLanguageListGrowsOutOfThePillAndStaysOnScreen() {
+        val L = LanguagePick
+        // 23 languages fit a tall phone: the list is centred on the pill, half above and half below
+        val content = L.contentHeight(10)
+        assertEquals(10 * L.ROW_H + 2 * L.PAD, content, 0.01f)
+        val b = L.box(anchorY = 400f, avail = 800f, content = content)
+        assertEquals(content, b.height, 0.01f)
+        assertEquals(400f - content / 2f, b.top, 0.01f)
+        // more than fits: as tall as the screen allows, inside the margins
+        val big = L.box(400f, 800f, L.contentHeight(40))
+        assertEquals(800f - 2 * L.MARGIN, big.height, 0.01f)
+        assertEquals(L.MARGIN, big.top, 0.01f)
+        // a pill near the bottom: the list slides up to stay on screen
+        val low = L.box(760f, 800f, L.contentHeight(6))
+        assertTrue(low.top + low.height <= 800f - L.MARGIN + 0.01f)
+        assertTrue(low.top >= L.MARGIN)
+        // never shorter than the pill, even on a tiny window
+        assertTrue(L.box(50f, 100f, 10f).height >= L.PILL_H)
+        assertTrue(L.box(300f, 600f, 10f).height >= L.PILL_H)
+        // widths: the list at most MAX_W; the pill never reaches the continue button at the edge
+        assertEquals(L.MAX_W, L.width(800f), 0.01f)
+        assertEquals(360f - 2 * L.MARGIN, L.width(360f), 0.01f)
+        val w = 360f
+        val pillRight = w / 2f + L.pillMax(w) / 2f
+        assertTrue("pill clear of the arrow", pillRight <= w - L.NEXT_EDGE - L.NEXT)
+        // opening scrolls so the language in use sits mid-list
+        assertEquals(0, L.firstRow(2, 9)); assertEquals(6, L.firstRow(10, 9))
+        assertEquals(5f, L.lerp(0f, 10f, 0.5f), 0.001f); assertEquals(0f, L.lerp(0f, 10f, 0f), 0.001f)
+    }
+
+    @Test fun theClipFitsWithoutCuttingTheLogo() {
+        // portrait phone: fitted to the width, zoomed a little, at least 88 % of the clip's width stays on screen
+        val (pw, ph) = IntroClip.size(411f, 891f)
+        assertTrue(pw >= 411f && pw <= 411f / IntroClip.KEEP_W + 0.5f)
+        assertEquals(IntroClip.VIDEO_W.toFloat() / IntroClip.VIDEO_H, pw / ph, 0.01f)
+        assertTrue(ph < 891f)
+        // landscape phone: fitted to the height, at least 92 % of its height stays
+        val (lw, lh) = IntroClip.size(891f, 411f)
+        assertTrue(lh >= 411f && lh <= 411f / IntroClip.KEEP_H + 0.5f)
+        // a screen with the clip's own shape: exactly fitted
+        assertEquals(1f, IntroClip.zoom(1110f, 830f), 0.001f)
+        assertEquals(1f, IntroClip.zoom(0f, 0f), 0.001f)
+        // motion off or a failed clip: the still logo; sound only with the ringer on and nothing else playing
+        assertEquals(IntroClip.Mode.CLIP, IntroClip.mode(motionOn = true, failed = false))
+        assertEquals(IntroClip.Mode.STILL, IntroClip.mode(motionOn = false, failed = false))
+        assertEquals(IntroClip.Mode.STILL, IntroClip.mode(motionOn = true, failed = true))
+        assertEquals(IntroClip.VOLUME, IntroClip.volume(ringerNormal = true), 0.001f)
+        assertEquals(0f, IntroClip.volume(ringerNormal = false), 0.001f)
+        assertEquals(0f, IntroClip.volume(ringerNormal = true, otherAudio = true), 0.001f)
+        assertTrue(IntroClip.START_TIMEOUT_MS < IntroClip.DURATION_MS && IntroClip.DURATION_MS < IntroClip.MAX_MS)
     }
 
     @Test fun projectRows() {

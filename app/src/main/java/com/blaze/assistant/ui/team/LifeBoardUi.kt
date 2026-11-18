@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -64,6 +65,8 @@ val LocalLifeFold = compositionLocalOf { LifeFold() }
 class LifeBoardActions(
     val onVisible: (String) -> Unit = {},
     val onTodo: (Widget, List<HomeTodo.Item>) -> Unit = { _, _ -> },
+    /** 2026-11-18: a to-do row that names a screen (the "Set up ARGUS" steps) opens it; its tick box still ticks. */
+    val onOpen: (Widget, HomeTodo.Item) -> Unit = { _, _ -> },
     val onLine: (Widget, WidgetLine) -> Unit = { _, _ -> },
     val onRefresh: (Widget) -> Unit = {},
     val onRemove: (Widget) -> Unit = {},
@@ -73,6 +76,7 @@ class LifeBoardActions(
 fun liveBoardActions(ctx: android.content.Context) = LifeBoardActions(
     onVisible = { com.blaze.assistant.home.HomeBoard.visible(it) },
     onTodo = { w, list -> com.blaze.assistant.home.HomeBoard.setConfig(w.id, mapOf("items" to HomeTodo.toJson(list))) },
+    onOpen = { _, item -> com.blaze.assistant.setup.FirstRun.open(ctx, item) },
     onLine = { _, l -> com.blaze.assistant.ui.openHomeLink(ctx, l.url) },
     onRefresh = { com.blaze.assistant.home.HomeBoard.refresh(it.id) },
     onRemove = { com.blaze.assistant.home.HomeBoard.remove(it.id) },
@@ -152,14 +156,27 @@ fun LifeBoardPanel(w: Widget, d: WidgetData?, actions: LifeBoardActions, onMenu:
             val items = HomeTodo.items(w.cfg())
             if (items.isEmpty()) Text(tr("Empty. Ask me to add something."), style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(top = 8.dp))
             items.forEachIndexed { i, it ->
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable(role = Role.Checkbox, onClickLabel = if (it.done) "Untick" else "Tick") {
-                        actions.onTodo(w, HomeTodo.toggle(items, i)) }
-                    .heightIn(min = 44.dp).semantics(mergeDescendants = true) { stateDescription = if (it.done) "Done" else "Not done" },
+                // A keyed item (the first-run checklist) is the app's own text: shown in the app language.
+                val text = if (it.key.isNotBlank()) tr(it.text) else it.text
+                val tick = { actions.onTodo(w, HomeTodo.toggle(items, i)) }
+                // 2026-11-18: a row that names a screen opens it on tap; its tick box (48 dp) ticks. Other rows tick on tap.
+                val opens = it.open.isNotBlank()
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                    .then(if (opens) Modifier.clickable(role = Role.Button, onClickLabel = tr("Open")) { actions.onOpen(w, it) }
+                        else Modifier.clickable(role = Role.Checkbox, onClickLabel = if (it.done) "Untick" else "Tick") { tick() })
+                    .testTag(LifeTags.todo(w.id, i))
+                    .heightIn(min = 44.dp).semantics(mergeDescendants = !opens) { stateDescription = if (it.done) "Done" else "Not done" },
                     verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Lucide.icon(if (it.done) "circle-check" else "square", 18), null, Modifier.size(18.dp), tint = if (it.done) c.success else c.mute)
-                    Spacer(Modifier.width(10.dp))
-                    Text(it.text, style = ArgusType.body.copy(textDecoration = if (it.done) TextDecoration.LineThrough else null),
-                        color = if (it.done) c.dim else c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    val box = Modifier.size(if (opens) 44.dp else 18.dp)
+                    Box(if (opens) box.clip(CircleShape).clickable(role = Role.Checkbox, onClickLabel = if (it.done) "Untick" else "Tick") { tick() }
+                        .semantics { contentDescription = text; stateDescription = if (it.done) "Done" else "Not done" } else box,
+                        contentAlignment = Alignment.CenterStart) {
+                        Icon(Lucide.icon(if (it.done) "circle-check" else "square", 18), null, Modifier.size(18.dp), tint = if (it.done) c.success else c.mute)
+                    }
+                    Spacer(Modifier.width(if (opens) 0.dp else 10.dp))
+                    Text(text, style = ArgusType.body.copy(textDecoration = if (it.done) TextDecoration.LineThrough else null),
+                        color = if (it.done) c.dim else c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    if (opens && !it.done) Icon(Lucide.icon("chevron-right", 14), null, Modifier.size(14.dp), tint = c.mute)
                 }
             }
             return@Column
