@@ -185,7 +185,8 @@ object ScheduleDay {
 
     /**
      * The local dates [text] asks about, or empty when it isn't a date / schedule question.
-     * "today/tonight" → today; "tomorrow" → +1; "this week" → today … Sunday; "this weekend" → Sat + Sun;
+     * "today/tonight" → today; "tomorrow" → +1; "this week" / "rest of the week" → today … Sunday; "my week" / "the week" /
+     * "week ahead" / "coming week" → today + the next 6 days; "this weekend" → Sat + Sun;
      * "next week" → next Mon … Sun; a weekday name → its next date (today when it is today).
      */
     fun datesAsked(text: String, today: LocalDate): List<LocalDate> {
@@ -197,6 +198,11 @@ object ScheduleDay {
             if ("weekend" in t) { var d = today; while (d.dayOfWeek != DayOfWeek.SATURDAY && d.dayOfWeek != DayOfWeek.SUNDAY) d = d.plusDays(1); out += d; if (d.dayOfWeek == DayOfWeek.SATURDAY) out += d.plusDays(1) }
             else { var d = today; do { out += d; d = d.plusDays(1) } while (d.dayOfWeek != DayOfWeek.MONDAY) }
         }
+        // 18 Nov 2026 (phone 10:51 CAT, "my week" answered "Today — Thu 19 Nov"): "my week", "the week", "week ahead",
+        // "coming week" got no schedule lines beyond today. They mean the seven days from today; "rest of the week" runs to Sunday.
+        if (Regex("\\brest of (?:the|this|my) week\\b").containsMatchIn(t)) { var d = today; do { out += d; d = d.plusDays(1) } while (d.dayOfWeek != DayOfWeek.MONDAY) }
+        else if (Regex("\\b(?:my|the|this coming|coming|upcoming|for the) week\\b(?!end)|\\bweek ahead\\b").containsMatchIn(t) && !Regex("\\b(?:last|next|past|previous) week\\b").containsMatchIn(t))
+            for (i in 0..6) out += today.plusDays(i.toLong())
         if (Regex("\\bnext week\\b").containsMatchIn(t)) { var d = today.plusDays(1); while (d.dayOfWeek != DayOfWeek.MONDAY) d = d.plusDays(1); repeat(7) { out += d; d = d.plusDays(1) } }
         // A named day only counts when the message is about the schedule ("what's on friday", "do I have class on sun").
         if (out.isEmpty() || scheduleWords.containsMatchIn(t)) for (m in dayRe.findAll(t)) {

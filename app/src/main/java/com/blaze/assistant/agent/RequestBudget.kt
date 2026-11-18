@@ -14,7 +14,8 @@ import org.json.JSONObject
  *  2. tool schemas: at most [MAX_TOOLS] (relevance order as given; tools already called and load_tools / find_tool stay),
  *     then down to [MIN_TOOLS] while still over;
  *  3. older steps: the oldest assistant/tool steps after the system prompt are summarised into one line (which tools
- *     ran) until it fits; the system prompt and the newest user message always stay.
+ *     ran) until it fits; every leading system message (persona, app prompt with the date and [context], identity) and
+ *     the newest user message always stay.
  * Long schema descriptions are cut to [DESC_CHARS] too. Pure (org.json only): RequestBudgetTest.
  */
 object RequestBudget {
@@ -85,7 +86,11 @@ object RequestBudget {
      */
     fun summariseOld(m: JSONArray, tools: JSONArray?, max: Int): JSONArray {
         val list = (0 until m.length()).map { m.getJSONObject(it) }
-        val sys = if (list.firstOrNull()?.optString("role") == "system") 1 else 0
+        // 18 Nov 2026 (phone 10:51 CAT, "my week" answered "Today — Thu 19 Nov"): only the FIRST system message was kept. With
+        // the shared persona first, the app's own system message (CURRENT LOCAL TIME and the [context] now: line) and the
+        // identity block were the "oldest steps" and were dropped first, so a big request lost the date and the model took
+        // the first calendar day for today. Every leading system message stays now.
+        val sys = list.takeWhile { it.optString("role") == "system" }.size
         val lastUser = list.indexOfLast { it.optString("role") == "user" }
         // group starts: every non-tool message after the system prompt (tool results belong to the message before them)
         val starts = (sys until list.size).filter { list[it].optString("role") != "tool" }

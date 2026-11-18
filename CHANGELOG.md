@@ -1,3 +1,12 @@
+## Unreleased: "Today" is today again in week answers
+
+2026-11-18, from the owner's phone (Wed 18 Nov 10:51 CAT, GPT 6 Luna, "my week" answered "Today — Thu 19 Nov …"), branch fix/today-label-date.
+- `RequestBudget.summariseOld` kept only the first system message. With the shared persona first, the app's own system message (CURRENT LOCAL TIME, the [context] now: line) and the identity block were dropped first whenever a request went over 60 KB, so a tool-heavy step lost the date and the model took the first calendar day for today. Every leading system message stays now.
+- calendar_events (`phone/EventLines.kt`): the result opens with "Today is Wed 18 Nov 2026, 10:51 (Africa/Lusaka)." and each event carries its day relative to today ("Thu 19 Nov (tomorrow) 14:00–17:00: …"). Times are in the phone's zone and all-day spans keep their last day.
+- `ScheduleDay.datesAsked`: "my week", "the week", "week ahead", "coming week" give the seven days from today; "rest of the week" runs to Sunday (only "this week" / "next week" did before).
+- Specialist turns get the [context] block too (Kotlin read the old `if … else a + … + block` as the else branch only).
+- Tests: RequestBudgetTest, ScheduleDayTest (updated); EventLinesTest (new).
+
 ## Unreleased: chats keep their files and topics, flashcards always there, Google links stay in your account, readable buttons, page tools
 
 2026-11-18, from the owner's screenshots (a NET103 PDF chat that forgot its first topic and couldn't make flashcards; Google Classroom links opening the wrong account; the unreadable "Ask instead" chip).

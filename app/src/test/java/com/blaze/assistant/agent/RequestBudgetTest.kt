@@ -80,6 +80,29 @@ class RequestBudgetTest {
         assertTrue(consistent(f.messages))
     }
 
+    /**
+     * 18 Nov 2026 (phone, Wed 18 Nov 10:51 CAT: "my week" answered "Today — Thu 19 Nov"): with the shared persona first, the
+     * app's own system message (CURRENT LOCAL TIME, the [context] now: line) was the oldest "step" and was summarised away
+     * first, so the model had no date. Every leading system message stays.
+     */
+    @Test fun everyLeadingSystemMessageSurvivesSummarising() {
+        val (m0, t) = bigRequest(steps = 40, resultChars = 2_000)
+        val m = JSONArray().put(JSONObject().put("role", "system").put("content", "Shared persona."))
+        for (i in 0 until m0.length()) m.put(m0.get(i))
+        val app = m.getJSONObject(1)
+        app.put("content", app.getString("content") + "\n[context]\nnow: Wed 18 Nov 2026 10:51, Africa/Lusaka (UTC+02:00)\n[/context]")
+        // the identity block (TeamHooks) goes in as a third system message
+        val withId = JSONArray().put(m.get(0)).put(m.get(1)).put(JSONObject().put("role", "system").put("content", "You are bot B1."))
+        for (i in 2 until m.length()) withId.put(m.get(i))
+        val f = RequestBudget.fit(withId, t)
+        assertTrue(f.messages.toString().contains("Earlier steps were summarised"))
+        assertEquals(listOf("system", "system", "system"), (0..2).map { f.messages.getJSONObject(it).getString("role") })
+        assertTrue("the date stays", f.messages.getJSONObject(1).getString("content").contains("now: Wed 18 Nov 2026 10:51"))
+        assertEquals("You are bot B1.", f.messages.getJSONObject(2).getString("content"))
+        assertTrue(f.messages.toString().contains("three best budget phones"))
+        assertTrue(consistent(f.messages))
+    }
+
     @Test fun recentResultsKeepMoreThanOldOnes() {
         val (m, _) = bigRequest(steps = 6, resultChars = 9_000)
         RequestBudget.trimResults(m)
