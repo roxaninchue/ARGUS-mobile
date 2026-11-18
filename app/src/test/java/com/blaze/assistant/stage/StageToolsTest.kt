@@ -83,10 +83,10 @@ class StageToolsTest {
         assertEquals("learn", ViewRouter.route("help me study for my CIT102 exam")?.id)
         assertNull(ViewRouter.route("what's the capital of Zambia?"))
         assertNull(ViewRouter.route("how does photosynthesis work"))
-        assertTrue(ViewRouter.hint(ViewRouter.byId("stage")!!).contains("kind=timer"))
-        assertTrue(ViewRouter.hint(ViewRouter.byId("stage")!!).contains("Don't make a reminder"))
-        assertTrue(ViewRouter.hint(ViewRouter.byId("learn")!!).contains("stage_show kind=flashcards"))
-        assertTrue(ViewRouter.PROMPT.contains("STAGE FIRST"))
+        assertTrue(ViewRouter.PROMPT.contains("kind=timer"))
+        assertTrue(ViewRouter.PROMPT.contains("not a reminder or alarm"))
+        assertTrue(ViewRouter.PROMPT.contains("stage_show kind=flashcards"))
+        assertTrue(ViewRouter.PROMPT.contains("When the Stage can host something it is shown there"))
     }
 
     @Test fun toolDietKeepsStageShowAndLoadsTheRest() {

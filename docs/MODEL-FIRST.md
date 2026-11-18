@@ -107,9 +107,20 @@ The fix is what the model receives. Nothing detects "exam", "completed" or "fini
 
 - 2026-11-18: the Learn safety net (`ViewRouter.shouldConvert` / `cardsFrom` turning a text reply into a deck, plus its re-prompt) is gone from the turn; `ViewRouter`'s helpers stay only for their old tests.
 
+## Round 4: no keyword-picked view (18 Nov 2026, owner: "fix this context understanding issue, even when I specifically mentioned the instructions")
+
+Seen: "Now please save this to memory: Name: Finn, Email: funder@afuyo.com, Task: flashcard fix…" got "Done — NET103 session 1 is in
+Learn with 14 cards." The word "flashcard" matched `ViewRouter.route`'s Learn cue, the turn got "REQUIRED VIEW THIS TURN: Learn … 10-25
+cards", and the model built a deck from an older study topic instead of saving what the newest message gave it.
+
+- The turn no longer calls `ViewRouter.route`: no `turnView`, no `ViewRouter.hint`, no view groups from the message's words.
+- `ViewRouter.PROMPT` (VIEWS) goes out on every turn, short and factual, with the per-view how-tos; the newest message decides.
+- A design on screen is a fact (`ViewRouter.currentDesign`), not a regex-gated "follow-on edit" order.
+- Guard: `ModelFirstTest.noKeywordRequiredViewInTheTurn`.
+
 ## Still to retire (owner to schedule; don't add more)
 
-- **`ViewRouter.route` / `SkillMatch` / `SpecialistMatch`** still pick views, skill packs and specialists from the message's words (they add the `make` / `extras` groups). Next candidate: list them in the prompt and let the model load one.
+- **`SkillMatch` / `SpecialistMatch`** still pick skill packs and specialists from the message's words (they add the `extras` group). Next candidate: list them in the prompt and let the model load one. (`ViewRouter.route` left the turn on 2026-11-18; `ClaimGuard.relevant` still reads it.)
 - **The loop guards in `runLoop`** (RetryGuard, ClaimGuard, EchoGuard, ToolTruth.NUDGE / refusal, AutoContinue…). These are HARNESS MUSTS #4, the "Plain harness" toggle.
 - **Small guesses:** `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
 - **The `BusyRoute` / `LookupLane` / `SmallTalk` / `ChatLane.fits` objects.** These are now unused by the chat turn. `LookupLane` is still used by BlazeQuery (`QueryRuntime`). Delete each one when nothing else needs it.

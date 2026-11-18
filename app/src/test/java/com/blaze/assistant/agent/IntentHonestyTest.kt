@@ -44,7 +44,7 @@ class IntentHonestyTest {
         assertEquals("memory", ViewRouter.route("show me your memories", followOn = true)?.id)
         assertEquals("memory", ViewRouter.route("show me your memories")?.id)
         assertEquals("memory", ViewRouter.route("what do you know about me", followOn = true)?.id)
-        assertTrue(ViewRouter.hint(ViewRouter.byId("memory")!!).contains("query=all"))
+        assertTrue(ViewRouter.PROMPT.contains("query=all"))
         // Follow-on design edits still work.
         assertEquals("design", ViewRouter.route("show the engine", followOn = true)?.id)
     }

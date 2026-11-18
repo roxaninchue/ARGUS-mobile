@@ -1585,8 +1585,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val turnTools = java.util.Collections.synchronizedList(mutableListOf<String>())
         /** v0.33.3: the ```apps card of this turn's last list_apps (added to the reply when it says it shows a list). */
         @Volatile var turnAppsCard: String? = null
-        /** v0.23.0: the view this turn must use (keyword classifier) and the skills looked up for it. */
-        @Volatile var turnView: ViewRouter.Spec? = null
+        /** v0.23.0: the skills looked up for this turn (2026-11-18: no keyword-picked view any more; see docs/MODEL-FIRST.md). */
         @Volatile var turnSkills: SkillMatch.Result = SkillMatch.Result.NONE
         @Volatile var turnSpecs: List<Specialists.Spec> = emptyList()
         /** v0.23.2: tool calls that succeeded this turn (the claim guard checks replies against them). */
@@ -3011,13 +3010,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // below (Kotlin reads `if … else a + … + block` as the else's sum), so a specialist turn never had it.
                     "\n" + TurnContextSource.block(lastUserText())
                 else systemPrompt(lastUserText(), turnSkills.full.map { it.name }.toSet(), id, awareFull,
-                    promptGroups, turnView != null || turnDesignNote.isNotEmpty(), promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
+                    promptGroups, true, promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
                 (if (rung == Mind.Rung.LOOKUP) "\n" + Mind.LOOKUP_RULE + "\n" else "") +
                 cacheBlock +
                 GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) + TaskMemory.block(turnRef) + (if (agentId == null) TaskMemory.SURFACE_RULE else "") +
                 (agentId?.let { "\nYou are background agent $it, not the main chat. Work alone and finish with the result only." } ?: BgAgents.leadLine()) +
-                (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) + SkillMatch.block(turnSkills) + SpecialistMatch.hint(turnSpecs) +
+                turnDesignNote + SkillMatch.block(turnSkills) + SpecialistMatch.hint(turnSpecs) +
                 // v0.27.x: "how do I install X" → lead with the action and end with one concrete offer to do it.
                 AnswerStyle.turnHint(lastUserText()) +
                 // 0.53.6: the user said to stop and answer: answer from what was found (WrapUp)
@@ -3025,7 +3024,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // v0.28.4: "take me to the blaze-agent repo" / "what version are you": look it up in Blaze's docs, never guess.
                 (if (BlazeDocs.isAboutBlaze(lastUserText())) BlazeDocs.TURN_HINT else "") +
                 // v0.26.1: an in-chat diagram / chart is drawn in the reply itself (no files, preview or use_skill).
-                (if (turnView == null && turnDesignNote.isEmpty() && Settings.bool("rich_replies", true) && VisualRoute.inChat(lastUserText())) VisualRoute.HINT else "") +
+                (if (turnDesignNote.isEmpty() && Settings.bool("rich_replies", true) && VisualRoute.inChat(lastUserText())) VisualRoute.HINT else "") +
                 // v0.31.2 Halo x Blaze: both know the other exists; on "@halo" turns the agent speaks as Halo.
                 (if (agentId == null) OnePersona.awareness() else "") +   // 0.51.0: no partner line
                 // 0.51.0 BlazeQuery evidence pack (automatic, judged, compact) + terminal-first route hint
@@ -3352,9 +3351,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val curDesign = dDesign.await()
                 val followOn = !routine && agentId == null && curDesign != null &&
                     (lastTurnDesign || com.blaze.assistant.ui.Views.showing.value == "design" || Designs.recent())
-                turnView = if (bulk) null else ViewRouter.route(userNow, followOn)
-                turnDesignNote = if (followOn && curDesign != null && turnView?.id == "design" && ViewRouter.route(userNow)?.id != "design")
-                    ViewRouter.followOnHint(curDesign.title, curDesign.kind, curDesign.path) else ""
+                // 2026-11-18 (model-first, owner: "fix this context understanding issue"): ViewRouter.route no longer reads the
+                // message. Its keyword match ("Task: flashcard fix" → Learn) put "REQUIRED VIEW THIS TURN" in the prompt, and the
+                // model made a deck from an older topic instead of saving the memory it was asked to. The VIEWS block goes out every
+                // turn; a design on screen is stated as a fact, and the model decides what the message is about.
+                turnDesignNote = if (followOn && curDesign != null) ViewRouter.currentDesign(curDesign.title, curDesign.kind, curDesign.path) else ""
                 turnOk.clear()
                 turnDone.clear()
                 turnCards.clear(); richRepaired = false
@@ -3393,7 +3394,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 var lastOkStep = ""
                 var savedPath: String? = null   // v0.45.9: a save_file this turn; the final answer names its path
                 var turnToolCalls = 0   // v0.45.9: tools run this turn (ScheduleTruth checks only answers made from the [context] block)
-                turnView?.let { groupsOn += it.groups }
                 turnSkills = dSkills.await()
                 // v0.26.2: a phone-state question ("am I on mute?") is answered from the Phone now line: no skill packs, no tool loop.
                 val stateQ = stateQ0
@@ -3420,7 +3420,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     .takeIf { it.isNotEmpty() }?.let { android.util.Log.i("BlazeSkills", it.joinToString(" | ")) } } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                 // v0.44.0 fewer tools per turn: ToolRouter's groups, then ToolPick (core split into cues, capped).
                 val usedNames = ToolPick.usedNames(history)
-                if (turnView != null) groupsOn += "make"
+                if (turnDesignNote.isNotEmpty()) groupsOn += "make"   // a design is on screen: structure, not words
                 var sizeLine = ""
                 // v0.45.0 context: once the model asks for a tool it wasn't sent (or one that doesn't exist), the rest of the
                 // turn gets the full tool set instead of a guessed subset.
@@ -3860,7 +3860,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         if (bad != null) {
                             // v0.27.x: only a claim about what the user asked for is worth doing for real; a stray claim about
                             // another view ("show me your memories" → "Opened the solar diagram in Design") is dropped, never acted on.
-                            val related = ClaimGuard.relevant(bad, lastUserText(), turnView?.id)
+                            val related = ClaimGuard.relevant(bad, lastUserText())
                             val rest = if (related) "" else ClaimGuard.drop(shown, bad)
                             if (!related && rest.isNotEmpty()) {
                                 textOut = rest

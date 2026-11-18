@@ -1,3 +1,11 @@
+## Unreleased: context fix, the turn no longer picks a view from keywords (branch fix/context-follow-latest-message)
+
+2026-11-18, owner's screenshots: "Now please save this to memory: Name: Finn, Email: funder@afuyo.com, Task: flashcard fix. Store it so I can ask about Finn and this flashcard fix later." got "Done — NET103 session 1 is in Learn with 14 cards." (owner: "fix this context understanding issue, even when I specifically mentioned the instructions").
+- **Cause:** `ViewRouter.route` matched "flashcard" (Learn cue) in the message, and the turn got "REQUIRED VIEW THIS TURN: Learn … 10-25 cards" plus the Learn safety net, so the model made a deck from an older study topic in the chat instead of doing what the newest message said.
+- **Fix (model-first):** `Agent.kt` no longer calls `ViewRouter.route` for the turn: no `turnView`, no per-turn `ViewRouter.hint`, no view tool groups or `make` cue from the message's words. The VIEWS block (`ViewRouter.PROMPT`) now goes out on every turn (it used to appear only after a keyword match), rewritten short and factual with no HARD RULE / Never / Do NOT lines, and it says the user's newest message decides; earlier topics are background. The per-view how-tos that lived in the hints (Learn deck + Stage, timers, 3D design, memory query=all, archive) moved into it.
+- **Design follow-ons:** the regex-gated "REQUIRED VIEW THIS TURN: Design" follow-on order is replaced by a plain fact, `ViewRouter.currentDesign` ("On screen now: the design … If the user's newest message is about it, change it with design action=update"), sent when a design was just made or is on screen (structure, not words), with the `make` cue on.
+- Tests: new `ModelFirstTest.noKeywordRequiredViewInTheTurn`; ViewsSkillsTest, DesignEverythingTest, IntentHonestyTest and StageToolsTest now check the VIEWS block / `currentDesign` instead of the removed hints.
+
 ## Unreleased: flashcards redesign, phase 1 (two thumbs, icons first, undo)
 
 2026-11-18, owner's screenshots of Learn and a NET103 card ("just two icons, thumbs up and down"; "icons are important and easy to read, not just long words").

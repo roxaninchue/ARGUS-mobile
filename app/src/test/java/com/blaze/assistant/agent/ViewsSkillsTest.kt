@@ -43,21 +43,18 @@ class ViewsSkillsTest {
     @Test fun everyRoutedViewExistsAndIsInThePrompt() {
         for (s in ViewRouter.specs) {
             // Archive is search only since v0.24.0 (no chat list screen); every other routed view has a screen.
-            if (s.id == "archive") assertTrue(ViewRouter.hint(s).contains("search_chat") && !ViewRouter.hint(s).contains("open_view"))
-            // 0.46.0: the Stage is the chat itself (no separate screen); its cards each have "Open in full view".
-            else if (s.id == "stage") assertTrue(ViewRouter.hint(s).contains("stage_show"))
-            else assertTrue("no view ${s.id}", Views.find(s.id) != null)
+            // Archive is answered in chat; 0.46.0: the Stage is the chat itself (no separate screen).
+            if (s.id != "archive" && s.id != "stage") assertTrue("no view ${s.id}", Views.find(s.id) != null)
             assertTrue("prompt misses ${s.name}", ViewRouter.PROMPT.contains("${s.name} (${s.id})"))
-            assertTrue(ViewRouter.hint(s).startsWith("\nREQUIRED VIEW THIS TURN: ${s.name}"))
         }
-        assertTrue(ViewRouter.PROMPT.contains("HARD RULE"))
+        assertTrue(ViewRouter.PROMPT.contains("search_chat / search_past_chats, answered in chat"))
         assertTrue(ViewRouter.PROMPT.contains("flashcards action=add"))
         assertEquals("projects", Views.find("project")?.id)
     }
 
-    @Test fun learnHintNamesTheDeckTool() {
-        val h = ViewRouter.hint(ViewRouter.byId("learn")!!)
-        assertTrue(h.contains("flashcards action=add")); assertTrue(h.contains("open_view view=learn")); assertTrue(h.contains("Do NOT"))
+    @Test fun learnLineNamesTheDeckTool() {
+        val h = ViewRouter.PROMPT
+        assertTrue(h.contains("flashcards action=add")); assertTrue(h.contains("open_view view=learn")); assertTrue(h.contains("stage_show kind=flashcards"))
     }
 
     // ---------------- Learn safety net ----------------

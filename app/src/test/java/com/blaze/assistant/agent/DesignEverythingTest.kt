@@ -55,17 +55,19 @@ class DesignEverythingTest {
         assertNull(ViewRouter.route("show my calendar", followOn = true))
         assertEquals("schedule", ViewRouter.route("remind me at 6 to check it", followOn = true)?.id)
         assertFalse(ViewRouter.isFollowOnEdit("tell me a long story about rockets and why they fly so high into space and beyond the moon"))
-        val h = ViewRouter.followOnHint("Tall rocket", "3d", "/x/index.html")
+        // 2026-11-18: the turn states the design on screen as a fact; the model decides whether the message is about it.
+        val h = ViewRouter.currentDesign("Tall rocket", "3d", "/x/index.html")
         assertTrue(h.contains("design action=update") && h.contains("set_parts") && h.contains("Tall rocket"))
+        assertFalse(h.contains("REQUIRED"))
     }
 
     @Test fun promptAndToolSayDesignIsForEverything() {
         val p = ViewRouter.PROMPT
         assertTrue(p.contains("3D") && p.contains("diagrams") && p.contains("design action=update"))
-        assertTrue(p.contains("Never say you created, updated or opened"))
+        assertTrue(p.contains("only when its tool succeeded this turn"))
         val d = Designs.tool().getJSONObject("function").getString("description")
         for (w in listOf("3D", "UI mockups", "diagrams", "charts", "posters", "slides", "floor plans", "follow-on")) assertTrue(w, d.contains(w))
-        assertTrue(ViewRouter.hint(ViewRouter.byId("design")!!).contains("kind=3d"))
+        assertTrue(p.contains("kind=3d"))
         assertTrue(Designs.TOOL in ViewRouter.byId("design")!!.tools)
     }
 

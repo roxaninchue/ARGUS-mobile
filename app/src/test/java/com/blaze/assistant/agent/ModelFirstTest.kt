@@ -123,4 +123,24 @@ class ModelFirstTest {
         assertFalse("assist never sends by itself", block.contains("send("))
         assertFalse("Agent.kt never calls text assist", agentSrc().contains("TextAssist."))
     }
+
+    /**
+     * 18 Nov 2026 (owner: "fix this context understanding issue, even when I specifically mentioned the instructions").
+     * Seen: "Now please save this to memory: Name: Finn, Email: funder@afuyo.com, Task: flashcard fix. Store it so I can ask
+     * about Finn and this flashcard fix later." got "Done — NET103 session 1 is in Learn with 14 cards." The word "flashcard"
+     * matched ViewRouter's Learn cue, the turn got "REQUIRED VIEW THIS TURN: Learn … 10-25 cards", and the model made a deck
+     * from an older study topic. The turn no longer reads ViewRouter.route; the VIEWS block is the same every turn.
+     */
+    @Test fun noKeywordRequiredViewInTheTurn() {
+        val src = agentSrc()
+        for (gone in listOf("ViewRouter.route(", "ViewRouter.hint(", "ViewRouter.followOnHint(", "turnView"))
+            assertFalse(gone, src.contains(gone))
+        assertTrue(src.contains("promptGroups, true, promptTurn)"))
+        val vr = File(root(), "app/src/main/java/com/blaze/assistant/agent/ViewRouter.kt").readText()
+        assertFalse(vr.contains("REQUIRED VIEW THIS TURN:"))
+        val p = ViewRouter.PROMPT
+        for (shout in listOf("HARD RULE", "NEVER", "ALWAYS", "MUST", "Do NOT", "EVERY", "FIRST")) assertFalse(shout, p.contains(shout))
+        assertTrue(p.contains("from the user's newest message"))
+        assertFalse(ViewRouter.currentDesign("x", "html", "/p").contains("REQUIRED"))
+    }
 }

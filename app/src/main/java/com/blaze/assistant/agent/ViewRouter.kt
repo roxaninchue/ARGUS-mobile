@@ -7,10 +7,11 @@ import com.blaze.assistant.BrandName
  * flashcards, a page, a reminder, a picture, a memory…) is made THERE, the view is opened or linked,
  * and the chat gets a short answer, never the whole thing dumped as text.
  *
- *  - [PROMPT]: the always-present VIEWS block of the system prompt (each view, what belongs there,
- *    the tool that writes to it, and the hard rule).
- *  - [route]: a cheap keyword/intent classifier (no model call) that picks the view a request needs.
- *    The agent loop turns it into a required-view hint ([hint]) and switches on that view's tools ([Spec.groups]).
+ *  - [PROMPT]: the VIEWS block of the system prompt, sent on every turn (each view, what belongs there,
+ *    the tool that writes to it). Which view fits a message is the model's call (docs/MODEL-FIRST.md).
+ *  - [route]: a keyword classifier. 2026-11-18: no longer read by the chat turn (it injected a
+ *    "REQUIRED VIEW THIS TURN" order that overrode the user's words). Still used by ClaimGuard; retire with it.
+ *  - [currentDesign]: a plain fact for the turn when a design is on screen.
  *  - [cardsFrom] / [deckName] / [shouldConvert]: the safety net for Learn. When the model still writes
  *    flashcards or a quiz as text without calling the flashcards tool, the agent turns that text into
  *    a Learn deck (or re-prompts once when nothing can be parsed).
@@ -111,60 +112,40 @@ object ViewRouter {
         return editLead.containsMatchIn(t) && !notDesign.containsMatchIn(t)
     }
 
-    /** The hint for a follow-on edit of the current design. */
-    fun followOnHint(title: String, kind: String, path: String): String =
-        "\nREQUIRED VIEW THIS TURN: Design, a follow-on edit of the current design \u201c" + title + "\u201d (" + kind + ", " + path + "). Change THAT design with design action=update " +
-            (if (kind == "3d") "(set_parts = the parts to add or change, by id, only the keys that change; remove_parts = ids to drop; read it first with action=read to see the part ids) "
-            else "(edits=[{find, replace}] or a new html; read it first with action=read) ") +
-            "and keep everything else as it was. For \"open it\" / \"show me\" use design action=open. Don't start a new design, and don't just describe the change."
+    /**
+     * 2026-11-18 (model-first): a plain fact for the turn when a design was just made or is on screen. It replaces the
+     * keyword-gated required-view order for Design follow-ons; whether the message is about this design is the model's call.
+     */
+    fun currentDesign(title: String, kind: String, path: String): String =
+        "\nOn screen now: the design \u201c" + title + "\u201d (" + kind + ", " + path + "). If the user's newest message is about it, change it with design action=update " +
+            (if (kind == "3d") "(set_parts for parts to add or change by id, remove_parts for ids to drop; action=read shows the part ids) "
+            else "(edits=[{find, replace}] or a new html; action=read shows it first) ") +
+            "and keep the rest as it was; design action=open shows it."
 
     /** All views a request touches, first = required. */
     fun routeAll(text: String): List<Spec> = if (route(text) == null) emptyList() else specs.filter { it.cue.containsMatchIn(text) }
 
+    /**
+     * The VIEWS block, the same on every turn (2026-11-18: it used to appear only when [route] matched a keyword, next to a
+     * per-turn "REQUIRED VIEW THIS TURN" order). Short and factual; no absolutes (ModelFirstTest guards it).
+     */
     val PROMPT: String = buildString {
-        append("\n\nVIEWS (always on; you use them without being asked). ${BrandName.NAME} has views, screens the user can open from /views. ")
-        append("HARD RULE: output that fits a view is CREATED in that view with its tool, then the view is opened (open_view) or named so the user can tap it, ")
-        append("and the chat reply is one or two short lines (what you made, where). Never dump it as text in chat instead. ")
-        append("You don't need the user to say \"use the view\": every turn, pick the view that fits.\n")
+        append("\n\nVIEWS. ${BrandName.NAME} has views (screens the user opens from /views) and the chat Stage (live cards on the chat itself). ")
+        append("When what the user asks for belongs in one, make it there with its tool, show or name it, and keep the chat reply to a line or two. ")
+        append("Whether a message asks for a view is your call from the user's newest message: earlier topics in the chat are background, ")
+        append("and a word like flashcards or memory inside another request doesn't make it a request for that view.\n")
         for (s in specs) append("- ${s.name} (${s.id}): ${s.holds}. Write with ${s.tools.filter { it != "open_view" }.ifEmpty { listOf("open_view") }.joinToString(" / ")}.\n")
-        append("- Flashcards, \"quiz me\", \"test me\", study or revision → Learn: flashcards action=add (deck, cards=[{front, back}]), then open_view view=learn. Never write Q: / A: lists in chat.\n")
-        append("- Anything visual or interactive → Design (it is not only for art and sites): 3D models and scenes (design action=create kind=3d parts=[…], three.js with orbit controls), " +
-            "2D art (svg), sites, UI mockups, diagrams, charts, posters, slides, floor plans, product mockups, games (html). The Design view opens by itself. " +
-            "EXCEPT a diagram, flowchart or chart asked for in chat: draw it inline in the reply (```mermaid / ```chart), no design tool, files or preview; Design only when they ask to save, export, edit or make a file. " +
-            "Follow-ons (\"show the engine\", \"make it taller\", \"add fins\") change the CURRENT design with design action=update, never a new one or a text answer.\n")
-        append("- Never say you created, updated or opened something in a view (\"I've updated the design\", \"view it in the design section\") unless that view's tool succeeded this turn; ${BrandName.NAME} checks.\n")
-        append("- \"Remind me\" or anything repeating → Schedule (create_routine / schedule_command / create_trigger). Pictures and beats → Gallery. A method or multi-step task to reuse → Skills (save_workflow with trigger, steps, checks).\n")
-        append("- STAGE FIRST (0.46): when the chat Stage can host it (timer, music, video, quiz, flashcards, plan, note), show it in place with stage_show instead of opening a view; " +
-            "the view still holds the data (a deck is still made with flashcards add). Open a view only when the user asks for it or the Stage can't host it.\n")
-        append("- Other views (Jobs, Accounts, Agents, Usage, Settings…): open with open_view ask=true unless the user asked for that view.")
-    }
-
-    /** The per-turn required-view hint, injected before the first model call. */
-    fun hint(s: Spec): String = when (s.id) {
-        "stage" -> "\nREQUIRED VIEW THIS TURN: Stage (in place on the chat, no screen change). A timer, study or focus time -> stage_show kind=timer minutes=N title=… " +
-            "(pomodoro=true for a pomodoro; autostart only if they said start / go): a timer card with a Start button. Don't make a reminder, an alarm or set_timer for it, and don't answer with just a sentence. " +
-            "Music -> stage_show kind=music query=<what to play, or empty> (it plays in place; never open the Music screen unless they ask). " +
-            "The browser -> stage_show kind=browser (url= a page or search, optional); the browser_ tools then drive the page in that card; open_view view=browser only for full screen / full view. " +
-            "Then reply in one short line, and never say a card is open unless stage_show succeeded."
-        "learn" -> "\nREQUIRED VIEW THIS TURN: Learn. Put the cards in a Learn deck with flashcards action=add (deck = topic or course code + topic, " +
-            "cards = [{front, back}], 10-25 cards, one fact each), then go through them on the chat Stage with stage_show kind=flashcards deck=<that deck> " +
-            "(or kind=quiz questions=[…] for a multiple-choice quiz); open_view view=learn only when the user asks for the Learn view or the Stage is off. Then reply in one or two lines (deck name, card count). " +
-            "Do NOT write the questions and answers in chat. To quiz from an existing deck: flashcards action=due and ask one card at a time."
-        "design" -> "\nREQUIRED VIEW THIS TURN: Design. Make it for real with the design tool: 3D (a rocket, car, building, product…) → design action=create kind=3d " +
-            "title=… parts=[…] (8-40 parts, real proportions, y up, parts that should touch do); pages, UI mockups, posters, slides, charts, diagrams, floor plans, games → " +
-            "design action=create html=<one complete document>; 2D art → svg. The Design view opens by itself. Then reply in one or two lines describing only what the tool result says " +
-            "you made (a 3D model only if it says 3D; orbit/zoom only for 3D). " +
-            "Don't paste the code in chat, and never say it's made unless the tool succeeded."
-        "schedule" -> "\nREQUIRED VIEW THIS TURN: Schedule. Create it with create_routine / schedule_command / create_trigger (or set_alarm / add_calendar_event for one-off times) and say when it will run in one line."
-        "gallery" -> "\nREQUIRED VIEW THIS TURN: Gallery. Make it with generate_image (art/photos) or run_code (beats, charts) saved under /root/phone/ so it lands in the Gallery; reply briefly."
-        "skills" -> "\nREQUIRED VIEW THIS TURN: Skills. Save a workflow with save_workflow (name, trigger, steps, checks), or a skill with write_skill / install_skill; say its name in one line."
-        "projects" -> "\nREQUIRED VIEW THIS TURN: Projects. Use open_view view=projects so the user can create or open the project there; keep the reply short."
-        "archive" -> "\nREQUIRED VIEW THIS TURN: Archive. Look it up with search_chat / search_past_chats and answer in chat from what you find (quote the exact words when it helps). There is no chat list screen to open."
-        "memory" -> "\nREQUIRED VIEW THIS TURN: Memory. Save, update or forget with memory_save / remember / forget (or look up with memory_search); confirm in one line. " +
-            "To show what you remember (\"show me your memories\", \"what do you know about me\"), call memory_search query=all and list the lines in chat grouped plainly " +
-            "(about you, preferences, people, projects…), then one line on how to change or delete one. Never open Design or another view for this."
-        "browser" -> "\nREQUIRED VIEW THIS TURN: Browser. Do it in ${BrandName.NAME}'s background browser (browser_open, browser_click, browser_type, browser_secure_input); browser_show only if the user must step in."
-        else -> "\nREQUIRED VIEW THIS TURN: ${s.name}. Create the result there with ${s.tools.joinToString(" / ")}, open or link it, and reply briefly."
+        append("- Learn: a deck is flashcards action=add (deck = topic or course code, cards=[{front, back}], one fact each); go through it on the Stage with stage_show kind=flashcards deck=<name> " +
+            "or kind=quiz, or open_view view=learn. To quiz from a deck: flashcards action=due, one card at a time.\n")
+        append("- Stage: a timer or focus session is stage_show kind=timer minutes=N (pomodoro=true for a pomodoro), not a reminder or alarm; music is stage_show kind=music; " +
+            "a browser card is stage_show kind=browser. When the Stage can host something it is shown there; its view still keeps the data.\n")
+        append("- Design is for anything visual or interactive: 3D models and scenes (design action=create kind=3d parts=[…]), 2D art (svg), pages, UI mockups, diagrams, " +
+            "charts, posters, slides, floor plans, games (html). A diagram or chart asked for in chat: draw it inline in the reply (```mermaid / ```chart) unless they want a file. " +
+            "A change to the current design is design action=update.\n")
+        append("- Memory: memory_save / remember / forget, and memory_search (query=all lists everything to show the user in chat). " +
+            "Archive: search_chat / search_past_chats, answered in chat. Schedule: create_routine / schedule_command / create_trigger, or set_alarm / add_calendar_event for a one-off time.\n")
+        append("- Say you made, changed or opened something in a view only when its tool succeeded this turn.\n")
+        append("- Other views (Jobs, Accounts, Agents, Usage, Settings…) open with open_view ask=true unless the user asked for that view.")
     }
 
     // ---------------- Learn safety net ----------------
