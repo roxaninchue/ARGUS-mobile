@@ -71,4 +71,25 @@ class ToolPickTest {
         assertTrue(ToolPick.core(true).none { it in ToolPick.TERMINAL_CORE })
         assertTrue(ToolPick.core(false).containsAll(ToolPick.TERMINAL_CORE))
     }
+
+    /** 2026-11-18 (owner screenshot): "Can you make flashcards" reached the model with no flashcards tool. */
+    @Test fun studyIsAlwaysOn() {
+        assertTrue("study" in ToolPick.ALWAYS_GROUPS && "schedule" in ToolPick.ALWAYS_GROUPS)
+    }
+
+    /** 2026-11-18: with older turns hidden, this chat's read-back tools ride every step; with the whole chat shown, they don't. */
+    @Test fun readBackToolsRideWhileOlderTurnsAreHidden() {
+        assertTrue(ToolPick.pinnedCues(Mind.Rung.RECENT, 0).isEmpty())
+        assertEquals(setOf(ToolPick.HISTORY), ToolPick.pinnedCues(Mind.Rung.LOOKUP, 0))
+        assertEquals(setOf(ToolPick.HISTORY), ToolPick.pinnedCues(Mind.Rung.SUMMARY, 0))
+        assertEquals(setOf(ToolPick.HISTORY), ToolPick.pinnedCues(Mind.Rung.RECENT, 12))
+        val rb = ToolPick.cueNames(setOf(ToolPick.HISTORY))
+        assertTrue(rb.containsAll(setOf("search_chat", "read_turn")))
+        // Picked with the cue on, they survive the cap even among many other tools.
+        val many = arr(ToolPick.ESSENTIAL + ToolPick.HARNESS + rb + (1..80).map { "extra_tool_$it" })
+        val out = names(ToolPick.pick(many, "what was the first topic", emptySet(), setOf(ToolPick.HISTORY)))
+        assertTrue(out.containsAll(setOf("search_chat", "read_turn")))
+        val off = names(ToolPick.pick(many, "what was the first topic", emptySet(), emptySet()))
+        assertTrue(off.none { it == "search_chat" || it == "read_turn" })
+    }
 }

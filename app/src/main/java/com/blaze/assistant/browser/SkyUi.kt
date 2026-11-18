@@ -497,7 +497,7 @@ private fun Toggle(icon: ImageVector, label: String, value: String, on: Boolean,
 
 // ---------------------------------------------------------------------------------------------- site sheet
 /** What the site sheet can open; the browser screen carries it out. */
-enum class SiteAction { PASSWORDS, PRIVACY, INSTALL, ASK, BOOKMARK, SAVE, SHARE, OPEN_WITH }
+enum class SiteAction { PASSWORDS, PRIVACY, INSTALL, ASK, BOOKMARK, SAVE, SHARE, OPEN_WITH, GOOGLE_ACCOUNT }
 
 /** The Sky site sheet (tap the lock): trackers, VPN exit, what's in memory, then the page's login, location, cookies and actions. */
 @Composable
@@ -536,6 +536,8 @@ internal fun SkySiteSheet(onDismiss: () -> Unit, onAction: (SiteAction) -> Unit)
             }
             Spacer(Modifier.height(8.dp))
             if (!t.isPrivate) Row2(Icons.Rounded.Key, "Saved login", logins.firstOrNull()?.user?.let { if (it.length > 12) it.take(10) + "\u2026" else it }?.ifBlank { "Saved" } ?: "None") { onAction(SiteAction.PASSWORDS) }
+            // 2026-11-18: on a Google site, which signed-in Google account this page uses; tap to switch (GoogleAccount).
+            if (GoogleAccount.isGoogle(url)) Row2(Icons.Rounded.AccountCircle, "Google account", GoogleAccount.label(GoogleAccount.accountOf(url) ?: 0)) { onAction(SiteAction.GOOGLE_ACCOUNT) }
             Row2(Icons.Rounded.LocationOn, "Location", if (masked) "Masked" else "Not masked") { onAction(SiteAction.PRIVACY) }
             Row2(Icons.Rounded.Cookie, "Cookies", if (t.isPrivate) "Wiped when private tabs close" else "Allowed") { onAction(SiteAction.PRIVACY) }
             if (http) {

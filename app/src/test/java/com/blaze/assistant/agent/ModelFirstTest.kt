@@ -46,6 +46,8 @@ class ModelFirstTest {
                 "PromptProfile.simpleGroupOk(", "ExecRoute.route(lu"))
             assertFalse(gone, src.contains(gone))
         assertTrue(src.contains("addAll(ToolPick.ALWAYS_GROUPS); addAll(ToolRouter.usedIn(history))"))
+        // 2026-11-18: the chat's read-back tools join by structure (older turns hidden), never by the message's words.
+        assertTrue(src.contains("val pinned = ToolPick.pinnedCues(lastRung, ctxFrom); groupsOn += pinned"))
     }
 
     @Test fun noShoutingRulesInTheChatPrompt() {

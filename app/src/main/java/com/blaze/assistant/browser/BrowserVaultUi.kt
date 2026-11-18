@@ -56,7 +56,7 @@ import com.blaze.assistant.ui.Type
 @Composable private fun Pill(text: String, primary: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(modifier.height(38.dp).clip(Glass.pill).background(if (primary) Glass.blue else Glass.raised2)
         .border(1.dp, if (primary) Color.Transparent else Glass.border, Glass.pill).clickable(onClick = onClick).padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center) { T(text, if (primary) Color.White else Glass.text, 14, weight = FontWeight.Medium, maxLines = 1) }
+        contentAlignment = Alignment.Center) { T(text, if (primary) Glass.inkFor(Glass.blue) else Glass.text, 14, weight = FontWeight.Medium, maxLines = 1) }
 }
 
 @Composable private fun SmallAction(icon: ImageVector, desc: String, tint: Color = Glass.sub, onClick: () -> Unit) {

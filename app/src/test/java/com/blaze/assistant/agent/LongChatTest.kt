@@ -77,6 +77,12 @@ class LongChatTest {
         assertEquals(32 * 1024, LongChat.contextWindow("some-model-32k"))
         assertEquals(128_000, LongChat.contextWindow("meta-llama/llama-3.3-70b-instruct:free"))
         assertEquals(50_000, LongChat.contextWindow("anything", 50_000))
+        // 2026-11-18: current families get 128k instead of "unknown".
+        for (m in listOf("openai/gpt-5", "gpt-5-mini", "openai/gpt-6-luna", "openai/gpt-oss-120b", "o3", "openai/o4-mini", "x-ai/grok-4", "grok-3-mini"))
+            assertEquals(m, 128_000, LongChat.contextWindow(m))
+        // gpt-4o is not "o4"; a model with no known family stays unknown.
+        assertEquals(128_000, LongChat.contextWindow("gpt-4o-mini"))
+        assertEquals(0, LongChat.contextWindow("foo-bar"))
         assertEquals(32_768, LongChat.meterLimit(0))
         assertEquals("in 4.2k · out 600", LongChat.meter(4200, 600))
         assertTrue(LongChat.high(27_000, 32_768))

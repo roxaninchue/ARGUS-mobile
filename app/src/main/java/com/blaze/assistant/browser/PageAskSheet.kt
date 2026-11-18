@@ -78,7 +78,7 @@ import com.blaze.assistant.ui.Type
 import kotlinx.coroutines.launch
 
 /** One line in the page chat: the bubble text, a pasted link shown as a chip, and what the model was asked. */
-private data class Line(val me: Boolean, val text: String, val link: String? = null, val prompt: String = text)
+private data class Line(val me: Boolean, val text: String, val link: String? = null, val prompt: String = text, val step: Boolean = false)
 
 /**
  * "Ask Blaze about this page": a compact chat sheet scoped to the open page. Nothing here goes into the main chat
@@ -97,6 +97,9 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
     var found by remember { mutableStateOf("") }
     val state = rememberLazyListState()
     val main = remember { Handler(Looper.getMainLooper()) }
+    // 2026-11-18 page tools (PageAgent): a step that commits something waits here for Allow / Not now, in this sheet.
+    var pending by remember { mutableStateOf<Pair<String, kotlinx.coroutines.CompletableDeferred<Boolean>>?>(null) }
+    val actx = LocalContext.current
     val lang = remember { try { java.util.Locale.getDefault().getDisplayLanguage(java.util.Locale.ENGLISH).ifBlank { "English" } } catch (_: Exception) { "English" } }
 
     // v0.27.1: an empty question summarises; a pasted link, one word or a greeting becomes a real request (PageQuestion).
@@ -106,9 +109,9 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
         val cur = page
         val intent = PageQuestion.parse(q, cur?.url ?: BrowserEngine.url())
         list += Line(true, intent.shown, intent.link, intent.prompt)
-        val history = list.map { it.me to it.prompt }
+        val history = list.filter { !it.step }.map { it.me to it.prompt }
         list += Line(false, "\u2026")
-        val idx = list.lastIndex
+        var idx = list.lastIndex
         scope.launch {
             try {
                 // A thin read (Lens results, a page still loading) is read again next time instead of being kept.
@@ -124,17 +127,29 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
                     if (r.isNotBlank() && !r.startsWith("Error")) extra.append(if (extra.isEmpty()) "" else "\n\n")
                         .append("THE PAGE THE USER LINKED (").append(PageQuestion.host(u)).append("):\n").append(r)
                 }
-                val r = com.blaze.assistant.agent.LlmClient.complete(PageAsk.messages(p, history, extra.toString(), lang), null, onText = { s ->
+                val onText: (String) -> Unit = { s ->
                     val shown = com.blaze.assistant.agent.ReplyParts.split(s, final = false).text
                     main.post { if (idx < list.size && shown.isNotBlank()) list[idx] = Line(false, shown) }
-                })
-                val out = com.blaze.assistant.agent.ReplyParts.split(r.optString("content"), final = true).text
+                }
+                // 2026-11-18: on a live page the sheet can act on it (PageAgent: page_ tools only, ≤12 steps, Allow / Not now
+                // for steps that commit something); each step shows as a small line above the answer.
+                val content = if (web != null) PageAgent.Runner(actx) { m, t, cb -> com.blaze.assistant.agent.LlmClient.complete(m, t, onText = cb) }
+                    .run(PageAgent.messages(p, history, extra.toString(), lang),
+                        onStep = { st -> if (idx <= list.size) { list.add(idx, Line(false, st, step = true)); idx++ } },
+                        allow = { q ->
+                            val d = kotlinx.coroutines.CompletableDeferred<Boolean>()
+                            pending = q to d
+                            try { d.await() } finally { if (pending?.second === d) pending = null }
+                        },
+                        onText = onText)
+                else com.blaze.assistant.agent.LlmClient.complete(PageAsk.messages(p, history, extra.toString(), lang), null, onText = onText).optString("content")
+                val out = com.blaze.assistant.agent.ReplyParts.split(content, final = true).text
                     .ifBlank { "I couldn't get an answer for this page just now. Tap a chip below or ask again in a moment." }
                 if (idx < list.size) list[idx] = Line(false, out)
             } catch (e: kotlinx.coroutines.CancellationException) { throw e
             } catch (e: Exception) {
                 if (idx < list.size) list[idx] = Line(false, "I couldn't answer that: " + (e.message ?: "no connection").take(160))
-            } finally { busy = false }
+            } finally { busy = false; pending?.second?.complete(false); pending = null }
         }
     }
     fun find(q: String, forward: Boolean? = null) {
@@ -198,19 +213,35 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
                 LazyColumn(state = state, modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp).padding(top = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(list) { _, line ->
+                        if (line.step) {
+                            Text("\u00b7 " + line.text, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 6.dp),
+                                style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
+                            return@itemsIndexed
+                        }
                         val me = line.me
                         Box(Modifier.fillMaxWidth(), contentAlignment = if (me) Alignment.CenterEnd else Alignment.CenterStart) {
                             Column(horizontalAlignment = if (me) Alignment.End else Alignment.Start, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 // A pasted link is a compact chip, never a giant URL bubble.
                                 line.link?.let { LinkChip(PageQuestion.chip(it)) }
                                 if (line.text.isNotBlank()) SelectionContainer {
-                                    Text(com.blaze.assistant.ui.Md.render(line.text, Glass.cyan, Glass.raised2), modifier = Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp))
-                                        .background(if (me) Glass.blue else Glass.raised).padding(horizontal = 12.dp, vertical = 9.dp),
-                                        style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = Glass.text))
+                                    // 2026-11-18: the user's bubble is a light fill, so its text and links are dark (Glass.inkFor).
+                                    val fill = if (me) Glass.blue else Glass.raised
+                                    Text(com.blaze.assistant.ui.Md.render(line.text, if (me) Glass.onFill else Glass.cyan, Glass.raised2), modifier = Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp))
+                                        .background(fill).padding(horizontal = 12.dp, vertical = 9.dp),
+                                        style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = Glass.inkFor(fill)))
                                 }
                             }
                         }
                     }
+                }
+            }
+            pending?.let { (q, d) ->
+                // The chat's confirm card never shows over the browser, so the sheet asks itself. Only this step is answered.
+                Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(q, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                        style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = Glass.text))
+                    Chip("Not now") { d.complete(false) }
+                    Chip("Allow", active = true) { d.complete(true) }
                 }
             }
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -250,20 +281,25 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
 
 @Composable
 private fun Chip(text: String, active: Boolean = false, onClick: () -> Unit) {
-    Row(Modifier.clip(Glass.pill).background(if (active) Glass.blue else Glass.raised).border(1.dp, Glass.border, Glass.pill)
+    // 2026-11-18: "Ask instead" (active) was light text on the light accent fill; the ink now follows the fill.
+    val fill = if (active) Glass.blue else Glass.raised
+    val ink = Glass.inkFor(fill)
+    Row(Modifier.clip(Glass.pill).background(fill).border(1.dp, Glass.border, Glass.pill)
         .clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         if (text == "Find on page") {
-            androidx.compose.material3.Icon(Icons.Rounded.FindInPage, contentDescription = null, tint = Glass.text, modifier = Modifier.padding(end = 6.dp).width(16.dp))
+            androidx.compose.material3.Icon(Icons.Rounded.FindInPage, contentDescription = null, tint = ink, modifier = Modifier.padding(end = 6.dp).width(16.dp))
         }
-        Text(text, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = Glass.text))
+        Text(text, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = ink))
     }
 }
 
 @Composable
 private fun LinkChip(label: String) {
-    Row(Modifier.widthIn(max = 260.dp).clip(Glass.pill).background(Glass.blue.copy(alpha = 0.85f)).border(1.dp, Glass.border, Glass.pill)
+    val fill = Glass.blue.copy(alpha = 0.85f)
+    val ink = Glass.inkFor(fill)
+    Row(Modifier.widthIn(max = 260.dp).clip(Glass.pill).background(fill).border(1.dp, Glass.border, Glass.pill)
         .padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.material3.Icon(Icons.Rounded.Link, contentDescription = null, tint = Glass.text, modifier = Modifier.padding(end = 6.dp).width(16.dp))
-        Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = Glass.text))
+        androidx.compose.material3.Icon(Icons.Rounded.Link, contentDescription = null, tint = ink, modifier = Modifier.padding(end = 6.dp).width(16.dp))
+        Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = ink))
     }
 }

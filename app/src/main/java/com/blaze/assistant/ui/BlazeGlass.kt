@@ -36,6 +36,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -70,13 +71,17 @@ object Glass {
     val brand: Brush get() = androidx.compose.ui.graphics.SolidColor(blue)
     val pill = RoundedCornerShape(50)
     val card = RoundedCornerShape(24.dp)
+    /** 2026-11-18: ink for the light accent fills (blue / orange / cyan): near-black (GlassContrast). */
+    val onFill = Color(GlassContrast.ON_FILL)
+    /** The readable ink for a solid or translucent [fill] on the dark glass (GlassContrast.inkFor). */
+    fun inkFor(fill: Color): Color = Color(GlassContrast.inkFor(fill.toArgb()))
 }
 
 /** Round icon button with a content description (TalkBack reads it; no text labels on the button). */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GlassIconButton(
-    icon: ImageVector, desc: String, modifier: Modifier = Modifier, size: Dp = 40.dp, tint: Color = Glass.text,
+    icon: ImageVector, desc: String, modifier: Modifier = Modifier, size: Dp = 40.dp, tint: Color = Color.Unspecified,
     bg: Color = Glass.raised, enabled: Boolean = true, bordered: Boolean = false, onLongClick: (() -> Unit)? = null, onClick: () -> Unit,
 ) {
     // v0.27.0: shrinks slightly while pressed (MotionTokens; none with Remove animations on).
@@ -88,7 +93,9 @@ fun GlassIconButton(
         .combinedClickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current,
             enabled = enabled, onClick = onClick, onLongClick = onLongClick, onClickLabel = desc)
         .semantics { contentDescription = desc }, contentAlignment = Alignment.Center) {
-        Icon(icon, contentDescription = null, tint = if (enabled) tint else Glass.weak, modifier = Modifier.size(size * 0.5f))
+        // 2026-11-18: with no tint given, the ink follows the fill (dark ink on a light accent fill, Glass.inkFor).
+        val ink = if (tint != Color.Unspecified) tint else if (bg == Glass.raised) Glass.text else Glass.inkFor(bg)
+        Icon(icon, contentDescription = null, tint = if (enabled) ink else Glass.weak, modifier = Modifier.size(size * 0.5f))
     }
 }
 

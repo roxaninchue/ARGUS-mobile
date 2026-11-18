@@ -64,14 +64,28 @@ class MindTest {
         assertEquals(Mind.Rung.SUMMARY, Mind.rung(12_001, budget, true, 800, 5_000, 32_768))
         // Summary + tail past 90% of the window: lookup.
         assertEquals(Mind.Rung.LOOKUP, Mind.rung(40_000, budget, true, 800, 29_000, 32_768))
-        // Over budget with no summary (summarising failed): lookup.
-        assertEquals(Mind.Rung.LOOKUP, Mind.rung(12_001, budget, false, 0, 1_000, 32_768))
+        // Over budget with no summary (summarising failed) but within 60% of the window: still word for word (2026-11-18).
+        assertEquals(Mind.Rung.RECENT, Mind.rung(12_001, budget, false, 0, 1_000, 32_768))
+        // Past 60% of the window with no summary: lookup.
+        assertEquals(Mind.Rung.LOOKUP, Mind.rung(19_700, budget, false, 0, 1_000, 32_768))
         // Small window: the budget is 60% of it.
         assertEquals(4_915, LongChat.budget(8_192))
         assertEquals(Mind.Rung.RECENT, Mind.rung(4_900, LongChat.budget(8_192), false, 0, 0, 8_192))
         assertEquals(Mind.Rung.LOOKUP, Mind.rung(9_000, LongChat.budget(8_192), true, 800, 7_000, 8_192))
         // Unknown window counts as 32k.
         assertEquals(Mind.Rung.SUMMARY, Mind.rung(20_000, 12_000, true, 800, 20_000, 0))
+        assertEquals(Mind.Rung.RECENT, Mind.rung(19_000, 6_000, false, 0, 0, 0))
+        assertEquals(Mind.Rung.LOOKUP, Mind.rung(20_000, 6_000, false, 0, 0, 0))
+    }
+
+    @Test fun aPdfInAShortChatStaysInThePrompt() {
+        // 2026-11-18 (owner screenshot): a 9-page PDF (~7.2k tokens of page images) over the 6k ChatTier budget, no summary
+        // yet, on a 128k model: the chat stays word for word instead of dropping to lookup and losing the PDF.
+        assertEquals(Mind.Rung.RECENT, Mind.rung(7_600, 6_000, false, 0, 7_600, 128_000))
+        assertEquals(Mind.Rung.RECENT, Mind.rung(70_000, 6_000, false, 0, 1_000, 128_000))
+        assertEquals(Mind.Rung.LOOKUP, Mind.rung(80_000, 6_000, false, 0, 1_000, 128_000))
+        // Under pressure (the whole request nears the window) there is no word-for-word escape.
+        assertEquals(Mind.Rung.LOOKUP, Mind.rung(7_600, 6_000, false, 0, 7_600, 128_000, pressure = true))
     }
 
     @Test fun pressureUsesTheSummaryUnderBudget() {
@@ -89,13 +103,28 @@ class MindTest {
         for (n in 0 until 20) { h.put(msg("user", "q$n")); h.put(msg("assistant", "a$n")) }
         val s = Mind.lookupStart(h)
         assertEquals("user", h.getJSONObject(s).getString("role"))
-        assertTrue(h.length() - s <= Mind.LOOKUP_TAIL)
+        // The tail holds the last LOOKUP_USER_TURNS user turns.
+        assertEquals(Mind.LOOKUP_USER_TURNS * 2, h.length() - s)
         // A long tool loop after the last user message: the tail goes back to that user message.
         val t = JSONArray().put(msg("user", "do the thing"))
         for (n in 0 until 10) t.put(JSONObject().put("role", "tool").put("content", "r$n"))
         assertEquals(0, Mind.lookupStart(t))
         // Never before the context window's start.
         assertTrue(Mind.lookupStart(h, 38) >= 38)
+        assertEquals(38, Mind.lookupStart(h, 38))
+    }
+
+    @Test fun lookupTailKeepsThreeUserTurnsPastAToolLoop() {
+        val h = JSONArray()
+        for (n in 0 until 5) { h.put(msg("user", "q$n")); h.put(msg("assistant", "a$n")) }
+        h.put(msg("user", "make flashcards"))
+        for (n in 0 until 12) h.put(JSONObject().put("role", "tool").put("content", "r$n"))
+        h.put(msg("assistant", "done"))
+        h.put(msg("user", "what was the first topic"))
+        val s = Mind.lookupStart(h)
+        val users = (s until h.length()).count { h.getJSONObject(it).getString("role") == "user" }
+        assertEquals(Mind.LOOKUP_USER_TURNS, users)
+        assertEquals("q4", h.getJSONObject(s).getString("content"))
     }
 
     @Test fun extractionParsesTolerantlyAndDropsSecrets() {
@@ -129,7 +158,10 @@ class MindTest {
 
     @Test fun sharedPromptTextMatchesDesktop() {
         assertTrue(Mind.MIND_RULE.startsWith("ONE MIND\n- This is one continuous conversation with the user; there are no separate chats."))
-        assertTrue(Mind.LOOKUP_RULE.startsWith("CONTEXT RESET: earlier turns are NOT in this prompt. You don't remember them; look them up."))
+        assertTrue(Mind.LOOKUP_RULE.startsWith("Older turns of this chat aren't in this prompt, to save room; the newest ones are."))
+        // Calm, model-first wording: no shouting, names the chat's own read-back tools.
+        assertFalse(Mind.LOOKUP_RULE.contains("NOT") || Mind.LOOKUP_RULE.contains("RESET"))
+        assertTrue(Mind.LOOKUP_RULE.contains("search_chat") && Mind.LOOKUP_RULE.contains("read_turn"))
         assertTrue(Mind.EXTRACT_PROMPT.endsWith("\"related\":\"other subjects, comma-separated\"}]"))
     }
 }

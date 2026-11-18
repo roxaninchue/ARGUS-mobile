@@ -102,6 +102,8 @@ object LongChat {
             m.contains("32768") -> 32768
             m.contains("gemini") -> 1_000_000
             m.contains("gemma") -> 8192
+            // 2026-11-18: current OpenAI / xAI families were "unknown" (32k assumed), so long chats summarised far too early.
+            listOf("gpt-5", "gpt-6", "gpt-oss", "grok").any { m.contains(it) } || Regex("""(^|[/:\s_-])o[34](\b|-)""").containsMatchIn(m) -> 128_000
             listOf("gpt-4o", "gpt-4.1", "llama-3", "llama3", "llama-4", "qwen", "deepseek", "mistral", "kimi", "glm", "claude", "auto/", "command-r").any { m.contains(it) } -> 128_000
             else -> 0
         }

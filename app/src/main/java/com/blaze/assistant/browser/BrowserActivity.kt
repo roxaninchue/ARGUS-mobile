@@ -356,6 +356,15 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
             SiteAction.BOOKMARK -> { BrowserData.toggleBookmark(ctx, tab?.title.orEmpty(), url); tick++ }
             SiteAction.SAVE -> tab?.let { t -> BrowserEngine.savePage(t) { msg -> toast(msg) } }
             SiteAction.SHARE -> share(url)
+            SiteAction.GOOGLE_ACCOUNT -> tab?.let { t ->
+                // 2026-11-18: reopen this Google page in another signed-in account (authuser=N); Google asks to sign in
+                // when that account isn't on this phone yet.
+                val now = GoogleAccount.accountOf(url) ?: 0
+                val labels = Array(GoogleAccount.MAX_SWITCH) { GoogleAccount.label(it) + if (it == now) " (this page)" else "" }
+                android.app.AlertDialog.Builder(ctx).setTitle("Google account")
+                    .setItems(labels) { _, which -> if (which != now) BrowserEngine.load(t, GoogleAccount.withAccount(url, which)) }
+                    .setNegativeButton("Cancel", null).show()
+            }
             SiteAction.OPEN_WITH -> try { ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW, Uri.parse(url)), "Open with").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
         }
     }

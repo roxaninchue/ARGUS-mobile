@@ -191,10 +191,11 @@ private fun SelectionBar(bar: DockToolbar) {
 @Composable
 private fun SmallPill(text: String, primary: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
     val press = remember { MutableInteractionSource() }
-    Box(Modifier.pressScale(press).height(32.dp).clip(Glass.pill).background(if (!enabled) Glass.raised else if (primary) Glass.blue else Glass.raised2)
+    val fill = if (!enabled) Glass.raised else if (primary) Glass.blue else Glass.raised2
+    Box(Modifier.pressScale(press).height(32.dp).clip(Glass.pill).background(fill)
         .clickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current, enabled = enabled, onClickLabel = text, onClick = onClick)
         .padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
-        Text(text, style = sans.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (enabled) Color.White else Glass.weak))
+        Text(text, style = sans.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (enabled) Glass.inkFor(fill) else Glass.weak))
     }
 }
 
@@ -202,14 +203,16 @@ private fun SmallPill(text: String, primary: Boolean, enabled: Boolean = true, o
 @Composable
 private fun GrabToggle(on: Boolean, withLabel: Boolean = true, onClick: () -> Unit) {
     val press = remember { MutableInteractionSource() }
-    Row(Modifier.pressScale(press).height(36.dp).clip(Glass.pill).background(if (on) Glass.blue else Glass.raised)
+    val fill = if (on) Glass.blue else Glass.raised
+    val ink = Glass.inkFor(fill)
+    Row(Modifier.pressScale(press).height(36.dp).clip(Glass.pill).background(fill)
         .clickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current,
             onClickLabel = if (on) "Stop grabbing" else DockButton.GRAB.desc, onClick = onClick)
         .padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Rounded.Gesture, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+        Icon(Icons.Rounded.Gesture, contentDescription = null, tint = ink, modifier = Modifier.size(18.dp))
         if (withLabel) {
             Spacer(Modifier.width(5.dp))
-            Text("Grab", style = sans.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.White))
+            Text("Grab", style = sans.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium, color = ink))
         }
     }
 }
@@ -319,7 +322,7 @@ private fun GrabCard(u: MagicHandState.Ui, calls: DockCalls, bar: DockToolbar = 
         // v0.27.0: a short coach mark on the first few grabs (the old long hint after that is gone).
         if (u.coach) {
             Spacer(Modifier.height(4.dp))
-            Text("\u2196 " + MagicHandState.COACH, style = sans.copy(fontSize = 11.5.sp, color = Color.White, fontWeight = FontWeight.Medium),
+            Text("\u2196 " + MagicHandState.COACH, style = sans.copy(fontSize = 11.5.sp, color = Glass.inkFor(Glass.blue.copy(alpha = 0.85f)), fontWeight = FontWeight.Medium),
                 modifier = Modifier.clip(Glass.pill).background(Glass.blue.copy(alpha = 0.85f)).padding(horizontal = 10.dp, vertical = 3.dp))
         }
         Spacer(Modifier.height(6.dp))
@@ -349,8 +352,9 @@ private fun GrabCard(u: MagicHandState.Ui, calls: DockCalls, bar: DockToolbar = 
                 .clickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current, enabled = enabled, onClickLabel = g.label) { calls.onGrab(g) }
                 .padding(horizontal = 6.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.size(42.dp).clip(CircleShape).background(if (!enabled) Glass.raised else if (g == GrabAction.COPY || g == u.queued) Glass.blue else Glass.raised2), contentAlignment = Alignment.Center) {
-                    Icon(MagicHandIcons.of(g), contentDescription = null, tint = if (enabled) Color.White else Glass.weak, modifier = Modifier.size(21.dp))
+                val fill = if (!enabled) Glass.raised else if (g == GrabAction.COPY || g == u.queued) Glass.blue else Glass.raised2
+                Box(Modifier.size(42.dp).clip(CircleShape).background(fill), contentAlignment = Alignment.Center) {
+                    Icon(MagicHandIcons.of(g), contentDescription = null, tint = if (enabled) Glass.inkFor(fill) else Glass.weak, modifier = Modifier.size(21.dp))
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(g.label, style = sans.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (enabled) Glass.text else Glass.weak))
@@ -412,10 +416,11 @@ private fun Chip(s: String, bg: Color, fg: Color) =
 @Composable
 private fun Pill(text: String, primary: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
     val press = remember { MutableInteractionSource() }
-    Box(Modifier.pressScale(press).height(40.dp).clip(Glass.pill).background(if (!enabled) Glass.raised else if (primary) Glass.blue else Glass.raised2)
+    val fill = if (!enabled) Glass.raised else if (primary) Glass.blue else Glass.raised2
+    Box(Modifier.pressScale(press).height(40.dp).clip(Glass.pill).background(fill)
         .clickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current, enabled = enabled, onClick = onClick)
         .padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
-        Text(text, style = sans.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = if (enabled) Color.White else Glass.weak))
+        Text(text, style = sans.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = if (enabled) Glass.inkFor(fill) else Glass.weak))
     }
 }
 

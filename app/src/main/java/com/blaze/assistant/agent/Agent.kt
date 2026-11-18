@@ -3413,9 +3413,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (!bulk && com.blaze.assistant.browser.BrowserFocus.active(synchronized(turnTools) { turnTools.toList() })) {
                         val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools, ToolPick.core(SimpleMode.simple) + widenNames); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
                     if (ToolTruth.full) { sizeLine = "tools all ${allTools.length()}"; return ToolTruth.forRequest(allTools) { allTools } }
+                    // 2026-11-18: older turns hidden (summary / lookup rung) → this chat's read-back tools ride along (ToolPick.pinnedCues).
+                    val pinned = ToolPick.pinnedCues(lastRung, ctxFrom); groupsOn += pinned
                     val diet = ToolRouter.select(allTools, groupsOn)
                     fun allNamesIn(g: Set<String>) = ToolPick.names(allTools).filter { ToolRouter.groupOf(it) in g }.toSet()
-                    val joinNames = widenNames + ToolTruth.MUST + ToolPick.core(SimpleMode.simple)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
+                    val joinNames = widenNames + ToolTruth.MUST + ToolPick.core(SimpleMode.simple) + ToolPick.cueNames(pinned)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
                     val diet2 = JSONArray().apply {
                         val have = ToolPick.names(diet).toSet(); for (i in 0 until diet.length()) put(diet.opt(i))
                         val allNames = ToolPick.names(allTools)

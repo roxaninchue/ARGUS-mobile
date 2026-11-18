@@ -268,9 +268,10 @@ fun PointerTiles(headIcon: ImageVector, head: String, tiles: List<PointerTile>, 
                         .clickable(onClickLabel = t.spoken) { t.onClick() }
                         .semantics { contentDescription = t.spoken }
                         .padding(top = 6.dp, start = 2.dp, end = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(Modifier.size(38.dp).clip(CircleShape).background(if (t.primary) Glass.blue else Glass.raised2),
+                        val fill = if (t.primary) Glass.blue else Glass.raised2
+                        Box(Modifier.size(38.dp).clip(CircleShape).background(fill),
                             contentAlignment = Alignment.Center) {
-                            Icon(t.icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(t.icon, contentDescription = null, tint = Glass.inkFor(fill), modifier = Modifier.size(20.dp))
                         }
                         Spacer(Modifier.height(5.dp))
                         Text(t.label, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,

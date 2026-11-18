@@ -46,8 +46,28 @@ object ToolPick {
     val TERMINAL_CORE = setOf("http_request", "run_shell", "run_code", "file_read", "file_write", "file_edit", "file_list")
 
     /** The names that join every turn from the full list: [ESSENTIAL] + [HARNESS] (Simple mode without the terminal ones). */
-    /** Groups sent every turn whatever the words: the user's calendar and reminders (an agent checks commitments itself). */
-    val ALWAYS_GROUPS = setOf("schedule")
+    /**
+     * Groups sent every turn whatever the words: the user's calendar and reminders (an agent checks commitments itself), and
+     * study (2026-11-18: flashcards is one small schema; it used to come only through the "study" regex, which model-first
+     * no longer reads, so "Can you make flashcards" reached a model with no flashcards tool and it web-searched for one).
+     */
+    val ALWAYS_GROUPS = setOf("schedule", "study")
+
+    /** The history cue: this chat's read-back tools (search_chat, read_turn, cache_*). */
+    const val HISTORY = "history"
+
+    /**
+     * 2026-11-18: when older turns of this chat are hidden from the prompt (summary or lookup rung, or a cleared start),
+     * the read-back tools ride every step, so the model can follow the prompt's "look it up" instead of guessing or
+     * searching memory for something said in this chat. Structure decides, never the message's words.
+     */
+    fun olderHidden(rung: Mind.Rung, ctxFrom: Int): Boolean = rung != Mind.Rung.RECENT || ctxFrom > 0
+
+    /** The cue ids a turn adds on top of its groups: [HISTORY] while older turns are hidden. */
+    fun pinnedCues(rung: Mind.Rung, ctxFrom: Int): Set<String> = if (olderHidden(rung, ctxFrom)) setOf(HISTORY) else emptySet()
+
+    /** The tool names of [cueIds]. */
+    fun cueNames(cueIds: Set<String>): Set<String> = CUES.filter { it.id in cueIds }.flatMap { it.names }.toSet()
 
     fun core(simple: Boolean): Set<String> = ESSENTIAL + (if (simple) HARNESS - TERMINAL_CORE else HARNESS)
 

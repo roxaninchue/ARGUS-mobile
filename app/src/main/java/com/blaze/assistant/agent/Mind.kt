@@ -32,6 +32,10 @@ object Mind {
     const val CORE_PREFS = 12
     const val INDEX_PER_KIND = 14
     const val LOOKUP_TAIL = 6
+    /** 2026-11-18: the lookup tail keeps at least this many of the newest user turns (and what followed them). */
+    const val LOOKUP_USER_TURNS = 3
+    /** 2026-11-18: with no usable summary, the history stays word for word while it fits this share of the window. */
+    const val RECENT_SHARE = 60
     const val CHUNK_CHARS = 12_000
     const val EXTRACT_CHARS = 6_000
     const val SAME = 0.5
@@ -49,7 +53,11 @@ object Mind {
         "- Save as you go: memory_save for anything lasting (profile, preference, person, project state, decision, commitment). One line each, the user's own conditions kept exactly (\"on weekdays\", \"for work trips\"); write \"(inferred)\" when you inferred it. memory_update rewrites a line that changed; never keep two versions.\n" +
         "- Never save procedure, one-off values (prices, counts, codes) or secrets.\n"
 
-    const val LOOKUP_RULE = "CONTEXT RESET: earlier turns are NOT in this prompt. You don't remember them; look them up. Use memory_search for facts, preferences and decisions, and search_chat / read_turn for exact earlier words, before you answer. Don't guess and don't ask the user to repeat."
+    /**
+     * 2026-11-18: said calmly (docs/MODEL-FIRST.md: no shouting). The old "CONTEXT RESET… You don't remember them" made the
+     * model treat a plain follow-up ("what was the first topic") as a memory question and search memory instead of the chat.
+     */
+    const val LOOKUP_RULE = "Older turns of this chat aren't in this prompt, to save room; the newest ones are. When the user refers to something you can't see here (a file they sent, a topic, something either of you said), look it up before answering: search_chat and read_turn for this chat's earlier words and files, memory_search for lasting facts and preferences. Answer from what you find rather than asking them to repeat it."
 
     const val EXTRACT_PROMPT = "You maintain the user's memory for ${BrandName.NAME}. From the conversation below, list what is worth remembering for months: profile facts (name, school, work, where they live), standing preferences (with every condition the user attached), people in their life and who they are to them, project state, decisions and why, commitments and deadlines.\n" +
         "Skip: procedure, how a tool works, one-off values (prices, counts, order numbers, codes), small talk, secrets and passwords, anything already in EXISTING unless it changed.\n" +
@@ -179,20 +187,37 @@ object Mind {
         if (history <= budget && !(pressure && hasSummary)) return Rung.RECENT
         val w = if (window > 0) window else 32_768
         if (hasSummary && summary + tail <= w * 9 / 10) return Rung.SUMMARY
+        // 2026-11-18: lookup is the last resort. The budget can be ~6k tokens (ChatTier) while the window is 128k, and a
+        // PDF is sent as page images (~800 tokens each), so one PDF used to push a short chat straight to lookup and the
+        // model lost the file it had just read. With no summary to fall back on, keep everything while it fits 60%.
+        if (!pressure && history <= w * RECENT_SHARE / 100) return Rung.RECENT
         return Rung.LOOKUP
     }
 
-    /** Where the lookup tail starts: the last [LOOKUP_TAIL] messages, moved forward to a user message (never before [from]). */
+    /**
+     * Where the lookup tail starts: the last [LOOKUP_TAIL] messages, widened back to the [LOOKUP_USER_TURNS]-th newest user
+     * message (2026-11-18: "what was the first topic" right after a long tool loop kept only that loop), always starting on
+     * a user message and never before [from].
+     */
     fun lookupStart(h: JSONArray, from: Int = 0): Int {
         val n = h.length()
-        var i = maxOf(from, n - LOOKUP_TAIL)
+        val lo = from.coerceIn(0, n)
+        var i = maxOf(lo, n - LOOKUP_TAIL)
         while (i < n && h.optJSONObject(i)?.optString("role") != "user") i++
-        if (i >= n) {
-            // No user message in the tail: walk back to the newest one.
-            i = n - 1
-            while (i > from && h.optJSONObject(i)?.optString("role") != "user") i--
+        // Walk back until the tail holds LOOKUP_USER_TURNS user messages (or the window's start).
+        var users = 0
+        for (k in i until n) if (h.optJSONObject(k)?.optString("role") == "user") users++
+        var j = i - 1
+        while (j >= lo && users < LOOKUP_USER_TURNS) {
+            if (h.optJSONObject(j)?.optString("role") == "user") { users++; i = j }
+            j--
         }
-        return i.coerceIn(from.coerceAtMost(n), n)
+        if (i >= n) {
+            // No user message in the window: walk back to the newest one.
+            i = n - 1
+            while (i > lo && h.optJSONObject(i)?.optString("role") != "user") i--
+        }
+        return i.coerceIn(lo, n)
     }
 
     // ---------------- extraction ----------------

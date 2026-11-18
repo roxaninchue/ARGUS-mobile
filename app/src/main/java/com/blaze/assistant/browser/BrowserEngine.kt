@@ -573,6 +573,11 @@ object BrowserEngine {
                 // (link taps, server redirects, JS / meta-refresh redirects) open the app that handles them; a page with
                 // no app for it just keeps loading (AppLinks / RedirectRules).
                 // An agent driving a background tab stays in the page: only the tab on screen hands https links to apps.
+                // 2026-11-18: a Google link tapped on a Google page in account N (authuser / /u/N/) stays in account N
+                // instead of opening in account 0 (GoogleAccount). Taps only; redirects keep what the server chose.
+                if (r.isForMainFrame && r.hasGesture() && r.method.equals("GET", true)) {
+                    GoogleAccount.carry(t.url.ifBlank { v.url }, r.url?.toString().orEmpty())?.let { carried -> load(t, carried); return true }
+                }
                 val handled = AppLinks.handle(app, v, r, t.url.ifBlank { v.url }, appLinks = visible(t))
                 if (!handled && r.isForMainFrame) allowFiles(t, r.url?.toString().orEmpty())
                 return handled
