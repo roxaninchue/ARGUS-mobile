@@ -107,18 +107,32 @@ object SiteInstaller {
         .setData(Uri.parse("blaze-site://app/$id")).putExtra(SiteAppActivity.EXTRA_ID, id)
 
     /**
-     * Saves the app and asks the launcher to pin it. Returns a line for the user: pinned, or (when the launcher can't
-     * pin) where to open it from.
+     * Saves the app, so it shows on ARGUS's Apps page (Life › Apps), and, when [home] is true, also asks the launcher to
+     * pin it to the phone's Home screen (owner 2026-11-18: "add to the apps page and an option for home screen").
+     * Returns a line for the user.
      */
-    suspend fun installOnPhone(ctx: Context, ins: Inspected, name: String = ins.app.name): String = withContext(Dispatchers.IO) {
+    suspend fun installOnPhone(ctx: Context, ins: Inspected, name: String = ins.app.name, home: Boolean = true): String = withContext(Dispatchers.IO) {
         val app = ins.app.copy(name = name.trim().ifEmpty { ins.app.name }.take(30))
         iconFile(ctx, app.id).parentFile?.mkdirs()
         iconFile(ctx, app.id).writeBytes(png(ins.icon))
         save(ctx, installed(ctx).filter { it.id != app.id } + app)
+        if (!home) return@withContext "Added ${app.name} to your Apps."
         val icon = if (ins.maskable) IconCompat.createWithAdaptiveBitmap(ins.icon) else IconCompat.createWithBitmap(ins.icon)
+        if (pin(ctx, app, icon)) "Added ${app.name} to your Apps and your Home screen."
+        else "Added ${app.name} to your Apps. Your launcher doesn't let apps pin icons to the Home screen."
+    }
+
+    /** Pins an installed site app to the phone's Home screen (the Apps page's long-press). Returns a line for the user. */
+    fun pinToHome(ctx: Context, id: String): String {
+        val app = find(ctx, id) ?: return "That app isn't installed any more."
+        val bmp = icon(ctx, id) ?: letterIcon(app.name, SiteLogic.hostOf(app.startUrl), app.themeColor)
+        return if (pin(ctx, app, IconCompat.createWithBitmap(bmp))) "Adding ${app.name} to your Home screen."
+        else "Your launcher doesn't let apps pin icons to the Home screen."
+    }
+
+    private fun pin(ctx: Context, app: SiteApp, icon: IconCompat): Boolean {
         val info = ShortcutInfoCompat.Builder(ctx, app.id).setShortLabel(app.name).setLongLabel(app.name).setIcon(icon).setIntent(intent(ctx, app.id)).build()
-        val ok = try { ShortcutManagerCompat.isRequestPinShortcutSupported(ctx) && ShortcutManagerCompat.requestPinShortcut(ctx, info, null) } catch (_: Exception) { false }
-        if (ok) "Adding ${app.name} to your home screen." else "Installed ${app.name}. Your launcher doesn't let apps pin icons; open it from the browser menu › Installed apps."
+        return try { ShortcutManagerCompat.isRequestPinShortcutSupported(ctx) && ShortcutManagerCompat.requestPinShortcut(ctx, info, null) } catch (_: Exception) { false }
     }
 
     /** Uninstall: the shortcut is disabled, the app's files go and its own WebView profile is wiped. */

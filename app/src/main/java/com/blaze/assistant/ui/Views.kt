@@ -15,29 +15,33 @@ import org.json.JSONObject
  * [page] = a settings page id ("" = the settings list); [special] = a screen that isn't a settings page.
  */
 data class BlazeView(val id: String, val name: String, val desc: String, val page: String? = null,
-                     val special: String? = null, val aliases: List<String> = emptyList())
+                     val special: String? = null, val aliases: List<String> = emptyList(),
+                     /** 2026-11-18: an app the user opens and uses (Music, Video…), shown on the Apps page; settings and chat are not. */
+                     val app: Boolean = false,
+                     /** The Lucide (or ArgusGlyphs) icon the Apps page draws for an [app] view. */
+                     val icon: String = "")
 
 object Views {
     val all = listOf(
         // v0.39.0: Home (the Home cards). In Simple mode it sits under the chat: swipe up for Chat, pull down for Home.
         BlazeView("home", "Home", "The ${BrandName.UPPER} Home: the living orb, the ask bar and Spotlight (pull the top notch down). ${BrandName.NAME} opens here", special = "home", aliases = listOf("home screen", "board", "widgets", "heads-ups", "notifications page")),
-        BlazeView("projects", "Projects", "Ongoing efforts with their own threads, brief and instructions", special = "projects", aliases = listOf("project")),
-        BlazeView("design", "Design", "Live preview of anything visual: 3D scenes, art, sites, UI mockups, diagrams, charts, posters, slides", special = "design", aliases = listOf("preview", "studio", "3d", "designs")),
+        BlazeView("projects", "Projects", "Ongoing efforts with their own threads, brief and instructions", special = "projects", aliases = listOf("project"), app = true, icon = "folder"),
+        BlazeView("design", "Design", "Live preview of anything visual: 3D scenes, art, sites, UI mockups, diagrams, charts, posters, slides", special = "design", aliases = listOf("preview", "studio", "3d", "designs"), app = true, icon = "palette"),
         BlazeView("memory", "Memory", "What ${BrandName.NAME} remembers and has learned", page = "memory", aliases = listOf("learning")),
-        BlazeView("learn", "Learn", "Flashcards with spaced repetition, Classroom, low-data mode", page = "learn", aliases = listOf("flashcards", "study", "student", "classroom")),
-        BlazeView("seller", "Seller", "Brand kit, store digest, posts, ads and listings", page = "seller", aliases = listOf("store", "shop", "marketing", "marketer", "brand")),
-        BlazeView("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell, Termux-style keys and tabs", special = "terminal", aliases = listOf("shell", "console", "termux", "bash", "alpine", "pty", "jobs", "job", "job log")),
-        BlazeView("schedule", "Schedule", "Routines and timed tasks", page = "routines", aliases = listOf("routines")),
+        BlazeView("learn", "Learn", "Flashcards with spaced repetition, Classroom, low-data mode", page = "learn", aliases = listOf("flashcards", "study", "student", "classroom"), app = true, icon = "graduation-cap"),
+        BlazeView("seller", "Seller", "Brand kit, store digest, posts, ads and listings", page = "seller", aliases = listOf("store", "shop", "marketing", "marketer", "brand"), app = true, icon = "shopping-bag"),
+        BlazeView("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell, Termux-style keys and tabs", special = "terminal", aliases = listOf("shell", "console", "termux", "bash", "alpine", "pty", "jobs", "job", "job log"), app = true, icon = "square-terminal"),
+        BlazeView("schedule", "Schedule", "Routines and timed tasks", page = "routines", aliases = listOf("routines"), app = true, icon = "calendar-clock"),
         BlazeView("accounts", "Accounts", "Connected apps: Google, GitHub, Spotify, Notion", page = "connections", aliases = listOf("connections", "connectors")),
         BlazeView("router", "Brain routing", "${BrandName.NAME} Cloud picks the model for every message", page = "ai", aliases = listOf("blazerouter", "dashboard-router")),
         BlazeView("brain", "Brain", "${BrandName.NAME} Cloud: the best free model for every message", page = "ai", aliases = listOf("models", "model", "keys", "classic", "cloud")),
         BlazeView("skills", "Skills", "Skill library: on, off, restore", page = "skills"),
-        BlazeView("music", "Music", "${BrandName.NAME} Music: your songs, playlists and a Store (Jamendo, Internet Archive" + (if (com.blaze.assistant.mediaapps.store.StoreSources.get("youtube") != null) ", YouTube" else "") + ") with downloads", special = "music", aliases = listOf("songs", "player", "music player", "playlist", "playlists")),
-        BlazeView("video", "Video", "${BrandName.NAME} Video: your videos, continue watching, and a Store (public-domain films, Blender open movies" + (if (com.blaze.assistant.mediaapps.store.StoreSources.get("youtube") != null) ", YouTube" else "") + ")", special = "video", aliases = listOf("videos", "movies", "films", "video player")),
-        BlazeView("apps", "App Store", "Free open-source apps from their developers' own releases. Not made by Blazeinchue; install at your own risk", page = "appstore", aliases = listOf("app store", "appstore", "open source apps", "foss apps", "get apps")),
-        BlazeView("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made", special = "gallery"),
-        BlazeView("browser", "Browser", "${BrandName.NAME}'s own browser and tabs", special = "browser"),
-        BlazeView("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: watch it log in and book, take control, hand back", special = "phonebrowser", aliases = listOf("blaze phone", "phone browser", "blaze phone browser", "blaze's phone")),
+        BlazeView("music", "Music", "${BrandName.NAME} Music: your songs, playlists and a Store (Jamendo, Internet Archive" + (if (com.blaze.assistant.mediaapps.store.StoreSources.get("youtube") != null) ", YouTube" else "") + ") with downloads", special = "music", aliases = listOf("songs", "player", "music player", "playlist", "playlists"), app = true, icon = "music"),
+        BlazeView("video", "Video", "${BrandName.NAME} Video: your videos, continue watching, and a Store (public-domain films, Blender open movies" + (if (com.blaze.assistant.mediaapps.store.StoreSources.get("youtube") != null) ", YouTube" else "") + ")", special = "video", aliases = listOf("videos", "movies", "films", "video player"), app = true, icon = "clapperboard"),
+        BlazeView("apps", "App Store", "Free open-source apps from their developers' own releases. Not made by Blazeinchue; install at your own risk", page = "appstore", aliases = listOf("app store", "appstore", "open source apps", "foss apps", "get apps"), app = true, icon = "blocks"),
+        BlazeView("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made", special = "gallery", app = true, icon = "image"),
+        BlazeView("browser", "Browser", "${BrandName.NAME}'s own browser and tabs", special = "browser", app = true, icon = "globe"),
+        BlazeView("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: watch it log in and book, take control, hand back", special = "phonebrowser", aliases = listOf("blaze phone", "phone browser", "blaze phone browser", "blaze's phone"), app = true, icon = "smartphone"),
         BlazeView("usage", "Usage", "Tokens and estimated cost", page = "usage", aliases = listOf("cost")),
         BlazeView("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, call", page = "voice"),
         BlazeView("control", "Phone control", "Accessibility, permissions", page = "control"),
@@ -54,6 +58,9 @@ object Views {
         BlazeView("look", "Look & feel", "Light / Dark / Auto, accent colour, the Home's tilt effect", page = "look", aliases = listOf("theme", "themes", "background", "backgrounds", "wallpaper", "look and feel", "look & feel")),
         BlazeView("settings", "Settings", "Behaviour, voice, privacy, backup", page = ""),
     )
+
+    /** The Apps page (Life › Apps): every view that is an app, in this list's order. Settings, chat and Home are not apps. */
+    val apps: List<BlazeView> get() = all.filter { it.app }
 
     fun find(id: String): BlazeView? {
         val k = id.trim().lowercase().removePrefix("/")
