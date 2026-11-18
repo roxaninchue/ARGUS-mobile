@@ -1403,6 +1403,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         // 16 Nov 2026 (Finn): no "/" commands, so no blaze_command tool (views open with open_view).
         if (Settings.longChat || Mind.ready) LongChat.tools().forEach { t.put(it) }
         com.blaze.assistant.memory.CacheTier.tools().forEach { t.put(it) }   // 0.49.0 cache tier
+        t.put(PdfPages.tool())   // 2026-11-18: pages of a PDF from this chat, again
         t.put(Flashcards.tool())
         if (Designs.templateLoader == null) Designs.templateLoader = { app.assets.open("skills/three-d-design/assets/mockup.html").bufferedReader().use { it.readText() } }
         t.put(Designs.tool())
@@ -4333,12 +4334,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         // v0.30.4: only the newest screen stays in the history; older readouts are dropped in place.
                         if (FastActions.isScreen(result)) FastActions.pruneScreens(history)
                     }
-                    if (Settings.lowData) shots.clear()
+                    if (Settings.lowData) shots.removeAll { !it.startsWith(PdfPages.MARK) }   // a PDF page the model asked for still goes
                     // v0.33.3: a screenshot is seen by one model call only; later steps no longer re-send it (nor go to vision).
-                    VisionFast.pruneShots(history, SHOT_NOTE)
-                    shots.lastOrNull()?.let { url ->
+                    VisionFast.pruneShots(history, SHOT_NOTE); VisionFast.pruneShots(history, PdfPages.NOTE)
+                    shots.lastOrNull()?.let { shot -> val (note, url) = PdfPages.noteAndUrl(shot, SHOT_NOTE)
                         history.put(JSONObject().put("role", "user").put("content", JSONArray()
-                            .put(JSONObject().put("type", "text").put("text", SHOT_NOTE))
+                            .put(JSONObject().put("type", "text").put("text", note))
                             .put(JSONObject().put("type", "image_url").put("image_url", JSONObject().put("url", url)))))
                     }
                     if (step == maxSteps - 1) add(Role.BLAZE, "I've taken a lot of steps on this one, so I'm pausing here. Tell me if you want me to keep going.")
@@ -4495,10 +4496,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     result
                 }, timeoutMs = Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L)
                 batch.zip(outs).forEach { (c, r) -> msgs.put(JSONObject().put("role", "tool").put("tool_call_id", c.id).put("name", c.name).put("content", r.output.take(12000))) }
-                VisionFast.pruneShots(msgs, SHOT_NOTE)
-                shots.lastOrNull()?.let { url -> shots.clear()
+                VisionFast.pruneShots(msgs, SHOT_NOTE); VisionFast.pruneShots(msgs, PdfPages.NOTE)
+                shots.lastOrNull()?.let { shot -> shots.clear(); val (note, url) = PdfPages.noteAndUrl(shot, SHOT_NOTE)
                     msgs.put(JSONObject().put("role", "user").put("content", JSONArray()
-                        .put(JSONObject().put("type", "text").put("text", SHOT_NOTE))
+                        .put(JSONObject().put("type", "text").put("text", note))
                         .put(JSONObject().put("type", "image_url").put("image_url", JSONObject().put("url", url))))) }
             }
             return "Stopped after 16 steps without finishing."
@@ -5317,6 +5318,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 else -> when {
                     name in LongChat.names -> longChatTool(name, args)
+                    name == PdfPages.TOOL -> { add(Role.STEP, "Looking at the PDF again")
+                        val (reply, pic) = PdfPages.show(app, args); if (pic != null) shots += pic; reply }
                     name in com.blaze.assistant.memory.CacheTier.names -> {
                         add(Role.STEP, when (name) { "cache_search" -> "Searching the document for \u201c${args.optString("query").take(40)}\u201d"
                             "cache_summarize" -> "Reading the whole document"; "cache_toc" -> "Looking at the document's contents"; else -> "Reading the document" })

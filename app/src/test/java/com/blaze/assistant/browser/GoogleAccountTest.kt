@@ -52,4 +52,22 @@ class GoogleAccountTest {
         assertNull(GoogleAccount.carry(from, once))
         assertEquals("Account 2", GoogleAccount.label(1))
     }
+
+    @Test fun agentLinksUseTheLastAccount() {
+        val keep = GoogleAccount.last
+        try {
+            GoogleAccount.last = 0
+            assertEquals("https://docs.google.com/d/x", GoogleAccount.forAgent("https://docs.google.com/d/x"))
+            assertTrue(GoogleAccount.seen("https://classroom.google.com/u/2/c/abc"))
+            assertFalse(GoogleAccount.seen("https://classroom.google.com/u/2/h"))
+            assertFalse(GoogleAccount.seen("https://example.com/u/5/"))
+            assertEquals(2, GoogleAccount.last)
+            assertEquals("https://docs.google.com/d/x?authuser=2", GoogleAccount.forAgent("https://docs.google.com/d/x"))
+            assertEquals("https://docs.google.com/d/x?authuser=0", GoogleAccount.forAgent("https://docs.google.com/d/x?authuser=0"))
+            assertEquals("https://example.com/", GoogleAccount.forAgent("https://example.com/"))
+            // Back in account 0: agent links stop carrying.
+            assertTrue(GoogleAccount.seen("https://mail.google.com/mail/u/0/#inbox"))
+            assertEquals("https://docs.google.com/d/x", GoogleAccount.forAgent("https://docs.google.com/d/x"))
+        } finally { GoogleAccount.last = keep }
+    }
 }

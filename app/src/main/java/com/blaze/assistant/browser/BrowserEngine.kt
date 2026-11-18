@@ -603,6 +603,7 @@ object BrowserEngine {
             override fun onPageFinished(v: WebView, url: String?) {
                 if (v !== t.live) return
                 t.url = url.orEmpty(); t.progress = 100; t.canBack = v.canGoBack(); t.canForward = v.canGoForward()
+                if (!t.isPrivate) noteGoogle(t.url)
                 t.loaded.complete(Unit)
                 // v0.33.3: room under the page for the floating toolbar, so the last lines can scroll above it.
                 if (url.orEmpty().startsWith("http")) v.evaluateJavascript(BOTTOM_PAD_JS, null)
@@ -615,6 +616,7 @@ object BrowserEngine {
             }
             override fun doUpdateVisitedHistory(v: WebView, url: String?, isReload: Boolean) {
                 t.url = url.orEmpty(); t.canBack = v.canGoBack(); t.canForward = v.canGoForward()
+                if (!t.isPrivate) noteGoogle(t.url)
                 if (!t.isPrivate) { offerSoon(t, 1200); scheduleSave() }
             }
         }
@@ -889,7 +891,21 @@ object BrowserEngine {
 
     private suspend fun ensureTab(ctx: Context): Tab = withContext(Dispatchers.Main) { tab() ?: newTab(ctx) }
 
-    suspend fun open(ctx: Context, url: String, newTab: Boolean, isPrivate: Boolean = false): String {
+    /** 2026-11-18: the Google account the user last had open, kept across restarts (GoogleAccount.last). */
+    private const val GOOGLE_PREF = "google_authuser"
+    private var googleLoaded = false
+    private fun noteGoogle(url: String) {
+        loadGoogle()
+        if (GoogleAccount.seen(url)) try { app.getSharedPreferences("browser", Context.MODE_PRIVATE).edit().putInt(GOOGLE_PREF, GoogleAccount.last).apply() } catch (_: Exception) { }
+    }
+    private fun loadGoogle() {
+        if (googleLoaded) return
+        try { GoogleAccount.last = app.getSharedPreferences("browser", Context.MODE_PRIVATE).getInt(GOOGLE_PREF, GoogleAccount.last); googleLoaded = true } catch (_: Exception) { }
+    }
+
+    suspend fun open(ctx: Context, url0: String, newTab: Boolean, isPrivate: Boolean = false): String {
+        // 2026-11-18: a Google link the agent opens itself stays in the user's Google account, the same as a tap (GoogleAccount).
+        val url = if (isPrivate) url0 else { loadGoogle(); GoogleAccount.forAgent(toUrl(url0)) }
         val t = withContext(Dispatchers.Main) {
             (if (newTab || tabs.isEmpty() || tab()?.isPrivate != isPrivate) newTab(ctx, url, isPrivate) else tab()!!.also { load(it, url) }).also { markAgent(it) }
         }

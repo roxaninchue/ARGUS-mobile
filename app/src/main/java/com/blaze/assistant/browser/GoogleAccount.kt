@@ -70,6 +70,23 @@ object GoogleAccount {
         return withAccount(to, acct)
     }
 
+    /**
+     * 2026-11-18: the Google account the user last had open (from the account the browser's own pages named). Links the
+     * agent opens itself (browser_open) carry it, the same as a tap does: [forAgent]. BrowserEngine keeps it across restarts.
+     */
+    @Volatile var last: Int = 0
+
+    /** A page the browser showed: remembers the Google account it names. True when that changed [last]. */
+    fun seen(url: String?): Boolean {
+        val a = url?.let { accountOf(it) } ?: return false
+        if (a == last) return false
+        last = a; return true
+    }
+
+    /** A Google link the agent opens: in the user's last Google account when it names none. Others come back unchanged. */
+    fun forAgent(url: String): String =
+        if (last > 0 && isGoogle(url) && accountOf(url) == null) withAccount(url, last) else url
+
     /** The switcher's labels: "Account 1" … for authuser 0 … */
     fun label(account: Int): String = "Account ${account + 1}"
 }

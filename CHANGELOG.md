@@ -1,3 +1,10 @@
+## Unreleased: PDF pages readable again, agent links keep your Google account
+
+2026-11-18, the two open items from the context-loss fix.
+- PDFs (`agent/PdfPages.kt`): an attached PDF is kept on the phone (`files/pdfs/<id>.pdf`, newest 40, up to 64 MB) and the message carries a text note `[PDF pdf:<id> "name" · N page(s) · …]` that survives when the page pictures leave the prompt or saved history. New tool `pdf_page(doc, page, to)` shows up to 3 pages again as one picture (labelled "[PDF page(s) the assistant asked to see]", not as a screenshot), including pages past the first 6 that were never sent. Always on hand (ToolRouter core, history cue), read-only, kept in low-data mode.
+- Google account (`browser/GoogleAccount.kt`): the browser remembers the Google account its pages last named (`GoogleAccount.last`, kept in prefs, not from private tabs). `browser_open` (BrowserEngine.open) opens a Google link that names no account in that one; account 0 stops the carry.
+- Tests: PdfPagesTest (new, 5), GoogleAccountTest (+1).
+
 ## Unreleased: "Today" is today again in week answers
 
 2026-11-18, from the owner's phone (Wed 18 Nov 10:51 CAT, GPT 6 Luna, "my week" answered "Today — Thu 19 Nov …"), branch fix/today-label-date.

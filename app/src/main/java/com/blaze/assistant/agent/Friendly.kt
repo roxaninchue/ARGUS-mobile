@@ -105,6 +105,7 @@ object Friendly {
             "memory_save", "memory_update" -> "Saving to memory"
             "read_artifact" -> "Reading the saved output"
             "cache_toc", "cache_read", "cache_search", "cache_summarize" -> "Reading the document"
+            "pdf_page" -> "Looking at the PDF again"
             "flashcards" -> "Working on your flashcards"
             "brand_kit" -> "Checking your brand kit"
             "update_brief" -> "Updating the project brief"

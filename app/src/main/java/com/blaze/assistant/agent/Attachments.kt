@@ -16,7 +16,7 @@ import java.io.File
 
 /** Turns a picked photo, PDF or text file into content the model can read. */
 object Attachments {
-    private const val MAX_PDF_PAGES = 6
+    const val MAX_PDF_PAGES = 6
 
     /**
      * [mimeHint] is the type the sender declared (e.g. a clipboard item's description). Some
@@ -38,10 +38,14 @@ object Attachments {
                 }
                 mime == "application/pdf" -> {
                     val parts = mutableListOf<JSONObject>()
+                    // 2026-11-18: the PDF is kept on the phone and the message names it (PdfPages.ref), so pdf_page can show
+                    // its pages again once these pictures leave the prompt.
+                    val kept = PdfPages.keep(ctx, uri)
                     cr.openFileDescriptor(uri, "r")?.use { fd ->
                         PdfRenderer(fd).use { pdf ->
                             val n = minOf(pdf.pageCount, MAX_PDF_PAGES)
-                            if (pdf.pageCount > n) parts += text("(PDF has ${pdf.pageCount} pages; showing the first $n.)")
+                            if (kept != null) parts += text(PdfPages.ref(kept, name, pdf.pageCount, n))
+                            else if (pdf.pageCount > n) parts += text("(PDF has ${pdf.pageCount} pages; showing the first $n.)")
                             for (i in 0 until n) pdf.openPage(i).use { page ->
                                 val w = 1100; val h = (w.toFloat() * page.height / page.width).toInt()
                                 val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
