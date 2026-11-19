@@ -27,6 +27,8 @@ object RequestBudget {
     const val KEEP_RECENT_RESULTS = 2
     const val DESC_CHARS = 600
     const val KEEP_GROUPS = 3
+    /** Size of the digest of dropped steps (user requests and first lines of results) in the summary note. */
+    const val DIGEST_CHARS = 2_000
     private val ALWAYS = setOf("load_tools", "find_tool", "ask_user")
 
     data class Fit(val messages: JSONArray, val tools: JSONArray?, val bytesBefore: Int, val bytesAfter: Int, val toolsBefore: Int, val toolsAfter: Int)
@@ -97,10 +99,17 @@ object RequestBudget {
         val protectedFrom = starts.filter { list[it].optString("role") == "assistant" }.takeLast(KEEP_GROUPS).firstOrNull() ?: list.size
         val dropped = BooleanArray(list.size)
         val ran = ArrayList<String>()
+        // 2026-11-19 (context loss: "session 2" went to the web after the Downloads read was dropped): the note used to
+        // name only the tools that ran, so every older user request vanished. It now carries what the user asked and
+        // what each tool returned (first lines, ContextKeep.digest), capped at [DIGEST_CHARS].
         fun build(): JSONArray = JSONArray().apply {
             for (k in 0 until sys) put(list[k])
-            if (ran.isNotEmpty()) put(JSONObject().put("role", "user").put("content",
-                "[Earlier steps were summarised to keep the request small. Tools that already ran: ${ran.distinct().take(30).joinToString(", ")}. Don't redo finished steps.]"))
+            if (ran.isNotEmpty() || dropped.any { it }) {
+                val gone = (sys until list.size).filter { dropped[it] }.map { list[it] }
+                put(JSONObject().put("role", "user").put("content",
+                    "[Earlier steps were summarised to keep the request small. Tools that already ran: ${ran.distinct().take(30).joinToString(", ")}. Don't redo finished steps.]" +
+                        ContextKeep.digest(gone, DIGEST_CHARS).let { if (it.isEmpty()) "" else "\n$it" }))
+            }
             for (k in sys until list.size) if (!dropped[k]) put(list[k])
         }
         var out = build()

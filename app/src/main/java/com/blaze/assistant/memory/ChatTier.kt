@@ -42,12 +42,38 @@ object ChatTier {
         var lastUser = n - 1
         while (lastUser > 0 && h.optJSONObject(lastUser)?.optString("role") != "user") lastUser--
         if (maxTok <= 0) return byCount
+        // 2026-11-19 (context loss: after a PDF read, "session 2" folded the turn that read the file into the note): the
+        // tail counts tool results and pictures the way they are sent (results cut to [SENT_RESULT_CHARS], only the newest
+        // picture sent), not their full stored size, so one big read no longer pushes the turn before it out.
         var i = byCount
-        while (i < lastUser && LongChat.tokens(h, i) > maxTok) {
+        while (i < lastUser && sentTokens(h, i) > maxTok) {
             i++
             while (i < lastUser && h.optJSONObject(i)?.optString("role") != "user") i++
         }
         return minOf(i, lastUser).coerceAtLeast(byCount)
+    }
+
+    /** A tool result's share of the estimate: what RequestBudget sends of an older result is about this long. */
+    const val SENT_RESULT_CHARS = 1_000
+
+    /** Token estimate of history[from..] as it is sent: tool results clipped, pictures counted once (only the newest is sent). */
+    fun sentTokens(h: JSONArray, from: Int = 0): Int {
+        var n = 0
+        var picture = false
+        for (i in h.length() - 1 downTo from.coerceAtLeast(0)) {
+            val m = h.optJSONObject(i) ?: continue
+            val c = m.opt("content")
+            n += when {
+                m.optString("role") == "tool" && c is String -> minOf(c.length, SENT_RESULT_CHARS) / 4
+                c is String -> c.length / 4
+                c is JSONArray -> (0 until c.length()).sumOf { k -> c.optJSONObject(k)?.let { p ->
+                    if (p.optString("type") == "image_url") { if (picture) 20 else { picture = true; 800 } } else p.optString("text").length / 4 } ?: 0 }
+                else -> 0
+            } + 4
+            m.optJSONArray("tool_calls")?.let { calls -> for (k in 0 until calls.length()) calls.optJSONObject(k)?.optJSONObject("function")?.let { f ->
+                n += (f.optString("name").length + f.optString("arguments").length) / 4 } }
+        }
+        return n
     }
 
     /** The paged-out text of history[from, to): the verbatim transcript (tool output whole), for the cache tier. */
