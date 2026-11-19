@@ -34,7 +34,7 @@ class DuoAll20Test {
         assertTrue(src.contains("if (kind == Duo.Kind.CHAT) { duoDoer(name, facts)"))
         val body = src.substringAfter("private suspend fun duoDoer(").substringBefore("/** After both agreed")
         assertTrue("${BrandName.NAME} before Halo", body.indexOf("ask(Duo.Who.BLAZE") in 0 until body.indexOf("DuoAll.haloSystem"))
-        assertTrue("Halo isn't streamed (a dropped repeat never flashes up)", body.contains("DuoAll.haloSystem(base(Duo.Who.HALO), blaze), stream = false"))
+        assertTrue("Halo isn't streamed (a dropped repeat never flashes up)", body.contains("DuoAll.haloSystem(base(Duo.Who.HALO), argus), stream = false"))
         assertFalse("no tools for the chat duo", body.contains("roomTools("))
     }
 

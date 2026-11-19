@@ -21,10 +21,11 @@ env = dict(os.environ, JAVA_HOME=JDK, PATH=f'{JDK}/bin:{KC}/bin:' + os.environ['
 DECL = re.compile(r'^(?:@\S+\s+)*(?:(?:private|internal|public|data|sealed|enum|abstract|open|inline|value|annotation|fun|const|operator|infix|suspend)\s+)*'
                   r'(?:class|object|interface|fun|val|var|typealias)\s+(?:<[^>]*>\s*)?(?:[\w.]+\.)?(\w+)', re.M)
 index = {}
-for f in glob.glob(f'{MAIN}/**/*.kt', recursive=True) + glob.glob('storeapi/src/main/java/**/*.kt', recursive=True):
+for f in glob.glob(f'{MAIN}/**/*.kt', recursive=True) + glob.glob('storeapi/src/main/java/**/*.kt', recursive=True) + \
+        [g for g in glob.glob(f'{TEST}/**/*.kt', recursive=True) if not g.endswith('Test.kt')]:
     src = open(f, encoding='utf8').read()
     code = '\n'.join(l for l in src.split('\n') if not l.lstrip().startswith(('//', '*', '/*')))
-    pure = not re.search(r'^import (android|androidx)\.', src, re.M) and not re.search(r'\bandroidx?\.[a-z]+\.[A-Za-z]', code) \
+    pure = not re.search(r'^import (android|androidx)\.', src, re.M) and not re.search(r'(?<![.\w"])androidx?\.[a-z]+\.[A-Z]', code) \
         and not f.endswith(('/agent/Settings.kt',))
     for m in DECL.finditer(src):
         index.setdefault(m.group(1), []).append((f, pure))
@@ -56,6 +57,10 @@ def run(test):
             break
         names = set(re.findall(r"[Uu]nresolved reference:? '?(\w+)'?", err))
         names |= set(re.findall(r"[Uu]nresolved reference '(\w+)'", err))
+        for f in list(files):
+            names |= set(re.findall(r'com\.argus\.assistant\.[a-z.]+\.([A-Z]\w*)', open(f, encoding='utf8').read()))
+        stubbed = {re.search(r'(?:object|class) (\w+)', open(x).read()).group(1) for x in files if x.startswith('/tmp/')}
+        names -= stubbed
         add = set()
         for n in names:
             for f, pure in index.get(n, []):

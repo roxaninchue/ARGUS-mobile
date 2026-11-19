@@ -34,14 +34,14 @@ class ArgusThreadTest {
     @Test fun oneBuilderForEveryArgusMessage() {
         val n = src("notify/Notifier.kt")
         val post = n.substringAfter("fun post(").substringBefore("fun reply(")
-        for (needle in listOf("NotificationCompat.MessagingStyle(me)", "style.addMessage(m.text, m.at, if (m.fromUser) me else blaze())", ".setShortcutId(ArgusThread.SHORTCUT)",
+        for (needle in listOf("NotificationCompat.MessagingStyle(me)", "style.addMessage(m.text, m.at, if (m.fromUser) me else argus())", ".setShortcutId(ArgusThread.SHORTCUT)",
                 "setAllowGeneratedReplies(false)", "QuickReplies.forMessage(text, kind)", "setChoices(", "SEMANTIC_ACTION_REPLY",
                 ".notify(ArgusThread.NOTIF_ID, ", "CATEGORY_MESSAGE", "ensureShortcut()"))
             assertTrue(needle, post.contains(needle))
         assertFalse(post.contains("setAllowGeneratedReplies(true)"))
         // the avatar is the app icon, not a letter
         assertTrue(n.contains("R.mipmap.ic_launcher") && n.contains("setIcon(it)"))
-        assertTrue(n.contains("setLongLived(true).setPerson(blaze())"))
+        assertTrue(n.contains("setLongLived(true).setPerson(argus())"))
         // reply / proactive / question go through post
         assertTrue(n.substringAfter("fun reply(").substringBefore("fun wakeHeard").contains("post(raw, replyKind(raw, isError), chatId)"))
         assertTrue(n.substringAfter("fun proactive(").substringBefore("fun question").contains("post(text, kind, chatId"))

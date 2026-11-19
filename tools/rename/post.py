@@ -6,7 +6,10 @@
 3. tools/rename/keep-blaze.txt: applicationId and the old-FQCN shim lines no longer apply (owner chose a new
    applicationId com.argus.assistant, so the app installs beside Blaze and no system grant carries over); the permanent
    keeps of this rename are listed with their reasons.
-4. Ratchet the guard baseline (node tools/check-no-blaze.mjs --update-baseline).
+4. Source-scan needles: a test string literal that quotes main code with a lowercase blaze identifier (rename.py keeps
+   lowercase inside strings) is rewritten when the old text is no longer in any main source but the renamed text is
+   (e.g. ArgusThreadTest "setPerson(blaze())" -> "setPerson(argus())", DuoAll20Test "..., blaze), stream = false").
+5. Ratchet the guard baseline (node tools/check-no-blaze.mjs --update-baseline).
 """
 import re, subprocess
 
@@ -45,5 +48,26 @@ blazeinchue|Blazeinchue  # GitLab namespace and Pages host
 \\w*blazerouter\\w*  # shared router code (blazerouter/, libblazerouter.so)
 '''
 open('tools/rename/keep-blaze.txt', 'w', encoding='utf8').write(KEEP)
+
+import glob, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import rename as rn
+main_text = '\n'.join(open(f, encoding='utf8').read() for f in glob.glob('app/src/main/**/*.kt', recursive=True)
+                      + glob.glob('storeapi/src/main/**/*.kt', recursive=True))
+for f in glob.glob('app/src/test/**/*.kt', recursive=True) + glob.glob('app/src/androidTest/**/*.kt', recursive=True):
+    src = open(f, encoding='utf8').read()
+    if 'blaze' not in src:
+        continue
+    out, changed = [], False
+    for kind, t in rn.lex(src):
+        if kind == 'string' and 'blaze' in t:
+            body = t.strip('"')
+            new = rn.edit(body, lower=True)
+            if new != body and len(body) >= 6 and body not in main_text and new in main_text:
+                t = t.replace(body, new); changed = True
+                print(f'  needle {f}: {body[:70]!r}')
+        out.append(t)
+    if changed:
+        open(f, 'w', encoding='utf8').write(''.join(out))
 
 print(subprocess.check_output(['node', 'tools/check-no-blaze.mjs', '--update-baseline'], text=True).strip())
