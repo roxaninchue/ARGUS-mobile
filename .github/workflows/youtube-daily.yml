@@ -78,7 +78,7 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
           set -o pipefail
-          ./gradlew :storeapi:test :youtube:test :app:testReleaseUnitTest --tests 'com.blaze.assistant.mediaapps.*' :app:assembleRelease --stacktrace 2>&1 | tee build.log
+          ./gradlew :storeapi:test :youtube:test :app:testReleaseUnitTest --tests 'com.argus.assistant.mediaapps.*' :app:assembleRelease --stacktrace 2>&1 | tee build.log
           APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
           mkdir -p /tmp/dex && unzip -o -q "$APK" 'classes*.dex' -d /tmp/dex
           if ! grep -a -q "Lcom/blaze/assistant/mediaapps/youtube/YouTubeSource;" /tmp/dex/*.dex; then

@@ -70,3 +70,8 @@ DuoAll20Test was checked by script to exist in main sources.
 - With Gradle/CI (owner's call): `./gradlew :app:testDebugUnitTest` on this branch, then the shot tests (their CI filters
   must name com.argus.assistant first).
 - Phase 3 follow-up: merge BlazeButton / BlazeColors / BlazeTheme into the ARGUS kit, then drop them from KEEP_IDS.
+
+## Workflows (2026-11-19)
+- build.yml, home-focus-check.yml, mobile-build.yml, youtube-daily.yml now name com.argus.assistant (Blaze050ShotsTest -> Argus050ShotsTest). The branch is NOT yet added to build.yml triggers; that waits for the owner's "build".
+- youtube-daily.yml dex check still looks for Lcom/blaze/assistant/mediaapps/youtube/YouTubeSource; because that class lives in the private :youtube plug-in, which is not renamed yet. Change it to Lcom/argus/... when the plug-in is renamed.
+- Still outside the repo: assetlinks.json on blazeinchue.pages.dev must add com.argus.assistant + signing cert.
