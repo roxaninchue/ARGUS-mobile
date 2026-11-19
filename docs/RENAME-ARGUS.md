@@ -1,5 +1,8 @@
 # Blaze → Argus (0.52.1)
 
+The full internal rename (code, data, wire, infra) is planned phase by phase in docs/RENAME-ARGUS-PLAN.md;
+the guard `node tools/check-no-blaze.mjs` keeps new "blaze" names out.
+
 Theme: omniscience (Argus Panoptes, the all-seeing). Brand tokens: docs/BRAND.md.
 
 ## One-line future rename
