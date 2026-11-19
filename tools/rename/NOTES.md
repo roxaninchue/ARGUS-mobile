@@ -73,5 +73,22 @@ DuoAll20Test was checked by script to exist in main sources.
 
 ## Workflows (2026-11-19)
 - build.yml, home-focus-check.yml, mobile-build.yml, youtube-daily.yml now name com.argus.assistant (Blaze050ShotsTest -> Argus050ShotsTest). The branch is NOT yet added to build.yml triggers; that waits for the owner's "build".
-- youtube-daily.yml dex check still looks for Lcom/blaze/assistant/mediaapps/youtube/YouTubeSource; because that class lives in the private :youtube plug-in, which is not renamed yet. Change it to Lcom/argus/... when the plug-in is renamed.
+- youtube-daily.yml dex check now looks for Lcom/argus/assistant/mediaapps/youtube/YouTubeSource; (the plug-in is renamed at build time, below).
 - Still outside the repo: assetlinks.json on blazeinchue.pages.dev must add com.argus.assistant + signing cert.
+
+## YouTube plug-in: required, renamed at build time (2026-11-19, owner: "build", then "remove the youtube less build completely")
+- No build without the plug-in any more: settings.gradle.kts always includes :youtube and throws when youtube/build.gradle.kts
+  is missing; app/build.gradle.kts always depends on it. build.yml lost continue-on-error on the plug-in checkout, the
+  "YouTube plug-in status" step and the conditional :youtube:test; a "YouTube plug-in token (required)" step fails first.
+  youtube-daily.yml no longer skips green without the secret. home-focus-check, home-intro-check, lowram-smoke, mobile-build
+  and tools/ci/builds-repo/mobile-build.yml check the plug-in out too (every Gradle job needs it now).
+- tools/rename/youtube-plugin.sh runs right after every plug-in checkout (and by hand after a local clone): moves
+  */com/blaze/assistant source dirs to */com/argus/assistant and rewrites com.blaze.assistant / com/blaze/assistant inside
+  youtube/ only. Idempotent; exits 1 if youtube/build.gradle.kts is missing or any old-package text is left. In build.yml it
+  runs after the rename guard (youtube/ is not this repo's content). Call made without the owner (overhaul.md Deviations,
+  "YouTube plug-in rewrite"): drop the step and the script once the private plug-in repo is renamed upstream.
+- keep-blaze.txt gains BLAZE_MOBILE_TOKEN and Blaze-mobile (upstream secret / repo names); baseline ratcheted down.
+- build.yml builds feat/argus-rename like the other feature branches: tests, APK, debug-signed and test-signed copies; release-key
+  rotation and every publish step stay off this branch (they are also gated on the upstream repo / main).
+- Still owed by the owner: assetlinks.json on blazeinchue.pages.dev (+ com.argus.assistant and the signing cert), the upstream
+  plug-in rename (then drop the rewrite), whether the BLAZE_MOBILE_TOKEN secret exists on the GitHub mirror.

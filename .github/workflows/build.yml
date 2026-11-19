@@ -28,44 +28,10 @@ jobs:
       contents: write
       issues: write
     timeout-minutes: 45
-    env:
-      # The YouTube plug-in lives in the owner's private repo Blaze-mobile and is checked out into youtube/.
-      # BLAZE_MOBILE_TOKEN = fine-grained PAT, Contents: read on Blaze-mobile. Missing (forks, or not set) = no YouTube.
-      HAS_BLAZE_MOBILE_TOKEN: ${{ secrets.BLAZE_MOBILE_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
-      # YouTube Store plug-in (Gradle :youtube, only built when youtube/build.gradle.kts exists). Never fails the build:
-      # without the secret, or if the checkout fails, Blaze builds WITHOUT YouTube and the next step says so.
-      - name: Check out the YouTube plug-in (Blaze-mobile → youtube/)
-        id: yt_checkout
-        if: env.HAS_BLAZE_MOBILE_TOKEN == 'true'
-        continue-on-error: true
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ format('{0}{1}{2}{3}/Blaze-mobile', 'lack', 'son', 'kap', 'apahue') }}
-          ref: main
-          token: ${{ secrets.BLAZE_MOBILE_TOKEN }}
-          path: youtube
-          persist-credentials: false
-
-      - name: YouTube plug-in status
-        id: yt
-        run: |
-          if [ -f youtube/build.gradle.kts ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-            MSG="YouTube plug-in: INCLUDED (Blaze-mobile main @ $(git -C youtube rev-parse --short HEAD))"
-            echo "$MSG"; echo "### $MSG" >> "$GITHUB_STEP_SUMMARY"
-          else
-            rm -rf youtube
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            if [ "$HAS_BLAZE_MOBILE_TOKEN" != "true" ]; then WHY="the BLAZE_MOBILE_TOKEN secret is not available (not set, or a pull request from a fork)"
-            else WHY="checking out the private YouTube plug-in repo failed (token expired, revoked or without access?)"; fi
-            echo "::warning title=Building WITHOUT YouTube::$WHY. This APK has no YouTube Store."
-            echo "### YouTube plug-in: NOT included — $WHY. This APK has no YouTube Store." >> "$GITHUB_STEP_SUMMARY"
-          fi
 
       - uses: actions/setup-java@v4
         with:
@@ -117,6 +83,33 @@ jobs:
           node tools/check-no-blaze.test.mjs
           node tools/check-no-blaze.mjs
 
+      # The YouTube plug-in (Gradle :youtube) is REQUIRED (owner, 2026-11-19): there is no build without it. It lives in the
+      # owner's private plug-in repo, checked out into youtube/ with the secret below (fine-grained PAT, Contents: read).
+      # No secret (not set, or a fork's pull request) or a failed checkout fails the build here. After the rename guard,
+      # because youtube/ is not this repo's content.
+      - name: YouTube plug-in token (required)
+        env:
+          T: ${{ secrets.BLAZE_MOBILE_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then
+            echo "::error title=YouTube plug-in missing::The plug-in token secret is not available (not set, or a pull request from a fork). The YouTube plug-in is required: there is no build without it."
+            exit 1
+          fi
+
+      - name: Check out the YouTube plug-in (→ youtube/)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ format('{0}{1}{2}{3}/Blaze-mobile', 'lack', 'son', 'kap', 'apahue') }}
+          ref: main
+          token: ${{ secrets.BLAZE_MOBILE_TOKEN }}
+          path: youtube
+          persist-credentials: false
+
+      # Until the private plug-in is renamed upstream, its package is rewritten to com.argus.assistant here (overhaul.md
+      # Deviations, "YouTube plug-in rewrite"). Also fails if youtube/build.gradle.kts is missing.
+      - name: YouTube plug-in package → com.argus.assistant (build-time rewrite)
+        run: bash tools/rename/youtube-plugin.sh
+
       # 2026-11-19: Robolectric downloads its Android jars from Maven Central while the tests run, with no retry. One failed
       # fetch (run on b4de2eaf: android-all-instrumented 13-...-i6, .pom not found) failed all 142 sdk=33 tests at once.
       # Fetch them here first, with retries, into ~/.m2 (where Robolectric looks before downloading) and cache them.
@@ -149,9 +142,7 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
           set -o pipefail
-          YT_TEST=""; if [ "${{ steps.yt.outputs.present }}" = "true" ]; then YT_TEST=":youtube:test"; fi
-          ./gradlew testReleaseUnitTest :storeapi:test $YT_TEST assembleRelease --stacktrace 2>&1 | tee build.log
-          echo "YouTube plug-in in this build: ${{ steps.yt.outputs.present }}" | tee -a build.log
+          ./gradlew testReleaseUnitTest :storeapi:test :youtube:test assembleRelease --stacktrace 2>&1 | tee build.log
 
       # 2026-11-14: the failure log, as an artifact anyone can fetch (job logs need a token; Post failure log runs only upstream)
       - name: Upload build log on failure

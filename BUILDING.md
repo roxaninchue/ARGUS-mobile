@@ -44,8 +44,8 @@ The other workflows also pass `-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspa
 
 | Check run | Workflow | Command (abridged) |
 |---|---|---|
-| `apk` | Build APK (`build.yml`) | `./gradlew testReleaseUnitTest :storeapi:test assembleRelease`, then screenshots with `BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests '…ShotsTest*' --tests '…SpaceShotsTest'` |
-| `build`, `build-without-youtube` | Mobile build | `./gradlew :app:assembleRelease` (+ release unit tests); the no-YouTube APK must contain no `mediaapps/youtube` classes |
+| `apk` | Build APK (`build.yml`) | `./gradlew testReleaseUnitTest :storeapi:test :youtube:test assembleRelease` (the YouTube plug-in is required: checked out into `youtube/`, package rewritten by `tools/rename/youtube-plugin.sh`), then screenshots with `BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests '…ShotsTest*' --tests '…SpaceShotsTest'` |
+| `build` | Mobile build | `./gradlew :app:assembleRelease` (+ release unit tests). 2026-11-19: the no-YouTube variant is gone; every Gradle job needs the plug-in |
 | `unit-tests` | Mobile build | `./gradlew :app:testDebugUnitTest --continue` |
 | `shots` | Mobile build | `./gradlew :app:testDebugUnitTest --tests` ShotsTest, Shots375Test, StageShotsTest, MoviesShotsTest, MediaRevampShotsTest, SecretCardsShotsTest, HomeRedesignShotsTest, ComposerShotsTest, Argus050ShotsTest, SpaceShotsTest |
 | `app-template` | Mobile build | builds the android-app-builder skill template |
@@ -53,7 +53,7 @@ The other workflows also pass `-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspa
 | `focus` | Home focus check | `assembleDebug assembleDebugAndroidTest`, `SpaceHomeCheck` on the low-RAM emulator: the ARGUS ground, top bar, Life and Projects since the ARGUS-only redo (0.52.2: ArgusHomeCheck) |
 | `intro` | Home intro check | same, `SpaceOnboardingCheck` via tools/smoke/run-space-onboarding.sh (0.52.2: ArgusSpotlightCheck) |
 
-Note: **any** test source that fails to compile fails `unit-tests`, `shots`, `build` and `build-without-youtube`
+Note: **any** test source that fails to compile fails `unit-tests`, `shots` and `build`
 together, because they all compile the unit-test source set.
 
 ## Reading CI

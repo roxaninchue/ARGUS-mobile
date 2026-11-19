@@ -18,3 +18,5 @@ X-Blaze-[A-Za-z-]+|x-blaze-[a-z-]+  # gateway wire headers (server names)
 \bblaze_[a-z0-9_]+  # wire fields, tool names, prefs/table/file/channel keys already on phones
 blazeinchue|Blazeinchue  # GitLab namespace and Pages host
 \w*blazerouter\w*  # shared router code (blazerouter/, libblazerouter.so)
+BLAZE_MOBILE_TOKEN  # 2026-11-19: Actions secret for the private YouTube plug-in repo (repo settings; renaming it is the owner's call)
+Blaze-mobile\b  # 2026-11-19: private YouTube plug-in repo, upstream name (not renamed upstream yet)

@@ -32,6 +32,22 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      # YouTube plug-in (Gradle :youtube): REQUIRED, no build without it (owner, 2026-11-19). Same steps as build.yml.
+      - name: YouTube plug-in token (required)
+        env:
+          T: ${{ secrets.BLAZE_MOBILE_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then echo "::error title=YouTube plug-in missing::The plug-in token secret is not available. The YouTube plug-in is required: there is no build without it."; exit 1; fi
+      - name: Check out the YouTube plug-in (→ youtube/)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ format('{0}{1}{2}{3}/Blaze-mobile', 'lack', 'son', 'kap', 'apahue') }}
+          ref: main
+          token: ${{ secrets.BLAZE_MOBILE_TOKEN }}
+          path: youtube
+          persist-credentials: false
+      - name: YouTube plug-in package → com.argus.assistant (build-time rewrite)
+        run: bash tools/rename/youtube-plugin.sh
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
       - uses: actions/setup-go@v5
@@ -98,6 +114,22 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      # YouTube plug-in (Gradle :youtube): REQUIRED, no build without it (owner, 2026-11-19). Same steps as build.yml.
+      - name: YouTube plug-in token (required)
+        env:
+          T: ${{ secrets.BLAZE_MOBILE_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then echo "::error title=YouTube plug-in missing::The plug-in token secret is not available. The YouTube plug-in is required: there is no build without it."; exit 1; fi
+      - name: Check out the YouTube plug-in (→ youtube/)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ format('{0}{1}{2}{3}/Blaze-mobile', 'lack', 'son', 'kap', 'apahue') }}
+          ref: main
+          token: ${{ secrets.BLAZE_MOBILE_TOKEN }}
+          path: youtube
+          persist-credentials: false
+      - name: YouTube plug-in package → com.argus.assistant (build-time rewrite)
+        run: bash tools/rename/youtube-plugin.sh
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
       - uses: gradle/actions/setup-gradle@v4
@@ -153,6 +185,22 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      # YouTube plug-in (Gradle :youtube): REQUIRED, no build without it (owner, 2026-11-19). Same steps as build.yml.
+      - name: YouTube plug-in token (required)
+        env:
+          T: ${{ secrets.BLAZE_MOBILE_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then echo "::error title=YouTube plug-in missing::The plug-in token secret is not available. The YouTube plug-in is required: there is no build without it."; exit 1; fi
+      - name: Check out the YouTube plug-in (→ youtube/)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ format('{0}{1}{2}{3}/Blaze-mobile', 'lack', 'son', 'kap', 'apahue') }}
+          ref: main
+          token: ${{ secrets.BLAZE_MOBILE_TOKEN }}
+          path: youtube
+          persist-credentials: false
+      - name: YouTube plug-in package → com.argus.assistant (build-time rewrite)
+        run: bash tools/rename/youtube-plugin.sh
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
       - uses: gradle/actions/setup-gradle@v4

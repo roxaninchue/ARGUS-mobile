@@ -7,14 +7,14 @@ import java.net.URL
 
 /**
  * v0.30.1: the Store sources this build has. The free ones are built in; YouTube is a plug-in module (youtube/ →
- * Gradle :youtube) that is only compiled in when the folder exists, and is found here by class name at runtime. With
- * no plug-in the YouTube store simply isn't listed.
+ * Gradle :youtube), compiled into every build (2026-11-19: required, there is no build without it) and found here by
+ * class name at runtime.
  */
 object StoreSources {
-    /** The YouTube plug-in's class (module :youtube). Absent in builds without the youtube/ folder. */
+    /** The YouTube plug-in's class (module :youtube, compiled into every build). */
     const val YOUTUBE_CLASS = "com.argus.assistant.mediaapps.youtube.YouTubeSource"
 
-    /** A Kotlin `object` StoreSource by class name, or null when that module isn't in this build. */
+    /** A Kotlin `object` StoreSource by class name, or null when no such class is on the classpath. */
     fun plugin(className: String): StoreSource? = try {
         Class.forName(className).getField("INSTANCE").get(null) as? StoreSource
     } catch (_: Throwable) { null }

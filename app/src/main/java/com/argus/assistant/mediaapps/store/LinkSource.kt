@@ -13,10 +13,9 @@ import java.net.URL
  * v0.32.1 "Download by link" (Music and Video Stores): paste a YouTube link (watch, youtu.be, shorts, music, embed,
  * live) or a direct link to a media file, get the qualities, download it like any Store item.
  *
- * YouTube links go to the YouTube plug-in first when this build has it ([resolve]); when it's missing or fails,
- * Argus's own small InnerTube player client tries several app clients (ANDROID_VR → ANDROID → IOS), probes the
- * stream url and hands out plain stream urls (no signature JavaScript). Direct links are read once (type and size)
- * and downloaded as they are; a web page with an og:video / og:audio file works too.
+ * YouTube links ([resolve]) use Argus's own small InnerTube player client (v0.33.0), which tries several app clients
+ * (ANDROID_VR → ANDROID → IOS), probes the stream url and hands out plain stream urls (no signature JavaScript).
+ * Direct links are read once (type and size) and downloaded as they are; a web page with an og:video / og:audio file works too.
  *
  * Registered in StoreSources.all (so downloads can refresh expired links) but hidden from the source chips.
  */
@@ -32,8 +31,8 @@ object LinkSource : StoreSource {
     override suspend fun search(kind: String, query: String, next: String): StorePage = StorePage(listOf(resolve(query, kind).first), "")
 
     /**
-     * A pasted link → one Store item and the source that will load it. A YouTube link goes to the YouTube plug-in when
-     * this build has it and it can load the video; otherwise (no plug-in, or it failed) to this source's own clients.
+     * A pasted link → one Store item and the source that will load it. A YouTube link goes to the built-in YouTube
+     * Store source, which loads it with this source's own clients.
      */
     suspend fun resolve(link: String, kind: String): Pair<StoreItem, StoreSource> {
         val url = LinkParse.firstUrl(link) ?: throw StoreError("That doesn't look like a link. Paste a YouTube link or a link to a music or video file.")

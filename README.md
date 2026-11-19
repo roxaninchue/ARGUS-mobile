@@ -11,17 +11,18 @@ Chat, voice ("Hey Blaze"), floating orb, and phone control through an Accessibil
 
 Local and CI builds are signed with the Android SDK's own debug key. No signing key lives in this repo: releases are re-signed outside it with the private Argus release key and a v3 lineage from the old key (rotated in 0.45.15; the old key is public and burned).
 
-### YouTube plug-in (private, optional)
+### YouTube plug-in (private, required)
 The YouTube Store plug-in (Gradle module `:youtube`) lives in a separate private repo
 (ask the owner for access), not here. `youtube/` is in
-`.gitignore`; Gradle includes `:youtube` only when `youtube/build.gradle.kts` exists, so without it Argus builds as
-normal with no YouTube Store.
+`.gitignore`. **There is no build without it** (owner, 2026-11-19): Gradle stops with an error when
+`youtube/build.gradle.kts` is missing.
 - **Local dev with YouTube:** clone the private YouTube plug-in repo as `youtube/` in this folder
-  (needs access), then `./gradlew :storeapi:test :youtube:test assembleRelease`. Commit plug-in changes inside `youtube/`
+  (needs access), run `tools/rename/youtube-plugin.sh` (renames its package to `com.argus.assistant` until the plug-in
+  repo is renamed upstream), then `./gradlew :storeapi:test :youtube:test assembleRelease`. Commit plug-in changes inside `youtube/`
   (its own repo).
-- **CI (historic, GitHub):** `build.yml` checked Blaze-mobile `main` out into `youtube/` with the Actions secret `BLAZE_MOBILE_TOKEN`
-  (fine-grained PAT, Contents: read on Blaze-mobile). No secret (forks) or a failed checkout = the build carries on
-  **without** YouTube and says so in a warning and the run summary. `build-without-youtube` keeps proving that build.
+- **CI (GitHub):** every workflow that runs Gradle checks the plug-in repo's `main` out into `youtube/` with the Actions
+  secret `BLAZE_MOBILE_TOKEN` (fine-grained PAT, Contents: read), then runs `tools/rename/youtube-plugin.sh`. No secret
+  (forks) or a failed checkout fails the build.
 - **Daily check:** retired (0.45.18). Blaze-mobile keeps its own `sync.yml`.
 
 ## Layout

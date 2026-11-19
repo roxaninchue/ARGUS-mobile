@@ -264,8 +264,8 @@ dependencies {
     implementation("io.github.dokar3:quickjs-kt-android:1.0.0-alpha13")
     implementation("org.jsoup:jsoup:1.17.2")
     testImplementation("io.github.dokar3:quickjs-kt-jvm:1.0.0-alpha13")
-    // The YouTube Store is a plug-in: compiled in only when the youtube/ folder (Gradle :youtube) exists.
-    if (rootProject.findProject(":youtube") != null) implementation(project(":youtube"))
+    // The YouTube Store plug-in (Gradle :youtube, private repo checked out into youtube/) is always compiled in (required).
+    implementation(project(":youtube"))
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")   // 0.45.20: runTest / virtual time (PermissionGateTest)
     testImplementation("org.hamcrest:hamcrest-core:1.3")   // 0.45.18: was a root hamcrest.jar; now a normal test dependency
