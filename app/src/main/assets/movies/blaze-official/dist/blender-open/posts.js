@@ -1,5 +1,5 @@
 "use strict";
-// Blaze Official example provider: lists items from archive.org's public search API.
+// Argus Official example provider: lists items from archive.org's public search API.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSearchPosts = exports.getPosts = void 0;
 var BASE = "identifier:(BigBuckBunny_124 OR ElephantsDream OR Sintel OR Tears-of-Steel OR CosmosLaundromatFirstCycle OR spring_blenderopenmovie OR agent327operationbarbershop OR sprite-fright OR Caminandes1LlamaDrama OR Caminandes2GranDillama OR CaminandesLlamigos)";

@@ -1,10 +1,10 @@
-# Blaze agents (0.52.0): background agents, parallel tools, blueprint orchestration
+# Argus agents (0.52.0): background agents, parallel tools, blueprint orchestration
 
 > **Standing rule (16 Nov 2026): read [MODEL-FIRST.md](MODEL-FIRST.md).** Build the system around the model; no keyword
 > routers that guess intent, no contradictory prompt orders. The BusyRoute stop/steer/side split below is retired: every
 > mid-turn message goes to the model.
 
-Blaze is one conversation agent that **never blocks**. Work that takes more than a couple of tool steps goes to
+Argus is one conversation agent that **never blocks**. Work that takes more than a couple of tool steps goes to
 background agents; the chat keeps answering. The chat shows only replies and work pills.
 
 ```
@@ -15,7 +15,7 @@ background agents; the chat keeps answering. The chat shows only replies and wor
             └─ orchestrate(goal, pipeline)             ─► BgAgents entry (specialist "orchestrator") ─► OrchestraRuns
                                                               planner ─► Blueprint DAG ─► Orchestrator (dataflow)
                                                               node agents = Session.runNode (specialist loops)
- results ──► Agent.agentFinished: pill moves to the bottom, result posted / main Blaze writes a short follow-up
+ results ──► Agent.agentFinished: pill moves to the bottom, result posted / main Argus writes a short follow-up
 ```
 
 ## 1. Background agents (agent/BgAgents.kt, ui/AgentPill.kt)
@@ -24,7 +24,7 @@ background agents; the chat keeps answering. The chat shows only replies and wor
   (several specialists, never two on one target), `orchestrate` (a blueprint run). The chat agent's prompt
   (`BgAgents.leadLine`) tells it to reply at once in one short line and keep chatting; it never waits or polls.
 - **Run**: each agent has its own hidden Session (own history, tool loop, modes, repairs) on the app scope, saved in
-  `filesDir/bg_agents.json`; a run cut by Blaze closing is re-queued with `resume = true` and told to check what is
+  `filesDir/bg_agents.json`; a run cut by Argus closing is re-queued with `resume = true` and told to check what is
   done first. `TaskWorker` (WorkManager, expedited) holds the process while work runs and restarts it after a kill.
 - **Concurrency**: `BgAgents.cap()` = `AgentBudget.cap(totalMem, isLowRamDevice)`: 4 on 6 GB+, 3 on 4 GB+, 2 below,
   1 on low-RAM phones, one fewer under memory pressure. Network-only specialists have their own cap (3); phone
@@ -37,9 +37,9 @@ background agents; the chat keeps answering. The chat shows only replies and wor
 
 ### Removed from the chat (ui/ChatPolicy.STATUS_LINES = false)
 The work line beside the typing dots (step pill → task chip → status → last step, which is where lines like "Waiting
-for your task to finish" and "Sent. Waiting for Blaze…" showed), the task chip ("Task · in progress"), the step pill
+for your task to finish" and "Sent. Waiting for Argus…" showed), the task chip ("Task · in progress"), the step pill
 row beside the drop, Simple mode's hint line (now the same work pill), the model-written wait line (WaitNudge), the
-"Got it, I've passed that to Blaze…" steer bubbles and Halo's holding line. The pure helpers stay for their tests.
+"Got it, I've passed that to Argus…" steer bubbles and Halo's holding line. The pure helpers stay for their tests.
 Messages sent while a turn runs still never queue behind it (BusyRoute: stop / steer / parallel answer).
 
 ## 2. Parallel, conflict-free tool calls (orchestra/ToolScheduler.kt, KeyedLocks.kt)
@@ -81,7 +81,7 @@ When a reply carries several tool calls, the independent ones run at the same ti
   get a fix agent with the error and the files it names, then a retry); a failed node cancels its dependents only;
   cancelling the run cancels every node agent and nested runs.
 - **Pipelines** (`Pipelines.pick` or the model's `pipeline`):
-  - `apk` (showcase): planner JSON (folders → files with contracts and imports) → folders made in Blaze Terminal →
+  - `apk` (showcase): planner JSON (folders → files with contracts and imports) → folders made in Argus Terminal →
     one coder per file, each starting when the files it imports exist → `./gradlew assembleDebug` in the terminal
     (terminal-first route) → fixers → `testDebugUnitTest`.
   - `research`: planner queries → parallel searches (findings saved to the store) → sorter (outline + claims) →

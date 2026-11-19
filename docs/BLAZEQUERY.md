@@ -1,19 +1,19 @@
-# BlazeQuery (0.51.0) — automatic, judged facts for every reply
+# ArgusQuery (0.51.0) — automatic, judged facts for every reply
 
-BlazeQuery runs **automatically the moment the user sends a message** ("involuntary omniscience"). It is not a tool the
+ArgusQuery runs **automatically the moment the user sends a message** ("involuntary omniscience"). It is not a tool the
 reply model decides to call. It fetches high-accuracy information, hyper-summarises it into a few scored facts and puts
 them into the prompt through the tiered-memory cache tier (`cache.db`), so the model answers — and above all writes code
 and runs commands — from current, trustworthy sources without spending its context on pages.
 
-Code: `app/src/main/java/com/blaze/assistant/agent/query/` (pure, JVM-tested) + the glue in `QueryRuntime.kt` and
+Code: `app/src/main/java/com/argus/assistant/agent/query/` (pure, JVM-tested) + the glue in `QueryRuntime.kt` and
 `Agent.Session.runLoop`. Research mode and `/query` / `/research` are extras on the same machinery.
 
 ```
  user sends ─┬─► prompt assembly (tools, skills, memory, orient …)            ─┐
-             └─► BlazeQuery.hot  (in parallel, budget HOT_MS = 1.2 s from send) │
+             └─► ArgusQuery.hot  (in parallel, budget HOT_MS = 1.2 s from send) │
                   need detection (no model, µs)                                 │
                    ├ NONE  (small talk, phone actions, writing, weather) → nothing
-                   ├ LOCAL (Blaze, its / commands, this chat, the user's data) → this chat's cache only, never the web
+                   ├ LOCAL (Argus, its / commands, this chat, the user's data) → this chat's cache only, never the web
                    └ EXTERNAL / CODE
                        reuse a live topic from cache.db?  ── yes → pack (instant)
                        no → plan 1–3 sub-queries (heuristic, from the conversation)
@@ -23,7 +23,7 @@ Code: `app/src/main/java/com/blaze/assistant/agent/query/` (pure, JVM-tested) + 
                   background (never blocks the reply)                            │
                        read the best trusted pages → extract passages (code kept whole)
                        judge again → the SELECTED TIER scores the evidence (Spark/Flare/Inferno)
-                       store: cache.db document (kind "blazequery") + topic row with TTL
+                       store: cache.db document (kind "argusquery") + topic row with TTL
                        └► onLate: the finished pack joins the NEXT model steps of the same turn;
                           later turns reuse the topic; cache_search / cache_read reach the full text
 ```
@@ -34,7 +34,7 @@ Pure rules, microseconds, no keyword trigger for *answering* from the web (0.50 
 | Need | When | What happens |
 |---|---|---|
 | NONE | small talk, `/commands`, weather (get_weather has it), phone actions ("set an alarm", "open WhatsApp"), writing jobs ("write a poem") | nothing fetched, nothing injected |
-| LOCAL | about Blaze, its / commands, this conversation or the user's own data (`SearchRoute.isLocal`) | the best BM25 hits in this chat's cached documents, ≤ 200 tokens; never the web |
+| LOCAL | about Argus, its / commands, this conversation or the user's own data (`SearchRoute.isLocal`) | the best BM25 hits in this chat's cached documents, ≤ 200 tokens; never the web |
 | CODE | an error message / stack trace, a code fence, a CLI tool with flags, APIs, libraries, versions, Android/Linux commands | priority trigger; registries + official docs preferred; command verification |
 | EXTERNAL | a question about the world (facts, how-to, news, prices, releases) | evidence pack |
 
@@ -55,7 +55,7 @@ Private chats are skipped entirely (nothing fetched, nothing stored). Background
   releases (`pip install x`, `npm i x`, `cargo add x`, `group:artifact`, `github.com/o/r` in the message). Parsed with
   regexes so a body cut by the fetch limit still yields its version.
 - Optional gateway proxy (setting `bq_gateway`, **default off**): `GET <gateway>/v1/query/search?q=` — written on gateway
-  branch `feat/blazequery` (0.8.60), **not deployed**. Any failure falls back to on-phone search.
+  branch `feat/argusquery` (0.8.60), **not deployed**. Any failure falls back to on-phone search.
 
 Limits: 3 sub-queries, 4 s per search, 3 pages per message, 6 s per page, registry bodies ≤ 2 MB.
 
@@ -93,7 +93,7 @@ is its freshness date. The cache document keeps up to 8 passages per page with s
    heuristic; an item the model rates irrelevant (< 3/10) is dropped. Hot path never waits for a model.
 
 ## 7. Cache tier storage (TTL, provenance, dedupe)
-- `cache.db` (the 0.49 tiered-memory cache, not blaze.db): one document per topic, kind `blazequery`, in the chat that
+- `cache.db` (the 0.49 tiered-memory cache, not blaze.db): one document per topic, kind `argusquery`, in the chat that
   asked (so `cache_search doc=all` finds it), plus a `bq` row: topic key, doc id, created, **expires**, the judged
   evidence as JSON (text, url, title, date, origin, code, intent, score, authority, judged, conflict), hit count.
 - TTL: news 1 h, versions 3 h, everything else 6 h. Expired rows and their documents are purged (`bqExpire`, on ~1 in 5
@@ -117,7 +117,7 @@ The pack sits in the per-turn tail of the system prompt (after the cached-docume
 the stable prompt prefix stays cacheable.
 
 ## 9. Verification for code and commands (`Verify`)
-Every `run_shell` result gets one line when this turn has evidence: `[BlazeQuery] verified against ffmpeg.org (-ss -t)`,
+Every `run_shell` result gets one line when this turn has evidence: `[ArgusQuery] verified against ffmpeg.org (-ss -t)`,
 `partly verified …; unverified: --turbo`, or `unverified: the fetched docs don't cover apt-get -y`. The program must be
 named in an evidence item and each flag must appear in an item about that program. It never blocks or changes a command
 — CommandPolicy and the confirm card still decide what runs. The pack's header tells the model to call commands / flags /
@@ -135,22 +135,22 @@ queries … → judge with the selected tier → cited brief`.
 
 ## 11. Speed and stability
 - Starts in parallel with prompt assembly; the reply waits at most `HOT_MS` (1.2 s) from the send, counting the assembly
-  that already happened, plus a 150 ms safety margin. A miss is named in the speed line ("late: blazequery") and logged
-  (`BlazeQuery` in logcat with status and ms).
+  that already happened, plus a 150 ms safety margin. A miss is named in the speed line ("late: argusquery") and logged
+  (`ArgusQuery` in logcat with status and ms).
 - Every network / disk call is on `Dispatchers.IO`; the background pass runs in `QueryRuntime.scope` (SupervisorJob, IO),
   which outlives the turn, so cancelling a turn never cancels the fetch that will serve the next one.
 - No main-thread I/O; nothing here runs on the main thread.
 
 ## 12. Settings, offline, telemetry
-- Settings › Personality › "BlazeQuery: fresh facts for every reply" (`blazequery`, **on** by default). Off = 0.50 behaviour.
+- Settings › Personality › "ArgusQuery: fresh facts for every reply" (`argusquery`, **on** by default). Off = 0.50 behaviour.
   `bq_gateway` (off) = try the gateway proxy first.
 - Offline: a live cached topic is still injected; otherwise nothing (status OFFLINE); research says it needs the internet.
-- Telemetry: `BlazeQuery.Stats` counters on the phone only (skipped, local, reused, injected, late, empty, offline, pages,
+- Telemetry: `ArgusQuery.Stats` counters on the phone only (skipped, local, reused, injected, late, empty, offline, pages,
   blocked_sources, judged, research_runs, errors). Never uploaded.
 
 ## 13. Tests
-`BlazeQueryPureTest.kt` (SourcePolicyTest, NeedDetectTest, QueryPlannerTest, RegistriesTest, ExtractTest, JudgeTest,
-EvidencePackTest, VerifyTest), `BlazeQueryEngineTest.kt` (hot path under a slow network returns within budget and the
+`ArgusQueryPureTest.kt` (SourcePolicyTest, NeedDetectTest, QueryPlannerTest, RegistriesTest, ExtractTest, JudgeTest,
+EvidencePackTest, VerifyTest), `ArgusQueryEngineTest.kt` (hot path under a slow network returns within budget and the
 background finishes on its own; fast path injects a judged pack without Wikipedia; topic reuse without a new search; TTL
 expiry deletes row + document; dedupe keeps one document; LOCAL / small talk / private never touch the network; offline
 degradation; the background judge uses the selected tier; ResearchTest: round bounds, early stop, no-model brief).

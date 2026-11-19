@@ -8,7 +8,7 @@ Every push costs a 15–25 minute CI round, so the cheapest build is the one you
 
 | What | Where |
 |---|---|
-| Source of truth | GitLab `blazeinchue/BlazeMobile`, branch `feat/argus-hark-design` (0.52.3; `feat/argus-3d-home` was 0.52.2) |
+| Source of truth | GitLab `blazeinchue/ArgusMobile`, branch `feat/argus-hark-design` (0.52.3; `feat/argus-3d-home` was 0.52.2) |
 | CI | GitHub Actions on the mirror `roxaninchue/ARGUS-mobile` (GitLab mirrors every branch within minutes) |
 | GitLab CI | Not used (credits exhausted). `.gitlab-ci.yml` is left alone. |
 
@@ -47,7 +47,7 @@ The other workflows also pass `-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspa
 | `apk` | Build APK (`build.yml`) | `./gradlew testReleaseUnitTest :storeapi:test assembleRelease`, then screenshots with `BLAZE_SHOTS=1 ./gradlew testDebugUnitTest --tests '…ShotsTest*' --tests '…SpaceShotsTest'` |
 | `build`, `build-without-youtube` | Mobile build | `./gradlew :app:assembleRelease` (+ release unit tests); the no-YouTube APK must contain no `mediaapps/youtube` classes |
 | `unit-tests` | Mobile build | `./gradlew :app:testDebugUnitTest --continue` |
-| `shots` | Mobile build | `./gradlew :app:testDebugUnitTest --tests` ShotsTest, Shots375Test, StageShotsTest, MoviesShotsTest, MediaRevampShotsTest, SecretCardsShotsTest, HomeRedesignShotsTest, ComposerShotsTest, Blaze050ShotsTest, SpaceShotsTest |
+| `shots` | Mobile build | `./gradlew :app:testDebugUnitTest --tests` ShotsTest, Shots375Test, StageShotsTest, MoviesShotsTest, MediaRevampShotsTest, SecretCardsShotsTest, HomeRedesignShotsTest, ComposerShotsTest, Argus050ShotsTest, SpaceShotsTest |
 | `app-template` | Mobile build | builds the android-app-builder skill template |
 | `smoke` | Low-RAM smoke gate | `assembleRelease assembleDebug assembleDebugAndroidTest`, then API 31 emulator, 1.5 GB RAM, 192 MB heap |
 | `focus` | Home focus check | `assembleDebug assembleDebugAndroidTest`, `SpaceHomeCheck` on the low-RAM emulator: the ARGUS ground, top bar, Life and Projects since the ARGUS-only redo (0.52.2: ArgusHomeCheck) |
@@ -74,14 +74,14 @@ the rest are usually cascades (one bad paren produced "Unresolved reference 'ass
 | before d12934f8 | `compileReleaseKotlin` OOM | Gradle daemon + Kotlin daemon both on a 7 GB runner | Keep the memory settings above |
 | before 4ad444cc | Release unit tests couldn't start Compose tests | `ui-test-manifest` missing on the release test classpath | Keep `ui-test-manifest` on the test classpath; Compose-only tests (`*ShotsTest*`, e.g. `SpaceShotsTest`, `ShotsTest`) are skipped in Release |
 | 5ac5fc5d | `SpaceWiringTest.theVersionIs0530` | Version bumped in app/build.gradle.kts without the test | Every version bump also updates `versionCode`/`versionName` in `SpaceWiringTest.theVersionIs0530`, same commit |
-| 4ad444cc | 35 unit-test failures | Blaze → Argus rename: tests expecting old strings/commands | Commands accept both `Argus` and `Blaze`; when renaming, grep `app/src/test` and `app/src/androidTest` for the old string in the same commit |
+| 4ad444cc | 35 unit-test failures | Argus → Argus rename: tests expecting old strings/commands | Commands accept both `Argus` and `Argus`; when renaming, grep `app/src/test` and `app/src/androidTest` for the old string in the same commit |
 | 4ad444cc | Skill hash / store catalog tests | `assets/skills/**` edited without resyncing hashes and `store/catalog.json` | Any change under `assets/skills/` → regenerate the hashes and catalog in the same commit |
 | 93b65e51 | `compileDebugKotlin`: `ParsedChat` unresolved | A sweeping edit to `ChatJson.kt` deleted a class that was still used | Before deleting a symbol, `git grep -n '\bName\b'` across `app/src` (main, test, androidTest) |
 | f2041477 | `compile*UnitTestKotlin`: `AuthReturnTest.kt:40` | A trailing `// comment)` swallowed the call's closing `)` | Never end a line with a `)` inside a comment; run the paren check below |
-| 2c7ef81d | `Halo0459Test.memoryGateStopsSmallTalk…` ("hi Argus") | `BrandName.NAME` became "Argus" but `MemoryGate`'s small-talk regexes only knew `blaze`/`halo` | Regexes and word lists that match the assistant's name must include `argus` (grep `blaze\|` in `app/src/main`) |
+| 2c7ef81d | `Halo0459Test.memoryGateStopsSmallTalk…` ("hi Argus") | `BrandName.NAME` became "Argus" but `MemoryGate`'s small-talk regexes only knew `argus`/`halo` | Regexes and word lists that match the assistant's name must include `argus` (grep `argus\|` in `app/src/main`) |
 | 2c7ef81d | `PhonePerfTest.perfAfterIsFasterAndAlwaysVerified` (Release) | Wall-clock p50 bar too tight for the shared runner (7.7 ms vs 7.0 ms) | Timing asserts in unit tests need headroom for noisy runners; prefer ratios with slack |
 | 4ad444cc | `ArgusSpotlightCheck` gesture didn't take | Emulator under load drops a swipe | The check retries gestures; don't make on-device checks depend on one gesture |
-| 10d5bd15 | Release cold start 706 ms app-attributable (373 ms the round before) | Slow runner (TotalTime 3633 vs 2230 ms) | Watch it; if it repeats, profile `BlazeApp.onCreate` and the first composition of the release build |
+| 10d5bd15 | Release cold start 706 ms app-attributable (373 ms the round before) | Slow runner (TotalTime 3633 vs 2230 ms) | Watch it; if it repeats, profile `ArgusApp.onCreate` and the first composition of the release build |
 | 2c7ef81d | `LowRamSmokeTest.f_argusHome` / `z_noStallAnywhere`: main stalled 903 ms in "argus home (auto)" | First HWUI frame of the test process: SwiftShader compiled Skia's programs on the RenderThread (878 ms GL, Davey 1191 ms) and the first window draw held main until it completed; main's own work was ~115 ms. Not ART verification (that sampled stack was from cold start) | The in-process gate warms the renderer with the ARGUS Home itself before its monitor starts (same exclusion run-smoke.sh makes for cold start). A generic warm-up (10d5bd15) was not enough: 706 ms, the Home frame still spent 644 ms in GL. Read the Davey line's `IssueDrawCommandsStart`→`SwapBuffers` before blaming main-thread code |
 | b5f84b74 | shots: `ComposerShotsTest.spotlightModels` timed out | 0.52.3 removed the model picker rows; the shots-only test still waited for "ARGUS Panoptes" (only `mobile-build.yml`'s shots job runs `ComposerShotsTest`, with `BLAZE_SHOTS=1`, so unit-tests stayed green) | When removing UI, grep `app/src/test` for its strings including `*ShotsTest*` files, not just the plain unit tests |
 | 21e7f293 | shots: `SpaceShotsTest.profileLight` "component is not displayed" | `SpaceProfileScreen` draws the line it is given; the caller (`SettingsSheet`) passes `SpaceProfile.subtitle(...)`. The test passed the raw e-mail signed-out, then asserted the "Not signed in" subtitle | Tests should call a screen the way its real caller does; check the call site before asserting derived text |
@@ -95,7 +95,7 @@ The deep-link scheme stays `blaze://` (any case) after the rename; don't rename 
 
 1. **One commit per round**, small, with every file it needs.
 2. **Symbols**: for every class/function you removed or renamed, `git grep` finds no remaining use.
-3. **Renames**: `git grep -in 'blaze'` in the files you touched; test strings updated in the same commit.
+3. **Renames**: `git grep -in 'argus'` in the files you touched; test strings updated in the same commit.
 4. **Parens and braces**: for changed `.kt` lines, strip strings and comments and check `(`/`)` and `{`/`}` balance
    (a one-file Python check is enough; tree-sitter-kotlin works too but has false positives on ~17 % of files,
    so compare before/after rather than trusting a single run).
@@ -157,5 +157,5 @@ cold-start check in run-smoke.sh.
 - **Renames:** ArgusHome* / ArgusSpotlight* tests and checks were replaced, not kept; `run-smoke.sh` still expects
   `OK (7 tests)` (`f_argusHome` became `f_spaceHome`), and the warm-up draws the space shell (same SwiftShader reason as above).
   2026-11-15: `f_spaceHome` became `f_argusShell` (the ARGUS shell; the 0.52.3 Home is retired), still 7 tests; the warm-up draws the ARGUS shell.
-- **Setup downloads on CI:** SetupRunner only starts from the onboarding's setup step or (BlazeApp, 30 s after the first
+- **Setup downloads on CI:** SetupRunner only starts from the onboarding's setup step or (ArgusApp, 30 s after the first
   frame) for people already onboarded. A fresh emulator install is neither, so no smoke or device check downloads anything.

@@ -23,7 +23,7 @@ fetch $C/org/robolectric/annotations/4.13/annotations-4.13 jar robo-annotations
 fetch $C/org/robolectric/sandbox/4.13/sandbox-4.13 jar robo-sandbox
 fetch $C/org/robolectric/pluginapi/4.13/pluginapi-4.13 jar robo-pluginapi
 XJ=$(ls $J2/*.jar | tr '\n' ':')
-cd $R/app/src; M=main/java/com/blaze/assistant; T=test/java/com/blaze/assistant
+cd $R/app/src; M=main/java/com/argus/assistant; T=test/java/com/argus/assistant
 MAIN="$(sed "s|/workspace/work/argus-mobile|$R|g" $L/base.txt) $L/stubs/ui/*.kt $L/stubs/shots/*.kt $(cat $L/ui.txt) $M/ui/argus/*.kt $M/ui/argus/kit/*.kt $M/ui/argus/icons/*.kt $M/ui/argus/settings/*.kt $M/ui/team/TeamMode.kt $M/ui/team/BotEditor.kt $M/ui/team/PlanSheet.kt $M/ui/team/DeskMode.kt $M/ui/team/JobsPage.kt $M/ui/team/ChatDrawer.kt $M/ui/team/LifeMode.kt $M/ui/team/thread/ThreadKit.kt"
 SHOTS="$T/ui/shots/P1Previews.kt $T/ui/shots/P1ShotsTest.kt $T/ui/team/TeamShotsTest.kt $T/ui/team/LifeShotsTest.kt $T/ui/team/thread/ThreadShotsTest.kt $T/ui/argus/kit/KitShotsTest.kt $T/ui/argus/OrbShotsTest.kt"
 rm -rf $OUT; kotlinc -nowarn -jvm-target 17 -Xplugin=$KT/kotlin-compose-compiler-plugin-2.0.21.jar -cp $TCP:$CCP:$XJ$AJ $MAIN $SHOTS -d $OUT 2>&1 | grep -E "error:" | sed 's|^.*/assistant/||' | sort -u | head -${N:-40}

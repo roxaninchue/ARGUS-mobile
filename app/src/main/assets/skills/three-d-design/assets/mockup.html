@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Blaze 3D mockup starter (three-d-design skill).
+  Argus 3D mockup starter (three-d-design skill).
   Copy this file, rename it (design/<thing>-3d.html), set the title, then describe the object
   in the blaze-parts JSON below. The scene is built from that JSON, so the Design tab can pick a
   part, show its numbers, and write colour, size, position and rotation back to it exactly.
@@ -116,7 +116,7 @@ function material(p) {
 
 // ---- 5. Geometry per shape ---------------------------------------------------------------
 // Dimensions are in mockup units; the part's root is scaled by U, so geometry stays in units.
-// Shape names the model sometimes uses for the presets (Blaze also normalises them before serving).
+// Shape names the model sometimes uses for the presets (Argus also normalises them before serving).
 const ALIAS = { cube: "box", cuboid: "box", rect: "box", rectangle: "box", block: "box", wedge: "box", fin: "box", panel: "box",
   cylinder: "cylinder", tube: "cylinder", pipe: "cylinder", disc: "cylinder", disk: "cylinder", frustum: "cylinder", rod: "cylinder",
   cone: "cone", pyramid: "cone", nose: "cone", nosecone: "cone", sphere: "sphere", ball: "sphere", ellipsoid: "sphere", dome: "sphere",
@@ -231,7 +231,7 @@ function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.asp
 addEventListener("resize", resize); resize();
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 
-// ---- 12. Hand the scene to Blaze's Design tab ---------------------------------------------
+// ---- 12. Hand the scene to Argus's Design tab ---------------------------------------------
 // Design raycasts clicks with these to pick parts and reads each part's numbers from spec.
 window.__blazeScene = { THREE, scene, camera, renderer, controls, parts, spec };
 </script>

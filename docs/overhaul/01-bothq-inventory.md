@@ -2,7 +2,7 @@
 
 > Slice 1 of the ARGUS overhaul (see `overhaul.md`). Owner: Specialist 1. Status: **complete, first full pass** (2026-11-11).
 > Source read in full: `github.com/nickvasilescu/bot-hq` @HEAD (MIT; 193 files, ~15.9k lines excluding assets): README, docs/, server/src/**, server/box/**, web/src/**, scripts/, tests/.
-> Cross-checked against `argus-mobile@main` (Kotlin/Compose, `app/src/main/java/com/blaze/assistant/…`, plus `gateway/`) and `a-team@main` (`app/www/*.js`, `app/src/ai/argus/agents/*.java`, `api/`).
+> Cross-checked against `argus-mobile@main` (Kotlin/Compose, `app/src/main/java/com/argus/assistant/…`, plus `gateway/`) and `a-team@main` (`app/www/*.js`, `app/src/ai/argus/agents/*.java`, `api/`).
 
 ## How to read this
 
@@ -228,7 +228,7 @@ Full app tool list (each is its own feature):
 **BH-58 · Group chats (rooms)** — P0
 - What: a room is a bot row `kind='room'` with members (≥2 bots); user message dispatches to @mentioned members, else all (max 3 responders), each gets "[Group chat X] members… recent 12 messages… reply with post_to_group or stay_silent"; members add/remove (UI + event rows "X joined · Y left"); created from UI (New group chat modal) or by a bot (`create_group`).
 - Where: `server/src/agent/rooms.ts`, `routes-rooms.ts`, `routes.ts messages`, `web/src/components/modals/CreateGroupModal.tsx`, `MembersCard.tsx`, `DetailsPanel.tsx`.
-- PORT: **AM** Duo/MeetingRoom (Blaze+Halo, merged away in 0.51) has the parallel-answer + "react once" mechanics in `Duo.kt` (pure, tested) and a Meeting room UI. **AT** none. Land **N**: Group threads with @mentions, max-responders, "nothing to add → silent"; reuse Duo's parallel run + single reaction; MeetingRoom UI as "watch the bots discuss".
+- PORT: **AM** Duo/MeetingRoom (Argus+Halo, merged away in 0.51) has the parallel-answer + "react once" mechanics in `Duo.kt` (pure, tested) and a Meeting room UI. **AT** none. Land **N**: Group threads with @mentions, max-responders, "nothing to add → silent"; reuse Duo's parallel run + single reaction; MeetingRoom UI as "watch the bots discuss".
 
 **BH-59 · Subagents (hidden child bots, ≤4 per parent)** — P1 — **unwired** in Bot HQ (`agent/subagents.ts`). PORT: **AM** BgAgents + Dispatch `delegate` + Orchestrator blueprints already do this better → **N**.
 

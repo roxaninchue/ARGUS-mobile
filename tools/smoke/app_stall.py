@@ -3,7 +3,7 @@
 
 usage: app_stall.py <logcat -v threadtime file> <pid>   -> prints JSON {raw_ms, app_ms, frames:[...], excluded_ms}
 
-Approved gate change (owner, 2026-10-27): the emulator draws Blaze's very first frame with swiftshader (software GL), which
+Approved gate change (owner, 2026-10-27): the emulator draws Argus's very first frame with swiftshader (software GL), which
 takes 4-6 s on the RenderThread once per process (frame 2 then takes 1-3 ms). While it runs the main thread is parked in
 HWUI waiting for the RenderThread, so Choreographer reports a 5 s "Skipped N frames" that no app code caused. This script
 keeps every other millisecond:

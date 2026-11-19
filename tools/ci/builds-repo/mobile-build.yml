@@ -39,7 +39,7 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;34.0.0" > /dev/null
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
-      - name: Go libraries (browser VPN, BlazeRouter)
+      - name: Go libraries (browser VPN, ArgusRouter)
         run: |
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           (cd wgproxy && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/arm64-v8a/libwgproxy.so . \
@@ -137,7 +137,7 @@ jobs:
           BLAZE_SHOTS: "1"
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ShotsTest' --tests 'com.blaze.assistant.ui.Shots375Test' \
+          ./gradlew :app:testDebugUnitTest --tests 'com.argus.assistant.ui.ShotsTest' --tests 'com.argus.assistant.ui.Shots375Test' \
             --continue --console=plain "-Dorg.gradle.jvmargs=-Xmx5g -Xss8m -XX:MaxMetaspaceSize=1g" \
             -Pkotlin.compiler.execution.strategy=in-process -Pkotlin.jvm.target.validation.mode=warning 2>&1 | tee shots.log
       - name: shots.zip

@@ -41,7 +41,7 @@ scene, Argus Blue #0056FF / Electric #1286FF, white + Steel #9AA0B3 text.
   ArgusHomeLogicTest + SpotlightGroupsTest + ArgusLookTest 49/49 OK, ArgusHomeWiringTest 8/8 OK. Compose / GL /
   androidTest files only got a kotlinc syntax pass (no syntax errors; unresolved symbols expected without the classpath).
 - Push through the GitLab commits API (git over HTTPS doesn't work). 2026-11-06: `work/push_gl.py "<msg>" [paths]` in the
-  BlazeMobile ARGUS 3D Home project workspace (local copy `work/src`, a git repo whose HEAD tracks the branch head,
+  ArgusMobile ARGUS 3D Home project workspace (local copy `work/src`, a git repo whose HEAD tracks the branch head,
   checked against `.remote_head` before every push).
 
 ## Done (pushed)
@@ -56,7 +56,7 @@ scene, Argus Blue #0056FF / Electric #1286FF, white + Steel #9AA0B3 text.
 - Living Themes removed: deleted `ui/LivingThemes.kt, LivingLogic.kt, LivingBackground.kt, LivingThemesDraw.kt,
   ThemePicker.kt, ThemeSceneImages.kt`, `assets/theme-scenes/` (13 webp, ~880 KB). New `ui/ArgusLook.kt` keeps what
   stays (LookLogic colour maths / light-dark-auto / accents, Look accent, BubbleTones single ARGUS tone, LightDark).
-  Rewired: Theme.kt (`blazePalette(dark, lookAccent)`), AppTheme.kt (ThemeSwitch = light/dark switch, no themes),
+  Rewired: Theme.kt (`argusPalette(dark, lookAccent)`), AppTheme.kt (ThemeSwitch = light/dark switch, no themes),
   TermPalette (`of(dark)`), terminal theme menu → light/dark, DuoGlow fixed colours, Contrast (SceneVeil gone),
   SimplePages (Look & feel = theme mode, accent, tilt parallax, Stage; Navigation choice removed), Music / Video /
   Gallery / Settings / Search / Projects / Design grounds, MediaUi, MoviesUi, HomeBoardUi.
@@ -98,9 +98,9 @@ plus 13 Release-only, shots 1, intro 1. Fixed (one commit per CI round, see the 
 - **Argus rename fallout (code, both names kept):** every user-input regex / prefix strip that knew only "blaze" also takes
   "argus" ("Hey Argus …", "@argus", "Argus Music", "argus settings", "[Argus] " speaker tags, "passing that to Argus"…):
   InAppRoute, AppMatch (from fix/argus-release-build-memory), CameraIntent, SmallTalk, SearchRoute, SelfControl, QuickRules,
-  LogChunker, Duo (+ @argus = @blaze), SimpleHome, Ack, BlazeDocs, ToolTruth, TaskMemory, PhonePolicy, PhoneState, … and the
-  stop-word lists. AlarmRows finds "(Argus A2)" and "(Blaze A2)"; ModelHide collapses "Argus · Argus"; Designs knows
-  the "Blaze 3D mockup starter" template; CoverArt drops "by Argus"; ChatJson reads a role "ARGUS" as BLAZE; CliAuth
+  LogChunker, Duo (+ @argus = @blaze), SimpleHome, Ack, ArgusDocs, ToolTruth, TaskMemory, PhonePolicy, PhoneState, … and the
+  stop-word lists. AlarmRows finds "(Argus A2)" and "(Argus A2)"; ModelHide collapses "Argus · Argus"; Designs knows
+  the "Argus 3D mockup starter" template; CoverArt drops "by Argus"; ChatJson reads a role "ARGUS" as BLAZE; CliAuth
   session name "Argus CLI (this phone)". applicationId untouched (MR !26).
 - **Data:** skills/index.json sha256 regenerated from the shipped SKILL.md files (44 changed by the rename);
   store/catalog.json = the bundled copy (Argus Store).

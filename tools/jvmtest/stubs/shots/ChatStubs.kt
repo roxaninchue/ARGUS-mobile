@@ -1,5 +1,5 @@
 // P1-QA-01 signature stubs (shots.sh only, never the jvmtest run) so ui/team/ChatDrawer.kt and the shots compile locally.
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 import kotlinx.coroutines.flow.MutableStateFlow
 enum class Role { USER, BLAZE, SYSTEM }
 enum class Mood { IDLE, THINKING }

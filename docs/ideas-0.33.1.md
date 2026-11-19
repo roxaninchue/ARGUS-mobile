@@ -1,6 +1,6 @@
 # The 33 ideas: verdicts (v0.33.1)
 
-Each idea was checked against the v0.33.0 code. **Built** = in v0.33.1. **Already there** = Blaze does this (or most of it) today. **Not now / No** = why, and what would change the answer.
+Each idea was checked against the v0.33.0 code. **Built** = in v0.33.1. **Already there** = Argus does this (or most of it) today. **Not now / No** = why, and what would change the answer.
 
 | # | Idea | Verdict | Why / where |
 |---|------|---------|-------------|
@@ -8,7 +8,7 @@ Each idea was checked against the v0.33.0 code. **Built** = in v0.33.1. **Alread
 | 2 | Speculative tools | **Built** (safe slice) | After web_search on Wi-Fi, the top 2 pages are prefetched into the tool cache. Speculating screen reads or memory is pointless (screens change, memory lookups are ms) and on metered data it would spend the user's bundle. |
 | 3 | Draft-and-verify cascade | No | Two models per reply makes the common case slower and dearer; the gateway already picks a fast model per task. Worth it only if a measured quality gap appears on a task. |
 | 4 | Optimistic answers | No | Offline Brain (0.5B) answers would often be wrong, then visibly swap. Flicker on a wrong answer costs more trust than the latency saves. |
-| 5 | Screen diffs | Already there | readScreen sends "Same screen in X. Changed or new: …" (BlazeAccessibilityService), only the newest screen stays in history (FastActions.pruneScreens). |
+| 5 | Screen diffs | Already there | readScreen sends "Same screen in X. Changed or new: …" (ArgusAccessibilityService), only the newest screen stays in history (FastActions.pruneScreens). |
 | 6 | No streaming on tool turns | Already there (in effect) | Text written beside tool calls becomes a status step, call-like text never shows; streaming itself costs nothing measurable. |
 | 7 | Prompt JIT | Mostly there | Skills (≤3 per turn), specialists, project brief (≤600 tokens), docs and tools are already retrieved per turn; the static part stays in the provider's cached prefix, which is the cheap part. Deleting the kernel rules would lose safety and honesty behaviour. The new token ledger will show if the system prompt is really the top cost. |
 | 8 | Policy engine | Already there | ConfirmGate, ActionProof, ClaimGuard, PrivateChat, Modes.block are deterministic code gates. Prompt rules stay too: a gate stops a bad action, the rule stops the model trying. |
@@ -20,7 +20,7 @@ Each idea was checked against the v0.33.0 code. **Built** = in v0.33.1. **Alread
 | 14 | Virtual-memory context | Already there | AutoCompact folds old turns into a summary, search_chat / read_turn fault them back in. |
 | 15 | Trajectory distillation | Already there | TapLoop.Plans keeps the steps of phone tasks that ended well and replays them as one run_plan; IntentCache maps exact commands to tools with no model. |
 | 16 | Learned tool router | **Built** | LearnedRouter adds groups on top of the regex lists. |
-| 17 | Personal reward model | Not now | Needs several candidate replies per turn to rank; Blaze makes one. |
+| 17 | Personal reward model | Not now | Needs several candidate replies per turn to rank; Argus makes one. |
 | 18 | Self-editing playbooks | No | Learning already writes skills from what worked; letting it rewrite its own core prompts is a prompt-injection path. |
 | 19 | Skill evolution | Not now | Needs a golden set with automatic scoring first. |
 | 20 | On-device eval harness | Not now | The JVM tests in CI are the harness; replaying real tasks on the phone at night spends battery and data and touches real apps. |

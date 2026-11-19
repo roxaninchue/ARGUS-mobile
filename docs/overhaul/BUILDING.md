@@ -16,11 +16,11 @@ Owner rule (Finn, 13 Nov 2026): every agent follows this before pushing a commit
 | Source-scan tests: tests that grep main sources for an exact needle string (SpaceWiringTest, ToolCapTest, BrainRaceTest, ToolTurnRaceTest, ChatOverlayLogicTest, RequestBudgetTest, ReliabilityP2Test, SecurityP4Test, WaveB4NoLinuxTest, ThemeEverywhereTest…) | SpaceWiringTest ×4 (run #44) | Before you edit a line in any main file, `grep -rn "<distinctive text from that line>" app/src/test` and keep every needle true. Prefer adding a new line to rewriting a needled one |
 | Banned owner-name strings | OwnerName19Test (run #44) | Never write the names that test bans, not even in examples, test data or comments. Use neutral names (`nova@hitch.io`, "Rhea") |
 | Version pins in tests | SpaceWiringTest version pin | A version bump updates `app/build.gradle.kts`, CHANGELOG, STATUS, about.md **and** any test that pins the version (`grep -rn "versionCode\|0\.5[0-9]\.[0-9]" app/src/test`) |
-| Provider or maker names in any string literal under ui/ or notify/ (map keys and generated data count) | HideModels19Test.uiStringsNameNoProvider (run 43501708535, BrandPaths keys) | Keep generated data with maker ids outside ui/ (now com.blaze.assistant.brand); scan with the UiStrings logic before pushing |
+| Provider or maker names in any string literal under ui/ or notify/ (map keys and generated data count) | HideModels19Test.uiStringsNameNoProvider (run 43501708535, BrandPaths keys) | Keep generated data with maker ids outside ui/ (now com.argus.assistant.brand); scan with the UiStrings logic before pushing |
 | Agent.kt growth cap | LocalEngineTest (≤ 20 added lines) | `git diff --stat` on Agent.kt; seam use is recorded in overhaul.md (9/20 as of 13 Nov) |
 | do-not-port | tools/check-do-not-port.mjs | `node tools/check-do-not-port.mjs` must show 0 hits |
 | A-team evals | evals/ | `node --test evals/test/*.test.mjs` must pass 34/34 |
-| Empty catch in a "cleaned" file (Agent.kt, BlazeApp.kt, Mind.kt, CloudSync.kt, BrowserEngine.kt, Bridge.kt, Dashboard.kt, DashHttp.kt) | SecurityP4Test.cleanedFilesHaveNoEmptyCatch (run 43681828555, a Log line wrapped in `catch (_: Throwable) { }`) | `grep -nE 'catch \(_: (Throwable\|Exception)\) \{ ?\}'` on those files must be empty; put a comment inside, e.g. `{ /* android.util.Log is absent in JVM unit tests */ }` |
+| Empty catch in a "cleaned" file (Agent.kt, ArgusApp.kt, Mind.kt, CloudSync.kt, BrowserEngine.kt, Bridge.kt, Dashboard.kt, DashHttp.kt) | SecurityP4Test.cleanedFilesHaveNoEmptyCatch (run 43681828555, a Log line wrapped in `catch (_: Throwable) { }`) | `grep -nE 'catch \(_: (Throwable\|Exception)\) \{ ?\}'` on those files must be empty; put a comment inside, e.g. `{ /* android.util.Log is absent in JVM unit tests */ }` |
 | Low-RAM smoke contract | tools/smoke | Don't touch LowRamSmokeTest (exactly 7 tests, STALL_MS 700), and never add `@Ignore` or `assume` |
 
 ## 2. Run the tests the way CI will
@@ -39,7 +39,7 @@ Owner rule (Finn, 13 Nov 2026): every agent follows this before pushing a commit
 1. Make one commit without `[skip ci]`. Its title says what is built.
 2. Find the run with `curl -s "https://api.github.com/repos/roxaninchue/ARGUS-mobile/actions/runs?per_page=3"`, match `head_sha`, and poll its `status` every 30 s. It takes about 20 to 25 minutes.
 3. Job logs need a GitHub token (403 without one). Job names and conclusions are public: `/actions/runs/<id>/jobs`. On red, reproduce the failure locally with steps 1 and 2 above instead of guessing.
-4. Artifacts: `blaze-<sha>` (APK) and `shots-<sha>`. Download them through `https://nightly.link/roxaninchue/ARGUS-mobile/actions/artifacts/<artifact-id>.zip`.
+4. Artifacts: `argus-<sha>` (APK) and `shots-<sha>`. Download them through `https://nightly.link/roxaninchue/ARGUS-mobile/actions/artifacts/<artifact-id>.zip`.
 5. The CI APK is unsigned. For install testing only, sign it with apksig (from maven.google.com) and a throwaway debug keystore, using v2 and v3 signatures, and check that `ApkVerifier` reports verified=true. Never use or commit the release keystore.
 
 ## 4. After a build

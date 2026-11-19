@@ -1,5 +1,5 @@
 "use strict";
-// Blaze Official example provider: lists items from archive.org's public search API.
+// Argus Official example provider: lists items from archive.org's public search API.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSearchPosts = exports.getPosts = void 0;
 var BASE = "(collection:feature_films OR (collection:moviesandfilms AND licenseurl:*publicdomain*)) AND mediatype:movies";

@@ -3,7 +3,7 @@
 You are picking up Phase 0 of the ARGUS overhaul. The planning is finished; no code has been written yet. Your job is to lay the foundation: tickets 1–9 below. Ticket 10 (the release) waits until the owner says "build".
 
 ## 1. What this project is
-Argus-mobile (Kotlin/Compose, package `com.blaze.assistant`, currently 0.52.3) absorbs every feature of:
+Argus-mobile (Kotlin/Compose, package `com.argus.assistant`, currently 0.52.3) absorbs every feature of:
 - **A-team** (GitLab `blazeinchue/a-team`, project 88676660, v2.18): Android WebView app + Cloudflare Worker `argus-agents-api`. **Its design language is the target look.**
 - **Bot HQ** (`github.com/nickvasilescu/bot-hq`, MIT): multi-agent "team" app. Mostly a design source; it needs a server with Chrome, so little code ports directly.
 
@@ -27,7 +27,7 @@ Read order: `overhaul.md` → `06-team-plan.md` §1–§6 → the slice doc for 
 1. Commit straight to `main`. **Every commit title ends with `[skip ci]`.**
 2. **No Gradle build, no CI, no release until the owner says "build".** Check code by hand and by running pure tests with standalone `kotlinc` where possible.
 3. Never change `applicationId`, signing, `keystore/`, or the rotate-key CI step.
-4. Never alter the shared `memories` schema (side tables only). Keep deployed wire names (`blaze-*`, `X-Blaze-*`).
+4. Never alter the shared `memories` schema (side tables only). Keep deployed wire names (`argus-*`, `X-Argus-*`).
 5. `Agent.kt` (~5.8k lines, already hit "Method too large") may grow by **≤ 20 lines total**, only for the TeamHooks seam.
 6. No `@Ignore`, no skipped tests, no threshold changes (700 ms stall gate, 7 low-RAM smoke tests, PhonePerfTest).
 7. Never copy Bot HQ / Grok artwork (not MIT). Use A-team orbs only. Ask for a LICENSE on a-team before copying its code (P0-IL-02).

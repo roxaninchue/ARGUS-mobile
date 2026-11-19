@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- HTTPS everywhere for Blaze's own calls, except plain HTTP to this phone (on-device Needle runner, OAuth loopback)
+<!-- HTTPS everywhere for Argus's own calls, except plain HTTP to this phone (on-device Needle runner, OAuth loopback)
      and to a self-hosted gateway/MCP server the user adds on their LAN or Tailscale (e.g. OmniRoute on their own PC):
      connect/UrlSafety refuses http:// to any other host before a request is made, and never sends keys in the clear.
      v0.45.0 (#32) review: cleartext stays permitted at the platform level on purpose. The in-app browser must still open

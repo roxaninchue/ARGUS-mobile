@@ -4,7 +4,7 @@
 > Source: `gitlab.com/blazeinchue/a-team` `main` @ `7c4b459a` (v2.18, versionCode 25), read from a local snapshot
 > (`README.md`, `HANDOFF*.md`, `docs/HANDOFF-v2.15.md`, every `app/www/*.js`, `app/www/app.css`, `index.html`,
 > `app/src/**`, `AndroidManifest.xml`, `api/`, `evals/`, `needle-ft/`). Unmerged branches compared against `main`
-> through the GitLab API (project 88676660). Port notes were checked against `argus-mobile` `app/src/main/java/com/blaze/assistant/**` (grep).
+> through the GitLab API (project 88676660). Port notes were checked against `argus-mobile` `app/src/main/java/com/argus/assistant/**` (grep).
 
 ## 0. Summary
 
@@ -35,7 +35,7 @@ built-in **Manager** leads the team, each bot works in a real **Ubuntu 24.04** u
 - **Servers: reuse unchanged.** `argus-agents-api` (team sync + MCP), `argus-connect` (`/v1/me/*` per-user connectors
   and skills), the gateway (`/v1/models/live`, `/v1/billing/*`, `/v1/skill-polish`), and the auth worker
   (`blaze-auth`). Argus-mobile already talks to blaze-auth and the gateway.
-- **Data migration:** A-team and Argus-mobile are different packages (`ai.argus.agents` vs `com.blaze.assistant`), so
+- **Data migration:** A-team and Argus-mobile are different packages (`ai.argus.agents` vs `com.argus.assistant`), so
   there is no shared storage. Move users through the API sync (`POST /v1/sync`, account doc `user:<id>`) for bots and
   jobs, and the existing JSON backup (Settings > Data > Copy backup) for the rest. Memory, profile, chats and
   routines are local-only in A-team today, so they need a one-off export path (add one to A-team, or accept the loss).
@@ -45,7 +45,7 @@ built-in **Manager** leads the team, each bot works in a real **Ubuntu 24.04** u
 ## How to read the entries
 
 Each feature: **What** it does · **Source** paths (relative to the a-team repo) · **Branch** · **Port**: is there an
-equivalent in Argus-mobile (paths relative to `app/src/main/java/com/blaze/assistant/`) and how to bring it into
+equivalent in Argus-mobile (paths relative to `app/src/main/java/com/argus/assistant/`) and how to bring it into
 Kotlin/Compose. "AM" = Argus-mobile.
 
 ---
@@ -56,7 +56,7 @@ Kotlin/Compose. "AM" = Argus-mobile.
 - **What:** one `Activity` + WebView serving `www/` from `https://app.argus.local`. The `Native` bridge exposes: `http`, `httpStream`/`httpAbort` (SSE batched about 30 ms into `__nativeStream`; dodges the gateway's missing CORS), `cloudHttp`, `browserSignIn`/`cancelSignIn` (PKCE loopback), `connectListen`/`cancelConnect`, `secretSet/Get`, `keySet/keyHas`, `workspaceStatus/Setup/Env`, `wsExec/wsStat/wsReadFile/wsPutFile/wsZip`, `saveToDownloads/shareFile/openFile/previewHtml`, `ptyOpen/Write/Resize/Close/List/Replay`, `notify/agentAvatar/notifyPrefs/notifyPreview/overlayAllowed/overlaySettings/haptic`, `cloudLease/cloudState/cloudSsh`, `routineSync/routineFired/timeZone`, `brCall` (browser), `clipboardSet/Get`, `openUrl`, `platform`, `setBars`, and (v2.19) `edgeSwipe`. Root is a FrameLayout (background browser at index 0, page on top). `singleTask` activity; notification taps carry `argus_agent`. Cached thread pool.
 - **Source:** `app/src/ai/argus/agents/MainActivity.java`, `app/AndroidManifest.xml`, `app/build.sh`.
 - **Branch:** main (+ `edgeSwipe` on v2.19).
-- **Port:** AM is native Compose (`MainActivity.kt`, `BlazeApp.kt`). Drop the bridge: each method maps to an AM service (HTTP: `connect/Http.kt`; secrets: `agent/Secrets.kt`/`SecretVault.kt`; PTY: `terminal/TermSessions.kt`; browser: `browser/BrowserEngine.kt`; notifications: `notify/Notifier.kt`). Keep the bridge **only** if a transitional "classic A-team" WebView screen is wanted for a release; not recommended.
+- **Port:** AM is native Compose (`MainActivity.kt`, `ArgusApp.kt`). Drop the bridge: each method maps to an AM service (HTTP: `connect/Http.kt`; secrets: `agent/Secrets.kt`/`SecretVault.kt`; PTY: `terminal/TermSessions.kt`; browser: `browser/BrowserEngine.kt`; notifications: `notify/Notifier.kt`). Keep the bridge **only** if a transitional "classic A-team" WebView screen is wanted for a release; not recommended.
 
 ### A2. Navigation model, back stack, reopen where you left off
 - **What:** `go(tab, sub, talk, back)` with tabs `home | agents (bot chat) | tasks (Jobs) | graph (Compose) | models (Settings)`; a NAV stack so Back returns where you came from (Chat > Settings > Back = Chat); the last page (Chat page, bot chat, list, Jobs, Compose; never Settings) restored on launch (`argus.last.v1`). Rendering is DOM-morphing (`morph()`/`patchHTML()`) so nothing jumps while typing.
@@ -326,7 +326,7 @@ Kotlin/Compose. "AM" = Argus-mobile.
 - **What:** full-screen dark terminal: tabs (one per tmux window, dead tabs struck through), extra-keys rows (Esc / - | ~ PgUp ↑ PgDn; Tab Ctrl Alt tmux-prefix Home ← ↓ → End), copy/paste, font zoom, sessions outlive the view and WebView reloads (replay buffer). Termux terminal-emulator 0.118.0 JNI (`libtermux.so`) for forkpty; xterm.js 6.0.0 + fit addon draw it.
 - **Source:** `www/terminal.js`, `www/vendor/xterm/`, `app/src/.../Pty.java`, `com/termux/terminal/ArgusJni.java`, `app/libs/termux-terminal-emulator-0.118.0.jar`.
 - **Branch:** main (v2.6).
-- **Port:** AM has a native terminal (`terminal/TermSessions.kt`, `Terminal.kt`, `BlazeTerminalActivity.kt`, `TerminalSheet.kt`, `ui/TermPalette.kt`) on the same Termux library. Use AM's; add "attach to bot's tmux window" tabs and A-team's extra-keys set.
+- **Port:** AM has a native terminal (`terminal/TermSessions.kt`, `Terminal.kt`, `ArgusTerminalActivity.kt`, `TerminalSheet.kt`, `ui/TermPalette.kt`) on the same Termux library. Use AM's; add "attach to bot's tmux window" tabs and A-team's extra-keys set.
 
 ### G3. Files: attach, save, preview, share, zip, working set
 - **What:** `attach` tool posts attachment cards in the bot's reply: images inline, HTML with **Preview** (full-screen Dialog WebView serving `https://preview.argus.local/<path>` from the rootfs, only `/root` and `/tmp`, no JS bridge), Open / Share (read-only `content://ai.argus.agents.files/<token>/<name>`) / Save (MediaStore Downloads/ARGUS); folders → Zip (200 MB cap). `save` tool copies to Downloads. Bots are told to attach deliverables automatically.
@@ -366,7 +366,7 @@ Kotlin/Compose. "AM" = Argus-mobile.
 - **What:** same account as ARGUS mobile/Desktop via the auth worker: Continue with Google / GitHub (browser PKCE, loopback redirect), email + password, two-step codes (app, emailed, recovery), forgot password, "Use without an account" (offline-first). Full-screen gate styled after ARGUS mobile's account screen.
 - **Source:** `www/account.js` (`ACC`), `MainActivity.browserSignIn`, `app.css` "sign-in".
 - **Branch:** main.
-- **Port:** AM has it: `connect/BlazeAccount.kt`, `Mfa.kt`, `AuthReturn.kt`, `ui/AccountPage.kt`. Use AM's; keep "use without an account".
+- **Port:** AM has it: `connect/ArgusAccount.kt`, `Mfa.kt`, `AuthReturn.kt`, `ui/AccountPage.kt`. Use AM's; keep "use without an account".
 
 ### H2. Connectors page (ARGUS Connect, per user)
 - **What:** full-screen plugin-list page: back button, title with a category menu, sections **Connected** / **Available**, rows with real brand logo tiles (46 px rounded, brand colour background), name and status, a trailing menu; search pill floating at the bottom; detail sheet: on/off per app and **per tool**, connect by pasting a key/fields or OAuth in the browser (loopback `http://127.0.0.1:<port>/connect`), Test, Disconnect. All calls to argus-connect `/v1/me/*` with the user's `bz_` token; keys stored encrypted server-side, never on the phone. 92 logo files (Simple Icons CC0 + official icons + category glyphs), generated by `app/scripts/gen-logos.mjs`.
@@ -544,7 +544,7 @@ Kotlin/Compose. "AM" = Argus-mobile.
 | 45 | Bots' browser | G5 | BrowserEngine (origin) | use AM |
 | 46 | Cloud computer + lease + guard | G6 | none | port |
 | 47 | Computer view | G7 | BrowserLivePreview | new card |
-| 48 | ARGUS sign-in | H1 | BlazeAccount | use AM |
+| 48 | ARGUS sign-in | H1 | ArgusAccount | use AM |
 | 49 | Connectors page + logos | H2 | Connectors.kt (different model) | argus-connect + Compose |
 | 50 | Connector tools for agents | H3 | none | port |
 | 51 | My skills + Polish + originals | H4 | SkillLibrary, SkillSync | add source |
@@ -560,7 +560,7 @@ Kotlin/Compose. "AM" = Argus-mobile.
 | 61 | Vault-style pings (avatar, glow, haptics, pop-up) | I4 | ScreenGlow, Overlay | port |
 | 62 | REST /v1 | J1 | — | reuse server |
 | 63 | MCP /mcp + OpenAPI | J2 | Mcp.kt (client) | reuse server |
-| 64 | Auth/tenancy | J3 | BlazeAccount token | reuse |
+| 64 | Auth/tenancy | J3 | ArgusAccount token | reuse |
 | 65 | Evals harness | K1 | Traces | keep external |
 | 66 | Playwright/Java tests | K2 | — | use as specs |
 | 67 | No-Gradle build | K3 | Gradle | obsolete |
@@ -649,7 +649,7 @@ light: `#ffffff` at 12 %/6 %, `#dfe3ec` at 95 %/32 %, `#e6e9f0` at 40 %/100 % ov
 Composer 29 (pill) · gate/primary full-width buttons 26 (52 tall) · sheets 26 top corners (v1 24) · cards, job cards, plan cards, setup tiles 20 · user bubble `20 20 6 20`, AI bubble `20 20 20 6` (when bubbled) · chips 18 / pills 99 · pop-up banner 22 · system message 16 · big search, gate inputs 16 · chat row pressed 16 · tool cards, tool groups, computer view, attachment tiles 14 · menu rows 14 · buttons 13 (sm 11) · toast 13 · field inputs 12 · code blocks 12 · Connectors logo 13 (lg 15) · checkbox 7 (21 px) · icon buttons, FAB, avatars, `me`: circle · notch handle 11 (46×22) · progress bars 4–9.
 
 ### L6. Elevation, glass recipes (Compose translation)
-- **Frosted chrome** (top bar, composer, chips, toast, sheet, notch pill, pop-up): fill `--chrome`/`--sheet`, `backdrop-filter: blur(22–30px) saturate(160–170%)`, 1 px `--glb` border, `--ghl` inset highlight, composer adds `--gsh` and a `--spec` overlay at 70 % opacity. → Compose: `Modifier.glassBlur` (API 31+ `RenderEffect`, fallback to the fill only), border 1 dp, a vertical gradient overlay for `--spec`; AM's `GlassKit.kt`/`BlazeGlass.kt` already implements this pattern (greyscale glass, 22 dp card) — retune its tokens to section L2.
+- **Frosted chrome** (top bar, composer, chips, toast, sheet, notch pill, pop-up): fill `--chrome`/`--sheet`, `backdrop-filter: blur(22–30px) saturate(160–170%)`, 1 px `--glb` border, `--ghl` inset highlight, composer adds `--gsh` and a `--spec` overlay at 70 % opacity. → Compose: `Modifier.glassBlur` (API 31+ `RenderEffect`, fallback to the fill only), border 1 dp, a vertical gradient overlay for `--spec`; AM's `GlassKit.kt`/`ArgusGlass.kt` already implements this pattern (greyscale glass, 22 dp card) — retune its tokens to section L2.
 - **Glass surface (no blur)**: `background: var(--spec), var(--gl)`, 1 px `--glb`, shadow `--ghl` + `0 6px 22px rgba(0,0,0,.12)` (dark cards `0 8px 26px rgba(0,0,0,.35)`).
 - **Solid ink primary**: `linear-gradient(180deg, rgba(255,255,255,.2), transparent 60%), var(--ink)`, shadow `0 6px 18px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.25)`.
 - **Inputs**: `--gl` fill, `--glb` border, `inset 0 1px 2px rgba(0,0,0,.12)`; focus → `--glb2` border + `0 0 0 3px var(--gl2)` ring.
@@ -711,7 +711,7 @@ Composer 29 (pill) · gate/primary full-width buttons 26 (52 tall) · sheets 26 
 4. **Chats model conflict:** A-team (v2.19) moves to many saved Manager chats; AM is "one mind". Needs a product decision (slice 4/5).
 5. **Memory/profile/chats/routines are local-only** in A-team and not in the sync payload: migration needs the JSON backup path or an export endpoint.
 6. **Gateway context pruning:** confirm AM's direct gateway calls send `blaze_context: "full"` (none found by grep) or route through `/v1/runs`.
-7. **Deployed legacy names** stay (`*.blaze-app.workers.dev`, `X-Blaze-*`, `blaze-auto`, `blaze-auth`): the unified app must use them until a coordinated redeploy.
+7. **Deployed legacy names** stay (`*.blaze-app.workers.dev`, `X-Argus-*`, `blaze-auto`, `blaze-auth`): the unified app must use them until a coordinated redeploy.
 8. **Needle runtime:** AM has no Cactus runtime; choosing Cactus Android SDK vs WebView-hosted wasm vs OfflineBrain affects APK size (+35 MB model) and RAM.
 9. **Package/key change:** A-team users cannot upgrade in place (different package `ai.argus.agents`, different signing key); plan a migration release.
 10. **Licences to carry over:** Termux proot (GPL-2.0, shipped as separate `.so`), talloc (LGPL-3.0), libandroid-shmem (BSD-3), terminal-emulator (Apache-2.0), xterm.js (MIT, only if kept), Lucide (ISC), Simple Icons (CC0) + brand trademarks — see `THIRD_PARTY_NOTICES.md`.

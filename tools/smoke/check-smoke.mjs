@@ -9,7 +9,7 @@ import { join } from 'node:path';
 
 export const EXPECTED_TESTS = 7;
 export const STALL_MS = 700;
-export const TEST_FILE = 'app/src/androidTest/java/com/blaze/assistant/smoke/LowRamSmokeTest.kt';
+export const TEST_FILE = 'app/src/androidTest/java/com/argus/assistant/smoke/LowRamSmokeTest.kt';
 export const RUNNER = 'tools/smoke/run-smoke.sh';
 
 /** The @Test method names in a Kotlin source, in order. */

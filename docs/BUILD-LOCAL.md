@@ -1,4 +1,4 @@
-# Building Blaze locally (no GitHub Actions)
+# Building Argus locally (no GitHub Actions)
 
 Written 2026-11-01 for the 0.49.0 build, when the GitHub mirror was unavailable. The build agent's sandbox is
 **Linux aarch64** (2 CPUs, ~7 GB RAM, no `/dev/kvm`), which shapes every step below.
@@ -23,7 +23,7 @@ that shell (its own command line matches); use `pkill -f '[G]radleDaemon'`.
 
 ## Scripts
 
-- `work/toolchain/gradle.sh <log> <tasks…>` — copies `work/blaze` (without `.git`, `build/`) to `work/toolchain/bb`
+- `work/toolchain/gradle.sh <log> <tasks…>` — copies `work/argus` (without `.git`, `build/`) to `work/toolchain/bb`
   and runs Gradle there with the CI flags (`-Xmx3g`, in-process Kotlin, the aapt2 override), so build outputs never
   land in the git tree.
   Run it detached (`nohup … &`) and poll the log; a cold `compileDebugKotlin` takes ~12 min on 2 CPUs.
@@ -41,7 +41,7 @@ Typical sequence:
 ```
 work/toolchain/golibs.sh
 work/toolchain/gradle.sh work/toolchain/logs/unit.log --init-script work/toolchain/jdk21-tests.gradle :app:testDebugUnitTest --continue
-BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log :app:testDebugUnitTest --tests 'com.blaze.assistant.ui.ComposerShotsTest' …   # see mobile-build.yml for the list
+BLAZE_SHOTS=1 work/toolchain/gradle.sh /tmp/shots.log :app:testDebugUnitTest --tests 'com.argus.assistant.ui.ComposerShotsTest' …   # see mobile-build.yml for the list
 work/toolchain/gradle.sh /tmp/rel.log :app:assembleRelease
 ```
 
@@ -52,10 +52,10 @@ BT=$ANDROID_HOME/build-tools/34.0.0
 $BT/zipalign -f -p 4 /tmp/bb/app/build/outputs/apk/release/*-unsigned.apk /tmp/aligned.apk
 keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 -storepass testonly -keypass testonly -alias test \
   -keyalg RSA -keysize 2048 -validity 30 -dname "CN=Blaze test"
-java -jar $BT/lib/apksigner.jar sign --ks /tmp/test.p12 --ks-pass pass:testonly --out work/out/blaze-<ver>-<tag>-<sha8>-test-signed.apk /tmp/aligned.apk
+java -jar $BT/lib/apksigner.jar sign --ks /tmp/test.p12 --ks-pass pass:testonly --out work/out/argus-<ver>-<tag>-<sha8>-test-signed.apk /tmp/aligned.apk
 ```
 
-A phone with the real (production-signed) Blaze must uninstall it before installing a test-signed APK.
+A phone with the real (production-signed) Argus must uninstall it before installing a test-signed APK.
 
 ## Robolectric native graphics on aarch64 (screenshot tests)
 
@@ -102,7 +102,7 @@ stop it between big steps (`pkill -f '[G]radleDaemon'`). A sandbox restart mid-r
 | Run | Where | Result |
 |---|---|---|
 | `:app:testDebugUnitTest` (whole suite) | aarch64, test JVM on JDK 21 | 2,908 tests · 240 skipped (221 screenshot tests need `BLAZE_SHOTS=1`). Failures: the same 13 native-graphics tests (env) + 3 source-scan tests updated for 0.50 (`PromptCacheBenchTest` mirrors the new `search` prompt part; `ComposerKeysTest` / `DesignNavTest` accept the expand mode) → 8/8 after the fix. |
-| 13 native-graphics tests + all 9 screenshot classes, `BLAZE_SHOTS=1` | x86-64 JVM under qemu-user, run in 4 chunks (each < 13 min) | 234 / 234 pass: 13 + `ShotsTest` 84, `Shots375Test` 84, `HomeRedesignShotsTest` 22, `ComposerShotsTest` 12, `Blaze050ShotsTest` 6, `MediaRevampShotsTest` 5, `SecretCardsShotsTest` 3, `StageShotsTest` 3, `MoviesShotsTest` 2. |
+| 13 native-graphics tests + all 9 screenshot classes, `BLAZE_SHOTS=1` | x86-64 JVM under qemu-user, run in 4 chunks (each < 13 min) | 234 / 234 pass: 13 + `ShotsTest` 84, `Shots375Test` 84, `HomeRedesignShotsTest` 22, `ComposerShotsTest` 12, `Argus050ShotsTest` 6, `MediaRevampShotsTest` 5, `SecretCardsShotsTest` 3, `StageShotsTest` 3, `MoviesShotsTest` 2. |
 | `FAST_R8=1 :app:assembleRelease` | aarch64 | 20m48s (cold release Kotlin compile ~11 min + R8 ~5 min); the detached (`nohup setsid`) run was not killed at 1200 s. |
 
 After a sandbox restart a cached Kotlin jar read failed once (`NoClassDefFoundError … KtTokens`, zip read errors); all

@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 object DevTools { val names = emptySet<String>() }
 /** P2-SF-01: CommandPolicyTest's autopilotRuleUnchanged reads Terminal.risky; copied verbatim from Terminal.kt (the rest needs Android). */
 object Terminal {

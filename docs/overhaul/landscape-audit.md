@@ -33,7 +33,7 @@ to the Living agent (its `isLandscape()`); this round does not touch it.
 | Model picker | Unbounded list | `scroll = false` (its list scrolls under the sticky search); fits under the cap | fixed |
 | Team / Life / Chat-drawer quick-action sheets, New sheet, Rename chat | Up to 6 rows + title > 360 dp | Body scrolls (ArgusSheet) | fixed |
 | `+` menu (PlusMenu) / Views sheet (Shell.kt) | 480 / 320 dp lists above the composer | `sheetBody(480/320.dp)` | fixed |
-| BlazeDialog | 360 dp wide card, short content | none | ok |
+| ArgusDialog | 360 dp wide card, short content | none | ok |
 | Gallery dialogs (album picker 260 dp, info) | fit | none | ok |
 
 ## Modes and pages

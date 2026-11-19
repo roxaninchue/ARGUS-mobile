@@ -1,7 +1,7 @@
 # Biometric login, keys and reinstall: what survives what (0.52.1)
 
 Why this doc: testers reinstalled test APKs signed with a new throwaway key every build, so every install wiped the
-app's data and every "Unlock with fingerprint/face" key. This is what Android actually guarantees, and what Blaze does.
+app's data and every "Unlock with fingerprint/face" key. This is what Android actually guarantees, and what Argus does.
 
 ## 1. BiometricPrompt: STRONG vs WEAK
 
@@ -26,7 +26,7 @@ Consequences:
 - Keys in the Android Keystore belong to the app's UID. **Uninstall deletes them**; "Clear storage" deletes them too.
 - Auto Backup / device-to-device restore brings back files and SharedPreferences, **never Keystore keys**. Data encrypted with a
   Keystore key is restored as unreadable bytes: treat a decrypt failure after restore as "signed out", wipe that blob, and re-ask.
-  (Blaze: backup_rules.xml keeps the "blaze" prefs, which hold the Keystore-sealed account / gateway tokens, out of cloud backup; data_rules.xml device transfer copies everything except saved logins.)
+  (Argus: backup_rules.xml keeps the "blaze" prefs, which hold the Keystore-sealed account / gateway tokens, out of cloud backup; data_rules.xml device transfer copies everything except saved logins.)
 - So a biometric unlock built on a Keystore key can never survive a reinstall. That is by design.
 
 ## 3. Credential Manager passkeys survive reinstall
@@ -38,7 +38,7 @@ Consequences:
   signing certificate that should be allowed** (production key AND the test key below if test builds should use passkeys), and the
   server (gateway) verifies WebAuthn assertions for that RP ID.
 - Saved passwords via Credential Manager (`CreatePasswordRequest`) also live in the provider and survive reinstall.
-- Recommended Blaze flow: passkey (or Google sign-in via Credential Manager) to get the account back after a reinstall; a STRONG-bound
+- Recommended Argus flow: passkey (or Google sign-in via Credential Manager) to get the account back after a reinstall; a STRONG-bound
   Keystore key only as the fast local unlock for this install.
 
 ## 4. Upgrade in place (no uninstall, data kept)

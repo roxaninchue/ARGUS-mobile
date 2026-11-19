@@ -1,7 +1,7 @@
 # 05 — Agent ecosystem architecture
 
 > Slice 5 of the ARGUS overhaul (see `overhaul.md`). Owner: Specialist 5 (agent systems architect). Status: **v1 complete, 2026-11-11** (open questions in §11.3).
-> Scope: how the unified ARGUS app (Kotlin/Compose, `argus-mobile`) runs an **ecosystem of specialist agents** — one per part of a person's life and per kind of task — orchestrated by a Manager. Built from what already exists in Argus-mobile (Blaze agent, BgAgents, Orchestra, Mind, Proactive, Routines, Connectors, MCP), A-team (Manager bot, jobs queue, profile memory, skills, Ubuntu workspace, cloud computer, live model picking, Needle, `argus-agents-api`) and Bot HQ (Hermes engines, per-bot MCP, approvals, rooms, subagents, soul/memory files, per-bot screen, voice).
+> Scope: how the unified ARGUS app (Kotlin/Compose, `argus-mobile`) runs an **ecosystem of specialist agents** — one per part of a person's life and per kind of task — orchestrated by a Manager. Built from what already exists in Argus-mobile (Argus agent, BgAgents, Orchestra, Mind, Proactive, Routines, Connectors, MCP), A-team (Manager bot, jobs queue, profile memory, skills, Ubuntu workspace, cloud computer, live model picking, Needle, `argus-agents-api`) and Bot HQ (Hermes engines, per-bot MCP, approvals, rooms, subagents, soul/memory files, per-bot screen, voice).
 > Nothing here is implemented yet. File references are to the three source trees as pulled on 2026-11-11.
 
 ## Contents
@@ -34,11 +34,11 @@ What we keep from each source, and why:
 
 Design principles (they resolve most later decisions):
 
-1. **One runtime, many identities.** A bot is data, not code. Domain agents differ by soul, tools, memory scope, routines and permissions — never by a separate loop. (Avoids three agent loops: Blaze Session, A-team `CHAT.reply`, Hermes.)
+1. **One runtime, many identities.** A bot is data, not code. Domain agents differ by soul, tools, memory scope, routines and permissions — never by a separate loop. (Avoids three agent loops: Argus Session, A-team `CHAT.reply`, Hermes.)
 2. **Manager is the front door, not a bottleneck.** The user can always talk to any bot directly; Manager handles the unaddressed message, delegation, conflicts and the daily picture.
 3. **Persistent domain agents, ephemeral task workers.** Domain agents own a part of life (memory, routines, relationships with apps). Task workers (today's `Specialists.builtIn`) are templates spawned for one job and then gone.
 4. **Phone first, cloud when needed, user-confirmed.** Default placement is on-device (phone control, proot Ubuntu, on-device models where good enough). A cloud computer starts only for work the phone can't do, and only after a yes (A-team rule kept).
-5. **Zero-budget by default.** Free routes first (Blaze Gateway free lineup, on-device brain, Workers AI). Paid services (Composio, xAI, Orgo) become optional adapters, never requirements.
+5. **Zero-budget by default.** Free routes first (Argus Gateway free lineup, on-device brain, Workers AI). Paid services (Composio, xAI, Orgo) become optional adapters, never requirements.
 6. **Approvals live in the tool layer**, not the prompt (Bot HQ + `ConfirmGate`): every engine, every bot, every channel goes through the same policy check.
 7. **Memory is the user's.** Readable, editable, forgettable as plain markdown files per bot; sensitive domains private by default; secrets never stored.
 8. **Quiet by default.** Proactivity is arbitrated centrally with hard caps; most checks end in silence.
@@ -106,8 +106,8 @@ Budgets, bills calendar, subscription audit, receipts in the Library.
 
 | `EngineKind` | Where the loop runs | Use |
 |---|---|---|
-| `LOCAL` | Phone, `Agent.Session` loop; model calls to the Blaze Gateway / on-device brain per `BrainOrder` | Default for every bot. Full phone tools. |
-| `CLOUD_RUN` | Blaze Gateway `/v1/runs` (CloudRuns): loop on the gateway, `needs_device` hands phone tools back | Long jobs that must survive the app closing; still the same bot. |
+| `LOCAL` | Phone, `Agent.Session` loop; model calls to the Argus Gateway / on-device brain per `BrainOrder` | Default for every bot. Full phone tools. |
+| `CLOUD_RUN` | Argus Gateway `/v1/runs` (CloudRuns): loop on the gateway, `needs_device` hands phone tools back | Long jobs that must survive the app closing; still the same bot. |
 | `HERMES` | A Hermes gateway (`POST /v1/responses`), user-provided host; ARGUS tools exposed to it over MCP (`/mcp/<botId>` equivalent served by the phone relay or the gateway) | Power users who already run Hermes (Bot HQ's primary engine rule: never restart / reconfigure it). |
 | `NEEDLE` | On-device Cactus Needle 3 (A-team `needle-worker.js`) | Not a bot engine — a **command fast path** for Manager (§2.3). |
 
@@ -246,7 +246,7 @@ Legend — **Tools** are tool groups (`ToolRouter` groups; §6.1). **Apps** are 
 | **Pulse** (Health & fitness) | Training plans, habits, sleep, steps, meds reminders, appointments | health(read), routines, web, calendar | Health Connect, Strava, Google Fit | Weekly training plan Sun, habit nudges, med reminders | `health` **private** | booking appointments, sharing any health data with another bot or person |
 | **Ledger** (Money) | Budgets, bills, subscriptions, receipts, savings goals, price of decisions | bank(read), files, web, routines | Bank SMS/notification parser (on-device), Sheets | Bill due reminders, monthly subscription audit, "spend this week" Fri | `money` **private** | **any payment, transfer, subscribe/cancel**, sharing balances |
 | **Career** (Work) | Job/career goals, CV, applications, networking, skills plan, meeting prep | web, files, writer, calendar(read) | LinkedIn (browser), Google Docs | Weekly goals check, meeting prep 30 min before key meetings | `work` | applications, outreach messages |
-| **Forge** (Founder Dev/Ops) | ARGUS-specific: repos, issues, MRs, CI, deploys, infra health, Blaze-builds-Blaze loop | terminal(ubuntu), dev(gitlab/github), web, cloud(ask) | GitLab, GitHub, Cloudflare, Sentry | CI watch (event), daily "what broke / what shipped", Worker health ping | `work:argus` | merge, tag, deploy, push to protected branches (PLAN-reliable-agent §1 rules: never), touching secrets |
+| **Forge** (Founder Dev/Ops) | ARGUS-specific: repos, issues, MRs, CI, deploys, infra health, Blaze-builds-Argus loop | terminal(ubuntu), dev(gitlab/github), web, cloud(ask) | GitLab, GitHub, Cloudflare, Sentry | CI watch (event), daily "what broke / what shipped", Worker health ping | `work:argus` | merge, tag, deploy, push to protected branches (PLAN-reliable-agent §1 rules: never), touching secrets |
 | **Hearth** (Home) | Home tasks, maintenance schedule, utilities, smart home, home services, household list | device, phone, web, routines | Home Assistant (MCP), utility apps | Maintenance calendar, utility bill reminders, "leaving home" checklist (place trigger) | `home` | booking services, changing device/home settings |
 | **Pantry** (Food) | Meal plans, groceries, usual orders, recipes, dietary rules | web, browser, phone(delivery apps), memory | Grocery/delivery apps (browser/phone) | Weekly meal plan + list, "dinner idea" 17:30 opt-in | `food` (allergies mirrored in `user:core`) | **orders/checkouts** |
 | **Atlas** (Travel) | Trips end to end: flights, stays, visas, packing, day-of travel, itinerary pages | web, browser, booker, calendar, files | Airline/hotel sites, Maps | Check-in reminders, day-before packing, flight status watch | `travel` (reads `money:budget-caps` only) | **bookings/payments**, sharing itinerary |
@@ -291,7 +291,7 @@ Users and Manager can create new domains from the same template (`agent_create` 
 
 | Source | Store | Shape | Sync |
 |---|---|---|---|
-| Argus-mobile | `filesDir/blaze.db` `memories` (+FTS5; schema shared with Blaze Desktop/CLI — must not change) + side tables `mind_mem`, `mind_journal`; pinned core (`PinnedFacts`); chat tier (rolling summary); cache tier (`cache.db`) | Flat facts with `category`, `project`, `chat`, `pinned`, `uses` | Blaze account cloud sync (`CloudSync`, `SyncCrypto`) |
+| Argus-mobile | `filesDir/blaze.db` `memories` (+FTS5; schema shared with Blaze Desktop/CLI — must not change) + side tables `mind_mem`, `mind_journal`; pinned core (`PinnedFacts`); chat tier (rolling summary); cache tier (`cache.db`) | Flat facts with `category`, `project`, `chat`, `pinned`, `uses` | Argus account cloud sync (`CloudSync`, `SyncCrypto`) |
 | A-team | Profile `argus.profile.v1` in localStorage (kinds: name, style, goal, project, preference, person, date, place, rule, note; `stated` vs `inferred`) mirrored to `/root/.argus/manager/profile.{json,md}`; bot memory `S.memory.bots[id]` + `S.memory.team` (visibility: own + team + reports') | JSON items | **Never synced** |
 | Bot HQ | Hermes home `memories/MEMORY.md` (bot's notes) + `USER.md` (about user), entries separated by `§`; UI can list/remove | Markdown files | None (lives on the Hermes host) |
 
@@ -357,7 +357,7 @@ Tools: `memory_search(scope?)`, `memory_save`, `memory_update`, `memory_delete`,
 
 ### 4.6 Sync and privacy
 
-- `user:*`, `team`, non-private domain scopes, `bot:*` and SOUL.md sync via the **existing Blaze account sync** (`CloudSync`, end-to-end `SyncCrypto`), never through `argus-agents-api` (which carries only roster, jobs, routines metadata and approvals — §6.4). This fixes A-team's "memory never leaves this phone" without exposing it to the Worker.
+- `user:*`, `team`, non-private domain scopes, `bot:*` and SOUL.md sync via the **existing Argus account sync** (`CloudSync`, end-to-end `SyncCrypto`), never through `argus-agents-api` (which carries only roster, jobs, routines metadata and approvals — §6.4). This fixes A-team's "memory never leaves this phone" without exposing it to the Worker.
 - Private scopes sync only if the user turns on "Sync private memory" (off by default), still E2E encrypted.
 - Private chats (`PrivateChat`) are never paged, journaled or reviewed (Argus rule kept).
 - **Forget**: deleting a line removes it from `memories`, `mem_scope`, FTS, projections, the Hermes home and the sync blob (tombstone), then re-validates by search (the Hark-style "verify after delete" rule).
@@ -380,7 +380,7 @@ flowchart LR
     VA[SecretVault · Keystore]
   end
   subgraph Edge[Cloudflare · free tier]
-    GW[Blaze Gateway<br/>/v1/chat · /v1/runs · /v1/models/live]
+    GW[Argus Gateway<br/>/v1/chat · /v1/runs · /v1/models/live]
     AA[argus-agents-api v2<br/>REST + MCP + sync]
     AC[argus-connect<br/>OAuth apps · skills]
     AU[blaze-auth]
@@ -403,7 +403,7 @@ flowchart LR
 | Need | Run on | Fallback |
 |---|---|---|
 | Intent → command (add job, reminder, route) | Needle on-device | gateway `quick` lane |
-| Chat / reasoning | Gateway lane via `/v1/models/live` pick; on-device brain first for private/zero-retention or offline (BrainOrder: on-device → Nous `:free` → Blaze Cloud) | next in BrainOrder |
+| Chat / reasoning | Gateway lane via `/v1/models/live` pick; on-device brain first for private/zero-retention or offline (BrainOrder: on-device → Nous `:free` → Argus Cloud) | next in BrainOrder |
 | Long job that must survive app close | Gateway `/v1/runs` (CloudRuns) | local loop + `TaskWorker` |
 | Phone apps, settings, SMS/calls, notifications | Phone | — |
 | Code, scripts, files, PDFs, git, headless fetch | proot Ubuntu (bot's own tmux window/home) | cloud desk (ask) |
@@ -456,7 +456,7 @@ All three sources' tools merge into one `ToolRegistry` (Argus `CommandRegistry` 
 | `cloud` | `cloud_start/stop/status`, `desk_screenshot/click/type/key`, `desk_bash` (A-team cloud.js, Bot HQ computer tools) — every start is `ASK` |
 | `phone` / `device` / `comms` / `notifications` | Argus phone control, alarms, SMS/calls, notification read |
 | `browser` | Argus `browser_*` (WebView) · CDP browser on a cloud desk |
-| `web` | `web_search`, `web_fetch`, BlazeQuery · `x_search` (optional key) |
+| `web` | `web_search`, `web_fetch`, ArgusQuery · `x_search` (optional key) |
 | `apps` | argus-connect app tools (`gmail_list`, `gmail_read`, `cal_list`, … A-team v2.16 helpers), `connectors_list`, MCP servers as `mcp__<server>__<tool>` |
 | `dev` | `gitlab_issue_read/list`, `gitlab_branch_create`, `gitlab_mr_create`, `ci_status` (PLAN-reliable-agent §1; Forge only) |
 | `design`, `media`, `study`, `bank`, `health` | Argus groups (Designs, media, Learn/Flashcards, Bank mode, Health Connect) |
@@ -585,7 +585,7 @@ flowchart LR
 ---
 ## 9. Data models
 
-### 9.1 Kotlin (package `com.blaze.assistant.team`)
+### 9.1 Kotlin (package `com.argus.assistant.team`)
 
 ```kotlin
 enum class BotKind { MANAGER, DOMAIN, CUSTOM, WORKER, SUBAGENT, ROOM, REMOTE }

@@ -271,7 +271,7 @@ Every component lists: purpose · AT source · Compose API · key specs. All liv
 | `.av.bot` + `botSVG()` | `BotOrb` | Canvas |
 | `.gate/.setup` | `OnboardingScaffold` | reuse AM SetupPlan |
 | `.cnp/.cn-*` | `ConnectorsPage` | full-screen plugin list, floating search pill at bottom |
-| `.term` + xterm | AM `BlazeTerminalActivity` restyled dark-mono | Terminal stays dark in both themes (AT rule) |
+| `.term` + xterm | AM `ArgusTerminalActivity` restyled dark-mono | Terminal stays dark in both themes (AT rule) |
 | `#graph .node/.edge` | `ComposeGraph` (Canvas, pan/zoom) | edges: solid owns, dashed waits-on, dotted lead/reports-to |
 | `.mbadge` | `ArgusBadge(kind = Lead)` | gold |
 | `--safe-b` | `WindowInsets.navigationBars` | |
@@ -398,8 +398,8 @@ Presentation rules:
 | **Assist gesture** (default assistant, `ASSIST`/`VOICE_COMMAND`) | Compact assistant panel over the current app (AM AssistPanel) with screen context; bot switcher row | AM |
 | **Floating orb** (overlay) | Draggable 56 dp orb of the current bot: tap = compact chat, hold = talk, drag to edge = Magic Hand | AM Overlay / Mascot |
 | **Magic Hand** | circle/grab anything on screen → copy, translate, search, save, **send to a bot** | AM |
-| **Quick Settings tile** | "ARGUS" tile: tap = Voice mode; long-press = app; second tile **"Approvals (n)"** opens Inbox | AM BlazeTile + new |
-| **Home-screen widgets** | (1) *Team* 4×2: Need-you count + 4 pinned orbs (tap = thread) + ask field; (2) *Ask* 4×1: composer pill → Voice/Chat; (3) *Today* 2×2: next routine/event + approvals; (4) *Live screen* 2×2: a bot's last frame when its computer runs | AM BlazeWidget (extend, Glance) |
+| **Quick Settings tile** | "ARGUS" tile: tap = Voice mode; long-press = app; second tile **"Approvals (n)"** opens Inbox | AM ArgusTile + new |
+| **Home-screen widgets** | (1) *Team* 4×2: Need-you count + 4 pinned orbs (tap = thread) + ask field; (2) *Ask* 4×1: composer pill → Voice/Chat; (3) *Today* 2×2: next routine/event + approvals; (4) *Live screen* 2×2: a bot's last frame when its computer runs | AM ArgusWidget (extend, Glance) |
 | **Share sheet** (`SEND`) | "Share to ARGUS" → bot picker sheet (orbs, last-used first, "Manager decides") + optional note; Direct Share targets = top 4 bots | AM SEND filters + new |
 | **Launcher shortcuts** | long-press icon: New chat · Voice · Inbox · top pinned bot | new |
 | **Notifications** | per-bot channel, the bot's own orb as large icon (AT notify), inline reply, **Approve/Deny actions**, edge glow over other apps (opt-in overlay) | AT notify, AM NotificationBrain |
@@ -509,7 +509,7 @@ Legend — **From**: AM Argus-mobile · AT A-team · BH Bot HQ · N new. **Home*
 | Gateway live models, automatic pick, fallback (no picker by default) | AT, AM | Settings → Models (read-only list + "Automatic") | Engine tab "Automatic" |
 | Gemini with your key (per-bot model, cool-down) | AT | Settings → Models → Your keys; Bot profile → Engine | — |
 | On-device Cactus Needle 3 (commands offline) | AT | Settings → Models → On-device | status in Diagnostics |
-| Backup brain / offline brain, BlazeRouter, brain race | AM | Settings → Models → On-device / Advanced | — |
+| Backup brain / offline brain, ArgusRouter, brain race | AM | Settings → Models → On-device / Advanced | — |
 | Tiers Insight / Oracle / Panoptes | AM | Bot profile → Engine → Depth (Automatic default) | — |
 | Connectors (ARGUS Connect: per-user apps, per tool on/off, logos, categories, test, disconnect) | AT | **Settings → Apps & connectors** (full-screen plugin list) | ConnectCard, Bot profile → Apps |
 | Composio apps (connect, callback, per-bot app access) | BH | merged into Apps & connectors (provider column) **[Q]** | Bot profile → Apps |

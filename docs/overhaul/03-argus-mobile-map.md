@@ -6,7 +6,7 @@
 > skimmed from their README / HANDOFF / ARCHITECTURE only; slices 1 and 2 own their full inventories.
 > Status: **complete first pass** (sections a–d). Nothing here was built or run (owner rule: no build).
 
-Package root everywhere below: `app/src/main/java/com/blaze/assistant/` (written as `…/`).
+Package root everywhere below: `app/src/main/java/com/argus/assistant/` (written as `…/`).
 Size of the app: **1,218 Kotlin files**, `agent/` alone 247 files / ~40k lines (`Agent.kt` 5,807 lines), `ui/` 167 files / ~37k
 lines; 451 JVM test files, 3 androidTest files; 57 bundled skills, 10 built-in specialists.
 
@@ -42,24 +42,24 @@ lines; 451 JVM test files, 3 androidTest files; 57 bundled skills, 10 built-in s
 | Tool diet & routing | `agent/ToolRouter.kt` (groups, `load_tools`), `ToolTruth.kt`, `ToolPick.kt`, `ExecRoute.kt` (terminal-first), `SearchRoute.kt`, `InAppRoute.kt`, `FastActions.kt`, `LookupLane.kt`, `ChatLane.kt` |
 | Honesty / guards | `ClaimGuard.kt`, `ClaimCheck.kt`, `ActionProof.kt`, `FakeCall.kt`, `ToolLeak.kt`, `ReplyClean.kt`, `LoopGuard.kt`, `RetryGuard.kt`, `EchoGuard.kt`, `EmptyReply.kt`, `VerifyPolicy.kt` |
 | Approval & autonomy | `ConfirmGate.kt`, `CommandPolicy.kt`, `PermissionGate.kt`, `PlanGate.kt`, `Autonomy.kt` (always Autopilot; delete/pay/message still ask), `ui/ConfirmCard.kt` |
-| BlazeQuery (fact check while typing) | `agent/query/*` (NeedDetect, QueryPlanner, SourcePolicy, Registries, Judge, EvidencePack, Research) |
+| ArgusQuery (fact check while typing) | `agent/query/*` (NeedDetect, QueryPlanner, SourcePolicy, Registries, Judge, EvidencePack, Research) |
 | Skills | `SkillLibrary.kt` (seeded to `~/skills`), `SkillMatch.kt` (≤3 per turn), `SkillIndex.kt`, `SkillGuard.kt`, `SkillPacks.kt` (`save_workflow`), `CoreSkills.kt` (6 pinned), `Marketplace.kt` (GitHub `blaze-skill` topic, reviewed install), `Learning.kt` (Hermes-style post-turn review), `assets/skills/` (57) |
-| Self-knowledge | `BlazeDocs.kt` (docs indexed into blaze.db at build), `SelfKnowledge.kt`, `SelfControl.kt`, `SelfSetup.kt` |
+| Self-knowledge | `ArgusDocs.kt` (docs indexed into blaze.db at build), `SelfKnowledge.kt`, `SelfControl.kt`, `SelfSetup.kt` |
 | Personas | `OnePersona.kt` (Halo merged into Argus in 0.51), `Duo.kt` / `DuoAll.kt` / `DuoText.kt` (two-companion code still present), `DuoWorkspace.kt` (multi-day shared folder + board), `HaloStudio.kt` (persona sliders), `Personas.kt`, `SharedPersona.kt`, `assets/persona-v1.json` |
 
 ### a.3 Models / brains
 | Feature | Where |
 |---|---|
 | OpenAI-compatible client | `agent/LlmClient.kt`, `RequestBudget.kt` (≤60 KB request), `StreamGate.kt`, `Failover.kt`, `HedgeRace.kt`, `BrainRace.kt` |
-| Argus Cloud (gateway, no user keys) | `agent/Cloud.kt` → `https://ai.blaze-app.workers.dev` (wire names `blaze-auto`, `X-Blaze-*`), `connect/Billing.kt`, `connect/Entitlements.kt`, `agent/Quota.kt` |
+| Argus Cloud (gateway, no user keys) | `agent/Cloud.kt` → `https://ai.blaze-app.workers.dev` (wire names `blaze-auto`, `X-Argus-*`), `connect/Billing.kt`, `connect/Entitlements.kt`, `agent/Quota.kt` |
 | Providers / free routing (legacy, hidden) | `Providers.kt` (pollinations, blazerouter, gemini, openai, anthropic, nvidia, moonshot, deepseek, groq, openrouter, mistral, cerebras, github, xai), `FreeRouter.kt`, `ProviderCatalog.kt`, `ModelMemory.kt`, `KeyRing.kt` |
 | Tiers (no picker) | `composer/ModelChoice.kt` (always Auto; Insight/Oracle/Panoptes ≈ Spark/Flare/Inferno; `forRole`) |
-| On-device | `FastLane.kt` (Cactus **Needle 3**, `libneedle.so`, weights in `filesDir/needle`), `OfflineBrain.kt` (Qwen2.5 0.5B via MediaPipe), `BackupBrain*.kt`, `agent/BlazeRouter.kt` + Go `blazerouter/` (OmniRoute port on 127.0.0.1) |
+| On-device | `FastLane.kt` (Cactus **Needle 3**, `libneedle.so`, weights in `filesDir/needle`), `OfflineBrain.kt` (Qwen2.5 0.5B via MediaPipe), `BackupBrain*.kt`, `agent/ArgusRouter.kt` + Go `blazerouter/` (OmniRoute port on 127.0.0.1) |
 
 ### a.4 Memory
 | Feature | Where |
 |---|---|
-| One Mind (long tier) | `agent/Mind.kt`, `MindStore.kt`, `MindReview.kt` (idle review), `MindLogs.kt`, `Memory.kt`, `MemoryIntent.kt`, `MemoryGate.kt`, `MemoryMerge.kt`, `MemoryDelete.kt`; `store/BlazeDb.kt` (`filesDir/blaze.db`, schema **shared with Desktop/CLI**, FTS5) |
+| One Mind (long tier) | `agent/Mind.kt`, `MindStore.kt`, `MindReview.kt` (idle review), `MindLogs.kt`, `Memory.kt`, `MemoryIntent.kt`, `MemoryGate.kt`, `MemoryMerge.kt`, `MemoryDelete.kt`; `store/ArgusDb.kt` (`filesDir/blaze.db`, schema **shared with Desktop/CLI**, FTS5) |
 | Chat tier + cache tier | `memory/ChatTier.kt`, `CacheTier.kt`, `CacheStore.kt` (`filesDir/cache/cache.db`), `Chunker.kt`, `CacheToc.kt`, `MapReduce.kt`; `agent/LongChat.kt`, `AutoCompact.kt` |
 | Pinned facts / "What Argus is holding" | `agent/PinnedFacts.kt`, `PinnedStore.kt` |
 | Task memory | `agent/TaskMemory.kt`, `TaskMemoryStore.kt` (`task_records.json`) |
@@ -68,13 +68,13 @@ lines; 451 JVM test files, 3 androidTest files; 57 bundled skills, 10 built-in s
 ### a.5 Phone, device, comms
 | Feature | Where |
 |---|---|
-| Phone control (AccessibilityService, orient loop, pointer, settings jumps, OEM label matching) | `phone/BlazeAccessibilityService.kt`, `PhoneControl.kt`, `PhoneTools.kt`, `ScreenTree.kt`, `SettingsRoute.kt`, `SettingsJump.kt`, `LabelMatch.kt`, `Pointer.kt`, `agent/Orient.kt`, `phone/flash/*` (Flash loop) |
+| Phone control (AccessibilityService, orient loop, pointer, settings jumps, OEM label matching) | `phone/ArgusAccessibilityService.kt`, `PhoneControl.kt`, `PhoneTools.kt`, `ScreenTree.kt`, `SettingsRoute.kt`, `SettingsJump.kt`, `LabelMatch.kt`, `Pointer.kt`, `agent/Orient.kt`, `phone/flash/*` (Flash loop) |
 | Magic Hand (grab / OCR / teach / watch) | `phone/MagicHand*.kt` |
 | Messaging, calls, SMS, USSD, contacts, calendar | `phone/Messaging.kt`, `CallControl.kt`, `CallCopilot.kt` (live captions), `Ussd.kt`, `PimEdit.kt`, `Skills.kt`, `SendCheck.kt` |
 | Notification replies, group brain, scam/money radar | `notify/Conversations.kt`, `GroupBrain.kt`, `ScamShield.kt`, `MoneyRadar.kt`, `Sensitive.kt`, `StatusNote.kt` (one status notification) |
 | Voice | `voice/Voice.kt`, `WakeWordService.kt` (Vosk, "Hey Argus"), `ReadAloud.kt`, `voice/myvoice/*` (sherpa-onnx PocketTTS clone), `voice/gemini/*` |
-| Assistant entry points | `assist/BlazeAssist.kt` (VoiceInteractionService), `BlazeTile.kt`, `ui/Overlay.kt` (orb), `widget/BlazeWidget.kt` |
-| Camera | `device/BlazeCamera.kt`, `CameraFlow.kt`, `CameraModes.kt`, `CameraZoom.kt`, `CameraSmart.kt`, `ui/CameraPro.kt`, `InAppCamera.kt` |
+| Assistant entry points | `assist/ArgusAssist.kt` (VoiceInteractionService), `ArgusTile.kt`, `ui/Overlay.kt` (orb), `widget/ArgusWidget.kt` |
+| Camera | `device/ArgusCamera.kt`, `CameraFlow.kt`, `CameraModes.kt`, `CameraZoom.kt`, `CameraSmart.kt`, `ui/CameraPro.kt`, `InAppCamera.kt` |
 | Life logs / brainstorm | `life/*` (LifeLogService, Vosk transcription, chunks into journal) |
 | Bank mode | `bank/*` (switches off phone control/Magic Hand while banking) |
 | Device health | `device/Watchdog.kt`, `Thermal.kt`, `CrashLog.kt`, `StartLater.kt`, `StartWarm.kt`, `Perms.kt` |
@@ -82,19 +82,19 @@ lines; 451 JVM test files, 3 androidTest files; 57 bundled skills, 10 built-in s
 ### a.6 Terminal, browser, apps, media
 | Feature | Where |
 |---|---|
-| Terminal (BusyBox phone shell; Alpine default, Ubuntu/Debian/Arch/Fedora/Manjaro via proot-distro rootfs; Termux PRoot 5.1.107.96; tabs; jobs) | `terminal/Terminal.kt`, `Linux.kt`, `Distros.kt`, `LinuxPm.kt`, `TermSessions.kt`, `BlazeTerminalActivity.kt` (Termux terminal-view), `JobKeeper.kt` (dataSync FGS), `Git.kt`, `DevTools.kt`, `CliAuth.kt`, `LinuxDoctor.kt`, `Fetch.kt`; native `jniLibs/*/libproot*.so`, `libbusybox.so`, `libtalloc.so`; `tools/proot`, `tools/busybox` |
+| Terminal (BusyBox phone shell; Alpine default, Ubuntu/Debian/Arch/Fedora/Manjaro via proot-distro rootfs; Termux PRoot 5.1.107.96; tabs; jobs) | `terminal/Terminal.kt`, `Linux.kt`, `Distros.kt`, `LinuxPm.kt`, `TermSessions.kt`, `ArgusTerminalActivity.kt` (Termux terminal-view), `JobKeeper.kt` (dataSync FGS), `Git.kt`, `DevTools.kt`, `CliAuth.kt`, `LinuxDoctor.kt`, `Fetch.kt`; native `jniLibs/*/libproot*.so`, `libbusybox.so`, `libtalloc.so`; `tools/proot`, `tools/busybox` |
 | Browser (tabs, background agent tabs, secure input, saved logins, VPN via WARP/WireGuard, tracker block, location mask, saved pages, page ask) | `browser/*` (BrowserActivity, BrowserEngine, BrowserTools, SecureInput, BrowserLogins, WarpFree, BrowserVpn, TrackerBlock, LocationMask, PageAsk), Go `wgproxy/` |
 | Argus Phone browser engine (single-page task surface) | `browser/phone/*` (`phone_*` tools, PhoneDriver, DomCache) |
 | Site apps (PWA-like) | `siteapps/*` |
 | App Store (curated APKs, VirusTotal check) | `appstore/*`, `store/catalog.json` (+ `build_cat.py`, `verify.py`, `STORE_CLEANROOM.md`) |
-| Music / Video / Movies / Gallery | `mediaapps/*` (media3 MusicService, VideoActivity, Downloads, Lyrics, Blaze DJ, Clip Studio, BeatLab), `mediaapps/store/*` + `:storeapi` module (StoreSource), optional private `:youtube`, `movies/*` (QuickJS provider sandbox), `media/*` (Gallery) |
+| Music / Video / Movies / Gallery | `mediaapps/*` (media3 MusicService, VideoActivity, Downloads, Lyrics, Argus DJ, Clip Studio, BeatLab), `mediaapps/store/*` + `:storeapi` module (StoreSource), optional private `:youtube`, `movies/*` (QuickJS provider sandbox), `media/*` (Gallery) |
 | Desktop link / local dashboard | `link/DesktopLink.kt` (QR pairing, pinned cert), `link/PcMessages.kt`, `dashboard/*` (127.0.0.1:8787 web chat) |
 | Updates | `update/*` (in-app APK updates, VersionFeed) |
 
 ### a.7 Accounts, connectors, secrets
 | Feature | Where |
 |---|---|
-| ARGUS account (blaze-auth: email/password, Google/GitHub PKCE loopback, MFA) | `connect/BlazeAccount.kt`, `Mfa.kt`, `AuthReturn.kt` → `https://blaze-auth.blaze-app.workers.dev` |
+| ARGUS account (blaze-auth: email/password, Google/GitHub PKCE loopback, MFA) | `connect/ArgusAccount.kt`, `Mfa.kt`, `AuthReturn.kt` → `https://blaze-auth.blaze-app.workers.dev` |
 | On-phone OAuth connectors (Google incl. Classroom, GitHub device flow, Spotify, Notion, Slack) | `connect/Connectors.kt`, `Classroom.kt`, `GitHubApps.kt` |
 | MCP client (Streamable HTTP + legacy SSE; per-tool Ask/Always/Off) | `connect/Mcp.kt`, `McpConfig.kt` |
 | Key / skill sync via account | `connect/KeySync.kt`, `SkillSync.kt` (blaze-auth `/v1/skills`), `SkillMerge.kt` |
@@ -111,7 +111,7 @@ lines; 451 JVM test files, 3 androidTest files; 57 bundled skills, 10 built-in s
 ### a.9 Out-of-app components in the repo
 | Folder | What | Note |
 |---|---|---|
-| `gateway/` | "Blaze Gateway 0.3.0" Cloudflare Worker source (TS, D1) | **Stale copy**: the live gateway (0.9.x, `ai.blaze-app.workers.dev`) lives in `blazeinchue/Blaze-agent`. Don't develop here. |
+| `gateway/` | "Argus Gateway 0.3.0" Cloudflare Worker source (TS, D1) | **Stale copy**: the live gateway (0.9.x, `ai.blaze-app.workers.dev`) lives in `blazeinchue/Blaze-agent`. Don't develop here. |
 | `blazerouter/` | Go OmniRoute port, run on 127.0.0.1 inside Alpine | Optional local router |
 | `wgproxy/` | Go user-space WireGuard → HTTP proxy for the browser VPN | Built before Gradle by CI |
 | `store/` | App Store catalog + tooling | |
@@ -159,10 +159,10 @@ lines; 451 JVM test files, 3 androidTest files; 57 bundled skills, 10 built-in s
 ### b.2 LlmClient / providers
 - Production path: **Argus Cloud** only (`Cloud.kt`): one OpenAI-compatible gateway, account token `bz_…`, gateway picks
   model per `blaze_task` (chat, quick, code, vision, long, agent) and tier; failover in the gateway. No model picker
-  (`ModelChoice` always Auto). Wire names stay `blaze-*` / `X-Blaze-*` (deployed contract).
+  (`ModelChoice` always Auto). Wire names stay `argus-*` / `X-Argus-*` (deployed contract).
 - Legacy direct providers (`Providers.kt`, 14 OpenAI-compatible services incl. **xai**) + `FreeRouter`/`ProviderCatalog`
   still compile and are used by fallbacks; key UI is gone.
-- On-device: Needle 3 fast lane (function calling for direct commands), Offline Brain (Qwen 0.5B), BlazeRouter.
+- On-device: Needle 3 fast lane (function calling for direct commands), Offline Brain (Qwen 0.5B), ArgusRouter.
 
 ### b.3 Memory / Mind
 Three tiers (docs/MEMORY.md): **long** = `memories` + `mind_journal` in `blaze.db` (FTS5; kinds profile, preference,
@@ -199,7 +199,7 @@ input) always open Chat (`SpaceNav.showChat()`).
 Pure tokens and rules in `SpaceLogic.kt` (palette, tabs, pill fit, greeting, card order, settings tree, test tags) with
 composables in `SpaceTheme.kt` (`SpaceCard`, `SpaceHeadline` serif, `SpacePillButton`, `SpaceChip`,
 `SpaceRoundButton`, backdrop with image cache). The unreleased "one look" round made `ArgusBrand`, `GlassTokens`,
-`Light/DarkColors` and `blazeScheme` read `SpacePalette`; gutters 20, card padding 22, 44 dp controls, 28 dp radius,
+`Light/DarkColors` and `argusScheme` read `SpacePalette`; gutters 20, card padding 22, 44 dp controls, 28 dp radius,
 one switch 46×28. Tests: `SpaceLogicTest`, `ContrastTest`, `ThemeEverywhereTest`, `SpaceWiringTest`, `SpaceShotsTest`.
 Leftovers on the old look: browser `Sheet`, Terminal, Design, MeetingRoom, camera, phone overlays.
 
@@ -207,7 +207,7 @@ Leftovers on the old look: browser `Sheet`, Terminal, Design, MeetingRoom, camer
 
 ## (c) Merge map: A-team + Bot HQ → Argus-mobile
 
-**Ground rule.** Argus-mobile is the host (Kotlin + Compose, package `com.blaze.assistant`). A-team is a WebView +
+**Ground rule.** Argus-mobile is the host (Kotlin + Compose, package `com.argus.assistant`). A-team is a WebView +
 plain-JS + Java app (`ai.argus.agents`, own signing key) and Bot HQ is a Node/React server app around Hermes gateways on
 an Orgo computer: neither is embedded. Their **capabilities and contracts are ported natively**; their **cloud pieces**
 (argus-agents-api, argus-connect, gateway 0.9.x, Orgo, Composio, xAI, Hermes) are reached as services. A-team's
@@ -224,7 +224,7 @@ become one (winner named) · **Service** = stays server-side, app gets a client.
 | 2 | **Manager bot** (A-team `manager.js`: routes, creates/updates bots, asks before delete, job status, user profile, routines, daily ≤3 suggestions) | The **Argus lead agent itself** (`Agent.Session` main thread) + `team/ManagerTools.kt` | Unify (Argus wins) | Don't add a second "Manager" persona beside Argus: Argus *is* the Manager (one mind, one main chat). Port the tools (`agents_list/create/update/delete/delegate/status`) as a tool group `team`; `delegate`/`spawn_agent` already route work. Manager's profile → Mind `profile`/`preference` memories (not a separate localStorage profile). Daily suggestions → `proactive/` with `ProactiveDial` gating. |
 | 3 | **Jobs & approvals inline in each bot's thread**, waits-on deps, verified `done_job`, notifications (A-team `jobs.js`); per-bot task list (Bot HQ `create_task`) | New `team/Jobs.kt` (durable job records) executing on `BgAgents` + `orchestra/` | Unify | One job model: `Job{id, title, bot, deps, state queued/running/waiting/done/failed, due, priority}` persisted like `TaskMemoryStore`. Running a job = a `BgAgents` entry for that bot; deps = Blueprint edges (Orchestrator already waits on deps). Port A-team's **verified done** + **completeness gate** into `agent/VerifyPolicy`/`ToolVerify`. Fixes A-team's "one job at a time, app must be open" gap for free (WorkManager `TaskWorker`, RAM cap). |
 | 4 | **Compose graph** (who reports to whom, live status, job nodes) | New `ui/team/TeamGraph.kt` | New | Data from `TeamStore` + `BgAgents` live state; reuse `MemGraph.kt` drawing discipline (≤20 fps, stops when idle/hidden). |
-| 5 | **Ubuntu workspace per bot** (A-team `Workspace.java`, tmux window per bot, bg jobs supervisor `bgjobs.js`) | Extend `terminal/` (`Distros.kt`, `TermSessions.kt`) + new `terminal/BotWorkspace.kt` | Unify (Argus terminal wins) | **One rootfs, many homes**: per-bot home `/root/bots/<id>` + tmux window `argus:<bot>`; never one rootfs per bot (Ubuntu+tools ≈ 800 MB). Keep Alpine as the system distro (run_code, git, BlazeRouter pinned to `apk`); Ubuntu 24.04 becomes the optional **workspace distro**, downloaded by `SetupPlan` on Wi-Fi. Port two A-team fixes: tmux 3.3+ `server-access` ACL host config (`Pty.HOST_SCRIPT`/`ensureTmux`) and `hostLinks()` re-pointing `libtalloc.so.2` after app updates; and the detached-job supervisor (nohup/setsid, exit file) into `JobKeeper`. PTY: Argus's native Termux `terminal-view` wins over A-team's JNI + xterm.js. |
+| 5 | **Ubuntu workspace per bot** (A-team `Workspace.java`, tmux window per bot, bg jobs supervisor `bgjobs.js`) | Extend `terminal/` (`Distros.kt`, `TermSessions.kt`) + new `terminal/BotWorkspace.kt` | Unify (Argus terminal wins) | **One rootfs, many homes**: per-bot home `/root/bots/<id>` + tmux window `argus:<bot>`; never one rootfs per bot (Ubuntu+tools ≈ 800 MB). Keep Alpine as the system distro (run_code, git, ArgusRouter pinned to `apk`); Ubuntu 24.04 becomes the optional **workspace distro**, downloaded by `SetupPlan` on Wi-Fi. Port two A-team fixes: tmux 3.3+ `server-access` ACL host config (`Pty.HOST_SCRIPT`/`ensureTmux`) and `hostLinks()` re-pointing `libtalloc.so.2` after app updates; and the detached-job supervisor (nohup/setsid, exit file) into `JobKeeper`. PTY: Argus's native Termux `terminal-view` wins over A-team's JNI + xterm.js. |
 | 6 | **Computer you can watch / take over** (Bot HQ: Orgo screen per bot, noVNC viewer, watch vs control; A-team: cloud computer Orgo/Codespaces, lease + idle stop, live screenshot card) | New `computer/` (`ComputerProvider`, `Lease`, `CloudGuard`, `ComputerView`) + `ui/team/ComputerCard.kt` | New, Unify A-team + Bot HQ | Providers: `Orgo` (A-team lease rules incl. 5-min idle, 60-min cap, orphan stop, Java alarm + 15-min job backstop), `Codespaces`, `LocalBrowser` (Argus background tabs / Argus Phone engine rendered as frames), later `HermesBox` (a Bot HQ-style server). Viewer: screenshot polling first (A-team), VNC-over-WebSocket relay for take-over (Bot HQ `vnc.ts` pattern; needs a server relay so the VNC password never reaches the phone). **Do not** bring back the removed on-phone XFCE/VNC desktop. Keys in `SecretVault`, auth header added only for the key's host (A-team `CloudGuard.authFor`). |
 | 7 | **Bots' own browser** (A-team `browser.js`, already *ported from Argus Phone browser*) | `browser/phone/*` (exists) | Unify (Argus wins) | Nothing to port back except per-bot browser profiles (`site-<bot>` WebView profile, like `SiteAppActivity`) so bots don't share cookies; `KeyedLocks` `browser` lock already serialises use. |
 | 8 | **Connectors** (A-team → argus-connect `/v1/me/tools` + `/v1/me/execute`, per-user, keys server-side, personal MCP tokens; Bot HQ → Composio with approval cards, triggers) | Extend `connect/`: new `connect/ArgusConnect.kt` (catalog, toggles, execute), tools exposed like MCP tools | Unify + Service | **argus-connect is the one connector backend** (multi-tenant, keys never on the phone). Composio stays *behind* argus-connect (server side), never in the app. Keep on-phone `Connectors.kt` only for device-bound ones (Spotify playback, Classroom) and migrate the rest. Approval policy: reuse `Mcp.kt` Ask/Always/Off + `ConfirmGate`; add Bot HQ's **Always allow** per tool + "a new user message closes the card → skipped". Port A-team's connector-tool cap rules (connected apps first, ≤96) into `ToolRouter`. |
@@ -243,7 +243,7 @@ become one (winner named) · **Service** = stays server-side, app gets a client.
 | 21 | **Team sync / external API** (A-team `argus-agents-api`: REST `/v1` + MCP `/mcp`, KV, per-account doc, last-write-wins) | New `team/TeamSync.kt` | Service | The bridge that lets ARGUS Desktop / any MCP client see the team, and the **migration path from the A-team APK** (it syncs up; Argus syncs down). Not E2E: keep memory and souls out of it (A-team already excludes memory). |
 | 22 | **Built-in code review** (A-team `review.js`: static scan + strict reviewer) | `orchestra/Pipelines.kt` `verify`/`review` nodes + `assets/skills/code-review` | Extend | Becomes a review node after `build` in the apk pipeline and a gate for the Coder bot. |
 | 23 | **Notch / Bots \| Chat switch**, edge glow, heads-up with bot avatar (A-team v2.16) | `ui/space/SpaceTopBar.kt`, `notify/` | Extend | Tabs become Home \| Chat \| Bots (or Projects folded into Bots/Home: slice 4). `AgentNotify` MessagingStyle Person per bot → `notify/Notifier.kt`. |
-| 24 | **ARGUS account, plan, billing** (both) | `connect/BlazeAccount.kt`, `Billing.kt` | Same service | Same blaze-auth + gateway billing; nothing to merge. |
+| 24 | **ARGUS account, plan, billing** (both) | `connect/ArgusAccount.kt`, `Billing.kt` | Same service | Same blaze-auth + gateway billing; nothing to merge. |
 | 25 | **Deep research / multi-agent big jobs** (Bot HQ Hermes delegation; A-team jobs) | `orchestra/` | Argus wins | Already ahead (blueprint DAG, fact-check reviewers). |
 
 ### c.2 Overlaps resolved (one line each)
@@ -267,7 +267,7 @@ become one (winner named) · **Service** = stays server-side, app gets a client.
 5. **Default distro** Alpine (3.5 MB) vs Ubuntu 24.04 (~800 MB with tools) for bots.
 6. **Look**: A-team monochrome glass (`--bg #0a0a0a`, white solid, Lucide icons, no emoji, 52 px fields) vs Argus space view + Argus Blue + Material Rounded icons (slice 4).
 7. **Halo/Duo**: owner merged Halo into Argus in 0.51 ("no separate persona for now"); multi-bot rooms reintroduce several personas — confirm that this reversal is intended.
-8. **Two apps on the phone**: A-team (`ai.argus.agents`, key F7:8A:80…) cannot update into `com.blaze.assistant`; decide retire-and-migrate (via argus-agents-api sync) vs keep A-team as a companion.
+8. **Two apps on the phone**: A-team (`ai.argus.agents`, key F7:8A:80…) cannot update into `com.argus.assistant`; decide retire-and-migrate (via argus-agents-api sync) vs keep A-team as a companion.
 9. **Hermes**: bring Hermes in only as an optional remote engine, or not at all.
 10. **Repo `gateway/`** is a stale 0.3.0 copy; the live gateway is in Blaze-agent. Delete or mark it read-only to avoid edits in the wrong place.
 
@@ -279,10 +279,10 @@ become one (winner named) · **Service** = stays server-side, app gets a client.
 | Area | Constraint |
 |---|---|
 | Process rules | Commit straight to `main`; every commit title ends with `[skip ci]`; **no build until the owner says build**. Every CI push is a 15–25 min round and workflows cancel-in-progress, so batch. Source of truth GitLab `blazeinchue/argus-mobile` (87806466); CI runs on the GitHub mirror (GitLab CI out of credits; `.gitlab-ci.yml` left alone). Never push/merge on GitHub. |
-| Identity | Never change `applicationId` (`com.blaze.assistant`, owned by MR !26 `feat/argus-identity-signing`) or signing; never touch `keystore/` or the "Rotate signing key" CI step; release key lives outside the repo (v3 lineage). Keep the Kotlin package name too (prefs, components, tests pin it). |
+| Identity | Never change `applicationId` (`com.argus.assistant`, owned by MR !26 `feat/argus-identity-signing`) or signing; never touch `keystore/` or the "Rotate signing key" CI step; release key lives outside the repo (v3 lineage). Keep the Kotlin package name too (prefs, components, tests pin it). |
 | Build | Gradle 8.7, AGP with `compileSdk`/`targetSdk` 34, `minSdk` 26, JVM 17 (CI also JDK 21), Compose BOM 2024.09; `gradle.properties` memory settings must stay (7 GB runners OOM otherwise); Go 1.26 builds `wgproxy`/`blazerouter` before Gradle; `:youtube` optional private module. ABIs arm64-v8a + armeabi-v7a. |
 | Data compatibility | `blaze.db` schema is shared with Desktop/CLI → only side tables; prefs must stay backward compatible; old setting keys keep defaults. |
-| Deployed wire names | `blaze-auto`, `X-Blaze-*`, `blaze-auth`, `ai.blaze-app.workers.dev` stay until a two-name redeploy. |
+| Deployed wire names | `blaze-auto`, `X-Argus-*`, `blaze-auth`, `ai.blaze-app.workers.dev` stay until a two-name redeploy. |
 | Licence | Argus is PolyForm Noncommercial 1.0.0. Bot HQ code is MIT (fine to port with notice in THIRD_PARTY_NOTICES) but its **Grok Bot artwork/icons are not** — don't copy. A-team has no LICENSE (same owner; add one before copying code). PRoot (GPL-2.0) ships as a separate executable (keep it that way); no GPL code linked into the app (NewPipe precedent). |
 | Tests | No `@Ignore`, no skipping, no threshold changes (700 ms stall gate, 7 low-RAM smoke tests, PhonePerfTest). Source-scan tests (`NoSquareTest`, `BackButtonTest`, `ThemeEverywhereTest`, `IconOnlyTest`, `MoviesLegalTest`, skill hash / `store/catalog.json` sync) break on new files that ignore them. |
 
@@ -302,11 +302,11 @@ become one (winner named) · **Service** = stays server-side, app gets a client.
 | CI churn | Big UI changes break screenshot/source-scan tests | Land per package, update the matching tests in the same commit, keep shots reviewed. |
 
 ### d.3 Recommended package layout for the unified app
-Keep one `:app` module and the `com.blaze.assistant` package (identity + prefs + tests). New code goes in new packages;
+Keep one `:app` module and the `com.argus.assistant` package (identity + prefs + tests). New code goes in new packages;
 pure rules in their own files with JVM tests, Android glue beside them.
 
 ```
-com.blaze.assistant
+com.argus.assistant
 ├─ agent/            lead loop (frozen in size), guards, prompt, skills, specialists (Spec = bot base), lanes, query/
 │  └─ engines/       NEW optional remote engines (HermesEngine over /v1/responses)
 ├─ team/             NEW  Bot (persistent Spec), TeamStore, Soul, BotThreads, ManagerTools (team tool group),
@@ -338,7 +338,7 @@ x_search, Library → 10. A-team look across `ui/space` + `ui/team` → 11. A-te
 ## Sources read
 `argus-mobile`: README.md, STATUS.md (top rounds), CHANGELOG.md (unreleased → 0.51.0), HANDOFF.md, HANDOFF-argus-hark-design.md,
 P.H.A.md, BUILDING.md, settings.gradle.kts, app/build.gradle.kts, AndroidManifest.xml, docs/AGENTS.md, MEMORY.md,
-TERMINAL-FIRST.md, HANDOFF-0.52.md, removed.md, package tree and file headers under `app/src/main/java/com/blaze/assistant/**`,
+TERMINAL-FIRST.md, HANDOFF-0.52.md, removed.md, package tree and file headers under `app/src/main/java/com/argus/assistant/**`,
 gateway/README.md, blazerouter/main.go, wgproxy/main.go, .gitlab-ci.yml.
 `a-team`: README.md, HANDOFF.md, HANDOFF-v2.16.md, HANDOFF-connectors.md (head), api/README.md, `app/www/*.js` headers, app.css tokens.
 `bot-hq`: README.md, docs/ARCHITECTURE.md, server/src file list, `agent/tools.ts` tool names, `engine.ts` (SOUL.md).

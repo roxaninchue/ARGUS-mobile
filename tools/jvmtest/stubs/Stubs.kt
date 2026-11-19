@@ -1,5 +1,5 @@
 // JVM test stubs for app classes the pure files touch (not shipped; P1-TM-04 local test run only).
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 object Settings {
     val m = HashMap<String, Any?>()
     var userName: String = ""   // P1-MG-01: the A-team import sets the name when there is none

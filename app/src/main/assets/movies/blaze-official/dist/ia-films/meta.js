@@ -1,5 +1,5 @@
 "use strict";
-// Blaze Official example provider: title details from archive.org's metadata API.
+// Argus Official example provider: title details from archive.org's metadata API.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMeta = async function (o) {
     var id = String(o.link).split("/details/")[1].split(/[/?#]/)[0];

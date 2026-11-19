@@ -1,5 +1,5 @@
 "use strict";
-// Blaze Official example provider: the item's own MP4 / Ogg video files and subtitle files on archive.org.
+// Argus Official example provider: the item's own MP4 / Ogg video files and subtitle files on archive.org.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getStream = async function (o) {
     var id = String(o.link).split("/details/")[1].split(/[/?#]/)[0];

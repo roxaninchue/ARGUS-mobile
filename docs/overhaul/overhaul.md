@@ -85,7 +85,7 @@ Finn will attach Living UI reference images; add them here when received.
 - **Code:** `ui/living/LivingSpec.kt` (version, palettes, grid, the Chat | Living state), `LivingModel.kt` (steps → cards, pure), `LivingLayout.kt` (positions, connectors, culling, camera, pure), `LivingScreen.kt` (Compose canvas, cards, pill, switch). ChatScreen.kt: +7 lines (the Chat | Living branch in Chat mode, the switch over the chatbox, Back). Agent.kt untouched. Tests: `LivingModelTest` (8) and `LivingLayoutTest` (7), 15/15 on the JVM; the four Living files compile with the Compose compiler (2.0.20) against compose 1.7.5 with stubs for the app classes. Not run: Gradle, Robolectric shots, device.
 
 ### Living UI: deferred (TODO)
-- Browser screenshots: the background browser keeps no per-step screenshot today, so browser cards show the page's text; add low-res thumbnails when the browser captures them (Blaze Phone's `PhoneBrowser.frame` is only for the phone-control browser).
+- Browser screenshots: the background browser keeps no per-step screenshot today, so browser cards show the page's text; add low-res thumbnails when the browser captures them (Argus Phone's `PhoneBrowser.frame` is only for the phone-control browser).
 - Charts and comparison tables built from the agent's findings, sticky notes for standing rules, tasks-still-to-do cards.
 - Collapsing older steps into dots, a minimap, and one lane per bot when team bots work in parallel; real bot orbs (Finn's design) in place of the placeholder dots.
 - Battery-saver check for the pulse (reduced motion is honoured today), and Robolectric shots of the canvas in light and dark.

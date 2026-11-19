@@ -23,7 +23,7 @@ Reported by Finn, 14 Nov 2026 (same "dots3 note preview" task: the agent found t
 - A chart image it already had (benchmarks) wasn't read.
 
 **Fix plan**
-1. Give search a real API path through the Blaze Gateway (key held server-side, keyless chain stays as the fallback). Pick the provider with Finn; it may cost money, so it needs his approval.
+1. Give search a real API path through the Argus Gateway (key held server-side, keyless chain stays as the fallback). Pick the provider with Finn; it may cost money, so it needs his approval.
 2. "Go to the source" rule: when the answer names a likely canonical page (Hugging Face model card, GitHub repo, official docs), fetch_page it before telling the user to look themselves. Never end with "search for X yourself" while a fetch is untried.
 3. When a found page carries a chart/table image relevant to the ask, read it (vision) before concluding the data isn't available.
 4. Measure: log per-search outcome (source, ok/blocked/empty/irrelevant) so success rate is visible in the gateway admin, and track it release to release.

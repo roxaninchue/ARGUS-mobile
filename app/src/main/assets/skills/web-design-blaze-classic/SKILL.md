@@ -1,7 +1,7 @@
 ---
 name: web-design-blaze-classic
-description: Design or build pages, apps or components in the classic Blaze look from blazeinchue.netlify.app - paper #fcfcfc, ink #111110, one blue accent #1f4bd8, square edges, Inter + Inter Tight, mono uppercase labels, hairline-ruled grids and particle-dot hovers. Use for anything Blaze-branded or when the user asks for "the Blaze style".
-tags: [design, web, css, brand, blaze]
+description: Design or build pages, apps or components in the classic Argus look from blazeinchue.netlify.app - paper #fcfcfc, ink #111110, one blue accent #1f4bd8, square edges, Inter + Inter Tight, mono uppercase labels, hairline-ruled grids and particle-dot hovers. Use for anything Blaze-branded or when the user asks for "the Argus style".
+tags: [design, web, css, brand, argus]
 version: 1
 ---
 

@@ -48,7 +48,7 @@ trace against those lists (Android 11 and 12 branches):
   (no setresuid/setresgid/setgroups/faccessat2/clone3/rseq). Start-up is fine on Android 11/12.
 - **armeabi-v7a (1.31.0, patched):** `qemu-arm -strace`: ash start-up and most applets are fine, but the old path
   syscalls are not in Android's 32-bit app allowlist (only the `*at()` forms are): `chmod`, `chown32`, `link`, `symlink`,
-  `rmdir`, `mknod`. So on a phone that runs Blaze as 32-bit, `busybox chmod`, `ln`, `rmdir`, `rm -r`, `cp -a`, `tar x`,
+  `rmdir`, `mknod`. So on a phone that runs Argus as 32-bit, `busybox chmod`, `ln`, `rmdir`, `rm -r`, `cp -a`, `tar x`,
   `mkfifo` die with signal 31. Setup now runs those through a second probe and, if it fails, leaves
   `TermLogic.LEGACY_SYSCALL_APPLETS` to Android's toybox in /system/bin.
 

@@ -5,7 +5,7 @@
 > Unlike previous versions of the app, where we tried to force the model: none of that. We build the system around the
 > model, not put in contradictory instructions and try to bend every model.
 
-Earlier versions of ARGUS (and Blaze before it) put keyword rules and regexes in front of the model to guess what the user
+Earlier versions of ARGUS (and Argus before it) put keyword rules and regexes in front of the model to guess what the user
 meant, and stacked up prompt orders ("ALWAYS…", "NEVER…", "answer EVERY…") to patch the results. Each patch fought the
 others, and the model ended up looking dumb when the system around it was the problem. Don't do that again.
 
@@ -112,7 +112,7 @@ The fix is what the model receives. Nothing detects "exam", "completed" or "fini
 - **`ViewRouter.route` / `SkillMatch` / `SpecialistMatch`** still pick views, skill packs and specialists from the message's words (they add the `make` / `extras` groups). Next candidate: list them in the prompt and let the model load one.
 - **The loop guards in `runLoop`** (RetryGuard, ClaimGuard, EchoGuard, ToolTruth.NUDGE / refusal, AutoContinue…). These are HARNESS MUSTS #4, the "Plain harness" toggle.
 - **Small guesses:** `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
-- **The `BusyRoute` / `LookupLane` / `SmallTalk` / `ChatLane.fits` objects.** These are now unused by the chat turn. `LookupLane` is still used by BlazeQuery (`QueryRuntime`). Delete each one when nothing else needs it.
+- **The `BusyRoute` / `LookupLane` / `SmallTalk` / `ChatLane.fits` objects.** These are now unused by the chat turn. `LookupLane` is still used by ArgusQuery (`QueryRuntime`). Delete each one when nothing else needs it.
 
 When you touch one of these, replace it with structure plus the model's own decision, and add a line to
 `ModelFirstTest`.
