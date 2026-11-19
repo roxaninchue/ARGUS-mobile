@@ -106,7 +106,7 @@ object SetupRunner {
         when (id) {
             "linux" -> when {
                 !com.blaze.assistant.terminal.Linux.supported() -> Status(Phase.SKIPPED, note = "Not available on this phone's CPU")
-                com.blaze.assistant.terminal.Linux.installed() -> Status(Phase.DONE)
+                com.blaze.assistant.terminal.Distros.installed(com.blaze.assistant.terminal.Distros.setupId()) -> Status(Phase.DONE)
                 else -> null
             }
             "tools" -> if (!com.blaze.assistant.terminal.Linux.supported()) Status(Phase.SKIPPED, note = "Comes with the Linux workspace") else null
@@ -136,13 +136,18 @@ object SetupRunner {
         probe(i.id)?.let { if (SetupPlan.settled(it)) return it }
         return when (i.id) {
             "linux" -> {
-                val watch = scope.launch { while (isActive) { val t = com.blaze.assistant.terminal.Linux.status.value; if (t.isNotBlank()) set(i.id, Status(Phase.RUNNING, percentIn(t), t.take(60))); delay(500) } }
-                val r = try { com.blaze.assistant.terminal.Linux.install() } finally { watch.cancel() }
-                if (com.blaze.assistant.terminal.Linux.installed()) Status(Phase.DONE) else fail(r)
+                // Owner 2026-11-20: the Linux picked on the distro step (Alpine when none was, or this CPU can't run it)
+                val id = com.blaze.assistant.terminal.Distros.setupId()
+                val watch = scope.launch { while (isActive) {
+                    val t = if (id == "alpine") com.blaze.assistant.terminal.Linux.status.value else com.blaze.assistant.terminal.Distros.status.value
+                    if (t.isNotBlank()) set(i.id, Status(Phase.RUNNING, percentIn(t), t.take(60))); delay(500) } }
+                val r = try { com.blaze.assistant.terminal.Distros.install(id) } finally { watch.cancel() }
+                if (com.blaze.assistant.terminal.Distros.installed(id)) Status(Phase.DONE) else fail(r)
             }
             "tools" -> {
-                com.blaze.assistant.terminal.LinuxReadyRunner.ensure("alpine", force = true)
-                val marker = java.io.File(com.blaze.assistant.terminal.Linux.rootfs(), com.blaze.assistant.terminal.LinuxReady.MARKER)
+                val id = com.blaze.assistant.terminal.Distros.setupId()
+                com.blaze.assistant.terminal.LinuxReadyRunner.ensure(id, force = true)
+                val marker = java.io.File(com.blaze.assistant.terminal.Linux.rootfs(id), com.blaze.assistant.terminal.LinuxReady.MARKER)
                 if (marker.exists()) Status(Phase.DONE) else fail("The Linux tools didn't finish")
             }
             "skills" -> { com.blaze.assistant.agent.SkillLibrary.seed(app); Status(Phase.DONE) }

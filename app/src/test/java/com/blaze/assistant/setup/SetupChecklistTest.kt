@@ -139,4 +139,22 @@ class SetupChecklistTest {
         assertTrue(intro.indexOf("write()") < intro.indexOf("beforePost()"))
         assertTrue(intro.indexOf("beforePost()") < intro.indexOf("FirstRunIntro.pick(text, fallback)"))
     }
+
+    @Test fun theIntroductionArrivesSentenceBySentence() {
+        // owner 2026-11-20: never popping in whole
+        val t = FirstRunIntro.FALLBACK
+        val cuts = FirstRunIntro.cuts(t)
+        assertTrue("several beats", cuts.size >= 4)
+        assertEquals("the last beat is the whole text", t.length, cuts.last())
+        assertEquals("in order, never repeating", cuts.sorted().distinct(), cuts)
+        assertTrue("the first beat is the greeting", t.substring(0, cuts[0]).startsWith("Hi, I'm"))
+        assertTrue("the bold title is never cut in half", cuts.none { t.substring(0, it).count { c -> c == '*' } % 4 != 0 })
+        assertEquals(listOf(5), FirstRunIntro.cuts("Hello"))
+        assertEquals(listOf(3, 8), FirstRunIntro.cuts("Hi. Yes!"))
+        assertEquals(listOf(3, 9), FirstRunIntro.cuts("Hi.\n\nMore"))
+        assertEquals(emptyList<Int>(), FirstRunIntro.cuts(""))
+        assertEquals(450L, FirstRunIntro.pause("Hi."))
+        assertEquals(1_800L, FirstRunIntro.pause("x".repeat(400)))
+        assertTrue(FirstRunIntro.pause("A sentence of medium length here.") in 451L..1_799L)
+    }
 }

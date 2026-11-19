@@ -18,6 +18,12 @@ object Distros {
     private fun abi() = Build.SUPPORTED_ABIS.firstOrNull()
     fun installable() = TermLogic.installable(abi())
 
+    /** Owner 2026-11-20: the Linux picked on the onboarding distro step, blank when none was. */
+    fun chosen(): String = try { com.blaze.assistant.agent.Settings.str(TermLogic.PREF_AGENT_DISTRO, "") } catch (_: Throwable) { "" }
+
+    /** The Linux setup installs and the agent works in: the pick, else Alpine. */
+    fun setupId(): String = TermLogic.setupDistro(chosen(), installable().map { it.id })
+
     fun installed(id: String): Boolean = if (id == "alpine") Linux.installed()
         else File(Linux.rootfs(id), ".blaze_ok").exists()
 

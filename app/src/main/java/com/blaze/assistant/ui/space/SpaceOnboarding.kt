@@ -42,6 +42,7 @@ import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -147,6 +148,7 @@ fun SpaceOnboardingScreen(
                     SpaceOnboarding.Step.INTRO -> IntroStep(onNext)
                     SpaceOnboarding.Step.LANGUAGE -> LanguageStep(onNext)
                     SpaceOnboarding.Step.SIGN_IN -> SignIn(signedIn, onNext, accountCard)
+                    SpaceOnboarding.Step.DISTRO -> DistroStep(onNext)
                 }
             }
         }
@@ -244,6 +246,119 @@ private fun LanguageStep(onNext: () -> Unit) {
         // The continue button: its own round button at the far right, level with the frame
         SpaceRoundButton(tr("Continue"), onNext, Modifier.align(Alignment.CenterEnd).padding(end = LanguagePick.NEXT_EDGE.dp),
             tag = SpaceTags.LANGUAGE_NEXT, size = LanguagePick.NEXT.dp, fill = look.primaryFill) {
+            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("arrow-right", 22), null,
+                Modifier.size(22.dp).graphicsLayer { scaleX = if (rtl) -1f else 1f }, tint = look.primaryInk)
+        }
+    }
+}
+
+/** A Linux's logo, in its brand colour (white on the dark space view when the brand colour is too dark to read). */
+@Composable
+private fun distroLogo(id: String): ImageVector? = androidx.compose.runtime.remember(id) {
+    val l = com.blaze.assistant.terminal.DistroLogos.of(id) ?: return@remember null
+    val c = Color(l.argb.toInt())
+    val ink = if (c.red * 0.299f + c.green * 0.587f + c.blue * 0.114f < 0.15f) Color(0xFFE8EEF4) else c
+    ImageVector.Builder(name = "distro-$id", defaultWidth = 24.dp, defaultHeight = 24.dp,
+        viewportWidth = com.blaze.assistant.terminal.DistroLogos.VIEWPORT, viewportHeight = com.blaze.assistant.terminal.DistroLogos.VIEWPORT)
+        .addPath(pathData = androidx.compose.ui.graphics.vector.addPathNodes(l.d), fill = androidx.compose.ui.graphics.SolidColor(ink))
+        .build()
+}
+
+/**
+ * Owner 2026-11-20: after sign-in, before the chat, the agent's Linux. The same wheel as the language step: every Linux this
+ * phone can run by name, snapping into the framed middle row; Debian carries a star (recommended) and sits in the frame
+ * first ([DistroPick]). At the far left, level with the frame, the Linux in the frame shows its logo in a round bubble, the
+ * twin of the continue arrow at the far right. The pick is saved as [com.blaze.assistant.terminal.TermLogic.PREF_AGENT_DISTRO];
+ * setup installs it in the background (SetupRunner) and the agent's commands run in it.
+ */
+@Composable
+private fun DistroStep(onNext: () -> Unit) {
+    val look = SpaceLook.Dark
+    val all = androidx.compose.runtime.remember {
+        try { com.blaze.assistant.terminal.Distros.installable() } catch (_: Throwable) { com.blaze.assistant.terminal.TermLogic.DISTROS }
+    }
+    val rows = DistroPick.rows(all.map { it.id })
+    val cpu = androidx.compose.runtime.remember { com.blaze.assistant.terminal.TermLogic.cpu(android.os.Build.SUPPORTED_ABIS.firstOrNull()) }
+    var sel by androidx.compose.runtime.saveable.rememberSaveable {
+        androidx.compose.runtime.mutableStateOf(rows.getOrNull(DistroPick.start(rows, com.blaze.assistant.terminal.Distros.chosen())) ?: "alpine")
+    }
+    val save: (String) -> Unit = { id -> sel = id; com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.terminal.TermLogic.PREF_AGENT_DISTRO, id) }
+    val short = com.blaze.assistant.ui.common.WindowUi.short()
+    val side = LanguagePick.side(short)
+    val rtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
+    val motion = com.blaze.assistant.ui.MotionTokens.enabled
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val rowPx = with(density) { LanguagePick.ROW_H.dp.toPx() }
+    val list = androidx.compose.foundation.lazy.rememberLazyListState(rows.indexOf(sel).coerceAtLeast(0))
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    androidx.compose.runtime.LaunchedEffect(list) {
+        androidx.compose.runtime.snapshotFlow { list.isScrollInProgress }.collect { moving ->
+            if (!moving) rows.getOrNull(LanguagePick.centred(list.firstVisibleItemIndex, list.firstVisibleItemScrollOffset, rowPx, rows.size))?.let(save)
+        }
+    }
+    val star = Color(0xFFFFC94D)
+    BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe()) {
+        val wheelW = LanguagePick.width(maxWidth.value)
+        Column(Modifier.align(Alignment.TopCenter).padding(top = if (short) 10.dp else 44.dp, start = 24.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            ArgusLogo(if (short) 56.dp else 96.dp)
+            Spacer(Modifier.height(if (short) 8.dp else 16.dp))
+            Text(tr(DistroPick.TITLE), textAlign = TextAlign.Center, style = SpaceType.headline(if (short) 22.sp else 28.sp, look.ink))
+            Spacer(Modifier.height(8.dp))
+            Text(tr(DistroPick.SUBTITLE, BrandName.UPPER), textAlign = TextAlign.Center, style = SpaceType.body(14.sp, look.sub),
+                modifier = Modifier.widthIn(max = 360.dp))
+        }
+        // The frame: the Linux in the middle row is the pick
+        Box(Modifier.align(Alignment.Center).size(wheelW.dp, LanguagePick.ROW_H.dp).clip(SpaceShapes.pill).background(look.card)
+            .border(1.dp, look.hair, SpaceShapes.pill).testTag(SpaceTags.DISTRO_FRAME))
+        androidx.compose.foundation.lazy.LazyColumn(Modifier.align(Alignment.Center).size(wheelW.dp, LanguagePick.height(short).dp)
+            .testTag(SpaceTags.DISTRO_WHEEL)
+            .semantics { contentDescription = tr("Linux: {0}", all.firstOrNull { it.id == sel }?.name.orEmpty()) },
+            state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = (side * LanguagePick.ROW_H).dp),
+            flingBehavior = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(list)) {
+            items(rows.size, key = { rows[it] }) { i ->
+                val d = all.first { it.id == rows[i] }
+                val on = d.id == sel
+                Box(Modifier.fillMaxWidth().height(LanguagePick.ROW_H.dp)
+                    .graphicsLayer {
+                        val info = list.layoutInfo
+                        val item = info.visibleItemsInfo.firstOrNull { it.index == i }
+                        alpha = if (item == null) 0f else LanguagePick.fade(
+                            kotlin.math.abs(item.offset + item.size / 2f - (info.viewportStartOffset + info.viewportEndOffset) / 2f) / rowPx, side)
+                    }
+                    .selectable(selected = on, role = androidx.compose.ui.semantics.Role.RadioButton) {
+                        scope.launch { if (motion) list.animateScrollToItem(i) else list.scrollToItem(i) }
+                    }
+                    .padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(d.name, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            style = SpaceType.body(if (on) 19.sp else 17.sp, if (on) look.ink else look.sub)
+                                .copy(fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal))
+                        if (DistroPick.starred(d.id)) {
+                            Spacer(Modifier.width(6.dp))
+                            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Star, tr("Recommended"),
+                                Modifier.size(if (on) 18.dp else 16.dp), tint = star)
+                        }
+                    }
+                }
+            }
+        }
+        val cur = all.firstOrNull { it.id == sel }
+        Text(cur?.let { tr(DistroPick.detail(it.name, it.version, cpu?.let { c -> it.sizeMb[c] }, DistroPick.starred(it.id))) }.orEmpty(),
+            textAlign = TextAlign.Center, style = SpaceType.body(14.sp, look.sub),
+            modifier = Modifier.align(Alignment.Center).offset(y = (LanguagePick.height(short) / 2f + 24f).dp).padding(horizontal = 40.dp))
+        // The logo bubble: at the far left, level with the frame, the twin of the arrow
+        Box(Modifier.align(Alignment.CenterStart).padding(start = LanguagePick.NEXT_EDGE.dp).size(LanguagePick.NEXT.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape).background(look.card)
+            .border(1.dp, look.hair, androidx.compose.foundation.shape.CircleShape).testTag(SpaceTags.DISTRO_LOGO),
+            contentAlignment = Alignment.Center) {
+            androidx.compose.animation.Crossfade(sel, label = "distro-logo") { id ->
+                distroLogo(id)?.let { Image(it, null, Modifier.size(26.dp)) }
+                    ?: androidx.compose.material3.Icon(Icons.Rounded.Terminal, null, Modifier.size(24.dp), tint = look.ink)
+            }
+        }
+        SpaceRoundButton(tr("Continue"), { save(sel); onNext() }, Modifier.align(Alignment.CenterEnd).padding(end = LanguagePick.NEXT_EDGE.dp),
+            tag = SpaceTags.DISTRO_NEXT, size = LanguagePick.NEXT.dp, fill = look.primaryFill) {
             androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("arrow-right", 22), null,
                 Modifier.size(22.dp).graphicsLayer { scaleX = if (rtl) -1f else 1f }, tint = look.primaryInk)
         }

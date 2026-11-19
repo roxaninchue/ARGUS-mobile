@@ -1,3 +1,12 @@
+## Unreleased: the agent's Linux in onboarding, an introduction that arrives line by line
+
+2026-11-20, owner's list.
+- **Distro step** (`ui/space/SpaceOnboarding.kt` DistroStep, `SpaceOnboarding.Step.DISTRO`, `DistroPick`): once signed in, before the chat, "Pick your agent's playground". The same wheel as the language: every Linux this phone can run (`Distros.installable()`), Debian starred as recommended and in the frame first, a line under the wheel with version and size. At the far left, level with the frame, the Linux in the frame shows its logo in its own round bubble (the twin of the continue arrow). Skipped on a CPU no Linux is built for. Tags `space_distro_frame` / `_wheel` / `_logo` / `_next`.
+- **The pick is used** (`TermLogic.PREF_AGENT_DISTRO` = `agent_distro`, `Distros.chosen()` / `setupId()`): setup's Linux item installs the picked Linux (Alpine when none was picked or this CPU can't run it), its tools item readies it, and `linux=true` commands run in it once installed (`TermLogic.defaultDistro(installed, chosen)`).
+- **Logos** (`terminal/DistroLogos.kt`): one path per Linux from simple-icons (CC0), in brand colour.
+- **Introduction line by line** (`FirstRunIntro.cuts` / `pause` / `THINK_MS`, `Agent.introduce`): 1.2 s of thinking, then the introduction arrives sentence by sentence at a reading pace instead of popping in whole. With reduced motion it is posted at once.
+- Tests: SpaceLogicTest +1 (and the old flow with `distros = false`), SetupChecklistTest +1, TermLogicTest +1.
+
 ## Unreleased: language wheel, heads-ups pause, faster intro, forms for planning
 
 2026-11-19, owner's list.
