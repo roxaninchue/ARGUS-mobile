@@ -4,7 +4,8 @@ on:
   push:
     # 0.52.2: the ARGUS living 3D Home branch builds and tests here too (it never publishes: the publish steps are main-only).
     # 0.52.3: + the ARGUS x Hark design branch (same rules: tests, shots, a test-signed APK, never published).
-    branches: [main, feat/argus-3d-home, feat/argus-hark-design]
+    # 2026-11-19: + the package rename branch (owner: "build"; same rules, never published, never release-key signed).
+    branches: [main, feat/argus-3d-home, feat/argus-hark-design, feat/argus-rename]
     # The Blaze Gateway Worker (gateway/) has its own workflow; changes only there don't rebuild the app.
     paths-ignore: ['gateway/**', '.github/workflows/gateway.yml', '**/*.md', 'docs/**']
   # Pull requests (including from forks) only build; they never publish, sign a release or edit issues.
@@ -41,7 +42,7 @@ jobs:
       # Caches wrapper, dependencies AND the build cache, with fallback restore (the old key went cold on any .gradle.kts edit).
       - uses: gradle/actions/setup-gradle@v4
         with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/feat/argus-3d-home' && github.ref != 'refs/heads/feat/argus-hark-design' }}
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/feat/argus-3d-home' && github.ref != 'refs/heads/feat/argus-hark-design' && github.ref != 'refs/heads/feat/argus-rename' }}
 
       - uses: actions/setup-go@v5
         with:
@@ -162,8 +163,8 @@ jobs:
       # permission, shared-uid and auth, so an APK signed only with the old (public) key can't replace a rotated install.
       # The new key lives only in Actions secrets; PR builds never see it.
       - name: Rotate signing key
-        # 0.52.2: never on the feat/argus-3d-home test branch (its APK is test-signed below, never with a release key); 0.52.3: nor feat/argus-hark-design
-        if: github.event_name != 'pull_request' && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue') && github.ref != 'refs/heads/feat/argus-3d-home' && github.ref != 'refs/heads/feat/argus-hark-design'
+        # 0.52.2: never on the feat/argus-3d-home test branch (its APK is test-signed below, never with a release key); 0.52.3: nor feat/argus-hark-design; 2026-11-19: nor feat/argus-rename
+        if: github.event_name != 'pull_request' && github.repository == format('{0}{1}{2}{3}/Blaze-agent', 'lack', 'son', 'kap', 'apahue') && github.ref != 'refs/heads/feat/argus-3d-home' && github.ref != 'refs/heads/feat/argus-hark-design' && github.ref != 'refs/heads/feat/argus-rename'
         env:
           NEW_P12: ${{ secrets.BLAZE_SIGNING_P12 }}
           NEW_PASS: ${{ secrets.BLAZE_SIGNING_PASS }}
@@ -278,7 +279,7 @@ jobs:
       # 0.52.2: a TEST-signed copy of this build for phones (throwaway key made here, like lowram-smoke.yml). Never published:
       # a phone with the real ARGUS must uninstall it first (the signatures differ). The release key is never used here.
       - name: Test-signed APK (throwaway key, install only)
-        if: github.ref == 'refs/heads/feat/argus-3d-home' || github.head_ref == 'feat/argus-3d-home' || github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design'
+        if: github.ref == 'refs/heads/feat/argus-3d-home' || github.head_ref == 'feat/argus-3d-home' || github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design' || github.ref == 'refs/heads/feat/argus-rename' || github.head_ref == 'feat/argus-rename'
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
@@ -292,11 +293,11 @@ jobs:
           (cd test-signed && sha256sum *.apk | tee SHA256SUMS)
 
       - name: Upload test-signed APK
-        if: github.ref == 'refs/heads/feat/argus-3d-home' || github.head_ref == 'feat/argus-3d-home' || github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design'
+        if: github.ref == 'refs/heads/feat/argus-3d-home' || github.head_ref == 'feat/argus-3d-home' || github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design' || github.ref == 'refs/heads/feat/argus-rename' || github.head_ref == 'feat/argus-rename'
         uses: actions/upload-artifact@v4
         with:
-          # 0.52.3: argus-hark-design-test-signed-<sha> on feat/argus-hark-design
-          name: ${{ (github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design') && 'argus-hark-design' || 'argus-3d-home' }}-test-signed-${{ github.sha }}
+          # 0.52.3: argus-hark-design-test-signed-<sha> on feat/argus-hark-design; 2026-11-19: argus-rename-test-signed-<sha> on feat/argus-rename
+          name: ${{ (github.ref == 'refs/heads/feat/argus-hark-design' || github.head_ref == 'feat/argus-hark-design') && 'argus-hark-design' || ((github.ref == 'refs/heads/feat/argus-rename' || github.head_ref == 'feat/argus-rename') && 'argus-rename' || 'argus-3d-home') }}-test-signed-${{ github.sha }}
           path: test-signed/
           retention-days: 14
 
