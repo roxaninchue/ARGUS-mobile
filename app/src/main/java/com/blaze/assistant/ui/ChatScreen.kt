@@ -196,7 +196,7 @@ fun ChatScreen() {
     val composer = com.blaze.assistant.ui.composer.rememberComposerState()
 
     var settingsPage by rememberSaveable { mutableStateOf<String?>(null) }
-    // First run (space/SpaceOnboarding, owner 2026-11-18): the logo clip, the language pill, then sign-in; the downloads run in
+    // First run (space/SpaceOnboarding, owner 2026-11-18): the logo clip, the language wheel, then sign-in; the downloads run in
     // the background afterwards. People who already set ARGUS up never see it.
     // Account lock: a fresh install sees the clip and the language before the lock screen (MainActivity), so after signing in
     // there onboarding starts at the sign-in step, which moves on by itself.
@@ -1225,7 +1225,7 @@ fun ChatScreen() {
             said = { Agent.messages.value.takeLast(300).filter { it.role == Role.USER || it.role == Role.BLAZE }
                 .map { com.blaze.assistant.composer.SpotlightGroups.Said(it.id, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text), it.role == Role.USER) } })
         } // !onboard
-        // First run (owner 2026-11-18): the clip, the language pill, then sign-in. Finishing starts the downloads (they finish
+        // First run (owner 2026-11-18): the clip, the language wheel, then sign-in. Finishing starts the downloads (they finish
         // in the background; Life shows what is left) and lands in the chat, where ARGUS introduces itself (setup/FirstRun).
         if (onboard) {
             val step = com.blaze.assistant.ui.space.SpaceOnboarding.Step.valueOf(obStep)

@@ -38,7 +38,7 @@ object Habits {
             Settings.setStr("habits", all.toString().take(20_000))
             val offered = Settings.str("habits_offered", "")
             // Unreleased after 0.52.3: the dial's High offers at 3 of the last 7 days (else 4).
-            if (recent.size >= ProactiveDial.habitDays(Proactive.level) && !offered.split(',').contains(key)) {
+            if (!Proactive.paused && recent.size >= ProactiveDial.habitDays(Proactive.level) && !offered.split(',').contains(key)) {
                 Settings.setStr("habits_offered", (offered.split(',').filter { it.isNotBlank() }.takeLast(40) + key).joinToString(","))
                 val time = "%02d:%02d".format(hour, 0)
                 Proactive.say("You open $label around ${hour}:00 most days. Want me to do it for you?",

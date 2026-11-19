@@ -71,6 +71,7 @@ object RichReplies {
         "rows of facts with several columns (plans, prices, schedules, specs of 4+ items, results) -> a ```table card; " +
         "numbers, shares or a trend -> a ```chart; anything with an amount the user could change (splitting, tips, loans, savings, unit or recipe scaling) -> a ```tool; " +
         "a choice the user must make next -> a ```choices block; several details you need from the user at once -> a ```form; a how-to -> numbered steps with **bold titles**. " +
+        "When a reply needs several details from the user, or is planning something with them (a trip, an event, a budget), a ```form, ```choices or ```tool is welcome there too; it is an option, and plain text is fine when it reads better. " +
         "IN CHAT, INLINE: a diagram, chart or visual the user asks for (\"draw\", \"flowchart\", \"diagram\", \"chart\", \"graph\", \"map out\", \"visualise\") goes straight in your reply as a ```mermaid or ```chart block, drawn in the chat. " +
         "Don't write files, don't open a preview, Design view or preview_server, and don't call use_skill for it. Make a file (or preview / export it) only when the user asks to save, export, download, edit or make a file. " +
         "Interactive blocks are fenced code blocks: the kind word ALONE on the opening ``` line, the JSON on the next line(s), then a closing ```; the body is ONE valid JSON object (double quotes, no comments, no trailing commas). The examples below show kind + JSON: " +

@@ -449,7 +449,7 @@ open class ShotsTest {
             onPage = {}, onSignOut = {}, onSearch = {}, version = "0.52.3")
     }
 
-    // owner 2026-11-18: first run is the logo clip, the language pill, then sign-in; this is the language step.
+    // owner 2026-11-18: first run is the logo clip, the language step (a wheel since 2026-11-19), then sign-in; this is the language step.
     @Test fun onboarding() = shot("22-onboarding") {
         com.blaze.assistant.ui.space.SpaceOnboardingScreen(com.blaze.assistant.ui.space.SpaceOnboarding.Step.LANGUAGE, signedIn = true,
             onNext = {}, accountCard = {})

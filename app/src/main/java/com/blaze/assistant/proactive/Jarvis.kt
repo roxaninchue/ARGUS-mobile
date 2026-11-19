@@ -99,6 +99,7 @@ object Jarvis {
         if (!::app.isInitialized || !Settings.ready) return@withLock
         val l = level
         if (l == Level.OFF || Proactive.quietNow() || busy() || !inUse()) return@withLock
+        if (Proactive.paused) return@withLock   // owner 2026-11-19: heads-ups paused: no questions, glances, routine ideas or call offers
         // v0.43.0: Bank mode on: no screen glances, camera looks or anything else until it's off.
         if (com.blaze.assistant.bank.BankMode.active) return@withLock
         val lim = JarvisLogic.limits(l)
@@ -287,7 +288,7 @@ object Jarvis {
     private fun offerCall() {
         val open = Awareness.nows().count { it.key.startsWith("followup:") }
         // Unreleased after 0.52.3: a call offer is a check-in the dial judges.
-        if (!ProactiveDial.allows(Proactive.level, ProactiveDial.Source.CHECK_IN, false)) return
+        if (!ProactiveDial.allows(Proactive.level, ProactiveDial.Source.CHECK_IN, false, Proactive.paused)) return
         val text = JarvisLogic.callLine(open, Calendar.getInstance().get(Calendar.HOUR_OF_DAY))
         try { com.blaze.assistant.agent.Agent.recordHeadsUp(text, ProactiveDial.Why.checkIn()) } catch (_: Throwable) { }
         val call = android.app.PendingIntent.getActivity(app, 7400, com.blaze.assistant.IntentKey.sign(app, Intent(app, com.blaze.assistant.MainActivity::class.java)

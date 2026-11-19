@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import com.blaze.assistant.agent.LlmClient
 import com.blaze.assistant.agent.Settings
+import com.blaze.assistant.device.CrashLog
 import com.blaze.assistant.home.HomeBoard
 import com.blaze.assistant.home.HomeTodo
 import kotlinx.coroutines.CoroutineScope
@@ -16,22 +18,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 2026-11-18 first run, after sign-in (owner's spec): ARGUS introduces itself in the chat and puts the "Set up ARGUS"
- * checklist in Life itself, with its life_todo tool (action setup) in the same hidden turn
- * ([com.blaze.assistant.agent.Agent.introduce], model-written, [FirstRunIntro]). When no model answers (offline, an
- * error, the timeout) or the model left it out, the app puts the same checklist there before the message lands, so the
- * fixed introduction's "it's in Life" is true. Once per install ([PREF_WELCOMED]). Life keeps the list in step with the
+ * 2026-11-18 first run, after sign-in (owner's spec): ARGUS introduces itself in the chat and the "Set up ARGUS" checklist
+ * is in Life. Owner 2026-11-19, faster intro: the app puts the checklist there and the introduction lands with it
+ * ([com.blaze.assistant.agent.Agent.introduce], [FirstRunIntro]): in English the fixed introduction at once, in another
+ * language one model reply with no tools (the fixed one, translated, when no model answers in time). Once per install ([PREF_WELCOMED]). Life keeps the list in step with the
  * phone ([sync], on each visit) and a tap on a step opens its screen ([open]).
  */
 object FirstRun {
     const val PREF_WELCOMED = "first_run_welcomed"
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.blaze.assistant.device.CrashLog.guard)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CrashLog.guard)
 
     private fun granted(ctx: Context, p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
 
     /** What the phone says now about each step (cheap: permissions, prefs and system settings). */
     fun probe(ctx: Context): SetupChecklist.Probe {
-        fun ok(what: String, f: () -> Boolean): Boolean = try { f() } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("FirstRun.probe $what", t); false }
+        fun ok(what: String, f: () -> Boolean): Boolean = try { f() } catch (t: Throwable) { CrashLog.quiet("FirstRun.probe $what", t); false }
         return SetupChecklist.Probe(
             calendarPermission = ok("calendar") { granted(ctx, Manifest.permission.READ_CALENDAR) },
             googleConnected = ok("google") { com.blaze.assistant.connect.Connectors.connected("google") },
@@ -52,18 +53,25 @@ object FirstRun {
     }
 
     /**
-     * Onboarding finished: ARGUS introduces itself and makes the checklist (life_todo setup); the app's checklist is only
-     * the fallback. Runs once per install.
+     * Onboarding finished: the checklist goes in Life and ARGUS's introduction is posted with it (owner 2026-11-19). English
+     * needs no model call; another language gets one model reply with no tools ([FirstRunIntro]). Runs once per install.
      */
     fun welcome(ctx: Context) {
         val app = ctx.applicationContext
         if (Settings.bool(PREF_WELCOMED, false)) return
         Settings.setBool(PREF_WELCOMED, true)
         scope.launch {
-            val open = SetupChecklist.open(SetupChecklist.fresh(SetupChecklist.detected(probe(app))))
-            val lang = com.blaze.assistant.i18n.AppLang.current.english
-            com.blaze.assistant.agent.Agent.introduce(FirstRunIntro.kickoff(open, lang), com.blaze.assistant.i18n.tr(FirstRunIntro.FALLBACK),
-                tools = FirstRunIntro.TOOLS, beforePost = { withContext(Dispatchers.IO) { ensureChecklist(app) } })
+            val lang = com.blaze.assistant.i18n.AppLang.current
+            val write: (suspend () -> String?)? = if (!FirstRunIntro.needsModel(lang.code)) null else {
+                val open = SetupChecklist.open(SetupChecklist.fresh(SetupChecklist.detected(probe(app))))
+                val ask: suspend () -> String? = {
+                    LlmClient.complete(FirstRunIntro.messages(open, lang.english), null, null, null,
+                        LlmClient.Lane.MAIN).optString("content")
+                }
+                ask
+            }
+            com.blaze.assistant.agent.Agent.introduce(com.blaze.assistant.i18n.tr(FirstRunIntro.FALLBACK), write,
+                beforePost = { withContext(Dispatchers.IO) { ensureChecklist(app) } })
         }
     }
 
@@ -82,6 +90,6 @@ object FirstRun {
     fun open(ctx: Context, item: HomeTodo.Item): Boolean {
         if (item.open.isBlank()) return false
         return try { com.blaze.assistant.agent.SelfSetup.open(ctx, item.open); true }
-        catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("FirstRun.open", t); false }
+        catch (t: Throwable) { CrashLog.quiet("FirstRun.open", t); false }
     }
 }

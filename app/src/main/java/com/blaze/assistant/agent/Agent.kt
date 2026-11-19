@@ -1070,18 +1070,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     }
 
     /**
-     * 2026-11-18 first run (setup/FirstRun): ARGUS's first message. The model writes it in a hidden turn from [kickoff] (the
-     * app's facts about the moment, not the user's words) through the normal loop; its reply lands in the chat on screen as
-     * ARGUS's. With no reply in [FirstRunIntro.TIMEOUT_MS] (offline, an error) the fixed [fallback] is posted instead.
-     * [tools] ride with the hidden turn whatever the diet picks (life_todo: ARGUS puts the setup checklist in Life);
-     * [beforePost] runs after the turn and before the message lands (FirstRun makes sure the checklist is there).
+     * 2026-11-18 first run (setup/FirstRun): ARGUS's first message, landing in the chat on screen as ARGUS's. Owner
+     * 2026-11-19, faster intro: [write] is the one model reply (another language than English; no tools, so no tool step),
+     * null for none; with no reply in [FirstRunIntro.TIMEOUT_MS] (offline, an error) or no [write], the fixed [fallback] is
+     * posted. [beforePost] puts the setup checklist in Life just before, so the two arrive together.
      */
-    fun introduce(kickoff: String, fallback: String, tools: Set<String> = emptySet(), beforePost: suspend () -> Unit = {}) { scope.launch {
-        val s = Session(newId()).also { it.title = "First run"; it.pinTools = tools; sessions[it.id] = it }
-        val text = try { kotlinx.coroutines.withTimeoutOrNull(com.blaze.assistant.setup.FirstRunIntro.TIMEOUT_MS) { s.send(kickoff); s.job?.join()
-            s.msgs.lastOrNull { (it.role == Role.BLAZE && it.meta != Ack.META) || it.role == Role.ERROR }?.takeIf { it.role == Role.BLAZE }?.text } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce", e); null }
-        try { s.job?.cancel(); ChatStore.delete(s.id) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce cleanup", e) }
-        sessions.remove(s.id)
+    fun introduce(fallback: String, write: (suspend () -> String?)? = null, beforePost: suspend () -> Unit = {}) { scope.launch {
+        val text = if (write == null) null else try { kotlinx.coroutines.withTimeoutOrNull(com.blaze.assistant.setup.FirstRunIntro.TIMEOUT_MS) { write() } }
+            catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce", e); null }
         try { beforePost() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce beforePost", e) }
         val c = cur; c.add(Role.BLAZE, com.blaze.assistant.setup.FirstRunIntro.pick(text, fallback)); c.persist(); refreshChats()
     } }

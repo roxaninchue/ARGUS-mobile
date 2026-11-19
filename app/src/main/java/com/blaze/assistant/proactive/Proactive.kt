@@ -60,6 +60,10 @@ object Proactive {
     var level: ProactiveDial.Level
         get() = ProactiveDial.Level.of(Settings.str(ProactiveDial.KEY, ProactiveDial.Level.NORMAL.id))
         set(v) = Settings.setStr(ProactiveDial.KEY, v.id)
+    /** Owner 2026-11-19: the one switch that pauses every unprompted message ([ProactiveDial.PAUSED_KEY]). */
+    var paused: Boolean
+        get() = Settings.bool(ProactiveDial.PAUSED_KEY, false)
+        set(v) { Settings.setBool(ProactiveDial.PAUSED_KEY, v); if (::app.isInitialized) start(app) }
     var quietFrom: Int
         get() = Settings.str("quiet_from", "22").toIntOrNull() ?: 22
         set(v) = Settings.setStr("quiet_from", v.toString())
@@ -89,7 +93,7 @@ object Proactive {
     fun tick(force: Boolean = false) {
         if (!::app.isInitialized || !enabled || !Settings.ready) return
         if (com.blaze.assistant.connect.AccountGate.locked()) return   // account lock: no checks, nothing raised
-        if (!ProactiveDial.runsChecks(level)) return   // dial at Off: nothing this check could raise would be shown
+        if (!ProactiveDial.runsChecks(level, paused)) return   // paused, or the dial at Off: nothing this check could raise would be shown
         if (!force && System.currentTimeMillis() - lastCheck < everyMin * 60_000L * 0.8) return
         scope.launch { check() }
     }
@@ -98,7 +102,7 @@ object Proactive {
     private val chatApps = Regex("whatsapp|messages|messenger|telegram|signal|phone|sms|gmail|outlook|slack|teams", RegexOption.IGNORE_CASE)
 
     fun onNotification(appName: String, title: String, text: String) {
-        if (!enabled || !::app.isInitialized || !ProactiveDial.runsChecks(level)) return
+        if (!enabled || !::app.isInitialized || !ProactiveDial.runsChecks(level, paused)) return
         if (chatApps.containsMatchIn(appName) && urgentWords.containsMatchIn("$title $text") && System.currentTimeMillis() - lastUrgent > 120_000) {
             lastUrgent = System.currentTimeMillis()
             scope.launch { delay(4000); check(urgentHint = "$appName — $title: $text", urgentApp = appName) }
@@ -232,7 +236,7 @@ Reply ONLY with JSON: {"say": "" or "one or two short friendly sentences", "urge
             kind: com.blaze.assistant.notify.BlazeThread.Kind = com.blaze.assistant.notify.BlazeThread.Kind.HEADS_UP,
             why: String = "", source: ProactiveDial.Source = ProactiveDial.Source.CHECK) {
         if (!::app.isInitialized) return
-        if (!ProactiveDial.allows(level, source, urgent)) return
+        if (!ProactiveDial.allows(level, source, urgent, paused)) return
         val now = System.currentTimeMillis()
         synchronized(said) {
             said.entries.removeAll { now - it.value > 6 * 3600_000 }

@@ -6,8 +6,8 @@ import java.io.File
 
 /**
  * Landscape audit 2026-11-15 (docs/overhaul/landscape-audit.md), redone for the cinematic onboarding (owner 2026-11-18):
- * the language step is a centred pill over the space view, so it fits a phone held sideways (a smaller logo on a short
- * window, the list sized to the window by LanguagePick.box); the clip is fitted to any shape (IntroClip.size); every step
+ * the language step is a wheel on the space view, so it fits a phone held sideways (a smaller logo and one language each
+ * side of the frame on a short window, LanguagePick.side); the clip is fitted to any shape (IntroClip.size); every step
  * keeps clear of a side cutout.
  */
 class OnboardingLandscapeTest {
@@ -17,17 +17,19 @@ class OnboardingLandscapeTest {
         "com/blaze/assistant/ui/space/SpaceIntro.kt").readText()
     private fun body(fn: String, s: String = src) = s.substringAfter("private fun $fn(").substringBefore("\n}\n")
 
-    @Test fun languageIsAPillThatOpensIntoAList() {
+    /** Owner 2026-11-19: no pop-out box; a wheel on the page with a framed middle row, snapping, sized for a short window. */
+    @Test fun languageIsAWheelOnThePage() {
         val b = body("LanguageStep")
         assertTrue("com.blaze.assistant.ui.common.WindowUi.short()" in b)
         assertTrue("cutoutSafe()" in b && "BoxWithConstraints(" in b)
-        assertTrue("the pill is centred", "Modifier.align(Alignment.Center).height(LanguagePick.PILL_H.dp)" in b)
+        assertTrue("one each side on a short window", "LanguagePick.side(short)" in b && "LanguagePick.height(short)" in b)
+        assertTrue("the frame is the middle row", "Modifier.align(Alignment.Center).size(wheelW.dp, LanguagePick.ROW_H.dp)" in b)
         assertTrue("the arrow sits apart, at the far end", "Modifier.align(Alignment.CenterEnd).padding(end = LanguagePick.NEXT_EDGE.dp)" in b)
-        assertTrue("the list is sized to the window", "LanguagePick.box(h / 2f, h, LanguagePick.contentHeight(langs.size))" in b)
-        assertTrue("the list scrolls", "LazyColumn(" in b && "rememberLazyListState()" in b)
-        assertTrue("springs", "spring(dampingRatio = 0.82f" in b)
-        assertTrue("no typing", "TextField" !in b && "BasicTextField" !in b)
-        assertTrue("Back folds the list first", "BackHandler(enabled = open) { open = false }" in b)
+        assertTrue("it scrolls and snaps", "LazyColumn(" in b && "rememberSnapFlingBehavior(list)" in b)
+        assertTrue("the settled row is the language", "snapshotFlow { list.isScrollInProgress }" in b && "LanguagePick.centred(" in b)
+        assertTrue("a tap scrolls the row into the frame", "animateScrollToItem(i)" in b)
+        assertTrue("rows fade towards the edges", "LanguagePick.fade(" in b)
+        assertTrue("no pop-out box, no typing", "BackHandler" !in b && "var open" !in b && "TextField" !in b)
     }
 
     @Test fun theClipFillsAnyWindowOnBlack() {

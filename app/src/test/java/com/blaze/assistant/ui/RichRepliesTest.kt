@@ -101,4 +101,12 @@ class RichRepliesTest {
         assertTrue(RichReplies.PROMPT.contains("**bold titles**"))
         assertTrue(RichReplies.PROMPT.length < 6000)   // v0.26.1: the visual-answers prompt, still static (cached prefix)
     }
+
+    /** Owner 2026-11-19, smart UI: forms, choices and tools are welcome for several details or planning, as an option. */
+    @Test fun promptOffersFormsForPlanningAsAnOption() {
+        val line = RichReplies.PROMPT.lines().joinToString(" ").substringAfter("When a reply needs several details").substringBefore(". \"")
+        assertTrue(RichReplies.PROMPT.contains("When a reply needs several details from the user, or is planning something with them"))
+        assertTrue(RichReplies.PROMPT.contains("a ```form, ```choices or ```tool is welcome there too; it is an option, and plain text is fine when it reads better."))
+        for (w in listOf("ALWAYS", "NEVER", "MUST")) assertFalse(w, line.contains(w))
+    }
 }

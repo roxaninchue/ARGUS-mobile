@@ -65,6 +65,31 @@ object ProactiveDial {
     /** False when the background check would only find heads-ups the dial drops anyway (no model call is spent). */
     fun runsChecks(level: Level): Boolean = level != Level.OFF
 
+    /**
+     * Owner 2026-11-19, "Heads-ups paused": one switch (Settings key [PAUSED_KEY], off by default) stops every message
+     * ARGUS starts on its own: background checks (and the briefs they carry), Home news, follow-up nudges, the
+     * getting-to-know-you questions, screen and camera glances, routine ideas, battery offers and call offers. Replies,
+     * finished tasks, reminders, the user's own routines and questions during a task they started never pass through
+     * here, so they still notify; a follow-up the user said yes to counts as their own reminder ([KEPT_WHEN_PAUSED]).
+     * The dial keeps its setting underneath, so switching the pause off brings everything back as it was.
+     */
+    const val PAUSED_KEY = "headsups_paused"
+
+    /** The only sources that still reach the user while heads-ups are paused. */
+    val KEPT_WHEN_PAUSED = setOf(Source.REMINDER, Source.FOLLOW_UP_ASKED)
+
+    /** [allows], with the pause on top: paused, only [KEPT_WHEN_PAUSED] get through, urgent or not. */
+    fun allows(level: Level, source: Source, urgent: Boolean, paused: Boolean): Boolean =
+        if (paused) source in KEPT_WHEN_PAUSED else allows(level, source, urgent)
+
+    /** [runsChecks], with the pause on top: paused, no background check runs (no model call). */
+    fun runsChecks(level: Level, paused: Boolean): Boolean = !paused && runsChecks(level)
+
+    /** The line under the pause switch. */
+    fun pausedNote(paused: Boolean): String = if (paused)
+        "Paused. Replies, finished tasks, reminders, your own routines and questions about a task you started still come through."
+    else "${BrandName.NAME} may message you on its own when something matters."
+
     /** Days out of the last 7 an app must be opened around the same hour before the habit offer. */
     fun habitDays(level: Level): Int = if (level == Level.HIGH) 3 else 4
 

@@ -26,9 +26,9 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * Local check (NOT part of the official low-RAM gate), redone for the cinematic onboarding (owner 2026-11-18): the first
  * run on the low-RAM emulator with animations on and real touches injected into the window. Three rounds of: the logo
- * clip (a tap skips it) -> the language pill, a tap on the pill opens the list (it grows up and down out of the pill), a
- * tap on the dimmed space folds it, then a tap on the round arrow at the far right -> onboarding over (signed in, so no
- * sign-in step). Same 50 ms main-thread monitor and 700 ms limit as the other checks (round 1 is a warm-up: classes, the
+ * clip (a tap skips it) -> the language wheel (owner 2026-11-19), a tap on the row under the frame scrolls it in, a tap on
+ * the row above scrolls the first language back, then a tap on the round arrow at the far right -> onboarding over
+ * (signed in, so no sign-in step). Same 50 ms main-thread monitor and 700 ms limit as the other checks (round 1 is a warm-up: classes, the
  * logo, the clip and the space image decode); screenshots go to the app's files (space-onboarding/). A tap that lands
  * while the screen is still fading in is retried (BUILDING.md: a device check never hangs on one gesture).
  * Run by .github/workflows/home-intro-check.yml (tools/smoke/run-space-onboarding.sh). Replaces ArgusSpotlightCheck.
@@ -80,9 +80,9 @@ class SpaceOnboardingCheck {
     private fun tap(x: Float, y: Float) { val down = SystemClock.uptimeMillis(); touch(MotionEvent.ACTION_DOWN, x, y, down); SystemClock.sleep(60); touch(MotionEvent.ACTION_UP, x, y, down) }
 
     private var topInset = 0
-    /** The middle of the window between the bars: where the language pill sits. */
+    /** The middle of the window between the bars: where the language wheel's frame sits. */
     private fun midY() = topInset + (h - topInset - bottomInset) / 2f
-    /** The round arrow: 24 dp from the right edge, 56 dp across, level with the pill. */
+    /** The round arrow: 24 dp from the right edge, 56 dp across, level with the frame. */
     private fun arrowX() = w - (24 + 28) * density
 
     private fun waitFor(what: String, ms: Long = 2_500, cond: () -> Boolean): Boolean {
@@ -136,8 +136,8 @@ class SpaceOnboardingCheck {
                 SystemClock.sleep(1_200); mark("$r clip", measured); if (round == 1) shot("clip")
                 if (!attempt("language after a tap on the clip", act = { tap(w / 2f, h / 2f) }) { step.value == SpaceOnboarding.Step.LANGUAGE }) failures++
                 SystemClock.sleep(900); mark("$r language", measured); if (round == 1) shot("language")
-                tap(w / 2f, midY()); SystemClock.sleep(700); mark("$r list open", measured); if (round == 1) shot("language-open")
-                tap(w / 2f, topInset + 8 * density); SystemClock.sleep(700); mark("$r list folded", measured)
+                tap(w / 2f, midY() + 52 * density); SystemClock.sleep(900); mark("$r wheel next", measured); if (round == 1) shot("language-next")
+                tap(w / 2f, midY() - 52 * density); SystemClock.sleep(900); mark("$r wheel back", measured)
                 val before = finished
                 if (!attempt("done after the arrow", act = { tap(arrowX(), midY()) }) { finished > before }) failures++
                 SystemClock.sleep(400); mark("$r continue", measured)

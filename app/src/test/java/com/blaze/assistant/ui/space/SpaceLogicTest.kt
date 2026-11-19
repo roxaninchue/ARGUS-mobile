@@ -289,40 +289,32 @@ class SpaceLogicTest {
         assertEquals("onboarding_intro_seen", SpaceOnboarding.PREF_INTRO_SEEN)
     }
 
-    @Test fun theLanguageListGrowsOutOfThePillAndStaysOnScreen() {
+    /** Owner 2026-11-19: the language wheel, a framed middle row with two languages each side (one on a short window). */
+    @Test fun theLanguageWheelSnapsIntoItsFrame() {
         val L = LanguagePick
-        // 23 languages fit a tall phone: the list is centred on the pill, half above and half below
-        val content = L.contentHeight(10)
-        assertEquals(10 * L.ROW_H + 2 * L.PAD, content, 0.01f)
-        val b = L.box(anchorY = 400f, avail = 800f, content = content)
-        assertEquals(content, b.height, 0.01f)
-        assertEquals(400f - content / 2f, b.top, 0.01f)
-        // more than fits: as tall as the screen allows, inside the margins
-        val big = L.box(400f, 800f, L.contentHeight(40))
-        assertEquals(800f - 2 * L.MARGIN, big.height, 0.01f)
-        assertEquals(L.MARGIN, big.top, 0.01f)
-        // a pill near the bottom: the list slides up to stay on screen
-        val low = L.box(760f, 800f, L.contentHeight(6))
-        assertTrue(low.top + low.height <= 800f - L.MARGIN + 0.01f)
-        assertTrue(low.top >= L.MARGIN)
-        // never shorter than the pill, even on a tiny window
-        assertTrue(L.box(50f, 100f, 10f).height >= L.PILL_H)
-        assertTrue(L.box(300f, 600f, 10f).height >= L.PILL_H)
-        // widths: the list at most MAX_W; the pill never reaches the continue button at the edge
-        assertEquals(L.MAX_W, L.width(800f), 0.01f)
-        assertEquals(360f - 2 * L.MARGIN, L.width(360f), 0.01f)
-        val w = 360f
-        val pillRight = w / 2f + L.pillMax(w) / 2f
-        assertTrue("pill clear of the arrow", pillRight <= w - L.NEXT_EDGE - L.NEXT)
-        // the pill's narrowest never passes its widest, so a narrow window can't push it into the arrow
+        assertEquals(2, L.side(short = false)); assertEquals(1, L.side(short = true))
+        assertEquals(5 * L.ROW_H, L.height(false), 0.01f)
+        assertEquals(3 * L.ROW_H, L.height(true), 0.01f)
+        // the wheel never reaches the continue button at the edge, down to a split-screen window
         for (aw in listOf(280f, 320f, 360f, 411f, 800f)) {
-            assertTrue(L.pillMin(aw) <= L.pillMax(aw))
-            assertTrue("clear of the arrow at $aw", aw / 2f + L.pillMin(aw) / 2f <= aw - L.NEXT_EDGE - L.NEXT)
+            assertTrue("clear of the arrow at $aw", aw / 2f + L.width(aw) / 2f <= aw - L.NEXT_EDGE - L.NEXT)
+            assertTrue(L.width(aw) <= L.MAX_W)
         }
-        assertEquals(150f, L.pillMin(411f), 0.01f)
-        // opening scrolls so the language in use sits mid-list
-        assertEquals(0, L.firstRow(2, 9)); assertEquals(6, L.firstRow(10, 9))
-        assertEquals(5f, L.lerp(0f, 10f, 0.5f), 0.001f); assertEquals(0f, L.lerp(0f, 10f, 0f), 0.001f)
+        assertEquals(L.MAX_W, L.width(1200f), 0.01f)
+        // it opens on the language in use, else the first
+        assertEquals(2, L.index("bem", listOf("en", "sw", "bem")))
+        assertEquals(0, L.index("xx", listOf("en", "sw")))
+        // the row in the frame: the anchored row until it has moved more than half a row
+        assertEquals(3, L.centred(3, 0, 100f, 10))
+        assertEquals(3, L.centred(3, 50, 100f, 10))
+        assertEquals(4, L.centred(3, 51, 100f, 10))
+        assertEquals(9, L.centred(9, 80, 100f, 10))
+        assertEquals(0, L.centred(0, 0, 100f, 0))
+        // full in the frame, fading out towards the edges, never below 0
+        assertEquals(1f, L.fade(0f, 2), 0.001f); assertEquals(1f, L.fade(0.4f, 2), 0.001f)
+        assertTrue(L.fade(1f, 2) < 1f && L.fade(2f, 2) < L.fade(1f, 2) && L.fade(2f, 2) > 0f)
+        assertTrue(L.fade(1f, 1) < L.fade(1f, 2))
+        assertEquals(0f, L.fade(10f, 2), 0.001f)
     }
 
     @Test fun theClipFitsWithoutCuttingTheLogo() {

@@ -3,6 +3,7 @@ package com.blaze.assistant.ui
 
 import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
+import com.blaze.assistant.proactive.ProactiveDial
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.clickable
@@ -120,6 +121,9 @@ fun ProactivePage() {
     var speak by remember { mutableStateOf(P.speak) }
     var every by remember { mutableStateOf(P.everyMin) }
     V18Note("${BrandName.NAME} watches what's new (notifications, calendar, phone health) and speaks up on its own when something matters: an urgent message, a meeting soon, a phone problem. Most checks stay silent. Urgent-looking messages are checked right away.")
+    // Owner 2026-11-19: one switch pauses every message ARGUS starts on its own; switching it back brings them all back.
+    var paused by remember { mutableStateOf(P.paused) }
+    ToggleRow("Pause heads-ups", ProactiveDial.pausedNote(paused), paused) { paused = !paused; P.paused = paused }
     ToggleRow("Speak up on my own", "Heads-ups with a one-tap action", on) { on = !on; P.enabled = on }
     ToggleRow("Say it out loud", "Read heads-ups aloud when the ringer is on (urgent ones always)", speak) { speak = !speak; P.speak = speak }
     Spacer(Modifier.height(12.dp))
@@ -143,9 +147,9 @@ fun ProactivePage() {
     var dial by remember { mutableStateOf(P.level) }
     Spacer(Modifier.height(12.dp))
     Label(tr("How proactive"), modifier = Modifier.padding(bottom = 8.dp))
-    com.blaze.assistant.ui.space.SpaceSegmented(com.blaze.assistant.proactive.ProactiveDial.Level.values().map { it.id to it.label }, dial.id,
-        Modifier.fillMaxWidth(), tag = "proactive_level") { id -> dial = com.blaze.assistant.proactive.ProactiveDial.Level.of(id); P.level = dial }
-    V18Note(com.blaze.assistant.proactive.ProactiveDial.note(dial) + " Every heads-up says why it came.", top = 6)
+    com.blaze.assistant.ui.space.SpaceSegmented(ProactiveDial.Level.values().map { it.id to it.label }, dial.id,
+        Modifier.fillMaxWidth(), tag = "proactive_level") { id -> dial = ProactiveDial.Level.of(id); P.level = dial }
+    V18Note(ProactiveDial.note(dial) + " Every heads-up says why it came.", top = 6)
     if (!com.blaze.assistant.notify.NotificationBrain.enabled(ctx)) { Spacer(Modifier.height(6.dp)); NotificationAccessRow() }
     val pm = ctx.getSystemService(android.os.PowerManager::class.java)
     if (pm?.isIgnoringBatteryOptimizations(ctx.packageName) != true) {
