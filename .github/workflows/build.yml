@@ -84,32 +84,9 @@ jobs:
           node tools/check-no-blaze.test.mjs
           node tools/check-no-blaze.mjs
 
-      # The YouTube plug-in (Gradle :youtube) is REQUIRED (owner, 2026-11-19): there is no build without it. It lives in the
-      # owner's private plug-in repo, checked out into youtube/ with the secret below (fine-grained PAT, Contents: read).
-      # No secret (not set, or a fork's pull request) or a failed checkout fails the build here. After the rename guard,
-      # because youtube/ is not this repo's content.
-      - name: YouTube plug-in token (required)
-        env:
-          T: ${{ secrets.BLAZE_MOBILE_TOKEN }}
-        run: |
-          if [ -z "$T" ]; then
-            echo "::error title=YouTube plug-in missing::The plug-in token secret is not available (not set, or a pull request from a fork). The YouTube plug-in is required: there is no build without it."
-            exit 1
-          fi
-
-      - name: Check out the YouTube plug-in (→ youtube/)
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ format('{0}{1}{2}{3}/Blaze-mobile', 'lack', 'son', 'kap', 'apahue') }}
-          ref: main
-          token: ${{ secrets.BLAZE_MOBILE_TOKEN }}
-          path: youtube
-          persist-credentials: false
-
-      # Until the private plug-in is renamed upstream, its package is rewritten to com.argus.assistant here (overhaul.md
-      # Deviations, "YouTube plug-in rewrite"). Also fails if youtube/build.gradle.kts is missing.
-      - name: YouTube plug-in package → com.argus.assistant (build-time rewrite)
-        run: bash tools/rename/youtube-plugin.sh
+      # The YouTube plug-in (Gradle :youtube) is REQUIRED (owner, 2026-11-19): there is no build without it. Since
+      # 2026-11-19 it lives in this repo (youtube/, rebuilt in-repo), so it comes with the checkout above: no secret,
+      # no second checkout. Its tests run with the build below (:youtube:test).
 
       # 2026-11-19: Robolectric downloads its Android jars from Maven Central while the tests run, with no retry. One failed
       # fetch (run on b4de2eaf: android-all-instrumented 13-...-i6, .pom not found) failed all 142 sdk=33 tests at once.
