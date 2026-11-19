@@ -1,3 +1,10 @@
+## Unreleased: follow-up chips read any spelling of their marker, no control marker shows as text
+
+2026-11-19, Finn's screenshot: a reply ended with the raw text "<<follow-offs: Turn on calendar access | Make tonight 2 hours | Start a 25-min timer now>>".
+- **Root cause:** `ReplyParts.split` only knew the key `follow-ups` (and close spellings like `followups`), so the model's near-miss `follow-offs` was not a marker and stayed in the bubble.
+- **Fix** (`agent/QuickReplies.kt` › `FollowUpMarker`, used by `ReplyParts.split`, `EmptyReply` and `ScheduleTruth`): any near-miss key (follow-offs, followups, follow ups, follow-up, suggestions, quick replies, chips; any case, optional spaces) becomes chips, items split by `|` or `;`, and a marker with no closing `>>` at the end of the final reply still gives its chips. Every other `<<word>>` / `<<word: …>>` control marker is cut from the bubble (not inside ``` code), and a half-typed `<<…` waits while streaming. `QuickReplies.RULE` now gives the exact spelling once (`FollowUpMarker.MARK`). Agent.kt shrinks (the old regexes moved out).
+- Tests: QuickRepliesTest 11 (5 new: the leaked follow-offs reply, missing `>>`, near-miss keys and separators, no marker shown on any streamed prefix, ordinary text and code untouched). Not run: Android / Gradle compile, Robolectric, a device check.
+
 ## Unreleased: flashcards phase 3, card sources, typed answers checked by the model, study reminder
 
 2026-11-18 night, last part of the owner's flashcards redesign.
