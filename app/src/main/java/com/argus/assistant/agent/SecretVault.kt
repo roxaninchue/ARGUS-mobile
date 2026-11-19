@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
 /**
- * 0.46.6 Secure form: Blaze's vault for keys, tokens, logins, cards and one-time codes the user gives through the
+ * 0.46.6 Secure form: Argus's vault for keys, tokens, logins, cards and one-time codes the user gives through the
  * Secure Form card (request_secret) or the paste guard. Each value is sealed with the Android Keystore AES-GCM key
  * ([Secrets], `enc1:`), lives in `filesDir/secret_vault.json` (excluded from cloud backup and device transfer) and is
  * never put into chat history, memory, logs, crash reports or a model/gateway request. The model only ever handles an
@@ -13,7 +13,7 @@ import java.io.File
  * at execution time ([SecretUse]) and every output is scrubbed back to the handle ([scrub]).
  *
  * One-time codes are kept in memory only (10 minutes) and never written. Card details are only ever typed into a page
- * in Blaze's browser on the sites they were saved for, and are never shown back (no reveal). Pure Kotlin + org.json:
+ * in Argus's browser on the sites they were saved for, and are never shown back (no reveal). Pure Kotlin + org.json:
  * tests swap [seal] / [open] and [file] (SecretVaultTest, SecretUseTest, SecretLeakTest).
  */
 object SecretVault {
@@ -103,7 +103,7 @@ object SecretVault {
     private fun write(o: JSONObject) = synchronized(lock) {
         known = null
         try { file?.let { f -> f.parentFile?.mkdirs(); val t = File(f.path + ".tmp"); t.writeText(o.toString()); if (!t.renameTo(f)) { f.writeText(o.toString()); t.delete() } } }
-        catch (e: Exception) { try { com.blaze.assistant.device.CrashLog.quiet("SecretVault.write", e) } catch (_: Throwable) { } }
+        catch (e: Exception) { try { com.argus.assistant.device.CrashLog.quiet("SecretVault.write", e) } catch (_: Throwable) { } }
     }
     private fun items(d: JSONObject): JSONObject = d.optJSONObject("items") ?: JSONObject().also { d.put("items", it) }
 

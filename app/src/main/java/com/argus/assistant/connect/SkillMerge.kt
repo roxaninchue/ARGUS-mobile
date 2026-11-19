@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 /**
  * Pure merge rules for skill sync (no Android, so it is unit-tested on the JVM).

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.28.3: where the user is in the shell (Chat | Projects), as one small pure value so the rules are unit tested.

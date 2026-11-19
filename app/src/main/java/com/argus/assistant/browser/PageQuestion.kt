@@ -1,9 +1,9 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import java.net.URLDecoder
 
 /**
- * v0.27.1: what the user actually means in "Ask Blaze about this page" (pure, tested in PageQuestionTest).
+ * v0.27.1: what the user actually means in "Ask Argus about this page" (pure, tested in PageQuestionTest).
  *
  * People paste things that aren't questions: a giant Google / Lens results link, nothing at all, one word. Each of
  * those is turned into a real request for the model ([Intent.prompt]) and a compact bubble for the chat

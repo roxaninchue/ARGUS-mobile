@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,19 +29,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.connect.AccountGate
-import com.blaze.assistant.connect.AccountLock
-import com.blaze.assistant.connect.BlazeAccount
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.readableWidth
-import com.blaze.assistant.ui.space.ArgusLogo
-import com.blaze.assistant.ui.space.SpaceBackdrop
-import com.blaze.assistant.ui.space.SpaceCard
-import com.blaze.assistant.ui.space.SpaceHeadline
-import com.blaze.assistant.ui.space.SpaceLook
-import com.blaze.assistant.ui.space.SpacePillButton
-import com.blaze.assistant.ui.space.SpaceType
+import com.argus.assistant.connect.AccountGate
+import com.argus.assistant.connect.AccountLock
+import com.argus.assistant.connect.ArgusAccount
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.readableWidth
+import com.argus.assistant.ui.space.ArgusLogo
+import com.argus.assistant.ui.space.SpaceBackdrop
+import com.argus.assistant.ui.space.SpaceCard
+import com.argus.assistant.ui.space.SpaceHeadline
+import com.argus.assistant.ui.space.SpaceLook
+import com.argus.assistant.ui.space.SpacePillButton
+import com.argus.assistant.ui.space.SpaceType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -56,21 +56,21 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AccountLockRoute(reason: AccountLock.Reason, modifier: Modifier = Modifier) {
     val look = SpaceLook.Dark
-    val v by BlazeAccount.view.collectAsState()
+    val v by ArgusAccount.view.collectAsState()
     LaunchedEffect(v.user != null) {
-        withContext(Dispatchers.IO) { BlazeAccount.refreshProviders(true) }
+        withContext(Dispatchers.IO) { ArgusAccount.refreshProviders(true) }
         while (v.user != null) {
-            withContext(Dispatchers.IO) { BlazeAccount.checkSession() }
+            withContext(Dispatchers.IO) { ArgusAccount.checkSession() }
             AccountGate.recompute()
             delay(30_000)
         }
     }
-    CompositionLocalProvider(LocalBlaze provides DarkColors) {
+    CompositionLocalProvider(LocalArgus provides DarkColors) {
         DarkSystemBars()   // always dark: keep the status bar icons light over it
         SpaceBackdrop(modifier.testTag(ACCOUNT_LOCK_TAG), forceDark = true) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe().padding(horizontal = 18.dp, vertical = 18.dp).readableWidth()) {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                    ArgusLogo(if (com.blaze.assistant.ui.common.WindowUi.short()) 72.dp else 120.dp, Modifier.align(Alignment.CenterHorizontally))
+                    ArgusLogo(if (com.argus.assistant.ui.common.WindowUi.short()) 72.dp else 120.dp, Modifier.align(Alignment.CenterHorizontally))
                     Spacer(Modifier.height(18.dp))
                     SpaceCard {
                         SpaceHeadline(tr(AccountLock.TITLE), size = 30.sp)
@@ -91,17 +91,17 @@ const val ACCOUNT_LOCK_TAG = "account_lock"
 private fun SignedInLocked() {
     val look = SpaceLook.Dark
     val scope = rememberCoroutineScope()
-    val v by BlazeAccount.view.collectAsState()
+    val v by ArgusAccount.view.collectAsState()
     var busy by remember { mutableStateOf(false) }
     Text(tr("Signed in as {0}", v.user?.email.orEmpty()), style = SpaceType.body(14.sp, look.sub), modifier = Modifier.padding(vertical = 8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         Box(Modifier.weight(1f)) {
             SpacePillButton(tr(if (busy) "Checking…" else "Try again"), {
-                if (!busy) { busy = true; scope.launch { withContext(Dispatchers.IO) { BlazeAccount.checkSession() }; AccountGate.recompute(); busy = false } }
+                if (!busy) { busy = true; scope.launch { withContext(Dispatchers.IO) { ArgusAccount.checkSession() }; AccountGate.recompute(); busy = false } }
             }, primary = true, modifier = Modifier.fillMaxWidth())
         }
         Box(Modifier.weight(1f)) {
-            SpacePillButton(tr("Sign out"), { scope.launch { BlazeAccount.signOut() } }, modifier = Modifier.fillMaxWidth())
+            SpacePillButton(tr("Sign out"), { scope.launch { ArgusAccount.signOut() } }, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -113,7 +113,7 @@ private fun SignedInLocked() {
 @Composable
 fun AccountLockCard(reason: AccountLock.Reason, onSignIn: () -> Unit, onClose: () -> Unit) {
     val look = SpaceLook.Dark
-    CompositionLocalProvider(LocalBlaze provides DarkColors) {
+    CompositionLocalProvider(LocalArgus provides DarkColors) {
         Box(Modifier.fillMaxSize().navigationBarsPadding().padding(16.dp), contentAlignment = Alignment.BottomCenter) {
             SpaceCard(Modifier.widthIn(max = 520.dp).fillMaxWidth(), tag = ACCOUNT_LOCK_CARD_TAG) {
                 SpaceHeadline(tr(AccountLock.TITLE), size = 24.sp)

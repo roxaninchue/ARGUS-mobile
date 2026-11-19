@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.readableWidth
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.readableWidth
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -63,15 +63,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.composer.SelfMap
-import com.blaze.assistant.composer.SpotlightGroups
-import com.blaze.assistant.composer.SpotlightRecents
-import com.blaze.assistant.composer.SpotlightSearch
-import com.blaze.assistant.ui.MotionTokens
-import com.blaze.assistant.ui.SearchGlyph
-import com.blaze.assistant.ui.composer.ComposerState
-import com.blaze.assistant.ui.composer.SpotRow
-import com.blaze.assistant.ui.composer.rememberSpotlightActions
+import com.argus.assistant.composer.SelfMap
+import com.argus.assistant.composer.SpotlightGroups
+import com.argus.assistant.composer.SpotlightRecents
+import com.argus.assistant.composer.SpotlightSearch
+import com.argus.assistant.ui.MotionTokens
+import com.argus.assistant.ui.SearchGlyph
+import com.argus.assistant.ui.composer.ComposerState
+import com.argus.assistant.ui.composer.SpotRow
+import com.argus.assistant.ui.composer.rememberSpotlightActions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -111,13 +111,13 @@ fun SpaceSpotlightLayer(
     fun runRow(r: SpotlightSearch.Row) {
         if (composer.query.isNotBlank() && r.act !is SpotlightSearch.Act.Complete) { recent = SpotlightRecents.push(recent, composer.query); saveRecent(recent) }
         val pkg = SpotlightGroups.appPackage(r.act)
-        if (pkg != null) { composer.closeSpotlight(); com.blaze.assistant.phone.InstalledApps.launch(ctx, pkg); return }
+        if (pkg != null) { composer.closeSpotlight(); com.argus.assistant.phone.InstalledApps.launch(ctx, pkg); return }
         when (val a = r.act) {
             is SpotlightSearch.Act.Complete -> composer.query = a.text
             // no inline previews in this panel: a preview opens the real view
             is SpotlightSearch.Act.Preview -> actions.run(SpotlightSearch.Act.OpenView(a.view, a.arg))
-            is SpotlightSearch.Act.Browse -> { composer.closeSpotlight(); com.blaze.assistant.ui.SelectionDo.openInBlazeBrowser(ctx, a.query.ifBlank { "https://www.google.com" }) }
-            is SpotlightSearch.Act.RunCommand -> actions.run(SpotlightSearch.Act.AskBlaze("Run this in the terminal (${a.distro}): ${a.command}"))
+            is SpotlightSearch.Act.Browse -> { composer.closeSpotlight(); com.argus.assistant.ui.SelectionDo.openInArgusBrowser(ctx, a.query.ifBlank { "https://www.google.com" }) }
+            is SpotlightSearch.Act.RunCommand -> actions.run(SpotlightSearch.Act.AskArgus("Run this in the terminal (${a.distro}): ${a.command}"))
             else -> actions.run(a)
         }
     }
@@ -147,8 +147,8 @@ fun SpaceSpotlightPanel(
     modifier: Modifier = Modifier,
     maxListHeight: androidx.compose.ui.unit.Dp = 460.dp,
 ) {
-    val songs by com.blaze.assistant.mediaapps.MediaLib.songs.collectAsState()
-    val videos by com.blaze.assistant.mediaapps.MediaLib.videos.collectAsState()
+    val songs by com.argus.assistant.mediaapps.MediaLib.songs.collectAsState()
+    val videos by com.argus.assistant.mediaapps.MediaLib.videos.collectAsState()
     val map = remember { SelfMap.default }
     val sections by produceState(
         SpotlightGroups.sections("", SpotlightSearch.Result(SpotlightSearch.Mode.CURATED, SpotlightSearch.curated(map)), apps, said, recent, hour),
@@ -163,7 +163,7 @@ fun SpaceSpotlightPanel(
     }
     val top = SpotlightGroups.top(sections)
     val look = SpaceLook.Dark   // the panel is always the dark card over its scrim
-    // the rows and icon tiles read LocalBlaze, so they take the dark overlay's ink too, whatever the app's theme
+    // the rows and icon tiles read LocalArgus, so they take the dark overlay's ink too, whatever the app's theme
     ProvideOverlayInk(dark = look.dark) {
         Column(modifier.fillMaxWidth().overlaySurface(look.dark, SpaceShapes.card, Color(SpacePalette.ELECTRIC).copy(alpha = 0.35f))
             .testTag(SpaceTags.SPOTLIGHT)
@@ -202,6 +202,6 @@ fun SpaceSpotlightPanel(
     }
 }
 
-private fun readRecent(): List<String> = try { SpotlightRecents.decode(com.blaze.assistant.agent.Settings.str(SpotlightRecents.PREF, "")) } catch (_: Throwable) { emptyList() }
+private fun readRecent(): List<String> = try { SpotlightRecents.decode(com.argus.assistant.agent.Settings.str(SpotlightRecents.PREF, "")) } catch (_: Throwable) { emptyList() }
 
-private fun saveRecent(list: List<String>) { try { com.blaze.assistant.agent.Settings.setStr(SpotlightRecents.PREF, SpotlightRecents.encode(list)) } catch (_: Throwable) { } }
+private fun saveRecent(list: List<String>) { try { com.argus.assistant.agent.Settings.setStr(SpotlightRecents.PREF, SpotlightRecents.encode(list)) } catch (_: Throwable) { } }

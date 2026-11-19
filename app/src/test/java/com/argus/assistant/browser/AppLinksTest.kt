@@ -1,12 +1,12 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
-import com.blaze.assistant.browser.RedirectRules.Kind
+import com.argus.assistant.browser.RedirectRules.Kind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.33.3: which navigations leave the WebView for another app (Blaze browser, site apps). */
+/** v0.33.3: which navigations leave the WebView for another app (Argus browser, site apps). */
 class AppLinksTest {
     private val gh = "https://github.com/apps/hark/installations/new"
 

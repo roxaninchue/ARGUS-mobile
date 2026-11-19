@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui.argus.icons
+package com.argus.assistant.ui.argus.icons
 
-import com.blaze.assistant.brand.BrandPath
-import com.blaze.assistant.brand.BrandPaths
+import com.argus.assistant.brand.BrandPath
+import com.argus.assistant.brand.BrandPaths
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor

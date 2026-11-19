@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color as AColor
@@ -80,30 +80,30 @@ import androidx.compose.ui.unit.IntSize
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import com.blaze.assistant.ui.Glass
-import com.blaze.assistant.ui.GlassIconButton
-import com.blaze.assistant.ui.MascotGlyph
-import com.blaze.assistant.ui.BrandProgress
-import com.blaze.assistant.ui.BlazeTheme
-import com.blaze.assistant.ui.Label
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.Type
-import com.blaze.assistant.ui.hairline
-import com.blaze.assistant.ui.hairlineBottom
-import com.blaze.assistant.ui.hairlineTop
-import com.blaze.assistant.ui.space.SpaceInsets
-import com.blaze.assistant.ui.space.SpaceLook
-import com.blaze.assistant.ui.space.SpaceTypeScale
+import com.argus.assistant.ui.Glass
+import com.argus.assistant.ui.GlassIconButton
+import com.argus.assistant.ui.MascotGlyph
+import com.argus.assistant.ui.BrandProgress
+import com.argus.assistant.ui.BlazeTheme
+import com.argus.assistant.ui.Label
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.Type
+import com.argus.assistant.ui.hairline
+import com.argus.assistant.ui.hairlineBottom
+import com.argus.assistant.ui.hairlineTop
+import com.argus.assistant.ui.space.SpaceInsets
+import com.argus.assistant.ui.space.SpaceLook
+import com.argus.assistant.ui.space.SpaceTypeScale
 
 /** The Browser screen: shows BrowserEngine's current tab with an address bar, tabs, bookmarks, history and downloads. */
-class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled {
+class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.argus.assistant.ui.BackRule.Shelled {
     /**
-     * v0.45.25 Back (edge swipe on gesture navigation, or the back button): BackRule sees it first, as for every Blaze
+     * v0.45.25 Back (edge swipe on gesture navigation, or the back button): BackRule sees it first, as for every Argus
      * screen. While the browser has something of its own to undo (fullscreen video, an open sheet, the pointer, the Ask
      * sheet, or a page to go back to) Back stays here and the screen's BackHandler handles it; otherwise it goes to the chat.
      */
     override fun backTakesToChat(): Boolean = !BrowserUi.innerBack()
-    override fun backToChat() { com.blaze.assistant.mediaapps.BackToChat.go(this) }
+    override fun backToChat() { com.argus.assistant.mediaapps.BackToChat.go(this) }
 
     private var pending: ValueCallback<Array<Uri>>? = null
     private val picker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
@@ -160,7 +160,7 @@ class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.blaze.assi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
+        if (com.argus.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.auto(AColor.TRANSPARENT, AColor.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(AColor.TRANSPARENT, AColor.TRANSPARENT))
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -200,7 +200,7 @@ class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.blaze.assi
 
     override fun onResume() { super.onResume(); BrowserEngine.attach(this); BrowserEngine.tab()?.live?.onResume(); hideNav() }
     override fun onPause() { BrowserEngine.attach(null); BrowserEngine.saveTabsNow(); super.onPause() }
-    // v0.45.25: the engine knows when the screen is up, so hidden tabs (and, once Blaze is idle, the visible one) can sleep.
+    // v0.45.25: the engine knows when the screen is up, so hidden tabs (and, once Argus is idle, the visible one) can sleep.
     override fun onStart() { super.onStart(); BrowserEngine.setUiVisible(true) }
     override fun onStop() { BrowserEngine.saveTabsNow(); TrackerBlock.flush(); BrowserEngine.setUiVisible(false); super.onStop() }
 
@@ -241,9 +241,9 @@ object BrowserUi {
 private enum class Panel { NONE, TABS, GRID, LAUNCHER, SITE, FIND, BOOKMARKS, HISTORY, PRIVACY, PASSWORDS, SAVED_PAGES, INSTALL_SITE, SITE_APPS }
 
 /**
- * The Browser (v0.24.6 look): rounded dark Blaze theme with a pill address bar, rounded tab chips, round icon
+ * The Browser (v0.24.6 look): rounded dark Argus theme with a pill address bar, rounded tab chips, round icon
  * buttons and a brand-coloured progress shimmer. The mascot button summons the page pointer (long-press too);
- * the sparkle button opens "Ask Blaze about this page".
+ * the sparkle button opens "Ask Argus about this page".
  */
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -292,7 +292,7 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
     reading?.let { p -> SavedTextReader(p, onClose = { reading = null }); return }
 
     if (panel == Panel.GRID) {
-        Box(Modifier.fillMaxSize().background(if (priv) androidx.compose.ui.graphics.Color(0xFF202124) else LocalBlaze.current.paper).systemBarsPadding()) {
+        Box(Modifier.fillMaxSize().background(if (priv) androidx.compose.ui.graphics.Color(0xFF202124) else LocalArgus.current.paper).systemBarsPadding()) {
             TabGrid(startPrivate = priv, onDone = { panel = Panel.NONE })
         }
         return
@@ -445,7 +445,7 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
         }
 
         // v0.33.3 floating bar, v0.34.1 docking (drag the grip to any edge; remembered), v0.45.25 Sky look: one frosted pill
-        // (lock · address · VPN · tabs · Blaze) with small chips beside it (back / forward / reload / home, Blaze's status).
+        // (lock · address · VPN · tabs · Argus) with small chips beside it (back / forward / reload / home, Argus's status).
         val sheetOpen = panel == Panel.TABS || panel == Panel.LAUNCHER || panel == Panel.SITE
         val showBar = !sheetOpen && (barShown || panel != Panel.NONE || pointer || blank)
         val hide by androidx.compose.animation.core.animateFloatAsState(if (showBar) 0f else 1f, androidx.compose.animation.core.tween(220), label = "bar")
@@ -510,7 +510,7 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
             }
         }
         val url = tab?.url.orEmpty()
-        val insecure = com.blaze.assistant.connect.UrlSafety.notSecure(url)
+        val insecure = com.argus.assistant.connect.UrlSafety.notSecure(url)
         val lockIcon = when { priv -> Icons.Rounded.VisibilityOff; insecure -> Icons.Rounded.ErrorOutline; url.startsWith("https") -> Icons.Rounded.Lock; else -> Icons.Rounded.Info }
         val tabCount: @Composable () -> Unit = {
             val n = BrowserEngine.tabs.count { it.isPrivate == priv }
@@ -523,7 +523,7 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
                     Text(if (n > 99) ":D" else "$n", Sky.ink, SpaceTypeScale.CAPTION.toInt() - 1, weight = FontWeight.SemiBold) }
             }
         }
-        val blazeButton: @Composable () -> Unit = {
+        val argusButton: @Composable () -> Unit = {
             // unification: the one primary button, white on dark and Argus Blue on light
             Box(Modifier.size(Sky.control).clip(CircleShape).background(if (pointer) Sky.primary.copy(alpha = 0.75f) else Sky.primary)
                 .combinedClickable(onClick = { if (url.startsWith("http") && !pointer) { askFirst = null; askOpen = true } else pointer = !pointer },
@@ -545,11 +545,11 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
             grip()
             SkyChipButton(lockIcon, "Site info") { panel = Panel.SITE }
             SkyChipButton(Icons.Rounded.Search, "Search or type a web address") { panel = Panel.LAUNCHER }
-            navChips(); tabCount(); blazeButton()
+            navChips(); tabCount(); argusButton()
         } else Column(barMod, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val chips: @Composable () -> Unit = {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    BlazeStatusChip(tab, Modifier.weight(1f, fill = false))
+                    ArgusStatusChip(tab, Modifier.weight(1f, fill = false))
                     Spacer(Modifier.weight(0.01f))
                     if (!blank) Row(Modifier.frost(Sky.pill, Sky.frost, Sky.rim).padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) { navChips() }
                 }
@@ -581,7 +581,7 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
                 }
                 tabCount()
                 Spacer(Modifier.width(4.dp))
-                blazeButton()
+                argusButton()
             }
             if (dock == ToolbarDock.TOP) chips()
         }
@@ -628,9 +628,9 @@ private fun TopProgress(tab: BrowserEngine.Tab, modifier: Modifier) {
     if (p in 0..99) ThinProgress(p, modifier)
 }
 
-/** "Blaze reading in background · Watch": shows while Blaze drives a tab; Watch brings that tab on screen. */
+/** "Argus reading in background · Watch": shows while Argus drives a tab; Watch brings that tab on screen. */
 @Composable
-private fun BlazeStatusChip(tab: BrowserEngine.Tab?, modifier: Modifier) {
+private fun ArgusStatusChip(tab: BrowserEngine.Tab?, modifier: Modifier) {
     val step by BrowserLive.step.collectAsState()
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(step) { now = System.currentTimeMillis() }
@@ -675,7 +675,7 @@ private fun display(u: String) = if (u == "about:blank") "" else if (SavedPages.
 @Composable private fun EntryRow(e: BrowserData.Entry, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        com.blaze.assistant.ui.IconTile(icon, tint = Glass.text, small = true)
+        com.argus.assistant.ui.IconTile(icon, tint = Glass.text, small = true)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Text(e.title.ifBlank { e.url }, Glass.text, 14, maxLines = 1)
@@ -733,8 +733,8 @@ enum class ToolbarDock(val id: String, val vertical: Boolean, val alignment: Ali
     companion object {
         const val KEY = "browser_bar_dock"
         fun of(id: String?): ToolbarDock = entries.firstOrNull { it.id == id } ?: BOTTOM
-        fun load(): ToolbarDock = of(runCatching { com.blaze.assistant.agent.Settings.str(KEY, BOTTOM.id) }.getOrNull())
-        fun save(d: ToolbarDock) { runCatching { com.blaze.assistant.agent.Settings.setStr(KEY, d.id) } }
+        fun load(): ToolbarDock = of(runCatching { com.argus.assistant.agent.Settings.str(KEY, BOTTOM.id) }.getOrNull())
+        fun save(d: ToolbarDock) { runCatching { com.argus.assistant.agent.Settings.setStr(KEY, d.id) } }
 
         /** The edge closest to the point (x, y) in a w x h area; a tie keeps the order bottom, top, left, right. */
         fun nearest(x: Float, y: Float, w: Float, h: Float): ToolbarDock {

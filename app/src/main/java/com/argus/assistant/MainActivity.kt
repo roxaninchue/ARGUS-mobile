@@ -1,4 +1,4 @@
-package com.blaze.assistant
+package com.argus.assistant
 
 import android.graphics.Color
 import android.os.Bundle
@@ -9,53 +9,53 @@ import androidx.biometric.BiometricPrompt
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.notify.Notifier
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.notify.Notifier
+import com.argus.assistant.voice.Voice
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.layout.layout
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import com.blaze.assistant.ui.BlazeTheme
-import com.blaze.assistant.ui.ChatScreen
+import com.argus.assistant.ui.BlazeTheme
+import com.argus.assistant.ui.ChatScreen
 
-class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled {
+class MainActivity : FragmentActivity(), com.argus.assistant.ui.BackRule.Shelled {
     private val locked = mutableStateOf(false)
     private var leftAt = 0L
-    /** 0.45.19 fix 4: in picture-in-picture (only Blaze Phone's live view is drawn). */
+    /** 0.45.19 fix 4: in picture-in-picture (only Argus Phone's live view is drawn). */
     private val pip = mutableStateOf(false)
-    /** 0.46.1: the picture-in-picture window shows a Stage video (not Blaze Phone). */
+    /** 0.46.1: the picture-in-picture window shows a Stage video (not Argus Phone). */
     private val videoPip = mutableStateOf(false)
-    /** When Blaze last opened one of its own screens (that is not "leaving Blaze"). */
+    /** When Argus last opened one of its own screens (that is not "leaving Argus"). */
     private var ownLaunchAt = 0L
     /** Account lock: why ARGUS is locked (the lock screen shows), or null. Read on the main thread by Back and PiP. */
-    private val gate = mutableStateOf<com.blaze.assistant.connect.AccountLock.Reason?>(null)
+    private val gate = mutableStateOf<com.argus.assistant.connect.AccountLock.Reason?>(null)
     /** Owner 2026-11-18: a fresh install plays the clip and the language step before the lock screen (SpaceOnboarding.beforeLock). */
     private val preLock = mutableStateOf(false)
 
-    companion object { const val EXTRA_LISTEN = "listen"; const val ACTION_CALL = "com.blaze.assistant.CALL" }
+    companion object { const val EXTRA_LISTEN = "listen"; const val ACTION_CALL = "com.argus.assistant.CALL" }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        com.blaze.assistant.ui.MotionTokens.refresh(this)
+        com.argus.assistant.ui.MotionTokens.refresh(this)
         super.onCreate(savedInstanceState)
-        // v0.24.7: one Blaze window. "Open Blaze" from the hold-Home panel starts MainActivity through
-        // startAssistantActivity, which Android puts in a separate (assistant) task even with singleTask, so two Blaze
+        // v0.24.7: one Argus window. "Open Argus" from the hold-Home panel starts MainActivity through
+        // startAssistantActivity, which Android puts in a separate (assistant) task even with singleTask, so two Argus
         // cards showed in Recents. If another task already holds MainActivity, hand it this intent and close this copy.
         if (savedInstanceState == null && joinExistingTask()) return
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
         )
-        locked.value = com.blaze.assistant.agent.Settings.appLock
-        gate.value = com.blaze.assistant.connect.AccountGate.recompute()
-        preLock.value = try { com.blaze.assistant.ui.space.SpaceOnboarding.beforeLock(com.blaze.assistant.agent.Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, false),
-            com.blaze.assistant.agent.Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, false)) } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("MainActivity preLock", t); false }
-        lifecycleScope.launch { com.blaze.assistant.connect.AccountGate.lock.collect { gate.value = it } }
+        locked.value = com.argus.assistant.agent.Settings.appLock
+        gate.value = com.argus.assistant.connect.AccountGate.recompute()
+        preLock.value = try { com.argus.assistant.ui.space.SpaceOnboarding.beforeLock(com.argus.assistant.agent.Settings.bool(com.argus.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, false),
+            com.argus.assistant.agent.Settings.bool(com.argus.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, false)) } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("MainActivity preLock", t); false }
+        lifecycleScope.launch { com.argus.assistant.connect.AccountGate.lock.collect { gate.value = it } }
         setContent { BlazeTheme {
             // Owner 2026-11-18: the status bar icons follow ARGUS's own light / dark, not the phone's (SystemBarIcons.kt)
-            com.blaze.assistant.ui.SyncSystemBarIcons(com.blaze.assistant.ui.LocalBlaze.current.dark)
-            // 0.45.19 fix 4: in picture-in-picture only Blaze Phone's live view is drawn; the chat stays composed (its
+            com.argus.assistant.ui.SyncSystemBarIcons(com.argus.assistant.ui.LocalArgus.current.dark)
+            // 0.45.19 fix 4: in picture-in-picture only Argus Phone's live view is drawn; the chat stays composed (its
             // draft, attachments and scroll survive) but is not placed, so nothing of it shows in the small window.
             androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
                 androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize().layout { m, c ->
@@ -64,36 +64,36 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
                     // Account lock: the lock screen comes before the app. On a fresh install the opening clip and the language
                     // step come first (owner 2026-11-18, SpaceOnboarding.beforeLock), then the lock screen is the sign-in.
                     val acct = gate.value
-                    if (acct != null && preLock.value) com.blaze.assistant.ui.space.SpaceFirstRunBeforeLock { preLock.value = false }
-                    else if (acct != null) com.blaze.assistant.ui.AccountLockRoute(acct)
-                    else if (locked.value) com.blaze.assistant.ui.LockScreen { unlock() } else ChatScreen()
+                    if (acct != null && preLock.value) com.argus.assistant.ui.space.SpaceFirstRunBeforeLock { preLock.value = false }
+                    else if (acct != null) com.argus.assistant.ui.AccountLockRoute(acct)
+                    else if (locked.value) com.argus.assistant.ui.LockScreen { unlock() } else ChatScreen()
                 }
-                if (pip.value && !locked.value && gate.value == null) { if (videoPip.value) com.blaze.assistant.ui.StageVideoPip() else com.blaze.assistant.browser.phone.PhonePipView() }
+                if (pip.value && !locked.value && gate.value == null) { if (videoPip.value) com.argus.assistant.ui.StageVideoPip() else com.argus.assistant.browser.phone.PhonePipView() }
                 // 0.46.5: after a crash (also a native one, read on the next start), offer the local report once; the user chooses
-                val crash = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(com.blaze.assistant.device.CrashLog.pendingReport()) }
+                val crash = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(com.argus.assistant.device.CrashLog.pendingReport()) }
                 androidx.compose.runtime.DisposableEffect(Unit) {
-                    com.blaze.assistant.device.CrashLog.pendingChanged = { runOnUiThread { crash.value = com.blaze.assistant.device.CrashLog.pendingReport() } }
-                    onDispose { com.blaze.assistant.device.CrashLog.pendingChanged = null }
+                    com.argus.assistant.device.CrashLog.pendingChanged = { runOnUiThread { crash.value = com.argus.assistant.device.CrashLog.pendingReport() } }
+                    onDispose { com.argus.assistant.device.CrashLog.pendingChanged = null }
                 }
-                if (crash.value && !locked.value && !pip.value && gate.value == null) com.blaze.assistant.ui.BlazeDialog(CRASH_TITLE, CRASH_BODY, confirm = "Send crash report",
-                    onConfirm = { com.blaze.assistant.device.CrashLog.dismissReport(); crash.value = false
-                        try { com.blaze.assistant.device.CrashLog.shareIntent(this@MainActivity)?.let { startActivity(it) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("crash report share", e) } },
-                    dismiss = "Not now", onDismiss = { com.blaze.assistant.device.CrashLog.dismissReport(); crash.value = false })
+                if (crash.value && !locked.value && !pip.value && gate.value == null) com.argus.assistant.ui.ArgusDialog(CRASH_TITLE, CRASH_BODY, confirm = "Send crash report",
+                    onConfirm = { com.argus.assistant.device.CrashLog.dismissReport(); crash.value = false
+                        try { com.argus.assistant.device.CrashLog.shareIntent(this@MainActivity)?.let { startActivity(it) } } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("crash report share", e) } },
+                    dismiss = "Not now", onDismiss = { com.argus.assistant.device.CrashLog.dismissReport(); crash.value = false })
             }
         } }
         watchFirstFrame()
-        // Picture-in-picture follows the user out only while Blaze works on Blaze Phone (auto-enter on API 31+).
+        // Picture-in-picture follows the user out only while Argus works on Argus Phone (auto-enter on API 31+).
         lifecycleScope.launch {
-            kotlinx.coroutines.flow.combine(com.blaze.assistant.browser.phone.PhoneBrowser.live, Agent.busyChats) { l, b ->
-                com.blaze.assistant.browser.phone.PhonePip.working(l.mode, com.blaze.assistant.browser.phone.PhoneBrowser.ownerChat, b)
-            }.distinctUntilChanged().collect { w -> com.blaze.assistant.browser.phone.PhonePipHost.update(this@MainActivity, w, locked.value) }
+            kotlinx.coroutines.flow.combine(com.argus.assistant.browser.phone.PhoneBrowser.live, Agent.busyChats) { l, b ->
+                com.argus.assistant.browser.phone.PhonePip.working(l.mode, com.argus.assistant.browser.phone.PhoneBrowser.ownerChat, b)
+            }.distinctUntilChanged().collect { w -> com.argus.assistant.browser.phone.PhonePipHost.update(this@MainActivity, w, locked.value) }
         }
         if (android.os.Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7)
         }
         if (savedInstanceState == null) handle(intent) else authLink(intent)   // v0.45.4: a sign-in link must land even after a restore
-        // Long-press the Blaze icon → "Call Blaze".
+        // Long-press the Argus icon → "Call Argus".
         try {
             val sm = getSystemService(android.content.pm.ShortcutManager::class.java)
             sm?.dynamicShortcuts = listOf(android.content.pm.ShortcutInfo.Builder(this, "call")
@@ -104,8 +104,8 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     }
 
     /**
-     * Lazy start: after Blaze's first frame is drawn, the work BlazeApp left for later runs (StartLater) and heavy UI that
-     * waits for it composes (AfterFirstFrame). Logs how long the first frame took from process start ("BlazeStart").
+     * Lazy start: after Argus's first frame is drawn, the work ArgusApp left for later runs (StartLater) and heavy UI that
+     * waits for it composes (AfterFirstFrame). Logs how long the first frame took from process start ("ArgusStart").
      */
     private fun watchFirstFrame() {
         val decor = window.decorView
@@ -115,19 +115,19 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
                 seen = true
                 // posted: runs once this frame's traversal is over (a draw listener can't remove itself while drawing)
                 decor.post {
-                    try { android.util.Log.i("BlazeStart", "first frame ${android.os.SystemClock.elapsedRealtime() - android.os.Process.getStartElapsedRealtime()} ms after process start") }
-                    catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("first frame log", e) }
-                    com.blaze.assistant.device.StartLater.firstFrameDrawn()
+                    try { android.util.Log.i("ArgusStart", "first frame ${android.os.SystemClock.elapsedRealtime() - android.os.Process.getStartElapsedRealtime()} ms after process start") }
+                    catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("first frame log", e) }
+                    com.argus.assistant.device.StartLater.firstFrameDrawn()
                 }
             }
         }
         try {
             decor.viewTreeObserver.addOnDrawListener(listener)
-            com.blaze.assistant.device.StartLater.onFirstFrame { try { decor.viewTreeObserver.removeOnDrawListener(listener) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("first frame listener", e) } }
-        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("watchFirstFrame", e); com.blaze.assistant.device.StartLater.firstFrameDrawn() }
+            com.argus.assistant.device.StartLater.onFirstFrame { try { decor.viewTreeObserver.removeOnDrawListener(listener) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("first frame listener", e) } }
+        } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("watchFirstFrame", e); com.argus.assistant.device.StartLater.firstFrameDrawn() }
     }
 
-    /** True when an older Blaze task was brought to the front and this duplicate task is being closed. */
+    /** True when an older Argus task was brought to the front and this duplicate task is being closed. */
     private fun joinExistingTask(): Boolean {
         val am = getSystemService(android.app.ActivityManager::class.java) ?: return false
         val tasks = try { am.appTasks } catch (_: Exception) { return false }
@@ -150,22 +150,22 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     }
 
     // 0.45.19 fix 7: Back goes to the chat from any view the shell has in front (BackRule); never past the app lock.
-    override fun backTakesToChat(): Boolean = com.blaze.assistant.ui.BackRule.shellTakesBack(locked.value || gate.value != null) && !pip.value
-    override fun backToChat() { com.blaze.assistant.ui.BackRule.toChat?.invoke() }
+    override fun backTakesToChat(): Boolean = com.argus.assistant.ui.BackRule.shellTakesBack(locked.value || gate.value != null) && !pip.value
+    override fun backToChat() { com.argus.assistant.ui.BackRule.toChat?.invoke() }
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent); setIntent(intent); handle(intent)
     }
 
     /**
-     * v0.45.4: Google / GitHub sign-in comes back as blaze://auth/cb?code=..&state=.. . BlazeAccount only accepts the
+     * v0.45.4: Google / GitHub sign-in comes back as blaze://auth/cb?code=..&state=.. . ArgusAccount only accepts the
      * state it started (PKCE-bound), so a stray link does nothing. True when [i] was such a link (now consumed).
      */
     private fun authLink(i: android.content.Intent?): Boolean {
         val u = i?.data?.toString() ?: return false
-        if (i.action != android.content.Intent.ACTION_VIEW || !com.blaze.assistant.connect.AuthReturn.isAuthLink(u)) return false
+        if (i.action != android.content.Intent.ACTION_VIEW || !com.argus.assistant.connect.AuthReturn.isAuthLink(u)) return false
         i.data = null; i.action = null
-        com.blaze.assistant.connect.BlazeAccount.onAppRedirect(applicationContext, u)
+        com.argus.assistant.connect.ArgusAccount.onAppRedirect(applicationContext, u)
         return true
     }
 
@@ -174,29 +174,29 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         i ?: return
         if (authLink(i)) return
         // Account lock: nothing an intent asks for (listen, call, share, open a chat) happens while locked; the lock screen shows.
-        if (com.blaze.assistant.connect.AccountGate.locked()) {
+        if (com.argus.assistant.connect.AccountGate.locked()) {
             i.removeExtra(Notifier.EXTRA_OPEN_FORM); i.removeExtra(Notifier.EXTRA_OPEN_CHAT); i.removeExtra(EXTRA_LISTEN); i.removeExtra(IntentKey.EXTRA)
-            i.removeExtra(com.blaze.assistant.connect.AccountGate.EXTRA_LOCK); i.action = null
+            i.removeExtra(com.argus.assistant.connect.AccountGate.EXTRA_LOCK); i.action = null
             return
         }
-        // RC2 (HomeRoute): Back out of Music / Video / Browser / Terminal / Blaze Phone lands on the new Home
-        if (i.getBooleanExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME, false)) {
-            i.removeExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME)
+        // RC2 (HomeRoute): Back out of Music / Video / Browser / Terminal / Argus Phone lands on the new Home
+        if (i.getBooleanExtra(com.argus.assistant.ui.HomeRoute.EXTRA_HOME, false)) {
+            i.removeExtra(com.argus.assistant.ui.HomeRoute.EXTRA_HOME)
             // 0.52.3: lands on Home (the Home tab)
-            com.blaze.assistant.ui.homeRequests.value = com.blaze.assistant.ui.homeRequests.value + 1
+            com.argus.assistant.ui.homeRequests.value = com.argus.assistant.ui.homeRequests.value + 1
         }
-        // v0.45.0: internal extras only count when Blaze itself sent the intent (IntentKey); another app can still open
-        // Blaze, use the assistant button / voice command, or share into the message box.
+        // v0.45.0: internal extras only count when Argus itself sent the intent (IntentKey); another app can still open
+        // Argus, use the assistant button / voice command, or share into the message box.
         val ok = IntentKey.Policy.allowed(i.action, i.getBooleanExtra(EXTRA_LISTEN, false), i.getStringExtra(Notifier.EXTRA_OPEN_CHAT) != null,
             i.getBooleanExtra(Notifier.EXTRA_OPEN_FORM, false), IntentKey.trusted(this, i), ACTION_CALL)
         val chatId = i.getStringExtra(Notifier.EXTRA_OPEN_CHAT)
         val askedListen = i.getBooleanExtra(EXTRA_LISTEN, false) || i.action == ACTION_CALL
         i.removeExtra(Notifier.EXTRA_OPEN_FORM); i.removeExtra(Notifier.EXTRA_OPEN_CHAT); i.removeExtra(EXTRA_LISTEN); i.removeExtra(IntentKey.EXTRA)
-        if (askedListen && !ok.listen && !ok.call) com.blaze.assistant.device.CrashLog.write("Ignored a listen/call request from outside ${BrandName.NAME}")
+        if (askedListen && !ok.listen && !ok.call) com.argus.assistant.device.CrashLog.write("Ignored a listen/call request from outside ${BrandName.NAME}")
         // "Action required" notification: open the chat that's waiting on the secure form (the card shows there).
-        if (ok.openForm) { Agent.showFormChat(); Notifier.clearAction(); com.blaze.assistant.ui.space.SpaceNav.showChat() }
+        if (ok.openForm) { Agent.showFormChat(); Notifier.clearAction(); com.argus.assistant.ui.space.SpaceNav.showChat() }
         // v0.28.3: a reply notification from a project chat opens that chat in Projects (the shell follows Agent's chat).
-        if (ok.openChat && chatId != null) { Agent.openFromLink(chatId); com.blaze.assistant.ui.space.SpaceNav.showChat() }
+        if (ok.openChat && chatId != null) { Agent.openFromLink(chatId); com.argus.assistant.ui.space.SpaceNav.showChat() }
         if (i.action == ACTION_CALL) { i.action = null; if (ok.call) Voice.callRequests.value = Voice.callRequests.value + 1; return }
         if (ok.listen) {
             i.action = null
@@ -212,7 +212,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
             if (stream != null) {
                 // App scope: this activity may be a duplicate that closes right away (joinExistingTask).
                 kotlinx.coroutines.MainScope().launch {
-                    val a = com.blaze.assistant.agent.Attachments.load(applicationContext, stream)
+                    val a = com.argus.assistant.agent.Attachments.load(applicationContext, stream)
                     Agent.sharedDraft.value = Agent.SharedDraft(shared, a)
                 }
                 return
@@ -223,7 +223,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
 
     private val auth = BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
-    /** Fingerprint / face / PIN. If the phone has no lock set up, Blaze stays open. */
+    /** Fingerprint / face / PIN. If the phone has no lock set up, Argus stays open. */
     private fun unlock() {
         if (BiometricManager.from(this).canAuthenticate(auth) != BiometricManager.BIOMETRIC_SUCCESS) { locked.value = false; return }
         BiometricPrompt(this, mainExecutor, object : BiometricPrompt.AuthenticationCallback() {
@@ -233,23 +233,23 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
 
     override fun onStart() {
         super.onStart()
-        if (com.blaze.assistant.agent.Settings.appLock && leftAt > 0 && System.currentTimeMillis() - leftAt > 30_000) locked.value = true
+        if (com.argus.assistant.agent.Settings.appLock && leftAt > 0 && System.currentTimeMillis() - leftAt > 30_000) locked.value = true
         if (locked.value) window.decorView.post { unlock() }
     }
 
     override fun onStop() { leftAt = System.currentTimeMillis(); super.onStop() }
 
-    /** Below API 31 Blaze enters picture-in-picture itself when the user leaves while Blaze Phone works. */
+    /** Below API 31 Argus enters picture-in-picture itself when the user leaves while Argus Phone works. */
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         val own = android.os.SystemClock.uptimeMillis() - ownLaunchAt < 1500
-        val phone = com.blaze.assistant.browser.phone.PhonePipHost.enterOnLeave(this, locked.value || gate.value != null, own)
-        // 0.46.1: a Stage video playing follows the user out in picture-in-picture (not while Blaze Phone has the window).
-        if (!phone && !own && !locked.value && gate.value == null && !isInPictureInPictureMode && com.blaze.assistant.ui.StageVideo.playing() &&
-            !com.blaze.assistant.browser.phone.PhonePipHost.working() && com.blaze.assistant.browser.phone.PhonePipHost.supported(this)) {
+        val phone = com.argus.assistant.browser.phone.PhonePipHost.enterOnLeave(this, locked.value || gate.value != null, own)
+        // 0.46.1: a Stage video playing follows the user out in picture-in-picture (not while Argus Phone has the window).
+        if (!phone && !own && !locked.value && gate.value == null && !isInPictureInPictureMode && com.argus.assistant.ui.StageVideo.playing() &&
+            !com.argus.assistant.browser.phone.PhonePipHost.working() && com.argus.assistant.browser.phone.PhonePipHost.supported(this)) {
             videoPip.value = true
             val ok = try { enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational(16, 9)).build()) }
-                catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("MainActivity.videoPip", t); false }
+                catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("MainActivity.videoPip", t); false }
             if (!ok) videoPip.value = false
         }
     }
@@ -261,39 +261,39 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
     }
 
     /**
-     * Opening one of Blaze's own screens (Blaze Phone, the browser, Music…) is not leaving Blaze: those starts carry
+     * Opening one of Argus's own screens (Argus Phone, the browser, Music…) is not leaving Argus: those starts carry
      * NO_USER_ACTION, so neither auto-enter (API 31+) nor onUserLeaveHint turns the chat into picture-in-picture.
      */
     @Deprecated("Activity API")
     override fun startActivityForResult(intent: android.content.Intent, requestCode: Int, options: Bundle?) {
-        if (com.blaze.assistant.browser.phone.PhonePip.ownScreen(intent.component?.packageName ?: intent.`package`, packageName)) {
+        if (com.argus.assistant.browser.phone.PhonePip.ownScreen(intent.component?.packageName ?: intent.`package`, packageName)) {
             intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NO_USER_ACTION); ownLaunchAt = android.os.SystemClock.uptimeMillis()
         }
         @Suppress("DEPRECATION") super.startActivityForResult(intent, requestCode, options)
     }
 
     override fun onResume() {
-        com.blaze.assistant.ui.MotionTokens.refresh(this)   // v0.27.0: follow "Remove animations"
+        com.argus.assistant.ui.MotionTokens.refresh(this)   // v0.27.0: follow "Remove animations"
         super.onResume(); Agent.inForeground = true
-        gate.value = com.blaze.assistant.connect.AccountGate.recompute()   // account lock: the 7-day grace may have run out
-        com.blaze.assistant.agent.SelfControl.activity = java.lang.ref.WeakReference(this)
+        gate.value = com.argus.assistant.connect.AccountGate.recompute()   // account lock: the 7-day grace may have run out
+        com.argus.assistant.agent.SelfControl.activity = java.lang.ref.WeakReference(this)
         Notifier.clearReplies(); Notifier.visible(true)
-        com.blaze.assistant.voice.WakeWordService.start(this)
-        com.blaze.assistant.connect.CloudSync.foreground(true)   // v0.40.0: a round now and every minute while open (when on)
-        com.blaze.assistant.agent.LlmClient.prewarm()   // v0.45.1: DNS + TLS to Blaze Cloud while the user reads / types (once a minute at most)
-        kotlin.concurrent.thread(isDaemon = true, name = "entitlements") { runCatching { com.blaze.assistant.connect.Entitlements.refresh(applicationContext) } }   // v0.45.18: plan + limits, when stale
+        com.argus.assistant.voice.WakeWordService.start(this)
+        com.argus.assistant.connect.CloudSync.foreground(true)   // v0.40.0: a round now and every minute while open (when on)
+        com.argus.assistant.agent.LlmClient.prewarm()   // v0.45.1: DNS + TLS to Argus Cloud while the user reads / types (once a minute at most)
+        kotlin.concurrent.thread(isDaemon = true, name = "entitlements") { runCatching { com.argus.assistant.connect.Entitlements.refresh(applicationContext) } }   // v0.45.18: plan + limits, when stale
     }
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        // v0.25.0: no key catcher any more (Blaze Cloud holds the keys); nothing reads the clipboard here.
+        // v0.25.0: no key catcher any more (Argus Cloud holds the keys); nothing reads the clipboard here.
     }
 
     override fun onPause() {
         Agent.inForeground = false
-        com.blaze.assistant.connect.CloudSync.foreground(false)
-        if (Agent.mood.value != com.blaze.assistant.agent.Mood.IDLE) Notifier.working(Agent.lastStep())
+        com.argus.assistant.connect.CloudSync.foreground(false)
+        if (Agent.mood.value != com.argus.assistant.agent.Mood.IDLE) Notifier.working(Agent.lastStep())
         Notifier.visible(false)
-        com.blaze.assistant.policy.PolicyRuntime.onBackground()   // 0.53.7: an approval left unanswered goes to the shade (Approve / Deny)
+        com.argus.assistant.policy.PolicyRuntime.onBackground()   // 0.53.7: an approval left unanswered goes to the shade (Approve / Deny)
         super.onPause()
     }
 }

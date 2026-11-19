@@ -1,6 +1,6 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -86,7 +86,7 @@ object AccountLock {
     }
 
     /** Notification buttons that still work while locked: they only stop things (Stop, Stop Magic Hand, Don't). */
-    val ACTIONS_WHILE_LOCKED = setOf("com.blaze.assistant.STOP", "com.blaze.assistant.STOP_HAND", "com.blaze.assistant.DENY")
+    val ACTIONS_WHILE_LOCKED = setOf("com.argus.assistant.STOP", "com.argus.assistant.STOP_HAND", "com.argus.assistant.DENY")
     fun actionAllowed(locked: Boolean, action: String?): Boolean = !locked || action in ACTIONS_WHILE_LOCKED
 
     /** Music: while locked only ARGUS itself may hold a controller (Android Auto and other apps are turned away). */

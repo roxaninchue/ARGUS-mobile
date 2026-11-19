@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
- * 0.46.3 (reports on 0.46.2: "Blaze Cloud is busy right now. Tap Retry", then "Something went wrong (t8: …)" mid-task).
+ * 0.46.3 (reports on 0.46.2: "Argus Cloud is busy right now. Tap Retry", then "Something went wrong (t8: …)" mid-task).
  * The rule: while any brain is left, nobody sees a busy or provider error. One model call of the agent loop, at ANY turn
- * (the first or the eighth), goes through the brains in [BrainOrder.plan] order (Nous reserve, Blaze Cloud), each with the same messages and tools, so the task goes on with its context. Only when every one failed
+ * (the first or the eighth), goes through the brains in [BrainOrder.plan] order (Nous reserve, Argus Cloud), each with the same messages and tools, so the task goes on with its context. Only when every one failed
  * is an error thrown (shown with Retry). [onSwitch] gets one plain status line when a later brain took over a call.
- * A sign-in / allowance / malformed-request refusal from Blaze Cloud is final ([fixable]). Pure (FailoverTest).
+ * A sign-in / allowance / malformed-request refusal from Argus Cloud is final ([fixable]). Pure (FailoverTest).
  */
 object Failover {
     const val SWITCHED = "Switched to backup"

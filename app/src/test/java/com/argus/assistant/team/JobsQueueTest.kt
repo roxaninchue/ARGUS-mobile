@@ -1,6 +1,6 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.store.JdbcSql
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

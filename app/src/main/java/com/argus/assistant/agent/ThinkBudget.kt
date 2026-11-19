@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.33.1 adaptive thinking budget (idea #9). Until now a turn was "quick" (reasoning models told to think briefly,

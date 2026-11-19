@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 
 /**
@@ -22,13 +22,13 @@ import org.json.JSONArray
  * The behaviour is Mind.Db's (dedupe through [Mind.decide], the same search ranking, the same journal rules); only
  * the storage moved. Pure JVM over [Sql]: the phone runs it on the bundled SQLite (AndroidSql), tests on sqlite-jdbc.
  */
-class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
+class MindStore(val argus: ArgusDb, val sql: Sql) : Mind.Store {
 
     override val fts: Boolean get() = true
 
     private val lock = Any()
 
-    init { for (st in BlazeDb.statements(EXTRA)) sql.exec(st) }
+    init { for (st in ArgusDb.statements(EXTRA)) sql.exec(st) }
 
     // ---------------- meta ----------------
 
@@ -67,13 +67,13 @@ class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
             is Mind.Decision.Update -> {
                 val old = mem(d.id) ?: return@synchronized "same" to d.id
                 sql.tx {
-                    sql.exec("UPDATE memories SET text=?, norm=?, category=?, updated=? WHERE id=?", t, BlazeDb.norm(t), k, sec, d.id)
+                    sql.exec("UPDATE memories SET text=?, norm=?, category=?, updated=? WHERE id=?", t, ArgusDb.norm(t), k, sec, d.id)
                     side(d.id, old.created / 1000, s, MemoryMerge.unionRelated(old.related, related), if (sourceTurn > 0) sourceTurn else old.sourceTurn)
                 }
                 "updated" to d.id
             }
             Mind.Decision.Insert -> {
-                val n = BlazeDb.norm(t)
+                val n = ArgusDb.norm(t)
                 // blaze.db keeps one row per normalised text (Desktop's Add): the same words with other punctuation are "same".
                 sql.query("SELECT id FROM memories WHERE norm=? LIMIT 1", n) { it.long(0) }.firstOrNull()?.let { return@synchronized "same" to it }
                 val id = sql.tx {
@@ -93,7 +93,7 @@ class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
         val s = subject?.let { Mind.squash(it).take(60) }?.ifBlank { null } ?: old.subject
         val k = if (!kind.isNullOrBlank()) Mind.normKind(kind) else old.kind
         sql.tx {
-            sql.exec("UPDATE memories SET text=?, norm=?, category=?, updated=? WHERE id=?", t, BlazeDb.norm(t), k, now / 1000, id)
+            sql.exec("UPDATE memories SET text=?, norm=?, category=?, updated=? WHERE id=?", t, ArgusDb.norm(t), k, now / 1000, id)
             side(id, old.created / 1000, s, old.related, old.sourceTurn)
         }
         true
@@ -116,7 +116,7 @@ class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
         val s = Mind.squash(subject).ifBlank { old.subject }.take(60)
         val gone = drop.distinct().filter { it != keep }
         sql.tx {
-            sql.exec("UPDATE memories SET text=?, norm=?, category=?, updated=? WHERE id=?", t, BlazeDb.norm(t), k, now / 1000, keep)
+            sql.exec("UPDATE memories SET text=?, norm=?, category=?, updated=? WHERE id=?", t, ArgusDb.norm(t), k, now / 1000, keep)
             side(keep, old.created / 1000, s, related, old.sourceTurn)
             for (id in gone) { sql.exec("DELETE FROM memories WHERE id=?", id); sql.exec("DELETE FROM mind_mem WHERE id=?", id) }
         }
@@ -138,7 +138,7 @@ class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
         val every = all()
         if (ws.isEmpty()) return every.filter { k == null || it.kind == k }.sortedByDescending { it.updated }.take(limit)
         val rank = HashMap<Long, Int>()
-        val fq = BlazeDb.ftsQuery(query, 32)
+        val fq = ArgusDb.ftsQuery(query, 32)
         if (fq.isNotEmpty()) try {
             sql.query("SELECT f.rowid FROM memories_fts f WHERE memories_fts MATCH ? ORDER BY bm25(memories_fts) LIMIT 200", fq) { it.long(0) }
                 .forEachIndexed { i, id -> rank.putIfAbsent(id, i) }
@@ -289,19 +289,19 @@ class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
         if (imported()) return Imported(0, 0, skipped = true)
         val b = meta(IMPORT_BACKUP).takeIf { it.isNotBlank() && java.io.File(it).isFile } ?: backup().also { setMeta(IMPORT_BACKUP, it) }
         if (b.isBlank()) throw java.io.IOException("mind.db backup failed")
-        setMeta(IMPORT_STARTED, BlazeDb.now().toString())
+        setMeta(IMPORT_STARTED, ArgusDb.now().toString())
         val oldMeta = src.metaAll()
         sql.tx { for ((k, v) in oldMeta) sql.exec("INSERT INTO meta(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", META + k, v) }
         val mems = src.oldMemories()
         sql.tx {
             for (m in mems) {
-                val text = BlazeDb.clean(m.text)
+                val text = ArgusDb.clean(m.text)
                 if (text.isEmpty()) continue
-                val c = sec(m.created).takeIf { it > 0 } ?: BlazeDb.now()
+                val c = sec(m.created).takeIf { it > 0 } ?: ArgusDb.now()
                 val u = sec(m.updated).takeIf { it > 0 } ?: c
                 sql.exec("DELETE FROM memories WHERE id=?", m.id)
                 sql.exec("INSERT INTO memories(id, text, norm, category, created, updated) VALUES(?,?,?,?,?,?)",
-                    m.id, text, BlazeDb.norm(text), Mind.normKind(m.kind), c, u)
+                    m.id, text, ArgusDb.norm(text), Mind.normKind(m.kind), c, u)
                 side(m.id, c, Mind.squash(m.subject).ifBlank { "You" }.take(60), m.related, m.sourceTurn)
             }
         }
@@ -327,13 +327,13 @@ class MindStore(val blaze: BlazeDb, val sql: Sql) : Mind.Store {
         if (haveMems != wantMems) throw IllegalStateException("memories copied $haveMems of $wantMems")
         if (copied < total) throw IllegalStateException("journal copied $copied of $total")
         synced.clear()
-        setMeta(IMPORT_AT, BlazeDb.now().toString())
+        setMeta(IMPORT_AT, ArgusDb.now().toString())
         setMeta(IMPORT_DONE, "1")
         Imported(wantMems, copied)
     }
 
     /** A fresh install (no mind.db): nothing to copy. */
-    fun markFresh() { if (!imported()) { setMeta(IMPORT_AT, BlazeDb.now().toString()); setMeta(IMPORT_DONE, "1") } }
+    fun markFresh() { if (!imported()) { setMeta(IMPORT_AT, ArgusDb.now().toString()); setMeta(IMPORT_DONE, "1") } }
 
     companion object {
         const val META = "mind:"

@@ -1,14 +1,14 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Application
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.memory.CacheStore
-import com.blaze.assistant.memory.CacheTier
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.memory.CacheStore
+import com.argus.assistant.memory.CacheTier
+import com.argus.assistant.store.JdbcSql
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -61,9 +61,9 @@ class HomeChatToolLoopTest {
             else -> "Error: there is no tool called \"$name\"."
         }
 
-        suspend fun turn(user: String, lastBlaze: String): String {
+        suspend fun turn(user: String, lastArgus: String): String {
             history.put(JSONObject().put("role", "user").put("content", user))
-            var useLite = ChatLane.fits(user, lastBlaze) && !CacheTier.referenced(history)
+            var useLite = ChatLane.fits(user, lastArgus) && !CacheTier.referenced(history)
             lane = if (useLite) "chat" else "tools"
             var promiseNudged = false
             repeat(8) {
@@ -119,10 +119,10 @@ class HomeChatToolLoopTest {
         assertNotNull(i); assertTrue(i!!.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
     }
 
-    @Test fun withBlazeOnScreenTheActivityStartsIt() {
+    @Test fun withArgusOnScreenTheActivityStartsIt() {
         val a = Robolectric.buildActivity(androidx.activity.ComponentActivity::class.java).setup().get()
         SelfControl.activity = java.lang.ref.WeakReference(a)
-        assertEquals("activity", com.blaze.assistant.device.ActivityStart.start(app, Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)))
+        assertEquals("activity", com.argus.assistant.device.ActivityStart.start(app, Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)))
         val i = accessibilityOpened(a)
         assertNotNull(i); assertEquals(0, i!!.flags and Intent.FLAG_ACTIVITY_NEW_TASK)
     }

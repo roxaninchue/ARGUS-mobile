@@ -1,4 +1,4 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 /**
  * 0.46.5: friendly details for any source. Provider link / group titles are raw release names

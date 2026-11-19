@@ -1,7 +1,7 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
  * 0.47 chat composer: the model family the user picked on the composer's model chip (or in Spotlight).
  * Auto (default) / Spark (fast, < 6 s) / Flare (balanced, 6–12 s) / Inferno (smartest, > 12 s).
  *
- * The choice never changes the brain ORDER (on-phone brain → Nous → Blaze cloud gateway; never Jev, System One or
+ * The choice never changes the brain ORDER (on-phone brain → Nous → Argus cloud gateway; never Jev, System One or
  * NVIDIA models). Routing only READS it: [wire] is sent to the gateway as the `blaze_family` hint (every blaze_* field is
  * stripped by the gateway before a provider sees it), Auto sends nothing. Persisted in Settings ("composer_model").
  */
@@ -27,8 +27,8 @@ object ModelChoice {
 
         /** "Insight (Fast)", the picker row. */
         val pickerLabel: String get() = if (this == AUTO) label else "$label ($sub)"
-        /** "Blaze Inferno", the Spotlight / self-map name. */
-        val blazeName: String get() = "${BrandName.NAME} $label"
+        /** "Argus Inferno", the Spotlight / self-map name. */
+        val argusName: String get() = "${BrandName.NAME} $label"
     }
 
     const val PREF = "composer_model"
@@ -57,13 +57,13 @@ object ModelChoice {
      * older build is put back to Auto at start instead of steering every message from a setting nobody can see.
      */
     private fun load(): Family {
-        runCatching { if (com.blaze.assistant.agent.Settings.str(PREF, "auto") != Family.AUTO.id) com.blaze.assistant.agent.Settings.setStr(PREF, Family.AUTO.id) }
+        runCatching { if (com.argus.assistant.agent.Settings.str(PREF, "auto") != Family.AUTO.id) com.argus.assistant.agent.Settings.setStr(PREF, Family.AUTO.id) }
         return Family.AUTO
     }
 
     fun set(f: Family) {
         _current.value = f
-        runCatching { com.blaze.assistant.agent.Settings.setStr(PREF, f.id) }
+        runCatching { com.argus.assistant.agent.Settings.setStr(PREF, f.id) }
     }
 
     /** The gateway hint for [f]: null for Auto (the gateway picks as before). */

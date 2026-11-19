@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
@@ -14,12 +14,12 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.ReplySources
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.mediaapps.MovieDetails
-import com.blaze.assistant.movies.MovieGroup
-import com.blaze.assistant.movies.MovieInfo
-import com.blaze.assistant.movies.MovieLink
+import com.argus.assistant.agent.ReplySources
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.mediaapps.MovieDetails
+import com.argus.assistant.movies.MovieGroup
+import com.argus.assistant.movies.MovieInfo
+import com.argus.assistant.movies.MovieLink
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -62,7 +62,7 @@ class MoviesShotsTest {
         val found = ReplySources.Found(listOf(ReplySources.Source("https://archive.org/details/TheStranger_0", "The Stranger (1946)"),
             ReplySources.Source("https://en.wikipedia.org/wiki/The_Stranger_(1946_film)", ""), ReplySources.Source("https://www.blender.org/about/projects/", "Blender open projects")))
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides DarkColors) {
+            CompositionLocalProvider(LocalArgus provides DarkColors) {
                 Column(Modifier.fillMaxSize().background(DarkColors.paper).padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SourcePills(found, Modifier.fillMaxWidth())
                     Column(Modifier.fillMaxWidth().height(620.dp)) {
@@ -78,11 +78,11 @@ class MoviesShotsTest {
 
     /** 0.46.3: the install sheet with 25 providers: the bottom bar (Cancel, Install (N)) is drawn on screen. */
     @Test fun installSheetWith25Providers() {
-        val entries = (1..25).map { com.blaze.assistant.movies.ProviderRepo.Entry("provider$it", "Provider $it", "1.0") }
+        val entries = (1..25).map { com.argus.assistant.movies.ProviderRepo.Entry("provider$it", "Provider $it", "1.0") }
         rule.setContent {
             CompositionLocalProvider {
                 androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF0B0D12)), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                    com.blaze.assistant.mediaapps.InstallSheet(entries, emptySet(), entries.take(4).map { it.value }, mapOf("provider1" to "Installed"), false, {}, {}, {}, {})
+                    com.argus.assistant.mediaapps.InstallSheet(entries, emptySet(), entries.take(4).map { it.value }, mapOf("provider1" to "Installed"), false, {}, {}, {}, {})
                 }
             }
         }

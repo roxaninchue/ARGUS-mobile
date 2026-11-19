@@ -1,4 +1,4 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -38,7 +38,7 @@ class TiersTest {
         assertEquals(null, ModelChoice.migrate("spark")); assertEquals(null, ModelChoice.migrate("auto"))
         assertEquals("spark", ModelChoice.migrate("Spark")); assertEquals("flare", ModelChoice.migrate("Oracle"))
         assertEquals("inferno", ModelChoice.migrate("Panoptes")); assertEquals("inferno", ModelChoice.migrate(" Inferno "))
-        assertEquals("auto", ModelChoice.migrate("Blaze Max"))
+        assertEquals("auto", ModelChoice.migrate("Argus Max"))
         assertEquals(ModelChoice.Family.INFERNO, ModelChoice.of("panoptes")); assertEquals(ModelChoice.Family.SPARK, ModelChoice.of("Insight"))
     }
 }

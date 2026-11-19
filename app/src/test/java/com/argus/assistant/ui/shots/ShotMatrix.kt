@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.shots
+package com.argus.assistant.ui.shots
 
-import com.blaze.assistant.ui.argus.Ground
+import com.argus.assistant.ui.argus.Ground
 
 /**
  * P1-QA-01 the shots matrix (06 §9 "Robolectric / Compose shots"): every new P1 screen in light and dark × the three

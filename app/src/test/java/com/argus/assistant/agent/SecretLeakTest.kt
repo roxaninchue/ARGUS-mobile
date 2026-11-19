@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.SecretTestKit.CF
-import com.blaze.assistant.agent.SecretTestKit.GL
+import com.argus.assistant.agent.SecretTestKit.CF
+import com.argus.assistant.agent.SecretTestKit.GL
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -51,10 +51,10 @@ class SecretLeakTest {
         val req = SecretDesk.requestOf(JSONObject().put("kind", "card").put("label", "Card for the shop").put("service", "shop.example.com"))
         assertEquals(listOf("number", "exp", "cvc"), req.fields.map { it.name })
         assertEquals(listOf("shop.example.com"), req.hosts)
-        assertFalse(com.blaze.assistant.ui.SecretFormRules.ready(req.kind, req.fields, mapOf("number" to "4242424242424241", "exp" to "12/29", "cvc" to "123")))
-        assertTrue(com.blaze.assistant.ui.SecretFormRules.ready(req.kind, req.fields, mapOf("number" to "4242 4242 4242 4242", "exp" to "12/29", "cvc" to "123")))
+        assertFalse(com.argus.assistant.ui.SecretFormRules.ready(req.kind, req.fields, mapOf("number" to "4242424242424241", "exp" to "12/29", "cvc" to "123")))
+        assertTrue(com.argus.assistant.ui.SecretFormRules.ready(req.kind, req.fields, mapOf("number" to "4242 4242 4242 4242", "exp" to "12/29", "cvc" to "123")))
         val login = SecretDesk.requestOf(JSONObject().put("kind", "login").put("label", "GitLab").put("service", "gitlab"))
-        assertTrue(com.blaze.assistant.ui.SecretFormRules.ready(login.kind, login.fields, mapOf("password" to "x")))
+        assertTrue(com.argus.assistant.ui.SecretFormRules.ready(login.kind, login.fields, mapOf("password" to "x")))
     }
 
     @Test fun noSecretInHistoryChatLogsOrWire() {
@@ -88,14 +88,14 @@ class SecretLeakTest {
 
     @Test fun nextLaunchCrashReportIsScrubbed() {
         SecretTestKit.cloudflare(); SecretTestKit.gitlab()
-        val C = com.blaze.assistant.device.CrashLog
+        val C = com.argus.assistant.device.CrashLog
         // 0.46.5's last-exit record (native trace + in-flight marker) and the report that leaves the phone.
         val line = C.exitLine(4, "crash with Bearer $CF", "backtrace: libquickjs.so $GL", "provider call with token $CF", listOf("My Source"))!!
         assertFalse(line.contains(CF)); assertFalse(line.contains(GL))
         assertTrue(line.contains("{{secret:cloudflare_token}}")); assertTrue(line.contains("{{secret:gitlab_token}}"))
         val report = C.reportText("2026-10-26 21:00:00  QUIET old line written before the save: $GL\n")
         assertFalse(report.contains(GL)); assertTrue(report.contains("{{secret:gitlab_token}}"))
-        val src = java.io.File("src/main/java/com/blaze/assistant/device/CrashLog.kt").let { if (it.exists()) it else java.io.File("app/" + it.path) }.readText()
+        val src = java.io.File("src/main/java/com/argus/assistant/device/CrashLog.kt").let { if (it.exists()) it else java.io.File("app/" + it.path) }.readText()
         assertTrue(src.contains("SecretVault.file = File(ctx.filesDir, \"secret_vault.json\")"))   // known before the crash handler / last-exit check
         assertTrue(src.contains("redact(scrubSecrets(label), secrets)"))                            // in-flight marker
         assertTrue(src.contains("reportText(file.readText())"))                                      // read() / Send crash report / crash_log tool

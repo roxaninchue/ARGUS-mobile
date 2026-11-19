@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.content.Context
 import android.content.res.Configuration
@@ -53,7 +53,7 @@ class PhoneStateReader(ctx: Context) : StateCheck.Reader {
  * stale after the screen redrew) and its checked state read again. Polls with a timeout instead of a fixed settle.
  */
 object ToggleVerify {
-    suspend fun after(ctx: Context, svc: BlazeAccessibilityService, label: String, wantId: Int, want: Boolean, timeoutMs: Long = 1500): StateCheck.Result {
+    suspend fun after(ctx: Context, svc: ArgusAccessibilityService, label: String, wantId: Int, want: Boolean, timeoutMs: Long = 1500): StateCheck.Result {
         var tries = 0
         return StateCheck.verifyToggle(label, want, PhoneStateReader(ctx), reread = {
             tries++
@@ -64,9 +64,9 @@ object ToggleVerify {
 
     /** The tool result's ending for [r]: "Checked on the phone: …" or one honest "Not confirmed: …". */
     fun marker(r: StateCheck.Result): String = when (r.status) {
-        StateCheck.Status.VERIFIED -> com.blaze.assistant.agent.ActCheck.checked(StateCheck.evidence(r))
-        StateCheck.Status.CONTRADICTED -> com.blaze.assistant.agent.ActCheck.notConfirmed(
+        StateCheck.Status.VERIFIED -> com.argus.assistant.agent.ActCheck.checked(StateCheck.evidence(r))
+        StateCheck.Status.CONTRADICTED -> com.argus.assistant.agent.ActCheck.notConfirmed(
             "${r.word} still reads ${StateCheck.onOff(!r.want)}", "read_screen, then tap the switch itself")
-        StateCheck.Status.UNKNOWN -> com.blaze.assistant.agent.ActCheck.notConfirmed(StateCheck.unchecked(r), "read_screen and check it")
+        StateCheck.Status.UNKNOWN -> com.argus.assistant.agent.ActCheck.notConfirmed(StateCheck.unchecked(r), "read_screen and check it")
     }
 }

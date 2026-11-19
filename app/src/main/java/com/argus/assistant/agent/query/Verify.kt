@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
 /**
- * 0.51.0 BlazeQuery verification for commands and code: before a shell command runs (and in the reply rules for code), its
- * program, flags and API names are checked against the evidence BlazeQuery fetched for this turn. The result is a short
+ * 0.51.0 ArgusQuery verification for commands and code: before a shell command runs (and in the reply rules for code), its
+ * program, flags and API names are checked against the evidence ArgusQuery fetched for this turn. The result is a short
  * line appended to the tool result: "verified against developer.android.com" or "unverified: --foo isn't in the fetched
  * docs". It never blocks or changes the command (the confirm card / CommandPolicy still decide what runs).
  * Pure (VerifyTest).
@@ -58,8 +58,8 @@ object Verify {
     /** The line appended to a tool result ("" when there was nothing to check against). */
     fun note(r: Result): String = when {
         r.checked.isEmpty() || r.program.isEmpty() && r.source == null && r.missing.isEmpty() -> ""
-        r.verified -> "\n[BlazeQuery] verified against ${r.source}" + if (r.checked.size > 1) " (${r.checked.drop(1).joinToString(" ")})" else ""
-        r.source != null -> "\n[BlazeQuery] partly verified against ${r.source}; unverified: ${r.missing.joinToString(" ")}"
-        else -> "\n[BlazeQuery] unverified: the fetched docs don't cover ${r.missing.take(4).joinToString(" ")}"
+        r.verified -> "\n[ArgusQuery] verified against ${r.source}" + if (r.checked.size > 1) " (${r.checked.drop(1).joinToString(" ")})" else ""
+        r.source != null -> "\n[ArgusQuery] partly verified against ${r.source}; unverified: ${r.missing.joinToString(" ")}"
+        else -> "\n[ArgusQuery] unverified: the fetched docs don't cover ${r.missing.take(4).joinToString(" ")}"
     }
 }

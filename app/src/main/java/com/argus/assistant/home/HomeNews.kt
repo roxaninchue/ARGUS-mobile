@@ -1,7 +1,7 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
-import com.blaze.assistant.proactive.Proactive
-import com.blaze.assistant.proactive.ProactiveDial
+import com.argus.assistant.proactive.Proactive
+import com.argus.assistant.proactive.ProactiveDial
 import kotlin.math.abs
 
 /**
@@ -81,7 +81,7 @@ object HomeNews {
         now - last >= GAP_MS && (today != day || countToday < PER_DAY)
 
     // ---------------- store ----------------
-    private fun s() = com.blaze.assistant.agent.Settings
+    private fun s() = com.argus.assistant.agent.Settings
     var enabled: Boolean get() = s().bool("home_headsups", true); set(v) = s().setBool("home_headsups", v)
     fun seen(): Set<String>? = s().str("home_seen", "\u0000").let { if (it == "\u0000") null else it.split('\n').filter { k -> k.isNotBlank() }.toSet() }
     fun saveSeen(k: Set<String>) = s().setStr("home_seen", k.toList().takeLast(KEEP).joinToString("\n"))

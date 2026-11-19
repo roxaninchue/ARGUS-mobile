@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -141,7 +141,7 @@ object AttachView {
      */
     fun fileChips(files: List<String>, media: List<String>): List<String> = if (media.isEmpty()) files else files.drop(media.size)
 
-    /** The placeholder text Blaze stores when you send pictures with no words: hidden under the thumbnails. */
+    /** The placeholder text Argus stores when you send pictures with no words: hidden under the thumbnails. */
     const val NO_TEXT = "Take a look at this."
     fun bubbleText(text: String, media: List<String>): String = if (media.isNotEmpty() && text.trim() == NO_TEXT) "" else text
 }
@@ -164,7 +164,7 @@ fun rememberBitmap(path: String?, px: Int): ImageBitmap? {
 /** A rounded picture thumbnail ([size]) with an optional small × in the corner. Tap opens it. */
 @Composable
 fun ThumbChip(path: String?, name: String, size: Dp = 60.dp, onOpen: () -> Unit, onRemove: (() -> Unit)? = null, bitmap: ImageBitmap? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val bmp = bitmap ?: rememberBitmap(path, 240)
     val shape = RoundedCornerShape(14.dp)
     Box(Modifier.size(size + 6.dp)) {
@@ -182,7 +182,7 @@ fun ThumbChip(path: String?, name: String, size: Dp = 60.dp, onOpen: () -> Unit,
 /** A non-picture file: icon + name in a rounded chip (× to remove when [onRemove] is set). */
 @Composable
 fun FileChip(name: String, onRemove: (() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.padding(top = 6.dp).height(40.dp).clip(RoundedCornerShape(14.dp)).background(c.bubble).padding(start = 10.dp, end = if (onRemove != null) 4.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Icon(if (AttachView.isPdfName(name)) Icons.Rounded.PictureAsPdf else Icons.Rounded.Description, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
@@ -198,8 +198,8 @@ fun FileChip(name: String, onRemove: (() -> Unit)? = null) {
 
 /** The composer's attachments: rounded picture thumbnails (× to remove, tap to preview) and file chips. */
 @Composable
-fun AttachmentThumbs(files: List<com.blaze.assistant.agent.Attachment>, loading: Boolean, onRemove: (com.blaze.assistant.agent.Attachment) -> Unit) {
-    val c = LocalBlaze.current
+fun AttachmentThumbs(files: List<com.argus.assistant.agent.Attachment>, loading: Boolean, onRemove: (com.argus.assistant.agent.Attachment) -> Unit) {
+    val c = LocalArgus.current
     var preview by remember { mutableStateOf<String?>(null) }
     // v0.28.1: with several pictures, tapping one opens the full-screen viewer at it (swipe between them). The row of
     // thumbnails stays (each needs its own ×), so the composer keeps its height.
@@ -229,7 +229,7 @@ fun ImagePreview(path: String, onDismiss: () -> Unit) {
  */
 @Composable
 fun SentBubble(text: String, quoted: String, media: List<String>, files: List<String>, pos: GroupPos, bitmaps: List<ImageBitmap?>? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var preview by remember { mutableStateOf<String?>(null) }
     var previewAt by remember { mutableStateOf(-1) }
     val words = AttachView.bubbleText(text, media)
@@ -263,10 +263,10 @@ fun SentBubble(text: String, quoted: String, media: List<String>, files: List<St
     if (previewAt >= 0) ImagePager(media.take(12), previewAt) { previewAt = -1 }
 }
 
-/** "Open in Design?": the chip Blaze shows instead of switching views on its own. */
+/** "Open in Design?": the chip Argus shows instead of switching views on its own. */
 @Composable
 fun ViewOfferChip(label: String, onOpen: () -> Unit, onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.glass(GlassTokens.pillShape, GlassIntensity.High, shadow = false).clickable(onClickLabel = label) { onOpen() }
             .padding(start = 8.dp, end = 16.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {

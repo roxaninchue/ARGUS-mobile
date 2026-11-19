@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import com.blaze.assistant.agent.ChatNav
+import com.argus.assistant.agent.ChatNav
 
 /**
  * P1-SH-01: the ARGUS shell's four modes as one HorizontalPager (04 §3.2: the notch, a swipe and /team /chat /life /desk

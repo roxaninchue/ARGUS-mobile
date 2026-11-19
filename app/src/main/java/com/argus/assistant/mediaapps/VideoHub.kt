@@ -1,10 +1,10 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.movies.MovieInfo
-import com.blaze.assistant.movies.MoviePost
-import com.blaze.assistant.movies.Progress
+import com.argus.assistant.BrandName
+import com.argus.assistant.movies.MovieInfo
+import com.argus.assistant.movies.MoviePost
+import com.argus.assistant.movies.Progress
 
 /**
  * 0.46.4 Video revamp: the pure parts (bottom nav, Home row order and hero picks, details chips, player gesture rules).
@@ -109,7 +109,7 @@ typealias BrowseRows = List<Pair<String, List<MoviePost>>>
 
 object BrowseState {
     /** 0.46.6: 90 s (was 20): one provider engine at a time now, so a source's catalog + rows calls wait in line behind
-     *  other sources ([com.blaze.assistant.movies.ProviderSandbox.Gate]); rows still land one source at a time. */
+     *  other sources ([com.argus.assistant.movies.ProviderSandbox.Gate]); rows still land one source at a time. */
     const val SOURCE_TIMEOUT_MS = 90_000L
 
     /**
@@ -178,7 +178,7 @@ object BrowseState {
 /**
  * 0.46.5 crash hardening: Compose throws (and closes the app) when two items in one LazyColumn / LazyRow share a key. Every
  * list on the Video screens is keyed through here (source + link, deduped) so a provider that sends the same item twice, or
- * the same link from two sources, can't crash Blaze.
+ * the same link from two sources, can't crash Argus.
  */
 object VideoKeys {
     fun post(p: MoviePost): String = p.source + "|" + p.link

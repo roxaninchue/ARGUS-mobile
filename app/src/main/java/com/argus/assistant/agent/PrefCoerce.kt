@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.5 hotfix (P0, user 2026-10-20 20:38): "hey how's it going" failed at once with

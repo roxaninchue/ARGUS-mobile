@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,18 +24,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.movies.MovieHub
-import com.blaze.assistant.movies.MoviePlay
-import com.blaze.assistant.movies.MoviePost
-import com.blaze.assistant.movies.MovieSource
-import com.blaze.assistant.movies.Movies
-import com.blaze.assistant.movies.Progress
-import com.blaze.assistant.ui.BlazeShapes
-import com.blaze.assistant.ui.EmptyState
-import com.blaze.assistant.ui.GlassIntensity
-import com.blaze.assistant.ui.KitSearch
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.glass
+import com.argus.assistant.movies.MovieHub
+import com.argus.assistant.movies.MoviePlay
+import com.argus.assistant.movies.MoviePost
+import com.argus.assistant.movies.MovieSource
+import com.argus.assistant.movies.Movies
+import com.argus.assistant.movies.Progress
+import com.argus.assistant.ui.ArgusShapes
+import com.argus.assistant.ui.EmptyState
+import com.argus.assistant.ui.GlassIntensity
+import com.argus.assistant.ui.KitSearch
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.glass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -83,7 +83,7 @@ internal fun VideoHomePage(open: (MovieSource, MoviePost) -> Unit, onResume: (Pr
 @Composable
 internal fun VideoHomeContent(sources: List<MovieSource>, rows: Map<String, Result<List<Pair<String, List<MoviePost>>>>>, cont: List<Progress>, watch: List<MoviePost>,
                               saved: (MoviePost) -> Boolean, open: (MovieSource, MoviePost) -> Unit, onResume: (Progress) -> Unit, onRetry: () -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val byId = remember(sources) { sources.associateBy { it.id } }
     val snap = rows.toMap()
     val flat = remember(snap) { snap.mapValues { (_, r) -> r.getOrNull().orEmpty().flatMap { it.second } } }
@@ -137,7 +137,7 @@ internal fun VideoHomeContent(sources: List<MovieSource>, rows: Map<String, Resu
 
 @Composable
 private fun PosterSkeletons() {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         repeat(3) { Box(Modifier.width(112.dp).aspectRatio(2f / 3f).clip(RoundedCornerShape(12.dp)).background(c.faint)) }
     }
@@ -146,14 +146,14 @@ private fun PosterSkeletons() {
 /** A hero card: the backdrop art, its title, Play / Resume and Watchlist. */
 @Composable
 private fun HeroCard(h: VideoHome.Hero, saved: Boolean, onPlay: () -> Unit, onWatchlist: () -> Unit) {
-    Box(Modifier.width(300.dp).aspectRatio(16f / 10f).clip(BlazeShapes.medium).clickable(role = Role.Button, onClickLabel = "Open ${h.title}") { onPlay() }) {
+    Box(Modifier.width(300.dp).aspectRatio(16f / 10f).clip(ArgusShapes.medium).clickable(role = Role.Button, onClickLabel = "Open ${h.title}") { onPlay() }) {
         PosterArt(h.title, h.image, Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)))))
         Column(Modifier.align(Alignment.BottomStart).padding(12.dp)) {
             Text(h.title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(Modifier.clip(BlazeShapes.pill).background(Color.White).clickable(role = Role.Button, onClickLabel = if (h.resume != null) "Resume ${h.title}" else "Play ${h.title}") { onPlay() }
+                Row(Modifier.clip(ArgusShapes.pill).background(Color.White).clickable(role = Role.Button, onClickLabel = if (h.resume != null) "Resume ${h.title}" else "Play ${h.title}") { onPlay() }
                     .padding(horizontal = 14.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
                     Text(if (h.resume != null) "Resume" else "Play", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -168,7 +168,7 @@ private fun HeroCard(h: VideoHome.Hero, saved: Boolean, onPlay: () -> Unit, onWa
 /** Search: instant (after a short pause in typing) across sources, posters in a grid, source filter chips. */
 @Composable
 internal fun VideoSearchPage(open: (MovieSource, MoviePost) -> Unit, onOnline: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val gen by Movies.gen.collectAsState()
     val sources = remember(gen) { Movies.sources() }
     var query by remember { mutableStateOf("") }
@@ -210,7 +210,7 @@ internal fun VideoSearchPage(open: (MovieSource, MoviePost) -> Unit, onOnline: (
 
 @Composable
 private fun GridPoster(p: MoviePost, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClickLabel = "Open ${p.title}") { onClick() }) {
         PosterArt(p.title, p.image, Modifier.fillMaxWidth().aspectRatio(2f / 3f).clip(RoundedCornerShape(12.dp)))
         Text(p.title, color = c.ink, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp))
@@ -237,7 +237,7 @@ internal fun WatchlistGrid(open: (MovieSource, MoviePost) -> Unit) {
 /** Sources: the provider manager (unchanged), the user's Jellyfin server, and opening a video file. */
 @Composable
 internal fun VideoSourcesPage(onPickFile: () -> Unit, incoming: String?, onIncomingDone: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var panel by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     if (incoming != null) LinkInstallFlow(incoming) { m -> note = m; onIncomingDone(); Movies.gen.value++ }
@@ -256,7 +256,7 @@ internal fun VideoSourcesPage(onPickFile: () -> Unit, incoming: String?, onIncom
         if (note.isNotBlank()) item { Text(note, color = c.sub, fontSize = 12.sp) }
         item { SectionTitle("On now", Modifier.offset(x = (-16).dp)) }
         items(VideoKeys.unique(sources) { it.id }, key = { "src-" + it.id }) { s ->
-            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).glass(BlazeShapes.small, GlassIntensity.Low, shadow = false).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).glass(ArgusShapes.small, GlassIntensity.Low, shadow = false).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(if (s.official) Icons.Rounded.Verified else Icons.Rounded.Extension, contentDescription = null, tint = c.sub, modifier = Modifier.size(20.dp))
                 Text(VideoHome.rowTitle(s.id, s.name, ""), color = c.ink, fontSize = 14.sp, modifier = Modifier.padding(start = 10.dp))
             }
@@ -266,8 +266,8 @@ internal fun VideoSourcesPage(onPickFile: () -> Unit, incoming: String?, onIncom
 
 @Composable
 private fun SourceTile(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier, onClick: () -> Unit) {
-    val c = LocalBlaze.current
-    Column(modifier.height(92.dp).clip(BlazeShapes.small).glass(BlazeShapes.small, GlassIntensity.Medium, shadow = false)
+    val c = LocalArgus.current
+    Column(modifier.height(92.dp).clip(ArgusShapes.small).glass(ArgusShapes.small, GlassIntensity.Medium, shadow = false)
         .clickable(role = Role.Button, onClickLabel = label) { onClick() }.padding(12.dp), verticalArrangement = Arrangement.SpaceBetween) {
         Icon(icon, contentDescription = null, tint = c.ink, modifier = Modifier.size(26.dp))
         Text(label, color = c.ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)

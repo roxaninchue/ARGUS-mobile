@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import android.content.Context
 import android.net.Uri
@@ -71,7 +71,7 @@ object StreamCache {
             val dir = File(ctx.applicationContext.cacheDir, "media-stream").apply { mkdirs() }
             deviceBudget = budget(ramMb(ctx), dir.usableSpace)
             // 0.45.19: the LRU cap also follows this month's download limits (MediaNet.cacheCap), updated in place.
-            val ev = CappedEvictor(MediaNetDevice.cacheCap(deviceBudget, com.blaze.assistant.connect.Entitlements.cached(ctx)))
+            val ev = CappedEvictor(MediaNetDevice.cacheCap(deviceBudget, com.argus.assistant.connect.Entitlements.cached(ctx)))
             evictor = ev
             SimpleCache(dir, ev, StandaloneDatabaseProvider(ctx.applicationContext))
         }.also { cache = it }
@@ -80,7 +80,7 @@ object StreamCache {
     /** Re-reads the plan's limits into the cache cap (shrinking evicts the oldest spans on the next write). */
     fun applyQuota(ctx: Context) {
         get(ctx)
-        evictor?.cap = MediaNetDevice.cacheCap(deviceBudget, com.blaze.assistant.connect.Entitlements.cached(ctx))
+        evictor?.cap = MediaNetDevice.cacheCap(deviceBudget, com.argus.assistant.connect.Entitlements.cached(ctx))
     }
 
     /**
@@ -153,7 +153,7 @@ object StreamCache {
     }
 
     /** 0.45.19 step 3: details fetched ahead for the top results (MediaNet.warmCount), keyed source:id:kind. */
-    val details = MediaNet.TtlCache<com.blaze.assistant.mediaapps.store.StoreDetail>()
+    val details = MediaNet.TtlCache<com.argus.assistant.mediaapps.store.StoreDetail>()
     fun detailKey(source: String, id: String, kind: String) = "$source:$id:$kind"
 
     // Offline replay: the last stream urls per Track key (the cache key), so a stream played before can start again
@@ -291,7 +291,7 @@ object StreamRenew {
     private val renewer = UrlRenew.Renewer({ src, id, kind ->
         kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
             kotlinx.coroutines.withTimeoutOrNull(8_000) {
-                com.blaze.assistant.mediaapps.store.StoreSources.get(src)?.refresh(id, kind)?.formats
+                com.argus.assistant.mediaapps.store.StoreSources.get(src)?.refresh(id, kind)?.formats
             }
         }
     })

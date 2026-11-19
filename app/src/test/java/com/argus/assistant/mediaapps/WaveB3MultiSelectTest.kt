@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -11,7 +11,7 @@ import org.junit.Test
 /** Wave B item 20: press-and-hold multi-select in the Music and Video libraries. */
 class WaveB3MultiSelectTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     private fun t(k: String, source: String = "download", kind: String = "audio") = Track(k, "content://media/$k", "Song $k", source = source, kind = kind)
 

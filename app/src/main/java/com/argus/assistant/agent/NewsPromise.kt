@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.46.0 (phone screenshot): Rocky shared news with "@halo making a huge blaze update!! Modular screens and study coach, you'll
+ * 0.46.0 (phone screenshot): Rocky shared news with "@halo making a huge argus update!! Modular screens and study coach, you'll
  * hear about them when they're ready!" and got back "Halo's got the modular screens and study coach locked in—just a few more
  * sparks to fire and it'll be yours." Nobody was building anything: the user was only sharing news. When the user's message
  * asks for nothing and no tool ran, sentences that promise delivery ("locked in", "on it", "coming your way", "it'll be yours",

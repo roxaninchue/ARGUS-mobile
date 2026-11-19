@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -72,7 +72,7 @@ object HomeImages {
                         try {
                             val c = URL(url).openConnection() as HttpURLConnection
                             c.connectTimeout = 8000; c.readTimeout = 10000; c.instanceFollowRedirects = true
-                            c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 12) Blaze")
+                            c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 12) Argus")
                             if (c.responseCode !in 200..299) return@withContext null
                             val tmp = File(f.path + ".part")
                             // 0.46.5: stop reading past the cap (a huge "poster" never fills the disk or memory)

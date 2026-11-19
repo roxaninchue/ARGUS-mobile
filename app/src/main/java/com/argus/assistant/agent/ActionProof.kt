@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * v0.28.8: proof for every action. v0.28.7 stopped fake "message sent" replies; this does the same for every
- * action Blaze can claim in a final reply: calls, alarms and timers, reminders and routines, calendar events,
+ * action Argus can claim in a final reply: calls, alarms and timers, reminders and routines, calendar events,
  * device settings, saving to memory, files, emails, opening apps or pages, installs, downloads, contacts and
  * music. A claim needs a tool from its group that SUCCEEDED this turn ([ClaimGuard.succeeded] on the result).
  *
@@ -32,12 +32,12 @@ object ActionProof {
         "send" to setOf("share_to_app"),
         "music" to setOf("spotify_now_playing", "open_url", "open_app", "search_in_app"),
         "download" to setOf("browser_click"),
-        // 0.45.19: no Blaze Phone step proves a booking on its own; only a page read back as VERIFIED does (ClaimCheck.readBack).
-        "booked" to com.blaze.assistant.browser.phone.PhonePolicy.TOOLS,
+        // 0.45.19: no Argus Phone step proves a booking on its own; only a page read back as VERIFIED does (ClaimCheck.readBack).
+        "booked" to com.argus.assistant.browser.phone.PhonePolicy.TOOLS,
     )
 
     /**
-     * v0.45.0 (#4, #20): the same claims in the languages Blaze's users write in (French, Swahili, Nyanja, Bemba), so a
+     * v0.45.0 (#4, #20): the same claims in the languages Argus's users write in (French, Swahili, Nyanja, Bemba), so a
      * reply that isn't English is checked too. Kept short and specific: a missed claim stays unchecked, a false hit only
      * asks for proof that is usually there.
      */

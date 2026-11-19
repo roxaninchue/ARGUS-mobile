@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -51,12 +51,12 @@ class Review1022Test {
 
     @Test fun oneNudgeBudgetAndNoBlindFastLaneDone() {
         assertEquals(2, RetryGuard.MAX)
-        val src = listOf(java.io.File("src/main/java/com/blaze/assistant/agent/Agent.kt"), java.io.File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
+        val src = listOf(java.io.File("src/main/java/com/argus/assistant/agent/Agent.kt"), java.io.File("app/src/main/java/com/argus/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         // Every re-prompt kind spends the same per-turn budget.
         for (k in listOf("leakNudged", "refusalNudged", "echoNudged", "emptyNudged"))
             assertTrue(k, Regex(k + " = true; nudgesLeft--").containsMatchIn(src))
         assertTrue(FastLane.FAIL_STARTS.containsAll(listOf("No app", "Error", "Couldn't")))
-        val fl = listOf(java.io.File("src/main/java/com/blaze/assistant/agent/FastLane.kt"), java.io.File("app/src/main/java/com/blaze/assistant/agent/FastLane.kt")).first { it.exists() }.readText()
+        val fl = listOf(java.io.File("src/main/java/com/argus/assistant/agent/FastLane.kt"), java.io.File("app/src/main/java/com/argus/assistant/agent/FastLane.kt")).first { it.exists() }.readText()
         assertTrue(fl.contains("\"media_control\" -> null") && fl.contains("\"navigate_to\" -> null") && fl.contains("\"set_alarm\", \"set_timer\" -> null"))
     }
 }

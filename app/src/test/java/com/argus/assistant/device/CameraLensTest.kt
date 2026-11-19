@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.45.28: which back camera Blaze Camera opens, the separate ultrawide below 1x, and focus at high zoom. */
+/** v0.45.28: which back camera Argus Camera opens, the separate ultrawide below 1x, and focus at high zoom. */
 class CameraLensTest {
     private val e = 0.001f
     private val main = CameraZoom.Lens("0", logical = false, minZoom = 1f, maxZoom = 8f, eq = 0.85f)

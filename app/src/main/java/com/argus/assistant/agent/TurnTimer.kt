@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.41.0 speed: where one turn's time goes, phase by phase ("tools 12 ms · route 3 ms · prep 41 ms · prompt 18 ms ·
  * first word 1.9 s · model 4.2 s · tool work 9.8 s"). The agent loop marks phases; the line goes to logcat
- * (tag BlazeSpeed), the crash/slow log and the speed log, so a slow answer can be traced to its phase on any phone.
+ * (tag ArgusSpeed), the crash/slow log and the speed log, so a slow answer can be traced to its phase on any phone.
  * Pure (TurnTimerTest): the clock is passed in.
  */
 class TurnTimer(private val clock: () -> Long = System::currentTimeMillis) {

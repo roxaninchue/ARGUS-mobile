@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import java.io.File
 
@@ -8,17 +8,17 @@ import java.io.File
  *
  *  - Designs load from a virtual https origin ([ORIGIN]) instead of file://, so the page, its importmap and
  *    the bundled three.js modules are all same-origin (no opaque "null" origin, no CORS):
- *      /designs/…  → the designs folder in Blaze's home (~/designs)
- *      /home/…     → anything else in Blaze's home
+ *      /designs/…  → the designs folder in Argus's home (~/designs)
+ *      /home/…     → anything else in Argus's home
  *      /three/…    → three.js r170 bundled in assets/design/three (WebGL2)
  *      /three/r162/… → three.js r162 bundled in assets/design/three-r162 (the last build with WebGL1)
  *    CDN three.js URLs (jsDelivr, unpkg, cdnjs…) are still served from the APK as a fallback ([bundledThree]).
  *  - Every HTML page served gets [HOOK_JS] first in <head>: it catches errors (window.onerror, failed
  *    module/script loads, unhandled rejections), checks WebGL2/WebGL1, picks the three.js build, and
- *    reports gl / error / ready / fail to the Design view through the `BlazeDesign` bridge.
+ *    reports gl / error / ready / fail to the Design view through the `ArgusDesign` bridge.
  *  - A three.js importmap is rewritten so the page imports the chosen same-origin build ([prepareHtml]), through
  *    the safety net (v0.23.5, assets/design/three-safe.js: null geometry / material objects are fixed and hidden
- *    instead of killing the scene), and a 3D page's parts are normalised ([com.blaze.assistant.agent.Designs.normalizeSpec]).
+ *    instead of killing the scene), and a 3D page's parts are normalised ([com.argus.assistant.agent.Designs.normalizeSpec]).
  *
  * Pure (no Android classes) so the mapping, rewriting and fallback choice are unit-tested (DesignRenderTest).
  */
@@ -56,9 +56,9 @@ object DesignServe {
     }
 
     /**
-     * v0.28.2: the URL the Design view loads. Like [virtualUrl], and a file:// page outside Blaze's home is served
+     * v0.28.2: the URL the Design view loads. Like [virtualUrl], and a file:// page outside Argus's home is served
      * from the virtual origin too (/ext/<name>, with its own folder as the root, see [extRoot]), so the WebView
-     * never needs file access. A file inside the app's private data ([appData]) but outside Blaze's home is
+     * never needs file access. A file inside the app's private data ([appData]) but outside Argus's home is
      * not served (404).
      */
     fun servedUrl(fileUrl: String, home: File?): String {
@@ -102,7 +102,7 @@ object DesignServe {
     /** Caps what a page may hand the [DesignBridge] (it only updates the view's state). */
     fun bridgeText(s: String?, max: Int = 500): String = (s ?: "").take(max)
 
-    /** What a request to the virtual origin maps to: a file in Blaze's home or an APK asset. */
+    /** What a request to the virtual origin maps to: a file in Argus's home or an APK asset. */
     sealed class Target {
         abstract val mime: String
         data class Disk(val file: File, override val mime: String) : Target()
@@ -265,7 +265,7 @@ object DesignServe {
     fun prepareHtml(html: String, is3d: Boolean): String {
         var out = html
         // v0.23.5: the parts every renderer gets are normalised (known shapes, unique ids, objects only).
-        if (is3d) com.blaze.assistant.agent.Designs.specFrom(out)?.let { out = com.blaze.assistant.agent.Designs.withSpec(out, com.blaze.assistant.agent.Designs.normalizeSpec(it)) }
+        if (is3d) com.argus.assistant.agent.Designs.specFrom(out)?.let { out = com.argus.assistant.agent.Designs.withSpec(out, com.argus.assistant.agent.Designs.normalizeSpec(it)) }
         importMap.find(out)?.let { m ->
             val json = m.groupValues[1]
             if (usesThree(out)) {
@@ -287,12 +287,12 @@ object DesignServe {
     }
 
     /**
-     * Injected first into every page the Design view serves. Talks to the `BlazeDesign` bridge:
+     * Injected first into every page the Design view serves. Talks to the `ArgusDesign` bridge:
      * gl(level, hasWebGL1, engine), error(msg), ready(engine), fail(msg). The engine choice mirrors [engineFor].
      */
     val HOOK_JS = """
 (function(){
-var B=window.BlazeDesign||null, IS3D=__BZ_IS3D__, GL=__BZ_GL__;
+var B=window.ArgusDesign||null, IS3D=__BZ_IS3D__, GL=__BZ_GL__;
 var errs=window.__bzErrors=window.__bzErrors||[];
 function say(k,a,b,c){try{if(B&&B[k]){if(c!==undefined)B[k](a,b,c);else if(b!==undefined)B[k](a,b);else B[k](a===undefined?"":String(a).slice(0,600));}}catch(e){}}
 function err(m){m=String(m||"Unknown error");if(errs.length<20)errs.push(m);say("error",m);}

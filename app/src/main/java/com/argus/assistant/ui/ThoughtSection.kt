@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
@@ -45,9 +45,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.GlitchSpans
-import com.blaze.assistant.ui.argus.icons.Lucide
-import com.blaze.assistant.agent.PromptEcho
+import com.argus.assistant.agent.GlitchSpans
+import com.argus.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.agent.PromptEcho
 
 /**
  * fix/chat-flat-ui (owner, 14 Nov 2026: "we'll show collapsible and expandable thinking process"): the model's reasoning,
@@ -60,7 +60,7 @@ import com.blaze.assistant.agent.PromptEcho
  */
 @Composable
 fun ThoughtSection(key: Long, thinking: String, live: Boolean, answerStarted: Boolean, ms: Long, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val body = remember(thinking) { ThoughtFold.body(thinking) }
     if (body.isEmpty()) return
     val now = ThoughtFold.thinkingNow(live, answerStarted)

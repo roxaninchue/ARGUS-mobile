@@ -1,8 +1,8 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import android.content.Context
-import com.blaze.assistant.stage.StageKind
-import com.blaze.assistant.stage.StageStore
+import com.argus.assistant.stage.StageKind
+import com.argus.assistant.stage.StageStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -26,22 +26,22 @@ object StageMovies {
                 val p = Movies.lib.value.continueWatching.getOrNull(i)?.play ?: throw IllegalStateException("Nothing to continue")
                 if (p.url.isNotBlank()) p else MovieHub.refresh(Movies.source(p.source) ?: throw IllegalStateException("That source isn't available any more"), p, Movies.maxHeight(ctx))
             }
-            com.blaze.assistant.ui.StageVideo.autoplay = true
+            com.argus.assistant.ui.StageVideo.autoplay = true
             StageMoviesLogic.playProps(play)
         } catch (e: Exception) { mapOf("error" to (e.message ?: "Couldn't play that").take(200)) }
     }
 
     /** Agent / route: play [p] on the Stage video card (shown in place, as the hero). */
     fun show(p: MoviePlay): String {
-        com.blaze.assistant.ui.StageVideo.autoplay = true
-        StageStore.dispatch(com.blaze.assistant.stage.StageAction.Show(StageKind.VIDEO, StageMoviesLogic.playProps(p), com.blaze.assistant.stage.StageMode.HERO))
+        com.argus.assistant.ui.StageVideo.autoplay = true
+        StageStore.dispatch(com.argus.assistant.stage.StageAction.Show(StageKind.VIDEO, StageMoviesLogic.playProps(p), com.argus.assistant.stage.StageMode.HERO))
         return "Playing \u201c${p.title}\u201d on the video card."
     }
 
     /** Agent / route: search results on the Stage video card (tap one to play it there). */
     fun showResults(query: String, s: MovieHub.Search) {
         val props = StageMoviesLogic.resultProps(query, s.posts, s.failed.map { it.source.name }) + mapOf("url" to "", "movie" to "", "title" to "Movies: $query".take(60))
-        StageStore.dispatch(com.blaze.assistant.stage.StageAction.Show(StageKind.VIDEO, props, com.blaze.assistant.stage.StageMode.HERO))
+        StageStore.dispatch(com.argus.assistant.stage.StageAction.Show(StageKind.VIDEO, props, com.argus.assistant.stage.StageMode.HERO))
     }
 }
 

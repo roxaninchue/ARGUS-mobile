@@ -1,4 +1,4 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -160,7 +160,7 @@ class ProviderConfinementTest {
         assertTrue(ProviderSandbox.Gate.lowRamFor(lowRamDevice = true, memoryClassMb = 256))
         assertTrue(ProviderSandbox.Gate.lowRamFor(lowRamDevice = false, memoryClassMb = 128))
         assertFalse(ProviderSandbox.Gate.lowRamFor(lowRamDevice = false, memoryClassMb = 256))
-        val src = listOf(File("src/main/java/com/blaze/assistant/movies/ProviderSandbox.kt"), File("app/src/main/java/com/blaze/assistant/movies/ProviderSandbox.kt")).first { it.exists() }.readText()
+        val src = listOf(File("src/main/java/com/argus/assistant/movies/ProviderSandbox.kt"), File("app/src/main/java/com/argus/assistant/movies/ProviderSandbox.kt")).first { it.exists() }.readText()
         assertFalse("never shut an engine's executor down", src.contains("exec.shutdown()"))
         assertTrue(src.contains("4L * 1024 * 1024"))
         assertTrue(src.contains("while (pending.get() > 0) delay(20)"))

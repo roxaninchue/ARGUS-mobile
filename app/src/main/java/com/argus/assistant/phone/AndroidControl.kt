@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipData
@@ -14,12 +14,12 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.blaze.assistant.R
+import com.argus.assistant.R
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Wider Android control with plain public APIs (no root, no Shizuku): clipboard, Blaze's own
+ * Wider Android control with plain public APIs (no root, no Shizuku): clipboard, Argus's own
  * notifications (with progress and a tap action), the share sheet, ringer/DND/brightness/rotation,
  * jumping straight to any settings page, system actions (power menu, split screen, screenshot,
  * lock), app usage, uninstall prompts and the camera. Anything Android doesn't let an app change
@@ -94,27 +94,27 @@ object AndroidControl {
             if (apps.isEmpty()) "No installed app matches \u201c$f\u201d." else "${apps.size} apps:\n" + apps.take(150).joinToString("\n") { "${it.first} (${it.second})" }
         }
         "uninstall_app" -> if (start(ctx, Intent(Intent.ACTION_DELETE, Uri.parse("package:" + a.optString("package"))))) "Android is asking the user to confirm the uninstall." else "Couldn't start the uninstall."
-        "blaze_camera" -> com.blaze.assistant.device.BlazeCamera.openFromTool(ctx, a.optString("mode"), a.optString("_chat").ifBlank { null }, a.optString("_asked").ifBlank { null })
+        "blaze_camera" -> com.argus.assistant.device.ArgusCamera.openFromTool(ctx, a.optString("mode"), a.optString("_chat").ifBlank { null }, a.optString("_asked").ifBlank { null })
         "open_camera" -> openCamera(ctx, a.optString("mode", "photo"))
         else -> "Unknown tool"
     } }
 
     /**
-     * v0.28.x camera-fix: the camera app first (STILL_IMAGE / VIDEO_CAMERA need no permission), then Blaze Camera; QR goes
-     * straight to Blaze Camera's Scan mode (ML Kit, it can act on the code). Every failure is logged with its real
+     * v0.28.x camera-fix: the camera app first (STILL_IMAGE / VIDEO_CAMERA need no permission), then Argus Camera; QR goes
+     * straight to Argus Camera's Scan mode (ML Kit, it can act on the code). Every failure is logged with its real
      * exception, and the reply says what really happened instead of a blanket "No camera app found."
      */
     private fun openCamera(ctx: Context, mode: String): String {
-        val cs = com.blaze.assistant.device.CameraSupport
+        val cs = com.argus.assistant.device.CameraSupport
         if (!cs.hasCamera(ctx)) return "This phone has no camera."
         fun tryStart(i: Intent, what: String): Throwable? = try { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); null }
             catch (e: Exception) { cs.log("open_camera $what failed", e); e }
-        val blaze = com.blaze.assistant.device.BlazeCamera
+        val argus = com.argus.assistant.device.ArgusCamera
         return when (mode) {
-            "qr" -> if (blaze.open(ctx, com.blaze.assistant.device.CameraModes.Mode.SCAN, com.blaze.assistant.device.CameraModes.Origin.STANDALONE)) "Opened ${BrandName.NAME} Camera's scanner: point it at the code." else "Couldn't open the scanner (it's in ${BrandName.NAME}'s log)."
+            "qr" -> if (blaze.open(ctx, com.argus.assistant.device.CameraModes.Mode.SCAN, com.argus.assistant.device.CameraModes.Origin.STANDALONE)) "Opened ${BrandName.NAME} Camera's scanner: point it at the code." else "Couldn't open the scanner (it's in ${BrandName.NAME}'s log)."
             "video" -> {
                 val e1 = tryStart(Intent(android.provider.MediaStore.INTENT_ACTION_VIDEO_CAMERA), "video camera") ?: return "Opened the video camera."
-                // ACTION_VIDEO_CAPTURE needs Blaze's CAMERA permission (declared by the QR library), so only try it when granted.
+                // ACTION_VIDEO_CAPTURE needs Argus's CAMERA permission (declared by the QR library), so only try it when granted.
                 if (cs.granted(ctx) && tryStart(Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE), "video capture") == null) return "Opened the video camera."
                 if (e1 is SecurityException) "Android blocked the video camera (${e1.message?.take(80)}). ${BrandName.NAME}'s own camera takes photos only."
                 else if (!cs.granted(ctx)) "No video camera app answered directly, and ${BrandName.NAME}'s Camera permission is off. Turn it on in Settings → Apps → ${BrandName.NAME} → Permissions."
@@ -122,7 +122,7 @@ object AndroidControl {
             }
             else -> {
                 tryStart(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA), "still camera") ?: return "Opened the camera."
-                if (blaze.open(ctx, com.blaze.assistant.device.CameraModes.Mode.PHOTO, com.blaze.assistant.device.CameraModes.Origin.STANDALONE)) "The phone's camera app didn't open, so I opened ${BrandName.NAME} Camera (photos save to Pictures/Blaze)."
+                if (blaze.open(ctx, com.argus.assistant.device.CameraModes.Mode.PHOTO, com.argus.assistant.device.CameraModes.Origin.STANDALONE)) "The phone's camera app didn't open, so I opened ${BrandName.NAME} Camera (photos save to Pictures/Blaze)."
                 else "Couldn't open any camera (the reason is in ${BrandName.NAME}'s log)."
             }
         }
@@ -131,15 +131,15 @@ object AndroidControl {
     private var nextNote = 500
 
     private fun notify(ctx: Context, title: String, text0: String, progress: Int, onTap: String): String {
-        val text = com.blaze.assistant.ui.Md.plain(text0)
+        val text = com.argus.assistant.ui.Md.plain(text0)
         val nm = ctx.getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("blaze_custom", "${BrandName.NAME} notes", NotificationManager.IMPORTANCE_DEFAULT))
         val b = NotificationCompat.Builder(ctx, "blaze_custom").setSmallIcon(R.drawable.ic_stat_blaze)
             .setContentTitle(title.ifBlank { "${BrandName.NAME}" }).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text)).setAutoCancel(true)
         if (progress in 0..100) b.setProgress(100, progress, false).setOnlyAlertOnce(true)
         if (onTap.isNotBlank()) {
-            val pi = android.app.PendingIntent.getBroadcast(ctx, onTap.hashCode(), Intent(ctx, com.blaze.assistant.notify.ActionReceiver::class.java)
-                .setAction(com.blaze.assistant.notify.ActionReceiver.DO).putExtra("prompt", onTap),
+            val pi = android.app.PendingIntent.getBroadcast(ctx, onTap.hashCode(), Intent(ctx, com.argus.assistant.notify.ActionReceiver::class.java)
+                .setAction(com.argus.assistant.notify.ActionReceiver.DO).putExtra("prompt", onTap),
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
             b.setContentIntent(pi)
         } else {
@@ -180,7 +180,7 @@ object AndroidControl {
     }
 
     private fun system(action: String): String {
-        val svc = BlazeAccessibilityService.instance ?: return "Turn on ${BrandName.NAME} phone control first."
+        val svc = ArgusAccessibilityService.instance ?: return "Turn on ${BrandName.NAME} phone control first."
         val g = when (action) {
             "power_dialog" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_POWER_DIALOG
             "split_screen" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN

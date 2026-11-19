@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 
@@ -35,7 +35,7 @@ object AutoCompact {
 
     /** 0.49.0: where the tail starts, by message count and (when [tailTok] > 0) by tokens too (ChatTier). */
     fun tail(h: JSONArray, forced: Boolean, tailTok: Int): Int =
-        if (tailTok > 0) com.blaze.assistant.memory.ChatTier.tailStart(h, keep(forced), tailTok) else LongChat.tailStart(h, keep(forced))
+        if (tailTok > 0) com.argus.assistant.memory.ChatTier.tailStart(h, keep(forced), tailTok) else LongChat.tailStart(h, keep(forced))
 
     /** Where the word-for-word tail starts for this fold: [LongChat.KEEP_TAIL] normally, [FORCED_KEEP] after a refusal. */
     fun keep(forced: Boolean): Int = if (forced) FORCED_KEEP else LongChat.KEEP_TAIL

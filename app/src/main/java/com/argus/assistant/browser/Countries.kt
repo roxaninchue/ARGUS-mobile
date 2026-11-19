@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 /**
  * Countries VPN providers have servers in, with what location masking pretends to be there:

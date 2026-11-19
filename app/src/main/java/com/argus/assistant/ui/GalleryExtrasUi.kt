@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -52,11 +52,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.blaze.assistant.media.GalleryClean
-import com.blaze.assistant.media.GalleryModel
-import com.blaze.assistant.media.GalleryModel.Entry
-import com.blaze.assistant.media.GalleryRepo
-import com.blaze.assistant.media.GalleryTools
+import com.argus.assistant.media.GalleryClean
+import com.argus.assistant.media.GalleryModel
+import com.argus.assistant.media.GalleryModel.Entry
+import com.argus.assistant.media.GalleryRepo
+import com.argus.assistant.media.GalleryTools
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -79,7 +79,7 @@ private fun thumbOf(e: Entry, px: Int): ImageBitmap? {
 @Composable
 private fun Thumb(e: Entry, size: Int, onClick: () -> Unit = {}) {
     val b = thumbOf(e, 192)
-    Box(Modifier.size(size.dp).clip(BlazeShapes.small).background(Color(0x22888888)).clickable(onClick = onClick)) {
+    Box(Modifier.size(size.dp).clip(ArgusShapes.small).background(Color(0x22888888)).clickable(onClick = onClick)) {
         if (b != null) Image(b, e.title, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
     }
 }
@@ -91,7 +91,7 @@ private fun DText(t: String, size: Float = 13f, color: Color = DialogColors.body
 /** On this day: a row of pictures from this date in earlier years, at the top of All. */
 @Composable
 fun OnThisDayCard(groups: List<Pair<Int, List<Entry>>>, now: Long, onOpen: (Entry) -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     if (groups.isEmpty()) return
     Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
         Text(tr("On this day"), style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = c.ink))
@@ -123,7 +123,7 @@ fun CleanUpDialog(all: List<Entry>, onTrash: (List<Entry>) -> Unit, onDismiss: (
     val blur = remember(s) { s?.let { GalleryTools.blurry(it) }.orEmpty() }
     var skipBlur by remember { mutableStateOf<Set<String>>(emptySet()) }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(Modifier.padding(14.dp).fillMaxWidth().clip(BlazeShapes.large).background(DialogColors.surface).padding(18.dp).heightIn(max = 620.dp)
+        Column(Modifier.padding(14.dp).fillMaxWidth().clip(ArgusShapes.large).background(DialogColors.surface).padding(18.dp).heightIn(max = 620.dp)
             .verticalScroll(rememberScrollState())) {
             DText("Clean up", 18f, DialogColors.title, FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
@@ -160,7 +160,7 @@ fun CleanUpDialog(all: List<Entry>, onTrash: (List<Entry>) -> Unit, onDismiss: (
     }
 }
 
-/** The 30-day Trash: Blaze's own items (restore / delete now) and phone photos in Android's trash (restore). */
+/** The 30-day Trash: Argus's own items (restore / delete now) and phone photos in Android's trash (restore). */
 @Composable
 fun TrashDialog(onRestorePhone: (android.content.IntentSender) -> Unit, onDismiss: () -> Unit) {
     val ctx = LocalContext.current
@@ -169,7 +169,7 @@ fun TrashDialog(onRestorePhone: (android.content.IntentSender) -> Unit, onDismis
     var phone by remember { mutableStateOf<List<android.net.Uri>>(emptyList()) }
     LaunchedEffect(Unit) { phone = withContext(Dispatchers.IO) { GalleryClean.phoneTrash(ctx) } }
     val now = System.currentTimeMillis()
-    BlazeDialog(tr("Trash"), tr("Things stay here for {0} days, then go for good.", GalleryTools.TRASH_DAYS), confirm = tr("Done"), onConfirm = onDismiss, onDismiss = onDismiss) {
+    ArgusDialog(tr("Trash"), tr("Things stay here for {0} days, then go for good.", GalleryTools.TRASH_DAYS), confirm = tr("Done"), onConfirm = onDismiss, onDismiss = onDismiss) {
         Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
             if (items.isEmpty() && phone.isEmpty()) DText("The Trash is empty.")
             items.sortedByDescending { it.at }.forEach { t ->
@@ -196,7 +196,7 @@ fun TrashDialog(onRestorePhone: (android.content.IntentSender) -> Unit, onDismis
 @Composable
 fun BackupPlanDialog(all: List<Entry>, onDismiss: () -> Unit) {
     val p = remember(all) { GalleryTools.plan(all, System.currentTimeMillis()) }
-    BlazeDialog(tr("Backup plan"), confirm = tr("OK"), onConfirm = onDismiss, onDismiss = onDismiss) {
+    ArgusDialog(tr("Backup plan"), confirm = tr("OK"), onConfirm = onDismiss, onDismiss = onDismiss) {
         Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
             DText("Everything: ${GalleryModel.size(p.totalBytes)}", 14f, DialogColors.title, FontWeight.Medium)
             DText("Photos ${GalleryModel.size(p.photos)} \u00b7 videos ${GalleryModel.size(p.videos)} \u00b7 music ${GalleryModel.size(p.music)}")
@@ -214,7 +214,7 @@ fun BackupPlanDialog(all: List<Entry>, onDismiss: () -> Unit) {
     }
 }
 
-/** Basic editor: rotate, crop to a shape, brightness / contrast / colour; saves a copy into Blaze's Gallery. */
+/** Basic editor: rotate, crop to a shape, brightness / contrast / colour; saves a copy into Argus's Gallery. */
 @Composable
 fun PhotoEditor(e: Entry, onDone: () -> Unit) {
     val ctx = LocalContext.current

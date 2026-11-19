@@ -1,6 +1,6 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -49,17 +49,17 @@ object LifeTodo {
      */
     fun pick(lists: List<Widget>, title: String): Widget? {
         val t = title.trim().lowercase()
-        return if (t.isEmpty()) lists.firstOrNull { !com.blaze.assistant.setup.SetupChecklist.isChecklist(it.cfg()) }
+        return if (t.isEmpty()) lists.firstOrNull { !com.argus.assistant.setup.SetupChecklist.isChecklist(it.cfg()) }
         else lists.firstOrNull { it.title.trim().lowercase() == t }
     }
 
     /**
-     * setup: ARGUS puts the first-run checklist in Life ([com.blaze.assistant.setup.SetupChecklist]): made at the top with
+     * setup: ARGUS puts the first-run checklist in Life ([com.argus.assistant.setup.SetupChecklist]): made at the top with
      * every step (those [done] reports ticked) when there is none, else the one there is ticked in step with the phone.
      * Asked for explicitly, so it is made even when an earlier one was removed; [onSeeded] records that it was made.
      */
     private fun setup(store: HomeStore, done: Map<String, Boolean>, now: Long, onChange: (String) -> Unit, onSeeded: () -> Unit): String {
-        val r = com.blaze.assistant.setup.SetupChecklist.applyTo(store, done, seededBefore = false, now = now)
+        val r = com.argus.assistant.setup.SetupChecklist.applyTo(store, done, seededBefore = false, now = now)
         if (r.added) onSeeded()
         r.id?.let(onChange)
         val w = r.id?.let { store.get(it) } ?: return "Couldn't put the setup checklist in Life."

@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,11 +23,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.stage.StageItem
-import com.blaze.assistant.stage.StageKind
-import com.blaze.assistant.stage.StageMode
-import com.blaze.assistant.stage.StageTimer
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.stage.StageItem
+import com.argus.assistant.stage.StageKind
+import com.argus.assistant.stage.StageMode
+import com.argus.assistant.stage.StageTimer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -40,7 +40,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
 /**
- * 0.46.0 Blaze Stage screenshots (CI's shots job, BLAZE_SHOTS=1): every hero and every widget in three themes x light / dark
+ * 0.46.0 Argus Stage screenshots (CI's shots job, BLAZE_SHOTS=1): every hero and every widget in three themes x light / dark
  * (build/shots/StageShotsTest/), each frame checked to be drawn (not blank), plus the timer card's Start button and labels.
  */
 @RunWith(AndroidJUnit4::class)
@@ -74,9 +74,9 @@ class StageShotsTest {
         StageItem("music9", StageKind.MUSIC, mapOf("queue" to "true")),
     )
     private val queue = listOf("Midnight Drive" to "Lo-fi Lusaka", "Copper Sun" to "Kalindula Trio", "Rain on Tin" to "Zed Beats", "Night Bus" to "Lo-fi Lusaka")
-        .mapIndexed { i, (t, a) -> com.blaze.assistant.mediaapps.StageMusicLogic.Entry("k$i", t, a) }
-    private val musicNow = com.blaze.assistant.mediaapps.StageMusicLogic.Snapshot(true, true, "Midnight Drive", "Lo-fi Lusaka", 72_000, 201_000, 3,
-        shuffle = true, repeat = com.blaze.assistant.mediaapps.Repeat.ALL, queue = queue, index = 0)
+        .mapIndexed { i, (t, a) -> com.argus.assistant.mediaapps.StageMusicLogic.Entry("k$i", t, a) }
+    private val musicNow = com.argus.assistant.mediaapps.StageMusicLogic.Snapshot(true, true, "Midnight Drive", "Lo-fi Lusaka", 72_000, 201_000, 3,
+        shuffle = true, repeat = com.argus.assistant.mediaapps.Repeat.ALL, queue = queue, index = 0)
     private fun data(i: StageItem) = when (i.kind) {
         StageKind.TIMER -> StageData(now = t0 + 61_000, timer = timer)
         StageKind.MUSIC -> StageData(now = t0, music = musicNow)
@@ -106,8 +106,8 @@ class StageShotsTest {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             val (id, dark, k) = which.value
-            val c = blazePalette(dark, accentOf(id))
-            CompositionLocalProvider(LocalBlaze provides c) {
+            val c = argusPalette(dark, accentOf(id))
+            CompositionLocalProvider(LocalArgus provides c) {
                 Column(Modifier.fillMaxSize().background(c.paper).padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val hero = items[k]
                     StageHero(hero.copy(mode = StageMode.HERO), data(hero), modifier = Modifier.fillMaxWidth().height(430.dp)) {}
@@ -134,7 +134,7 @@ class StageShotsTest {
     @Test fun menuGridAndEndedMusic() {
         rule.mainClock.autoAdvance = false
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides DarkColors) {
+            CompositionLocalProvider(LocalArgus provides DarkColors) {
                 Column(Modifier.fillMaxSize().background(DarkColors.paper).padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     StageMenuGrid(listOf("Shrink", "Full view", "Top", "Side", "Bottom", "Chat", "Tile", "Hide", "Focus", "Reset", "Close").map {
                         StageMenuAction(androidx.compose.material.icons.Icons.Rounded.Close, it) {} }) {}
@@ -158,7 +158,7 @@ class StageShotsTest {
         val fresh = StageTimer.create("timer1", "Study", 30.0)
         var op = ""
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides DarkColors) {
+            CompositionLocalProvider(LocalArgus provides DarkColors) {
                 StageHero(items[0].copy(mode = StageMode.HERO), StageData(now = t0, timer = fresh), modifier = Modifier.fillMaxWidth().height(420.dp)) { e ->
                     if (e is StageEvent.Timer) op = e.op }
             }

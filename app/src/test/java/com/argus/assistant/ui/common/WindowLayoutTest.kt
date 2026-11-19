@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.common
+package com.argus.assistant.ui.common
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

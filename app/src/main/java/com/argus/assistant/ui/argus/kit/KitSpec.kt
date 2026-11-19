@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
-import com.blaze.assistant.ui.argus.ArgusPalette
-import com.blaze.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusPalette
+import com.argus.assistant.ui.argus.ArgusTokens
 
 /**
  * P1-SH-02: the pure rules behind the kit components in this package (04 §2.8 items 5–9, 11–13, 32, 35–37 and the

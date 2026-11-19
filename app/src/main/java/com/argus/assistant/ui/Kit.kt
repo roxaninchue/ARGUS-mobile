@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -47,20 +47,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.space.SpaceInsets
-import com.blaze.assistant.ui.space.SpaceLook
-import com.blaze.assistant.ui.space.SpaceRow
-import com.blaze.assistant.ui.space.SpaceRowSize
-import com.blaze.assistant.ui.space.SpacePalette
-import com.blaze.assistant.ui.space.SpaceShapes
-import com.blaze.assistant.ui.space.SpaceType
-import com.blaze.assistant.ui.space.SpaceTypeScale
-import com.blaze.assistant.ui.space.spaceLook
+import com.argus.assistant.ui.space.SpaceInsets
+import com.argus.assistant.ui.space.SpaceLook
+import com.argus.assistant.ui.space.SpaceRow
+import com.argus.assistant.ui.space.SpaceRowSize
+import com.argus.assistant.ui.space.SpacePalette
+import com.argus.assistant.ui.space.SpaceShapes
+import com.argus.assistant.ui.space.SpaceType
+import com.argus.assistant.ui.space.SpaceTypeScale
+import com.argus.assistant.ui.space.spaceLook
 
 /*
  * v0.19.0 visual parity: the small kit Blaze Desktop's pages are built from (frontend/dist/style.css:
- * .phead, .group, .rows, .pill, .btn, .empty), in the Blaze look: paper, ink, hairlines, one blue accent.
- * v0.24.8 "no square UI": every piece is rounded ([BlazeShapes]): grouped rows are rounded cards, buttons are pills in
+ * .phead, .group, .rows, .pill, .btn, .empty), in the Argus look: paper, ink, hairlines, one blue accent.
+ * v0.24.8 "no square UI": every piece is rounded ([ArgusShapes]): grouped rows are rounded cards, buttons are pills in
  * sentence case (primary = the mascot's orange-to-blue gradient), inputs are filled pills, tags are pills, the switch is round.
  */
 
@@ -74,7 +74,7 @@ val BlazeColors.onAccent: Color get() = if (dark) Color(0xFF0E0E10) else Color.W
 /** Page header: accent eyebrow, 24sp display title, a lead line. */
 @Composable
 fun PageHead(eyebrow: String, title: String, lead: String = "", modifier: Modifier = Modifier, right: (@Composable () -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(modifier.fillMaxWidth().padding(top = 18.dp, bottom = 18.dp), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f)) {
             Label(eyebrow, color = c.accent, size = 10.sp, maxLines = 1)
@@ -93,7 +93,7 @@ fun PageHead(eyebrow: String, title: String, lead: String = "", modifier: Modifi
 /** Group header: mono label, optional action on the right, optional description under it. */
 @Composable
 fun GroupHead(title: String, desc: String = "", modifier: Modifier = Modifier, right: (@Composable RowScope.() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp)) {
         Row(Modifier.fillMaxWidth().heightIn(min = 24.dp), verticalAlignment = Alignment.CenterVertically) {
             Label(title, size = 10.sp, modifier = Modifier.weight(1f), maxLines = 1)
@@ -107,8 +107,8 @@ fun GroupHead(title: String, desc: String = "", modifier: Modifier = Modifier, r
 /** Desktop's .rows as a rounded grouped card (v0.24.8): a raised 16dp card with soft hairlines between its rows. */
 @Composable
 fun Rows(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val c = LocalBlaze.current
-    Column(modifier.fillMaxWidth().glass(BlazeShapes.medium, GlassIntensity.Low, shadow = false), content = content)
+    val c = LocalArgus.current
+    Column(modifier.fillMaxWidth().glass(ArgusShapes.medium, GlassIntensity.Low, shadow = false), content = content)
 }
 
 /**
@@ -121,7 +121,7 @@ fun Rows(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> U
 fun KitRow(title: String, sub: String = "", n: Int = 0, first: Boolean = false, pill: String = "", pillOn: Boolean = false,
            dim: Boolean = false, mono: Boolean = false, onClick: (() -> Unit)? = null, lead: (@Composable () -> Unit)? = null,
            trailing: (@Composable RowScope.() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val look = spaceLook()
     // v0.24.8: no "01 / 02" row numbers (they were part of the old square desktop look); [n] is kept for callers.
     val ink = if (dim) c.weak else look.ink
@@ -140,8 +140,8 @@ fun KitRow(title: String, sub: String = "", n: Int = 0, first: Boolean = false, 
 /** Small pill tag: accent-soft when [on], faint otherwise. */
 @Composable
 fun Tag(text: String, on: Boolean = false) {
-    val c = LocalBlaze.current
-    Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.accentSoft else c.faint, BlazeShapes.pill).padding(horizontal = 8.dp, vertical = 2.dp)) {
+    val c = LocalArgus.current
+    Box(Modifier.clip(ArgusShapes.pill).background(if (on) c.accentSoft else c.faint, ArgusShapes.pill).padding(horizontal = 8.dp, vertical = 2.dp)) {
         Text(tr(text).sentence(), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 10.5.sp,
             color = if (on) c.accent else c.sub))
     }
@@ -150,7 +150,7 @@ fun Tag(text: String, on: Boolean = false) {
 enum class Btn { ACCENT, INK, LINE, GHOST }
 
 /**
- * Desktop's .btn as a Blaze pill (v0.24.8), sentence case. ACCENT and INK are the primary pill, LINE a raised outlined
+ * Desktop's .btn as a Argus pill (v0.24.8), sentence case. ACCENT and INK are the primary pill, LINE a raised outlined
  * pill, GHOST plain text in a pill-shaped touch area. Unification: [SpaceInsets.CONTROL_DP] tall like every other control.
  */
 @Composable
@@ -163,15 +163,15 @@ fun KitButton(text: String, kind: Btn = Btn.LINE, modifier: Modifier = Modifier,
 enum class BtnKind { PRIMARY, SECONDARY, GHOST, DANGER }
 
 /**
- * The one Blaze button (v0.24.8): a pill, sentence case. PRIMARY = the one primary style ([PrimaryButton], the shell's
+ * The one Argus button (v0.24.8): a pill, sentence case. PRIMARY = the one primary style ([PrimaryButton], the shell's
  * SpacePillButton primary), SECONDARY = raised pill with a hairline, GHOST = text only, DANGER = warm outline.
  */
 @Composable
 fun BlazeButton(text: String, modifier: Modifier = Modifier, kind: BtnKind = BtnKind.PRIMARY, enabled: Boolean = true,
                 height: androidx.compose.ui.unit.Dp = SpaceInsets.CONTROL_DP.dp, lead: String = "", icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
                 onClick: () -> Unit) {
-    val c = LocalBlaze.current
-    val shape = BlazeShapes.pill
+    val c = LocalArgus.current
+    val shape = ArgusShapes.pill
     // v0.27.0: shrinks slightly while pressed (MotionTokens; none with Remove animations on).
     val press = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val base = modifier.pressScale(press).height(height).widthIn(min = 64.dp).clip(shape)
@@ -195,7 +195,7 @@ fun BlazeButton(text: String, modifier: Modifier = Modifier, kind: BtnKind = Btn
         .padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
         // 0.52.4: [icon] leads the label, like the reference's "Quick Scan" buttons
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (icon != null) { LeadIcon(icon, fg, size = BlazeIconStyle.buttonIcon); Spacer(Modifier.width(8.dp)) }
+            if (icon != null) { LeadIcon(icon, fg, size = ArgusIconStyle.buttonIcon); Spacer(Modifier.width(8.dp)) }
             Text((if (lead.isNotBlank()) "$lead  " else "") + text.sentence(), maxLines = 1, overflow = TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = fg))
         }
@@ -203,18 +203,18 @@ fun BlazeButton(text: String, modifier: Modifier = Modifier, kind: BtnKind = Btn
 }
 
 /**
- * The one Blaze text field (v0.24.8): a filled dark surface ([field]) with a soft outline that turns accent when focused.
+ * The one Argus text field (v0.24.8): a filled dark surface ([field]) with a soft outline that turns accent when focused.
  * Single line = a pill; multi-line = a 16dp card. No square outline anywhere.
  */
 @Composable
-fun BlazeTextField(value: String, onChange: (String) -> Unit, hint: String, modifier: Modifier = Modifier, singleLine: Boolean = true,
+fun ArgusTextField(value: String, onChange: (String) -> Unit, hint: String, modifier: Modifier = Modifier, singleLine: Boolean = true,
                    minHeight: androidx.compose.ui.unit.Dp = if (singleLine) 46.dp else 88.dp, mono: Boolean = false, enabled: Boolean = true,
                    keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default,
                    keyboardActions: androidx.compose.foundation.text.KeyboardActions = androidx.compose.foundation.text.KeyboardActions.Default,
                    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var focused by remember { mutableStateOf(false) }
-    val shape = if (singleLine) BlazeShapes.pill else BlazeShapes.medium
+    val shape = if (singleLine) ArgusShapes.pill else ArgusShapes.medium
     Box(modifier.heightIn(min = minHeight).clip(shape).background(c.field, shape).border(1.dp, if (focused) c.accent else c.fieldLine, shape)
         .padding(horizontal = if (singleLine) 18.dp else 14.dp, vertical = 12.dp),
         contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart) {
@@ -226,12 +226,12 @@ fun BlazeTextField(value: String, onChange: (String) -> Unit, hint: String, modi
     }
 }
 
-/** A rounded Blaze card (v0.24.8): raised surface, 16dp corners, soft hairline; [accent] outlines it in blue. */
+/** A rounded Argus card (v0.24.8): raised surface, 16dp corners, soft hairline; [accent] outlines it in blue. */
 @Composable
-fun BlazeCard(modifier: Modifier = Modifier, accent: Boolean = false, padding: androidx.compose.ui.unit.Dp = 14.dp,
+fun ArgusCard(modifier: Modifier = Modifier, accent: Boolean = false, padding: androidx.compose.ui.unit.Dp = 14.dp,
               onClick: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
-    val c = LocalBlaze.current
-    val shape = BlazeShapes.medium
+    val c = LocalArgus.current
+    val shape = ArgusShapes.medium
     // v0.31.0: a glass card; [accent] brightens the rim.
     Column(modifier.fillMaxWidth().glass(shape, GlassIntensity.Medium, shadow = false)
         .let { if (accent) it.border(1.dp, c.accent.copy(alpha = 0.55f), shape) else it }
@@ -256,7 +256,7 @@ fun Modifier.hairlineTopInset(color: Color, inset: androidx.compose.ui.unit.Dp =
 /** Desktop's .empty: a bold line and a quiet one, centred, with an optional action. */
 @Composable
 fun EmptyState(title: String, body: String, modifier: Modifier = Modifier, mark: Boolean = true, action: String = "", onAction: () -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 26.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         if (mark) { DotMark(); Spacer(Modifier.height(14.dp)) }
         Text(tr(title), textAlign = TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
@@ -269,7 +269,7 @@ fun EmptyState(title: String, body: String, modifier: Modifier = Modifier, mark:
 /** The particle-dot mark empty states wear: a 3x3 grid of dots, the centre one blue (round since v0.24.8). */
 @Composable
 fun DotMark(size: androidx.compose.ui.unit.Dp = 30.dp) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     androidx.compose.foundation.Canvas(Modifier.size(size)) {
         val g = this.size.width / 3f; val d = g * 0.56f; val o = (g - d) / 2f
         for (y in 0 until 3) for (x in 0 until 3) {
@@ -283,10 +283,10 @@ fun DotMark(size: androidx.compose.ui.unit.Dp = 30.dp) {
 /** Desktop's .msearch as a filled pill (v0.24.8) that turns blue with a soft ring when focused. */
 @Composable
 fun KitSearch(value: String, onChange: (String) -> Unit, hint: String, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var focused by remember { mutableStateOf(false) }
-    Row(modifier.fillMaxWidth().let { if (focused) it.background(c.accentSoft, BlazeShapes.pill).padding(2.dp) else it.padding(2.dp) }
-        .background(c.field, BlazeShapes.pill).hairline(if (focused) c.accent else c.fieldLine, BlazeShapes.pill).height(42.dp).padding(horizontal = 16.dp),
+    Row(modifier.fillMaxWidth().let { if (focused) it.background(c.accentSoft, ArgusShapes.pill).padding(2.dp) else it.padding(2.dp) }
+        .background(c.field, ArgusShapes.pill).hairline(if (focused) c.accent else c.fieldLine, ArgusShapes.pill).height(42.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.foundation.Canvas(Modifier.size(12.dp)) {
             val col = if (focused) c.accent else c.weak
@@ -302,7 +302,7 @@ fun KitSearch(value: String, onChange: (String) -> Unit, hint: String, modifier:
                 textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, color = c.ink),
                 modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused })
         }
-        if (value.isNotEmpty()) Box(Modifier.size(28.dp).clip(BlazeShapes.pill).clickable { onChange("") }, contentAlignment = Alignment.Center) {
+        if (value.isNotEmpty()) Box(Modifier.size(28.dp).clip(ArgusShapes.pill).clickable { onChange("") }, contentAlignment = Alignment.Center) {
             Text("\u00d7", style = TextStyle(fontFamily = Type.Sans, fontSize = 16.sp, color = c.sub))
         }
     }
@@ -311,13 +311,13 @@ fun KitSearch(value: String, onChange: (String) -> Unit, hint: String, modifier:
 /** Two- or three-way segmented pill (Graph | List), ink when on. */
 @Composable
 fun Segmented(options: List<Pair<String, String>>, value: String, modifier: Modifier = Modifier, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(modifier.glass(GlassTokens.pillShape, GlassIntensity.Low, shadow = false).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         options.forEach { (id, label) ->
             val on = id == value
             // v0.27.0: the selected segment's fill fades across instead of jumping.
             val fill by androidx.compose.animation.animateColorAsState(if (on) c.ink else Color.Transparent, MotionTokens.medium(), label = "seg")
-            Box(Modifier.height(30.dp).clip(BlazeShapes.pill).background(fill, BlazeShapes.pill).clickable { onPick(id) }.padding(horizontal = 14.dp),
+            Box(Modifier.height(30.dp).clip(ArgusShapes.pill).background(fill, ArgusShapes.pill).clickable { onPick(id) }.padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center) {
                 Text(tr(label), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 12.5.sp,
                     color = if (on) c.paper else c.sub))
@@ -329,8 +329,8 @@ fun Segmented(options: List<Pair<String, String>>, value: String, modifier: Modi
 /** Round on/off switch (v0.24.8: a pill track with a round knob, blue when on), usable outside Settings. */
 @Composable
 fun KitSwitch(on: Boolean, onToggle: () -> Unit) {
-    Box(Modifier.clip(BlazeShapes.pill).clickable(onClick = onToggle).padding(4.dp)) {
-        BlazeSwitchTrack(on)
+    Box(Modifier.clip(ArgusShapes.pill).clickable(onClick = onToggle).padding(4.dp)) {
+        ArgusSwitchTrack(on)
     }
 }
 
@@ -346,18 +346,18 @@ object SwitchSize {
  * Unification: one size ([SwitchSize]) and the shell's colours (accent when on, the track colour when off).
  */
 @Composable
-fun BlazeSwitchTrack(on: Boolean) {
+fun ArgusSwitchTrack(on: Boolean) {
     val look = spaceLook()
     val w = SwitchSize.W_DP.dp; val h = SwitchSize.H_DP.dp; val inset = SwitchSize.KNOB_INSET_DP.dp
     val knob = h - inset * 2
-    Box(Modifier.width(w).height(h).clip(BlazeShapes.pill).background(if (on) look.accent else look.track, BlazeShapes.pill)
-        .border(1.dp, if (on) look.accent else look.hair, BlazeShapes.pill)) {
-        Box(Modifier.padding(start = if (on) w - knob - inset else inset, top = inset).size(knob).clip(BlazeShapes.pill)
-            .background(if (on) look.primaryInk else look.sub, BlazeShapes.pill))
+    Box(Modifier.width(w).height(h).clip(ArgusShapes.pill).background(if (on) look.accent else look.track, ArgusShapes.pill)
+        .border(1.dp, if (on) look.accent else look.hair, ArgusShapes.pill)) {
+        Box(Modifier.padding(start = if (on) w - knob - inset else inset, top = inset).size(knob).clip(ArgusShapes.pill)
+            .background(if (on) look.primaryInk else look.sub, ArgusShapes.pill))
     }
 }
 
-// ---------------- v0.24.5: Blaze dialog and menu (no Material defaults anywhere) ----------------
+// ---------------- v0.24.5: Argus dialog and menu (no Material defaults anywhere) ----------------
 
 /**
  * v0.31.2 theme fix: the surface for menus and pop-up lists whose text uses the theme's ink (the avatar menu, the "/"
@@ -398,7 +398,7 @@ object DialogColors {
 
     fun of(dark: Boolean): DialogPalette = if (dark) Dark else Light
 
-    private val now: DialogPalette @Composable @ReadOnlyComposable get() = of(LocalBlaze.current.dark)
+    private val now: DialogPalette @Composable @ReadOnlyComposable get() = of(LocalArgus.current.dark)
 
     val surface: Color @Composable @ReadOnlyComposable get() = now.surface
     val border: Color @Composable @ReadOnlyComposable get() = now.border
@@ -430,21 +430,21 @@ object PrimaryButton {
 }
 
 /**
- * The shared Blaze dialog: the shell's solid card ([DialogColors], light or dark with the app) with a hairline and a
+ * The shared Argus dialog: the shell's solid card ([DialogColors], light or dark with the app) with a hairline and a
  * shadow, ink title, muted body, a primary pill button (or warm with [warm]) and an optional ghost secondary button.
  */
 @Composable
-fun BlazeDialog(
+fun ArgusDialog(
     title: String, body: String = "", confirm: String, onConfirm: () -> Unit,
     dismiss: String? = null, onDismiss: () -> Unit, warm: Boolean = false,
     content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { BlazeDialogCard(title, body, confirm, onConfirm, dismiss, onDismiss, warm, content) }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { ArgusDialogCard(title, body, confirm, onConfirm, dismiss, onDismiss, warm, content) }
 }
 
 /** The card itself (also used by screenshots, which can't open a real dialog window). */
 @Composable
-fun BlazeDialogCard(
+fun ArgusDialogCard(
     title: String, body: String = "", confirm: String, onConfirm: () -> Unit,
     dismiss: String? = null, onDismiss: () -> Unit = {}, warm: Boolean = false,
     content: (@Composable ColumnScope.() -> Unit)? = null,
@@ -477,7 +477,7 @@ fun BlazeDialogCard(
 fun PillButton(text: String, primary: Boolean, warm: Boolean = false, modifier: Modifier = Modifier,
                icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onDark: Boolean = false, onClick: () -> Unit) {
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
-    val pal = if (onDark) DialogColors.Dark else DialogColors.of(LocalBlaze.current.dark)
+    val pal = if (onDark) DialogColors.Dark else DialogColors.of(LocalArgus.current.dark)
     val main = PrimaryButton.colors(onDark)
     val bg = if (!primary) Color.Transparent else if (warm) pal.warmFill else main.first
     val press = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
@@ -488,19 +488,19 @@ fun PillButton(text: String, primary: Boolean, warm: Boolean = false, modifier: 
         val fg = if (!primary) pal.ghost else if (warm) pal.onPrimary else main.second
         // 0.52.4: an optional leading icon (Play, Shuffle, Retry…), the shared button-icon size
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (icon != null) { LeadIcon(icon, fg, size = BlazeIconStyle.buttonIcon); Spacer(Modifier.width(8.dp)) }
+            if (icon != null) { LeadIcon(icon, fg, size = ArgusIconStyle.buttonIcon); Spacer(Modifier.width(8.dp)) }
             Text(tr(text), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = fg))
         }
     }
 }
 
-/** The shared Blaze menu (replaces Material's DropdownMenu): the shell's menu card in a popup. */
+/** The shared Argus menu (replaces Material's DropdownMenu): the shell's menu card in a popup. */
 @Composable
-fun BlazeMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<Pair<String, () -> Unit>>) {
+fun ArgusMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<Pair<String, () -> Unit>>) {
     if (!expanded) return
     androidx.compose.ui.window.Popup(alignment = Alignment.TopEnd, onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.PopupProperties(focusable = true)) {
-        BlazeMenuCard(items, onDismiss)
+        ArgusMenuCard(items, onDismiss)
     }
 }
 
@@ -510,10 +510,10 @@ fun BlazeMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<Pair<String,
  * where nothing matches stays text only.
  */
 @Composable
-fun BlazeMenuCard(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit = {}) {
+fun ArgusMenuCard(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit = {}) {
     // Unification: the shell's opaque menu colour ([menuSurface], light or dark with the app), the dialogs' radius, a hairline.
     val shape = FloatingShape
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val icons = remember(items.map { it.first }) { items.map { MenuIcons.forLabel(it.first) } }
     val anyIcon = icons.any { it != null }
     Column(Modifier.widthIn(min = 200.dp, max = 280.dp).shadow(12.dp, shape).background(c.menuSurface, shape)
@@ -524,8 +524,8 @@ fun BlazeMenuCard(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit =
                 verticalAlignment = Alignment.CenterVertically) {
                 val icon = icons.getOrNull(i)
                 if (icon != null) LeadIcon(icon.vector(), DialogColors.title)
-                else if (anyIcon) Spacer(Modifier.width(BlazeIconStyle.rowIcon))
-                if (anyIcon) Spacer(Modifier.width(BlazeIconStyle.gap))
+                else if (anyIcon) Spacer(Modifier.width(ArgusIconStyle.rowIcon))
+                if (anyIcon) Spacer(Modifier.width(ArgusIconStyle.gap))
                 Text(tr(label), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = DialogColors.title))
             }
         }
@@ -537,21 +537,21 @@ fun BlazeMenuCard(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit =
  * parameters as [Label] so the old uppercase mono "label buttons" swap over one for one.
  */
 @Composable
-fun ActionText(text: String, color: Color = LocalBlaze.current.sub, size: androidx.compose.ui.unit.TextUnit = 11.sp, modifier: Modifier = Modifier,
+fun ActionText(text: String, color: Color = LocalArgus.current.sub, size: androidx.compose.ui.unit.TextUnit = 11.sp, modifier: Modifier = Modifier,
                maxLines: Int = 1) {
-    Text(tr(text).sentence(), modifier = Modifier.clip(BlazeShapes.pill).then(modifier).padding(horizontal = 6.dp, vertical = 2.dp), maxLines = maxLines,
+    Text(tr(text).sentence(), modifier = Modifier.clip(ArgusShapes.pill).then(modifier).padding(horizontal = 6.dp, vertical = 2.dp), maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = (size.value + 3f).sp, color = color))
 }
 
 /** v0.24.8: the old uppercase mono "button" text inside a filled box, as sentence-case button text. */
 @Composable
-fun ButtonText(text: String, color: Color = LocalBlaze.current.ink, size: androidx.compose.ui.unit.TextUnit = 14.sp) {
+fun ButtonText(text: String, color: Color = LocalArgus.current.ink, size: androidx.compose.ui.unit.TextUnit = 14.sp) {
     Text(tr(text).sentence(), maxLines = 1, overflow = TextOverflow.Ellipsis,
         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = size, color = color))
 }
 
-/** v0.28.3: the back button's fill and outline (Material's surface-variant in the Blaze palette, the Kit's 1 dp hairline). */
+/** v0.28.3: the back button's fill and outline (Material's surface-variant in the Argus palette, the Kit's 1 dp hairline). */
 val BlazeColors.backFill: Color get() = if (dark) Color(0x1AFFFFFF) else Color(0xFFF0F0EE)
 val BlazeColors.backLine: Color get() = if (dark) Color(0x33FFFFFF) else Color(0x1A111110)
 

@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 /**
  * 0.45.19-speed: what [PhoneEngine] needs from a page. On the phone it is [PhoneBrowser]'s WebView (real taps, keys,

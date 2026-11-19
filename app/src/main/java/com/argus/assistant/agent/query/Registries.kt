@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
 /**
- * 0.51.0 BlazeQuery: version facts straight from the package registries' free JSON APIs (no key, no scraping, no search
+ * 0.51.0 ArgusQuery: version facts straight from the package registries' free JSON APIs (no key, no scraping, no search
  * engine in between): PyPI, npm, crates.io, Maven Central, GitHub releases. These are the sources of record for "what is the
  * latest version of X" and for checking a dependency line before it is written into code.
  *

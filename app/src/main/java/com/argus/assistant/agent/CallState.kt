@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.asContextElement
 import org.json.JSONObject
@@ -32,7 +32,7 @@ class CallState(val parent: CallState? = null) {
     /** 0.46.4: the caller's own [BrainRace.Kind] (Halo's side lane = CHAT); null = decided per call. */
     @Volatile var raceKind: BrainRace.Kind? = null
     @Volatile var turnModel: TurnModel? = null
-    /** 0.51.0 BlazeQuery: a per-call model family hint ("spark" / "flare" / "inferno"; "" = none) that wins over the composer's pick. */
+    /** 0.51.0 ArgusQuery: a per-call model family hint ("spark" / "flare" / "inferno"; "" = none) that wins over the composer's pick. */
     @Volatile var family: String? = null
 
     /** Wall-clock time of the latest streamed chunk of a call in this state (or a child's). */

@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -58,20 +58,20 @@ import android.widget.Toast
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import com.blaze.assistant.ui.BackRule
-import com.blaze.assistant.ui.BlazeTheme
-import com.blaze.assistant.ui.phonePalette
-import com.blaze.assistant.ui.Glass
-import com.blaze.assistant.ui.GlassIconButton
-import com.blaze.assistant.ui.PhoneFrame
-import com.blaze.assistant.ui.StatusPill
-import com.blaze.assistant.ui.Type
+import com.argus.assistant.ui.BackRule
+import com.argus.assistant.ui.BlazeTheme
+import com.argus.assistant.ui.phonePalette
+import com.argus.assistant.ui.Glass
+import com.argus.assistant.ui.GlassIconButton
+import com.argus.assistant.ui.PhoneFrame
+import com.argus.assistant.ui.StatusPill
+import com.argus.assistant.ui.Type
 
 /**
- * 0.45.19 Blaze Phone full screen. Watching: Blaze's screen, live, with the step it's on and "Take control". In control:
- * the real page (the same WebView, moved here, fully interactive with the keyboard), a clear "Blaze paused, you're in
+ * 0.45.19 Argus Phone full screen. Watching: Argus's screen, live, with the step it's on and "Take control". In control:
+ * the real page (the same WebView, moved here, fully interactive with the keyboard), a clear "Argus paused, you're in
  * control" bar and only "Hand back" (fix 6: the old Done button is gone; closing the screen hands back too). Back goes to the chat
- * (fix 7, BackRule: handing back first when the user has control). Leaving Blaze while Blaze works turns this screen
+ * (fix 7, BackRule: handing back first when the user has control). Leaving Argus while Argus works turns this screen
  * into picture-in-picture showing only the live view (fix 4).
  */
 class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
@@ -88,9 +88,9 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
+        if (com.argus.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         PhoneBrowser.init(this)
-        // Opened by the user with nothing running: their own Blaze Phone session, in control from the start.
+        // Opened by the user with nothing running: their own Argus Phone session, in control from the start.
         if (!PhoneBrowser.hasPage()) { PhoneBrowser.openForUser(this); take() }
         else if (intent?.getBooleanExtra(EXTRA_CONTROL, false) == true) take()
         else if (PhoneBrowser.live.value.mode == PhonePolicy.Mode.USER) take()   // re-host the WebView in this window
@@ -99,7 +99,7 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
             else PhoneScreen(control.value, onTake = { take() }, onHandBack = { handBack() }, onExit = { backToChat() })
         } }
         lifecycleScope.launch {
-            combine(PhoneBrowser.live, com.blaze.assistant.agent.Agent.busyChats) { l, b -> PhonePip.working(l.mode, PhoneBrowser.ownerChat, b) && !control.value }
+            combine(PhoneBrowser.live, com.argus.assistant.agent.Agent.busyChats) { l, b -> PhonePip.working(l.mode, PhoneBrowser.ownerChat, b) && !control.value }
                 .distinctUntilChanged().collect { w -> PhonePipHost.update(this@PhoneBrowserActivity, w, locked = false) }
         }
     }
@@ -116,7 +116,7 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
         }
     }
 
-    /** Hand back: Blaze resumes (an agent was waiting) and the screen keeps watching; with nobody waiting it closes. */
+    /** Hand back: Argus resumes (an agent was waiting) and the screen keeps watching; with nobody waiting it closes. */
     private fun handBack() {
         val agentWaiting = PhoneBrowser.live.value.agentWaiting
         control.value = false
@@ -130,7 +130,7 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
         finishToChat()
     }
 
-    private fun finishToChat() = com.blaze.assistant.mediaapps.BackToChat.go(this)
+    private fun finishToChat() = com.argus.assistant.mediaapps.BackToChat.go(this)
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
@@ -225,7 +225,7 @@ private fun PhoneScreen(control: Boolean, onTake: () -> Unit, onHandBack: () -> 
 
 
 @Composable
-private fun AddressBar(url: String, pal: com.blaze.assistant.ui.PhoneColors.Palette) {
+private fun AddressBar(url: String, pal: com.argus.assistant.ui.PhoneColors.Palette) {
     var text by remember(url) { mutableStateOf(url) }
     BasicTextField(text, { text = it }, singleLine = true,
         textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = Color(pal.fieldText)), cursorBrush = SolidColor(Color(pal.fieldText)),

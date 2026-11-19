@@ -1,7 +1,7 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.JdbcSql
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -84,7 +84,7 @@ class HomeStoreTest {
 
     @Test fun migrationIsIdempotentAndLeavesSchemaV1Alone() {
         val sq = sql()
-        val db = BlazeDb(sq)
+        val db = ArgusDb(sq)
         val before = db.version()
         val s1 = HomeStore(sq)
         s1.add(w("news", "Top stories"))
@@ -93,7 +93,7 @@ class HomeStoreTest {
         val s3 = HomeStore(sq)
         assertEquals(1, s3.count())
         assertEquals(before, db.version())
-        assertEquals(1, BlazeDb(sq).version())
+        assertEquals(1, ArgusDb(sq).version())
         assertEquals(HomeStore.SCHEMA.toString(), s2.meta("schema"))
         // Memories still work next to the Home tables.
         val names = sq.query("SELECT name FROM sqlite_master WHERE type='table'") { it.text(0) }.toSet()

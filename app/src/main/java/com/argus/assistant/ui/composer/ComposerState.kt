@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.composer
+package com.argus.assistant.ui.composer
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -8,20 +8,20 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Attachment
-import com.blaze.assistant.composer.ChatOverlayLogic
-import com.blaze.assistant.composer.SpotlightSearch
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Attachment
+import com.argus.assistant.composer.ChatOverlayLogic
+import com.argus.assistant.composer.SpotlightSearch
 
 /**
  * 0.47 chat composer + Spotlight v2: the shared state of the chat bar, the chat over Home and Spotlight.
- * One per Home; create it with [rememberComposerState] (or let [BlazeComposerHome] make one).
+ * One per Home; create it with [rememberComposerState] (or let [ArgusComposerHome] make one).
  */
 @Stable
 class ComposerState {
-    /** RC4: focus for the "Message Blaze" field (the host / checks can raise the keyboard on it). */
+    /** RC4: focus for the "Message Argus" field (the host / checks can raise the keyboard on it). */
     val barFocus = androidx.compose.ui.focus.FocusRequester()
-    /** The "Message Blaze" pill's text. */
+    /** The "Message Argus" pill's text. */
     var text by mutableStateOf("")
     val attachments = mutableStateListOf<Attachment>()
     var attaching by mutableStateOf(false)
@@ -94,7 +94,7 @@ class ComposerState {
         val newest = runCatching { Agent.messages.value.maxOfOrNull { it.id } ?: 0L }.getOrDefault(0L)
         if (liveFrom == Long.MAX_VALUE || liveFrom < newest) liveFrom = newest
         text = ""; attachments.clear(); pickerOpen = false
-        val body = t.ifEmpty { com.blaze.assistant.ui.AttachView.NO_TEXT }
+        val body = t.ifEmpty { com.argus.assistant.ui.AttachView.NO_TEXT }
         sender?.invoke(body, files) ?: Agent.send(body, attachments = files)
     }
 }

@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -10,7 +10,7 @@ import android.webkit.WebView
 
 /**
  * v0.33.3: pure rules for "should this navigation leave the WebView for another app?" (tested in AppLinksTest).
- * Used by the Blaze browser and SiteAppActivity.
+ * Used by the Argus browser and SiteAppActivity.
  */
 object RedirectRules {
     enum class Kind {
@@ -128,12 +128,12 @@ object AppLinks {
         }
     }
 
-    /** Opens an https URL in the installed app that handles it (verified App Link / specific host), never a browser or Blaze. */
+    /** Opens an https URL in the installed app that handles it (verified App Link / specific host), never a browser or Argus. */
     fun openAppLink(ctx: Context, uri: Uri): Boolean {
         val i = Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return try {
             if (Build.VERSION.SDK_INT >= 30) {
-                // Only an app that handles this host specifically; browsers (Blaze's own wildcard filter too) are refused.
+                // Only an app that handles this host specifically; browsers (Argus's own wildcard filter too) are refused.
                 i.addFlags(Intent.FLAG_ACTIVITY_REQUIRE_NON_BROWSER)
                 ctx.startActivity(i); true
             } else {
@@ -143,7 +143,7 @@ object AppLinks {
         } catch (_: ActivityNotFoundException) { false } catch (_: Exception) { false }
     }
 
-    /** API < 30: the one app that handles [uri] but not a generic https URL (so not a browser), excluding Blaze. */
+    /** API < 30: the one app that handles [uri] but not a generic https URL (so not a browser), excluding Argus. */
     private fun nonBrowserHandler(ctx: Context, uri: Uri): String? {
         val pm = ctx.packageManager
         val handlers = pm.queryIntentActivities(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE), 0)

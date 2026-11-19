@@ -1,13 +1,13 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
  * v0.44.0 fewer tools per turn. ToolRouter already sends the groups a request needs, but its always-on core had grown
- * to ~50 tools (background agents, long-chat lookups, Blaze's own docs and settings, skills, projects…), so a plain
+ * to ~50 tools (background agents, long-chat lookups, Argus's own docs and settings, skills, projects…), so a plain
  * "open WhatsApp" still carried every one of their schemas. Smaller models pick worse from a long list, and every
  * schema is input tokens on every step.
  *
@@ -21,7 +21,7 @@ import org.json.JSONObject
  * (load_tools / find_tool, whose descriptions list every group). Over the cap, structure decides (core, must, used, cue,
  * then the registry's order), never word overlap with the request. The cues' regexes are no longer consulted.
  *
- * Pure Kotlin; ToolPickTest. Prompt size before/after is logged per turn (BlazeSpeed / speed log: "tools a/b, c→d chars").
+ * Pure Kotlin; ToolPickTest. Prompt size before/after is logged per turn (ArgusSpeed / speed log: "tools a/b, c→d chars").
  */
 object ToolPick {
     /** Upper bound of tool schemas per model call (load_tools / find_tool always on top). */
@@ -82,7 +82,7 @@ object ToolPick {
         Cue("history", "this chat's older turns and files, past chats, the project's brief and notes",
             setOf("search_chat", "read_turn", "read_artifact", "search_past_chats", "update_brief", "project_docs_search", "project_docs_read", "recall_memory", "cache_toc", "cache_read", "cache_search", "cache_summarize", "pdf_page"),
             r("""\b(earlier|before|last time|you said|i said|we (?:talked|discussed|said|did)|previous\w*|that (?:file|doc|table|list|code|report)|above|chats?|conversation|project|brief|notes|what did|remind me what|recall|again)\b""")),
-        Cue("self", "${BrandName.NAME} itself: its docs, settings and self-test, BlazeRouter, Jarvis, follow-ups, running processes (alarms, routines, jobs by ID)",
+        Cue("self", "${BrandName.NAME} itself: its docs, settings and self-test, ArgusRouter, Jarvis, follow-ups, running processes (alarms, routines, jobs by ID)",
             setOf("about_blaze", "blaze_self", "self_test", "blaze_docs_search", "blaze_docs_read", "blazerouter", "jarvis_mode", "follow_ups", "processes", "process"),
             r("""\b((?:argus|blaze)|yourself|your (?:settings|docs|repo|version|features?)|update|what can you|can you|self.?test|router|jarvis|follow.?ups?|reach out|process(?:es)?|running|stop|cancel|delete|alarms?|timers?|routines?|jobs?|r\d+|version|halo)\b""")),
         Cue("skills", "skills, goals and saved workflows",

@@ -1,9 +1,9 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Role
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Role
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -62,7 +62,7 @@ class ChatOverlayLogicTest {
 
     private fun src(rel: String): String {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        return File(root, "com/blaze/assistant/$rel").readText()
+        return File(root, "com/argus/assistant/$rel").readText()
     }
 
     @Test fun composerSourcesFollowTheRules() {
@@ -72,7 +72,7 @@ class ChatOverlayLogicTest {
         // no other branding, never the forbidden model names, never "No results"
         assertFalse(Regex("(?i)\\b(hark|jarvis|nvidia|nemotron|system one|jev)\\b").containsMatchIn(all.lines().filterNot { it.trim().startsWith("*") || it.trim().startsWith("//") }.joinToString("\n")))
         assertFalse(all.contains("\"No results"))
-        // the chat bar: Message Blaze pill, send arrow inside it, + opens Spotlight
+        // the chat bar: Message Argus pill, send arrow inside it, + opens Spotlight
         val bar = src("ui/composer/ChatComposer.kt")
         assertTrue(bar.contains("tr(\"Message {0}\", BrandName.NAME)") && bar.contains("Icons.Rounded.ArrowUpward") && bar.contains("state.openSpotlight()"))
         // one cached blur, reduce motion respected

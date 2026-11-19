@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 /**
  * 0.53.4 GitHub goes through the connection, not the web. With GitHub connected, a github.com / raw.githubusercontent.com

@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -44,30 +44,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.BlazeMenu
-import com.blaze.assistant.ui.BlazeShapes
-import com.blaze.assistant.ui.BlazeTextField
-import com.blaze.assistant.ui.EmptyState
-import com.blaze.assistant.ui.GlassIntensity
-import com.blaze.assistant.ui.KitSearch
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.PillButton
-import com.blaze.assistant.ui.glass
-import com.blaze.assistant.ui.MotionTokens
-import com.blaze.assistant.ui.space.SpaceInsets
-import com.blaze.assistant.ui.space.SpacePalette
-import com.blaze.assistant.ui.space.SpaceRoundButton
-import com.blaze.assistant.ui.space.SpaceShapes
-import com.blaze.assistant.ui.space.SpaceType
-import com.blaze.assistant.ui.space.SpaceTypeScale
-import com.blaze.assistant.ui.space.spaceLook
+import com.argus.assistant.ui.ArgusMenu
+import com.argus.assistant.ui.ArgusShapes
+import com.argus.assistant.ui.ArgusTextField
+import com.argus.assistant.ui.EmptyState
+import com.argus.assistant.ui.GlassIntensity
+import com.argus.assistant.ui.KitSearch
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.PillButton
+import com.argus.assistant.ui.glass
+import com.argus.assistant.ui.MotionTokens
+import com.argus.assistant.ui.space.SpaceInsets
+import com.argus.assistant.ui.space.SpacePalette
+import com.argus.assistant.ui.space.SpaceRoundButton
+import com.argus.assistant.ui.space.SpaceShapes
+import com.argus.assistant.ui.space.SpaceType
+import com.argus.assistant.ui.space.SpaceTypeScale
+import com.argus.assistant.ui.space.spaceLook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /*
- * 0.46.4 Music + Video revamp (shared chrome and the new Music pages). Blaze's own look: the picked theme's scene shows
+ * 0.46.4 Music + Video revamp (shared chrome and the new Music pages). Argus's own look: the picked theme's scene shows
  * through, raised parts are glass, colours come from the cover art or the theme. Less text, more art; animations are
  * only fades and the existing sheet slide (cheap on every phone).
  */
@@ -80,7 +80,7 @@ import java.io.File
  */
 @Composable
 fun AccountBadge(onClick: () -> Unit) {
-    val name = remember { runCatching { com.blaze.assistant.agent.Settings.userName }.getOrDefault("") }
+    val name = remember { runCatching { com.argus.assistant.agent.Settings.userName }.getOrDefault("") }
     val initial = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: ""
     Box(Modifier.size(SpaceInsets.CONTROL_DP.dp).clip(CircleShape).background(Color(SpacePalette.ARGUS_BLUE))
         .clickable(role = Role.Button, onClickLabel = "Your account") { onClick() }
@@ -91,8 +91,8 @@ fun AccountBadge(onClick: () -> Unit) {
 }
 
 /**
- * The top bar of Music and Video: account badge left, then [actions] (Blaze DJ in Music), the light / dark switch and the
- * close (X) on the right. Close always goes back to the Blaze chat ([MusicNav.CLOSE_TARGET]).
+ * The top bar of Music and Video: account badge left, then [actions] (Argus DJ in Music), the light / dark switch and the
+ * close (X) on the right. Close always goes back to the Argus chat ([MusicNav.CLOSE_TARGET]).
  * Unification: the shared header, matched to the shell's top bar and BackTitle: the same height (the 44 dp control plus
  * 10 dp above and below), the controls at the gutter ([SpaceInsets.GUTTER_DP]), round [SpaceInsets.CONTROL_DP] buttons
  * in the track colour, and the shell's serif title ([SpaceType.section]). The switch lives here, so every screen that
@@ -109,7 +109,7 @@ fun MediaTopBar(title: String, onAccount: () -> Unit, onClose: () -> Unit, theme
             modifier = Modifier.weight(1f).semantics { heading() })
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             actions()
-            if (themeSwitch) com.blaze.assistant.ui.ThemeSwitch(Modifier.size(SpaceInsets.CONTROL_DP.dp).clip(CircleShape).background(look.track), tint = look.ink)
+            if (themeSwitch) com.argus.assistant.ui.ThemeSwitch(Modifier.size(SpaceInsets.CONTROL_DP.dp).clip(CircleShape).background(look.track), tint = look.ink)
             SpaceRoundButton("Close and go back to ${BrandName.NAME} chat", onClose) {
                 Icon(Icons.Rounded.Close, contentDescription = null, tint = look.ink, modifier = Modifier.size(22.dp))
             }
@@ -184,7 +184,7 @@ object PlaylistCovers {
 
 /** A playlist / mix cover: the custom picture, else a 2x2 mosaic of 4 different covers, else one cover, else the placeholder. */
 @Composable
-fun CoverTile(id: String, tracks: List<Track>, modifier: Modifier, shape: androidx.compose.ui.graphics.Shape = BlazeShapes.small) {
+fun CoverTile(id: String, tracks: List<Track>, modifier: Modifier, shape: androidx.compose.ui.graphics.Shape = ArgusShapes.small) {
     val ctx = LocalContext.current
     val g by PlaylistCovers.gen.collectAsState()
     val custom = remember(id, g) { if (id.isBlank()) "" else PlaylistCovers.path(ctx, id) }
@@ -201,7 +201,7 @@ fun CoverTile(id: String, tracks: List<Track>, modifier: Modifier, shape: androi
 /** The cover's dominant colour, or the theme accent when there's no usable picture ([CoverTint.of]). */
 @Composable
 fun rememberCoverTint(t: Track?): Color {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val art = rememberArt(t, 64)
     return remember(art, c.accent) {
         val fallback = (c.accent.value shr 32).toInt()
@@ -216,7 +216,7 @@ fun rememberCoverTint(t: Track?): Color {
 
 @Composable
 internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, playList: (List<Track>, Int, Boolean) -> Unit, onDj: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val songs by MediaLib.songs.collectAsState()
     val lists by MediaLib.playlists.collectAsState()
     val recent by MediaLib.recent.collectAsState()
@@ -225,7 +225,7 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
     var chip by remember { mutableStateOf("all") }
     val byKey = remember(songs) { songs.associateBy { it.key } }
     val now = remember(plays.size) { System.currentTimeMillis() }
-    val hour = remember(plays.size) { BlazeDj.hour() }
+    val hour = remember(plays.size) { ArgusDj.hour() }
     val smart = remember(songs, plays.size, liked) { MusicSmart.smartLists(songs, plays, liked, now) }
     val tiles = remember(chip, songs, lists, smart, recent) { MusicHome.tiles(chip, songs, lists, smart, recent) }
     val mixes = remember(songs, plays.size) { MusicHome.mixes(songs, plays, now / 86_400_000L, hour) }
@@ -246,11 +246,11 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
-        // The Blaze DJ tile.
+        // The Argus DJ tile.
         item {
-            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp).fillMaxWidth().clip(BlazeShapes.medium).glass(BlazeShapes.medium, GlassIntensity.Medium, shadow = false)
+            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp).fillMaxWidth().clip(ArgusShapes.medium).glass(ArgusShapes.medium, GlassIntensity.Medium, shadow = false)
                 .clickable(role = Role.Button, onClickLabel = "Start ${BrandName.NAME} DJ") { onDj() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(52.dp).clip(BlazeShapes.pill).background(Brush.linearGradient(listOf(c.accent.copy(alpha = 0.9f), BlazeBrushTint.warm))),
+                Box(Modifier.size(52.dp).clip(ArgusShapes.pill).background(Brush.linearGradient(listOf(c.accent.copy(alpha = 0.9f), ArgusBrushTint.warm))),
                     contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Headphones, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp)) }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
@@ -264,8 +264,8 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
             SectionTitle("Your mixes")
             LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(mixes, key = { it.id }) { m ->
-                    Column(Modifier.width(150.dp).clip(BlazeShapes.small).clickable(role = Role.Button, onClickLabel = "Open ${m.name}") { openTile(m) }) {
-                        CoverTile(m.id, m.keys.take(8).mapNotNull { byKey[it] }, Modifier.size(150.dp), BlazeShapes.small)
+                    Column(Modifier.width(150.dp).clip(ArgusShapes.small).clickable(role = Role.Button, onClickLabel = "Open ${m.name}") { openTile(m) }) {
+                        CoverTile(m.id, m.keys.take(8).mapNotNull { byKey[it] }, Modifier.size(150.dp), ArgusShapes.small)
                         Text(m.sub.ifBlank { m.name }, color = c.sub, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
                     }
                 }
@@ -275,9 +275,9 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
             SectionTitle("Recently played")
             LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(recentSongs, key = { "r-" + it.key }) { t ->
-                    Column(Modifier.width(112.dp).clip(BlazeShapes.small).clickable(role = Role.Button, onClickLabel = "Play ${t.title}") {
+                    Column(Modifier.width(112.dp).clip(ArgusShapes.small).clickable(role = Role.Button, onClickLabel = "Play ${t.title}") {
                         MusicContext.set("Recently played"); playList(recentSongs, recentSongs.indexOf(t), false) }) {
-                        Art(t, Modifier.size(112.dp), BlazeShapes.small, 240)
+                        Art(t, Modifier.size(112.dp), ArgusShapes.small, 240)
                         Text(t.title, color = c.ink, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
                     }
                 }
@@ -286,13 +286,13 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
     }
 }
 
-/** Blaze's own warm tint for gradients (not a brand colour). */
-internal object BlazeBrushTint { val warm = Color(0xFFD6B48E) }
+/** Argus's own warm tint for gradients (not a brand colour). */
+internal object ArgusBrushTint { val warm = Color(0xFFD6B48E) }
 
 @Composable
 private fun HomeTile(t: MusicHome.Tile, byKey: Map<String, Track>, modifier: Modifier, onClick: () -> Unit) {
-    val c = LocalBlaze.current
-    Row(modifier.height(56.dp).clip(BlazeShapes.xs).glass(BlazeShapes.xs, GlassIntensity.Low, shadow = false)
+    val c = LocalArgus.current
+    Row(modifier.height(56.dp).clip(ArgusShapes.xs).glass(ArgusShapes.xs, GlassIntensity.Low, shadow = false)
         .clickable(role = Role.Button, onClickLabel = "Open ${t.name}") { onClick() }, verticalAlignment = Alignment.CenterVertically) {
         CoverTile(if (t.kind == "playlist") t.id else "", t.keys.take(8).mapNotNull { byKey[it] }, Modifier.size(56.dp), RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp))
         Text(t.name, color = c.ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 8.dp))
@@ -303,7 +303,7 @@ private fun HomeTile(t: MusicHome.Tile, byKey: Map<String, Track>, modifier: Mod
 
 @Composable
 internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, openTile: (MusicHome.Tile) -> Unit, onStore: () -> Unit, onVibe: (DjPlan.Vibe) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val songs by MediaLib.songs.collectAsState()
     val lists by MediaLib.playlists.collectAsState()
     var q by remember { mutableStateOf("") }
@@ -320,7 +320,7 @@ internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, open
                 items(tiles.chunked(2)) { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { (name, col, icon) ->
-                            Box(Modifier.weight(1f).height(92.dp).clip(BlazeShapes.small).background(Brush.linearGradient(listOf(col, col.copy(alpha = 0.55f))))
+                            Box(Modifier.weight(1f).height(92.dp).clip(ArgusShapes.small).background(Brush.linearGradient(listOf(col, col.copy(alpha = 0.55f))))
                                 .clickable(role = Role.Button, onClickLabel = name) {
                                     if (name == "Online music") onStore() else DjPlan.Vibe.values().firstOrNull { it.label == name }?.let(onVibe)
                                 }.padding(12.dp)) {
@@ -358,10 +358,10 @@ internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, open
 
 @Composable
 private fun ResultRow(t: MusicHome.Tile, byKey: Map<String, Track>, round: Boolean = false, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Open ${t.name}") { onClick() }.padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        CoverTile(if (t.kind == "playlist") t.id else "", t.keys.take(8).mapNotNull { byKey[it] }, Modifier.size(52.dp), if (round) BlazeShapes.pill else BlazeShapes.xs)
+        CoverTile(if (t.kind == "playlist") t.id else "", t.keys.take(8).mapNotNull { byKey[it] }, Modifier.size(52.dp), if (round) ArgusShapes.pill else ArgusShapes.xs)
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(t.name, color = c.ink, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(when (t.kind) { "artist" -> "Artist"; "album" -> "Album" + if (t.sub.isNotBlank()) " \u00b7 ${t.sub}" else ""; else -> "Playlist" }, color = c.sub, fontSize = 12.sp, maxLines = 1)
@@ -372,18 +372,18 @@ private fun ResultRow(t: MusicHome.Tile, byKey: Map<String, Track>, round: Boole
 /** A track row: art, title, artist and a ⋮ menu. */
 @Composable
 internal fun TrackRow(t: Track, playing: Boolean = false, menu: List<Pair<String, () -> Unit>> = emptyList(), onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var open by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Play ${t.title}") { onClick() }.padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Art(t, Modifier.size(48.dp), BlazeShapes.xs, 160)
+        Art(t, Modifier.size(48.dp), ArgusShapes.xs, 160)
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(t.title, color = if (playing) c.accent else c.ink, fontSize = 15.sp, fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (t.artist.isNotBlank()) Text(t.artist, color = c.sub, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (menu.isNotEmpty()) Box {
             RoundIcon(Icons.Rounded.MoreVert, "More for ${t.title}", tint = c.sub) { open = true }
-            BlazeMenu(open, { open = false }, menu.map { (l, f) -> l to { open = false; f() } })
+            ArgusMenu(open, { open = false }, menu.map { (l, f) -> l to { open = false; f() } })
         }
     }
 }
@@ -391,14 +391,14 @@ internal fun TrackRow(t: Track, playing: Boolean = false, menu: List<Pair<String
 // ---------------------------------------------------------------- Playlist view
 
 /**
- * A playlist, mix, album or artist: big centred cover, a header tinted from the cover blending into the Blaze background,
+ * A playlist, mix, album or artist: big centred cover, a header tinted from the cover blending into the Argus background,
  * title / owner / total time, icon actions (offline, share, shuffle) + a big round Play, chips (Add, Edit, Name & details,
  * Sort; real playlists only) and the tracks.
  */
 @Composable
 internal fun PlaylistPage(tile: MusicHome.Tile, np: NowPlaying, playList: (List<Track>, Int, Boolean) -> Unit, onBack: () -> Unit,
                           onQueueNext: (Track) -> Unit, onAddSongs: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val songs by MediaLib.songs.collectAsState()
@@ -427,7 +427,7 @@ internal fun PlaylistPage(tile: MusicHome.Tile, np: NowPlaying, playList: (List<
             Box(Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(tint.copy(alpha = if (c.dark) 0.55f else 0.35f), Color.Transparent)))) {
                 Column(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) { RoundIcon(Icons.Rounded.KeyboardArrowDown, "Back", onClick = onBack) }
-                    CoverTile(if (real) tile.id else "", tracks, Modifier.size(220.dp), BlazeShapes.small)
+                    CoverTile(if (real) tile.id else "", tracks, Modifier.size(220.dp), ArgusShapes.small)
                 }
             }
         }
@@ -450,7 +450,7 @@ internal fun PlaylistPage(tile: MusicHome.Tile, np: NowPlaying, playList: (List<
                     }
                     RoundIcon(Icons.Rounded.Shuffle, if (shuffle) "Shuffle on" else "Shuffle off", tint = if (shuffle) c.accent else c.sub) { shuffle = !shuffle }
                     Spacer(Modifier.weight(1f))
-                    Box(Modifier.size(56.dp).clip(BlazeShapes.pill).background(c.ink).clickable(role = Role.Button, onClickLabel = "Play $name") {
+                    Box(Modifier.size(56.dp).clip(ArgusShapes.pill).background(c.ink).clickable(role = Role.Button, onClickLabel = "Play $name") {
                         if (tracks.isNotEmpty()) { MusicContext.set(name); playList(tracks, if (shuffle) tracks.indices.random() else 0, shuffle) }
                     }, contentAlignment = Alignment.Center) { Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = c.paper, modifier = Modifier.size(32.dp)) }
                 }
@@ -460,7 +460,7 @@ internal fun PlaylistPage(tile: MusicHome.Tile, np: NowPlaying, playList: (List<
                     SmallChip("Name & details", Icons.Rounded.Info) { naming = name }
                     Box {
                         SmallChip(sort.label, Icons.Rounded.SwapVert) { sortMenu = true }
-                        BlazeMenu(sortMenu, { sortMenu = false }, PlaylistMeta.Sort.values().map { s -> s.label to { sort = s; sortMenu = false } })
+                        ArgusMenu(sortMenu, { sortMenu = false }, PlaylistMeta.Sort.values().map { s -> s.label to { sort = s; sortMenu = false } })
                     }
                 }
             }
@@ -481,12 +481,12 @@ internal fun PlaylistPage(tile: MusicHome.Tile, np: NowPlaying, playList: (List<
     }
     naming?.let { cur ->
         var text by remember { mutableStateOf(cur) }
-        com.blaze.assistant.ui.BlazeDialog(onDismiss = { naming = null }, title = "Name & details", confirm = "Save", onConfirm = {
+        com.argus.assistant.ui.ArgusDialog(onDismiss = { naming = null }, title = "Name & details", confirm = "Save", onConfirm = {
             val n = PlaylistOps.cleanName(text)
             if (n.isNotBlank()) MediaLib.setPlaylists(PlaylistOps.rename(lists, tile.id, n, System.currentTimeMillis()))
             naming = null
         }) {
-            BlazeTextField(text, { text = it }, "Playlist name")
+            ArgusTextField(text, { text = it }, "Playlist name")
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SmallChip("Choose picture", Icons.Rounded.Image) { pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
@@ -498,17 +498,17 @@ internal fun PlaylistPage(tile: MusicHome.Tile, np: NowPlaying, playList: (List<
 
 @Composable
 private fun AccountBadgeSmall() {
-    val c = LocalBlaze.current
-    val name = remember { runCatching { com.blaze.assistant.agent.Settings.userName }.getOrDefault("") }
-    Box(Modifier.size(22.dp).clip(BlazeShapes.pill).background(c.faint), contentAlignment = Alignment.Center) {
+    val c = LocalArgus.current
+    val name = remember { runCatching { com.argus.assistant.agent.Settings.userName }.getOrDefault("") }
+    Box(Modifier.size(22.dp).clip(ArgusShapes.pill).background(c.faint), contentAlignment = Alignment.Center) {
         Text(name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "", color = c.ink, fontSize = 11.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
 internal fun SmallChip(text: String, icon: ImageVector, onClick: () -> Unit) {
-    val c = LocalBlaze.current
-    Row(Modifier.clip(BlazeShapes.pill).glass(BlazeShapes.pill, GlassIntensity.Low, shadow = false).clickable(role = Role.Button, onClickLabel = text) { onClick() }
+    val c = LocalArgus.current
+    Row(Modifier.clip(ArgusShapes.pill).glass(ArgusShapes.pill, GlassIntensity.Low, shadow = false).clickable(role = Role.Button, onClickLabel = text) { onClick() }
         .padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = c.ink, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(6.dp))
@@ -519,8 +519,8 @@ internal fun SmallChip(text: String, icon: ImageVector, onClick: () -> Unit) {
 // ---------------------------------------------------------------- Create
 
 @Composable
-internal fun MusicCreatePage(onCreated: (MusicHome.Tile) -> Unit, onAskBlaze: (String) -> Unit) {
-    val c = LocalBlaze.current
+internal fun MusicCreatePage(onCreated: (MusicHome.Tile) -> Unit, onAskArgus: (String) -> Unit) {
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf("") }
@@ -530,13 +530,13 @@ internal fun MusicCreatePage(onCreated: (MusicHome.Tile) -> Unit, onAskBlaze: (S
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp).verticalScroll(rememberScrollState())) {
         SectionTitle("New playlist", Modifier.offset(x = (-16).dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(88.dp).clip(BlazeShapes.small).glass(BlazeShapes.small, GlassIntensity.Low, shadow = false)
+            Box(Modifier.size(88.dp).clip(ArgusShapes.small).glass(ArgusShapes.small, GlassIntensity.Low, shadow = false)
                 .clickable(role = Role.Button, onClickLabel = "Choose a picture") { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 contentAlignment = Alignment.Center) {
                 Icon(if (image == null) Icons.Rounded.AddPhotoAlternate else Icons.Rounded.CheckCircle, contentDescription = null, tint = c.ink, modifier = Modifier.size(30.dp))
             }
             Spacer(Modifier.width(12.dp))
-            BlazeTextField(name, { name = it }, "Name", Modifier.weight(1f))
+            ArgusTextField(name, { name = it }, "Name", Modifier.weight(1f))
         }
         Spacer(Modifier.height(12.dp))
         PillButton("Create", primary = true, icon = Icons.Rounded.Add) {
@@ -552,33 +552,33 @@ internal fun MusicCreatePage(onCreated: (MusicHome.Tile) -> Unit, onAskBlaze: (S
             }
         }
         SectionTitle("Ask ${BrandName.NAME}", Modifier.offset(x = (-16).dp))
-        BlazeTextField(ask, { ask = it }, "Make a chill playlist", Modifier.fillMaxWidth())
+        ArgusTextField(ask, { ask = it }, "Make a chill playlist", Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("Make a chill playlist", "Songs for a workout", "Focus music for studying").forEach { s -> SmallChip(s, Icons.Rounded.AutoAwesome) { onAskBlaze(s) } }
+            listOf("Make a chill playlist", "Songs for a workout", "Focus music for studying").forEach { s -> SmallChip(s, Icons.Rounded.AutoAwesome) { onAskArgus(s) } }
         }
         Spacer(Modifier.height(10.dp))
-        PillButton("Ask ${BrandName.NAME}", primary = false, icon = Icons.Rounded.AutoAwesome) { onAskBlaze(ask.ifBlank { "Make a chill playlist" }) }
+        PillButton("Ask ${BrandName.NAME}", primary = false, icon = Icons.Rounded.AutoAwesome) { onAskArgus(ask.ifBlank { "Make a chill playlist" }) }
         Spacer(Modifier.height(150.dp))
     }
 }
 
-// ---------------------------------------------------------------- Blaze DJ sheet
+// ---------------------------------------------------------------- Argus DJ sheet
 
-/** Blaze DJ controls: start / stop, vibe chips, More like this, spoken intros on or off. */
+/** Argus DJ controls: start / stop, vibe chips, More like this, spoken intros on or off. */
 @Composable
 internal fun DjSheet(onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
-    val on by BlazeDj.on.collectAsState()
-    val vibe by BlazeDj.vibe.collectAsState()
-    var voice by remember { mutableStateOf(BlazeDj.voiceOn(ctx)) }
-    val low = remember { BlazeDj.lowPower(ctx) }
+    val on by ArgusDj.on.collectAsState()
+    val vibe by ArgusDj.vibe.collectAsState()
+    var voice by remember { mutableStateOf(ArgusDj.voiceOn(ctx)) }
+    val low = remember { ArgusDj.lowPower(ctx) }
     fun svc(block: (MusicService) -> Unit) {
         val s = MusicService.current
         if (s == null) { ctx.startService(Intent(ctx, MusicService::class.java)); Toast.makeText(ctx, "Starting the player. Tap again in a moment.", Toast.LENGTH_SHORT).show() } else block(s)
     }
-    com.blaze.assistant.ui.BlazeDialog(onDismiss = onDismiss, title = "${BrandName.NAME} DJ", confirm = if (on) "Stop DJ" else "Start", onConfirm = {
+    com.argus.assistant.ui.ArgusDialog(onDismiss = onDismiss, title = "${BrandName.NAME} DJ", confirm = if (on) "Stop DJ" else "Start", onConfirm = {
         if (on) svc { it.startDj(false) } else svc { it.djFresh(null) }
         onDismiss()
     }) {
@@ -587,8 +587,8 @@ internal fun DjSheet(onDismiss: () -> Unit) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DjPlan.Vibe.values().forEach { v ->
                 val sel = v == vibe
-                Box(Modifier.clip(BlazeShapes.pill).background(if (sel) c.ink else c.faint).clickable(role = Role.Button, onClickLabel = v.label) {
-                    BlazeDj.setVibe(ctx, v); if (on) svc { it.djFresh(v) }
+                Box(Modifier.clip(ArgusShapes.pill).background(if (sel) c.ink else c.faint).clickable(role = Role.Button, onClickLabel = v.label) {
+                    ArgusDj.setVibe(ctx, v); if (on) svc { it.djFresh(v) }
                 }.padding(horizontal = 12.dp, vertical = 7.dp)) { Text(v.label, color = if (sel) c.paper else c.ink, fontSize = 13.sp) }
             }
         }
@@ -597,11 +597,11 @@ internal fun DjSheet(onDismiss: () -> Unit) {
             SmallChip("More like this", Icons.Rounded.ThumbUp) { svc { it.djMoreLikeThis() } }
             SmallChip("Change vibe", Icons.Rounded.Autorenew) {
                 val next = DjPlan.Vibe.values()[(vibe.ordinal + 1) % DjPlan.Vibe.values().size]
-                BlazeDj.setVibe(ctx, next); svc { it.djFresh(next) }
+                ArgusDj.setVibe(ctx, next); svc { it.djFresh(next) }
             }
         }
         Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth().clickable(role = Role.Switch, onClickLabel = "Spoken intros") { voice = !voice; BlazeDj.setVoice(ctx, voice) }.padding(vertical = 6.dp),
+        Row(Modifier.fillMaxWidth().clickable(role = Role.Switch, onClickLabel = "Spoken intros") { voice = !voice; ArgusDj.setVoice(ctx, voice) }.padding(vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Icon(if (voice) Icons.Rounded.RecordVoiceOver else Icons.Rounded.VoiceOverOff, contentDescription = null, tint = c.ink, modifier = Modifier.size(22.dp))
             Text(if (low) "Spoken intros (off while battery saver is on)" else if (voice) "Spoken intros: on" else "Spoken intros: off", color = c.ink, fontSize = 14.sp,
@@ -615,7 +615,7 @@ internal fun DjSheet(onDismiss: () -> Unit) {
 /** The lyrics card under the player: only when lyrics are on the phone (a .lrc next to the song, or saved earlier). */
 @Composable
 internal fun LyricsCard(t: Track, pos: Long, onOpen: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val res by produceState<Lyrics.Result?>(null, t.key) { value = withContext(Dispatchers.IO) { Lyrics.local(ctx.filesDir, t) } }
     val r = res ?: return
@@ -624,7 +624,7 @@ internal fun LyricsCard(t: Track, pos: Long, onOpen: () -> Unit) {
         val i = Lrc.current(r.synced, pos).coerceAtLeast(0)
         r.synced.drop(i).take(4).map { it.text }
     } else r.plain.lines().filter { it.isNotBlank() }.take(4)
-    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp).clip(BlazeShapes.medium).glass(BlazeShapes.medium, GlassIntensity.Medium, shadow = false)
+    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp).clip(ArgusShapes.medium).glass(ArgusShapes.medium, GlassIntensity.Medium, shadow = false)
         .clickable(role = Role.Button, onClickLabel = "Open lyrics") { onOpen() }.padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.Lyrics, contentDescription = null, tint = c.sub, modifier = Modifier.size(16.dp))

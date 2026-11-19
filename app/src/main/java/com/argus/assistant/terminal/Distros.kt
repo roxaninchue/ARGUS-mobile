@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 import android.os.Build
 import kotlinx.coroutines.Dispatchers

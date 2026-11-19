@@ -1,9 +1,9 @@
-package com.blaze.assistant.mediaapps.store
+package com.argus.assistant.mediaapps.store
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
-import com.blaze.assistant.mediaapps.TimeText
+import com.argus.assistant.mediaapps.TimeText
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -81,7 +81,7 @@ object JamendoSource : StoreSource {
         userId = runCatching { JSONObject(File(dir, "jamendo.json").readText()).optString("client_id") }.getOrDefault("")
     }
 
-    fun buildId(): String = try { com.blaze.assistant.BuildConfig.JAMENDO_CLIENT_ID } catch (_: Throwable) { "" }
+    fun buildId(): String = try { com.argus.assistant.BuildConfig.JAMENDO_CLIENT_ID } catch (_: Throwable) { "" }
     fun clientId(): String = userId.trim().ifBlank { buildId().trim() }
 
     fun setClientId(id: String) {
@@ -98,12 +98,12 @@ object JamendoSource : StoreSource {
         r.optJSONObject("headers")?.optString("status") == "success"
     } catch (_: Exception) { false }
 
-    /** v0.30.5: the jamendo_setup tool, so "Ask Blaze to set it up" can save the id Blaze got from the dev portal. */
+    /** v0.30.5: the jamendo_setup tool, so "Ask Argus to set it up" can save the id Argus got from the dev portal. */
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", TOOL)
         .put("description", "Save a Jamendo API client_id for ${BrandName.NAME} Music's Jamendo Store (checked against Jamendo before it's saved). " +
             "Get one free at $DEVPORTAL: sign in or sign up (ask the user before creating an account), My applications, create an app " +
-            "(name Blaze Music, website https://blazeinchue.pages.dev), then copy its Client ID here.")
+            "(name Argus Music, website https://blazeinchue.pages.dev), then copy its Client ID here.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("client_id", JSONObject().put("type", "string").put("description", "The app's Client ID (8 hex characters)")))
             .put("required", JSONArray().put("client_id"))))

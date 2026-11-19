@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import android.app.ActivityManager
 import android.content.Context
@@ -131,7 +131,7 @@ object DeviceStatus {
         return idCache
     }
 
-    /** One line for the system prompt so Blaze is aware without spending a tool call. */
+    /** One line for the system prompt so Argus is aware without spending a tool call. */
     fun promptLine(ctx: Context): String = try {
         val s = snap(ctx)
         val w = warnings(s)

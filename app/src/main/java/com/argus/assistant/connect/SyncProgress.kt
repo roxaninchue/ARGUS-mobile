@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 /**
- * 0.45.24: how far a cloud sync round is, for the "Syncing with Blaze Cloud" notification ([SyncNote]).
+ * 0.45.24: how far a cloud sync round is, for the "Syncing with Argus Cloud" notification ([SyncNote]).
  *
  * [SyncEngine] reports a [Step] after every pulled page and every pushed batch. Pulling has no item count up front, so
  * a full restore (cursor at 0) measures bytes against the cloud copy's size, and a catch-up round counts items with an

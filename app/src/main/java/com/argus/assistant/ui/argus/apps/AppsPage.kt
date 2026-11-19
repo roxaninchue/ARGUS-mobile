@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.apps
+package com.argus.assistant.ui.argus.apps
 
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
@@ -48,23 +48,23 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.siteapps.SiteInstaller
-import com.blaze.assistant.ui.BlazeView
-import com.blaze.assistant.ui.Views
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusGround
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Lucide
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusIconButton
-import com.blaze.assistant.ui.argus.kit.ArgusSearch
-import com.blaze.assistant.ui.argus.kit.ArgusSheet
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.IconButtonKind
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.siteapps.SiteInstaller
+import com.argus.assistant.ui.ArgusView
+import com.argus.assistant.ui.Views
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusGround
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusIconButton
+import com.argus.assistant.ui.argus.kit.ArgusSearch
+import com.argus.assistant.ui.argus.kit.ArgusSheet
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.IconButtonKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

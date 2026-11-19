@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 /**
  * P0-SH-02: the bot orb's geometry and states as pure numbers (OrbGeometryTest); [BotOrb] draws them. A redraw in

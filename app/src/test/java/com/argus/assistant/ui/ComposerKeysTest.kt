@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
@@ -18,7 +18,7 @@ class ComposerKeysTest {
     }
 
     private fun src(path: String): String {
-        val roots = listOf("src/main/java/com/blaze/assistant", "app/src/main/java/com/blaze/assistant")
+        val roots = listOf("src/main/java/com/argus/assistant", "app/src/main/java/com/argus/assistant")
         return roots.map { File(it, path) }.first { it.exists() }.readText()
     }
 

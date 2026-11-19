@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -33,15 +33,15 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Providers
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.agent.Traces
-import com.blaze.assistant.phone.BlazeAccessibilityService
+import com.argus.assistant.agent.Providers
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.agent.Traces
+import com.argus.assistant.phone.ArgusAccessibilityService
 import kotlinx.coroutines.delay
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 
-/** Settings → Look & feel: the small things that make Blaze feel alive. */
+/** Settings → Look & feel: the small things that make Argus feel alive. */
 @Composable
 internal fun FeelPage() {
     var taps by remember { mutableStateOf(Settings.bool("show_taps", true)) }
@@ -66,27 +66,27 @@ internal fun FeelPage() {
 /** First run: three short screens, then straight into something real. */
 @Composable
 fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     var page by remember { mutableStateOf(page0) }
-    var a11y by remember { mutableStateOf(BlazeAccessibilityService.isEnabled(ctx)) }
+    var a11y by remember { mutableStateOf(ArgusAccessibilityService.isEnabled(ctx)) }
     var brain by remember { mutableStateOf(if (Settings.ready) "ready" else "") }
-    LaunchedEffect(page) { while (page == 1) { a11y = BlazeAccessibilityService.isEnabled(ctx); delay(1200) } }
+    LaunchedEffect(page) { while (page == 1) { a11y = ArgusAccessibilityService.isEnabled(ctx); delay(1200) } }
     BackHandler(enabled = page > 0) { page-- }
     fun finish(prompt: String?) { Settings.setBool("onboarded", true); onDone(prompt) }
 
     Box(Modifier.fillMaxSize().pageBackdrop(c)) {
-        ParticleField(com.blaze.assistant.agent.Mood.IDLE)
+        ParticleField(com.argus.assistant.agent.Mood.IDLE)
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(28.dp), verticalArrangement = Arrangement.SpaceBetween) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 // v0.19.0: three progress segments, like Desktop's onboarding steps.
                 (0 until 3).forEach { i ->
-                    Box(Modifier.padding(end = 4.dp).width(22.dp).height(3.dp).clip(BlazeShapes.pill).background(if (i <= page) c.accent else c.hair2))
+                    Box(Modifier.padding(end = 4.dp).width(22.dp).height(3.dp).clip(ArgusShapes.pill).background(if (i <= page) c.accent else c.hair2))
                 }
                 Spacer(Modifier.width(8.dp))
                 Label("0${page + 1} / 03", color = c.weak, size = 10.sp)
                 Spacer(Modifier.weight(1f))
-                Box(Modifier.clip(BlazeShapes.pill).clickable { finish(null) }.padding(8.dp)) { ActionText("Skip", color = c.sub, size = 10.sp) }
+                Box(Modifier.clip(ArgusShapes.pill).clickable { finish(null) }.padding(8.dp)) { ActionText("Skip", color = c.sub, size = 10.sp) }
             }
             Column {
                 OrbFace(72.dp)
@@ -108,7 +108,7 @@ fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
                         if (!a11y) ctx.startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 }
             }
-            Box(Modifier.fillMaxWidth().height(54.dp).clip(BlazeShapes.pill).glassButton(c).clickable {
+            Box(Modifier.fillMaxWidth().height(54.dp).clip(ArgusShapes.pill).glassButton(c).clickable {
                 when (page) {
                     0 -> { brain = "free"; page = 1 }
                     1 -> page = 2
@@ -123,7 +123,7 @@ fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
 
 @Composable
 private fun Choice(title: String, sub: String, on: Boolean, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth().pageGlassSelectable(c, on).clickable(onClick = onClick).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {

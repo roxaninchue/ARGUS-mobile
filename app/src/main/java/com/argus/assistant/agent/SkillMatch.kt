@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import java.io.File
 
 /**
- * Skills on every turn (v0.23.0). Blazeinchue's rule: before each turn's first model call, Blaze looks up the
+ * Skills on every turn (v0.23.0). Blazeinchue's rule: before each turn's first model call, Argus looks up the
  * skills related to the request. No extra model call: a keyword score over each skill's name,
  * description and keywords (front-matter `tags:` / `keywords:`), across bundled skills (assets/skills),
  * the user's own (~/skills) and learned ones (Learning, skills.json). Disabled skills never match.
@@ -162,7 +162,7 @@ object SkillMatch {
     // v0.26.1: an in-chat diagram / chart doesn't pull in the file-route skills (VisualRoute); it's drawn in the reply.
     fun forTurn(query: String): Result = try {
         // v0.33.3: "list my apps" is about the phone (list_apps), never a skill whose words overlap (product-listing).
-        if (com.blaze.assistant.phone.AppFinder.isAppsAsk(query)) Result.NONE else selectForTurn(query, VisualRoute.filter(query, cached()))
+        if (com.argus.assistant.phone.AppFinder.isAppsAsk(query)) Result.NONE else selectForTurn(query, VisualRoute.filter(query, cached()))
     } catch (_: Throwable) { Result.NONE }
 
     /**
@@ -199,7 +199,7 @@ object SkillMatch {
     }
 
     /** The per-turn skills block: the 2-3 best matches with short descriptions and one line about find_skill. No name list. */
-    fun lookupBlock(query: String, skip: Set<String> = emptySet()): String = if (com.blaze.assistant.phone.AppFinder.isAppsAsk(query)) "" else try {
+    fun lookupBlock(query: String, skip: Set<String> = emptySet()): String = if (com.argus.assistant.phone.AppFinder.isAppsAsk(query)) "" else try {
         // 0.50.0: no "best matches" for a message that doesn't ask for a task (small talk, a status update); just the find_skill line.
         val cands = VisualRoute.filter(query, cached())
         if (!SkillIntent.taskIntent(query)) SkillIndex.promptBlock(index(cands), "") else {

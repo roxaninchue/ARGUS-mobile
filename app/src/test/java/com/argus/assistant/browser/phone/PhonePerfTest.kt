@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -9,7 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 0.45.19-speed: the Blaze Phone perf harness. Times the real tool + engine code ([PhoneBrowserTools.run] over
+ * 0.45.19-speed: the Argus Phone perf harness. Times the real tool + engine code ([PhoneBrowserTools.run] over
  * [PhoneEngine]) on [SimPage] (virtual clock, phone cost model, seeded jitter) for two measures:
  *  - page read: phone_read on a loaded page (small login page, medium booking page, big shop page);
  *  - act-to-verified: phone_act until the tool returns with the change visible (link to the next page, an in-page

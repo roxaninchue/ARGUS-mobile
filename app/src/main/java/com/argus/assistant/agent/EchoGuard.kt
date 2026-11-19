@@ -1,15 +1,15 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 
 /**
- * v0.45.5 (#1, the 18:42 wrong reply): "Hi! Introduce yourself" came back 13 minutes later as a heading "Current Blaze UI",
+ * v0.45.5 (#1, the 18:42 wrong reply): "Hi! Introduce yourself" came back 13 minutes later as a heading "Current Argus UI",
  * a quote "Chat (pull down from the top for Home)" and a table of recent apps: the model copied the Awareness block /
- * the blaze_now result into the chat instead of answering. A tool result or the context Blaze sends with the request is
+ * the blaze_now result into the chat instead of answering. A tool result or the context Argus sends with the request is
  * never the answer. [echoes] spots a reply that is mostly a copy of those sources (or carries their markers); the agent
- * asks the model once more for a real answer and otherwise shows [HONEST]. Asking about Blaze's state ("what's going on",
+ * asks the model once more for a real answer and otherwise shows [HONEST]. Asking about Argus's state ("what's going on",
  * "what's playing") is exempt. Pure Kotlin (EchoGuardTest).
  */
 object EchoGuard {
@@ -17,7 +17,7 @@ object EchoGuard {
         "Answer the user's latest message directly, in your own words, in one or two sentences. Don't copy context, tables or tool output."
     const val HONEST = "Sorry, that reply went wrong (it repeated my own status notes). Ask me again and I'll answer properly."
 
-    /** Context-reading tools whose output is for Blaze, not the user (unless the user asked for it). */
+    /** Context-reading tools whose output is for Argus, not the user (unless the user asked for it). */
     val CONTEXT_TOOLS = setOf("blaze_now", "device_status", "processes", "about_blaze", "self_test", "blaze_docs_read")
 
     private val markers = listOf("WHAT'S GOING ON (live", "## Live now", "## ${BrandName.NAME} apps", "## Views (open_view)", "pull down from the top for Home",
@@ -26,7 +26,7 @@ object EchoGuard {
     private val askState = Regex("\\b(what'?s (?:going on|happening|playing|on (?:my|the) screen|open|running)|blaze_now|live now|status report|" +
         "what (?:are you|is blaze) (?:doing|running)|recent apps?|what did (?:i|you) (?:just )?(?:do|open)|show (?:me )?(?:the )?(?:status|context|prompt))\\b", RegexOption.IGNORE_CASE)
 
-    /** The user asked about Blaze's state, so quoting it is the answer. */
+    /** The user asked about Argus's state, so quoting it is the answer. */
     fun asked(userText: String): Boolean = askState.containsMatchIn(userText)
 
     private fun grams(s: String, n: Int = 4): List<String> {
@@ -45,7 +45,7 @@ object EchoGuard {
     fun hasMarker(reply: String): Boolean = markers.any { reply.contains(it, ignoreCase = true) }
 
     /**
-     * True when [reply] is a copy of Blaze's context: a marker, or at least [min] of its 4-grams from the [context]
+     * True when [reply] is a copy of Argus's context: a marker, or at least [min] of its 4-grams from the [context]
      * (system prompt / awareness) or from a context tool's result ([toolTexts]). Short replies (under 8 grams) only count
      * on a marker.
      */

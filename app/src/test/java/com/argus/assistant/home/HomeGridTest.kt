@@ -1,4 +1,4 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -144,7 +144,7 @@ class HomeGridTest {
     // ---------------- Quick actions ----------------
 
     @Test fun quickActionsFromRealData() {
-        val starters = com.blaze.assistant.agent.SimpleHome.starters(9).map { it.label to it.prompt }
+        val starters = com.argus.assistant.agent.SimpleHome.starters(9).map { it.label to it.prompt }
         val qa = QuickActions.build(starters, listOf("Programming", "Startups", "PlayStation"), routineHours = emptyList())
         assertEquals(listOf("Plan", "Catch up", "Set up"), qa.map { it.verb })
         assertEquals("my day: what's on and what not to forget", qa[0].rest)

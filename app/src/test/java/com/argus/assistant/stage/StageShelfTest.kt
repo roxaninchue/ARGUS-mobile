@@ -1,4 +1,4 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

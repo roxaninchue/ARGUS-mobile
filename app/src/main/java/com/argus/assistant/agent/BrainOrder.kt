@@ -1,12 +1,12 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 
 /**
  * Brain order and the per-brain ledger. Owner 16 Nov 2026: the on-device backup brain was removed, so the order is the
- * gateway's two brains: plain chat asks the Nous reserve then Blaze Cloud; tool turns Blaze Cloud then the reserve
+ * gateway's two brains: plain chat asks the Nous reserve then Argus Cloud; tool turns Argus Cloud then the reserve
  * ([BrainRace.order]). [coding] still marks coding jobs for the race's limits. Pure (BrainOrderTest).
  */
 object BrainOrder {

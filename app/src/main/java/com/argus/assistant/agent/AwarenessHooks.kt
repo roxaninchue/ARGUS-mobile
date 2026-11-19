@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Activity
 import android.app.Application
 import android.content.ComponentName
@@ -14,11 +14,11 @@ import android.os.SystemClock
 import androidx.media3.common.Player
 
 /**
- * v0.37.0: the Android side of [Awareness]. Installed once from BlazeApp:
- *  - the Blaze screen in front (activity callbacks) and the view open over the chat (Views.showing, Design's title);
+ * v0.37.0: the Android side of [Awareness]. Installed once from ArgusApp:
+ *  - the Argus screen in front (activity callbacks) and the view open over the chat (Views.showing, Design's title);
  *  - other apps' media (Spotify, YouTube, podcasts…) from their media sessions, read through the notification
- *    listener Blaze already has (no new permission; nothing when notification access is off);
- *  - Blaze Music and Blaze Video report their own player ([music], [video], [videoClosed]).
+ *    listener Argus already has (no new permission; nothing when notification access is off);
+ *  - Argus Music and Argus Video report their own player ([music], [video], [videoClosed]).
  * All readers are cheap and never throw.
  */
 object AwarenessHooks {
@@ -27,7 +27,7 @@ object AwarenessHooks {
     private val friendly = mapOf(
         "MainActivity" to "Chat", "VideoActivity" to "${BrandName.NAME} Video", "MusicActivity" to "${BrandName.NAME} Music",
         "BrowserActivity" to "Browser", "SiteAppActivity" to "a site app",
-        "BlazeTerminalActivity" to "Terminal",
+        "ArgusTerminalActivity" to "Terminal",
     )
 
     fun screenName(a: Activity): String = friendly[a.javaClass.simpleName]
@@ -56,19 +56,19 @@ object AwarenessHooks {
 
     /** The view over the chat (Design, Learn…), with the design's title when it's Design. */
     private fun viewNow(): List<Awareness.Now> {
-        val v = com.blaze.assistant.ui.Views.showing.value
+        val v = com.argus.assistant.ui.Views.showing.value
         if (v.isBlank() || Awareness.get("screen")?.title != "Chat") return emptyList()
-        val name = com.blaze.assistant.ui.Views.find(v)?.name ?: v
+        val name = com.argus.assistant.ui.Views.find(v)?.name ?: v
         val title = if (v == "design") (try { Designs.current()?.title } catch (_: Throwable) { null })?.ifBlank { null } else null
         return listOf(Awareness.Now("view", "Open", title ?: name, if (title != null) "the Design view" else "${BrandName.NAME}"))
     }
 
-    /** Other apps' media sessions (Blaze's own are reported by the players themselves). */
+    /** Other apps' media sessions (Argus's own are reported by the players themselves). */
     private fun phoneMedia(ctx: Context): List<Awareness.Now> {
-        if (com.blaze.assistant.notify.NotificationBrain.instance == null) return emptyList()
+        if (com.argus.assistant.notify.NotificationBrain.instance == null) return emptyList()
         val msm = ctx.getSystemService(MediaSessionManager::class.java) ?: return emptyList()
         val list: List<MediaController> = try {
-            msm.getActiveSessions(ComponentName(ctx, com.blaze.assistant.notify.NotificationBrain::class.java))
+            msm.getActiveSessions(ComponentName(ctx, com.argus.assistant.notify.NotificationBrain::class.java))
         } catch (_: Throwable) { return emptyList() }
         return list.filter { it.packageName != ctx.packageName }.mapNotNull { c -> session(ctx, c) }.take(3)
     }
@@ -91,14 +91,14 @@ object AwarenessHooks {
             if (artist.isNotBlank()) "by $artist" else "", pos, if (dur > 0) dur else -1, playing, at)
     }
 
-    // ---------------- Blaze's own players (called on the player's thread) ----------------
+    // ---------------- Argus's own players (called on the player's thread) ----------------
 
-    /** Blaze Music's player changed (song, play / pause, seek). [songChanged] logs the new song as played. */
+    /** Argus Music's player changed (song, play / pause, seek). [songChanged] logs the new song as played. */
     fun music(p: Player, songChanged: Boolean = false) {
         try {
             val item = p.currentMediaItem
             if (item == null) { Awareness.clear("music"); return }
-            val t = com.blaze.assistant.mediaapps.MediaLib.find(item.mediaId)
+            val t = com.argus.assistant.mediaapps.MediaLib.find(item.mediaId)
             val title = t?.title ?: item.mediaMetadata.title?.toString() ?: return
             val artist = t?.artist?.ifBlank { null } ?: item.mediaMetadata.artist?.toString() ?: ""
             val dur = p.duration.takeIf { it > 0 } ?: t?.durationMs?.takeIf { it > 0 } ?: -1
@@ -110,8 +110,8 @@ object AwarenessHooks {
 
     fun musicStopped() = Awareness.clear("music")
 
-    /** Blaze Video's player: the video loaded, played, paused or moved. */
-    fun video(p: Player, t: com.blaze.assistant.mediaapps.Track?) {
+    /** Argus Video's player: the video loaded, played, paused or moved. */
+    fun video(p: Player, t: com.argus.assistant.mediaapps.Track?) {
         try {
             if (t == null) { Awareness.clear("video"); return }
             val dur = p.duration.takeIf { it > 0 } ?: t.durationMs.takeIf { it > 0 } ?: -1
@@ -121,7 +121,7 @@ object AwarenessHooks {
     }
 
     /** The video was closed or replaced: remember where it was left (what "the movie I was just watching" means). */
-    fun videoLeft(p: Player, t: com.blaze.assistant.mediaapps.Track?, clear: Boolean) {
+    fun videoLeft(p: Player, t: com.argus.assistant.mediaapps.Track?, clear: Boolean) {
         try {
             if (t == null) return
             val dur = p.duration.takeIf { it > 0 } ?: t.durationMs

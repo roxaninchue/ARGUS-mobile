@@ -1,7 +1,7 @@
-package com.blaze.assistant.voice.myvoice
+package com.argus.assistant.voice.myvoice
 
-import com.blaze.assistant.voice.myvoice.VoiceRoute.Reason
-import com.blaze.assistant.voice.myvoice.VoiceRoute.Route
+import com.argus.assistant.voice.myvoice.VoiceRoute.Reason
+import com.argus.assistant.voice.myvoice.VoiceRoute.Route
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

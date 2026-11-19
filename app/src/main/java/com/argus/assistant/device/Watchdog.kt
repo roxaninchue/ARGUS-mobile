@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import android.os.Handler
 import android.os.Looper
@@ -12,7 +12,7 @@ import android.os.SystemClock
  * [JANK_MS] is written as "STALL" (at most once a minute), so "it froze" can be traced to the line that blocked.
  *
  * [StartGuard]: startup steps run one by one, each guarded: a step that throws is logged and skipped instead of
- * closing the app (before this, ~25 init calls in BlazeApp.onCreate were unguarded, so one bad file or service meant a
+ * closing the app (before this, ~25 init calls in ArgusApp.onCreate were unguarded, so one bad file or service meant a
  * crash on every launch). When the last starts crashed within a minute of opening, the optional extras (proactive
  * helpers, orb, dashboard, desktop link, router autostart) wait for a calm start: [safeStart].
  */
@@ -104,9 +104,9 @@ object StartGuard {
         noteStep(name, SystemClock.elapsedRealtime() - t0)
     }
 
-    /** 0.46.6: every start step of 20 ms or more also goes to logcat (BlazeStart), so the low-RAM gate shows where start time goes. */
+    /** 0.46.6: every start step of 20 ms or more also goes to logcat (ArgusStart), so the low-RAM gate shows where start time goes. */
     fun noteStep(name: String, ms: Long) {
-        if (ms >= STEP_LOG_MS) try { android.util.Log.i("BlazeStart", "step $name $ms ms") } catch (_: Throwable) { Unit }
+        if (ms >= STEP_LOG_MS) try { android.util.Log.i("ArgusStart", "step $name $ms ms") } catch (_: Throwable) { Unit }
         if (ms >= 150) CrashLog.write("SLOW START STEP $name ${ms} ms")
     }
     const val STEP_LOG_MS = 20L
@@ -124,9 +124,9 @@ object MemoryTrim {
 
     @Volatile private var lastLogged = 0L
     fun dropCaches() {
-        com.blaze.assistant.ui.ParseMemo.bubble.clear(); com.blaze.assistant.ui.ParseMemo.segs.clear()
-        com.blaze.assistant.ui.ParseMemo.blocks.clear(); com.blaze.assistant.ui.ParseMemo.md.clear()
-        try { com.blaze.assistant.ui.HomeImages.trim() } catch (_: Throwable) { }   // 0.46.6: decoded posters too
+        com.argus.assistant.ui.ParseMemo.bubble.clear(); com.argus.assistant.ui.ParseMemo.segs.clear()
+        com.argus.assistant.ui.ParseMemo.blocks.clear(); com.argus.assistant.ui.ParseMemo.md.clear()
+        try { com.argus.assistant.ui.HomeImages.trim() } catch (_: Throwable) { }   // 0.46.6: decoded posters too
         // 0.46.6: once per 10 minutes in the log (hundreds a day on a low-RAM phone said nothing new)
         val now = System.currentTimeMillis()
         if (now - lastLogged > 600_000L) { lastLogged = now; CrashLog.write("MEMORY trimmed: parse caches + pictures dropped") }

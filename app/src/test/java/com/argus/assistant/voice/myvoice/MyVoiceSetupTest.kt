@@ -1,7 +1,7 @@
-package com.blaze.assistant.voice.myvoice
+package com.argus.assistant.voice.myvoice
 
-import com.blaze.assistant.voice.myvoice.AudioClip.Verdict
-import com.blaze.assistant.voice.myvoice.MyVoiceSetup.Inputs
+import com.argus.assistant.voice.myvoice.AudioClip.Verdict
+import com.argus.assistant.voice.myvoice.MyVoiceSetup.Inputs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

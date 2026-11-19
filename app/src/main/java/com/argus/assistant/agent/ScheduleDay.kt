@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import java.time.DayOfWeek
 import java.time.Instant
@@ -19,9 +19,9 @@ import java.util.Locale
  * Wednesday's. The model was handed undated rules (list_routines: "Church: 08:30 Sun …") and picked the wrong one.
  *
  * Now every source is expanded here, for a given local date in the phone's IANA zone:
- *  - Blaze reminders / routines (Routines): a weekday mask (Mon=1 … Sun=64; 0 = once at its next time), a dated one-off
+ *  - Argus reminders / routines (Routines): a weekday mask (Mon=1 … Sun=64; 0 = once at its next time), a dated one-off
  *    (`at`), or every-N-minutes jobs;
- *  - Clock alarms Blaze set (Processes kind "alarm": a due time, optional weekday mask);
+ *  - Clock alarms Argus set (Processes kind "alarm": a due time, optional weekday mask);
  *  - calendar events: the provider's Instances (Android already expands RRULEs there) or, for anything that only has
  *    a start + RRULE, [RRule] below;
  * and only that date's items (with times) are sent, labelled with the date: `schedule Wed 21 Oct 2026: 08:00 CIT class`.

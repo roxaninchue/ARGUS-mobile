@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.core.Animatable
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -182,7 +182,7 @@ private fun WindowPicture(img: RichReplies.Img) {
 @Composable
 private fun Miniature(b: RichReplies.Block, streaming: Boolean, w: Dp, h: Dp, onOpen: () -> Unit, design: Dp = 320.dp) {
     val scale = w / design
-    val shape = BlazeShapes.small
+    val shape = ArgusShapes.small
     Box(Modifier.size(w, h).clip(shape).background(Color.White.copy(alpha = 0.05f)).border(1.dp, Color.White.copy(alpha = 0.30f), shape)) {
         val pic = when (b) { is RichReplies.Block.Image -> b.img; is RichReplies.Block.Images -> b.imgs.firstOrNull(); else -> null }
         if (pic != null) RichPicture(pic, Modifier.fillMaxSize(), ratio = w / h, crop = true)
@@ -199,7 +199,7 @@ private fun Miniature(b: RichReplies.Block, streaming: Boolean, w: Dp, h: Dp, on
  */
 @Composable
 fun RichPreviewCard(b: RichReplies.Block, key: String, streaming: Boolean, tail: Boolean, landIn: Boolean) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var open by rememberSaveable(key) { mutableStateOf(false) }
     val orb = LocalOrb.current
     val motion = MotionTokens.enabled
@@ -296,7 +296,7 @@ private fun ZoomPanBox(width: Dp, content: @Composable () -> Unit) {
  */
 @Composable
 private fun TableWindow(t: RichKit.TableCard) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val clip = LocalClipboardManager.current
     val ctx = LocalContext.current
     val cols = t.cols

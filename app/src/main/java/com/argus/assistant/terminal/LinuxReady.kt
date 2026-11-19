@@ -1,17 +1,17 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
-import com.blaze.assistant.terminal.LinuxPm.Pm
+import com.argus.assistant.terminal.LinuxPm.Pm
 
 /**
- * v0.45.26, pure (LinuxReadyTest): every Linux in Blaze's Terminal comes ready to use. Right after a Linux is installed
- * (and once for Linuxes installed before this version) Blaze refreshes its package lists, upgrades what's there and adds
+ * v0.45.26, pure (LinuxReadyTest): every Linux in Argus's Terminal comes ready to use. Right after a Linux is installed
+ * (and once for Linuxes installed before this version) Argus refreshes its package lists, upgrades what's there and adds
  * a small set of everyday tools, so nobody has to start with `apk update`, `apt update`, `pacman -Sy` or `dnf makecache`:
- * python3 + pip, curl, wget, git, ca-certificates and nano. The Blaze CLI is put on PATH as `blaze` too
+ * python3 + pip, curl, wget, git, ca-certificates and nano. The Blaze CLI is put on PATH as `argus` too
  * ([cliAsset], checked against the published SHA256SUMS).
  *
  * A marker file in the rootfs ([MARKER], holding [stamp]) records that it's done, so it never runs again on each launch;
  * changing the package set or [VERSION] makes it run once more. When the phone is offline or a mirror fails, nothing is
- * marked: Blaze tries again later (no sooner than [RETRY_MS]), and the Terminal works meanwhile.
+ * marked: Argus tries again later (no sooner than [RETRY_MS]), and the Terminal works meanwhile.
  */
 object LinuxReady {
     /** Bump to make every installed Linux run the ready step once more. */
@@ -83,7 +83,7 @@ object LinuxReady {
     // ---------------- the Blaze CLI ----------------
 
     const val CLI_BASE = "https://blazeinchue.pages.dev/dl/cli/latest"
-    /** Where `blaze` goes in every Linux (on the default PATH). */
+    /** Where `argus` goes in every Linux (on the default PATH). */
     const val CLI_PATH = "usr/local/bin/blaze"
 
     /** The CLI build for the phone's CPU ([cpu] = "aarch64" / "arm" / null). Only linux-arm64 is published; null = skip. */

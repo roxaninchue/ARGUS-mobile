@@ -1,17 +1,17 @@
-package com.blaze.assistant.assist
+package com.argus.assistant.assist
 
 import android.app.assist.AssistStructure
 import android.graphics.Bitmap
 import android.util.Base64
-import com.blaze.assistant.agent.Attachment
+import com.argus.assistant.agent.Attachment
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 
 /**
- * v0.33.0 Screen Doctor: long-press home / power (Blaze as the phone's assistant) over any app and tap "What's this?".
+ * v0.33.0 Screen Doctor: long-press home / power (Argus as the phone's assistant) over any app and tap "What's this?".
  * Android hands the assistant the screen's text (AssistStructure) and a screenshot when "Use text / screenshot from
- * screen" is on; Blaze sends both with a prompt that explains an error, translates a menu, says what a button does, or
- * offers to fill the form. Nothing is captured unless you summon Blaze. Pure prompt / text tidy in [prompt] / [tidy]
+ * screen" is on; Argus sends both with a prompt that explains an error, translates a menu, says what a button does, or
+ * offers to fill the form. Nothing is captured unless you summon Argus. Pure prompt / text tidy in [prompt] / [tidy]
  * (ScreenDoctorTest).
  */
 object ScreenDoctor {

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -7,13 +7,13 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Lazy start (low-RAM release gate: BlazeApp.onCreate was 673-806 ms; Agent.preload 342 ms = verification of the boot
+ * Lazy start (low-RAM release gate: ArgusApp.onCreate was 673-806 ms; Agent.preload 342 ms = verification of the boot
  * Session built in Agent.<clinit>, Mind.init 211 ms = opening blaze.db on the main thread). The rules are pure
  * (LazyStart) and the wiring is checked in the sources, since onCreate itself needs a device.
  */
 class LazyStartTest {
-    private fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
-    private fun onCreate() = src("BlazeApp.kt").substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
+    private fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }.readText()
+    private fun onCreate() = src("ArgusApp.kt").substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
 
     @Test fun mainChatOnlyReplacesNothingOrThePlaceholder() {
         assertTrue(LazyStart.showMain(null))

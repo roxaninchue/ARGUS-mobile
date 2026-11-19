@@ -1,18 +1,18 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.PhoneCases
-import com.blaze.assistant.agent.PhoneQaReport
-import com.blaze.assistant.agent.Processes
-import com.blaze.assistant.agent.SaveFile
-import com.blaze.assistant.agent.SaveFileAndroid
-import com.blaze.assistant.agent.ToolVerify
-import com.blaze.assistant.agent.TurnTrace
-import com.blaze.assistant.agent.VerifyProbes
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.PhoneCases
+import com.argus.assistant.agent.PhoneQaReport
+import com.argus.assistant.agent.Processes
+import com.argus.assistant.agent.SaveFile
+import com.argus.assistant.agent.SaveFileAndroid
+import com.argus.assistant.agent.ToolVerify
+import com.argus.assistant.agent.TurnTrace
+import com.argus.assistant.agent.VerifyProbes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,11 +54,11 @@ object PhoneQa {
         kotlinx.coroutines.withContext(Dispatchers.Main) { Agent.note(text, asReply) }
 
     private fun screen(): String = try {
-        BlazeAccessibilityService.instance?.readScreen()?.take(3000) ?: "(phone control off: no screen read)"
+        ArgusAccessibilityService.instance?.readScreen()?.take(3000) ?: "(phone control off: no screen read)"
     } catch (e: Throwable) { "(screen read failed: ${e.message})" }
 
-    private fun backToBlaze(ctx: Context) {
-        try { ctx.startActivity(Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) } catch (_: Throwable) { }
+    private fun backToArgus(ctx: Context) {
+        try { ctx.startActivity(Intent(ctx, com.argus.assistant.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) } catch (_: Throwable) { }
     }
 
     /** The newest registry alarm whose name or label holds [words] → (id, "HH:mm"). */
@@ -78,7 +78,7 @@ object PhoneQa {
                 val a = alarmFor(e["label"].orEmpty())
                 val next = p.nextAlarm()
                 val clock = a?.let { ClockUi.read(ctx, it.first, it.second) }
-                backToBlaze(ctx)
+                backToArgus(ctx)
                 when {
                     clock?.first == true -> true to "Clock list: ${clock.second}"
                     next != null && "%02d:%02d".format(next.first, next.second) == e["time"] -> true to "AlarmManager next alarm ${e["time"]}"
@@ -90,7 +90,7 @@ object PhoneQa {
             PhoneCases.Verifier.ALARM_OFF -> {
                 val a = alarmFor(e["label"].orEmpty())
                 val clock = ClockUi.read(ctx, a?.first ?: "A0", a?.second?.ifBlank { null } ?: e["time"])
-                backToBlaze(ctx)
+                backToArgus(ctx)
                 when {
                     clock == null -> null to "phone control off: the Clock list can't be read"
                     clock.first == false -> true to "Clock list: ${clock.second}"
@@ -201,7 +201,7 @@ object PhoneQa {
         say("Phone self-test: ${cases.size} cases \u00d7 $runs runs. Leave the phone on its own until it says it's finished; approve any card it shows.")
         for (i in 1..runs) for (c in cases) {
             try {
-                setup(ctx, c, probes)?.let { s -> Agent.askFresh("QA \u00b7 setup ${c.id} #$i", s, keep = false); backToBlaze(ctx); delay(1500) }
+                setup(ctx, c, probes)?.let { s -> Agent.askFresh("QA \u00b7 setup ${c.id} #$i", s, keep = false); backToArgus(ctx); delay(1500) }
                 val before = screen()
                 val runStart = System.currentTimeMillis()
                 val (chat, reply, _) = Agent.askFresh("QA \u00b7 ${c.id} #$i", c.prompt)
@@ -216,19 +216,19 @@ object PhoneQa {
                     tr?.route.orEmpty(), tr?.model.orEmpty(), tr?.provider.orEmpty(), tools,
                     tr?.let { if (it.clientTtftMs > 0) it.clientTtftMs else -1L } ?: -1, tr?.totalMs ?: -1,   // 0.45.15: per-turn TTFT (StartTrace marks are the app's first send only: 68027 / 7052 on every run)
                     before, after, ok, ev, j.pass, j.why, reply?.text.orEmpty(), chat,
-                    if (reply == null) "no reply" else if (reply.role == com.blaze.assistant.agent.Role.ERROR) "error reply" else "")
+                    if (reply == null) "no reply" else if (reply.role == com.argus.assistant.agent.Role.ERROR) "error reply" else "")
                 say("QA ${c.id} #$i: ${if (out.last().pass) "PASS" else "FAIL"} (${ev.take(80)})")
             } catch (e: Throwable) {
                 out += PhoneQaReport.Run(c.id, i, c.prompt, emptyList(), "", "", "", emptyList(), -1, -1, "", "", null, "", false, "", "", "", "runner error: ${e.message}")
             }
-            backToBlaze(ctx); delay(1200)
+            backToArgus(ctx); delay(1200)
         }
         val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date(started))
-        val meta = linkedMapOf("app" to com.blaze.assistant.BuildConfig.VERSION_NAME + " (" + com.blaze.assistant.BuildConfig.VERSION_CODE + ")",
+        val meta = linkedMapOf("app" to com.argus.assistant.BuildConfig.VERSION_NAME + " (" + com.argus.assistant.BuildConfig.VERSION_CODE + ")",
             "device" to android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + ", Android " + android.os.Build.VERSION.RELEASE,
             "started" to SimpleDateFormat("yyyy-MM-dd HH:mm ZZZZ", Locale.US).format(Date(started)), "runs_per_case" to runs.toString(),
-            "phone_control" to (BlazeAccessibilityService.instance != null).toString(),
-            "notification_access" to (com.blaze.assistant.notify.NotificationBrain.instance != null).toString())
+            "phone_control" to (ArgusAccessibilityService.instance != null).toString(),
+            "notification_access" to (com.argus.assistant.notify.NotificationBrain.instance != null).toString())
         val j = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.json", "application/json", PhoneQaReport.json(out, meta)))
         val m = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.md", "text/markdown", PhoneQaReport.markdown(out, meta)))
         val sum = PhoneQaReport.summary(out).joinToString("\n") { "${it.case}: ${it.passed}/${it.runs}" + if (it.strict) " PASS" else " FAIL" }

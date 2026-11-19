@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.os.Build
 import android.view.WindowManager
 import androidx.compose.animation.core.Animatable
@@ -54,7 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import com.blaze.assistant.ui.space.SpaceOverlay
+import com.argus.assistant.ui.space.SpaceOverlay
 
 /**
  * v0.31.1 floating glass window: a centred card-like glass window over a dimmed (and, on Android 12+, blurred) scrim,
@@ -68,7 +68,7 @@ import com.blaze.assistant.ui.space.SpaceOverlay
 fun GlassFloatingWindow(title: String, onDismiss: () -> Unit, subtitle: String = "", fillHeight: Boolean = false,
                         content: @Composable BoxWithConstraintsScope.() -> Unit) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        val c = LocalBlaze.current
+        val c = LocalArgus.current
         val view = LocalView.current
         LaunchedEffect(Unit) {
             (view.parent as? DialogWindowProvider)?.window?.let { w ->

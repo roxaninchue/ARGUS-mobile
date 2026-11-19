@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
@@ -12,7 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.home.HomeGrid
+import com.argus.assistant.home.HomeGrid
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -73,7 +73,7 @@ class HomeFocusTest {
         rule.onAllNodesWithText("Researchers have discovered a faster way to compile").onLast().performClick()
         assertEquals("https://example.com/a", opened)
         assertTrue(f.isOpen)
-        // a Quick action asks Blaze and closes the card
+        // a Quick action asks Argus and closes the card
         rule.runOnIdle { f.close() }; rule.waitForIdle()
         rule.runOnIdle { f.open(HomeGrid.Card.QUICK) }; rule.waitForIdle()
         rule.onAllNodesWithText("Plan").onLast().performClick()

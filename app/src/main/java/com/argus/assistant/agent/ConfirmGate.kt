@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
 /**
- * v0.28.2: when Blaze's confirm card may be skipped, as one pure decision (unit-tested in ConfirmGateTest).
+ * v0.28.2: when Argus's confirm card may be skipped, as one pure decision (unit-tested in ConfirmGateTest).
  *
  *  - Outbound actions in the user's name (texts, calls, messages in other apps, email, posts, payments,
  *    deleting files / data, installing apps, changing phone settings) pass `always = true`: the card shows
@@ -51,7 +51,7 @@ object ConfirmGate {
 
     private val web = setOf("browser_open", "browser_read", "browser_click", "browser_scroll", "browser_back", "browser_tabs",
         "browser_find", "browser_wait", "browser_select", "browser_key",   // 0.45.29
-        // 0.45.19 Blaze Phone: its pages are outside content too.
+        // 0.45.19 Argus Phone: its pages are outside content too.
         "phone_open", "phone_read", "phone_act", "phone_screenshot", "phone_wait", "phone_handoff")
     private val fetched = setOf("fetch_page", "http_request", "download_file")
     private val notifications = setOf("recent_notifications", "notif_read", "notif_conversations")
@@ -131,12 +131,12 @@ object ConfirmGate {
      * a local write (WRITE_REMOTE and up, PHYSICAL included) needs the user's card, "Requested after reading …" on top.
      * (Stricter than [decide], which kept Autopilot for non-destructive actions; [decide] itself is unchanged.)
      */
-    fun taintAsks(c: com.blaze.assistant.team.ActionClass): Boolean =
-        c != com.blaze.assistant.team.ActionClass.READ && c != com.blaze.assistant.team.ActionClass.WRITE_LOCAL
+    fun taintAsks(c: com.argus.assistant.team.ActionClass): Boolean =
+        c != com.argus.assistant.team.ActionClass.READ && c != com.argus.assistant.team.ActionClass.WRITE_LOCAL
 
     /** What [confirm]'s `always = true` means as action classes: these always show the card (sends, money, deletes, secrets). */
-    fun alwaysCard(c: com.blaze.assistant.team.ActionClass): Boolean = c in setOf(com.blaze.assistant.team.ActionClass.SEND,
-        com.blaze.assistant.team.ActionClass.SPEND, com.blaze.assistant.team.ActionClass.DELETE, com.blaze.assistant.team.ActionClass.CREDENTIAL)
+    fun alwaysCard(c: com.argus.assistant.team.ActionClass): Boolean = c in setOf(com.argus.assistant.team.ActionClass.SEND,
+        com.argus.assistant.team.ActionClass.SPEND, com.argus.assistant.team.ActionClass.DELETE, com.argus.assistant.team.ActionClass.CREDENTIAL)
 
     /**
      * Set around one tool call the user has just approved on the policy's card (approval inside the tool call): the

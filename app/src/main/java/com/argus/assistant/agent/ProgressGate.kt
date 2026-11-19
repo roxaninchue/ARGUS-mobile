@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
- * 0.52.1 (owner: "real progress replies, no templates"). While background agents work, the main Blaze may post an
+ * 0.52.1 (owner: "real progress replies, no templates"). While background agents work, the main Argus may post an
  * interim message it writes itself from the agents' real results ("I found some genuinely good stuff, getting a bit
  * more, then merging the final report"). This decides WHEN:
- *  - an agent reaching a milestone ([MILESTONES] steps, after [MIN_ELAPSED_S]) wakes the main Blaze once per milestone
+ *  - an agent reaching a milestone ([MILESTONES] steps, after [MIN_ELAPSED_S]) wakes the main Argus once per milestone
  *    with its progress; the model either calls post_update or replies [SKIP] (nothing is shown);
  *  - post_update itself is refused unless there is something new since the last update (≥ [MIN_NEW_STEPS] more agent
  *    steps or an agent finished), at most one per [MIN_GAP_MS], and never a near-repeat of the last line.
@@ -53,7 +53,7 @@ object ProgressGate {
         return (x intersect y).size.toDouble() / (x union y).size >= 0.7
     }
 
-    /** The platform message that wakes the main Blaze at a milestone (its findings are real tool results). */
+    /** The platform message that wakes the main Argus at a milestone (its findings are real tool results). */
     fun wakeText(id: String, title: String, steps: Int, seconds: Long, log: List<String>, findings: List<String>): String = buildString {
         append("[Agent progress · $id · $steps steps · ${seconds}s] This is a platform message, not the user. Your background agent \u00ab$title\u00bb is still working.\n")
         if (log.isNotEmpty()) append("Its newest steps: ").append(log.takeLast(8).joinToString("; ").take(900)).append('\n')

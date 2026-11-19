@@ -1,10 +1,10 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.34.0 agent tool `camera_math`: the pro-control maths behind Blaze Camera (exposure equivalents, EV, hand-held
+ * v0.34.0 agent tool `camera_math`: the pro-control maths behind Argus Camera (exposure equivalents, EV, hand-held
  * shutter, depth of field / hyperfocal, ND filters) and reading prices and sums out of text the camera read.
  */
 object CameraMathTool {
@@ -43,7 +43,7 @@ object CameraMathTool {
             "read" -> {
                 val text = args.optString("text")
                 val p = CameraSmart.prices(text)
-                val sums = CameraSmart.sums(text).mapNotNull { e -> com.blaze.assistant.ui.Expr.eval(e)?.let { "$e = $it" } }
+                val sums = CameraSmart.sums(text).mapNotNull { e -> com.argus.assistant.ui.Expr.eval(e)?.let { "$e = $it" } }
                 buildString {
                     if (p.isNotEmpty()) append("Prices: " + p.joinToString(", ") { "${it.currency} ${"%,.2f".format(it.amount)}" } + ". Total: " +
                         CameraSmart.totals(p).entries.joinToString(" + ") { (k, v) -> "$k ${"%,.2f".format(v)}" } + ".")

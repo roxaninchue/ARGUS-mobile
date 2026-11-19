@@ -1,13 +1,13 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The gateway's two brains (Blaze Cloud, the Nous reserve) and when to move on. Owner 16 Nov 2026: no on-device brain. */
+/** The gateway's two brains (Argus Cloud, the Nous reserve) and when to move on. Owner 16 Nov 2026: no on-device brain. */
 class BackupRouteTest {
     @Test fun stepsAndReserveHeaders() {
         assertEquals(listOf(BackupRoute.Step.CLOUD, BackupRoute.Step.RESERVE), BackupRoute.Step.values().toList())
@@ -38,7 +38,7 @@ class BackupRouteTest {
         assertFalse(BackupRoute.moveOn(429, "quota_exceeded"))
     }
 
-    // v0.45.28: Rocky on 4G saw "Blaze Cloud is busy" and the Nous reserve was never asked.
+    // v0.45.28: Rocky on 4G saw "Argus Cloud is busy" and the Nous reserve was never asked.
     @Test fun busyStillGoesToTheReserve() {
         val R = listOf(BackupRoute.Step.RESERVE)
         assertEquals(R, BackupRoute.fallbacks(503, Cloud.BUSY, false))
@@ -64,9 +64,9 @@ class BackupRouteTest {
     }
 
     @Test fun llmClientRacesTheGatewayBrains() {
-        val src = HideModels19Test.srcFile("java/com/blaze/assistant/agent/LlmClient.kt").readText()
+        val src = HideModels19Test.srcFile("java/com/argus/assistant/agent/LlmClient.kt").readText()
         assertFalse(src.contains("if (e is TooSlow && !backupReady) throw"))
-        // 0.46.4: every call of the loop runs through the hedged race (BrainRace order: Nous / Blaze Cloud)
+        // 0.46.4: every call of the loop runs through the hedged race (BrainRace order: Nous / Argus Cloud)
         assertTrue(src.contains("HedgeRace.run("))
         assertTrue(src.contains("BrainRace.order(kind, true, "))
         assertFalse(src.contains("BackupBrain") || src.contains("OfflineBrain"))

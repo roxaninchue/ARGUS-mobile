@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
@@ -19,7 +19,7 @@ import android.provider.ContactsContract
 import android.provider.Telephony
 import android.telephony.SmsManager
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.agent.Agent
+import com.argus.assistant.agent.Agent
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -108,8 +108,8 @@ object Skills {
 
     suspend fun run(ctx: Context, name: String, a: JSONObject): String = try {
         val want = needs[name]
-        val denied = if (want != null && !com.blaze.assistant.device.Perms.ensure(ctx, *want) && name != "add_calendar_event")
-            (if (name == "calendar_events") CALENDAR_OFF else com.blaze.assistant.device.Perms.denied(name.replace('_', ' '))) else null
+        val denied = if (want != null && !com.argus.assistant.device.Perms.ensure(ctx, *want) && name != "add_calendar_event")
+            (if (name == "calendar_events") CALENDAR_OFF else com.argus.assistant.device.Perms.denied(name.replace('_', ' '))) else null
         denied ?: when (name) {
             "find_contact" -> findContact(ctx, a.getString("name"))
             "read_messages" -> readSms(ctx, a.optString("from").ifBlank { null }, a.optInt("limit", 10))
@@ -289,8 +289,8 @@ object Skills {
             var first: Long? = null; var primary: Long? = null
             while (it.moveToNext()) { if (first == null) first = it.getLong(0); if (it.getInt(1) == 1) primary = it.getLong(0) }
             primary ?: first
-        } ?: com.blaze.assistant.routine.RoutineCalendar.calendarId(ctx) ?: return "No writable calendar on this phone."   // 18 Nov 2026: else the ARGUS calendar
-        val rule = com.blaze.assistant.routine.RoutineCalendar.repeatRule(a.optString("repeat"))
+        } ?: com.argus.assistant.routine.RoutineCalendar.calendarId(ctx) ?: return "No writable calendar on this phone."   // 18 Nov 2026: else the ARGUS calendar
+        val rule = com.argus.assistant.routine.RoutineCalendar.repeatRule(a.optString("repeat"))
         val remind = if (a.has("reminder_minutes")) a.optInt("reminder_minutes", -1) else -1
         val v = ContentValues().apply {
             put(CalendarContract.Events.CALENDAR_ID, calId)
@@ -303,8 +303,8 @@ object Skills {
             a.optString("location").takeIf { it.isNotBlank() }?.let { put(CalendarContract.Events.EVENT_LOCATION, it) }
         }
         val uri = ctx.contentResolver.insert(CalendarContract.Events.CONTENT_URI, v) ?: return "The calendar refused the event."
-        if (remind >= 0) com.blaze.assistant.routine.RoutineCalendar.alert(ctx, android.content.ContentUris.parseId(uri), remind)
-        val pid = com.blaze.assistant.agent.Processes.register("event", a.getString("title"), android.content.ContentUris.parseId(uri).toString(), start,
+        if (remind >= 0) com.argus.assistant.routine.RoutineCalendar.alert(ctx, android.content.ContentUris.parseId(uri), remind)
+        val pid = com.argus.assistant.agent.Processes.register("event", a.getString("title"), android.content.ContentUris.parseId(uri).toString(), start,
             JSONObject().put("location", a.optString("location")).put("start", a.getString("start")).put("end", a.optString("end")))
         return "Added \"${a.getString("title")}\" on ${SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault()).format(Date(start))}" +
             (if (rule != null) ", repeating ($rule)" else "") + (if (remind >= 0) ", alert $remind min before" else "") + ". [ID $pid]"
@@ -332,10 +332,10 @@ object Skills {
         val want = when (v) { "on", "enable", "true", "1" -> true; "off", "disable", "false", "0" -> false; else -> null }
         // v0.28.2: changing a phone setting always shows the confirm card, except a command the user typed or said
         // themselves (the fast lane, ConfirmGate.Direct). Reading (battery) and opening a settings panel don't ask.
-        suspend fun approved(): Boolean = kotlin.coroutines.coroutineContext[com.blaze.assistant.agent.ConfirmGate.DirectKey] != null ||
+        suspend fun approved(): Boolean = kotlin.coroutines.coroutineContext[com.argus.assistant.agent.ConfirmGate.DirectKey] != null ||
             Agent.confirm("Change a phone setting?", settingLine(s, v), "Change", always = true)
         tileNames[s]?.let { names ->
-            val svc = BlazeAccessibilityService.instance
+            val svc = ArgusAccessibilityService.instance
             if (svc != null && !approved()) return "The user declined. The setting was NOT changed."
             if (svc != null) try { svc.toggleQuickTile(names, want)?.let { return it } } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) {}
         }

@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.27.1: what a pasted link, an empty box or one word means in "Ask Blaze about this page". */
+/** v0.27.1: what a pasted link, an empty box or one word means in "Ask Argus about this page". */
 class PageQuestionTest {
     // The kind of link Joey's tester pasted (a Google Lens results page; no q).
     private val lens = "https://www.google.com/search?sca_esv=1b2c3d&lns_surface=26&biw=360&bih=640&udm=26&lns_mode=un" +

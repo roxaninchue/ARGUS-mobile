@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import kotlin.math.roundToInt
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,14 +42,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.DoingLogic
-import com.blaze.assistant.agent.SimpleMode
+import com.argus.assistant.agent.DoingLogic
+import com.argus.assistant.agent.SimpleMode
 import java.util.Calendar
 
 /** Settings: the Simple / Advanced switch at the top of the list, and what Simple keeps out of sight. */
 @Composable
 fun SimpleAdvancedSwitch() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val simple by SimpleMode.simpleFlow.collectAsState()
     Spacer(Modifier.height(10.dp))
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).glass(RoundedCornerShape(26.dp), GlassIntensity.Low, shadow = false).padding(4.dp)) {
@@ -66,11 +66,11 @@ fun SimpleAdvancedSwitch() {
         modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
 }
 
-/** "Things Blaze is doing": routines and reminders with friendly names and an on/off switch, then "Today I…". */
+/** "Things Argus is doing": routines and reminders with friendly names and an on/off switch, then "Today I…". */
 @Composable
 fun DoingPage() {
-    val c = LocalBlaze.current.mono
-    val routines by com.blaze.assistant.routine.Routines.all.collectAsState()
+    val c = LocalArgus.current.mono
+    val routines by com.argus.assistant.routine.Routines.all.collectAsState()
     var showAll by remember { mutableStateOf(false) }
     Spacer(Modifier.height(10.dp))
     Text(tr("Turn any of these off with one tap."), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.sub))
@@ -81,11 +81,11 @@ fun DoingPage() {
         modifier = Modifier.padding(vertical = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
     routines.sortedByDescending { it.enabled }.forEach { r ->
         ToggleRow(DoingLogic.friendlyName(r.name), DoingLogic.whenLine(r.days, r.hour, r.minute, r.at, r.everyMinutes), r.enabled, icon = MenuIcon.TIMER.vector()) {
-            com.blaze.assistant.routine.Routines.setEnabled(r.id, !r.enabled)
+            com.argus.assistant.routine.Routines.setEnabled(r.id, !r.enabled)
         }
     }
     Spacer(Modifier.height(22.dp))
-    val lines = remember { DoingLogic.today(com.blaze.assistant.agent.Awareness.recent(60)) }
+    val lines = remember { DoingLogic.today(com.argus.assistant.agent.Awareness.recent(60)) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Label(tr("Today I\u2026"), modifier = Modifier.weight(1f))
         if (lines.size > 6) ActionText(if (showAll) "Show less" else "See all", modifier = Modifier.clickable { showAll = !showAll }.padding(8.dp))
@@ -106,12 +106,12 @@ fun DoingPage() {
  */
 @Composable
 fun LookPage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Spacer(Modifier.height(10.dp))
     // P1-SH-06: Appearance is the ARGUS section (Match phone / Dark / Light, ground, handedness, reduced motion; no
     // accent), then Size and Stage. The 0.52 Theme row and accent picker left with the look switch, 16 Nov 2026.
-    androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(c.dark)) {
-        com.blaze.assistant.ui.argus.settings.ArgusAppearanceLive()
+    androidx.compose.runtime.CompositionLocalProvider(com.argus.assistant.ui.argus.LocalArgusColors provides com.argus.assistant.ui.argus.ArgusColors.of(c.dark)) {
+        com.argus.assistant.ui.argus.settings.ArgusAppearanceLive()
     }
     Spacer(Modifier.height(14.dp))
     // 0.52.4: how big the app draws, for people who find the default too large (or too small).
@@ -135,15 +135,15 @@ fun LookPage() {
     Text(tr("Makes everything in {0} smaller or bigger, text included.", BrandName.NAME), modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
-    // 0.46.0 Blaze Stage: timers, music, quizzes and other live cards right on the chat (off = Blaze answers in chat / opens views).
-    var stageOn by remember { mutableStateOf(com.blaze.assistant.stage.StageStore.enabled) }
+    // 0.46.0 Argus Stage: timers, music, quizzes and other live cards right on the chat (off = Argus answers in chat / opens views).
+    var stageOn by remember { mutableStateOf(com.argus.assistant.stage.StageStore.enabled) }
     ToggleRow("${BrandName.NAME} Stage", "Live cards right on the chat: timers, music, quizzes. Drag to move; back or Reset layout restores the chat", stageOn) {
-        stageOn = !stageOn; com.blaze.assistant.agent.Settings.setBool("stage_on", stageOn)
-        if (!stageOn) com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.Reset)
+        stageOn = !stageOn; com.argus.assistant.agent.Settings.setBool("stage_on", stageOn)
+        if (!stageOn) com.argus.assistant.stage.StageStore.dispatch(com.argus.assistant.stage.StageAction.Reset)
     }
     // Milestone 4: live tool rows in the chat (off = the one-line task pill).
-    var toolRowsOn by remember { mutableStateOf(com.blaze.assistant.agent.Settings.toolRows) }
+    var toolRowsOn by remember { mutableStateOf(com.argus.assistant.agent.Settings.toolRows) }
     ToggleRow("Show tool steps", "While ${BrandName.NAME} works, each step opens to what it ran and what came back. Off: one short line", toolRowsOn) {
-        toolRowsOn = !toolRowsOn; com.blaze.assistant.agent.Settings.toolRows = toolRowsOn
+        toolRowsOn = !toolRowsOn; com.argus.assistant.agent.Settings.toolRows = toolRowsOn
     }
 }

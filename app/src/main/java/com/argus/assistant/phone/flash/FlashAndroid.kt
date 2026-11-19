@@ -1,16 +1,16 @@
-package com.blaze.assistant.phone.flash
+package com.argus.assistant.phone.flash
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.view.accessibility.AccessibilityNodeInfo
-import com.blaze.assistant.agent.LlmClient
-import com.blaze.assistant.phone.BlazeAccessibilityService
+import com.argus.assistant.agent.LlmClient
+import com.argus.assistant.phone.ArgusAccessibilityService
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** The real phone, through Blaze's accessibility service (no ADB). */
-class A11yDevice(private val ctx: Context, private val svc: BlazeAccessibilityService) : FlashDevice {
+/** The real phone, through Argus's accessibility service (no ADB). */
+class A11yDevice(private val ctx: Context, private val svc: ArgusAccessibilityService) : FlashDevice {
     private var nodes: Map<Int, AccessibilityNodeInfo> = emptyMap()
 
     override fun now(): Long = android.os.SystemClock.uptimeMillis()
@@ -34,25 +34,25 @@ class A11yDevice(private val ctx: Context, private val svc: BlazeAccessibilitySe
     } catch (_: Throwable) { null }
 
     override suspend fun act(a: PhoneAct, on: Obs): ActResult {
-        com.blaze.assistant.phone.BlazeAccessibilityService.touched()
+        com.argus.assistant.phone.ArgusAccessibilityService.touched()
         val r = when (a) {
             is PhoneAct.Tap -> nodes[a.index]?.let { svc.flashTap(it, a.long) } ?: "No element [${a.index}]."
             is PhoneAct.TapAt -> svc.flashTapAt(FlashTree.px(a.x, on.w).toFloat(), FlashTree.px(a.y, on.h).toFloat(), a.long)
             is PhoneAct.Type -> svc.flashType(a.index?.let { nodes[it] }, a.text, a.submit)
             is PhoneAct.Scroll -> svc.flashScroll(a.index?.let { nodes[it] }, a.direction)
             is PhoneAct.Key -> if (a.name == "enter") (if (svc.flashEnter()) "Pressed Enter." else "Couldn't press Enter.") else svc.press(a.name)
-            is PhoneAct.OpenApp -> com.blaze.assistant.phone.PhoneTools.run(ctx, "open_app", JSONObject().put("app_name", a.app))
+            is PhoneAct.OpenApp -> com.argus.assistant.phone.PhoneTools.run(ctx, "open_app", JSONObject().put("app_name", a.app))
             is PhoneAct.Wait -> { kotlinx.coroutines.delay(a.ms); "Waited." }
             else -> "Nothing to do."
         }
         if (a !is PhoneAct.Wait) svc.settle(1000, 150)
         val ok = !Regex("(?i)^(no element|couldn't|stopped|no text field|that's a password|that element is gone|unknown|no installed app|tried to open)").containsMatchIn(r) &&
-            r != com.blaze.assistant.bank.BankModeLogic.REFUSE
+            r != com.argus.assistant.bank.BankModeLogic.REFUSE
         return ActResult(ok, r)
     }
 }
 
-/** The model through Blaze's own routing (Blaze Cloud gateway, then the backup brain, then the free reserve): flash steps on the STEPS lane, pro steps on MAIN. */
+/** The model through Argus's own routing (Argus Cloud gateway, then the backup brain, then the free reserve): flash steps on the STEPS lane, pro steps on MAIN. */
 class RoutedPolicy : FlashPolicy {
     override suspend fun next(req: FlashRequest): String {
         val sys = if (req.mode == FlashMode.PRO) FlashPrompt.SYSTEM_PRO else FlashPrompt.SYSTEM_FLASH
@@ -84,9 +84,9 @@ object FlashRunner {
     suspend fun run(ctx: Context, args: JSONObject): String {
         val goal = args.optString("goal").trim()
         if (goal.isEmpty()) return "Give the task as goal."
-        val svc = BlazeAccessibilityService.instance
+        val svc = ArgusAccessibilityService.instance
         if (svc == null) {
-            val seen = com.blaze.assistant.agent.Settings.bool(PhoneExplainer.SEEN_KEY, false)
+            val seen = com.argus.assistant.agent.Settings.bool(PhoneExplainer.SEEN_KEY, false)
             val raised = PhoneExplainer.request(seen, false)
             return "Phone control is off, so nothing on the screen was touched. " + (if (raised) "${BrandName.NAME} is showing the user a short explainer with an Open Settings button; ask them to switch ${BrandName.NAME} on there, then try again."
                 else "The chat shows a one-tap 'Turn on' banner; ask the user to tap it, switch ${BrandName.NAME} on, then try again.")

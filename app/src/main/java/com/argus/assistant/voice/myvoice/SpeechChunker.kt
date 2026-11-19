@@ -1,4 +1,4 @@
-package com.blaze.assistant.voice.myvoice
+package com.argus.assistant.voice.myvoice
 
 /**
  * Splits a reply into speakable pieces for My voice, so the first piece is short (first audio starts fast)

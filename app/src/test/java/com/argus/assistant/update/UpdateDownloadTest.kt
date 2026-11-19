@@ -1,6 +1,6 @@
-package com.blaze.assistant.update
+package com.argus.assistant.update
 
-import com.blaze.assistant.ui.UpdateCardText
+import com.argus.assistant.ui.UpdateCardText
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

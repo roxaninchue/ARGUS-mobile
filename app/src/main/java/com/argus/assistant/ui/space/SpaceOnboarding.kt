@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -11,8 +11,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.readableWidth
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.readableWidth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -76,13 +76,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.setup.SetupPlan
-import com.blaze.assistant.ui.BlazeIconStyle
-import com.blaze.assistant.ui.IconTile
-import com.blaze.assistant.ui.DarkColors
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.drawArgusMark
+import com.argus.assistant.BrandName
+import com.argus.assistant.setup.SetupPlan
+import com.argus.assistant.ui.ArgusIconStyle
+import com.argus.assistant.ui.IconTile
+import com.argus.assistant.ui.DarkColors
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.drawArgusMark
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
@@ -101,9 +101,9 @@ object ArgusLogoCache {
             val targetPx = (260f * ctx.resources.displayMetrics.density).toInt().coerceAtLeast(1)
             var s = 1; while (720 / (s * 2) >= targetPx) s *= 2
             val o = BitmapFactory.Options().apply { inSampleSize = s }
-            BitmapFactory.decodeResource(ctx.resources, com.blaze.assistant.R.drawable.argus_logo, o)
+            BitmapFactory.decodeResource(ctx.resources, com.argus.assistant.R.drawable.argus_logo, o)
                 ?.also { it.prepareToDraw() }?.asImageBitmap()?.also { cached = it }
-        } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ArgusLogoCache", t); null }
+        } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("ArgusLogoCache", t); null }
     }
 }
 
@@ -134,14 +134,14 @@ fun SpaceOnboardingScreen(
     accountCard: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    CompositionLocalProvider(LocalBlaze provides DarkColors) {
-        com.blaze.assistant.ui.DarkSystemBars()   // always dark: keep the status bar icons light over it
+    CompositionLocalProvider(LocalArgus provides DarkColors) {
+        com.argus.assistant.ui.DarkSystemBars()   // always dark: keep the status bar icons light over it
         SpaceBackdrop(modifier.testTag(SpaceTags.ONBOARDING), forceDark = true) {
             AnimatedContent(step, transitionSpec = {
                     // the clip dissolves slowly into the space view; the other steps cross-fade as before
-                    if (initialState == SpaceOnboarding.Step.INTRO && com.blaze.assistant.ui.MotionTokens.enabled)
+                    if (initialState == SpaceOnboarding.Step.INTRO && com.argus.assistant.ui.MotionTokens.enabled)
                         fadeIn(androidx.compose.animation.core.tween(520)) togetherWith fadeOut(androidx.compose.animation.core.tween(420))
-                    else fadeIn(com.blaze.assistant.ui.MotionTokens.medium()) togetherWith fadeOut(com.blaze.assistant.ui.MotionTokens.fast()) },
+                    else fadeIn(com.argus.assistant.ui.MotionTokens.medium()) togetherWith fadeOut(com.argus.assistant.ui.MotionTokens.fast()) },
                 label = "onboarding") { s ->
                 when (s) {
                     SpaceOnboarding.Step.INTRO -> IntroStep(onNext)
@@ -163,7 +163,7 @@ fun SpaceFirstRunBeforeLock(onDone: () -> Unit) {
     val s = SpaceOnboarding.Step.valueOf(step)
     SpaceOnboardingScreen(s, signedIn = false, onNext = {
         val nx = SpaceOnboarding.next(s, signedIn = false)
-        if (SpaceOnboarding.introSeen(s, nx)) com.blaze.assistant.agent.Settings.setBool(SpaceOnboarding.PREF_INTRO_SEEN, true)
+        if (SpaceOnboarding.introSeen(s, nx)) com.argus.assistant.agent.Settings.setBool(SpaceOnboarding.PREF_INTRO_SEEN, true)
         if (nx == null || nx == SpaceOnboarding.Step.SIGN_IN) onDone() else step = nx.name
     }, accountCard = {})
 }
@@ -173,23 +173,23 @@ fun SpaceFirstRunBeforeLock(onDone: () -> Unit) {
  * middle row with two languages above and two below ([LanguagePick.side]; one each side on a short window), fading out
  * towards the edges, and the rest scroll in. It snaps row by row, and whichever language settles in the frame becomes the
  * app's language ([LanguagePick.centred]). A tap on a row scrolls it into the frame. The round arrow at the far right,
- * level with the frame, moves on. The space view's colours; the language list is [com.blaze.assistant.i18n.AppLang.PICKABLE].
+ * level with the frame, moves on. The space view's colours; the language list is [com.argus.assistant.i18n.AppLang.PICKABLE].
  */
 @Composable
 private fun LanguageStep(onNext: () -> Unit) {
     val look = SpaceLook.Dark
-    val sel = com.blaze.assistant.i18n.AppLang.code.value
-    val langs = com.blaze.assistant.i18n.AppLang.PICKABLE
+    val sel = com.argus.assistant.i18n.AppLang.code.value
+    val langs = com.argus.assistant.i18n.AppLang.PICKABLE
     val pick: (String) -> Unit = { code ->
-        if (code != com.blaze.assistant.i18n.AppLang.code.value) {
-            com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, code)
-            com.blaze.assistant.i18n.AppLang.apply(code); com.blaze.assistant.ui.FontPick.refresh()
+        if (code != com.argus.assistant.i18n.AppLang.code.value) {
+            com.argus.assistant.agent.Settings.setStr(com.argus.assistant.i18n.AppLang.PREF, code)
+            com.argus.assistant.i18n.AppLang.apply(code); com.argus.assistant.ui.FontPick.refresh()
         }
     }
-    val short = com.blaze.assistant.ui.common.WindowUi.short()
+    val short = com.argus.assistant.ui.common.WindowUi.short()
     val side = LanguagePick.side(short)
     val rtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
-    val motion = com.blaze.assistant.ui.MotionTokens.enabled
+    val motion = com.argus.assistant.ui.MotionTokens.enabled
     val density = androidx.compose.ui.platform.LocalDensity.current
     val rowPx = with(density) { LanguagePick.ROW_H.dp.toPx() }
     val list = androidx.compose.foundation.lazy.rememberLazyListState(LanguagePick.index(sel, langs.map { it.code }))
@@ -215,7 +215,7 @@ private fun LanguageStep(onNext: () -> Unit) {
         // The wheel: every language by its own name, snapping into the frame
         androidx.compose.foundation.lazy.LazyColumn(Modifier.align(Alignment.Center).size(wheelW.dp, LanguagePick.height(short).dp)
             .testTag(SpaceTags.LANGUAGE_WHEEL)
-            .semantics { contentDescription = tr("Language: {0}", com.blaze.assistant.i18n.AppLang.lang(sel).name) },
+            .semantics { contentDescription = tr("Language: {0}", com.argus.assistant.i18n.AppLang.lang(sel).name) },
             state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = (side * LanguagePick.ROW_H).dp),
             flingBehavior = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(list)) {
             items(langs.size, key = { langs[it].code }) { i ->
@@ -233,7 +233,7 @@ private fun LanguageStep(onNext: () -> Unit) {
                     }
                     .padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
                     Text(l.name, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                        style = SpaceType.body(if (on) 19.sp else 17.sp, if (on) look.ink else look.sub).copy(fontFamily = com.blaze.assistant.ui.Type.sansFor(l.name),
+                        style = SpaceType.body(if (on) 19.sp else 17.sp, if (on) look.ink else look.sub).copy(fontFamily = com.argus.assistant.ui.Type.sansFor(l.name),
                             fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal))
                 }
             }
@@ -244,7 +244,7 @@ private fun LanguageStep(onNext: () -> Unit) {
         // The continue button: its own round button at the far right, level with the frame
         SpaceRoundButton(tr("Continue"), onNext, Modifier.align(Alignment.CenterEnd).padding(end = LanguagePick.NEXT_EDGE.dp),
             tag = SpaceTags.LANGUAGE_NEXT, size = LanguagePick.NEXT.dp, fill = look.primaryFill) {
-            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("arrow-right", 22), null,
+            androidx.compose.material3.Icon(com.argus.assistant.ui.argus.icons.Lucide.icon("arrow-right", 22), null,
                 Modifier.size(22.dp).graphicsLayer { scaleX = if (rtl) -1f else 1f }, tint = look.primaryInk)
         }
     }
@@ -255,7 +255,7 @@ private fun SignIn(signedIn: Boolean, onNext: () -> Unit, accountCard: @Composab
     val look = SpaceLook.Dark
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe().padding(horizontal = 18.dp, vertical = 18.dp).readableWidth()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            ArgusLogo(if (com.blaze.assistant.ui.common.WindowUi.short()) 72.dp else 120.dp, Modifier.align(Alignment.CenterHorizontally))
+            ArgusLogo(if (com.argus.assistant.ui.common.WindowUi.short()) 72.dp else 120.dp, Modifier.align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(18.dp))
             SpaceCard {
                 SpaceHeadline(tr("Sign in to {0}", BrandName.UPPER), size = 30.sp)
@@ -301,7 +301,7 @@ fun SpaceSetupScreen(setup: Map<String, SetupPlan.Status>, onContinue: () -> Uni
                         verticalAlignment = Alignment.CenterVertically) {
                         // 0.52.4: a round tinted icon tile per item (the reference's result rows), the status mark on the right
                         IconTile(setupIcon(item.id), tint = look.accent)
-                        Spacer(Modifier.width(BlazeIconStyle.gap))
+                        Spacer(Modifier.width(ArgusIconStyle.gap))
                         Column(Modifier.weight(1f)) {
                             Text(item.title, style = SpaceType.body(16.sp, look.ink, FontWeight.Medium))
                             Text(item.sub, style = SpaceType.body(13.sp, look.sub))
@@ -318,7 +318,7 @@ fun SpaceSetupScreen(setup: Map<String, SetupPlan.Status>, onContinue: () -> Uni
                 if (wifiMb > 0) {
                     val ctx = androidx.compose.ui.platform.LocalContext.current
                     Spacer(Modifier.height(8.dp))
-                    SpaceChip(SetupPlan.mobileDataButton(wifiMb), { com.blaze.assistant.setup.SetupRunner.useMobileData(ctx) }, icon = Icons.Rounded.SignalCellularAlt)
+                    SpaceChip(SetupPlan.mobileDataButton(wifiMb), { com.argus.assistant.setup.SetupRunner.useMobileData(ctx) }, icon = Icons.Rounded.SignalCellularAlt)
                 }
                 if (setup.values.any { it.phase == SetupPlan.Phase.FAILED }) {
                     Spacer(Modifier.height(8.dp))

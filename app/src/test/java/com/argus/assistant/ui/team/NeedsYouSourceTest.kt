@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -8,17 +8,17 @@ import java.io.File
 
 /**
  * P2-SF-03: the bell dot, the NeedYouBanner and the Inbox (bell sheet + Desk segment) read ONE needs-you query
- * ([com.blaze.assistant.policy.NeedsYou] via NeedsYouFeed). Source scan: no surface counts pending things on its own.
+ * ([com.argus.assistant.policy.NeedsYou] via NeedsYouFeed). Source scan: no surface counts pending things on its own.
  */
 class NeedsYouSourceTest {
-    private fun root(): File = listOf(File("src/main/java/com/blaze/assistant"), File("app/src/main/java/com/blaze/assistant")).first { it.exists() }
+    private fun root(): File = listOf(File("src/main/java/com/argus/assistant"), File("app/src/main/java/com/argus/assistant")).first { it.exists() }
     private fun src(rel: String) = File(root(), rel).readText()
 
     @Test fun bellDotReadsNeedsYou() {
         val chat = src("ui/ChatScreen.kt")
         val badge = chat.lines().single { it.trim().startsWith("bellBadge =") }
         assertTrue(badge.contains("NeedsYou.dot(needsYou)"))
-        assertTrue(chat.contains("val needsYou = com.blaze.assistant.ui.team.rememberNeedsYou()"))
+        assertTrue(chat.contains("val needsYou = com.argus.assistant.ui.team.rememberNeedsYou()"))
         // policy cards reach the bell only through NeedsYou, not as a second signal
         assertFalse(badge.contains("pendingConfirmNow") || badge.contains("policyCards"))
     }
@@ -33,7 +33,7 @@ class NeedsYouSourceTest {
     @Test fun deskInboxUsesTheOneList() {
         val desk = src("ui/team/DeskMode.kt")
         assertTrue(desk.contains("val needs = rememberNeedsYou()"))
-        assertTrue(desk.contains("DeskModel.chips(com.blaze.assistant.policy.NeedsYou.count(needs)"))
+        assertTrue(desk.contains("DeskModel.chips(com.argus.assistant.policy.NeedsYou.count(needs)"))
         assertTrue(desk.contains("InboxList(needs"))
         assertFalse(desk.contains("DeskModel.inboxBody("))
         val sheet = src("ui/InboxSheet.kt")

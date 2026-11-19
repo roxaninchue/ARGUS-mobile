@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui.argus.apps
+package com.argus.assistant.ui.argus.apps
 
-import com.blaze.assistant.ui.BlazeView
-import com.blaze.assistant.ui.Views
+import com.argus.assistant.ui.ArgusView
+import com.argus.assistant.ui.Views
 
 /**
  * Owner 2026-11-18 (overhaul.md "NEXT UP" 3): Life's Apps button opens a full Apps page. Its tiles are ARGUS's own apps
@@ -16,7 +16,7 @@ object AppsPageModel {
     /** One tile: a view (opened through Views) or an installed site app (opened as its own window). */
     data class Tile(val kind: Kind, val id: String, val label: String, val icon: String = "", val keywords: String = "")
 
-    fun viewTiles(views: List<BlazeView> = Views.apps): List<Tile> =
+    fun viewTiles(views: List<ArgusView> = Views.apps): List<Tile> =
         views.filter { it.app }.map { Tile(Kind.VIEW, it.id, it.name, it.icon.ifBlank { "square" }, (listOf(it.id, it.desc) + it.aliases).joinToString(" ")) }
 
     /** Installed site apps as (id, name, start url), oldest install first, as the browser lists them. */

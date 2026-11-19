@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.ComposerHints.Note
-import com.blaze.assistant.agent.ComposerHints.Sources
-import com.blaze.assistant.agent.ComposerHints.Upcoming
+import com.argus.assistant.agent.ComposerHints.Note
+import com.argus.assistant.agent.ComposerHints.Sources
+import com.argus.assistant.agent.ComposerHints.Upcoming
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

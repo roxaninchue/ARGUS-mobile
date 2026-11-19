@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.53.0 (owner, 13 Nov 2026: "web search must ALWAYS work"): the order [Web.search] tries its keyless sources in, and the

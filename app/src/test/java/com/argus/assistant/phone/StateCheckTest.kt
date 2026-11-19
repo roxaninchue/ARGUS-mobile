@@ -1,12 +1,12 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.agent.ActCheck
-import com.blaze.assistant.agent.ClaimCheck
-import com.blaze.assistant.agent.ToggleReply
-import com.blaze.assistant.agent.ToolVerify
-import com.blaze.assistant.agent.UnconfirmedEcho
-import com.blaze.assistant.notify.BlazeThread
-import com.blaze.assistant.notify.QuickReplies
+import com.argus.assistant.agent.ActCheck
+import com.argus.assistant.agent.ClaimCheck
+import com.argus.assistant.agent.ToggleReply
+import com.argus.assistant.agent.ToolVerify
+import com.argus.assistant.agent.UnconfirmedEcho
+import com.argus.assistant.notify.ArgusThread
+import com.argus.assistant.notify.QuickReplies
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -161,12 +161,12 @@ class StateCheckTest {
     }
 
     @Test fun quickRepliesFitTheResult() {
-        assertEquals(listOf("Turn it off", "Thanks"), QuickReplies.forMessage(StateCheck.doneLine("Dark mode", true), BlazeThread.Kind.RESULT))
-        assertEquals(listOf("Turn it on", "Thanks"), QuickReplies.forMessage(StateCheck.doneLine("Wi-Fi", false), BlazeThread.Kind.RESULT))
-        assertEquals(listOf("Check it again", "Thanks"), QuickReplies.forMessage(StateCheck.honest(true), BlazeThread.Kind.RESULT))
-        assertEquals(listOf("Try again", "What happened?"), QuickReplies.forMessage("I tried to turn Wi-Fi on, but it still reads off.", BlazeThread.Kind.RESULT))
+        assertEquals(listOf("Turn it off", "Thanks"), QuickReplies.forMessage(StateCheck.doneLine("Dark mode", true), ArgusThread.Kind.RESULT))
+        assertEquals(listOf("Turn it on", "Thanks"), QuickReplies.forMessage(StateCheck.doneLine("Wi-Fi", false), ArgusThread.Kind.RESULT))
+        assertEquals(listOf("Check it again", "Thanks"), QuickReplies.forMessage(StateCheck.honest(true), ArgusThread.Kind.RESULT))
+        assertEquals(listOf("Try again", "What happened?"), QuickReplies.forMessage("I tried to turn Wi-Fi on, but it still reads off.", ArgusThread.Kind.RESULT))
         for (t in listOf(StateCheck.doneLine("Dark mode", true), StateCheck.honest(true), "I tried to turn Wi-Fi on, but it still reads off."))
-            assertTrue(QuickReplies.forMessage(t, BlazeThread.Kind.RESULT).none { it.equals("Weird", true) || it.equals("Great!", true) })
+            assertTrue(QuickReplies.forMessage(t, ArgusThread.Kind.RESULT).none { it.equals("Weird", true) || it.equals("Great!", true) })
     }
 
     @Test fun labelsMapToSettings() {
@@ -186,12 +186,12 @@ class StateCheckTest {
     }
 
     @Test fun agentUsesStateVerification() {
-        fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
+        fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }.readText()
         val a = src("agent/Agent.kt")
         assertFalse("the old stale-node read-back is gone", a.contains("couldn't read the switch back"))
-        assertTrue(a.contains("com.blaze.assistant.phone.ToggleVerify.after(app, svc, label, wantId, want)"))
+        assertTrue(a.contains("com.argus.assistant.phone.ToggleVerify.after(app, svc, label, wantId, want)"))
         assertTrue(a.contains("ToggleReply.fix(textOut, synchronized(turnDone) { turnDone.toList() })"))
-        assertTrue("run_plan switch steps are verified too", a.contains("planChecks += com.blaze.assistant.phone.ToggleVerify.marker(vr)"))
+        assertTrue("run_plan switch steps are verified too", a.contains("planChecks += com.argus.assistant.phone.ToggleVerify.marker(vr)"))
         val r = src("phone/PhoneStateReader.kt")
         for (api in listOf("nightMode", "Configuration.UI_MODE_NIGHT_MASK", "isWifiEnabled", "BluetoothManager", "AIRPLANE_MODE_ON", "SCREEN_BRIGHTNESS", "ringerMode"))
             assertTrue(api, r.contains(api))

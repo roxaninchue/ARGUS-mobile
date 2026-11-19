@@ -1,17 +1,17 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Mind
-import com.blaze.assistant.agent.MindLogs
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Mind
+import com.argus.assistant.agent.MindLogs
+import com.argus.assistant.agent.Settings
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -22,9 +22,9 @@ import java.util.Locale
  * Notification replies (v0.19.0). With notification access on, every chat-app notification (WhatsApp, SMS,
  * Telegram, Messenger, Signal…) is read with its MessagingStyle history: who sent what, in which conversation.
  *
- *  - Each conversation keeps a rolling log in the journal (kind "notif", conv "notif:<app>:<name>"), so Blaze has
- *    more than the last few lines a notification carries. Senders are linked to people memories when Blaze reads it.
- *  - Blaze drafts a reply and sends it through the notification's own reply box (RemoteInput), without opening the
+ *  - Each conversation keeps a rolling log in the journal (kind "notif", conv "notif:<app>:<name>"), so Argus has
+ *    more than the last few lines a notification carries. Senders are linked to people memories when Argus reads it.
+ *  - Argus drafts a reply and sends it through the notification's own reply box (RemoteInput), without opening the
  *    app. Sending always shows a confirm card, unless the user switched on auto-reply for that conversation
  *    (Settings › Notification replies).
  *  - Codes and bank messages ([Sensitive]) are never stored or shown.
@@ -94,7 +94,7 @@ object Conversations {
     fun render(msgs: List<Msg>, fmt: SimpleDateFormat = SimpleDateFormat("EEE HH:mm", Locale.getDefault())): String =
         msgs.joinToString("\n") { "${fmt.format(Date(it.at))} ${if (it.self) "You" else it.sender}: ${it.text.take(600)}" }
 
-    /** True when there's too little to reply well; Blaze then asks the user or opens the chat to read more. */
+    /** True when there's too little to reply well; Argus then asks the user or opens the chat to read more. */
     fun thin(n: Int) = n < THIN
 
     fun autoKeys(raw: String): Set<String> = try {
@@ -170,7 +170,7 @@ object Conversations {
         }
         if (add.isNotEmpty()) c.updated = maxOf(c.updated, add.maxOf { it.at })
         // v0.38.0 follow-ups: plans in new messages; the user's own reply closes that chat's follow-ups.
-        if (add.isNotEmpty()) try { com.blaze.assistant.proactive.FollowUps.onMessages(pkg, app, title, group, add) } catch (_: Throwable) { }
+        if (add.isNotEmpty()) try { com.argus.assistant.proactive.FollowUps.onMessages(pkg, app, title, group, add) } catch (_: Throwable) { }
         else if (incoming.isNotEmpty()) c.updated = maxOf(c.updated, System.currentTimeMillis())
         synchronized(convs) { while (convs.size > 80) { val old = convs.values.minByOrNull { it.updated }?.key ?: break; convs.remove(old) } }
         if (logOn) Mind.db()?.let { d ->

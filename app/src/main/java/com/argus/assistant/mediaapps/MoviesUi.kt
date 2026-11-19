@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,9 +32,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.ClosedCaption
 import androidx.compose.ui.graphics.Brush
-import com.blaze.assistant.movies.MovieLibrary
-import com.blaze.assistant.movies.ReleaseTitle
-import com.blaze.assistant.movies.StreamPlan
+import com.argus.assistant.movies.MovieLibrary
+import com.argus.assistant.movies.ReleaseTitle
+import com.argus.assistant.movies.StreamPlan
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Bookmark
@@ -80,32 +80,32 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.movies.MovieDownloads
-import com.blaze.assistant.movies.MovieHub
-import com.blaze.assistant.movies.MovieInfo
-import com.blaze.assistant.movies.MovieLink
-import com.blaze.assistant.movies.MoviePlay
-import com.blaze.assistant.movies.MoviePost
-import com.blaze.assistant.movies.MovieSource
-import com.blaze.assistant.movies.MovieStream
-import com.blaze.assistant.movies.Movies
-import com.blaze.assistant.movies.ProviderRepo
-import com.blaze.assistant.movies.ProviderStore
-import com.blaze.assistant.movies.Progress
-import com.blaze.assistant.movies.SourceNotice
-import com.blaze.assistant.ui.BlazeDialog
-import com.blaze.assistant.ui.BlazeTextField
-import com.blaze.assistant.ui.EmptyState
-import com.blaze.assistant.ui.KitSearch
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.StageIconButton
+import com.argus.assistant.movies.MovieDownloads
+import com.argus.assistant.movies.MovieHub
+import com.argus.assistant.movies.MovieInfo
+import com.argus.assistant.movies.MovieLink
+import com.argus.assistant.movies.MoviePlay
+import com.argus.assistant.movies.MoviePost
+import com.argus.assistant.movies.MovieSource
+import com.argus.assistant.movies.MovieStream
+import com.argus.assistant.movies.Movies
+import com.argus.assistant.movies.ProviderRepo
+import com.argus.assistant.movies.ProviderStore
+import com.argus.assistant.movies.Progress
+import com.argus.assistant.movies.SourceNotice
+import com.argus.assistant.ui.ArgusDialog
+import com.argus.assistant.ui.ArgusTextField
+import com.argus.assistant.ui.EmptyState
+import com.argus.assistant.ui.KitSearch
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.StageIconButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 0.46.2 Blaze Video › Movies: home rows per source, search across enabled sources (failed ones named), details with seasons /
+ * 0.46.2 Argus Video › Movies: home rows per source, search across enabled sources (failed ones named), details with seasons /
  * episodes, server and quality choice, watchlist, continue watching, downloads, the user's Jellyfin server, and the Providers
  * screen for sources the user adds. Compact and icon-only like the 0.46.1 Stage. The stateless parts are screenshot-tested.
  */
@@ -147,7 +147,7 @@ internal fun MoviesTab(onPlay: (MoviePlay) -> Unit, onPickFile: () -> Unit, inco
             StageIconButton(Icons.Rounded.Extension, "Providers", size = 40.dp) { panel = "providers" }
         }
         SourceChips(sources.map { it.id to it.name }, filter) { filter = it }
-        if (note.isNotBlank()) Text(note, color = LocalBlaze.current.sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp))
+        if (note.isNotBlank()) Text(note, color = LocalArgus.current.sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp))
         val open: (MovieSource, MoviePost) -> Unit = { s, p -> detail = s to p }
         if (query.trim().length >= 2) SearchResults(search, sources, open)
         else MoviesHome(sources.filter { filter == "all" || it.id == filter }, lib.continueWatching, lib.watchlist, open,
@@ -169,7 +169,7 @@ internal fun SourceChips(items: List<Pair<String, String>>, value: String, onPic
 
 @Composable
 private fun MovieChip(text: String, selected: Boolean, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.clip(RoundedCornerShape(50)).background(if (selected) c.accent.copy(alpha = 0.18f) else c.faint)
         .border(1.dp, if (selected) c.accent else c.hair, RoundedCornerShape(50)).clickable(role = Role.Button, onClickLabel = text) { onClick() }
         .padding(horizontal = 12.dp, vertical = 6.dp)) { Text(text, color = if (selected) c.accent else c.ink, fontSize = 13.sp, maxLines = 1) }
@@ -202,12 +202,12 @@ private fun SourceRows(s: MovieSource, open: (MovieSource, MoviePost) -> Unit, p
 }
 
 @Composable
-private fun RowTitle(t: String) = Text(t, color = LocalBlaze.current.ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+private fun RowTitle(t: String) = Text(t, color = LocalArgus.current.ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
     modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 6.dp).semantics { heading() })
 
 @Composable
 internal fun Poster(title: String, image: String, progress: Float = -1f, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(Modifier.width(112.dp).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClickLabel = "Open $title") { onClick() }) {
         Box(Modifier.fillMaxWidth().aspectRatio(2f / 3f).clip(RoundedCornerShape(12.dp))) {
             PosterArt(title, image, Modifier.fillMaxSize())
@@ -219,7 +219,7 @@ internal fun Poster(title: String, image: String, progress: Float = -1f, onClick
 
 @Composable
 internal fun SearchResults(s: MovieHub.Search?, sources: List<MovieSource>, open: (MovieSource, MoviePost) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     if (s == null) { Text("Searching\u2026", color = c.sub, fontSize = 13.sp, modifier = Modifier.padding(16.dp)); return }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 90.dp)) {
         if (s.posts.isEmpty()) item { EmptyState("Nothing found", "Try other words, or another source.", mark = false) }
@@ -248,7 +248,7 @@ internal fun MovieDetailsLoader(src: MovieSource, post: MoviePost, saved: Boolea
         Movies.note(src, r.exceptionOrNull()?.message)
         // 0.46.5: every stream the source gave, best first; the player tries them in order (StreamPlan).
         val list = StreamPlan.order(r.getOrNull().orEmpty(), Movies.maxHeight(ctx), MediaPrefs.int(ctx, "movie_pref_height", 0))
-        if (r.isFailure) com.blaze.assistant.device.CrashLog.write(StreamPlan.logLine(src.id, 0, 0, StreamPlan.Kind.PROGRESSIVE, "extract: " + (r.exceptionOrNull()?.javaClass?.simpleName ?: "error")))
+        if (r.isFailure) com.argus.assistant.device.CrashLog.write(StreamPlan.logLine(src.id, 0, 0, StreamPlan.Kind.PROGRESSIVE, "extract: " + (r.exceptionOrNull()?.javaClass?.simpleName ?: "error")))
         msg = if (list.isEmpty()) StreamPlan.FAIL_TEXT else ""
         if (list.isNotEmpty() && !download) onPlay(MovieHub.play(src, post, info?.getOrNull(), link, list[0], list.drop(1)))
         else if (list.size == 1 && MovieDownloads.why(list[0]) == null) msg = MovieDownloads.start(ctx, src, MovieHub.play(src, post, info?.getOrNull(), link, list[0]), list[0])
@@ -258,9 +258,9 @@ internal fun MovieDetailsLoader(src: MovieSource, post: MoviePost, saved: Boolea
     val i = info
     val resume = remember(lib, post.link) { lib.progress.firstOrNull { it.play.postLink == post.link && MovieLibrary.unfinished(it.posMs, it.durMs) } }
     when {
-        i == null -> Column(Modifier.fillMaxSize()) { DetailsTop(post.title, saved, onBack, onWatchlist); Text("Loading\u2026", color = LocalBlaze.current.sub, modifier = Modifier.padding(16.dp)) }
+        i == null -> Column(Modifier.fillMaxSize()) { DetailsTop(post.title, saved, onBack, onWatchlist); Text("Loading\u2026", color = LocalArgus.current.sub, modifier = Modifier.padding(16.dp)) }
         i.isFailure -> Column(Modifier.fillMaxSize()) { DetailsTop(post.title, saved, onBack, onWatchlist)
-            val (t, b) = com.blaze.assistant.mediaapps.BrowseState.openError(i.exceptionOrNull()?.message)
+            val (t, b) = com.argus.assistant.mediaapps.BrowseState.openError(i.exceptionOrNull()?.message)
             EmptyState(t, b, mark = false, action = "Retry", onAction = { attempt++ }) }
         else -> MovieDetails(i.getOrThrow(), src.name, saved, msg, onBack, onWatchlist, pick,
             loadEpisodes = { link -> withContext(Dispatchers.IO) { runCatching { src.episodes(link) }.getOrDefault(emptyList()) } },
@@ -282,13 +282,13 @@ internal fun MovieDetailsLoader(src: MovieSource, post: MoviePost, saved: Boolea
 private fun DetailsTop(title: String, saved: Boolean, onBack: () -> Unit, onWatchlist: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         StageIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back to Movies", size = 40.dp) { onBack() }
-        Text(title, color = LocalBlaze.current.ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Text(title, color = LocalArgus.current.ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         StageIconButton(if (saved) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder, if (saved) "Remove from watchlist" else "Add to watchlist", on = saved, size = 40.dp) { onWatchlist() }
     }
 }
 
 /**
- * 0.46.5 details, friendly for any source: the backdrop fading into the Blaze background, poster, title, year / runtime / rating
+ * 0.46.5 details, friendly for any source: the backdrop fading into the Argus background, poster, title, year / runtime / rating
  * chips, a 2-line synopsis (tap for more), a season picker, one big Play / Resume, a small quality / language chip (best quality
  * that fits by default, the choice is remembered), the episode list (number, title, thumbnail, progress), icon actions
  * (watchlist, download, share, subtitles), "More like this", and a Details expander that is the only place raw names show.
@@ -298,7 +298,7 @@ internal fun MovieDetails(info: MovieInfo, sourceName: String, saved: Boolean, m
                           onPick: (MovieLink) -> Unit, loadEpisodes: suspend (String) -> List<MovieLink>,
                           more: List<MoviePost> = emptyList(), onMore: (MoviePost) -> Unit = {}, resumeMs: Long = 0L, onResume: (() -> Unit)? = null,
                           onDownload: ((MovieLink) -> Unit)? = null, onShare: (() -> Unit)? = null, progressOf: (MovieLink) -> Float = { -1f }) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     var full by remember(info.title) { mutableStateOf(false) }
     var raw by remember(info.title) { mutableStateOf(false) }
@@ -360,13 +360,13 @@ internal fun MovieDetails(info: MovieInfo, sourceName: String, saved: Boolean, m
                     if (onShare != null) StageIconButton(Icons.Rounded.Share, "Share", size = 44.dp) { onShare() }
                     Box {
                         StageIconButton(Icons.Rounded.ClosedCaption, "Subtitles", size = 44.dp) { subsMenu = true }
-                        com.blaze.assistant.ui.BlazeMenu(subsMenu, { subsMenu = false }, listOf("Off" to "", "English" to "en", "French" to "fr", "Portuguese" to "pt", "Spanish" to "es", "Swahili" to "sw").map { (n, code) ->
+                        com.argus.assistant.ui.ArgusMenu(subsMenu, { subsMenu = false }, listOf("Off" to "", "English" to "en", "French" to "fr", "Portuguese" to "pt", "Spanish" to "es", "Swahili" to "sw").map { (n, code) ->
                             (if (SubsLoader.pref(ctx) == code) "$n  \u2713" else n) to { SubsLoader.setPref(ctx, code); subsMenu = false } })
                     }
                     // Quality / language: a small chip; the sheet lists the season's variants.
                     if (season != null && season.variants.size > 1 && variant != null) Box {
                         MovieChip(listOf(ReleaseTitle.qualityLabel(variant.height), variant.languages.take(2).joinToString("/")).filter { it.isNotBlank() }.joinToString(" \u00b7 ").ifBlank { "Quality" }, false) { qualityMenu = true }
-                        com.blaze.assistant.ui.BlazeMenu(qualityMenu, { qualityMenu = false }, season.variants.map { v ->
+                        com.argus.assistant.ui.ArgusMenu(qualityMenu, { qualityMenu = false }, season.variants.map { v ->
                             (v.label + if (v == variant) "  \u2713" else "") to {
                                 prefH = v.height; prefLang = v.languages.firstOrNull().orEmpty()
                                 MediaPrefs.setInt(ctx, "movie_pref_height", prefH); MediaPrefs.setStr(ctx, "movie_pref_lang", prefLang); qualityMenu = false } })
@@ -409,7 +409,7 @@ internal fun MovieDetails(info: MovieInfo, sourceName: String, saved: Boolean, m
 /** A poster that is never an empty grey tile: the picture when it loads, else a soft gradient from the title with its initial. */
 @Composable
 internal fun PosterArt(title: String, image: String, modifier: Modifier, initial: String? = null) {
-    val img = if (image.isBlank()) null else com.blaze.assistant.ui.rememberHomeImage(image)
+    val img = if (image.isBlank()) null else com.argus.assistant.ui.rememberHomeImage(image)
     val hue = remember(title) { ((title.hashCode() and 0x7fffffff) % 360).toFloat() }
     Box(modifier.background(Brush.linearGradient(listOf(Color.hsv(hue, 0.35f, 0.42f), Color.hsv((hue + 40f) % 360f, 0.30f, 0.22f)))), contentAlignment = Alignment.Center) {
         if (img != null) androidx.compose.foundation.Image(img, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -420,7 +420,7 @@ internal fun PosterArt(title: String, image: String, modifier: Modifier, initial
 
 @Composable
 private fun LinkRow(title: String, onPlay: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button, onClickLabel = "Play $title") { onPlay() }, verticalAlignment = Alignment.CenterVertically) {
         Text(title, color = c.ink, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         StageIconButton(Icons.Rounded.PlayArrow, "Play $title", size = 38.dp) { onPlay() }
@@ -430,12 +430,12 @@ private fun LinkRow(title: String, onPlay: () -> Unit) {
 /** Server / quality choice: each stream with play and (when possible) download. */
 @Composable
 internal fun StreamChooser(streams: List<MovieStream>, onDismiss: () -> Unit, onPlay: (MovieStream) -> Unit, onDownload: (MovieStream) -> Unit) {
-    BlazeDialog("Choose a stream", confirm = "Close", onConfirm = onDismiss, onDismiss = onDismiss) {
-        streams.sortedByDescending { com.blaze.assistant.movies.MovieJson.qualityRank(it.quality) }.take(12).forEach { s ->
+    ArgusDialog("Choose a stream", confirm = "Close", onConfirm = onDismiss, onDismiss = onDismiss) {
+        streams.sortedByDescending { com.argus.assistant.movies.MovieJson.qualityRank(it.quality) }.take(12).forEach { s ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(s.server, color = LocalBlaze.current.ink, fontSize = 14.sp, maxLines = 1)
-                    Text(listOf(s.quality, s.type.uppercase(), if (s.subtitles.isNotEmpty()) "subtitles" else "").filter { it.isNotBlank() }.joinToString(" \u00b7 "), color = LocalBlaze.current.sub, fontSize = 12.sp)
+                    Text(s.server, color = LocalArgus.current.ink, fontSize = 14.sp, maxLines = 1)
+                    Text(listOf(s.quality, s.type.uppercase(), if (s.subtitles.isNotEmpty()) "subtitles" else "").filter { it.isNotBlank() }.joinToString(" \u00b7 "), color = LocalArgus.current.sub, fontSize = 12.sp)
                 }
                 StageIconButton(Icons.Rounded.PlayArrow, "Play from ${s.server} ${s.quality}", size = 38.dp) { onPlay(s) }
                 if (MovieDownloads.why(s) == null) StageIconButton(Icons.Rounded.Download, "Download from ${s.server} ${s.quality}", size = 38.dp) { onDownload(s) }
@@ -451,24 +451,24 @@ internal fun JellyfinDialog(onDone: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     val acct = remember { Movies.jellyfinAccount() }
     if (acct != null) {
-        BlazeDialog("Jellyfin", "Signed in to ${acct.name} (${acct.server}) as ${acct.user}.", confirm = "Done", onConfirm = { onDone("") },
+        ArgusDialog("Jellyfin", "Signed in to ${acct.name} (${acct.server}) as ${acct.user}.", confirm = "Done", onConfirm = { onDone("") },
             dismiss = "Sign out", onDismiss = { Movies.removeJellyfin(); onDone("Signed out of Jellyfin.") })
         return
     }
     var server by remember { mutableStateOf("") }; var user by remember { mutableStateOf("") }; var pass by remember { mutableStateOf("") }; var reveal by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf("") }; var busy by remember { mutableStateOf(false) }
-    BlazeDialog("Add your Jellyfin server", "Your own server only. The password is used once to sign in; ${BrandName.NAME} keeps the sign-in encrypted on this phone.",
+    ArgusDialog("Add your Jellyfin server", "Your own server only. The password is used once to sign in; ${BrandName.NAME} keeps the sign-in encrypted on this phone.",
         confirm = if (busy) "Signing in\u2026" else "Sign in", onConfirm = {
             if (!busy) scope.launch { busy = true; err = ""
                 try { val n = Movies.addJellyfin(server, user, pass); pass = ""; onDone("Jellyfin: signed in to $n.") } catch (e: Exception) { err = e.message ?: "Couldn't sign in" }
                 busy = false }
         }, dismiss = "Cancel", onDismiss = { onDone("") }) {
-        BlazeTextField(server, { server = it }, "Server address (http://192.168.1.20:8096)", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
-        Spacer(Modifier.height(8.dp)); BlazeTextField(user, { user = it }, "User name")
-        Spacer(Modifier.height(8.dp)); BlazeTextField(pass, { pass = it }, "Password", visualTransformation = if (reveal) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
+        ArgusTextField(server, { server = it }, "Server address (http://192.168.1.20:8096)", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
+        Spacer(Modifier.height(8.dp)); ArgusTextField(user, { user = it }, "User name")
+        Spacer(Modifier.height(8.dp)); ArgusTextField(pass, { pass = it }, "Password", visualTransformation = if (reveal) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
-        Text(if (reveal) "Hide password" else "Show password", color = LocalBlaze.current.accent, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp).clickable { reveal = !reveal })
-        if (err.isNotBlank()) Text(err, color = LocalBlaze.current.sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+        Text(if (reveal) "Hide password" else "Show password", color = LocalArgus.current.accent, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp).clickable { reveal = !reveal })
+        if (err.isNotBlank()) Text(err, color = LocalArgus.current.sub, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
     }
 }
 
@@ -495,7 +495,7 @@ internal fun ProvidersScreen(onBack: () -> Unit) {
         onRemove = { v -> store.remove(v); refreshState(); msg = "Removed." },
         onActive = { v -> store.setActive(v); refreshState() },
         onSettings = { settingsFor = it })
-    if (notice) BlazeDialog("Before you add a source", SourceNotice.TEXT, confirm = "I understand", onConfirm = { store.markNoticeSeen(); refreshState(); notice = false; adding = true },
+    if (notice) ArgusDialog("Before you add a source", SourceNotice.TEXT, confirm = "I understand", onConfirm = { store.markNoticeSeen(); refreshState(); notice = false; adding = true },
         dismiss = "Cancel", onDismiss = { notice = false })
     if (adding) AddSourceDialog(onCancel = { adding = false }, onAdd = { url -> adding = false
         run("add") { val r = withContext(Dispatchers.IO) { store.addRepo(url) }; offer = r; "Found ${r.second.size} provider${if (r.second.size == 1) "" else "s"}." } })
@@ -509,7 +509,7 @@ internal fun ProvidersScreen(onBack: () -> Unit) {
 @Composable
 internal fun ProvidersList(st: ProviderStore.State, busy: List<String>, msg: String, onBack: () -> Unit, onAdd: () -> Unit, onRefresh: () -> Unit,
                            onTest: (String) -> Unit, onUpdate: (String) -> Unit, onRemove: (String) -> Unit, onActive: (String) -> Unit, onSettings: (ProviderStore.Installed) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             StageIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back to Movies", size = 40.dp) { onBack() }
@@ -544,7 +544,7 @@ internal fun ProvidersList(st: ProviderStore.State, busy: List<String>, msg: Str
 
 @Composable
 private fun StatusIcon(s: ProviderStore.Status) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val (icon, tint) = when (s) { ProviderStore.Status.WORKING -> Icons.Rounded.CheckCircle to c.accent; ProviderStore.Status.FAILING -> Icons.Rounded.Error to androidx.compose.ui.graphics.Color(0xFFE5484D); else -> Icons.Rounded.HelpOutline to c.sub }
     Icon(icon, contentDescription = s.label, tint = tint, modifier = Modifier.size(18.dp).semantics { contentDescription = s.label })
 }
@@ -552,11 +552,11 @@ private fun StatusIcon(s: ProviderStore.Status) {
 @Composable
 internal fun AddSourceDialog(onCancel: () -> Unit, onAdd: (String) -> Unit) {
     var url by remember { mutableStateOf("") }
-    // The field starts empty: the hint is Blaze's own example repo (what a link looks like), never a third-party one.
-    BlazeDialog("Add source", "Type or paste a source: owner/repo, a GitHub or GitLab link, or a folder with manifest.json. ${BrandName.NAME} finds the manifest.",
+    // The field starts empty: the hint is Argus's own example repo (what a link looks like), never a third-party one.
+    ArgusDialog("Add source", "Type or paste a source: owner/repo, a GitHub or GitLab link, or a folder with manifest.json. ${BrandName.NAME} finds the manifest.",
         confirm = "Add", onConfirm = { if (url.isNotBlank()) onAdd(url.trim()) }, dismiss = "Cancel", onDismiss = onCancel) {
-        BlazeTextField(url, { url = it }, ProviderRepo.EXAMPLE, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
-        Text("Example: " + ProviderRepo.EXAMPLE, color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+        ArgusTextField(url, { url = it }, ProviderRepo.EXAMPLE, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
+        Text("Example: " + ProviderRepo.EXAMPLE, color = LocalArgus.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
     }
 }
 
@@ -587,10 +587,10 @@ internal fun LinkInstallCard(url: String, entries: List<ProviderRepo.Entry>?, er
         entries == null -> "Reading the source\u2026"
         else -> "${entries.count { !it.disabled }} provider${if (entries.count { !it.disabled } == 1) "" else "s"}: " + entries.filter { !it.disabled }.take(8).joinToString(", ") { it.name }
     }
-    com.blaze.assistant.ui.BlazeDialogCard("Add source", body, confirm = if (busy) "Installing\u2026" else "Install", onConfirm = { if (entries != null && error == null) onInstall() },
+    com.argus.assistant.ui.ArgusDialogCard("Add source", body, confirm = if (busy) "Installing\u2026" else "Install", onConfirm = { if (entries != null && error == null) onInstall() },
         dismiss = "Cancel", onDismiss = onCancel) {
-        Text(url, color = LocalBlaze.current.ink, fontSize = 12.sp, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { contentDescription = "Source URL $url" })
-        if (showNotice) Text(SourceNotice.TEXT, color = LocalBlaze.current.sub, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+        Text(url, color = LocalArgus.current.ink, fontSize = 12.sp, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { contentDescription = "Source URL $url" })
+        if (showNotice) Text(SourceNotice.TEXT, color = LocalArgus.current.sub, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
@@ -618,12 +618,12 @@ internal object InstallPick {
 @Composable
 internal fun InstallSheet(entries: List<ProviderRepo.Entry>, have: Set<String>, picked: List<String>, progress: Map<String, String>, installing: Boolean,
                           onToggle: (String) -> Unit, onAll: () -> Unit, onInstall: () -> Unit, onCancel: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val listed = InstallPick.listed(entries)
     val maxH = (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.86f).dp
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
     Column(Modifier.widthIn(max = 380.dp).fillMaxWidth().heightIn(max = maxH)
-        .background(com.blaze.assistant.ui.DialogColors.surface, shape).padding(start = 18.dp, end = 12.dp, top = 16.dp, bottom = 12.dp)) {
+        .background(com.argus.assistant.ui.DialogColors.surface, shape).padding(start = 18.dp, end = 12.dp, top = 16.dp, bottom = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Install providers", color = c.ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
@@ -647,7 +647,7 @@ internal fun InstallSheet(entries: List<ProviderRepo.Entry>, have: Set<String>, 
         }
         // the bottom bar: never scrolls away
         Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-            com.blaze.assistant.ui.PillButton("Cancel", primary = false, onClick = onCancel)
+            com.argus.assistant.ui.PillButton("Cancel", primary = false, onClick = onCancel)
             val n = picked.count { v -> listed.any { it.value == v } }
             val ok = InstallPick.canInstall(n, installing)
             Row(Modifier.height(40.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
@@ -697,12 +697,12 @@ private fun InstallDialog(entries: List<ProviderRepo.Entry>, have: Set<String>, 
 private fun ProviderSettingsDialog(i: ProviderStore.Installed, onDone: (Map<String, String>, Boolean) -> Unit, onCancel: () -> Unit) {
     var base by remember { mutableStateOf(i.settings["baseUrl"].orEmpty()) }
     var on by remember { mutableStateOf(i.enabled) }
-    BlazeDialog(i.entry.name, "Runs in ${BrandName.NAME}'s sandbox: web requests only, no files, no ${BrandName.NAME} data.", confirm = "Save",
+    ArgusDialog(i.entry.name, "Runs in ${BrandName.NAME}'s sandbox: web requests only, no files, no ${BrandName.NAME} data.", confirm = "Save",
         onConfirm = { onDone(i.settings + ("baseUrl" to base.trim()), on) }, dismiss = "Cancel", onDismiss = onCancel) {
-        BlazeTextField(base, { base = it }, "Site address the provider uses (optional)", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
+        ArgusTextField(base, { base = it }, "Site address the provider uses (optional)", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
         Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Use this provider", color = LocalBlaze.current.ink, fontSize = 14.sp, modifier = Modifier.weight(1f))
-            com.blaze.assistant.ui.KitSwitch(on) { on = !on }
+            Text("Use this provider", color = LocalArgus.current.ink, fontSize = 14.sp, modifier = Modifier.weight(1f))
+            com.argus.assistant.ui.KitSwitch(on) { on = !on }
         }
     }
 }

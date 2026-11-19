@@ -1,11 +1,11 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 import android.content.Context
-import com.blaze.assistant.agent.FastLane
-import com.blaze.assistant.agent.LlmClient
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.terminal.Distros
-import com.blaze.assistant.terminal.Terminal
+import com.argus.assistant.agent.FastLane
+import com.argus.assistant.agent.LlmClient
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.terminal.Distros
+import com.argus.assistant.terminal.Terminal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -71,14 +71,14 @@ class ThoughtFoldTest {
     }
 
     private fun src(rel: String): String =
-        listOf(File("src/main/java/com/blaze/assistant/$rel"), File("app/src/main/java/com/blaze/assistant/$rel")).first { it.exists() }.readText()
+        listOf(File("src/main/java/com/argus/assistant/$rel"), File("app/src/main/java/com/argus/assistant/$rel")).first { it.exists() }.readText()
 
     /** Owner, 14 Nov 2026: replies are flat text on the page; your prompts keep their bubble. */
     @Test fun repliesAreFlatPromptsKeepTheirBubble() {
         val b = src("ui/Bubbles.kt")
-        val reply = b.substringAfter("fun BlazeReply(").substringBefore("\n}\n")
+        val reply = b.substringAfter("fun ArgusReply(").substringBefore("\n}\n")
         assertTrue(reply.contains("FlatReply("))
-        assertFalse("no bubble around a reply", reply.contains("BlazeBubble(") || reply.contains("ChatBubble("))
+        assertFalse("no bubble around a reply", reply.contains("ArgusBubble(") || reply.contains("ChatBubble("))
         val flat = b.substringAfter("fun FlatReply(").substringBefore("\n}\n")
         assertFalse("no fill, border or clip", flat.contains(".background(") || flat.contains(".border(") || flat.contains(".clip("))
         assertTrue("long-press menu kept", flat.contains("bubbleLongPress(menu)"))
@@ -91,7 +91,7 @@ class ThoughtFoldTest {
         assertTrue(chat.contains("ThoughtSection(m.id, thought, live = streamHere, answerStarted = m.text.isNotBlank(), ms = m.thinkMs)"))
         assertTrue(chat.contains("streamHere = item.m.id == streamId,"))
         // 0.53.3: tool rows render inside the turn flow (TurnFlow.kt), the live turn included
-        assertTrue(chat.contains("com.blaze.assistant.ui.team.thread.TurnFlowView(liveFlow)"))
+        assertTrue(chat.contains("com.argus.assistant.ui.team.thread.TurnFlowView(liveFlow)"))
         val llm = src("agent/LlmClient.kt")
         assertTrue(llm.contains("val chatThink = if (lane == Lane.MAIN) onThink else null"))
         assertTrue(llm.contains("PromptEcho.note(messages)"))

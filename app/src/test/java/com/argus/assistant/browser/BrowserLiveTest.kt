@@ -1,10 +1,10 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.30.5: Home's live browser preview shows only while Blaze is working and has just used its browser. */
+/** v0.30.5: Home's live browser preview shows only while Argus is working and has just used its browser. */
 class BrowserLiveTest {
     private val now = 1_000_000L
 
@@ -20,7 +20,7 @@ class BrowserLiveTest {
     }
 
     @Test fun everyBrowserStepMarksIt() {
-        val src = listOf(java.io.File("src/main/java/com/blaze/assistant/browser/BrowserTools.kt"), java.io.File("app/src/main/java/com/blaze/assistant/browser/BrowserTools.kt"))
+        val src = listOf(java.io.File("src/main/java/com/argus/assistant/browser/BrowserTools.kt"), java.io.File("app/src/main/java/com/argus/assistant/browser/BrowserTools.kt"))
             .first { it.exists() }.readText()
         assertTrue(src.contains("BrowserLive.mark(describe(name, a))"))
     }

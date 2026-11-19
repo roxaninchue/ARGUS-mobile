@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -66,8 +66,8 @@ private object AppIcons {
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun RichApps(card: com.blaze.assistant.ui.RichKit.AppsCard) {
-    val c = LocalBlaze.current
+fun RichApps(card: com.argus.assistant.ui.RichKit.AppsCard) {
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     var all by rememberSaveable(card.title, card.apps.size) { mutableStateOf(card.apps.size <= 24) }
     val shown = if (all) card.apps else card.apps.take(24)
@@ -89,7 +89,7 @@ fun RichApps(card: com.blaze.assistant.ui.RichKit.AppsCard) {
                         },
                         onLongClickLabel = "Quote ${a.label}",
                         onLongClick = {
-                            ChatQuote.request.value = com.blaze.assistant.phone.AppFinder.tileLine(com.blaze.assistant.phone.AppFinder.App(a.label, a.pkg))
+                            ChatQuote.request.value = com.argus.assistant.phone.AppFinder.tileLine(com.argus.assistant.phone.AppFinder.App(a.label, a.pkg))
                         })
                     .padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(c.paper), contentAlignment = Alignment.Center) {

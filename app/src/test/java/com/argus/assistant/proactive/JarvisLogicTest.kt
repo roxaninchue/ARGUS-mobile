@@ -1,6 +1,6 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
-import com.blaze.assistant.proactive.JarvisLogic.Level
+import com.argus.assistant.proactive.JarvisLogic.Level
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -58,9 +58,9 @@ class JarvisLogicTest {
         assertFalse(JarvisLogic.sensitive("com.booking", "Hotels in Livingstone"))
     }
 
-    @Test fun glanceableSkipsBlazeLauncherAndRepeats() {
-        assertFalse(JarvisLogic.glanceable("com.blaze.assistant", "com.blaze.assistant", false, "", 0, now))
-        assertFalse(JarvisLogic.glanceable("com.sec.android.app.launcher", "com.blaze.assistant", true, "", 0, now))
+    @Test fun glanceableSkipsArgusLauncherAndRepeats() {
+        assertFalse(JarvisLogic.glanceable("com.argus.assistant", "com.argus.assistant", false, "", 0, now))
+        assertFalse(JarvisLogic.glanceable("com.sec.android.app.launcher", "com.argus.assistant", true, "", 0, now))
         assertFalse(JarvisLogic.glanceable("com.booking", "x", false, "com.booking", now - 5 * 60_000L, now))
         assertTrue(JarvisLogic.glanceable("com.booking", "x", false, "com.booking", now - 25 * 60_000L, now))
         assertTrue(JarvisLogic.glanceable("com.booking", "x", false, "com.spotify.music", now - 60_000L, now))

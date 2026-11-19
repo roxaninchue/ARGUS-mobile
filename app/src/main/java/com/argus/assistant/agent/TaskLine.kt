@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.52.1 (owner, repeated): ONE pill per task, a single short line of natural text that changes as the work moves on

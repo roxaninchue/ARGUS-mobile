@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -121,16 +121,16 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Attachment
-import com.blaze.assistant.agent.Attachments
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.ChatNav
-import com.blaze.assistant.agent.Mood
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.phone.BlazeAccessibilityService
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Attachment
+import com.argus.assistant.agent.Attachments
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.ChatNav
+import com.argus.assistant.agent.Mood
+import com.argus.assistant.agent.Role
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.phone.ArgusAccessibilityService
+import com.argus.assistant.voice.Voice
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -138,8 +138,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Calendar
-import com.blaze.assistant.ui.argus.kit.NotchBackdrop
-import com.blaze.assistant.ui.argus.kit.NotchOverlay
+import com.argus.assistant.ui.argus.kit.NotchBackdrop
+import com.argus.assistant.ui.argus.kit.NotchOverlay
 import dev.chrisbanes.haze.haze
 
 /** What the message list draws: a message, or a folded run of steps. [pos] = its place in a run from one side (v0.24.0). */
@@ -147,12 +147,12 @@ internal sealed class Item(val key: String) {
     var pos: GroupPos = GroupPos.SINGLE
     abstract val side: Side
     abstract val at: Long
-    /** 0.45.19: who wrote it on Blaze's side ("halo" or "" for Blaze), so Halo's and Blaze's messages group apart. */
+    /** 0.45.19: who wrote it on Argus's side ("halo" or "" for Argus), so Halo's and Argus's messages group apart. */
     open val who: String get() = ""
     class Msg(val m: ChatMessage) : Item("m${m.id}") {
         override val side: Side get() = if (m.role == Role.USER) Side.ME else Side.BLAZE
         override val at: Long get() = m.at
-        override val who: String get() = if (m.role == Role.BLAZE && com.blaze.assistant.agent.Duo.Who.of(m.speaker) == com.blaze.assistant.agent.Duo.Who.HALO) "halo" else ""
+        override val who: String get() = if (m.role == Role.BLAZE && com.argus.assistant.agent.Duo.Who.of(m.speaker) == com.argus.assistant.agent.Duo.Who.HALO) "halo" else ""
     }
     class Steps(val steps: List<ChatMessage>, val live: Boolean, val endAt: Long, val startAt: Long) : Item("s${steps.first().id}") {
         override val side: Side get() = Side.BLAZE
@@ -182,38 +182,38 @@ internal fun buildItems(messages: List<ChatMessage>, working: Boolean, hideDoneS
 
 @Composable
 fun ChatScreen() {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // Only "is the chat empty?" lives up here, so streamed words don't redraw the whole screen.
     val hasMessages by remember { Agent.messages.map { it.isNotEmpty() }.distinctUntilChanged() }
         .collectAsState(Agent.messages.value.isNotEmpty())
     val mood by Agent.mood.collectAsState()
     // v0.45.8: the first frame that shows the working state, timed from the Send tap (StartTrace "Send → working").
-    LaunchedEffect(mood) { if (mood != Mood.IDLE) androidx.compose.runtime.withFrameNanos { com.blaze.assistant.agent.StartTrace.visible() } }
+    LaunchedEffect(mood) { if (mood != Mood.IDLE) androidx.compose.runtime.withFrameNanos { com.argus.assistant.agent.StartTrace.visible() } }
     val ctx = LocalContext.current
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current   // v0.45.2: long-press light / dark
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val clip = LocalClipboardManager.current
-    // 0.48.0 RC4: the new Blaze look is the only chat surface: chat happens over the blurred Home (the composer), the old
+    // 0.48.0 RC4: the new Argus look is the only chat surface: chat happens over the blurred Home (the composer), the old
     // full chat screen (Chat / Projects pills, themed scenes, Hold to talk / Type / Photo, draft cards) is never drawn.
-    val composer = com.blaze.assistant.ui.composer.rememberComposerState()
+    val composer = com.argus.assistant.ui.composer.rememberComposerState()
 
     var settingsPage by rememberSaveable { mutableStateOf<String?>(null) }
     // First run (space/SpaceOnboarding, owner 2026-11-18): the logo clip, the language wheel, then sign-in; the downloads run in
     // the background afterwards. People who already set ARGUS up never see it.
     // Account lock: a fresh install sees the clip and the language before the lock screen (MainActivity), so after signing in
     // there onboarding starts at the sign-in step, which moves on by itself.
-    var onboard by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.show(Settings.bool("onboarded", false), Settings.ready && !com.blaze.assistant.connect.AccountGate.firstRun(), hasMessages)) }
-    var obStep by rememberSaveable { mutableStateOf(com.blaze.assistant.ui.space.SpaceOnboarding.first(Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, false)).name) }
+    var onboard by rememberSaveable { mutableStateOf(com.argus.assistant.ui.space.SpaceOnboarding.show(Settings.bool("onboarded", false), Settings.ready && !com.argus.assistant.connect.AccountGate.firstRun(), hasMessages)) }
+    var obStep by rememberSaveable { mutableStateOf(com.argus.assistant.ui.space.SpaceOnboarding.first(Settings.bool(com.argus.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, false)).name) }
     val galleryOpen by GalleryUi.open.collectAsState()
     LaunchedEffect(Unit) { if (!onboard) Settings.setBool("onboarded", true) }
     // 0.52.3: no dependency gate any more; what has to be downloaded is set up by itself (setup/SetupRunner) and the
     // Home's "Finishing setup" card shows what is left.
-    val setupState by com.blaze.assistant.setup.SetupRunner.state.collectAsState()
+    val setupState by com.argus.assistant.setup.SetupRunner.state.collectAsState()
     var setupSheet by rememberSaveable { mutableStateOf(false) }
-    // Blaze opening one of its own settings pages (setup help).
-    val askedPage by com.blaze.assistant.agent.SelfSetup.openPage.collectAsState()
-    LaunchedEffect(askedPage) { askedPage?.let { settingsPage = it; com.blaze.assistant.agent.SelfSetup.openPage.value = null } }
+    // Argus opening one of its own settings pages (setup help).
+    val askedPage by com.argus.assistant.agent.SelfSetup.openPage.collectAsState()
+    LaunchedEffect(askedPage) { askedPage?.let { settingsPage = it; com.argus.assistant.agent.SelfSetup.openPage.value = null } }
     var input by remember { mutableStateOf(TextFieldValue("")) }
     // 18 Nov 2026 text assist (TextAssist): the draft as typed once assist has improved it (null = not yet), so the next tap
     // sends what the box holds and Undo can put the typed text back. The user always sees what is sent (docs/MODEL-FIRST.md).
@@ -221,9 +221,9 @@ fun ChatScreen() {
     var assistJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all), typed or spoken.
     var talkTo by rememberSaveable { mutableStateOf("blaze") }
-    // v0.45.28: "Halo x Blaze" is no longer a pick (it joins in by itself): a restored "all" becomes Blaze.
+    // v0.45.28: "Halo x Argus" is no longer a pick (it joins in by itself): a restored "all" becomes Argus.
     if (talkTo != TalkArcMath.normalize(talkTo)) talkTo = TalkArcMath.normalize(talkTo)
-    // v0.43.0: the Blaze / Halo / All arc, opened from the header orb (replaces the "Talk to" pills, in both modes).
+    // v0.43.0: the Argus / Halo / All arc, opened from the header orb (replaces the "Talk to" pills, in both modes).
     var arcOpen by remember { mutableStateOf(false) }
     var quote by rememberSaveable { mutableStateOf("") }
     // v0.45.28: a link tapped in a reply opens in Home's glass window (GlassWindow), over the chat.
@@ -250,10 +250,10 @@ fun ChatScreen() {
     }
     val files = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { addUris(it) }
     val photos = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(5)) { addUris(it) }
-    // v0.28.x camera-fix: permission → camera app (explicit grants) → Blaze's own camera → photo picker (ui/CameraCapture.kt).
+    // v0.28.x camera-fix: permission → camera app (explicit grants) → Argus's own camera → photo picker (ui/CameraCapture.kt).
     val cameraCapture = rememberCameraCapture(onPhoto = { addUris(listOf(it), "image/jpeg") },
         onPickPhoto = { photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
-    val hasCamera = remember { com.blaze.assistant.device.CameraSupport.hasCamera(ctx) }
+    val hasCamera = remember { com.argus.assistant.device.CameraSupport.hasCamera(ctx) }
     cameraCapture.dialogs()
 
     // An image on the clipboard shows a "Paste image" chip.
@@ -279,19 +279,19 @@ fun ChatScreen() {
         addUris(uris, hint)
     }
 
-    var a11yOn by remember { mutableStateOf(BlazeAccessibilityService.isEnabled(ctx)) }
-    var control by remember { mutableStateOf(com.blaze.assistant.phone.PhoneControl.state(ctx)) }
+    var a11yOn by remember { mutableStateOf(ArgusAccessibilityService.isEnabled(ctx)) }
+    var control by remember { mutableStateOf(com.argus.assistant.phone.PhoneControl.state(ctx)) }
     LaunchedEffect(Unit) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (true) {
-                a11yOn = BlazeAccessibilityService.isEnabled(ctx)
-                control = com.blaze.assistant.phone.PhoneControl.state(ctx).also { com.blaze.assistant.phone.PhoneControl.note(it) }
+                a11yOn = ArgusAccessibilityService.isEnabled(ctx)
+                control = com.argus.assistant.phone.PhoneControl.state(ctx).also { com.argus.assistant.phone.PhoneControl.note(it) }
                 delay(2500)
             }
         }
     }
 
-    // v0.24.1: the composer's rotating placeholder, rebuilt from on-device data each time Blaze comes to the front.
+    // v0.24.1: the composer's rotating placeholder, rebuilt from on-device data each time Argus comes to the front.
     var hints by remember { mutableStateOf(emptyList<String>()) }
     var reducedMotion by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -307,7 +307,7 @@ fun ChatScreen() {
     LaunchedEffect(shared) {
         val d = shared ?: return@LaunchedEffect
         Agent.sharedDraft.value = null
-        com.blaze.assistant.ui.space.SpaceNav.showChat()   // 0.52.3: it waits in the chat's message box (the shell switches to Chat)
+        com.argus.assistant.ui.space.SpaceNav.showChat()   // 0.52.3: it waits in the chat's message box (the shell switches to Chat)
         if (d.text.isNotBlank()) input = TextFieldValue(d.text, androidx.compose.ui.text.TextRange(d.text.length))
         d.attachment?.let { pending = pending + it }
     }
@@ -316,7 +316,7 @@ fun ChatScreen() {
     val listenReq by Voice.listenRequests.collectAsState()
     fun startVoice() {
         Voice.listen(onText = { if (callWords.matches(it.trim())) Voice.callRequests.value++ else if (it.isNotBlank())
-            Agent.send(com.blaze.assistant.agent.SimpleHome.tagged(it, talkTo), byVoice = true) },
+            Agent.send(com.argus.assistant.agent.SimpleHome.tagged(it, talkTo), byVoice = true) },
             onError = { Toast.makeText(ctx, it, Toast.LENGTH_SHORT).show() })
     }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
@@ -369,7 +369,7 @@ fun ChatScreen() {
     var botThread by remember { mutableStateOf<String?>(null) }
     var showSearch by remember { mutableStateOf(false) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all) and whether the keyboard composer is out.
-    val simpleMode by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
+    val simpleMode by com.argus.assistant.agent.SimpleMode.simpleFlow.collectAsState()
     // The old Home under a swipe-up chat sheet is gone (and since 16 Nov 2026 the 0.52 Home too), so the Swipe setting
     // no longer applies (HomeRoute keeps its rule for the RC2 redesign behind HomeRedesign).
     val swipeMode = HomeRoute.swipe(false, HomeRedesign.enabled)
@@ -383,40 +383,40 @@ fun ChatScreen() {
     var newOpen by remember { mutableStateOf(false) }
     // Owner 16 Nov 2026: the Inbox sheet (bell) and its unread count
     var inboxOpen by remember { mutableStateOf(false) }
-    val inboxItems by com.blaze.assistant.notify.Inbox.items.collectAsState()
-    val inboxUnread = remember(inboxItems) { com.blaze.assistant.notify.Inbox.unread(inboxItems) }
+    val inboxItems by com.argus.assistant.notify.Inbox.items.collectAsState()
+    val inboxUnread = remember(inboxItems) { com.argus.assistant.notify.Inbox.unread(inboxItems) }
     // P2-SF-03: the bell dot reads the one needs-you list (approvals, questions, connects, failed jobs, suggestions)
-    val needsYou = com.blaze.assistant.ui.team.rememberNeedsYou()
+    val needsYou = com.argus.assistant.ui.team.rememberNeedsYou()
     val showing by Views.showing.collectAsState()
     val designTarget by Views.designTarget.collectAsState()
     val viewOffer by Views.offer.collectAsState()
-    val work by com.blaze.assistant.agent.Modes.work.collectAsState()
-    val approval by com.blaze.assistant.agent.Modes.approval.collectAsState()
-    val bgAgents by com.blaze.assistant.agent.BgAgents.all.collectAsState()
-    val account by com.blaze.assistant.connect.BlazeAccount.view.collectAsState()
-    val projects by com.blaze.assistant.agent.Projects.all.collectAsState()
+    val work by com.argus.assistant.agent.Modes.work.collectAsState()
+    val approval by com.argus.assistant.agent.Modes.approval.collectAsState()
+    val bgAgents by com.argus.assistant.agent.BgAgents.all.collectAsState()
+    val account by com.argus.assistant.connect.ArgusAccount.view.collectAsState()
+    val projects by com.argus.assistant.agent.Projects.all.collectAsState()
     val allChats by Agent.chats.collectAsState()
     val busyChats by Agent.busyChats.collectAsState()
     val question by Agent.pendingQuestion.collectAsState()
     val currentChat by Agent.chatId.collectAsState()
     val liveStatus by Agent.status.collectAsState()
-    val routerState by com.blaze.assistant.agent.BlazeRouter.state.collectAsState()
+    val routerState by com.argus.assistant.agent.ArgusRouter.state.collectAsState()
 
     fun exitView() { Views.showing.value = "" }
-    fun openView(v: BlazeView, target: String = "") {
+    fun openView(v: ArgusView, target: String = "") {
         showViews = false; showSearch = false; plusOpen = false; avatarMenu = false
         when (v.special) {
             "gallery" -> GalleryUi.open.value = true
             "home" -> homeRequests.value++
             "projects" -> go(navNow().projectsList())
-            "browser" -> com.blaze.assistant.browser.BrowserTools.show(ctx)
-            "phonebrowser" -> com.blaze.assistant.browser.phone.PhoneBrowserActivity.open(ctx, control = false)
-            "terminal" -> com.blaze.assistant.terminal.BlazeTerminalActivity.open(ctx)
-            "music" -> com.blaze.assistant.mediaapps.MusicActivity.open(ctx, target)
-            "video" -> com.blaze.assistant.mediaapps.VideoActivity.open(ctx, target)
+            "browser" -> com.argus.assistant.browser.BrowserTools.show(ctx)
+            "phonebrowser" -> com.argus.assistant.browser.phone.PhoneBrowserActivity.open(ctx, control = false)
+            "terminal" -> com.argus.assistant.terminal.ArgusTerminalActivity.open(ctx)
+            "music" -> com.argus.assistant.mediaapps.MusicActivity.open(ctx, target)
+            "video" -> com.argus.assistant.mediaapps.VideoActivity.open(ctx, target)
             "design" -> {
                 if (target.isNotBlank()) Views.designTarget.value = target
-                else if (Views.designTarget.value.isBlank()) try { com.blaze.assistant.agent.Designs.current()?.path?.let { Views.designTarget.value = it } } catch (_: Exception) { }
+                else if (Views.designTarget.value.isBlank()) try { com.argus.assistant.agent.Designs.current()?.path?.let { Views.designTarget.value = it } } catch (_: Exception) { }
                 go(navNow().switchTab(ChatNav.CHAT)); Views.showing.value = "design"
             }
             else -> settingsPage = v.page ?: ""
@@ -430,12 +430,12 @@ fun ChatScreen() {
     }
 
     // P1-TM-06: the "Here's what I'll do" sheet waiting for Apply, and its preview switch.
-    var teamPlan by remember { mutableStateOf<com.blaze.assistant.team.Router.Plan?>(null) }
+    var teamPlan by remember { mutableStateOf<com.argus.assistant.team.Router.Plan?>(null) }
     var teamPlanFromChat by remember { mutableStateOf(false) }
-    var planInstant by remember { mutableStateOf(com.blaze.assistant.team.TeamRouting.instant) }
+    var planInstant by remember { mutableStateOf(com.argus.assistant.team.TeamRouting.instant) }
     fun send(raw: String, routed: Boolean = false) {
         // v0.45.8: the reply's start is timed from this tap (StartTrace, monotonic).
-        com.blaze.assistant.agent.StartTrace.tap(force = true)
+        com.argus.assistant.agent.StartTrace.tap(force = true)
         val text = raw.trim()
         if (callWords.matches(text)) { input = TextFieldValue(""); startCall(); return }
         // 16 Nov 2026 (Finn): no "/" commands. A message that starts with "/" is just a message.
@@ -445,44 +445,44 @@ fun ChatScreen() {
         val nowNav = navNow()
         val where = when {
             routed || pending.isNotEmpty() || quote.isNotBlank() || text.isEmpty() -> null
-            nowNav.tab == ChatNav.TEAM -> com.blaze.assistant.team.Router.Where.Team
+            nowNav.tab == ChatNav.TEAM -> com.argus.assistant.team.Router.Where.Team
             nowNav.tab == ChatNav.CHAT && !nowNav.inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value &&
-                com.blaze.assistant.team.TeamCommands.maybeTeam(text) -> com.blaze.assistant.team.Router.Where.Thread(com.blaze.assistant.team.BotRules.MANAGER_ID)
+                com.argus.assistant.team.TeamCommands.maybeTeam(text) -> com.argus.assistant.team.Router.Where.Thread(com.argus.assistant.team.BotRules.MANAGER_ID)
             else -> null
         }
         if (where != null) {
             input = TextFieldValue("")
-            val fromTeam = where is com.blaze.assistant.team.Router.Where.Team
+            val fromTeam = where is com.argus.assistant.team.Router.Where.Team
             fun toChat() { if (fromTeam) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) } }
-            val toast = { m: String -> com.blaze.assistant.ui.argus.kit.ArgusToasts.show(m) }
+            val toast = { m: String -> com.argus.assistant.ui.argus.kit.ArgusToasts.show(m) }
             scope.launch {
-                when (val o = com.blaze.assistant.team.TeamRouting.handle(ctx, text, where)) {
+                when (val o = com.argus.assistant.team.TeamRouting.handle(ctx, text, where)) {
                     null -> { send(text, routed = true); toChat() }
-                    is com.blaze.assistant.team.Router.Outcome.Chat -> { send(o.text, routed = true); toChat() }
-                    is com.blaze.assistant.team.Router.Outcome.Shell -> { toChat(); Agent.note(com.blaze.assistant.team.TeamRouting.shell(o.cmd), asReply = true) }
-                    is com.blaze.assistant.team.Router.Outcome.Delegated -> { toast(o.handed.line); if (!fromTeam) Agent.note(o.handed.line + " \u2192 " + text.take(200), asReply = true) }
-                    is com.blaze.assistant.team.Router.Outcome.Open ->
-                        if (com.blaze.assistant.team.BotRules.isManager(o.bot)) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
+                    is com.argus.assistant.team.Router.Outcome.Chat -> { send(o.text, routed = true); toChat() }
+                    is com.argus.assistant.team.Router.Outcome.Shell -> { toChat(); Agent.note(com.argus.assistant.team.TeamRouting.shell(o.cmd), asReply = true) }
+                    is com.argus.assistant.team.Router.Outcome.Delegated -> { toast(o.handed.line); if (!fromTeam) Agent.note(o.handed.line + " \u2192 " + text.take(200), asReply = true) }
+                    is com.argus.assistant.team.Router.Outcome.Open ->
+                        if (com.argus.assistant.team.BotRules.isManager(o.bot)) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
                         else { botThread = o.bot.id }
-                    is com.blaze.assistant.team.Router.Outcome.Done -> {
-                        toast(com.blaze.assistant.ui.team.PlanSheetModel.done(o.applied))
+                    is com.argus.assistant.team.Router.Outcome.Done -> {
+                        toast(com.argus.assistant.ui.team.PlanSheetModel.done(o.applied))
                         if (!fromTeam) Agent.note(o.applied.lines.joinToString("\n") { "\u2713 $it" }, asReply = true)
                     }
-                    is com.blaze.assistant.team.Router.Outcome.Preview -> { teamPlanFromChat = !fromTeam; teamPlan = o.plan }
+                    is com.argus.assistant.team.Router.Outcome.Preview -> { teamPlanFromChat = !fromTeam; teamPlan = o.plan }
                 }
             }
             return
         }
-        val body = com.blaze.assistant.agent.SimpleHome.tagged(text, talkTo)
+        val body = com.argus.assistant.agent.SimpleHome.tagged(text, talkTo)
         val full = if (quote.isNotBlank()) quote.lines().joinToString("\n") { "> $it" } + "\n\n" + body else body
         if (full.isBlank() && pending.isEmpty()) return
         // P1-SH-04: Chat mode sends to the newest Manager chat (an older one is read-only)
         if (navNow().tab == ChatNav.CHAT && !navNow().inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value)
-            com.blaze.assistant.ui.team.ChatModeRuntime.beforeSend()
-        // v0.30.6 rapid messages: no "busy" check; a message sent while Blaze works joins the turn (Agent.send).
+            com.argus.assistant.ui.team.ChatModeRuntime.beforeSend()
+        // v0.30.6 rapid messages: no "busy" check; a message sent while Argus works joins the turn (Agent.send).
         // v0.28.3: a new project chat joins its project with its first message (only from its own screen in Projects).
         val n = navNow()
-        if (n.inProjectChat && Agent.chatId.value == n.chat && com.blaze.assistant.agent.Projects.of(n.chat) == null) com.blaze.assistant.agent.Projects.assign(n.chat, n.project)
+        if (n.inProjectChat && Agent.chatId.value == n.chat && com.argus.assistant.agent.Projects.of(n.chat) == null) com.argus.assistant.agent.Projects.assign(n.chat, n.project)
         Agent.send(full, attachments = pending)
         pending = emptyList(); quote = ""; input = TextFieldValue("")
     }
@@ -490,13 +490,13 @@ fun ChatScreen() {
     var tbRect by remember { mutableStateOf<Rect?>(null) }
     var tbCopy by remember { mutableStateOf<(() -> Unit)?>(null) }
     var tbAll by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val toolbar = remember { BlazeTextToolbar({ r, cp, all -> tbRect = r; tbCopy = cp; tbAll = all }, { tbRect = null }) }
+    val toolbar = remember { ArgusTextToolbar({ r, cp, all -> tbRect = r; tbCopy = cp; tbAll = all }, { tbRect = null }) }
     // v0.27.2: selected words reach Search / Ask / Share without overwriting the phone's clipboard.
     val capClip = remember(clip) { CaptureClipboard(clip) }
     // v0.27.2: what each selection-pill action does in the chat. Every action but Select all ends the selection.
     fun askNow(prompt: String) {
         input = TextFieldValue(prompt, TextRange(prompt.length))
-        send(prompt)   // v0.30.6: joins the turn when Blaze is working
+        send(prompt)   // v0.30.6: joins the turn when Argus is working
     }
     fun onSelection(a: SelectionActions.Action) {
         val copy = tbCopy
@@ -509,7 +509,7 @@ fun ChatScreen() {
                 if (t.isBlank()) return
                 when (SelectionActions.resolve(a, t)) {
                     SelectionActions.Action.QUOTE -> quote = t
-                    SelectionActions.Action.SEARCH, SelectionActions.Action.OPEN_LINK -> SelectionDo.openInBlazeBrowser(ctx, t)
+                    SelectionActions.Action.SEARCH, SelectionActions.Action.OPEN_LINK -> SelectionDo.openInArgusBrowser(ctx, t)
                     SelectionActions.Action.ASK -> askNow(SelectionActions.askPrompt(t))
                     SelectionActions.Action.TRANSLATE -> askNow(SelectionActions.translatePrompt(t, SelectionDo.phoneLanguage()))
                     SelectionActions.Action.DEFINE -> askNow(SelectionActions.definePrompt(t))
@@ -528,7 +528,7 @@ fun ChatScreen() {
     }
     fun openProjectChat(id: String) {
         // One mind: only the main thread and project threads open (v0.24.0: no chat list or archive screen).
-        val p = com.blaze.assistant.agent.Projects.of(id)?.id ?: return
+        val p = com.argus.assistant.agent.Projects.of(id)?.id ?: return
         quote = ""; showSearch = false
         go(navNow().openChat(p, id))
     }
@@ -539,12 +539,12 @@ fun ChatScreen() {
     // The shell drives which thread the agent shows (main on Chat, the open project chat in Projects)…
     LaunchedEffect(nav.visibleChat) {
         Agent.showChat(nav.visibleChat)
-        com.blaze.assistant.agent.Projects.current.value = if (nav.inProjectChat) nav.project else ""
+        com.argus.assistant.agent.Projects.current.value = if (nav.inProjectChat) nav.project else ""
     }
     // …and follows when something else shows a chat (a notification, the secure form card): a project chat opens in Projects.
     LaunchedEffect(currentChat) {
         val n = navNow()
-        val f = n.follow(currentChat) { com.blaze.assistant.agent.Projects.of(it)?.id }
+        val f = n.follow(currentChat) { com.argus.assistant.agent.Projects.of(it)?.id }
         if (f != n) go(f)
     }
 
@@ -565,13 +565,13 @@ fun ChatScreen() {
     composer.hostAction = { id ->
         when (id) {
             "camera" -> { cameraCapture.open(); true }
-            "blazecam" -> { com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value); true }
+            "blazecam" -> { com.argus.assistant.device.ArgusCamera.open(ctx, null, com.argus.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value); true }
             "photos" -> { photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)); true }
             "files" -> { files.launch(arrayOf("*/*")); true }
             "paste" -> { pasteImage(); true }
             "call" -> { startCall(); true }
-            "plan" -> { com.blaze.assistant.agent.Modes.toggleWork()
-                Toast.makeText(ctx, if (com.blaze.assistant.agent.Modes.plan) "Plan mode on: ${BrandName.NAME} plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
+            "plan" -> { com.argus.assistant.agent.Modes.toggleWork()
+                Toast.makeText(ctx, if (com.argus.assistant.agent.Modes.plan) "Plan mode on: ${BrandName.NAME} plans before it acts" else "Plan mode off", Toast.LENGTH_SHORT).show(); true }
             "views" -> { appsOpen = true; true }   // 2026-11-18: the views shortcut opens the Apps page
             "profile" -> { settingsPage = ""; true }
             else -> false
@@ -580,24 +580,24 @@ fun ChatScreen() {
     // 0.52.3: asking for the chat (Spotlight's Chat / history / an ask) or a private chat shows the Chat tab.
     LaunchedEffect(composer.chatOpen) { if (composer.chatOpen) { composer.dismissChat(); if (!navNow().inProjectChat) go(navNow().switchTab(ChatNav.CHAT)) } }
     LaunchedEffect(isPrivate) { if (isPrivate && !navNow().inProjectChat) go(navNow().switchTab(ChatNav.CHAT)) }
-    val chatAsk by com.blaze.assistant.ui.space.SpaceNav.chatRequests.collectAsState()
+    val chatAsk by com.argus.assistant.ui.space.SpaceNav.chatRequests.collectAsState()
     LaunchedEffect(chatAsk) { if (chatAsk > 0 && !navNow().inProjectChat) go(navNow().switchTab(ChatNav.CHAT)) }
     // v0.28.3: the thread + composer show on main Chat and on a project chat screen; views (Design…) belong to main Chat.
     val chatBody = nav.tab == ChatNav.CHAT || nav.inProjectChat
     // 0.52.3: the floating composer is on Home too (Hark's "Message ARGUS"); a message from Home opens the Chat tab.
     val composerShown = chatBody || nav.tab == ChatNav.HOME || ChatNav.isMode(nav.tab)
     // 0.46.0 ARGUS Stage: the main chat is one playground (heroes, widgets, a movable chat, top / reply bars that can hide).
-    val stage by com.blaze.assistant.stage.StageStore.state.collectAsState()
-    val stageActive = com.blaze.assistant.stage.StageStore.enabled && nav.tab == ChatNav.CHAT && !nav.inProjectChat && showing.isEmpty()
+    val stage by com.argus.assistant.stage.StageStore.state.collectAsState()
+    val stageActive = com.argus.assistant.stage.StageStore.enabled && nav.tab == ChatNav.CHAT && !nav.inProjectChat && showing.isEmpty()
     // Living UI 0.2.1: landscape Living on the main chat trades the top bars, the Chat | Living switch and the full-width
     // composer for a left rail, one header line on the canvas and a floating composer (LivingSpec.railOn, LivingRail)
-    val livingView by com.blaze.assistant.ui.living.LivingSpec.view.collectAsState()
+    val livingView by com.argus.assistant.ui.living.LivingSpec.view.collectAsState()
     // Living UI 0.2.3: on its side the rail is the shell's chrome in every mode (Team, Chat, Life, Desk, Projects)
-    val landscapeNow = com.blaze.assistant.ui.common.isLandscape()
-    val landRail = com.blaze.assistant.ui.living.LivingSpec.shellRail(landscapeNow, true, DesignNav.fullScreen(showing, nav),
+    val landscapeNow = com.argus.assistant.ui.common.isLandscape()
+    val landRail = com.argus.assistant.ui.living.LivingSpec.shellRail(landscapeNow, true, DesignNav.fullScreen(showing, nav),
         ChatExpand.on && (nav.tab == ChatNav.CHAT || nav.inProjectChat), stage.topBar || !stageActive)
-    val railOn = landRail && com.blaze.assistant.ui.living.LivingSpec.railOn(landscapeNow, true,
-        livingView == com.blaze.assistant.ui.living.LivingSpec.View.LIVING,
+    val railOn = landRail && com.argus.assistant.ui.living.LivingSpec.railOn(landscapeNow, true,
+        livingView == com.argus.assistant.ui.living.LivingSpec.View.LIVING,
         nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty),
         hasMessages, showing.isNotEmpty())
     val stageLast by remember { Agent.messages.map { l -> l.lastOrNull { it.role == Role.BLAZE || it.role == Role.USER }?.text.orEmpty().take(140) }.distinctUntilChanged() }
@@ -606,7 +606,7 @@ fun ChatScreen() {
     // ---- v0.39.0 Swipe navigation (Settings › Navigation, independent of Simple / Advanced): Home underneath, Chat slides up over it (SwipeNav). ----
     val density = LocalDensity.current.density
     var sheetH by remember { mutableFloatStateOf(1f) }
-    var sheetP by rememberSaveable { mutableFloatStateOf(if (com.blaze.assistant.agent.SwipeNav.startSurface(swipeMode, !onboard && Settings.bool("onboarded", false)) == com.blaze.assistant.agent.SwipeNav.HOME) 0f else 1f) }
+    var sheetP by rememberSaveable { mutableFloatStateOf(if (com.argus.assistant.agent.SwipeNav.startSurface(swipeMode, !onboard && Settings.bool("onboarded", false)) == com.argus.assistant.agent.SwipeNav.HOME) 0f else 1f) }
     val sheetJob = remember { arrayOfNulls<kotlinx.coroutines.Job>(1) }
     var dragFrom by remember { mutableFloatStateOf(1f) }
     fun settleTo(t0: Float, velocity: Float = 0f) {
@@ -616,10 +616,10 @@ fun ChatScreen() {
             androidx.compose.animation.core.animate(sheetP, t, velocity, androidx.compose.animation.core.spring(dampingRatio = 0.86f, stiffness = 380f)) { x, _ -> sheetP = x }
         }
     }
-    val sheetDrag = androidx.compose.foundation.gestures.rememberDraggableState { d -> sheetJob[0]?.cancel(); sheetP = com.blaze.assistant.agent.SwipeNav.drag(sheetP, d, sheetH) }
+    val sheetDrag = androidx.compose.foundation.gestures.rememberDraggableState { d -> sheetJob[0]?.cancel(); sheetP = com.argus.assistant.agent.SwipeNav.drag(sheetP, d, sheetH) }
     val onSheetStart: suspend kotlinx.coroutines.CoroutineScope.(Offset) -> Unit = { dragFrom = if (sheetP >= 0.5f) 1f else 0f }
     val onSheetStop: suspend kotlinx.coroutines.CoroutineScope.(Float) -> Unit = { v ->
-        settleTo(com.blaze.assistant.agent.SwipeNav.settle(sheetP, v / density, dragFrom), -v / sheetH.coerceAtLeast(1f))
+        settleTo(com.argus.assistant.agent.SwipeNav.settle(sheetP, v / density, dragFrom), -v / sheetH.coerceAtLeast(1f))
     }
     val p = if (swipeMode) sheetP else 1f
     // Swipe has no Home tab: a remembered Home tab from Classic tabs becomes the Home surface.
@@ -627,11 +627,11 @@ fun ChatScreen() {
     // Things that need the chat bring it up: a question, an approval, a fix card, the computer card, a shared text, the mic.
     val pendingConfirmLegacy by Agent.pendingConfirm.collectAsState()
     // P2-SF-02: a policy card (approval / draft / question / connect) counts as an approval waiting here too
-    val policyCards by com.blaze.assistant.policy.PolicyRuntime.cards.collectAsState()
+    val policyCards by com.argus.assistant.policy.PolicyRuntime.cards.collectAsState()
     val pendingConfirmNow: Any? = pendingConfirmLegacy ?: policyCards.firstOrNull()
-    val fixNow by com.blaze.assistant.agent.FixCards.current.collectAsState()
+    val fixNow by com.argus.assistant.agent.FixCards.current.collectAsState()
     val formNow by Agent.pendingForm.collectAsState()
-    val secretNow by com.blaze.assistant.agent.SecretDesk.pending.collectAsState()
+    val secretNow by com.argus.assistant.agent.SecretDesk.pending.collectAsState()
     LaunchedEffect(question, pendingConfirmNow, fixNow, listenReq, formNow, secretNow) {
         if (swipeMode && (question != null || pendingConfirmNow != null || fixNow != null || listenReq > 0) && sheetP < 1f) settleTo(1f)
         // 0.52.3: what ARGUS waits on is answered in the chat, so Home (or Projects) gives way to it
@@ -657,8 +657,8 @@ fun ChatScreen() {
         }
     }
     // Awareness: which surface is in front (Home or Chat).
-    val surface by remember(swipeMode) { derivedStateOf { if (!swipeMode) (if (navNow().tab == ChatNav.HOME || navNow().tab == ChatNav.LIFE) "home" else "chat") else com.blaze.assistant.agent.SwipeNav.surfaceOf(sheetP) } }
-    LaunchedEffect(surface) { try { com.blaze.assistant.agent.Awareness.set(com.blaze.assistant.agent.Awareness.Now("surface", "Showing", com.blaze.assistant.agent.SwipeNav.awarenessLine(surface), "${BrandName.NAME}")) } catch (_: Throwable) { } }
+    val surface by remember(swipeMode) { derivedStateOf { if (!swipeMode) (if (navNow().tab == ChatNav.HOME || navNow().tab == ChatNav.LIFE) "home" else "chat") else com.argus.assistant.agent.SwipeNav.surfaceOf(sheetP) } }
+    LaunchedEffect(surface) { try { com.argus.assistant.agent.Awareness.set(com.argus.assistant.agent.Awareness.Now("surface", "Showing", com.argus.assistant.agent.SwipeNav.awarenessLine(surface), "${BrandName.NAME}")) } catch (_: Throwable) { } }
     // 0.45.19 fix 7: Back returns to the chat from everything (BackRule); the chat is the root, so Back from Chat no
     // longer goes down to Home (that made Home and Chat a loop Back could never leave). The shell publishes what is
     // in front and how to close it; BackRule's window interceptor acts on it before any nested BackHandler.
@@ -695,7 +695,7 @@ fun ChatScreen() {
         if (over) return
         val n = navNow()
         // Living UI: Back on Living returns to Chat first
-        if (n.tab == ChatNav.CHAT && !n.inProjectChat && com.blaze.assistant.ui.living.LivingSpec.back()) return
+        if (n.tab == ChatNav.CHAT && !n.inProjectChat && com.argus.assistant.ui.living.LivingSpec.back()) return
         val up = n.back()
         if ((n.inProjectChat || n.tab == ChatNav.PROJECTS) && up != null && up.tab == ChatNav.PROJECTS) go(up)
         else if (!Agent.privateChat.value) {
@@ -721,31 +721,31 @@ fun ChatScreen() {
     // v0.28.3: back inside Projects: project chat → project page → projects list (then the system's back).
     BackHandler(enabled = !isPrivate && nav.back() != null) { navNow().back()?.let { go(it) } }
     // P1-TM-04: the bot editor flow (New bot, Edit soul, New › Bot) and the Delete / Keep sheet for agent_delete.
-    var botFlow by remember { mutableStateOf<com.blaze.assistant.ui.team.BotFlow?>(null) }
-    val pendingDelete by com.blaze.assistant.team.JobsRuntime.pendingDelete.collectAsState()
+    var botFlow by remember { mutableStateOf<com.argus.assistant.ui.team.BotFlow?>(null) }
+    val pendingDelete by com.argus.assistant.team.JobsRuntime.pendingDelete.collectAsState()
     // P1-SH-01: where the Team page sends you. The Manager's row opens Chat (its thread is the main conversation); other
     // bots' threads and the jobs lists come with P1-SH-03 / P1-TM-05 and say so until then. P1-TM-04: Edit soul and New
     // bot open the bot editor.
     val teamNav = remember {
-        com.blaze.assistant.ui.team.TeamNav(
+        com.argus.assistant.ui.team.TeamNav(
             // 2026-11-17: every other bot opens its own thread (BotThreadScreen)
-            openBot = { id -> if (id == com.blaze.assistant.team.BotRules.MANAGER_ID) go(navNow().switchTab(ChatNav.CHAT)) else { botThread = id } },
+            openBot = { id -> if (id == com.argus.assistant.team.BotRules.MANAGER_ID) go(navNow().switchTab(ChatNav.CHAT)) else { botThread = id } },
             memory = { settingsPage = "memory" },
-            editSoul = { id -> botFlow = com.blaze.assistant.ui.team.BotFlow.Edit(id) },
-            newBot = { botFlow = com.blaze.assistant.ui.team.BotFlow.New },
+            editSoul = { id -> botFlow = com.argus.assistant.ui.team.BotFlow.Edit(id) },
+            newBot = { botFlow = com.argus.assistant.ui.team.BotFlow.New },
             // P1-TM-07: Desk → Jobs on Unassigned / All (the "jobs" view stays the terminal job log)
-            unassigned = { com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS, com.blaze.assistant.ui.team.JobsFilter.UNASSIGNED); go(navNow().switchTab(ChatNav.DESK)) },
-            allJobs = { com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS, com.blaze.assistant.ui.team.JobsFilter.ALL); go(navNow().switchTab(ChatNav.DESK)) },
+            unassigned = { com.argus.assistant.ui.team.DeskState.show(com.argus.assistant.ui.team.DeskModel.Segment.JOBS, com.argus.assistant.ui.team.JobsFilter.UNASSIGNED); go(navNow().switchTab(ChatNav.DESK)) },
+            allJobs = { com.argus.assistant.ui.team.DeskState.show(com.argus.assistant.ui.team.DeskModel.Segment.JOBS, com.argus.assistant.ui.team.JobsFilter.ALL); go(navNow().switchTab(ChatNav.DESK)) },
         )
     }
     ArgusShellLocals(c.dark) {
     // The + menu's entries and what a pick does (the composer's own menu with the ARGUS look, the sheet without it).
     fun plusEntries(): List<PlusItem> = plusItems(work, approval, "", clipHasImage, nav.inProjectChat, hasCamera)
-        .filter { com.blaze.assistant.agent.SimpleMode.plusVisible(it.id, simpleMode) }
+        .filter { com.argus.assistant.agent.SimpleMode.plusVisible(it.id, simpleMode) }
     fun plusPick(id: String) {
         when (id) {
             "camera" -> cameraCapture.open()
-            "blazecam" -> if (!com.blaze.assistant.device.BlazeCamera.open(ctx, null, com.blaze.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
+            "blazecam" -> if (!com.argus.assistant.device.ArgusCamera.open(ctx, null, com.argus.assistant.device.CameraModes.Origin.CHAT_PLUS, Agent.chatId.value))
                 Toast.makeText(ctx, "${BrandName.NAME} Camera couldn't open on this phone. Pick a photo instead.", Toast.LENGTH_SHORT).show() else Unit
             "photos" -> photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             "files" -> files.launch(arrayOf("*/*"))
@@ -754,16 +754,16 @@ fun ChatScreen() {
             "call" -> startCall()
             "apps" -> settingsPage = "connections"
             "skills" -> settingsPage = "skills"
-            "plan" -> com.blaze.assistant.agent.Modes.toggleWork()
+            "plan" -> com.argus.assistant.agent.Modes.toggleWork()
             "new" -> newProjectChat(navNow().project)
         }
     }
-    Box(Modifier.fillMaxSize().testTag(com.blaze.assistant.ui.space.SpaceTags.ROOT).onSizeChanged { sheetH = it.height.toFloat() }) {
+    Box(Modifier.fillMaxSize().testTag(com.argus.assistant.ui.space.SpaceTags.ROOT).onSizeChanged { sheetH = it.height.toFloat() }) {
         // 0.52.3: the space view (dark) or the light ARGUS ground behind every tab. Not while the first-run onboarding is up:
         // it draws its own opaque space view over everything, so a second full-screen backdrop (and image draw) under it
         // only added first-frame work (CI fix, low-RAM smoke cold start).
         // P1-SH-01: the ARGUS shell's ground (Orbit, SpaceBackdrop's space view, unless Appearance picks another).
-        if (!onboard) com.blaze.assistant.ui.argus.ArgusGround {}
+        if (!onboard) com.argus.assistant.ui.argus.ArgusGround {}
         // 0.52.3 CI fix (low-RAM smoke): while the first-run onboarding is up it covers everything with its own opaque space
         // view, so the shell under it (Home, top bar, chat, Projects, Spotlight) is not composed at all. Composing it anyway
         // cost ~636 ms of first-frame layout on the low-RAM emulator. It composes the moment onboarding ends.
@@ -785,10 +785,10 @@ fun ChatScreen() {
         val designFull = DesignNav.fullScreen(showing, nav)
         // Owner 2026-11-14: the keyboard only lifts the chat column when it is typing into it; Spotlight, chat search, the
         // history drawer's search and Settings bring their own field, so the chatbox stays put under them.
-        val lift = com.blaze.assistant.ui.argus.kit.ShellSpec.Composer.liftsWithKeyboard(spotlight = composer.spotlightOpen,
-            search = showSearch, drawer = com.blaze.assistant.ui.team.ChatDrawerUi.showing(), settings = settingsPage != null)
+        val lift = com.argus.assistant.ui.argus.kit.ShellSpec.Composer.liftsWithKeyboard(spotlight = composer.spotlightOpen,
+            search = showSearch, drawer = com.argus.assistant.ui.team.ChatDrawerUi.showing(), settings = settingsPage != null)
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().then(if (lift) Modifier.imePadding() else Modifier)
-            .then(com.blaze.assistant.ui.living.shellPad(landRail))) {
+            .then(com.argus.assistant.ui.living.shellPad(landRail))) {
             // v0.39.0 Simple mode: pull down from the top (the bar above the header, or the header itself) for Home.
             // 0.50.0: the chat box's expand arrows maximise the chat (no top bar, no pull handle); Back restores first.
             val maxed = ChatExpand.on && chatBody
@@ -801,14 +801,14 @@ fun ChatScreen() {
             // 0.52.3 (Hark design): round button (+ on Home, search in Chat, the menu in Projects), the Home | Chat | Projects
             // pill, the avatar (profile and settings; long-press = light / dark). A view (Gallery, Design…) shows an Exit chip.
             // P1-SH-01: the ARGUS top bar (me · notch · search · bell · +); the notch itself is drawn over the content below.
-            com.blaze.assistant.ui.argus.kit.ArgusTopBar(
-                initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
+            com.argus.assistant.ui.argus.kit.ArgusTopBar(
+                initial = com.argus.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
                 onMe = { notchOpen = false; settingsPage = "" },
                 onMeLong = {
                     val (m, note) = LightDark.toggle(c.dark)
                     ThemeMode.set(m)
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    com.blaze.assistant.ui.argus.kit.ArgusToasts.show(note)
+                    com.argus.assistant.ui.argus.kit.ArgusToasts.show(note)
                 },
                 onSearch = { notchOpen = false; composer.query = ""; composer.openSpotlight() },
                 // Owner 16 Nov 2026: the bell opens the Inbox; while something in the chat waits on you (a question, an OK, a form) it opens Chat first
@@ -818,23 +818,23 @@ fun ChatScreen() {
                     if (question != null || pendingConfirmLegacy != null || fixNow != null || formNow != null || secretNow != null) { exitView(); go(navNow().switchTab(ChatNav.CHAT)) }
                     else inboxOpen = true
                 },
-                bellBadge = question != null || pendingConfirmLegacy != null || fixNow != null || formNow != null || secretNow != null || inboxUnread > 0 || com.blaze.assistant.policy.NeedsYou.dot(needsYou),
+                bellBadge = question != null || pendingConfirmLegacy != null || fixNow != null || formNow != null || secretNow != null || inboxUnread > 0 || com.argus.assistant.policy.NeedsYou.dot(needsYou),
                 onPlus = { notchOpen = false; newOpen = true })
             }
             // P1-SH-01: a private chat says so under the ARGUS top bar, with the way out
-            if (isPrivate && !designFull && !maxed && !landRail) com.blaze.assistant.ui.argus.kit.ArgusButton(tr("Private chat \u00b7 Leave"), { confirmLeavePrivate = true },
-                Modifier.padding(start = 12.dp, bottom = 6.dp), size = com.blaze.assistant.ui.argus.kit.ButtonSize.S, icon = "lock")
-            if (!designFull && !maxed && showing.isNotEmpty() && nav.tab == ChatNav.CHAT) com.blaze.assistant.ui.space.SpaceChip(
+            if (isPrivate && !designFull && !maxed && !landRail) com.argus.assistant.ui.argus.kit.ArgusButton(tr("Private chat \u00b7 Leave"), { confirmLeavePrivate = true },
+                Modifier.padding(start = 12.dp, bottom = 6.dp), size = com.argus.assistant.ui.argus.kit.ButtonSize.S, icon = "lock")
+            if (!designFull && !maxed && showing.isNotEmpty() && nav.tab == ChatNav.CHAT) com.argus.assistant.ui.space.SpaceChip(
                 (Views.find(showing)?.name ?: showing) + (if (showing == "design") " \u00b7 $DESIGN_BETA" else "") + "  \u2715", { exitView() },
-                modifier = Modifier.padding(start = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, bottom = 6.dp))
+                modifier = Modifier.padding(start = com.argus.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, bottom = 6.dp))
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 // P1-SH-01: Home's board and the main chat as panes of their own, so the ARGUS shell shows them as its Life and
                 // Chat pages and the 0.52 shell keeps them as tabs.
                 // P1-SH-05: Life mode v1 (day line, Today strip, domain tiles, Projects, the Home's panels) is the ARGUS shell's
                 // Life page. The 0.52 Home pane left with the look switch, 16 Nov 2026.
                 val lifePane: @Composable () -> Unit = {
-                    com.blaze.assistant.ui.team.LifePage(
-                        com.blaze.assistant.ui.team.LifeNav(
+                    com.argus.assistant.ui.team.LifePage(
+                        com.argus.assistant.ui.team.LifeNav(
                             onAsk = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) },
                             onOpenChat = { go(navNow().switchTab(ChatNav.CHAT)) },
                             onOpenProject = { go(navNow().openProject(it)) },
@@ -842,13 +842,13 @@ fun ChatScreen() {
                             onSignIn = { settingsPage = "account" },
                             onSetup = { setupSheet = true },
                             onOpenSchedule = { Views.find("schedule")?.let { openView(it) } },
-                            onSetUpLife = { d -> send(com.blaze.assistant.ui.team.LifeModel.setUpAsk(d)); go(navNow().switchTab(ChatNav.CHAT)) },
+                            onSetUpLife = { d -> send(com.argus.assistant.ui.team.LifeModel.setUpAsk(d)); go(navNow().switchTab(ChatNav.CHAT)) },
                             onConnect = { settingsPage = "connections" },
                             onApps = { appsOpen = true }),
-                        projects = projects.sortedByDescending { it.updated }.take(com.blaze.assistant.ui.space.SpaceHomeCards.MAX_PROJECTS).map { it.id to it.name },
+                        projects = projects.sortedByDescending { it.updated }.take(com.argus.assistant.ui.space.SpaceHomeCards.MAX_PROJECTS).map { it.id to it.name },
                         signedIn = me != null || Settings.ready, working = mood != Mood.IDLE,
-                        setupLeft = if (com.blaze.assistant.setup.SetupRunner.started()) com.blaze.assistant.setup.SetupPlan.left(setupState).size else 0,
-                        setupPercent = com.blaze.assistant.setup.SetupPlan.percent(setupState))
+                        setupLeft = if (com.argus.assistant.setup.SetupRunner.started()) com.argus.assistant.setup.SetupPlan.left(setupState).size else 0,
+                        setupPercent = com.argus.assistant.setup.SetupPlan.percent(setupState))
                 }
                 // Owner 2026-11-18: [modePage] is true when this is the ARGUS shell's Chat page inside the mode pager. That page
                 // keeps drawing Chat mode (the Manager's current chat) while the pager slides or the panes cross-fade to another
@@ -862,23 +862,23 @@ fun ChatScreen() {
                     DesignView(designTarget, busy = mood != Mood.IDLE, status = liveStatus,
                         onAsk = { send(it) }, onOpenInBrowser = { u ->
                             try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                            catch (_: Exception) { com.blaze.assistant.browser.BrowserTools.show(ctx) } },
-                        home = try { com.blaze.assistant.terminal.Terminal.home() } catch (_: Exception) { null },
+                            catch (_: Exception) { com.argus.assistant.browser.BrowserTools.show(ctx) } },
+                        home = try { com.argus.assistant.terminal.Terminal.home() } catch (_: Exception) { null },
                         onBack = { Views.showing.value = DesignNav.back(Views.showing.value) })
                     BackHandler { Views.showing.value = DesignNav.back(Views.showing.value) }
                 } else if ((modePage || nav.tab == ChatNav.CHAT) && (currentChat == ChatNav.MAIN || isPrivate) && !(stageActive && !stage.isEmpty)) {
                     // P1-SH-04 Chat mode: the Manager's chats (history drawer, ✎ new chat, ghost toggle, greeting) on the main chat
-                    com.blaze.assistant.ui.team.ChatModeFrame(name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null },
+                    com.argus.assistant.ui.team.ChatModeFrame(name = me?.name?.ifBlank { null } ?: Settings.userName.ifBlank { null },
                         privateOn = isPrivate, onPrivate = { if (isPrivate) confirmLeavePrivate = true else Agent.enterPrivate() },
                         onAsk = { send(it) }, onOpenProjectChat = { openProjectChat(it) }, chrome = !landRail, note = !railOn) { keep ->
                         val dens = LocalDensity.current
                         CompositionLocalProvider(LocalTextToolbar provides toolbar, LocalClipboardManager provides capClip, LocalOpenLink provides openLink,
                             LocalDensity provides androidx.compose.ui.unit.Density(dens.density, dens.fontScale * Settings.textScale)) {
                             // Living UI 0.1.0: Chat | Living over the chatbox; Living draws in Chat's place, Back returns to Chat
-                            val living by com.blaze.assistant.ui.living.LivingSpec.view.collectAsState()
-                            if (living == com.blaze.assistant.ui.living.LivingSpec.View.LIVING) { BackHandler { com.blaze.assistant.ui.living.LivingSpec.back() }
-                                com.blaze.assistant.ui.living.LivingScreen(mood != Mood.IDLE, keep, reducedMotion,
-                                    wide = railOn, onTitle = { com.blaze.assistant.ui.team.ChatDrawerUi.open() }) }
+                            val living by com.argus.assistant.ui.living.LivingSpec.view.collectAsState()
+                            if (living == com.argus.assistant.ui.living.LivingSpec.View.LIVING) { BackHandler { com.argus.assistant.ui.living.LivingSpec.back() }
+                                com.argus.assistant.ui.living.LivingScreen(mood != Mood.IDLE, keep, reducedMotion,
+                                    wide = railOn, onTitle = { com.argus.assistant.ui.team.ChatDrawerUi.open() }) }
                             else MessageList(mood, onQuote = { quote = it }, onFollowup = { send(it) }, keep = keep)
                         }
                     }
@@ -891,7 +891,7 @@ fun ChatScreen() {
                         LocalDensity provides androidx.compose.ui.unit.Density(dens.density, dens.fontScale * Settings.textScale)) {
                         if (stageActive && !stage.isEmpty) {
                             // 0.46.0: back steps toward the normal chat (hero -> widget, then the bars and chat come back).
-                            if (!stage.isNormal) BackHandler { com.blaze.assistant.stage.StageStore.back() }
+                            if (!stage.isNormal) BackHandler { com.argus.assistant.stage.StageStore.back() }
                             StageHost(stageLast) { m -> Box(m) { if (hasMessages) MessageList(mood, onQuote = { quote = it }, onFollowup = { send(it) }) } }
                         } else MessageList(mood,
                             onQuote = { quote = it },
@@ -904,17 +904,17 @@ fun ChatScreen() {
                 // P1-SH-01: in the ARGUS shell the four modes are one pager ("modes"); Projects and project chats show over it.
                 // P1-TM-07: the Projects list is Desk's Projects segment in the ARGUS shell (DeskRoute); a project page and a
                 // project chat still show over the pager.
-                val navShown = com.blaze.assistant.ui.team.DeskRoute.shown(nav, true)
-                LaunchedEffect(nav) { com.blaze.assistant.ui.team.DeskRoute.segment(nav, true)?.let { com.blaze.assistant.ui.team.DeskState.show(it); go(navShown) } }
+                val navShown = com.argus.assistant.ui.team.DeskRoute.shown(nav, true)
+                LaunchedEffect(nav) { com.argus.assistant.ui.team.DeskRoute.segment(nav, true)?.let { com.argus.assistant.ui.team.DeskState.show(it); go(navShown) } }
                 val projectsPane: @Composable (Boolean) -> Unit = { embedded ->
                     val needs = remember(question, allChats) { question?.let { q -> allChats.filter { it.title == q.chat }.map { it.id }.toSet() } ?: emptySet() }
-                    com.blaze.assistant.ui.space.SpaceProjectsScreen(projects, allChats, busyChats, needs, if (embedded) "" else nav.project,
+                    com.argus.assistant.ui.space.SpaceProjectsScreen(projects, allChats, busyChats, needs, if (embedded) "" else nav.project,
                         onOpen = { go(navNow().openProject(it)) }, onBack = { navNow().back()?.let { go(it) } },
-                        onCreate = { go(navNow().openProject(com.blaze.assistant.agent.Projects.create(it).id)) },
+                        onCreate = { go(navNow().openProject(com.argus.assistant.agent.Projects.create(it).id)) },
                         onChat = { openProjectChat(it) }, onNewChat = { newProjectChat(it) },
-                        onInstructions = { id, t -> com.blaze.assistant.agent.Projects.setInstructions(id, t) },
-                        onBrief = { id, t -> com.blaze.assistant.agent.Projects.setBrief(id, t) },
-                        onDelete = { com.blaze.assistant.agent.Projects.delete(it); go(navNow().projectDeleted(it)) },
+                        onInstructions = { id, t -> com.argus.assistant.agent.Projects.setInstructions(id, t) },
+                        onBrief = { id, t -> com.argus.assistant.agent.Projects.setBrief(id, t) },
+                        onDelete = { com.argus.assistant.agent.Projects.delete(it); go(navNow().projectDeleted(it)) },
                         onRenameChat = { id, t -> Agent.renameChat(id, t) },
                         onDeleteChat = { deleteProjectChat(it) }, embedded = embedded)
                     LaunchedEffect(Unit) { Agent.refreshChats() }
@@ -924,16 +924,16 @@ fun ChatScreen() {
                     animationSpec = MotionTokens.medium(), label = "tab") { paneNow ->
                 if (paneNow == "modes") {
                     ArgusModesPager(navShown.tab, onTab = { m -> if (navNow().tab != m) { notchOpen = false; go(navNow().switchTab(m)) } },
-                        team = { com.blaze.assistant.ui.team.TeamPage(teamNav) },
+                        team = { com.argus.assistant.ui.team.TeamPage(teamNav) },
                         chat = { chatPane(true) },
                         life = { lifePane() },
                         // P1-TM-07: Desk v1 (Inbox placeholder · Jobs · Routines · Library · Projects · Computers)
                         desk = {
-                            com.blaze.assistant.ui.team.DeskPage(
-                                com.blaze.assistant.ui.team.DeskNav(open = { t ->
+                            com.argus.assistant.ui.team.DeskPage(
+                                com.argus.assistant.ui.team.DeskNav(open = { t ->
                                     when (t) {
-                                        com.blaze.assistant.ui.team.DeskModel.Targets.CHAT -> go(navNow().switchTab(ChatNav.CHAT))
-                                        com.blaze.assistant.ui.team.DeskModel.Targets.DOWNLOADS -> try {
+                                        com.argus.assistant.ui.team.DeskModel.Targets.CHAT -> go(navNow().switchTab(ChatNav.CHAT))
+                                        com.argus.assistant.ui.team.DeskModel.Targets.DOWNLOADS -> try {
                                             ctx.startActivity(Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                                         } catch (_: Exception) { GalleryUi.open.value = true }
                                         else -> Views.find(t)?.let { openView(it) }
@@ -975,67 +975,67 @@ fun ChatScreen() {
                     }
                 } else chatPane(false)
                 }
-                // v0.39.0: the 10-second Undo bar for what Blaze just did on Autopilot.
+                // v0.39.0: the 10-second Undo bar for what Argus just did on Autopilot.
                 if (chatBody) UndoCountdownBar(onUndone = { line -> Agent.note(line) })
                 // Dim the chat while a sheet (/views, the arc) is open (the + sheet brings its own scrim), so half-cut lines at its edge read as background.
                 if (chatBody && viewShowing.isEmpty() && (showViews || arcOpen)) SheetScrim { showViews = false; arcOpen = false }
                 // Owner 2026-11-15: a tap anywhere above the opened chat box closes its + menu (no dimming: it is part of the page).
-                if (plusOpen) Box(Modifier.matchParentSize().testTag(com.blaze.assistant.ui.argus.kit.PlusMenuSpec.SCRIM_TAG)
+                if (plusOpen) Box(Modifier.matchParentSize().testTag(com.argus.assistant.ui.argus.kit.PlusMenuSpec.SCRIM_TAG)
                     .clickable(remember { MutableInteractionSource() }, indication = null) { plusOpen = false })
             }
             if (chatBody && viewShowing.isEmpty()) {
                 if (voiceState == Voice.State.LISTENING) ListeningStrip(onStop = { Voice.stopByTap() })
                 LaunchedEffect(a11yOn) { if (a11yOn) Settings.setBool("a11y_seen", true) }
-                LaunchedEffect(control) { if (control == com.blaze.assistant.phone.PhoneControl.State.CONNECTED) Settings.setBool("a11y_seen", true) }
-                // v0.20.0: say which way it dropped and fix it in one tap (Blaze's own switch, not the whole list).
-                if (control != com.blaze.assistant.phone.PhoneControl.State.CONNECTED && Settings.phoneControl && Settings.bool("a11y_seen", false))
+                LaunchedEffect(control) { if (control == com.argus.assistant.phone.PhoneControl.State.CONNECTED) Settings.setBool("a11y_seen", true) }
+                // v0.20.0: say which way it dropped and fix it in one tap (Argus's own switch, not the whole list).
+                if (control != com.argus.assistant.phone.PhoneControl.State.CONNECTED && Settings.phoneControl && Settings.bool("a11y_seen", false))
                     PhoneControlBanner(control) {
-                        ComeBack.watch(ctx) { BlazeAccessibilityService.instance != null }
-                        try { ctx.startActivity(com.blaze.assistant.phone.PhoneControl.fixIntent(ctx)) }
+                        ComeBack.watch(ctx) { ArgusAccessibilityService.instance != null }
+                        try { ctx.startActivity(com.argus.assistant.phone.PhoneControl.fixIntent(ctx)) }
                         catch (_: Exception) { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                     }
                 // 0.46.3: the one-time phone control explainer (a phone task needed control and it was off).
-                val explain by com.blaze.assistant.phone.flash.PhoneExplainer.requested.collectAsState()
+                val explain by com.argus.assistant.phone.flash.PhoneExplainer.requested.collectAsState()
                 if (explain) PhoneExplainerDialog(onOpenSettings = {
-                    ComeBack.watch(ctx) { BlazeAccessibilityService.instance != null }
-                    try { ctx.startActivity(com.blaze.assistant.phone.PhoneControl.fixIntent(ctx)) }
+                    ComeBack.watch(ctx) { ArgusAccessibilityService.instance != null }
+                    try { ctx.startActivity(com.argus.assistant.phone.PhoneControl.fixIntent(ctx)) }
                     catch (_: Exception) { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                }, onClose = { com.blaze.assistant.phone.flash.PhoneExplainer.requested.value = false; Settings.setBool("a11y_seen", true) })
-                // v0.45.4: "Blaze X.Y.Z is available" (once a day on app open, dismissible, silent offline).
+                }, onClose = { com.argus.assistant.phone.flash.PhoneExplainer.requested.value = false; Settings.setBool("a11y_seen", true) })
+                // v0.45.4: "Argus X.Y.Z is available" (once a day on app open, dismissible, silent offline).
                 if (!ChatExpand.on) UpdateBanner()
             }
             ConfirmCard()
-            com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark)   // P2-SF-02: approval / draft / question / connect cards
+            com.argus.assistant.ui.team.cards.ArgusCards(dark = LocalArgus.current.dark)   // P2-SF-02: approval / draft / question / connect cards
             QuestionCard()
             FixCard()
             SecureFormCard()
             // 0.46.6 Secure form: request_secret's card, and the "looks like a secret" hold before a message is sent.
             SecretRequestCard()
             SecretPasteCard()
-            // 0.45.19: Blaze Phone's live tile (frame, site, step, Take control) while Blaze works on its own phone.
+            // 0.45.19: Argus Phone's live tile (frame, site, step, Take control) while Argus works on its own phone.
             PhoneLiveCard()
             // v0.24.6: "Open in Design?" instead of switching views on its own.
             if (nav.tab == ChatNav.CHAT) viewOffer?.let { o -> if (showing != o.id) ViewOfferChip(Views.offerLabel(o.id),
                 onOpen = { Views.offer.value = null; Views.find(o.id)?.let { openView(it, o.target) } }, onDismiss = { Views.offer.value = null }) }
             if (composerShown && viewShowing.isEmpty()) {
-                com.blaze.assistant.ui.argus.kit.ArgusToastHost()
+                com.argus.assistant.ui.argus.kit.ArgusToastHost()
                 val sugg = remember(input.text) { fileSuggestions(input.text) }
                 if (sugg.isNotEmpty() && !showViews) SuggestionList(sugg) { s ->
                     if (s.runNow) send(s.fill) else input = TextFieldValue(s.fill, TextRange(s.fill.length))
                 }
                 if (quote.isNotBlank()) QuoteStrip(quote) { quote = "" }
                 // P1-SH-01: the mode's chips 10 dp over the composer (hidden while attachments wait or a sheet is open)
-                if (!landRail && input.text.isEmpty() && com.blaze.assistant.ui.argus.kit.ShellSpec.Chips.visible(pending.size, plusOpen || showViews || newOpen))
-                    com.blaze.assistant.ui.argus.kit.ChipsRow(com.blaze.assistant.ui.argus.kit.ShellSpec.Chips.of(nav.tab), onChip = { k ->
+                if (!landRail && input.text.isEmpty() && com.argus.assistant.ui.argus.kit.ShellSpec.Chips.visible(pending.size, plusOpen || showViews || newOpen))
+                    com.argus.assistant.ui.argus.kit.ChipsRow(com.argus.assistant.ui.argus.kit.ShellSpec.Chips.of(nav.tab), onChip = { k ->
                         when (k) {
-                            "job" -> input = com.blaze.assistant.ui.argus.kit.composerFill("Add a job: ")
+                            "job" -> input = com.argus.assistant.ui.argus.kit.composerFill("Add a job: ")
                             "memory" -> settingsPage = "memory"
                             "routines" -> Views.find("schedule")?.let { openView(it) }
                         }
                     })
                 if (pending.isNotEmpty() || loadingFiles) AttachmentThumbs(pending, loadingFiles) { a -> pending = pending - a }
                 if (clipHasImage && pending.isEmpty() && !plusOpen) Row(Modifier.fillMaxWidth()
-                    .padding(start = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, end = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp - 8.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    .padding(start = com.argus.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, end = com.argus.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp - 8.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Label(tr("Image on your clipboard"), size = 10.sp, modifier = Modifier.weight(1f))
                     ActionText("Paste image", color = c.accent, size = 10.sp, modifier = Modifier.clickable { pasteImage() }.padding(8.dp))
                     ActionText("×", size = 12.sp, modifier = Modifier.clickable { clipHasImage = false }.padding(8.dp))
@@ -1050,15 +1050,15 @@ fun ChatScreen() {
                 // v0.24.6: pictures straight from the keyboard (Samsung clipboard, GIFs, stickers) attach like picked photos.
                 // 0.52.3: always the composer pill (Simple mode's big hold-to-talk bar is gone with the old chat look).
                 // v0.43.0: who the next message goes to (@blaze / @halo / @all), picked on the arc from the header orb.
-                // 0.51.0 one persona: the Blaze / Halo arc is gone (there is only Blaze).
+                // 0.51.0 one persona: the Argus / Halo arc is gone (there is only Argus).
                 if (arcOpen) BackHandler { arcOpen = false }
                 // Owner 2026-11-15: the switch folds away while the + menu is open, so nothing sits over the opened chat box.
                 if (!landRail && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages)
-                    androidx.compose.animation.AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.blaze.assistant.ui.living.LivingSwitch() }
+                    androidx.compose.animation.AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.argus.assistant.ui.living.LivingSwitch() }
                 if (plusOpen) BackHandler { plusOpen = false }
                 // 0.46.0: the reply bar folded into a floating pill by the Stage (never gone): tap for the full bar.
-                if (stageActive && stage.reply == com.blaze.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                    StageReplyPill { com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.SetChrome(reply = com.blaze.assistant.stage.ReplyBar.FULL)) }
+                if (stageActive && stage.reply == com.argus.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                    StageReplyPill { com.argus.assistant.stage.StageStore.dispatch(com.argus.assistant.stage.StageAction.SetChrome(reply = com.argus.assistant.stage.ReplyBar.FULL)) }
                 }
                 else AcceptImages(onImage = { uri, mime -> addUris(listOf(uri), mime) }) {
                 // P1-SH-01: the ARGUS composer (+ · text · mic / send / stop, 5 lines); a message from Team, Life or Desk goes
@@ -1066,24 +1066,24 @@ fun ChatScreen() {
                 // 0.53.0: the manual model chip sits over the composer (ModelPick; Auto by default); 18 Nov 2026: effort and text assist beside it.
                 // Owner 2026-11-14: chip and chatbox are one surface (the chip is the composer's top row, no edge of its own).
                 val topRow = !(railOn || (landRail && nav.tab != ChatNav.CHAT))
-                com.blaze.assistant.ui.argus.kit.ArgusComposer(input, { input = it; if (it.text.isEmpty()) assistedFrom = null; Agent.typing(it.text.isNotEmpty()) },
+                com.argus.assistant.ui.argus.kit.ArgusComposer(input, { input = it; if (it.text.isEmpty()) assistedFrom = null; Agent.typing(it.text.isNotEmpty()) },
                     mode = if (nav.inProjectChat) ChatNav.CHAT else nav.tab, streaming = mood != Mood.IDLE, attachments = pending.size,
                     onPlus = { plusOpen = !plusOpen; showViews = false; notchOpen = false }, plusOpen = plusOpen,
                     // Owner 2026-11-15: the + menu grows out of this chat box (same glass), never a sheet over it
-                    menu = { com.blaze.assistant.ui.argus.kit.ComposerPlusMenu(plusEntries(), onPick = { id -> plusOpen = false; plusPick(id) }) },
+                    menu = { com.argus.assistant.ui.argus.kit.ComposerPlusMenu(plusEntries(), onPick = { id -> plusOpen = false; plusPick(id) }) },
                     // P1-TM-06: from Team the router decides (a job or a hand-off stays on Team; conversation opens Chat)
                     onSend = send@{
                         val t = input.text
                         if (assistJob?.isActive == true) return@send   // the improved text is on its way
                         // 18 Nov 2026 text assist: the first tap puts the improved text in the box; the next tap sends it
-                        if (topRow && com.blaze.assistant.agent.TextAssist.shouldRewrite(com.blaze.assistant.agent.TextAssist.level.value, t, assistedFrom)) {
+                        if (topRow && com.argus.assistant.agent.TextAssist.shouldRewrite(com.argus.assistant.agent.TextAssist.level.value, t, assistedFrom)) {
                             assistJob = scope.launch {
                                 val lines = Agent.messages.value.filter { it.role == Role.USER || it.role == Role.BLAZE }.map { (it.role == Role.USER) to it.text }
-                                val better = com.blaze.assistant.agent.TextAssist.rewrite(t, lines)
+                                val better = com.argus.assistant.agent.TextAssist.rewrite(t, lines)
                                 if (input.text != t) return@launch   // the user kept typing; their text stays
                                 assistedFrom = t
-                                if (better != null) input = com.blaze.assistant.ui.argus.kit.composerFill(better)
-                                else com.blaze.assistant.ui.argus.kit.ArgusToasts.show(tr("Couldn't improve that. Tap send to send it as written."))
+                                if (better != null) input = com.argus.assistant.ui.argus.kit.composerFill(better)
+                                else com.argus.assistant.ui.argus.kit.ArgusToasts.show(tr("Couldn't improve that. Tap send to send it as written."))
                             }
                             return@send
                         }
@@ -1091,37 +1091,37 @@ fun ChatScreen() {
                         send(t); if (ChatNav.isMode(navNow().tab) && navNow().tab != ChatNav.CHAT && navNow().tab != ChatNav.TEAM && t.isNotBlank() && !t.trimStart().startsWith("/")) go(navNow().switchTab(ChatNav.CHAT)) },
                     onMic = { onMic() }, onStop = { Agent.stop() },
                     // Living UI 0.2.1: a compact pill floating over the canvas in landscape Living (no chip row)
-                    modifier = if (railOn) com.blaze.assistant.ui.living.LivingFloat else if (landRail) com.blaze.assistant.ui.living.LivingCompact else Modifier,
+                    modifier = if (railOn) com.argus.assistant.ui.living.LivingFloat else if (landRail) com.argus.assistant.ui.living.LivingCompact else Modifier,
                     // 18 Nov 2026: model · effort · text assist on one row (ComposerTopRow, the flat model chip on the left)
                     top = if (!topRow) null else ({
                         val from = assistedFrom
-                        com.blaze.assistant.ui.argus.kit.ComposerTopRow(undo = if (from != null && input.text != from) ({ input = com.blaze.assistant.ui.argus.kit.composerFill(from) }) else null)
+                        com.argus.assistant.ui.argus.kit.ComposerTopRow(undo = if (from != null && input.text != from) ({ input = com.argus.assistant.ui.argus.kit.composerFill(from) }) else null)
                     }))
                 }
             }
         }
         // Living UI 0.2.3: the landscape shell rail at the start edge in every mode (the column is padded for it: shellPad)
         if (landRail) {
-            val chatsV by com.blaze.assistant.ui.team.ChatModeRuntime.version.collectAsState()
-            val unseen = remember(chatsV) { com.blaze.assistant.ui.team.ChatModeRuntime.chats().anyUnseen() }
+            val chatsV by com.argus.assistant.ui.team.ChatModeRuntime.version.collectAsState()
+            val unseen = remember(chatsV) { com.argus.assistant.ui.team.ChatModeRuntime.chats().anyUnseen() }
             val inChat = nav.tab == ChatNav.CHAT && !nav.inProjectChat
-            com.blaze.assistant.ui.living.LivingRail(
+            com.argus.assistant.ui.living.LivingRail(
                 mode = if (ChatNav.isMode(nav.tab) && !nav.inProjectChat) nav.tab else "",
                 onMode = { m -> notchOpen = false; exitView(); composer.closeSpotlight(); go(navNow().switchTab(m)) },
                 chat = inChat, livingShown = inChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages,
-                livingOn = livingView == com.blaze.assistant.ui.living.LivingSpec.View.LIVING,
-                initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
+                livingOn = livingView == com.argus.assistant.ui.living.LivingSpec.View.LIVING,
+                initial = com.argus.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
                 historyBadge = unseen, privateOn = isPrivate,
-                onHistory = { com.blaze.assistant.ui.team.ChatDrawerUi.open() },
+                onHistory = { com.argus.assistant.ui.team.ChatDrawerUi.open() },
                 onSearch = { notchOpen = false; composer.query = ""; composer.openSpotlight() },
-                onNew = { if (inChat) com.blaze.assistant.ui.team.ChatModeRuntime.newChat(ctx) else { notchOpen = false; newOpen = true } },
+                onNew = { if (inChat) com.argus.assistant.ui.team.ChatModeRuntime.newChat(ctx) else { notchOpen = false; newOpen = true } },
                 onLeavePrivate = { confirmLeavePrivate = true },
                 onMe = { notchOpen = false; settingsPage = "" },
                 onMeLong = {
                     val (m, note) = LightDark.toggle(c.dark)
                     ThemeMode.set(m)
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    com.blaze.assistant.ui.argus.kit.ArgusToasts.show(note)
+                    com.argus.assistant.ui.argus.kit.ArgusToasts.show(note)
                 })
         }
         // 0.52.3: no particles over the thread (the space view is the backdrop now).
@@ -1137,12 +1137,12 @@ fun ChatScreen() {
             if (notchOpen) {
                 NotchBackdrop(notchHaze, onClose = { notchOpen = NotchOverlay.outside(modeNow).open },
                     onExit = { notchStep(NotchOverlay.close()) }, onMe = { notchStep(NotchOverlay.me(modeNow)) },
-                    initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email))
+                    initial = com.argus.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email))
                 BackHandler { notchStep(NotchOverlay.back(true, modeNow)) }
             }
-            Box(Modifier.fillMaxWidth().statusBarsPadding().padding(top = ((com.blaze.assistant.ui.argus.kit.ShellSpec.TOP_BAR_DP - com.blaze.assistant.ui.argus.kit.KitSpec.TARGET) / 2).dp),
+            Box(Modifier.fillMaxWidth().statusBarsPadding().padding(top = ((com.argus.assistant.ui.argus.kit.ShellSpec.TOP_BAR_DP - com.argus.assistant.ui.argus.kit.KitSpec.TARGET) / 2).dp),
                 contentAlignment = Alignment.TopCenter) {
-                com.blaze.assistant.ui.argus.kit.NotchSwitcher(mode = modeNow, open = notchOpen,
+                com.argus.assistant.ui.argus.kit.NotchSwitcher(mode = modeNow, open = notchOpen,
                     onOpen = { notchOpen = it; if (it) newOpen = false },
                     // another mode switches as before; the mode you're in closes the pill and goes back to its normal page
                     onMode = { m -> notchStep(NotchOverlay.tap(modeNow, m)) },
@@ -1151,13 +1151,13 @@ fun ChatScreen() {
         }
         // Owner 2026-11-14: the history drawer over the whole screen, so the top bar and the chatbox sit under its scrim
         // instead of reading as parts with their own edges. Empty unless Chat mode is showing.
-        com.blaze.assistant.ui.team.ChatDrawerLayer()
+        com.argus.assistant.ui.team.ChatDrawerLayer()
         if (inboxOpen) InboxSheet(onDismiss = { inboxOpen = false })
         // P1-SH-01: the top bar's New sheet (P1-TM-04: Bot; jobs join it with the job sheet).
-        if (newOpen) com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = tr("New")) {
-            com.blaze.assistant.ui.argus.kit.MenuRow("bot", tr("Bot"), { newOpen = false; botFlow = com.blaze.assistant.ui.team.BotFlow.New }, sub = tr("A new bot for your team"))
-            com.blaze.assistant.ui.argus.kit.MenuRow("notebook", tr("Project"), { newOpen = false; go(navNow().projectsList()) }, sub = tr("A space with its own chats and files"))
-            com.blaze.assistant.ui.argus.kit.MenuRow("lock", tr("Private chat"), { newOpen = false; Agent.enterPrivate(); go(navNow().switchTab(ChatNav.CHAT)) }, sub = tr("Nothing here is saved or learned"))
+        if (newOpen) com.argus.assistant.ui.argus.kit.ArgusSheet(onDismiss = { newOpen = false }, title = tr("New")) {
+            com.argus.assistant.ui.argus.kit.MenuRow("bot", tr("Bot"), { newOpen = false; botFlow = com.argus.assistant.ui.team.BotFlow.New }, sub = tr("A new bot for your team"))
+            com.argus.assistant.ui.argus.kit.MenuRow("notebook", tr("Project"), { newOpen = false; go(navNow().projectsList()) }, sub = tr("A space with its own chats and files"))
+            com.argus.assistant.ui.argus.kit.MenuRow("lock", tr("Private chat"), { newOpen = false; Agent.enterPrivate(); go(navNow().switchTab(ChatNav.CHAT)) }, sub = tr("Nothing here is saved or learned"))
         }
 
         // The + menu grows out of the composer (owner 2026-11-15); the 0.52 + bottom sheet left with the look switch (16 Nov 2026).
@@ -1165,28 +1165,28 @@ fun ChatScreen() {
         // P1-TM-04: the bot editor (Describe it sends the draft request to ARGUS and opens Chat), and the Delete / Keep
         // sheet while agent_delete waits for the user's answer (a yes typed in the chat works too).
         // 2026-11-17: a bot's own chat, over the shell (Back or the arrow returns to Team)
-        com.blaze.assistant.ui.team.BotThreadHost(botThread, onClose = { botThread = null },
-            onEditSoul = { id -> botFlow = com.blaze.assistant.ui.team.BotFlow.Edit(id) },
-            onOpenJob = { _ -> botThread = null; com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS, com.blaze.assistant.ui.team.JobsFilter.ALL); go(navNow().switchTab(ChatNav.DESK)) })
-        com.blaze.assistant.ui.team.BotFlowHost(botFlow, onClose = { botFlow = null },
+        com.argus.assistant.ui.team.BotThreadHost(botThread, onClose = { botThread = null },
+            onEditSoul = { id -> botFlow = com.argus.assistant.ui.team.BotFlow.Edit(id) },
+            onOpenJob = { _ -> botThread = null; com.argus.assistant.ui.team.DeskState.show(com.argus.assistant.ui.team.DeskModel.Segment.JOBS, com.argus.assistant.ui.team.JobsFilter.ALL); go(navNow().switchTab(ChatNav.DESK)) })
+        com.argus.assistant.ui.team.BotFlowHost(botFlow, onClose = { botFlow = null },
             onDescribe = { t -> send(t); go(navNow().switchTab(ChatNav.CHAT)) })
         val askDelete = pendingDelete
-        if (askDelete != null) com.blaze.assistant.ui.team.PendingDeleteSheet(askDelete.name,
-            onDelete = { scope.launch { val r = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.team.JobsRuntime.manager()?.confirmByButton(askDelete.botId) }
-                com.blaze.assistant.ui.argus.kit.ArgusToasts.show(if (r == null || r.startsWith("Error:")) (r?.removePrefix("Error: ") ?: "Team isn't ready yet.") else "Bot removed") } },
-            onKeep = { scope.launch { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.team.JobsRuntime.manager()?.keep(askDelete.botId) }
-                com.blaze.assistant.ui.argus.kit.ArgusToasts.show("Kept ${askDelete.name}") } })
+        if (askDelete != null) com.argus.assistant.ui.team.PendingDeleteSheet(askDelete.name,
+            onDelete = { scope.launch { val r = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.argus.assistant.team.JobsRuntime.manager()?.confirmByButton(askDelete.botId) }
+                com.argus.assistant.ui.argus.kit.ArgusToasts.show(if (r == null || r.startsWith("Error:")) (r?.removePrefix("Error: ") ?: "Team isn't ready yet.") else "Bot removed") } },
+            onKeep = { scope.launch { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.argus.assistant.team.JobsRuntime.manager()?.keep(askDelete.botId) }
+                com.argus.assistant.ui.argus.kit.ArgusToasts.show("Kept ${askDelete.name}") } })
 
         // P1-TM-06: "Here's what I'll do" for a command read from the Team composer (or offline in the ARGUS chat)
         teamPlan?.let { plan ->
-            com.blaze.assistant.ui.team.PlanSheet(plan, instant = planInstant,
-                onInstant = { planInstant = it; com.blaze.assistant.team.TeamRouting.instant = it },
+            com.argus.assistant.ui.team.PlanSheet(plan, instant = planInstant,
+                onInstant = { planInstant = it; com.argus.assistant.team.TeamRouting.instant = it },
                 onApply = {
                     teamPlan = null
                     val inChat = teamPlanFromChat
                     scope.launch {
-                        val a = com.blaze.assistant.team.TeamRouting.apply(ctx, plan)
-                        com.blaze.assistant.ui.argus.kit.ArgusToasts.show(com.blaze.assistant.ui.team.PlanSheetModel.done(a))
+                        val a = com.argus.assistant.team.TeamRouting.apply(ctx, plan)
+                        com.argus.assistant.ui.argus.kit.ArgusToasts.show(com.argus.assistant.ui.team.PlanSheetModel.done(a))
                         if (inChat) Agent.note(a.lines.joinToString("\n") { "\u2713 $it" }, asReply = true)
                     }
                 },
@@ -1197,7 +1197,7 @@ fun ChatScreen() {
         chatGlassUrl?.let { u -> GlassWindow(u, onClose = { chatGlassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
             onAsk = { t -> chatGlassUrl = null; send(t) }, onQuote = { t -> chatGlassUrl = null; quote = t }) }
 
-        // v0.27.2: the selection pill, swipe sideways for Search, Ask Blaze, Translate, Define, Read aloud, Share.
+        // v0.27.2: the selection pill, swipe sideways for Search, Ask Argus, Translate, Define, Read aloud, Share.
         tbRect?.let { r ->
             val d = LocalDensity.current
             val short = with(d) { SelectionActions.likelyShort(r.width / density, r.height / density) }
@@ -1216,14 +1216,14 @@ fun ChatScreen() {
             MeetingRoomScreen(roomOpen, onDismiss = { Agent.roomOpen.value = -1L })
             BackHandler { Agent.roomOpen.value = -1L }
         }
-        if (confirmLeavePrivate) BlazeDialog(
-            title = com.blaze.assistant.agent.PrivateChat.LEAVE_TITLE, body = com.blaze.assistant.agent.PrivateChat.LEAVE_TEXT,
+        if (confirmLeavePrivate) ArgusDialog(
+            title = com.argus.assistant.agent.PrivateChat.LEAVE_TITLE, body = com.argus.assistant.agent.PrivateChat.LEAVE_TEXT,
             confirm = tr("Leave"), onConfirm = { confirmLeavePrivate = false; Agent.leavePrivate(); composer.dismissChat() }, warm = true,
             dismiss = tr("Stay"), onDismiss = { confirmLeavePrivate = false })
         // 2026-11-18 (overhaul.md NEXT UP 3): Life's Apps opens a full Apps page (ARGUS's apps + installed site apps),
         // under Settings so its avatar can open the profile over it. A tile closes the page and opens the app.
-        if (appsOpen) com.blaze.assistant.ui.argus.apps.AppsPage(
-            initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
+        if (appsOpen) com.argus.assistant.ui.argus.apps.AppsPage(
+            initial = com.argus.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email),
             onClose = { appsOpen = false },
             onProfile = { settingsPage = "" },
             onOpenView = { id -> appsOpen = false; Views.find(id)?.let { openView(it) } })
@@ -1238,41 +1238,41 @@ fun ChatScreen() {
         }
         // 0.52.3: what is left of setup (the Home's "Finishing setup" card), as the same one-screen progress view.
         if (setupSheet && !onboard) {
-            CompositionLocalProvider(LocalBlaze provides DarkColors) {
+            CompositionLocalProvider(LocalArgus provides DarkColors) {
                 DarkSystemBars()   // always dark: keep the status bar icons light over it
-                com.blaze.assistant.ui.space.SpaceBackdrop(forceDark = true) {
-                    com.blaze.assistant.ui.space.SpaceSetupScreen(setupState, onContinue = { setupSheet = false },
-                        onRetry = { com.blaze.assistant.setup.SetupRunner.retry(ctx) })
+                com.argus.assistant.ui.space.SpaceBackdrop(forceDark = true) {
+                    com.argus.assistant.ui.space.SpaceSetupScreen(setupState, onContinue = { setupSheet = false },
+                        onRetry = { com.argus.assistant.setup.SetupRunner.retry(ctx) })
                 }
             }
             BackHandler { setupSheet = false }
         }
         // 0.52.3: Spotlight, from the top bar's round button (+ / search) or the profile's Search pill, over everything.
-        com.blaze.assistant.ui.space.SpaceSpotlightLayer(composer, hour = com.blaze.assistant.ui.space.SpaceGreeting.hourNow(),
-            apps = { com.blaze.assistant.phone.InstalledApps.all(ctx).map { com.blaze.assistant.composer.SpotlightGroups.App(it.label, it.pkg) } },
+        com.argus.assistant.ui.space.SpaceSpotlightLayer(composer, hour = com.argus.assistant.ui.space.SpaceGreeting.hourNow(),
+            apps = { com.argus.assistant.phone.InstalledApps.all(ctx).map { com.argus.assistant.composer.SpotlightGroups.App(it.label, it.pkg) } },
             said = { Agent.messages.value.takeLast(300).filter { it.role == Role.USER || it.role == Role.BLAZE }
-                .map { com.blaze.assistant.composer.SpotlightGroups.Said(it.id, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text), it.role == Role.USER) } })
+                .map { com.argus.assistant.composer.SpotlightGroups.Said(it.id, com.argus.assistant.agent.ToolLeak.bubbleText(it.text), it.role == Role.USER) } })
         } // !onboard
         // First run (owner 2026-11-18): the clip, the language wheel, then sign-in. Finishing starts the downloads (they finish
         // in the background; Life shows what is left) and lands in the chat, where ARGUS introduces itself (setup/FirstRun).
         if (onboard) {
-            val step = com.blaze.assistant.ui.space.SpaceOnboarding.Step.valueOf(obStep)
+            val step = com.argus.assistant.ui.space.SpaceOnboarding.Step.valueOf(obStep)
             val signedIn = me != null || Settings.ready
             val finish: () -> Unit = {
-                Settings.setBool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME))
-                com.blaze.assistant.setup.SetupRunner.start(ctx); com.blaze.assistant.setup.FirstRun.welcome(ctx)
+                Settings.setBool(com.argus.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME))
+                com.argus.assistant.setup.SetupRunner.start(ctx); com.argus.assistant.setup.FirstRun.welcome(ctx)
             }
             val advance: () -> Unit = {
-                val nx = com.blaze.assistant.ui.space.SpaceOnboarding.next(step, signedIn)
-                if (com.blaze.assistant.ui.space.SpaceOnboarding.introSeen(step, nx)) Settings.setBool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, true)
+                val nx = com.argus.assistant.ui.space.SpaceOnboarding.next(step, signedIn)
+                if (com.argus.assistant.ui.space.SpaceOnboarding.introSeen(step, nx)) Settings.setBool(com.argus.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, true)
                 if (nx != null) obStep = nx.name else finish()
             }
             // Signed in (here or on the lock screen): the sign-in step moves on by itself.
-            LaunchedEffect(step, signedIn) { if (com.blaze.assistant.ui.space.SpaceOnboarding.autoNext(step, signedIn)) advance() }
-            if (!com.blaze.assistant.ui.space.SpaceOnboarding.autoNext(step, signedIn))
-                com.blaze.assistant.ui.space.SpaceOnboardingScreen(step, signedIn = signedIn, onNext = advance, accountCard = { AccountPage() })
-            BackHandler(enabled = com.blaze.assistant.ui.space.SpaceOnboarding.back(step) != null) {
-                com.blaze.assistant.ui.space.SpaceOnboarding.back(step)?.let { obStep = it.name }
+            LaunchedEffect(step, signedIn) { if (com.argus.assistant.ui.space.SpaceOnboarding.autoNext(step, signedIn)) advance() }
+            if (!com.argus.assistant.ui.space.SpaceOnboarding.autoNext(step, signedIn))
+                com.argus.assistant.ui.space.SpaceOnboardingScreen(step, signedIn = signedIn, onNext = advance, accountCard = { AccountPage() })
+            BackHandler(enabled = com.argus.assistant.ui.space.SpaceOnboarding.back(step) != null) {
+                com.argus.assistant.ui.space.SpaceOnboarding.back(step)?.let { obStep = it.name }
             }
         }
     }
@@ -1286,14 +1286,14 @@ fun ChatScreen() {
 @Composable
 private fun ArgusShellLocals(dark: Boolean, content: @Composable () -> Unit) {
     CompositionLocalProvider(
-        com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(dark),
-        com.blaze.assistant.ui.argus.LocalArgusGround provides com.blaze.assistant.ui.argus.Argus.groundSetting(com.blaze.assistant.ui.argus.Ground.ORBIT),
-        LocalArgusRich provides com.blaze.assistant.ui.argus.ArgusColors.of(dark),
+        com.argus.assistant.ui.argus.LocalArgusColors provides com.argus.assistant.ui.argus.ArgusColors.of(dark),
+        com.argus.assistant.ui.argus.LocalArgusGround provides com.argus.assistant.ui.argus.Argus.groundSetting(com.argus.assistant.ui.argus.Ground.ORBIT),
+        LocalArgusRich provides com.argus.assistant.ui.argus.ArgusColors.of(dark),
         content = content,
     )
 }
 
-/** "@ind" → files in Blaze's home whose path matches, to mention in the message. */
+/** "@ind" → files in Argus's home whose path matches, to mention in the message. */
 /** A row in the composer's pop-up list (the @file picker). */
 data class Suggestion(val title: String, val sub: String, val fill: String, val runNow: Boolean)
 
@@ -1301,7 +1301,7 @@ private fun fileSuggestions(text: String): List<Suggestion> {
     val tok = text.substringAfterLast(' ').substringAfterLast('\n')
     if (!tok.startsWith("@")) return emptyList()
     val q = tok.removePrefix("@").lowercase()
-    val home = try { com.blaze.assistant.terminal.Terminal.home() } catch (_: Exception) { return emptyList() }
+    val home = try { com.argus.assistant.terminal.Terminal.home() } catch (_: Exception) { return emptyList() }
     val found = home.walkTopDown().maxDepth(3).onEnter { !it.name.startsWith(".") || it == home }
         .filter { it.isFile && !it.name.startsWith(".") }
         .map { it.relativeTo(home).path }
@@ -1315,22 +1315,22 @@ private fun fileSuggestions(text: String): List<Suggestion> {
 private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (String) -> Unit,
                         /** P1-SH-04: Chat mode's open chat (a window of the main chat); null = every message. */
                         keep: ((ChatMessage) -> Boolean)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val messages by Agent.messages.collectAsState()
     val state = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // v0.26.2: the old "Fresh start" bubble stays hidden in saved chats too (compaction and /new are silent).
     val itemBuilder = remember { ItemBuilder() }
-    val simpleUi by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
-    val hideDoneSteps = com.blaze.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, live = false) == com.blaze.assistant.agent.SimpleMode.Work.NONE
+    val simpleUi by com.argus.assistant.agent.SimpleMode.simpleFlow.collectAsState()
+    val hideDoneSteps = com.argus.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, live = false) == com.argus.assistant.agent.SimpleMode.Work.NONE
     // v0.45.0 (#10): built incrementally: a streamed frame only rebuilds the rows after the last unchanged message.
     // 0.52.1 (owner): no step rows and no agent cards in the chat: the task's work is ONE line in the TaskPill at the end.
-    val items = remember(messages, mood, hideDoneSteps, keep) { itemBuilder.build(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
-        it.role == Role.STEP || it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD) || keep?.invoke(it) == false }, mood != Mood.IDLE, hideDoneSteps) }
+    val items = remember(messages, mood, hideDoneSteps, keep) { itemBuilder.build(messages.filterNot { com.argus.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
+        it.role == Role.STEP || it.meta.startsWith(com.argus.assistant.agent.BgAgents.CARD) || keep?.invoke(it) == false }, mood != Mood.IDLE, hideDoneSteps) }
     // The running turn's step texts (after your newest message), for the pill's line.
     val turnSteps = remember(messages) { val u = messages.indexOfLast { it.role == Role.USER }
         messages.drop(u + 1).filter { it.role == Role.STEP }.takeLast(12).map { it.text } }
-    val agentsAll by com.blaze.assistant.agent.BgAgents.all.collectAsState()
+    val agentsAll by com.argus.assistant.agent.BgAgents.all.collectAsState()
     val chatHere by Agent.chatId.collectAsState()
     val agentLogs = remember(agentsAll, chatHere) { agentsAll.filter { it.live && it.parent == chatHere }.sortedBy { it.started }
         .map { b -> b.log.ifEmpty { listOfNotNull(b.last.takeIf { l -> l.isNotBlank() }) } } }
@@ -1338,17 +1338,17 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     // setting; off = the 0.52.1 TaskPill line only.
     // 0.53.3 (owner: Claude-style turns, no pills): every turn is a flow of the model's words and grouped tool rows
     // (ui/team/thread/TurnFlow.kt), always on; the tool_rows setting only decides whether finished tool rows stay visible.
-    LaunchedEffect(Unit) { com.blaze.assistant.agent.ToolTrail.on = true }
-    val trail by com.blaze.assistant.agent.ToolTrail.results.collectAsState()
+    LaunchedEffect(Unit) { com.argus.assistant.agent.ToolTrail.on = true }
+    val trail by com.argus.assistant.agent.ToolTrail.results.collectAsState()
     val toolTurns = remember(messages, mood, trail, chatHere, keep) {
-        com.blaze.assistant.ui.team.thread.ChatToolRows.flows(messages.filterNot { com.blaze.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
-            it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD) || keep?.invoke(it) == false }.map {
-            com.blaze.assistant.ui.team.thread.ChatToolRows.Msg(it.id, it.role == Role.STEP, it.text, if (it.role == Role.STEP) it.meta else "", it.at, it.startAt,
-                ack = it.role == Role.BLAZE && it.meta == com.blaze.assistant.agent.Ack.META) }, mood != Mood.IDLE, trail[chatHere].orEmpty())
+        com.argus.assistant.ui.team.thread.ChatToolRows.flows(messages.filterNot { com.argus.assistant.agent.ReplyChips.isFreshStart(it.text, it.meta) ||
+            it.meta.startsWith(com.argus.assistant.agent.BgAgents.CARD) || keep?.invoke(it) == false }.map {
+            com.argus.assistant.ui.team.thread.ChatToolRows.Msg(it.id, it.role == Role.STEP, it.text, if (it.role == Role.STEP) it.meta else "", it.at, it.startAt,
+                ack = it.role == Role.BLAZE && it.meta == com.argus.assistant.agent.Ack.META) }, mood != Mood.IDLE, trail[chatHere].orEmpty())
     }
     val keepToolRows = Settings.toolRows || !hideDoneSteps
     val idleNow = rememberUpdatedState(mood == Mood.IDLE)
-    val toolActions = remember(onFollowup) { com.blaze.assistant.ui.team.thread.ThreadActions(goOn = { if (idleNow.value) onFollowup("Go on") }) }
+    val toolActions = remember(onFollowup) { com.argus.assistant.ui.team.thread.ThreadActions(goOn = { if (idleNow.value) onFollowup("Go on") }) }
     val total = items.size + 1 // + working row
     val atBottom by remember { derivedStateOf { !state.canScrollForward } }
     var follow by remember { mutableStateOf(true) }
@@ -1362,7 +1362,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
         if (animated) state.animateScrollToItem(total - 1) else state.scrollToItem(total - 1)
         state.scrollBy(100_000f)
     }
-    // Open at the latest message, and jump back there whenever you come back to Blaze.
+    // Open at the latest message, and jump back there whenever you come back to Argus.
     LaunchedEffect(Unit) { toEnd(false) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
@@ -1382,25 +1382,25 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val lastUser = messages.lastOrNull { it.role == Role.USER }?.id
     LaunchedEffect(lastUser) { if (lastUser != null) { follow = true; toEnd(true) } }
 
-    val lastBlazeId = messages.lastOrNull()?.takeIf { it.role == Role.BLAZE }?.id
+    val lastArgusId = messages.lastOrNull()?.takeIf { it.role == Role.BLAZE }?.id
     // 0.45.20 delivery label: only under your latest bubble (Sending > Sent > Read, ui/DeliveryStatus.kt).
-    val deliveries by com.blaze.assistant.agent.Delivery.tracker().states.collectAsState()
+    val deliveries by com.argus.assistant.agent.Delivery.tracker().states.collectAsState()
     val lastUserId = messages.lastOrNull { it.role == Role.USER }?.id
     val answeredLast = lastUserId != null && messages.dropWhile { it.id != lastUserId }.drop(1)
-        .any { (it.role == Role.BLAZE && it.meta != com.blaze.assistant.agent.Ack.META) || it.role == Role.ERROR }
+        .any { (it.role == Role.BLAZE && it.meta != com.argus.assistant.agent.Ack.META) || it.role == Role.ERROR }
     // v0.31.0: the reply streaming in right now (the droplet rides it); -1 = none.
     val streamId by Agent.streamingId.collectAsState()
-    // v0.31.2 Halo x Blaze: replies streaming side by side (@all, parallel team phases).
+    // v0.31.2 Halo x Argus: replies streaming side by side (@all, parallel team phases).
     val duoLive by Agent.duoLive.collectAsState()
-    // v0.32.0 split: Halo talking with you while Blaze works (her replies stream on their own; the drop stays on the work).
+    // v0.32.0 split: Halo talking with you while Argus works (her replies stream on their own; the drop stays on the work).
     val sideLive by Agent.sideLive.collectAsState()
     val split by Agent.split.collectAsState()
     // 0.45.24: the live line beside the drop shows until the reply's first words appear (WaitRow).
-    val replyAtEnd = (items.lastOrNull() as? Item.Msg)?.m?.let { it.role == Role.BLAZE && it.meta != com.blaze.assistant.agent.Ack.META && (lastUserId == null || it.id > lastUserId) } == true
+    val replyAtEnd = (items.lastOrNull() as? Item.Msg)?.m?.let { it.role == Role.BLAZE && it.meta != com.argus.assistant.agent.Ack.META && (lastUserId == null || it.id > lastUserId) } == true
     val waitLineOn = WaitRow.showLine(mood != Mood.IDLE, streamId >= 0, replyAtEnd)
     // v0.31.2: the newest reply keeps the joined drop + halo, dimmed and waiting, while the chat is idle.
     val waitingId = if (mood == Mood.IDLE) messages.lastOrNull { it.role == Role.BLAZE }?.id ?: -1L else -1L
-    // v0.30.6 rapid messages: quote chips on replies, the glow on what Blaze is working on, tap a chip to jump (ReplyQuote.kt).
+    // v0.30.6 rapid messages: quote chips on replies, the glow on what Argus is working on, tap a chip to jump (ReplyQuote.kt).
     val replyRefs = rememberReplyRefs(messages)
     // v0.31.1: one stable lambda (it captured the whole item list, so every row's params changed on every streamed frame).
     val itemsNow = rememberUpdatedState(items)
@@ -1415,7 +1415,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
         CompositionLocalProvider(RichSend.Local provides (if (mood == Mood.IDLE) onFollowup else null)) {
         // Unification 6/9: the thread sits at the shell gutter, under the top bar's round button and avatar
         LazyColumn(state = state, modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 14.dp)) {
+            contentPadding = PaddingValues(horizontal = com.argus.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 14.dp)) {
             itemsIndexed(items, key = { _, it -> it.key }, contentType = { _, it -> if (it is Item.Steps) 1 else 0 }) { i, item ->
                 val fresh = remember(item.key) { appear.fresh(item.key) }
                 // 0.45.20: "Today" / "Yesterday" chips between days (ui/ChatBubbles.kt).
@@ -1424,7 +1424,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 if (item is Item.Msg && BubbleDays.startsDay(prevAt, item.at)) DayChip(remember(item.at) { BubbleDays.label(item.at) })
                 // Milestone 4: the finished turn's work chip, just above the message that ended it.
                 if (item is Item.Msg) toolTurns.before[item.m.id]?.let { f ->
-                    ToolRowsLocals { com.blaze.assistant.ui.team.thread.TurnFlowView(f, showTools = keepToolRows) } }
+                    ToolRowsLocals { com.argus.assistant.ui.team.thread.TurnFlowView(f, showTools = keepToolRows) } }
                 Box(Modifier.fillMaxWidth().appearIn(fresh && i >= items.size - 3).padding(top = Bubbles.gapAbove(item.pos, i == 0))) {
                     when (item) {
                         is Item.Steps -> {
@@ -1432,24 +1432,24 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                             val chipOn by Agent.taskChip.collectAsState()
                             val st = if (chipOn.isNotBlank()) "" else st0   // no status words behind an ack
                             // v0.24.4: the token meter is a technical line; shown only with Show technical details on.
-                            val m = if (Settings.longChat && com.blaze.assistant.agent.ReplyChips.showTech() && (item.live || item.key == lastStepsKey)) meter else null
-                            when (com.blaze.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, item.live)) {
-                                com.blaze.assistant.agent.SimpleMode.Work.CARD ->
+                            val m = if (Settings.longChat && com.argus.assistant.agent.ReplyChips.showTech() && (item.live || item.key == lastStepsKey)) meter else null
+                            when (com.argus.assistant.agent.SimpleMode.work(simpleUi, Settings.showSteps, item.live)) {
+                                com.argus.assistant.agent.SimpleMode.Work.CARD ->
                                     WorkCard(item.steps, item.live, item.startAt, item.endAt, status = "", exact = Settings.showSteps,
                                         meter = m?.text.orEmpty(), meterHigh = m?.high == true, simple = false)
                                 // v0.41.0 Simple mode: one small quiet line while working, nothing once done.
                                 // 0.52.0: Simple mode shows the same work pill (no quiet status line any more)
-                                com.blaze.assistant.agent.SimpleMode.Work.HINT -> WorkCard(item.steps, item.live, item.startAt, item.endAt, status = "", exact = false)
-                                com.blaze.assistant.agent.SimpleMode.Work.NONE -> Unit
+                                com.argus.assistant.agent.SimpleMode.Work.HINT -> WorkCard(item.steps, item.live, item.startAt, item.endAt, status = "", exact = false)
+                                com.argus.assistant.agent.SimpleMode.Work.NONE -> Unit
                             }
                         }
                         is Item.Msg -> ReplyThread(item.m, replyRefs, jumpTo) { Entry(item.m, item.pos, canAct = mood == Mood.IDLE, onQuote = onQuote,
                             delivery = if (item.m.id == lastUserId) DeliveryView.effective(deliveries[item.m.gid], answeredLast, mood != Mood.IDLE) else null,
-                            showActs = item.m.id == lastBlazeId && mood == Mood.IDLE,
+                            showActs = item.m.id == lastArgusId && mood == Mood.IDLE,
                             live = item.m.id == streamId || item.m.id in duoLive || item.m.id in sideLive, latest = item.m.id == waitingId,
                             streamHere = item.m.id == streamId,
-                            followups = if (item.m.id == lastBlazeId && mood == Mood.IDLE && Settings.followups) item.m.followups else emptyList(),
-                            onFollowup = onFollowup, askChips = item.m.id == lastBlazeId && mood == Mood.IDLE && com.blaze.assistant.agent.SimpleMode.simple) }
+                            followups = if (item.m.id == lastArgusId && mood == Mood.IDLE && Settings.followups) item.m.followups else emptyList(),
+                            onFollowup = onFollowup, askChips = item.m.id == lastArgusId && mood == Mood.IDLE && com.argus.assistant.agent.SimpleMode.simple) }
                     }
                 }
                 }
@@ -1465,7 +1465,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 // droplet layer), and hands over without a fade: the reply's drop appears at this spot and glides to the text end.
                 val chip by Agent.taskChip.collectAsState()
                 // 0.45.20 step pill: the newest step under the pending reply (agent/StepPill.kt), this chat only.
-                val pill by com.blaze.assistant.agent.StepPills.current.collectAsState()
+                val pill by com.argus.assistant.agent.StepPills.current.collectAsState()
                 val chatNow by Agent.chatId.collectAsState()
                 // 0.45.24: the live line sits beside the drop (same row, centred) and goes as soon as the reply starts.
                 val working = mood != Mood.IDLE
@@ -1473,7 +1473,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 // 0.52.1: the waiting drop is replaced by the one TaskPill below (no second "working" indicator).
                 @Suppress("UNUSED_VARIABLE") val dropWas = WaitRow.showDrop(working, streamId >= 0, chip.isNotBlank(), duoLive.isNotEmpty())
                 val dropOn = false
-                // The step pill first; otherwise what Blaze is doing (the status line that used to sit above in the work card).
+                // The step pill first; otherwise what Argus is doing (the status line that used to sit above in the work card).
                 val liveSteps = (items.lastOrNull() as? Item.Steps)?.takeIf { it.live }
                 val pillText = WaitRow.line(pill?.takeIf { it.chat == chatNow }?.text, if (chip.isBlank()) status else "",
                     liveSteps?.steps?.lastOrNull()?.text.orEmpty(), simple = simpleUi && liveSteps != null, on = lineOn)
@@ -1482,7 +1482,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                     .offset(y = if (dropOn) OrbAnchor.thinkingOffsetY else 0.dp), verticalAlignment = Alignment.CenterVertically) {
                 AnimatedVisibility(dropOn, enter = MotionTokens.enterUp(), exit = androidx.compose.animation.ExitTransition.None) {
                     Box(Modifier.padding(top = 3.dp)) {
-                        val label = com.blaze.assistant.agent.ThinkingLabel.label(live = true, hasThought = live.isNotBlank(), show = Settings.showReasoning)
+                        val label = com.argus.assistant.agent.ThinkingLabel.label(live = true, hasThought = live.isNotBlank(), show = Settings.showReasoning)
                             ?: status.ifBlank { "${BrandName.NAME} is thinking" }
                         // v0.32.0 split: while Halo talks with you, the drop works alone (its halo went with her).
                         val ring by androidx.compose.animation.core.animateFloatAsState(if (split) 0f else 1f, androidx.compose.animation.core.tween(520), label = "ring")
@@ -1498,8 +1498,8 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 // its flow (the model's words + grouped tool rows, TurnFlow.kt), then the reasoning streaming in under it. No
                 // TaskPill, no "· 15 steps" line, no Skills / Specialist chips.
                 val liveFlow = toolTurns.live?.takeIf { working }
-                if (liveFlow != null) ToolRowsLocals { com.blaze.assistant.ui.team.thread.TurnFlowView(liveFlow) }
-                if (!working) toolTurns.tail?.let { f -> ToolRowsLocals { com.blaze.assistant.ui.team.thread.TurnFlowView(f, showTools = keepToolRows) } }
+                if (liveFlow != null) ToolRowsLocals { com.argus.assistant.ui.team.thread.TurnFlowView(liveFlow) }
+                if (!working) toolTurns.tail?.let { f -> ToolRowsLocals { com.argus.assistant.ui.team.thread.TurnFlowView(f, showTools = keepToolRows) } }
                 // 0.54.2 (owner, 15 Nov: "I want the thought to stream in"): the reasoning streams here, word by word, as it arrives.
                 val thinkingNow = working && streamId < 0 && ThoughtFold.shows(live, Settings.showReasoning)
                 if (thinkingNow) ThoughtSection(-1L - (lastUserId ?: 0L), live, live = true, answerStarted = false, ms = 0L)
@@ -1537,14 +1537,14 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
  */
 @Composable
 private fun WorkingWord() {
-    val c = com.blaze.assistant.ui.argus.Argus.colors
+    val c = com.argus.assistant.ui.argus.Argus.colors
     val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "ww")
     val a by t.animateFloat(0.35f, 0.8f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900),
         androidx.compose.animation.core.RepeatMode.Reverse), label = "a")
     val alpha = if (MotionTokens.enabled) a else 0.6f
     Row(Modifier.padding(start = 2.dp, top = 6.dp, bottom = 6.dp).graphicsLayer { this.alpha = alpha }
         .semantics(mergeDescendants = true) { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }, verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon(ThoughtFold.ICON, 14), null, Modifier.size(14.dp), tint = c.mute)
+        androidx.compose.material3.Icon(com.argus.assistant.ui.argus.icons.Lucide.icon(ThoughtFold.ICON, 14), null, Modifier.size(14.dp), tint = c.mute)
         Spacer(Modifier.width(8.dp))
         Text(tr("Thinking"), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp), color = c.mute)
     }
@@ -1553,18 +1553,18 @@ private fun WorkingWord() {
 /** Milestone 4: the A-team kit's colours for the tool rows, whichever look the chat is in. */
 @Composable
 private fun ToolRowsLocals(content: @Composable () -> Unit) {
-    val c = LocalBlaze.current
-    CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(c.dark), content = content)
+    val c = LocalArgus.current
+    CompositionLocalProvider(com.argus.assistant.ui.argus.LocalArgusColors provides com.argus.assistant.ui.argus.ArgusColors.of(c.dark), content = content)
 }
 
 /** "14 steps" folded into one line. Tap to see them all. While working, the newest step shows. */
 @Composable
 private fun StepsGroup(steps: List<ChatMessage>, live: Boolean) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var open by rememberSaveable(steps.first().id) { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(6.dp).background(if (live) c.accent else c.weak, BlazeShapes.pill))
+            Box(Modifier.size(6.dp).background(if (live) c.accent else c.weak, ArgusShapes.pill))
             Spacer(Modifier.width(10.dp))
             Label(if (steps.size == 1) "1 step" else "${steps.size} steps", color = c.sub, size = 10.sp)
             Spacer(Modifier.width(10.dp))
@@ -1600,32 +1600,32 @@ private fun Modifier.hairlineStart(color: Color) = this.drawBehind {
  */
 @Composable
 private fun ThinkingLine(text: String, live: Boolean) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val tr = androidx.compose.animation.core.rememberInfiniteTransition(label = "think")
     val pulse = tr.animateFloat(0.3f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900),
         androidx.compose.animation.core.RepeatMode.Reverse), label = "thinkA")
     val a = if (MotionTokens.enabled) pulse.value else 1f   // v0.27.0: a still dot with Remove animations on
     Row(Modifier.padding(top = 6.dp, bottom = 4.dp).semantics { contentDescription = text }, verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(if (live) BlazeBrush.blue.copy(alpha = a) else c.weak))
+        Box(Modifier.size(7.dp).clip(CircleShape).background(if (live) ArgusBrush.blue.copy(alpha = a) else c.weak))
         Spacer(Modifier.width(8.dp))
         Text(text, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, color = if (live) c.body else c.sub))
     }
 }
 
 /**
- * One message in the thread (v0.24.0): yours on the right in an ink bubble, Blaze's on the left in a soft bubble,
- * errors in Blaze's bubble with an accent wash. Only the last message of a group gets the quiet time + actions line.
+ * One message in the thread (v0.24.0): yours on the right in an ink bubble, Argus's on the left in a soft bubble,
+ * errors in Argus's bubble with an accent wash. Only the last message of a group gets the quiet time + actions line.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (String) -> Unit, followups: List<String>, onFollowup: (String) -> Unit,
                   live: Boolean = false, latest: Boolean = false, askChips: Boolean = false,
-                  delivery: com.blaze.assistant.agent.DeliveryState? = null, showActs: Boolean = false,
+                  delivery: com.argus.assistant.agent.DeliveryState? = null, showActs: Boolean = false,
                   /** fix/chat-flat-ui: this row is the reply streaming right now (its thinking is the turn's live one). */
                   streamHere: Boolean = false) {
     val entryCtx = LocalContext.current
     // 0.45.20 (spec A): the time sits inside the last bubble of a run; actions are a long-press menu (BubbleMenu), and
-    // only the latest Blaze reply keeps its small action row.
+    // only the latest Argus reply keeps its small action row.
     val menu = remember(m.id) { mutableStateOf(false) }
     val entryClip = LocalClipboardManager.current
     val bubbleTime = remember(m.at, pos) { if (pos.ends) BubbleDays.time(m.at) else "" }
@@ -1633,8 +1633,8 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
         LocalBubbleMenu provides (if (m.role == Role.USER || m.role == Role.ERROR) ({ menu.value = true }) else null)) {
     // Owner 2026-11-15: a long-press on a reply shows only the text-selection pill (Copy, Quote, Select all, Search), not the menu column too.
     BubbleMenu(menu.value, buildList<Pair<String, (() -> Unit)?>> {
-        add("Copy" to { entryClip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(entryCtx, "Copied", Toast.LENGTH_SHORT).show() })
-        if (m.role != Role.ERROR) add("Quote" to { onQuote(if (m.role == Role.BLAZE) com.blaze.assistant.agent.ToolLeak.forDisplay(m.text) else splitQuote(m.text).second) })
+        add("Copy" to { entryClip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.argus.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(entryCtx, "Copied", Toast.LENGTH_SHORT).show() })
+        if (m.role != Role.ERROR) add("Quote" to { onQuote(if (m.role == Role.BLAZE) com.argus.assistant.agent.ToolLeak.forDisplay(m.text) else splitQuote(m.text).second) })
         add("Retry" to (if (canAct) ({ Agent.retry(m.id) }) else null))
         // Owner 2026-11-15: no reactions (no React item, no double-tap, no emoji chips or picker).
         // Owner 2026-11-15: no Pin on messages ("no use for it").
@@ -1645,18 +1645,18 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
             // v0.24.6: pictures inside your bubble (tap to preview), other files as icon chips.
             SentBubble(body, quoted, rememberPresent(m.media), m.files, pos)
             if (delivery != null && DeliveryView.shown(delivery)) DeliveryLabel(delivery, onRetry = if (canAct) ({
-                com.blaze.assistant.agent.Delivery.tracker().apply(listOf(m.gid), com.blaze.assistant.agent.Delivery.Ev.USER_RETRY); Agent.retry(m.id) }) else null)
+                com.argus.assistant.agent.Delivery.tracker().apply(listOf(m.gid), com.argus.assistant.agent.Delivery.Ev.USER_RETRY); Agent.retry(m.id) }) else null)
         } }
-        Role.BLAZE -> if (m.meta == com.blaze.assistant.update.Updater.CARD) UpdateCard()
-        else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) Unit   // 0.52.1: agents show only in the one TaskPill
-        else if (m.meta.startsWith(com.blaze.assistant.agent.Duo.ROOM_CARD)) RoomCard(m)   // v0.32.0 meeting room
-        else SwipeToQuote(true, onQuote = { onQuote(com.blaze.assistant.agent.ToolLeak.forDisplay(m.text)) }) { Column(Modifier.fillMaxWidth()) {
+        Role.BLAZE -> if (m.meta == com.argus.assistant.update.Updater.CARD) UpdateCard()
+        else if (m.meta.startsWith(com.argus.assistant.agent.BgAgents.CARD)) Unit   // 0.52.1: agents show only in the one TaskPill
+        else if (m.meta.startsWith(com.argus.assistant.agent.Duo.ROOM_CARD)) RoomCard(m)   // v0.32.0 meeting room
+        else SwipeToQuote(true, onQuote = { onQuote(com.argus.assistant.agent.ToolLeak.forDisplay(m.text)) }) { Column(Modifier.fillMaxWidth()) {
             // v0.31.0: no "Thought it through · 4 s" line; the droplet was the status while it thought.
             // v0.28.3: old saved replies may hold raw leaked tool syntax; it's hidden when drawn too.
-            val shown = remember(m.text, live) { ParseMemo.memo(ParseMemo.bubble, m.text, live) { com.blaze.assistant.agent.ToolLeak.bubbleText(m.text) } }
+            val shown = remember(m.text, live) { ParseMemo.memo(ParseMemo.bubble, m.text, live) { com.argus.assistant.agent.ToolLeak.bubbleText(m.text) } }
             val tracker = remember(m.id) { OrbTracker() }
-            // v0.31.2 Halo x Blaze: who wrote it (the name over Halo's replies and in a duo, the shimmer colour, the orb half that travels).
-            val who = com.blaze.assistant.agent.Duo.Who.of(m.speaker)
+            // v0.31.2 Halo x Argus: who wrote it (the name over Halo's replies and in a duo, the shimmer colour, the orb half that travels).
+            val who = com.argus.assistant.agent.Duo.Who.of(m.speaker)
             if (m.speaker.isNotEmpty()) SpeakerName(who)
             // fix/chat-flat-ui (owner, 14 Nov 2026): the reasoning, folded above the reply (ui/ThoughtSection.kt). Saved with
             // the reply; while this reply streams, the turn's live thinking. Only the streaming row reads the live flow.
@@ -1677,37 +1677,37 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
             var hadLive by remember(m.id) { mutableStateOf(live) }
             LaunchedEffect(live) { if (live) hadLive = true }
             // 0.46.2 immersive replies: the pages' pictures above the text, the source pills under it (from the turn's real tool results).
-            val found = remember(m.sources) { com.blaze.assistant.agent.ReplySources.decode(m.sources) }
+            val found = remember(m.sources) { com.argus.assistant.agent.ReplySources.decode(m.sources) }
             if (!live && found.images.isNotEmpty()) { val pc = LocalContext.current
-                ReplyImages(found, low = remember { StageDevice.tier(pc) == com.blaze.assistant.stage.PerfTier.LOW }) }
+                ReplyImages(found, low = remember { StageDevice.tier(pc) == com.argus.assistant.stage.PerfTier.LOW }) }
             Box(Modifier.fillMaxWidth().onGloballyPositioned { tracker.root = it }) {
-                CompositionLocalProvider(LocalOrb provides tracker, LocalSpeaker provides who) { BlazeReply(m.id, shown, pos, live = fresh) }
-                if (hadLive) OrbLayer(tracker, fresh, speaker = who, latest = latest, alone = who == com.blaze.assistant.agent.Duo.Who.HALO && Agent.split.collectAsState().value)
+                CompositionLocalProvider(LocalOrb provides tracker, LocalSpeaker provides who) { ArgusReply(m.id, shown, pos, live = fresh) }
+                if (hadLive) OrbLayer(tracker, fresh, speaker = who, latest = latest, alone = who == com.argus.assistant.agent.Duo.Who.HALO && Agent.split.collectAsState().value)
             }
             if (m.media.isNotEmpty()) MediaStrip(m.media)
             if (!live && found.sources.isNotEmpty()) SourcePills(found)
             if (showActs || followups.isNotEmpty()) Actions(m, Side.BLAZE, "", canAct, onQuote, allowQuote = true,
                 orbSlot = if (hadLive) ({ co -> tracker.aimRest(co) }) else null, reactable = !live)
             else {
-                if (com.blaze.assistant.agent.ReplyChips.shown(m.meta).isNotBlank()) Actions(m, Side.BLAZE, "", canAct, onQuote, allowQuote = true, chipOnly = true)
+                if (com.argus.assistant.agent.ReplyChips.shown(m.meta).isNotBlank()) Actions(m, Side.BLAZE, "", canAct, onQuote, allowQuote = true, chipOnly = true)
             }
             if (followups.isNotEmpty()) Followups(followups, onFollowup)
-            // v0.39.0 Simple mode: Yes / No / Later / Do it for me under a question from Blaze.
+            // v0.39.0 Simple mode: Yes / No / Later / Do it for me under a question from Argus.
             if (askChips && !live) {
-                val chips = remember(m.text) { com.blaze.assistant.agent.SimpleHome.replyChips(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text)) }
+                val chips = remember(m.text) { com.argus.assistant.agent.SimpleHome.replyChips(com.argus.assistant.agent.ToolLeak.bubbleText(m.text)) }
                 ReplyChipRow(chips, onFollowup)
             }
         } }
-        // v0.45.4: signed out of Blaze Cloud: a Sign in card; the message above it is sent by itself once signed in.
-        Role.ERROR -> if (m.meta == com.blaze.assistant.agent.SignInGate.CARD) Column(Modifier.fillMaxWidth()) {
+        // v0.45.4: signed out of Argus Cloud: a Sign in card; the message above it is sent by itself once signed in.
+        Role.ERROR -> if (m.meta == com.argus.assistant.agent.SignInGate.CARD) Column(Modifier.fillMaxWidth()) {
             ErrorBubble(m.text, pos)
-            FollowupRow(listOf(com.blaze.assistant.agent.SignInGate.BUTTON)) { com.blaze.assistant.agent.SelfSetup.openPage.value = "account" }
+            FollowupRow(listOf(com.argus.assistant.agent.SignInGate.BUTTON)) { com.argus.assistant.agent.SelfSetup.openPage.value = "account" }
         } else Column(Modifier.fillMaxWidth()) {
             ErrorBubble(m.text, pos)
             Actions(m, Side.BLAZE, "", canAct, onQuote, allowQuote = false)
             // Pick up where it broke instead of starting over: the history keeps the steps done so far.
             // (v0.25.0: no brain switcher on old "used up" errors; there is nothing to pick.)
-            if (canAct) Followups(listOf(com.blaze.assistant.agent.StopResume.CHIP), onFollowup)
+            if (canAct) Followups(listOf(com.argus.assistant.agent.StopResume.CHIP), onFollowup)
         }
         Role.STEP -> {}
     }
@@ -1736,34 +1736,34 @@ private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, o
     val showTrace = remember(m.id) { mutableStateOf(false) }
     val usedUp = m.meta.startsWith("usedup:")
     // v0.24.4: technical parts of the chip (timings, data, model ids) are hidden unless Show technical details is on.
-    val chip = if (usedUp) "" else com.blaze.assistant.agent.ReplyChips.shown(m.meta)
+    val chip = if (usedUp) "" else com.argus.assistant.agent.ReplyChips.shown(m.meta)
     if (chipOnly && chip.isBlank()) return
     if (chipOnly) { MetaLine(side, "", emptyList(), chip, chip.startsWith("⚡")); HeadsUpWhy(m.meta); return }
     val acts = buildList<Pair<String, (() -> Unit)?>> {
-        add("Copy" to { clip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() })
+        add("Copy" to { clip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.argus.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() })
         // Owner 2026-11-15: no Quote icon under replies (long-press menu and swipe still quote).
         add("Retry" to (if (canAct) ({ Agent.retry(m.id) }) else null))
         // 0.53.2: no "What I did" button or sheet (owner, 14 Nov 2026: "remove the what I did cards"). Receipts are still
         // stored with the reply; the live tool rows (Show tool steps) are where steps show.
         // v0.45.5 (#1): "What happened": model, route, tools, timings, errors, request id. 0.45.19: never shown to users
         // (which model replied is never shown); developers only, behind DevFlags.modelInfo (off by default, debug builds).
-        if (m.role == Role.BLAZE && m.trace.isNotBlank() && com.blaze.assistant.agent.DevFlags.modelInfo()) add("What happened" to { showTrace.value = true })
+        if (m.role == Role.BLAZE && m.trace.isNotBlank() && com.argus.assistant.agent.DevFlags.modelInfo()) add("What happened" to { showTrace.value = true })
     }
     MetaLine(side, time, acts, chip, chip.startsWith("⚡"), orbSlot = orbSlot)
     HeadsUpWhy(m.meta)
-    if (showTrace.value && com.blaze.assistant.agent.DevFlags.modelInfo()) TraceDialog(m.trace) { showTrace.value = false }
+    if (showTrace.value && com.argus.assistant.agent.DevFlags.modelInfo()) TraceDialog(m.trace) { showTrace.value = false }
 }
 
 /** Unreleased after 0.52.3: the small "Why?" under a heads-up; a tap shows what set it off (ProactiveDial.whyOf). */
 @Composable
 private fun HeadsUpWhy(meta: String) {
-    val why = remember(meta) { com.blaze.assistant.proactive.ProactiveDial.whyOf(meta) }
+    val why = remember(meta) { com.argus.assistant.proactive.ProactiveDial.whyOf(meta) }
     if (why.isBlank()) return
     var open by remember(meta) { mutableStateOf(false) }
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Text(if (open) "Why: $why" else "Why?", maxLines = 2,
         modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 2.dp).clickable(onClickLabel = tr("Why you got this")) { open = !open },
-        style = com.blaze.assistant.ui.space.SpaceType.meta(c.body))
+        style = com.argus.assistant.ui.space.SpaceType.meta(c.body))
 }
 
 
@@ -1771,7 +1771,7 @@ private fun HeadsUpWhy(meta: String) {
 private var privateReactNoted = false
 private fun reactNow(ctx: android.content.Context, m: ChatMessage, emoji: String) {
     if (!Agent.react(m.id, emoji)) return
-    try { com.blaze.assistant.device.Haptics.tick(ctx) } catch (_: Throwable) { }
+    try { com.argus.assistant.device.Haptics.tick(ctx) } catch (_: Throwable) { }
     if (Agent.privateChat.value && !privateReactNoted) {
         privateReactNoted = true
         Toast.makeText(ctx, "Reactions in a private chat aren't saved", Toast.LENGTH_SHORT).show()
@@ -1781,19 +1781,19 @@ private fun reactNow(ctx: android.content.Context, m: ChatMessage, emoji: String
 /** v0.45.5 (#1): "What happened": what served this reply, its tools, timings and errors, and a copyable request id. */
 @Composable
 private fun TraceDialog(json: String, onClose: () -> Unit) {
-    val t = remember(json) { com.blaze.assistant.agent.TurnTrace.fromJson(json) }
-    val c = LocalBlaze.current
+    val t = remember(json) { com.argus.assistant.agent.TurnTrace.fromJson(json) }
+    val c = LocalArgus.current
     val clip = LocalClipboardManager.current
     val ctx = LocalContext.current
     androidx.compose.material3.AlertDialog(onDismissRequest = onClose,
         confirmButton = { androidx.compose.material3.TextButton(onClick = onClose) { Text(tr("Close")) } },
         dismissButton = { if (t != null) androidx.compose.material3.TextButton(onClick = {
-            clip.setText(AnnotatedString(com.blaze.assistant.agent.TurnTrace.copyText(t))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() }) { Text(tr("Copy")) } },
+            clip.setText(AnnotatedString(com.argus.assistant.agent.TurnTrace.copyText(t))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() }) { Text(tr("Copy")) } },
         title = { Text(tr("What happened")) },
         text = {
             Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
                 if (t == null) { Text(tr("Nothing was recorded for this reply.")); return@Column }
-                com.blaze.assistant.agent.TurnTrace.rows(t).forEach { (k, v) ->
+                com.argus.assistant.agent.TurnTrace.rows(t).forEach { (k, v) ->
                     Text(k, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
                     Text(v, style = TextStyle(fontFamily = if (k == "Request id" || k == "Server-Timing") Type.Mono else Type.Sans, fontSize = 14.sp, color = c.ink),
                         modifier = if (k == "Request id") Modifier.clickable { clip.setText(AnnotatedString(v)); Toast.makeText(ctx, "Request id copied", Toast.LENGTH_SHORT).show() } else Modifier)
@@ -1802,7 +1802,7 @@ private fun TraceDialog(json: String, onClose: () -> Unit) {
                 if (t.tools.isNotEmpty()) {
                     Text(tr("Tools"), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.body))
                     t.tools.forEach { x ->
-                        Text("${if (x.ok) com.blaze.assistant.agent.Receipt.OK else com.blaze.assistant.agent.Receipt.BAD} ${x.name}(${x.args})", style = TextStyle(fontFamily = Type.Mono, fontSize = 11.sp, color = c.ink))
+                        Text("${if (x.ok) com.argus.assistant.agent.Receipt.OK else com.argus.assistant.agent.Receipt.BAD} ${x.name}(${x.args})", style = TextStyle(fontFamily = Type.Mono, fontSize = 11.sp, color = c.ink))
                         if (x.result.isNotBlank()) Text(x.result, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 16.sp, color = c.body))
                         Spacer(Modifier.height(6.dp))
                     }
@@ -1817,7 +1817,7 @@ private fun TraceDialog(json: String, onClose: () -> Unit) {
 
 @Composable
 private fun QuoteStrip(q: String, onClear: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // Unification 6/9: a floating panel at the composer's inset (composerPanel), not a 12 dp glass band
     Row(Modifier.fillMaxWidth().padding(top = 6.dp).composerPanel()
         .padding(start = 14.dp, end = 2.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1825,7 +1825,7 @@ private fun QuoteStrip(q: String, onClear: () -> Unit) {
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Label(tr("Replying to"), color = c.accent, size = 9.sp)
-            Text(q, maxLines = 2, style = com.blaze.assistant.ui.space.SpaceType.meta(c.body))
+            Text(q, maxLines = 2, style = com.argus.assistant.ui.space.SpaceType.meta(c.body))
         }
         ActionText("×", size = 14.sp, modifier = Modifier.clip(CircleShape).clickable(onClick = onClear).semantics { contentDescription = tr("Cancel reply") }.padding(12.dp))
     }
@@ -1833,9 +1833,9 @@ private fun QuoteStrip(q: String, onClear: () -> Unit) {
 
 @Composable
 internal fun SuggestionList(list: List<Suggestion>, onPick: (Suggestion) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // Unification 6/9: the slash list floats at the composer's inset on the menu colour; it sat 10 dp in, radius 18, glass
-    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).composerPanel(fill = com.blaze.assistant.ui.space.spaceLook().menu)
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).composerPanel(fill = com.argus.assistant.ui.space.spaceLook().menu)
         .heightIn(max = 260.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp)) {
         list.forEach { s ->
             Row(Modifier.fillMaxWidth().clickable { onPick(s) }.padding(horizontal = 16.dp, vertical = 11.dp),
@@ -1855,30 +1855,30 @@ internal fun SuggestionList(list: List<Suggestion>, onPick: (Suggestion) -> Unit
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun Welcome(needsSetup: Boolean, onSetup: () -> Unit, onPick: (String) -> Unit) {
-    val look = com.blaze.assistant.ui.space.spaceLook()
-    val hour = remember { com.blaze.assistant.ui.space.SpaceGreeting.hourNow() }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 12.dp),
+    val look = com.argus.assistant.ui.space.spaceLook()
+    val hour = remember { com.argus.assistant.ui.space.SpaceGreeting.hourNow() }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = com.argus.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        com.blaze.assistant.ui.space.SpaceCard {
-            com.blaze.assistant.ui.space.SpaceHeadline(com.blaze.assistant.ui.space.SpaceGreeting.hello(hour, Settings.userName.ifBlank { null }) { com.blaze.assistant.i18n.tr(it) })
+        com.argus.assistant.ui.space.SpaceCard {
+            com.argus.assistant.ui.space.SpaceHeadline(com.argus.assistant.ui.space.SpaceGreeting.hello(hour, Settings.userName.ifBlank { null }) { com.argus.assistant.i18n.tr(it) })
             Spacer(Modifier.height(10.dp))
             Text(tr("Ask anything. {0} answers, opens apps, taps and types for you, and checks with you before anything that matters.", BrandName.NAME),
-                style = com.blaze.assistant.ui.space.SpaceType.bodyText(look.sub))
+                style = com.argus.assistant.ui.space.SpaceType.bodyText(look.sub))
         }
-        if (needsSetup) com.blaze.assistant.ui.space.SpaceCard {
-            com.blaze.assistant.ui.space.SpaceHeadline(tr("{0} can do more", BrandName.UPPER), size = com.blaze.assistant.ui.space.SpaceTypeScale.TITLE.sp)
+        if (needsSetup) com.argus.assistant.ui.space.SpaceCard {
+            com.argus.assistant.ui.space.SpaceHeadline(tr("{0} can do more", BrandName.UPPER), size = com.argus.assistant.ui.space.SpaceTypeScale.TITLE.sp)
             Spacer(Modifier.height(8.dp))
             Text(tr("Sign in to your {0} account for the best answers, synced across your devices.", BrandName.NAME),
-                style = com.blaze.assistant.ui.space.SpaceType.bodyText(look.ink))
+                style = com.argus.assistant.ui.space.SpaceType.bodyText(look.ink))
             Spacer(Modifier.height(14.dp))
-            com.blaze.assistant.ui.space.SpacePillButton(tr("Sign in"), onSetup, primary = true)
+            com.argus.assistant.ui.space.SpacePillButton(tr("Sign in"), onSetup, primary = true)
         }
-        com.blaze.assistant.ui.space.SpaceCard {
-            Text(tr("Try"), style = com.blaze.assistant.ui.space.SpaceType.meta(look.sub))
+        com.argus.assistant.ui.space.SpaceCard {
+            Text(tr("Try"), style = com.argus.assistant.ui.space.SpaceType.meta(look.sub))
             Spacer(Modifier.height(12.dp))
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf("Set an alarm for 6:30", "Draw a lion wearing sunglasses", "Make me an afro beat", "Open YouTube and play lo-fi music")
-                    .forEach { s -> com.blaze.assistant.ui.space.SpaceChip(s, { onPick(s) }) }
+                    .forEach { s -> com.argus.assistant.ui.space.SpaceChip(s, { onPick(s) }) }
             }
         }
     }
@@ -1888,35 +1888,35 @@ internal fun Welcome(needsSetup: Boolean, onSetup: () -> Unit, onPick: (String) 
 private fun BlinkLabel(text: String) {
     var on by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) { while (true) { delay(500); on = !on } }
-    Label(text + if (on) " _" else "  ", color = LocalBlaze.current.sub)
+    Label(text + if (on) " _" else "  ", color = LocalArgus.current.sub)
 }
 
 @Composable
 private fun ListeningStrip(onStop: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val partial by Voice.partial.collectAsState()
     val level by Voice.level.collectAsState()
     val w by animateFloatAsState(0.15f + level * 0.85f, label = "lvl")
     // v0.45.28: tap the strip to stop listening and send.
     // Unification 6/9: a floating panel at the composer's inset; it was a full-width paper band with a top hairline
     Column(Modifier.fillMaxWidth().padding(top = 6.dp).composerPanel().clickable(onClickLabel = tr("Stop listening and send")) { onStop() }
-        .padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.CARD_PAD_DP.dp, vertical = 14.dp)) {
+        .padding(horizontal = com.argus.assistant.ui.space.SpaceInsets.CARD_PAD_DP.dp, vertical = 14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BlinkLabel("Listening")
             Spacer(Modifier.width(12.dp))
-            Box(Modifier.weight(1f).height(2.dp).clip(BlazeShapes.pill).background(c.faint)) {
-                Box(Modifier.fillMaxWidth(w).height(2.dp).clip(BlazeShapes.pill).background(c.accent))
+            Box(Modifier.weight(1f).height(2.dp).clip(ArgusShapes.pill).background(c.faint)) {
+                Box(Modifier.fillMaxWidth(w).height(2.dp).clip(ArgusShapes.pill).background(c.accent))
             }
         }
         Spacer(Modifier.height(8.dp))
         Text(partial.ifBlank { "Say \"Open YouTube\" or ask anything" },
-            style = com.blaze.assistant.ui.space.SpaceType.section(if (partial.isBlank()) c.weak else c.ink))
+            style = com.argus.assistant.ui.space.SpaceType.section(if (partial.isBlank()) c.weak else c.ink))
     }
 }
 
 @Composable
-private fun AttachmentStrip(files: List<com.blaze.assistant.agent.Attachment>, loading: Boolean, onRemove: (com.blaze.assistant.agent.Attachment) -> Unit) {
-    val c = LocalBlaze.current
+private fun AttachmentStrip(files: List<com.argus.assistant.agent.Attachment>, loading: Boolean, onRemove: (com.argus.assistant.agent.Attachment) -> Unit) {
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().background(c.paper).padding(horizontal = 14.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         files.forEach { f ->
@@ -1933,13 +1933,13 @@ private fun AttachmentStrip(files: List<com.blaze.assistant.agent.Attachment>, l
 private val callWords = Regex("""^(?:(?:hey |ok )?(?:(?:argus|blaze)[, ]+)?)(?:(?:can we|could we|can you|let['’]?s|lets|i want to|i wanna|wanna|please)\s+)?(?:(?:get|hop|jump|be)\s+on\s+(?:a\s+)?(?:voice\s+)?call|(?:start|have|do|make)\s+a\s+(?:voice\s+)?call|call(?:\s+(?:(?:argus|blaze)|me))?|talk(?:\s+to\s+me)?|voice\s+(?:call|chat|mode))(?:\s+(?:with\s+(?:me|(?:argus|blaze)|you)|(?:argus|blaze)|now|please))*[.!?]*$""", RegexOption.IGNORE_CASE)
 
 
-/** v0.31.2 Halo x Blaze: a small coloured name over a reply when it isn't plain Blaze talking alone. */
+/** v0.31.2 Halo x Argus: a small coloured name over a reply when it isn't plain Argus talking alone. */
 @Composable
-internal fun SpeakerName(who: com.blaze.assistant.agent.Duo.Who) {
+internal fun SpeakerName(who: com.argus.assistant.agent.Duo.Who) {
     Row(Modifier.padding(start = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
         Canvas(Modifier.size(7.dp)) {
-            if (who == com.blaze.assistant.agent.Duo.Who.HALO) drawCircle(DuoColors.haloGold, radius = size.minDimension / 2f - 0.6.dp.toPx(), style = androidx.compose.ui.graphics.drawscope.Stroke(1.4.dp.toPx()))
-            else drawCircle(DuoColors.blazeBlue)
+            if (who == com.argus.assistant.agent.Duo.Who.HALO) drawCircle(DuoColors.haloGold, radius = size.minDimension / 2f - 0.6.dp.toPx(), style = androidx.compose.ui.graphics.drawscope.Stroke(1.4.dp.toPx()))
+            else drawCircle(DuoColors.argusBlue)
         }
         Text("  " + who.display, style = androidx.compose.ui.text.TextStyle(fontFamily = Type.Sans, fontSize = 11.5.sp,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, color = DuoColors.main(who).copy(alpha = 0.95f)))
@@ -1950,25 +1950,25 @@ internal fun SpeakerName(who: com.blaze.assistant.agent.Duo.Who) {
 const val STREAM_STALE_MS = 2200L
 
 /**
- * 0.48.0 RC4: what Blaze is waiting on, under the chat over Home (it lived at the bottom of the old chat screen): the
- * listening strip, approvals and drafts (Send / Not now), questions, fix cards, secure forms and secret requests, Blaze
+ * 0.48.0 RC4: what Argus is waiting on, under the chat over Home (it lived at the bottom of the old chat screen): the
+ * listening strip, approvals and drafts (Send / Not now), questions, fix cards, secure forms and secret requests, Argus
  * Phone's live tile, "Open in Design?", the update banner, and the Undo bar.
  */
 @Composable
 private fun WaitingCards(listening: Boolean,
-                         control: com.blaze.assistant.phone.PhoneControl.State, viewOffer: Views.Offer?, showing: String,
+                         control: com.argus.assistant.phone.PhoneControl.State, viewOffer: Views.Offer?, showing: String,
                          onOpenOffer: (Views.Offer) -> Unit) {
     val ctx = LocalContext.current
     if (listening) ListeningStrip(onStop = { Voice.stopByTap() })
-    if (control != com.blaze.assistant.phone.PhoneControl.State.CONNECTED && Settings.phoneControl && Settings.bool("a11y_seen", false))
+    if (control != com.argus.assistant.phone.PhoneControl.State.CONNECTED && Settings.phoneControl && Settings.bool("a11y_seen", false))
         PhoneControlBanner(control) {
-            ComeBack.watch(ctx) { BlazeAccessibilityService.instance != null }
-            try { ctx.startActivity(com.blaze.assistant.phone.PhoneControl.fixIntent(ctx)) }
+            ComeBack.watch(ctx) { ArgusAccessibilityService.instance != null }
+            try { ctx.startActivity(com.argus.assistant.phone.PhoneControl.fixIntent(ctx)) }
             catch (_: Exception) { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
     UpdateBanner()
     ConfirmCard()
-    com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark)   // P2-SF-02
+    com.argus.assistant.ui.team.cards.ArgusCards(dark = LocalArgus.current.dark)   // P2-SF-02
     QuestionCard()
     FixCard()
     SecureFormCard()

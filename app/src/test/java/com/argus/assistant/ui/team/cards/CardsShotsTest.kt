@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.team.cards
+package com.argus.assistant.ui.team.cards
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Column
@@ -6,13 +6,13 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.policy.Card
-import com.blaze.assistant.policy.CardAnswer
-import com.blaze.assistant.policy.Cards
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.ui.argus.ArgusGround
-import com.blaze.assistant.ui.argus.ArgusTheme
-import com.blaze.assistant.ui.team.thread.ThreadModel.CardModel
+import com.argus.assistant.policy.Card
+import com.argus.assistant.policy.CardAnswer
+import com.argus.assistant.policy.Cards
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.ui.argus.ArgusGround
+import com.argus.assistant.ui.argus.ArgusTheme
+import com.argus.assistant.ui.team.thread.ThreadModel.CardModel
 import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeTrue
 import org.junit.Rule

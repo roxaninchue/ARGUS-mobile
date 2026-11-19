@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.app.SearchManager
 import android.content.Context
@@ -53,7 +53,7 @@ object AppSearch {
             } catch (_: Exception) {
                 try { ctx.startActivity(intent.setPackage(null)) } catch (e: Exception) { return "Error: couldn't open ${app}: ${e.message}" }
             }
-            BlazeAccessibilityService.instance?.settle(2500, 400) ?: delay(1200)
+            ArgusAccessibilityService.instance?.settle(2500, 400) ?: delay(1200)
             if (play && key == "youtube") return playFirstYouTube(query)
             return "Opened ${app.trim()} search results for \u201c$query\u201d." + if (!installed) " (App not installed, so it opened on the web.)" else ""
         }
@@ -63,7 +63,7 @@ object AppSearch {
 
     /** On YouTube results, tap the first video so it starts playing. */
     private suspend fun playFirstYouTube(query: String): String {
-        val svc = BlazeAccessibilityService.instance ?: return "Opened YouTube results for \u201c$query\u201d. Turn on phone control so I can start the first video."
+        val svc = ArgusAccessibilityService.instance ?: return "Opened YouTube results for \u201c$query\u201d. Turn on phone control so I can start the first video."
         val screen = svc.readScreen()
         val line = screen.lines().firstOrNull { l -> l.startsWith("[") && (l.contains(" minutes") || l.contains(" views") || l.contains("Go to channel").not() && l.contains("play video", true)) }
         val id = line?.substringAfter('[')?.substringBefore(']')?.toIntOrNull()

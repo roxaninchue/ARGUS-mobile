@@ -1,6 +1,6 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
-import com.blaze.assistant.terminal.LinuxPm.Pm
+import com.argus.assistant.terminal.LinuxPm.Pm
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

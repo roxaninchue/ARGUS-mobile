@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -49,14 +49,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.blaze.assistant.agent.DesignPage
-import com.blaze.assistant.agent.Designs
-import com.blaze.assistant.agent.DesignTruth
+import com.argus.assistant.agent.DesignPage
+import com.argus.assistant.agent.Designs
+import com.argus.assistant.agent.DesignTruth
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 
-/** Turns what Blaze passed (URL, ~/path, relative path, absolute path) into something WebView can load. */
+/** Turns what Argus passed (URL, ~/path, relative path, absolute path) into something WebView can load. */
 fun designUrl(target: String, home: File?): String {
     val t = target.trim()
     if (t.isEmpty()) return ""
@@ -94,8 +94,8 @@ fun bundledThree(url: String): String? {
 fun designSpec(target: String, home: File?): org.json.JSONObject? = try {
     val u = designUrl(target, home)
     if (!u.startsWith("file://")) null else File(u.removePrefix("file://")).takeIf { it.isFile && it.length() < 2_000_000 }
-        ?.let { com.blaze.assistant.agent.Designs.specFrom(it.readText()) }
-        ?.let { com.blaze.assistant.agent.Designs.normalizeSpec(it) }   // v0.23.5: known shapes, unique ids
+        ?.let { com.argus.assistant.agent.Designs.specFrom(it.readText()) }
+        ?.let { com.argus.assistant.agent.Designs.normalizeSpec(it) }   // v0.23.5: known shapes, unique ids
 } catch (_: Exception) { null }
 
 /** v0.45.6: true when the design file is a three.js page (it must report that it drew, like a parts-based 3D design). */
@@ -105,7 +105,7 @@ fun designUsesThree(target: String, home: File?): Boolean = try {
 } catch (_: Exception) { false }
 
 /**
- * v0.23.3: the JS bridge a Design page calls (window.BlazeDesign), injected by [DesignServe.HOOK_JS].
+ * v0.23.3: the JS bridge a Design page calls (window.ArgusDesign), injected by [DesignServe.HOOK_JS].
  * Calls arrive on a WebView binder thread; they're posted to the main thread.
  */
 class DesignBridge(private val onGl: (Int, Boolean, String) -> Unit, private val onError: (String) -> Unit,
@@ -140,22 +140,22 @@ private class RenderState {
 }
 
 /**
- * Design view: a live preview of what Blaze builds (HTML files, local servers, URLs), phone or
+ * Design view: a live preview of what Argus builds (HTML files, local servers, URLs), phone or
  * desktop width, with a one-line box to ask for changes without leaving. Exit is in the top bar.
  *
- * v0.23.3: designs in Blaze's home load from a virtual https origin ([DesignServe]); 3D pages report
+ * v0.23.3: designs in Argus's home load from a virtual https origin ([DesignServe]); 3D pages report
  * ready / errors through [DesignBridge]; when three.js can't start, the view retries with the WebGL1 build
  * and then draws the parts natively ([PartsSketchView]) with the real error and Retry, so a 3D design
- * always shows something. Errors go to ~/designs/.last_error.txt for Blaze's design tool.
+ * always shows something. Errors go to ~/designs/.last_error.txt for Argus's design tool.
  * [initialFailure] shows the fallback straight away (screenshots).
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (String) -> Unit, home: File?, wide: Boolean, reloadKey: Int,
                            preview: Boolean = true, initialFailure: String? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val fileUrl = remember(target, home) { designUrl(target, home) }
-    // v0.28.2: every page is served from the virtual origin (files outside Blaze's home too), so the WebView has no file access.
+    // v0.28.2: every page is served from the virtual origin (files outside Argus's home too), so the WebView has no file access.
     val url = remember(fileUrl, home) { DesignServe.servedUrl(fileUrl, home) }
     val appData = androidx.compose.ui.platform.LocalContext.current.applicationInfo?.dataDir?.let { File(it) }
     val extRoot = remember(fileUrl, home) { DesignServe.extRoot(fileUrl, home, appData) }
@@ -201,7 +201,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
         }
     }
 
-    // When Blaze finishes a turn, show its latest version.
+    // When Argus finishes a turn, show its latest version.
     var wasBusy by remember { mutableStateOf(busy) }
     androidx.compose.runtime.LaunchedEffect(busy) { if (wasBusy && !busy) restart(rs.forceGl1); wasBusy = busy }
     // A 3D page has READY_TIMEOUT_MS to say it's drawing (the test phone parses three.js slowly).
@@ -263,7 +263,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
                             settings.loadWithOverviewMode = wide
                             settings.builtInZoomControls = true
                             settings.displayZoomControls = false
-                            addJavascriptInterface(bridge, "BlazeDesign")
+                            addJavascriptInterface(bridge, "ArgusDesign")
                             webChromeClient = object : android.webkit.WebChromeClient() {
                                 override fun onConsoleMessage(m: android.webkit.ConsoleMessage): Boolean {
                                     if (m.messageLevel() == android.webkit.ConsoleMessage.MessageLevel.ERROR) {
@@ -292,7 +292,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
                                         "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}m.content='width=1280';})()", null)
                                 }
                             }
-                            // v0.26.1: a Mermaid file (also outside Blaze's home, where requests aren't served by us) is drawn as a picture.
+                            // v0.26.1: a Mermaid file (also outside Argus's home, where requests aren't served by us) is drawn as a picture.
                             val mmd = if (fileUrl.startsWith("file://")) mermaidFile(File(fileUrl.removePrefix("file://"))) else null
                             if (mmd != null) loadDataWithBaseURL(DesignServe.ORIGIN + "/", DesignServe.mermaidHtml(mmd, File(fileUrl).nameWithoutExtension), "text/html", "utf-8", null)
                             else loadUrl(loadUrl)
@@ -301,12 +301,12 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
                 }
                 if (failure != null) FailBanner(failure, sketch = false, onRetry = { restart(false) }, modifier = Modifier.align(Alignment.BottomCenter))
                 // v0.45.6: until a 3D page proves it drew, say so (never an empty pane).
-                else if (glPage && !rs.ready) Box(Modifier.align(Alignment.Center).clip(BlazeShapes.pill).background(c.menuSurface, BlazeShapes.pill)
-                    .border(1.dp, c.hair2, BlazeShapes.pill).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                else if (glPage && !rs.ready) Box(Modifier.align(Alignment.Center).clip(ArgusShapes.pill).background(c.menuSurface, ArgusShapes.pill)
+                    .border(1.dp, c.hair2, ArgusShapes.pill).padding(horizontal = 14.dp, vertical = 8.dp)) {
                     Text(tr("Drawing the 3D view\u2026"), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
                 external?.let { link ->
-                    Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(10.dp).clip(BlazeShapes.pill).background(c.ink, BlazeShapes.pill)
+                    Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(10.dp).clip(ArgusShapes.pill).background(c.ink, ArgusShapes.pill)
                         .padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(tr("Link to ") + (DesignServe.originOf(link).substringAfter("://").ifBlank { "another site" }), maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
@@ -323,7 +323,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
 /** The "3D engine couldn't start" banner: the real error, what's shown instead, and Retry. */
 @Composable
 private fun FailBanner(error: String, sketch: Boolean, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth().padding(12.dp).clip(BlazeShapes.medium).background(DialogColors.Dark.surface, BlazeShapes.medium).border(1.dp, DialogColors.Dark.border, BlazeShapes.medium)
+    Row(modifier.fillMaxWidth().padding(12.dp).clip(ArgusShapes.medium).background(DialogColors.Dark.surface, ArgusShapes.medium).border(1.dp, DialogColors.Dark.border, ArgusShapes.medium)
         .padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(DesignServe.failText(error), maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -332,14 +332,14 @@ private fun FailBanner(error: String, sketch: Boolean, onRetry: () -> Unit, modi
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 11.sp, color = GlassTokens.sub))
         }
         Spacer(Modifier.width(8.dp))
-        Box(Modifier.clip(BlazeShapes.pill).background(GlassTokens.accent, BlazeShapes.pill).clickable { onRetry() }.padding(horizontal = 14.dp, vertical = 8.dp)) {
+        Box(Modifier.clip(ArgusShapes.pill).background(GlassTokens.accent, ArgusShapes.pill).clickable { onRetry() }.padding(horizontal = 14.dp, vertical = 8.dp)) {
             ButtonText("Retry", color = GlassTokens.onAccent, size = 13.sp)
         }
     }
 }
 
 /**
- * Answers a Design view request: the virtual origin (designs, Blaze's home, bundled three.js) and CDN three.js
+ * Answers a Design view request: the virtual origin (designs, Argus's home, bundled three.js) and CDN three.js
  * URLs from the APK (the build matching [engine]). Null = let the network have it.
  */
 fun serveDesign(ctx: android.content.Context, url: String, home: File?, engine: String?, ext: File? = null): android.webkit.WebResourceResponse? {
@@ -354,9 +354,9 @@ fun serveDesign(ctx: android.content.Context, url: String, home: File?, engine: 
                 !t.file.isFile -> notFound()
                 t.mime == "text/html" -> {
                     // v0.23.5: a page from an older stock starter is served from the current one (same parts).
-                    val html = com.blaze.assistant.agent.Designs.upgradeStarter(t.file.readText(),
-                        try { com.blaze.assistant.agent.Designs.templateLoader?.invoke() } catch (_: Exception) { null })
-                    val is3d = com.blaze.assistant.agent.Designs.specFrom(html) != null
+                    val html = com.argus.assistant.agent.Designs.upgradeStarter(t.file.readText(),
+                        try { com.argus.assistant.agent.Designs.templateLoader?.invoke() } catch (_: Exception) { null })
+                    val is3d = com.argus.assistant.agent.Designs.specFrom(html) != null
                     ok("text/html", java.io.ByteArrayInputStream(DesignServe.prepareHtml(html, is3d).toByteArray(Charsets.UTF_8)), "no-store")
                 }
                 // v0.26.1: a Mermaid file is drawn as a picture, never shown as raw source.
@@ -384,10 +384,10 @@ fun mermaidFile(f: File): String? = try {
 
 // ---------------- v0.35.0 Design studio ----------------
 
-/** The studio's four modes. Page and 3D draw what Blaze makes today; Motion and Audio land in phases 3 and 4. */
+/** The studio's four modes. Page and 3D draw what Argus makes today; Motion and Audio land in phases 3 and 4. */
 enum class StudioMode(val label: String) { PAGE("Page"), THREE_D("3D"), MOTION("Motion"), AUDIO("Audio") }
 
-/** Prompt chips per mode (they ask Blaze; the Page ones name the selected element when there is one). */
+/** Prompt chips per mode (they ask Argus; the Page ones name the selected element when there is one). */
 /** v0.45.6: what is open, so the chips fit it (no "Make the headline bigger" on a 3D model). */
 enum class Artifact { NONE, STUDIO_PAGE, WEB_PAGE, THREE_PAGE, MODEL_3D }
 
@@ -435,7 +435,7 @@ fun studioAsk(text: String, mode: StudioMode, element: DesignPage.El?): String {
  * check and zoom at the bottom), a contextual dock (layers in Page mode), prompt chips and the ask box.
  *
  * Page mode edits studio pages (kind canvas) natively: tap to select, drag to move, handles to resize, a colour wheel
- * with hex, text and format; each pause in editing saves a new version (Undo and Blaze's next edit see it). Other
+ * with hex, text and format; each pause in editing saves a new version (Undo and Argus's next edit see it). Other
  * pages, sites and 3D designs are previewed live as before ([DesignPreview]).
  */
 @Composable
@@ -443,7 +443,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                preview: Boolean = true, initialFailure: String? = null,
                /** v0.45.8: Design is its own full-screen view; this is its "Back to chat" (null: no back button). */
                onBack: (() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val fileUrl = remember(target, home) { designUrl(target, home) }
     val file = remember(fileUrl) { fileUrl.takeIf { it.startsWith("file://") }?.let { File(it.removePrefix("file://")) } }
@@ -466,7 +466,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
     }
     var mode by remember(file) { mutableStateOf(StudioMode.PAGE) }
     androidx.compose.runtime.LaunchedEffect(is3d) { if (is3d) mode = StudioMode.THREE_D }
-    // Blaze finished a turn: show its latest version.
+    // Argus finished a turn: show its latest version.
     var wasBusy by remember { mutableStateOf(busy) }
     androidx.compose.runtime.LaunchedEffect(busy) { if (wasBusy && !busy) reload++; wasBusy = busy }
     // v0.45.6: the agent changed the design mid-turn: show it now, so its render check sees this version.
@@ -519,7 +519,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                         Text(tr("Design"), style = TextStyle(fontFamily = Type.Display, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 24.sp, color = c.ink))
                         Spacer(Modifier.width(8.dp))
                         // v0.45.6: Design is labelled Beta (header and the view chip).
-                        Box(Modifier.clip(BlazeShapes.pill).border(1.dp, c.hair2, BlazeShapes.pill).padding(horizontal = 7.dp, vertical = 2.dp)) {
+                        Box(Modifier.clip(ArgusShapes.pill).border(1.dp, c.hair2, ArgusShapes.pill).padding(horizontal = 7.dp, vertical = 2.dp)) {
                             Text(DESIGN_BETA, style = TextStyle(fontFamily = Type.Sans, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 10.sp, color = c.sub))
                         }
                     }
@@ -528,25 +528,25 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
                 // v0.45.8: the shared theme switcher (the same options as every other screen).
-                Box(Modifier.glass(BlazeShapes.pill, GlassIntensity.Low, shadow = false)) { ThemeSwitch() }
+                Box(Modifier.glass(ArgusShapes.pill, GlassIntensity.Low, shadow = false)) { ThemeSwitch() }
                 Spacer(Modifier.width(8.dp))
-                Box(Modifier.glass(BlazeShapes.pill, GlassIntensity.Low, shadow = false)) {
+                Box(Modifier.glass(ArgusShapes.pill, GlassIntensity.Low, shadow = false)) {
                     StudioIcon(if (c.dark) Icons.Rounded.LightMode else Icons.Rounded.DarkMode,
                         if (c.dark) "Light theme" else "Dark theme") { ThemeMode.set(if (c.dark) "light" else "dark") }
                 }
                 if (fileUrl.isNotBlank()) {
                     Spacer(Modifier.width(8.dp))
-                    Box(Modifier.glass(BlazeShapes.pill, GlassIntensity.Low, shadow = false)) {
+                    Box(Modifier.glass(ArgusShapes.pill, GlassIntensity.Low, shadow = false)) {
                         StudioIcon(Icons.Rounded.IosShare, "Open outside the app") { onOpenInBrowser(fileUrl) }
                     }
                 }
             }
             // Mode switcher.
-            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp).glass(BlazeShapes.pill, GlassIntensity.Low, shadow = false).padding(4.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 8.dp).glass(ArgusShapes.pill, GlassIntensity.Low, shadow = false).padding(4.dp)) {
                 StudioMode.values().forEach { m ->
                     val on = m == mode
                     val bg by androidx.compose.animation.animateColorAsState(if (on) c.ink else Color.Transparent, label = "mode")
-                    Box(Modifier.weight(1f).height(34.dp).clip(BlazeShapes.pill).background(bg, BlazeShapes.pill)
+                    Box(Modifier.weight(1f).height(34.dp).clip(ArgusShapes.pill).background(bg, ArgusShapes.pill)
                         .clickable { mode = m; selected = null }, contentAlignment = Alignment.Center) {
                         Text(m.label, style = TextStyle(fontFamily = Type.Sans, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 12.5.sp,
                             color = if (on) c.paper else c.sub))
@@ -598,7 +598,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                         val cr = remember(d) { DesignPage.critique(d) }
                         CriticChip(cr) { cr.weakest?.let { selected = it; note = cr.note } }
                     }
-                    Row(Modifier.align(Alignment.BottomEnd).padding(10.dp).glass(BlazeShapes.pill, GlassIntensity.Medium, shadow = false),
+                    Row(Modifier.align(Alignment.BottomEnd).padding(10.dp).glass(ArgusShapes.pill, GlassIntensity.Medium, shadow = false),
                         verticalAlignment = Alignment.CenterVertically) {
                         Text("\u2212", modifier = Modifier.clickable { view.zoom = (view.zoom - 0.25f).coerceAtLeast(0.5f); if (view.zoom <= 1f) view.pan = androidx.compose.ui.geometry.Offset.Zero }.padding(horizontal = 10.dp, vertical = 6.dp),
                             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink))
@@ -612,8 +612,8 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                     .padding(horizontal = 18.dp, vertical = 12.dp)) {
                     Text(status.ifBlank { "${BrandName.NAME} is designing\u2026" }, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.ink))
                 }
-                if (note.isNotEmpty()) Box(Modifier.align(Alignment.TopCenter).padding(top = 48.dp).clip(BlazeShapes.pill).background(c.menuSurface, BlazeShapes.pill)
-                    .border(1.dp, c.hair2, BlazeShapes.pill).padding(horizontal = 15.dp, vertical = 9.dp)) {
+                if (note.isNotEmpty()) Box(Modifier.align(Alignment.TopCenter).padding(top = 48.dp).clip(ArgusShapes.pill).background(c.menuSurface, ArgusShapes.pill)
+                    .border(1.dp, c.hair2, ArgusShapes.pill).padding(horizontal = 15.dp, vertical = 9.dp)) {
                     Text(note, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.ink))
                 }
             }
@@ -622,11 +622,11 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 d.painted().reversed().forEach { e ->
                     val on = e.id == selected
-                    Row(Modifier.height(44.dp).clip(BlazeShapes.medium).border(1.5.dp, if (on) Color(0xFF4DA8FF) else c.hair, BlazeShapes.medium)
-                        .then(if (on) Modifier.background(Color(0x144DA8FF), BlazeShapes.medium) else Modifier)
+                    Row(Modifier.height(44.dp).clip(ArgusShapes.medium).border(1.5.dp, if (on) Color(0xFF4DA8FF) else c.hair, ArgusShapes.medium)
+                        .then(if (on) Modifier.background(Color(0x144DA8FF), ArgusShapes.medium) else Modifier)
                         .clickable { selected = if (on) null else e.id }.padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         val sw = DesignPage.parseHex(if (e.isText && e.fill.isBlank()) e.color else e.fill.ifBlank { e.color }) ?: 0xFF888888L
-                        Box(Modifier.size(18.dp).clip(BlazeShapes.pill).background(argbColor(sw), BlazeShapes.pill).border(1.dp, c.hair2, BlazeShapes.pill))
+                        Box(Modifier.size(18.dp).clip(ArgusShapes.pill).background(argbColor(sw), ArgusShapes.pill).border(1.dp, c.hair2, ArgusShapes.pill))
                         Spacer(Modifier.width(8.dp))
                         Text(e.label, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 12.5.sp, color = c.ink))
                     }
@@ -635,7 +635,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
             // Prompt chips.
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp).padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 studioSuggestions(mode, artifactOf(file != null, d != null, is3d, usesThree)).forEach { s ->
-                    Box(Modifier.height(28.dp).clip(BlazeShapes.pill).border(1.dp, c.hair, BlazeShapes.pill).clickable(enabled = !busy) { onAsk(studioAsk(s, mode, sel)) }
+                    Box(Modifier.height(28.dp).clip(ArgusShapes.pill).border(1.dp, c.hair, ArgusShapes.pill).clickable(enabled = !busy) { onAsk(studioAsk(s, mode, sel)) }
                         .padding(horizontal = 11.dp), contentAlignment = Alignment.Center) {
                         Text(s, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                     }
@@ -644,7 +644,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
             // Ask box (scoped to the selected element).
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(RoundedCornerShape(24.dp), GlassIntensity.Low, shadow = false)
                 .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (sel != null) Row(Modifier.height(26.dp).clip(BlazeShapes.pill).background(Color(0x244DA8FF), BlazeShapes.pill).clickable { selected = null }
+                if (sel != null) Row(Modifier.height(26.dp).clip(ArgusShapes.pill).background(Color(0x244DA8FF), ArgusShapes.pill).clickable { selected = null }
                     .padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(sel.label + "  \u00d7", maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, fontSize = 11.5.sp, color = Color(0xFF4DA8FF)))
                 }
@@ -657,7 +657,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
                         modifier = Modifier.fillMaxWidth())
                 }
                 val canSend = ask.isNotBlank() && !busy
-                Box(Modifier.size(36.dp).clip(BlazeShapes.pill).background(if (canSend) c.ink else c.ink.copy(alpha = 0.35f), BlazeShapes.pill)
+                Box(Modifier.size(36.dp).clip(ArgusShapes.pill).background(if (canSend) c.ink else c.ink.copy(alpha = 0.35f), ArgusShapes.pill)
                     .clickable(enabled = canSend) { onAsk(studioAsk(ask, mode, sel)); ask = "" }.semantics { contentDescription = tr("Send") }, contentAlignment = Alignment.Center) {
                     androidx.compose.material3.Icon(Icons.Rounded.ArrowUpward, null, tint = c.paper, modifier = Modifier.size(19.dp))
                 }
@@ -689,7 +689,7 @@ const val STAGE_INSET_DP = 52
 /** v0.45.6: one honest status for a mode that isn't built yet (Motion), with a way to the tab that has the work. */
 @Composable
 private fun StudioStatus(text: String, action: String, onAction: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.fillMaxSize().background(if (c.dark) Color(0xFF060607) else Color(0xFFE7E7EA)).dotGrid(c.hair)) {
         Column(Modifier.align(Alignment.Center).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub))
@@ -702,7 +702,7 @@ private fun StudioStatus(text: String, action: String, onAction: () -> Unit) {
 /** An empty stage: what this mode makes, a way to start, and honest notes for modes still to come. */
 @Composable
 private fun StudioEmpty(mode: StudioMode, hasPage: Boolean, onNewPage: () -> Unit, onAsk: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.fillMaxSize().background(if (c.dark) Color(0xFF060607) else Color(0xFFE7E7EA)).dotGrid(c.hair)) {
         Column(Modifier.align(Alignment.Center).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Label(mode.label)

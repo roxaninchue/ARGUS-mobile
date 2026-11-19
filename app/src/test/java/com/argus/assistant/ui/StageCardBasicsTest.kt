@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.stage.StageTimer
-import com.blaze.assistant.stage.StageTools
+import com.argus.assistant.stage.StageTimer
+import com.argus.assistant.stage.StageTools
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

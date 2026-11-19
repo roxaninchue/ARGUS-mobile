@@ -1,4 +1,4 @@
-package com.blaze.assistant.voice.myvoice
+package com.argus.assistant.voice.myvoice
 
 import android.annotation.SuppressLint
 import android.media.AudioFormat

@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -11,7 +11,7 @@ import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** The actions Blaze can take on the phone, exposed to the AI as tools. */
+/** The actions Argus can take on the phone, exposed to the AI as tools. */
 object PhoneTools {
 
     private fun fn(name: String, desc: String, props: JSONObject = JSONObject(), required: List<String> = emptyList()) =
@@ -90,11 +90,11 @@ object PhoneTools {
     }
 
     suspend fun run(ctx: Context, name: String, args: JSONObject): String {
-        val svc = BlazeAccessibilityService.instance
+        val svc = ArgusAccessibilityService.instance
         fun needSvc() = "Phone control is off right now. ${BrandName.NAME}'s browser tools (browser_*) and background tools don't need it, so keep going with those if they fit. " +
             "For the screen itself, the chat shows a one-tap 'Turn on' banner; tell the user to tap it (it opens ${BrandName.NAME}'s switch in Accessibility settings)."
         // v0.45.1: any phone tool but a read may change the screen, so the next read walks the tree again (ScreenReadCache).
-        if (name != "read_screen") BlazeAccessibilityService.touched()
+        if (name != "read_screen") ArgusAccessibilityService.touched()
         return try {
             when (name) {
                 "open_app" -> openApp(ctx, args.getString("app_name"))
@@ -111,7 +111,7 @@ object PhoneTools {
                     if (args.has("element")) args.getInt("element") else null) ?: needSvc()
                 "press_button" -> svc?.press(args.getString("button")) ?: needSvc()
                 "open_url" -> {
-                    val raw = com.blaze.assistant.agent.ToolLeak.fixBlazeUrl(args.getString("url").trim())
+                    val raw = com.argus.assistant.agent.ToolLeak.fixArgusUrl(args.getString("url").trim())
                     val url = if (raw.startsWith("http://") || raw.startsWith("https://")) raw
                     else if (raw.contains('.') && !raw.contains(' ')) "https://$raw"
                     else "https://www.google.com/search?q=" + Uri.encode(raw)
@@ -135,7 +135,7 @@ object PhoneTools {
                 "set_alarm" -> {
                     // The registry ID goes into the clock label so the alarm can be found and deleted later.
                     val h = args.getInt("hour"); val m = args.getInt("minute")
-                    val pid = com.blaze.assistant.agent.Processes.nextId("alarm")
+                    val pid = com.argus.assistant.agent.Processes.nextId("alarm")
                     val name = args.optString("label").trim()
                     val label = (if (name.isNotBlank()) "$name " else "") + "(${BrandName.NAME} $pid)"
                     val i = Intent(AlarmClock.ACTION_SET_ALARM)
@@ -144,8 +144,8 @@ object PhoneTools {
                         .putExtra(AlarmClock.EXTRA_SKIP_UI, true)
                         .putExtra(AlarmClock.EXTRA_MESSAGE, label)
                     start(ctx, i)
-                    com.blaze.assistant.agent.Processes.register("alarm", name.ifBlank { "Alarm %02d:%02d".format(h, m) }, label,
-                        com.blaze.assistant.agent.Processes.nextAt(h, m),
+                    com.argus.assistant.agent.Processes.register("alarm", name.ifBlank { "Alarm %02d:%02d".format(h, m) }, label,
+                        com.argus.assistant.agent.Processes.nextAt(h, m),
                         org.json.JSONObject().put("label", label).put("name", name).put("time", "%02d:%02d".format(h, m)), id = pid)
                     // v0.45.13 (phone 17:12, "reminder at 18:30" for an 18:15 alarm): the result names the exact time and label set.
                     "Alarm set for ${"%02d:%02d".format(h, m)}, label \u201c$label\u201d. [ID $pid]"
@@ -157,7 +157,7 @@ object PhoneTools {
                         .putExtra(AlarmClock.EXTRA_SKIP_UI, true)
                     if (args.has("label")) i.putExtra(AlarmClock.EXTRA_MESSAGE, args.getString("label"))
                     start(ctx, i)
-                    val pid = com.blaze.assistant.agent.Processes.register("timer",
+                    val pid = com.argus.assistant.agent.Processes.register("timer",
                         args.optString("label").ifBlank { if (secs >= 60) "${secs / 60} min timer" else "$secs s timer" },
                         System.currentTimeMillis().toString(), System.currentTimeMillis() + secs * 1000L,
                         org.json.JSONObject().put("seconds", secs))
@@ -178,7 +178,7 @@ object PhoneTools {
     /** A screenshot as a JPEG data URL, or an explanation when it can't be taken. */
     suspend fun screenshot(): String {
         if (android.os.Build.VERSION.SDK_INT < 30) return "Screenshots need Android 11 or newer."
-        val svc = BlazeAccessibilityService.instance ?: return "Phone control is off, so I can't take a screenshot."
+        val svc = ArgusAccessibilityService.instance ?: return "Phone control is off, so I can't take a screenshot."
         return svc.screenshot() ?: "Couldn't take a screenshot (some apps block it)."
     }
 
@@ -199,14 +199,14 @@ object PhoneTools {
         val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val apps = pm.queryIntentActivities(launcher, 0)
         AppFinder.pkgIn(name)?.let { p -> pm.getLaunchIntentForPackage(p)?.let { i ->
-            start(ctx, i); BlazeAccessibilityService.instance?.settle(maxMs = 2000, quietMs = 300) ?: delay(900)
+            start(ctx, i); ArgusAccessibilityService.instance?.settle(maxMs = 2000, quietMs = 300) ?: delay(900)
             return "Opened $p. It is installed, so never offer to install it." } }
         val q = AppMatch.clean(name)
         if (q.isEmpty()) return "Couldn't tell which app '$name' means. Ask the user, or use the earlier context."
-        // v0.45.6: Blaze's own screens open in-app (open_view), never by launching a look-alike app.
-        AppMatch.blazeView(name)?.let { v -> return "\u201c$name\u201d is part of ${BrandName.NAME} itself: call open_view with view=$v (or music_ops for playback) instead of open_app." }
+        // v0.45.6: Argus's own screens open in-app (open_view), never by launching a look-alike app.
+        AppMatch.argusView(name)?.let { v -> return "\u201c$name\u201d is part of ${BrandName.NAME} itself: call open_view with view=$v (or music_ops for playback) instead of open_app." }
         val labelled = apps.map { it.loadLabel(pm).toString() to it.activityInfo.packageName }
-        // v0.45.6: exact package or exact label only, never a fuzzy match ("Blaze*" opened BlazeFX).
+        // v0.45.6: exact package or exact label only, never a fuzzy match ("Argus*" opened ArgusFX).
         val best = AppMatch.exact(name, labelled, ctx.packageName)
             ?: return AppMatch.near(name, labelled, ctx.packageName).let { near ->
                 if (near.isNotEmpty()) "No installed app is called exactly '$name'. Close names: ${near.joinToString(", ")}. Ask the user which one they mean; never open a near match yourself."
@@ -217,9 +217,9 @@ object PhoneTools {
         val intent = pm.getLaunchIntentForPackage(best.first)
             ?: return "Couldn't open ${best.second}."
         start(ctx, intent)
-        BlazeAccessibilityService.instance?.settle(maxMs = 2000, quietMs = 300) ?: delay(900)
+        ArgusAccessibilityService.instance?.settle(maxMs = 2000, quietMs = 300) ?: delay(900)
         // v0.45.6: check what actually came to the front.
-        val front = try { BlazeAccessibilityService.instance?.currentPkg().orEmpty() } catch (_: Exception) { "" }
+        val front = try { ArgusAccessibilityService.instance?.currentPkg().orEmpty() } catch (_: Exception) { "" }
         if (front.isNotEmpty() && front != best.first && !front.startsWith("com.android.systemui"))
             return "Tried to open ${best.second} (${best.first}), but $front is in front instead. Tell the user it didn't open; don't act on the wrong app."
         return "Opened ${best.second} (${best.first})" + (if (front == best.first) ", checked: it's in front" else "") + ". It is installed, so never offer to install it."

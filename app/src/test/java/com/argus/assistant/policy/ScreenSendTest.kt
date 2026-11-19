@@ -1,4 +1,4 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

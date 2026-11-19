@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.JdbcSql
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.JdbcSql
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -26,7 +26,7 @@ class MemoryMergeTest {
 
     private fun open(): MindStore {
         val s = JdbcSql("jdbc:sqlite:" + File(dir, "blaze.db").path).also { sqls += it }
-        return MindStore(BlazeDb(s), s).also { Mind.use(it) }
+        return MindStore(ArgusDb(s), s).also { Mind.use(it) }
     }
 
     private fun mem(id: Long, text: String, subject: String = "You", kind: String = "preference", created: Long = id) =
@@ -158,9 +158,9 @@ class MemoryMergeTest {
         val st = open()
         st.save("person", "Mary", "Sister is Mary, a nurse in Kitwe", now = 1000)
         st.save("person", "Mary", "Prefers tea", now = 2000)
-        // Written by another device / an older Blaze, so the save-time dedupe never saw them together.
+        // Written by another device / an older Argus, so the save-time dedupe never saw them together.
         st.sql.exec("INSERT INTO memories(text, norm, category, created, updated) VALUES(?,?,?,?,?)",
-            "Sister is Mary, a nurse in Kitwe hospital", BlazeDb.norm("Sister is Mary, a nurse in Kitwe hospital"), "person", 3, 3)
+            "Sister is Mary, a nurse in Kitwe hospital", ArgusDb.norm("Sister is Mary, a nurse in Kitwe hospital"), "person", 3, 3)
         assertEquals(3, st.all().size)
         assertEquals(1, Mind.consolidate())
         val left = st.all()

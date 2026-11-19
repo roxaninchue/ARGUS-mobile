@@ -1,17 +1,17 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 
 /**
- * Why "Blaze lost phone control" and how to get it back in one tap (v0.20.0).
+ * Why "Argus lost phone control" and how to get it back in one tap (v0.20.0).
  *
- * Android has two separate facts: whether Blaze's accessibility service is switched on in Settings,
- * and whether it's actually connected right now. When Blaze's process dies (a browser page's renderer
+ * Android has two separate facts: whether Argus's accessibility service is switched on in Settings,
+ * and whether it's actually connected right now. When Argus's process dies (a browser page's renderer
  * crash used to take it down; Device care or "close all" can kill it), the service is still on but
  * disconnected for a moment, and on Samsung phones it is often switched off for good.
  */
@@ -30,7 +30,7 @@ object PhoneControl {
         return s.split(':').any { it.startsWith(ctx.packageName + "/") }
     }
 
-    fun state(ctx: Context): State = state(BlazeAccessibilityService.instance != null, enabledInSettings(ctx))
+    fun state(ctx: Context): State = state(ArgusAccessibilityService.instance != null, enabledInSettings(ctx))
 
     /** Banner words for each state ("" = no banner). */
     fun banner(s: State): Pair<String, String> = when (s) {
@@ -39,10 +39,10 @@ object PhoneControl {
         State.OFF -> "Phone control is off" to "Turn on"
     }
 
-    /** Straight to Blaze's own switch where Android allows it (Android 11+), else the accessibility list. */
+    /** Straight to Argus's own switch where Android allows it (Android 11+), else the accessibility list. */
     fun fixIntent(ctx: Context): Intent {
         if (Build.VERSION.SDK_INT >= 30) {
-            val cn = ComponentName(ctx, BlazeAccessibilityService::class.java).flattenToString()
+            val cn = ComponentName(ctx, ArgusAccessibilityService::class.java).flattenToString()
             val i = Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS").putExtra(Intent.EXTRA_COMPONENT_NAME, cn)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             if (i.resolveActivity(ctx.packageManager) != null) return i
@@ -59,7 +59,7 @@ object PhoneControl {
             { Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) },
             { Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + ctx.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
         for (t in tries) {
-            try { ctx.startActivity(t()); return true } catch (e: Exception) { com.blaze.assistant.device.CrashLog.write("Phone control settings: ${e.javaClass.simpleName}") }
+            try { ctx.startActivity(t()); return true } catch (e: Exception) { com.argus.assistant.device.CrashLog.write("Phone control settings: ${e.javaClass.simpleName}") }
         }
         return false
     }
@@ -68,14 +68,14 @@ object PhoneControl {
     @Volatile private var last: State? = null
     fun note(s: State) {
         val prev = last; last = s
-        if (prev != null && prev != s) com.blaze.assistant.device.CrashLog.write("Phone control: $prev -> $s")
+        if (prev != null && prev != s) com.argus.assistant.device.CrashLog.write("Phone control: $prev -> $s")
         if (s == State.RECONNECTING && prev != State.RECONNECTING) reconnectingSince = System.currentTimeMillis()
         // Owner 16 Nov 2026: a drop is listed in the Inbox under "Not working" and marked fixed when control is back.
         if (prev != s) try {
             when (s) {
-                State.CONNECTED -> com.blaze.assistant.notify.Inbox.resolved(INBOX_KEY)
-                State.RECONNECTING -> com.blaze.assistant.notify.Inbox.problem(INBOX_KEY, "Phone control is reconnecting. Tap Fix if it doesn't come back.")
-                State.OFF -> com.blaze.assistant.notify.Inbox.problem(INBOX_KEY, "Phone control is off. $TIP")
+                State.CONNECTED -> com.argus.assistant.notify.Inbox.resolved(INBOX_KEY)
+                State.RECONNECTING -> com.argus.assistant.notify.Inbox.problem(INBOX_KEY, "Phone control is reconnecting. Tap Fix if it doesn't come back.")
+                State.OFF -> com.argus.assistant.notify.Inbox.problem(INBOX_KEY, "Phone control is off. $TIP")
             }
         } catch (_: Throwable) { }
     }

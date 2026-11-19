@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.notify.MessageThread
-import com.blaze.assistant.notify.Notifier
-import com.blaze.assistant.notify.StatusNote
+import com.argus.assistant.BrandName
+import com.argus.assistant.notify.MessageThread
+import com.argus.assistant.notify.Notifier
+import com.argus.assistant.notify.StatusNote
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject

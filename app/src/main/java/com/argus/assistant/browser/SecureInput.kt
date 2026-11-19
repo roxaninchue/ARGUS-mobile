@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
  * In-chat secure forms for the background browser (v0.20.0).
  *
  * When a page needs something only the user has (email, phone, username + password, an API key,
- * a one-time code), Blaze shows a form card in the chat. The values go straight from the card into
+ * a one-time code), Argus shows a form card in the chat. The values go straight from the card into
  * the page. The model never sees them: it only ever handles placeholders like `{{secret:password}}`,
  * which the browser swaps for the real value at the moment it types. Values can be saved to the
  * vault (Android Keystore encrypted, per site) so the next sign-in needs no card.
@@ -82,7 +82,7 @@ object SecureInput {
     fun hasPlaceholder(s: String) = token.containsMatchIn(s)
     fun names(s: String): List<String> = token.findAll(s).map { it.groupValues[1] }.toList()
 
-    /** Values given in this run, by name. Memory only; gone when Blaze restarts. */
+    /** Values given in this run, by name. Memory only; gone when Argus restarts. */
     private val slots = ConcurrentHashMap<String, String>()
     /** Every value given this run (any site), so tool output can be scrubbed. */
     private val seen = java.util.Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
@@ -96,7 +96,7 @@ object SecureInput {
      * Swaps placeholders for real values: this run's values first, then the vault for [host].
      * Returns null (and the missing names) when one isn't known, so nothing half-filled is typed.
      */
-    fun resolve(text: String, host: String, vault: (String, String) -> String? = { h, n -> Vault.get(h, n) ?: com.blaze.assistant.agent.SecretUse.forBrowser(n, h) }): Pair<String?, List<String>> {
+    fun resolve(text: String, host: String, vault: (String, String) -> String? = { h, n -> Vault.get(h, n) ?: com.argus.assistant.agent.SecretUse.forBrowser(n, h) }): Pair<String?, List<String>> {
         val missing = ArrayList<String>()
         val out = token.replace(text) { m ->
             val n = m.groupValues[1]
@@ -108,11 +108,11 @@ object SecureInput {
     /** Replaces any secret value that slipped into text (page text, an echo) with its placeholder or bullets. */
     fun scrub(text: String): String {
         if (text.isEmpty()) return text
-        if (seen.isEmpty()) return com.blaze.assistant.agent.SecretVault.scrub(text)
+        if (seen.isEmpty()) return com.argus.assistant.agent.SecretVault.scrub(text)
         var t = text
         val byValue = slots.entries.associate { it.value to it.key }
         for (v in seen.sortedByDescending { it.length }) if (t.contains(v)) t = t.replace(v, byValue[v]?.let { placeholder(it) } ?: "••••")
-        return com.blaze.assistant.agent.SecretVault.scrub(t)   // 0.46.6: Secure Form vault values too
+        return com.argus.assistant.agent.SecretVault.scrub(t)   // 0.46.6: Secure Form vault values too
     }
 
     fun hostOf(url: String): String = try {
@@ -142,7 +142,7 @@ object SecureInput {
 
 /**
  * Sites that won't take a password (GitHub's "This account does not support password sign-in",
- * passkey-only, Google-only accounts). Spotted in page text so Blaze offers the ways that work
+ * passkey-only, Google-only accounts). Spotted in page text so Argus offers the ways that work
  * instead of looping on the password form.
  */
 object SignInHints {
@@ -170,7 +170,7 @@ object SignInHints {
 }
 
 /**
- * Blaze's vault for website sign-ins: `filesDir/vault.json`, one entry per site and field, each value
+ * Argus's vault for website sign-ins: `filesDir/vault.json`, one entry per site and field, each value
  * encrypted with the Android Keystore key (Secrets). Excluded from cloud backup (the key can't leave
  * the phone anyway). Values are only ever handed to the browser, never to the model.
  */
@@ -178,8 +178,8 @@ object Vault {
     @Volatile var fileOverride: File? = null
     @Volatile var dir: File? = null
     /** Encrypt / decrypt; tests swap these for plain functions (no Keystore on the JVM). */
-    var seal: (String) -> String = { com.blaze.assistant.agent.Secrets.encrypt(it) }
-    var open: (String) -> String = { com.blaze.assistant.agent.Secrets.decrypt(it) }
+    var seal: (String) -> String = { com.argus.assistant.agent.Secrets.encrypt(it) }
+    var open: (String) -> String = { com.argus.assistant.agent.Secrets.decrypt(it) }
 
     private fun file(): File? = fileOverride ?: dir?.let { File(it, "vault.json") }
     private val lock = Any()

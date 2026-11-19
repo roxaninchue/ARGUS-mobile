@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * v0.45.6 jank ("really laggy", scrolling back through a chat): LazyColumn drops rows that leave the screen, and with them

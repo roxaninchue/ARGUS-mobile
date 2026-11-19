@@ -1,12 +1,12 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.PrivateChat
-import com.blaze.assistant.agent.engines.BotEngine
-import com.blaze.assistant.agent.engines.RowSink
-import com.blaze.assistant.agent.engines.TurnEvent
-import com.blaze.assistant.agent.engines.TurnInput
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.PrivateChat
+import com.argus.assistant.agent.engines.BotEngine
+import com.argus.assistant.agent.engines.RowSink
+import com.argus.assistant.agent.engines.TurnEvent
+import com.argus.assistant.agent.engines.TurnInput
+import com.argus.assistant.store.Sql
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -279,7 +279,7 @@ interface ArgusChats {
 
 /**
  * P1-TM-02: shows one of the user's chats (ChatJson file) as ARGUS rows, without changing it. Message i (1-based) is
- * row seq i with updatedSeq i; roles map like [com.blaze.assistant.agent.engines.RowMapper]: USER → message from
+ * row seq i with updatedSeq i; roles map like [com.argus.assistant.agent.engines.RowMapper]: USER → message from
  * "user", BLAZE (and the old/new brand names) → message from the Manager, STEP → event "step", ERROR → notice "error".
  * Attachments, sources, reactions and the rest stay in the chat file; the Chat screen keeps reading those from it.
  */
@@ -298,7 +298,7 @@ object ArgusBridge {
                 "USER" -> RowKind.MESSAGE to RowBodies.message(RowBodies.USER, text)
                 "STEP" -> RowKind.EVENT to RowBodies.event("step", text)
                 "ERROR" -> RowKind.NOTICE to RowBodies.notice(text, "error")
-                else -> RowKind.MESSAGE to RowBodies.message(BotRules.MANAGER_ID, text)   // BLAZE / ARGUS / Blaze
+                else -> RowKind.MESSAGE to RowBodies.message(BotRules.MANAGER_ID, text)   // BLAZE / ARGUS / Argus
             }
             val s = (i + 1).toLong()
             out += Row(BotRules.MANAGER_ID, generation, s, s, kind, body, at)

@@ -1,6 +1,6 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,7 +12,7 @@ class WaveA2ForYouTest {
     private fun e(kind: String, title: String, author: String, w: Int = 1, daysAgo: Int = 1) = TasteEvent(kind, title, author, w, now - daysAgo * 86_400_000L)
     private fun item(src: String, id: String) = StoreItem(src, id, "t$id", "a")
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     @Test fun nothingSelectedMeansForYouMix() {
         assertTrue(ForYou.isMix("", ""))

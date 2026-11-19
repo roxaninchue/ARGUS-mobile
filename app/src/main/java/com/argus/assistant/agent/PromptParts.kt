@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.1 speed: the system prompt as named parts with a stability tier, so provider prompt caching can hit.

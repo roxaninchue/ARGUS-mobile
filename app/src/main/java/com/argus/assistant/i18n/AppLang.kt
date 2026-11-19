@@ -1,4 +1,4 @@
-package com.blaze.assistant.i18n
+package com.argus.assistant.i18n
 
 import androidx.compose.runtime.mutableStateOf
 import org.json.JSONObject

@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /**
  * fix/chat-flat-ui (owner, 14 Nov 2026): inside the folded "Thinking" section, the parts of the model's reasoning that

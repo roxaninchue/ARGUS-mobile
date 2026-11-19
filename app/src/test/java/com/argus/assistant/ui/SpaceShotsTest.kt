@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Column
@@ -16,20 +16,20 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.Project
-import com.blaze.assistant.setup.SetupPlan
-import com.blaze.assistant.ui.space.SpaceAnswer
-import com.blaze.assistant.ui.space.SpaceBackdrop
-import com.blaze.assistant.ui.space.SpaceGreeting
-import com.blaze.assistant.ui.space.SpaceOnboarding
-import com.blaze.assistant.ui.space.SpaceOnboardingScreen
-import com.blaze.assistant.ui.space.SpaceProfile
-import com.blaze.assistant.ui.space.SpaceProfileScreen
-import com.blaze.assistant.ui.space.SpaceProjectsScreen
-import com.blaze.assistant.ui.space.SpaceSetupScreen
-import com.blaze.assistant.ui.space.SpaceTabs
-import com.blaze.assistant.ui.space.SpaceTags
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.Project
+import com.argus.assistant.setup.SetupPlan
+import com.argus.assistant.ui.space.SpaceAnswer
+import com.argus.assistant.ui.space.SpaceBackdrop
+import com.argus.assistant.ui.space.SpaceGreeting
+import com.argus.assistant.ui.space.SpaceOnboarding
+import com.argus.assistant.ui.space.SpaceOnboardingScreen
+import com.argus.assistant.ui.space.SpaceProfile
+import com.argus.assistant.ui.space.SpaceProfileScreen
+import com.argus.assistant.ui.space.SpaceProjectsScreen
+import com.argus.assistant.ui.space.SpaceSetupScreen
+import com.argus.assistant.ui.space.SpaceTabs
+import com.argus.assistant.ui.space.SpaceTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -56,7 +56,7 @@ class SpaceShotsTest {
         }
     }
     @get:Rule(order = 1) val rule = createAndroidComposeRule<androidx.activity.ComponentActivity>()
-    @org.junit.Before fun initSettings() { try { com.blaze.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
+    @org.junit.Before fun initSettings() { try { com.argus.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
 
     private fun capture(name: String, content: @androidx.compose.runtime.Composable () -> Unit): Bitmap {
         rule.mainClock.autoAdvance = false
@@ -82,7 +82,7 @@ class SpaceShotsTest {
     /** The shell as ChatScreen draws it: the space view, the top bar, then the tab's content. */
     @androidx.compose.runtime.Composable
     private fun Shell(dark: Boolean, tab: String, content: @androidx.compose.runtime.Composable () -> Unit) {
-        CompositionLocalProvider(LocalBlaze provides if (dark) DarkColors else LightColors) {
+        CompositionLocalProvider(LocalArgus provides if (dark) DarkColors else LightColors) {
             SpaceBackdrop {
                 Column(Modifier.statusBarsPadding()) { content() }
             }
@@ -94,7 +94,7 @@ class SpaceShotsTest {
     @Test fun profileDark() {
         var opened = ""
         capture("space-profile-dark") {
-            CompositionLocalProvider(LocalBlaze provides DarkColors) {
+            CompositionLocalProvider(LocalArgus provides DarkColors) {
                 SpaceBackdrop {
                     Column(Modifier.statusBarsPadding()) {
                         SpaceProfileScreen("Gaby Alarcon", "gaby@example.com", signedIn = true, planLine = "Pro plan",
@@ -114,7 +114,7 @@ class SpaceShotsTest {
 
     @Test fun profileLight() {
         capture("space-profile-light") {
-            CompositionLocalProvider(LocalBlaze provides LightColors) {
+            CompositionLocalProvider(LocalArgus provides LightColors) {
                 SpaceBackdrop {
                     // the caller (SettingsSheet) passes SpaceProfile.subtitle(...) as the line under the name, as here
                     SpaceProfileScreen("Gaby Alarcon", SpaceProfile.subtitle("gaby@example.com", false), signedIn = false, planLine = "", onPage = {}, onSignOut = {}, onSearch = {})

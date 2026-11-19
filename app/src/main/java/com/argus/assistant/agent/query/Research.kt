@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
-import com.blaze.assistant.composer.ModelChoice
+import com.argus.assistant.composer.ModelChoice
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -9,7 +9,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 
 /**
- * 0.51.0 BlazeQuery research mode: multi-round research on the same retrieval / judging / cache machinery, as a reusable API
+ * 0.51.0 ArgusQuery research mode: multi-round research on the same retrieval / judging / cache machinery, as a reusable API
  * that is not tied to the reply path. Used by the `blaze_research` tool and the /research and /query slash commands.
  *
  *   round 1: plan (the model writes sub-queries; heuristic plan offline) → retrieve (search + trusted pages + registries)
@@ -18,7 +18,7 @@ import org.json.JSONObject
  *   brief:   the model writes a short cited brief from the top evidence ([q1]…); without a model, the top facts as a list.
  *
  * Bounded by [Limits] (rounds, queries, pages, wall time). Everything found is stored in the cache tier as one
- * "blazequery" document, so later turns and cache_search reach it. Pure orchestration over [BlazeQuery.Env] (ResearchTest).
+ * "argusquery" document, so later turns and cache_search reach it. Pure orchestration over [ArgusQuery.Env] (ResearchTest).
  */
 object Research {
     data class Limits(val rounds: Int = 3, val queriesPerRound: Int = 3, val pagesPerRound: Int = 4, val totalMs: Long = 90_000, val keep: Int = 14)
@@ -72,7 +72,7 @@ object Research {
      * Runs the research. [progress] gets plain lines ("Round 2: 3 searches"). Never throws for network / model failures
      * (an empty brief says so); cancellation propagates.
      */
-    suspend fun run(question: String, recent: List<String>, chat: String, family: ModelChoice.Family, env: BlazeQuery.Env,
+    suspend fun run(question: String, recent: List<String>, chat: String, family: ModelChoice.Family, env: ArgusQuery.Env,
                     limits: Limits = DEEP, progress: (String) -> Unit = {}): Brief {
         val t0 = env.now()
         val fam = Judge.family(family)
@@ -97,16 +97,16 @@ object Research {
             val terms = QueryPlanner.terms(question + " " + qs.joinToString(" ") { it.text }).take(14)
             val found = coroutineScope {
                 val pkgs = if (round == 1) Registries.detect(question) else emptyList()
-                val reg = pkgs.map { p -> async { withTimeoutOrNull(BlazeQuery.FETCH_MS) { env.net.fetch(Registries.url(p), BlazeQuery.REGISTRY_CHARS) }
+                val reg = pkgs.map { p -> async { withTimeoutOrNull(ArgusQuery.FETCH_MS) { env.net.fetch(Registries.url(p), ArgusQuery.REGISTRY_CHARS) }
                     ?.let { Registries.parse(p, it) }?.let { (l, d) -> Evidence(l, Registries.page(p), p.eco.label + " " + p.name, d, Origin.REGISTRY, true, Intent.VERSION) } } }
-                val hits = qs.map { q -> async { (withTimeoutOrNull(BlazeQuery.SEARCH_MS) { runCatching { env.net.search(q.text) }.getOrNull() } ?: emptyList()).map { q to it } } }.awaitAll().flatten()
+                val hits = qs.map { q -> async { (withTimeoutOrNull(ArgusQuery.SEARCH_MS) { runCatching { env.net.search(q.text) }.getOrNull() } ?: emptyList()).map { q to it } } }.awaitAll().flatten()
                 val snippets = hits.filter { SourcePolicy.allowed(it.second.url) && it.second.snippet.length >= 30 }
                     .map { (q, h) -> Evidence(h.snippet, h.url, h.title, Extract.date(h.snippet), Origin.SNIPPET, false, q.intent) }
                 val pages = hits.map { it.second }.distinctBy { it.url }.filter { SourcePolicy.trust(it.url) >= SourcePolicy.UNKNOWN && seenUrls.add(it.url) }
                     .sortedByDescending { SourcePolicy.trust(it.url) }.take(limits.pagesPerRound)
                 progress("Round $round: reading ${pages.size} page${if (pages.size == 1) "" else "s"}")
                 val intentOf = hits.associate { it.second.url to it.first.intent }
-                val pageEv = pages.map { h -> async { withTimeoutOrNull(BlazeQuery.FETCH_MS) { runCatching { env.net.fetch(h.url, BlazeQuery.PAGE_CHARS) }.getOrNull() }
+                val pageEv = pages.map { h -> async { withTimeoutOrNull(ArgusQuery.FETCH_MS) { runCatching { env.net.fetch(h.url, ArgusQuery.PAGE_CHARS) }.getOrNull() }
                     ?.takeIf { !it.startsWith("Error") && it.length >= 200 }?.let { t -> val d = Extract.date(t)
                         Extract.pieces(t, terms, 4).map { p -> Evidence(p.text, h.url, h.title, d, Origin.PAGE, p.code, intentOf[h.url] ?: Intent.FACT) } } ?: emptyList() } }.awaitAll().flatten()
                 reg.awaitAll().filterNotNull() + snippets + pageEv
@@ -125,7 +125,7 @@ object Research {
         if (ask != null && pool.isNotEmpty()) {
             val size = Judge.batchSize(fam)
             val head = pool.take(size * 2)
-            val judged = withTimeoutOrNull(BlazeQuery.JUDGE_MS) {
+            val judged = withTimeoutOrNull(ArgusQuery.JUDGE_MS) {
                 head.chunked(size).flatMap { b -> val raw = try { ask(Judge.prompt(question, b, fam), fam) } catch (e: CancellationException) { throw e } catch (_: Exception) { "" }
                     val sc = Judge.parse(raw, b.size); if (sc.isEmpty()) b else Judge.blend(b, sc) }
             }
@@ -139,11 +139,11 @@ object Research {
         var doc: String? = null
         val s = env.store()
         if (s != null && top.isNotEmpty()) try {
-            val d = s.ingest(chat, BlazeQuery.KIND, "Research: " + question.take(80), "# Research brief\n$text\n\n" + BlazeQuery.document(asked, top, emptyList()))
-            s.bqPut(QueryPlanner.topicKey(question, recent), d.id, chat, BlazeQuery.TTL_MS, BlazeQuery.encode(top, conflicts), ask != null)
+            val d = s.ingest(chat, ArgusQuery.KIND, "Research: " + question.take(80), "# Research brief\n$text\n\n" + ArgusQuery.document(asked, top, emptyList()))
+            s.bqPut(QueryPlanner.topicKey(question, recent), d.id, chat, ArgusQuery.TTL_MS, ArgusQuery.encode(top, conflicts), ask != null)
             s.evict(setOf(d.id)); doc = d.id
         } catch (_: Exception) { }
-        BlazeQuery.Stats.count("research_runs")
+        ArgusQuery.Stats.count("research_runs")
         return Brief(text, top, round, asked, doc, gaps, stopped)
     }
 

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Arrangement
@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.ui.argus.icons.Lucide
-import com.blaze.assistant.ui.argus.icons.LucideSpec
+import com.argus.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.icons.LucideSpec
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule

@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.geometry.Rect
-import com.blaze.assistant.home.HomeGrid
-import com.blaze.assistant.home.WeatherBoard
-import com.blaze.assistant.home.WeatherKind
-import com.blaze.assistant.ui.splash.HomeIntroSpec
+import com.argus.assistant.home.HomeGrid
+import com.argus.assistant.home.WeatherBoard
+import com.argus.assistant.home.WeatherKind
+import com.argus.assistant.ui.splash.HomeIntroSpec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * v0.45.28, pure (TalkTapTest): what a press on the big mic does. Not listening: start; a long hold sends when you let

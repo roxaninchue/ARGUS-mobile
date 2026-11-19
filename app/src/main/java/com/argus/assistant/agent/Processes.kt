@@ -1,15 +1,15 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.provider.AlarmClock
 import android.provider.CalendarContract
-import com.blaze.assistant.phone.ClockUi.State as ClockState
-import com.blaze.assistant.proactive.Triggers
-import com.blaze.assistant.routine.Routines
+import com.argus.assistant.phone.ClockUi.State as ClockState
+import com.argus.assistant.proactive.Triggers
+import com.argus.assistant.routine.Routines
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
@@ -21,7 +21,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Process registry: everything Blaze creates that keeps living after the chat (alarms, timers,
+ * Process registry: everything Argus creates that keeps living after the chat (alarms, timers,
  * routines, triggers, calendar events, background jobs) gets a short unique ID like R4 or A12.
  *
  * The model works by ID only. `processes` returns one short line per item (ID, kind, title, when),
@@ -87,7 +87,7 @@ object Processes {
         return (prefix[kind] ?: "X") + n
     }
 
-    /** Record something Blaze created. Returns its ID. */
+    /** Record something Argus created. Returns its ID. */
     @Synchronized fun register(kind: String, title: String, ref: String, due: Long = 0, props: JSONObject = JSONObject(), id: String? = null): String {
         if (!ok()) return ""
         val pid = id ?: nextId(kind)
@@ -129,7 +129,7 @@ object Processes {
             }
         } catch (_: Exception) { }
         try {
-            val ws = com.blaze.assistant.phone.Watchers.states()
+            val ws = com.argus.assistant.phone.Watchers.states()
             list.removeAll { it.kind == "watcher" && it.ref !in ws }
             val ks = SkillPacks.all().map { it.dir.name }.toSet()
             list.removeAll { it.kind == "skill" && it.ref !in ks }
@@ -143,7 +143,7 @@ object Processes {
                 it.status == "active" && it.kind == "timer" && it.due in 1..now -> it.copy(status = "finished")
                 it.status == "active" && it.kind == "alarm" && it.due in 1..now && !it.props.optBoolean("repeats") -> it.copy(status = "rang")
                 it.status == "active" && (it.kind == "event" || it.kind == "gevent") && it.due in 1..now -> it.copy(status = "past")
-                it.kind == "job" && it.status == "active" && !com.blaze.assistant.terminal.Terminal.jobAlive(it.ref.toIntOrNull() ?: -1) -> it.copy(status = "ended")
+                it.kind == "job" && it.status == "active" && !com.argus.assistant.terminal.Terminal.jobAlive(it.ref.toIntOrNull() ?: -1) -> it.copy(status = "ended")
                 else -> it
             }
         }.toMutableList()
@@ -184,7 +184,7 @@ object Processes {
         return null
     }
 
-    /** v0.45.13: the phone's next Clock alarm when Blaze tracks none at that time (only the next one is visible to apps). */
+    /** v0.45.13: the phone's next Clock alarm when Argus tracks none at that time (only the next one is visible to apps). */
     @Volatile var nextSystemAlarm: () -> Long? = { null }
 
     private fun untrackedLine(kind: String, tracked: List<P>): String? {
@@ -205,8 +205,8 @@ object Processes {
         sync()
         val id0 = idRaw.trim().removePrefix("#")
         val id = if (id0.startsWith("clock@", true)) "clock@" + id0.substringAfter('@') else id0.uppercase()
-        // v0.45.13: a Clock alarm Blaze no longer tracks (0.45.9 dropped A2 after an unconfirmed delete; the system's
-        // next alarm) can still be switched off / deleted by its label "(Blaze A2)" or its time ("clock@18:15").
+        // v0.45.13: a Clock alarm Argus no longer tracks (0.45.9 dropped A2 after an unconfirmed delete; the system's
+        // next alarm) can still be switched off / deleted by its label "(Argus A2)" or its time ("clock@18:15").
         val p = _all.value.firstOrNull { it.id == id } ?: untracked(id, action) ?: return "No process $id. Call processes to see the IDs."
         return when (action) {
             "details" -> JSONObject().put("id", p.id).put("kind", p.kind).put("title", p.title).put("status", p.status)
@@ -224,15 +224,15 @@ object Processes {
         val msg = when (p.kind) {
             "routine" -> { Routines.delete(p.ref.toInt()); "Deleted routine ${p.id} \u201c${p.title}\u201d." }
             "trigger" -> { Triggers.remove(p.ref.toLong()); "Deleted trigger ${p.id} \u201c${p.title}\u201d." }
-            "job" -> com.blaze.assistant.terminal.Terminal.stopJob(p.ref.toInt())
-            "watcher" -> { com.blaze.assistant.phone.Watchers.remove(p.ref); "Deleted watcher ${p.id}." }
+            "job" -> com.argus.assistant.terminal.Terminal.stopJob(p.ref.toInt())
+            "watcher" -> { com.argus.assistant.phone.Watchers.remove(p.ref); "Deleted watcher ${p.id}." }
             "goal" -> { Autonomy.remove(p.ref); "Deleted goal ${p.id}." }
             "skill" -> { SkillPacks.delete(p.ref); "Deleted skill ${p.id} \u201c${p.title}\u201d." }
             "event" -> try {
                 val n = ctx.contentResolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, p.ref.toLong()), null, null)
                 if (n > 0) "Deleted calendar event ${p.id} \u201c${p.title}\u201d." else "That event was already gone from the calendar."
             } catch (e: Exception) { "Couldn't delete the event: ${e.message}" }
-            "gevent" -> com.blaze.assistant.connect.Connectors.gcalDelete(p.ref)
+            "gevent" -> com.argus.assistant.connect.Connectors.gcalDelete(p.ref)
             "alarm" -> return alarmOff(ctx, p, delete = true)
             "timer" -> {
                 if (p.status == "active" && android.os.Build.VERSION.SDK_INT >= 28) try {
@@ -249,14 +249,14 @@ object Processes {
 
     /**
      * v0.45.13 (phone 17:13, "Alarm removed." while Samsung Clock still showed it ON): delete (or switch off) the alarm
-     * in the Clock app through phone control and read the list back ([com.blaze.assistant.phone.ClockUi]). Only a
+     * in the Clock app through phone control and read the list back ([com.argus.assistant.phone.ClockUi]). Only a
      * confirmed reading is reported as done ([ActCheck] markers); the registry row is dropped only when it's gone.
      */
     private suspend fun alarmOff(ctx: Context, p: P, delete: Boolean): String {
         val label = p.props.optString("label")
         val hhmm = p.props.optString("time").ifBlank { null } ?: if (p.due > 0) SimpleDateFormat("HH:mm", Locale.US).format(Date(p.due)) else null
         val what = "alarm ${p.id}" + (hhmm?.let { " ($it" + (if (label.isNotBlank()) ", \u201c$label\u201d" else "") + ")" } ?: "")
-        val o = com.blaze.assistant.phone.ClockUi.alarmOff(ctx, p.id, hhmm, label.ifBlank { "${BrandName.NAME} ${p.id}" }, delete)
+        val o = com.argus.assistant.phone.ClockUi.alarmOff(ctx, p.id, hhmm, label.ifBlank { "${BrandName.NAME} ${p.id}" }, delete)
         lastTrace = o.trace
         return when (o.state) {
             ClockState.DELETED, ClockState.GONE -> { drop(p.id); "Deleted $what from the Clock app. " + ActCheck.checked(o.evidence) }
@@ -280,9 +280,9 @@ object Processes {
         if (off) return alarmOff(ctx, p, delete = false)
         val label = p.props.optString("label")
         val hhmm = p.props.optString("time").ifBlank { null }
-        val o = com.blaze.assistant.phone.ClockUi.alarmOn(ctx, p.id, hhmm, label.ifBlank { "${BrandName.NAME} ${p.id}" })
+        val o = com.argus.assistant.phone.ClockUi.alarmOn(ctx, p.id, hhmm, label.ifBlank { "${BrandName.NAME} ${p.id}" })
         lastTrace = o.trace
-        return if (o.state == com.blaze.assistant.phone.ClockUi.State.ON) { update(p.id) { it.copy(status = "active") }; "Turned alarm ${p.id} back on. " + ActCheck.checked(o.evidence) }
+        return if (o.state == com.argus.assistant.phone.ClockUi.State.ON) { update(p.id) { it.copy(status = "active") }; "Turned alarm ${p.id} back on. " + ActCheck.checked(o.evidence) }
             else "I tried to turn alarm ${p.id} back on. " + ActCheck.notConfirmed(o.evidence, "switch it on in the Clock app")
     }
 
@@ -294,7 +294,7 @@ object Processes {
             sync(); "Trigger ${p.id} ${if (off) "paused" else "resumed"}."
         }
         "goal" -> { Autonomy.setStatus(p.ref, if (off) "paused" else "open"); sync(); "Goal ${p.id} ${if (off) "paused" else "resumed"}." }
-        "watcher" -> { com.blaze.assistant.phone.Watchers.setEnabled(p.ref, !off); sync(); "Watcher ${p.id} ${if (off) "paused" else "resumed"}." }
+        "watcher" -> { com.argus.assistant.phone.Watchers.setEnabled(p.ref, !off); sync(); "Watcher ${p.id} ${if (off) "paused" else "resumed"}." }
         else -> "A ${p.kind} can't be paused, only deleted or rescheduled."
     }
 
@@ -317,7 +317,7 @@ object Processes {
             "alarm" -> {
                 // v0.45.13: the old one is deleted (or switched off) and read back first; the new one is checked by set_alarm's own probe.
                 val old = alarmOff(ctx, p, delete = true)
-                val r = com.blaze.assistant.phone.PhoneTools.run(ctx, "set_alarm", JSONObject().put("hour", h).put("minute", mi)
+                val r = com.argus.assistant.phone.PhoneTools.run(ctx, "set_alarm", JSONObject().put("hour", h).put("minute", mi)
                     .put("label", p.props.optString("name").ifBlank { p.title }))
                 "Old alarm: $old\nNew alarm: $r"
             }

@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
 import android.content.Context
@@ -96,7 +96,7 @@ object Servers {
             alive -> "Server '$n' started (job ${e.job})."
             else -> "Server '$n' did NOT start: its process exited. Read the output, fix it, then servers action=start again."
         }
-        return head + (if (keep) " It is kept: restarted if it dies and when ${com.blaze.assistant.BrandName.NAME} starts again, until servers action=stop." else "") +
+        return head + (if (keep) " It is kept: restarted if it dies and when ${com.argus.assistant.BrandName.NAME} starts again, until servers action=stop." else "") +
             "\n" + out.takeLast(1200)
     }
 
@@ -146,7 +146,7 @@ object Servers {
         if (!e.keep) return null
         val now = System.currentTimeMillis()
         e.restarts.removeAll { now - it > RESTART_WINDOW_MS }
-        if (e.restarts.size >= MAX_RESTARTS) { e.job = 0; return "Server '${e.name}' keeps stopping ($MAX_RESTARTS restarts in 30 min). Left it down; ask ${com.blaze.assistant.BrandName.NAME} to look at its log." }
+        if (e.restarts.size >= MAX_RESTARTS) { e.job = 0; return "Server '${e.name}' keeps stopping ($MAX_RESTARTS restarts in 30 min). Left it down; ask ${com.argus.assistant.BrandName.NAME} to look at its log." }
         e.restarts.add(now)
         launch(e)
         return null
@@ -170,12 +170,12 @@ object Servers {
             .put("name", p("string", "Short name for the server, e.g. music"))
             .put("command", p("string", "start: the command that runs the server in the foreground (no trailing &), e.g. python3 server.py"))
             .put("port", p("integer", "start: the port it listens on; used to check it is really up"))
-            .put("linux", p("boolean", "start: run inside ${com.blaze.assistant.BrandName.NAME}'s Linux (python, node...) instead of the phone shell"))
+            .put("linux", p("boolean", "start: run inside ${com.argus.assistant.BrandName.NAME}'s Linux (python, node...) instead of the phone shell"))
             .put("folder", p("string", "start: folder to run it in, e.g. /root/music-server"))
-            .put("keep", p("boolean", "start: keep it running (restart if it dies and when ${com.blaze.assistant.BrandName.NAME} starts). Default true"))
+            .put("keep", p("boolean", "start: keep it running (restart if it dies and when ${com.argus.assistant.BrandName.NAME} starts). Default true"))
             .put("lines", p("integer", "logs: last N lines, default 80"))
         return JSONObject().put("type", "function").put("function", JSONObject().put("name", NAME)
-            .put("description", "The place servers live. Start a server the user will keep using here (not run_shell background=true): it gets a name, keeps running when ${com.blaze.assistant.BrandName.NAME} is closed, is restarted if it dies or the app is killed, and every turn shows whether it is really answering on its port. list shows each one's real state; logs shows its output; stop removes it.")
+            .put("description", "The place servers live. Start a server the user will keep using here (not run_shell background=true): it gets a name, keeps running when ${com.argus.assistant.BrandName.NAME} is closed, is restarted if it dies or the app is killed, and every turn shows whether it is really answering on its port. list shows each one's real state; logs shows its output; stop removes it.")
             .put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray())))
     }
 

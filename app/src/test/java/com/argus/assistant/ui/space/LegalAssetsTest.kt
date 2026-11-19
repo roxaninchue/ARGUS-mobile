@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,7 +47,7 @@ class LegalAssetsTest {
     }
 
     @Test fun aboutListsTheLicences() {
-        val src = File(app, "java/com/blaze/assistant/ui/SetupColumns.kt").readText()
+        val src = File(app, "java/com/argus/assistant/ui/SetupColumns.kt").readText()
         val about = src.substringAfter("fun AboutPage()").substringBefore("\n}\n")
         assertTrue("About shows the licences", "LicencesSection()" in about)
         assertTrue(src.contains("LegalAssets.read(ctx, f)") && src.contains("LegalAssets.FILES.forEach"))

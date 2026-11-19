@@ -1,13 +1,13 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Base64
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,13 +25,13 @@ import java.util.Locale
 import java.util.TimeZone
 
 /**
- * Accounts Blaze can use on your behalf. Three sign-in styles:
+ * Accounts Argus can use on your behalf. Three sign-in styles:
  *  LOOPBACK – OAuth 2.0 + PKCE in the browser, redirect caught on http://127.0.0.1:43117/callback (Google, Spotify)
  *  DEVICE   – GitHub device flow: type a short code on github.com
  *  TOKEN    – paste an access token (Notion internal integration, Slack app token)
  * One-click (v1.16): when blaze-auth has the provider switched on, Connect needs no developer app:
  * the Worker holds the client secret and hands tokens back through a PKCE-bound one-time code
- * (BlazeAccount.connectTokens), like Blaze Desktop. Your own client id still works and wins when set.
+ * (ArgusAccount.connectTokens), like Blaze Desktop. Your own client id still works and wins when set.
  * Manual setup (own client id / pasted token) was removed from the app; old connections still refresh.
  * Tokens are stored Keystore-encrypted.
  */
@@ -102,14 +102,14 @@ object Connectors {
      * Connect is OAuth through blaze-auth only, like Blaze Desktop (v1.16): no developer apps or
      * pasted tokens. Accounts connected the old way keep working until you disconnect them.
      */
-    fun available(id: String) = BlazeAccount.oneClick(id)
+    fun available(id: String) = ArgusAccount.oneClick(id)
 
     suspend fun connect(ctx: Context, id: String): String {
         val c = byId(id)
         if (available(id)) return oneClick(ctx, c).also { status(id, it) }
-        withContext(Dispatchers.IO) { BlazeAccount.refreshProviders(true) }
+        withContext(Dispatchers.IO) { ArgusAccount.refreshProviders(true) }
         if (available(id)) return oneClick(ctx, c).also { status(id, it) }
-        return (if (!BlazeAccount.view.value.online) "Couldn't reach ${BrandName.NAME}'s sign-in service. Check your internet connection."
+        return (if (!ArgusAccount.view.value.online) "Couldn't reach ${BrandName.NAME}'s sign-in service. Check your internet connection."
                 else "One-tap Connect for ${c.name} is coming soon.").also { status(id, it) }
     }
 
@@ -129,10 +129,10 @@ object Connectors {
 
     private suspend fun oneClick(ctx: Context, c: Connector): String = try {
         status(c.id, "Waiting for you to sign in in the browser…")
-        // GitHub "workflow" lets Blaze push the Actions file of an app it builds (android-app-builder);
+        // GitHub "workflow" lets Argus push the Actions file of an app it builds (android-app-builder);
         // only Workers from 0.8.0 accept it, so older ones keep getting the old scopes.
-        val scopes = if (c.kind == Kind.TOKEN) "" else if (c.id == "github" && BlazeAccount.workerAtLeast("0.8.0")) c.scopes + " workflow" else scopesFor(c)
-        val t = BlazeAccount.connectTokens(ctx, c.id, scopes)
+        val scopes = if (c.kind == Kind.TOKEN) "" else if (c.id == "github" && ArgusAccount.workerAtLeast("0.8.0")) c.scopes + " workflow" else scopesFor(c)
+        val t = ArgusAccount.connectTokens(ctx, c.id, scopes)
         val exp = t.optLong("expires_in", 0)
         if (exp > 0) t.put("expires_at", System.currentTimeMillis() + exp * 1000)
         saveTokens(c.id, t.put("via", "blaze"))
@@ -140,7 +140,7 @@ object Connectors {
             ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)?.let { ctx.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
         }
         "Connected" + (t.optString("account").takeIf { it.isNotBlank() }?.let { " as $it" } ?: "")
-    } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { BlazeAccount.message(e) }
+    } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { ArgusAccount.message(e) }
 
     /** Google asks for Classroom only once the user switched it on (v0.16.0); nothing changes for anyone else. */
     fun scopesFor(c: Connector): String = if (c.id == "google" && Classroom.enabled) c.scopes + " " + Classroom.SCOPES else c.scopes
@@ -216,7 +216,7 @@ object Connectors {
         val t = tokens(id) ?: return null
         val exp = t.optLong("expires_at", 0)
         if (exp > 0 && exp < System.currentTimeMillis() + 60_000 && t.optString("refresh_token").isNotBlank() && t.optString("via") == "blaze") {
-            val n = BlazeAccount.refreshTokens(id, t.getString("refresh_token")) ?: return null
+            val n = ArgusAccount.refreshTokens(id, t.getString("refresh_token")) ?: return null
             for (k in n.keys()) t.put(k, n.get(k))
             t.put("expires_at", System.currentTimeMillis() + n.optLong("expires_in", 3600) * 1000)
             saveTokens(id, t)
@@ -346,7 +346,7 @@ object Connectors {
         } catch (e: Exception) { "Error: ${e.message}" }
     }
 
-    /** Used by the process registry to delete a Google Calendar event Blaze created. */
+    /** Used by the process registry to delete a Google Calendar event Argus created. */
     suspend fun gcalDelete(eventId: String): String = withContext(Dispatchers.IO) {
         val tok = access("google") ?: return@withContext "Couldn't delete: Google isn't connected."
         try {
@@ -418,11 +418,11 @@ object Connectors {
                     .put("location", a.optString("location")).put("start", JSONObject().put("dateTime", rfc(st)).put("timeZone", tz))
                     .put("end", JSONObject().put("dateTime", rfc(en)).put("timeZone", tz)).also { body ->
                         // 18 Nov 2026: alerts and repeats, so a reminder reaches the user from Google itself
-                        com.blaze.assistant.routine.RoutineCalendar.repeatRule(a.optString("repeat"))?.let { body.put("recurrence", JSONArray().put("RRULE:$it")) }
+                        com.argus.assistant.routine.RoutineCalendar.repeatRule(a.optString("repeat"))?.let { body.put("recurrence", JSONArray().put("RRULE:$it")) }
                         if (a.has("reminder_minutes")) body.put("reminders", JSONObject().put("useDefault", false).put("overrides",
                             JSONArray().put(JSONObject().put("method", "popup").put("minutes", a.optInt("reminder_minutes", 0).coerceAtLeast(0)))))
                     }, t)
-                val pid = com.blaze.assistant.agent.Processes.register("gevent", a.optString("title"), e.optString("id"), st.time,
+                val pid = com.argus.assistant.agent.Processes.register("gevent", a.optString("title"), e.optString("id"), st.time,
                     JSONObject().put("location", a.optString("location")).put("link", e.optString("htmlLink")))
                 "Added \"${a.optString("title")}\" to Google Calendar. [ID $pid] ${e.optString("htmlLink")}"
             }
@@ -455,12 +455,12 @@ object Connectors {
                     .let { l -> if (l.isEmpty()) "No assignments due in that window." else l.take(40).joinToString("\n") { Classroom.line(it) } }
                 else -> {
                     val l = Classroom.work(g, "", a.optInt("days", 30).coerceIn(1, 180), false).filter { !Classroom.done(it) }
-                    val have = com.blaze.assistant.routine.Routines.all.value.map { it.name }.toSet()
+                    val have = com.argus.assistant.routine.Routines.all.value.map { it.name }.toSet()
                     val added = ArrayList<String>(); var kept = 0
                     for (w in l) {
                         val at = Classroom.reminderAt(w.due) ?: continue
                         if (Classroom.reminderName(w) in have) { kept++; continue }
-                        com.blaze.assistant.routine.Routines.addAt(Classroom.reminderName(w), Classroom.reminderPrompt(w), at)
+                        com.argus.assistant.routine.Routines.addAt(Classroom.reminderName(w), Classroom.reminderPrompt(w), at)
                         added += w.title
                     }
                     if (l.isEmpty()) "Nothing due in Classroom in that window that isn't turned in."

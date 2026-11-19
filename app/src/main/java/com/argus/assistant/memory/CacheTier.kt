@@ -1,4 +1,4 @@
-package com.blaze.assistant.memory
+package com.argus.assistant.memory
 
 import android.content.Context
 import kotlinx.coroutines.CoroutineScope
@@ -64,8 +64,8 @@ object CacheTier {
                 val r = root ?: return@run null
                 try {
                     r.mkdirs()
-                    CacheStore(com.blaze.assistant.store.AndroidSql(File(r, "cache.db").absolutePath), r).also { store = it }
-                } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CacheTier: open", e); null }
+                    CacheStore(com.argus.assistant.store.AndroidSql(File(r, "cache.db").absolutePath), r).also { store = it }
+                } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CacheTier: open", e); null }
             }
         }
     }
@@ -136,11 +136,11 @@ object CacheTier {
                 val d = s.ingest(chat, "paste", nameOf(b.text), b.text)
                 out += b to ref(d, b.text.substringAfter(":\n", b.text).let { if (it.length < 40) b.text else it })
                 startGists(d.id)
-            } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("CacheTier: page", e) }
+            } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("CacheTier: page", e) }
         }
         // documents cached before the chat was known (text attachments) join this chat
         for (i in from.coerceAtLeast(0) until h.length()) {
-            val t = h.optJSONObject(i)?.let { com.blaze.assistant.agent.LongChat.text(it) } ?: continue
+            val t = h.optJSONObject(i)?.let { com.argus.assistant.agent.LongChat.text(it) } ?: continue
             for (id in docIds(t)) try { s.claim(id, chat) } catch (_: Exception) { }
         }
         if (out.isNotEmpty()) try { s.evict(out.map { docIds(it.second) }.flatten().toSet()) } catch (_: Exception) { }
@@ -156,7 +156,7 @@ object CacheTier {
             startGists(d.id)
             s.evict(setOf(d.id))
             ref(d, head)
-        } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("CacheTier: attachment", e); null }
+        } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("CacheTier: attachment", e); null }
     }
 
     /** A tool result over [TOOL_OVER]: cached, and the model gets its head, the TOC and the doc id. Null = keep as is. */
@@ -170,7 +170,7 @@ object CacheTier {
                 s.evict(setOf(d.id))
                 result.take(Chunker.safe(result, 1_200)) + "\n… [${result.length - 1_200} more characters cached as doc:${d.id}]\n" +
                     CacheToc.toc(d, s.sections(d.id), maxChars = 1_500) + "\nRead more with cache_read {doc:\"${d.id}\", index} or cache_search."
-            } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("CacheTier: aside", e); null }
+            } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("CacheTier: aside", e); null }
         }
     }
 
@@ -180,7 +180,7 @@ object CacheTier {
         withContext(Dispatchers.IO) {
             val s = store() ?: return@withContext
             try { s.append(ChatTier.docId(chat), chat, "history", "Earlier turns of this chat", text); s.evict(setOf(ChatTier.docId(chat))) }
-            catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("CacheTier: pageOut", e) }
+            catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("CacheTier: pageOut", e) }
         }
     }
 
@@ -203,7 +203,7 @@ object CacheTier {
 
     suspend fun hasDocs(chat: String): Boolean = withContext(Dispatchers.IO) { try { store()?.docs(chat)?.isNotEmpty() == true } catch (_: Exception) { false } }
 
-    suspend fun deleteChat(chat: String) = withContext(Dispatchers.IO) { try { store()?.deleteChat(chat) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("CacheTier: delete", e) } }
+    suspend fun deleteChat(chat: String) = withContext(Dispatchers.IO) { try { store()?.deleteChat(chat) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("CacheTier: delete", e) } }
 
     // ---------------- gists ----------------
 

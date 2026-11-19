@@ -1,8 +1,8 @@
-package com.blaze.assistant.glance
+package com.argus.assistant.glance
 
-import com.blaze.assistant.stage.ShelfCard
-import com.blaze.assistant.stage.StageKind
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.stage.ShelfCard
+import com.argus.assistant.stage.StageKind
+import com.argus.assistant.store.JdbcSql
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

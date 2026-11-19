@@ -1,10 +1,10 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.connect.ArgusAppsModel.App
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.connect.ArgusAppsModel.App
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,7 +46,7 @@ object ArgusApps {
         if (list.isNotEmpty()) _view.value = _view.value.copy(apps = list)
     }
 
-    private fun token(): String = BlazeAccount.sessionToken()
+    private fun token(): String = ArgusAccount.sessionToken()
 
     private fun call(method: String, path: String, body: JSONObject? = null): Pair<Int, String> {
         val t = token()

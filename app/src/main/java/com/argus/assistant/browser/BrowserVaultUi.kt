@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
@@ -43,11 +43,11 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.Glass
-import com.blaze.assistant.ui.MascotGlyph
-import com.blaze.assistant.ui.Type
+import com.argus.assistant.ui.Glass
+import com.argus.assistant.ui.MascotGlyph
+import com.argus.assistant.ui.Type
 
-/** v0.29.7: the browser's password prompt, saved-account picker, Saved passwords and Saved pages (Blaze glass look). */
+/** v0.29.7: the browser's password prompt, saved-account picker, Saved passwords and Saved pages (Argus glass look). */
 
 @Composable private fun T(s: String, color: Color, size: Int, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE, weight: FontWeight = FontWeight.Normal) =
     androidx.compose.material3.Text(s, modifier = modifier, maxLines = maxLines, overflow = TextOverflow.Ellipsis,
@@ -102,7 +102,7 @@ internal fun SaveLoginCard(offer: BrowserEngine.LoginOffer, onSave: () -> Unit, 
     }
 }
 
-/** Bar above the page when it has a sign-in form and Blaze has saved accounts for the site. */
+/** Bar above the page when it has a sign-in form and Argus has saved accounts for the site. */
 @Composable
 internal fun LoginFillBar(accounts: List<BrowserLogins.Login>, onPick: (BrowserLogins.Login) -> Unit, onDismiss: () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
@@ -284,7 +284,7 @@ internal fun SavedTextReader(page: SavedPages.Page, onClose: () -> Unit) {
     val text = remember(page.id) { SavedPages.text(page.id) ?: "This page has no text copy." }
     Column(Modifier.fillMaxSize().background(Glass.bg)) {
         Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            com.blaze.assistant.ui.GlassIconButton(Icons.Rounded.Close, "Close", size = 38.dp, onClick = onClose)
+            com.argus.assistant.ui.GlassIconButton(Icons.Rounded.Close, "Close", size = 38.dp, onClick = onClose)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 T(page.title.ifBlank { page.url }, Glass.text, 15, weight = FontWeight.Medium, maxLines = 1)

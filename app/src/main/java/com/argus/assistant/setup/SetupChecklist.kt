@@ -1,17 +1,17 @@
-package com.blaze.assistant.setup
+package com.argus.assistant.setup
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.home.HomeStore
-import com.blaze.assistant.home.HomeTodo
-import com.blaze.assistant.home.Widget
-import com.blaze.assistant.home.WidgetTypes
+import com.argus.assistant.BrandName
+import com.argus.assistant.home.HomeStore
+import com.argus.assistant.home.HomeTodo
+import com.argus.assistant.home.Widget
+import com.argus.assistant.home.WidgetTypes
 import org.json.JSONObject
 
 /**
  * 2026-11-18 first run: the "Set up ARGUS" checklist ARGUS puts at the top of Life after sign-in. It is an ordinary Life
  * to-do panel ([HomeTodo], so a tap ticks it and life_todo can tick it), marked `checklist: setup` in its config, whose
  * items carry a key (what the app checks) and a target (what a tap on the row opens, a
- * [com.blaze.assistant.agent.SelfSetup.open] target). Pure: [FirstRun] feeds it what the phone reports.
+ * [com.argus.assistant.agent.SelfSetup.open] target). Pure: [FirstRun] feeds it what the phone reports.
  *
  * The steps are the ones this app can really check and open (SetupGate.deps, SelfSetup.audit, the Google connector);
  * Linux, tools and voice models are not here because they download by themselves (SetupPlan).

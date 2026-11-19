@@ -1,7 +1,7 @@
-package com.blaze.assistant.appstore
+package com.argus.assistant.appstore
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -56,7 +56,7 @@ class StoreCatalogTest {
         }
         assertEquals("Open-source, not made by Blazeinchue. Install at your own risk.", StorePolicy.NOTICE)
         assertEquals("Source repo", StorePolicy.SOURCE_BUTTON)
-        val page = File("src/main/java/com/blaze/assistant/ui/AppStorePage.kt").readText()
+        val page = File("src/main/java/com/argus/assistant/ui/AppStorePage.kt").readText()
         assertTrue("each row shows the notice", page.contains("Text(StorePolicy.NOTICE"))
         assertTrue("each row has the Source repo button", page.contains("OutlinePill(StorePolicy.SOURCE_BUTTON)"))
         assertTrue("each row shows its license", page.contains("a.license.ifBlank"))
@@ -130,8 +130,8 @@ class StoreCatalogTest {
         assertEquals("app-universal.apk", u.name)
     }
 
-    private fun storeFiles() = (File("src/main/java/com/blaze/assistant/appstore").listFiles()!!.filter { it.extension == "kt" } +
-        File("src/main/java/com/blaze/assistant/ui/AppStorePage.kt"))
+    private fun storeFiles() = (File("src/main/java/com/argus/assistant/appstore").listFiles()!!.filter { it.extension == "kt" } +
+        File("src/main/java/com/argus/assistant/ui/AppStorePage.kt"))
 
     private fun kotlinStrings(): String = storeFiles().joinToString("\n") { f -> Regex("\"(?:[^\"\\\\\\n]|\\\\.)*\"").findAll(f.readText()).joinToString("\n") { it.value } }
 

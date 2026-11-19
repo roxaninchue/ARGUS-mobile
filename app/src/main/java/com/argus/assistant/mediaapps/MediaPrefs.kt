@@ -1,10 +1,10 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import android.content.Context
 import android.net.ConnectivityManager
 
 /**
- * v0.34.0: Blaze Music / Video settings (autoplay, smart downloads, data saver, equalizer, crossfade, sleep fade)
+ * v0.34.0: Argus Music / Video settings (autoplay, smart downloads, data saver, equalizer, crossfade, sleep fade)
  * and small per-video memories (where a series' intro ends, which downloads were watched to the end). One prefs file.
  */
 object MediaPrefs {
@@ -12,7 +12,7 @@ object MediaPrefs {
     private fun p(ctx: Context) = ctx.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     fun bool(ctx: Context, key: String, def: Boolean) = try { p(ctx).getBoolean(key, def) }
-        catch (_: ClassCastException) { com.blaze.assistant.agent.PrefCoerce.bool(p(ctx).all[key], def) }   // v0.45.5 hotfix
+        catch (_: ClassCastException) { com.argus.assistant.agent.PrefCoerce.bool(p(ctx).all[key], def) }   // v0.45.5 hotfix
     fun setBool(ctx: Context, key: String, v: Boolean) = p(ctx).edit().putBoolean(key, v).apply()
     fun int(ctx: Context, key: String, def: Int) = p(ctx).getInt(key, def)
     fun setInt(ctx: Context, key: String, v: Int) = p(ctx).edit().putInt(key, v).apply()
@@ -25,7 +25,7 @@ object MediaPrefs {
     const val EQ = "music_eq_preset"                 // preset name, "Flat" = off
     const val CROSSFADE = "music_crossfade_s"        // 0 = off
     const val SLEEP_FADE = "music_sleep_fade"        // default on
-    const val DJ = "music_dj"                        // Blaze DJ keeps the music going
+    const val DJ = "music_dj"                        // Argus DJ keeps the music going
     const val STRIP_GPS = "share_strip_location"     // default on
 
     fun autoplay(ctx: Context) = bool(ctx, AUTOPLAY, true)

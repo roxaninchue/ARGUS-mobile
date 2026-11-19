@@ -1,7 +1,7 @@
-package com.blaze.assistant.voice.myvoice
+package com.argus.assistant.voice.myvoice
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * The My voice setup steps as pure state (MyVoiceSetupTest): whether step 2 is done, whether "Try it" can run, and
  * the plain line under step 3 that says exactly what is still missing.

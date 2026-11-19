@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlin.math.ln
 
@@ -9,7 +9,7 @@ import kotlin.math.ln
  * instead of every skill name. It lives in memory and is rebuilt whenever the skill set changes (install,
  * toggle, learn, delete): SkillMatch keys it on a signature of the candidates.
  *
- * Desktop's own SQLite FTS5 store (store/BlazeDb.kt) needs a bundled SQLite on Android; until memory moves
+ * Desktop's own SQLite FTS5 store (store/ArgusDb.kt) needs a bundled SQLite on Android; until memory moves
  * there this index is the same ranking without a database. Pure (SkillIndexTest).
  */
 object SkillIndex {

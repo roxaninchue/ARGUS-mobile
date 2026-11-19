@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * v0.27.x: the agent's self-checks (FakeCall, ClaimGuard, refusal and verify nudges) stay on the user's request.
  *

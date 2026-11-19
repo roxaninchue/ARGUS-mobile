@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -63,8 +63,8 @@ object Attachments {
                     // 0.49.0 tiered memory: a big text file is streamed into the cache tier (never loaded whole) and the
                     // message carries a reference; a small one is sent as before.
                     val size = try { cr.openFileDescriptor(uri, "r")?.use { it.statSize } ?: -1L } catch (_: Exception) { -1L }
-                    val big = size < 0 || size > com.blaze.assistant.memory.CacheTier.PASTE_OVER
-                    val ref = if (!big) null else cr.openInputStream(uri)?.bufferedReader()?.use { com.blaze.assistant.memory.CacheTier.cacheAttachment(name, it) }
+                    val big = size < 0 || size > com.argus.assistant.memory.CacheTier.PASTE_OVER
+                    val ref = if (!big) null else cr.openInputStream(uri)?.bufferedReader()?.use { com.argus.assistant.memory.CacheTier.cacheAttachment(name, it) }
                     if (ref != null) Attachment(name, listOf(text("File $name:\n$ref")))
                     else {
                         val body = cr.openInputStream(uri)?.bufferedReader()?.use { r -> val b = CharArray(60_000); var n = 0
@@ -116,7 +116,7 @@ object Attachments {
         val scaled = if (s < 1f) Bitmap.createScaledBitmap(bmp, (bmp.width * s).toInt(), (bmp.height * s).toInt(), true) else bmp
         // v0.28.x: BitmapFactory ignores EXIF, so a portrait photo from many phones (Samsung, Xiaomi…) reached the model sideways.
         val o2 = try { cr.openInputStream(uri)?.use { android.media.ExifInterface(it).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1) } ?: 1 } catch (_: Exception) { 1 }
-        val deg = com.blaze.assistant.device.CameraFlow.exifDegrees(o2); val mirror = com.blaze.assistant.device.CameraFlow.exifMirrored(o2)
+        val deg = com.argus.assistant.device.CameraFlow.exifDegrees(o2); val mirror = com.argus.assistant.device.CameraFlow.exifMirrored(o2)
         if (deg == 0 && !mirror) return scaled
         return try {
             val m = android.graphics.Matrix().apply { if (deg != 0) postRotate(deg.toFloat()); if (mirror) postScale(-1f, 1f) }

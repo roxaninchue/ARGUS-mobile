@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,8 +29,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.routine.Routine
-import com.blaze.assistant.routine.Routines
+import com.argus.assistant.routine.Routine
+import com.argus.assistant.routine.Routines
 
 /**
  * Schedule (Settings › Routines, /schedule), v0.19.0 look after Desktop's Schedule view: a page header,
@@ -39,7 +39,7 @@ import com.blaze.assistant.routine.Routines
  */
 @Composable
 fun SchedulePage(list0: List<Routine>? = null, adding0: Boolean = false, now: Long? = null) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val live by Routines.all.collectAsState()
     val list = list0 ?: live
     var adding by remember { mutableStateOf(adding0) }

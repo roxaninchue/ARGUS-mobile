@@ -1,6 +1,6 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
-import com.blaze.assistant.agent.Agent
+import com.argus.assistant.agent.Agent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -8,10 +8,10 @@ import java.io.File
 
 /**
  * 0.46.6 cold start (low-RAM gate run 2): Agent.Session's verification (207 ms) and opening blaze.db leave the main thread;
- * StartWarm does them on a background thread started first in BlazeApp.onCreate.
+ * StartWarm does them on a background thread started first in ArgusApp.onCreate.
  */
 class StartWarmTest {
-    private fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }
+    private fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }
 
     @Test fun warmsAgentSessionByItsRealName() {
         assertEquals(listOf(Agent.Session::class.java.name), StartWarm.classes)
@@ -19,7 +19,7 @@ class StartWarmTest {
     }
 
     @Test fun aMissingClassIsSkippedNeverThrown() {
-        assertEquals(1, StartWarm.warmClasses(listOf("com.blaze.assistant.NoSuchClass", Agent.Session::class.java.name)))
+        assertEquals(1, StartWarm.warmClasses(listOf("com.argus.assistant.NoSuchClass", Agent.Session::class.java.name)))
     }
 
     @Test fun runWithoutAContextDoesNotThrow() {
@@ -28,7 +28,7 @@ class StartWarmTest {
     }
 
     @Test fun startsFirstInOnCreateOffTheMainThread() {
-        val body = src("BlazeApp.kt").readText().substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
+        val body = src("ArgusApp.kt").readText().substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
         val warm = body.indexOf("StartWarm.begin(this)")
         assertTrue("StartWarm.begin missing", warm > 0)
         assertTrue("warm-up must start before the first start step", warm < body.indexOf("StartGuard.step(\"Settings.init\")"))

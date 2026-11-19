@@ -1,21 +1,21 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 import android.app.ActivityManager
 import android.content.Context
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.BgAgents
-import com.blaze.assistant.agent.ChatNav
-import com.blaze.assistant.agent.Memory
-import com.blaze.assistant.agent.Mind
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.agent.TaskKeeper
-import com.blaze.assistant.agent.TeamHooks
-import com.blaze.assistant.agent.ToolRouter
-import com.blaze.assistant.agent.UndoCenter
-import com.blaze.assistant.agent.engines.ToolSubset
-import com.blaze.assistant.agent.engines.LocalEngine
-import com.blaze.assistant.agent.engines.RowMapper
-import com.blaze.assistant.orchestra.AgentBudget
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.BgAgents
+import com.argus.assistant.agent.ChatNav
+import com.argus.assistant.agent.Memory
+import com.argus.assistant.agent.Mind
+import com.argus.assistant.agent.Role
+import com.argus.assistant.agent.TaskKeeper
+import com.argus.assistant.agent.TeamHooks
+import com.argus.assistant.agent.ToolRouter
+import com.argus.assistant.agent.UndoCenter
+import com.argus.assistant.agent.engines.ToolSubset
+import com.argus.assistant.agent.engines.LocalEngine
+import com.argus.assistant.agent.engines.RowMapper
+import com.argus.assistant.orchestra.AgentBudget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -72,7 +72,7 @@ object JobsRuntime {
         val app = ctx.applicationContext
         scope.launch {
             val g = TeamGraph.get(app)
-            runCatching { com.blaze.assistant.policy.PolicyRuntime.init(g.sql, g.threads) }   // P2-SF-01: approvals + policies on team.db; P2-SF-02: card rows in bot threads
+            runCatching { com.argus.assistant.policy.PolicyRuntime.init(g.sql, g.threads) }   // P2-SF-01: approvals + policies on team.db; P2-SF-02: card rows in bot threads
             val store = JobStore(g.sql)
             val rowStore = RowStore(g.sql)
             val am = app.getSystemService(ActivityManager::class.java)
@@ -90,7 +90,7 @@ object JobsRuntime {
                             // the brief is posted once as the task message, so the loop's own copy of it is skipped
                             if (!(e is TeamHooks.Event.Message && e.role == "USER")) for (row in mapper.map(e)) runCatching { g.threads.put(row) }
                         }
-                        b.origin = com.blaze.assistant.policy.PolicyCalls.originOf(job)   // P2-SF-01: who started it, for the policy
+                        b.origin = com.argus.assistant.policy.PolicyCalls.originOf(job)   // P2-SF-01: who started it, for the policy
                         TeamHooks.bind(chat, b); bound[chat] = b
                     }
                     val parent = if (manager || JobStore.requester(job.source) == null) ChatNav.MAIN else PARENT_PREFIX + job.id

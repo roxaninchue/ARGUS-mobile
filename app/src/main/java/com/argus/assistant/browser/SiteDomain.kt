@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 /**
  * v0.29.7: the "site" a saved login belongs to: the registrable domain (eTLD+1), so a password saved on

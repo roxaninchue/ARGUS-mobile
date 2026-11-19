@@ -1,6 +1,6 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
-import com.blaze.assistant.notify.GroupBrain.Pure
+import com.argus.assistant.notify.GroupBrain.Pure
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

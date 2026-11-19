@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -191,7 +191,7 @@ class HedgeRaceTest {
 
     @Test fun slowOnPhoneAndNousWithCloudFailingStillAnswerOnATask() = runTest {
         // phone 25 s to its first word, Nous 15 s, Cloud fails at once (busy). 0.46.4 dropped phone at 20 s and Nous at
-        // 20 s after it started, then showed "Blaze Cloud is busy". Now: phone at 0, Nous hedged at 6 s (word at 21 s),
+        // 20 s after it started, then showed "Argus Cloud is busy". Now: phone at 0, Nous hedged at 6 s (word at 21 s),
         // Cloud at 12 s fails at once, and the answer comes from Nous at 21 s; the phone is cancelled only then.
         val cancels = mutableListOf<Pair<B, Long>>(); val fails = mutableListOf<String>()
         val o = slowRace(task, mapOf(B.PHONE to Fake(25_000), B.NOUS to Fake(15_000), B.CLOUD to Fake(null, error = 200)), listOf(B.PHONE, B.NOUS, B.CLOUD), cancels, fails)

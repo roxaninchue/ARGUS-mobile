@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.policy.NeedsYou
-import com.blaze.assistant.policy.NeedsYou.CardSrc
-import com.blaze.assistant.policy.NeedsYou.Filter
-import com.blaze.assistant.team.ActionClass
+import com.argus.assistant.policy.NeedsYou
+import com.argus.assistant.policy.NeedsYou.CardSrc
+import com.argus.assistant.policy.NeedsYou.Filter
+import com.argus.assistant.team.ActionClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

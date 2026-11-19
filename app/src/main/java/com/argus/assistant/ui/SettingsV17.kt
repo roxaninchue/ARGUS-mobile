@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.foundation.background
@@ -33,29 +33,29 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.FastLane
-import com.blaze.assistant.agent.FreeRouter
-import com.blaze.assistant.agent.Learning
-import com.blaze.assistant.agent.Providers
-import com.blaze.assistant.agent.ScreenMemory
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.connect.Connectors
-import com.blaze.assistant.connect.Mcp
-import com.blaze.assistant.connect.McpConfig
-import com.blaze.assistant.notify.NotificationBrain
+import com.argus.assistant.agent.FastLane
+import com.argus.assistant.agent.FreeRouter
+import com.argus.assistant.agent.Learning
+import com.argus.assistant.agent.Providers
+import com.argus.assistant.agent.ScreenMemory
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.connect.Connectors
+import com.argus.assistant.connect.Mcp
+import com.argus.assistant.connect.McpConfig
+import com.argus.assistant.notify.NotificationBrain
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 
 @Composable
 private fun Note(text: String, top: Int = 0) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Text(text, modifier = Modifier.padding(top = top.dp, bottom = 10.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub))
 }
 
 @Composable
 private fun Button(text: String, primary: Boolean = true, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.fillMaxWidth().height(44.dp).then(if (primary) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f))
         .clickable(onClick = onClick), contentAlignment = Alignment.Center) { ButtonText(text, color = if (primary) c.paper else c.ink, size = 13.sp) }
 }
@@ -68,7 +68,7 @@ private fun Section(title: String) { Spacer(Modifier.height(24.dp)); Label(title
 
 @Composable
 fun FastLaneSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val prog by FastLane.progress.collectAsState()
@@ -95,15 +95,15 @@ fun FastLaneSection() {
 fun StepsModelSection() {
     var pid by remember { mutableStateOf(Settings.stepsProvider) }
     var model by remember { mutableStateOf(Settings.stepsModel) }
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Section("Model for phone steps")
     Note("Optional: a quicker model for the in-between turns while ${BrandName.NAME} taps through an app (e.g. a Flash-Lite model). Leave on \u201cSame as main\u201d to use your main model.")
     val options = listOf("" to "Same as main") + Providers.all.filter { it.id == Providers.AUTO || Settings.keyFor(it.id).isNotBlank() }.map { it.id to it.name }
     Column(Modifier.fillMaxWidth().hairline(c.hair)) {
         options.forEach { (id, name) ->
-            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (id == pid) PageGlass.fill(c, 0.10f) else androidx.compose.ui.graphics.Color.Transparent).hairlineBottom(c.hair)
+            Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).background(if (id == pid) PageGlass.fill(c, 0.10f) else androidx.compose.ui.graphics.Color.Transparent).hairlineBottom(c.hair)
                 .clickable { pid = id; Settings.stepsProvider = id }.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(6.dp).background(if (id == pid) c.accent else c.paper, BlazeShapes.pill)); Spacer(Modifier.width(10.dp))
+                Box(Modifier.size(6.dp).background(if (id == pid) c.accent else c.paper, ArgusShapes.pill)); Spacer(Modifier.width(10.dp))
                 Text(name, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink))
             }
         }
@@ -119,16 +119,16 @@ fun StepsModelSection() {
  */
 @Composable
 fun ConnectionsPage(connected0: Set<String>? = null, online0: Boolean? = null, open0: String = "") {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val st by Connectors.state.collectAsState()
     var open by remember { mutableStateOf(open0) }
     var tick by remember { mutableStateOf(0) }
     if (connected0 == null) LaunchedEffect(Unit) {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { com.blaze.assistant.connect.BlazeAccount.refreshProviders(true) } }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { com.argus.assistant.connect.ArgusAccount.refreshProviders(true) } }
     }
     PageHead("Accounts", "Apps & connectors", "Every app your ${BrandName.NAME} gateway offers. Tap one to connect it: approve in your browser or paste a key. Keys stay encrypted on your gateway; sending or posting always asks you first.")
     // 2026-11-15: the full catalogue from the gateway (argus-connect) replaces the five built-in accounts.
-    GatewayAppsSection(apps0 = if (connected0 != null) com.blaze.assistant.connect.ArgusAppsModel.preview else null)
+    GatewayAppsSection(apps0 = if (connected0 != null) com.argus.assistant.connect.ArgusAppsModel.preview else null)
     // Accounts connected the old way on this phone keep working; they are listed only so they can be disconnected.
     val legacy = Connectors.all.map { conn -> conn to (connected0?.contains(conn.id) ?: remember(tick, st) { runCatching { Connectors.connected(conn.id) }.getOrDefault(false) }) }
         .filter { it.second }
@@ -138,7 +138,7 @@ fun ConnectionsPage(connected0: Set<String>? = null, online0: Boolean? = null, o
         Rows {
             legacy.forEachIndexed { i, (conn, _) ->
                 KitRow(conn.name, st[conn.id]?.takeIf { it.isNotBlank() } ?: conn.blurb, first = i == 0, pill = "Connected", pillOn = true,
-                    onClick = { open = if (open == conn.id) "" else conn.id }, lead = { Box(Modifier.size(7.dp).background(c.accent, BlazeShapes.pill)) })
+                    onClick = { open = if (open == conn.id) "" else conn.id }, lead = { Box(Modifier.size(7.dp).background(c.accent, ArgusShapes.pill)) })
                 if (open == conn.id) Column(Modifier.fillMaxWidth().glassInset(c).hairlineTop(c.hair).padding(start = 33.dp, end = 14.dp, top = 10.dp, bottom = 12.dp)) {
                     KitButton("Disconnect", Btn.LINE) { Connectors.disconnect(conn.id); tick++ }
                 }
@@ -146,12 +146,12 @@ fun ConnectionsPage(connected0: Set<String>? = null, online0: Boolean? = null, o
         }
     }
     // v0.39.0: MCP servers are a technical tool, shown in Advanced mode only (saved servers keep working).
-    if (connected0 == null && com.blaze.assistant.agent.SimpleMode.showMcp(com.blaze.assistant.agent.SimpleMode.simple)) McpSection()
+    if (connected0 == null && com.argus.assistant.agent.SimpleMode.showMcp(com.argus.assistant.agent.SimpleMode.simple)) McpSection()
 }
 
 @Composable
 private fun McpSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val servers by Mcp.servers.collectAsState()
@@ -178,9 +178,9 @@ private fun McpSection() {
                     Text(s.url.ifBlank { "stdio" } + when (s.transport) { McpConfig.SSE -> " \u00b7 SSE"; McpConfig.HTTP -> " \u00b7 HTTP"; else -> "" },
                         maxLines = 1, style = TextStyle(fontFamily = Type.Mono, fontSize = 10.sp, color = c.weak))
                 }
-                if (s.remote) Box(Modifier.clip(BlazeShapes.pill).clickable { scope.launch { Mcp.refresh(s) } }.padding(8.dp)) { ActionText("Test", size = 10.sp) }
-                Box(Modifier.clip(BlazeShapes.pill).clickable { Mcp.toggle(s.name) }.padding(8.dp)) { ActionText(if (s.enabled) "On" else "Off", color = if (s.enabled) c.accent else c.weak, size = 10.sp) }
-                Box(Modifier.clip(BlazeShapes.pill).clickable { Mcp.remove(s.name) }.padding(10.dp)) { ActionText("\u00d7", size = 13.sp) }
+                if (s.remote) Box(Modifier.clip(ArgusShapes.pill).clickable { scope.launch { Mcp.refresh(s) } }.padding(8.dp)) { ActionText("Test", size = 10.sp) }
+                Box(Modifier.clip(ArgusShapes.pill).clickable { Mcp.toggle(s.name) }.padding(8.dp)) { ActionText(if (s.enabled) "On" else "Off", color = if (s.enabled) c.accent else c.weak, size = 10.sp) }
+                Box(Modifier.clip(ArgusShapes.pill).clickable { Mcp.remove(s.name) }.padding(10.dp)) { ActionText("\u00d7", size = 13.sp) }
             }
             if (open == s.name) {
                 val tools = toolLists[s.name]
@@ -194,7 +194,7 @@ private fun McpSection() {
                             Text(when (t.risk) { McpConfig.Risk.READ -> "reads only"; McpConfig.Risk.WRITE -> "can delete or change data"; else -> "acts" }, style = TextStyle(fontFamily = Type.Sans, fontSize = 10.sp, color = c.weak))
                         }
                         listOf(McpConfig.ASK to "Ask", McpConfig.ALWAYS to "Always", McpConfig.OFF to "Off").forEach { (m, label) ->
-                            Box(Modifier.clip(BlazeShapes.pill).clickable { Mcp.setToolMode(s.name, t.name, if (m == McpConfig.defaultMode(t.risk)) "" else m) }.padding(6.dp)) {
+                            Box(Modifier.clip(ArgusShapes.pill).clickable { Mcp.setToolMode(s.name, t.name, if (m == McpConfig.defaultMode(t.risk)) "" else m) }.padding(6.dp)) {
                                 Label(label, size = 10.sp, color = if (mode == m) c.accent else c.weak)
                             }
                         }
@@ -211,7 +211,7 @@ private fun McpSection() {
     Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Label(tr("Transport"), modifier = Modifier.weight(1f))
         listOf(McpConfig.AUTO to "Auto", McpConfig.HTTP to "HTTP", McpConfig.SSE to "SSE").forEach { (t, label) ->
-            Box(Modifier.clip(BlazeShapes.pill).clickable { transport = t }.padding(8.dp)) { ActionText(label, size = 11.sp, color = if (transport == t) c.accent else c.weak) }
+            Box(Modifier.clip(ArgusShapes.pill).clickable { transport = t }.padding(8.dp)) { ActionText(label, size = 11.sp, color = if (transport == t) c.accent else c.weak) }
         }
     }
     Button("Add server") {
@@ -240,7 +240,7 @@ private fun McpSection() {
 
 @Composable
 fun LearningSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val skills by Learning.skills.collectAsState()
     val pending by Learning.pending.collectAsState()
@@ -253,12 +253,12 @@ fun LearningSection() {
     ToggleRow("Learn from chats", "${BrandName.NAME} saves lasting facts and preferences as you go, replaces ones that changed, and saves tasks you teach it or repeat as skills. Small talk costs nothing: it only checks when something worth keeping was said", auto) { auto = !auto; Settings.autoLearn = auto }
     var long by remember { mutableStateOf(Settings.longChat) }
     ToggleRow("Long chats", "Older turns fold into a running summary, ${BrandName.NAME} searches the chat instead of re-reading it, long tool output is saved aside, and the work card shows tokens in and out", long) { long = !long; Settings.longChat = long }
-    var review by remember { mutableStateOf(com.blaze.assistant.agent.MindReview.enabled) }
+    var review by remember { mutableStateOf(com.argus.assistant.agent.MindReview.enabled) }
     ToggleRow("Review past conversations when idle", "When the phone is idle and charging, or idle on Wi-Fi, ${BrandName.NAME} reads past turns (old chats too) a little at a time with the cheapest free model and saves what's worth remembering", review) {
-        review = !review; com.blaze.assistant.agent.MindReview.enabled = review
-        try { com.blaze.assistant.agent.MindReview.schedule(ctx) } catch (_: Throwable) { }
+        review = !review; com.argus.assistant.agent.MindReview.enabled = review
+        try { com.argus.assistant.agent.MindReview.schedule(ctx) } catch (_: Throwable) { }
     }
-    val waiting = remember { try { com.blaze.assistant.agent.Mind.db()?.unreviewedCount() ?: 0 } catch (_: Exception) { 0 } }
+    val waiting = remember { try { com.argus.assistant.agent.Mind.db()?.unreviewedCount() ?: 0 } catch (_: Exception) { 0 } }
     if (review && waiting > 0) Label(tr("{0} turns waiting for review", waiting), size = 9.sp, modifier = Modifier.padding(bottom = 6.dp))
     ToggleRow("Name chats by topic", "Chats are titled by what most of the conversation is about, not the first message. Chats you rename stay as you named them", titles) { titles = !titles; Settings.autoTitles = titles }
     ToggleRow("Ask before saving", "Changes wait here for your OK instead of saving straight away", ask) { ask = !ask; Settings.learnApproval = ask }
@@ -268,8 +268,8 @@ fun LearningSection() {
             pending.forEach { p ->
                 Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).padding(start = 12.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(p.title, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
-                    Box(Modifier.clip(BlazeShapes.pill).clickable { Learning.approve(p.id) }.padding(10.dp)) { ActionText("Keep", color = c.accent, size = 10.sp) }
-                    Box(Modifier.clip(BlazeShapes.pill).clickable { Learning.reject(p.id) }.padding(10.dp)) { ActionText("×", size = 13.sp) }
+                    Box(Modifier.clip(ArgusShapes.pill).clickable { Learning.approve(p.id) }.padding(10.dp)) { ActionText("Keep", color = c.accent, size = 10.sp) }
+                    Box(Modifier.clip(ArgusShapes.pill).clickable { Learning.reject(p.id) }.padding(10.dp)) { ActionText("×", size = 13.sp) }
                 }
             }
         }
@@ -288,8 +288,8 @@ fun LearningSection() {
                         }
                         Text(s.description + " · used ${s.uses}×", style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                     }
-                    Box(Modifier.clip(BlazeShapes.pill).clickable { com.blaze.assistant.agent.Agent.send("Run my skill \"${s.name}\"") }.padding(10.dp)) { ActionText("Run", color = c.accent, size = 10.sp) }
-                    Box(Modifier.clip(BlazeShapes.pill).clickable { Learning.deleteSkill(s.name) }.padding(10.dp)) { ActionText("×", size = 13.sp) }
+                    Box(Modifier.clip(ArgusShapes.pill).clickable { com.argus.assistant.agent.Agent.send("Run my skill \"${s.name}\"") }.padding(10.dp)) { ActionText("Run", color = c.accent, size = 10.sp) }
+                    Box(Modifier.clip(ArgusShapes.pill).clickable { Learning.deleteSkill(s.name) }.padding(10.dp)) { ActionText("×", size = 13.sp) }
                 }
                 if (shown == s.name) Text(s.steps, modifier = Modifier.padding(top = 6.dp, end = 12.dp),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.body))
@@ -306,14 +306,14 @@ fun LearningSection() {
 
 @Composable
 fun NotificationAccessRow() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     var on by remember { mutableStateOf(NotificationBrain.enabled(ctx)) }
     LaunchedEffect(Unit) { on = NotificationBrain.enabled(ctx) }
     Section("Notification brain")
     Row(Modifier.fillMaxWidth().hairline(if (on) c.hair else c.accent).clickable { ctx.startActivity(NotificationBrain.settingsIntent()) }.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(6.dp).background(if (on) c.accent else c.weak, BlazeShapes.pill)); Spacer(Modifier.width(10.dp))
+        Box(Modifier.size(6.dp).background(if (on) c.accent else c.weak, ArgusShapes.pill)); Spacer(Modifier.width(10.dp))
         Text(if (on) "Notification access is on" else "Let ${BrandName.NAME} read notifications", modifier = Modifier.weight(1f),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
         Label(tr("Open →"), color = c.accent)

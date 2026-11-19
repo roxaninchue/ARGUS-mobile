@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -34,7 +34,7 @@ object ToolTruth {
     /** Requests that need a tool (any lane that sends no tools hands these to the full lane). */
     private val shaped = Regex("""(?i)\b(run|execute|terminal|shell|command|ls|cd|pwd|cat|python|script|linux|desktop|browser|browse|open|launch|show me|go to|navigate|settings|design view|view|screen|tab|page|file|files|folder|save|download|export|upload|calendar|schedule|agenda|event|meeting|remind|reminder|alarm|timer|routine|search|look ?up|google|web|fetch|memory|remember|forget|recall|what do you know|weather|send|text|call|message|email|install|make|create|build|generate|draw|play|set|turn (?:on|off)|enable|disable)\b|https?://|\b[\w-]+\.(com|org|net|io|dev|zm|app)\b""")
 
-    fun toolShaped(text: String): Boolean = shaped.containsMatchIn(text) || com.blaze.assistant.browser.phone.PhonePolicy.phoneAsk(text)
+    fun toolShaped(text: String): Boolean = shaped.containsMatchIn(text) || com.argus.assistant.browser.phone.PhonePolicy.phoneAsk(text)
 
     /** Plain talk that happens to contain a cue word ("what do you think, should I make tea?") stays with the talker. */
     private val chatty = Regex("""(?i)^\s*(?:@\w+\s*)?(?:what do you think|how do you feel|do you like|tell me a joke|joke)\b""")
@@ -128,8 +128,8 @@ object ToolTruth {
     private val timerAsk = Regex("""(?i)\b(?:set|start|put|make)\s+(?:me\s+)?(?:an?\s+)?(?:\d+[\s-]*(?:min(?:ute)?s?|sec(?:ond)?s?|hours?)\s+)?(?:countdown\s+)?timer\b|\btimer for\b""")
     private val contactAsk = Regex("""(?i)\b(?:add|save|create|new)\s+(?:a\s+|the\s+|this\s+)?(?:new\s+)?contact\b|\bsave\b[^.?!\n]{0,40}\bas a contact\b|\badd\b[^.?!\n]{0,40}\bto (?:my )?contacts\b""")
     private val mapsAsk = Regex("""(?i)\b(?:directions?|navigate|navigation|route)\s+(?:me\s+)?(?:to|for)\b|\bhow do i get to\b|\btake me to\b[^.?!\n]{0,40}\bmaps?\b""")
-    /** 0.45.16 (design suite tool-media-play 1/5): "play X in Blaze Music" went to run_plan search_in_app on our own app. */
-    private val blazeMusicAsk = Regex("""(?i)\b(?:play|put on|start|queue|shuffle)\b[^.?!\n]{0,80}\b(?:on|in|from|with)\s+(?:(?:argus|blaze)\s+music|my\s+(?:music\s+)?library|my\s+(?:songs|downloads))\b""")
+    /** 0.45.16 (design suite tool-media-play 1/5): "play X in Argus Music" went to run_plan search_in_app on our own app. */
+    private val argusMusicAsk = Regex("""(?i)\b(?:play|put on|start|queue|shuffle)\b[^.?!\n]{0,80}\b(?:on|in|from|with)\s+(?:(?:argus|blaze)\s+music|my\s+(?:music\s+)?library|my\s+(?:songs|downloads))\b""")
     private val youtubeAsk = Regex("""(?i)\b(?:play|put on|watch|start)\b[^.?!\n]{0,80}\b(?:on|in|from)\s+(?:youtube(?:\s+music)?|yt)\b""")
     private val toggleAsk = Regex("""(?i)\b(?:turn|switch|put)\s+(?:on|off)\b[^.?!\n]{0,40}\b(?:wi-?fi|bluetooth|do not disturb|dnd|flashlight|torch|airplane|aeroplane|flight mode|mobile data)\b|\b(?:wi-?fi|bluetooth|do not disturb|dnd|flashlight|torch|airplane mode|mobile data)\b[^.?!\n]{0,40}\b(?:on|off)\b|\b(?:enable|disable)\b[^.?!\n]{0,20}\b(?:wi-?fi|bluetooth|do not disturb|dnd|flashlight|airplane mode|mobile data)\b""")
     private val settingsValue = Regex("""(?i)\b(?:open|go to)\b[^.?!\n]{0,20}\bsettings\b[^.?!\n]{0,40}\b(?:turn|switch|set|enable|disable|change)\b|\b(?:turn|switch|set)\s+(?:on\s+|off\s+)?(?:the\s+)?(?:dark (?:mode|theme)|night (?:mode|light)|eye comfort|auto[- ]?rotate|always on display)\b|\b(?:dark (?:mode|theme)|night mode)\s+(?:on|off)\b""")
@@ -143,7 +143,7 @@ object ToolTruth {
         fun pick(vararg n: String) = n.firstOrNull { it in toolNames }
         return when {
             alarmOff.containsMatchIn(u) -> pick("processes", "process")
-            blazeMusicAsk.containsMatchIn(u) -> pick("music_ops")
+            argusMusicAsk.containsMatchIn(u) -> pick("music_ops")
             draftAsk.containsMatchIn(u) -> pick("compose_sms")
             timerAsk.containsMatchIn(u) -> pick("set_timer")
             alarmSet.containsMatchIn(u) -> pick("set_alarm")
@@ -182,8 +182,8 @@ object ToolTruth {
                 TurnContext.scheduleFollowUp(u, assistantTexts.lastOrNull().orEmpty()) && calOffer.containsMatchIn(assistantTexts.lastOrNull().orEmpty()))) return "calendar_events"
         if ("create_routine" in toolNames && remindAsk.containsMatchIn(u)) return "create_routine"
         if ("list_routines" in toolNames && remindList.containsMatchIn(u)) return "list_routines"
-        // 0.45.19 Blaze Phone: "book a table at X", "log into Y", "sign up for Z", "order … from shop.com" start on Blaze Phone.
-        if ("phone_open" in toolNames && com.blaze.assistant.browser.phone.PhonePolicy.phoneAsk(u)) return "phone_open"
+        // 0.45.19 Argus Phone: "book a table at X", "log into Y", "sign up for Z", "order … from shop.com" start on Argus Phone.
+        if ("phone_open" in toolNames && com.argus.assistant.browser.phone.PhonePolicy.phoneAsk(u)) return "phone_open"
         if (memRecall.containsMatchIn(u)) return listOf("memory_search", "recall_memory").firstOrNull { it in toolNames }
         if (memSave.containsMatchIn(u) && MemoryGate.allows(u)) return listOf("memory_save", "remember").firstOrNull { it in toolNames }
         return phoneChoice(u, toolNames)
@@ -342,9 +342,9 @@ object ToolTruth {
             addAll(follow(user).values)
             // the first-step choice too on a later step, so the flow's own tool never drops mid-turn
             choiceFor(user, emptyList(), names)?.let { add(it) }
-            // 0.45.19: a Blaze Phone flow keeps all its tools (open → read → act → verify) once it started or was asked for.
-            if (used.any { it in com.blaze.assistant.browser.phone.PhonePolicy.TOOLS } || com.blaze.assistant.browser.phone.PhonePolicy.phoneAsk(user))
-                addAll(com.blaze.assistant.browser.phone.PhonePolicy.TOOLS)
+            // 0.45.19: a Argus Phone flow keeps all its tools (open → read → act → verify) once it started or was asked for.
+            if (used.any { it in com.argus.assistant.browser.phone.PhonePolicy.TOOLS } || com.argus.assistant.browser.phone.PhonePolicy.phoneAsk(user))
+                addAll(com.argus.assistant.browser.phone.PhonePolicy.TOOLS)
         }
         val text = user.lowercase()
         val words = word.findAll(text).map { it.value }.filter { it !in stop }.toSet()

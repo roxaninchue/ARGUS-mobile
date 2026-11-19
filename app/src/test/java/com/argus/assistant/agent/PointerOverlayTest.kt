@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.ToolVerify.Status
+import com.argus.assistant.agent.ToolVerify.Status
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

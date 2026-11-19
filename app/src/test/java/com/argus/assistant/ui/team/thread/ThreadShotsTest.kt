@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.team.thread
+package com.argus.assistant.ui.team.thread
 
 import android.graphics.Bitmap
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -9,12 +9,12 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.team.Row
-import com.blaze.assistant.team.RowBodies
-import com.blaze.assistant.team.RowKind
-import com.blaze.assistant.team.TeamJson
-import com.blaze.assistant.ui.argus.ArgusGround
-import com.blaze.assistant.ui.argus.ArgusTheme
+import com.argus.assistant.team.Row
+import com.argus.assistant.team.RowBodies
+import com.argus.assistant.team.RowKind
+import com.argus.assistant.team.TeamJson
+import com.argus.assistant.ui.argus.ArgusGround
+import com.argus.assistant.ui.argus.ArgusTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.54.1: a final reply the model didn't finish is shown as cut, never as a finished answer.

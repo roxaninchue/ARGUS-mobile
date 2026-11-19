@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.settings
+package com.argus.assistant.ui.argus.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,22 +18,22 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.policy.PermissionsModel
-import com.blaze.assistant.policy.PolicyStore
-import com.blaze.assistant.policy.SpendGuard
-import com.blaze.assistant.team.Autonomy
-import com.blaze.assistant.team.SendScope
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusField
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
-import com.blaze.assistant.ui.argus.kit.ChipModel
-import com.blaze.assistant.ui.argus.kit.Segmented
-import com.blaze.assistant.ui.argus.kit.SettingsGroup
-import com.blaze.assistant.ui.argus.kit.SettingsItem
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.policy.PermissionsModel
+import com.argus.assistant.policy.PolicyStore
+import com.argus.assistant.policy.SpendGuard
+import com.argus.assistant.team.Autonomy
+import com.argus.assistant.team.SendScope
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusField
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.ui.argus.kit.ChipModel
+import com.argus.assistant.ui.argus.kit.Segmented
+import com.argus.assistant.ui.argus.kit.SettingsGroup
+import com.argus.assistant.ui.argus.kit.SettingsItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -123,7 +123,7 @@ fun PermissionsLive() {
     LaunchedEffect(tick) {
         runCatching {
             withContext(Dispatchers.IO) {
-                val g = com.blaze.assistant.team.TeamGraph.get(ctx)
+                val g = com.argus.assistant.team.TeamGraph.get(ctx)
                 val roster = g.store.all().filter { it.enabled }
                 val names = roster.associate { it.id to it.name }
                 val ledger = runCatching { g.sql.query("SELECT bot_id, amount_minor, currency, at FROM spend_ledger") { r ->
@@ -135,10 +135,10 @@ fun PermissionsLive() {
         }.onSuccess { (a, b) -> allows = a; bots = b }
     }
     PermissionsSection(allows, bots,
-        onAskAgain = { tool, bot -> scope.launch { withContext(Dispatchers.IO) { runCatching { PolicyStore(com.blaze.assistant.team.TeamGraph.get(ctx).sql).forget(tool, bot) } }; tick++ } },
+        onAskAgain = { tool, bot -> scope.launch { withContext(Dispatchers.IO) { runCatching { PolicyStore(com.argus.assistant.team.TeamGraph.get(ctx).sql).forget(tool, bot) } }; tick++ } },
         onSave = { bp -> scope.launch {
             withContext(Dispatchers.IO) { runCatching {
-                val st = com.blaze.assistant.team.TeamGraph.get(ctx).store
+                val st = com.argus.assistant.team.TeamGraph.get(ctx).store
                 st.get(bp.botId)?.let { old -> st.update(old.copy(permissions = PermissionsModel.apply(old.permissions, bp))) }
             } }
             tick++

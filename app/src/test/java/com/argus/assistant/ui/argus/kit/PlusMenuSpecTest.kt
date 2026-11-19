@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
-import com.blaze.assistant.ui.argus.icons.LucidePaths
-import com.blaze.assistant.ui.argus.icons.LucideSpec
-import com.blaze.assistant.ui.living.LivingSpec
-import com.blaze.assistant.ui.plusItems
+import com.argus.assistant.ui.argus.icons.LucidePaths
+import com.argus.assistant.ui.argus.icons.LucideSpec
+import com.argus.assistant.ui.living.LivingSpec
+import com.argus.assistant.ui.plusItems
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -71,7 +71,7 @@ class PlusMenuSpecTest {
 
     private fun src(rel: String): String {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        return File(root, "com/blaze/assistant/$rel").readText()
+        return File(root, "com/argus/assistant/$rel").readText()
     }
 
     @Test fun theMenuIsPartOfTheComposer() {
@@ -79,7 +79,7 @@ class PlusMenuSpecTest {
         val composer = kit.substringAfter("fun ArgusComposer(").substringBefore("\n}\n")
         assertTrue("the menu is a slot of the composer", "menu: (@Composable () -> Unit)? = null" in composer)
         assertTrue("it grows in the same glass, with MotionTokens", "argusGlass(GlassLevel.CHROME, shape)" in composer &&
-            "AnimatedVisibility(menuOpen, enter = com.blaze.assistant.ui.MotionTokens.expand(), exit = com.blaze.assistant.ui.MotionTokens.collapse())" in composer)
+            "AnimatedVisibility(menuOpen, enter = com.argus.assistant.ui.MotionTokens.expand(), exit = com.argus.assistant.ui.MotionTokens.collapse())" in composer)
         assertTrue("the model chip folds away while it is open", "AnimatedVisibility(!menuOpen" in composer)
         assertTrue("the + turns into ×", "PlusMenuSpec.PLUS_TURN" in composer && ".rotate(rotation)" in kit)
         assertTrue("typing closes it", "if (it.isFocused && menuOpen) onPlus()" in composer)
@@ -89,11 +89,11 @@ class PlusMenuSpecTest {
         assertTrue("Lucide icons", "Lucide.icon(PlusMenuSpec.icon(" in menu)
 
         val screen = src("ui/ChatScreen.kt")
-        assertTrue("the ARGUS composer gets the menu", "menu = { com.blaze.assistant.ui.argus.kit.ComposerPlusMenu(plusEntries(), onPick = { id -> plusOpen = false; plusPick(id) }) }" in screen)
+        assertTrue("the ARGUS composer gets the menu", "menu = { com.argus.assistant.ui.argus.kit.ComposerPlusMenu(plusEntries(), onPick = { id -> plusOpen = false; plusPick(id) }) }" in screen)
         assertTrue("no sheet over the ARGUS composer", "PlusMenu(plusEntries(), onDismiss" !in screen)
         assertTrue("Back closes it", "if (plusOpen) BackHandler { plusOpen = false }" in screen)
         assertTrue("a tap outside closes it", "PlusMenuSpec.SCRIM_TAG" in screen && "indication = null) { plusOpen = false }" in screen)
-        assertTrue("the Chat | Living switch folds away", "AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.blaze.assistant.ui.living.LivingSwitch() }" in screen)
+        assertTrue("the Chat | Living switch folds away", "AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.argus.assistant.ui.living.LivingSwitch() }" in screen)
         // every action still runs from the one handler
         val pick = screen.substringAfter("fun plusPick(id: String) {").substringBefore("\n    }\n")
         for (id in listOf("camera", "blazecam", "photos", "files", "atfile", "paste", "call", "apps", "skills", "plan", "new"))

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -19,47 +19,47 @@ class ToolPickSizeTest {
             try { when (val v = f()) { is JSONObject -> t.put(v); is List<*> -> v.forEach { t.put(it) } } } catch (e: Throwable) { missed += "$what (${e.javaClass.simpleName})" }
         }
         add("Memory") { Memory.tools() }
-        add("DeviceStatus") { com.blaze.assistant.device.DeviceStatus.tool() }
-        add("Jamendo") { com.blaze.assistant.mediaapps.store.JamendoSource.tool() }
+        add("DeviceStatus") { com.argus.assistant.device.DeviceStatus.tool() }
+        add("Jamendo") { com.argus.assistant.mediaapps.store.JamendoSource.tool() }
         add("SelfControl") { SelfControl.tool() }
         add("Web") { Web.tools() }
-        add("Media") { com.blaze.assistant.media.Media.tools() }
+        add("Media") { com.argus.assistant.media.Media.tools() }
         add("Processes") { Processes.tools() }
-        add("Watchers") { com.blaze.assistant.phone.Watchers.tool() }
+        add("Watchers") { com.argus.assistant.phone.Watchers.tool() }
         add("SkillPacks") { SkillPacks.tools() }
-        add("AndroidControl") { com.blaze.assistant.phone.AndroidControl.tools() }
+        add("AndroidControl") { com.argus.assistant.phone.AndroidControl.tools() }
         add("Autonomy") { listOf(Autonomy.findToolDef(), Autonomy.goalTool(), Autonomy.permissionTool()) }
-        add("Triggers") { com.blaze.assistant.proactive.Triggers.tools() }
-        add("Ussd") { com.blaze.assistant.phone.Ussd.tool() }
-        add("Messaging") { com.blaze.assistant.phone.Messaging.tool() }
-        add("Browser") { com.blaze.assistant.browser.BrowserTools.definitions() }
-        add("PhoneBrowser") { com.blaze.assistant.browser.phone.PhoneBrowserTools.definitions() }   // 0.45.19
-        add("DevTools") { com.blaze.assistant.terminal.DevTools.tools() }
-        add("Git") { com.blaze.assistant.terminal.Git.tool() }
-        add("PimEdit") { com.blaze.assistant.phone.PimEdit.tools() }
-        add("SelfCheck") { com.blaze.assistant.device.SelfCheck.tool() }
-        add("Location") { com.blaze.assistant.phone.Location.tool() }
+        add("Triggers") { com.argus.assistant.proactive.Triggers.tools() }
+        add("Ussd") { com.argus.assistant.phone.Ussd.tool() }
+        add("Messaging") { com.argus.assistant.phone.Messaging.tool() }
+        add("Browser") { com.argus.assistant.browser.BrowserTools.definitions() }
+        add("PhoneBrowser") { com.argus.assistant.browser.phone.PhoneBrowserTools.definitions() }   // 0.45.19
+        add("DevTools") { com.argus.assistant.terminal.DevTools.tools() }
+        add("Git") { com.argus.assistant.terminal.Git.tool() }
+        add("PimEdit") { com.argus.assistant.phone.PimEdit.tools() }
+        add("SelfCheck") { com.argus.assistant.device.SelfCheck.tool() }
+        add("Location") { com.argus.assistant.phone.Location.tool() }
         add("Specialists") { listOf(Specialists.tool(), Specialists.createTool()) }
         add("Learning") { Learning.tools() }
-        add("Updater") { com.blaze.assistant.update.Updater.tool() }
-        add("Views") { com.blaze.assistant.ui.Views.tool() }
+        add("Updater") { com.argus.assistant.update.Updater.tool() }
+        add("Views") { com.argus.assistant.ui.Views.tool() }
         add("SelfKnowledge") { SelfKnowledge.tool() }
         add("Awareness") { Awareness.tool() }
-        add("Jarvis") { com.blaze.assistant.proactive.Jarvis.tool() }
-        add("FollowUps") { com.blaze.assistant.proactive.FollowUps.tool() }
-        add("BlazeDocs") { BlazeDocs.tools() }
+        add("Jarvis") { com.argus.assistant.proactive.Jarvis.tool() }
+        add("FollowUps") { com.argus.assistant.proactive.FollowUps.tool() }
+        add("ArgusDocs") { ArgusDocs.tools() }
         add("ProjectDocs") { ProjectDocs.tools() }
-        add("HomeTools") { com.blaze.assistant.home.HomeTools.tools() }
-        add("BlazeRouter") { BlazeRouter.tool() }
+        add("HomeTools") { com.argus.assistant.home.HomeTools.tools() }
+        add("ArgusRouter") { ArgusRouter.tool() }
         add("LongChat") { LongChat.tools() }
         add("Flashcards") { Flashcards.tool() }
         add("Designs") { Designs.tool() }
         add("Seller") { Seller.tool() }
-        add("LifeLogs") { com.blaze.assistant.life.LifeLogs.tool() }
-        add("MediaFetch") { com.blaze.assistant.mediaapps.MediaFetch.tool() }
-        add("VideoTools") { com.blaze.assistant.mediaapps.VideoTools.tool() }
-        add("MusicTools") { com.blaze.assistant.mediaapps.MusicTools.tool() }
-        add("GalleryOps") { com.blaze.assistant.media.GalleryOps.tool() }
+        add("LifeLogs") { com.argus.assistant.life.LifeLogs.tool() }
+        add("MediaFetch") { com.argus.assistant.mediaapps.MediaFetch.tool() }
+        add("VideoTools") { com.argus.assistant.mediaapps.VideoTools.tool() }
+        add("MusicTools") { com.argus.assistant.mediaapps.MusicTools.tool() }
+        add("GalleryOps") { com.argus.assistant.media.GalleryOps.tool() }
         add("load_tools") { ToolPick.loadTool() }
         return t to missed
     }

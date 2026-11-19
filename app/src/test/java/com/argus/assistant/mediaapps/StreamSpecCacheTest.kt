@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import android.net.Uri
 import androidx.annotation.OptIn

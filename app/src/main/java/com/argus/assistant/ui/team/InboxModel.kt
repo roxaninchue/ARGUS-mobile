@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.policy.NeedsYou
+import com.argus.assistant.policy.NeedsYou
 
 /**
  * P2-SF-03: the Inbox list's UI state, pure (InboxTest). The bell's InboxSheet and Desk → Inbox draw the same
- * [com.blaze.assistant.ui.team.InboxList] over this model, fed by the one [NeedsYou] list (never a count of their own).
+ * [com.argus.assistant.ui.team.InboxList] over this model, fed by the one [NeedsYou] list (never a count of their own).
  *
  *  - a filter chip per [NeedsYou.Filter], each with its count from the same list;
  *  - selection (long-press) for bulk Allow / Deny, enabled only by [NeedsYou.bulkAllowed] (one bot, one kind, no money/delete);

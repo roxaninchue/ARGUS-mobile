@@ -1,7 +1,7 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -42,7 +42,7 @@ class StatusNoteTest {
 
     @Test fun notifierStateFeedsTheLine() {
         Notifier.resetStatus()
-        // v0.45.18 ack/background: "Blaze is working" is gone (WORKING_NOTE=false), so working() feeds no status line.
+        // v0.45.18 ack/background: "Argus is working" is gone (WORKING_NOTE=false), so working() feeds no status line.
         Notifier.working("Opening youtube.com")
         assertNull(StatusNote.line(Notifier.statusInput()))
         Notifier.update(55, "${BrandName.NAME} v0.24.4")

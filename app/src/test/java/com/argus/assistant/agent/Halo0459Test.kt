@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -100,7 +100,7 @@ class Halo0459Test {
         assertTrue(TurnContext.SCHEDULE_TOOLS.containsAll(listOf("calendar_events", "list_routines")))
         assertTrue("the router picks the schedule group for plurals", "schedule" in ToolRouter.guess("View your upcoming meetings"))
         assertTrue("schedule" in ToolRouter.guess("anything on for today?"))
-        assertTrue(com.blaze.assistant.phone.Skills.CALENDAR_OFF.contains("Never say you can't access calendars"))
+        assertTrue(com.argus.assistant.phone.Skills.CALENDAR_OFF.contains("Never say you can't access calendars"))
     }
 
     @Test fun memoryGateStopsSmallTalkAndReadOnlyQuestions() {
@@ -121,7 +121,7 @@ class Halo0459Test {
     }
 
     @Test fun memoryGateIsWiredBeforeEveryWrite() {
-        val src = listOf(File("src/main/java/com/blaze/assistant/agent/Agent.kt"), File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
+        val src = listOf(File("src/main/java/com/argus/assistant/agent/Agent.kt"), File("app/src/main/java/com/argus/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         assertTrue("before the auto-extract", Regex("MemoryGate\\.allows\\(userText\\)\\) \\{\\s*val ex = ").containsMatchIn(src))
         assertTrue("before memory_save / remember", src.contains("MemoryGate.refusal(name, lastUserText())?.let { return it }\n            return when (name) {"))
     }
@@ -204,10 +204,10 @@ class Halo0459Test {
         assertTrue(TurnContext.scheduleFollowUp("yes", "Want me to set a reminder for 8:30?"))
         assertFalse(TurnContext.scheduleFollowUp("yes", "Want me to play some music?"))
         assertFalse(TurnContext.scheduleFollowUp("yes but tell me a joke first", offer))
-        assertTrue(listOf(File("src/main/java/com/blaze/assistant/agent/ChatLane.kt"), File("app/src/main/java/com/blaze/assistant/agent/ChatLane.kt")).first { it.exists() }.readText().contains("TurnContext.scheduleFollowUp(t, lastAssistant)) return false"))
+        assertTrue(listOf(File("src/main/java/com/argus/assistant/agent/ChatLane.kt"), File("app/src/main/java/com/argus/assistant/agent/ChatLane.kt")).first { it.exists() }.readText().contains("TurnContext.scheduleFollowUp(t, lastAssistant)) return false"))
         assertEquals(setOf("calendar_events", "list_routines", "create_routine"), Duo.SIDE_SCHEDULE_TOOLS)
         // Wired: the side lane and the main @halo turn both add them.
-        val src = listOf(java.io.File("src/main/java/com/blaze/assistant/agent/Agent.kt"), java.io.File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
+        val src = listOf(java.io.File("src/main/java/com/argus/assistant/agent/Agent.kt"), java.io.File("app/src/main/java/com/argus/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         assertTrue(src.contains("roomTools(if (sched) Duo.SIDE_SCHEDULE_TOOLS else emptySet())"))
         // 2026-11-16 model-first: the main turn sends the schedule group every turn (ToolPick.ALWAYS_GROUPS), no word guess.
         assertTrue(src.contains("addAll(ToolPick.ALWAYS_GROUPS)"))

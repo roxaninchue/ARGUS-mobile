@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -67,8 +67,8 @@ class StreamPromptTest {
     }
 
     @Test fun loneListMarkerWaitsForItsWords() {
-        assertEquals("- one\n- two", com.blaze.assistant.ui.Md.dropLoneMarker("- one\n- two\n- "))
-        assertEquals("1. a", com.blaze.assistant.ui.Md.dropLoneMarker("1. a\n2."))
-        assertEquals("- one\n- t", com.blaze.assistant.ui.Md.dropLoneMarker("- one\n- t"))
+        assertEquals("- one\n- two", com.argus.assistant.ui.Md.dropLoneMarker("- one\n- two\n- "))
+        assertEquals("1. a", com.argus.assistant.ui.Md.dropLoneMarker("1. a\n2."))
+        assertEquals("- one\n- t", com.argus.assistant.ui.Md.dropLoneMarker("- one\n- t"))
     }
 }

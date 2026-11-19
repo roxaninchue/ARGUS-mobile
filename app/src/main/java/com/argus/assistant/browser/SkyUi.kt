@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -51,18 +51,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.siteapps.SiteApp
-import com.blaze.assistant.siteapps.SiteInstaller
-import com.blaze.assistant.ui.BlazeSwitchTrack
-import com.blaze.assistant.ui.Type
-import com.blaze.assistant.ui.space.SpaceBackdrop
-import com.blaze.assistant.ui.space.SpaceInsets
-import com.blaze.assistant.ui.space.SpaceLook
-import com.blaze.assistant.ui.space.SpaceSegmented
-import com.blaze.assistant.ui.space.SpaceShapes
-import com.blaze.assistant.ui.space.SpaceType
-import com.blaze.assistant.ui.space.SpaceTypeScale
-import com.blaze.assistant.ui.space.spaceLook
+import com.argus.assistant.siteapps.SiteApp
+import com.argus.assistant.siteapps.SiteInstaller
+import com.argus.assistant.ui.ArgusSwitchTrack
+import com.argus.assistant.ui.Type
+import com.argus.assistant.ui.space.SpaceBackdrop
+import com.argus.assistant.ui.space.SpaceInsets
+import com.argus.assistant.ui.space.SpaceLook
+import com.argus.assistant.ui.space.SpaceSegmented
+import com.argus.assistant.ui.space.SpaceShapes
+import com.argus.assistant.ui.space.SpaceType
+import com.argus.assistant.ui.space.SpaceTypeScale
+import com.argus.assistant.ui.space.spaceLook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -160,7 +160,7 @@ private data class Pin(val label: String, val url: String, val app: SiteApp? = n
 
 /**
  * The Sky new-tab page (unification 8/9: on the shell's space view): wordmark, time and date, the search pill (with voice), pinned sites and installed site
- * apps, "pick up where you left off" (recent tabs and Blaze's task) and two chips (trackers, live tabs).
+ * apps, "pick up where you left off" (recent tabs and Argus's task) and two chips (trackers, live tabs).
  */
 @Composable
 internal fun SkyStartPage(tick: Int, bottomSpace: Dp, open: (String) -> Unit, onSearch: () -> Unit, onVoice: () -> Unit) {
@@ -274,7 +274,7 @@ private fun Chip(icon: ImageVector, text: String, strong: String?) {
 @Composable
 internal fun SkyChipButton(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
     Box(Modifier.size(Sky.control).clip(CircleShape).clickable(enabled = enabled, onClickLabel = label, onClick = onClick), contentAlignment = Alignment.Center) {
-        Icon(icon, label, tint = if (enabled) Sky.ink else Sky.weak, modifier = Modifier.size(com.blaze.assistant.ui.BlazeIconStyle.rowIcon))
+        Icon(icon, label, tint = if (enabled) Sky.ink else Sky.weak, modifier = Modifier.size(com.argus.assistant.ui.ArgusIconStyle.rowIcon))
     }
 }
 
@@ -287,7 +287,7 @@ private fun age(ms: Long, now: Long): String {
 }
 
 /**
- * Sky tabs: a frosted sheet with Open / Private / Blaze, tabs split into AWAKE (a live page in memory) and SLEEPING (a
+ * Sky tabs: a frosted sheet with Open / Private / Argus, tabs split into AWAKE (a live page in memory) and SLEEPING (a
  * record only), favicon rows with close, and New tab / Private / Search at the bottom. The picture grid stays one tap away.
  */
 @Composable
@@ -311,7 +311,7 @@ internal fun SkyTabsSheet(startSeg: TabSeg, onDone: () -> Unit, onGrid: () -> Un
                     Box {
                         Box(Modifier.size(Sky.control).clip(CircleShape).clickable { menu = true }, contentAlignment = Alignment.Center) {
                             Icon(Icons.Rounded.MoreVert, "Tab options", tint = Sky.ink, modifier = Modifier.size(20.dp)) }
-                        com.blaze.assistant.ui.BlazeMenu(menu, onDismiss = { menu = false }, items = listOf(
+                        com.argus.assistant.ui.ArgusMenu(menu, onDismiss = { menu = false }, items = listOf(
                             "Picture grid" to { onGrid() },
                             (if (seg == TabSeg.PRIVATE) "Close all private tabs" else "Close all tabs") to {
                                 BrowserEngine.closeAll(seg == TabSeg.PRIVATE)
@@ -392,7 +392,7 @@ enum class Tool(val label: String, val icon: ImageVector) {
 }
 
 /**
- * The Sky launcher (tap the address in the pill): a search field with matching open tabs, history and "Ask Blaze", a grid of
+ * The Sky launcher (tap the address in the pill): a search field with matching open tabs, history and "Ask Argus", a grid of
  * tools, and the privacy switches (VPN, location mask, tracker blocking, private browsing).
  */
 @Composable
@@ -487,10 +487,10 @@ private fun Toggle(icon: ImageVector, label: String, value: String, on: Boolean,
         Icon(icon, null, tint = Sky.ink, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(14.dp))
         SkyText(label, T_BODY, modifier = Modifier.weight(1f))
         if (value.isNotEmpty()) { SkyText(value, T_CAPTION, Sky.sub); Spacer(Modifier.width(10.dp)) }
-        // unification: the one switch (BlazeSwitchTrack). The switch itself still sets the value even when the row opens
+        // unification: the one switch (ArgusSwitchTrack). The switch itself still sets the value even when the row opens
         // more (VPN, location: [onRow]), exactly as the Material switch did.
         Box(Modifier.heightIn(min = Sky.control).toggleable(value = on, role = Role.Switch, onValueChange = set), contentAlignment = Alignment.Center) {
-            BlazeSwitchTrack(on)
+            ArgusSwitchTrack(on)
         }
     }
 }
@@ -507,7 +507,7 @@ internal fun SkySiteSheet(onDismiss: () -> Unit, onAction: (SiteAction) -> Unit)
     val url = t.url
     val host = skyHost(url)
     val http = url.startsWith("http")
-    val insecure = com.blaze.assistant.connect.UrlSafety.notSecure(url)
+    val insecure = com.argus.assistant.connect.UrlSafety.notSecure(url)
     val logins = remember(host) { try { if (t.isPrivate) emptyList() else BrowserLogins.forHost(host) } catch (_: Throwable) { emptyList() } }
     val marked = remember(url) { BrowserData.isBookmarked(ctx, url) }
     val vpnOn = BrowserVpn.status == BrowserVpn.Status.ON

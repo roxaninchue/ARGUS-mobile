@@ -1,8 +1,8 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.MediaNet.Link
-import com.blaze.assistant.mediaapps.store.StoreFormat
-import com.blaze.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.MediaNet.Link
+import com.argus.assistant.mediaapps.store.StoreFormat
+import com.argus.assistant.mediaapps.store.StoreItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -25,7 +25,7 @@ class StreamSpecTest {
     @get:Rule val timeout: Timeout = Timeout.seconds(120)
 
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     // ------------------------------------------------------------------ the throttled network
 

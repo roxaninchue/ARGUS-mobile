@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,8 +12,8 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.blaze.assistant.MainActivity
-import com.blaze.assistant.R
+import com.argus.assistant.MainActivity
+import com.argus.assistant.R
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit
 
 /**
  * v0.33.0 Time Capsule: "write a letter to me for next year", "remind future me why I started this". A sealed note
- * (optionally with a snapshot of what Blaze knows about your goals right now) that stays locked, unreadable even by
- * Blaze's tools, until its date; then it opens as a notification and lands in the chat. Pure date maths in [openAt]
+ * (optionally with a snapshot of what Argus knows about your goals right now) that stays locked, unreadable even by
+ * Argus's tools, until its date; then it opens as a notification and lands in the chat. Pure date maths in [openAt]
  * (TimeCapsuleTest).
  */
 object TimeCapsule {

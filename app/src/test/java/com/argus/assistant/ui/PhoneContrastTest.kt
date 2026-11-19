@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
@@ -8,15 +8,15 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 0.45.19 Blaze Phone UI fix 3 (contrast), strict 5/5. The tile's chip was white text on a white-ish chip ("Reading
- * Blaze Phone's page", 1.2:1). Every text / ground pair the Blaze Phone tile and screen draw now comes from
+ * 0.45.19 Argus Phone UI fix 3 (contrast), strict 5/5. The tile's chip was white text on a white-ish chip ("Reading
+ * Argus Phone's page", 1.2:1). Every text / ground pair the Argus Phone tile and screen draw now comes from
  * [PhoneColors] and must reach WCAG AA (4.5:1) for every Look & feel accent (0.52.2: one ARGUS look, no Living Themes)
  * x light / dark plus random accents, computed here with the WCAG
  * formula (cross-checked against the app's own [Contrast]). Real pixels on a phone are a device check.
  */
 class PhoneContrastTest {
     private fun root(): File = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-    private fun src(p: String) = File(root(), "com/blaze/assistant/$p").readText()
+    private fun src(p: String) = File(root(), "com/argus/assistant/$p").readText()
 
     /** The accent BlazeTheme hands the UI for [pick] in [dark] (a pale accent is deepened on light grounds; null = none picked). */
     private fun accentOf(dark: Boolean, pick: Long?): Long? {
@@ -43,7 +43,7 @@ class PhoneContrastTest {
     @Test fun theOldChipFailedAndTheNewOnesPass() = fiveTimes("regression") {
         // What the screenshots showed: white on Glass.blue (#E6E6EA).
         assertTrue(PhoneColors.contrast(0xFFFFFFFFL, 0xFFE6E6EAL) < 1.5)
-        // StatusPill's default pair (Blaze Phone surfaces that pass no palette).
+        // StatusPill's default pair (Argus Phone surfaces that pass no palette).
         assertTrue(PhoneColors.contrast(PhoneColors.STATUS_ON_CHIP, PhoneColors.STATUS_CHIP) >= PhoneColors.AA)
     }
 

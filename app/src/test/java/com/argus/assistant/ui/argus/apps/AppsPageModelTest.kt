@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui.argus.apps
+package com.argus.assistant.ui.argus.apps
 
-import com.blaze.assistant.agent.ChatNav
-import com.blaze.assistant.ui.BackRule
-import com.blaze.assistant.ui.Views
-import com.blaze.assistant.ui.argus.icons.ArgusGlyphs
-import com.blaze.assistant.ui.argus.icons.LucideSpec
+import com.argus.assistant.agent.ChatNav
+import com.argus.assistant.ui.BackRule
+import com.argus.assistant.ui.Views
+import com.argus.assistant.ui.argus.icons.ArgusGlyphs
+import com.argus.assistant.ui.argus.icons.LucideSpec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -48,7 +48,7 @@ class AppsPageModelTest {
 
     @Test fun lifeAppsAndTheViewsShortcutOpenThePage() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val chat = File(root, "com/argus/assistant/ui/ChatScreen.kt").readText()
         assertTrue("onApps = { appsOpen = true }" in chat)
         assertTrue("\"views\" -> { appsOpen = true; true }" in chat)
         assertTrue("AppsPage(" in chat && "onProfile = { settingsPage = \"\" }" in chat)
@@ -57,9 +57,9 @@ class AppsPageModelTest {
 
     @Test fun installingASiteAddsItToAppsAndHomeIsAnOption() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        val panel = File(root, "com/blaze/assistant/browser/SiteAppsPanel.kt").readText()
+        val panel = File(root, "com/argus/assistant/browser/SiteAppsPanel.kt").readText()
         assertTrue("\"Add to Apps\"" in panel && "Also add to Home screen" in panel && "home = toHome" in panel)
-        val inst = File(root, "com/blaze/assistant/siteapps/SiteInstaller.kt").readText()
+        val inst = File(root, "com/argus/assistant/siteapps/SiteInstaller.kt").readText()
         assertTrue("home: Boolean" in inst && "fun pinToHome(" in inst)
     }
 

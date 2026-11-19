@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.splash
+package com.argus.assistant.ui.splash
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ClipOp
@@ -10,8 +10,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.withTransform
-import com.blaze.assistant.home.WeatherKind
-import com.blaze.assistant.ui.splash.CloudSplashSpec as S
+import com.argus.assistant.home.WeatherKind
+import com.argus.assistant.ui.splash.CloudSplashSpec as S
 
 /**
  * Draws one weather variant ([S.glyph]) as an outline: the two-lobe cloud plus its sun, moon, back cloud, rain, snow,

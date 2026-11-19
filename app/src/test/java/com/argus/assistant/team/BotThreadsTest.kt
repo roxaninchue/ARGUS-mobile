@@ -1,15 +1,15 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.engines.BotEngine
-import com.blaze.assistant.agent.engines.EngineCaps
-import com.blaze.assistant.agent.engines.LocalEngine
-import com.blaze.assistant.agent.engines.LocalEngineTest.FakeLlm
-import com.blaze.assistant.agent.engines.LocalEngineTest.FakeLoop
-import com.blaze.assistant.agent.engines.RowSink
-import com.blaze.assistant.agent.engines.TurnEvent
-import com.blaze.assistant.agent.engines.TurnInput
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.engines.BotEngine
+import com.argus.assistant.agent.engines.EngineCaps
+import com.argus.assistant.agent.engines.LocalEngine
+import com.argus.assistant.agent.engines.LocalEngineTest.FakeLlm
+import com.argus.assistant.agent.engines.LocalEngineTest.FakeLoop
+import com.argus.assistant.agent.engines.RowSink
+import com.argus.assistant.agent.engines.TurnEvent
+import com.argus.assistant.agent.engines.TurnInput
+import com.argus.assistant.store.JdbcSql
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch

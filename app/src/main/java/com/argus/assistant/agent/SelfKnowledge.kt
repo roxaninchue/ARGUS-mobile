@@ -1,26 +1,26 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import org.json.JSONObject
 import java.io.File
 
 /**
- * Blaze knows itself: what it is, which apps make up Blaze, where its files live, what is set up
+ * Argus knows itself: what it is, which apps make up Argus, where its files live, what is set up
  * and what isn't. A short ABOUT YOU block rides in every prompt; about_blaze returns the full,
- * live report (every nook and cranny) so Blaze never asks the user what Blaze is.
+ * live report (every nook and cranny) so Argus never asks the user what Argus is.
  */
 object SelfKnowledge {
     const val TOOL = "about_blaze"
 
-    /** Facts about the Blaze family that never change at runtime. */
+    /** Facts about the Argus family that never change at runtime. */
     const val FAMILY = "${BrandName.NAME} is an AI assistant made by Blazeinchue. It comes as three apps that share one ${BrandName.NAME} account: " +
         "${BrandName.NAME} for Android (you, this app), ${BrandName.NAME} Desktop (Windows/macOS/Linux) and ${BrandName.NAME} CLI (terminal). " +
         "The ${BrandName.NAME} account (Settings › ${BrandName.NAME} account; sign in with Google, GitHub or email) syncs model keys, MCP servers and your own skills between them. " +
         "Phone and PC connect with ${BrandName.NAME} Link: on the PC open ${BrandName.NAME} Desktop › Phone › Show pairing QR code, " +
         "then on the phone open /views › ${BrandName.NAME} Desktop › Scan QR code (or paste the blaze://pair link); same Wi-Fi, or anywhere when both are on Tailscale. After that the phone can ask_pc and the PC can use the phone. " +
-        "All three use free AI providers by default (Auto), plus BlazeRouter (Desktop, and on the phone) for routing presets like auto/best-free with a web dashboard."
+        "All three use free AI providers by default (Auto), plus ArgusRouter (Desktop, and on the phone) for routing presets like auto/best-free with a web dashboard."
 
     private fun safe(f: () -> String): String = try { f() } catch (_: Throwable) { "unknown" }
 
@@ -28,8 +28,8 @@ object SelfKnowledge {
     fun promptBlock(ctx: Context): String = buildString {
         append("\nABOUT YOU: ").append(FAMILY)
         append(" You are ${BrandName.NAME} for Android v").append(safe { version(ctx) }).append(".")
-        append(" Paired PC: ").append(safe { if (com.blaze.assistant.link.DesktopLink.paired) com.blaze.assistant.link.DesktopLink.pcName else "none" }).append(".")
-        append(" ${BrandName.NAME} account: ").append(safe { com.blaze.assistant.connect.BlazeAccount.view.value.user?.let { "signed in" } ?: "not signed in" }).append(".")
+        append(" Paired PC: ").append(safe { if (com.argus.assistant.link.DesktopLink.paired) com.argus.assistant.link.DesktopLink.pcName else "none" }).append(".")
+        append(" ${BrandName.NAME} account: ").append(safe { com.argus.assistant.connect.ArgusAccount.view.value.user?.let { "signed in" } ?: "not signed in" }).append(".")
         append(" Questions about ${BrandName.NAME} itself, its apps, settings, files, what's installed, or connecting phone and PC: answer from this, call about_blaze for live setup and blaze_docs_search for docs (repos, versions, features, settings). Never ask the user what ${BrandName.NAME} is or which apps they mean.")
     }
 
@@ -54,26 +54,26 @@ object SelfKnowledge {
                 append("## This app\n")
                 append("${BrandName.NAME} for Android v").append(safe { version(ctx) }).append(", package ").append(ctx.packageName).append(".\n")
                 append("Mode: ").append(safe { Modes.work.value + " · " + Modes.approval.value }).append(". Personality: ").append(safe { Settings.personaId }).append(".\n")
-                append("Screen: Chat | Projects switch, Search, BlazeRouter dot, the ARGUS Home first (orb, profile top right, pull-down Spotlight from the top notch, ask bar), avatar menu (Account, Settings, Look & feel, Updates). Composer + menu: attach, @ files, voice, call, Plan/Build, Auto/Autopilot, views.\n")
+                append("Screen: Chat | Projects switch, Search, ArgusRouter dot, the ARGUS Home first (orb, profile top right, pull-down Spotlight from the top notch, ask bar), avatar menu (Account, Settings, Look & feel, Updates). Composer + menu: attach, @ files, voice, call, Plan/Build, Auto/Autopilot, views.\n")
                 append("Projects: ").append(safe { Projects.all.value.joinToString { "${it.name} (${it.chats.size} chats)" }.ifBlank { "none" } }).append(".\n\n")
             }
-            if (on("phone")) { append("## Phone\n").append(safe { com.blaze.assistant.device.DeviceStatus.identity(ctx) }).append("\n\n") }
+            if (on("phone")) { append("## Phone\n").append(safe { com.argus.assistant.device.DeviceStatus.identity(ctx) }).append("\n\n") }
             if (on("brains")) {
                 append("## Brains (AI providers)\n")
                 append("Answering with: ${BrandName.NAME} Cloud (the gateway picks the best free model per message; the user can't and needn't choose models or add keys).\n")
                 append("Signed in to ${BrandName.NAME}: ").append(safe { if (Settings.ready) "yes" else "no (Settings › Account)" }).append(".\n")
-                append("BlazeRouter (this phone): ").append(safe { val st = BlazeRouter.state.value; if (st.running) "running in ${BlazeRouter.label(st.where)} on ${BlazeRouter.BASE}/v1 (dashboard /views › BlazeRouter)" else "stopped (blazerouter start; runner ${BlazeRouter.runner})" }).append(".\n")
+                append("ArgusRouter (this phone): ").append(safe { val st = ArgusRouter.state.value; if (st.running) "running in ${ArgusRouter.label(st.where)} on ${ArgusRouter.BASE}/v1 (dashboard /views › ArgusRouter)" else "stopped (blazerouter start; runner ${ArgusRouter.runner})" }).append(".\n")
                 append("Fast lane (on-device): ").append(safe { if (FastLane.ready(ctx)) "installed" else "not installed" }).append(".\n\n")
             }
             if (on("accounts")) {
                 append("## Accounts\n")
-                append("${BrandName.NAME} account: ").append(safe { com.blaze.assistant.connect.BlazeAccount.view.value.user?.let { u -> "signed in as ${u.email.ifBlank { u.name }}" } ?: "not signed in" }).append(".\n")
-                append("Connected apps: ").append(safe { com.blaze.assistant.connect.Connectors.all.joinToString { c -> c.name + if (com.blaze.assistant.connect.Connectors.connected(c.id)) " ✓" else " –" } }).append(".\n")
-                append("MCP servers: ").append(safe { com.blaze.assistant.connect.Mcp.servers.value.joinToString { s -> s.name + if (s.enabled) "" else " (off)" }.ifBlank { "none" } }).append(".\n\n")
+                append("${BrandName.NAME} account: ").append(safe { com.argus.assistant.connect.ArgusAccount.view.value.user?.let { u -> "signed in as ${u.email.ifBlank { u.name }}" } ?: "not signed in" }).append(".\n")
+                append("Connected apps: ").append(safe { com.argus.assistant.connect.Connectors.all.joinToString { c -> c.name + if (com.argus.assistant.connect.Connectors.connected(c.id)) " ✓" else " –" } }).append(".\n")
+                append("MCP servers: ").append(safe { com.argus.assistant.connect.Mcp.servers.value.joinToString { s -> s.name + if (s.enabled) "" else " (off)" }.ifBlank { "none" } }).append(".\n\n")
             }
             if (on("link")) {
                 append("## ${BrandName.NAME} Link (phone ↔ PC)\n")
-                append(safe { if (com.blaze.assistant.link.DesktopLink.paired) "Paired with ${com.blaze.assistant.link.DesktopLink.pcName}. Use ask_pc to work on it." else "Not paired. To pair: on the PC open ${BrandName.NAME} Desktop › Phone › Show pairing QR code; on the phone open /views › ${BrandName.NAME} Desktop › Scan QR code (or paste the blaze://pair link). Same Wi-Fi, or anywhere when both are on Tailscale." })
+                append(safe { if (com.argus.assistant.link.DesktopLink.paired) "Paired with ${com.argus.assistant.link.DesktopLink.pcName}. Use ask_pc to work on it." else "Not paired. To pair: on the PC open ${BrandName.NAME} Desktop › Phone › Show pairing QR code; on the phone open /views › ${BrandName.NAME} Desktop › Scan QR code (or paste the blaze://pair link). Same Wi-Fi, or anywhere when both are on Tailscale." })
                 append("\n\n")
             }
             if (on("skills")) { append("## Skills\n").append(safe { SkillPacks.all().joinToString { it.name }.ifBlank { "none" } }).append("\nFolder: ~/skills (manage in /views › Skills).\n\n") }
@@ -86,30 +86,30 @@ object SelfKnowledge {
                 append("## Files\n")
                 val f = ctx.filesDir
                 append("App data: ").append(f.absolutePath).append("\n")
-                append("Home (terminal ~, run_code, file_*): ").append(safe { com.blaze.assistant.terminal.Terminal.home().absolutePath }).append("\n")
+                append("Home (terminal ~, run_code, file_*): ").append(safe { com.argus.assistant.terminal.Terminal.home().absolutePath }).append("\n")
                 append("Chats: ").append(File(f, "chats").absolutePath).append(" (").append(safe { (File(f, "chats").list()?.size ?: 0).toString() }).append(" saved)\n")
                 append("Gallery (things ${BrandName.NAME} made), wake model: ").append(File(f, "wake-model").absolutePath).append("\n")
                 append("Free space: ").append(safe { "%.1f GB".format(f.usableSpace / 1e9) }).append("\n\n")
             }
             if (on("linux")) {
                 append("## Linux and terminal\n")
-                append("Alpine Linux (proot): ").append(safe { if (com.blaze.assistant.terminal.Linux.installed()) "installed" else "not installed (blaze_self install linux)" }).append(".\n")
-                append("linux=true commands run in: ").append(safe { com.blaze.assistant.terminal.Terminal.defaultDistro() }).append(".\n")
-                append("Termux: ").append(safe { if (com.blaze.assistant.terminal.Terminal.termuxInstalled(ctx)) "installed (termux_run)" else "not installed" }).append(".\n")
-                append("Local dashboard: ").append(safe { if (com.blaze.assistant.dashboard.Dashboard.running.value) com.blaze.assistant.dashboard.Dashboard.localUrl().substringBefore("?") else "off" }).append(".\n\n")
+                append("Alpine Linux (proot): ").append(safe { if (com.argus.assistant.terminal.Linux.installed()) "installed" else "not installed (blaze_self install linux)" }).append(".\n")
+                append("linux=true commands run in: ").append(safe { com.argus.assistant.terminal.Terminal.defaultDistro() }).append(".\n")
+                append("Termux: ").append(safe { if (com.argus.assistant.terminal.Terminal.termuxInstalled(ctx)) "installed (termux_run)" else "not installed" }).append(".\n")
+                append("Local dashboard: ").append(safe { if (com.argus.assistant.dashboard.Dashboard.running.value) com.argus.assistant.dashboard.Dashboard.localUrl().substringBefore("?") else "off" }).append(".\n\n")
             }
             if (on("voice")) {
                 append("## Voice\n")
-                append("Wake word model: ").append(safe { if (com.blaze.assistant.voice.WakeModel.ready(ctx)) "installed" else "not installed" }).append(".\n\n")
+                append("Wake word model: ").append(safe { if (com.argus.assistant.voice.WakeModel.ready(ctx)) "installed" else "not installed" }).append(".\n\n")
             }
             if (on("views")) {
                 append("## Views (open_view)\n")
-                append(com.blaze.assistant.ui.Views.all.joinToString("\n") { "- ${it.name} (${it.id}): ${it.desc}" }).append("\n")
+                append(com.argus.assistant.ui.Views.all.joinToString("\n") { "- ${it.name} (${it.id}): ${it.desc}" }).append("\n")
                 append("${BrandName.NAME} uses its views on its own, every turn, without being asked: output that fits a view (flashcards → Learn, anything visual or interactive (3D scenes, 2D art, sites, UI mockups, diagrams, charts, posters, slides, floor plans) → Design via the design tool, with follow-on edits changing the same design, reminders → Schedule, pictures and beats → Gallery, methods → Skills, facts → Memory) is made there, opened or linked, and answered briefly in chat. Matching skills are looked up before every turn.\n")
                 append("\n")
             }
             // 0.47 Spotlight v2: the self-map (the same registry Spotlight searches); only when asked for, it is long.
-            if (want == "map") { append("## Self-map\n").append(safe { com.blaze.assistant.composer.SelfMap.describe() }).append("\n\n") }
+            if (want == "map") { append("## Self-map\n").append(safe { com.argus.assistant.composer.SelfMap.describe() }).append("\n\n") }
             if (on("setup")) {
                 append("## Setup check\n")
                 append(safe { SelfSetup.audit(ctx).joinToString("\n") { (if (it.ok) "✓ " else "✕ ") + it.name + if (it.ok) "" else " — " + it.fix } })

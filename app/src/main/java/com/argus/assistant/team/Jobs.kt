@@ -1,6 +1,6 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.Sql
 import java.util.Locale
 
 /**

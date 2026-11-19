@@ -1,4 +1,4 @@
-package com.blaze.assistant.appstore
+package com.argus.assistant.appstore
 
 import android.content.pm.PackageInstaller
 import kotlinx.coroutines.async
@@ -300,7 +300,7 @@ class StoreInstallTest {
     }
 
     @Test fun sourceHasNoSilentOrSideChannelInstall() {
-        val dir = File("src/main/java/com/blaze/assistant/appstore")
+        val dir = File("src/main/java/com/argus/assistant/appstore")
         val all = dir.listFiles()!!.filter { it.extension == "kt" }.joinToString("\n") { it.readText() }
         assertTrue(all.contains("USER_ACTION_REQUIRED"))
         for (bad in listOf("rikka.shizuku", "Shizuku.", "pm install", "Runtime.getRuntime", "su -c", "INSTALL_REPLACE_EXISTING", "USER_ACTION_NOT_REQUIRED", "BLAZE_PHONE", "SOURCE_PAGE"))

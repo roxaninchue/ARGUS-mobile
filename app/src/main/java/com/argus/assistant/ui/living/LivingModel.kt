@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
-import com.blaze.assistant.agent.ToolTrail
+import com.argus.assistant.agent.ToolTrail
 
 /**
  * Living UI: the chat's messages → the cards on the canvas. The same stream that drives "Show tool steps": the step
- * messages carry the exact call in their meta ([com.blaze.assistant.agent.Friendly.exact]: `name(k=v, …)`, or `$ cmd`
+ * messages carry the exact call in their meta ([com.argus.assistant.agent.Friendly.exact]: `name(k=v, …)`, or `$ cmd`
  * for a shell) and [ToolTrail] keeps what each call gave back, matched by that exact text.
  *
  * Per turn (your message and everything up to the next one):

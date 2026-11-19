@@ -1,4 +1,4 @@
-package com.blaze.assistant.memory
+package com.argus.assistant.memory
 
 /**
  * Whole-document questions over the cache tier (0.49.0): summarise sections in batches that fit a small model

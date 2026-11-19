@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
@@ -55,7 +55,7 @@ class HedgeThoughtTest {
     }
 
     @Test fun llmClientGatesThinkingOnTheThinkingLaneNotOnTheWinner() {
-        val f = listOf(java.io.File("src/main/java/com/blaze/assistant/agent/LlmClient.kt"), java.io.File("app/src/main/java/com/blaze/assistant/agent/LlmClient.kt")).first { it.exists() }.readText()
+        val f = listOf(java.io.File("src/main/java/com/argus/assistant/agent/LlmClient.kt"), java.io.File("app/src/main/java/com/argus/assistant/agent/LlmClient.kt")).first { it.exists() }.readText()
         assertTrue(f.contains("if (a.thoughtShows()) f(p)"))
         assertFalse(f.contains("a.think(); if (a.shows()) f(p)"))
         assertTrue(f.contains("if (a.takesOverThought()) chatThink?.invoke(\"\")"))

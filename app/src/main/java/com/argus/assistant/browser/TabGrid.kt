@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,11 +32,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.Type
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.Type
 import kotlin.math.abs
 
-/** Colours for the two sides of the grid: normal tabs follow Blaze's theme, private tabs are always dark, like Chrome's Incognito. */
+/** Colours for the two sides of the grid: normal tabs follow Argus's theme, private tabs are always dark, like Chrome's Incognito. */
 private data class GridColors(val bg: Color, val card: Color, val ink: Color, val sub: Color, val accent: Color, val bar: Color)
 
 /**
@@ -45,7 +45,7 @@ private data class GridColors(val bg: Color, val card: Color, val ink: Color, va
  */
 @Composable
 fun TabGrid(startPrivate: Boolean, onDone: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     var priv by remember { mutableStateOf(startPrivate) }
     val g = if (priv) GridColors(Color(0xFF202124), Color(0xFF35363A), Color(0xFFE8EAED), Color(0xFF9AA0A6), Color(0xFF8AB4F8), Color(0xFF202124))
@@ -77,7 +77,7 @@ fun TabGrid(startPrivate: Boolean, onDone: () -> Unit) {
             var menu by remember { mutableStateOf(false) }
             Box {
                 Box(Modifier.size(44.dp).clip(CircleShape).clickable { menu = true }, contentAlignment = Alignment.Center) { T("⋮", g.ink, 22) }
-                com.blaze.assistant.ui.BlazeMenu(menu, onDismiss = { menu = false }, items = listOf(
+                com.argus.assistant.ui.ArgusMenu(menu, onDismiss = { menu = false }, items = listOf(
                     (if (priv) "Close all private tabs" else "Close all tabs") to {
                         BrowserEngine.closeAll(priv)
                         if (BrowserEngine.normalTabs().isEmpty()) BrowserEngine.newTab(ctx)

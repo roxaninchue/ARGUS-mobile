@@ -1,18 +1,18 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.content.Context
 import android.content.Intent
 import android.provider.AlarmClock
 import android.view.accessibility.AccessibilityNodeInfo
-import com.blaze.assistant.agent.AlarmRows
+import com.argus.assistant.agent.AlarmRows
 
 /**
- * v0.45.13: turns off or deletes one of Blaze's alarms in the phone's own Clock app and READS IT BACK.
+ * v0.45.13: turns off or deletes one of Argus's alarms in the phone's own Clock app and READS IT BACK.
  *
  * Android has no API to delete another app's alarm. AlarmClock.ACTION_DISMISS_ALARM only dismisses an alarm that is
  * about to ring on some clocks and does nothing on others (Samsung Clock, 21 Oct 2026 17:13: the alarm stayed ON).
- * So, with phone control on, Blaze drives the Clock screen like a person: open the alarm list, find the row by its
- * "(Blaze A2)" label (or its time), long-press → Delete (delete), or flip its switch (off), then read the list again.
+ * So, with phone control on, Argus drives the Clock screen like a person: open the alarm list, find the row by its
+ * "(Argus A2)" label (or its time), long-press → Delete (delete), or flip its switch (off), then read the list again.
  * Only that second read decides the result ([Outcome.state]). Without phone control nothing can be read back, so the
  * dismiss intent is sent and the result says plainly it isn't confirmed.
  */
@@ -24,7 +24,7 @@ object ClockUi {
     private fun clockPkg(p: String) = p.contains("clock", true) || p.contains("deskclock", true) || p == "com.sec.android.app.clockpackage"
 
     /** A snapshot of the active window as [AlarmRows.Node]s (refs keep the live nodes for clicking). */
-    fun snapshot(svc: BlazeAccessibilityService): AlarmRows.Node? {
+    fun snapshot(svc: ArgusAccessibilityService): AlarmRows.Node? {
         val root = svc.rootInActiveWindow ?: return null
         fun conv(n: AccessibilityNodeInfo?, depth: Int): AlarmRows.Node? {
             if (n == null || depth > 30) return null
@@ -37,9 +37,9 @@ object ClockUi {
 
     private fun live(n: AlarmRows.Node?) = n?.ref as? AccessibilityNodeInfo
 
-    private suspend fun openList(ctx: Context, svc: BlazeAccessibilityService, trace: MutableList<String>): AlarmRows.Node? {
+    private suspend fun openList(ctx: Context, svc: ArgusAccessibilityService, trace: MutableList<String>): AlarmRows.Node? {
         try { ctx.startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { return null }
-        BlazeAccessibilityService.touched()
+        ArgusAccessibilityService.touched()
         svc.settle(maxMs = 2500, quietMs = 350)
         var pkg = svc.currentPkg()
         if (!clockPkg(pkg)) { kotlinx.coroutines.delay(700); pkg = svc.currentPkg() }
@@ -48,7 +48,7 @@ object ClockUi {
         return snapshot(svc)
     }
 
-    private suspend fun findWithScroll(svc: BlazeAccessibilityService, first: AlarmRows.Node, pid: String, hhmm: String?, trace: MutableList<String>): Pair<AlarmRows.Node, AlarmRows.Row?> {
+    private suspend fun findWithScroll(svc: ArgusAccessibilityService, first: AlarmRows.Node, pid: String, hhmm: String?, trace: MutableList<String>): Pair<AlarmRows.Node, AlarmRows.Row?> {
         var root = first
         var row = AlarmRows.find(root, pid, hhmm)
         var n = 0
@@ -62,9 +62,9 @@ object ClockUi {
         return root to row
     }
 
-    private suspend fun click(svc: BlazeAccessibilityService, n: AlarmRows.Node?, long: Boolean = false): Boolean {
+    private suspend fun click(svc: ArgusAccessibilityService, n: AlarmRows.Node?, long: Boolean = false): Boolean {
         val node = live(n) ?: return false
-        BlazeAccessibilityService.touched()
+        ArgusAccessibilityService.touched()
         if (long) {
             var x: AccessibilityNodeInfo? = node
             while (x != null) { if (x.isLongClickable && x.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK)) return true; x = x.parent }
@@ -79,7 +79,7 @@ object ClockUi {
      */
     suspend fun alarmOff(ctx: Context, pid: String, hhmm: String?, label: String, deleteWanted: Boolean): Outcome {
         val trace = ArrayList<String>()
-        val svc = BlazeAccessibilityService.instance
+        val svc = ArgusAccessibilityService.instance
         if (svc == null) {
             // Nothing can be read back: ask the clock app (works on some clocks for an alarm that is about to ring).
             try {
@@ -92,7 +92,7 @@ object ClockUi {
         }
         val first = openList(ctx, svc, trace) ?: return Outcome(State.NOT_CLOCK, "the Clock app's alarm list didn't come to the front", trace)
         val (root0, row0) = findWithScroll(svc, first, pid, hhmm, trace)
-        if (row0 == null) return if (AlarmRows.gone(root0, pid, hhmm)) Outcome(State.GONE, "the Clock app's alarm list has no alarm labelled \u201cBlaze $pid\u201d" + (hhmm?.let { " and none at $it" } ?: ""), trace)
+        if (row0 == null) return if (AlarmRows.gone(root0, pid, hhmm)) Outcome(State.GONE, "the Clock app's alarm list has no alarm labelled \u201cArgus $pid\u201d" + (hhmm?.let { " and none at $it" } ?: ""), trace)
             else Outcome(State.NOT_FOUND, "couldn't find alarm $pid in the Clock app's list", trace)
         if (deleteWanted) {
             if (click(svc, row0.row, long = true) || click(svc, row0.label, long = true)) {
@@ -137,7 +137,7 @@ object ClockUi {
     /** Switch alarm [pid] back on, read back. */
     suspend fun alarmOn(ctx: Context, pid: String, hhmm: String?, label: String): Outcome {
         val trace = ArrayList<String>()
-        val svc = BlazeAccessibilityService.instance ?: return Outcome(State.NO_CONTROL, "phone control is off, so nothing could switch or read the alarm", trace)
+        val svc = ArgusAccessibilityService.instance ?: return Outcome(State.NO_CONTROL, "phone control is off, so nothing could switch or read the alarm", trace)
         val first = openList(ctx, svc, trace) ?: return Outcome(State.NOT_CLOCK, "the Clock app's alarm list didn't come to the front", trace)
         val (_, row) = findWithScroll(svc, first, pid, hhmm, trace)
         row ?: return Outcome(State.NOT_FOUND, "couldn't find alarm $pid in the Clock app's list", trace)
@@ -150,7 +150,7 @@ object ClockUi {
 
     /** Read-only: the state of alarm [pid] in the Clock list (for the self-test runner). null = can't read. */
     suspend fun read(ctx: Context, pid: String?, hhmm: String?, labelWords: String? = null): Pair<Boolean?, String>? {
-        val svc = BlazeAccessibilityService.instance ?: return null
+        val svc = ArgusAccessibilityService.instance ?: return null
         val trace = ArrayList<String>()
         val first = openList(ctx, svc, trace) ?: return null
         val row = if (pid != null) findWithScroll(svc, first, pid, hhmm, trace).second else null

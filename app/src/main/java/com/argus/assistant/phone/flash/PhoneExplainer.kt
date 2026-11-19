@@ -1,12 +1,12 @@
-package com.blaze.assistant.phone.flash
+package com.argus.assistant.phone.flash
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.46.3: the one-time "Let Blaze use your phone" explainer. Phones have no ADB here, so on-phone control runs only
- * through Blaze's accessibility service, which the user switches on once in Android Settings. The first time a phone task
+ * 0.46.3: the one-time "Let Argus use your phone" explainer. Phones have no ADB here, so on-phone control runs only
+ * through Argus's accessibility service, which the user switches on once in Android Settings. The first time a phone task
  * needs it (or the user taps the banner), the explainer says what it does and what it never does, with one button
- * straight to Blaze's own switch. It is shown once; after that the plain "Phone control is off · Turn on" banner is enough.
+ * straight to Argus's own switch. It is shown once; after that the plain "Phone control is off · Turn on" banner is enough.
  * The rule is pure ([shouldShow]); the seen flag lives in Settings (PhoneExplainerTest).
  */
 object PhoneExplainer {

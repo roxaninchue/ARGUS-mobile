@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -49,21 +49,21 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.home.HomeBoard
-import com.blaze.assistant.home.HomeGrid
-import com.blaze.assistant.home.InterestsFeed
-import com.blaze.assistant.home.NextUp
-import com.blaze.assistant.home.QuickActions
-import com.blaze.assistant.home.TodoFeed
-import com.blaze.assistant.home.WeatherBoard
-import com.blaze.assistant.home.WeatherKind
-import com.blaze.assistant.home.Widget
-import com.blaze.assistant.home.WidgetData
-import com.blaze.assistant.home.WidgetTypes
-import com.blaze.assistant.ui.splash.CloudGlyphPainter
-import com.blaze.assistant.ui.splash.CloudSplashSpec
-import com.blaze.assistant.ui.splash.HomeIntroSpec
-import com.blaze.assistant.ui.splash.HomeSequence
+import com.argus.assistant.home.HomeBoard
+import com.argus.assistant.home.HomeGrid
+import com.argus.assistant.home.InterestsFeed
+import com.argus.assistant.home.NextUp
+import com.argus.assistant.home.QuickActions
+import com.argus.assistant.home.TodoFeed
+import com.argus.assistant.home.WeatherBoard
+import com.argus.assistant.home.WeatherKind
+import com.argus.assistant.home.Widget
+import com.argus.assistant.home.WidgetData
+import com.argus.assistant.home.WidgetTypes
+import com.argus.assistant.ui.splash.CloudGlyphPainter
+import com.argus.assistant.ui.splash.CloudSplashSpec
+import com.argus.assistant.ui.splash.HomeIntroSpec
+import com.argus.assistant.ui.splash.HomeSequence
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -126,7 +126,7 @@ object HomeIntroBus {
 }
 
 /**
- * Is the redesigned Home on? 0.50.0 (owner, 2026-11-01): OFF. Blaze is back to the original look from before the
+ * Is the redesigned Home on? 0.50.0 (owner, 2026-11-01): OFF. Argus is back to the original look from before the
  * sky-and-mountains Home (the 0.47-era chat with the Chat | Projects bar, Home board, themes and the full chat screen),
  * with the newer engineering (tiered memory, tool loop fixes, tool cards, follow-up chips, choice buttons) inside it.
  * The redesigned Home + chat over Home stay in the code behind this switch (screenshot tests set it themselves).
@@ -162,7 +162,7 @@ fun HomeRedesignScreen(
         onWeather = { data.values.firstOrNull { it.link.isNotBlank() && it.sunset.isNotBlank() }?.link?.let(onOpenLink) },
         onTopic = { t -> if (t.url.isNotBlank()) onOpenLink(t.url) },
         onPickInterests = onPickInterests,
-        onMusic = { try { com.blaze.assistant.mediaapps.MusicActivity.open(ctx) } catch (_: Throwable) { } },
+        onMusic = { try { com.argus.assistant.mediaapps.MusicActivity.open(ctx) } catch (_: Throwable) { } },
         onMusicToggle = { mediaPlayPause(ctx) },
         // RC4: with no tasks the To-do card is an "add one" card
         onTodo = { if (s.hasTasks) onAllWidgets() else onAsk("Add a task to my to-do list") },
@@ -172,7 +172,7 @@ fun HomeRedesignScreen(
         chatBar = chatBar)
 }
 
-/** Sends play/pause to the active media session (Blaze Music when it is the one playing). */
+/** Sends play/pause to the active media session (Argus Music when it is the one playing). */
 private fun mediaPlayPause(ctx: Context) {
     try {
         val am = ctx.getSystemService(android.media.AudioManager::class.java) ?: return
@@ -196,7 +196,7 @@ fun rememberHomeGridState(ctx: Context, widgets: List<Widget>, data: Map<String,
     var event by remember { mutableStateOf<Pair<String, Long>?>(null) }
     var reminders by remember { mutableStateOf<List<Pair<String, Long>>>(emptyList()) }
     var routineHours by remember { mutableStateOf<List<Int>>(emptyList()) }
-    val routines by com.blaze.assistant.routine.Routines.all.collectAsState()
+    val routines by com.argus.assistant.routine.Routines.all.collectAsState()
     val h24 = remember { try { android.text.format.DateFormat.is24HourFormat(ctx) } catch (_: Throwable) { false } }
 
     // after the first frame: ask the board to refresh what the grid shows when it is stale (network, off main)
@@ -209,7 +209,7 @@ fun rememberHomeGridState(ctx: Context, widgets: List<Widget>, data: Map<String,
         val (r, h) = withContext(Dispatchers.Default) {
             val t = System.currentTimeMillis()
             val on = routines.filter { it.enabled }
-            on.map { it.name to com.blaze.assistant.routine.Routines.next(it, t) } to on.filter { it.at <= 0L && it.everyMinutes <= 0 }.map { it.hour }
+            on.map { it.name to com.argus.assistant.routine.Routines.next(it, t) } to on.filter { it.at <= 0L && it.everyMinutes <= 0 }.map { it.hour }
         }
         reminders = r; routineHours = h
     }
@@ -223,7 +223,7 @@ fun rememberHomeGridState(ctx: Context, widgets: List<Widget>, data: Map<String,
     LaunchedEffect(started) {
         if (!started) return@LaunchedEffect
         while (true) {
-            music = com.blaze.assistant.agent.Awareness.get("music")?.let { n ->
+            music = com.argus.assistant.agent.Awareness.get("music")?.let { n ->
                 val pos = if (n.playing && n.posMs >= 0) n.posMs + (System.currentTimeMillis() - n.at) else n.posMs
                 HomeMusicNow(n.title, n.detail.removePrefix("by ").trim(), pos.coerceAtMost(if (n.durMs > 0) n.durMs else Long.MAX_VALUE), n.durMs, n.playing)
             }
@@ -242,7 +242,7 @@ fun rememberHomeGridState(ctx: Context, widgets: List<Widget>, data: Map<String,
     val next = remember(reminders, event, now / 60_000L) { NextUp.pick(reminders, listOfNotNull(event), now) }
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     val actions = remember(widgets, routineHours, hour) {
-        QuickActions.build(com.blaze.assistant.agent.SimpleHome.starters(hour).map { it.label to it.prompt }, InterestsFeed.labels(widgets), routineHours)
+        QuickActions.build(com.argus.assistant.agent.SimpleHome.starters(hour).map { it.label to it.prompt }, InterestsFeed.labels(widgets), routineHours)
     }
     val allTopics = remember(widgets, data) { InterestsFeed.topics(widgets, data, max = 24) }
     return HomeGridState(board, topics, music, tasks, count, next, actions, h24, now, allTopics)

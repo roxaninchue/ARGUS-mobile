@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * Pure (BackupRouteTest): the brains Argus asks for an answer, and when it moves on. Two, both on the gateway:
- *  - Blaze Cloud (the gateway's own lineup);
+ *  - Argus Cloud (the gateway's own lineup);
  *  - the Nous reserve (`X-Blaze-Reserve: only`, free models, slower but consistent).
  * Owner 16 Nov 2026: the on-device backup brain (OpenCode under Alpine) was removed; nothing runs a model on the phone.
  * The person never sees which one answered beyond the route chip.
@@ -27,7 +27,7 @@ object BackupRoute {
     }
 
     /**
-     * v0.45.28: what runs after Blaze Cloud's own call failed for good. The Nous reserve on the gateway
+     * v0.45.28: what runs after Argus Cloud's own call failed for good. The Nous reserve on the gateway
      * (`X-Blaze-Reserve: only`) ALWAYS gets a turn for a failure another brain can fix (busy, 5xx, 429 that isn't the
      * allowance, too slow, no answer, a stream that died mid-reply). [shapeError] (the request itself was refused) and
      * what [moveOn] rules out (sign-in, waiting list, allowance) get nothing.

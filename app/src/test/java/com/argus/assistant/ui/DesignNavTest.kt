@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.ChatNav
+import com.argus.assistant.agent.ChatNav
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,7 +12,7 @@ import org.junit.Test
  */
 class DesignNavTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     @Test fun opensFullScreenFromAnywhere() {
         for (from in listOf(ChatNav(), ChatNav(ChatNav.PROJECTS, "p1", ""), ChatNav(ChatNav.PROJECTS, "p1", "c1"), ChatNav(ChatNav.HOME))) {
@@ -55,6 +55,6 @@ class DesignNavTest {
         assertTrue("Text(DESIGN_BETA" in view)
         assertTrue("DesignTruth" in view)
         // Its own entry stays in Views (open_view design, /design, the views sheet).
-        assertTrue("BlazeView(\"design\", \"Design\"" in src("ui/Views.kt"))
+        assertTrue("ArgusView(\"design\", \"Design\"" in src("ui/Views.kt"))
     }
 }

@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui.composer
+package com.argus.assistant.ui.composer
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.annotation.SuppressLint
-import com.blaze.assistant.composer.ComposerLook
+import com.argus.assistant.composer.ComposerLook
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -78,15 +78,15 @@ import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.blaze.assistant.composer.SelfMap
-import com.blaze.assistant.composer.SpotUrl
-import com.blaze.assistant.composer.SpotlightSearch
-import com.blaze.assistant.composer.SpotlightSearch.Act
-import com.blaze.assistant.ui.DuoColors
-import com.blaze.assistant.ui.GlassIntensity
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.Type
-import com.blaze.assistant.ui.glass
+import com.argus.assistant.composer.SelfMap
+import com.argus.assistant.composer.SpotUrl
+import com.argus.assistant.composer.SpotlightSearch
+import com.argus.assistant.composer.SpotlightSearch.Act
+import com.argus.assistant.ui.DuoColors
+import com.argus.assistant.ui.GlassIntensity
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.Type
+import com.argus.assistant.ui.glass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -101,9 +101,9 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun SpotlightPanel(state: ComposerState, onAct: (Act) -> Unit, modifier: Modifier = Modifier, maxHeight: androidx.compose.ui.unit.Dp = 560.dp) {
-    val c = LocalBlaze.current
-    val songs by com.blaze.assistant.mediaapps.MediaLib.songs.collectAsState()
-    val videos by com.blaze.assistant.mediaapps.MediaLib.videos.collectAsState()
+    val c = LocalArgus.current
+    val songs by com.argus.assistant.mediaapps.MediaLib.songs.collectAsState()
+    val videos by com.argus.assistant.mediaapps.MediaLib.videos.collectAsState()
     // Installed distros: file checks, once per opening, on IO.
     val distros by produceState(emptyList<SpotlightSearch.Distro>(), state.spotlightOpen) {
         value = withContext(Dispatchers.IO) { runCatching { liveDistros() }.getOrDefault(emptyList()) }
@@ -120,7 +120,7 @@ fun SpotlightPanel(state: ComposerState, onAct: (Act) -> Unit, modifier: Modifie
     }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }   // Spotlight is opened by a tap, so it may focus its own search
-    com.blaze.assistant.ui.ClearFocusOnLeave()
+    com.argus.assistant.ui.ClearFocusOnLeave()
     val solid = LocalComposerSolid.current
     val shape = RoundedCornerShape(26.dp)
 
@@ -140,7 +140,7 @@ fun SpotlightPanel(state: ComposerState, onAct: (Act) -> Unit, modifier: Modifie
             Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
                 if (state.query.isEmpty()) Text(tr("Spotlight Search"), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.sub))
                 BasicTextField(state.query, { state.query = it; if (state.preview != null && !it.startsWith("@") && !it.startsWith("!")) state.preview = null },
-                    singleLine = true, textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.ink), cursorBrush = SolidColor(DuoColors.blazeBlue),
+                    singleLine = true, textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 20.sp, color = c.ink), cursorBrush = SolidColor(DuoColors.argusBlue),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                     keyboardActions = KeyboardActions(onGo = { result.rows.firstOrNull()?.let { onAct(it.act) } }),
                     modifier = Modifier.fillMaxWidth().focusRequester(focus).semantics { contentDescription = tr("Spotlight search") })
@@ -164,8 +164,8 @@ fun SpotlightPanel(state: ComposerState, onAct: (Act) -> Unit, modifier: Modifie
 }
 
 private fun liveDistros(): List<SpotlightSearch.Distro> {
-    val installed = runCatching { com.blaze.assistant.terminal.Distros.installedIds() }.getOrDefault(emptySet())
-    return com.blaze.assistant.terminal.TermLogic.DISTROS.map { SpotlightSearch.Distro(it.id, it.name, it.id in installed) }
+    val installed = runCatching { com.argus.assistant.terminal.Distros.installedIds() }.getOrDefault(emptySet())
+    return com.argus.assistant.terminal.TermLogic.DISTROS.map { SpotlightSearch.Distro(it.id, it.name, it.id in installed) }
 }
 
 fun spotIcon(i: SpotlightSearch.Icon): ImageVector = when (i) {
@@ -183,14 +183,14 @@ fun spotIcon(i: SpotlightSearch.Icon): ImageVector = when (i) {
 
 /** One result: icon tile, title, subtitle; the top row is highlighted (Enter runs it), like macOS Spotlight. */
 @Composable
-fun SpotRow(r: SpotlightSearch.Row, top: Boolean, ink: Color = LocalBlaze.current.ink, sub: Color = LocalBlaze.current.sub, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+fun SpotRow(r: SpotlightSearch.Row, top: Boolean, ink: Color = LocalArgus.current.ink, sub: Color = LocalArgus.current.sub, onClick: () -> Unit) {
+    val c = LocalArgus.current
     // the caller passes the ink of the surface it draws on: a dark overlay over a light app needs white titles
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (top) DuoColors.blazeBlue.copy(alpha = if (c.dark) 0.34f else 0.20f) else Color.Transparent)
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (top) DuoColors.argusBlue.copy(alpha = if (c.dark) 0.34f else 0.20f) else Color.Transparent)
         .clickable(onClick = onClick).semantics { contentDescription = r.title + ". " + r.subtitle }.padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically) {
         // 0.52.4: the shared round icon tile, solid for the top hit that Enter runs
-        com.blaze.assistant.ui.IconTile(spotIcon(r.icon), tint = if (top) DuoColors.blazeBlue else ink, small = true, filled = top)
+        com.argus.assistant.ui.IconTile(spotIcon(r.icon), tint = if (top) DuoColors.argusBlue else ink, small = true, filled = top)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(r.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = ink))
@@ -203,7 +203,7 @@ fun SpotRow(r: SpotlightSearch.Row, top: Boolean, ink: Color = LocalBlaze.curren
 /** The distro picker on the right of the field: a tick in a circle when installed, a download icon when not. */
 @Composable
 private fun DistroPicker(distros: List<SpotlightSearch.Distro>, current: String, onPick: (SpotlightSearch.Distro) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var open by remember { mutableStateOf(false) }
     val d = distros.firstOrNull { it.id == current } ?: distros.first()
     Box {
@@ -226,7 +226,7 @@ private fun DistroPicker(distros: List<SpotlightSearch.Distro>, current: String,
 
 @Composable
 private fun InstallMark(installed: Boolean) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     if (installed) Icon(Icons.Rounded.CheckCircle, null, tint = Color(0xFF3DD68C), modifier = Modifier.size(16.dp))
     else Icon(Icons.Rounded.Download, null, tint = c.sub, modifier = Modifier.size(16.dp))
 }
@@ -235,7 +235,7 @@ private fun InstallMark(installed: Boolean) {
 
 @Composable
 private fun InlinePreview(p: Act.Preview, state: ComposerState, onAct: (Act) -> Unit, height: androidx.compose.ui.unit.Dp = 360.dp) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val name = SelfMap.default.firstOrNull { it.kind == SelfMap.Kind.VIEW && it.target == p.view }?.title ?: p.view.replaceFirstChar { it.uppercase() }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -262,7 +262,7 @@ private fun InlinePreview(p: Act.Preview, state: ComposerState, onAct: (Act) -> 
 
 @Composable
 private fun PreviewButton(icon: ImageVector, desc: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.size(32.dp).clip(CircleShape).background(c.ink.copy(alpha = 0.08f)).clickable(onClick = onClick).semantics { contentDescription = desc },
         contentAlignment = Alignment.Center) { Icon(icon, null, tint = c.ink, modifier = Modifier.size(16.dp)) }
 }
@@ -287,7 +287,7 @@ private fun BrowserPreview(url: String, height: androidx.compose.ui.unit.Dp = 36
 /** The inline terminal: the newest "!" command and its output in the picked distro. */
 @Composable
 private fun TerminalPreview(state: ComposerState) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(12.dp)) {
         Text(if (state.termCmd.isBlank()) "Type ! and a command in the field above, then Go." else "${state.distro} \u203a ${state.termCmd}",
             style = TextStyle(fontFamily = Type.Mono, fontSize = 13.sp, color = c.sub))
@@ -298,8 +298,8 @@ private fun TerminalPreview(state: ComposerState) {
 
 @Composable
 private fun MediaPreview(video: Boolean, onAct: (Act) -> Unit) {
-    val c = LocalBlaze.current
-    val items by (if (video) com.blaze.assistant.mediaapps.MediaLib.videos else com.blaze.assistant.mediaapps.MediaLib.songs).collectAsState()
+    val c = LocalArgus.current
+    val items by (if (video) com.argus.assistant.mediaapps.MediaLib.videos else com.argus.assistant.mediaapps.MediaLib.songs).collectAsState()
     if (items.isEmpty()) Box(Modifier.fillMaxWidth().padding(16.dp)) {
         Text(if (video) "No videos in your library yet." else "No songs in your library yet.", style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.sub))
     } else LazyColumn(Modifier.fillMaxWidth()) {
@@ -330,7 +330,7 @@ class SpotlightActions(private val ctx: android.content.Context, private val sta
         when (a) {
             is Act.OpenView -> {
                 state.closeSpotlight()
-                com.blaze.assistant.ui.Views.open(a.view, a.target)
+                com.argus.assistant.ui.Views.open(a.view, a.target)
                 if (a.view !in activityViews) onLeaveHome()
             }
             is Act.Preview -> { state.preview = a; if (a.view == "terminal" && a.arg.isNotBlank()) runCommand(a.arg, state.distro) }
@@ -338,33 +338,33 @@ class SpotlightActions(private val ctx: android.content.Context, private val sta
                 "chat" -> state.openChat()
                 // RC4: the whole thread over Home (the old full chat screen is gone)
                 "history" -> state.openChat(full = true)
-                "new_chat" -> { state.closeSpotlight(); com.blaze.assistant.agent.Agent.clear(); state.openChat() }
-                "private" -> { state.closeSpotlight(); com.blaze.assistant.agent.Agent.enterPrivate(); state.openChat(full = true) }
-                "voice" -> { state.closeSpotlight(); com.blaze.assistant.voice.Voice.listenRequests.value = com.blaze.assistant.voice.Voice.listenRequests.value + 1 }
+                "new_chat" -> { state.closeSpotlight(); com.argus.assistant.agent.Agent.clear(); state.openChat() }
+                "private" -> { state.closeSpotlight(); com.argus.assistant.agent.Agent.enterPrivate(); state.openChat(full = true) }
+                "voice" -> { state.closeSpotlight(); com.argus.assistant.voice.Voice.listenRequests.value = com.argus.assistant.voice.Voice.listenRequests.value + 1 }
                 "attach" -> { state.closeSpotlight(); if (state.hostAction?.invoke("files") != true) onAttach() }
                 else -> { state.closeSpotlight(); state.hostAction?.invoke(a.action) }
             }
             is Act.PlaySong -> { state.closeSpotlight(); playSong(a.key) }
-            is Act.PlayVideo -> { state.closeSpotlight(); com.blaze.assistant.mediaapps.VideoActivity.openAndPlay(ctx, a.key) }
+            is Act.PlayVideo -> { state.closeSpotlight(); com.argus.assistant.mediaapps.VideoActivity.openAndPlay(ctx, a.key) }
             is Act.Browse -> state.preview = Act.Preview("browser", a.query)
-            is Act.MusicSearch -> { state.closeSpotlight(); com.blaze.assistant.mediaapps.MusicActivity.open(ctx, "search") }
-            is Act.VideoSearch -> { state.closeSpotlight(); com.blaze.assistant.mediaapps.VideoActivity.open(ctx, "search") }
-            is Act.AskBlaze -> { state.closeSpotlight(); if (a.query.isBlank()) state.openChat() else state.send(a.query) }
+            is Act.MusicSearch -> { state.closeSpotlight(); com.argus.assistant.mediaapps.MusicActivity.open(ctx, "search") }
+            is Act.VideoSearch -> { state.closeSpotlight(); com.argus.assistant.mediaapps.VideoActivity.open(ctx, "search") }
+            is Act.AskArgus -> { state.closeSpotlight(); if (a.query.isBlank()) state.openChat() else state.send(a.query) }
             is Act.RunCommand -> { state.preview = Act.Preview("terminal", a.command); runCommand(a.command, a.distro) }
             is Act.Complete -> state.query = a.text
         }
     }
 
     private fun playSong(key: String) {
-        val svc = com.blaze.assistant.mediaapps.MusicService.current
+        val svc = com.argus.assistant.mediaapps.MusicService.current
         if (svc != null) svc.playKeys(listOf(key))
-        else { com.blaze.assistant.mediaapps.MusicService.pendingPlay = listOf(key) to false; com.blaze.assistant.mediaapps.MusicActivity.open(ctx, "player") }
+        else { com.argus.assistant.mediaapps.MusicService.pendingPlay = listOf(key) to false; com.argus.assistant.mediaapps.MusicActivity.open(ctx, "player") }
     }
 
     private fun runCommand(cmd: String, distro: String) {
         state.termCmd = cmd; state.termBusy = true; state.termOut = ""
         scope.launch {
-            val out = runCatching { com.blaze.assistant.terminal.Terminal.run(cmd, 30, linux = true, distro = distro) }.getOrElse { "Error: ${it.message}" }
+            val out = runCatching { com.argus.assistant.terminal.Terminal.run(cmd, 30, linux = true, distro = distro) }.getOrElse { "Error: ${it.message}" }
             state.termOut = out.take(8_000); state.termBusy = false
         }
     }

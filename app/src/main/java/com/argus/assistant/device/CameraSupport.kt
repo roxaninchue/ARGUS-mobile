@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import android.Manifest
 import android.content.ClipData
@@ -19,7 +19,7 @@ import java.io.File
 
 /** Android side of [CameraFlow]: what this phone has, the capture intent, logging and photo clean-up. */
 object CameraSupport {
-    const val TAG = "BlazeCamera"
+    const val TAG = "ArgusCamera"
     private const val ASKED = "camera_perm_asked"
     private const val IN_APP = "camera_prefer_inapp"
     private const val GRID = "camera_grid"
@@ -40,23 +40,23 @@ object CameraSupport {
         ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
 
     var askedBefore: Boolean
-        get() = try { com.blaze.assistant.agent.Settings.bool(ASKED, false) } catch (_: Throwable) { false }
-        set(v) { try { com.blaze.assistant.agent.Settings.setBool(ASKED, v) } catch (_: Throwable) { } }
+        get() = try { com.argus.assistant.agent.Settings.bool(ASKED, false) } catch (_: Throwable) { false }
+        set(v) { try { com.argus.assistant.agent.Settings.setBool(ASKED, v) } catch (_: Throwable) { } }
 
-    /** Set after the phone's camera app failed once here: next time Blaze's own camera opens straight away. */
+    /** Set after the phone's camera app failed once here: next time Argus's own camera opens straight away. */
     var preferInApp: Boolean
-        get() = try { com.blaze.assistant.agent.Settings.bool(IN_APP, false) } catch (_: Throwable) { false }
-        set(v) { try { com.blaze.assistant.agent.Settings.setBool(IN_APP, v) } catch (_: Throwable) { } }
+        get() = try { com.argus.assistant.agent.Settings.bool(IN_APP, false) } catch (_: Throwable) { false }
+        set(v) { try { com.argus.assistant.agent.Settings.setBool(IN_APP, v) } catch (_: Throwable) { } }
 
-    /** v0.30.x Blaze Camera Pro: the rule-of-thirds grid, remembered between sessions. */
+    /** v0.30.x Argus Camera Pro: the rule-of-thirds grid, remembered between sessions. */
     var grid: Boolean
-        get() = try { com.blaze.assistant.agent.Settings.bool(GRID, false) } catch (_: Throwable) { false }
-        set(v) { try { com.blaze.assistant.agent.Settings.setBool(GRID, v) } catch (_: Throwable) { } }
+        get() = try { com.argus.assistant.agent.Settings.bool(GRID, false) } catch (_: Throwable) { false }
+        set(v) { try { com.argus.assistant.agent.Settings.setBool(GRID, v) } catch (_: Throwable) { } }
 
     /** The self-timer (0, 3 or 10 s), remembered between sessions. */
     var timer: Int
-        get() = try { CameraTimer.normalize(com.blaze.assistant.agent.Settings.str(TIMER, "0").toIntOrNull() ?: 0) } catch (_: Throwable) { 0 }
-        set(v) { try { com.blaze.assistant.agent.Settings.setStr(TIMER, CameraTimer.normalize(v).toString()) } catch (_: Throwable) { } }
+        get() = try { CameraTimer.normalize(com.argus.assistant.agent.Settings.str(TIMER, "0").toIntOrNull() ?: 0) } catch (_: Throwable) { 0 }
+        set(v) { try { com.argus.assistant.agent.Settings.setStr(TIMER, CameraTimer.normalize(v).toString()) } catch (_: Throwable) { } }
 
     /** A fresh, not-yet-created file in cache/camera (FileProvider path "camera/") and its content uri. */
     fun newPhoto(ctx: Context): Pair<File, Uri> {
@@ -78,7 +78,7 @@ object CameraSupport {
         Intent(MediaStore.ACTION_IMAGE_CAPTURE).resolveActivity(ctx.packageManager) != null
     } catch (_: Exception) { true }
 
-    /** Logcat + Blaze's own diagnostics log (Settings → Device & diagnostics → crash report). */
+    /** Logcat + Argus's own diagnostics log (Settings → Device & diagnostics → crash report). */
     fun log(what: String, e: Throwable? = null) {
         val line = "CAMERA $what" + (e?.let { " · ${it.javaClass.name}: ${it.message}" } ?: "") + " · ${device()}"
         try { if (e != null) Log.w(TAG, line, e) else Log.i(TAG, line) } catch (_: Throwable) { }

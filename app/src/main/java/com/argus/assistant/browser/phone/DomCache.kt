@@ -1,10 +1,10 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.45.19-speed: Blaze Phone's cached model of the page, kept current by the injected bridge
+ * 0.45.19-speed: Argus Phone's cached model of the page, kept current by the injected bridge
  * ([PhoneScripts.bridge]) as diffs. Reads come from here (no page round trip, no screenshot); a missed message or a new
  * document makes it unusable until a full model arrives (the engine then asks the bridge for one, or reads the DOM the
  * old way). Thread-safe: messages arrive on the main thread, the engine reads from its own coroutine.

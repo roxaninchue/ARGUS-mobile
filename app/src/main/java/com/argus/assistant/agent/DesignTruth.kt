@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.ui.DesignStatus
+import com.argus.assistant.ui.DesignStatus
 
 /**
  * v0.45.6: Design never says "Done" unless the artifact really rendered. The design tool's result carries a RENDER CHECK

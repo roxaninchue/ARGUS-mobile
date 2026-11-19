@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
-import com.blaze.assistant.composer.ModelChoice
+import com.argus.assistant.composer.ModelChoice
 import org.json.JSONArray
 
 /**
- * 0.51.0 BlazeQuery quality judging, in two passes:
+ * 0.51.0 ArgusQuery quality judging, in two passes:
  *
  *  1. [heuristic] (hot path, no model, microseconds): relevance (query terms present), authority ([SourcePolicy]),
  *     freshness (the page's date against what the intent needs) and cross-source agreement (the same versions / numbers on

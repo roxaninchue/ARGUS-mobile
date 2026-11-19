@@ -1,19 +1,19 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.28.4 blaze-docs: Blaze's knowledge about itself as an on-demand lookup, not prompt text.
+ * v0.28.4 blaze-docs: Argus's knowledge about itself as an on-demand lookup, not prompt text.
  *
  * At build time Gradle writes assets/blaze-docs/ from the repo (README, CHANGELOG split per version, STATUS, docs/, the
  * hand-written about.md with this build's version / commit / SDK levels, manifest.json; app/build.gradle.kts
- * `BlazeDocsTask`). On the first launch after an update (the manifest hash or the tool list changed) the docs are
+ * `ArgusDocsTask`). On the first launch after an update (the manifest hash or the tool list changed) the docs are
  * chunked by heading (~300–800 tokens, each with its doc, section path and version) into blaze.db: table `blaze_docs`
  * + FTS5 `blaze_docs_fts`, replaced whole in one transaction (idempotent). A tool reference generated from the real
  * tool list (name + one line, grouped like ToolRouter) is indexed as the doc `tools`, so it is always in sync.
@@ -22,9 +22,9 @@ import org.json.JSONObject
  * system prompt carries one short line and the repo URL ([PROMPT_LINE]), whatever the docs hold (PromptBudgetTest).
  *
  * Prefixed names like MindStore's side tables: schema v1 and user_version are untouched, and Desktop / the CLI simply
- * don't read these tables. Pure JVM over [Sql] (BlazeDocsTest on sqlite-jdbc); [init] is the Android glue.
+ * don't read these tables. Pure JVM over [Sql] (ArgusDocsTest on sqlite-jdbc); [init] is the Android glue.
  */
-object BlazeDocs {
+object ArgusDocs {
     const val TOOL_SEARCH = "blaze_docs_search"
     const val TOOL_READ = "blaze_docs_read"
     val toolNames = setOf(TOOL_SEARCH, TOOL_READ)
@@ -45,7 +45,7 @@ object BlazeDocs {
 
     // ---------------- secrets ----------------
 
-    /** What must never be in the docs (also scrubbed at build time). The same patterns as BlazeDocsTask. */
+    /** What must never be in the docs (also scrubbed at build time). The same patterns as ArgusDocsTask. */
     val SECRET_PATTERNS: List<Pair<Regex, String>> = listOf(
         Regex("""[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}""") to "[email]",
         Regex("""\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b|\bgithub_pat_[A-Za-z0-9_]{20,}\b""") to "[token]",
@@ -63,7 +63,7 @@ object BlazeDocs {
 
     // ---------------- chunking ----------------
 
-    fun tokens(s: String): Int = BlazeDb.tokens(s)
+    fun tokens(s: String): Int = ArgusDb.tokens(s)
 
     private data class Section(val path: List<String>, val lines: MutableList<String>)
 
@@ -170,8 +170,8 @@ object BlazeDocs {
     fun toolsHash(tools: JSONArray?): String {
         if (tools == null) return ""
         val rows = (0 until tools.length()).mapNotNull { tools.optJSONObject(it)?.optJSONObject("function") }
-            .map { BlazeDb.ToolRow(it.optString("name"), it.optString("description"), "") }
-        return BlazeDb.toolsHash(rows).take(16)
+            .map { ArgusDb.ToolRow(it.optString("name"), it.optString("description"), "") }
+        return ArgusDb.toolsHash(rows).take(16)
     }
 
     // ---------------- the store ----------------
@@ -184,7 +184,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
     class Store(private val sql: Sql, private val getMeta: (String) -> String, private val setMeta: (String, String) -> Unit) {
         private val lock = Any()
 
-        init { for (st in BlazeDb.statements(TABLES)) sql.exec(st) }
+        init { for (st in ArgusDb.statements(TABLES)) sql.exec(st) }
 
         fun signature(): String = getMeta(META_SIG)
 
@@ -204,7 +204,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
 
         /** Best chunks for [query] (bm25: section ×6, doc ×2, text ×1; the about doc is preferred), with snippets. */
         fun search(query: String, limit: Int): List<Hit> {
-            val fq = BlazeDb.ftsQuery(expand(query), 32); if (fq.isEmpty()) return emptyList()
+            val fq = ArgusDb.ftsQuery(expand(query), 32); if (fq.isEmpty()) return emptyList()
             return try {
                 sql.query("SELECT id, doc, section, snippet(blaze_docs_fts, 3, '', '', '…', 48) FROM blaze_docs_fts f WHERE blaze_docs_fts MATCH ? " +
                     "ORDER BY bm25(blaze_docs_fts, 0.0, 2.0, 6.0, 1.0) * (CASE WHEN f.id LIKE 'about#%' THEN 2.0 WHEN f.id LIKE 'tools#%' THEN 1.2 ELSE 1.0 END) LIMIT ?",
@@ -279,7 +279,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
     )
 
     /** The exact repo URLs, put on top of any repo / source-code search (the fact that was guessed wrong before). */
-    const val REPOS_LINE = "Blaze repos (exact): Android (this app) $REPO_URL · Desktop https://gitlab.com/blazeinchue/Blaze-dekstop · CLI https://gitlab.com/blazeinchue/Blaze-cli"
+    const val REPOS_LINE = "Argus repos (exact): Android (this app) $REPO_URL · Desktop https://gitlab.com/blazeinchue/Blaze-dekstop · CLI https://gitlab.com/blazeinchue/Blaze-cli"
 
     fun formatHits(q: String, hits: List<Hit>): String =
         (if (repoRe.containsMatchIn(q.lowercase())) "$REPOS_LINE\n" else "") +
@@ -300,8 +300,8 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
         }
     }
 
-    /** "where is your repo", "what version are you", "how do I … in Blaze": a question about Blaze itself (a per-turn hint). */
-    fun isAboutBlaze(text: String): Boolean {
+    /** "where is your repo", "what version are you", "how do I … in Argus": a question about Argus itself (a per-turn hint). */
+    fun isAboutArgus(text: String): Boolean {
         val l = text.lowercase()
         if (Regex("\\b(?:argus|blaze)\\b").containsMatchIn(l) && Regex("\\b(repo|repository|github|source|version|changelog|update|release|setting|settings|feature|features|built|language|stack|how do i|how to|where)\\b").containsMatchIn(l)) return true
         return Regex("\\b(your (repo|repository|source code|code|github|version|changelog|settings?)|what version are you|are you open source|who (made|built|created) you|what (language|stack) are you)\\b").containsMatchIn(l)
@@ -358,7 +358,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
         (Mind.db() as? MindStore)?.let { m -> return Store(m.sql, { m.blaze.meta(it) }, { k, v -> m.blaze.setMeta(k, v) }) }
         // blaze.db isn't the memory store right now (still copying, or it couldn't open): keep the docs in memory this run.
         val mem = HashMap<String, String>()
-        return Store(Mind.openBlaze(java.io.File(":memory:")), { mem[it].orEmpty() }, { k, v -> mem[k] = v })
+        return Store(Mind.openArgus(java.io.File(":memory:")), { mem[it].orEmpty() }, { k, v -> mem[k] = v })
     }
 
     fun search(args: JSONObject): String = run(store, TOOL_SEARCH, args)

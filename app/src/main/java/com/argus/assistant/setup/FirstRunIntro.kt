@@ -1,6 +1,6 @@
-package com.blaze.assistant.setup
+package com.argus.assistant.setup
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 

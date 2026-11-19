@@ -1,4 +1,4 @@
-package com.blaze.assistant.media
+package com.argus.assistant.media
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -8,18 +8,18 @@ import java.util.Locale
 /**
  * v0.30.0 Gallery: the pure part (no Android), unit tested in GalleryModelTest.
  *
- * One [Entry] per thing the Gallery shows, whether Blaze made it (filesDir/gallery, id "file:<path>") or it sits in
- * shared storage (MediaStore, id = its content:// uri): songs and videos Blaze downloaded to Music/Blaze and
+ * One [Entry] per thing the Gallery shows, whether Argus made it (filesDir/gallery, id "file:<path>") or it sits in
+ * shared storage (MediaStore, id = its content:// uri): songs and videos Argus downloaded to Music/Blaze and
  * Movies/Blaze (or any "Blaze" folder), Download/Blaze, and, when the phone allows it, Screenshots and Camera.
  */
 object GalleryModel {
     /** Where an entry came from. Drives the automatic albums. */
     object Src {
-        const val BLAZE = "blaze"            // made by Blaze (generated images, beats, terminal output)
-        const val MUSIC = "music"            // Music/Blaze, Blaze/Music: songs Blaze downloaded
-        const val VIDEOS = "videos"          // Movies/Blaze, Blaze/Videos: videos Blaze downloaded
+        const val BLAZE = "blaze"            // made by Argus (generated images, beats, terminal output)
+        const val MUSIC = "music"            // Music/Blaze, Argus/Music: songs Argus downloaded
+        const val VIDEOS = "videos"          // Movies/Blaze, Argus/Videos: videos Argus downloaded
         const val DOWNLOADS = "downloads"    // Download/Blaze
-        const val PICTURES = "pictures"      // Pictures/Blaze (saved copies, Blaze Camera)
+        const val PICTURES = "pictures"      // Pictures/Blaze (saved copies, Argus Camera)
         const val SCREENSHOTS = "screenshots"
         const val CAMERA = "camera"
         const val OTHER = "other"
@@ -28,7 +28,7 @@ object GalleryModel {
     data class Entry(
         val id: String,          // "file:/abs/path" or "content://media/…"
         val name: String,        // display name with extension
-        val title: String,       // what the tile says (Blaze's prompt title, or the name without extension)
+        val title: String,       // what the tile says (Argus's prompt title, or the name without extension)
         val kind: String,        // image | audio | video
         val src: String,         // one of [Src]
         val time: Long,          // ms since epoch (modified / added)
@@ -36,7 +36,7 @@ object GalleryModel {
         val durationMs: Long = 0,
         val width: Int = 0,
         val height: Int = 0,
-        val folder: String = "", // relative path ("Music/Blaze/") or "Blaze gallery"
+        val folder: String = "", // relative path ("Music/Blaze/") or "Argus gallery"
     ) {
         val isFile get() = id.startsWith("file:")
         val path get() = if (isFile) id.removePrefix("file:") else ""
@@ -113,7 +113,7 @@ object GalleryModel {
 
     /**
      * Automatic albums, in a fixed order, only when they have something (Screenshots and Camera only appear once the
-     * phone lets Blaze read them). Music holds songs Blaze downloaded and beats it made; Videos the same for video.
+     * phone lets Argus read them). Music holds songs Argus downloaded and beats it made; Videos the same for video.
      */
     fun autoAlbums(list: List<Entry>): List<AutoAlbum> {
         val newest = list.sortedByDescending { it.time }
@@ -129,13 +129,13 @@ object GalleryModel {
     }
 
     /**
-     * Blaze's own copy and the copy it saved to the phone (Save → Pictures/Blaze) are the same picture: keep the
-     * Blaze one. Two entries match when name and size match.
+     * Argus's own copy and the copy it saved to the phone (Save → Pictures/Blaze) are the same picture: keep the
+     * Argus one. Two entries match when name and size match.
      */
-    fun merge(blaze: List<Entry>, phone: List<Entry>): List<Entry> {
+    fun merge(argus: List<Entry>, phone: List<Entry>): List<Entry> {
         val mine = blaze.map { it.name.lowercase(Locale.ROOT) to it.size }.toSet()
         val seen = HashSet<String>()
-        return (blaze + phone.filter { (it.name.lowercase(Locale.ROOT) to it.size) !in mine }).filter { seen.add(it.id) }
+        return (argus + phone.filter { (it.name.lowercase(Locale.ROOT) to it.size) !in mine }).filter { seen.add(it.id) }
     }
 
     // ---------------------------------------------------------------- timeline
@@ -218,7 +218,7 @@ object GalleryModel {
 
 /**
  * Albums the user makes. A plain JSON file (filesDir/gallery_albums.json); items are Gallery [GalleryModel.Entry] ids,
- * so a song in Music/Blaze and a picture Blaze drew can sit in one album. Not thread safe: the UI calls it on main.
+ * so a song in Music/Blaze and a picture Argus drew can sit in one album. Not thread safe: the UI calls it on main.
  */
 class AlbumStore(private val file: File?) {
     data class Album(val id: String, val name: String, val items: List<String>, val created: Long)

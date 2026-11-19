@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.Mind
+import com.argus.assistant.agent.Mind
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min

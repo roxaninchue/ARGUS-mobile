@@ -1,6 +1,6 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
-import com.blaze.assistant.agent.FixCards
+import com.argus.assistant.agent.FixCards
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -14,7 +14,7 @@ class StorageAccessTest {
         assertTrue(StorageAccess.touchesShared("/storage/emulated/0/Download/Andronix"))
         assertFalse(StorageAccess.touchesShared("ls -la ~/projects"))
         assertFalse(StorageAccess.touchesShared("find . -name '*.kt'"))
-        assertFalse(StorageAccess.touchesShared("/data/user/0/com.blaze.assistant/files/home"))
+        assertFalse(StorageAccess.touchesShared("/data/user/0/com.argus.assistant/files/home"))
     }
 
     @Test fun noteOnlyWhenAccessIsOff() {

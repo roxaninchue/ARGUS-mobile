@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import android.content.Context
 import android.webkit.WebResourceResponse

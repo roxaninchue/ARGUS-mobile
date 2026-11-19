@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,8 +31,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.browser.SecureInput
-import com.blaze.assistant.browser.Vault
+import com.argus.assistant.browser.SecureInput
+import com.argus.assistant.browser.Vault
 
 /**
  * Settings › Saved logins (v0.20.0): what the secure form saved, per site. Values are shown masked,
@@ -40,7 +40,7 @@ import com.blaze.assistant.browser.Vault
  */
 @Composable
 fun SavedLoginsPage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var tick by remember { mutableIntStateOf(0) }
     val sites = remember(tick) { Vault.sites().filter { it.second.isNotEmpty() }.sortedBy { it.first } }
     var editing by remember { mutableStateOf<Pair<String, String>?>(null) }

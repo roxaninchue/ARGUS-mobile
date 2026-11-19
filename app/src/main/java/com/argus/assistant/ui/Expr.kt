@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * v0.26.1 mini tools: a tiny, safe arithmetic evaluator for the formulas in a ```tool block (ExprTest).

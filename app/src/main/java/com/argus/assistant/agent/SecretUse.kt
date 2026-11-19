@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -104,7 +104,7 @@ object SecretUse {
 
     fun channelOf(tool: String): Channel = when (tool) {
         "http_request", "fetch_page", "download_file" -> Channel.HTTP
-        "run_shell", "run_code", "termux_run", com.blaze.assistant.terminal.Git.NAME -> Channel.TERMINAL
+        "run_shell", "run_code", "termux_run", com.argus.assistant.terminal.Git.NAME -> Channel.TERMINAL
         else -> if (tool.startsWith("browser_")) Channel.BROWSER else Channel.NONE
     }
 
@@ -172,7 +172,7 @@ object SecretUse {
     }
 
     /**
-     * For Blaze's browser: the value of `{{secret:name}}` / `{{secret:name.field}}` when [host] is one the secret was saved
+     * For Argus's browser: the value of `{{secret:name}}` / `{{secret:name.field}}` when [host] is one the secret was saved
      * for (cards included: that is how a card reaches its payment page). Null when unknown or not allowed.
      */
     fun forBrowser(name: String, host: String): String? {

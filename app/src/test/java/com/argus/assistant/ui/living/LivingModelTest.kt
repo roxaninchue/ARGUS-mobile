@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
-import com.blaze.assistant.agent.ToolTrail
-import com.blaze.assistant.ui.living.LivingModel.Kind
-import com.blaze.assistant.ui.living.LivingModel.Msg
-import com.blaze.assistant.ui.living.LivingModel.Role
-import com.blaze.assistant.ui.living.LivingModel.State
+import com.argus.assistant.agent.ToolTrail
+import com.argus.assistant.ui.living.LivingModel.Kind
+import com.argus.assistant.ui.living.LivingModel.Msg
+import com.argus.assistant.ui.living.LivingModel.Role
+import com.argus.assistant.ui.living.LivingModel.State
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

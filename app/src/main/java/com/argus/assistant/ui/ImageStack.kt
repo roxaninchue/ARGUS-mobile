@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -137,7 +137,7 @@ object FlipMath {
 @Composable
 fun ImageStackFrame(bitmaps: List<ImageBitmap?>, top: Int, progress: Float, size: Dp = 220.dp, modifier: Modifier = Modifier,
                     onTap: (() -> Unit)? = null, onExpand: (() -> Unit)? = null, dragModifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val n = bitmaps.size
     val widthPx = with(LocalDensity.current) { size.toPx() }
     val shape = RoundedCornerShape(20.dp)

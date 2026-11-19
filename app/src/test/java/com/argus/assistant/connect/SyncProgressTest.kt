@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

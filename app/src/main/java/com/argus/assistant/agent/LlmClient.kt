@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.isActive
@@ -117,14 +117,14 @@ object LlmClient {
 
     /**
      * v0.25.0: one path for every lane (chat, the assist panel, Magic Hand, background, vision, code, agent):
-     * the Blaze gateway with a task hint. Network trouble, busy models and model-gone / refused-model errors are
+     * the Argus gateway with a task hint. Network trouble, busy models and model-gone / refused-model errors are
      * retried quietly with backoff (the gateway re-routes to its task lineup); a request that outgrew the model
      * is trimmed once. The user's old provider / model / key prefs are ignored (kept on disk, never used or sent).
      */
     private suspend fun completeRaw(messages: JSONArray, tools: JSONArray?, onText: ((String) -> Unit)?,
                          onThink: ((String) -> Unit)?, lane: Lane): JSONObject {
         val token = Settings.gatewayToken()
-        // Brains (BrainRace.order): the gateway's Nous reserve and Blaze Cloud. Owner 16 Nov 2026: the on-device backup brain
+        // Brains (BrainRace.order): the gateway's Nous reserve and Argus Cloud. Owner 16 Nov 2026: the on-device backup brain
         // was removed, so signed out there is nothing to ask.
         if (token.isBlank()) throw LlmException(Cloud.SIGNED_OUT, 401)
         val t = Target(Providers.GATEWAY, Providers.GATEWAY_BASE, token, Cloud.MODEL)
@@ -143,7 +143,7 @@ object LlmClient {
             }, served = { lastServedKey },
                 trim = { e -> lastCloudError = e.message.orEmpty().take(300); CallState.current().errors.add(lastCloudError); if (!trimmed && tooLarge(e)) { trimmed = true; msgs = shrink(msgs); true } else false },
                 onEmpty = { n -> lastCloudError = "empty reply #$n from ${lastServedBy.ifBlank { "the gateway" }}"; CallState.current().errors.add(lastCloudError)
-                    try { com.blaze.assistant.device.CrashLog.write("${BrandName.NAME} Cloud: $lastCloudError (reasoning only / no content)") } catch (_: Throwable) { } })
+                    try { com.argus.assistant.device.CrashLog.write("${BrandName.NAME} Cloud: $lastCloudError (reasoning only / no content)") } catch (_: Throwable) { } })
         }
         val coding = BrainOrder.coding(msgs)
         // A3: once the gateway Worker looks killed (Cloudflare 1102, CPU limit), later gateway calls go slim, after a short pause.
@@ -181,7 +181,7 @@ object LlmClient {
                     val v = withContext(st.element()) { when (a.step) {
                         // Nous (the gateway's reserve, free models only)
                         BackupRoute.Step.RESERVE -> viaGatewayWith(BackupRoute.reserveHeader(BackupRoute.Step.RESERVE), gText, gThink).also { lastRoute = "Nous reserve" }
-                        // Blaze Cloud; its own reserve is asked separately, so the gateway skips it
+                        // Argus Cloud; its own reserve is asked separately, so the gateway skips it
                         // 0.46.5: inside the race a busy / CPU-killed / 5xx Cloud fails at once (no backoff tries) so the race moves on
                         BackupRoute.Step.CLOUD -> withContext(Cloud.FastFail) { viaGatewayWith("skip", gText, gThink) }
                     } }
@@ -197,7 +197,7 @@ object LlmClient {
                     if (e is HedgeRace.TooSlow && onText != null) BrainLedger.app.ttft(step, BrainRace.limits(kind).firstMs)
                     if (step == BackupRoute.Step.CLOUD) cloudErr = e
                     parent.errors.add(step.name.lowercase() + ": " + e.message.orEmpty().take(200))
-                    if (step == BackupRoute.Step.CLOUD && (e as? LlmException)?.code != 401) try { com.blaze.assistant.device.CrashLog.write("${BrandName.NAME} Cloud failed: ${lastCloudError.ifBlank { e.message.orEmpty() }}") } catch (_: Throwable) { }
+                    if (step == BackupRoute.Step.CLOUD && (e as? LlmException)?.code != 401) try { com.argus.assistant.device.CrashLog.write("${BrandName.NAME} Cloud failed: ${lastCloudError.ifBlank { e.message.orEmpty() }}") } catch (_: Throwable) { }
                 },
                 // a brain that lost the race without a word is at least that slow (the chat router learns the faster one)
                 onLose = { step, ms -> if (onText != null) BrainLedger.app.ttft(step, ms) },
@@ -210,7 +210,7 @@ object LlmClient {
                 retryMs = BrainRace.RETRY_MS,
                 parallel = BrainRace.parallel(tools?.length() ?: 0))
         } catch (e: LlmException) {
-            try { com.blaze.assistant.device.CrashLog.write("All brains failed (${e.code}): ${e.message.orEmpty().take(200)}") } catch (_: Throwable) { }
+            try { com.argus.assistant.device.CrashLog.write("All brains failed (${e.code}): ${e.message.orEmpty().take(200)}") } catch (_: Throwable) { }
             throw e
         } finally { BrainLedger.save() }
         out.value.second.publish()
@@ -235,7 +235,7 @@ object LlmClient {
     /** 0.46.3: told when another brain took over a call ("Switched to backup"); the agent shows it as a quiet status. */
     @Volatile var switchListener: ((String) -> Unit)? = null
 
-    /** Thrown inside [watchFirstChunk] when Blaze Cloud showed no sign of life in time (the backup takes over). */
+    /** Thrown inside [watchFirstChunk] when Argus Cloud showed no sign of life in time (the backup takes over). */
     class TooSlow(ms: Long) : LlmException("${BrandName.NAME} Cloud too slow (no first chunk in ${ms / 1000}s)", 0)
 
     // 0.46.4: watchFirstChunk (never called in 0.46.3, so no gateway call had a first-token cap) is replaced by HedgeRace.
@@ -314,7 +314,7 @@ object LlmClient {
      */
     fun prewarm() {
         // v0.45.9: build the [context] block in the background too (cached ~60 s), so the send path never waits for it.
-        try { TurnContextSource.warm() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("prewarm context", e) }
+        try { TurnContextSource.warm() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("prewarm context", e) }
         // v0.45.5 (#5/5b): signed in, POST /v1/warm (gateway 0.6.9) at most every 25 s: it pre-opens TLS on the shared
         // keep-alive pool and loads config + token into the edge isolate. Fire and forget.
         val tok = try { Settings.gatewayToken() } catch (_: Throwable) { "" }
@@ -322,13 +322,13 @@ object LlmClient {
             if (!WarmGate.take()) return
             Thread {
                 try {
-                    val c = com.blaze.assistant.connect.UrlSafety.open(WarmGate.url(Providers.GATEWAY_BASE))
+                    val c = com.argus.assistant.connect.UrlSafety.open(WarmGate.url(Providers.GATEWAY_BASE))
                     c.requestMethod = "POST"; c.connectTimeout = 5000; c.readTimeout = 5000; c.doOutput = true
                     c.setRequestProperty("Authorization", "Bearer $tok"); c.setRequestProperty("Content-Type", "application/json")
                     c.outputStream.use { it.write("{}".toByteArray()) }
                     val code = c.responseCode
                     val b = (if (code in 200..299) c.inputStream else c.errorStream)?.use { it.readBytes() }
-                    com.blaze.assistant.connect.AccountGate.report(code, b?.let { String(it) })   // account lock: a refused session
+                    com.argus.assistant.connect.AccountGate.report(code, b?.let { String(it) })   // account lock: a refused session
                 } catch (_: Exception) { }
             }.start()
             return
@@ -343,7 +343,7 @@ object LlmClient {
             warmed[host] = now
             Thread {
                 try {
-                    val c = com.blaze.assistant.connect.UrlSafety.open(b)
+                    val c = com.argus.assistant.connect.UrlSafety.open(b)
                     c.requestMethod = "HEAD"; c.connectTimeout = 5000; c.readTimeout = 5000
                     // v0.45.1: whatever the status, the (empty) body is closed so the connection goes back to the pool
                     // for the real request instead of being dropped with an unread error stream.
@@ -370,8 +370,8 @@ object LlmClient {
         if (owner != null && owner != t.pid && t.pid != Providers.CUSTOM && t.pid != Providers.keyless.id)
             throw LlmException("The key saved under ${Providers.byId(t.pid).name} is actually a ${Providers.byId(owner).name} key. Switch Settings to Advanced and paste the right key for each service on the AI page.", 401)
         // v0.28.2: http:// only to this phone, the LAN or Tailscale; never keys or chats in the clear over the internet.
-        com.blaze.assistant.connect.UrlSafety.problem(base)?.let { throw LlmException(it, 0) }
-        val conn = com.blaze.assistant.connect.UrlSafety.open("$base/chat/completions")
+        com.argus.assistant.connect.UrlSafety.problem(base)?.let { throw LlmException(it, 0) }
+        val conn = com.argus.assistant.connect.UrlSafety.open("$base/chat/completions")
         conn.requestMethod = "POST"
         // A free-chain call (timeoutMs < 120 s) gives up quickly so the next model gets a turn.
         val chained = timeoutMs < 120_000
@@ -397,7 +397,7 @@ object LlmClient {
             heavyTurn, tools != null && tools.length() > 0, avoid)?.let { conn.setRequestProperty(TurnModel.PREFER_HEADER, TurnModel.safe(it)) } }
         // v0.45.8 (Site): the reply-language picker as a header (BCP-47); none for Auto.
         if (t.pid == Providers.GATEWAY) ReplyLanguage.header(ReplyLanguage.current())?.let { (k, v) -> conn.setRequestProperty(k, v) }
-        // v0.45.26: where the gateway's Nous reserve goes (BackupRoute): "skip" on Blaze Cloud (the reserve is asked on its own), "only" for the reserve.
+        // v0.45.26: where the gateway's Nous reserve goes (BackupRoute): "skip" on Argus Cloud (the reserve is asked on its own), "only" for the reserve.
         if (t.pid == Providers.GATEWAY && reserve.isNotBlank()) conn.setRequestProperty("X-Blaze-Reserve", reserve)
 
         val body = JSONObject().apply {
@@ -420,8 +420,8 @@ object LlmClient {
             if (t.pid == Providers.GATEWAY) Cloud.tag(this, task ?: Cloud.task(messages, tools, liteTurn))
             // 0.47 chat composer: the model family picked on the composer's chip (Auto sends nothing). Read-only hint; the brain
             // order (Nous / gateway) is unchanged and the gateway strips every blaze_* field before a provider.
-            // 0.51.0: a call can carry its own family (BlazeQuery's judge uses the tier the user picked, Auto → Flare).
-            if (t.pid == Providers.GATEWAY) (CallState.current().family?.let { it.ifBlank { null } } ?: com.blaze.assistant.composer.ModelChoice.wire())?.let { put("blaze_family", it) }
+            // 0.51.0: a call can carry its own family (ArgusQuery's judge uses the tier the user picked, Auto → Flare).
+            if (t.pid == Providers.GATEWAY) (CallState.current().family?.let { it.ifBlank { null } } ?: com.argus.assistant.composer.ModelChoice.wire())?.let { put("blaze_family", it) }
             // v0.45.3: a hint for short / plain turns that the first visible word matters more than long reasoning. The
             // gateway strips every blaze_* field before a provider sees it, so this is safe today; a gateway that reads it can
             // map it to each provider's own setting (e.g. reasoning_effort "low" for gpt-oss). Not sent on action turns.
@@ -499,7 +499,7 @@ object LlmClient {
         conn.disconnect()
 
         if (code !in 200..299) {
-            com.blaze.assistant.connect.AccountGate.report(code, text)   // account lock: any 401, or 403 account_locked
+            com.argus.assistant.connect.AccountGate.report(code, text)   // account lock: any 401, or 403 account_locked
             val msg = try {
                 val o = if (text.trimStart().startsWith("[")) JSONArray(text).getJSONObject(0) else JSONObject(text)
                 val e = o.opt("error")

@@ -1,12 +1,12 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Specialists: focused sub-agents Blaze can hand a piece of work to. Each has its own prompt and
+ * Specialists: focused sub-agents Argus can hand a piece of work to. Each has its own prompt and
  * only the tools it needs, so it stays on task, uses fewer tokens, and several can run at once.
  */
 object Specialists {
@@ -16,7 +16,7 @@ object Specialists {
      * [madeBy] = "user" (Settings) or "blaze" (create_specialist). Both are optional in the saved JSON.
      */
     /**
-     * P1-TM-01: a Spec is also a persistent bot definition (team/Bot.kt [com.blaze.assistant.team.BotRules.workerTemplate]):
+     * P1-TM-01: a Spec is also a persistent bot definition (team/Bot.kt [com.argus.assistant.team.BotRules.workerTemplate]):
      * [soul] (its SOUL.md body; blank = [prompt]), [avatar] (orb shape), [colour] (#RRGGBB), [memoryScope] (the scope it
      * owns, 05 §8), [workspace] (its folder), [voice] (voice id), [managedBy] (bot id it reports to; blank = the Manager)
      * and [modelPref] (pinned model; blank = Auto). All optional: blank means the default, and old saved JSON loads as before.
@@ -25,7 +25,7 @@ object Specialists {
                     val skills: List<String> = emptyList(), val playbook: String = "", val madeBy: String = "",
                     val soul: String = "", val avatar: String = "", val colour: String = "", val memoryScope: String = "",
                     val workspace: String = "", val voice: String = "", val managedBy: String = "", val modelPref: String = "") {
-        val byBlaze: Boolean get() = madeBy == BLAZE
+        val byArgus: Boolean get() = madeBy == BLAZE
     }
 
     const val BLAZE = "blaze"
@@ -95,7 +95,7 @@ object Specialists {
     data class Made(val ok: Boolean, val spec: Spec?, val message: String)
 
     /**
-     * Checks and builds a specialist Blaze wants to create. The playbook must pass [Playbooks.validate] (against
+     * Checks and builds a specialist Argus wants to create. The playbook must pass [Playbooks.validate] (against
      * the field = name + prompt, and every other playbook so it isn't a copy); on failure the model is told exactly
      * what to fix, up to [Playbooks.MAX_TRIES] tries ([attempt] is 1-based). Ids of built-ins and of the user's
      * own specialists are never overwritten; a Blaze-made one with the same id is updated. Pure.
@@ -111,7 +111,7 @@ object Specialists {
         if (id.isEmpty()) return no("Give it an id (short-kebab-name).")
         if (builtIn.any { it.id == id || it.name.equals(name, true) }) return no("$id is a built-in specialist; use it with delegate instead of creating one.")
         val clash = existing.firstOrNull { it.id == id || it.name.equals(name, true) }
-        if (clash != null && clash.custom && !clash.byBlaze) return no("The user already has a specialist \"${clash.name}\"; use it with delegate, or pick another name and id.")
+        if (clash != null && clash.custom && !clash.byArgus) return no("The user already has a specialist \"${clash.name}\"; use it with delegate, or pick another name and id.")
         if (prompt.length < 40) return no("The prompt is too short (${prompt.length} characters): say in two or three sentences what it does, how, and what it returns.")
         Playbooks.secrets(prompt).takeIf { it.isNotEmpty() }?.let { return no("The prompt contains what looks like ${it.joinToString(" and ")}; remove it.") }
         val wanted = groups0.map { it.trim().lowercase() }.filter { it.isNotEmpty() }.distinct()
@@ -151,12 +151,12 @@ object Specialists {
         tool == "flashcards" -> "study"
         tool == Designs.TOOL -> "design"
         tool in phone -> "phone"
-        tool in com.blaze.assistant.phone.Skills.names -> "comms"
+        tool in com.argus.assistant.phone.Skills.names -> "comms"
         tool.startsWith("mcp_") || tool.startsWith("gmail") || tool.startsWith("gcal") || tool.startsWith("drive") || tool.startsWith("gcontacts")
             || tool.startsWith("github") || tool.startsWith("spotify") || tool.startsWith("notion") || tool.startsWith("slack") || tool == "share_to_app" -> "connectors"
         tool in setOf("remember", "forget", "recall_memory", "search_past_chats", "search_screen_memory") -> "memory"
         tool.endsWith("_routine") || tool == "list_routines" || tool.endsWith("_trigger") || tool == "list_triggers" -> "routines"
-        tool.startsWith("terminal") || tool == "run_shell" || tool == "git" || tool in com.blaze.assistant.terminal.DevTools.names -> "terminal"
+        tool.startsWith("terminal") || tool == "run_shell" || tool == "git" || tool in com.argus.assistant.terminal.DevTools.names -> "terminal"
         tool == "device_status" -> "device"
         tool.contains("notification") -> "notifications"
         else -> "other"

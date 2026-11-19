@@ -1,7 +1,7 @@
-package com.blaze.assistant.store
+package com.argus.assistant.store
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -17,7 +17,7 @@ import java.nio.file.Files
  * blaze.db on the JVM (sqlite-jdbc): the schema is Blaze Desktop's internal/store v1 byte for byte, and the Go
  * store tests (store_test.go, shared_test.go) hold for the Kotlin port.
  */
-class BlazeDbTest {
+class ArgusDbTest {
     private lateinit var dir: File
     private val open = ArrayList<Sql>()
 
@@ -25,7 +25,7 @@ class BlazeDbTest {
     @After fun tearDown() { open.forEach { try { it.close() } catch (_: Exception) { } }; dir.deleteRecursively() }
 
     private fun sql(name: String = "blaze.db"): JdbcSql = JdbcSql("jdbc:sqlite:" + File(dir, name).path).also { open += it }
-    private fun db(name: String = "blaze.db") = BlazeDb(sql(name))
+    private fun db(name: String = "blaze.db") = ArgusDb(sql(name))
 
     /** The v1 script exactly as it is in Blaze-dekstop internal/store/store.go (copied into test resources). */
     private val desktopV1: String = javaClass.getResource("/desktop/store_v1.sql")!!.readText()
@@ -36,8 +36,8 @@ class BlazeDbTest {
         }
 
     @Test fun migrationTextIsDesktopsVerbatim() {
-        assertEquals(1, BlazeDb.MIGRATIONS.size)
-        assertEquals(desktopV1, BlazeDb.MIGRATIONS[0])
+        assertEquals(1, ArgusDb.MIGRATIONS.size)
+        assertEquals(desktopV1, ArgusDb.MIGRATIONS[0])
     }
 
     @Test fun schemaMatchesDesktop() {
@@ -45,7 +45,7 @@ class BlazeDbTest {
         val go = sql("go.db")
         (go as JdbcSql).conn.createStatement().use { it.executeUpdate(desktopV1) }
         go.exec("PRAGMA user_version = 1")
-        val kt = sql("kt.db"); BlazeDb(kt)
+        val kt = sql("kt.db"); ArgusDb(kt)
         val want = master(go); val got = master(kt)
         assertTrue("Desktop's script created nothing", want.size >= 14)
         assertEquals(want, got)
@@ -54,7 +54,7 @@ class BlazeDbTest {
             assertTrue(t, got.any { it.split('|')[1] == t })
         listOf("memories_ai", "memories_ad", "memories_au", "memories_norm").forEach { n -> assertTrue(n, got.any { it.split('|')[1] == n }) }
         // A file Desktop made opens here without a migration, and the other way round.
-        BlazeDb(go)
+        ArgusDb(go)
         assertEquals(1L, go.query("PRAGMA user_version") { it.long(0) }.first())
         assertEquals(want, master(go))
     }
@@ -72,7 +72,7 @@ class BlazeDbTest {
         val f = File(dir, "new.db")
         JdbcSql("jdbc:sqlite:" + f.path).apply { exec("CREATE TABLE future(x)"); exec("PRAGMA user_version = 7"); close() }
         val before = f.readBytes()
-        try { BlazeDb(sql("new.db")); fail("a newer schema must be refused") } catch (e: BlazeDb.NewerSchema) {
+        try { ArgusDb(sql("new.db")); fail("a newer schema must be refused") } catch (e: ArgusDb.NewerSchema) {
             assertTrue(e.message!!, e.message!!.contains("newer version of ${BrandName.NAME}"))
             assertTrue(e.message!!, e.message!!.contains("v7"))
         }
@@ -86,24 +86,24 @@ class BlazeDbTest {
     }
 
     @Test fun normAndQueryLikeGo() {
-        assertEquals("uses pnpm not npm", BlazeDb.norm("  Uses PNPM, not   npm. "))
-        assertEquals("café 2026 ndola", BlazeDb.norm("Café—2026 (Ndola)!"))
+        assertEquals("uses pnpm not npm", ArgusDb.norm("  Uses PNPM, not   npm. "))
+        assertEquals("café 2026 ndola", ArgusDb.norm("Café—2026 (Ndola)!"))
         // Newest words first, stopwords and 1-byte words out, duplicates once, every term quoted.
-        assertEquals("\"theme\" OR \"homeglow\" OR \"deploy\"", BlazeDb.ftsQuery("how do I deploy the homeglow theme?", 32))
-        assertEquals("", BlazeDb.ftsQuery("the and of a", 32))
-        assertEquals(2, BlazeDb.tokens("abcdefg"))
-        assertEquals(1.0, BlazeDb.similar("a b c", "c b a"), 1e-9)
+        assertEquals("\"theme\" OR \"homeglow\" OR \"deploy\"", ArgusDb.ftsQuery("how do I deploy the homeglow theme?", 32))
+        assertEquals("", ArgusDb.ftsQuery("the and of a", 32))
+        assertEquals(2, ArgusDb.tokens("abcdefg"))
+        assertEquals(1.0, ArgusDb.similar("a b c", "c b a"), 1e-9)
         // Go: sha1 of name NUL desc NUL group SOH, sorted by name.
-        assertEquals("7d68cb19a6d6933b7e73345bcee46930226a97e2", BlazeDb.toolsHash(listOf(BlazeDb.ToolRow("a", "b", "c"))))
-        assertEquals(BlazeDb.toolsHash(listOf(BlazeDb.ToolRow("b", "", ""), BlazeDb.ToolRow("a", "", ""))),
-            BlazeDb.toolsHash(listOf(BlazeDb.ToolRow("a", "", ""), BlazeDb.ToolRow("b", "", ""))))
+        assertEquals("7d68cb19a6d6933b7e73345bcee46930226a97e2", ArgusDb.toolsHash(listOf(ArgusDb.ToolRow("a", "b", "c"))))
+        assertEquals(ArgusDb.toolsHash(listOf(ArgusDb.ToolRow("b", "", ""), ArgusDb.ToolRow("a", "", ""))),
+            ArgusDb.toolsHash(listOf(ArgusDb.ToolRow("a", "", ""), ArgusDb.ToolRow("b", "", ""))))
     }
 
     @Test fun searchRanking() {
         val d = db()
         for (f in listOf("Uses pnpm, not npm", "HomeGlow deploys with shopify theme push", "HomeGlow tests run with pnpm test",
             "Prefers short answers without emoji", "Lives in Lusaka, Zambia", "Shopify store HomeGlow sells home lighting"))
-            assertEquals(f, BlazeDb.ADDED, d.add(f).second)
+            assertEquals(f, ArgusDb.ADDED, d.add(f).second)
         val r = d.search("how do I deploy the homeglow theme?", 3)
         assertEquals("porter: deploy ~ deploys, bm25 best first", "HomeGlow deploys with shopify theme push", r.first().text)
         assertEquals(1, d.search("emoji", 5).size)
@@ -113,13 +113,13 @@ class BlazeDbTest {
 
     @Test fun dedupeAndForget() {
         val d = db()
-        val (id, st) = d.add("Uses pnpm, not npm"); assertEquals(BlazeDb.ADDED, st)
-        assertEquals(id to BlazeDb.EXISTS, d.add("  uses PNPM not npm. "))
+        val (id, st) = d.add("Uses pnpm, not npm"); assertEquals(ArgusDb.ADDED, st)
+        assertEquals(id to ArgusDb.EXISTS, d.add("  uses PNPM not npm. "))
         d.add("Favourite editor is Neovim with LazyVim config")
         val (id3, st3) = d.add("Favourite editor is Neovim with the LazyVim config")
-        assertEquals(BlazeDb.UPDATED, st3)
+        assertEquals(ArgusDb.UPDATED, st3)
         assertTrue(d.memory(id3)!!.text.contains("the LazyVim"))
-        assertEquals(BlazeDb.ADDED, d.add("Favourite drink is coffee").second)
+        assertEquals(ArgusDb.ADDED, d.add("Favourite drink is coffee").second)
         assertEquals(3, d.countMemories())
         assertEquals(2, d.forgetMatching("favourite").size)
         assertTrue(d.delete(id)); assertEquals(0, d.countMemories())
@@ -135,20 +135,20 @@ class BlazeDbTest {
         val got = d.forPrompt("deploy homeglow", 8, 600)
         assertEquals(pid, got[0].id)
         assertEquals("HomeGlow deploys with shopify theme push", got[1].text)
-        assertTrue(got.sumOf { BlazeDb.tokens(it.text) + 2 } <= 600)
+        assertTrue(got.sumOf { ArgusDb.tokens(it.text) + 2 } <= 600)
         assertTrue("picked rows are touched", d.memory(pid)!!.uses >= 1)
     }
 
     @Test fun skillsAndToolsIndex() {
         val d = db()
-        d.replaceSkills(listOf(BlazeDb.Skill("deploy-shopify", "Push a Shopify theme", "/s/a/SKILL.md", "steps"),
-            BlazeDb.Skill("write-email", "Draft an email in the user's voice", "/s/b/SKILL.md", "shopify mentioned once")))
+        d.replaceSkills(listOf(ArgusDb.Skill("deploy-shopify", "Push a Shopify theme", "/s/a/SKILL.md", "steps"),
+            ArgusDb.Skill("write-email", "Draft an email in the user's voice", "/s/b/SKILL.md", "shopify mentioned once")))
         assertEquals("deploy-shopify", d.searchSkills("shopify deploy", 5).first().name)
         assertEquals(2, d.skillMtimes().size)
         assertEquals("steps", d.skillBody("/s/a/SKILL.md"))
-        d.syncTools(listOf(BlazeDb.ToolRow("web_search", "Search the web", "web"), BlazeDb.ToolRow("memory_save", "Save a memory", "memory")))
+        d.syncTools(listOf(ArgusDb.ToolRow("web_search", "Search the web", "web"), ArgusDb.ToolRow("memory_save", "Save a memory", "memory")))
         val h = d.meta("tools_hash"); assertEquals(40, h.length)
-        d.syncTools(listOf(BlazeDb.ToolRow("memory_save", "Save a memory", "memory"), BlazeDb.ToolRow("web_search", "Search the web", "web")))
+        d.syncTools(listOf(ArgusDb.ToolRow("memory_save", "Save a memory", "memory"), ArgusDb.ToolRow("web_search", "Search the web", "web")))
         assertEquals("same set, same hash, no rebuild", h, d.meta("tools_hash"))
         assertEquals("web_search", d.searchTools("search the web", 3).first())
         d.activate("c1", "web_search"); assertEquals(listOf("web_search"), d.active("c1"))

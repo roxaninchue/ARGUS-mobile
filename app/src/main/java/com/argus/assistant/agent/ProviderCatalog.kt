@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,12 +14,12 @@ import kotlin.math.ln
 /**
  * v0.23.4: every free model each provider offers, not just one default per provider.
  *
- * For each provider in the Auto chain Blaze lists the provider's models (OpenAI-compatible
+ * For each provider in the Auto chain Argus lists the provider's models (OpenAI-compatible
  * `/models`, Gemini's models API, OpenRouter filtered to `:free` / zero price, Pollinations'
  * public list), keeps chat-capable text models only, marks which can call tools, and orders them:
  * the curated defaults first, then the rest by size/quality. Lists are cached in
  * `filesDir/model_catalog.json` for 24 h and refreshed in the background; offline or after a failed
- * fetch Blaze uses the last cache, then the defaults.
+ * fetch Argus uses the last cache, then the defaults.
  */
 object ProviderCatalog {
 
@@ -279,7 +279,7 @@ object ProviderCatalog {
     }
 
     private fun get(url: String, headers: Map<String, String>): String {
-        val c = com.blaze.assistant.connect.UrlSafety.open(url)
+        val c = com.argus.assistant.connect.UrlSafety.open(url)
         c.connectTimeout = 10_000; c.readTimeout = 20_000
         headers.forEach { (k, v) -> c.setRequestProperty(k, v) }
         val code = c.responseCode

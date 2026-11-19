@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.composer.ModelChoice
+import com.argus.assistant.BrandName
+import com.argus.assistant.composer.ModelChoice
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -10,7 +10,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.51.0 BlazeQuery: source policy, need detection, planner, registries, extraction, judge, evidence pack, verification. */
+/** 0.51.0 ArgusQuery: source policy, need detection, planner, registries, extraction, judge, evidence pack, verification. */
 class SourcePolicyTest {
     @Test fun wikipediaAndWikisAreBlocked() {
         for (u in listOf("https://en.wikipedia.org/wiki/Kotlin_(programming_language)", "https://en.m.wikipedia.org/wiki/Android", "https://www.wikiwand.com/en/Kotlin",
@@ -43,7 +43,7 @@ class SourcePolicyTest {
 class NeedDetectTest {
     private fun need(t: String, recent: List<String> = emptyList()) = NeedDetect.decide(t, recent).need
 
-    @Test fun blazeLocalQuestionsNeverSearch() {
+    @Test fun argusLocalQuestionsNeverSearch() {
         for (t in listOf("what / commands do I have?", "what can you do?", "what did I say earlier?", "how many photos do I have?",
                 "what's on my calendar today?", "which settings does ${BrandName.NAME} have?", "/help"))
             assertFalse(t, NeedDetect.decide(t).external)

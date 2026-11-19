@@ -1,11 +1,11 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.policy.Policy.Decision
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.Autonomy
-import com.blaze.assistant.team.Permissions
-import com.blaze.assistant.team.Rule
-import com.blaze.assistant.team.SendScope
+import com.argus.assistant.policy.Policy.Decision
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.Autonomy
+import com.argus.assistant.team.Permissions
+import com.argus.assistant.team.Rule
+import com.argus.assistant.team.SendScope
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

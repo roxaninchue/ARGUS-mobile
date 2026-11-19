@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -7,9 +7,9 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.TimeZone
-import com.blaze.assistant.ui.space.SpaceHomeCards.Card as C
-import com.blaze.assistant.ui.space.SpaceOnboarding.Step as S
-import com.blaze.assistant.ui.space.SpaceProjectRows.Status as PS
+import com.argus.assistant.ui.space.SpaceHomeCards.Card as C
+import com.argus.assistant.ui.space.SpaceOnboarding.Step as S
+import com.argus.assistant.ui.space.SpaceProjectRows.Status as PS
 
 /**
  * 0.52.3 "ARGUS x Hark" shell, the pure rules (SpaceLogic.kt): the palette, the three tabs and their round button, the
@@ -75,9 +75,9 @@ class SpaceLogicTest {
         for (l in SpaceTabs.Left.values()) assertTrue(SpaceTabs.leftLabel(l).isNotBlank())
         assertEquals(3, SpaceTabs.Left.values().map { SpaceTabs.leftLabel(it) }.toSet().size)
         // the tab ids are the chat shell's
-        assertEquals(com.blaze.assistant.agent.ChatNav.HOME, SpaceTabs.HOME)
-        assertEquals(com.blaze.assistant.agent.ChatNav.CHAT, SpaceTabs.CHAT)
-        assertEquals(com.blaze.assistant.agent.ChatNav.PROJECTS, SpaceTabs.PROJECTS)
+        assertEquals(com.argus.assistant.agent.ChatNav.HOME, SpaceTabs.HOME)
+        assertEquals(com.argus.assistant.agent.ChatNav.CHAT, SpaceTabs.CHAT)
+        assertEquals(com.argus.assistant.agent.ChatNav.PROJECTS, SpaceTabs.PROJECTS)
     }
 
     @Test fun theAvatarLetter() {
@@ -223,7 +223,7 @@ class SpaceLogicTest {
         for (r in all) assertEquals(r, SpaceProfile.row(r.id))
         assertNull(SpaceProfile.row("advanced"))
         // each row opens a real settings page
-        val pages = com.blaze.assistant.ui.settingsPages.map { it.id }.toSet()
+        val pages = com.argus.assistant.ui.settingsPages.map { it.id }.toSet()
         for (p in SpaceProfile.PAGES) assertTrue("page $p", p in pages)
         assertEquals("Gaby Alarcon", SpaceProfile.title(" Gaby Alarcon ", "G"))
         assertEquals("Gaby", SpaceProfile.title(" ", "Gaby"))
@@ -242,7 +242,7 @@ class SpaceLogicTest {
         assertNull("profile rows go back to the profile", SpaceSettings.parentOf("about"))
         assertNull(SpaceSettings.parentOf(null))
         // every page in the tree exists, the required ones are in it, the removed ones are not
-        val pages = com.blaze.assistant.ui.settingsPages.map { it.id }.toSet()
+        val pages = com.argus.assistant.ui.settingsPages.map { it.id }.toSet()
         for (p in SpaceSettings.TREE) assertTrue("page $p", p in pages)
         assertTrue(SpaceSettings.TREE.containsAll(SpaceSettings.REQUIRED))
         for (p in SpaceSettings.REMOVED_FROM_SETTINGS) assertFalse("$p still listed", p in SpaceSettings.TREE)

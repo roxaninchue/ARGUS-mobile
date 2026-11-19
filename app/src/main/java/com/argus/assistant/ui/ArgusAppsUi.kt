@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -38,12 +38,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.connect.ArgusApps
-import com.blaze.assistant.connect.ArgusAppsModel
-import com.blaze.assistant.connect.ArgusAppsModel.App
-import com.blaze.assistant.connect.BlazeAccount
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.BrandName
+import com.argus.assistant.connect.ArgusApps
+import com.argus.assistant.connect.ArgusAppsModel
+import com.argus.assistant.connect.ArgusAppsModel.App
+import com.argus.assistant.connect.ArgusAccount
+import com.argus.assistant.i18n.tr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -81,7 +81,7 @@ internal object AppIconCache {
 /** An app's real icon on a soft rounded tile; a letter tile when it has none. */
 @Composable
 fun AppIcon(app: App, size: Dp = 28.dp) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val bmp by produceState(AppIconCache.peek(app.id), app.id, app.iconUrl) {
         if (value == null) value = withContext(Dispatchers.IO) { AppIconCache.load(ctx.applicationContext, app) }
@@ -103,12 +103,12 @@ fun AppIcon(app: App, size: Dp = 28.dp) {
  */
 @Composable
 fun GatewayAppsSection(apps0: List<App>? = null, query: String = SettingsSearch.query.value) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val v by ArgusApps.view.collectAsState()
     val st by ArgusApps.status.collectAsState()
-    val acct by BlazeAccount.view.collectAsState()
+    val acct by ArgusAccount.view.collectAsState()
     if (apps0 == null) LaunchedEffect(acct.user?.id) { ArgusApps.loadCached(); ArgusApps.refresh() }
     val apps = apps0 ?: v.apps
     var open by remember { mutableStateOf("") }
@@ -128,7 +128,7 @@ fun GatewayAppsSection(apps0: List<App>? = null, query: String = SettingsSearch.
     GroupHead("Apps \u00b7 %02d".format(apps.size), right = {
         Label("${apps.count { it.connected }} connected", size = 9.sp, color = c.weak)
         Spacer(Modifier.width(10.dp))
-        Box(Modifier.clip(BlazeShapes.pill).then(if (apps0 == null) Modifier.clickable { scope.launch { ArgusApps.refresh() } } else Modifier).padding(horizontal = 6.dp, vertical = 2.dp)) {
+        Box(Modifier.clip(ArgusShapes.pill).then(if (apps0 == null) Modifier.clickable { scope.launch { ArgusApps.refresh() } } else Modifier).padding(horizontal = 6.dp, vertical = 2.dp)) {
             Label(if (v.loading) "Loading\u2026" else "Refresh", size = 9.sp, color = c.accent)
         }
     })
@@ -190,7 +190,7 @@ fun GatewayAppsSection(apps0: List<App>? = null, query: String = SettingsSearch.
 
 @Composable
 private fun Note2(text: String) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Text(text, modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.body))
 }

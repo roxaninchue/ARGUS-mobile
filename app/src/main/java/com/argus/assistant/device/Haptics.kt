@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import android.content.Context
 import android.os.Build
@@ -12,7 +12,7 @@ object Haptics {
         ctx.getSystemService(VibratorManager::class.java)?.defaultVibrator else @Suppress("DEPRECATION") ctx.getSystemService(Vibrator::class.java)
 
     fun tick(ctx: Context) {
-        if (!com.blaze.assistant.agent.Settings.haptics) return
+        if (!com.argus.assistant.agent.Settings.haptics) return
         try {
             val v = vib(ctx) ?: return
             if (Build.VERSION.SDK_INT >= 29) v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
@@ -21,7 +21,7 @@ object Haptics {
     }
 
     fun done(ctx: Context) {
-        if (!com.blaze.assistant.agent.Settings.haptics) return
+        if (!com.argus.assistant.agent.Settings.haptics) return
         try {
             val v = vib(ctx) ?: return
             if (Build.VERSION.SDK_INT >= 29) v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK))

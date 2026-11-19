@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 import java.util.Locale
 
@@ -83,7 +83,7 @@ object GatewayWeather {
 
     /** Raw GET; returns (code, body). Blocking: call off the main thread. */
     fun fetch(lat: Double, lon: Double, units: String, token: String, base: String = Providers.GATEWAY_BASE): Pair<Int, String> {
-        val c = com.blaze.assistant.connect.UrlSafety.open(url(base, lat, lon, units))
+        val c = com.argus.assistant.connect.UrlSafety.open(url(base, lat, lon, units))
         c.connectTimeout = 8000; c.readTimeout = 10000
         if (token.isNotBlank()) c.setRequestProperty("Authorization", "Bearer $token")
         val code = c.responseCode

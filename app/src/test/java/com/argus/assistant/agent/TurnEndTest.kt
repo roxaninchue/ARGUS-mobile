@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,8 +18,8 @@ class TurnEndTest {
 
     @Test fun everyReasonHasAPlainLine() {
         for (r in TurnEnd.Reason.values()) {
-            val l = TurnEnd.line(r, "Opening BlazeFX\u2026")
-            assertTrue(l, l.isNotBlank() && l.contains("(last step: Opening BlazeFX)"))
+            val l = TurnEnd.line(r, "Opening ArgusFX\u2026")
+            assertTrue(l, l.isNotBlank() && l.contains("(last step: Opening ArgusFX)"))
         }
         assertEquals("Stopped before finishing. Tell me if you want me to carry on.", TurnEnd.line(TurnEnd.Reason.STOPPED))
         // v0.45.14: there is no paused ending any more (the pointer never pauses a run).

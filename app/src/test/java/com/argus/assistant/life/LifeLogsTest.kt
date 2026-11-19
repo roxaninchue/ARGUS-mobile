@@ -1,8 +1,8 @@
-package com.blaze.assistant.life
+package com.argus.assistant.life
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.QuickRules
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.QuickRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

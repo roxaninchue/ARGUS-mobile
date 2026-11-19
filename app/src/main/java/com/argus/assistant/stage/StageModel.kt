@@ -1,7 +1,7 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
 /**
- * 0.46.0 Blaze Stage: the chat screen is one playground. Everything on it is an element Blaze (stage_* tools) or the user
+ * 0.46.0 Argus Stage: the chat screen is one playground. Everything on it is an element Argus (stage_* tools) or the user
  * (drag, the element menu) can place, resize or hide: the chat stream, the top bar, the reply bar, one hero (the big area)
  * and small widgets docked in slots. Nothing is a fixed rule; [StageReducer] only keeps a few invariants:
  *  - at most one hero; showing a new hero turns the old one into a widget (same object, it morphs, nothing stops);
@@ -13,7 +13,7 @@ package com.blaze.assistant.stage
 enum class StageKind(val id: String, val label: String, val fullView: String?) {
     TIMER("timer", "Timer", null), MUSIC("music", "Music", "music"), VIDEO("video", "Video", "video"),
     QUIZ("quiz", "Quiz", "learn"), FLASHCARDS("flashcards", "Flashcards", "learn"), PLAN("plan", "Plan", null), NOTE("note", "Note", null),
-    /** 0.46.1: Blaze's browser (the current tab of the built-in browser, one shared WebView) as a card. */
+    /** 0.46.1: Argus's browser (the current tab of the built-in browser, one shared WebView) as a card. */
     BROWSER("browser", "Browser", "browser");
     companion object {
         fun of(s: String?): StageKind? {
@@ -50,7 +50,7 @@ data class StageItem(
     /** Order within its slot (lower first) and age (for which widget leaves first). */
     val order: Long = 0,
     val x: Float = 0.7f, val y: Float = 0.2f,
-    /** Hero scale 0.4..1 of the free area (the user can pinch / Blaze can resize). */
+    /** Hero scale 0.4..1 of the free area (the user can pinch / Argus can resize). */
     val scale: Float = 1f,
     /** Immersive hero: top bar slides off and the reply bar becomes the pill while it is the hero. */
     val immersive: Boolean = false,
@@ -185,7 +185,7 @@ object StageReducer {
             // The old hero shrinks into a widget (keeps running).
             items = items.map { if (it.mode == StageMode.HERO) { note += "; ${it.kind.label} moved to a widget"; it.copy(mode = StageMode.WIDGET, order = seq) } else it }
             // A hero arriving on the plain chat brings the hero layout (chat docked, chrome per immersive); a hero replacing a hero keeps
-            // whatever layout is up now (the user or Blaze may have arranged it).
+            // whatever layout is up now (the user or Argus may have arranged it).
             if (s.hero == null) st = st.copy(chat = s.heroChat)
             if (immersive) st = st.copy(topBar = false, reply = ReplyBar.PILL)
             note += " (big)"

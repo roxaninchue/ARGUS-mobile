@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.Manifest
 import android.content.Context
@@ -21,9 +21,9 @@ object Location {
     @Suppress("MissingPermission", "DEPRECATION")
     suspend fun run(ctx: Context): String {
         val coarse = ctx.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (!coarse && !com.blaze.assistant.device.Perms.ensure(ctx, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (!coarse && !com.argus.assistant.device.Perms.ensure(ctx, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
             && ctx.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-            return com.blaze.assistant.device.Perms.denied("location")
+            return com.argus.assistant.device.Perms.denied("location")
         val lm = ctx.getSystemService(LocationManager::class.java)
         if (lm == null || !(try { lm.isLocationEnabled } catch (_: Exception) { true })) return "Location is switched off on the phone (Quick Settings → Location)."
         val best = lm.getProviders(true).mapNotNull { p -> try { lm.getLastKnownLocation(p) } catch (_: Exception) { null } }

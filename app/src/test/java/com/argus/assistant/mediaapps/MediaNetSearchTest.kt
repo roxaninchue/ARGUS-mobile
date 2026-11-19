@@ -1,6 +1,6 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreItem
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -13,7 +13,7 @@ import org.junit.Test
 /** 0.45.19 step 2: live search (250 ms debounce, results land per source, per-card skeletons, recent searches). */
 class MediaNetSearchTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     private fun item(src: String, id: String, title: String = "t$id", thumb: String = "https://img/$id.jpg") =
         StoreItem(source = src, id = id, title = title, author = "", thumb = thumb)

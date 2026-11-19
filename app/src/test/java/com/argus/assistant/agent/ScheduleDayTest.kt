@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -135,7 +135,7 @@ class ScheduleDayTest {
     }
 
     @Test fun routinesParseDaysWholeWords() {
-        val r = com.blaze.assistant.routine.Routines
+        val r = com.argus.assistant.routine.Routines
         assertEquals(ScheduleDay.bit(DayOfWeek.SUNDAY), r.parseDays("sunday"))
         assertEquals(ScheduleDay.bit(DayOfWeek.MONDAY) or ScheduleDay.bit(DayOfWeek.WEDNESDAY), r.parseDays("Mondays and Wednesdays"))
         assertEquals(ScheduleDay.bit(DayOfWeek.TUESDAY) or ScheduleDay.bit(DayOfWeek.THURSDAY), r.parseDays("tue, thurs"))

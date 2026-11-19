@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -15,10 +15,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.ui.DarkColors
-import com.blaze.assistant.ui.LightColors
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.MotionTokens
+import com.argus.assistant.ui.DarkColors
+import com.argus.assistant.ui.LightColors
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.MotionTokens
 
 /*
  * One surface for everything that opens over the chat (Spotlight, the views sheet, floating windows): an opaque card,
@@ -53,11 +53,11 @@ fun SpaceScrim(visible: Boolean, onDismiss: () -> Unit, label: String, modifier:
 
 /**
  * Draws [content] with the ink of a [dark] or light overlay, whatever the app's theme is, so shared rows and icon tiles
- * that read LocalBlaze match the surface they sit on. Nothing changes when the app is already in that mode.
+ * that read LocalArgus match the surface they sit on. Nothing changes when the app is already in that mode.
  */
 @Composable
 fun ProvideOverlayInk(dark: Boolean, content: @Composable () -> Unit) {
-    val app = LocalBlaze.current
+    val app = LocalArgus.current
     if (app.dark == dark) content()
-    else CompositionLocalProvider(LocalBlaze provides (if (dark) DarkColors else LightColors), content = content)
+    else CompositionLocalProvider(LocalArgus provides (if (dark) DarkColors else LightColors), content = content)
 }

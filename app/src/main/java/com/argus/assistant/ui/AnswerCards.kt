@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 
 /**
  * Answer cards: long tables, lists, code and reports fold into a clipped card with a fade.
@@ -147,20 +147,20 @@ object AnswerCards {
 }
 
 /**
- * A Blaze reply drawn as text plus cards. v0.31.0: rich blocks (diagrams, pictures, charts, tables, compare cards, mini
+ * A Argus reply drawn as text plus cards. v0.31.0: rich blocks (diagrams, pictures, charts, tables, compare cards, mini
  * tools) are detached glass preview windows ([RichPreviewCard]), never inline. [live] = streaming right now: the last
  * text block fades its newest words in and tells the droplet ([LocalOrb]) where the text ends.
  */
 @Composable
 fun AnswerBody(key: Long, src: String, live: Boolean = false) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val fold = Settings.foldAnswers
     // v0.45.6: settled replies come from the process-wide memo (rows scrolled back into view don't parse again).
     val segs = remember(src, live) { ParseMemo.memo(ParseMemo.segs, src, live) { AnswerCards.parse(src) } }
     val report = fold && AnswerCards.isReport(src)
     // v0.24.9 rich replies: steps, section pictures, image rows / decks and diagrams on top of the cards (pref rich_replies, default on;
     // "Visual answers" in Settings since v0.26.1, which also covers charts, choices, forms, tools and compare cards).
-    val priv = com.blaze.assistant.agent.Agent.privateChat.value
+    val priv = com.argus.assistant.agent.Agent.privateChat.value
     val rich = Settings.bool("rich_replies", true)
     val blocks = remember(src, priv, rich, live) { ParseMemo.memo(ParseMemo.blocks, "$priv|$rich|" + src, live) {
         val raw = if (rich) RichReplies.expand(segs, priv) else segs.map { RichReplies.Block.Plain(it) }
@@ -169,8 +169,8 @@ fun AnswerBody(key: Long, src: String, live: Boolean = false) {
     } }
     // Blocks already on screen when this reply was first drawn don't play the landing again.
     val seen = remember(key) { HashSet<Int>().apply { if (!live) addAll(blocks.indices) } }
-    // v0.26.1: a visual still streaming in shows a quiet placeholder only while Blaze is replying.
-    val streaming = com.blaze.assistant.agent.Agent.mood.collectAsState().value != com.blaze.assistant.agent.Mood.IDLE
+    // v0.26.1: a visual still streaming in shows a quiet placeholder only while Argus is replying.
+    val streaming = com.argus.assistant.agent.Agent.mood.collectAsState().value != com.argus.assistant.agent.Mood.IDLE
     val orb = LocalOrb.current
     val gap = with(androidx.compose.ui.platform.LocalDensity.current) { 10.dp.toPx() }
     val body: @Composable () -> Unit = {
@@ -223,7 +223,7 @@ private const val FADE_STEP = 4
 
 @Composable
 private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val codeBg = c.hair.copy(alpha = 0.35f)
     // 0.54.2 (owner: "the text layout looks ugly"): rich = inline code as tight rounded chips drawn behind the glyphs
     // (MdChips) and list items with a hanging indent.
@@ -240,7 +240,7 @@ private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
     val text = if (edge <= 0.01f || shown.isEmpty()) shown else remember(shown, edge, c.body) {
         androidx.compose.ui.text.AnnotatedString.Builder(shown).apply {
             // v0.45.7: spans snap to whole letters (a Yorùbá tone mark or an emoji is never split between two alphas).
-            com.blaze.assistant.agent.Scripts.fadeSpans(shown.text, FADE_STEP, FADE_CHARS).forEachIndexed { k, (start, end) ->
+            com.argus.assistant.agent.Scripts.fadeSpans(shown.text, FADE_STEP, FADE_CHARS).forEachIndexed { k, (start, end) ->
                 val a = 1f - edge * 0.78f * (1f - k * FADE_STEP.toFloat() / FADE_CHARS)
                 addStyle(androidx.compose.ui.text.SpanStyle(color = c.body.copy(alpha = c.body.alpha * a)), start, end)
             }
@@ -255,7 +255,7 @@ private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
         orb?.aimAtTextEnd(co, l, gap)
     }
     val mod0 = if (tracking && orb != null) Modifier.onGloballyPositioned { holder[0] = it; aim() } else Modifier
-    // v0.31.2 Halo x Blaze: the newest words shimmer in the speaker's colour (blue Blaze, gold Halo), then one band sweeps and fades.
+    // v0.31.2 Halo x Argus: the newest words shimmer in the speaker's colour (blue Argus, gold Halo), then one band sweeps and fades.
     val mod = mod0.duoShimmer(LocalSpeaker.current, tracking) { holder[1] as? androidx.compose.ui.text.TextLayoutResult }
     // v0.45.28: a tap on a link opens it (the chat's glass window, LocalOpenLink); long-press still selects and copies.
     val openLink = LocalOpenLink.current
@@ -279,7 +279,7 @@ private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
 
 @Composable
 private fun CodeText(code: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val a = LocalArgusRich.current
     SelectionContainer {
         Text(code, modifier = Modifier.horizontalScroll(rememberScrollState()).padding(12.dp),
@@ -293,15 +293,15 @@ private fun CodeText(code: String) {
  * P1-SH-03: inside the ARGUS shell rich replies (code, tables, titled and folded cards) take its look
  * ([RichReplies.Look]); null = the 0.52 look. Provided by ChatScreen's ArgusShellLocals.
  */
-val LocalArgusRich = androidx.compose.runtime.staticCompositionLocalOf<com.blaze.assistant.ui.argus.ArgusColors?> { null }
+val LocalArgusRich = androidx.compose.runtime.staticCompositionLocalOf<com.argus.assistant.ui.argus.ArgusColors?> { null }
 
 @Composable
 private fun cardShape(): RoundedCornerShape = if (LocalArgusRich.current != null) ArgusCardShape else CardShape
 
-/** v0.24.0: cards are soft rounded insets, no outline. Inside a Blaze bubble they're lighter than the bubble. */
+/** v0.24.0: cards are soft rounded insets, no outline. Inside a Argus bubble they're lighter than the bubble. */
 @Composable
 private fun cardFill(): Color {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     LocalArgusRich.current?.let { return it.soft }
     return if (LocalBubble.current != null) GlassBubble.cardFill(c) else c.faint
 }
@@ -311,7 +311,7 @@ private val ArgusCardShape = RoundedCornerShape(RichReplies.Look.CARD_RADIUS.dp)
 
 @Composable
 internal fun TableGrid(rows: List<List<String>>) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val cols = rows.maxOfOrNull { it.size } ?: 0
     if (cols == 0) return
     Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
@@ -336,7 +336,7 @@ internal fun TableGrid(rows: List<List<String>>) {
 
 @Composable
 private fun CopyLabel(raw: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val clip = LocalClipboardManager.current
     val ctx = LocalContext.current
     ActionText("Copy", color = c.accent, size = 9.sp, modifier = Modifier.clickable {
@@ -347,7 +347,7 @@ private fun CopyLabel(raw: String) {
 /** A titled block that is short enough to show whole. */
 @Composable
 private fun PlainCard(title: String, raw: String, content: @Composable () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(Modifier.fillMaxWidth().clip(cardShape()).background(cardFill())) {
         Row(Modifier.fillMaxWidth().padding(start = 12.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             Label(title, color = c.sub, size = 9.sp, modifier = Modifier.weight(1f), maxLines = 1)
@@ -360,7 +360,7 @@ private fun PlainCard(title: String, raw: String, content: @Composable () -> Uni
 /** Clipped with a fade until tapped. */
 @Composable
 private fun FoldCard(key: String, title: String, raw: String, maxH: Dp = 220.dp, card: Boolean = true, content: @Composable () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var open by rememberSaveable(key) { mutableStateOf(false) }
     val fill = if (card) cardFill() else (LocalBubble.current ?: c.paper)
     val shape = cardShape()

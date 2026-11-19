@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -45,8 +45,8 @@ object AppTheme {
  * [AppTheme.toggle], so every other screen and activity changes too.
  */
 @Composable
-fun ThemeSwitch(modifier: Modifier = Modifier, tint: Color = LocalBlaze.current.ink) {
-    val dark = LocalBlaze.current.dark
+fun ThemeSwitch(modifier: Modifier = Modifier, tint: Color = LocalArgus.current.ink) {
+    val dark = LocalArgus.current.dark
     Box(modifier) {
         Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = if (dark) "Switch to light" else "Switch to dark") { AppTheme.toggle() }
             .semantics { contentDescription = if (dark) "Dark theme. Switch to light" else "Light theme. Switch to dark" }, contentAlignment = Alignment.Center) {

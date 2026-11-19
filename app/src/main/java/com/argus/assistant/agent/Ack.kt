@@ -1,23 +1,23 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * Ack-and-background (HQ 22 Oct 20:35), 0.45.29: with no ack text at all.
  *
  * 0.45.29 (user report, Mon 26 Oct 09:02): a user answered a heads-up from its notification with "I play guitar" and the
- * thread then showed "Playing guitar a little." as if Blaze had said it: an ack line (made on the phone by rewording the
- * message, or sent by the gateway's `ack` event) instead of a real answer. Blaze never shows a canned or paraphrased line
+ * thread then showed "Playing guitar a little." as if Argus had said it: an ack line (made on the phone by rewording the
+ * message, or sent by the gateway's `ack` event) instead of a real answer. Argus never shows a canned or paraphrased line
  * between a message and its answer any more, in the chat or in a notification: only what the model actually wrote
  * (its reply, and the 0.45.28 wait line [WaitNudge], which the model writes live). Removed: the on-device ack
- * ("Turning on dark mode."), the gateway ack, the ack notification, the "Blaze got your message…" line and the
+ * ("Turning on dark mode."), the gateway ack, the ack notification, the "Argus got your message…" line and the
  * "Done ✓" prefix that was added to an acknowledged turn's reply.
  *
- * What stays is the bookkeeping, without words: a task (a message that asks Blaze to do something, [wants]) still
+ * What stays is the bookkeeping, without words: a task (a message that asks Argus to do something, [wants]) still
  * running after [FAST_MS] is written on the task ledger (TaskKeeper) so it keeps going when the user leaves and is never
  * lost silently, and the quiet task chip ([chip]) shows while it runs. Pure parts: AckTest / ChatAck19Test.
  */
 object Ack {
     /**
-     * The meta of a Blaze line that is not the turn's answer: acks saved by versions before 0.45.29 (still in old chats)
+     * The meta of a Argus line that is not the turn's answer: acks saved by versions before 0.45.29 (still in old chats)
      * and the model-written wait line ([WaitNudge]). Such a line never counts as "answered".
      */
     const val META = "ack"
@@ -42,7 +42,7 @@ object Ack {
         RegexOption.IGNORE_CASE)
 
     /**
-     * A question gets answered, never acked ("did you already book?", "what is Blaze phone doing"). A polite request
+     * A question gets answered, never acked ("did you already book?", "what is Argus phone doing"). A polite request
      * phrased as a question ("can you turn on dark mode?") is still a task.
      */
     private val askLead = Regex(
@@ -60,7 +60,7 @@ object Ack {
 
     /**
      * Placeholder lines that say nothing about the task ("Got it, I'm on it. I'll message you here when it's done.",
-     * Halo's "passing that straight to Blaze"). Never shown: an ack is specific or there is none.
+     * Halo's "passing that straight to Argus"). Never shown: an ack is specific or there is none.
      */
     private val generic = Regex(
         "(\\bi'?m on it\\b|^\\s*((got it|ok(ay)?|sure|alright)[,.!\\s\u2014-]*)?on it\\b|\\bi'?ll (message|text|ping|update) you\\b|\\bi'?ll let you know\\b|" +
@@ -69,7 +69,7 @@ object Ack {
             "\\bgive me a (moment|sec|second)\\b|^\\s*got it[.!]?\\s*$|^\\s*halo here\\b)",
         RegexOption.IGNORE_CASE)
 
-    /** True for a placeholder line that names nothing Blaze is doing. Pure. */
+    /** True for a placeholder line that names nothing Argus is doing. Pure. */
     fun isGeneric(ack: String): Boolean = generic.containsMatchIn(ack.trim())
 
     /** True when [text] is a task (kept on the ledger while it runs), not a question, greeting or small talk. */

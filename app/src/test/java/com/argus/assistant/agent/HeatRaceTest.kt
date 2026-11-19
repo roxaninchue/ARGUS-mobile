@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -43,8 +43,8 @@ class HeatRaceTest {
     }
 
     @Test fun screenshotsAreRateCapped() {
-        assertEquals(0, com.blaze.assistant.phone.ScreenHeat.shotWait(0, 5_000))
-        assertEquals(500, com.blaze.assistant.phone.ScreenHeat.shotWait(1_000, 1_200))
-        assertEquals(0, com.blaze.assistant.phone.ScreenHeat.shotWait(1_000, 2_000))
+        assertEquals(0, com.argus.assistant.phone.ScreenHeat.shotWait(0, 5_000))
+        assertEquals(500, com.argus.assistant.phone.ScreenHeat.shotWait(1_000, 1_200))
+        assertEquals(0, com.argus.assistant.phone.ScreenHeat.shotWait(1_000, 2_000))
     }
 }

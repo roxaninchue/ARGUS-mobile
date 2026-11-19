@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 /**
  * v0.30.4 fast actions: settings by direct intent. "Stop GitHub opening links" used to be 18 steps of tapping
@@ -190,7 +190,7 @@ object SettingsRoute {
         "play store" to "com.android.vending", "google play" to "com.android.vending", "snapchat" to "com.snapchat.android",
         "netflix" to "com.netflix.mediaclient", "discord" to "com.discord", "slack" to "com.Slack", "zoom" to "us.zoom.videomeetings",
         "outlook" to "com.microsoft.office.outlook", "teams" to "com.microsoft.teams", "samsung internet" to "com.sec.android.app.sbrowser",
-        "blaze" to "com.blaze.assistant",
+        "blaze" to "com.argus.assistant",
     )
 
     /**

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONObject
 
@@ -6,14 +6,14 @@ import org.json.JSONObject
  * v0.44.0 verify before claiming. Every tool result the model sees now ends with an explicit status line:
  *
  *  - `[verified=true]` the tool read back what it did (a file's size, a setting's new state, the app in front),
- *    or it only looked something up, or it changed Blaze's own data (memory, routines,
+ *    or it only looked something up, or it changed Argus's own data (memory, routines,
  *    designs) where success IS the result.
  *  - `[verified=false: …]` it ran but nothing confirmed the effect: an intent handed to another app (timer, call,
  *    media), a settings page opened instead of the setting changed, an app that isn't in front.
  *  - `[verified=false: FAILED …]` it failed, or its check failed.
  *
  * [classify] is pure (the result's own words); [check] adds cheap post-condition probes for the tools that act outside
- * Blaze ([Probes], Android side in VerifyProbes). The system prompt ([PROMPT_RULE]) forbids claiming success without
+ * Argus ([Probes], Android side in VerifyProbes). The system prompt ([PROMPT_RULE]) forbids claiming success without
  * verified=true, and ClaimCheck rewrites a final reply that still does. Pure Kotlin; ToolVerifyTest.
  */
 object ToolVerify {
@@ -27,11 +27,11 @@ object ToolVerify {
     interface Probes {
         /** Package of the app in front now. */
         suspend fun foreground(): String? = null
-        /** Blaze's own package (an app that "opened" while Blaze is still in front didn't open). */
-        val self: String get() = "com.blaze.assistant"
+        /** Argus's own package (an app that "opened" while Argus is still in front didn't open). */
+        val self: String get() = "com.argus.assistant"
         /** (hour, minute) of the next alarm the system knows about. */
         suspend fun nextAlarm(): Pair<Int, Int>? = null
-        /** Size in bytes of a file Blaze wrote (-1 = missing, null = can't tell). */
+        /** Size in bytes of a file Argus wrote (-1 = missing, null = can't tell). */
         fun fileSize(path: String): Long? = null
         /** v0.45.0 (#4): the setting read back from the system (wifi, bluetooth, airplane, do_not_disturb, mobile_data); null = can't tell. */
         suspend fun settingOn(setting: String): Boolean? = null
@@ -107,8 +107,8 @@ object ToolVerify {
         if (!ClaimGuard.succeeded(r)) return Verdict(Status.FAILED, firstLine(r))
         if (failWords.containsMatchIn(r.take(400))) return Verdict(Status.FAILED, firstLine(r))
         HANDED_OFF[name]?.let { return Verdict(Status.UNVERIFIED, it) }
-        // 0.45.19 Blaze Phone: a phone tool worked; whether its page PROVES a booking / order is in [why] ("page verified: …").
-        if (name in com.blaze.assistant.browser.phone.PhonePolicy.TOOLS) return phoneVerdict(r)
+        // 0.45.19 Argus Phone: a phone tool worked; whether its page PROVES a booking / order is in [why] ("page verified: …").
+        if (name in com.argus.assistant.browser.phone.PhonePolicy.TOOLS) return phoneVerdict(r)
         if (name in SEND_TOOLS) return if (sentWords.containsMatchIn(r)) Verdict(Status.VERIFIED, firstLine(r))
             else Verdict(Status.UNVERIFIED, "no “Sent” confirmation came back")
         return when (name) {
@@ -126,7 +126,7 @@ object ToolVerify {
     }
 
     /**
-     * 0.45.19 Blaze Phone: the newest verification line in a phone tool's result (PhonePolicy.Verdict.line). VERIFIED with
+     * 0.45.19 Argus Phone: the newest verification line in a phone tool's result (PhonePolicy.Verdict.line). VERIFIED with
      * why "page verified: …" only when the page itself showed a confirmation; otherwise VERIFIED (the step worked) with
      * why "page not verified", which never backs a "booked / ordered / paid" claim (ClaimCheck BOOKED).
      */
@@ -180,7 +180,7 @@ object ToolVerify {
         Regex("""\(([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)\)""").find(result)?.groupValues?.get(1)
             ?: Regex("""^Opened ([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)""").find(result.trim())?.groupValues?.get(1)
 
-    /** A path Blaze wrote that the result names ("Saved to /sdcard/Download/a.pdf", "Downloaded … → /x/y"). */
+    /** A path Argus wrote that the result names ("Saved to /sdcard/Download/a.pdf", "Downloaded … → /x/y"). */
     fun pathIn(result: String, args: JSONObject): String? =
         args.optString("path").takeIf { it.startsWith("/") }
             ?: Regex("""(/(?:sdcard|storage|data|root)[^\s"'),]+)""").find(result)?.groupValues?.get(1)?.trimEnd('.')

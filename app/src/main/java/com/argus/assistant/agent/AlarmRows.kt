@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
- * v0.45.13: finds one of Blaze's alarms in a Clock app's alarm list, from a snapshot of the accessibility tree. Pure,
+ * v0.45.13: finds one of Argus's alarms in a Clock app's alarm list, from a snapshot of the accessibility tree. Pure,
  * so AlarmRowsTest covers Samsung Clock, Google Clock and AOSP DeskClock shapes without a phone.
  *
- * Blaze's alarms carry their registry id in the label ("Demo app alarm (Blaze A2)"), so the row is found by
- * "Blaze A2" (word-bounded: A2 never matches A21). When a clock truncates or hides the label, the time ("18:15",
+ * Argus's alarms carry their registry id in the label ("Demo app alarm (Argus A2)"), so the row is found by
+ * "Argus A2" (word-bounded: A2 never matches A21). When a clock truncates or hides the label, the time ("18:15",
  * "6:15") finds it, but only when exactly one row shows that time. The row is the smallest ancestor of the label that
  * holds exactly one switch; its switch is the alarm's on/off state.
  */
@@ -21,7 +21,7 @@ object AlarmRows {
         val on: Boolean? get() = toggle?.checked
     }
 
-    fun labelRe(pid: String) = Regex("(?i)\\b(?:${com.blaze.assistant.BrandName.NAME}|${com.blaze.assistant.BrandName.OLD})\\s+" + Regex.escape(pid) + "\\b")
+    fun labelRe(pid: String) = Regex("(?i)\\b(?:${com.argus.assistant.BrandName.NAME}|${com.argus.assistant.BrandName.OLD})\\s+" + Regex.escape(pid) + "\\b")
 
     /** "18:15" → the ways a clock shows it: "18:15", "6:15" (12 h, with or without am/pm). */
     fun timeForms(hhmm: String): List<String> {
@@ -80,7 +80,7 @@ object AlarmRows {
         return if (hit.first.clickable) hit.first else hit.second.asReversed().firstOrNull { it.clickable } ?: hit.first
     }
 
-    /** A short readable line of what the row shows (for the report): "Demo app alarm (Blaze A2) · 18:15 · on". */
+    /** A short readable line of what the row shows (for the report): "Demo app alarm (Argus A2) · 18:15 · on". */
     fun describe(r: Row): String = subtreeText(r.row).replace(Regex("\\s+"), " ").trim().take(90) + " \u00b7 " +
         when (r.on) { true -> "switch on"; false -> "switch off"; null -> "no switch read" }
 }

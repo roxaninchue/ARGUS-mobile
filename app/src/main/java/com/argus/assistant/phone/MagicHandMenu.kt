@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.phone.MagicHandLogic.Action
-import com.blaze.assistant.phone.MagicHandLogic.Kind
+import com.argus.assistant.phone.MagicHandLogic.Action
+import com.argus.assistant.phone.MagicHandLogic.Kind
 
 /**
  * The seam between Magic Hand and a shared element → action mapping (v0.24.7).
@@ -58,30 +58,30 @@ object MagicHandMenu {
  * [MagicHandMenu.withHandActions].
  */
 object BrowserMenuMapper : ElementActionMapper {
-    fun pageKind(k: Kind): com.blaze.assistant.browser.PagePointer.Kind = when (k) {
-        Kind.LINK -> com.blaze.assistant.browser.PagePointer.Kind.LINK
-        Kind.IMAGE -> com.blaze.assistant.browser.PagePointer.Kind.IMAGE
-        Kind.TEXT, Kind.VALUE, Kind.BUTTON, Kind.FIELD -> com.blaze.assistant.browser.PagePointer.Kind.TEXT
-        Kind.EMPTY, Kind.SECRET -> com.blaze.assistant.browser.PagePointer.Kind.OTHER
+    fun pageKind(k: Kind): com.argus.assistant.browser.PagePointer.Kind = when (k) {
+        Kind.LINK -> com.argus.assistant.browser.PagePointer.Kind.LINK
+        Kind.IMAGE -> com.argus.assistant.browser.PagePointer.Kind.IMAGE
+        Kind.TEXT, Kind.VALUE, Kind.BUTTON, Kind.FIELD -> com.argus.assistant.browser.PagePointer.Kind.TEXT
+        Kind.EMPTY, Kind.SECRET -> com.argus.assistant.browser.PagePointer.Kind.OTHER
     }
 
     /** A browser action as a hand action; null for the ones that only make sense in a WebView (download, pop out). */
-    fun handAction(a: com.blaze.assistant.browser.PagePointer.Action): Action? = when (a) {
-        com.blaze.assistant.browser.PagePointer.Action.ASK -> Action.ASK
-        com.blaze.assistant.browser.PagePointer.Action.COPY_TEXT -> Action.COPY
-        com.blaze.assistant.browser.PagePointer.Action.TRANSLATE -> Action.TRANSLATE
-        com.blaze.assistant.browser.PagePointer.Action.EXPLAIN, com.blaze.assistant.browser.PagePointer.Action.SUMMARISE -> Action.EXPLAIN
-        com.blaze.assistant.browser.PagePointer.Action.OPEN, com.blaze.assistant.browser.PagePointer.Action.OPEN_BG -> Action.OPEN_LINK
-        com.blaze.assistant.browser.PagePointer.Action.COPY_LINK, com.blaze.assistant.browser.PagePointer.Action.COPY_IMAGE_LINK -> Action.COPY_LINK
-        com.blaze.assistant.browser.PagePointer.Action.SHARE -> Action.SHARE
-        com.blaze.assistant.browser.PagePointer.Action.SAVE_IMAGE -> Action.SAVE_IMAGE
-        com.blaze.assistant.browser.PagePointer.Action.SEARCH_IMAGE -> Action.DESCRIBE
-        com.blaze.assistant.browser.PagePointer.Action.DOWNLOAD, com.blaze.assistant.browser.PagePointer.Action.PIP -> null
+    fun handAction(a: com.argus.assistant.browser.PagePointer.Action): Action? = when (a) {
+        com.argus.assistant.browser.PagePointer.Action.ASK -> Action.ASK
+        com.argus.assistant.browser.PagePointer.Action.COPY_TEXT -> Action.COPY
+        com.argus.assistant.browser.PagePointer.Action.TRANSLATE -> Action.TRANSLATE
+        com.argus.assistant.browser.PagePointer.Action.EXPLAIN, com.argus.assistant.browser.PagePointer.Action.SUMMARISE -> Action.EXPLAIN
+        com.argus.assistant.browser.PagePointer.Action.OPEN, com.argus.assistant.browser.PagePointer.Action.OPEN_BG -> Action.OPEN_LINK
+        com.argus.assistant.browser.PagePointer.Action.COPY_LINK, com.argus.assistant.browser.PagePointer.Action.COPY_IMAGE_LINK -> Action.COPY_LINK
+        com.argus.assistant.browser.PagePointer.Action.SHARE -> Action.SHARE
+        com.argus.assistant.browser.PagePointer.Action.SAVE_IMAGE -> Action.SAVE_IMAGE
+        com.argus.assistant.browser.PagePointer.Action.SEARCH_IMAGE -> Action.DESCRIBE
+        com.argus.assistant.browser.PagePointer.Action.DOWNLOAD, com.argus.assistant.browser.PagePointer.Action.PIP -> null
     }
 
     override fun actionsFor(kind: Kind, carrying: Boolean): List<Action> {
         if (kind == Kind.SECRET) return emptyList()
-        val base = com.blaze.assistant.browser.PagePointer.actionsFor(pageKind(kind)).mapNotNull(::handAction).toMutableList()
+        val base = com.argus.assistant.browser.PagePointer.actionsFor(pageKind(kind)).mapNotNull(::handAction).toMutableList()
         // The browser's text menu has no Search / Share / Remind; text on the phone gets them like the hand's own menu.
         if (kind == Kind.TEXT) listOf(Action.SEARCH, Action.SHARE, Action.REMIND).forEach { if (it !in base) base += it }
         if (kind == Kind.FIELD && carrying) base.add(0, Action.DROP)
@@ -92,7 +92,7 @@ object BrowserMenuMapper : ElementActionMapper {
 /**
  * v0.24.7 Magic Hand safety rules (pure, tested): what the hand may do while a private chat (or a private browser
  * tab) is in front. In private nothing is captured: no screenshot, no OCR, no teach recording, no watch, nothing
- * sent to Blaze or saved. Moving text the user can already see (copy, carry, drop, share, open) still works.
+ * sent to Argus or saved. Moving text the user can already see (copy, carry, drop, share, open) still works.
  */
 object MagicHandGuard {
     private val capturing = setOf(Action.ASK, Action.EXPLAIN, Action.DESCRIBE, Action.TRANSLATE, Action.REMIND,

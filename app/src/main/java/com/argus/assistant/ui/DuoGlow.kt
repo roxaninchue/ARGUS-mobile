@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -28,31 +28,31 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.agent.Duo
+import com.argus.assistant.agent.Duo
 import kotlinx.coroutines.launch
 import kotlin.math.sin
 
 /*
- * v0.31.2 Halo x Blaze, the look.
- *  - The glassy drop (Blaze) now sits inside a golden halo ring (Halo), like the app icon.
- *  - When Blaze writes, the drop leaves the ring and rides the end of the text; the newest words shimmer BLUE behind it.
+ * v0.31.2 Halo x Argus, the look.
+ *  - The glassy drop (Argus) now sits inside a golden halo ring (Halo), like the app icon.
+ *  - When Argus writes, the drop leaves the ring and rides the end of the text; the newest words shimmer BLUE behind it.
  *  - When Halo writes, the ring leaves the drop and rides ahead of the text; the newest words shimmer GOLD behind it.
  *  - When the reply ends, one last band of that colour sweeps over the words and fades; the traveller glides home,
  *    the two join again and dim, and stay there waiting (on the newest reply only).
  * Everything is draw-only (no relayout), and nothing moves with Remove animations on.
  */
 
-/** Who is speaking in the reply being drawn (Blaze by default). */
+/** Who is speaking in the reply being drawn (Argus by default). */
 val LocalSpeaker = compositionLocalOf { Duo.Who.BLAZE }
 
 object DuoColors {
     // 0.52.2: one ARGUS look (the Living Themes that tinted the drop and its halo are gone).
-    val blazeBlue: Color get() = Color(0xFF3466FF)   /* 0.52.1 Argus electric blue */
-    val blazeIce: Color get() = Color(0xFFBFE3FF)
+    val argusBlue: Color get() = Color(0xFF3466FF)   /* 0.52.1 Argus electric blue */
+    val argusIce: Color get() = Color(0xFFBFE3FF)
     val haloGold: Color get() = Color(0xFFFFC94D)
     val haloCream: Color get() = Color(0xFFFFF0C2)
-    fun main(w: Duo.Who) = if (w == Duo.Who.HALO) haloGold else blazeBlue
-    fun light(w: Duo.Who) = if (w == Duo.Who.HALO) haloCream else blazeIce
+    fun main(w: Duo.Who) = if (w == Duo.Who.HALO) haloGold else argusBlue
+    fun light(w: Duo.Who) = if (w == Duo.Who.HALO) haloCream else argusIce
 }
 
 /** The halo: a glowing gold ring of radius ≈ 1.75 [r] around [c], breathing gently with the clock [t]. */
@@ -99,7 +99,7 @@ fun Modifier.duoShimmer(speaker: Duo.Who, tracking: Boolean, layout: () -> TextL
     }
     val active = tracking || glow.value > 0.01f || sweep.value >= 0f
     // 0.46.4 heat audit: ~30 fps instead of every display frame, and a still glow while the phone is warm (Thermal)
-    val hot by com.blaze.assistant.device.Thermal.hot.collectAsState()
+    val hot by com.argus.assistant.device.Thermal.hot.collectAsState()
     LaunchedEffect(active, hot) {
         if (!active || hot) return@LaunchedEffect
         var last = 0L
@@ -139,7 +139,7 @@ fun Modifier.duoShimmer(speaker: Duo.Who, tracking: Boolean, layout: () -> TextL
 }
 
 /**
- * v0.32.0 the Blaze icon everywhere in the app: the glass drop (Blaze) inside its gold halo (Halo), centred in a square of
+ * v0.32.0 the Argus icon everywhere in the app: the glass drop (Argus) inside its gold halo (Halo), centred in a square of
  * side [w]. [t] = clock for the wobble and the breathing ring (0 = a still picture).
  */
 fun DrawScope.drawDuoEmblem(center: Offset, w: Float, t: Float = 0f, alpha: Float = 1f) {
@@ -147,10 +147,10 @@ fun DrawScope.drawDuoEmblem(center: Offset, w: Float, t: Float = 0f, alpha: Floa
     drawArgusMark(center, w, t, alpha)
 }
 
-/** The new Blaze icon as a composable: still when idle, gently alive when [animate]. */
+/** The new Argus icon as a composable: still when idle, gently alive when [animate]. */
 @Composable
 fun DuoEmblem(size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier, animate: Boolean = false) {
-    val clock = if (animate && com.blaze.assistant.ui.MotionTokens.enabled) {
+    val clock = if (animate && com.argus.assistant.ui.MotionTokens.enabled) {
         val tr = androidx.compose.animation.core.rememberInfiniteTransition(label = "emblem")
         tr.animateFloat(0f, (2 * Math.PI * 10).toFloat(), androidx.compose.animation.core.infiniteRepeatable(
             tween(20_000, easing = androidx.compose.animation.core.LinearEasing)), label = "t").value

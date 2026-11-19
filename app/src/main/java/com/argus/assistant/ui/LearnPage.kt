@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,9 +32,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Flashcards
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.connect.Classroom
+import com.argus.assistant.agent.Flashcards
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.connect.Classroom
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
@@ -61,8 +61,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.border
 import kotlinx.coroutines.launch
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.StudyNudge
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.StudyNudge
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -79,7 +79,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
  */
 @Composable
 internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Long? = null) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val all by Flashcards.cards.collectAsState()
     val undo by Flashcards.undoable.collectAsState()
     LaunchedEffect(Unit) { Flashcards.load() }
@@ -97,7 +97,7 @@ internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Lon
     } else {
         val waiting = remember(all) { Flashcards.waiting(clock) }
         if (waiting > 0) {
-            Row(Modifier.fillMaxWidth().height(56.dp).clip(BlazeShapes.pill).background(c.accent, BlazeShapes.pill)
+            Row(Modifier.fillMaxWidth().height(56.dp).clip(ArgusShapes.pill).background(c.accent, ArgusShapes.pill)
                 .clickable(onClickLabel = tr("Study all")) { deck = Flashcards.ALL }.padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
@@ -137,7 +137,7 @@ internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Lon
 /** An icon with a short line beside it (the caught-up line, the done screen's counts). */
 @Composable
 private fun IconLine(icon: ImageVector, text: String, tint: Color) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(10.dp))
@@ -147,7 +147,7 @@ private fun IconLine(icon: ImageVector, text: String, tint: Color) {
 
 @Composable
 private fun DeckRow(d: Flashcards.Deck, onStudy: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var open by remember(d.name) { mutableStateOf(false) }
     var renaming by remember(d.name) { mutableStateOf(false) }
     var name by remember(d.name) { mutableStateOf(d.name) }
@@ -169,7 +169,7 @@ private fun DeckRow(d: Flashcards.Deck, onStudy: () -> Unit) {
         }
         if (open) {
             if (renaming) Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                BlazeTextField(name, { name = it }, tr("Deck name"), modifier = Modifier.weight(1f))
+                ArgusTextField(name, { name = it }, tr("Deck name"), modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
                 GlassIconButton(Icons.Rounded.Check, tr("Save the name"), bg = c.accent, tint = Color.White) {
                     Flashcards.renameDeck(d.name, name); renaming = false; open = false }
@@ -188,7 +188,7 @@ private val FORGOT_RED = Color(0xFFFF6B6B)
 
 @Composable
 private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBack: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val all by Flashcards.cards.collectAsState()
     val clock = now ?: System.currentTimeMillis()
     val forgot = remember(deck) { mutableStateListOf<String>() }
@@ -234,8 +234,8 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
     Spacer(Modifier.height(10.dp))
     // Progress through this session.
     val done = if (seen + left == 0) 1f else seen.toFloat() / (seen + left)
-    Box(Modifier.fillMaxWidth().height(4.dp).clip(BlazeShapes.pill).background(c.hair, BlazeShapes.pill)) {
-        Box(Modifier.fillMaxWidth(done.coerceIn(0f, 1f)).height(4.dp).clip(BlazeShapes.pill).background(c.accent, BlazeShapes.pill))
+    Box(Modifier.fillMaxWidth().height(4.dp).clip(ArgusShapes.pill).background(c.hair, ArgusShapes.pill)) {
+        Box(Modifier.fillMaxWidth(done.coerceIn(0f, 1f)).height(4.dp).clip(ArgusShapes.pill).background(c.accent, ArgusShapes.pill))
     }
     Spacer(Modifier.height(14.dp))
 
@@ -248,8 +248,8 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
         var front by remember(card.id) { mutableStateOf(card.front) }
         var back by remember(card.id) { mutableStateOf(card.back) }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            BlazeTextField(front, { front = it }, tr("Question"), singleLine = false)
-            BlazeTextField(back, { back = it }, tr("Answer"), singleLine = false)
+            ArgusTextField(front, { front = it }, tr("Question"), singleLine = false)
+            ArgusTextField(back, { back = it }, tr("Answer"), singleLine = false)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
                 GlassIconButton(Icons.Rounded.Close, tr("Cancel"), size = 52.dp) { editing = false }
                 GlassIconButton(Icons.Rounded.Check, tr("Save the card"), size = 52.dp, bg = c.accent, tint = Color.White) {
@@ -276,7 +276,7 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
             checking = false; typing = false; reveal = true
         }
     }
-    Column(Modifier.fillMaxWidth().heightIn(min = 240.dp).clip(BlazeShapes.medium).hairline(c.ink.copy(alpha = 0.35f))
+    Column(Modifier.fillMaxWidth().heightIn(min = 240.dp).clip(ArgusShapes.medium).hairline(c.ink.copy(alpha = 0.35f))
         .clickable(onClickLabel = if (reveal) tr("Show the question") else tr("Show the answer")) { reveal = !reveal }.padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -303,7 +303,7 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
     if (typing) {
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BlazeTextField(typed, { typed = it }, tr("Your answer"), modifier = Modifier.weight(1f), enabled = !checking,
+            ArgusTextField(typed, { typed = it }, tr("Your answer"), modifier = Modifier.weight(1f), enabled = !checking,
                 keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { check() }),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done))
             Spacer(Modifier.width(8.dp))
@@ -328,7 +328,7 @@ private fun Study(deck: String, reveal0: Boolean, now: Long?, undo: String, onBa
 /** A big round grade icon with its next wait under it ("10 min", "6 d"). */
 @Composable
 private fun GradeButton(icon: ImageVector, desc: String, wait: String, bg: Color, tint: Color, picked: Boolean = false, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         // The model's pick after a typed answer gets a ring; the user still decides.
         Box(Modifier.size(82.dp).then(if (picked) Modifier.border(3.dp, if (bg.alpha >= 0.99f) bg else tint, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
@@ -342,7 +342,7 @@ private fun GradeButton(icon: ImageVector, desc: String, wait: String, bg: Color
 /** End of a session: how many you knew, and when the next cards come back. */
 @Composable
 private fun DoneCard(deck: String, seen: Int, knew: Int, now: Long, onBack: () -> Unit, onMore: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val next = remember(deck, seen) { Flashcards.nextDue(deck, now) }
     val held = remember(deck, seen) { Flashcards.heldBack(deck, now) }
     Column(Modifier.fillMaxWidth().hairline(c.hair).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
@@ -359,7 +359,7 @@ private fun DoneCard(deck: String, seen: Int, knew: Int, now: Long, onBack: () -
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
             BackButton(onBack, desc = "Back to decks")
             // Today's 20 new cards are done; more are waiting: one tap studies another 20 (owner 2026-11-18: keep the limit, soft).
-            if (held > 0) Row(Modifier.height(48.dp).clip(BlazeShapes.pill).background(c.accent, BlazeShapes.pill)
+            if (held > 0) Row(Modifier.height(48.dp).clip(ArgusShapes.pill).background(c.accent, ArgusShapes.pill)
                 .clickable(onClickLabel = tr("Study more")) { onMore() }.padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(6.dp))

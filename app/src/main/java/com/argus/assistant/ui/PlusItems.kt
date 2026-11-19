@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 // Owner 2026-11-15: moved out of Shell.kt (unchanged apart from the Scan label) so the + menu's entries are pure and the
 // JVM tests (PlusMenuSpecTest, MenuIconsTest) build them without the Compose shell.
@@ -31,6 +31,6 @@ fun plusItems(work: String, approval: String, model: String, hasClipImage: Boole
     add(PlusItem("atfile", "@ files", "Mention a file from ${BrandName.NAME}'s home"))
     add(PlusItem("plan", if (work == "plan") "Plan mode" else "Build mode", if (work == "plan") "Read and look only \u00b7 tap for Build" else "Full access \u00b7 tap for Plan", on = work == "plan"))
     // Unreleased (owner): no Auto / Autopilot row; ARGUS is always on Autopilot.
-    // v0.25.0: no Model row; Blaze Cloud picks the model for every message.
+    // v0.25.0: no Model row; Argus Cloud picks the model for every message.
     if (inProject) add(PlusItem("new", "New chat", "A new thread in this project"))
 }

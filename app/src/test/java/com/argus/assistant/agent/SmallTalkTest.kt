@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -53,7 +53,7 @@ class SmallTalkTest {
     }
 
     @Test fun wiring() {
-        fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/agent/$p"), File("app/src/main/java/com/blaze/assistant/agent/$p")).first { it.exists() }.readText()
+        fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/agent/$p"), File("app/src/main/java/com/argus/assistant/agent/$p")).first { it.exists() }.readText()
         assertTrue(src("LookupLane.kt").contains("if (SmallTalk.ruleChat(t)) return false"))
         assertTrue(src("ChatLane.kt").contains("if (SmallTalk.chitChat(t) && !TurnContext.scheduleFollowUp(t, lastAssistant)"))
         assertTrue(src("ChatLane.kt").contains("if (SmallTalk.chitChat(userText)) append(SmallTalk.RULE)"))

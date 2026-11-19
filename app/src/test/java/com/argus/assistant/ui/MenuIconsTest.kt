@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -12,7 +12,7 @@ import java.io.File
  */
 class MenuIconsTest {
     private fun root(): File = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = File(root(), "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = File(root(), "com/argus/assistant/$path").readText()
 
     @Test fun theMenusInTheAppGetTheIconsTheirLabelsSay() {
         val cases = mapOf(
@@ -77,13 +77,13 @@ class MenuIconsTest {
     }
 
     @Test fun theMenuCardAndTheBubbleMenuDrawThem() {
-        val kit = src("ui/Kit.kt").substringAfter("fun BlazeMenuCard(").substringBefore("\n}\n")
+        val kit = src("ui/Kit.kt").substringAfter("fun ArgusMenuCard(").substringBefore("\n}\n")
         assertTrue("MenuIcons.forLabel(" in kit && "LeadIcon(icon.vector()" in kit)
         val bubble = src("ui/BubbleMenu.kt")
         assertTrue("MenuIcons.forLabel(label)" in bubble && "leadingIcon =" in bubble)
         // one style for every icon tile and row icon
         val theme = src("ui/Theme.kt")
-        assertTrue("object BlazeIconStyle" in theme)
-        assertTrue("BlazeIconStyle.tile" in src("ui/IconKit.kt"))
+        assertTrue("object ArgusIconStyle" in theme)
+        assertTrue("ArgusIconStyle.tile" in src("ui/IconKit.kt"))
     }
 }

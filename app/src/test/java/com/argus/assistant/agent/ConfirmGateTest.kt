@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.ConfirmGate.Decision.AUTOPILOT_OK
-import com.blaze.assistant.agent.ConfirmGate.Decision.SHOW
-import com.blaze.assistant.agent.ConfirmGate.Decision.STANDING_OK
+import com.argus.assistant.agent.ConfirmGate.Decision.AUTOPILOT_OK
+import com.argus.assistant.agent.ConfirmGate.Decision.SHOW
+import com.argus.assistant.agent.ConfirmGate.Decision.STANDING_OK
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

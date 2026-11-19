@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,7 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.34.0 agent tool `music_ops`: Blaze Music's smart side from the chat. Blaze DJ, daily mixes and smart playlists,
+ * v0.34.0 agent tool `music_ops`: Argus Music's smart side from the chat. Argus DJ, daily mixes and smart playlists,
  * Wrapped, the equalizer, crossfade, data saver, playlist import (YouTube / Spotify links) and the tag fixer.
  */
 object MusicTools {
@@ -51,21 +51,21 @@ object MusicTools {
     }
 
     /**
-     * 0.46.0 Blaze Stage: music starts IN PLACE (the service in the background + the music card on the chat), not on the Music
-     * screen. With the Stage off it opens Blaze Music as before. Main thread.
+     * 0.46.0 Argus Stage: music starts IN PLACE (the service in the background + the music card on the chat), not on the Music
+     * screen. With the Stage off it opens Argus Music as before. Main thread.
      */
     fun openPlayer(ctx: Context) {
-        if (!com.blaze.assistant.stage.StageStore.enabled) { MusicActivity.open(ctx, "player"); return }
+        if (!com.argus.assistant.stage.StageStore.enabled) { MusicActivity.open(ctx, "player"); return }
         StageMusic.startQuiet(ctx); onStage()
     }
 
     /** The music card on the Stage: big when nothing else is, else a mini player that doesn't disturb the hero. */
     fun onStage() {
-        if (!com.blaze.assistant.stage.StageStore.enabled) return
-        val st = com.blaze.assistant.stage.StageStore.state.value
-        if (st.items.any { it.kind == com.blaze.assistant.stage.StageKind.MUSIC }) return
-        com.blaze.assistant.stage.StageStore.dispatch(com.blaze.assistant.stage.StageAction.Show(com.blaze.assistant.stage.StageKind.MUSIC,
-            mode = if (st.hero == null) com.blaze.assistant.stage.StageMode.HERO else com.blaze.assistant.stage.StageMode.WIDGET))
+        if (!com.argus.assistant.stage.StageStore.enabled) return
+        val st = com.argus.assistant.stage.StageStore.state.value
+        if (st.items.any { it.kind == com.argus.assistant.stage.StageKind.MUSIC }) return
+        com.argus.assistant.stage.StageStore.dispatch(com.argus.assistant.stage.StageAction.Show(com.argus.assistant.stage.StageKind.MUSIC,
+            mode = if (st.hero == null) com.argus.assistant.stage.StageMode.HERO else com.argus.assistant.stage.StageMode.WIDGET))
     }
 
     /** v0.45.6: the player's state for [MusicCtl]. Main thread for the service fields. */

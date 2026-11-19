@@ -1,6 +1,6 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.Sql
 
 /**
  * P2-SF-05: team.db `audit_log` and `spend_ledger` (TeamSchema v1, no new columns). [append] chains a row onto the last

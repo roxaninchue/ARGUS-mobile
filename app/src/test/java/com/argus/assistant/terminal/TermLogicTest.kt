@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals

@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
-import com.blaze.assistant.ui.argus.ArgusContrast
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.Ground
+import com.argus.assistant.ui.argus.ArgusContrast
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.Ground
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

@@ -1,4 +1,4 @@
-package com.blaze.assistant.store
+package com.argus.assistant.store
 
 import java.sql.Connection
 import java.sql.PreparedStatement

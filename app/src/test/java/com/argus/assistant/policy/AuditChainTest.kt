@@ -1,7 +1,7 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.SecretTestKit
-import com.blaze.assistant.policy.Audit.Decision
+import com.argus.assistant.agent.SecretTestKit
+import com.argus.assistant.policy.Audit.Decision
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals

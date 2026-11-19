@@ -1,8 +1,8 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
-import com.blaze.assistant.notify.Inbox.Item
-import com.blaze.assistant.notify.Inbox.Kind
-import com.blaze.assistant.phone.PhoneControl
+import com.argus.assistant.notify.Inbox.Item
+import com.argus.assistant.notify.Inbox.Kind
+import com.argus.assistant.phone.PhoneControl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -63,11 +63,11 @@ class InboxTest {
 
     @Test fun inboxWords() {
         val now = 10_000_000L
-        assertEquals("now", com.blaze.assistant.ui.InboxText.ago(now - 5_000, now))
-        assertEquals("3 min ago", com.blaze.assistant.ui.InboxText.ago(now - 180_000, now))
-        assertEquals("2 h ago", com.blaze.assistant.ui.InboxText.ago(now - 7_200_000, now))
-        assertEquals("Chat", com.blaze.assistant.ui.InboxText.threadTitle(""))
-        assertEquals("Chat", com.blaze.assistant.ui.InboxText.threadTitle(com.blaze.assistant.agent.Mind.MAIN))
-        assertEquals("Another chat", com.blaze.assistant.ui.InboxText.threadTitle("p_123"))
+        assertEquals("now", com.argus.assistant.ui.InboxText.ago(now - 5_000, now))
+        assertEquals("3 min ago", com.argus.assistant.ui.InboxText.ago(now - 180_000, now))
+        assertEquals("2 h ago", com.argus.assistant.ui.InboxText.ago(now - 7_200_000, now))
+        assertEquals("Chat", com.argus.assistant.ui.InboxText.threadTitle(""))
+        assertEquals("Chat", com.argus.assistant.ui.InboxText.threadTitle(com.argus.assistant.agent.Mind.MAIN))
+        assertEquals("Another chat", com.argus.assistant.ui.InboxText.threadTitle("p_123"))
     }
 }

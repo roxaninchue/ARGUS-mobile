@@ -1,14 +1,14 @@
-package com.blaze.assistant.ui.shots
+package com.argus.assistant.ui.shots
 
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.Router
-import com.blaze.assistant.ui.argus.Ground
-import com.blaze.assistant.ui.team.ChatDrawerModel
-import com.blaze.assistant.ui.team.DeskModel
-import com.blaze.assistant.ui.team.JobsFilter
-import com.blaze.assistant.ui.team.LifeModel
-import com.blaze.assistant.ui.team.PlanSheetModel
-import com.blaze.assistant.ui.team.thread.ThreadModel
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.Router
+import com.argus.assistant.ui.argus.Ground
+import com.argus.assistant.ui.team.ChatDrawerModel
+import com.argus.assistant.ui.team.DeskModel
+import com.argus.assistant.ui.team.JobsFilter
+import com.argus.assistant.ui.team.LifeModel
+import com.argus.assistant.ui.team.PlanSheetModel
+import com.argus.assistant.ui.team.thread.ThreadModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -145,7 +145,7 @@ class P1FixturesTest {
         assertEquals(listOf("Vega"), r.gemini.map { it.first })
         assertTrue(r.changes > 0)
         assertEquals(f.theme != null, r.theme != null)
-        assertTrue(com.blaze.assistant.team.ATeamImport.lines(r).isNotEmpty())
+        assertTrue(com.argus.assistant.team.ATeamImport.lines(r).isNotEmpty())
         assertEquals(r, P1Fixtures.backupPreview())   // a fresh db each time: the same preview
     }
 

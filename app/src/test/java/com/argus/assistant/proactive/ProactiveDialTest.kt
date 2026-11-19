@@ -1,8 +1,8 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
-import com.blaze.assistant.agent.ReplyChips
-import com.blaze.assistant.proactive.ProactiveDial.Level
-import com.blaze.assistant.proactive.ProactiveDial.Source
+import com.argus.assistant.agent.ReplyChips
+import com.argus.assistant.proactive.ProactiveDial.Level
+import com.argus.assistant.proactive.ProactiveDial.Source
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

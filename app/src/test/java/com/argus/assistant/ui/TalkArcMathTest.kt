@@ -1,24 +1,24 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.43.0 / v0.45.28: the Blaze / Halo arc from the header orb (Halo x Blaze is automatic now, not a pick). */
+/** v0.43.0 / v0.45.28: the Argus / Halo arc from the header orb (Halo x Argus is automatic now, not a pick). */
 class TalkArcMathTest {
     private val e = 0.001f
 
     @Test fun targetsAndLabels() {
         assertEquals(listOf("blaze", "halo"), TalkArcMath.TARGETS)
-        // 0.51.0 one persona: a saved "halo" pick is Blaze now
+        // 0.51.0 one persona: a saved "halo" pick is Argus now
         assertEquals(0, TalkArcMath.indexOf("halo")); assertEquals(0, TalkArcMath.indexOf("nobody"))
         assertEquals("halo", TalkArcMath.targetAt(9)); assertEquals("blaze", TalkArcMath.targetAt(-1))
         assertEquals("${BrandName.NAME}", TalkArcMath.label("halo")); assertEquals("${BrandName.NAME}", TalkArcMath.label("blaze"))
     }
 
-    @Test fun oldHaloXBlazePickMigratesToBlaze() {
+    @Test fun oldHaloXArgusPickMigratesToArgus() {
         assertEquals("blaze", TalkArcMath.normalize("all"))
         assertEquals(0, TalkArcMath.indexOf("all"))
         assertEquals("${BrandName.NAME}", TalkArcMath.label("all"))
@@ -26,7 +26,7 @@ class TalkArcMathTest {
     }
 
     @Test fun layoutPutsTheFocusedOnTop() {
-        // Halo focused: Blaze to the left, Halo on top. Blaze focused: Halo to the right.
+        // Halo focused: Argus to the left, Halo on top. Argus focused: Halo to the right.
         assertEquals(150f, TalkArcMath.angle(0, 1f), e); assertEquals(90f, TalkArcMath.angle(1, 1f), e)
         assertEquals(30f, TalkArcMath.angle(1, 0f), e)
         val (x, y) = TalkArcMath.offset(1, 1f, 100f)
@@ -41,7 +41,7 @@ class TalkArcMathTest {
         val rx = 160f; val ry = TalkArcMath.flatRy(rx, 40f)
         assertTrue(ry < rx * 0.5f); assertTrue(ry >= 40f)
         assertEquals(40f, TalkArcMath.flatRy(50f, 40f), e)
-        val (hx, hy) = TalkArcMath.offset(1, 0f, rx, ry)      // Halo to the right while Blaze is on top
+        val (hx, hy) = TalkArcMath.offset(1, 0f, rx, ry)      // Halo to the right while Argus is on top
         assertTrue(hx > rx * 0.8f); assertTrue(-hy < ry * 0.6f)
         val (tx, ty) = TalkArcMath.offset(0, 0f, rx, ry)
         assertEquals(0f, tx, e); assertEquals(-ry, ty, e)

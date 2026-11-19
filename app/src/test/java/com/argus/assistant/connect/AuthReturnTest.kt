@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -134,16 +134,16 @@ class AuthReturnTest {
         assertFalse(AuthReturn.serverAllows(JSONObject().put("app_redirect", "blaze://other")))
         assertFalse(AuthReturn.serverAllows(JSONObject().put("version", "0.9.3")))
         assertFalse(AuthReturn.serverAllows(null))
-        assertEquals(true, BlazeAccount.featureFlags(live)["app_redirect"])
-        assertEquals(false, BlazeAccount.featureFlags(JSONObject())["app_redirect"])
+        assertEquals(true, ArgusAccount.featureFlags(live)["app_redirect"])
+        assertEquals(false, ArgusAccount.featureFlags(JSONObject())["app_redirect"])
     }
 
     @Test fun browserOutcomesInPlainWords() {
         for (c in listOf("signin_expired", "state_mismatch", "missing_code", "no_session", "mfa_required")) {
-            val m = BlazeAccount.message(BlazeAccount.ApiError(400, c))
+            val m = ArgusAccount.message(ArgusAccount.ApiError(400, c))
             assertFalse(m, m.contains(c))
         }
-        assertTrue(BlazeAccount.OPEN_APP.contains("package=com.blaze.assistant;"))
-        assertFalse(BlazeAccount.OPEN_APP.contains("code") || BlazeAccount.OPEN_APP.contains("state"))
+        assertTrue(ArgusAccount.OPEN_APP.contains("package=com.argus.assistant;"))
+        assertFalse(ArgusAccount.OPEN_APP.contains("code") || ArgusAccount.OPEN_APP.contains("state"))
     }
 }

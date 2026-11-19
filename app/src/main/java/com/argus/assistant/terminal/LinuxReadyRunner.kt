@@ -1,7 +1,7 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.os.Build
 import android.system.Os
@@ -67,7 +67,7 @@ object LinuxReadyRunner {
                         line = "Python, pip, git, curl, wget and nano are ready."
                     } else {
                         prefs().edit().putLong(lastKey, System.currentTimeMillis()).apply()
-                        runCatching { com.blaze.assistant.device.CrashLog.write("LinuxReady $distroId failed: " + out.takeLast(600).replace('\n', ' ')) }
+                        runCatching { com.argus.assistant.device.CrashLog.write("LinuxReady $distroId failed: " + out.takeLast(600).replace('\n', ' ')) }
                         line = "Couldn't finish setting up the Linux tools; ${BrandName.NAME} will try again later."
                     }
                 }
@@ -93,7 +93,7 @@ object LinuxReadyRunner {
     } catch (_: Throwable) { false }
 
     /**
-     * Puts the Blaze CLI at /usr/local/bin/blaze: the linux-arm64 build from blazeinchue.pages.dev, checked against
+     * Puts the Blaze CLI at /usr/local/bin/argus: the linux-arm64 build from blazeinchue.pages.dev, checked against
      * the published SHA256SUMS (a mismatch installs nothing). 32-bit phones: no build is published, so it's skipped.
      */
     private fun installCli(rootfs: File) {

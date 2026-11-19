@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,8 +12,8 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.blaze.assistant.MainActivity
-import com.blaze.assistant.R
+import com.argus.assistant.MainActivity
+import com.argus.assistant.R
 import java.util.concurrent.TimeUnit
 
 /**

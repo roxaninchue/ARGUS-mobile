@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.device.Thermal
+import com.argus.assistant.device.Thermal
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -13,7 +13,7 @@ class HeatTest {
     @org.junit.Before fun drainLeaks() = LeakedMainLaunches.drain()
     @After fun cool() = Thermal.set(0, false)
 
-    private fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
+    private fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }.readText()
 
     @Test fun thermalPolicy() {
         assertEquals(Thermal.COOL, Thermal.policy(0, false))
@@ -38,18 +38,18 @@ class HeatTest {
     @Test fun noPhoneBrainLeft() {
         // Owner 16 Nov 2026: the on-device brains (the OpenCode backup and the MediaPipe Offline Brain) are removed
         for (f in listOf("agent/BackupBrain.kt", "agent/BackupBridge.kt", "agent/BackupHeat.kt", "agent/OfflineBrain.kt", "agent/BrainRest.kt"))
-            assertFalse(f, listOf(File("src/main/java/com/blaze/assistant/$f"), File("app/src/main/java/com/blaze/assistant/$f")).any { it.exists() })
+            assertFalse(f, listOf(File("src/main/java/com/argus/assistant/$f"), File("app/src/main/java/com/argus/assistant/$f")).any { it.exists() })
     }
 
     @Test fun phoneControlIdlesOutsideATask() {
-        val s = src("phone/BlazeAccessibilityService.kt")
+        val s = src("phone/ArgusAccessibilityService.kt")
         assertTrue(s.contains("if (!taskActive()) { if (treeWindow >= 0)"))
         assertTrue(s.contains("ScreenHeat.shotWait(lastShotAt, now0)"))
     }
 
     @Test fun animationsFreezeWhenHotOrIdle() {
         assertTrue(src("ui/Theme.kt").contains("if (paused || hot || !busy) return@LaunchedEffect"))
-        assertTrue(src("ui/BlazeGlass.kt").contains("if (hot) return@LaunchedEffect"))
+        assertTrue(src("ui/ArgusGlass.kt").contains("if (hot) return@LaunchedEffect"))
         assertTrue(src("ui/DuoGlow.kt").contains("if (!active || hot) return@LaunchedEffect"))
         assertTrue(src("ui/StreamOrb.kt").contains("if (!running || hot) return@LaunchedEffect"))
         assertTrue(src("ui/GlassKit.kt").contains("Thermal.now().blur"))

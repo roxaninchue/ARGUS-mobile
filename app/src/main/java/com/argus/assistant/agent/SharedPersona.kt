@@ -1,15 +1,15 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 
 /**
- * v0.45.5 (#10): the persona every Blaze app shares (Site: https://blazeinchue.pages.dev/persona.json, v1.0.0).
+ * v0.45.5 (#10): the persona every Argus app shares (Site: https://blazeinchue.pages.dev/persona.json, v1.0.0).
  * Its `system` text is the FIRST system message, byte-identical every turn (provider prompt caches hit, TTFT drops);
  * the app's own instructions (tools, phone, the user's first name, local time in natural words) follow in a SECOND
  * system message. Fetched on start, refetched at most once a day, cached; the bundled v1 (assets/persona-v1.json) is the
- * offline fallback. Used for the default Blaze personality; a personality the user picked keeps its own words in the
+ * offline fallback. Used for the default Argus personality; a personality the user picked keeps its own words in the
  * second message. Pure parts (parse, due, pick) in this object; SharedPersonaTest runs the persona's evals as
  * regressions on the request shape.
  */
@@ -56,7 +56,7 @@ object SharedPersona {
         }
     }
 
-    /** True when the shared persona leads the prompt: the default Blaze personality (a picked one keeps its own words). */
+    /** True when the shared persona leads the prompt: the default Argus personality (a picked one keeps its own words). */
     fun applies(personaId: String): Boolean = personaId == "blaze"
 
     /** The second system message's opening: the user's first name and the local time in natural words. */
@@ -99,7 +99,7 @@ object SharedPersona {
         fetching = true
         Thread {
             try {
-                val c = com.blaze.assistant.connect.UrlSafety.open(URL)
+                val c = com.argus.assistant.connect.UrlSafety.open(URL)
                 c.connectTimeout = 8000; c.readTimeout = 8000; c.useCaches = false
                 c.setRequestProperty("Cache-Control", "no-cache")
                 val body = if (c.responseCode in 200..299) c.inputStream.bufferedReader().use { it.readText() } else null

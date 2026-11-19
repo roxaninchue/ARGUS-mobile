@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 /**
- * 0.45.19 Blaze Phone browser: what the phone_* tools drive. [PhoneBrowser] is the real one (WebView on Blaze's own
+ * 0.45.19 Argus Phone browser: what the phone_* tools drive. [PhoneBrowser] is the real one (WebView on Argus's own
  * display); the JVM sims (PhoneToolSimTest) drive a scripted demo site through the same tool code.
  */
 interface PhoneDriver {
@@ -31,7 +31,7 @@ interface PhoneDriver {
     suspend fun screenshot(): String?
     suspend fun waitFor(selector: String?, text: String?, gone: Boolean, ms: Long): String
     suspend fun handoff(reason: String): String
-    /** Waits while the user is in control; true when Blaze may act. */
+    /** Waits while the user is in control; true when Argus may act. */
     suspend fun awaitAgentTurn(): Boolean
     fun status(): String
     fun step(what: String)

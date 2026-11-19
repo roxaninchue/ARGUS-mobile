@@ -1,7 +1,7 @@
-package com.blaze.assistant.media
+package com.argus.assistant.media
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -21,7 +21,7 @@ import java.net.URL
 import java.net.URLEncoder
 
 /**
- * Blaze's gallery: images it generates (free, keyless Pollinations) and anything it makes in the
+ * Argus's gallery: images it generates (free, keyless Pollinations) and anything it makes in the
  * terminal (beats, charts, edited photos). Everything lives in filesDir/gallery with a small
  * sidecar .json (what it is, the prompt). Chats show items inline; the Gallery screen lists them.
  */
@@ -53,7 +53,7 @@ object Media {
             }.sortedByDescending { it.time }
     }
 
-    /** Copies a file Blaze made (terminal, download) into the gallery and returns the copy. */
+    /** Copies a file Argus made (terminal, download) into the gallery and returns the copy. */
     fun add(src: File, title: String = ""): File {
         val d = dir()
         if (src.parentFile?.canonicalPath == d.canonicalPath) { if (title.isNotBlank()) meta(src, title); refresh(); return src }
@@ -126,10 +126,10 @@ object Media {
         return try {
             if (Build.VERSION.SDK_INT >= 29) {
                 val (coll, rel) = when (kind) {
-                    "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI to Environment.DIRECTORY_PICTURES + "/Blaze"
-                    "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI to Environment.DIRECTORY_MUSIC + "/Blaze"
-                    "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI to Environment.DIRECTORY_MOVIES + "/Blaze"
-                    else -> MediaStore.Downloads.EXTERNAL_CONTENT_URI to Environment.DIRECTORY_DOWNLOADS + "/Blaze"
+                    "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI to Environment.DIRECTORY_PICTURES + "/Argus"
+                    "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI to Environment.DIRECTORY_MUSIC + "/Argus"
+                    "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI to Environment.DIRECTORY_MOVIES + "/Argus"
+                    else -> MediaStore.Downloads.EXTERNAL_CONTENT_URI to Environment.DIRECTORY_DOWNLOADS + "/Argus"
                 }
                 val v = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, f.name); put(MediaStore.MediaColumns.MIME_TYPE, mime)

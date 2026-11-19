@@ -1,7 +1,7 @@
-package com.blaze.assistant.voice.myvoice
+package com.argus.assistant.voice.myvoice
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * The decisions behind My voice, kept pure so they're tested on the JVM (VoiceRouteTest):
  * which voice speaks, when a slow phone hands the rest of a reply to the system voice, and what to tell the user (once).

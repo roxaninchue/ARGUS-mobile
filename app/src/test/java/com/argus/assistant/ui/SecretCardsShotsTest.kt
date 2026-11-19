@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
@@ -14,9 +14,9 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.SecretDesk
-import com.blaze.assistant.agent.SecretVault
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.SecretDesk
+import com.argus.assistant.agent.SecretVault
+import com.argus.assistant.agent.Settings
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -54,7 +54,7 @@ class SecretCardsShotsTest {
 
     private fun frame(colors: BlazeColors, name: String) {
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides colors) {
+            CompositionLocalProvider(LocalArgus provides colors) {
                 Column(Modifier.fillMaxSize().background(colors.paper).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     SecretForm(SecretVault.Kind.API_KEY, "Cloudflare API token", "cloudflare", "Workers and Pages edit, nothing account-wide.",
                         SecretVault.fieldsFor(SecretVault.Kind.API_KEY, "Cloudflare API token"), onSave = {}, onCancel = {})
@@ -75,7 +75,7 @@ class SecretCardsShotsTest {
 
     @Test fun pasteHoldAndSavedDark() {
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides DarkColors) {
+            CompositionLocalProvider(LocalArgus provides DarkColors) {
                 Column(Modifier.fillMaxSize().background(DarkColors.paper).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     SecretPasteHold(listOf("GitLab token"), "here's my token •••••••• (GitLab token) can you push?", onSave = {}, onSend = {})
                     SavedSecurelyLine("GitLab token", "…3Mn9")

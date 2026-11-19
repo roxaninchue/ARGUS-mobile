@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * P0-AG-01: the one seam between the agent loop (`Agent.Session`) and the team layer. A [com.blaze.assistant.agent.engines.LocalEngine]
+ * P0-AG-01: the one seam between the agent loop (`Agent.Session`) and the team layer. A [com.argus.assistant.agent.engines.LocalEngine]
  * turn [bind]s a chat id to a bot for the length of the turn; the loop then asks this object three things and tells it four:
  *
  *  - asks: the bot's identity block for the system prompt ([identityBlock]), whether a tool is in the bot's subset
@@ -117,7 +117,7 @@ object TeamHooks {
      * The team tools' schemas (none until JobsRuntime sets [tools]) and, with them, P2-SF-02's request_app_connection
      * (the connect card; PolicyRuntime runs it before any tool set sees it).
      */
-    fun toolDefs(): List<String> = tools?.let { t -> safe { t.defs() }?.plus(com.blaze.assistant.policy.Cards.connectToolDef()) } ?: emptyList()
+    fun toolDefs(): List<String> = tools?.let { t -> safe { t.defs() }?.plus(com.argus.assistant.policy.Cards.connectToolDef()) } ?: emptyList()
 
     /** The result of a team tool, or null when [tool] isn't one (the loop runs it as usual). */
     fun runTool(chatId: String, tool: String, args: String): String? {

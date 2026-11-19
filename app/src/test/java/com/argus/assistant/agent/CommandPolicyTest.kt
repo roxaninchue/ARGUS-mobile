@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.CommandPolicy.Decision
-import com.blaze.assistant.agent.CommandPolicy.Kind
-import com.blaze.assistant.agent.CommandPolicy.Level
+import com.argus.assistant.agent.CommandPolicy.Decision
+import com.argus.assistant.agent.CommandPolicy.Kind
+import com.argus.assistant.agent.CommandPolicy.Level
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -96,8 +96,8 @@ class CommandPolicyTest {
 
     @Test fun autopilotRuleUnchanged() {
         // The Autopilot path keeps the old checks: Terminal.risky / Git.risky decide, CommandPolicy isn't consulted.
-        assertTrue(com.blaze.assistant.terminal.Terminal.risky("rm -rf /"))
-        assertFalse(com.blaze.assistant.terminal.Terminal.risky("ls"))
+        assertTrue(com.argus.assistant.terminal.Terminal.risky("rm -rf /"))
+        assertFalse(com.argus.assistant.terminal.Terminal.risky("ls"))
         assertEquals(ConfirmGate.Decision.SHOW, ConfirmGate.decide(true, true, false, true, false))
         assertEquals(ConfirmGate.Decision.AUTOPILOT_OK, ConfirmGate.decide(false, false, false, true, false))
     }

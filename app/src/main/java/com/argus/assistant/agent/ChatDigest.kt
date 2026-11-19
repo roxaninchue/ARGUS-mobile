@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /**
  * Owner 16 Nov 2026 (whole-chat review): one chat as a compact digest the curator reads in a single call: every user

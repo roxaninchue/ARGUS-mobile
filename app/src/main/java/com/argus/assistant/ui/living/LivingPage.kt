@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
 /**
  * Living UI 0.2.0: what a browser card shows of a page. The tools hand the model text made for the model ("Opened X

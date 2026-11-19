@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -17,7 +17,7 @@ class ToolLeakTest {
 
     private val findTool = "[/find_tool need=\"stock tracking\"]"
     private val github = "[github_open repo=\"Blazeinchue/Blaze-Agent\"]"
-    private val blazer = "[/blazer_save kind=features text=\"## App ideas\n1. **Offline mode**: works without data\n2. **Sync**: across devices"
+    private val argusr = "[/blazer_save kind=features text=\"## App ideas\n1. **Offline mode**: works without data\n2. **Sync**: across devices"
 
     private fun only(r: Pair<JSONArray, String>?): Pair<String, JSONObject> {
         assertNotNull(r); assertEquals(1, r!!.first.length())
@@ -33,7 +33,7 @@ class ToolLeakTest {
         assertEquals("", ToolLeak.toCalls(findTool, all)!!.second)
     }
 
-    @Test fun githubOpenOpensTheRepoInBlazesBrowser() {
+    @Test fun githubOpenOpensTheRepoInArgussBrowser() {
         val (n, a) = only(ToolLeak.toCalls(github, all))
         assertEquals("browser_open", n)
         assertEquals(ToolLeak.BLAZE_REPO_URL, a.getString("url"))
@@ -41,8 +41,8 @@ class ToolLeakTest {
         assertEquals("https://github.com/octocat/hello", ToolLeak.githubUrl(JSONObject().put("repo", "octocat/hello")))
     }
 
-    @Test fun blazerSaveMapsToMemorySaveEvenUnclosed() {
-        val (n, a) = only(ToolLeak.toCalls(blazer, all))
+    @Test fun argusrSaveMapsToMemorySaveEvenUnclosed() {
+        val (n, a) = only(ToolLeak.toCalls(argusr, all))
         assertEquals("memory_save", n)
         assertTrue(a.getString("text").startsWith("## App ideas\n1. **Offline mode**"))
         assertEquals("project", a.getString("kind"))
@@ -50,7 +50,7 @@ class ToolLeakTest {
     }
 
     @Test fun neverShownToTheUser() {
-        for (s in listOf(findTool, github, blazer)) {
+        for (s in listOf(findTool, github, argusr)) {
             assertEquals("", ToolLeak.strip(s))
             assertEquals("", ReplyParts.split(s, final = true).text)
             assertTrue(ToolLeak.has(s))

@@ -1,9 +1,9 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
-import com.blaze.assistant.agent.DeliveryState
-import com.blaze.assistant.mediaapps.BrowseState
-import com.blaze.assistant.ui.DeliveryView
-import com.blaze.assistant.ui.HomeImages
+import com.argus.assistant.agent.DeliveryState
+import com.argus.assistant.mediaapps.BrowseState
+import com.argus.assistant.ui.DeliveryView
+import com.argus.assistant.ui.HomeImages
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -16,13 +16,13 @@ import java.io.File
  * spam and the picture cache on low-RAM phones.
  */
 class CrashReport465Test {
-    private fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
+    private fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }.readText()
 
     @Test fun detailsSayWhatReallyWentWrong() {
         assertEquals("This title is too big for this source", BrowseState.openError("The source used too much memory").first)
         assertEquals("This source is slow right now", BrowseState.openError("The source took longer than 25 s").first)
-        assertEquals("This source is slow right now", BrowseState.openError(com.blaze.assistant.movies.ProviderSandbox.BUSY).first)
-        assertEquals("A source got stuck", BrowseState.openError(com.blaze.assistant.movies.ProviderSandbox.STUCK).first)
+        assertEquals("This source is slow right now", BrowseState.openError(com.argus.assistant.movies.ProviderSandbox.BUSY).first)
+        assertEquals("A source got stuck", BrowseState.openError(com.argus.assistant.movies.ProviderSandbox.STUCK).first)
         assertEquals("This source has no details for this title", BrowseState.openError("X returned no details").first)
         assertEquals("Couldn't open this right now", BrowseState.openError("Unable to resolve host").first)
         assertEquals("Couldn't open this right now", BrowseState.openError(null).first)
@@ -37,9 +37,9 @@ class CrashReport465Test {
     }
 
     @Test fun noMainThreadAccessibilityTreeOrLabelLookups() {
-        val a11y = src("phone/BlazeAccessibilityService.kt")
+        val a11y = src("phone/ArgusAccessibilityService.kt")
         assertTrue(a11y.contains("if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) return frontPkg"))
-        assertTrue(a11y.contains("com.blaze.assistant.bank.BankMode.warm(this)"))
+        assertTrue(a11y.contains("com.argus.assistant.bank.BankMode.warm(this)"))
         assertTrue(a11y.contains("BankMode.labelOf(this, pkg)"))
         assertFalse(a11y.contains("fun currentPkg(): String = rootInActiveWindow"))
     }
@@ -54,7 +54,7 @@ class CrashReport465Test {
 
     @Test fun memoryTrimsDropPicturesAndLogRarely() {
         val w = src("device/Watchdog.kt")
-        assertTrue(w.contains("com.blaze.assistant.ui.HomeImages.trim()"))
+        assertTrue(w.contains("com.argus.assistant.ui.HomeImages.trim()"))
         assertTrue(w.contains("if (now - lastLogged > 600_000L)"))
         assertEquals(2 * 1024 * 1024, HomeImages.cacheBytes(true)); assertEquals(6 * 1024 * 1024, HomeImages.cacheBytes(false))
     }

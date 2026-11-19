@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
@@ -18,10 +18,10 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.home.WeatherKind
-import com.blaze.assistant.ui.splash.CloudGlyphPainter
-import com.blaze.assistant.ui.splash.CloudSplashSpec
-import com.blaze.assistant.ui.splash.HomeIntroSpec
+import com.argus.assistant.home.WeatherKind
+import com.argus.assistant.ui.splash.CloudGlyphPainter
+import com.argus.assistant.ui.splash.CloudSplashSpec
+import com.argus.assistant.ui.splash.HomeIntroSpec
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
@@ -46,8 +46,8 @@ class HomeRedesignShotsTest {
         }
     }
     @get:Rule(order = 1) val rule = createAndroidComposeRule<androidx.activity.ComponentActivity>()
-    // RC4: Blaze's bubbles in the chat over Home read Settings (fold answers), as in the app
-    @org.junit.Before fun initSettings() { try { com.blaze.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
+    // RC4: Argus's bubbles in the chat over Home read Settings (fold answers), as in the app
+    @org.junit.Before fun initSettings() { try { com.argus.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
 
     private fun capture(name: String, content: @androidx.compose.runtime.Composable () -> Unit): Bitmap {
         rule.mainClock.autoAdvance = false
@@ -161,20 +161,20 @@ class HomeRedesignShotsTest {
     }
 
     /** RC2 card focus: a card lifted over the blurred Home. */
-    private fun focused(name: String, card: com.blaze.assistant.home.HomeGrid.Card, software: Boolean) = capture(name) {
+    private fun focused(name: String, card: com.argus.assistant.home.HomeGrid.Card, software: Boolean) = capture(name) {
         HomeRedesignContent(HomeRedesignSample.state().let { it.copy(allTopics = it.topics + HomeRedesignSample.extraTopics()) },
             playIntro = false, drawSky = true, focus = HomeFocusState(card), forceSoftwareBlur = software)
     }
     @Test fun focusedInterests() {
-        focused("focus-interests", com.blaze.assistant.home.HomeGrid.Card.INTERESTS, software = false)
+        focused("focus-interests", com.argus.assistant.home.HomeGrid.Card.INTERESTS, software = false)
         rule.onNodeWithText("Formula One").assertIsDisplayed()
     }
     @Test fun focusedWeather() {
-        focused("focus-weather", com.blaze.assistant.home.HomeGrid.Card.WEATHER, software = false)
+        focused("focus-weather", com.argus.assistant.home.HomeGrid.Card.WEATHER, software = false)
         rule.onNodeWithText("Open the forecast").assertIsDisplayed()
     }
     @Test fun focusedLowRamBlur() {
-        val b = focused("focus-interests-lowram", com.blaze.assistant.home.HomeGrid.Card.INTERESTS, software = true)
+        val b = focused("focus-interests-lowram", com.argus.assistant.home.HomeGrid.Card.INTERESTS, software = true)
         // the sides are dimmed (the blurred, dimmed Home): darker than the open sky
         val side = b.getPixel(4, b.height / 2)
         assertTrue("dim on the sides: ${Integer.toHexString(side)}", (side and 0xFF) < 170)
@@ -184,7 +184,7 @@ class HomeRedesignShotsTest {
     @Test fun splashNight() { home("intro-0-splash-night", night = true, frozenU = -900L) }
     @Test fun glide() { home("intro-1-glide", frozenU = HomeIntroSpec.GLIDE_MS / 2) }
     @Test fun board() { home("intro-2-board-typing", frozenU = HomeIntroSpec.TYPE_COND_AT + 120) }
-    @Test fun cards() { home("intro-3-cards", frozenU = HomeIntroSpec.CARDS_AT + com.blaze.assistant.ui.splash.HomeSequence.INT_SPAN + 700) }
+    @Test fun cards() { home("intro-3-cards", frozenU = HomeIntroSpec.CARDS_AT + com.argus.assistant.ui.splash.HomeSequence.INT_SPAN + 700) }
 
     /**
      * 0.48.0 RC3: the intro frame by frame at the approved video's clock (every 0.5 s, the splash handing over at 2.4 s like
@@ -230,23 +230,23 @@ class HomeRedesignShotsTest {
      */
     @Test fun homeWithChatBar() {
         val b = capture("home-with-chat-bar") {
-            androidx.compose.runtime.CompositionLocalProvider(LocalBlaze provides DarkColors) {
+            androidx.compose.runtime.CompositionLocalProvider(LocalArgus provides DarkColors) {
                 Box(Modifier.fillMaxSize()) {
                     HomeSkyBackground(night = false, modifier = Modifier.fillMaxSize())
                     androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f)) { HomeRedesignContent(HomeRedesignSample.state(), playIntro = false, drawSky = false) }
                         androidx.compose.foundation.layout.Spacer(Modifier.fillMaxWidth()
-                            .height((com.blaze.assistant.ui.composer.ChatBarTokens.HEIGHT_DP + 8).dp))
+                            .height((com.argus.assistant.ui.composer.ChatBarTokens.HEIGHT_DP + 8).dp))
                     }
                     Box(Modifier.align(androidx.compose.ui.Alignment.BottomCenter)) {
-                        com.blaze.assistant.ui.composer.BlazeChatBar(com.blaze.assistant.ui.composer.ComposerState())
+                        com.argus.assistant.ui.composer.ArgusChatBar(com.argus.assistant.ui.composer.ComposerState())
                     }
                 }
             }
         }
         // "All widgets" must end above the bar's top edge (the bar is the bottom HEIGHT_DP of the frame).
         val all = rule.onNode(androidx.compose.ui.test.hasText("All widgets"), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val barTop = b.height - com.blaze.assistant.ui.composer.ChatBarTokens.HEIGHT_DP * rule.density.density
+        val barTop = b.height - com.argus.assistant.ui.composer.ChatBarTokens.HEIGHT_DP * rule.density.density
         assertTrue("All widgets (bottom ${all.bottom}) overlaps the chat bar (top $barTop)", all.bottom <= barTop)
     }
 
@@ -263,16 +263,16 @@ class HomeRedesignShotsTest {
 
     /** Chat and Spotlight over Home with NO blur (low-RAM phones): the solid scrim + opaque bubbles. */
     private fun overNewHome(name: String, body: @androidx.compose.runtime.Composable () -> Unit) = capture(name) {
-        androidx.compose.runtime.CompositionLocalProvider(LocalBlaze provides DarkColors,
-            com.blaze.assistant.ui.composer.LocalComposerSolid provides true) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalArgus provides DarkColors,
+            com.argus.assistant.ui.composer.LocalComposerSolid provides true) {
             Box(Modifier.fillMaxSize()) {
                 // the app's layout: Home above a bottom slot as tall as the bar (HomeSurface), the scrim over all of it
                 HomeSkyBackground(night = false, modifier = Modifier.fillMaxSize())
                 androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
                     Box(Modifier.weight(1f)) { HomeRedesignContent(HomeRedesignSample.state(), playIntro = false, drawSky = false) }
-                    androidx.compose.foundation.layout.Spacer(Modifier.fillMaxWidth().height((com.blaze.assistant.ui.composer.ChatBarTokens.HEIGHT_DP + 8).dp))
+                    androidx.compose.foundation.layout.Spacer(Modifier.fillMaxWidth().height((com.argus.assistant.ui.composer.ChatBarTokens.HEIGHT_DP + 8).dp))
                 }
-                Box(Modifier.fillMaxSize().background(com.blaze.assistant.composer.ComposerLook.scrim(DarkColors, blur = false)))
+                Box(Modifier.fillMaxSize().background(com.argus.assistant.composer.ComposerLook.scrim(DarkColors, blur = false)))
                 body()
             }
         }
@@ -281,34 +281,34 @@ class HomeRedesignShotsTest {
     @Test fun chatOverNewHome() {
         val now = System.currentTimeMillis()
         val msgs = listOf(
-            com.blaze.assistant.agent.ChatMessage(1, com.blaze.assistant.agent.Role.USER, "What's on today?", at = now - 120_000),
-            com.blaze.assistant.agent.ChatMessage(2, com.blaze.assistant.agent.Role.BLAZE, "Standup at 10:00, then the dentist at 15:30.", at = now - 110_000))
-        val st = com.blaze.assistant.ui.composer.ComposerState().apply { chatOpen = true }
-        com.blaze.assistant.ui.MotionTokens.setEnabledForTests(false)
+            com.argus.assistant.agent.ChatMessage(1, com.argus.assistant.agent.Role.USER, "What's on today?", at = now - 120_000),
+            com.argus.assistant.agent.ChatMessage(2, com.argus.assistant.agent.Role.BLAZE, "Standup at 10:00, then the dentist at 15:30.", at = now - 110_000))
+        val st = com.argus.assistant.ui.composer.ComposerState().apply { chatOpen = true }
+        com.argus.assistant.ui.MotionTokens.setEnabledForTests(false)
         val b = overNewHome("chat-over-new-home") {
             androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f)) { com.blaze.assistant.ui.composer.ChatOverHomeContent(st, msgs, busy = true, now = now) }
-                com.blaze.assistant.ui.composer.BlazeChatBar(st)
+                Box(Modifier.weight(1f)) { com.argus.assistant.ui.composer.ChatOverHomeContent(st, msgs, busy = true, now = now) }
+                com.argus.assistant.ui.composer.ArgusChatBar(st)
             }
         }
-        com.blaze.assistant.ui.MotionTokens.setEnabledForTests(true)
+        com.argus.assistant.ui.MotionTokens.setEnabledForTests(true)
         // the scrim is strong: the frame's top-middle (Home's cards behind) is close to the theme background
         val p = b.getPixel(b.width / 2, b.height / 2)
         assertTrue("scrim too weak: ${Integer.toHexString(p)}", ((p shr 16) and 0xFF) < 0x40 && (p and 0xFF) < 0x48)
     }
 
     @Test fun spotlightOverNewHome() {
-        com.blaze.assistant.mediaapps.MediaLib.seedForTests(listOf(com.blaze.assistant.mediaapps.Track("s1", "content://s1", "Bohemian Rhapsody", "Queen")), emptyList())
-        val st = com.blaze.assistant.ui.composer.ComposerState().apply { spotlightOpen = true }
-        com.blaze.assistant.ui.MotionTokens.setEnabledForTests(false)
+        com.argus.assistant.mediaapps.MediaLib.seedForTests(listOf(com.argus.assistant.mediaapps.Track("s1", "content://s1", "Bohemian Rhapsody", "Queen")), emptyList())
+        val st = com.argus.assistant.ui.composer.ComposerState().apply { spotlightOpen = true }
+        com.argus.assistant.ui.MotionTokens.setEnabledForTests(false)
         overNewHome("spotlight-over-new-home") {
             // RC4: Spotlight floats on its own in the upper third (no chat bar under it), like macOS Spotlight
             Box(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
                 Box(Modifier.align(androidx.compose.ui.Alignment.TopCenter).padding(top = 96.dp)) {
-                    com.blaze.assistant.ui.composer.SpotlightPanel(st, onAct = {}, maxHeight = 560.dp)
+                    com.argus.assistant.ui.composer.SpotlightPanel(st, onAct = {}, maxHeight = 560.dp)
                 }
             }
         }
-        com.blaze.assistant.ui.MotionTokens.setEnabledForTests(true)
+        com.argus.assistant.ui.MotionTokens.setEnabledForTests(true)
     }
 }

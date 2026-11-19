@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /**
  * 2026-11-14 harness gap (owner: "complement the model's knowledge, not hold it back"). The system prompt had grown to

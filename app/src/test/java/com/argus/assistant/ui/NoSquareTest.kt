@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,7 +33,7 @@ class NoSquareTest {
 
     @Test fun noSquareShapesInAppUi() {
         val bad = offenders(root().walkTopDown())
-        assertTrue("Square shapes found (round them with BlazeShapes):\n" + bad.joinToString("\n"), bad.isEmpty())
+        assertTrue("Square shapes found (round them with ArgusShapes):\n" + bad.joinToString("\n"), bad.isEmpty())
     }
 
     @Test fun detectorCatchesSquares() {

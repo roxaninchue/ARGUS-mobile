@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
 import android.graphics.BitmapFactory
@@ -52,7 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.media.Media
+import com.argus.assistant.media.Media
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
@@ -95,7 +95,7 @@ private object Player {
     fun stop() { try { mp?.release() } catch (_: Exception) { }; mp = null; playing.value = "" }
 }
 
-/** Pictures and beats under a Blaze reply. */
+/** Pictures and beats under a Argus reply. */
 /**
  * v0.45.0 (#2): [paths] without the files that no longer exist, checked on a background thread when the row is first
  * drawn (shown as given until then). Replaces the File.exists per media path per message that ran at chat load.
@@ -111,7 +111,7 @@ fun rememberPresent(paths: List<String>): List<String> {
 
 @Composable
 fun MediaStrip(paths: List<String>) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val playing by Player.playing.collectAsState()
     // v0.45.0 (#2): media files are checked here, off the main thread, when the row is drawn (no longer for every
@@ -123,16 +123,16 @@ fun MediaStrip(paths: List<String>) {
             when (Media.kindOf(f)) {
                 "image" -> {
                     val bmp = rememberThumb(p, 720)
-                    Box(Modifier.widthIn(max = 330.dp).fillMaxWidth().heightIn(min = 120.dp).clip(BlazeShapes.medium).background(c.hair.copy(alpha = 0.3f))
+                    Box(Modifier.widthIn(max = 330.dp).fillMaxWidth().heightIn(min = 120.dp).clip(ArgusShapes.medium).background(c.hair.copy(alpha = 0.3f))
                         .clickable { try { ctx.startActivity(Media.viewIntent(f)) } catch (_: Exception) { } }) {
                         if (bmp != null) Image(bmp, contentDescription = f.nameWithoutExtension, modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
-                        else Box(Modifier.fillMaxWidth().height(200.dp).shimmer(c.hair.copy(alpha = 0.3f), c.paper.copy(alpha = 0.3f), BlazeShapes.medium),
+                        else Box(Modifier.fillMaxWidth().height(200.dp).shimmer(c.hair.copy(alpha = 0.3f), c.paper.copy(alpha = 0.3f), ArgusShapes.medium),
                             contentAlignment = Alignment.Center) { Label(tr("Loading picture\u2026"), size = 10.sp) }
                     }
                 }
                 "audio" -> Row(Modifier.widthIn(max = 330.dp).fillMaxWidth().hairline(c.hair).clickable { Player.toggle(p) }.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(34.dp).clip(BlazeShapes.pill).background(c.ink), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(34.dp).clip(ArgusShapes.pill).background(c.ink), contentAlignment = Alignment.Center) {
                         androidx.compose.material3.Icon(if (playing == p) androidx.compose.material.icons.Icons.Rounded.Pause else androidx.compose.material.icons.Icons.Rounded.PlayArrow,
                             contentDescription = if (playing == p) "Pause" else "Play", tint = c.paper, modifier = Modifier.size(18.dp))
                     }
@@ -160,13 +160,13 @@ fun MediaStrip(paths: List<String>) {
 /** Your own attached photos/PDF pages, shown as pictures in your message. Tap to open full size. */
 @Composable
 fun AttachedThumbs(paths: List<String>) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         paths.take(5).forEach { p ->
             val bmp = rememberThumb(p, 360)
             val single = paths.size == 1
-            Box(Modifier.then(if (single) Modifier.widthIn(max = 220.dp) else Modifier.size(84.dp)).clip(BlazeShapes.small).background(c.hair.copy(alpha = 0.3f)).border(1.dp, c.hair, BlazeShapes.small)
+            Box(Modifier.then(if (single) Modifier.widthIn(max = 220.dp) else Modifier.size(84.dp)).clip(ArgusShapes.small).background(c.hair.copy(alpha = 0.3f)).border(1.dp, c.hair, ArgusShapes.small)
                 .clickable { try { ctx.startActivity(Media.viewIntent(File(p))) } catch (_: Exception) { } }) {
                 if (bmp != null) Image(bmp, contentDescription = tr("Attached picture"),
                     modifier = if (single) Modifier.widthIn(max = 220.dp).heightIn(max = 300.dp) else Modifier.fillMaxSize(),

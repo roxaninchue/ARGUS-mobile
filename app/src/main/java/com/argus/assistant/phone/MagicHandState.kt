@@ -1,10 +1,10 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.phone.MagicHandLogic.Action
-import com.blaze.assistant.phone.MagicHandLogic.Intent
-import com.blaze.assistant.phone.MagicHandLogic.Kind
+import com.argus.assistant.BrandName
+import com.argus.assistant.phone.MagicHandLogic.Action
+import com.argus.assistant.phone.MagicHandLogic.Intent
+import com.argus.assistant.phone.MagicHandLogic.Kind
 
 /**
  * Magic Hand (v0.24.7): what the dock shows, as one immutable value, plus the pure transitions the controller
@@ -178,7 +178,7 @@ object MagicHandState {
         if (u.mode == MagicHandLogic.Mode.TEACH) { if (u.panel == Panel.TEACH) add(DockButton.DONE) }
         else if (!u.private && u.panel != Panel.TEACH_INTRO) add(DockButton.TEACH)
         if (u.carrying && !u.private && u.mode == MagicHandLogic.Mode.POINT) add(DockButton.DROP_CHAT)
-        // v0.28.x: Blaze Camera from the hand (not in Private, where nothing is captured, and not mid-teach).
+        // v0.28.x: Argus Camera from the hand (not in Private, where nothing is captured, and not mid-teach).
         if (!u.private && u.mode == MagicHandLogic.Mode.POINT && u.panel != Panel.TEACH_INTRO && u.panel != Panel.TEACH_REVIEW) add(DockButton.CAMERA)
         add(DockButton.CLOSE)
     }

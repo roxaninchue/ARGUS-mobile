@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.JdbcSql
-import com.blaze.assistant.store.Sql
-import com.blaze.assistant.ui.MemGraph
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.JdbcSql
+import com.argus.assistant.store.Sql
+import com.argus.assistant.ui.MemGraph
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -27,7 +27,7 @@ class MemoryDedupTest {
 
     private fun open(): MindStore {
         val s = JdbcSql("jdbc:sqlite:" + File(dir, "blaze.db").path).also { sqls += it }
-        return MindStore(BlazeDb(s), s).also { Mind.use(it) }
+        return MindStore(ArgusDb(s), s).also { Mind.use(it) }
     }
 
     // ---------------- write time ----------------
@@ -86,7 +86,7 @@ class MemoryDedupTest {
         var n = 0
         fun put(kind: String, subject: String, text: String, related: String) {
             n++
-            st.sql.exec("INSERT INTO memories(text, norm, category, created, updated) VALUES(?,?,?,?,?)", text, BlazeDb.norm(text), kind, n.toLong(), n.toLong())
+            st.sql.exec("INSERT INTO memories(text, norm, category, created, updated) VALUES(?,?,?,?,?)", text, ArgusDb.norm(text), kind, n.toLong(), n.toLong())
             val id = st.sql.query("SELECT last_insert_rowid()") { it.long(0) }.first()
             st.sql.exec("INSERT INTO mind_mem(id, created, subject, related, source_turn) VALUES(?,?,?,?,?)", id, n.toLong(), subject, related, (n / 3).toLong())
         }

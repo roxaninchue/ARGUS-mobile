@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
-import com.blaze.assistant.agent.ToolTrail
-import com.blaze.assistant.ui.living.LivingLayout.Box
-import com.blaze.assistant.ui.living.LivingLayout.Camera
-import com.blaze.assistant.ui.living.LivingModel.Kind
-import com.blaze.assistant.ui.living.LivingModel.Msg
-import com.blaze.assistant.ui.living.LivingModel.Role
+import com.argus.assistant.agent.ToolTrail
+import com.argus.assistant.ui.living.LivingLayout.Box
+import com.argus.assistant.ui.living.LivingLayout.Camera
+import com.argus.assistant.ui.living.LivingModel.Kind
+import com.argus.assistant.ui.living.LivingModel.Msg
+import com.argus.assistant.ui.living.LivingModel.Role
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -313,9 +313,9 @@ class LivingLayoutTest {
         assertFalse(LivingSpec.shellRail(true, true, false, false, false))
         assertEquals(listOf("team", "chat", "life", "desk"), LivingSpec.SHELL_MODES.map { it.first })   // ChatNav.MODES order
         // landscape = wider than tall and at least 560 dp wide
-        assertTrue(com.blaze.assistant.ui.common.Orientation.landscape(851, 393))
-        assertFalse(com.blaze.assistant.ui.common.Orientation.landscape(393, 851))
-        assertFalse(com.blaze.assistant.ui.common.Orientation.landscape(520, 400))   // a small split-screen window
-        assertFalse(com.blaze.assistant.ui.common.Orientation.landscape(800, 1280))  // a tablet held upright
+        assertTrue(com.argus.assistant.ui.common.Orientation.landscape(851, 393))
+        assertFalse(com.argus.assistant.ui.common.Orientation.landscape(393, 851))
+        assertFalse(com.argus.assistant.ui.common.Orientation.landscape(520, 400))   // a small split-screen window
+        assertFalse(com.argus.assistant.ui.common.Orientation.landscape(800, 1280))  // a tablet held upright
     }
 }

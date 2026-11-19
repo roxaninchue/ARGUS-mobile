@@ -1,9 +1,9 @@
-package com.blaze.assistant.voice
+package com.argus.assistant.voice
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
-import com.blaze.assistant.voice.myvoice.MyVoice
+import com.argus.assistant.voice.myvoice.MyVoice
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -54,7 +54,7 @@ object ReadAloud {
         if (a.optString("action") == "stop") { stop(); return "Stopped reading." }
         val raw = when {
             a.optString("text").isNotBlank() -> a.optString("text")
-            a.optString("url").isNotBlank() -> try { com.blaze.assistant.agent.Web.fetch(a.optString("url"), 60_000) } catch (e: Exception) { return "Couldn't open that page (${e.message})." }
+            a.optString("url").isNotBlank() -> try { com.argus.assistant.agent.Web.fetch(a.optString("url"), 60_000) } catch (e: Exception) { return "Couldn't open that page (${e.message})." }
             a.optString("path").isNotBlank() -> {
                 val f = File(a.optString("path").replace("/root/phone/", "/storage/emulated/0/"))
                 if (!f.exists() || f.length() > 3_000_000) return "Can't read that file (missing or too big)."
@@ -68,7 +68,7 @@ object ReadAloud {
         val mine = a.optString("voice") == "mine" || (a.optString("voice").isBlank() && MyVoice.chosen())
         val useMine = mine && MyVoice.packReady() && MyVoice.voiceReady()
         stop()
-        a.optDouble("speed").takeIf { !it.isNaN() }?.let { com.blaze.assistant.agent.Settings.setStr("tts_rate", it.coerceIn(0.5, 2.5).toString()); Voice.applyPrefs() }
+        a.optDouble("speed").takeIf { !it.isNaN() }?.let { com.argus.assistant.agent.Settings.setStr("tts_rate", it.coerceIn(0.5, 2.5).toString()); Voice.applyPrefs() }
         parts.forEachIndexed { i, p ->
             if (useMine) MyVoice.speak(p, "read-$i", flush = i == 0) else Voice.speak(p, queue = i > 0)
         }

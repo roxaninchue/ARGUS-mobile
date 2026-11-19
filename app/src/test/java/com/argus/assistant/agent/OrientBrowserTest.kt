@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.browser.SecureInput
-import com.blaze.assistant.browser.SignInHints
-import com.blaze.assistant.browser.Vault
-import com.blaze.assistant.phone.PhoneControl
+import com.argus.assistant.browser.SecureInput
+import com.argus.assistant.browser.SignInHints
+import com.argus.assistant.browser.Vault
+import com.argus.assistant.phone.PhoneControl
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -132,8 +132,8 @@ class OrientBrowserTest {
     }
 
     @Test fun headsUpsOnlySpeakWhenSwitchedOn() {
-        assertFalse(com.blaze.assistant.proactive.Proactive.shouldSpeak(speakOn = false, canTalk = true))
-        assertFalse(com.blaze.assistant.proactive.Proactive.shouldSpeak(speakOn = true, canTalk = false))
-        assertTrue(com.blaze.assistant.proactive.Proactive.shouldSpeak(speakOn = true, canTalk = true))
+        assertFalse(com.argus.assistant.proactive.Proactive.shouldSpeak(speakOn = false, canTalk = true))
+        assertFalse(com.argus.assistant.proactive.Proactive.shouldSpeak(speakOn = true, canTalk = false))
+        assertTrue(com.argus.assistant.proactive.Proactive.shouldSpeak(speakOn = true, canTalk = true))
     }
 }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.system.Os
@@ -21,11 +21,11 @@ import java.util.concurrent.TimeUnit
 /**
  * A real shell on the phone: Android's sh plus ~300 BusyBox tools (vi, wget, httpd, tar, grep,
  * awk, nc…) shipped inside the APK. Home is filesDir/home. Long jobs (local servers) run in the
- * background. For a full Linux (pkg install python/nodejs/gradle) Blaze hands commands to Termux.
+ * background. For a full Linux (pkg install python/nodejs/gradle) Argus hands commands to Termux.
  */
 object Terminal {
     private lateinit var app: Context
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.blaze.assistant.device.CrashLog.guard)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.argus.assistant.device.CrashLog.guard)
 
     fun home(): File = File(app.filesDir, "home").apply { mkdirs() }
     private fun bin(): File = File(app.filesDir, "usr/bin")
@@ -120,7 +120,7 @@ object Terminal {
         val pi = app.packageManager.getPackageInfo(app.packageName, 0)
         @Suppress("DEPRECATION") val code = if (android.os.Build.VERSION.SDK_INT >= 28) pi.longVersionCode else pi.versionCode.toLong()
         TermLogic.bbKey(code, pi.lastUpdateTime)
-    } catch (_: Exception) { TermLogic.bbKey(com.blaze.assistant.BuildConfig.VERSION_CODE.toLong(), 0) }
+    } catch (_: Exception) { TermLogic.bbKey(com.argus.assistant.BuildConfig.VERSION_CODE.toLong(), 0) }
 
     private fun writeRc() {
         try { phoneRc().parentFile?.mkdirs(); phoneRc().writeText(TermLogic.phoneRc(busyboxOk)) } catch (_: Exception) { }
@@ -154,7 +154,7 @@ object Terminal {
     val sessions = MutableStateFlow(listOf(Session(nextSession++, "phone")))
     val active = MutableStateFlow(sessions.value.first())
 
-    /** Read-only tab: every command Blaze itself runs, with its output, live. */
+    /** Read-only tab: every command Argus itself runs, with its output, live. */
     val agentLog = MutableStateFlow("")
     fun logAgent(cmd: String, result: String) {
         val stamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
@@ -356,7 +356,7 @@ object Terminal {
                 .also { it.environment().putAll(env()); it.environment().putAll(Linux.env()) }.start() else builder(wrapped).start() } catch (e: Exception) { return "Error: ${e.message}" }
         val jid = nextJob++
         lastJob = jid
-        val pid = com.blaze.assistant.agent.Processes.register("job", cmd.take(50), jid.toString(), props = org.json.JSONObject().put("command", cmd).put("max_minutes", maxMinutes))
+        val pid = com.argus.assistant.agent.Processes.register("job", cmd.take(50), jid.toString(), props = org.json.JSONObject().put("command", cmd).put("max_minutes", maxMinutes))
         val j = Job(jid, cmd, p, StringBuilder(), System.currentTimeMillis(), maxMinutes * 60_000L, pid = pid)
         synchronized(jobs) { jobs[j.id] = j }
         JobKeeper.start(app)
@@ -400,7 +400,7 @@ object Terminal {
     fun termuxInstalled(ctx: Context) = try { ctx.packageManager.getPackageInfo("com.termux", 0); true } catch (_: Exception) { false }
 
     const val TERMUX_FIX = "mkdir -p ~/.termux && echo \"allow-external-apps=true\" >> ~/.termux/termux.properties && termux-reload-settings"
-    private const val RESULT_ACTION = "com.blaze.assistant.TERMUX_RESULT"
+    private const val RESULT_ACTION = "com.argus.assistant.TERMUX_RESULT"
 
     /**
      * Runs [cmd] in Termux and (in background mode) returns its real output. Sets itself up:
@@ -411,7 +411,7 @@ object Terminal {
     suspend fun runInTermux(ctx: Context, cmd: String, background: Boolean): String {
         if (!termuxInstalled(ctx)) return "Termux isn't installed. ${BrandName.NAME}'s own Linux (run_code / run_shell) does the same job with no setup; use that."
         val perm = "com.termux.permission.RUN_COMMAND"
-        if (!com.blaze.assistant.device.Perms.ensure(ctx, perm))
+        if (!com.argus.assistant.device.Perms.ensure(ctx, perm))
             return "The user didn't allow 'Run commands in Termux' in the Android pop-up. Use ${BrandName.NAME}'s own Linux (run_code / run_shell) instead."
         val id = System.nanoTime().toInt()
         val result = kotlinx.coroutines.CompletableDeferred<android.os.Bundle?>()

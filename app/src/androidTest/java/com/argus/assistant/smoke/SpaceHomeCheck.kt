@@ -1,4 +1,4 @@
-package com.blaze.assistant.smoke
+package com.argus.assistant.smoke
 
 import android.graphics.Bitmap
 import android.os.Handler
@@ -17,18 +17,18 @@ import androidx.compose.ui.Modifier
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.Project
-import com.blaze.assistant.ui.DarkColors
-import com.blaze.assistant.ui.LightColors
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.argus.ArgusColors
-import com.blaze.assistant.ui.argus.ArgusGround
-import com.blaze.assistant.ui.argus.LocalArgusColors
-import com.blaze.assistant.ui.argus.kit.ArgusTopBar
-import com.blaze.assistant.ui.space.SpaceProjectsScreen
-import com.blaze.assistant.ui.team.LifeNav
-import com.blaze.assistant.ui.team.LifePage
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.Project
+import com.argus.assistant.ui.DarkColors
+import com.argus.assistant.ui.LightColors
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.argus.ArgusColors
+import com.argus.assistant.ui.argus.ArgusGround
+import com.argus.assistant.ui.argus.LocalArgusColors
+import com.argus.assistant.ui.argus.kit.ArgusTopBar
+import com.argus.assistant.ui.space.SpaceProjectsScreen
+import com.argus.assistant.ui.team.LifeNav
+import com.argus.assistant.ui.team.LifePage
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -100,7 +100,7 @@ class SpaceHomeCheck {
             a.window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(0xFF000000.toInt()))
             a.setContent {
                 val h by home; val t by tab
-                CompositionLocalProvider(LocalBlaze provides if (dark) DarkColors else LightColors, LocalArgusColors provides ArgusColors.of(dark)) {
+                CompositionLocalProvider(LocalArgus provides if (dark) DarkColors else LightColors, LocalArgusColors provides ArgusColors.of(dark)) {
                     ArgusGround {
                         Column(Modifier.statusBarsPadding()) {
                             ArgusTopBar(initial = "G", onMe = {}, onMeLong = {}, onSearch = {}, onBell = {}, bellBadge = false, onPlus = {})

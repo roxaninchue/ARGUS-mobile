@@ -1,4 +1,4 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
 import org.json.JSONArray
 import org.json.JSONObject

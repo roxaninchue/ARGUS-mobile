@@ -1,14 +1,14 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.ArchiveFilmsSource
-import com.blaze.assistant.mediaapps.store.ArchiveAudioSource
-import com.blaze.assistant.mediaapps.store.ArchiveParse
-import com.blaze.assistant.mediaapps.store.BlenderMoviesSource
-import com.blaze.assistant.mediaapps.store.JamendoParse
-import com.blaze.assistant.mediaapps.store.Licence
-import com.blaze.assistant.mediaapps.store.StoreError
-import com.blaze.assistant.mediaapps.store.StoreItem
-import com.blaze.assistant.mediaapps.store.StoreSources
+import com.argus.assistant.mediaapps.store.ArchiveFilmsSource
+import com.argus.assistant.mediaapps.store.ArchiveAudioSource
+import com.argus.assistant.mediaapps.store.ArchiveParse
+import com.argus.assistant.mediaapps.store.BlenderMoviesSource
+import com.argus.assistant.mediaapps.store.JamendoParse
+import com.argus.assistant.mediaapps.store.Licence
+import com.argus.assistant.mediaapps.store.StoreError
+import com.argus.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreSources
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

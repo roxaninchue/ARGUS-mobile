@@ -1,6 +1,6 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.agent.ClaimGuard
+import com.argus.assistant.agent.ClaimGuard
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull

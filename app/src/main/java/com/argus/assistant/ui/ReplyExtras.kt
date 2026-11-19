@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,7 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.ReplySources
+import com.argus.assistant.agent.ReplySources
 
 /**
  * 0.46.2 immersive replies: the pages a turn searched / read as one horizontally scrolling row of small source pills (favicon +
@@ -55,7 +55,7 @@ import com.blaze.assistant.agent.ReplySources
 @Composable
 fun SourcePills(found: ReplySources.Found, modifier: Modifier = Modifier) {
     if (found.sources.isEmpty()) return
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val open = LocalOpenLink.current
     val ctx = LocalContext.current
     val clip = LocalClipboardManager.current
@@ -78,7 +78,7 @@ fun SourcePills(found: ReplySources.Found, modifier: Modifier = Modifier) {
 /** The site's own icon (https://<domain>/favicon.ico); while it loads, or when there's none, the domain's initial. */
 @Composable
 private fun Favicon(domain: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val img = if (domain.isBlank()) null else rememberHomeImage("https://$domain/favicon.ico")
     Box(Modifier.size(18.dp).clip(CircleShape).background(c.hair), contentAlignment = Alignment.Center) {
         if (img != null && img.width >= 8) Image(img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -101,7 +101,7 @@ fun ReplyImages(found: ReplySources.Found, low: Boolean, modifier: Modifier = Mo
                     Image(bmp, contentDescription = tr("Picture from {0}", im.domain), contentScale = ContentScale.Crop,
                         modifier = Modifier.height(if (single) 170.dp else 110.dp).widthIn(min = 120.dp, max = if (single) 300.dp else 180.dp)
                             .clip(RoundedCornerShape(14.dp)).clickable(role = Role.Image, onClickLabel = tr("Open the picture")) { full = im })
-                    Text(im.domain, color = LocalBlaze.current.sub, fontSize = 10.sp, maxLines = 1, modifier = Modifier.padding(start = 4.dp, top = 2.dp))
+                    Text(im.domain, color = LocalArgus.current.sub, fontSize = 10.sp, maxLines = 1, modifier = Modifier.padding(start = 4.dp, top = 2.dp))
                 }
             }
         }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
@@ -33,7 +33,7 @@ object CoverArt {
             ?: if (kind == "video") "eye-catching video thumbnail, cinematic, high contrast" else "striking album cover art, artistic, cohesive palette"
         return buildString {
             append(if (kind == "video") "YouTube-style thumbnail for a video titled \"$t\"" else "Album cover for the song \"$t\"")
-            if (artist.isNotBlank() && !artist.equals("Blaze", true) && !artist.equals(com.blaze.assistant.BrandName.NAME, true) && !artist.equals("unknown", true)) append(" by $artist")
+            if (artist.isNotBlank() && !artist.equals("Blaze", true) && !artist.equals(com.argus.assistant.BrandName.NAME, true) && !artist.equals("unknown", true)) append(" by $artist")
             append(". ").append(style.ifBlank { hint })
             append(". No text, no letters, no watermark, no logos.")
         }
@@ -57,7 +57,7 @@ object CoverArt {
         val done = ArrayList<String>(); val failed = ArrayList<String>()
         for (t in targets) {
             val video = t.kind == "video"
-            val r = com.blaze.assistant.media.Media.generate(prompt(t.title, t.artist, t.kind, a.optString("style")), if (video) 1280 else 1024, if (video) 720 else 1024)
+            val r = com.argus.assistant.media.Media.generate(prompt(t.title, t.artist, t.kind, a.optString("style")), if (video) 1280 else 1024, if (video) 720 else 1024)
             r.fold({ f ->
                 val dest = File(File(ctx.filesDir, "mediaapps/art").apply { mkdirs() }, "forge_${t.key.hashCode().toUInt()}.jpg")
                 try { f.copyTo(dest, overwrite = true) } catch (_: Exception) { }

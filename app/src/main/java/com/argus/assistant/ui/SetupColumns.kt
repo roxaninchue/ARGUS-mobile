@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -60,7 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.setup.SetupGate
+import com.argus.assistant.setup.SetupGate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
@@ -70,7 +70,7 @@ enum class Mark { TODO, WORKING, DONE }
 
 @Composable
 fun StepMark(mark: Mark, size: Dp = 26.dp) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val done by animateFloatAsState(if (mark == Mark.DONE) 1f else 0f, tween(420), label = "done")
     val spin = if (mark == Mark.WORKING) {
         val t = rememberInfiniteTransition(label = "ring")
@@ -105,7 +105,7 @@ fun StepMark(mark: Mark, size: Dp = 26.dp) {
 @Composable
 fun SetupColumnRow(title: String, why: String, mark: Mark, required: Boolean, status: String = "",
                    onDo: (() -> Unit)?, onLater: (() -> Unit)?) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth().pageGlassSelectable(c, mark == Mark.DONE)
         .let { if (onDo != null && mark == Mark.TODO) it.clickable(onClick = onDo) else it }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
         StepMark(mark)
@@ -133,10 +133,10 @@ fun setupFix(ctx: Context, id: String, ask: (String) -> Unit, openPage: (String)
         "notifications" -> if (Build.VERSION.SDK_INT >= 33) ask(Manifest.permission.POST_NOTIFICATIONS)
             else go(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName))
         "mic" -> ask(Manifest.permission.RECORD_AUDIO)
-        "linux" -> scope.launch { try { com.blaze.assistant.terminal.Linux.install() } catch (_: Throwable) { } }
+        "linux" -> scope.launch { try { com.argus.assistant.terminal.Linux.install() } catch (_: Throwable) { } }
         "accessibility" -> {
-            com.blaze.assistant.agent.Settings.phoneControl = true
-            ComeBack.watch(ctx) { com.blaze.assistant.phone.BlazeAccessibilityService.isEnabled(ctx) }
+            com.argus.assistant.agent.Settings.phoneControl = true
+            ComeBack.watch(ctx) { com.argus.assistant.phone.ArgusAccessibilityService.isEnabled(ctx) }
             go(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
         "overlay" -> { ComeBack.watch(ctx) { android.provider.Settings.canDrawOverlays(ctx) }; go(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg)) }
@@ -156,7 +156,7 @@ fun PermissionsPage(onOpenPage: (String) -> Unit = {}) {
     var tick by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) { while (true) { delay(1500); tick++ } }
     val have = remember(tick) { SetupGate.probe(ctx) }
-    val linuxBusy by com.blaze.assistant.terminal.Linux.installing.collectAsState()
+    val linuxBusy by com.argus.assistant.terminal.Linux.installing.collectAsState()
     val perm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
     Spacer(Modifier.height(10.dp))
     GroupHead("Permissions & setup", "What ${BrandName.NAME} can use on this phone. Tap one that's off to turn it on.")
@@ -178,16 +178,16 @@ fun UpdatesPage() {
     UpdateCard()
     Spacer(Modifier.height(12.dp))
     Row {
-        KitButton("Check now", Btn.INK) { com.blaze.assistant.update.Updater.retry(ctx) }
+        KitButton("Check now", Btn.INK) { com.argus.assistant.update.Updater.retry(ctx) }
         Spacer(Modifier.width(8.dp))
-        KitButton("Stop", Btn.GHOST) { com.blaze.assistant.update.Updater.stop() }
+        KitButton("Stop", Btn.GHOST) { com.argus.assistant.update.Updater.stop() }
     }
 }
 
 /** Settings › About (v0.24.4). */
 @Composable
 fun AboutPage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val v = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault("")
     Spacer(Modifier.height(10.dp))
@@ -209,27 +209,27 @@ fun AboutPage() {
     LicencesSection()
 }
 
-/** About › Licences: one row per file in assets/legal ([com.blaze.assistant.ui.space.LegalAssets.FILES]); tap = the text, in a scrollable box. */
+/** About › Licences: one row per file in assets/legal ([com.argus.assistant.ui.space.LegalAssets.FILES]); tap = the text, in a scrollable box. */
 @Composable
 fun LicencesSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     var open by remember { mutableStateOf<String?>(null) }
     var text by remember { mutableStateOf("") }
     LaunchedEffect(open) {
         val f = open ?: return@LaunchedEffect
-        text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.ui.space.LegalAssets.read(ctx, f) }
+        text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.argus.assistant.ui.space.LegalAssets.read(ctx, f) }
     }
     Label(tr("Licences"), size = 10.sp)
     Spacer(Modifier.height(6.dp))
-    com.blaze.assistant.ui.space.LegalAssets.FILES.forEach { (file, title) ->
+    com.argus.assistant.ui.space.LegalAssets.FILES.forEach { (file, title) ->
         Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClickLabel = title) { open = if (open == file) null else file }
             .padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(title, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink))
             Label(if (open == file) "Close" else "Read", color = c.accent, size = 10.sp)
         }
         if (open == file) Box(Modifier.fillMaxWidth().height(360.dp).padding(vertical = 8.dp).verticalScroll(rememberScrollState())) {
-            Text(com.blaze.assistant.ui.space.LegalAssets.plain(text), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.body))
+            Text(com.argus.assistant.ui.space.LegalAssets.plain(text), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.body))
         }
     }
 }

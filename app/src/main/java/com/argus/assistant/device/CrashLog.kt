@@ -1,7 +1,7 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -23,7 +23,7 @@ object CrashLog {
         dir = ctx.filesDir
         // 0.46.6: the vault file is known before the crash handler and the last-exit check run (the Agent sets it later),
         // so a crash at start and the next-launch crash report are scrubbed too.
-        try { if (com.blaze.assistant.agent.SecretVault.file == null) com.blaze.assistant.agent.SecretVault.file = File(ctx.filesDir, "secret_vault.json") } catch (_: Throwable) { }
+        try { if (com.argus.assistant.agent.SecretVault.file == null) com.argus.assistant.agent.SecretVault.file = File(ctx.filesDir, "secret_vault.json") } catch (_: Throwable) { }
         val prev = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             // 0.54.2: an OutOfMemoryError can fail the full trace (16 Nov report: "CRASH (previous run, crash)" and no line);
@@ -47,7 +47,7 @@ object CrashLog {
     fun secret(vararg values: String?) { values.forEach { v -> v?.trim()?.takeIf { it.length >= 3 }?.let { secrets += it } } }
 
     /** 0.46.6: saved secrets back to their handles (Secure form vault). Never throws. */
-    fun scrubSecrets(text: String): String = try { com.blaze.assistant.agent.SecretVault.scrub(text) } catch (_: Throwable) { text }
+    fun scrubSecrets(text: String): String = try { com.argus.assistant.agent.SecretVault.scrub(text) } catch (_: Throwable) { text }
 
     /** Pure: [text] with each of [names] (case-insensitive, longest first) replaced by "a source". */
     fun redact(text: String, names: Collection<String>): String {
@@ -118,24 +118,24 @@ object CrashLog {
     }
 
     /**
-     * Added to every background scope: a failure inside Blaze's own work is logged and shown as
+     * Added to every background scope: a failure inside Argus's own work is logged and shown as
      * an error in the chat instead of closing the app.
      */
     val guard = kotlinx.coroutines.CoroutineExceptionHandler { _, e ->
         write("CAUGHT: ${android.util.Log.getStackTraceString(e).take(4000)}")
         try {
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                try { com.blaze.assistant.agent.Agent.reportError(lineFor(e)) } catch (_: Throwable) { }
+                try { com.argus.assistant.agent.Agent.reportError(lineFor(e)) } catch (_: Throwable) { }
             }
         } catch (_: Throwable) { }
     }
 
     /**
-     * 0.46.3 (A5; report: "Something went wrong (t8: Blaze Cloud is busy…)": "t8" was the release build's shrunk name for
+     * 0.46.3 (A5; report: "Something went wrong (t8: Argus Cloud is busy…)": "t8" was the release build's shrunk name for
      * the model-call error class). A model error shows its own plain words; anything else a plain line. Never a class name.
      */
     fun lineFor(e: Throwable, kept: Boolean = false): String = when {
-        e is com.blaze.assistant.agent.LlmClient.LlmException && !e.message.isNullOrBlank() -> e.message!!.trim()
+        e is com.argus.assistant.agent.LlmClient.LlmException && !e.message.isNullOrBlank() -> e.message!!.trim()
         kept -> "Something went wrong, but ${BrandName.NAME} kept running. It's in the crash report."
         else -> "Something went wrong. It's in the crash report; try again."
     }
@@ -154,7 +154,7 @@ object CrashLog {
                     recent.addLast(now); while (recent.isNotEmpty() && now - recent.first() > 10_000) recent.removeFirst()
                     if (recent.size >= 5 || e is OutOfMemoryError) { writeNow("CAUGHT on main (giving up): ${android.util.Log.getStackTraceString(e).take(4000)}"); throw e }
                     write("CAUGHT on main: ${android.util.Log.getStackTraceString(e).take(4000)}")
-                    try { com.blaze.assistant.agent.Agent.reportError(lineFor(e, kept = true)) } catch (_: Throwable) { }
+                    try { com.argus.assistant.agent.Agent.reportError(lineFor(e, kept = true)) } catch (_: Throwable) { }
                 }
             }
         }

@@ -1,6 +1,6 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.phone.AppFinder.App
+import com.argus.assistant.phone.AppFinder.App
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -77,7 +77,7 @@ class AppFinderTest {
         assertEquals("Opened it.", AppFinder.ensureCard("Opened it.", fence, "open rally"))
         assertEquals("x", AppFinder.ensureCard("x", null, "list my apps"))
         assertEquals(out, AppFinder.ensureCard(out, fence, "list my apps"))       // never twice
-        val card = com.blaze.assistant.ui.RichKit.apps(fence.removePrefix("```apps\n").removeSuffix("\n```"))!!
+        val card = com.argus.assistant.ui.RichKit.apps(fence.removePrefix("```apps\n").removeSuffix("\n```"))!!
         assertEquals(listOf("com.rallyhorizon.game", "com.busfever.party"), card.apps.map { it.pkg })
         assertTrue(card.apps[0].game)
     }

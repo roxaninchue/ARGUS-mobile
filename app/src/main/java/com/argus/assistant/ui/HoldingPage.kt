@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,14 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Holding
-import com.blaze.assistant.ui.space.SpaceGroup
-import com.blaze.assistant.ui.space.SpaceHairline
-import com.blaze.assistant.ui.space.SpaceInsets
-import com.blaze.assistant.ui.space.SpaceSectionLabel
-import com.blaze.assistant.ui.space.SpaceType
-import com.blaze.assistant.ui.space.spaceLook
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Holding
+import com.argus.assistant.ui.space.SpaceGroup
+import com.argus.assistant.ui.space.SpaceHairline
+import com.argus.assistant.ui.space.SpaceInsets
+import com.argus.assistant.ui.space.SpaceSectionLabel
+import com.argus.assistant.ui.space.SpaceType
+import com.argus.assistant.ui.space.spaceLook
 
 /**
  * Unreleased round after 0.52.3, "What Argus is holding" (settings page id "holding": the profile row, /holding, open

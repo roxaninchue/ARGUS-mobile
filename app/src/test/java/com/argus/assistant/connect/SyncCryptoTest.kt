@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

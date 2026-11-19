@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -37,7 +37,7 @@ object ClaimGuard {
         "projects" to """projects?""",
         "memory" to """memory|memories""",
         "browser" to """browser|tabs?""",
-        // 0.46.0 Blaze Stage: "I've started a 30-minute timer", "the music player is on your screen".
+        // 0.46.0 Argus Stage: "I've started a 30-minute timer", "the music player is on your screen".
         "stage" to """stage|timers?|pomodoros?|countdowns?|mini ?players?""",
     )
 
@@ -188,7 +188,7 @@ object ClaimGuard {
     fun unbackedCard(reply: String, ok: List<Call>, onStage: Set<String>): String? {
         for (kind in cardClaims(reply).keys) {
             if (kind in onStage) continue
-            val shown = ok.any { c -> c.name == "stage_show" && com.blaze.assistant.stage.StageKind.of(c.args.optString("kind"))?.id == kind } ||
+            val shown = ok.any { c -> c.name == "stage_show" && com.argus.assistant.stage.StageKind.of(c.args.optString("kind"))?.id == kind } ||
                 (kind == "browser" && ok.any { it.name == "browser_show" || (it.name == "open_view" && it.args.optString("view").equals("browser", true)) }) ||
                 (kind == "music" && ok.any { it.name == "music_ops" }) || (kind == "timer" && ok.any { it.name == "set_timer" })
             if (!shown) return kind

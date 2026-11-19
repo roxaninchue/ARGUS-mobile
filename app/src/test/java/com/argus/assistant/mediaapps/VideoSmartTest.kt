@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.34.0 Blaze Video: data cost, episodes, skip intro, up next, smart downloads, recap and translation text. */
+/** v0.34.0 Argus Video: data cost, episodes, skip intro, up next, smart downloads, recap and translation text. */
 class VideoSmartTest {
     private fun v(title: String, key: String = title) = Track(key, "content://$key", title, kind = "video")
 

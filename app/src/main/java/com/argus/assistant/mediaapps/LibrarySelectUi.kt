@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -31,9 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.BlazeMenu
-import com.blaze.assistant.ui.BlazeShapes
-import com.blaze.assistant.ui.LocalBlaze
+import com.argus.assistant.ui.ArgusMenu
+import com.argus.assistant.ui.ArgusShapes
+import com.argus.assistant.ui.LocalArgus
 
 /**
  * Wave B item 20: the top bar while picking library items: close, "N selected", then Select all, Add to playlist (Music),
@@ -48,8 +48,8 @@ fun SelectionBar(
     exportItems: List<Pair<String, () -> Unit>> = emptyList(),
 ) {
     var exportMenu by remember { mutableStateOf(false) }
-    val c = LocalBlaze.current
-    Row(modifier.fillMaxWidth().height(48.dp).clip(BlazeShapes.pill).background(c.faint).padding(horizontal = 4.dp),
+    val c = LocalArgus.current
+    Row(modifier.fillMaxWidth().height(48.dp).clip(ArgusShapes.pill).background(c.faint).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically) {
         RoundIcon(Icons.Rounded.Close, "Cancel selection", size = 38, onClick = onClose)
         Spacer(Modifier.width(4.dp))
@@ -61,7 +61,7 @@ fun SelectionBar(
         // Wave B 2: with targets given, Export opens a menu (Music/Movies, Downloads, a folder); else straight to the folder picker.
         Box {
             RoundIcon(Icons.Rounded.SaveAlt, "Export", size = 38, onClick = { if (exportItems.isEmpty()) onExport() else exportMenu = true })
-            BlazeMenu(exportMenu, { exportMenu = false }, exportItems)
+            ArgusMenu(exportMenu, { exportMenu = false }, exportItems)
         }
         RoundIcon(Icons.Rounded.Delete, "Delete", size = 38, onClick = onDelete)
     }
@@ -70,8 +70,8 @@ fun SelectionBar(
 /** The pick mark on a row or tile in selection mode: a filled check when picked, an empty ring when not. */
 @Composable
 fun SelectMark(selected: Boolean, modifier: Modifier = Modifier, onArt: Boolean = false) {
-    val c = LocalBlaze.current
-    Box(modifier.size(26.dp).clip(BlazeShapes.pill).background(if (onArt) Color.Black.copy(alpha = 0.35f) else Color.Transparent),
+    val c = LocalArgus.current
+    Box(modifier.size(26.dp).clip(ArgusShapes.pill).background(if (onArt) Color.Black.copy(alpha = 0.35f) else Color.Transparent),
         contentAlignment = Alignment.Center) {
         Icon(if (selected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
             contentDescription = if (selected) "Selected" else "Not selected",

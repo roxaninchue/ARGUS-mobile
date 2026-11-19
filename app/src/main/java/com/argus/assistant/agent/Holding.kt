@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /**
  * Unreleased round after 0.52.3, "What Argus is holding": the current chat's rolling summary from LongChat, the active

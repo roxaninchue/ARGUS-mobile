@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,9 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.space.SpaceLook
-import com.blaze.assistant.ui.space.SpacePalette
-import com.blaze.assistant.ui.space.SpaceShapes
+import com.argus.assistant.ui.space.SpaceLook
+import com.argus.assistant.ui.space.SpacePalette
+import com.argus.assistant.ui.space.SpaceShapes
 
 /**
  * Black-and-white frosted glass for the non-chat pages (settings, memory, gallery, setup, home board…).
@@ -121,13 +121,13 @@ internal fun Modifier.glassSheen(c: BlazeColors): Modifier = drawWithContent {
 
 @Composable
 internal fun GlassSection(modifier: Modifier = Modifier, padding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(modifier.fillMaxWidth().pageGlass(c).padding(padding), content = content)
 }
 
 @Composable
 internal fun GlassHeader(title: String, sub: String = "", modifier: Modifier = Modifier, right: (@Composable RowScope.() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             BasicText(title, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 20.sp, color = c.ink))
@@ -140,7 +140,7 @@ internal fun GlassHeader(title: String, sub: String = "", modifier: Modifier = M
 @Composable
 internal fun GlassRow(title: String, sub: String = "", modifier: Modifier = Modifier, onClick: (() -> Unit)? = null,
                       trailing: (@Composable RowScope.() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(modifier.fillMaxWidth().pageGlass(c, PageGlass.row, alpha = 0.06f)
         .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
         .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -153,11 +153,11 @@ internal fun GlassRow(title: String, sub: String = "", modifier: Modifier = Modi
     }
 }
 
-/** Glass row with the app's one switch ([BlazeSwitchTrack], unification: it had its own 40 dp monochrome one). */
+/** Glass row with the app's one switch ([ArgusSwitchTrack], unification: it had its own 40 dp monochrome one). */
 @Composable
 internal fun GlassToggleRow(title: String, sub: String = "", on: Boolean, modifier: Modifier = Modifier, onToggle: () -> Unit) {
     GlassRow(title, sub, modifier, onClick = onToggle) {
-        BlazeSwitchTrack(on)
+        ArgusSwitchTrack(on)
         Spacer(Modifier.width(2.dp))
     }
 }

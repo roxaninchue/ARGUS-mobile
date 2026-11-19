@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
- * 0.50.0 (owner's screenshot 2026-11-01 22:51: a casual "need to make improvements to Blaze agent (an Android ai agent I'm
+ * 0.50.0 (owner's screenshot 2026-11-01 22:51: a casual "need to make improvements to Argus agent (an Android ai agent I'm
  * making). I'll try and sleep soon!" showed "Skills: android-app-builder, reverse-engine…"). Skills load only for a message
- * that clearly asks Blaze to DO something:
- *  - never for small talk, acks or a message that only tells Blaze how the user is / what they plan to do themselves;
+ * that clearly asks Argus to DO something:
+ *  - never for small talk, acks or a message that only tells Argus how the user is / what they plan to do themselves;
  *  - a clear request: an imperative ("make…", "write…", "fix…"), a polite ask ("can you…", "please…", "help me…",
  *    "I want you to…"), a how-to ("how do I…"), or a question that names a task verb;
  *  - a terse subject-less request ("flashcards on photosynthesis") counts as a command;
@@ -32,7 +32,7 @@ object SkillIntent {
     private val verbAnywhere = Regex("""(?i)\b(?:$VERBS)\b""")
     private val namedSkill = Regex("""(?i)\b(?:use|with|load|run|apply)\s+(?:the\s+|my\s+)?[\w-]+\s+skill\b|\bskill\s+[\w-]{3,}""")
 
-    /** Does [text] clearly ask Blaze to do something (so skills may be looked up)? */
+    /** Does [text] clearly ask Argus to do something (so skills may be looked up)? */
     fun taskIntent(text: String): Boolean {
         val raw = text.trim()
         if (raw.isEmpty()) return false

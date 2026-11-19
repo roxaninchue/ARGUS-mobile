@@ -1,7 +1,7 @@
-package com.blaze.assistant.update
+package com.argus.assistant.update
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * 0.45.15 signing key rotation (user-approved 22 Oct 2026 08:32). Old key e9183294… (the public debug keystore) handed over
  * to the private release key e7b0281f… through a v3 lineage that leaves the old key only "installed data", so current
@@ -19,7 +19,7 @@ object UpdateKeys {
 
     /**
      * 0.45.18: Android 7/8 (API < 28) has no v3 key rotation, and 0.45.17's v2 block is signed by the release key, so a
-     * phone below Android 9 whose Blaze carries the old key can't update in place. One line telling the user what to do,
+     * phone below Android 9 whose Argus carries the old key can't update in place. One line telling the user what to do,
      * or null when the phone can update normally. [installedSigners] = lowercase hex SHA-256 of the installed signers.
      */
     fun legacyNote(sdk: Int, installedSigners: Set<String>): String? =
@@ -27,5 +27,5 @@ object UpdateKeys {
         else LEGACY_NOTE
 
     const val LEGACY_NOTE = "On Android 7 and 8 this update can't install over your ${BrandName.NAME}: back up (Settings \u203a Backup), " +
-        "uninstall Blaze, then reinstall it from blazeinchue.pages.dev."
+        "uninstall Argus, then reinstall it from blazeinchue.pages.dev."
 }

@@ -1,11 +1,11 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.telephony.TelephonyManager
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.notify.NotificationBrain
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.notify.NotificationBrain
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -39,8 +39,8 @@ object Messaging {
         val app = a.optString("app", "any").lowercase()
         val imageArg = a.optString("image").trim()
         val image: java.io.File? = if (imageArg.isEmpty()) null else {
-            com.blaze.assistant.media.Media.refresh()
-            val items = com.blaze.assistant.media.Media.items.value.filter { it.kind == "image" }
+            com.argus.assistant.media.Media.refresh()
+            val items = com.argus.assistant.media.Media.items.value.filter { it.kind == "image" }
             val name = SendCheck.imageArg(imageArg, items.map { it.file.name to it.time })
                 ?: return "Couldn't find the picture \u201c$imageArg\u201d in the Gallery. Make it with generate_image first, then call message_contact with image=\"last\". Nothing was sent."
             items.first { it.file.name == name }.file
@@ -66,7 +66,7 @@ object Messaging {
         val contact: Pair<String, String> = kotlin.run {
             val digits = to.filter { it.isDigit() || it == '+' }
             if (digits.length >= 5 && digits.length >= to.count { !it.isWhitespace() } - 2) return@run to to digits
-            if (!com.blaze.assistant.device.Perms.ensure(ctx, android.Manifest.permission.READ_CONTACTS)) return com.blaze.assistant.device.Perms.denied("contacts")
+            if (!com.argus.assistant.device.Perms.ensure(ctx, android.Manifest.permission.READ_CONTACTS)) return com.argus.assistant.device.Perms.denied("contacts")
             val p = SendCheck.pick(to, Skills.contacts(ctx, to))
             p.one ?: return if (p.choices.isEmpty()) SendCheck.notFound(to) else SendCheck.ambiguous(to, p.choices)
         }
@@ -93,7 +93,7 @@ object Messaging {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try { ctx.startActivity(intent.setPackage(pkg)) } catch (e: Exception) { return "Couldn't open $label: ${e.message}. Nothing was sent." }
 
-        val svc = BlazeAccessibilityService.instance
+        val svc = ArgusAccessibilityService.instance
             ?: return "Not sent yet: $label is open on ${contact.first}'s chat with it ready, but phone control is off, so the user must tap Send. Tell them exactly that."
         // Only press Send inside the right chat. A wrong chat, a chooser or a "not on WhatsApp" screen stops here.
         val send = svc.waitFor("Send", 9000)

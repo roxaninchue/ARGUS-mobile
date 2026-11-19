@@ -1,4 +1,4 @@
-package com.blaze.assistant.update
+package com.argus.assistant.update
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

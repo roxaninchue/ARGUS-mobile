@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.agent.ScheduleDay
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.icons.LucideSpec
-import com.blaze.assistant.ui.space.SpaceAnswer
-import com.blaze.assistant.ui.space.SpaceGreeting
-import com.blaze.assistant.ui.space.SpaceHomeCards
+import com.argus.assistant.agent.ScheduleDay
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.icons.LucideSpec
+import com.argus.assistant.ui.space.SpaceAnswer
+import com.argus.assistant.ui.space.SpaceGreeting
+import com.argus.assistant.ui.space.SpaceHomeCards
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.TextStyle
@@ -252,15 +252,15 @@ object LifeCalendar {
 
 /** Owner 2026-11-14: the dashboard's panels, newest at the top (ARGUS adds at position 0), hidden ones and the weather out. */
 object LifeBoard {
-    fun panels(widgets: List<com.blaze.assistant.home.Widget>): List<com.blaze.assistant.home.Widget> =
-        widgets.filter { !it.hidden && it.type != com.blaze.assistant.home.WidgetTypes.INTO && it.type != com.blaze.assistant.home.WidgetTypes.WEATHER }
-            .sortedWith(compareBy<com.blaze.assistant.home.Widget> { it.order }.thenByDescending { it.created })
+    fun panels(widgets: List<com.argus.assistant.home.Widget>): List<com.argus.assistant.home.Widget> =
+        widgets.filter { !it.hidden && it.type != com.argus.assistant.home.WidgetTypes.INTO && it.type != com.argus.assistant.home.WidgetTypes.WEATHER }
+            .sortedWith(compareBy<com.argus.assistant.home.Widget> { it.order }.thenByDescending { it.created })
 
     /**
      * Owner 2026-11-14: the panels under headers (the widget's category, which ARGUS picks, merges or renames). A header
      * keeps the place of its top panel, so a panel ARGUS just added brings its header to the top.
      */
-    fun groups(widgets: List<com.blaze.assistant.home.Widget>): List<Pair<String, List<com.blaze.assistant.home.Widget>>> =
+    fun groups(widgets: List<com.argus.assistant.home.Widget>): List<Pair<String, List<com.argus.assistant.home.Widget>>> =
         panels(widgets).groupBy { header(it.category) }.toList()
 
     fun header(category: String): String = category.trim().ifBlank { "Notes" }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,13 +23,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.update.Updater
-import com.blaze.assistant.update.Updater.State
+import com.argus.assistant.update.Updater
+import com.argus.assistant.update.Updater.State
 
 /** Checking → Downloading N% → Installing, with a plain error and Retry. */
 @Composable
 fun UpdateCard(preview: State? = null) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val live by Updater.state.collectAsState()
     val st = preview ?: live
@@ -47,8 +47,8 @@ fun UpdateCard(preview: State? = null) {
         Text(line, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.body))
         if (pct >= 0) {
             Spacer(Modifier.height(10.dp))
-            Box(Modifier.fillMaxWidth().height(4.dp).clip(BlazeShapes.pill).background(c.faint)) {
-                Box(Modifier.fillMaxWidth(pct / 100f).height(4.dp).clip(BlazeShapes.pill).background(c.accent))
+            Box(Modifier.fillMaxWidth().height(4.dp).clip(ArgusShapes.pill).background(c.faint)) {
+                Box(Modifier.fillMaxWidth(pct / 100f).height(4.dp).clip(ArgusShapes.pill).background(c.accent))
             }
         }
         val action = when (st) {
@@ -59,7 +59,7 @@ fun UpdateCard(preview: State? = null) {
         }
         if (action != null) {
             Spacer(Modifier.height(10.dp))
-            Text(action, color = c.accent, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), modifier = Modifier.hairline(c.accent).clip(BlazeShapes.pill).clickable { Updater.retry(ctx) }.padding(horizontal = 12.dp, vertical = 8.dp))
+            Text(action, color = c.accent, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), modifier = Modifier.hairline(c.accent).clip(ArgusShapes.pill).clickable { Updater.retry(ctx) }.padding(horizontal = 12.dp, vertical = 8.dp))
         }
     }
 }
@@ -79,10 +79,10 @@ object UpdateCardText {
     }
 }
 
-/** v0.45.4: "Blaze X.Y.Z is available · Update · ×", shown at most once a day on app open (Updater.checkInBackground). */
+/** v0.45.4: "Argus X.Y.Z is available · Update · ×", shown at most once a day on app open (Updater.checkInBackground). */
 @Composable
 fun UpdateBanner() {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val b by Updater.banner.collectAsState()
     val banner = b ?: return

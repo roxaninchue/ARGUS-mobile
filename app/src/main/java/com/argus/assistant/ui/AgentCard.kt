@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,16 +17,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.BgAgents
-import com.blaze.assistant.agent.Modes
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.BgAgents
+import com.argus.assistant.agent.Modes
 import kotlinx.coroutines.delay
 import androidx.compose.ui.draw.clip
 
 /** A background agent's live card: status, current step, time, and Steer / Stop / Open. */
 @Composable
 fun AgentCard(id: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val all by BgAgents.all.collectAsState()
     val bg = all.firstOrNull { it.id == id }
     var tick by remember { mutableStateOf(0) }
@@ -94,7 +94,7 @@ fun AgentCard(id: String) {
 /** Composer mode switches: Plan / Build (Autopilot is always on), plus how many agents are working. */
 @Composable
 fun ModeBar() {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val work by Modes.work.collectAsState()
     val agents by BgAgents.all.collectAsState()
     val live = agents.count { it.live }
@@ -109,8 +109,8 @@ fun ModeBar() {
 
 @Composable
 private fun Chip(text: String, on: Boolean, onClick: () -> Unit) {
-    val c = LocalBlaze.current
-    Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.accent else c.paper, BlazeShapes.pill).hairline(if (on) c.accent else c.hair, BlazeShapes.pill).clickable(onClick = onClick)
+    val c = LocalArgus.current
+    Box(Modifier.clip(ArgusShapes.pill).background(if (on) c.accent else c.paper, ArgusShapes.pill).hairline(if (on) c.accent else c.hair, ArgusShapes.pill).clickable(onClick = onClick)
         .padding(horizontal = 10.dp, vertical = 5.dp)) {
         ButtonText(text, color = if (on) c.paper else c.ink, size = 13.sp)
     }

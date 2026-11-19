@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.material3.Text
-import com.blaze.assistant.agent.Reaction
+import com.argus.assistant.agent.Reaction
 import kotlin.math.abs
 
 /**
@@ -76,7 +76,7 @@ fun Modifier.doubleTapToReact(enabled: Boolean, onDouble: () -> Unit): Modifier 
 @Composable
 fun ReactionChips(list: List<Reaction>, mine: Boolean, onToggle: (String) -> Unit) {
     if (list.isEmpty()) return
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically) {
         for ((e, n, own) in Reactions.groups(list)) {
@@ -96,7 +96,7 @@ fun ReactionChips(list: List<Reaction>, mine: Boolean, onToggle: (String) -> Uni
 /** The small picker "React" opens: the fixed set, one tap each. */
 @Composable
 fun ReactionPicker(current: List<Reaction>, onPick: (String) -> Unit, onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Popup(alignment = Alignment.TopStart, onDismissRequest = onDismiss, properties = androidx.compose.ui.window.PopupProperties(focusable = true)) {
         Row(Modifier.clip(RoundedCornerShape(22.dp)).background(c.bubble).border(1.dp, GlassBubble.stripEdge(c), RoundedCornerShape(22.dp))
             .padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {

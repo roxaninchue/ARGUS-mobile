@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.3: when Autopilot may send another turn by itself after a reply that called no tools.

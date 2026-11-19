@@ -1,6 +1,6 @@
-package com.blaze.assistant.setup
+package com.argus.assistant.setup
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /**
  * 0.52.3 one-screen setup: everything ARGUS downloads or prepares on first run, as one list with one overall progress
@@ -158,9 +158,9 @@ object SetupPlan {
      */
     fun showScreen(onboarded: Boolean, started: Boolean, st: Map<String, Status>): Boolean = !onboarded && started && !complete(st)
 
-    /** How long after the first frame BlazeApp starts what is left (people past onboarding): start-up stays quiet. */
+    /** How long after the first frame ArgusApp starts what is left (people past onboarding): start-up stays quiet. */
     const val LATER_MS = 30_000L
 
-    /** BlazeApp's later start: someone past onboarding (or who began setup) with something still left. */
+    /** ArgusApp's later start: someone past onboarding (or who began setup) with something still left. */
     fun startLater(onboarded: Boolean, started: Boolean, st: Map<String, Status>): Boolean = (onboarded || started) && !complete(st)
 }

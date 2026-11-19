@@ -1,13 +1,13 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Tools that let Blaze browse in its own browser, in the background, without touching the screen. */
+/** Tools that let Argus browse in its own browser, in the background, without touching the screen. */
 object BrowserTools {
     val names = setOf("browser_open", "browser_read", "browser_click", "browser_type", "browser_scroll", "browser_back", "browser_tabs", "browser_show", "browser_vpn", SECURE,
         // 0.45.29: choose in dropdowns, press keys, wait for something, find words on the page.
@@ -78,7 +78,7 @@ object BrowserTools {
     )
 
     fun describe(name: String, a: JSONObject): String = when (name) {
-        "browser_open" -> "Browsing ${com.blaze.assistant.agent.ToolLeak.fixBlazeUrl(a.optString("url")).take(50)}"
+        "browser_open" -> "Browsing ${com.argus.assistant.agent.ToolLeak.fixArgusUrl(a.optString("url")).take(50)}"
         "browser_read" -> "Reading the page"
         "browser_click" -> "Clicking ${a.optString("text").ifBlank { "#" + a.optInt("number") }}"
         "browser_type" -> "Typing in the page"
@@ -105,13 +105,13 @@ object BrowserTools {
     }
 
     private suspend fun runStep(ctx: Context, name: String, a: JSONObject): String = try {
-        // v0.30.5: Home's live preview window shows the page while Blaze works in it.
+        // v0.30.5: Home's live preview window shows the page while Argus works in it.
         if (name != "browser_vpn" && name != "browser_tabs") BrowserLive.mark(describe(name, a))
         when (name) {
-            // v0.28.4: a guessed Blaze repo URL (wrong owner / case) opens the real repo.
+            // v0.28.4: a guessed Argus repo URL (wrong owner / case) opens the real repo.
             // v0.33.3: a Play Store page for an installed app launches the app (never "Install" for something installed).
-            "browser_open" -> com.blaze.assistant.phone.AppFinder.playId(a.optString("url"))?.takeIf { com.blaze.assistant.phone.InstalledApps.launch(ctx, it) }
-                ?.let { "That app ($it) is installed on this phone, so I opened it instead of its Play Store page. Never offer to install it." } ?: BrowserEngine.open(ctx, com.blaze.assistant.agent.ToolLeak.fixBlazeUrl(a.optString("url")), a.optBoolean("new_tab", false), a.optBoolean("private", false)).also { if (a.optBoolean("show")) show(ctx) }
+            "browser_open" -> com.argus.assistant.phone.AppFinder.playId(a.optString("url"))?.takeIf { com.argus.assistant.phone.InstalledApps.launch(ctx, it) }
+                ?.let { "That app ($it) is installed on this phone, so I opened it instead of its Play Store page. Never offer to install it." } ?: BrowserEngine.open(ctx, com.argus.assistant.agent.ToolLeak.fixArgusUrl(a.optString("url")), a.optBoolean("new_tab", false), a.optBoolean("private", false)).also { if (a.optBoolean("show")) show(ctx) }
             "browser_read" -> BrowserEngine.read(ctx)
             "browser_click" -> {
                 // v0.28.2: a button that pays, sends, posts or deletes always asks first (ConfirmGate: outbound in the user's name).
@@ -119,8 +119,8 @@ object BrowserTools {
                 val text = a.optString("text").ifBlank { null }
                 val label = BrowserEngine.labelOf(n, text).ifBlank { text.orEmpty() }
                 val site = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { BrowserEngine.host() }.ifBlank { "this page" }
-                if (com.blaze.assistant.phone.Pointer.risky(label) &&
-                    !com.blaze.assistant.agent.Agent.confirm("Click \u201c${label.trim().take(40)}\u201d on $site?",
+                if (com.argus.assistant.phone.Pointer.risky(label) &&
+                    !com.argus.assistant.agent.Agent.confirm("Click \u201c${label.trim().take(40)}\u201d on $site?",
                         "This looks like it pays, sends, posts or deletes something.", "Click", always = true))
                     "The user did NOT approve clicking \"${label.trim().take(40)}\". Don't retry; tell them it's ready for them to finish (browser_show)."
                 else BrowserEngine.click(ctx, n, text)
@@ -134,8 +134,8 @@ object BrowserTools {
                 val k = a.optString("key")
                 val focused = if (k.equals("Enter", true) || k.equals("Space", true)) BrowserEngine.focusedLabel() else ""
                 val site = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { BrowserEngine.host() }.ifBlank { "this page" }
-                if (focused.isNotBlank() && com.blaze.assistant.phone.Pointer.risky(focused) &&
-                    !com.blaze.assistant.agent.Agent.confirm("Press \u201c${focused.trim().take(40)}\u201d on $site?",
+                if (focused.isNotBlank() && com.argus.assistant.phone.Pointer.risky(focused) &&
+                    !com.argus.assistant.agent.Agent.confirm("Press \u201c${focused.trim().take(40)}\u201d on $site?",
                         "This looks like it pays, sends, posts or deletes something.", "Press", always = true))
                     "The user did NOT approve pressing \"${focused.trim().take(40)}\". Don't retry; tell them it's ready for them to finish (browser_show)."
                 else BrowserEngine.key(ctx, k)
@@ -166,7 +166,7 @@ object BrowserTools {
 }
 
 /**
- * v0.30.5: what Blaze is doing in its background browser, for the Home tab's live preview window. Set on each browser
+ * v0.30.5: what Argus is doing in its background browser, for the Home tab's live preview window. Set on each browser
  * tool call; the preview shows while a chat is working and a browser step happened in the last [WINDOW_MS].
  */
 object BrowserLive {

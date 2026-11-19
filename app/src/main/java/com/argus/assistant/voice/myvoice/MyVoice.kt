@@ -1,4 +1,4 @@
-package com.blaze.assistant.voice.myvoice
+package com.argus.assistant.voice.myvoice
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -7,7 +7,7 @@ import android.media.AudioTrack
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 import com.k2fsa.sherpa.onnx.GenerationConfig
 import com.k2fsa.sherpa.onnx.OfflineTts
 import com.k2fsa.sherpa.onnx.OfflineTtsConfig
@@ -32,12 +32,12 @@ import java.util.zip.GZIPInputStream
 import kotlin.coroutines.resume
 
 /**
- * "My voice": Blaze speaks in the user's own voice, cloned on the phone by sherpa-onnx PocketTTS from a short
+ * "My voice": Argus speaks in the user's own voice, cloned on the phone by sherpa-onnx PocketTTS from a short
  * recording. Nothing leaves the phone: the model runs offline and the recording stays in app-private storage.
  *
  * Threads: one "myvoice" thread loads the model and makes speech piece by piece (never the main thread); one
  * "myvoice-play" thread plays the pieces through an AudioTrack while the next one is being made. Events go back to
- * [com.blaze.assistant.voice.Voice] on the main thread, so the voice loop / call screen behave exactly as with the
+ * [com.argus.assistant.voice.Voice] on the main thread, so the voice loop / call screen behave exactly as with the
  * phone's TextToSpeech. When the phone can't keep up, or the model fails, the rest of the reply is handed to the
  * system voice and the user is told once, in plain words.
  */
@@ -219,7 +219,7 @@ object MyVoice {
         _pack.value = VoicePack.State.Missing
     }
 
-    /** Deletes the recording(s). Blaze goes back to the system voice. */
+    /** Deletes the recording(s). Argus goes back to the system voice. */
     fun deleteVoice() {
         if (chosen()) choose(false) else stop()
         voiceDir().deleteRecursively()
@@ -231,7 +231,7 @@ object MyVoice {
         candidateFile().writeBytes(AudioClip.wavBytes(p.samples, p.sampleRate))
     }
 
-    /** "Use this voice": the tested recording becomes the voice, and Blaze starts speaking with it. */
+    /** "Use this voice": the tested recording becomes the voice, and Argus starts speaking with it. */
     fun useCandidate(): Boolean {
         val c = candidateFile()
         if (!c.exists()) return voiceReady().also { if (it) choose(true) }
@@ -320,7 +320,7 @@ object MyVoice {
 
     private fun scheduleIdle() {
         idle?.cancel(false)
-        // Free the ~300 MB model when Blaze hasn't spoken for a while (low-RAM phones).
+        // Free the ~300 MB model when Argus hasn't spoken for a while (low-RAM phones).
         idle = exec.schedule({ if (pending.get() == 0 && !busy()) releaseEngine() }, 4, TimeUnit.MINUTES)
     }
 

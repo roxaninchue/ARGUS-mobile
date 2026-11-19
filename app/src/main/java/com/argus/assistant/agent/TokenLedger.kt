@@ -1,18 +1,18 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
  * v0.33.1 token ledger per feature (idea #33). [Usage] knows how many tokens a day cost; this knows WHERE they went.
  * Every model call's request is split into the parts that make it up (system prompt, each tool group's schemas, your
- * messages, Blaze's replies and tool calls, each tool's results, screen readouts, images) and added to a rolling
+ * messages, Argus's replies and tool calls, each tool's results, screen readouts, images) and added to a rolling
  * 7-day ledger. "Where do my tokens go?" (blaze_self token_ledger) lists the top offenders with their share and a
  * concrete fix for each, so the big costs are found by measurement, not guesswork. Nothing is changed automatically.
  *
- * Sizes are characters ÷ 4 (BlazeDb.tokens' rule), images a flat 800. Pure parts tested in TokenLedgerTest.
+ * Sizes are characters ÷ 4 (ArgusDb.tokens' rule), images a flat 800. Pure parts tested in TokenLedgerTest.
  */
 object TokenLedger {
     const val IMAGE_TOKENS = 800

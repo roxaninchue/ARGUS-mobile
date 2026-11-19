@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -65,12 +65,12 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Lucide
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -203,13 +203,13 @@ fun ArgusComposer(
             .heightIn(min = ShellSpec.Composer.HEIGHT.dp).argusGlass(GlassLevel.CHROME, shape).padding(horizontal = 4.dp, vertical = 4.dp),
     ) {
     val menuOpen = plusOpen && menu != null
-    if (menu != null) AnimatedVisibility(menuOpen, enter = com.blaze.assistant.ui.MotionTokens.expand(), exit = com.blaze.assistant.ui.MotionTokens.collapse()) { menu() }
-    if (top != null) AnimatedVisibility(!menuOpen, enter = com.blaze.assistant.ui.MotionTokens.expand(), exit = com.blaze.assistant.ui.MotionTokens.collapse()) {
+    if (menu != null) AnimatedVisibility(menuOpen, enter = com.argus.assistant.ui.MotionTokens.expand(), exit = com.argus.assistant.ui.MotionTokens.collapse()) { menu() }
+    if (top != null) AnimatedVisibility(!menuOpen, enter = com.argus.assistant.ui.MotionTokens.expand(), exit = com.argus.assistant.ui.MotionTokens.collapse()) {
         Box(Modifier.padding(start = 8.dp)) { top() }
     }
     val focus = androidx.compose.ui.platform.LocalFocusManager.current
     val turn by androidx.compose.animation.core.animateFloatAsState(if (plusOpen) PlusMenuSpec.PLUS_TURN else 0f,
-        com.blaze.assistant.ui.MotionTokens.medium(), label = "plusTurn")
+        com.argus.assistant.ui.MotionTokens.medium(), label = "plusTurn")
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         ComposerDisc(if (menu != null) "plus" else if (plusOpen) "x" else "plus", if (plusOpen) KitA11y.Shell.PLUS_CLOSE else KitA11y.Shell.PLUS,
             { if (!plusOpen && menu != null) focus.clearFocus(); onPlus() }, ink = false, rotation = if (menu != null) turn else 0f)
@@ -246,8 +246,8 @@ fun ArgusComposer(
 private fun ComposerHint(placeholder: String, rotate: Boolean) {
     val c = Argus.colors
     // Owner 2026-11-14: the rotating "Let's {word}" hints are English word play, so other app languages get the fixed hint
-    if (!rotate || !com.blaze.assistant.ui.MotionTokens.enabled || com.blaze.assistant.i18n.AppLang.code.value != com.blaze.assistant.i18n.AppLang.DEFAULT) {
-        Text(com.blaze.assistant.i18n.tr(placeholder), style = ArgusType.field, color = c.mute, maxLines = 1); return
+    if (!rotate || !com.argus.assistant.ui.MotionTokens.enabled || com.argus.assistant.i18n.AppLang.code.value != com.argus.assistant.i18n.AppLang.DEFAULT) {
+        Text(com.argus.assistant.i18n.tr(placeholder), style = ArgusType.field, color = c.mute, maxLines = 1); return
     }
     val seed = remember { (System.currentTimeMillis() / 1000L).toInt() }
     var step by remember { androidx.compose.runtime.mutableIntStateOf(0) }

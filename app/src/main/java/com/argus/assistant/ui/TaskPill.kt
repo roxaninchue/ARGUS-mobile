@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
@@ -31,16 +31,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 0.52.1: the ONE task pill (owner: "Hark-style"). A single short line of natural text ([com.blaze.assistant.agent.TaskLine])
+ * 0.52.1: the ONE task pill (owner: "Hark-style"). A single short line of natural text ([com.argus.assistant.agent.TaskLine])
  * with a soft shimmer running through the words. It never expands, shows no count, timer, list or command, and is
- * removed by its caller when the task is done. Anything Blaze writes during the task sits above it in the chat.
+ * removed by its caller when the task is done. Anything Argus writes during the task sits above it in the chat.
  * Stop lives in the composer's stop button. Replaces WorkCard / AgentPill / StepsChip in the chat surfaces.
  */
 object TaskPillTokens { const val TAG = "task_pill" }
 
 @Composable
 fun TaskPill(line: String, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val base = c.sub
     val hi = c.ink
     val shimmer = if (MotionTokens.enabled) rememberInfiniteTransition(label = "taskPill")

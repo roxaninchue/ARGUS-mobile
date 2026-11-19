@@ -1,10 +1,10 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.45.29 browser tasks: once a turn has used Blaze's background browser, the rest of its steps carry only the browser
+ * 0.45.29 browser tasks: once a turn has used Argus's background browser, the rest of its steps carry only the browser
  * tools and the few a browser task needs (asking the user, the secure form, web search, memory, skills), not the whole
  * registered list (150+ tools on every step of a 10-25 step task, which crowded the page out on free models). A call to a
  * tool outside the set widens the turn back to the full list (Agent.pickTools' existing "widened" path). Pure (BrowserReadTest).

@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * v0.45.0 (#13, #16) what goes into the system prompt, by who is asking and what the turn needs.
  *

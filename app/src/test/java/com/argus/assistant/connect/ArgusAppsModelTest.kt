@@ -1,6 +1,6 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
-import com.blaze.assistant.connect.ArgusAppsModel.Auth
+import com.argus.assistant.connect.ArgusAppsModel.Auth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -1,7 +1,7 @@
-package com.blaze.assistant.media
+package com.argus.assistant.media
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.app.WallpaperManager
 import android.content.ClipData
@@ -27,8 +27,8 @@ import android.util.LruCache
 import android.util.Size
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.blaze.assistant.media.GalleryModel.Entry
-import com.blaze.assistant.media.GalleryModel.Src
+import com.argus.assistant.media.GalleryModel.Entry
+import com.argus.assistant.media.GalleryModel.Src
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,10 +44,10 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * v0.30.0 Gallery, Android side: reads shared storage (MediaStore) next to Blaze's own gallery folder, keeps the
+ * v0.30.0 Gallery, Android side: reads shared storage (MediaStore) next to Argus's own gallery folder, keeps the
  * user's albums, makes thumbnails / cover art / durations, and does share, delete, rename and set-as-wallpaper.
  *
- * Without any storage permission Android still shows Blaze everything Blaze itself saved to shared storage (songs and
+ * Without any storage permission Android still shows Argus everything Argus itself saved to shared storage (songs and
  * videos it downloaded to Music/Blaze and Movies/Blaze, Download/Blaze, Pictures/Blaze). Screenshots and Camera need
  * the "Photos and videos" permission, which the Albums tab offers.
  */
@@ -58,7 +58,7 @@ object GalleryRepo {
     private val _phone = MutableStateFlow<List<Entry>>(emptyList())
     val phone: StateFlow<List<Entry>> = _phone
     private val _blaze = MutableStateFlow<List<Entry>>(emptyList())
-    val blaze: StateFlow<List<Entry>> = _blaze
+    val argus: StateFlow<List<Entry>> = _blaze
     private val _albums = MutableStateFlow<List<AlbumStore.Album>>(emptyList())
     val albums: StateFlow<List<AlbumStore.Album>> = _albums
     private val _loading = MutableStateFlow(false)
@@ -72,7 +72,7 @@ object GalleryRepo {
         Media.init(app)
         store = AlbumStore(File(app.filesDir, "gallery_albums.json"))
         _albums.value = store!!.albums
-        scope.launch { Media.items.collect { list -> _blaze.value = list.map { blazeEntry(it) } } }
+        scope.launch { Media.items.collect { list -> _blaze.value = list.map { argusEntry(it) } } }
     }
 
     private fun albumStore(): AlbumStore = store ?: AlbumStore(null).also { store = it }
@@ -83,7 +83,7 @@ object GalleryRepo {
         arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
     else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
 
-    /** True once the phone lets Blaze see Screenshots and Camera (full or "selected photos" access). */
+    /** True once the phone lets Argus see Screenshots and Camera (full or "selected photos" access). */
     fun canReadPhone(): Boolean {
         if (!::app.isInitialized) return false
         val granted = phonePermissions().any { ContextCompat.checkSelfPermission(app, it) == PackageManager.PERMISSION_GRANTED }
@@ -110,7 +110,7 @@ object GalleryRepo {
 
     private val metaCache = HashMap<String, Triple<Long, Int, Int>>()   // key path@modified → duration, w, h
 
-    private fun blazeEntry(it: Media.Item): Entry {
+    private fun argusEntry(it: Media.Item): Entry {
         val f = it.file
         val key = f.absolutePath + "@" + f.lastModified()
         val (dur, w, h) = synchronized(metaCache) { metaCache[key] } ?: run {
@@ -156,7 +156,7 @@ object GalleryRepo {
             "$types AND (" + ors.joinToString(" OR ") + ")"
         } else {
             val d = MediaStore.MediaColumns.DATA
-            args += "%/Blaze/%"; args += "%/Screenshots/%"; args += "%/DCIM/%"
+            args += "%/Argus/%"; args += "%/Screenshots/%"; args += "%/DCIM/%"
             "$types AND ($d LIKE ? OR $d LIKE ? OR $d LIKE ?)"
         }
         val root = runCatching { Environment.getExternalStorageDirectory().absolutePath }.getOrDefault("/storage/emulated/0")
@@ -197,7 +197,7 @@ object GalleryRepo {
                 }
             }
         } catch (_: Exception) { }
-        // Durations the index doesn't have yet (just-downloaded files) come from the file itself: only Blaze's own
+        // Durations the index doesn't have yet (just-downloaded files) come from the file itself: only Argus's own
         // music/video/downloads and at most 150 of them, so a big Camera roll never stalls the first load.
         var budget = 150
         return out.map { e ->
@@ -257,7 +257,7 @@ object GalleryRepo {
     private val decodeGate = Semaphore(3)
 
     /**
-     * Thumbnails of Blaze's own files (and song covers) are kept as small JPEGs in cache/gallery_thumbs, so the second
+     * Thumbnails of Argus's own files (and song covers) are kept as small JPEGs in cache/gallery_thumbs, so the second
      * visit doesn't decode a 1024 px picture or open an MP3 again. Shared-storage pictures use Android's own thumbnail
      * cache (loadThumbnail) and skip this.
      */
@@ -361,7 +361,7 @@ object GalleryRepo {
     }
 
     /**
-     * Deletes what it can. Shared-storage items Blaze didn't save need the phone's own confirmation: that comes back
+     * Deletes what it can. Shared-storage items Argus didn't save need the phone's own confirmation: that comes back
      * as an [IntentSender] for the screen to launch (Android 10+); after it, call [refresh].
      */
     suspend fun delete(list: List<Entry>): IntentSender? = withContext(Dispatchers.IO) {

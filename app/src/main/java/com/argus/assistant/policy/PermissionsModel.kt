@@ -1,14 +1,14 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.Autonomy
-import com.blaze.assistant.team.Permissions
-import com.blaze.assistant.team.Rule
-import com.blaze.assistant.team.SendScope
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.Autonomy
+import com.argus.assistant.team.Permissions
+import com.argus.assistant.team.Rule
+import com.argus.assistant.team.SendScope
 
 /**
  * P2-SF-04 (BH-25, NEW-09): what Settings › Privacy › Approvals & permissions shows, pure so PermissionsTest runs it on
- * the JVM. The page ([com.blaze.assistant.ui.argus.settings.PermissionsPage]) only draws it; the glue reads the policies
+ * the JVM. The page ([com.argus.assistant.ui.argus.settings.PermissionsPage]) only draws it; the glue reads the policies
  * table (PolicyStore.all) and the bots (TeamStore) and writes back through PolicyStore.forget / TeamStore.update.
  *
  *  - standing allows ("Always allow" on a card): one row per tool × bot from the policies table, grouped by bot

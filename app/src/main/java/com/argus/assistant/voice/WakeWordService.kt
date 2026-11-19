@@ -1,7 +1,7 @@
-package com.blaze.assistant.voice
+package com.argus.assistant.voice
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,10 +15,10 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.MainActivity
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.assist.BlazeInteractionService
+import com.argus.assistant.MainActivity
+import com.argus.assistant.R
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.assist.ArgusInteractionService
 import org.json.JSONObject
 import org.vosk.Model
 import org.vosk.Recognizer
@@ -39,8 +39,8 @@ class WakeWordService : Service() {
         /** Start, or (when already running) re-promote from the foreground so Android gives the mic back. */
         fun start(ctx: Context) {
             if (!Settings.wakeWord || !WakeModel.ready(ctx)) return
-            if (com.blaze.assistant.connect.AccountGate.locked()) return   // account lock: the wake word stays off
-            if (com.blaze.assistant.life.LifeLogs.active) return   // life logs hold the mic (v0.19.0)
+            if (com.argus.assistant.connect.AccountGate.locked()) return   // account lock: the wake word stays off
+            if (com.argus.assistant.life.LifeLogs.active) return   // life logs hold the mic (v0.19.0)
             try { ContextCompat.startForegroundService(ctx, Intent(ctx, WakeWordService::class.java).setAction(if (running) ACT_REFRESH else null)) } catch (_: Exception) { }
         }
         fun stop(ctx: Context) { ctx.stopService(Intent(ctx, WakeWordService::class.java)) }
@@ -113,7 +113,7 @@ class WakeWordService : Service() {
                 })
         }
         if (!goForeground()) { running = false; stopSelf(); return }
-        if (com.blaze.assistant.connect.AccountGate.locked()) { running = false; stopSelf(); return }   // account lock (a sticky restart)
+        if (com.argus.assistant.connect.AccountGate.locked()) { running = false; stopSelf(); return }   // account lock (a sticky restart)
         Thread {
             try {
                 model = Model(WakeModel.dir(this).absolutePath)
@@ -157,7 +157,7 @@ class WakeWordService : Service() {
         val st = WakeNote.of(listening, paused, sleeping, micBlocked)
         if (st == shownState) return
         shownState = st
-        try { getSystemService(NotificationManager::class.java)?.notify(ID, build(st)) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("WakeNote", e) }
+        try { getSystemService(NotificationManager::class.java)?.notify(ID, build(st)) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("WakeNote", e) }
     }
 
     private fun goForeground(): Boolean {
@@ -188,7 +188,7 @@ class WakeWordService : Service() {
     /**
      * Our own mic loop (instead of Vosk's SpeechService) so we can notice when Android hands us
      * silence: a microphone service started from the background gets an all-zero stream on
-     * Android 11+. Then we ask the user to tap once to bring Blaze to the front.
+     * Android 11+. Then we ask the user to tap once to bring Argus to the front.
      */
     @Synchronized private fun startListening() {
         val m = model ?: return
@@ -221,8 +221,8 @@ class WakeWordService : Service() {
                     if (n <= 0) { Thread.sleep(50); continue }
                     var peak = 0
                     for (i in 0 until n) { val v = kotlin.math.abs(buf[i].toInt()); if (v > peak) peak = v }
-                    if (peak == 0) { silentMs += n / 16 } else { silentMs = 0; if (warned) { warned = false; micBlocked = false; main.post { note() }; com.blaze.assistant.notify.Notifier.clearWakeBlocked() } }
-                    if (silentMs > 6000 && !warned) { warned = true; micBlocked = true; main.post { note() }; com.blaze.assistant.notify.Notifier.wakeBlocked() }
+                    if (peak == 0) { silentMs += n / 16 } else { silentMs = 0; if (warned) { warned = false; micBlocked = false; main.post { note() }; com.argus.assistant.notify.Notifier.clearWakeBlocked() } }
+                    if (silentMs > 6000 && !warned) { warned = true; micBlocked = true; main.post { note() }; com.argus.assistant.notify.Notifier.wakeBlocked() }
                     if (gate) {
                         var sum = 0.0
                         for (i in 0 until n) { val v = buf[i].toDouble(); sum += v * v }
@@ -268,11 +268,11 @@ class WakeWordService : Service() {
     private fun stopListening() { listening = false; thread = null; main.post { note() } }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (com.blaze.assistant.connect.AccountGate.locked()) { stopListening(); stopSelf(); return START_NOT_STICKY }   // account lock
+        if (com.argus.assistant.connect.AccountGate.locked()) { stopListening(); stopSelf(); return START_NOT_STICKY }   // account lock
         when (intent?.action) {
             ACT_PAUSE -> { paused = true; pausedAt = System.currentTimeMillis(); stopListening() }
             ACT_RESUME -> { paused = false; note(); main.postDelayed({ startListening() }, 350) }
-            ACT_REFRESH -> { micBlocked = false; goForeground(); com.blaze.assistant.notify.Notifier.clearWakeBlocked()
+            ACT_REFRESH -> { micBlocked = false; goForeground(); com.argus.assistant.notify.Notifier.clearWakeBlocked()
                 if (!paused) { stopListening(); main.postDelayed({ startListening() }, 300) } }
             else -> if (!paused) startListening()
         }
@@ -280,7 +280,7 @@ class WakeWordService : Service() {
     }
 
     /**
-     * True when the wake phrase was heard (and Blaze was woken). The whole utterance must be the
+     * True when the wake phrase was heard (and Argus was woken). The whole utterance must be the
      * phrase (not buried in other speech), and every word must be recognised confidently.
      */
     private fun check(hyp: String?): Boolean {
@@ -289,7 +289,7 @@ class WakeWordService : Service() {
         val heard = text in PHRASES
         if (!heard) return false
         val words = o.optJSONArray("result")
-        val minConf = com.blaze.assistant.agent.Settings.str("wake_conf", "0.88").toDoubleOrNull() ?: 0.88
+        val minConf = com.argus.assistant.agent.Settings.str("wake_conf", "0.88").toDoubleOrNull() ?: 0.88
         if (words != null && words.length() > 0) {
             for (i in 0 until words.length()) if (words.getJSONObject(i).optDouble("conf", 0.0) < minConf) return false
             val dur = words.getJSONObject(words.length() - 1).optDouble("end") - words.getJSONObject(0).optDouble("start")
@@ -304,17 +304,17 @@ class WakeWordService : Service() {
     }
 
     private fun wake() {
-        com.blaze.assistant.device.Sounds.wake()
-        // Best path: as the default assistant, open Blaze's assistant session over any app.
-        if (BlazeInteractionService.showFromWake()) return
-        // Otherwise the overlay panel, if Blaze may draw over apps.
-        if (com.blaze.assistant.ui.Overlay.canDrawOverApps(this)) {
-            android.os.Handler(mainLooper).post { com.blaze.assistant.ui.Overlay.openPanel(this, listen = true) }; return
+        com.argus.assistant.device.Sounds.wake()
+        // Best path: as the default assistant, open Argus's assistant session over any app.
+        if (ArgusInteractionService.showFromWake()) return
+        // Otherwise the overlay panel, if Argus may draw over apps.
+        if (com.argus.assistant.ui.Overlay.canDrawOverApps(this)) {
+            android.os.Handler(mainLooper).post { com.argus.assistant.ui.Overlay.openPanel(this, listen = true) }; return
         }
-        val i = com.blaze.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
+        val i = com.argus.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(MainActivity.EXTRA_LISTEN, true))
-        try { startActivity(i) } catch (_: Exception) { com.blaze.assistant.notify.Notifier.wakeHeard() }
+        try { startActivity(i) } catch (_: Exception) { com.argus.assistant.notify.Notifier.wakeHeard() }
     }
 
     override fun onDestroy() {

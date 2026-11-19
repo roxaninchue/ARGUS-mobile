@@ -1,18 +1,18 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.CommandPolicy
-import com.blaze.assistant.agent.ConfirmGate
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.ActionClass.CREDENTIAL
-import com.blaze.assistant.team.ActionClass.DELETE
-import com.blaze.assistant.team.ActionClass.READ
-import com.blaze.assistant.team.ActionClass.SEND
-import com.blaze.assistant.team.ActionClass.SPEND
-import com.blaze.assistant.team.Autonomy
-import com.blaze.assistant.team.DEFAULT_RULES
-import com.blaze.assistant.team.Permissions
-import com.blaze.assistant.team.Rule
-import com.blaze.assistant.team.SendScope
+import com.argus.assistant.agent.CommandPolicy
+import com.argus.assistant.agent.ConfirmGate
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.ActionClass.CREDENTIAL
+import com.argus.assistant.team.ActionClass.DELETE
+import com.argus.assistant.team.ActionClass.READ
+import com.argus.assistant.team.ActionClass.SEND
+import com.argus.assistant.team.ActionClass.SPEND
+import com.argus.assistant.team.Autonomy
+import com.argus.assistant.team.DEFAULT_RULES
+import com.argus.assistant.team.Permissions
+import com.argus.assistant.team.Rule
+import com.argus.assistant.team.SendScope
 
 /**
  * P2-SF-01: the one policy engine (05 §7.1). `Policy.decide(call, ctx)` merges, in this order:

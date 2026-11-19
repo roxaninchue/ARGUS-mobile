@@ -1,12 +1,12 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * The scoped page chat: what "Ask Blaze about this page" tells the model (pure, tested in PageAskTest).
+ * The scoped page chat: what "Ask Argus about this page" tells the model (pure, tested in PageAskTest).
  *
  * v0.27.1 (Joey: a pasted Google Lens link got "The page text you provided does not include the HTML
  * markup of the `<body>` element…"). The page now reaches the model as what a person sees (title, the readable text,
@@ -15,7 +15,7 @@ import org.json.JSONObject
  * results are added when the screen alone can't answer.
  */
 object PageAsk {
-    /** What Blaze could read from the open page. */
+    /** What Argus could read from the open page. */
     data class Capture(val title: String, val url: String, val text: String, val labels: List<String> = emptyList(),
                        val images: Int = 0, val alts: List<String> = emptyList(), val password: Boolean = false) {
         companion object { val NONE = Capture("", "", "") }

@@ -1,4 +1,4 @@
-package com.blaze.assistant.i18n
+package com.argus.assistant.i18n
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -36,18 +36,18 @@ class AppLangTest {
     }
 
     @Test fun repliesAlwaysFollowTheUsersLanguage() {
-        assertEquals("auto", com.blaze.assistant.agent.ReplyLanguage.current())
-        assertEquals(null, com.blaze.assistant.agent.ReplyLanguage.header(com.blaze.assistant.agent.ReplyLanguage.current()))
+        assertEquals("auto", com.argus.assistant.agent.ReplyLanguage.current())
+        assertEquals(null, com.argus.assistant.agent.ReplyLanguage.header(com.argus.assistant.agent.ReplyLanguage.current()))
     }
 
     @Test fun settingsAndSetupPickTheAppLanguage() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        val settings = File(root, "com/blaze/assistant/ui/SettingsSheet.kt").readText()
+        val settings = File(root, "com/argus/assistant/ui/SettingsSheet.kt").readText()
         assertTrue("AppLang.PICKABLE.forEach" in settings)
         assertFalse("ReplyLanguage.OPTIONS" in settings)
-        val onboarding = File(root, "com/blaze/assistant/ui/space/SpaceOnboarding.kt").readText()
+        val onboarding = File(root, "com/argus/assistant/ui/space/SpaceOnboarding.kt").readText()
         assertTrue("SpaceOnboarding.Step.LANGUAGE -> LanguageStep(onNext)" in onboarding)
-        val theme = File(root, "com/blaze/assistant/ui/Theme.kt").readText()
+        val theme = File(root, "com/argus/assistant/ui/Theme.kt").readText()
         assertTrue("LocalLayoutDirection provides if (rtl)" in theme)
     }
 

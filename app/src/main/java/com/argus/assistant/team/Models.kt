@@ -1,4 +1,4 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 /**
  * P0-TM-01: the team's pure data model, 05-agent-ecosystem.md §9.1 verbatim (plus [DEFAULT_RULES], the 05 §7.1

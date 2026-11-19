@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * v0.24.4: the line under a reply shows only what matters to a person ("Memory updated", "Skill saved",
  * "Heads-up · 14:02"). Technical parts (timings, "instant/on-device", data used, token meters, model ids,
@@ -45,13 +45,13 @@ object ReplyChips {
         if (meta.startsWith("usedup:")) return ""
         // "Heads-up · 14:02" is one human chip even though it has a dot.
         // Unreleased after 0.52.3: its "why you got this" reason is not part of the chip (the bubble has its own "Why?").
-        if (meta.startsWith("Heads-up")) return com.blaze.assistant.proactive.ProactiveDial.chipOf(meta)
+        if (meta.startsWith("Heads-up")) return com.argus.assistant.proactive.ProactiveDial.chipOf(meta)
         return meta.split(" \u00b7 ").map { it.trim() }.filter { p ->
             p.isNotEmpty() && p != Ack.META && !Receipt.isChip(p) && !ModelHide.mentions(p) && !isRouteWord(p) && (showTech || !isTechnical(p))
         }.joinToString(" \u00b7 ")
     }
 
-    /** Route / lane words that only make sense with a model next to them ("Blaze Cloud", "cloud run", "fallback"). */
+    /** Route / lane words that only make sense with a model next to them ("Argus Cloud", "cloud run", "fallback"). */
     private fun isRouteWord(p: String): Boolean =
         Regex("^run$|\\b((?:argus|blaze) cloud|cloud run|via |model|provider|fallback|lane|keyless|free \\(|tier)\\b|^[\u2601]|[\\w.-]+/[\\w.:-]+|\\)$", RegexOption.IGNORE_CASE).containsMatchIn(p)
 

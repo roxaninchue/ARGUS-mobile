@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -61,9 +61,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Memory
-import com.blaze.assistant.agent.Mind
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Memory
+import com.argus.assistant.agent.Mind
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -79,7 +79,7 @@ import androidx.compose.ui.draw.clip
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun MemoryPage(mems0: List<Mind.Mem>? = null, mode0: String = "", select0: Long = 0L, query0: String = "") {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val facts by Memory.facts.collectAsState()
     val mems = remember(facts, mems0) {
         mems0 ?: if (Mind.ready) Mind.all() else facts.mapIndexed { i, f -> Mind.Mem(-(i + 1L), "fact", "", f) }
@@ -98,7 +98,7 @@ fun MemoryPage(mems0: List<Mind.Mem>? = null, mode0: String = "", select0: Long 
     val tidyNow by tidyProgress.collectAsState()
     val tidyStop = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
     var tidying by remember { mutableStateOf(false) }
-    // v0.26.3: one plain line when blaze.db couldn't be used (Blaze is on the copy it kept in mind.db).
+    // v0.26.3: one plain line when blaze.db couldn't be used (Argus is on the copy it kept in mind.db).
     val notice = if (mems0 == null) Mind.notice else null
 
     if (mems.isEmpty()) {
@@ -137,7 +137,7 @@ fun MemoryPage(mems0: List<Mind.Mem>? = null, mode0: String = "", select0: Long 
                                 Mind.consolidate(cancelled = { tidyStop.get() }, progress = { d, t -> tidyProgress.value = d to t })
                             }
                         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) {
-                            com.blaze.assistant.device.CrashLog.quiet("MemoryPage: tidy", e); -1
+                            com.argus.assistant.device.CrashLog.quiet("MemoryPage: tidy", e); -1
                         }
                         val stopped = tidyStop.get()
                         tidying = false; tidyProgress.value = null
@@ -189,7 +189,7 @@ fun MemoryPage(mems0: List<Mind.Mem>? = null, mode0: String = "", select0: Long 
 
 @Composable
 private fun ForgetAll(n: Int) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var armed by remember { mutableStateOf(false) }
     LaunchedEffect(armed) { if (armed) { delay(4000); armed = false } }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -214,7 +214,7 @@ private class Cam(var x: Float = 0f, var y: Float = 0f, var z: Float = 1f)
 @Composable
 fun MemoryGraphView(graph: MemGraph, selectedId: Long, matches: Set<Long>?, height: androidx.compose.ui.unit.Dp = 420.dp,
                     onSelect: (Long) -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val measurer = rememberTextMeasurer(cacheSize = 64)
     val cam = remember(graph) { Cam() }
     var size by remember { mutableStateOf(IntSize.Zero) }
@@ -422,7 +422,7 @@ fun MemoryGraphView(graph: MemGraph, selectedId: Long, matches: Set<Long>?, heig
 
 @Composable
 private fun GraphTool(text: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.height(30.dp).width(if (text.length > 1) 40.dp else 32.dp).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         Text(text, style = TextStyle(fontFamily = if (text.length > 1) Type.Mono else Type.Sans, fontSize = if (text.length > 1) 10.sp else 16.sp,
             letterSpacing = if (text.length > 1) 0.1.em else 0.em, color = c.sub))
@@ -474,8 +474,8 @@ private fun MemoryList(mems: List<Mind.Mem>, matches: Set<Long>?, sel: Long, gra
 /** 0.45.24: the tick box of a memory while picking lines to merge. */
 @Composable
 private fun PickMark(on: Boolean) {
-    val c = LocalBlaze.current.mono
-    Box(Modifier.size(16.dp).clip(BlazeShapes.pill).background(if (on) c.accent else androidx.compose.ui.graphics.Color.Transparent, BlazeShapes.pill)
+    val c = LocalArgus.current.mono
+    Box(Modifier.size(16.dp).clip(ArgusShapes.pill).background(if (on) c.accent else androidx.compose.ui.graphics.Color.Transparent, ArgusShapes.pill)
         .drawBehind { if (!on) drawCircle(c.sub, style = Stroke(1.dp.toPx())) }, contentAlignment = Alignment.Center) {
         if (on) Text("\u2713", style = TextStyle(fontFamily = Type.Sans, fontSize = 10.sp, color = c.paper))
     }
@@ -483,8 +483,8 @@ private fun PickMark(on: Boolean) {
 
 @Composable
 private fun KindMark(kind: String, on: Boolean = false) {
-    val c = LocalBlaze.current.mono
-    Box(Modifier.size(8.dp).background(if (on) c.accent else c.ink.copy(alpha = 0.85f), BlazeShapes.pill))
+    val c = LocalArgus.current.mono
+    Box(Modifier.size(8.dp).background(if (on) c.accent else c.ink.copy(alpha = 0.85f), ArgusShapes.pill))
 }
 
 // ---------------------------------------------------------------- detail
@@ -495,7 +495,7 @@ private fun date(ms: Long) = if (ms <= 0) "\u2014" else dateFmt.format(java.util
 /** View, edit and forget one memory (Desktop's detail panel). Forget asks for a second tap. */
 @Composable
 fun MemoryDetail(m: Mind.Mem, graph: MemGraph, onSelect: (Long) -> Unit, onClose: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var text by remember(m.id, m.text) { mutableStateOf(m.text) }
     var subject by remember(m.id, m.subject) { mutableStateOf(m.subject) }
     var kind by remember(m.id, m.kind) { mutableStateOf(Mind.normKind(m.kind)) }
@@ -510,9 +510,9 @@ fun MemoryDetail(m: Mind.Mem, graph: MemGraph, onSelect: (Long) -> Unit, onClose
         .drawBehind { drawRoundRect(c.accent, topLeft = androidx.compose.ui.geometry.Offset(4.dp.toPx(), 10.dp.toPx()), size = Size(3.dp.toPx(), (size.height - 20.dp.toPx()).coerceAtLeast(1f)), cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx())) }) {
         Column(Modifier.weight(1f).padding(start = 16.dp, end = 6.dp, top = 6.dp, bottom = 14.dp)) {
             Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(7.dp).background(c.accent, BlazeShapes.pill)); Spacer(Modifier.width(8.dp))
+                Box(Modifier.size(7.dp).background(c.accent, ArgusShapes.pill)); Spacer(Modifier.width(8.dp))
                 Label(kind, size = 10.sp, color = c.sub, modifier = Modifier.weight(1f), maxLines = 1)
-                Box(Modifier.size(36.dp).clip(BlazeShapes.pill).clickable(onClick = onClose), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(36.dp).clip(ArgusShapes.pill).clickable(onClick = onClose), contentAlignment = Alignment.Center) {
                     Text("\u00d7", style = TextStyle(fontFamily = Type.Sans, fontSize = 18.sp, color = c.sub))
                 }
             }
@@ -533,7 +533,7 @@ fun MemoryDetail(m: Mind.Mem, graph: MemGraph, onSelect: (Long) -> Unit, onClose
                             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                 row.forEach { k ->
                                     val on = k == kind
-                                    Box(Modifier.weight(1f).clip(BlazeShapes.pill).background(if (on) c.accentSoft else androidx.compose.ui.graphics.Color.Transparent, BlazeShapes.pill).clickable { kind = k; note = "" }
+                                    Box(Modifier.weight(1f).clip(ArgusShapes.pill).background(if (on) c.accentSoft else androidx.compose.ui.graphics.Color.Transparent, ArgusShapes.pill).clickable { kind = k; note = "" }
                                         .padding(vertical = 5.dp), contentAlignment = Alignment.Center) {
                                         Text(k.replaceFirstChar { it.uppercase() }, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 11.sp, color = if (on) c.accent else c.sub))
                                     }
@@ -557,7 +557,7 @@ fun MemoryDetail(m: Mind.Mem, graph: MemGraph, onSelect: (Long) -> Unit, onClose
             links.take(8).forEach { (j, e) ->
                 val o = graph.nodes[j].mem
                 Row(Modifier.fillMaxWidth().clickable { onSelect(o.id) }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(7.dp).background(c.ink.copy(alpha = 0.85f), BlazeShapes.pill)); Spacer(Modifier.width(9.dp))
+                    Box(Modifier.size(7.dp).background(c.ink.copy(alpha = 0.85f), ArgusShapes.pill)); Spacer(Modifier.width(9.dp))
                     Column(Modifier.weight(1f)) {
                         Text(o.subject.ifBlank { o.text }, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, color = c.ink))
@@ -586,7 +586,7 @@ fun MemoryDetail(m: Mind.Mem, graph: MemGraph, onSelect: (Long) -> Unit, onClose
 
 @Composable
 private fun MetaRow(label: String, content: @Composable () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).heightIn(min = 36.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Label(label, size = 9.5.sp, modifier = Modifier.width(72.dp), maxLines = 1)
         Box(Modifier.weight(1f)) { content() }
@@ -595,6 +595,6 @@ private fun MetaRow(label: String, content: @Composable () -> Unit) {
 
 @Composable
 private fun MetaText(t: String) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Text(t, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, lineHeight = 17.sp, color = c.body))
 }

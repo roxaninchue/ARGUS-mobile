@@ -1,4 +1,4 @@
-package com.blaze.assistant.orchestra
+package com.argus.assistant.orchestra
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel

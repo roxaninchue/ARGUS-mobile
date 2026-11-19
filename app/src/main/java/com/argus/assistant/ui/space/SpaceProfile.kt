@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,8 +54,8 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.ui.SearchGlyph
+import com.argus.assistant.BrandName
+import com.argus.assistant.ui.SearchGlyph
 
 fun SpaceProfile.Icon.vector(): ImageVector = when (this) {
     // 0.52.4: Rounded, like every other icon in the app; these were Outlined
@@ -194,7 +194,7 @@ fun SpaceFeedbackPage(version: String) {
             try { ctx.startActivity(mail) }
             catch (t: Throwable) {
                 // No mail app: copy the note so nothing is lost, and say where it goes.
-                com.blaze.assistant.device.CrashLog.quiet("feedback mail", t)
+                com.argus.assistant.device.CrashLog.quiet("feedback mail", t)
                 runCatching {
                     val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                     cm.setPrimaryClip(android.content.ClipData.newPlainText("feedback", body))

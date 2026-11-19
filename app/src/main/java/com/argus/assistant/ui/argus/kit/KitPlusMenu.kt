@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,12 +35,12 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.ui.PlusItem
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.ui.PlusItem
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.icons.Lucide
 
 /**
  * Owner 2026-11-15: the + menu drawn inside the composer's glass, above its field row ([ArgusComposer]'s `menu`), so it

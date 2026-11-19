@@ -1,4 +1,4 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,6 +1,6 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.store.JdbcSql
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -68,11 +68,11 @@ class ManagerToolsTest {
         assertEquals(JobTools.NAMES + ManagerTools.NAMES, tools.names())
         val defined = tools.defs().map { (TeamJson.read(it) as Map<*, *>)["function"].let { f -> (f as Map<*, *>)["name"] as String } }.toSet()
         assertEquals(tools.names(), defined)
-        assertTrue(ManagerTools.NAMES.all { com.blaze.assistant.agent.ToolRouter.groupOf(it) == "team" })
-        assertTrue("team" in com.blaze.assistant.agent.ToolRouter.guess("make me a new bot for research"))
-        assertTrue("team" in com.blaze.assistant.agent.ToolRouter.guess("save a note for the team"))
+        assertTrue(ManagerTools.NAMES.all { com.argus.assistant.agent.ToolRouter.groupOf(it) == "team" })
+        assertTrue("team" in com.argus.assistant.agent.ToolRouter.guess("make me a new bot for research"))
+        assertTrue("team" in com.argus.assistant.agent.ToolRouter.guess("save a note for the team"))
         // agent_status stays a jobs tool (reused, not duplicated)
-        assertEquals("jobs", com.blaze.assistant.agent.ToolRouter.groupOf("agent_status"))
+        assertEquals("jobs", com.argus.assistant.agent.ToolRouter.groupOf("agent_status"))
         assertTrue(t("agents_list").contains("- Nova (id nova)"))
     }
 
@@ -144,9 +144,9 @@ class ManagerToolsTest {
         assertEquals("Your email changed: email = atlas@argus.ai", t("update_agent", """{"email":"atlas@argus.ai"}""", bot = "atlas"))
         // in every bot's subset whatever its groups (ToolSubset.SELF), even though it lives in the team group
         val atlas = team.get("atlas")!!
-        assertTrue(com.blaze.assistant.agent.engines.ToolSubset.allows(atlas, "update_agent", "team"))
-        assertTrue(com.blaze.assistant.agent.engines.ToolSubset.allows(atlas, "note_team", "team"))
-        assertFalse(com.blaze.assistant.agent.engines.ToolSubset.allows(atlas, "agent_create", "team"))
+        assertTrue(com.argus.assistant.agent.engines.ToolSubset.allows(atlas, "update_agent", "team"))
+        assertTrue(com.argus.assistant.agent.engines.ToolSubset.allows(atlas, "note_team", "team"))
+        assertFalse(com.argus.assistant.agent.engines.ToolSubset.allows(atlas, "agent_create", "team"))
     }
 
     @Test fun deleteNeedsAYesInTheNextMessage() {

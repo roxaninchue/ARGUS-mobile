@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.45.29, pure (FollowUpBindTest): what a short "yes" answers.
  *
- * The bug: Blaze offered to unsubscribe the user from a shop's emails; later Halo offered to add a song to their music.
+ * The bug: Argus offered to unsubscribe the user from a shop's emails; later Halo offered to add a song to their music.
  * The user said "Yes" to the song, and the older unsubscribe offer was acted on (and reported as done). A short
- * "yes" / "ok" / "sure" / "do it" now binds ONLY to the newest assistant message in the chat (Blaze or Halo), and only
+ * "yes" / "ok" / "sure" / "do it" now binds ONLY to the newest assistant message in the chat (Argus or Halo), and only
  * while it is under [WINDOW_MS] old ([bind]). With no fresh offer, the model asks what the user means instead of
  * picking an older one ([block]). Outbound or destructive actions (send, email, message, post, call, unsubscribe,
  * delete, buy, order, pay, book) that the newest offer didn't name always get the confirm card, Autopilot or not

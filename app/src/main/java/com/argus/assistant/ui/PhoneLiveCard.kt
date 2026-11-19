@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -51,21 +51,21 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.browser.phone.PhoneBrowser
-import com.blaze.assistant.browser.phone.PhoneBrowserActivity
-import com.blaze.assistant.browser.phone.PhonePolicy
-import com.blaze.assistant.browser.phone.PhoneUiRules
+import com.argus.assistant.browser.phone.PhoneBrowser
+import com.argus.assistant.browser.phone.PhoneBrowserActivity
+import com.argus.assistant.browser.phone.PhonePolicy
+import com.argus.assistant.browser.phone.PhoneUiRules
 import kotlinx.coroutines.delay
 
-/** The Blaze Phone palette for the current theme accent and light / dark (PhoneColors; every pair meets WCAG AA). */
+/** The Argus Phone palette for the current theme accent and light / dark (PhoneColors; every pair meets WCAG AA). */
 @Composable
 fun phonePalette(): PhoneColors.Palette {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     return remember(c.accent, c.dark) { PhoneColors.of(c.accent.toArgb().toLong() and 0xFFFFFFFFL, c.dark) }
 }
 
 /**
- * 0.45.19 Blaze Phone live tile: while Blaze works on its own phone (or waits for the user to take over), a compact
+ * 0.45.19 Argus Phone live tile: while Argus works on its own phone (or waits for the user to take over), a compact
  * Glass card above the composer shows the newest frame, the site and the step. Tap it for the full screen (watch);
  * "Take control" gives the user the real page. Same card language as the old desktop card, sized for
  * 360 dp: a 54 dp phone-shaped frame, two text lines, one button.
@@ -74,7 +74,7 @@ fun phonePalette(): PhoneColors.Palette {
 fun PhoneLiveCard() {
     val live by PhoneBrowser.live.collectAsState()
     var hiddenAt by remember { mutableLongStateOf(-1L) }
-    // 0.45.19 fix 9: the 2-minute "recent" window needs a clock; without one the tile never left after Blaze finished.
+    // 0.45.19 fix 9: the 2-minute "recent" window needs a clock; without one the tile never left after Argus finished.
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(live.at, live.mode) {
         now = System.currentTimeMillis()
@@ -121,7 +121,7 @@ fun PhoneLiveCard() {
     }
 }
 
-/** The newest frame of Blaze's screen, fitted; a quiet placeholder when this phone has no live view. */
+/** The newest frame of Argus's screen, fitted; a quiet placeholder when this phone has no live view. */
 @Composable
 fun PhoneFrame(frameNo: Long, modifier: Modifier, pal: PhoneColors.Palette = phonePalette()) {
     val shape = RoundedCornerShape(12.dp)

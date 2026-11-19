@@ -1,4 +1,4 @@
-package com.blaze.assistant.smoke
+package com.argus.assistant.smoke
 
 import android.net.Uri
 import android.os.Handler
@@ -14,11 +14,11 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.blaze.assistant.agent.CallScan
-import com.blaze.assistant.movies.JsProviderSource
-import com.blaze.assistant.movies.ProviderRepo
-import com.blaze.assistant.movies.ProviderSandbox
-import com.blaze.assistant.movies.SandboxHttp
+import com.argus.assistant.agent.CallScan
+import com.argus.assistant.movies.JsProviderSource
+import com.argus.assistant.movies.ProviderRepo
+import com.argus.assistant.movies.ProviderSandbox
+import com.argus.assistant.movies.SandboxHttp
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicLong
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class LowRamSmokeTest {
     companion object {
-        private const val TAG = "BlazeSmoke"
+        private const val TAG = "ArgusSmoke"
         private const val STALL_MS = 700L
         private val main = Handler(Looper.getMainLooper())
         private val worst = AtomicLong(0); private val worstAt = arrayOf("")
@@ -71,31 +71,31 @@ class LowRamSmokeTest {
          * stays gated there. f_argusShell keeps the 700 ms gate for everything after: both themes, the four pages, Spotlight, You.
          */
         private fun warmRenderer() {
-            val mode = androidx.compose.runtime.mutableStateOf(com.blaze.assistant.agent.ChatNav.CHAT)
+            val mode = androidx.compose.runtime.mutableStateOf(com.argus.assistant.agent.ChatNav.CHAT)
             val sc = androidx.test.core.app.ActivityScenario.launch(androidx.activity.ComponentActivity::class.java)
             sc.onActivity { a -> a.setContent { ArgusShell(dark = true, mode = mode.value, life = lifeState(signedIn = true), profile = false) } }
             SystemClock.sleep(2_500)
-            main.post { mode.value = com.blaze.assistant.agent.ChatNav.LIFE }
+            main.post { mode.value = com.argus.assistant.agent.ChatNav.LIFE }
             SystemClock.sleep(1_500)
             sc.close()
             SystemClock.sleep(500)
         }
 
         /** Life's state as LifePage builds it: a day with a few things on, projects, and (signed out) the sign-in and setup sections. */
-        fun lifeState(signedIn: Boolean, setupLeft: Int = 0, setupPercent: Int = 100, answer: com.blaze.assistant.ui.space.SpaceAnswer.Card? = null) =
-            com.blaze.assistant.ui.team.LifeModel.state(java.time.LocalDate.of(2026, 11, 12), java.time.LocalTime.of(11, 0),
-                listOf(com.blaze.assistant.agent.ScheduleDay.Item("Gym", "reminder", java.time.LocalTime.of(7, 0)),
-                    com.blaze.assistant.agent.ScheduleDay.Item("Call", "event", java.time.LocalTime.of(13, 30), java.time.LocalTime.of(14, 0))),
+        fun lifeState(signedIn: Boolean, setupLeft: Int = 0, setupPercent: Int = 100, answer: com.argus.assistant.ui.space.SpaceAnswer.Card? = null) =
+            com.argus.assistant.ui.team.LifeModel.state(java.time.LocalDate.of(2026, 11, 12), java.time.LocalTime.of(11, 0),
+                listOf(com.argus.assistant.agent.ScheduleDay.Item("Gym", "reminder", java.time.LocalTime.of(7, 0)),
+                    com.argus.assistant.agent.ScheduleDay.Item("Call", "event", java.time.LocalTime.of(13, 30), java.time.LocalTime.of(14, 0))),
                 projects = listOf("p1" to "Smoke project"), answer = answer, signedIn = signedIn, setupLeft = setupLeft, setupPercent = setupPercent)
 
         /** Team's state as TeamPage builds it: the Manager and two bots, one with a thread. */
         private val smokeNow = 1_762_941_600_000L
-        private val roster = listOf(com.blaze.assistant.team.BotRules.manager(0),
-            com.blaze.assistant.team.Bot(id = "nova", kind = com.blaze.assistant.team.BotKind.CUSTOM, name = "Nova", label = "Research",
-                avatar = com.blaze.assistant.team.Avatar("orb", "#22c55e"), soulPath = "", toolGroups = emptySet(), pinned = true, createdAt = 0, u = 0))
-        fun teamState() = com.blaze.assistant.ui.team.TeamModel.state("Smoke team", roster,
-            listOf(com.blaze.assistant.team.BotThreads.Thread("nova", "Nova", 0, null, 1, "Smoke preview", smokeNow - 60_000, true, false, 0)),
-            com.blaze.assistant.ui.team.JobCounts(today = 2, open = 3), smokeNow, java.time.ZoneId.of("Africa/Lusaka"))
+        private val roster = listOf(com.argus.assistant.team.BotRules.manager(0),
+            com.argus.assistant.team.Bot(id = "nova", kind = com.argus.assistant.team.BotKind.CUSTOM, name = "Nova", label = "Research",
+                avatar = com.argus.assistant.team.Avatar("orb", "#22c55e"), soulPath = "", toolGroups = emptySet(), pinned = true, createdAt = 0, u = 0))
+        fun teamState() = com.argus.assistant.ui.team.TeamModel.state("Smoke team", roster,
+            listOf(com.argus.assistant.team.BotThreads.Thread("nova", "Nova", 0, null, 1, "Smoke preview", smokeNow - 60_000, true, false, 0)),
+            com.argus.assistant.ui.team.JobCounts(today = 2, open = 3), smokeNow, java.time.ZoneId.of("Africa/Lusaka"))
 
         /**
          * The ARGUS shell as ChatScreen draws it (ArgusShellLocals over the Orbit ground: ArgusTopBar with the notch, the
@@ -103,28 +103,28 @@ class LowRamSmokeTest {
          * Desk is left out: its Jobs page reads the team database, which the smoke run does not set up.
          */
         @androidx.compose.runtime.Composable
-        fun ArgusShell(dark: Boolean, mode: String, life: com.blaze.assistant.ui.team.LifeModel.LifeState, profile: Boolean,
-                       streaming: Boolean = false, composer: com.blaze.assistant.ui.composer.ComposerState? = null) {
-            androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.LocalBlaze provides if (dark) com.blaze.assistant.ui.DarkColors else com.blaze.assistant.ui.LightColors) {
-                com.blaze.assistant.ui.argus.ArgusTheme(dark = dark, ground = com.blaze.assistant.ui.argus.Ground.ORBIT) {
-                    com.blaze.assistant.ui.argus.ArgusGround {
+        fun ArgusShell(dark: Boolean, mode: String, life: com.argus.assistant.ui.team.LifeModel.LifeState, profile: Boolean,
+                       streaming: Boolean = false, composer: com.argus.assistant.ui.composer.ComposerState? = null) {
+            androidx.compose.runtime.CompositionLocalProvider(com.argus.assistant.ui.LocalArgus provides if (dark) com.argus.assistant.ui.DarkColors else com.argus.assistant.ui.LightColors) {
+                com.argus.assistant.ui.argus.ArgusTheme(dark = dark, ground = com.argus.assistant.ui.argus.Ground.ORBIT) {
+                    com.argus.assistant.ui.argus.ArgusGround {
                         androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.statusBarsPadding()) {
-                            com.blaze.assistant.ui.argus.kit.ArgusTopBar(initial = "S", onMe = {}, onMeLong = {}, onSearch = {}, onBell = {}, bellBadge = streaming, onPlus = {},
-                                notch = { com.blaze.assistant.ui.argus.kit.NotchSwitcher(mode, open = false, onOpen = {}, onMode = {}, onVoice = {}) })
+                            com.argus.assistant.ui.argus.kit.ArgusTopBar(initial = "S", onMe = {}, onMeLong = {}, onSearch = {}, onBell = {}, bellBadge = streaming, onPlus = {},
+                                notch = { com.argus.assistant.ui.argus.kit.NotchSwitcher(mode, open = false, onOpen = {}, onMode = {}, onVoice = {}) })
                             androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.weight(1f)) {
                                 when {
-                                    profile -> com.blaze.assistant.ui.argus.settings.YouPage("Smoke Test", "smoke@example.com", signedIn = true, planLine = "Pro plan",
+                                    profile -> com.argus.assistant.ui.argus.settings.YouPage("Smoke Test", "smoke@example.com", signedIn = true, planLine = "Pro plan",
                                         onPage = {}, onSignOut = {})
-                                    mode == com.blaze.assistant.agent.ChatNav.TEAM -> com.blaze.assistant.ui.team.TeamMode(teamState(), roster.associateBy { it.id },
-                                        com.blaze.assistant.ui.team.TeamNav(), {}, {})
-                                    mode == com.blaze.assistant.agent.ChatNav.LIFE -> com.blaze.assistant.ui.team.LifeMode(life, com.blaze.assistant.ui.team.LifeNav())
+                                    mode == com.argus.assistant.agent.ChatNav.TEAM -> com.argus.assistant.ui.team.TeamMode(teamState(), roster.associateBy { it.id },
+                                        com.argus.assistant.ui.team.TeamNav(), {}, {})
+                                    mode == com.argus.assistant.agent.ChatNav.LIFE -> com.argus.assistant.ui.team.LifeMode(life, com.argus.assistant.ui.team.LifeNav())
                                     else -> androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize())
                                 }
                             }
-                            if (!profile) com.blaze.assistant.ui.argus.kit.ArgusComposer(androidx.compose.ui.text.input.TextFieldValue(if (streaming) "Smoke ask" else ""), {}, mode,
+                            if (!profile) com.argus.assistant.ui.argus.kit.ArgusComposer(androidx.compose.ui.text.input.TextFieldValue(if (streaming) "Smoke ask" else ""), {}, mode,
                                 streaming = streaming, attachments = 0, onPlus = {}, onSend = {}, onMic = {}, onStop = {})
                         }
-                        if (composer != null) com.blaze.assistant.ui.space.SpaceSpotlightLayer(composer, hour = 9)
+                        if (composer != null) com.argus.assistant.ui.space.SpaceSpotlightLayer(composer, hour = 9)
                     }
                 }
             }
@@ -133,7 +133,7 @@ class LowRamSmokeTest {
         /** Main-thread latency monitor: one ping in flight at a time, checked every 50 ms. */
         @BeforeClass @JvmStatic fun startMonitor() {
             ProviderSandbox.Gate.resetForTests()
-            com.blaze.assistant.ui.HomeImages.configure(true)
+            com.argus.assistant.ui.HomeImages.configure(true)
             warmRenderer()
             running = true
             Thread({
@@ -203,7 +203,7 @@ class LowRamSmokeTest {
         delay(300)
         val t0 = SystemClock.uptimeMillis()
         val info = JsProviderSource(ProviderRepo.Entry("smokeE", "Smoke E", "1.0"), { _ -> posts }, ProviderSandbox.ProviderEnv(), ProviderSandbox(SiteHttp(20) { page(3) }))
-            .info(com.blaze.assistant.movies.MoviePost("Film number 1", "https://films.example/film/1", "", "p:smokeE"))
+            .info(com.argus.assistant.movies.MoviePost("Film number 1", "https://films.example/film/1", "", "p:smokeE"))
         val ms = SystemClock.uptimeMillis() - t0
         Log.i(TAG, "SMOKE details opened in $ms ms while browsing")
         assertEquals("Film number 1", info.title)
@@ -288,7 +288,7 @@ class LowRamSmokeTest {
      */
     @Test fun f_argusShell() {
         val inst = InstrumentationRegistry.getInstrumentation()
-        val chatTab = com.blaze.assistant.agent.ChatNav.CHAT
+        val chatTab = com.argus.assistant.agent.ChatNav.CHAT
         for (dark in listOf(true, false)) {
             phase = "argus shell (${if (dark) "dark" else "light"})"
             val calm = lifeState(signedIn = true)
@@ -296,15 +296,15 @@ class LowRamSmokeTest {
             val mode = androidx.compose.runtime.mutableStateOf(chatTab)
             val streaming = androidx.compose.runtime.mutableStateOf(false)
             val profile = androidx.compose.runtime.mutableStateOf(false)
-            val composer = com.blaze.assistant.ui.composer.ComposerState()
+            val composer = com.argus.assistant.ui.composer.ComposerState()
             val sc = androidx.test.core.app.ActivityScenario.launch(androidx.activity.ComponentActivity::class.java)
             sc.onActivity { a -> a.setContent { ArgusShell(dark, mode.value, life.value, profile.value, streaming.value, composer) } }
             SystemClock.sleep(2_500)
             repeat(2) {
                 main.post { streaming.value = true }; SystemClock.sleep(1_000)
-                main.post { streaming.value = false; mode.value = com.blaze.assistant.agent.ChatNav.TEAM }; SystemClock.sleep(1_000)
-                main.post { mode.value = com.blaze.assistant.agent.ChatNav.LIFE; life.value = lifeState(signedIn = true,
-                    answer = com.blaze.assistant.ui.space.SpaceAnswer.Card("Smoke ask", "Smoke reply with a few words in it.", false)) }; SystemClock.sleep(1_000)
+                main.post { streaming.value = false; mode.value = com.argus.assistant.agent.ChatNav.TEAM }; SystemClock.sleep(1_000)
+                main.post { mode.value = com.argus.assistant.agent.ChatNav.LIFE; life.value = lifeState(signedIn = true,
+                    answer = com.argus.assistant.ui.space.SpaceAnswer.Card("Smoke ask", "Smoke reply with a few words in it.", false)) }; SystemClock.sleep(1_000)
                 main.post { life.value = lifeState(signedIn = false, setupLeft = 3, setupPercent = 40) }; SystemClock.sleep(1_000)
                 main.post { composer.openSpotlight() }; SystemClock.sleep(1_000)
                 main.post { composer.query = "set" }; SystemClock.sleep(1_000)

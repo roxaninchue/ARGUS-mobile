@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -67,7 +67,7 @@ class DiagramRenderTest {
         assertTrue(DiagramRender.nonce().matches(Regex("[A-Za-z0-9]{24}")))
     }
 
-    @Test fun harnessUsesBlazeColours() {
+    @Test fun harnessUsesArgusColours() {
         val dark = DiagramRender.harness(flow, dark = true, nonce = "n")
         assertTrue(dark.contains("background:#26262A"))   // DarkColors.paper
         assertTrue(dark.contains("\"primaryBorderColor\":\"#6B8CFF\""))   // DarkColors.accent

@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.ui.PartsSketch
-import com.blaze.assistant.ui.bundledThree
+import com.argus.assistant.ui.PartsSketch
+import com.argus.assistant.ui.bundledThree
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After

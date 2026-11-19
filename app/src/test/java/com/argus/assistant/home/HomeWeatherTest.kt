@@ -1,6 +1,6 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
-import com.blaze.assistant.agent.GatewayWeather
+import com.argus.assistant.agent.GatewayWeather
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

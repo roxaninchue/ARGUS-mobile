@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 /**
  * P1-SH-01: the shell's rules (04 §2.8 Chrome 1–4, §3.2), pure so ShellSpecTest checks them on the JVM. The composables
@@ -12,7 +12,7 @@ object ShellSpec {
     val MODES = listOf("team", "chat", "life", "desk")
     val LABELS = mapOf("team" to "Team", "chat" to "Chat", "life" to "Life", "desk" to "Desk")
 
-    fun label(mode: String): String = com.blaze.assistant.i18n.tr(LABELS[mode] ?: mode.replaceFirstChar { it.uppercase() })   // owner 2026-11-14: app language
+    fun label(mode: String): String = com.argus.assistant.i18n.tr(LABELS[mode] ?: mode.replaceFirstChar { it.uppercase() })   // owner 2026-11-14: app language
 
     // ---------------------------------------------------------------- Composer (04 §2.8 #3)
     object Composer {

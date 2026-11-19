@@ -1,24 +1,24 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.ActionClass.COMPUTE_PAID
-import com.blaze.assistant.team.ActionClass.CREDENTIAL
-import com.blaze.assistant.team.ActionClass.DELETE
-import com.blaze.assistant.team.ActionClass.PHYSICAL
-import com.blaze.assistant.team.ActionClass.READ
-import com.blaze.assistant.team.ActionClass.SEND
-import com.blaze.assistant.team.ActionClass.SETTINGS
-import com.blaze.assistant.team.ActionClass.SPEND
-import com.blaze.assistant.team.ActionClass.WRITE_LOCAL
-import com.blaze.assistant.team.ActionClass.WRITE_REMOTE
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.ActionClass.COMPUTE_PAID
+import com.argus.assistant.team.ActionClass.CREDENTIAL
+import com.argus.assistant.team.ActionClass.DELETE
+import com.argus.assistant.team.ActionClass.PHYSICAL
+import com.argus.assistant.team.ActionClass.READ
+import com.argus.assistant.team.ActionClass.SEND
+import com.argus.assistant.team.ActionClass.SETTINGS
+import com.argus.assistant.team.ActionClass.SPEND
+import com.argus.assistant.team.ActionClass.WRITE_LOCAL
+import com.argus.assistant.team.ActionClass.WRITE_REMOTE
 
 /**
  * P2-SF-01: what each tool does, as one of the ten action classes of 05 §7.1 (the enum itself is
- * [com.blaze.assistant.team.ActionClass], P0-TM-01, so team.db rows and the policy share one type).
+ * [com.argus.assistant.team.ActionClass], P0-TM-01, so team.db rows and the policy share one type).
  *
  * Every tool the agent can call is declared here in [ToolRegistry]. A tool whose class depends on what it is asked to
  * do (`gallery` list vs delete, `git` status vs push) declares a base class (the riskiest common use) plus per-action
- * classes for its `action` argument. Shell and git commands are classed by [com.blaze.assistant.agent.CommandPolicy.actionClass],
+ * classes for its `action` argument. Shell and git commands are classed by [com.argus.assistant.agent.CommandPolicy.actionClass],
  * MCP tools by their server's read-only / destructive hints ([mcpClass]). A tool that is itself a card the user answers
  * (ask_user, request_secret, the browser's secure input) is [Decl.selfCard]: the card is the approval.
  *

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -37,22 +37,22 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.ChatMessage
+import com.argus.assistant.agent.ChatMessage
 
 /**
- * Calm steps: while Blaze works, one shimmering plain-English line ("Searching the web for …").
+ * Calm steps: while Argus works, one shimmering plain-English line ("Searching the web for …").
  * When done, "Worked for 12s · 5 steps"; tap to see each step in plain words. Exact calls and
  * commands only show with Settings › "Show every step" (StepsGroup), never here.
  */
 @Composable
 fun CalmSteps(steps: List<ChatMessage>, live: Boolean, endAt: Long) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var open by rememberSaveable(steps.first().id) { mutableStateOf(false) }
     val n = steps.size
     val count = if (n == 1) "1 step" else "$n steps"
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(6.dp).background(if (live) c.accent else c.weak, BlazeShapes.pill))
+            Box(Modifier.size(6.dp).background(if (live) c.accent else c.weak, ArgusShapes.pill))
             Spacer(Modifier.width(10.dp))
             if (live && !open) Shimmer(steps.last().text, Modifier.weight(1f))
             else {
@@ -88,7 +88,7 @@ fun CalmSteps(steps: List<ChatMessage>, live: Boolean, endAt: Long) {
 
 @Composable
 fun Shimmer(text: String, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val t = rememberInfiniteTransition(label = "shimmer")
     val x by t.animateFloat(-400f, 1200f, infiniteRepeatable(tween(1800, easing = LinearEasing)), label = "x")
     val brush = Brush.linearGradient(listOf(c.sub, c.accent, c.sub), start = Offset(x, 0f), end = Offset(x + 320f, 0f))

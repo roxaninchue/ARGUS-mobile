@@ -1,9 +1,9 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import org.json.JSONObject
 
 /**
- * v0.34.0 Blaze Video, the pure rules (VideoSmartTest): what a stream costs in data before it plays, episodes grouped
+ * v0.34.0 Argus Video, the pure rules (VideoSmartTest): what a stream costs in data before it plays, episodes grouped
  * into series, a learned "Skip intro" per series, what plays next, which watched downloads smart downloads clears,
  * and the text for a recap and for AI subtitle translation.
  */
@@ -26,7 +26,7 @@ object VideoSmart {
      * The streams to play now. With data saver on mobile data: music takes its smallest stream, video its smallest
      * picture of at least 240p (else the smallest); otherwise the source's own default.
      */
-    fun streamFor(kind: String, d: com.blaze.assistant.mediaapps.store.StoreDetail, src: com.blaze.assistant.mediaapps.store.StoreSource, saving: Boolean): List<com.blaze.assistant.mediaapps.store.StoreFormat> {
+    fun streamFor(kind: String, d: com.argus.assistant.mediaapps.store.StoreDetail, src: com.argus.assistant.mediaapps.store.StoreSource, saving: Boolean): List<com.argus.assistant.mediaapps.store.StoreFormat> {
         if (!saving) return src.streamPick(kind, d)
         val ch = src.choices(kind, d)
         val pick = saverChoice(kind, ch) ?: return src.streamPick(kind, d)
@@ -34,13 +34,13 @@ object VideoSmart {
     }
 
     /** 0.45.20 step-down: the best choice at or under [cap] px tall (null when no cap or nothing fits). */
-    fun capped(kind: String, d: com.blaze.assistant.mediaapps.store.StoreDetail, src: com.blaze.assistant.mediaapps.store.StoreSource, cap: Int): List<com.blaze.assistant.mediaapps.store.StoreFormat>? {
+    fun capped(kind: String, d: com.argus.assistant.mediaapps.store.StoreDetail, src: com.argus.assistant.mediaapps.store.StoreSource, cap: Int): List<com.argus.assistant.mediaapps.store.StoreFormat>? {
         if (cap <= 0) return null
         val ch = src.choices(kind, d).filter { it.height in 1..cap }.maxByOrNull { it.height } ?: return null
         return ch.keys.mapNotNull { k -> d.formats.firstOrNull { it.key == k } }.ifEmpty { null }
     }
 
-    fun saverChoice(kind: String, ch: List<com.blaze.assistant.mediaapps.store.Choice>): com.blaze.assistant.mediaapps.store.Choice? {
+    fun saverChoice(kind: String, ch: List<com.argus.assistant.mediaapps.store.Choice>): com.argus.assistant.mediaapps.store.Choice? {
         val sized = ch.filter { it.bytes > 0 }
         if (kind == "video") {
             val ok = ch.filter { it.height >= 240 }

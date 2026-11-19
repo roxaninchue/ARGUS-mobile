@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.argus.settings
+package com.argus.assistant.ui.argus.settings
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,20 +32,20 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusSearch
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ChipModel
-import com.blaze.assistant.ui.argus.kit.EmptyState
-import com.blaze.assistant.ui.argus.kit.Segmented
-import com.blaze.assistant.ui.argus.kit.SettingsGroup
-import com.blaze.assistant.ui.argus.kit.SettingsItem
+import com.argus.assistant.BrandName
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusSearch
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ChipModel
+import com.argus.assistant.ui.argus.kit.EmptyState
+import com.argus.assistant.ui.argus.kit.Segmented
+import com.argus.assistant.ui.argus.kit.SettingsGroup
+import com.argus.assistant.ui.argus.kit.SettingsItem
 
 object YouTags {
     const val PAGE = "you"
@@ -147,24 +147,24 @@ private fun Head(t: String) {
 
 /** P1-SH-06 the Appearance prefs the kit reads (Settings-backed; cheap reads, so defaults can call them each composition). */
 object ArgusPrefs {
-    fun reducedSetting(): Boolean = try { com.blaze.assistant.agent.Settings.bool(ArgusSettings.REDUCED_MOTION_KEY, false) } catch (_: Throwable) { false }
-    fun setReduced(on: Boolean) { try { com.blaze.assistant.agent.Settings.setBool(ArgusSettings.REDUCED_MOTION_KEY, on) } catch (_: Throwable) { } }
+    fun reducedSetting(): Boolean = try { com.argus.assistant.agent.Settings.bool(ArgusSettings.REDUCED_MOTION_KEY, false) } catch (_: Throwable) { false }
+    fun setReduced(on: Boolean) { try { com.argus.assistant.agent.Settings.setBool(ArgusSettings.REDUCED_MOTION_KEY, on) } catch (_: Throwable) { } }
     fun reducedNow(): Boolean = ArgusSettings.reducedMotion(reducedSetting(),
         try { if (android.animation.ValueAnimator.areAnimatorsEnabled()) 1f else 0f } catch (_: Throwable) { 1f })
-    fun hand(): ArgusSettings.Hand = try { ArgusSettings.Hand.of(com.blaze.assistant.agent.Settings.str(ArgusSettings.HAND_KEY, "right")) } catch (_: Throwable) { ArgusSettings.Hand.RIGHT }
-    fun setHand(h: ArgusSettings.Hand) { try { com.blaze.assistant.agent.Settings.setStr(ArgusSettings.HAND_KEY, h.value) } catch (_: Throwable) { } }
+    fun hand(): ArgusSettings.Hand = try { ArgusSettings.Hand.of(com.argus.assistant.agent.Settings.str(ArgusSettings.HAND_KEY, "right")) } catch (_: Throwable) { ArgusSettings.Hand.RIGHT }
+    fun setHand(h: ArgusSettings.Hand) { try { com.argus.assistant.agent.Settings.setStr(ArgusSettings.HAND_KEY, h.value) } catch (_: Throwable) { } }
 }
 
 /** The Appearance section wired to the live prefs (LookPage calls it in the ARGUS look). */
 @Composable
 fun ArgusAppearanceLive() {
-    var ground by remember { mutableStateOf(Argus.groundSetting(com.blaze.assistant.ui.argus.Ground.ORBIT).name) }
+    var ground by remember { mutableStateOf(Argus.groundSetting(com.argus.assistant.ui.argus.Ground.ORBIT).name) }
     var hand by remember { mutableStateOf(ArgusPrefs.hand()) }
     var reduced by remember { mutableStateOf(ArgusPrefs.reducedSetting()) }
-    val mode = com.blaze.assistant.ui.ThemeMode.mode.value
+    val mode = com.argus.assistant.ui.ThemeMode.mode.value
     ArgusAppearanceSection(
-        themeMode = mode, onTheme = { com.blaze.assistant.ui.ThemeMode.set(it) },
-        ground = ground, onGround = { ground = it; try { com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.ui.argus.ArgusLookFlag.GROUND_KEY, it) } catch (_: Throwable) { } },
+        themeMode = mode, onTheme = { com.argus.assistant.ui.ThemeMode.set(it) },
+        ground = ground, onGround = { ground = it; try { com.argus.assistant.agent.Settings.setStr(com.argus.assistant.ui.argus.ArgusLookFlag.GROUND_KEY, it) } catch (_: Throwable) { } },
         hand = hand, onHand = { hand = it; ArgusPrefs.setHand(it) },
         reduced = reduced, onReduced = { reduced = it; ArgusPrefs.setReduced(it) },
     )

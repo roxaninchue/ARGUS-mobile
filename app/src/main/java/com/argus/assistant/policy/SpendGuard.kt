@@ -1,4 +1,4 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
 import java.time.Instant
 import java.time.ZoneId

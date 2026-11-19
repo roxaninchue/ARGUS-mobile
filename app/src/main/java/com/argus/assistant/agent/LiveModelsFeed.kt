@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * P0-API-01 Android glue for [LiveModels] (behind Settings `live_models`, default on since 0.53.0): fetches GET /v1/models/live in
@@ -24,7 +24,7 @@ object LiveModelsFeed {
     }
 
     private fun get(base: String, key: String): String? {
-        val c = com.blaze.assistant.connect.UrlSafety.open(LiveModels.liveUrl(base))
+        val c = com.argus.assistant.connect.UrlSafety.open(LiveModels.liveUrl(base))
         return try {
             c.requestMethod = "GET"; c.connectTimeout = 8_000; c.readTimeout = 8_000
             LlmClient.authHeaders(key, Providers.GATEWAY).forEach { (k, v) -> c.setRequestProperty(k, v) }

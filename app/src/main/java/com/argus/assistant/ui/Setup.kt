@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -47,10 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.agent.Brains
-import com.blaze.assistant.agent.Providers
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.phone.BlazeAccessibilityService
+import com.argus.assistant.agent.Brains
+import com.argus.assistant.agent.Providers
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.phone.ArgusAccessibilityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -61,7 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 
 /**
- * Watches for a system toggle the user was sent to flip, and brings Blaze back to the front the
+ * Watches for a system toggle the user was sent to flip, and brings Argus back to the front the
  * moment it's on, so nobody has to find their way back through Android settings.
  */
 object ComeBack {
@@ -73,7 +73,7 @@ object ComeBack {
         val cm = ctx.getSystemService(android.net.ConnectivityManager::class.java) ?: return
         if (cm.isActiveNetworkMetered) return
         scope.launch {
-            try { if (!com.blaze.assistant.terminal.Linux.installed() && com.blaze.assistant.terminal.Linux.supported()) com.blaze.assistant.terminal.Linux.install() } catch (_: Throwable) { }
+            try { if (!com.argus.assistant.terminal.Linux.installed() && com.argus.assistant.terminal.Linux.supported()) com.argus.assistant.terminal.Linux.install() } catch (_: Throwable) { }
         }
     }
     fun watch(ctx: Context, done: () -> Boolean) {
@@ -97,18 +97,18 @@ object ComeBack {
  * checklist in Life (setup/SetupChecklist.kt) or from Settings › System Preferences › Permissions.
  */
 
-/** Settings › Brain (v0.25.0): one brain, Blaze Cloud, and whether this phone can reach it. */
+/** Settings › Brain (v0.25.0): one brain, Argus Cloud, and whether this phone can reach it. */
 @Composable
 fun BrainCard(onSignIn: () -> Unit = {}) {
-    val c = LocalBlaze.current.mono
-    val account by com.blaze.assistant.connect.BlazeAccount.view.collectAsState()
+    val c = LocalArgus.current.mono
+    val account by com.argus.assistant.connect.ArgusAccount.view.collectAsState()
     val signedIn = account.user != null
     var reach by remember { mutableStateOf<Boolean?>(null) }
     var tick by remember { mutableStateOf(0) }
     LaunchedEffect(tick) {
         reach = null
         reach = kotlinx.coroutines.withContext(Dispatchers.IO) {
-            try { com.blaze.assistant.connect.Http.req("GET", com.blaze.assistant.agent.Providers.GATEWAY_BASE.removeSuffix("/").removeSuffix("/v1") + "/health", timeoutMs = 8_000).first == 200 }
+            try { com.argus.assistant.connect.Http.req("GET", com.argus.assistant.agent.Providers.GATEWAY_BASE.removeSuffix("/").removeSuffix("/v1") + "/health", timeoutMs = 8_000).first == 200 }
             catch (_: Exception) { false }
         }
     }
@@ -121,7 +121,7 @@ fun BrainCard(onSignIn: () -> Unit = {}) {
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth().pageGlass(c, PageGlass.row).clickable { if (!signedIn) onSignIn() else tick++ }.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(BlazeShapes.pill).background(when (dot) { BrainStatus.Dot.OK -> c.accent; BrainStatus.Dot.BAD -> PageGlass.error; else -> c.weak }))
+            Box(Modifier.size(8.dp).clip(ArgusShapes.pill).background(when (dot) { BrainStatus.Dot.OK -> c.accent; BrainStatus.Dot.BAD -> PageGlass.error; else -> c.weak }))
             Spacer(Modifier.width(10.dp))
             Text(line, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
             ActionText(if (signedIn) "Check" else "Sign in", color = c.accent, size = 10.sp)

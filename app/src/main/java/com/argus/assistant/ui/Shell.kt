@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.readableWidth
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.readableWidth
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
@@ -97,15 +97,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.Mood
-import com.blaze.assistant.agent.Project
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.Mood
+import com.argus.assistant.agent.Project
 import kotlinx.coroutines.delay
-import com.blaze.assistant.ui.space.overlaySurface
+import com.argus.assistant.ui.space.overlaySurface
 
 /*
- * Blaze 0.12 shell: a calm, messaging-app layout (Desktop 1.0 redesign, part A).
+ * Argus 0.12 shell: a calm, messaging-app layout (Desktop 1.0 redesign, part A).
  * Everything here is stateless so the screenshot tests can draw it with sample data.
  */
 
@@ -126,14 +126,14 @@ fun ShellTopBar(
     /** v0.43.0: who the next message goes to ("blaze" / "halo" / "all"); the orb shows it, and tapping it opens the arc. Blank = the plain icon. */
     talkTo: String = "",
 ) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // v0.31: the app bar is a glass strip on the dark ground.
     Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).glass(RoundedCornerShape(26.dp), GlassIntensity.Low, shadow = false)) {
         Row(Modifier.fillMaxWidth().height(52.dp).padding(start = 10.dp, end = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             // v0.24.8: the mascot in a circle (was a square pixel "B").
-            // v0.43.0: it shows who you're talking to (orb = Blaze, halo = Halo, orb in its halo = All); a tap opens the picker arc.
+            // v0.43.0: it shows who you're talking to (orb = Argus, halo = Halo, orb in its halo = All); a tap opens the picker arc.
             Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onLogo)
-                .semantics { contentDescription = "${BrandName.NAME}" },   // 0.51.0 one persona: always Blaze's mark (no Halo picker)
+                .semantics { contentDescription = "${BrandName.NAME}" },   // 0.51.0 one persona: always Argus's mark (no Halo picker)
                 contentAlignment = Alignment.Center) { BrandMark(mood, 34.dp) }
             Spacer(Modifier.width(6.dp))
             // v0.29.0: the pill gets the room left over, and shrinks (then turns into icons) on narrow screens / big fonts.
@@ -171,7 +171,7 @@ fun ShellTopBar(
  */
 @Composable
 private fun Pill(mode: String, onMode: (String) -> Unit, homeTab: Boolean = true) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     androidx.compose.foundation.layout.BoxWithConstraints {
         val font = androidx.compose.ui.platform.LocalDensity.current.fontScale
         val fit = PillFit.pick(maxWidth.value, font)
@@ -219,7 +219,7 @@ object PillFit {
 /** v0.24.4: shown instead of Chat | Projects while a private chat is open. Tapping it offers to leave. */
 @Composable
 private fun PrivatePill(onLeave: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.clip(RoundedCornerShape(20.dp)).background(c.ink).clickable(onClickLabel = tr("Leave private chat"), onClick = onLeave)
         .padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         GhostGlyph(c.paper, filled = true, size = 14.dp, eyes = c.ink)
@@ -264,11 +264,11 @@ fun SearchGlyph(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp) {
 
 data class MenuItem(val id: String, val label: String, val sub: String = "")
 
-/** Account, Settings, BlazeRouter, Theme, Check for updates, Sign out — dropped from the avatar. */
+/** Account, Settings, ArgusRouter, Theme, Check for updates, Sign out — dropped from the avatar. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AvatarMenu(name: String, email: String, items: List<MenuItem>, onPick: (String) -> Unit, onLongPick: (String) -> Unit = {}, onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.25f)).clickable(remember { MutableInteractionSource() }, null, onClick = onDismiss)) {
         Column(Modifier.align(Alignment.TopEnd).padding(top = 60.dp, end = 10.dp).width(268.dp).background(c.menuSurface, RoundedCornerShape(16.dp)).glass(RoundedCornerShape(16.dp), GlassIntensity.High)
             .clickable(remember { MutableInteractionSource() }, null) { }) {
@@ -279,7 +279,7 @@ fun AvatarMenu(name: String, email: String, items: List<MenuItem>, onPick: (Stri
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
             items.forEach { m ->
-                Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp).clip(BlazeShapes.small).combinedClickable(onClick = { onPick(m.id) }, onLongClick = { onLongPick(m.id) })
+                Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp).clip(ArgusShapes.small).combinedClickable(onClick = { onPick(m.id) }, onLongClick = { onLongPick(m.id) })
                     .padding(horizontal = 10.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(m.label, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = if (m.id == "signout") c.accent else c.ink))
                     if (m.sub.isNotBlank()) Label(m.sub, color = c.sub, size = 9.sp)
@@ -299,7 +299,7 @@ object SheetVeil {
 /** A light ink veil over the chat while a bottom sheet is open; tap it to close the sheet. */
 @Composable
 fun BoxScope.SheetScrim(onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // v0.27.0: fades in with the sheet.
     // v0.45.7: feathered at the bottom (no hard grey band ending above the Halo arc / + sheet), and lighter.
     Box(Modifier.matchParentSize().appearIn(true).background(androidx.compose.ui.graphics.Brush.verticalGradient(*SheetVeil.stops(c.ink)))
@@ -310,19 +310,19 @@ fun BoxScope.SheetScrim(onDismiss: () -> Unit) {
 
 /** The /views picker: filter box + numbered rows. Opens above the composer. */
 @Composable
-fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismiss: () -> Unit, autoFocus: Boolean = true) {
-    val c = LocalBlaze.current
+fun ViewsSheet(badges: Map<String, String>, onPick: (ArgusView) -> Unit, onDismiss: () -> Unit, autoFocus: Boolean = true) {
+    val c = LocalArgus.current
     var q by remember { mutableStateOf("") }
     // v0.39.0: Simple mode lists no technical views (their /commands and open_view still open them).
-    val simple by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
-    val rows = remember(q, simple) { Views.filter(q).filter { com.blaze.assistant.agent.SimpleMode.viewVisible(it.id, simple) } }
+    val simple by com.argus.assistant.agent.SimpleMode.simpleFlow.collectAsState()
+    val rows = remember(q, simple) { Views.filter(q).filter { com.argus.assistant.agent.SimpleMode.viewVisible(it.id, simple) } }
     val focus = remember { FocusRequester() }
     if (autoFocus) LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     // v0.24.8: a rounded sheet with a pill search field and rounded rows (no square top rule, no row numbers).
     // On the shared opaque overlay surface: the glass let the chat above read through the view names.
-    Column(Modifier.fillMaxWidth().overlaySurface(c.dark, RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp), com.blaze.assistant.ui.space.spaceLook().hair)
+    Column(Modifier.fillMaxWidth().overlaySurface(c.dark, RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp), com.argus.assistant.ui.space.spaceLook().hair)
         .padding(top = 10.dp)) {
-        Row(Modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(BlazeShapes.pill).background(c.field).border(1.dp, c.fieldLine, BlazeShapes.pill)
+        Row(Modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(ArgusShapes.pill).background(c.field).border(1.dp, c.fieldLine, ArgusShapes.pill)
             .padding(start = 16.dp, end = 6.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             SearchGlyph(c.sub, 14.dp)
             Spacer(Modifier.width(10.dp))
@@ -338,9 +338,9 @@ fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismi
                 Text("\u00d7", style = TextStyle(fontFamily = Type.Sans, fontSize = 18.sp, color = c.sub))
             }
         }
-        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(320.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp)) {
+        Column(Modifier.fillMaxWidth().heightIn(max = com.argus.assistant.ui.common.WindowUi.sheetBody(320.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp)) {
             rows.forEachIndexed { i, v ->
-                Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (i == 0 && q.isNotEmpty()) c.faint else Color.Transparent)
+                Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).background(if (i == 0 && q.isNotEmpty()) c.faint else Color.Transparent)
                     .clickable { onPick(v) }.padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(7.dp).clip(CircleShape).background(c.accent))
                     Spacer(Modifier.width(12.dp))
@@ -359,12 +359,12 @@ fun ViewsSheet(badges: Map<String, String>, onPick: (BlazeView) -> Unit, onDismi
 // ---------------------------------------------------------------- search
 
 /**
- * Search (v0.24.0): views by name, and a one-tap "ask Blaze" that searches every past conversation with
+ * Search (v0.24.0): views by name, and a one-tap "ask Argus" that searches every past conversation with
  * search_chat (there is no chat list to browse any more).
  */
 @Composable
-fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss: () -> Unit, initial: String = "", autoFocus: Boolean = true) {
-    val c = LocalBlaze.current
+fun SearchScreen(onView: (ArgusView) -> Unit, onAsk: (String) -> Unit, onDismiss: () -> Unit, initial: String = "", autoFocus: Boolean = true) {
+    val c = LocalArgus.current
     var q by remember { mutableStateOf(initial) }
     val focus = remember { FocusRequester() }
     if (autoFocus) LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
@@ -416,16 +416,16 @@ fun SearchScreen(onView: (BlazeView) -> Unit, onAsk: (String) -> Unit, onDismiss
  */
 @Composable
 fun ChatRow(ch: ChatMeta, busy: Boolean, current: Boolean = false, chip: String = "", onMore: (() -> Unit)? = null, onClick: () -> Unit) {
-    val c = LocalBlaze.current
-    val look = com.blaze.assistant.ui.space.spaceLook()
+    val c = LocalArgus.current
+    val look = com.argus.assistant.ui.space.spaceLook()
     // v0.28.3: a preview saved before the leak fix can hold raw tool syntax ("[github_open repo=…]"); never show it.
-    val preview = remember(ch.preview) { com.blaze.assistant.agent.ToolLeak.forDisplay(ch.preview) }
-    com.blaze.assistant.ui.space.SpaceRow(ch.title.ifBlank { "Untitled" },
-        Modifier.padding(vertical = 3.dp).clip(com.blaze.assistant.ui.space.SpaceShapes.tile).background(if (current) look.track else look.tile),
+    val preview = remember(ch.preview) { com.argus.assistant.agent.ToolLeak.forDisplay(ch.preview) }
+    com.argus.assistant.ui.space.SpaceRow(ch.title.ifBlank { "Untitled" },
+        Modifier.padding(vertical = 3.dp).clip(com.argus.assistant.ui.space.SpaceShapes.tile).background(if (current) look.track else look.tile),
         sub = preview, subLines = 1,
         // 0.52.4: a small chat tile leads each row, in the shared icon-tile style
         icon = Icons.Rounded.ChatBubbleOutline, iconFilled = current,
-        size = com.blaze.assistant.ui.space.SpaceRowSize.COMPACT,
+        size = com.argus.assistant.ui.space.SpaceRowSize.COMPACT,
         padStart = 14.dp, padEnd = if (onMore != null) 4.dp else 14.dp, onLongClick = onMore,
         trailing = {
             // Pinned mark sits on the right so every title lines up (v0.15.0).
@@ -453,8 +453,8 @@ fun MoreDots(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp) {
 @Composable
 fun RenameChatDialog(current: String, onDone: (String) -> Unit, onDismiss: () -> Unit) {
     var t by remember { mutableStateOf(current) }
-    BlazeDialog(title = tr("Rename chat"), confirm = tr("Save"), onConfirm = { onDone(t.trim()) }, dismiss = tr("Cancel"), onDismiss = onDismiss) {
-        BlazeTextField(t, { t = it.take(80) }, "Chat name", modifier = Modifier.fillMaxWidth(),
+    ArgusDialog(title = tr("Rename chat"), confirm = tr("Save"), onConfirm = { onDone(t.trim()) }, dismiss = tr("Cancel"), onDismiss = onDismiss) {
+        ArgusTextField(t, { t = it.take(80) }, "Chat name", modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { onDone(t.trim()) }))
     }
 }
@@ -466,7 +466,7 @@ fun RenameChatDialog(current: String, onDone: (String) -> Unit, onDismiss: () ->
 @Composable
 fun ProjectChatHeader(project: String, title: String, onBack: () -> Unit, onRename: (String) -> Unit, onDelete: () -> Unit, onNewChat: () -> Unit,
                       canEdit: Boolean = true) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var menu by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
@@ -474,16 +474,16 @@ fun ProjectChatHeader(project: String, title: String, onBack: () -> Unit, onRena
     // straight on the space view instead of a glass pill inset 8 dp
     BackTitle(title.ifBlank { "New chat" }, onBack = onBack, eyebrow = project, modifier = Modifier.padding(top = 4.dp)) {
         Box {
-            Box(Modifier.size(com.blaze.assistant.ui.space.SpaceInsets.CONTROL_DP.dp).clip(CircleShape).clickable(onClickLabel = tr("Chat options")) { menu = true }
+            Box(Modifier.size(com.argus.assistant.ui.space.SpaceInsets.CONTROL_DP.dp).clip(CircleShape).clickable(onClickLabel = tr("Chat options")) { menu = true }
                 .semantics { contentDescription = tr("Chat options") }, contentAlignment = Alignment.Center) { MoreDots(c.ink) }
-            if (menu) BlazeMenu(true, onDismiss = { menu = false }, items = buildList<Pair<String, () -> Unit>> {
+            if (menu) ArgusMenu(true, onDismiss = { menu = false }, items = buildList<Pair<String, () -> Unit>> {
                 add("New chat in this project" to onNewChat)
                 if (canEdit) { add("Rename" to { renaming = true }); add("Delete chat" to { deleting = true }) }
             })
         }
     }
     if (renaming) RenameChatDialog(title, onDone = { t -> renaming = false; if (t.isNotBlank()) onRename(t) }, onDismiss = { renaming = false })
-    if (deleting) BlazeDialog(title = tr("Delete this chat?"), body = tr("Its messages are removed from this phone. The project and its other chats stay."),
+    if (deleting) ArgusDialog(title = tr("Delete this chat?"), body = tr("Its messages are removed from this phone. The project and its other chats stay."),
         confirm = tr("Delete"), onConfirm = { deleting = false; onDelete() }, warm = true, dismiss = tr("Keep"), onDismiss = { deleting = false })
 }
 
@@ -502,7 +502,7 @@ fun formatDuration(ms: Long): String {
 @Composable
 fun WorkCard(steps: List<ChatMessage>, live: Boolean, startAt: Long, endAt: Long, status: String = "", exact: Boolean = false, now: Long? = null,
              meter: String = "", meterHigh: Boolean = false, open0: Boolean = false, simple: Boolean = false) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var open by rememberSaveable(steps.firstOrNull()?.id ?: -1L) { mutableStateOf(open0) }
     var tick by remember { mutableLongStateOf(now ?: System.currentTimeMillis()) }
     if (live && now == null) LaunchedEffect(Unit) { while (true) { tick = System.currentTimeMillis(); delay(1000) } }
@@ -511,8 +511,8 @@ fun WorkCard(steps: List<ChatMessage>, live: Boolean, startAt: Long, endAt: Long
     val count = if (n == 1) "1 step" else "$n steps"
     val time = if (startAt > 0 && end >= startAt) " · " + formatDuration(end - startAt) else ""
     val pulse = if (live) rememberInfiniteTransition(label = "p").animateFloat(0.35f, 1f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "a").value else 1f
-    // v0.24.0: inline with the thread, no outline: a soft rounded strip on Blaze's side; a live one gets an accent wash.
-    // v0.30.5: the same theme glass as Blaze's bubbles once done; a live one keeps its accent wash and edge.
+    // v0.24.0: inline with the thread, no outline: a soft rounded strip on Argus's side; a live one gets an accent wash.
+    // v0.30.5: the same theme glass as Argus's bubbles once done; a live one keeps its accent wash and edge.
     Column(Modifier.padding(end = 28.dp).widthIn(max = 340.dp).fillMaxWidth()
         // v0.31.0: a GlassCard-style tile; live = a slightly brighter frost.
         .then(if (live) Modifier.glass(RoundedCornerShape(18.dp), GlassIntensity.Medium, shadow = false)
@@ -567,10 +567,10 @@ fun WorkCard(steps: List<ChatMessage>, live: Boolean, startAt: Long, endAt: Long
     }
 }
 
-/** v0.41.0 Simple mode: the whole work view while Blaze works, one small quiet line ("Looking at your films…"). */
+/** v0.41.0 Simple mode: the whole work view while Argus works, one small quiet line ("Looking at your films…"). */
 @Composable
 fun SimpleWorkHint(text: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val pulse = rememberInfiniteTransition(label = "h").animateFloat(0.35f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "a").value
     Row(Modifier.padding(start = 4.dp, end = 28.dp, top = 2.dp, bottom = 2.dp).semantics { contentDescription = text },
         verticalAlignment = Alignment.CenterVertically) {
@@ -583,11 +583,11 @@ fun SimpleWorkHint(text: String) {
 
 /**
  * Ack-and-background (HQ 22 Oct): the small chip an acknowledged task shows in the chat while it runs in the background
- * ("Reminder · in progress"), in place of the "Blaze is thinking" line. One line, ellipsised, fits 360 dp.
+ * ("Reminder · in progress"), in place of the "Argus is thinking" line. One line, ellipsised, fits 360 dp.
  */
 @Composable
 fun TaskChip(text: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val pulse = rememberInfiniteTransition(label = "tc").animateFloat(0.35f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "a").value
     Row(Modifier.padding(start = 4.dp, end = 28.dp, top = 4.dp, bottom = 2.dp)
         .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
@@ -607,11 +607,11 @@ fun TaskChip(text: String) {
 /**
  * The 0.52 shell's + menu (the ARGUS look off): a bottom sheet over the whole screen. Tiles first, then rows with a chevron.
  * Picking closes it. With the ARGUS look on (owner 2026-11-15) the + menu instead grows out of the composer itself
- * ([com.blaze.assistant.ui.argus.kit.ComposerPlusMenu] inside ArgusComposer), never as a sheet over it.
+ * ([com.argus.assistant.ui.argus.kit.ComposerPlusMenu] inside ArgusComposer), never as a sheet over it.
  */
 @Composable
 fun PlusMenu(items: List<PlusItem>, onDismiss: () -> Unit, onPick: (String) -> Unit) {
-    com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = onDismiss, title = null) {
+    com.argus.assistant.ui.argus.kit.ArgusSheet(onDismiss = onDismiss, title = null) {
         PlusMenuBody(items) { id -> onDismiss(); onPick(id) }
     }
 }
@@ -619,7 +619,7 @@ fun PlusMenu(items: List<PlusItem>, onDismiss: () -> Unit, onPick: (String) -> U
 /** The + sheet's content: the tile strip (scrolls sideways when it doesn't fit) and the rows. Also drawn alone in shots. */
 @Composable
 fun PlusMenuBody(items: List<PlusItem>, onPick: (String) -> Unit) {
-    val c = com.blaze.assistant.ui.argus.Argus.colors
+    val c = com.argus.assistant.ui.argus.Argus.colors
     val tiles = items.filter { it.tile }
     val rows = items.filterNot { it.tile }
     Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
@@ -681,21 +681,21 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
              hints: List<String> = emptyList(), animateHints: Boolean = true, hintIndex0: Int = 0,
              onExpand: (() -> Unit)? = null, expanded: Boolean = false,
              onSkills: (() -> Unit)? = null, onCall: (() -> Unit)? = null, onSlash: (() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     ClearFocusOnLeave()   // 0.52.1: the keyboard only shows when you tap the box
     var focused by remember { mutableStateOf(false) }
     var hintIdx by remember(hints) { mutableStateOf(if (hints.isEmpty()) 0 else hintIndex0.mod(hints.size)) }
     val empty = value.text.isEmpty()
     LaunchedEffect(hints, focused, empty, animateHints, listening) {
         if (!animateHints || focused || !empty || listening || hints.size < 2) return@LaunchedEffect
-        while (true) { delay(com.blaze.assistant.agent.ComposerHints.ROTATE_MS); hintIdx = (hintIdx + 1) % hints.size }
+        while (true) { delay(com.argus.assistant.agent.ComposerHints.ROTATE_MS); hintIdx = (hintIdx + 1) % hints.size }
     }
     val placeholder = when {
         listening -> "Listening\u2026"
-        hints.isEmpty() -> com.blaze.assistant.agent.ComposerHints.DEFAULT
+        hints.isEmpty() -> com.argus.assistant.agent.ComposerHints.DEFAULT
         else -> hints[hintIdx.coerceIn(0, hints.size - 1)]
     }
-    Column(Modifier.fillMaxWidth().padding(start = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, end = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, top = 6.dp, bottom = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_BOTTOM_DP.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = com.argus.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, end = com.argus.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp, top = 6.dp, bottom = com.argus.assistant.ui.space.SpaceInsets.COMPOSER_BOTTOM_DP.dp)) {
         if (chip.isNotBlank()) Row(Modifier.padding(start = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             // 0.52.4: the mode chip leads with its mode's icon (Autopilot, Plan), as the + menu shows it
             Row(Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onChip).padding(start = 8.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
@@ -706,10 +706,10 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
             }
         }
         val pill = RoundedCornerShape(28.dp)
-        Row(Modifier.fillMaxWidth().heightIn(min = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_MIN_DP.dp)
+        Row(Modifier.fillMaxWidth().heightIn(min = com.argus.assistant.ui.space.SpaceInsets.COMPOSER_MIN_DP.dp)
             .shadow(12.dp, pill, clip = false, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
             .clip(pill).background(ComposerCard.fill(c)).border(1.dp, ComposerCard.rim(c), pill)
-            .testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER)
+            .testTag(com.argus.assistant.ui.space.SpaceTags.COMPOSER)
             .semantics { contentDescription = tr("Message box") }
             .padding(start = 6.dp, end = 6.dp, top = 3.dp, bottom = 3.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f).padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp)) {
@@ -719,15 +719,15 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
                             (fadeOut(tween(300)) + androidx.compose.animation.slideOutVertically(tween(300)) { -it / 3 })
                     }) { t ->
                     Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = com.blaze.assistant.ui.space.SpaceTypeScale.BODY.sp, lineHeight = 22.sp, color = c.sub))
+                        style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Normal, fontSize = com.argus.assistant.ui.space.SpaceTypeScale.BODY.sp, lineHeight = 22.sp, color = c.sub))
                 }
                 BasicTextField(value = value, onValueChange = onValue,
-                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = com.blaze.assistant.ui.space.SpaceTypeScale.BODY.sp, lineHeight = 22.sp, color = c.ink),
+                    textStyle = TextStyle(fontFamily = Type.Sans, fontSize = com.argus.assistant.ui.space.SpaceTypeScale.BODY.sp, lineHeight = 22.sp, color = c.ink),
                     cursorBrush = SolidColor(c.accent), maxLines = if (expanded) 14 else 6,
                     // v0.28.1: Enter is a new line; only the send button sends (ComposerKeys).
                     keyboardOptions = ComposerKeys.Message,
-                    modifier = Modifier.fillMaxWidth().testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_FIELD)
-                        .onFocusChanged { focused = it.isFocused; if (it.isFocused) com.blaze.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
+                    modifier = Modifier.fillMaxWidth().testTag(com.argus.assistant.ui.space.SpaceTags.COMPOSER_FIELD)
+                        .onFocusChanged { focused = it.isFocused; if (it.isFocused) com.argus.assistant.agent.LlmClient.prewarm() /* v0.45.3: warm the connection as soon as the box is tapped */ }
                         .semantics { contentDescription = tr("Message {0}", BrandName.NAME) })
             }
             if (onExpand != null) ComposerIcon(if (expanded) Icons.Rounded.CloseFullscreen else Icons.Rounded.OpenInFull,
@@ -737,20 +737,20 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
             if (onSlash != null) Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onSlash).semantics { contentDescription = tr("Commands") },
                 contentAlignment = Alignment.Center) { Text("/", style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = c.sub)) }
             Box(Modifier.size(38.dp).clip(CircleShape).background(if (plusOpen) c.ink else Color.Transparent)
-                .testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_PLUS).clickable(onClick = onPlus)
+                .testTag(com.argus.assistant.ui.space.SpaceTags.COMPOSER_PLUS).clickable(onClick = onPlus)
                 .semantics { contentDescription = if (plusOpen) "Close menu" else "Attach and tools" }, contentAlignment = Alignment.Center) {
                 PlusIcon(if (plusOpen) c.paper else c.sub, open = plusOpen, size = 19.dp)
             }
             // v0.30.6 rapid messages: with text in the box, Send wins even while ARGUS works (the message joins the turn); Stop otherwise.
             val big = 40.dp
             when {
-                canSend -> Box(Modifier.size(big).clip(CircleShape).background(ComposerCard.send(c)).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_SEND)
+                canSend -> Box(Modifier.size(big).clip(CircleShape).background(ComposerCard.send(c)).testTag(com.argus.assistant.ui.space.SpaceTags.COMPOSER_SEND)
                     .clickable(onClick = onSend).semantics { contentDescription = tr("Send") }, contentAlignment = Alignment.Center) { SendMark(ComposerCard.sendInk(c), stop = false) }
-                busy -> Box(Modifier.size(big).clip(CircleShape).background(c.accent).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_SEND)
+                busy -> Box(Modifier.size(big).clip(CircleShape).background(c.accent).testTag(com.argus.assistant.ui.space.SpaceTags.COMPOSER_SEND)
                     .clickable(onClick = onStop).semantics { contentDescription = tr("Stop") }, contentAlignment = Alignment.Center) { SendMark(c.onAccent, stop = true) }
                 else -> {
                     val micOn = listening || speaking
-                    Box(Modifier.size(big).clip(CircleShape).background(if (micOn) c.accent else Color.Transparent).testTag(com.blaze.assistant.ui.space.SpaceTags.COMPOSER_MIC)
+                    Box(Modifier.size(big).clip(CircleShape).background(if (micOn) c.accent else Color.Transparent).testTag(com.argus.assistant.ui.space.SpaceTags.COMPOSER_MIC)
                         .clickable(onClick = onMic)
                         .semantics { contentDescription = if (speaking) "Stop speaking" else if (listening) "Stop listening" else "Talk" }, contentAlignment = Alignment.Center) {
                         if (speaking) SendMark(c.onAccent, stop = true) else MicIcon(if (micOn) c.onAccent else c.sub, size = 21.dp)
@@ -763,13 +763,13 @@ fun Composer(value: TextFieldValue, onValue: (TextFieldValue) -> Unit, busy: Boo
 
 /**
  * Unification 6/9: a panel that belongs to the composer (the + sheet, the reply-to strip, the listening strip, the
- * slash suggestions) floats at the composer's side inset ([com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP]) on the solid card with
+ * slash suggestions) floats at the composer's side inset ([com.argus.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP]) on the solid card with
  * a hairline rim, so nothing over the space view runs edge to edge. [fill] defaults to the solid card; menus pass look.menu.
  */
 @Composable
-fun Modifier.composerPanel(shape: Shape = com.blaze.assistant.ui.space.SpaceShapes.tile, fill: Color? = null): Modifier {
-    val look = com.blaze.assistant.ui.space.spaceLook()
-    return this.padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp).clip(shape).background(fill ?: look.cardSolid).border(1.dp, look.hair, shape)
+fun Modifier.composerPanel(shape: Shape = com.argus.assistant.ui.space.SpaceShapes.tile, fill: Color? = null): Modifier {
+    val look = com.argus.assistant.ui.space.spaceLook()
+    return this.padding(horizontal = com.argus.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp).clip(shape).background(fill ?: look.cardSolid).border(1.dp, look.hair, shape)
 }
 
 /** 0.52.3: the composer pill's fill and rim (Hark's floating pill: a dark glassy step over the space view, white on light) and the Send button. */
@@ -783,7 +783,7 @@ object ComposerCard {
 @Composable
 private fun ComposerIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, size: androidx.compose.ui.unit.Dp = 40.dp,
                          iconSize: androidx.compose.ui.unit.Dp = 21.dp, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.size(size).clip(CircleShape).clickable(onClick = onClick).semantics { contentDescription = desc }, contentAlignment = Alignment.Center) {
         androidx.compose.material3.Icon(icon, contentDescription = null, tint = c.sub, modifier = Modifier.size(iconSize))
     }
@@ -834,8 +834,8 @@ fun MicMark(color: Color, speaking: Boolean) {
 
 @Composable
 fun StatusChip(text: String, color: Color, filled: Boolean) {
-    val c = LocalBlaze.current
-    Box(Modifier.clip(BlazeShapes.pill).background(if (filled) color else Color.Transparent, BlazeShapes.pill).hairline(color, BlazeShapes.pill).padding(horizontal = 10.dp, vertical = 4.dp)) {
+    val c = LocalArgus.current
+    Box(Modifier.clip(ArgusShapes.pill).background(if (filled) color else Color.Transparent, ArgusShapes.pill).hairline(color, ArgusShapes.pill).padding(horizontal = 10.dp, vertical = 4.dp)) {
         Text(text.sentence(), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 11.sp, color = if (filled) c.paper else color))
     }
 }
@@ -843,7 +843,7 @@ fun StatusChip(text: String, color: Color, filled: Boolean) {
 /** v0.24.8: a project's round initial badge (soft classic-blue wash) instead of the old "01 / 02" numbers. */
 @Composable
 fun ProjectBadge(name: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.size(38.dp).glass(CircleShape, GlassIntensity.High, shadow = false), contentAlignment = Alignment.Center) {
         Text(name.trim().take(1).uppercase().ifBlank { "#" }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = c.ink))
     }
@@ -852,15 +852,15 @@ fun ProjectBadge(name: String) {
 /** v0.28.3: an empty project chat (just made with + New chat): what this thread is, above the composer. */
 @Composable
 fun ProjectChatEmpty(project: String, hasInstructions: Boolean) {
-    val c = LocalBlaze.current
-    Column(Modifier.fillMaxSize().padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+    val c = LocalArgus.current
+    Column(Modifier.fillMaxSize().padding(horizontal = com.argus.assistant.ui.space.SpaceInsets.COMPOSER_EDGE_DP.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         ProjectBadge(project)
         Spacer(Modifier.height(14.dp))
         Text("New chat in ${project.ifBlank { "this project" }}", maxLines = 2, overflow = TextOverflow.Ellipsis,
-            style = com.blaze.assistant.ui.space.SpaceType.section(c.ink).copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center))
+            style = com.argus.assistant.ui.space.SpaceType.section(c.ink).copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center))
         Spacer(Modifier.height(6.dp))
         Text(if (hasInstructions) "${BrandName.NAME} follows this project's instructions and brief here. Your main chat stays as it is."
             else "This thread stays in the project. Your main chat stays as it is.",
-            style = com.blaze.assistant.ui.space.SpaceType.meta(c.sub).copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center))
+            style = com.argus.assistant.ui.space.SpaceType.meta(c.sub).copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center))
     }
 }

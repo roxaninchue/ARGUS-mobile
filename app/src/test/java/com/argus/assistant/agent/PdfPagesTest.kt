@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -51,7 +51,7 @@ class PdfPagesTest {
     @Test fun theToolIsAlwaysOnHandAndWired() {
         assertTrue(ToolPick.cueNames(setOf(ToolPick.HISTORY)).contains(PdfPages.TOOL))
         val root = listOf(File("."), File("..")).first { File(it, "app/src/main").isDirectory }
-        fun src(p: String) = File(root, "app/src/main/java/com/blaze/assistant/$p").readText()
+        fun src(p: String) = File(root, "app/src/main/java/com/argus/assistant/$p").readText()
         assertTrue(src("agent/ToolRouter.kt").contains("\"cache_summarize\", \"pdf_page\","))
         val agent = src("agent/Agent.kt")
         assertTrue(agent.contains("t.put(PdfPages.tool())"))

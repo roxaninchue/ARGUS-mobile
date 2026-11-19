@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
@@ -27,15 +27,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.Label
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.Type
-import com.blaze.assistant.ui.hairlineTop
+import com.argus.assistant.ui.Label
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.Type
+import com.argus.assistant.ui.hairlineTop
 
 /** ⋯ › VPN & privacy: the browser VPN (WireGuard locations by country), location masking and private tabs. */
 @Composable
 fun PrivacySheet(onImport: () -> Unit, onPrivateTab: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val st = BrowserVpn.status
     val cur = BrowserVpn.current()
@@ -51,13 +51,13 @@ fun PrivacySheet(onImport: () -> Unit, onPrivateTab: () -> Unit) {
                     P("VPN", c.ink, 15)
                     P(BrowserVpn.statusLine(), if (st == BrowserVpn.Status.FAILED) Color(0xFFD93025) else if (st == BrowserVpn.Status.ON) c.accent else c.sub, 12)
                 }
-                // v0.25.3: one tap works with nothing imported (Blaze Free).
+                // v0.25.3: one tap works with nothing imported (Argus Free).
                 Switch(checked = BrowserVpn.on, onCheckedChange = { v ->
                     if (v) BrowserVpn.connect(BrowserVpn.defaultId()) else BrowserVpn.disconnect()
                 }, colors = SwitchDefaults.colors(checkedTrackColor = c.accent))
             }
 
-            // Blaze Free: always there, free, no setup.
+            // Argus Free: always there, free, no setup.
             Label("Location", modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp))
             val freeSel = BrowserVpn.isFree && BrowserVpn.on
             Row(Modifier.fillMaxWidth().background(if (freeSel) c.faint else c.paper).hairlineTop(c.hair)
@@ -117,7 +117,7 @@ fun PrivacySheet(onImport: () -> Unit, onPrivateTab: () -> Unit) {
 }
 
 @Composable private fun Row2(title: String, sub: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(Modifier.fillMaxWidth().hairlineTop(c.hair).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 11.dp)) {
         P(title, c.ink, 15); P(sub, c.sub, 12)
     }

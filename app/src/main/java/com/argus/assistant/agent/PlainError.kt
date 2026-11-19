@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * Turns raw provider/system errors (JSON blobs, stack messages, URLs) into one or two plain
  * sentences for the chat. The raw text goes to the crash log for debugging.
@@ -24,7 +24,7 @@ object PlainError {
         Cloud.access(403, t)?.let { line -> if ("403" in t || line == t || "waitlisted" in t || "access_rejected" in t) return line }
         val looksRaw = t.contains('{') || t.contains("\"error\"") || t.contains("http", true) || t.length > 220 || t.contains("Exception")
         if (!looksRaw) return t
-        try { com.blaze.assistant.device.CrashLog.error("chat error", RuntimeException(t.take(1500))) } catch (_: Throwable) { }
+        try { com.argus.assistant.device.CrashLog.error("chat error", RuntimeException(t.take(1500))) } catch (_: Throwable) { }
         val who = "${BrandName.NAME}"   // 0.45.19: never the provider name
         val code = codeRe.find(t)?.groupValues?.get(1)?.toIntOrNull()
         val low = t.lowercase()
@@ -32,7 +32,7 @@ object PlainError {
             code == 429 || "quota" in low || "rate limit" in low || "resource_exhausted" in low ->
                 Cloud.BUSY
             code == 401 || code == 403 || "api key" in low && "invalid" in low -> Cloud.EXPIRED
-            // v0.25.0: never "that model is gone, open Settings": Blaze Cloud already retried other models quietly.
+            // v0.25.0: never "that model is gone, open Settings": Argus Cloud already retried other models quietly.
             code == 404 || "not found" in low -> Cloud.BUSY
             code != null && code in 500..599 || "overloaded" in low || "unavailable" in low -> "$who is having trouble on its side right now. Tap Retry in a moment."
             "timeout" in low || "timed out" in low -> "$who took too long to answer. Tap Retry."

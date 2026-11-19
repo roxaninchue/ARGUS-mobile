@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.SecretTestKit.CF
-import com.blaze.assistant.agent.SecretTestKit.GL
-import com.blaze.assistant.agent.SecretTestKit.SK
-import com.blaze.assistant.agent.SecretTestKit.GHP
-import com.blaze.assistant.agent.SecretTestKit.AKIA
-import com.blaze.assistant.agent.SecretTestKit.JWT
+import com.argus.assistant.agent.SecretTestKit.CF
+import com.argus.assistant.agent.SecretTestKit.GL
+import com.argus.assistant.agent.SecretTestKit.SK
+import com.argus.assistant.agent.SecretTestKit.GHP
+import com.argus.assistant.agent.SecretTestKit.AKIA
+import com.argus.assistant.agent.SecretTestKit.JWT
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -94,7 +94,7 @@ class SecretGuardsTest {
             "commit eb5bfae769129e71151cc8914df70c17ac71285c is merged",
             "sha256 8c925f54faaec875bcf606ed7f7fb7a7fe15a2e12cf8c45d1a9961cc66d2ce40",
             "deploy 5c27f65c-deee-483b-816e-e503f4822f9b is live",
-            "see https://gitlab.com/blazeinchue/BlazeMobile/-/merge_requests/10 please",
+            "see https://gitlab.com/blazeinchue/ArgusMobile/-/merge_requests/10 please",
             "call me on +260 971 234 567 or 0971234567",
             "the password reset didn't work, my password is wrong apparently",
             "my task-force-alpha-bravo-charlie-delta-echo-foxtrot plan",

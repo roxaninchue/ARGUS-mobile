@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.9: a suggestion chip only offers something this phone can actually do right now. Seen on a phone (0.45.8):
- * "hi Blaze" came back with "View your upcoming meetings" while calendar access was off, and tapping it got "I don't
+ * "hi Argus" came back with "View your upcoming meetings" while calendar access was off, and tapping it got "I don't
  * have the ability to access your calendar". Every chip source goes through [allowed]: the model's <<follow-ups: …>>
  * (ReplyParts.split) and the composer / reply chips built in the app.
  *
@@ -14,9 +14,9 @@ object ChipGate {
     data class Caps(
         /** Device calendar readable (READ_CALENDAR granted) or Google Calendar connected. */
         val calendar: Boolean = true,
-        /** Weather tool usable (signed in to Blaze Cloud, or the Home weather card has a reading). */
+        /** Weather tool usable (signed in to Argus Cloud, or the Home weather card has a reading). */
         val weather: Boolean = true,
-        /** Something to play or replay (Blaze Music queue / library / last list, or Spotify connected). */
+        /** Something to play or replay (Argus Music queue / library / last list, or Spotify connected). */
         val music: Boolean = true,
         val sms: Boolean = true,
         val calls: Boolean = true,

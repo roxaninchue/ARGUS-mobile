@@ -1,17 +1,17 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.SearchRoute
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.SearchRoute
 
 /**
- * 0.51.0 BlazeQuery need detection: for every message the user sends, decide (in microseconds, no model, no network)
+ * 0.51.0 ArgusQuery need detection: for every message the user sends, decide (in microseconds, no model, no network)
  * whether outside facts would make the reply more correct.
  *
  *  - [Need.NONE]: small talk, slash commands, weather (get_weather has it), phone actions ("set an alarm", "open WhatsApp"),
  *    pure writing jobs ("write me a poem"). Nothing is fetched and nothing is injected.
- *  - [Need.LOCAL]: about Blaze, its / commands, this conversation or the user's own data (0.50 [SearchRoute.isLocal]).
- *    Never sent to the web: only the chat's own cache (cached documents, BlazeQuery facts from earlier turns) is consulted.
+ *  - [Need.LOCAL]: about Argus, its / commands, this conversation or the user's own data (0.50 [SearchRoute.isLocal]).
+ *    Never sent to the web: only the chat's own cache (cached documents, ArgusQuery facts from earlier turns) is consulted.
  *  - [Need.CODE]: code / command / API / version / error-message work. The priority trigger: a wrong flag or a stale API is
  *    exactly what fresh docs fix. Official docs, registries and release notes are preferred.
  *  - [Need.EXTERNAL]: a question about the world (facts, how-to, news, prices, releases).
@@ -37,7 +37,7 @@ object NeedDetect {
     private val newsWords = r("""\b(?:news|today|tonight|yesterday|this (?:week|month|year)|latest|recent(?:ly)?|right now|currently|just (?:happened|announced)|breaking|election|score|scores|match|fixture|price|prices|cost|exchange rate|rate|stock|shares|bitcoin|crypto|announced|launch(?:ed)?|update[sd]?|20[2-3]\d)\b""")
     private val howTo = r("""^\s*(?:how (?:do|can|to|should|would)|what(?:'s| is) the (?:best|right|correct) way|steps to|guide to|tutorial)\b""")
     private val question = r("""^\s*(?:what|which|who|whom|whose|when|where|why|how|is|are|was|were|does|did|do|can|could|will|would|should|has|have|tell me|explain|compare|list|define)\b|\?\s*$""")
-    /** A phone action Blaze performs with its own tools: no outside facts needed. */
+    /** A phone action Argus performs with its own tools: no outside facts needed. */
     private val phoneAction = r("""^\s*(?:please\s+)?(?:set|start|stop|cancel|turn|switch|open|close|launch|call|ring|dial|text|send|message|reply|play|pause|resume|skip|mute|unmute|take|snap|record|remind|wake|show me my|read my|check my|lock|unlock|share|install|uninstall|delete|remove|save|add|create a (?:reminder|alarm|note|routine|event))\b""")
     /** Writing / creative jobs from the model's own skill ("write me a poem", "draft an email to my boss"). */
     private val writingJob = r("""^\s*(?:please\s+)?(?:write|draft|compose|rewrite|rephrase|translate|summari[sz]e|fix (?:the )?(?:grammar|spelling)|make (?:it|this) (?:shorter|longer|better)|brainstorm|tell me a (?:joke|story)|give me (?:a )?(?:poem|joke|story|name|names|ideas?))\b""")

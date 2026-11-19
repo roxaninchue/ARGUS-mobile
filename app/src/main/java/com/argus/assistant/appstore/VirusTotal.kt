@@ -1,4 +1,4 @@
-package com.blaze.assistant.appstore
+package com.argus.assistant.appstore
 
 import org.json.JSONObject
 import java.net.HttpURLConnection

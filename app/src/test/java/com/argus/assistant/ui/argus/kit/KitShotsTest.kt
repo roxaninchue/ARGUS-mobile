@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Arrangement
@@ -18,8 +18,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.ui.argus.ArgusGround
-import com.blaze.assistant.ui.argus.ArgusTheme
+import com.argus.assistant.ui.argus.ArgusGround
+import com.argus.assistant.ui.argus.ArgusTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue

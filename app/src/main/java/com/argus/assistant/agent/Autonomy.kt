@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
@@ -11,7 +11,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Autonomy helpers: the pieces that make Blaze keep going on its own instead of giving up early.
+ * Autonomy helpers: the pieces that make Argus keep going on its own instead of giving up early.
  *
  *  - Refusal gate: a "can't do that" answer is sent back once with a nudge to try other tools first.
  *  - Failure check: if the last action failed, the model must retry another way or verify before

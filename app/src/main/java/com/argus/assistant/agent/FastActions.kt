@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 
 /**
@@ -111,7 +111,7 @@ object FastActions {
     fun key(step: JSONObject): String {
         val d = step.optString("do").lowercase()
         val what = listOf("target", "app", "text", "query", "direction").map { step.optString(it) }.firstOrNull { it.isNotBlank() }.orEmpty()
-        return d + "|" + com.blaze.assistant.phone.LabelMatch.norm(what)
+        return d + "|" + com.argus.assistant.phone.LabelMatch.norm(what)
     }
 
     /**

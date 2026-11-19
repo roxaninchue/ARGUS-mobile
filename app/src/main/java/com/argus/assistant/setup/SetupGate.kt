@@ -1,7 +1,7 @@
-package com.blaze.assistant.setup
+package com.argus.assistant.setup
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 import java.io.File
 
 /**
- * v0.24.4 dependency setup gate. On launch (new users after the first-run flow, and users who upgraded), Blaze
+ * v0.24.4 dependency setup gate. On launch (new users after the first-run flow, and users who upgraded), Argus
  * checks which dependencies are missing and shows the setup columns for just those. Required ones block the
  * app until they're done; optional ones have "Later". Once everything is resolved `setup_deps_done` is set and
  * the gate never runs again. Before the gate first runs, prefs and user data are backed up (see [backup]).
@@ -62,26 +62,26 @@ object SetupGate {
     /** What's already there on this phone. A step that can't apply here (Linux on an unsupported CPU) counts as done. */
     fun probe(ctx: Context): Map<String, Boolean> = mapOf(
         "notifications" to (Build.VERSION.SDK_INT < 33 || granted(ctx, Manifest.permission.POST_NOTIFICATIONS)),
-        "linux" to try { com.blaze.assistant.terminal.Linux.installed() || !com.blaze.assistant.terminal.Linux.supported() } catch (_: Throwable) { true },
-        "accessibility" to try { com.blaze.assistant.phone.BlazeAccessibilityService.isEnabled(ctx) } catch (_: Throwable) { false },
+        "linux" to try { com.argus.assistant.terminal.Linux.installed() || !com.argus.assistant.terminal.Linux.supported() } catch (_: Throwable) { true },
+        "accessibility" to try { com.argus.assistant.phone.ArgusAccessibilityService.isEnabled(ctx) } catch (_: Throwable) { false },
         "mic" to granted(ctx, Manifest.permission.RECORD_AUDIO),
         "overlay" to android.provider.Settings.canDrawOverlays(ctx),
         "battery" to (ctx.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(ctx.packageName) == true),
-        "desktop" to try { com.blaze.assistant.link.DesktopLink.paired } catch (_: Throwable) { false },
+        "desktop" to try { com.argus.assistant.link.DesktopLink.paired } catch (_: Throwable) { false },
     )
 
-    fun isDone(): Boolean = com.blaze.assistant.agent.Settings.bool(PREF_DONE, false)
-    fun later(): Set<String> = parseLater(com.blaze.assistant.agent.Settings.str(PREF_LATER, ""))
+    fun isDone(): Boolean = com.argus.assistant.agent.Settings.bool(PREF_DONE, false)
+    fun later(): Set<String> = parseLater(com.argus.assistant.agent.Settings.str(PREF_LATER, ""))
     fun putOff(id: String) {
         if (dep(id)?.required != false) return   // required steps can't be put off
-        com.blaze.assistant.agent.Settings.setStr(PREF_LATER, joinLater(later() + id))
+        com.argus.assistant.agent.Settings.setStr(PREF_LATER, joinLater(later() + id))
     }
 
     /** Sets the done pref when nothing is left. Returns true when done. */
     fun markIfComplete(have: Map<String, Boolean>): Boolean {
         if (isDone()) return true
         if (!complete(have, later())) return false
-        com.blaze.assistant.agent.Settings.setBool(PREF_DONE, true)
+        com.argus.assistant.agent.Settings.setBool(PREF_DONE, true)
         return true
     }
 
@@ -95,12 +95,12 @@ object SetupGate {
     private const val MAX_FILE = 64L * 1024 * 1024
 
     /**
-     * Copies shared_prefs and Blaze's own data files (chats, mind.db, longchat.db, vault, memories, skills…) to
+     * Copies shared_prefs and Argus's own data files (chats, mind.db, longchat.db, vault, memories, skills…) to
      * filesDir/backup/pre-setup-v<code>-<time>/ once per build, before the gate does anything. Keeps the newest 3.
      * Returns the backup folder, or null when this build already backed up (or nothing could be written).
      */
     fun backup(ctx: Context, code: Long, now: Long = System.currentTimeMillis()): File? {
-        val marker = try { com.blaze.assistant.agent.Settings.str(PREF_BACKUP, "") } catch (_: Throwable) { "" }
+        val marker = try { com.argus.assistant.agent.Settings.str(PREF_BACKUP, "") } catch (_: Throwable) { "" }
         if (marker == code.toString()) return null
         val root = File(ctx.filesDir, "backup").apply { mkdirs() }
         val out = File(root, "pre-setup-v$code-$now")
@@ -114,7 +114,7 @@ object SetupGate {
             ctx.getDatabasePath("x").parentFile?.takeIf { it.exists() }?.let { copyTree(it, File(out, "databases")) }
             root.listFiles()?.filter { it.name.startsWith("pre-setup-") }?.sortedByDescending { it.name.substringAfterLast('-').toLongOrNull() ?: 0L }
                 ?.drop(3)?.forEach { it.deleteRecursively() }
-            try { com.blaze.assistant.agent.Settings.setStr(PREF_BACKUP, code.toString()) } catch (_: Throwable) { }
+            try { com.argus.assistant.agent.Settings.setStr(PREF_BACKUP, code.toString()) } catch (_: Throwable) { }
             out
         } catch (_: Throwable) { null }
     }

@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -9,7 +9,7 @@ import org.junit.Test
 class WaveA5StreamCacheTest {
     private val MB = StreamCache.MB
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     @Test fun budgetFitsThePhone() {
         assertEquals(128 * MB, StreamCache.budget(3_000, 64_000 * MB))       // 3 GB phone: small

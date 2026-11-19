@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -152,7 +152,7 @@ class BrowserPersistenceTest {
         val back = SavedPages.decode(SavedPages.encode(listOf(p1, p2)))
         assertEquals(listOf(p2, p1), back)   // newest first
         assertEquals(1, SavedPages.decode("""{"pages":[{"id":"../../x","t":"bad"},{"id":"$id1","t":"ok"}]}""").size)
-        assertTrue(SavedPages.isSavedUrl("file:///data/user/0/com.blaze.assistant/files/saved_pages/$id1.mht"))
+        assertTrue(SavedPages.isSavedUrl("file:///data/user/0/com.argus.assistant/files/saved_pages/$id1.mht"))
         assertFalse(SavedPages.isSavedUrl("file:///sdcard/Download/x.mht"))
         assertFalse(SavedPages.isSavedUrl("file:///data/x/saved_pages/../../secret.mht"))
         assertEquals(id1, SavedPages.idOfUrl("file:///d/saved_pages/$id1.mht"))

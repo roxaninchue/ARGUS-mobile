@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.ManagerChats
-import com.blaze.assistant.ui.team.ChatDrawerModel.Key
-import com.blaze.assistant.ui.team.ChatDrawerModel.Msg
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.ManagerChats
+import com.argus.assistant.ui.team.ChatDrawerModel.Key
+import com.argus.assistant.ui.team.ChatDrawerModel.Msg
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -50,7 +50,7 @@ class ChatDrawerTest {
 
     @Test fun theDrawerMenuHasNoPin() {
         val src = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-            .resolve("com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
+            .resolve("com/argus/assistant/ui/team/ChatDrawer.kt").readText()
         assertFalse(src.contains("\"Pin\"") || src.contains("\"Unpin\"") || src.contains("pinChat"))
     }
 
@@ -136,7 +136,7 @@ class ChatDrawerTest {
 
     /** Source pins: the drawer's edge swipe asks for system gesture exclusion (06: "edge-swipe uses system gesture exclusion"). */
     @Test fun drawerEdgeUsesSystemGestureExclusion() {
-        val src = File("src/main/java/com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
+        val src = File("src/main/java/com/argus/assistant/ui/team/ChatDrawer.kt").readText()
         assertTrue(src.contains("systemGestureExclusion"))
         assertTrue(src.contains("ModalNavigationDrawer"))
     }
@@ -148,7 +148,7 @@ class ChatDrawerTest {
         assertTrue(ChatDrawerModel.layerUp(requested = false, open = true, opening = false, moving = false))
         assertTrue(ChatDrawerModel.layerUp(requested = false, open = false, opening = true, moving = false))
         assertTrue(ChatDrawerModel.layerUp(requested = false, open = false, opening = false, moving = true))
-        val src = File("src/main/java/com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
+        val src = File("src/main/java/com/argus/assistant/ui/team/ChatDrawer.kt").readText()
         assertTrue("the layer returns before drawing while closed", src.contains("if (!ChatDrawerModel.layerUp(requested, drawer.isOpen"))
         assertFalse("the button asks the layer, never opens a drawer that isn't drawn", src.contains("\"Chat history\", { scope.launch { drawer.open() } }"))
     }
@@ -156,7 +156,7 @@ class ChatDrawerTest {
     /** Owner 2026-11-14: the drawer shows ARGUS's title once given; a name you gave still wins. */
     @Test fun drawerShowsTheAutoTitleUnlessNamed() {
         val zone = java.time.ZoneId.of("Africa/Lusaka")
-        val m = com.blaze.assistant.agent.ManagerChats.fresh()
+        val m = com.argus.assistant.agent.ManagerChats.fresh()
         val msgs = listOf(ChatDrawerModel.Msg(true, "What's on for today?", 10L), ChatDrawerModel.Msg(false, "Two meetings.", 11L))
         fun title() = ChatDrawerModel.state(m, msgs, emptyList(), 20L, zone).sections.flatMap { it.entries }.single().title
         assertEquals("What's on for today?", title())

@@ -1,6 +1,6 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
-import com.blaze.assistant.connect.GitHubRoute.Kind
+import com.argus.assistant.connect.GitHubRoute.Kind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

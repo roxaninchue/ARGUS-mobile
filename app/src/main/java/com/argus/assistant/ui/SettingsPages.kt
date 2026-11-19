@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /*
  * P1-SH-06: the settings page ids, their old-id aliases and "open by name" moved here from SettingsSheet.kt and
@@ -12,10 +12,10 @@ import com.blaze.assistant.BrandName
 data class SettingsPage(val id: String, val title: String, val sub: String)
 
 /**
- * 0.52.3 (ARGUS x Hark): the root of Settings is the profile page ([com.blaze.assistant.ui.space.SpaceProfileScreen]):
+ * 0.52.3 (ARGUS x Hark): the root of Settings is the profile page ([com.argus.assistant.ui.space.SpaceProfileScreen]):
  * Usage and plan; Profile, Scheduled Tasks, Accounts, Wallet; Security, System Preferences, Submit Feedback, About.
  * System Preferences lists Appearance, Language, Voice, Permissions and Updates. Back follows
- * [com.blaze.assistant.ui.space.SpaceSettings.PARENT] (everything else returns to the profile). The old Settings list,
+ * [com.argus.assistant.ui.space.SpaceSettings.PARENT] (everything else returns to the profile). The old Settings list,
  * Advanced, the Brain page's switches and the backup / offline brain sections are gone: the brain is picked
  * automatically. The pages below stay reachable by id (ARGUS's open_settings, /views, the + menu) and keep their prefs.
  */
@@ -106,8 +106,8 @@ fun settingsPageByName(raw: String): String {
         "look" to "feel", "theme" to "feel", "sounds" to "feel", "accounts" to "connections", "connected" to "connections",
         "personality" to "persona", "phone" to "control", "accessibility" to "control", "skills" to "control",
         "library" to "skills", "signin" to "account", "login" to "account", "signup" to "account", "lock" to "privacy", "safety" to "privacy", "export" to "backup",
-        "brainstorm" to "logs", "lifelogs" to "logs", "transcripts" to "logs", "autoreply" to "replies") + com.blaze.assistant.ui.argus.settings.ArgusSettings.NAME_ALIASES
-    val words = raw.lowercase().replace("settings", " ").split(Regex("[^a-z_]+")).filter { it.isNotBlank() && it !in com.blaze.assistant.ui.argus.settings.ArgusSettings.STOP_WORDS }
+        "brainstorm" to "logs", "lifelogs" to "logs", "transcripts" to "logs", "autoreply" to "replies") + com.argus.assistant.ui.argus.settings.ArgusSettings.NAME_ALIASES
+    val words = raw.lowercase().replace("settings", " ").split(Regex("[^a-z_]+")).filter { it.isNotBlank() && it !in com.argus.assistant.ui.argus.settings.ArgusSettings.STOP_WORDS }
     if (words.isEmpty()) return ""
     // Several pages listed (the model copied the example): only trust it when they all point to one page.
     val hits = words.mapNotNull { w -> if (w in ids) w else alias[w] ?: settingsPages.firstOrNull { p -> p.title.lowercase().split(Regex("[^a-z]+")).contains(w) }?.id }.distinct()

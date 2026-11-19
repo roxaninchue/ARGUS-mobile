@@ -1,8 +1,8 @@
-package com.blaze.assistant.media
+package com.argus.assistant.media
 
-import com.blaze.assistant.media.GalleryModel.Entry
-import com.blaze.assistant.media.GalleryModel.Sort
-import com.blaze.assistant.media.GalleryModel.Src
+import com.argus.assistant.media.GalleryModel.Entry
+import com.argus.assistant.media.GalleryModel.Sort
+import com.argus.assistant.media.GalleryModel.Src
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -67,10 +67,10 @@ class GalleryModelTest {
 
     @Test fun sourceComesFromTheFolder() {
         assertEquals(Src.MUSIC, GalleryModel.sourceOf("Music/Blaze/", "audio"))
-        assertEquals(Src.MUSIC, GalleryModel.sourceOf("Blaze/Music/", "audio"))
+        assertEquals(Src.MUSIC, GalleryModel.sourceOf("Argus/Music/", "audio"))
         assertEquals(Src.MUSIC, GalleryModel.sourceOf("Download/Blaze/Music/", "audio"))
         assertEquals(Src.VIDEOS, GalleryModel.sourceOf("Movies/Blaze/", "video"))
-        assertEquals(Src.VIDEOS, GalleryModel.sourceOf("Blaze/Videos", "video"))
+        assertEquals(Src.VIDEOS, GalleryModel.sourceOf("Argus/Videos", "video"))
         assertEquals(Src.DOWNLOADS, GalleryModel.sourceOf("Download/Blaze/", "image"))
         assertEquals(Src.PICTURES, GalleryModel.sourceOf("Pictures/Blaze/", "image"))
         assertEquals(Src.SCREENSHOTS, GalleryModel.sourceOf("Pictures/Screenshots/", "image"))
@@ -94,11 +94,11 @@ class GalleryModelTest {
         assertNull(a["Camera"])
     }
 
-    @Test fun mergeDropsThePhoneCopyOfABlazePicture() {
-        val blaze = listOf(e("file:/g/lion.jpg", name = "lion.jpg", size = 100))
+    @Test fun mergeDropsThePhoneCopyOfAArgusPicture() {
+        val argus = listOf(e("file:/g/lion.jpg", name = "lion.jpg", size = 100))
         val phone = listOf(e("content://1", name = "lion.jpg", size = 100, src = Src.PICTURES), e("content://2", name = "lion.jpg", size = 99, src = Src.PICTURES),
             e("content://3", name = "song.mp3", kind = "audio", src = Src.MUSIC), e("content://3", name = "song.mp3", kind = "audio", src = Src.MUSIC))
-        assertEquals(listOf("file:/g/lion.jpg", "content://2", "content://3"), GalleryModel.merge(blaze, phone).map { it.id })
+        assertEquals(listOf("file:/g/lion.jpg", "content://2", "content://3"), GalleryModel.merge(argus, phone).map { it.id })
     }
 
     // ---------------------------------------------------------------- labels

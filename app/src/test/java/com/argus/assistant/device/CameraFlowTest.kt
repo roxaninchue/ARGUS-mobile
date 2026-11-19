@@ -1,8 +1,8 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
-import com.blaze.assistant.device.CameraFlow.Outcome
-import com.blaze.assistant.device.CameraFlow.State
-import com.blaze.assistant.device.CameraFlow.Step
+import com.argus.assistant.device.CameraFlow.Outcome
+import com.argus.assistant.device.CameraFlow.State
+import com.argus.assistant.device.CameraFlow.Step
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,15 +23,15 @@ class CameraFlowTest {
         assertEquals(Step.RATIONALE, CameraFlow.afterDenied(showRationale = true))
     }
     @Test fun grantedGoesToTheCameraApp() = assertEquals(Step.EXTERNAL, CameraFlow.next(ready))
-    @Test fun noCameraAppGoesToBlazeCamera() = assertEquals(Step.IN_APP, CameraFlow.next(ready.copy(externalHandler = false)))
-    @Test fun failedCameraAppGoesToBlazeCamera() = assertEquals(Step.IN_APP, CameraFlow.next(ready.copy(externalFailed = true)))
+    @Test fun noCameraAppGoesToArgusCamera() = assertEquals(Step.IN_APP, CameraFlow.next(ready.copy(externalHandler = false)))
+    @Test fun failedCameraAppGoesToArgusCamera() = assertEquals(Step.IN_APP, CameraFlow.next(ready.copy(externalFailed = true)))
     @Test fun rememberedFailureSkipsTheCameraApp() = assertEquals(Step.IN_APP, CameraFlow.next(ready.copy(preferInApp = true)))
-    @Test fun blazeCameraFailedFallsBackToTheCameraAppThenThePicker() {
+    @Test fun argusCameraFailedFallsBackToTheCameraAppThenThePicker() {
         assertEquals(Step.EXTERNAL, CameraFlow.next(ready.copy(preferInApp = true, inAppFailed = true)))
         assertEquals(Step.PICKER, CameraFlow.next(ready.copy(externalFailed = true, inAppFailed = true)))
     }
     @Test fun noCameraAtAllPicksAPhoto() = assertEquals(Step.PICKER, CameraFlow.next(ready.copy(hasCamera = false, permissionGranted = false)))
-    @Test fun withoutTheDeclaredPermissionNoBlazeCamera() {
+    @Test fun withoutTheDeclaredPermissionNoArgusCamera() {
         val s = State(hasCamera = true, permissionDeclared = false, permissionGranted = false)
         assertEquals(Step.EXTERNAL, CameraFlow.next(s))
         assertEquals(Step.PICKER, CameraFlow.next(s.copy(externalFailed = true)))

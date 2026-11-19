@@ -1,7 +1,7 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
@@ -37,15 +37,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * v0.29.2 Blaze Terminal: a full-screen, Termux-style terminal. Black screen, monospace text, Termux's two
+ * v0.29.2 Argus Terminal: a full-screen, Termux-style terminal. Black screen, monospace text, Termux's two
  * extra-keys rows (ESC / ― HOME ↑ END PGUP · ⇥ CTRL ALT ← ↓ → PGDN), tabs along the top, pinch to zoom,
  * long-press to select and copy, paste from the menu. Tabs run the user's Alpine Linux (PRoot) or the phone shell.
- * v0.29.8: Blaze colours (blue accent, rounded key caps), ⋮ and + open a Blaze bottom sheet (TermSheetHost) instead of a
+ * v0.29.8: Argus colours (blue accent, rounded key caps), ⋮ and + open a Argus bottom sheet (TermSheetHost) instead of a
  * white Android pop-up, and a phone tab shows tappable example commands above the keys.
  */
-class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
+class ArgusTerminalActivity : ComponentActivity(), TermSessions.Listener {
     companion object {
-        fun open(ctx: Context) = ctx.startActivity(Intent(ctx, BlazeTerminalActivity::class.java)
+        fun open(ctx: Context) = ctx.startActivity(Intent(ctx, ArgusTerminalActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
         private var fontPx = 0
     }
@@ -59,7 +59,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     // v0.45.8: every colour comes from the picked theme (TermPalette, 4.5:1 or more against the ground); set in applyTheme().
-    private var pal = com.blaze.assistant.ui.TermPalette.of(true)
+    private var pal = com.argus.assistant.ui.TermPalette.of(true)
     private var ink = pal.fg
     private var dim = pal.dim
     private var accent = pal.accent
@@ -78,7 +78,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
+        if (com.argus.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         window.statusBarColor = Color.BLACK
         window.navigationBarColor = barBg
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
@@ -113,7 +113,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         keys = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(barBg); setPadding(dp(4), dp(3), dp(4), dp(4)) }
         root.addView(keys)
 
-        // The Blaze sheet floats over everything (scrim + rounded card); it draws nothing while closed.
+        // The Argus sheet floats over everything (scrim + rounded card); it draws nothing while closed.
         val frame = FrameLayout(this)
         frame.addView(root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         frame.addView(ComposeView(this).apply {
@@ -121,9 +121,9 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
             setContent { TermSheetHost(sheet) }
         }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         setContentView(frame)
-        com.blaze.assistant.ui.MotionTokens.refresh(this)
+        com.argus.assistant.ui.MotionTokens.refresh(this)
 
-        // RC4: signed in to Blaze in the app = the `blaze` CLI here is signed in too (off the main thread, files only when done).
+        // RC4: signed in to Argus in the app = the `argus` CLI here is signed in too (off the main thread, files only when done).
         CliAuth.sync()
         TermSessions.screen = this
         val tab = TermSessions.ensureOne(this)
@@ -133,14 +133,14 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         term.requestFocus()
         // One shared light / dark state: a switch made here, in Chat, Music or anywhere else repaints the terminal.
         scope.launch {
-            androidx.compose.runtime.snapshotFlow { com.blaze.assistant.ui.ThemeMode.mode.value }
+            androidx.compose.runtime.snapshotFlow { com.argus.assistant.ui.ThemeMode.mode.value }
                 .collect { applyTheme() }
         }
     }
 
     /** v0.45.8: paints the bars, keys, sheet and the emulator's colours (ANSI, text, ground, cursor) from the theme. */
     private fun applyTheme() {
-        val p = com.blaze.assistant.ui.TermPalette.of(com.blaze.assistant.ui.AppTheme.darkNow())
+        val p = com.argus.assistant.ui.TermPalette.of(com.argus.assistant.ui.AppTheme.darkNow())
         pal = p; ink = p.fg; dim = p.dim; accent = p.accent; keyBg = p.keyBg; keyEdge = p.keyEdge; barBg = p.barBg
         TermSheet.Palette.set(p)
         TermColors.apply(p)
@@ -244,7 +244,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     v.background = keyCap(true)
-                    if (com.blaze.assistant.ui.MotionTokens.enabled) v.animate().scaleX(0.94f).scaleY(0.94f).setDuration(com.blaze.assistant.ui.MotionTokens.ms(com.blaze.assistant.ui.MotionTokens.SHORT) / 2).start()
+                    if (com.argus.assistant.ui.MotionTokens.enabled) v.animate().scaleX(0.94f).scaleY(0.94f).setDuration(com.argus.assistant.ui.MotionTokens.ms(com.argus.assistant.ui.MotionTokens.SHORT) / 2).start()
                     press(k)
                     if (k.repeat) {
                         val r = object : Runnable { override fun run() { press(k); main.postDelayed(this, 60) } }
@@ -253,7 +253,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.background = keyCap(k.toggle == "ctrl" && ctrl || k.toggle == "alt" && alt)
-                    v.animate().scaleX(1f).scaleY(1f).setDuration(com.blaze.assistant.ui.MotionTokens.ms(com.blaze.assistant.ui.MotionTokens.SHORT)).start()
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(com.argus.assistant.ui.MotionTokens.ms(com.argus.assistant.ui.MotionTokens.SHORT)).start()
                     repeating?.let { main.removeCallbacks(it) }; repeating = null
                 }
             }
@@ -280,7 +280,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         }
     }
 
-    /** A rounded Blaze key cap; [on] = held, or a CTRL/ALT that's switched on (Blaze blue). */
+    /** A rounded Argus key cap; [on] = held, or a CTRL/ALT that's switched on (Argus blue). */
     private fun keyCap(on: Boolean) = GradientDrawable().apply {
         cornerRadius = dp(10).toFloat()
         setColor(if (on) Color.argb(60, Color.red(accent), Color.green(accent), Color.blue(accent)) else keyBg)
@@ -329,8 +329,8 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
                         else dialog().setMessage("Remove ${d.name} and everything installed in it?")
                             .setPositiveButton("Remove") { _, _ ->
                                 synchronized(TermSessions.tabs) { TermSessions.tabs.filter { it.env.id == d.id } }.forEach { TermSessions.close(it) }
-                                scope.launch { withContext(Dispatchers.IO) { Distros.uninstall(d.id) }; Toast.makeText(this@BlazeTerminalActivity, "${d.name} removed", Toast.LENGTH_SHORT).show()
-                                    TermSessions.active()?.let { attach(it) } ?: attach(TermSessions.open(this@BlazeTerminalActivity)) }
+                                scope.launch { withContext(Dispatchers.IO) { Distros.uninstall(d.id) }; Toast.makeText(this@ArgusTerminalActivity, "${d.name} removed", Toast.LENGTH_SHORT).show()
+                                    TermSessions.active()?.let { attach(it) } ?: attach(TermSessions.open(this@ArgusTerminalActivity)) }
                             }.setNegativeButton("Cancel", null).show()
                     }.show()
             } else install(d)
@@ -350,27 +350,27 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
             watch.cancel()
             if (Distros.installed(d.id)) {
                 dlg.dismiss()
-                Toast.makeText(this@BlazeTerminalActivity, r.take(160), Toast.LENGTH_SHORT).show()
-                attach(TermSessions.open(this@BlazeTerminalActivity, d.env())); showKeyboard()
+                Toast.makeText(this@ArgusTerminalActivity, r.take(160), Toast.LENGTH_SHORT).show()
+                attach(TermSessions.open(this@ArgusTerminalActivity, d.env())); showKeyboard()
             } else text.text = r
         }
     }
 
     /** Light / dark (the same switch as everywhere else; flipping it here changes every screen). */
     private fun themeMenu() {
-        val dark = com.blaze.assistant.ui.AppTheme.darkNow()
+        val dark = com.argus.assistant.ui.AppTheme.darkNow()
         val items = listOf(
             TermSheet.Item("dark", "Dark" + if (dark) "  \u2713" else "", "", "theme"),
             TermSheet.Item("light", "Light" + if (!dark) "  \u2713" else "", "", "theme"))
         sheet.show("Light or dark", "Changes ${BrandName.NAME} everywhere: chat, Home, Music, Video, Design and here", items) { item ->
-            com.blaze.assistant.ui.ThemeMode.set(item.id)
+            com.argus.assistant.ui.ThemeMode.set(item.id)
         }
     }
 
     private fun moreMenu() {
         val tab = TermSessions.active()
         val items = buildList {
-            add(TermSheet.Item("theme", "Light or dark", (if (com.blaze.assistant.ui.AppTheme.darkNow()) "Dark" else "Light") + " \u00b7 the same as the rest of ${BrandName.NAME}", "theme"))
+            add(TermSheet.Item("theme", "Light or dark", (if (com.argus.assistant.ui.AppTheme.darkNow()) "Dark" else "Light") + " \u00b7 the same as the rest of ${BrandName.NAME}", "theme"))
             add(TermSheet.Item("paste", "Paste", "Type what's on the clipboard", "paste"))
             add(TermSheet.Item("copy", "Copy all text", "Everything in this tab, to the clipboard", "copy"))
             add(TermSheet.Item("keyboard", "Keyboard", "Show the on-screen keyboard", "keyboard"))
@@ -437,7 +437,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         }
         override fun onSingleTapUp(e: MotionEvent?) {
             val t = TermSessions.active()
-            if (t != null && t.finished) { val env = t.env; TermSessions.close(t); attach(TermSessions.open(this@BlazeTerminalActivity, env)) }
+            if (t != null && t.finished) { val env = t.env; TermSessions.close(t); attach(TermSessions.open(this@ArgusTerminalActivity, env)) }
             showKeyboard()
         }
         override fun shouldBackButtonBeMappedToEscape() = false
@@ -447,7 +447,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         override fun copyModeChanged(copyMode: Boolean) { }
         override fun onKeyDown(keyCode: Int, e: KeyEvent?, session: TerminalSession?): Boolean {
             if (keyCode == KeyEvent.KEYCODE_ENTER && TermSessions.active()?.finished == true) {
-                TermSessions.active()?.let { val env = it.env; TermSessions.close(it); attach(TermSessions.open(this@BlazeTerminalActivity, env)) }
+                TermSessions.active()?.let { val env = it.env; TermSessions.close(it); attach(TermSessions.open(this@ArgusTerminalActivity, env)) }
                 return true
             }
             return false

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -72,7 +72,7 @@ object MessageActionIcons {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MessageActionIcon(kind: MessageActionIcons.Kind, enabled: Boolean, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val haptic = LocalHapticFeedback.current
     var tip by remember { mutableStateOf(false) }
     LaunchedEffect(tip) { if (tip) { delay(1400); tip = false } }

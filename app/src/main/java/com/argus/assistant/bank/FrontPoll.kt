@@ -1,4 +1,4 @@
-package com.blaze.assistant.bank
+package com.argus.assistant.bank
 
 /**
  * v0.45.0 (#15): how Bank mode watches the app in front. It used to ask UsageStats for the last 10 s of events every

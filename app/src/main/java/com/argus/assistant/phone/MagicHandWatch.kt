@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -82,7 +82,7 @@ object MagicHandWatch {
 
     /** Minimum gap between re-reads of one watch, whether from WorkManager or the app coming to the front. */
     const val MIN_GAP_MS = 60 * 60_000L
-    /** The periodic check interval (WorkManager's own floor is 15 min; Blaze uses an hour to be kind to the battery). */
+    /** The periodic check interval (WorkManager's own floor is 15 min; Argus uses an hour to be kind to the battery). */
     const val CHECK_HOURS = 1L
 
     fun due(w: Watch, now: Long, gapMs: Long = MIN_GAP_MS): Boolean = now - w.lastChecked >= gapMs

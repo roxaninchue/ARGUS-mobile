@@ -1,4 +1,4 @@
-package com.blaze.assistant.siteapps
+package com.argus.assistant.siteapps
 
 import android.content.Context
 import android.content.Intent
@@ -23,7 +23,7 @@ import java.net.URL
  * the real icon in SiteLogic.iconOrder (manifest icons → apple-touch-icon → largest rel=icon → favicon.ico), drawing a
  * letter icon only when none decodes. Then:
  * ([installOnPhone]) saved in filesDir/siteapps/ and pinned as a real launcher shortcut (ShortcutManagerCompat.requestPinShortcut,
- * IconCompat bitmap) that opens [SiteAppActivity]. (0.45.29: the "inside BlazeOS" install went with BlazeOS.)
+ * IconCompat bitmap) that opens [SiteAppActivity]. (0.45.29: the "inside ArgusOS" install went with ArgusOS.)
  */
 object SiteInstaller {
     const val ICON_PX = 192

@@ -1,7 +1,7 @@
-package com.blaze.assistant.dashboard
+package com.argus.assistant.dashboard
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /** The dashboard web page (served by Dashboard). */
 object Page {
     val html = """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

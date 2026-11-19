@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -9,7 +9,7 @@ import org.json.JSONObject
  *   {"mcpServers": {"github": {"url": "https://…/mcp", "headers": {"Authorization": "Bearer …"}}}}
  *
  * Optional per server: "type" ("http" | "streamable-http" | "sse" | "stdio"), "disabled": true, and
- * Blaze's own "toolModes": {"<tool>": "ask" | "always" | "off"}. Anything else in an entry (a desktop's
+ * Argus's own "toolModes": {"<tool>": "ask" | "always" | "off"}. Anything else in an entry (a desktop's
  * "command", "args", "env") is kept as it is, so a list synced from a PC survives the round trip; stdio
  * servers are listed on the phone but can't run here.
  *
@@ -162,7 +162,7 @@ object McpConfig {
         return out.values.toList()
     }
 
-    /** Servers saved by Blaze for Android 1.7 – 0.8.0 (pref "mcp_servers" + a bearer token per id). */
+    /** Servers saved by Argus for Android 1.7 – 0.8.0 (pref "mcp_servers" + a bearer token per id). */
     fun fromLegacy(serversJson: String, token: (String) -> String): List<Server> = try {
         val a = JSONArray(serversJson)
         (0 until a.length()).map { i ->

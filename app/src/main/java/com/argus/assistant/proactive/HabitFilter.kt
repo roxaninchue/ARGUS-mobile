@@ -1,4 +1,4 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
 /**
  * v0.27.0: which app visits count towards a "You open X around 19:00 most days" offer. Pure Kotlin (HabitFilterTest).
@@ -6,7 +6,7 @@ package com.blaze.assistant.proactive
  * Before this, every window change counted, so a keyboard popping up, the home screen, the notification shade, the
  * permission dialog or a chat bubble floating over another app could become an offer ("open Gboard for you?").
  * Now only an app the user opened on purpose counts: it has a launcher icon, it isn't a keyboard, a home app, part
- * of the system UI, a settings/installer/permission screen or Blaze itself, it filled the screen as a normal app
+ * of the system UI, a settings/installer/permission screen or Argus itself, it filled the screen as a normal app
  * window, and the user stayed in it for at least [MIN_DWELL_MS].
  */
 object HabitFilter {

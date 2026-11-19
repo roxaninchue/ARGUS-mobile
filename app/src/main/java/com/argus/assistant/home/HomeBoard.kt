@@ -1,4 +1,4 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -10,7 +10,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -69,7 +69,7 @@ object HomeBoard {
     }
     /** Index into the swatch list (solid / gradient colour). */
     var bgColor: Int get() = Settings.str("home_bg_color", "0").toIntOrNull() ?: 0; set(v) = Settings.setStr("home_bg_color", v.toString())
-    /** Accent theme name ("" = Blaze's own). */
+    /** Accent theme name ("" = Argus's own). */
     var accent: String get() = Settings.str("home_accent", ""); set(v) = Settings.setStr("home_accent", v)
     var lastRefresh: Long get() = Settings.str("home_last_refresh", "0").toLongOrNull() ?: 0L; set(v) = Settings.setStr("home_last_refresh", v.toString())
     /** Stacks the user removed widgets from (suggestions skip them). */
@@ -92,9 +92,9 @@ object HomeBoard {
 
     /** blaze.db when it is the memory store (normally); otherwise a small side database so the board still works. */
     private fun open(): HomeStore {
-        com.blaze.assistant.agent.Mind.init(app)
-        (com.blaze.assistant.agent.Mind.db() as? com.blaze.assistant.agent.MindStore)?.let { return HomeStore(it.sql) }
-        return HomeStore(com.blaze.assistant.agent.Mind.openBlaze(java.io.File(app.filesDir, "home.db")))
+        com.argus.assistant.agent.Mind.init(app)
+        (com.argus.assistant.agent.Mind.db() as? com.argus.assistant.agent.MindStore)?.let { return HomeStore(it.sql) }
+        return HomeStore(com.argus.assistant.agent.Mind.openArgus(java.io.File(app.filesDir, "home.db")))
     }
 
     /** For tests / screenshots. */
@@ -103,7 +103,7 @@ object HomeBoard {
     fun reload() {
         val s = store ?: return
         _widgets.value = s.all(); _data.value = s.allData()
-        try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: cached weather feeds the [context] block
+        try { com.argus.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: cached weather feeds the [context] block
     }
 
     fun storeOrNull(): HomeStore? = store
@@ -240,13 +240,13 @@ object HomeBoard {
 
     /**
      * First open of Home after the interest picker: widgets for the chosen interests, saved as a memory too. Skip seeds
-     * from what Blaze remembers when it is confident, else 3–4 generic starters.
+     * from what Argus remembers when it is confident, else 3–4 generic starters.
      */
     fun finishOnboarding(chosen: Set<String>, subs: Set<String>, typed: String, skipped: Boolean) {
         onboarded = true
         if (skipped) { seedDefault(); return }
         val line = Interests.memoryLine(chosen, subs, typed)
-        if (line.isNotBlank()) try { com.blaze.assistant.agent.Mind.save("preference", "Interests", line) } catch (_: Throwable) { }
+        if (line.isNotBlank()) try { com.argus.assistant.agent.Mind.save("preference", "Interests", line) } catch (_: Throwable) { }
         val specs = Interests.seed(chosen, subs, typed)
         edit { s ->
             // The "tell me what you're into" card has done its job.
@@ -259,7 +259,7 @@ object HomeBoard {
     /** From memory when confident, else generic starters (only adds to an empty board). */
     fun seedDefault() = edit { s ->
         if (s.count() > 0) return@edit
-        val mems = try { com.blaze.assistant.agent.Mind.all().map { it.text } } catch (_: Throwable) { emptyList() }
+        val mems = try { com.argus.assistant.agent.Mind.all().map { it.text } } catch (_: Throwable) { emptyList() }
         val sug = Interests.fromMemories(mems, removedCategories)
         val specs = if (Interests.confident(sug)) listOf(Interests.starterWeather()) + sug.filter { it.confidence >= 0.5 }.take(5).map { it.spec } +
             WidgetSpec(WidgetTypes.ROUTINES, "Next routine", "Today", JSONObject())
@@ -271,13 +271,13 @@ object HomeBoard {
     // ---------------- first-run checklist ----------------
 
     /**
-     * 2026-11-18 first run: the "Set up ARGUS" checklist ([com.blaze.assistant.setup.SetupChecklist]) on this board, added once or
+     * 2026-11-18 first run: the "Set up ARGUS" checklist ([com.argus.assistant.setup.SetupChecklist]) on this board, added once or
      * kept in step with what the phone reports ([done]). Null while the board is still opening. Call it off the main thread.
      */
-    fun checklist(done: Map<String, Boolean>): com.blaze.assistant.setup.SetupChecklist.Result? {
+    fun checklist(done: Map<String, Boolean>): com.argus.assistant.setup.SetupChecklist.Result? {
         val s = store ?: return null
-        val r = com.blaze.assistant.setup.SetupChecklist.applyTo(s, done, Settings.bool(com.blaze.assistant.setup.SetupChecklist.PREF_SEEDED, false))
-        if (r.added) Settings.setBool(com.blaze.assistant.setup.SetupChecklist.PREF_SEEDED, true)
+        val r = com.argus.assistant.setup.SetupChecklist.applyTo(s, done, Settings.bool(com.argus.assistant.setup.SetupChecklist.PREF_SEEDED, false))
+        if (r.added) Settings.setBool(com.argus.assistant.setup.SetupChecklist.PREF_SEEDED, true)
         reload()
         return r
     }
@@ -288,8 +288,8 @@ object HomeBoard {
         val s = store ?: return "The Home board is still starting. Try again in a moment."
         return HomeTools.run(s, name, args, onChange = { id -> reload(); schedule(); if (id.isNotBlank()) refresh(id) },
             // 2026-11-18: life_todo setup (ARGUS puts the first-run checklist in Life) ticks what the phone already has
-            setupDone = { com.blaze.assistant.setup.SetupChecklist.detected(com.blaze.assistant.setup.FirstRun.probe(app)) },
-            onSeeded = { Settings.setBool(com.blaze.assistant.setup.SetupChecklist.PREF_SEEDED, true) })
+            setupDone = { com.argus.assistant.setup.SetupChecklist.detected(com.argus.assistant.setup.FirstRun.probe(app)) },
+            onSeeded = { Settings.setBool(com.argus.assistant.setup.SetupChecklist.PREF_SEEDED, true) })
     }
 }
 

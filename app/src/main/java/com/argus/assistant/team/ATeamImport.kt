@@ -1,7 +1,7 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.BrandName
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 import org.json.JSONObject
 

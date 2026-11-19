@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -142,15 +142,15 @@ class AckTest {
     // ---- no working notification, ever ----
 
     @Test fun noWorkingNotification() {
-        assertFalse(com.blaze.assistant.notify.Notifier.WORKING_NOTE)
-        com.blaze.assistant.notify.Notifier.resetStatus()
-        com.blaze.assistant.notify.Notifier.working("Opening YouTube")
-        com.blaze.assistant.notify.Notifier.working("Thinking about: remind me")
-        val i = com.blaze.assistant.notify.Notifier.statusInput()
+        assertFalse(com.argus.assistant.notify.Notifier.WORKING_NOTE)
+        com.argus.assistant.notify.Notifier.resetStatus()
+        com.argus.assistant.notify.Notifier.working("Opening YouTube")
+        com.argus.assistant.notify.Notifier.working("Thinking about: remind me")
+        val i = com.argus.assistant.notify.Notifier.statusInput()
         assertFalse(i.busy)
-        assertNull(com.blaze.assistant.notify.StatusNote.line(i))
-        assertTrue(com.blaze.assistant.notify.MessageThread.KEEP in 2..8)
-        assertFalse(com.blaze.assistant.notify.MessageThread.FAILED_TITLE.contains("Done"))
+        assertNull(com.argus.assistant.notify.StatusNote.line(i))
+        assertTrue(com.argus.assistant.notify.MessageThread.KEEP in 2..8)
+        assertFalse(com.argus.assistant.notify.MessageThread.FAILED_TITLE.contains("Done"))
         assertEquals("${BrandName.NAME}", QuietChannel.TITLE)                          // the only background note (old Android): no "working" words
     }
 }

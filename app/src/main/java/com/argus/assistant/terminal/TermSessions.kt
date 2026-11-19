@@ -1,7 +1,7 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context

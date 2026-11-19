@@ -1,6 +1,6 @@
-package com.blaze.assistant.mediaapps.store
+package com.argus.assistant.mediaapps.store
 
-import com.blaze.assistant.mediaapps.TimeText
+import com.argus.assistant.mediaapps.TimeText
 import org.json.JSONArray
 import org.json.JSONObject
 

@@ -1,7 +1,7 @@
-package com.blaze.assistant.store
+package com.argus.assistant.store
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * blaze.db: the same SQLite store as Blaze Desktop and Blaze CLI (internal/store, schema v1).
  * Memories, plus an index of skills and one of tools, each with an FTS5 table so a turn pulls only the
@@ -11,7 +11,7 @@ import com.blaze.assistant.BrandName
  * The SQL runs through [Sql] so the app uses a bundled modern SQLite (FTS5 everywhere, see
  * AndroidSql) while JVM tests use sqlite-jdbc.
  */
-class BlazeDb(private val sql: Sql) {
+class ArgusDb(private val sql: Sql) {
 
     data class Memory(val id: Long, val text: String, val category: String, val project: String, val chat: String,
                       val created: Long, val updated: Long, val uses: Int, val lastUsed: Long, val pinned: Boolean)

@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -14,14 +14,14 @@ import java.io.File
  *
  * The `design` tool keeps a **current design** (~/designs/current.json), so follow-on edits
  * ("show the engine", "make it taller") update the same design instead of starting a new one.
- *  - 3D: Blaze sends a parts list (the three-d-design skill's `blaze-parts` JSON: box, cylinder,
+ *  - 3D: Argus sends a parts list (the three-d-design skill's `blaze-parts` JSON: box, cylinder,
  *    cone, sphere, torus, capsule, plane, group); the page is generated from the skill's starter, so
  *    the model never has to write three.js by hand. Edits merge parts by id (`set_parts`, `remove_parts`).
  *  - Everything else: a full HTML document (`html`) or SVG markup (`svg`); edits are exact find/replace
  *    (`edits`) or a new `html`.
  * Each update keeps the previous version (.v<N>.html, last 10) so `undo` works.
  *
- * Files live in Blaze's home (~/designs/<slug>/index.html), so the terminal, skills and Desktop sync can
+ * Files live in Argus's home (~/designs/<slug>/index.html), so the terminal, skills and Desktop sync can
  * read them; nothing in prefs. The pure helpers are unit-tested in DesignsTest.
  */
 object Designs {
@@ -87,7 +87,7 @@ object Designs {
     /** Reads the 3D starter (the three-d-design skill's mockup.html). Set by the agent from assets; tests read the file. */
     @Volatile var templateLoader: (() -> String)? = null
 
-    fun root(): File = (rootOverride ?: File(com.blaze.assistant.terminal.Terminal.home(), "designs")).apply { mkdirs() }
+    fun root(): File = (rootOverride ?: File(com.argus.assistant.terminal.Terminal.home(), "designs")).apply { mkdirs() }
 
     // ---------------- current design ----------------
 
@@ -199,7 +199,7 @@ object Designs {
     fun isStockStarter(html: String): Boolean =
         (html.contains("${BrandName.NAME} 3D mockup starter") || html.contains("${BrandName.OLD} 3D mockup starter")) && Regex("""const CUSTOM = \{\s*//[^\n]*\n\s*\};""").containsMatchIn(html)
 
-    /** v0.23.5: a stock starter page re-made from the current [template] (same parts, title and Blaze additions), else [html]. */
+    /** v0.23.5: a stock starter page re-made from the current [template] (same parts, title and Argus additions), else [html]. */
     fun upgradeStarter(html: String, template: String?): String {
         if (template == null || !isStockStarter(html) || !isStockStarter(template)) return html
         val spec = specFrom(html) ?: return html
@@ -215,8 +215,8 @@ object Designs {
 """
 
     /**
-     * Blaze's additions to every 3D page: a phone-sized panel, and (for browsers outside Blaze, e.g. "Open")
-     * a message with the real error when three.js doesn't start within 20 s. Inside Blaze the Design view hides
+     * Argus's additions to every 3D page: a phone-sized panel, and (for browsers outside Argus, e.g. "Open")
+     * a message with the real error when three.js doesn't start within 20 s. Inside Argus the Design view hides
      * this and shows its own banner, retries with the WebGL1 build and falls back to a native drawing (v0.23.3).
      */
     private const val EXTRA_3D = """<!--bz-extra-->
@@ -377,7 +377,7 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
 
     /** v0.40.0: a design that changed goes to cloud sync (when it's on; off by default). */
     private fun runAndSync(args: JSONObject, now: Long): Outcome = runLocal(args, now).also { if (it.ok) synced() }
-    private fun synced() { com.blaze.assistant.connect.CloudSync.localChange(com.blaze.assistant.connect.SyncKinds.DESIGNS) }
+    private fun synced() { com.argus.assistant.connect.CloudSync.localChange(com.argus.assistant.connect.SyncKinds.DESIGNS) }
 
     private fun runLocal(args: JSONObject, now: Long): Outcome =
         withErrorNote(args, runInner(args, now)).also { o -> if (o.open != null && o.kind != null) touched.add(o.kind) }
@@ -420,7 +420,7 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
     private fun target(args: JSONObject): File? {
         val p = args.optString("path").trim()
         if (p.isNotEmpty()) {
-            val f = if (rootOverride != null && !p.startsWith("/")) File(root(), p.removePrefix("~/designs/")) else com.blaze.assistant.terminal.DevTools.resolve(p)
+            val f = if (rootOverride != null && !p.startsWith("/")) File(root(), p.removePrefix("~/designs/")) else com.argus.assistant.terminal.DevTools.resolve(p)
             return (if (f.isDirectory) File(f, "index.html") else f).takeIf { it.isFile }
         }
         return current()?.let { File(it.path) }?.takeIf { it.isFile }
@@ -455,7 +455,7 @@ setTimeout(function () { if (window.__blazeScene) return; var el = document.getE
 
     /**
      * Saves a page the user edited by hand in the studio (move, resize, colour, text, format) as a new version of
-     * the current design, so Blaze's next edit and Undo see it. Returns the new version, or null when there's no
+     * the current design, so Argus's next edit and Undo see it. Returns the new version, or null when there's no
      * current studio page to save to.
      */
     fun savePage(doc: DesignPage.Doc, now: Long = System.currentTimeMillis()): Current? = try {

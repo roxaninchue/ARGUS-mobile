@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,7 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Long-term facts Blaze keeps about the user, across chats.
+ * Long-term facts Argus keeps about the user, across chats.
  *
  * Since v0.18.0 (one mind) the memories table (blaze.db since v0.26.3, mind.db before) is the source of truth and this object is a view of it:
  * the Memory screen, remember / recall_memory / forget and the learning review all go through [Mind]. The old
@@ -28,7 +28,7 @@ object Memory {
     } catch (_: Exception) { emptyList() }
 
     /** [mergeLegacy]: also fold the prefs list into the table (after a backup was restored). */
-    /** [attachLater] (lazy start, BlazeApp): never touch the table here; attach on the store's background thread once open. */
+    /** [attachLater] (lazy start, ArgusApp): never touch the table here; attach on the store's background thread once open. */
     fun init(ctx: Context, mergeLegacy: Boolean = false, attachLater: Boolean = false) {
         prefs = ctx.getSharedPreferences("blaze", Context.MODE_PRIVATE)
         if (attachLater) {

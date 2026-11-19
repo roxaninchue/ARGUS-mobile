@@ -1,7 +1,7 @@
-package com.blaze.assistant.life
+package com.argus.assistant.life
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -17,14 +17,14 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.blaze.assistant.MainActivity
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Mind
-import com.blaze.assistant.agent.MindLogs
-import com.blaze.assistant.agent.MindReview
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.voice.WakeModel
+import com.argus.assistant.MainActivity
+import com.argus.assistant.R
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Mind
+import com.argus.assistant.agent.MindLogs
+import com.argus.assistant.agent.MindReview
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.voice.WakeModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -35,7 +35,7 @@ import java.io.File
 
 /**
  * v0.33.0 Life Log 2, after Stop: transcribe the recorded session with Vosk (+ the speaker model for voices), split it
- * by voice ([Diarize]), let Blaze and Halo review it ([LifeReview]), save the memories and the labelled transcript,
+ * by voice ([Diarize]), let Argus and Halo review it ([LifeReview]), save the memories and the labelled transcript,
  * post the write-up to the chat, then delete the audio (unless "Keep recordings"). Runs in the foreground (dataSync)
  * with progress; sessions left half-done (phone restarted) are picked up by [resumePending].
  */
@@ -149,14 +149,14 @@ class LifeLogWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
         val conv = if (brainstorm) "brainstorm:$started" else "life_log:${LifeLogs.day(started)}"
         try { Mind.db()?.let { db -> transcript.chunked(3000).forEach { part -> MindLogs.append(db, conv, "heard", part, started / 1000, MindLogs.LIFE) } } } catch (_: Exception) { }
 
-        // 5. Blaze drafts, Halo reviews (per ~18k-char part for long days)
+        // 5. Argus drafts, Halo reviews (per ~18k-char part for long days)
         LifeAudio.setState(d, "reviewing")
         progress("${BrandName.NAME} is going over it\u2026", 0)
         val parts = splitLines(transcript, 18_000).take(6)
         val results = ArrayList<LifeReview.Result>()
         for ((i, part) in parts.withIndex()) {
             val m = meta + if (parts.size > 1) " Part ${i + 1} of ${parts.size}." else ""
-            val draft = MindReview.cheap(LifeReview.blazeRequest(part, m))
+            val draft = MindReview.cheap(LifeReview.argusRequest(part, m))
             val b = LifeReview.parse(draft)
             val h = if (draft != null && b != null) LifeReview.parse(MindReview.cheap(LifeReview.haloRequest(part, m, draft.take(8000)))) else null
             (h ?: b)?.let { results += it }
@@ -203,7 +203,7 @@ class LifeLogWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
 
     private suspend fun done(text: String) = withContext(Dispatchers.Main) {
         Agent.note(text, asReply = true)
-        if (!Agent.inForeground) try { com.blaze.assistant.notify.Notifier.reply(text.replace("**", "").take(400), false) } catch (_: Throwable) { }
+        if (!Agent.inForeground) try { com.argus.assistant.notify.Notifier.reply(text.replace("**", "").take(400), false) } catch (_: Throwable) { }
     }
 
     private suspend fun progress(text: String, pct: Int) { try { setForeground(info(text, pct)) } catch (_: Exception) { } }

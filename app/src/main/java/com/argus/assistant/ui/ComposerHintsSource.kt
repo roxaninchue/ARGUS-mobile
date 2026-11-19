@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.Manifest
 import android.content.Context
@@ -6,7 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.agent.ComposerHints
+import com.argus.assistant.agent.ComposerHints
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -19,22 +19,22 @@ import kotlinx.coroutines.withContext
 object ComposerHintsSource {
     suspend fun load(ctx: Context): List<String> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
-        val connectors = safe { com.blaze.assistant.connect.Connectors.all.filter { com.blaze.assistant.connect.Connectors.connected(it.id) }.map { it.id } }
+        val connectors = safe { com.argus.assistant.connect.Connectors.all.filter { com.argus.assistant.connect.Connectors.connected(it.id) }.map { it.id } }
         val apps = safe {
             val pm = ctx.packageManager
             pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)
                 .map { it.loadLabel(pm).toString() }.distinct()
         }
         val notes = safe {
-            com.blaze.assistant.agent.Mind.all().filter { it.kind == "person" || it.kind == "project" }
+            com.argus.assistant.agent.Mind.all().filter { it.kind == "person" || it.kind == "project" }
                 .map { ComposerHints.Note(it.kind, it.subject, it.text, it.updated) }
         }
         val reminders = safe {
-            com.blaze.assistant.routine.Routines.all.value.filter { it.enabled && it.at > 0 }
+            com.argus.assistant.routine.Routines.all.value.filter { it.enabled && it.at > 0 }
                 .map { ComposerHints.Upcoming(it.name, it.at, calendar = false) }
         }
         val events = safe { calendar(ctx, now) }
-        val recent = safe { com.blaze.assistant.agent.Projects.all.value.sortedByDescending { it.updated }.map { it.name } }
+        val recent = safe { com.argus.assistant.agent.Projects.all.value.sortedByDescending { it.updated }.map { it.name } }
         ComposerHints.build(ComposerHints.Sources(connectors, apps, notes, events + reminders, recent, now))
     }
 

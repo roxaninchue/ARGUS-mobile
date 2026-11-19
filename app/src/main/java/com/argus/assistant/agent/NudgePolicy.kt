@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.0 (#19) re-prompts only when they can help. Each nudge is another full model call. For a claim with nothing

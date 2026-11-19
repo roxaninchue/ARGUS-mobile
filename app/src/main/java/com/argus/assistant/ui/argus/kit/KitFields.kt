@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,12 +26,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Lucide
 
 /**
  * P1-SH-02 `ArgusField` (`.field`): glass fill, 16 sp text (inputs never shrink), 12 dp radius, focus ring 3 dp

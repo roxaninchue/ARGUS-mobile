@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,15 +15,15 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.voice.myvoice.AudioClip
-import com.blaze.assistant.voice.myvoice.MyVoice
-import com.blaze.assistant.voice.myvoice.MyVoiceSetup
-import com.blaze.assistant.voice.gemini.GeminiTts
-import com.blaze.assistant.voice.gemini.GeminiVoice
-import com.blaze.assistant.voice.myvoice.SpeedWatch
-import com.blaze.assistant.voice.myvoice.VoicePack
-import com.blaze.assistant.voice.myvoice.VoiceRecorder
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.voice.myvoice.AudioClip
+import com.argus.assistant.voice.myvoice.MyVoice
+import com.argus.assistant.voice.myvoice.MyVoiceSetup
+import com.argus.assistant.voice.gemini.GeminiTts
+import com.argus.assistant.voice.gemini.GeminiVoice
+import com.argus.assistant.voice.myvoice.SpeedWatch
+import com.argus.assistant.voice.myvoice.VoicePack
+import com.argus.assistant.voice.myvoice.VoiceRecorder
 import kotlinx.coroutines.launch
 
 /** What the user reads aloud: varied sounds, ~15–20 s at a relaxed pace. */
@@ -50,11 +50,11 @@ data class MyVoiceUi(
     val message: String = "",
     /** A good recording saved on the phone, not confirmed with "Use this voice" yet. */
     val candidateSaved: Boolean = false,
-    /** v0.41.0: the Gemini voice is the one Blaze speaks with. */
+    /** v0.41.0: the Gemini voice is the one Argus speaks with. */
     val geminiChosen: Boolean = false,
 )
 
-/** Settings → Voice → "Blaze voice": System voice / My voice, the setup steps, and managing it. */
+/** Settings → Voice → "Argus voice": System voice / My voice, the setup steps, and managing it. */
 @Composable
 fun MyVoiceSection() {
     val ctx = LocalContext.current
@@ -165,7 +165,7 @@ fun MyVoiceCard(
     onDeleteVoice: () -> Unit = {}, onDeletePack: () -> Unit = {},
     onQuality: (String) -> Unit = {}, onKeepSlow: () -> Unit = {}, onOpenAppSettings: () -> Unit = {},
 ) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val packReady = ui.pack is VoicePack.State.Ready
     val mineActive = ui.chosen && packReady && ui.hasVoice
     val steps = MyVoiceSetup.Inputs(packReady, ui.pack is VoicePack.State.Working, ui.recording, ui.recorded?.verdict, ui.candidateSaved, ui.hasVoice)
@@ -208,11 +208,11 @@ fun MyVoiceCard(
             Spacer(Modifier.height(16.dp))
             StepTitle("2", "Record your voice", MyVoiceSetup.step2Done(steps))
             Body("Somewhere quiet, phone about a hand away. Read this out loud at your normal pace:")
-            Text("\u201C$MY_VOICE_SCRIPT\u201D", modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).background(c.weak.copy(alpha = 0.12f), BlazeShapes.small).padding(12.dp),
+            Text("\u201C$MY_VOICE_SCRIPT\u201D", modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).background(c.weak.copy(alpha = 0.12f), ArgusShapes.small).padding(12.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 22.sp, color = c.ink))
             if (ui.recording) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(8.dp).background(c.accent, BlazeShapes.pill))
+                    Box(Modifier.size(8.dp).background(c.accent, ArgusShapes.pill))
                     Spacer(Modifier.width(8.dp))
                     Text(tr("%d:%02d / 0:20").format(ui.seconds.toInt() / 60, ui.seconds.toInt() % 60),
                         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
@@ -276,7 +276,7 @@ fun MyVoiceCard(
 /** v0.41.0 Settings › Voice › Gemini voice: pick one of Google's voices, hear it, and (when needed) add the key. */
 @Composable
 fun GeminiVoicePanel(active: Boolean, onReady: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var voice by remember { mutableStateOf(GeminiVoice.voice()) }
     var hasKey by remember { mutableStateOf(GeminiVoice.hasKey()) }
     var keyText by remember { mutableStateOf("") }
@@ -294,7 +294,7 @@ fun GeminiVoicePanel(active: Boolean, onReady: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 8.dp).hairline(c.hair).padding(14.dp)) {
         if (!hasKey) {
             Body("Paste your Google AI Studio key. You can get one free at aistudio.google.com. It stays on this phone and in your ${BrandName.NAME} account.")
-            BlazeTextField(keyText, { keyText = it.trim() }, "Google AI Studio key", modifier = Modifier.fillMaxWidth().padding(top = 8.dp), mono = true)
+            ArgusTextField(keyText, { keyText = it.trim() }, "Google AI Studio key", modifier = Modifier.fillMaxWidth().padding(top = 8.dp), mono = true)
             PillButton(tr("Save key"), primary = true, modifier = Modifier.padding(top = 8.dp), onClick = {
                 if (keyText.length < 20) { note = "That doesn't look like a Google AI Studio key."; noteBad = true }
                 else if (GeminiVoice.saveKey(keyText)) { hasKey = true; keyText = ""; note = ""; hear() }
@@ -326,7 +326,7 @@ fun GeminiVoicePanel(active: Boolean, onReady: () -> Unit) {
 
 @Composable
 private fun Choice(title: String, sub: String, picked: Boolean, onPick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth().padding(bottom = 6.dp).hairline(if (picked) c.accent else c.hair).clickable(onClick = onPick).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
@@ -339,9 +339,9 @@ private fun Choice(title: String, sub: String, picked: Boolean, onPick: () -> Un
 
 @Composable
 private fun StepTitle(n: String, title: String, done: Boolean) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
-        Box(Modifier.size(22.dp).background(if (done) c.accent else c.weak.copy(alpha = 0.25f), BlazeShapes.pill), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(22.dp).background(if (done) c.accent else c.weak.copy(alpha = 0.25f), ArgusShapes.pill), contentAlignment = Alignment.Center) {
             Text(if (done) "✓" else n, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = if (done) c.paper else c.ink))
         }
         Spacer(Modifier.width(10.dp))
@@ -350,16 +350,16 @@ private fun StepTitle(n: String, title: String, done: Boolean) {
 }
 
 @Composable
-private fun Body(text: String, color: androidx.compose.ui.graphics.Color = LocalBlaze.current.sub, modifier: Modifier = Modifier) {
+private fun Body(text: String, color: androidx.compose.ui.graphics.Color = LocalArgus.current.sub, modifier: Modifier = Modifier) {
     Text(text, modifier = modifier, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = color))
 }
 
 /** A thin progress / level bar. A negative fraction draws an indeterminate bar. */
 @Composable
 private fun Bar(fraction: Float) {
-    val c = LocalBlaze.current.mono
-    Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(6.dp).background(c.weak.copy(alpha = 0.2f), BlazeShapes.pill)) {
+    val c = LocalArgus.current.mono
+    Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(6.dp).background(c.weak.copy(alpha = 0.2f), ArgusShapes.pill)) {
         if (fraction < 0f) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxSize(), color = c.accent, trackColor = c.weak.copy(alpha = 0.2f))
-        else Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().background(c.accent, BlazeShapes.pill))
+        else Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().background(c.accent, ArgusShapes.pill))
     }
 }

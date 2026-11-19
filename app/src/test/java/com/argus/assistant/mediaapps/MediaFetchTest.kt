@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.Choice
-import com.blaze.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.Choice
+import com.argus.assistant.mediaapps.store.StoreItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

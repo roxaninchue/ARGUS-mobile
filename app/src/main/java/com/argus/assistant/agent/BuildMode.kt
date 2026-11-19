@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 2026-11-14 build / craft mode (owner: "when I say make something, ARGUS always goes for the simplest version").

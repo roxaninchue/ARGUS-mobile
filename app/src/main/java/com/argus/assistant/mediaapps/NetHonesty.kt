@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.StoreFormat
-import com.blaze.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreFormat
+import com.argus.assistant.mediaapps.store.StoreItem
 import org.json.JSONArray
 import org.json.JSONObject
 

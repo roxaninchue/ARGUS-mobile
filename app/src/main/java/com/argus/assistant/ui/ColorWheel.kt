@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,14 +45,14 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.DesignPage
+import com.argus.assistant.agent.DesignPage
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.sin
 
-/** The studio's brand kit swatches (phase 1: the Blaze palette; phase 2 reads the project's brand kit). */
+/** The studio's brand kit swatches (phase 1: the Argus palette; phase 2 reads the project's brand kit). */
 val BrandSwatches = listOf("#111112", "#F6F5F1", "#1F4BD8", "#4DA8FF", "#FFC94D", "#F2F2F3")
 
 fun argbColor(argb: Long): Color = Color(argb.toInt())
@@ -64,7 +64,7 @@ fun argbColor(argb: Long): Color = Color(argb.toInt())
 @Composable
 fun ColorWheelPicker(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier, wheel: Dp = 168.dp,
                      swatches: List<String> = BrandSwatches) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val start = remember(value) { DesignPage.argbToHsv(DesignPage.parseHex(value) ?: 0xFFFFFFFFL) }
     var hue by remember { mutableStateOf(start[0]) }
     var sat by remember { mutableStateOf(start[1]) }
@@ -88,7 +88,7 @@ fun ColorWheelPicker(value: String, onChange: (String) -> Unit, modifier: Modifi
             HueWheel(hue, sat, v, Modifier.size(wheel)) { h, s -> hue = h; sat = s; emit() }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.fillMaxWidth().height(44.dp).clip(BlazeShapes.small).background(checker(c.dark)).border(1.dp, c.hair, BlazeShapes.small)) {
+                Box(Modifier.fillMaxWidth().height(44.dp).clip(ArgusShapes.small).background(checker(c.dark)).border(1.dp, c.hair, ArgusShapes.small)) {
                     Box(Modifier.matchParentSize().background(argbColor(argb)))
                 }
                 Label(tr("Brightness"), color = c.sub, size = 9.sp)
@@ -99,7 +99,7 @@ fun ColorWheelPicker(value: String, onChange: (String) -> Unit, modifier: Modifi
         }
         Spacer(Modifier.height(14.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(132.dp).clip(BlazeShapes.pill).background(c.faint, BlazeShapes.pill).border(1.dp, c.hair, BlazeShapes.pill)
+            Box(Modifier.width(132.dp).clip(ArgusShapes.pill).background(c.faint, ArgusShapes.pill).border(1.dp, c.hair, ArgusShapes.pill)
                 .padding(horizontal = 14.dp, vertical = 9.dp)) {
                 BasicTextField(hex, { t ->
                     hex = t.take(9).uppercase()
@@ -117,8 +117,8 @@ fun ColorWheelPicker(value: String, onChange: (String) -> Unit, modifier: Modifi
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 swatches.forEach { s ->
                     val p = DesignPage.parseHex(s) ?: return@forEach
-                    Box(Modifier.size(26.dp).clip(BlazeShapes.pill).background(argbColor(p), BlazeShapes.pill)
-                        .border(if (p == argb) 2.dp else 1.dp, if (p == argb) c.ink else c.hair, BlazeShapes.pill)
+                    Box(Modifier.size(26.dp).clip(ArgusShapes.pill).background(argbColor(p), ArgusShapes.pill)
+                        .border(if (p == argb) 2.dp else 1.dp, if (p == argb) c.ink else c.hair, ArgusShapes.pill)
                         .clickable { val h = DesignPage.argbToHsv(p); hue = h[0]; sat = h[1]; v = h[2]; alpha = h[3]; emit() }
                         .semantics { contentDescription = tr("Swatch {0}", s) })
                 }
@@ -130,7 +130,7 @@ fun ColorWheelPicker(value: String, onChange: (String) -> Unit, modifier: Modifi
 /** Hue around, saturation outwards; brightness is drawn over it so the wheel shows the real colours. */
 @Composable
 private fun HueWheel(hue: Double, sat: Double, v: Double, modifier: Modifier, onPick: (Double, Double) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     fun pick(o: Offset, w: Float, h: Float) {
         val r = min(w, h) / 2f
         val dx = o.x - w / 2f; val dy = o.y - h / 2f
@@ -159,9 +159,9 @@ private fun HueWheel(hue: Double, sat: Double, v: Double, modifier: Modifier, on
 
 @Composable
 private fun ColorBar(value: Double, brush: Brush, name: String, checkered: Boolean = false, onValue: (Double) -> Unit) {
-    val c = LocalBlaze.current
-    Box(Modifier.fillMaxWidth().height(22.dp).clip(BlazeShapes.pill).then(if (checkered) Modifier.background(checker(c.dark)) else Modifier)
-        .background(brush).border(1.dp, c.hair, BlazeShapes.pill)
+    val c = LocalArgus.current
+    Box(Modifier.fillMaxWidth().height(22.dp).clip(ArgusShapes.pill).then(if (checkered) Modifier.background(checker(c.dark)) else Modifier)
+        .background(brush).border(1.dp, c.hair, ArgusShapes.pill)
         .pointerInput(Unit) { detectTapGestures { onValue((it.x / size.width).toDouble().coerceIn(0.0, 1.0)) } }
         .pointerInput(Unit) { detectDragGestures { ch, _ -> ch.consume(); onValue((ch.position.x / size.width).toDouble().coerceIn(0.0, 1.0)) } }
         .semantics { contentDescription = name }) {

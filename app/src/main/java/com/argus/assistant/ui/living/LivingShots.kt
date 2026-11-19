@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.ImageBitmap

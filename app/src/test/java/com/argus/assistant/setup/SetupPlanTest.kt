@@ -1,7 +1,7 @@
-package com.blaze.assistant.setup
+package com.argus.assistant.setup
 
-import com.blaze.assistant.setup.SetupPlan.Phase
-import com.blaze.assistant.setup.SetupPlan.Status
+import com.argus.assistant.setup.SetupPlan.Phase
+import com.argus.assistant.setup.SetupPlan.Status
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -10,7 +10,7 @@ import org.junit.Test
 
 /**
  * 0.52.3 one-screen setup (setup/SetupPlan.kt): the list, the weighted overall progress, what may run now (order, Wi-Fi,
- * offline, back-off), retry, resume (only settled results are kept), when the screen shows and BlazeApp's later start
+ * offline, back-off), retry, resume (only settled results are kept), when the screen shows and ArgusApp's later start
  * for people past onboarding. The phone side (SetupRunner) is wired by SpaceWiringTest and run by SpaceOnboardingCheck.
  */
 class SetupPlanTest {
@@ -140,7 +140,7 @@ class SetupPlanTest {
         assertFalse(SetupPlan.showScreen(onboarded = true, started = true, st = emptyMap()))
         assertFalse(SetupPlan.showScreen(onboarded = false, started = false, st = emptyMap()))
         assertFalse(SetupPlan.showScreen(onboarded = false, started = true, st = all(Phase.DONE)))
-        // BlazeApp's start 30 s after the first frame: past onboarding (or setup begun) and something left
+        // ArgusApp's start 30 s after the first frame: past onboarding (or setup begun) and something left
         assertEquals(30_000L, SetupPlan.LATER_MS)
         assertTrue(SetupPlan.startLater(onboarded = true, started = false, st = emptyMap()))
         assertTrue(SetupPlan.startLater(onboarded = false, started = true, st = emptyMap()))

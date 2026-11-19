@@ -1,4 +1,4 @@
-package com.blaze.assistant.widget
+package com.argus.assistant.widget
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -7,18 +7,18 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import com.blaze.assistant.R
-import com.blaze.assistant.ui.Overlay
+import com.argus.assistant.R
+import com.argus.assistant.ui.Overlay
 
-/** Home-screen widget: last reply, an Ask box and a mic button. Both open Blaze over your screen. */
-class BlazeWidget : AppWidgetProvider() {
+/** Home-screen widget: last reply, an Ask box and a mic button. Both open Argus over your screen. */
+class ArgusWidget : AppWidgetProvider() {
     companion object {
-        const val ASK = "com.blaze.assistant.WIDGET_ASK"
-        const val MIC = "com.blaze.assistant.WIDGET_MIC"
+        const val ASK = "com.argus.assistant.WIDGET_ASK"
+        const val MIC = "com.argus.assistant.WIDGET_MIC"
 
         fun update(ctx: Context, last: String? = null, status: String = "Ready") {
             val mgr = AppWidgetManager.getInstance(ctx)
-            val ids = mgr.getAppWidgetIds(ComponentName(ctx, BlazeWidget::class.java))
+            val ids = mgr.getAppWidgetIds(ComponentName(ctx, ArgusWidget::class.java))
             if (ids.isEmpty()) return
             val prefs = ctx.getSharedPreferences("blaze", Context.MODE_PRIVATE)
             if (last != null) prefs.edit().putString("widget_last", last).apply()
@@ -33,15 +33,15 @@ class BlazeWidget : AppWidgetProvider() {
         }
 
         private fun pi(ctx: Context, action: String) = PendingIntent.getBroadcast(ctx, action.hashCode(),
-            Intent(ctx, BlazeWidget::class.java).setAction(action), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            Intent(ctx, ArgusWidget::class.java).setAction(action), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
     override fun onUpdate(ctx: Context, mgr: AppWidgetManager, ids: IntArray) = update(ctx)
 
     override fun onReceive(ctx: Context, intent: Intent) {
         // Account lock: Ask and the mic open the lock screen.
-        if ((intent.action == ASK || intent.action == MIC) && com.blaze.assistant.connect.AccountGate.locked()) {
-            try { ctx.startActivity(com.blaze.assistant.connect.AccountGate.lockIntent(ctx)) } catch (_: Exception) { com.blaze.assistant.connect.AccountGate.notice(ctx) }
+        if ((intent.action == ASK || intent.action == MIC) && com.argus.assistant.connect.AccountGate.locked()) {
+            try { ctx.startActivity(com.argus.assistant.connect.AccountGate.lockIntent(ctx)) } catch (_: Exception) { com.argus.assistant.connect.AccountGate.notice(ctx) }
             return
         }
         when (intent.action) {

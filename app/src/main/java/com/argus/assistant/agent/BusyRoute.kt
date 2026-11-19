@@ -1,13 +1,13 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.46.3 (report: while Blaze works on a long task, a new message sits at "Sending" until it finishes). A message that
+ * 0.46.3 (report: while Argus works on a long task, a new message sits at "Sending" until it finishes). A message that
  * arrives while a task runs is never queued behind the agent loop:
  *  - STOP ("stop", "cancel that", "never mind"): the running task is stopped at once, one plain line confirms;
  *  - STEER (a correction or addition: "also check Y", "actually make it 7", "instead…", "@blaze …", or anything that needs
- *    Blaze's tools): it joins the running task at its next step, the bubble is marked sent at once, Halo confirms in one line;
+ *    Argus's tools): it joins the running task at its next step, the bubble is marked sent at once, Halo confirms in one line;
  *  - SIDE (anything else, "how's it going?" too): Halo answers in parallel on its own model call, with the running task's
  *    read-only status, without blocking or cancelling it.
  * Pure (BusyRouteTest).
@@ -31,7 +31,7 @@ object BusyRoute {
     fun steered(task: String): String = if (task.isBlank()) "Got it, I've passed that to ${BrandName.NAME}. It's added to what ${BrandName.NAME} is doing now."
         else "Got it, I've passed that to ${BrandName.NAME}. It's added to \u201c${task.take(60)}\u201d."
 
-    /** What Halo is told about the running task (read only), e.g. "Blaze is working on: X. Now: Reading 3 pages (step 4)." */
+    /** What Halo is told about the running task (read only), e.g. "Argus is working on: X. Now: Reading 3 pages (step 4)." */
     fun status(task: String, now: String, step: Int): String = buildString {
         append("${BrandName.NAME} is working on: ").append(task.take(160).ifBlank { "a task" }).append('.')
         if (now.isNotBlank()) append(" Right now: ").append(now.take(120)).append(if (step > 0) " (step $step)." else ".")

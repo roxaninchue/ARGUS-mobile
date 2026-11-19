@@ -1,12 +1,12 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.R
+import com.argus.assistant.agent.Settings
 
 /**
  * v0.33.0 Scam Shield: every SMS / chat notification is checked on the phone for the usual mobile-money and prize

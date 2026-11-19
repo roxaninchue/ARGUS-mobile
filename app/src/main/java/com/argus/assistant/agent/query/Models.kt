@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
-/** 0.51.0 BlazeQuery: the shapes shared by the engine, the judge, the pack and research mode. */
+/** 0.51.0 ArgusQuery: the shapes shared by the engine, the judge, the pack and research mode. */
 
 /** What a sub-query is after; drives freshness rules, source preference and the registry lookups. */
 enum class Intent(val id: String) {

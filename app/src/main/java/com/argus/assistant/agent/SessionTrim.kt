@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.0 (#12): which chats can leave memory. Every opened chat, background agent, dashboard request and

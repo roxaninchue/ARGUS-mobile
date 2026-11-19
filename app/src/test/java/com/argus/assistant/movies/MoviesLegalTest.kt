@@ -1,4 +1,4 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -6,7 +6,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 0.46.2 legal guard: Blaze ships, suggests and links no third-party provider repo or streaming site, and no anti-censorship
+ * 0.46.2 legal guard: Argus ships, suggests and links no third-party provider repo or streaming site, and no anti-censorship
  * tunnel. The only Vega link allowed anywhere is the vega-app source repo in THIRD_PARTY_NOTICES.md (Apache-2.0 attribution).
  */
 class MoviesLegalTest {
@@ -15,9 +15,9 @@ class MoviesLegalTest {
     private val banned = Regex("""(?i)zenda|vega-org|vega-providers|vegamovies|moviesmod|hdhub|multimovies|uhdmovies|katmovie|goodbyedpi|byedpi|zapret|warp-plus|cloudflare warp""")
     private val okHosts = setOf("archive.org", "blazeinchue.pages.dev", "github.com", "raw.githubusercontent.com", "gitlab.com", "192.168.1.20", "schemas.android.com")
 
-    private fun scanned(): List<File> = (listOf(File(app, "java/com/blaze/assistant/movies"), File(app, "assets/movies"), File(app, "assets/skills/reverse-engineer-anything"))
-        .flatMap { d -> d.walkTopDown().filter { it.isFile }.toList() } + File(app, "java/com/blaze/assistant/mediaapps/MoviesUi.kt") + File(app, "java/com/blaze/assistant/mediaapps/VideoShell.kt") +
-        File(app, "java/com/blaze/assistant/mediaapps/VideoHub.kt") + File(app, "AndroidManifest.xml"))
+    private fun scanned(): List<File> = (listOf(File(app, "java/com/argus/assistant/movies"), File(app, "assets/movies"), File(app, "assets/skills/reverse-engineer-anything"))
+        .flatMap { d -> d.walkTopDown().filter { it.isFile }.toList() } + File(app, "java/com/argus/assistant/mediaapps/MoviesUi.kt") + File(app, "java/com/argus/assistant/mediaapps/VideoShell.kt") +
+        File(app, "java/com/argus/assistant/mediaapps/VideoHub.kt") + File(app, "AndroidManifest.xml"))
 
     @Test fun noThirdPartyProviderNamesOrUrls() {
         val files = scanned()

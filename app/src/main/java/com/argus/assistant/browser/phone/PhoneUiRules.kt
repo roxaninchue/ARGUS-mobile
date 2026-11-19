@@ -1,16 +1,16 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.45.19 Blaze Phone UI fixes, the pure part (PhoneUiRulesTest, PhonePipTest): when the chat tile shows, what its chip
- * says, which buttons the full screen offers, and when the picture-in-picture window follows the user out of Blaze.
+ * 0.45.19 Argus Phone UI fixes, the pure part (PhoneUiRulesTest, PhonePipTest): when the chat tile shows, what its chip
+ * says, which buttons the full screen offers, and when the picture-in-picture window follows the user out of Argus.
  */
 object PhoneUiRules {
-    /** The tile stays this long after Blaze's last step on Blaze Phone. */
+    /** The tile stays this long after Argus's last step on Argus Phone. */
     const val RECENT_MS = 120_000L
 
-    /** Shown while Blaze works there (a step in the last [RECENT_MS]), while the user drives, and always while it waits. */
+    /** Shown while Argus works there (a step in the last [RECENT_MS]), while the user drives, and always while it waits. */
     fun showTile(mode: PhonePolicy.Mode, at: Long, now: Long, hiddenAt: Long): Boolean {
         val needsUser = mode == PhonePolicy.Mode.WAITING
         val recent = mode == PhonePolicy.Mode.AGENT && now - at < RECENT_MS
@@ -39,30 +39,30 @@ object PhoneUiRules {
 }
 
 /**
- * 0.45.19 fix 4: Blaze Phone's picture-in-picture. When the user leaves Blaze while Blaze works on Blaze Phone, the live
- * view follows as a floating window (like a video) with Stop and Open Blaze; tapping it (expand) returns to Blaze.
+ * 0.45.19 fix 4: Argus Phone's picture-in-picture. When the user leaves Argus while Argus works on Argus Phone, the live
+ * view follows as a floating window (like a video) with Stop and Open Argus; tapping it (expand) returns to Argus.
  */
 object PhonePip {
-    const val ACTION_STOP = "com.blaze.assistant.phone.PIP_STOP"
-    const val ACTION_OPEN = "com.blaze.assistant.phone.PIP_OPEN"
+    const val ACTION_STOP = "com.argus.assistant.phone.PIP_STOP"
+    const val ACTION_OPEN = "com.argus.assistant.phone.PIP_OPEN"
     const val REQ_STOP = 7101
     const val REQ_OPEN = 7102
 
-    /** Blaze is working on Blaze Phone right now: a turn that used phone tools is still running (or waits for the user). */
+    /** Argus is working on Argus Phone right now: a turn that used phone tools is still running (or waits for the user). */
     fun working(mode: PhonePolicy.Mode, ownerChat: String?, busyChats: Set<String>): Boolean =
         (mode == PhonePolicy.Mode.AGENT || mode == PhonePolicy.Mode.WAITING) && ownerChat != null && ownerChat in busyChats
 
-    /** Whether leaving Blaze should open the picture-in-picture window at all (never over a locked Blaze). */
+    /** Whether leaving Argus should open the picture-in-picture window at all (never over a locked Argus). */
     fun wanted(working: Boolean, pipFeature: Boolean, sdk: Int, locked: Boolean): Boolean =
         working && pipFeature && sdk >= 26 && !locked
 
-    /** API 31+: the system enters it by itself (setAutoEnterEnabled); below, Blaze enters it on onUserLeaveHint. */
+    /** API 31+: the system enters it by itself (setAutoEnterEnabled); below, Argus enters it on onUserLeaveHint. */
     fun autoEnter(sdk: Int): Boolean = sdk >= 31
     fun enterOnLeaveHint(sdk: Int, wanted: Boolean, launchingOwnScreen: Boolean): Boolean = sdk in 26..30 && wanted && !launchingOwnScreen
 
     /**
-     * Leaving because Blaze opened one of its own screens (the Blaze Phone screen, the browser, settings pages in other
-     * activities) is not "leaving Blaze": those starts carry FLAG_ACTIVITY_NO_USER_ACTION so neither path fires.
+     * Leaving because Argus opened one of its own screens (the Argus Phone screen, the browser, settings pages in other
+     * activities) is not "leaving Argus": those starts carry FLAG_ACTIVITY_NO_USER_ACTION so neither path fires.
      */
     fun ownScreen(targetPackage: String?, ourPackage: String): Boolean = targetPackage != null && targetPackage == ourPackage
 
@@ -78,7 +78,7 @@ object PhonePip {
         }
     }
 
-    /** The window's buttons, in order: Stop while a turn runs, and Open Blaze always. */
+    /** The window's buttons, in order: Stop while a turn runs, and Open Argus always. */
     fun actions(working: Boolean): List<String> = if (working) listOf(ACTION_STOP, ACTION_OPEN) else listOf(ACTION_OPEN)
     fun title(action: String): String = if (action == ACTION_STOP) "Stop" else "Open ${BrandName.NAME}"
 

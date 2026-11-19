@@ -1,10 +1,10 @@
-package com.blaze.assistant.setup
+package com.argus.assistant.setup
 
-import com.blaze.assistant.home.HomeStore
-import com.blaze.assistant.home.HomeTodo
-import com.blaze.assistant.home.Widget
-import com.blaze.assistant.home.WidgetTypes
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.home.HomeStore
+import com.argus.assistant.home.HomeTodo
+import com.argus.assistant.home.Widget
+import com.argus.assistant.home.WidgetTypes
+import com.argus.assistant.store.JdbcSql
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -111,7 +111,7 @@ class SetupChecklistTest {
         assertTrue(k.contains("They picked French as the app's language."))
         assertTrue(k.contains("Introduce yourself to the user in French"))
         assertTrue("written from the fixed introduction", k.endsWith(FirstRunIntro.FALLBACK))
-        assertFalse("no tool to call: the checklist is already there", k.contains(com.blaze.assistant.home.LifeTodo.TOOL))
+        assertFalse("no tool to call: the checklist is already there", k.contains(com.argus.assistant.home.LifeTodo.TOOL))
         // docs/MODEL-FIRST.md: plain facts, no shouting
         for (w in listOf("ALWAYS", "NEVER", "MUST", "EVERY")) assertFalse(w, Regex("\\b$w\\b").containsMatchIn(k))
         val m = FirstRunIntro.messages(emptyList(), "")
@@ -126,7 +126,7 @@ class SetupChecklistTest {
 
     /** Owner 2026-11-19: the checklist and the introduction arrive together; English skips the model, others send no tools. */
     @Test fun theChecklistAndTheIntroductionArriveTogether() {
-        fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
+        fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }.readText()
         val fr = src("setup/FirstRun.kt")
         val welcome = fr.substring(fr.indexOf("fun welcome("), fr.indexOf("fun sync("))
         assertTrue("English: no model call", welcome.contains("if (!FirstRunIntro.needsModel(lang.code)) null else"))

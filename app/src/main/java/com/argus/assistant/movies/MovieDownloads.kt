@@ -1,19 +1,19 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import com.blaze.assistant.mediaapps.Downloads
-import com.blaze.assistant.mediaapps.store.Choice
-import com.blaze.assistant.mediaapps.store.StoreDetail
-import com.blaze.assistant.mediaapps.store.StoreFormat
-import com.blaze.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.Downloads
+import com.argus.assistant.mediaapps.store.Choice
+import com.argus.assistant.mediaapps.store.StoreDetail
+import com.argus.assistant.mediaapps.store.StoreFormat
+import com.argus.assistant.mediaapps.store.StoreItem
 
 /**
- * 0.46.2 Movies downloads. Internet Archive / Blender files go through Blaze's own download queue (resumable, verified, saved to
+ * 0.46.2 Movies downloads. Internet Archive / Blender files go through Argus's own download queue (resumable, verified, saved to
  * Videos); other direct files (Jellyfin, a provider's mp4) are queued with Android's DownloadManager (with the source's headers).
  * Adaptive streams (HLS / DASH) can't be saved as one file and say so.
  */
@@ -41,7 +41,7 @@ object MovieDownloads {
         val file = (play.title.replace(Regex("[^\\p{L}\\p{N} ._-]"), "").trim().ifBlank { "video" }.take(80)) + "." + s.type.lowercase().ifBlank { "mp4" }.take(5)
         val r = DownloadManager.Request(Uri.parse(s.link)).setTitle(play.title).setDescription("${BrandName.NAME} Movies")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-        val pub = try { r.setDestinationInExternalPublicDir(Environment.DIRECTORY_MOVIES, "Blaze/$file"); true }
+        val pub = try { r.setDestinationInExternalPublicDir(Environment.DIRECTORY_MOVIES, "Argus/$file"); true }
             catch (_: Exception) { r.setDestinationInExternalFilesDir(ctx, Environment.DIRECTORY_MOVIES, file); false }
         s.headers.forEach { (k, v) -> runCatching { r.addRequestHeader(k, v) } }
         return try { dm.enqueue(r); "Downloading \u201c${play.title}\u201d to " + (if (pub) "Movies/Blaze." else "${BrandName.NAME}'s Movies folder.") }

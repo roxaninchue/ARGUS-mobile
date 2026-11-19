@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigInteger
@@ -9,7 +9,7 @@ import java.security.SecureRandom
 import java.util.Base64
 
 /**
- * v0.25.3 "Blaze Free": a free Cloudflare WARP device registered from the phone (the way wgcf does it),
+ * v0.25.3 "Argus Free": a free Cloudflare WARP device registered from the phone (the way wgcf does it),
  * turned into an ordinary WireGuard config for wgproxy. Everything here is pure Kotlin (no Android, no
  * network) so it's unit-tested on the JVM: key generation, the registration request, response parsing,
  * the config, the endpoint fallback order, the reconnect backoff and the Cloudflare trace.

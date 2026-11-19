@@ -1,7 +1,7 @@
-package com.blaze.assistant.life
+package com.argus.assistant.life
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -9,7 +9,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * v0.33.0: Blaze and Halo go over a transcribed life log. Blaze (structured) drafts scenes, who each voice is, and
+ * v0.33.0: Argus and Halo go over a transcribed life log. Argus (structured) drafts scenes, who each voice is, and
  * the memories worth keeping; Halo (warm) reviews the draft against the transcript, fixes names and relationships,
  * adds how people felt, and returns the final version. Pure prompts / parsing / formatting (LifeLog2Test).
  */
@@ -49,13 +49,13 @@ object LifeReview {
         "transcript doesn't support, and add what ${BrandName.NAME} missed, especially relationships and how people felt (kept factual). Keep what is " +
         "right. Answer ONLY the same JSON shape, plus \"halo\":\"one short line to the user about what you changed or agreed with\"."
 
-    fun blazeRequest(transcript: String, meta: String): JSONArray = JSONArray()
+    fun argusRequest(transcript: String, meta: String): JSONArray = JSONArray()
         .put(JSONObject().put("role", "system").put("content", BLAZE_PROMPT))
         .put(JSONObject().put("role", "user").put("content", "$meta\n\nTranscript:\n$transcript"))
 
-    fun haloRequest(transcript: String, meta: String, blazeJson: String): JSONArray = JSONArray()
+    fun haloRequest(transcript: String, meta: String, argusJson: String): JSONArray = JSONArray()
         .put(JSONObject().put("role", "system").put("content", HALO_PROMPT))
-        .put(JSONObject().put("role", "user").put("content", "$meta\n\nTranscript:\n$transcript\n\nBlaze's draft:\n$blazeJson"))
+        .put(JSONObject().put("role", "user").put("content", "$meta\n\nTranscript:\n$transcript\n\nArgus's draft:\n$argusJson"))
 
     fun parse(raw: String?): Result? {
         val s = raw?.substringAfterLast("</think>") ?: return null

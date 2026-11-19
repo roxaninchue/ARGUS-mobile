@@ -1,13 +1,13 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
-import com.blaze.assistant.agent.Agent
+import com.argus.assistant.agent.Agent
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
@@ -19,7 +19,7 @@ import java.net.URL
  * GitHub tools behind the android-app-builder skill: make the repo, watch the Actions build
  * (with the compiler errors when it fails) and install the APK the build released. The phone
  * can't run Android's build tools, so GitHub Actions builds every push (see the skill's
- * template workflow), and Blaze reads the result back here.
+ * template workflow), and Argus reads the result back here.
  */
 object GitHubApps {
     private const val API = "https://api.github.com"
@@ -119,7 +119,7 @@ object GitHubApps {
         // v0.28.2: installing an app always asks first (Android's installer asks again).
         if (!Agent.confirm("Install ${repo.substringAfter('/')} ${rel.optString("tag_name")}?", "Download ${asset.optString("name")} from github.com/$repo and open Android's installer.", "Install", always = true))
             return "The user declined. Nothing was downloaded or installed."
-        val dir = File(com.blaze.assistant.terminal.Terminal.home(), "apps").apply { mkdirs() }
+        val dir = File(com.argus.assistant.terminal.Terminal.home(), "apps").apply { mkdirs() }
         val out = File(dir, repo.substringAfter('/') + ".apk")
         // The asset API redirects to a signed download URL that must not get the token.
         val conn = URL(asset.optString("url")).openConnection() as HttpURLConnection

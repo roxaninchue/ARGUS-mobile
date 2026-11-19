@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.Bitmap
 import android.graphics.Outline
@@ -132,7 +132,7 @@ internal fun TiltGlassPane(
     screen: @Composable BoxScope.(showLive: Boolean) -> Unit,
     above: @Composable BoxScope.() -> Unit = {},
 ) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val d = LocalDensity.current
     val scope = rememberCoroutineScope()
     val rx = remember { Animatable(0f) }

@@ -1,8 +1,8 @@
-package com.blaze.assistant.glance
+package com.argus.assistant.glance
 
-import com.blaze.assistant.stage.ShelfCard
-import com.blaze.assistant.stage.StageKind
-import com.blaze.assistant.stage.StageShelf
+import com.argus.assistant.stage.ShelfCard
+import com.argus.assistant.stage.StageKind
+import com.argus.assistant.stage.StageShelf
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant

@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.connect.Http
+import com.argus.assistant.connect.Http
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -9,7 +9,7 @@ import org.json.JSONObject
 import java.net.URLDecoder
 import java.net.URLEncoder
 
-/** Keyless web search (DuckDuckGo HTML) and page reading, so Blaze can look things up without opening a browser. */
+/** Keyless web search (DuckDuckGo HTML) and page reading, so Argus can look things up without opening a browser. */
 object Web {
     /** Feeds (Bing, Google News) answer a desktop browser with RSS more reliably than a phone. */
     private const val DESKTOP_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
@@ -17,7 +17,7 @@ object Web {
 
     /**
      * v0.32.0 ("it failed to find REA"): DuckDuckGo's HTML endpoint now often answers phones with a bot check, which used
-     * to read as "No results" and made Blaze conclude real things don't exist. Now: DuckDuckGo, then Bing (RSS), then
+     * to read as "No results" and made Argus conclude real things don't exist. Now: DuckDuckGo, then Bing (RSS), then
      * GitHub's repo search for code-ish queries; a block is reported as a block, never as "nothing exists".
      *
      * 0.53.0 (owner, 13 Nov 2026: "web search must ALWAYS work"; the phone got 'No results for "latest news NVIDIA CEO" on

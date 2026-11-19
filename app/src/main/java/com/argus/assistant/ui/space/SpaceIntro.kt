@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import android.app.Activity
 import android.content.Context
@@ -51,9 +51,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.ui.MotionTokens
+import com.argus.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.ui.MotionTokens
 import kotlinx.coroutines.delay
 
 /**
@@ -80,7 +80,7 @@ fun IntroStep(onDone: () -> Unit) {
         else {
             LaunchedEffect(Unit) { delay(IntroClip.STILL_MS); finish() }
             Column(Modifier.padding(horizontal = 28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                ArgusLogo(if (com.blaze.assistant.ui.common.WindowUi.short()) 140.dp else 240.dp)
+                ArgusLogo(if (com.argus.assistant.ui.common.WindowUi.short()) 140.dp else 240.dp)
                 Spacer(Modifier.height(20.dp))
                 Text(tr(SpaceOnboarding.TAGLINE), textAlign = TextAlign.Center, style = SpaceType.headline(26.sp, Color.White))
             }
@@ -98,23 +98,23 @@ private fun IntroVideo(onEnd: () -> Unit, onFail: () -> Unit) {
     val player = remember {
         try {
             ExoPlayer.Builder(ctx).build().apply {
-                setMediaItem(MediaItem.fromUri(Uri.parse("android.resource://" + ctx.packageName + "/" + com.blaze.assistant.R.raw.argus_intro)))
+                setMediaItem(MediaItem.fromUri(Uri.parse("android.resource://" + ctx.packageName + "/" + com.argus.assistant.R.raw.argus_intro)))
                 volume = IntroClip.volume(ringerNormal(ctx), otherAudio(ctx))
                 repeatMode = Player.REPEAT_MODE_OFF
                 playWhenReady = true
                 prepare()
             }
-        } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("IntroVideo", t); null }
+        } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("IntroVideo", t); null }
     }
     if (player == null) { LaunchedEffect(Unit) { fail() }; return }
     DisposableEffect(player) {
         val l = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) { if (state == Player.STATE_ENDED) end() }
-            override fun onPlayerError(error: PlaybackException) { com.blaze.assistant.device.CrashLog.quiet("IntroVideo play", error); fail() }
+            override fun onPlayerError(error: PlaybackException) { com.argus.assistant.device.CrashLog.quiet("IntroVideo play", error); fail() }
             override fun onRenderedFirstFrame() { shown = true }
         }
         player.addListener(l)
-        onDispose { player.removeListener(l); try { player.release() } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("IntroVideo release", t) } }
+        onDispose { player.removeListener(l); try { player.release() } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("IntroVideo release", t) } }
     }
     LaunchedEffect(Unit) { delay(IntroClip.START_TIMEOUT_MS); if (!shown) fail() }
     val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(240), label = "intro")
@@ -141,8 +141,8 @@ private fun HideSystemBars() {
         try {
             c?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             c?.hide(WindowInsetsCompat.Type.systemBars())
-        } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("IntroStep bars", t) }
-        onDispose { try { c?.show(WindowInsetsCompat.Type.systemBars()) } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("IntroStep bars back", t) } }
+        } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("IntroStep bars", t) }
+        onDispose { try { c?.show(WindowInsetsCompat.Type.systemBars()) } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("IntroStep bars back", t) } }
     }
 }
 

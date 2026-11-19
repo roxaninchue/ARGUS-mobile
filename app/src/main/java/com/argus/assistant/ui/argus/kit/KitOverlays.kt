@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 import androidx.compose.foundation.verticalScroll
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -46,14 +46,14 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusGlassRule
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.OrbSize
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusGlassRule
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.OrbSize
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Lucide
 
 /**
  * P1-SH-02 `ArgusSheet` (A-team `.sheet`, a ModalBottomSheet restyle): handle, title 19/650, content, and a sticky
@@ -80,8 +80,8 @@ fun ArgusSheet(
     // Landscape overhaul: never taller than the window under the status bar (a phone on its side is ~360 dp), and the
     // body scrolls between the title and the pinned action row. [bodyMax] is the cap a sheet was designed with upright;
     // [scroll] = false for a body that scrolls itself (a list with a sticky search above it).
-    val sheetMax = com.blaze.assistant.ui.common.WindowUi.sheetMaxHeight()
-    val bodyCap = if (bodyMax == androidx.compose.ui.unit.Dp.Unspecified) null else com.blaze.assistant.ui.common.WindowUi.sheetBody(bodyMax)
+    val sheetMax = com.argus.assistant.ui.common.WindowUi.sheetMaxHeight()
+    val bodyCap = if (bodyMax == androidx.compose.ui.unit.Dp.Unspecified) null else com.argus.assistant.ui.common.WindowUi.sheetBody(bodyMax)
     val tint = ArgusGlassRule.tint(c.palette, GlassLevel.SHEET, ArgusGlassRule.Mode.TINT)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -108,7 +108,7 @@ fun ArgusSheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
             ) {
                 // P1-SH-06 Handedness: the primary sits on the thumb's side
-                val order = com.blaze.assistant.ui.argus.settings.ArgusSettings.buttonOrder(true, false, com.blaze.assistant.ui.argus.settings.ArgusPrefs.hand())
+                val order = com.argus.assistant.ui.argus.settings.ArgusSettings.buttonOrder(true, false, com.argus.assistant.ui.argus.settings.ArgusPrefs.hand())
                 for (isPrimary in order) {
                     if (isPrimary) ArgusButton(primary, onPrimary, Modifier.weight(1f), kind = primaryKind, enabled = primaryEnabled)
                     else ArgusButton(cancel, onDismiss, Modifier.weight(1f), kind = ButtonKind.GLASS)
@@ -216,7 +216,7 @@ fun EmptyState(
         if (!body.isNullOrBlank()) Text(tr(body), style = ArgusType.body, color = c.mute, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         if (primary != null || secondary != null) Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             // P1-SH-06 Handedness: the primary sits on the thumb's side
-            for (isPrimary in com.blaze.assistant.ui.argus.settings.ArgusSettings.buttonOrder(true, false, com.blaze.assistant.ui.argus.settings.ArgusPrefs.hand())) {
+            for (isPrimary in com.argus.assistant.ui.argus.settings.ArgusSettings.buttonOrder(true, false, com.argus.assistant.ui.argus.settings.ArgusPrefs.hand())) {
                 if (isPrimary) primary?.let { ArgusButton(it.first, it.second, kind = ButtonKind.PRIMARY) }
                 else secondary?.let { ArgusButton(it.first, it.second, kind = ButtonKind.GLASS) }
             }
@@ -235,7 +235,7 @@ fun ProgressLine(
     modifier: Modifier = Modifier,
     detail: String? = null,
     onClick: (() -> Unit)? = null,
-    reducedMotion: Boolean = com.blaze.assistant.ui.argus.settings.ArgusPrefs.reducedNow(),
+    reducedMotion: Boolean = com.argus.assistant.ui.argus.settings.ArgusPrefs.reducedNow(),
 ) {
     val c = Argus.colors
     val click = onClick?.let { Modifier.clickable(role = Role.Button, onClick = it) } ?: Modifier

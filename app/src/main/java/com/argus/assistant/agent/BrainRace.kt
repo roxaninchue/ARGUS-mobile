@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -9,12 +9,12 @@ import org.json.JSONArray
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 0.46.4 hotfix router (report on 0.46.3, 26 Oct 19:07–19:11 CAT: "Sent. Waiting for Blaze…" for 4+ minutes, Halo silent).
+ * 0.46.4 hotfix router (report on 0.46.3, 26 Oct 19:07–19:11 CAT: "Sent. Waiting for Argus…" for 4+ minutes, Halo silent).
  *
  * Root cause in 0.46.3: the "~20 s first-token cap" only existed inside the on-phone brain's own stream loop (and counted
  * hidden thinking as a first token). The gateway paths had none: [LlmClient]'s watchFirstChunk was never called, a gateway
  * call waited on a 120 s read timeout with 3 tries and backoff, a Cloud run step waited up to 75 s on a run the gateway
- * kept "queued" (the status never changed from "Sent. Waiting for Blaze…"), and the brains were asked one after another.
+ * kept "queued" (the status never changed from "Sent. Waiting for Argus…"), and the brains were asked one after another.
  * The on-phone brain was used whenever it was installed, even cold: each call first took the setup Mutex in
  * BackupBrain.start() (shared with the background setup / health check) and waited up to 20 s for the server, so the turn
  * and Halo's side call queued behind each other and behind setup. 75 s + 150 s step budget + the idle watchdog's retry
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Now every model call goes through [HedgeRace] with deadlines by [Kind], brains in [order]:
  *  - CHAT (no tools, and every Halo side reply): hedged after 3 s, first visible token within 8 s or the next brain,
  *    thinking never counts and is not shown. (0.46.4–0.46.5 also put short tool turns here, fastest brain first.)
- *  - TASK / CODING: Blaze Cloud then Nous, first token 20 s (thinking may stretch it to
+ *  - TASK / CODING: Argus Cloud then Nous, first token 20 s (thinking may stretch it to
  *    45 s), hedged after 6 s.
  *  - Every kind: 30 s without any chunk once answering → next brain, with the same messages.
  * 0.46.6 brain routing fix (handoff 27 Oct):
@@ -52,11 +52,11 @@ object BrainRace {
     /** 0.46.5: every brain hard-failed → the most reliable one is asked once more with the long-task cap. */
     const val RETRY_MS = 60_000L   // 0.52.1: was 90 s (one failing step could burn 3–4 min)
 
-    /** 0.46.5: the one calm line when every brain (and the retry) failed. Never "Blaze Cloud is busy" unless Cloud was the only path. */
+    /** 0.46.5: the one calm line when every brain (and the retry) failed. Never "Argus Cloud is busy" unless Cloud was the only path. */
     const val TOO_LONG = "That took too long. Tap Retry."
 
-    /** [hot] (phone warm or Battery Saver, [com.blaze.assistant.device.Thermal]): no hedged second request, deadlines stay. */
-    fun limits(k: Kind, hot: Boolean = !com.blaze.assistant.device.Thermal.now().hedge): HedgeRace.Limits =
+    /** [hot] (phone warm or Battery Saver, [com.argus.assistant.device.Thermal]): no hedged second request, deadlines stay. */
+    fun limits(k: Kind, hot: Boolean = !com.argus.assistant.device.Thermal.now().hedge): HedgeRace.Limits =
         (if (k == Kind.CHAT) CHAT_LIMITS else TASK_LIMITS).let { if (hot) it.copy(hedgeMs = 0L) else it }
 
     /**
@@ -91,7 +91,7 @@ object BrainRace {
     @Suppress("UNUSED_PARAMETER")
     fun order(kind: Kind, signedIn: Boolean, ttft: (BackupRoute.Step) -> Long? = { null },
               reliability: (BackupRoute.Step) -> Double? = { null }): List<BackupRoute.Step> = buildList {
-        // 0.52.1 (gw061): on tool turns Blaze Cloud goes before the Nous reserve (the reserve is the same gateway with the
+        // 0.52.1 (gw061): on tool turns Argus Cloud goes before the Nous reserve (the reserve is the same gateway with the
         // same body on the slowest path, 60 s per attempt); plain chat keeps Nous → Cloud.
         if (signedIn) { if (kind == Kind.CHAT) { add(BackupRoute.Step.RESERVE); add(BackupRoute.Step.CLOUD) } else { add(BackupRoute.Step.CLOUD); add(BackupRoute.Step.RESERVE) } }
     }
@@ -106,7 +106,7 @@ object BrainRace {
     /**
      * 0.46.5: the error after every brain (and the retry) failed. A fatal error (sign-in, allowance, refused shape) keeps its
      * own line; Cloud's error only when Cloud was the only brain; otherwise the calm [TOO_LONG] (code 504, so no screen
-     * reads it as "Blaze Cloud is busy").
+     * reads it as "Argus Cloud is busy").
      */
     fun finalError(steps: List<BackupRoute.Step>, fatal: Throwable?, cloudErr: Throwable?, last: Throwable?): Throwable {
         (fatal as? LlmClient.LlmException)?.let { return it }
@@ -130,7 +130,7 @@ object BrainRace {
      */
     fun cloudRunFor(lite: Boolean, longWork: Boolean): Boolean = !lite && longWork
 
-    /** Halo's side reply: if no word arrived by then, Halo says where Blaze is (from the app's own state, no model). */
+    /** Halo's side reply: if no word arrived by then, Halo says where Argus is (from the app's own state, no model). */
     const val HALO_HOLD_MS = 2_000L
     fun haloHolding(task: String, now: String): String = buildString {
         append("${BrandName.NAME} is still on ")
@@ -141,9 +141,9 @@ object BrainRace {
     }
 
     /**
-     * Halo's side reply, independent of Blaze's turn: [call] streams the model's words through its show function; if none
+     * Halo's side reply, independent of Argus's turn: [call] streams the model's words through its show function; if none
      * came within [holdMs], [holding] (if not blank) is shown at once. When the model fails after the holding line was shown,
-     * the holding line is Halo's reply (never an error while Blaze is simply busy). Cancellation passes through.
+     * the holding line is Halo's reply (never an error while Argus is simply busy). Cancellation passes through.
      */
     suspend fun haloReply(holdMs: Long, holding: () -> String, show: (String) -> Unit, call: suspend (show: (String) -> Unit) -> String): String = coroutineScope {
         val spoke = AtomicBoolean(false)

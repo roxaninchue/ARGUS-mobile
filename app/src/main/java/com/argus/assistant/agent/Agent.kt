@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
-import com.blaze.assistant.notify.Notifier
-import com.blaze.assistant.phone.PhoneTools
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.notify.Notifier
+import com.argus.assistant.phone.PhoneTools
+import com.argus.assistant.voice.Voice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -16,8 +16,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.sync.withLock
-import com.blaze.assistant.glance.GlanceStore
-import com.blaze.assistant.glance.GlanceTool
+import com.argus.assistant.glance.GlanceStore
+import com.argus.assistant.glance.GlanceTool
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -33,7 +33,7 @@ enum class Role { USER, BLAZE, STEP, ERROR }
 @androidx.compose.runtime.Immutable   // v0.31.1: finished messages compare by value, so their rows skip recomposition
 data class ChatMessage(val id: Long, val role: Role, val text: String, val files: List<String> = emptyList(),
                        val thinking: String = "", val followups: List<String> = emptyList(), val meta: String = "",
-                       /** Pictures, beats and other media Blaze made for this reply (absolute paths). */
+                       /** Pictures, beats and other media Argus made for this reply (absolute paths). */
                        val media: List<String> = emptyList(),
                        /** When it was added (ms); 0 for chats saved before v1.13. */
                        val at: Long = System.currentTimeMillis(),
@@ -43,7 +43,7 @@ data class ChatMessage(val id: Long, val role: Role, val text: String, val files
                        val startAt: Long = 0L,
                        /** v0.30.6 rapid messages: the user messages this reply answers (from its [re:m7] marker); empty = not said. */
                        val replyTo: List<Long> = emptyList(),
-                       /** v0.31.2 Halo x Blaze: who said this reply ("halo"; "" or "blaze" = Blaze). */
+                       /** v0.31.2 Halo x Argus: who said this reply ("halo"; "" or "blaze" = Argus). */
                        val speaker: String = "",
                        /** v0.45.0 "What I did": the turn's action receipts (Receipt.toJson), stored with the reply; "" = none. */
                        val receipt: String = "",
@@ -90,7 +90,7 @@ data class PendingConfirm(val title: String, val detail: String, val action: Str
                           val grants: Boolean = false,
                           val grant: java.util.concurrent.atomic.AtomicReference<CommandPolicy.Grant> = java.util.concurrent.atomic.AtomicReference(CommandPolicy.Grant.ONCE))
 
-/** A question Blaze asks mid-task, with tap-to-answer [options] (the UI always adds "type my own"). */
+/** A question Argus asks mid-task, with tap-to-answer [options] (the UI always adds "type my own"). */
 data class PendingQuestion(val question: String, val options: List<String>, val chat: String,
                            val answer: kotlinx.coroutines.CompletableDeferred<String>)
 
@@ -106,15 +106,15 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     private val parallelSafe = setOf("web_search", "fetch_page", "recall_memory", "memory_search", "search_past_chats", "gmail_search", "gmail_read",
         "gcal_events", "calendar_events", "drive_search", "gcontacts_search", "find_contact", "recent_notifications", "read_messages",
         "recent_calls", "device_status", "battery_level", "github_issues", "github_my_prs", "github_notifications", "github_search_repos",
-        "notion_search", "slack_read", "slack_channels", "search_screen_memory", "spotify_now_playing", BlazeDocs.TOOL_SEARCH, BlazeDocs.TOOL_READ,
-        ProjectDocs.TOOL_SEARCH, ProjectDocs.TOOL_READ, com.blaze.assistant.home.HomeTools.LIST)
+        "notion_search", "slack_read", "slack_channels", "search_screen_memory", "spotify_now_playing", ArgusDocs.TOOL_SEARCH, ArgusDocs.TOOL_READ,
+        ProjectDocs.TOOL_SEARCH, ProjectDocs.TOOL_READ, com.argus.assistant.home.HomeTools.LIST)
 
     private val screenActions = setOf("tap", "type_text", "scroll", "press_button", "open_app", "open_url", "search_in_app")
     private val ids = AtomicLong(1)
     private lateinit var app: Context
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.argus.assistant.device.CrashLog.guard)
 
-    /** Text or a file shared into Blaze from another app, waiting in the message box for the user's Send. */
+    /** Text or a file shared into Argus from another app, waiting in the message box for the user's Send. */
     data class SharedDraft(val text: String, val attachment: Attachment? = null)
     val sharedDraft = MutableStateFlow<SharedDraft?>(null)
 
@@ -128,7 +128,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     /** The model's reasoning so far in the current turn (shown live under the brain). */
     private val _thinking = MutableStateFlow("")
     val thinking: StateFlow<String> = _thinking
-    /** What Blaze is doing right now, in plain words ("Searching the web for …"); "" when idle. Never a command. */
+    /** What Argus is doing right now, in plain words ("Searching the web for …"); "" when idle. Never a command. */
     private val _status = MutableStateFlow("")
     val status: StateFlow<String> = _status
     /** Ack-and-background: the task chip's label while an acknowledged task runs on the chat on screen ("" = none). */
@@ -140,19 +140,19 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
      */
     private val _streamingId = MutableStateFlow(-1L)
     val streamingId: StateFlow<Long> = _streamingId
-    /** v0.31.2 Halo x Blaze: replies streaming side by side (@all, parallel team phases); empty = none. */
+    /** v0.31.2 Halo x Argus: replies streaming side by side (@all, parallel team phases); empty = none. */
     private val _duoLive = MutableStateFlow<Set<Long>>(emptySet())
     val duoLive: StateFlow<Set<Long>> = _duoLive
     /** v0.32.0: the meeting rooms of the chat on screen (room card id → its messages). */
     private val _rooms = MutableStateFlow<Map<Long, List<ChatMessage>>>(emptyMap())
     val rooms: StateFlow<Map<Long, List<ChatMessage>>> = _rooms
-    /** v0.32.0 split: Halo is talking with you while Blaze works (the drop detached, the ring stays with you). */
+    /** v0.32.0 split: Halo is talking with you while Argus works (the drop detached, the ring stays with you). */
     private val _split = MutableStateFlow(false)
     val split: StateFlow<Boolean> = _split
-    /** v0.32.0: Halo's side replies streaming right now (the main working drop stays with Blaze). */
+    /** v0.32.0: Halo's side replies streaming right now (the main working drop stays with Argus). */
     private val _sideLive = MutableStateFlow<Set<Long>>(emptySet())
     val sideLive: StateFlow<Set<Long>> = _sideLive
-    /** v0.32.0: marks coroutines of Halo's side lane (their tool steps never land in Blaze's work card). */
+    /** v0.32.0: marks coroutines of Halo's side lane (their tool steps never land in Argus's work card). */
     internal val sideFlag = ThreadLocal<Boolean>()
     /** v0.32.0: the meeting room open on screen (-1 = none). */
     val roomOpen = MutableStateFlow(-1L)
@@ -172,7 +172,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     @Volatile private var typingAt = 0L
     @Volatile private var typingText = false
     fun typing(hasText: Boolean) {
-        // v0.45.1 speed: the first key press opens (or refreshes) the connection to Blaze Cloud, so DNS + TLS are done
+        // v0.45.1 speed: the first key press opens (or refreshes) the connection to Argus Cloud, so DNS + TLS are done
         // before Send (LlmClient.prewarm is at most once a minute per host and runs on its own thread).
         if (hasText && !typingText) LlmClient.prewarm()
         typingAt = System.currentTimeMillis(); typingText = hasText
@@ -188,11 +188,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     /**
      * Ask the user to approve something risky. Shows a card in the chat and the orb panel,
-     * plus a notification with Allow / Don't when Blaze isn't on screen. Times out as "no".
+     * plus a notification with Allow / Don't when Argus isn't on screen. Times out as "no".
      */
     /** v0.45.3: Normal-mode command allowances ("Allow for this chat" / "Always allow this command"; CommandPolicy). */
     val cmdGrants = CommandPolicy.Grants({ try { Settings.str("cmd_allow_always", "") } catch (_: Throwable) { "" } },
-        { v -> try { Settings.setStr("cmd_allow_always", v) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("cmdGrants.save", e) } })
+        { v -> try { Settings.setStr("cmd_allow_always", v) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("cmdGrants.save", e) } })
 
     /** v0.45.3: the confirm card with the allowance choices; the user's answer (NO when refused or timed out). */
     suspend fun confirmGrant(title0: String, detail0: String, action: String): CommandPolicy.Grant {
@@ -243,7 +243,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     private val askLock = kotlinx.coroutines.sync.Mutex()
 
     /**
-     * Pause the task and ask the user. In Blaze it's a card in the chat; over another app the
+     * Pause the task and ask the user. In Argus it's a card in the chat; over another app the
      * orb panel pops up with the question so the task continues right where it is.
      */
     suspend fun askUser(question0: String, options: List<String>, chat: String): String = askLock.withLock {
@@ -254,8 +254,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         _question.value = PendingQuestion(question, options.filter { it.isNotBlank() }.take(5), chat, d)
         var popped = false
         if (!inForeground && !overlayOpen) {
-            if (com.blaze.assistant.ui.Overlay.canDrawOverApps(app)) {
-                kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Overlay.openPanel(app, false) }; popped = true
+            if (com.argus.assistant.ui.Overlay.canDrawOverApps(app)) {
+                kotlinx.coroutines.withContext(Dispatchers.Main) { com.argus.assistant.ui.Overlay.openPanel(app, false) }; popped = true
             } else Notifier.question(question)
         }
         if (Voice.lastTurnByVoice && Voice.shouldSpeak()) Voice.speak(question)
@@ -266,23 +266,23 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         tag?.let { BgAgents.setWaiting(it.id, false) }
         _question.value = null
         Notifier.clearQuestion()
-        if (popped && a != null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Overlay.closePanel() }
+        if (popped && a != null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.argus.assistant.ui.Overlay.closePanel() }
         a ?: if (ap) Modes.AUTO_PREFIX + Modes.AUTO_REPLY else "(The user didn't answer within 15 minutes. Stop and say what you need.)"
     }
 
     fun answerQuestion(text: String) { _question.value?.answer?.complete(text) }
 
     // ---------- v0.20.0: secure forms for the background browser ----------
-    private val _form = MutableStateFlow<com.blaze.assistant.browser.SecureInput.Request?>(null)
-    val pendingForm: StateFlow<com.blaze.assistant.browser.SecureInput.Request?> = _form
+    private val _form = MutableStateFlow<com.argus.assistant.browser.SecureInput.Request?>(null)
+    val pendingForm: StateFlow<com.argus.assistant.browser.SecureInput.Request?> = _form
     private val formLock = kotlinx.coroutines.sync.Mutex()
     @Volatile private var formSession: Session? = null
 
     /**
-     * Shows the secure form card and waits (15 minutes at most). When Blaze isn't on screen an
+     * Shows the secure form card and waits (15 minutes at most). When Argus isn't on screen an
      * "Action required" notification opens the chat at the card. Null = cancelled or no answer.
      */
-    suspend fun askSecure(req: com.blaze.assistant.browser.SecureInput.Request, from: Session?): com.blaze.assistant.browser.SecureInput.Answer? = formLock.withLock {
+    suspend fun askSecure(req: com.argus.assistant.browser.SecureInput.Request, from: Session?): com.argus.assistant.browser.SecureInput.Answer? = formLock.withLock {
         val tag = kotlin.coroutines.coroutineContext[BgAgents.Tag]
         tag?.let { BgAgents.setWaiting(it.id, true) }
         formSession = from
@@ -299,12 +299,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
     }
 
-    private fun clearForm(req: com.blaze.assistant.browser.SecureInput.Request) {
+    private fun clearForm(req: com.argus.assistant.browser.SecureInput.Request) {
         if (_form.value?.id == req.id) { _form.value = null; formSession = null; Notifier.clearAction() }
     }
 
     /** Fill in / Cancel. The card goes at once, even if nothing is waiting on it any more. */
-    fun answerForm(a: com.blaze.assistant.browser.SecureInput.Answer?) {
+    fun answerForm(a: com.argus.assistant.browser.SecureInput.Answer?) {
         val r = _form.value ?: return
         r.answer.complete(a)
         clearForm(r)
@@ -331,7 +331,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     private val sessions = java.util.concurrent.ConcurrentHashMap<String, Session>()
     /**
      * Lazy start: the open chat. There is no "boot" Session built in Agent.<clinit> any more (building one made the main
-     * thread verify Session's biggest methods, ~300 ms on a low-RAM phone, inside BlazeApp.onCreate). [curRef] stays null
+     * thread verify Session's biggest methods, ~300 ms on a low-RAM phone, inside ArgusApp.onCreate). [curRef] stays null
      * until the main chat is shown (loaded off the main thread by [init]) or something asks for [cur] first, which then
      * builds the placeholder [bootSession] (StartWarm builds it on its background thread right after start).
      */
@@ -372,7 +372,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val c = cur
             val cands = sessions.values.map { SessionTrim.Cand(it.id, it === c, it.busy || it.sideBusy, it.waiting, it.isPrivate || it.saved, it.touchedAt) }
             for (id in SessionTrim.evict(cands, now, keep, minIdleMs)) sessions[id]?.let { s -> if (s !== cur && !s.busy) sessions.remove(id, s) }
-        } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: val now System.currentTimeMillis", e) }
+        } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: val now System.currentTimeMillis", e) }
     }
 
     private fun show(s: Session) {
@@ -401,13 +401,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     fun init(ctx: Context) {
         app = ctx.applicationContext
-        try { SharedPersona.init(app) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: SharedPersona.init", e) }   // v0.45.5 (#10): bundled v1 now, daily refresh in the background
+        try { SharedPersona.init(app) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: SharedPersona.init", e) }   // v0.45.5 (#10): bundled v1 now, daily refresh in the background
         // v0.45.9: the [context] block (time, cached weather, today's schedule, open tasks), warmed off the main thread on typing (LlmClient.prewarm) so Send finds it ready.
-        try { TurnContextSource.init(app) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnContextSource.init", e) }
-        // v0.45.4: messages held by a Sign in card go out by themselves once the Blaze account lands.
+        try { TurnContextSource.init(app) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: TurnContextSource.init", e) }
+        // v0.45.4: messages held by a Sign in card go out by themselves once the Argus account lands.
         scope.launch {
-            var wasIn = com.blaze.assistant.connect.BlazeAccount.signedIn()
-            com.blaze.assistant.connect.BlazeAccount.view.collect { v ->
+            var wasIn = com.argus.assistant.connect.ArgusAccount.signedIn()
+            com.argus.assistant.connect.ArgusAccount.view.collect { v ->
                 val nowIn = v.user != null
                 if (SignInGate.release(wasIn, nowIn, signInHolds.size())) sendHeld()
                 wasIn = nowIn
@@ -415,7 +415,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
         // v0.26.2: the built-in specialists' field playbooks ship in assets/specialists/<id>.md.
         Playbooks.loader = { id -> runCatching { app.assets.open("specialists/$id.md").bufferedReader().use { it.readText() } }.getOrNull() }
-        com.blaze.assistant.browser.Vault.dir = app.filesDir
+        com.argus.assistant.browser.Vault.dir = app.filesDir
         SecretVault.file = java.io.File(app.filesDir, "secret_vault.json")   // 0.46.6 Secure form vault (Keystore-sealed, never backed up)
         ChatStore.init(app)
         // v0.45.0 (#37): this phone's message-id prefix (made once, kept in prefs).
@@ -427,23 +427,23 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
         LongChat.init(app)
         // 0.49.0 tiered memory, cache tier: big pastes / files / outputs live in filesDir/cache (opened lazily on IO).
-        com.blaze.assistant.memory.CacheTier.init(app)
-        com.blaze.assistant.memory.CacheTier.ask = { prompt -> cacheAsk(prompt) }
-        // 0.51.0 BlazeQuery: online check and the background judge's model call (the chosen tier as the family hint)
-        com.blaze.assistant.agent.query.QueryRuntime.online = { try { FastLane.online(app) } catch (_: Throwable) { true } }
-        com.blaze.assistant.agent.query.QueryRuntime.ask = { prompt, fam -> queryAsk(prompt, fam) }
-        // 0.51.0 one persona: saved Halo / Halo x Blaze state becomes Blaze (once)
-        io.launch { try { OnePersona.migrate({ k -> Settings.str(k, "").ifEmpty { null } }, { k, v -> Settings.setStr(k, v) }, { k, d -> Settings.bool(k, d) }, { k, v -> Settings.setBool(k, v) }) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: OnePersona.migrate", e) } }
-        try { com.blaze.assistant.media.Media.init(app) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Media.initapp", e) }
+        com.argus.assistant.memory.CacheTier.init(app)
+        com.argus.assistant.memory.CacheTier.ask = { prompt -> cacheAsk(prompt) }
+        // 0.51.0 ArgusQuery: online check and the background judge's model call (the chosen tier as the family hint)
+        com.argus.assistant.agent.query.QueryRuntime.online = { try { FastLane.online(app) } catch (_: Throwable) { true } }
+        com.argus.assistant.agent.query.QueryRuntime.ask = { prompt, fam -> queryAsk(prompt, fam) }
+        // 0.51.0 one persona: saved Halo / Halo x Argus state becomes Argus (once)
+        io.launch { try { OnePersona.migrate({ k -> Settings.str(k, "").ifEmpty { null } }, { k, v -> Settings.setStr(k, v) }, { k, d -> Settings.bool(k, d) }, { k, v -> Settings.setBool(k, v) }) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: OnePersona.migrate", e) } }
+        try { com.argus.assistant.media.Media.init(app) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: Media.initapp", e) }
         refreshChats()
         // One mind (v0.18.0): one continuous main conversation. v0.28.3: main Chat always opens on the main thread.
         // Builds before saved the last project chat as the chat to reopen, which put a project chat in main Chat;
         // that pref is repaired here (project chats now open only inside Projects, see ChatNav). Nothing is deleted.
         if (Settings.lastChatId.let { it.isNotEmpty() && it != Mind.MAIN }) Settings.lastChatId = Mind.MAIN
         // Lazy start: the main chat is read, parsed and built on a background thread (Session's verification and the chat
-        // file never run inside BlazeApp.onCreate); it is shown on the main thread unless another chat was opened meanwhile.
+        // file never run inside ArgusApp.onCreate); it is shown on the main thread unless another chat was opened meanwhile.
         mainReady = io.launch {
-            val s = try { mainSession() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: mainSession off main", e); null }
+            val s = try { mainSession() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: mainSession off main", e); null }
             kotlinx.coroutines.withContext(Dispatchers.Main) {
                 if (s != null && LazyStart.showMain(curRef?.id)) show(s)
             }
@@ -452,16 +452,16 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         io.launch {
             val d = Mind.db() ?: return@launch
             // v0.45.0 (#1): the chat list is only built when the import still has to run (it used to be built on every start).
-            try { Mind.migrate(d, { ChatStore.list().map { it.id } }, { ChatStore.load(it) }, emptyList()) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mind.migrated ChatStore.list.map it.id C", e) }
+            try { Mind.migrate(d, { ChatStore.list().map { it.id } }, { ChatStore.load(it) }, emptyList()) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: Mind.migrated ChatStore.list.map it.id C", e) }
         }
-        // v0.42.0 Cloud runs: replies that finished while Blaze was closed or offline land in their chat, now and
+        // v0.42.0 Cloud runs: replies that finished while Argus was closed or offline land in their chat, now and
         // whenever the phone gets a connection again.
         pickUpCloudRuns()
         try {
             app.getSystemService(android.net.ConnectivityManager::class.java)?.registerDefaultNetworkCallback(object : android.net.ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: android.net.Network) { Delivery.reconnected(); pickUpCloudRuns() }
             })
-        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: app.getSystemServiceandroid.net.Connecti", e) }
+        } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: app.getSystemServiceandroid.net.Connecti", e) }
     }
 
     /** Chats that already showed the "couldn't save" line (once each, until the app restarts). */
@@ -471,7 +471,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     /**
      * v0.42.0: follows every saved Cloud run that no live turn owns to its end and puts the reply in its chat (with the
-     * usual notification when Blaze isn't on screen). A run that was waiting for the phone is stopped with one plain line.
+     * usual notification when Argus isn't on screen). A run that was waiting for the phone is stopped with one plain line.
      * A chat that is busy with a new turn is left for the next pick-up.
      */
     fun pickUpCloudRuns() {
@@ -552,10 +552,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     private fun newId() = UUID.randomUUID().toString().take(12)
 
-    /** The application context (for code outside the agent that needs one, e.g. Blaze Link sends). */
+    /** The application context (for code outside the agent that needs one, e.g. Argus Link sends). */
     fun appContext(): Context = app
 
-    private val io = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.blaze.assistant.device.CrashLog.guard)
+    private val io = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.argus.assistant.device.CrashLog.guard)
     private val ioLock = kotlinx.coroutines.sync.Mutex()
 
     /** Reads chat files in the background so the UI never waits on disk. */
@@ -605,7 +605,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     /** v0.24.4: removes app cards with this meta from every open chat (the update card when it finishes). */
     fun removeCard(meta: String) {
         val all = (sessions.values + cur).toSet()
-        all.forEach { s -> if (s.msgs.any { it.meta == meta }) { s.msgs = s.msgs.filterNot { it.meta == meta }; try { s.persist() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: s.persist", e) } } }
+        all.forEach { s -> if (s.msgs.any { it.meta == meta }) { s.msgs = s.msgs.filterNot { it.meta == meta }; try { s.persist() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: s.persist", e) } } }
     }
 
     /** A line from the app itself (command results, help). Shown, not sent to the model. */
@@ -620,69 +620,69 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     /** [untrusted]: where outside content in [text] came from (Magic Hand's screen text), see ConfirmGate. */
     fun send(text: String, byVoice: Boolean = false, attachments: List<Attachment> = emptyList(), untrusted: String? = null) {
-        // 0.46.6 paste safety: a message that looks like a secret is held for "Save it securely instead?" (Blaze and the Halo side lane).
-        if (untrusted == null && SecretDesk.hold(text, byVoice) { t -> send(t, byVoice, attachments, untrusted) }) { com.blaze.assistant.device.Haptics.tick(app); return }
+        // 0.46.6 paste safety: a message that looks like a secret is held for "Save it securely instead?" (Argus and the Halo side lane).
+        if (untrusted == null && SecretDesk.hold(text, byVoice) { t -> send(t, byVoice, attachments, untrusted) }) { com.argus.assistant.device.Haptics.tick(app); return }
         // v0.45.8: the reply's start is timed from here (the chat screen's Send already marked it; voice and others mark now).
         StartTrace.tap()
         // "Shut down", "stop", "be quiet"… are handled on-device, even mid-task.
         val self = if (attachments.isEmpty()) SelfControl.match(text) else null
         if (self != null) {
             val s = cur
-            com.blaze.assistant.device.Haptics.tick(app)
+            com.argus.assistant.device.Haptics.tick(app)
             if (self != "quiet") s.selfTurn(text.trim(), SelfControl.run(app, self), byVoice)
             else SelfControl.run(app, self)
             return
         }
         // Time, date, battery: answered on the phone instantly.
         if (attachments.isEmpty() && _question.value == null) {
-            SelfControl.quick(app, text)?.let { r -> com.blaze.assistant.device.Haptics.tick(app); cur.selfTurn(text.trim(), r, byVoice, "⚡ Instant"); return }
+            SelfControl.quick(app, text)?.let { r -> com.argus.assistant.device.Haptics.tick(app); cur.selfTurn(text.trim(), r, byVoice, "⚡ Instant"); return }
         }
-        // v0.45.6: Blaze Music transport and Blaze's own screens run in-app first (no model, no approval, no screen control).
+        // v0.45.6: Argus Music transport and Argus's own screens run in-app first (no model, no approval, no screen control).
         if (attachments.isEmpty() && _question.value == null && untrusted == null) {
             InAppRoute.match(text)?.let { r ->
                 val s = cur
-                com.blaze.assistant.device.Haptics.tick(app)
+                com.argus.assistant.device.Haptics.tick(app)
                 when (r) {
                     is InAppRoute.Route.Music -> scope.launch {
-                        val reply = try { com.blaze.assistant.mediaapps.MusicTools.transport(app, r.action) }
-                            catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app music", e); "Couldn't reach ${BrandName.NAME} Music: " + (e.message ?: "unknown error") + "." }
+                        val reply = try { com.argus.assistant.mediaapps.MusicTools.transport(app, r.action) }
+                            catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: in-app music", e); "Couldn't reach ${BrandName.NAME} Music: " + (e.message ?: "unknown error") + "." }
                         s.selfTurn(text.trim(), reply, byVoice, "♫ ${BrandName.NAME} Music")
                     }
                     is InAppRoute.Route.Stage -> scope.launch {
                         // 0.46.1: the card in place on the chat (the Stage off: the full Browser screen, as asked before 0.46).
-                        val reply = if (!com.blaze.assistant.stage.StageStore.enabled) {
-                            com.blaze.assistant.ui.Views.open(r.kind); "Opened the Browser."
+                        val reply = if (!com.argus.assistant.stage.StageStore.enabled) {
+                            com.argus.assistant.ui.Views.open(r.kind); "Opened the Browser."
                         } else try {
-                            val res = com.blaze.assistant.stage.StageStore.run(app, com.blaze.assistant.stage.StageTools.SHOW, JSONObject().put("kind", r.kind))
-                            if (com.blaze.assistant.stage.StageStore.state.value.items.any { it.kind.id == r.kind }) "The browser card is on the chat; its open-in-full-view button gives the whole screen." else res
-                        } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app stage", e); "Couldn't put the browser card up: " + (e.message ?: "unknown error") + "." }
+                            val res = com.argus.assistant.stage.StageStore.run(app, com.argus.assistant.stage.StageTools.SHOW, JSONObject().put("kind", r.kind))
+                            if (com.argus.assistant.stage.StageStore.state.value.items.any { it.kind.id == r.kind }) "The browser card is on the chat; its open-in-full-view button gives the whole screen." else res
+                        } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: in-app stage", e); "Couldn't put the browser card up: " + (e.message ?: "unknown error") + "." }
                         s.selfTurn(text.trim(), reply, byVoice, "\u26A1 ${BrandName.NAME} itself")
                     }
                     is InAppRoute.Route.Movie -> scope.launch {
                         // 0.46.2: "play the movie …", "search movies …", "continue watching" -> the Stage video card (official sources first).
-                        val reply = try { com.blaze.assistant.movies.MovieTools.route(app, r.action, r.query, text) }
-                            catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app movies", e); "Couldn't reach Movies: " + (e.message ?: "unknown error") + "." }
+                        val reply = try { com.argus.assistant.movies.MovieTools.route(app, r.action, r.query, text) }
+                            catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: in-app movies", e); "Couldn't reach Movies: " + (e.message ?: "unknown error") + "." }
                         s.selfTurn(text.trim(), reply, byVoice, "\u26A1 ${BrandName.NAME} itself")
                     }
                     is InAppRoute.Route.View -> {
-                        val v = com.blaze.assistant.ui.Views.find(r.id)
-                        if (v != null) com.blaze.assistant.ui.Views.open(v.id, if (v.id == "design") (try { Designs.current()?.path } catch (_: Exception) { null }).orEmpty() else "")
+                        val v = com.argus.assistant.ui.Views.find(r.id)
+                        if (v != null) com.argus.assistant.ui.Views.open(v.id, if (v.id == "design") (try { Designs.current()?.path } catch (_: Exception) { null }).orEmpty() else "")
                         s.selfTurn(text.trim(), if (v != null) "Opened ${v.name}." else "Couldn't find that screen.", byVoice, "⚡ ${BrandName.NAME} itself")
                     }
                 }
                 return
             }
         }
-        // Typing or speaking while Blaze waits on a question answers it.
+        // Typing or speaking while Argus waits on a question answers it.
         if (_question.value != null && text.isNotBlank()) { answerQuestion(text.trim()); return }
-        // v0.28.x Blaze Camera: "scan this document", "read this sign", "look at this", "escanea este documento"… open the
+        // v0.28.x Argus Camera: "scan this document", "read this sign", "look at this", "escanea este documento"… open the
         // camera in that mode at once (no model guess); the capture comes back into this chat as the answer (fromCamera).
         if (attachments.isEmpty() && untrusted == null && cur.job?.isActive != true && !cur.waiting) {
             CameraIntent.match(text)?.let { mode ->
                 val s = cur
-                if (com.blaze.assistant.device.BlazeCamera.open(app, mode, com.blaze.assistant.device.CameraModes.Origin.REQUEST, s.id, text.trim())) {
-                    com.blaze.assistant.device.Haptics.tick(app)
-                    s.selfTurn(text.trim(), com.blaze.assistant.device.CameraModes.openingLine(mode), byVoice, "\uD83D\uDCF7 ${BrandName.NAME} Camera")
+                if (com.argus.assistant.device.ArgusCamera.open(app, mode, com.argus.assistant.device.CameraModes.Origin.REQUEST, s.id, text.trim())) {
+                    com.argus.assistant.device.Haptics.tick(app)
+                    s.selfTurn(text.trim(), com.argus.assistant.device.CameraModes.openingLine(mode), byVoice, "\uD83D\uDCF7 ${BrandName.NAME} Camera")
                     return
                 }
             }
@@ -695,8 +695,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     }
 
     /**
-     * v0.28.x Blaze Camera: a capture (photo / document / text read / scanned code) goes into the chat that asked for it as
-     * the next message, so Blaze answers about it in that turn's thread. Falls back to the chat on screen.
+     * v0.28.x Argus Camera: a capture (photo / document / text read / scanned code) goes into the chat that asked for it as
+     * the next message, so Argus answers about it in that turn's thread. Falls back to the chat on screen.
      */
     fun fromCamera(chatId: String?, text: String, attachments: List<Attachment>) {
         scope.launch {
@@ -752,8 +752,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     fun reportError(text: String) {
         val s = cur
         s.add(Role.ERROR, text)
-        try { s.mood = Mood.IDLE } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: s.mood Mood.IDLE", e) }
-        try { s.persist() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: s.persist", e) }
+        try { s.mood = Mood.IDLE } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: s.mood Mood.IDLE", e) }
+        try { s.persist() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: s.persist", e) }
     }
 
     /** Open a chat. If it's still working in the background you see it live. */
@@ -834,7 +834,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         s.lcSummary = o.optString("lc_summary"); s.lcUpto = o.optInt("lc_upto"); s.ctxFrom = o.optInt("ctx_from")
         if (o.has("meter_in")) s.meter = Meter(o.optInt("meter_in"), o.optInt("meter_out"), o.optInt("meter_limit", 32_768))
         s.titleSource = o.optString("title_source"); s.titleTurns = o.optInt("title_turns"); s.keep = o.optBoolean("keep")
-        s.clearedAt = o.optLong(com.blaze.assistant.connect.SyncMerge.CLEARED)
+        s.clearedAt = o.optLong(com.argus.assistant.connect.SyncMerge.CLEARED)
         s.resume = StopResume.fromJson(o.optJSONObject("resume"))   // v0.45.0 (#38)
         o.optJSONArray("tips_pending")?.let { a -> for (i in 0 until a.length()) s.unseenTips += a.getString(i) }
         val h = o.optJSONArray("history") ?: JSONArray()
@@ -882,7 +882,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     /**
      * In a project: start a new thread there (the one you leave keeps working if it was busy). Everywhere else
-     * (one mind): a fresh context window on the main conversation; nothing is deleted and Blaze looks things up.
+     * (one mind): a fresh context window on the main conversation; nothing is deleted and Argus looks things up.
      */
     fun clear(inProject: Boolean = Projects.of(cur.id) != null) {
         cur.persist()
@@ -906,7 +906,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 ChatStore.load(id)?.let { o -> try { parseChat(o) } catch (_: Exception) { null } }
             } ?: return@launch
             if (sessions[id] !== live) return@launch
-            val r = SyncMergeIn.merge(live.msgs, p.msgs, live.clearedAt, p.o.optLong(com.blaze.assistant.connect.SyncMerge.CLEARED),
+            val r = SyncMergeIn.merge(live.msgs, p.msgs, live.clearedAt, p.o.optLong(com.argus.assistant.connect.SyncMerge.CLEARED),
                 live.busy || live.waiting, live.pendingReacts()) { ids.getAndIncrement() }
             if (live.title.isEmpty()) p.o.optString("title").takeIf { it.isNotEmpty() }?.let { live.title = it }
             if (r != null) { live.msgs = r.msgs; live.clearedAt = r.clearedAt; live.persist(force = true) }
@@ -917,7 +917,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     /**
      * v0.45.0 reactions: toggles [emoji] by the user on message [msgId] of the chat on screen (also a meeting-room
      * message). Saved with the chat (cheap: ChatIndex + per-message JSON cache) and synced as its own small item.
-     * 👍 / 👎 on Blaze's reply also teach Blaze (TurnFeedback). Returns false when there is no such message.
+     * 👍 / 👎 on Argus's reply also teach Argus (TurnFeedback). Returns false when there is no such message.
      */
     fun react(msgId: Long, emoji: String, by: String = "user"): Boolean {
         val s = cur
@@ -931,7 +931,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (by == "user" && m.role == Role.BLAZE && !s.isPrivate) {
                 val added = next.any { it.by == by && it.emoji == emoji }
                 try { TurnFeedback.react(m.gid, next.firstOrNull { it.by == by && (it.emoji == Reaction.UP || it.emoji == Reaction.DOWN) }?.emoji) }
-                catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnFeedback.react", e) }
+                catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: TurnFeedback.react", e) }
                 if (added && (emoji == Reaction.UP || emoji == Reaction.DOWN)) s.noteReaction(msgId, emoji)
             }
             return true
@@ -950,14 +950,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     fun ctxWindow(): Int = LongChat.contextWindow(Settings.model, Settings.str("context_tokens", "0").toIntOrNull() ?: 0)
     /** When older turns fold into the rolling summary. */
     /** 0.49.0 tiered memory (chat tier): ~6k tokens by default, scaled with the route's context window (ChatTier). */
-    fun budget(): Int = if (Settings.bool("tiered_memory", true)) com.blaze.assistant.memory.ChatTier.budget(ctxWindow()) else LongChat.budget(ctxWindow())
+    fun budget(): Int = if (Settings.bool("tiered_memory", true)) com.argus.assistant.memory.ChatTier.budget(ctxWindow()) else LongChat.budget(ctxWindow())
     /** The word-for-word tail's token cap (0 = message count only, the old rule). */
-    fun tailTok(): Int = if (Settings.bool("tiered_memory", true)) com.blaze.assistant.memory.ChatTier.tailBudget(budget()) else 0
+    fun tailTok(): Int = if (Settings.bool("tiered_memory", true)) com.argus.assistant.memory.ChatTier.tailBudget(budget()) else 0
 
     /** 0.49.0: the cheap model call the cache tier uses for gists and document summaries (the quick route, background lane). */
-    /** 0.51.0 BlazeQuery: one background call with [fam] as this call's family hint (the composer's pick stays as it is). */
-    private suspend fun queryAsk(prompt: String, fam: com.blaze.assistant.composer.ModelChoice.Family): String =
-        kotlinx.coroutines.withContext(CallState().also { it.family = com.blaze.assistant.composer.ModelChoice.wire(fam) ?: "" }.element()) {
+    /** 0.51.0 ArgusQuery: one background call with [fam] as this call's family hint (the composer's pick stays as it is). */
+    private suspend fun queryAsk(prompt: String, fam: com.argus.assistant.composer.ModelChoice.Family): String =
+        kotlinx.coroutines.withContext(CallState().also { it.family = com.argus.assistant.composer.ModelChoice.wire(fam) ?: "" }.element()) {
             LlmClient.liteTurn = true
             kotlinx.coroutines.withTimeout(30_000L) {
                 LlmClient.complete(JSONArray().put(JSONObject().put("role", "user").put("content", prompt)), null, null, null, LlmClient.Lane.BACKGROUND)
@@ -972,8 +972,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     }
 
     fun deleteChat(id: String) {
-        io.launch { try { LongChat.db()?.forget(id) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: LongChat.db.forgetid", e) } }
-        io.launch { com.blaze.assistant.memory.CacheTier.deleteChat(id) }   // 0.49.0: its cached documents go with it
+        io.launch { try { LongChat.db()?.forget(id) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: LongChat.db.forgetid", e) } }
+        io.launch { com.argus.assistant.memory.CacheTier.deleteChat(id) }   // 0.49.0: its cached documents go with it
         sessions[id]?.stop()
         sessions.remove(id)
         ChatStore.delete(id)
@@ -991,9 +991,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     /**
      * A reply typed into a notification's Reply box. It goes back to the conversation that notification
-     * came from, so Blaze knows what it said: the chat that posted it ([chatId]; heads-ups live in the
+     * came from, so Argus knows what it said: the chat that posted it ([chatId]; heads-ups live in the
      * Heads-ups chat since v0.8.0), or, for an old heads-up with no chat, a new chat that opens with
-     * Blaze's [context] message. The model is always told which message is being answered.
+     * Argus's [context] message. The model is always told which message is being answered.
      */
     fun replyFromNotification(chatId: String?, context: String?, text: String) {
         val t = text.trim(); if (t.isEmpty()) return
@@ -1021,7 +1021,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     }
 
     /**
-     * Records a heads-up Blaze posted as a notification (v0.8.0): it shows in the Heads-ups chat and the
+     * Records a heads-up Argus posted as a notification (v0.8.0): it shows in the Heads-ups chat and the
      * model is told about it with the next message there, so replying from the notification (or later in
      * the app) continues that conversation instead of starting a blank one. Returns the chat's id.
      */
@@ -1033,7 +1033,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             s.keep = true
             sessions[s.id] = s
             val mid = s.add(Role.BLAZE, text)
-            s.addMeta(mid, com.blaze.assistant.proactive.ProactiveDial.meta(stamp, why))   // unreleased after 0.52.3: "Why?" under it
+            s.addMeta(mid, com.argus.assistant.proactive.ProactiveDial.meta(stamp, why))   // unreleased after 0.52.3: "Why?" under it
             s.unseenTips += "$stamp: $text"
             while (s.unseenTips.size > 20) s.unseenTips.removeAt(0)
             s.persist()
@@ -1072,10 +1072,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
      * posted. [beforePost] puts the setup checklist in Life just before, so the two arrive together.
      */
     fun introduce(fallback: String, write: (suspend () -> String?)? = null, beforePost: suspend () -> Unit = {}) { scope.launch {
-        val text = if (write == null) null else try { kotlinx.coroutines.withTimeoutOrNull(com.blaze.assistant.setup.FirstRunIntro.TIMEOUT_MS) { write() } }
-            catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce", e); null }
-        try { beforePost() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce beforePost", e) }
-        val c = cur; c.add(Role.BLAZE, com.blaze.assistant.setup.FirstRunIntro.pick(text, fallback)); c.persist(); refreshChats()
+        val text = if (write == null) null else try { kotlinx.coroutines.withTimeoutOrNull(com.argus.assistant.setup.FirstRunIntro.TIMEOUT_MS) { write() } }
+            catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: introduce", e); null }
+        try { beforePost() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: introduce beforePost", e) }
+        val c = cur; c.add(Role.BLAZE, com.argus.assistant.setup.FirstRunIntro.pick(text, fallback)); c.persist(); refreshChats()
     } }
 
     /** Messages of any chat (for the dashboard). */
@@ -1106,7 +1106,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
     fun stopAgent(bg: BgAgents.Bg) { sessions[bg.chat]?.stop() }
 
-    /** 0.45.19: stops the turn running in chat [id] (Blaze Phone's picture-in-picture Stop). False when nothing ran there. */
+    /** 0.45.19: stops the turn running in chat [id] (Argus Phone's picture-in-picture Stop). False when nothing ran there. */
     fun stopChat(id: String): Boolean {
         val s = sessions[id] ?: return false
         val was = s.mood != Mood.IDLE
@@ -1133,7 +1133,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     /** agent_progress: an agent's newest steps and its latest real tool results. */
     fun agentProgress(id: String): String {
         val bg = BgAgents.get(id) ?: return "No agent $id. Call list_agents."
-        val found = try { agentSession(bg).recentResults(4) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: agentProgress", e); emptyList() }
+        val found = try { agentSession(bg).recentResults(4) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: agentProgress", e); emptyList() }
         return buildString {
             append(BgAgents.describe(bg))
             if (bg.log.isNotEmpty()) append("\nSteps so far: ").append(bg.log.takeLast(12).joinToString("; "))
@@ -1142,7 +1142,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
     }
 
-    /** post_update: one interim message from the main Blaze, above the task pill; gated by ProgressGate. */
+    /** post_update: one interim message from the main Argus, above the task pill; gated by ProgressGate. */
     fun postUpdate(chatId: String, text: String): String {
         val p = sessions[chatId] ?: return "Not posted: no such chat."
         val mine = BgAgents.all.value.filter { it.parent == chatId && (it.live || it.ended > System.currentTimeMillis() - 3600_000) }
@@ -1155,7 +1155,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         return "Posted. End this turn now: reply with exactly ${ProgressGate.SKIP}."
     }
 
-    /** A background agent reached a milestone: the main Blaze may tell the user, in its own words (never while it is busy). */
+    /** A background agent reached a milestone: the main Argus may tell the user, in its own words (never while it is busy). */
     fun agentMilestone(bg: BgAgents.Bg) {
         if (!Settings.bool("progress_updates", true)) return
         val p = sessions[bg.parent] ?: return
@@ -1170,14 +1170,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val p = sessions[bg.parent] ?: load(bg.parent) ?: return
         sessions[p.id] = p
         // v0.26.2: a specialist's result posts as it lands: its card (now showing the result) moves to the bottom of the chat,
-        // then the main Blaze writes a short follow-up from it.
+        // then the main Argus writes a short follow-up from it.
         if (bg.specialist.isNotBlank()) {
             p.msgs = Dispatch.moveToEnd(p.msgs, { it.meta == BgAgents.CARD + bg.id }, { it.copy(at = System.currentTimeMillis()) })
             p.persist()
         }
         // 0.52.0: a blueprint run's result (document card, gallery, build summary) is posted as the agent's reply right under
-        // its pill; the main Blaze then adds at most one short line.
-        if (bg.specialist == com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST && bg.result.isNotBlank()) {
+        // its pill; the main Argus then adds at most one short line.
+        if (bg.specialist == com.argus.assistant.orchestra.OrchestraRuns.SPECIALIST && bg.result.isNotBlank()) {
             p.add(Role.BLAZE, bg.result)
             p.persist()
         }
@@ -1274,7 +1274,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // v0.45.7 Settings › Language: one stable line in this (second) message; the persona message stays byte-stable.
             s("lang", ReplyLanguage.line(ReplyLanguage.current()))
             if (prof.simple) s("simple", PromptProfile.SIMPLE_RULE)
-            slow("connectors", com.blaze.assistant.connect.Connectors.promptBlock())
+            slow("connectors", com.argus.assistant.connect.Connectors.promptBlock())
             // 2026-11-14 harness gap: one consolidated core (HarnessPrompt) instead of ~20 stacked RULE lines (talk, self, remember,
             // again, yes, ask, pim, load_tools, weather, phone_save, leak, verify, ids, know, search, calls, autonomy, style).
             s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE)
@@ -1284,7 +1284,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             s("control", HarnessPrompt.phone(control, prof.simple) + (if (control) "\n" + Orient.RULE + FastActions.RULE else ""))
             s("secrets", "\n" + SecretRules.PROMPT)
             if (Settings.followups) s("followups", "\n" + QuickReplies.RULE + " Skip it for routines.")
-            s("docs", BlazeDocs.PROMPT_LINE)   // v0.28.4: one line + the repo URL; the docs are looked up
+            s("docs", ArgusDocs.PROMPT_LINE)   // v0.28.4: one line + the repo URL; the docs are looked up
             // Core skills: only the coding one stays pinned (on coding turns); the rest are read with use_skill when they fit.
             if (CoreSkills.loader == null) CoreSkills.loader = {
                 CoreSkills.NAMES.mapNotNull { n -> runCatching { n to app.assets.open("skills/$n/SKILL.md").bufferedReader().use { it.readText() } }.getOrNull() }.toMap()
@@ -1293,24 +1293,24 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             turn("build", BuildMode.block(userText))   // 2026-11-14 build / craft mode: plan, design system, self-review, one improvement round
             // v0.23.0: the VIEWS block. v0.45.0 (#16): in full only when a view is routed this turn; else one line.
             turn("views", if (prof.views) ViewRouter.PROMPT else PromptProfile.viewsShort(ViewRouter.specs.map { it.name }))
-            // 0.46.0 Blaze Stage: in place first; plain Q&A stays chat; "study 30 min" is a timer card with Start.
-            if (com.blaze.assistant.stage.StageStore.enabled) s("stage", com.blaze.assistant.stage.StageTools.RULE)
+            // 0.46.0 Argus Stage: in place first; plain Q&A stays chat; "study 30 min" is a timer card with Start.
+            if (com.argus.assistant.stage.StageStore.enabled) s("stage", com.argus.assistant.stage.StageTools.RULE)
             // v0.44.0: every tool result carries [verified=…]; success may only be claimed on verified=true (ToolVerify).
             s("tool_verify", ToolVerify.PROMPT_RULE)
             // v0.24.9 rich replies / v0.26.1 visual answers. Static text, so it stays in the cached prefix; left out only when Visual answers is off.
-            if (Settings.bool("rich_replies", true)) s("rich", com.blaze.assistant.ui.RichReplies.PROMPT)
+            if (Settings.bool("rich_replies", true)) s("rich", com.argus.assistant.ui.RichReplies.PROMPT)
             // Speed plan step 2: everything above stays identical turn after turn, so providers can
             // reuse their cached prefix. Everything that changes (clock, memory, device) goes last.
             // v0.45.1: the tiers finish that job (PromptParts.assemble puts every LIVE part after the rest).
             tail("time") { "\n\nCURRENT LOCAL TIME: $now (${java.util.TimeZone.getDefault().id}). This is exact: answer any time, date or day question straight from it, never say you can't see the time. " }
             tail("memory") { memBlock }
             s("learn", Learn.rules(Settings.autoLearn))
-            tail("device") { com.blaze.assistant.device.DeviceStatus.promptLine(app) }
+            tail("device") { com.argus.assistant.device.DeviceStatus.promptLine(app) }
             // v0.37.0: what's playing / on screen / just happened (changing tail only). v0.42.0: the full block only when the
             // turn can use it (phone, screen or media tools, or words like "this song"); otherwise a 2–3 line summary.
             tail("awareness") { if (fullAware) Awareness.promptBlock() else Awareness.summaryBlock() }
             // 0.53.7: kept servers and whether each really answers, so "is it still running?" is read from the record.
-            tail("servers") { try { com.blaze.assistant.terminal.Servers.promptBlock() } catch (_: Throwable) { "" } }
+            tail("servers") { try { com.argus.assistant.terminal.Servers.promptBlock() } catch (_: Throwable) { "" } }
             s("phone_state", PhoneState.RULE)
             // v0.45.0 (#13, #16): TERMINAL / MAKE THINGS in full only on coding or content-making turns in Advanced;
             // Simple gets one plain line and no paths or commands.
@@ -1331,13 +1331,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             tail("setup") { SelfSetup.promptLine(app) }
             // v0.26.2: learned skills are in the one skills lookup below (SkillMatch.lookupBlock), not a block of their own.
             tail("processes") { Processes.countLine().takeIf { it.isNotBlank() }?.let { "\nTracked now: $it (IDs via processes)." }.orEmpty() }
-            slow("desktop", com.blaze.assistant.link.DesktopLink.promptLine())
+            slow("desktop", com.argus.assistant.link.DesktopLink.promptLine())
             slow("about", SelfKnowledge.promptBlock(app)); slow("project", Projects.promptLine(chatId))
-            if (com.blaze.assistant.voice.Voice.inCall) tail("in_call") { " You are on a voice call with the user right now (${BrandName.NAME}'s call screen): \"I can't hear you\" means call_control speaker on or louder." }
+            if (com.argus.assistant.voice.Voice.inCall) tail("in_call") { " You are on a voice call with the user right now (${BrandName.NAME}'s call screen): \"I can't hear you\" means call_control speaker on or louder." }
             tail("goals") { Autonomy.promptLine() }
             // v0.30.4: no skills lookup for a plain device / settings action (it only ever pulled in unrelated skills).
             if (!FastActions.plainDevice(userText)) turn("skills", SkillMatch.lookupBlock(userText, skipSkills))
-            // v0.30.5: tasks the user has Blaze do often, with no skill yet, come first for a skill.
+            // v0.30.5: tasks the user has Argus do often, with no skill yet, come first for a skill.
             if (Settings.autoLearn) tail("frequent") { SkillGuard.Freq.promptLine(SkillGuard.Freq.load()) }
             // v0.45.9: the assistant rules and how to use the [context] block (static). The block itself goes at the very
             // end of this message (requestMessages), after the Halo identity and turn hints (Site persona v1.0.1).
@@ -1349,7 +1349,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         // The live tail: built once per turn (and again when what it is built from changes, or after 5 min).
         fun buildLive() = liveFns.map { (n, f) -> PromptParts.Part(n, PromptParts.Tier.LIVE, f()) }
         val livePs = if (stable && turnKey != 0L)
-            liveSnap.get(chatId, listOf(turnKey, fullAware, userText, memBlock.hashCode(), com.blaze.assistant.voice.Voice.inCall, liveFns.keys.toList())) { buildLive() }
+            liveSnap.get(chatId, listOf(turnKey, fullAware, userText, memBlock.hashCode(), com.argus.assistant.voice.Voice.inCall, liveFns.keys.toList())) { buildLive() }
         else buildLive()
         val all = PromptParts.withLive(parts.parts.toList(), livePs)
         lastPromptParts = all
@@ -1360,8 +1360,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val t = JSONArray()
         Memory.tools().forEach { t.put(it) }
         if (Mind.ready) Mind.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.device.DeviceStatus.tool())
-        t.put(com.blaze.assistant.mediaapps.store.JamendoSource.tool())
+        t.put(com.argus.assistant.device.DeviceStatus.tool())
+        t.put(com.argus.assistant.mediaapps.store.JamendoSource.tool())
         t.put(SelfControl.tool())
         t.put(JSONObject().put("type", "function").put("function", JSONObject().put("name", "ask_user")
             .put("description", "Pause and ask the user a question with 2-4 short tap-able options (an 'own answer' choice is added automatically). Use when a real choice is theirs (which account, which contact, which item) or the request is ambiguous. Never use it for facts you can check yourself (phone model, Android version, installed apps, settings, battery). The task waits right where it is and continues with the answer.")
@@ -1370,83 +1370,83 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 .put("options", JSONObject().put("type", "array").put("items", JSONObject().put("type", "string"))))
                 .put("required", JSONArray(listOf("question", "options"))))))
         Web.tools().forEach { t.put(it) }
-        com.blaze.assistant.media.Media.tools().forEach { t.put(it) }
+        com.argus.assistant.media.Media.tools().forEach { t.put(it) }
         Processes.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.phone.Watchers.tool())
+        t.put(com.argus.assistant.phone.Watchers.tool())
         SkillPacks.tools().forEach { t.put(it) }
-        com.blaze.assistant.phone.AndroidControl.tools().forEach { t.put(it) }
+        com.argus.assistant.phone.AndroidControl.tools().forEach { t.put(it) }
         t.put(Autonomy.findToolDef()); t.put(Autonomy.goalTool()); t.put(Autonomy.permissionTool())
-        com.blaze.assistant.proactive.Triggers.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.phone.Ussd.tool())
-        t.put(com.blaze.assistant.phone.Messaging.tool())
-        com.blaze.assistant.browser.BrowserTools.definitions().forEach { t.put(it) }
+        com.argus.assistant.proactive.Triggers.tools().forEach { t.put(it) }
+        t.put(com.argus.assistant.phone.Ussd.tool())
+        t.put(com.argus.assistant.phone.Messaging.tool())
+        com.argus.assistant.browser.BrowserTools.definitions().forEach { t.put(it) }
         t.put(SecretDesk.toolDef())   // 0.46.6 Secure form
-        com.blaze.assistant.appstore.StoreTools.definitions().forEach { t.put(it) }   // 0.45.19 App Store
-        com.blaze.assistant.browser.phone.PhoneBrowserTools.definitions().forEach { t.put(it) }   // 0.45.19 Blaze Phone browser
+        com.argus.assistant.appstore.StoreTools.definitions().forEach { t.put(it) }   // 0.45.19 App Store
+        com.argus.assistant.browser.phone.PhoneBrowserTools.definitions().forEach { t.put(it) }   // 0.45.19 Argus Phone browser
         // 16 Nov 2026 (Finn): the terminal and the specialists are always on (their switches left Settings with Jobs and Team & bots).
-        com.blaze.assistant.terminal.Terminal.tools(app).forEach { t.put(it) }
-        com.blaze.assistant.terminal.DevTools.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.terminal.Git.tool())
-        com.blaze.assistant.phone.PimEdit.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.device.SelfCheck.tool())
-        t.put(com.blaze.assistant.phone.Location.tool())
+        com.argus.assistant.terminal.Terminal.tools(app).forEach { t.put(it) }
+        com.argus.assistant.terminal.DevTools.tools().forEach { t.put(it) }
+        t.put(com.argus.assistant.terminal.Git.tool())
+        com.argus.assistant.phone.PimEdit.tools().forEach { t.put(it) }
+        t.put(com.argus.assistant.device.SelfCheck.tool())
+        t.put(com.argus.assistant.phone.Location.tool())
         t.put(GatewayWeather.tool())   // v0.45.5 (#7b)
         t.put(SaveFile.tool())   // v0.45.9: save the last code block to Downloads
         t.put(Specialists.tool()); t.put(Specialists.createTool())
         Learning.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.update.Updater.tool())
-        t.put(com.blaze.assistant.ui.Views.tool())
+        t.put(com.argus.assistant.update.Updater.tool())
+        t.put(com.argus.assistant.ui.Views.tool())
         // 0.46.0 Stage: heroes / widgets / layout on the chat itself (Stage first; open_view only when asked or the Stage can't host it).
-        if (com.blaze.assistant.stage.StageStore.enabled) com.blaze.assistant.stage.StageTools.definitions().forEach { t.put(it) }
+        if (com.argus.assistant.stage.StageStore.enabled) com.argus.assistant.stage.StageTools.definitions().forEach { t.put(it) }
         t.put(GlanceTool.def())   // 2026-11-19: the notch's glance layer (list / pin / unpin / remove / restore)
         t.put(SelfKnowledge.tool())
         t.put(Awareness.tool())
-        t.put(com.blaze.assistant.proactive.Jarvis.tool())
-        t.put(com.blaze.assistant.bank.BankMode.tool())   // v0.43.0 Bank mode
-        t.put(com.blaze.assistant.proactive.FollowUps.tool())
-        BlazeDocs.tools().forEach { t.put(it) }
+        t.put(com.argus.assistant.proactive.Jarvis.tool())
+        t.put(com.argus.assistant.bank.BankMode.tool())   // v0.43.0 Bank mode
+        t.put(com.argus.assistant.proactive.FollowUps.tool())
+        ArgusDocs.tools().forEach { t.put(it) }
         // v0.28.5: a project's full instructions / brief / notes as lookups; stripped from every chat that isn't in a project.
         ProjectDocs.tools().forEach { t.put(it) }
-        // v0.29.0 Home board: Blaze adds / changes / removes / lists the user's widgets.
-        com.blaze.assistant.home.HomeTools.tools().forEach { t.put(it) }
-        t.put(BlazeRouter.tool())
+        // v0.29.0 Home board: Argus adds / changes / removes / lists the user's widgets.
+        com.argus.assistant.home.HomeTools.tools().forEach { t.put(it) }
+        t.put(ArgusRouter.tool())
         // 16 Nov 2026 (Finn): no "/" commands, so no blaze_command tool (views open with open_view).
         if (Settings.longChat || Mind.ready) LongChat.tools().forEach { t.put(it) }
-        com.blaze.assistant.memory.CacheTier.tools().forEach { t.put(it) }   // 0.49.0 cache tier
+        com.argus.assistant.memory.CacheTier.tools().forEach { t.put(it) }   // 0.49.0 cache tier
         t.put(PdfPages.tool())   // 2026-11-18: pages of a PDF from this chat, again
         t.put(Flashcards.tool())
         if (Designs.templateLoader == null) Designs.templateLoader = { app.assets.open("skills/three-d-design/assets/mockup.html").bufferedReader().use { it.readText() } }
         t.put(Designs.tool())
         t.put(Seller.tool())
         if (Settings.screenMemory) t.put(ScreenMemory.tool())
-        if (com.blaze.assistant.notify.NotificationBrain.instance != null) com.blaze.assistant.notify.NotificationBrain.tools().forEach { t.put(it) }
-        if (com.blaze.assistant.notify.NotificationBrain.instance != null) com.blaze.assistant.notify.Conversations.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.life.LifeLogs.tool())
-        t.put(com.blaze.assistant.mediaapps.MediaFetch.tool())
-        t.put(com.blaze.assistant.mediaapps.VideoTools.tool())   // v0.34.0
-        t.put(com.blaze.assistant.movies.MovieTools.tool())   // 0.46.2 Movies
-        t.put(com.blaze.assistant.mediaapps.MusicTools.tool())   // v0.34.0
-        t.put(com.blaze.assistant.media.GalleryOps.tool())   // v0.34.0
-        t.put(com.blaze.assistant.device.CameraMathTool.tool())   // v0.34.0
-        t.put(com.blaze.assistant.notify.MoneyRadar.tool())
-        t.put(com.blaze.assistant.phone.SafeWalk.tool())
-        t.put(com.blaze.assistant.device.PhoneHealth.tool())
+        if (com.argus.assistant.notify.NotificationBrain.instance != null) com.argus.assistant.notify.NotificationBrain.tools().forEach { t.put(it) }
+        if (com.argus.assistant.notify.NotificationBrain.instance != null) com.argus.assistant.notify.Conversations.tools().forEach { t.put(it) }
+        t.put(com.argus.assistant.life.LifeLogs.tool())
+        t.put(com.argus.assistant.mediaapps.MediaFetch.tool())
+        t.put(com.argus.assistant.mediaapps.VideoTools.tool())   // v0.34.0
+        t.put(com.argus.assistant.movies.MovieTools.tool())   // 0.46.2 Movies
+        t.put(com.argus.assistant.mediaapps.MusicTools.tool())   // v0.34.0
+        t.put(com.argus.assistant.media.GalleryOps.tool())   // v0.34.0
+        t.put(com.argus.assistant.device.CameraMathTool.tool())   // v0.34.0
+        t.put(com.argus.assistant.notify.MoneyRadar.tool())
+        t.put(com.argus.assistant.phone.SafeWalk.tool())
+        t.put(com.argus.assistant.device.PhoneHealth.tool())
         t.put(TimeCapsule.tool())
-        t.put(com.blaze.assistant.agent.query.QueryRuntime.tool())   // 0.51.0 BlazeQuery research (Halo Persona Studio tool removed)
+        t.put(com.argus.assistant.agent.query.QueryRuntime.tool())   // 0.51.0 ArgusQuery research (Halo Persona Studio tool removed)
         t.put(Marketplace.tool())
-        t.put(com.blaze.assistant.mediaapps.BeatLab.tool())
-        t.put(com.blaze.assistant.mediaapps.ClipStudio.tool())
+        t.put(com.argus.assistant.mediaapps.BeatLab.tool())
+        t.put(com.argus.assistant.mediaapps.ClipStudio.tool())
         t.put(DuoWorkspace.tool())
-        t.put(com.blaze.assistant.phone.CallCopilot.tool())
-        t.put(com.blaze.assistant.mediaapps.CoverArt.tool())
-        t.put(com.blaze.assistant.voice.ReadAloud.tool())
-        t.put(com.blaze.assistant.notify.GroupBrain.tool())
-        t.put(com.blaze.assistant.phone.CallControl.tool())
-        if (Settings.bool("bg_agents", true)) { BgAgents.tools().forEach { t.put(it) }; t.put(com.blaze.assistant.orchestra.OrchestraRuns.tool()) }
+        t.put(com.argus.assistant.phone.CallCopilot.tool())
+        t.put(com.argus.assistant.mediaapps.CoverArt.tool())
+        t.put(com.argus.assistant.voice.ReadAloud.tool())
+        t.put(com.argus.assistant.notify.GroupBrain.tool())
+        t.put(com.argus.assistant.phone.CallControl.tool())
+        if (Settings.bool("bg_agents", true)) { BgAgents.tools().forEach { t.put(it) }; t.put(com.argus.assistant.orchestra.OrchestraRuns.tool()) }
         TeamHooks.toolDefs().forEach { t.put(JSONObject(it)) }   // P1-TM-05: job tools (add_job, done_job, …)
-        if (com.blaze.assistant.link.DesktopLink.paired) t.put(com.blaze.assistant.link.DesktopLink.tool())
-        com.blaze.assistant.connect.Connectors.tools().forEach { t.put(it) }
-        try { com.blaze.assistant.connect.Mcp.tools().forEach { t.put(it) } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mcp.tools.fo", e) }
+        if (com.argus.assistant.link.DesktopLink.paired) t.put(com.argus.assistant.link.DesktopLink.tool())
+        com.argus.assistant.connect.Connectors.tools().forEach { t.put(it) }
+        try { com.argus.assistant.connect.Mcp.tools().forEach { t.put(it) } } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: Mcp.tools.fo", e) }
         if (Settings.phoneControl) t.put(JSONObject().put("type", "function").put("function", JSONObject().put("name", "run_plan")
             .put("description", "FASTEST way to do anything in an app or settings page. Give the whole script at once; ${BrandName.NAME} runs it on-device in a few seconds, finding things by their visible text (no element numbers, no need to read the screen first), checking each step on the phone, and only comes back when done or stuck. Steps can open a settings page by intent (do=open_settings page=… app=…).")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject().put("steps", JSONObject().put("type", "array")
@@ -1472,21 +1472,21 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     .put("direction", JSONObject().put("type", "string")).put("button", JSONObject().put("type", "string"))
                     .put("seconds", JSONObject().put("type", "number")))
                     .put("required", JSONArray(listOf("action")))))).put("required", JSONArray(listOf("steps"))))))
-        com.blaze.assistant.routine.Routines.tools().forEach { t.put(it) }
-        com.blaze.assistant.phone.Skills.definitions().forEach { t.put(it) }
+        com.argus.assistant.routine.Routines.tools().forEach { t.put(it) }
+        com.argus.assistant.phone.Skills.definitions().forEach { t.put(it) }
         if (Settings.phoneControl) { val p = PhoneTools.definitions(); for (i in 0 until p.length()) t.put(p.get(i)) }
         // 0.46.3: the flash engine (compact indexed tree, one model call per step, verify, loop guard, coordinate fallback).
-        if (Settings.phoneControl) t.put(com.blaze.assistant.phone.flash.FlashRunner.tool())
+        if (Settings.phoneControl) t.put(com.argus.assistant.phone.flash.FlashRunner.tool())
         // v0.30.4: straight to a settings page by intent (in no tool group, so it's always on hand).
-        if (Settings.phoneControl) t.put(com.blaze.assistant.phone.SettingsJump.tool())
+        if (Settings.phoneControl) t.put(com.argus.assistant.phone.SettingsJump.tool())
         // v0.45.9: one schema per name, valid names and object parameters (gateway 0.8.2 checks calls against this list).
-        return ToolTruth.clean(ToolGuide.apply(t)).also { try { BlazeDocs.noteTools(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeDocs.noteToolsit", e) } }
+        return ToolTruth.clean(ToolGuide.apply(t)).also { try { ArgusDocs.noteTools(it) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: ArgusDocs.noteToolsit", e) } }
     }
 
     /** v0.28.4: the real tool list (for the blaze-docs tool reference, indexed at startup). */
     suspend fun toolCatalog(): JSONArray = tools()
 
-    /** True while Blaze's own screen is visible. */
+    /** True while Argus's own screen is visible. */
     @Volatile var inForeground = false
 
     /** True while the assistant overlay or floating orb is open (replies show there, not as notifications). */
@@ -1700,7 +1700,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         val busy get() = job?.isActive == true
 
-        /** v0.31.2 Halo x Blaze: who speaks in the turn in progress (Halo on "@halo" turns and in duo lanes). */
+        /** v0.31.2 Halo x Argus: who speaks in the turn in progress (Halo on "@halo" turns and in duo lanes). */
         @Volatile var voice: Duo.Who = Duo.Who.BLAZE
         private var _duoLiveV: Set<Long> = emptySet()
         /** v0.31.2: duo replies streaming right now (mirrored to [Agent.duoLive] while on screen). */
@@ -1723,7 +1723,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         var sideLive: Set<Long>
             get() = _sideLiveV
             set(v) { _sideLiveV = v; if (this === curRef) _sideLive.value = v }
-        /** v0.32.0 split: Halo's side lane while Blaze works. */
+        /** v0.32.0 split: Halo's side lane while Argus works. */
         private var sideJob: Job? = null
         val sideBusy: Boolean get() = sideJob?.isActive == true
         private val sideQueue = java.util.concurrent.ConcurrentLinkedQueue<Pair<Long, String>>()
@@ -1732,7 +1732,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         private val sideIds = java.util.Collections.synchronizedSet(HashSet<Long>())
         /** Shows Halo's tool steps as a hint in her bubble. */
         @Volatile private var sideStep: ((String) -> Unit)? = null
-        /** v0.32.0: a solo Blaze turn is running its tool loop (Halo is free to take the conversation). */
+        /** v0.32.0: a solo Argus turn is running its tool loop (Halo is free to take the conversation). */
         @Volatile var soloRunning = false
         /** v0.45.28: who is working on the running solo task (the other one is free for side talk and the wait line). */
         @Volatile var soloWho = Duo.Who.BLAZE
@@ -1768,7 +1768,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val t = (rec ?: TaskMemory.Rec("turn", id, turnGoal?.request.orEmpty(), updated = now)).copy(surface = sticky, updated = now,
                     state = if (rec?.state == TaskMemory.State.DONE) TaskMemory.State.ACTIVE else rec?.state ?: TaskMemory.State.ACTIVE)
                 TaskMemory.surfaceGuard(name, t, lastUserText(), now)?.also { if (!quiet) add(Role.STEP, "Staying on the same screen") }
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: surfaceNote", e); null }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: surfaceNote", e); null }
         }
 
         /** 0.52.1: writes this turn into its task record (TaskMemory): goal, state, surface, sign-ins, what it found, next step. */
@@ -1788,7 +1788,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val c = m.optString("content").replace(Regex("\\s+"), " ").trim()
                     if (c.isNotEmpty() && !c.startsWith("Not run")) out += c.take(700)
                 }
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: recentResults", e) }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: recentResults", e) }
             return out.reversed()
         }
 
@@ -1799,7 +1799,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             try {
                 val last = history.length() - 1
                 if (last >= 0 && history.optJSONObject(last)?.let { it.optString("role") == "assistant" && ProgressGate.skip(it.optString("content")) } == true) history.remove(last)
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: dropSkip", e) }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: dropSkip", e) }
         }
 
         /**
@@ -1817,7 +1817,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 handedOff = true
                 add(Role.BLAZE, "This is taking longer than a quick reply, so I'm finishing it in the background. Keep chatting; the result lands here.")
                 true
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: handOff", e); false }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: handOff", e); false }
         }
 
         /** [handOff] when the turn is within Handoff.MARGIN_MS of its hard end [end]. */
@@ -1836,13 +1836,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val failed = after.any { it.role == Role.ERROR }
                 val state = when { stopped -> TaskMemory.State.STOPPED; failed -> TaskMemory.State.FAILED; else -> TaskMemory.State.DONE }
                 val finding = after.lastOrNull { it.role == Role.BLAZE && it.meta != Ack.META && !it.meta.startsWith(BgAgents.CARD) }?.text.orEmpty()
-                    .let { com.blaze.assistant.ui.Md.plain(it) }.replace(Regex("\\s+"), " ").take(300)
+                    .let { com.argus.assistant.ui.Md.plain(it) }.replace(Regex("\\s+"), " ").take(300)
                 val next = resume?.let { p -> p.interrupted.firstOrNull()?.let { "check, then redo: $it" } ?: "continue: ${p.goal.request.take(160)}" }.orEmpty()
                 val base = existing ?: TaskMemory.Rec("t" + now.toString(36), id, (turnGoal?.request ?: lastUserText()).take(400), created = now, updated = now)
                 val rec = TaskMemory.afterTurn(base, tools, state, finding, next, turnSignInWall, turnSignedIn, now)
                 TaskMemoryStore.put(rec)
                 turnTaskId = rec.id
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: recordTask", e) }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: recordTask", e) }
         }
 
         private fun keepForResume() {
@@ -1850,7 +1850,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val t = StopResume.tidy(history)
                 val done = synchronized(turnLog) { StopResume.doneLines(turnLog.toList()) }
                 resume = StopResume.pending(turnGoal, done, t.interrupted)
-            } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: val t StopResume.tidyhistory", e) }
+            } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: val t StopResume.tidyhistory", e) }
         }
 
         fun stop() {
@@ -1923,7 +1923,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         fun add(role: Role, text1: String, files: List<String> = emptyList()): Long {
             val text0 = SecretVault.scrub(text1)   // 0.46.6: no saved secret's value ever lands in the chat
-            // v0.32.0: the model sometimes copies the history's [Blaze] / [Halo] tags into its narration; never shown.
+            // v0.32.0: the model sometimes copies the history's [Argus] / [Halo] tags into its narration; never shown.
             val text = if (role == Role.STEP || role == Role.BLAZE) Duo.clean(text0).ifEmpty { text0 } else text0
             TeamHooks.message(this.id, role.name, text)   // P0-AG-01: a bound bot's row sink
             if (role == Role.STEP && autoStepId >= 0 && msgs.lastOrNull()?.id == autoStepId) {
@@ -2024,7 +2024,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val line = Receipt.line(log)
             msgs = msgs.map { m -> if (m.id != id) m else m.copy(receipt = Receipt.toJson(log),
                 meta = (m.meta.split(" \u00b7 ").filter { p -> p.isNotBlank() && !Receipt.isChip(p) } + listOf(line).filter { it.isNotBlank() }).joinToString(" \u00b7 ")) }
-            try { persist() } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: updateReceipt persist", e) }
+            try { persist() } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: updateReceipt persist", e) }
         }
 
         /** v0.45.2: a background check ended: during the turn it updates what the final claim check reads; after it, the reply's receipt. */
@@ -2096,7 +2096,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 .put("title_source", titleSource).put("title_turns", titleTurns).put("keep", keep)
                 .put("tips_pending", JSONArray(synchronized(unseenTips) { unseenTips.toList() }))
                 .apply { if (rooms.isNotEmpty()) put("rooms", roomsJson()) }
-                .apply { if (clearedAt > 0) put(com.blaze.assistant.connect.SyncMerge.CLEARED, clearedAt) }
+                .apply { if (clearedAt > 0) put(com.argus.assistant.connect.SyncMerge.CLEARED, clearedAt) }
                 .apply { resume?.let { put("resume", it.toJson()) } }   // v0.45.0 (#38)
             if (this === curRef && id == Mind.MAIN) Settings.lastChatId = id
             val cid = id
@@ -2114,10 +2114,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         try { val h2 = JSONArray(); for (h in snapHist) h2.put(stripImages(h)); hist = h2; break }
                         catch (_: Exception) { kotlinx.coroutines.delay(20L * (attempt + 1)) }
                     }
-                    if (hist == null) { com.blaze.assistant.device.CrashLog.write("ERROR chat save skipped ($cid): history kept changing"); return@withLock }
+                    if (hist == null) { com.argus.assistant.device.CrashLog.write("ERROR chat save skipped ($cid): history kept changing"); return@withLock }
                     if (ChatStore.saveText(head, ChatJson.file(head, arr, hist!!))) savedSeq = seq
                     _chats.value = ChatStore.list()   // v0.45.0 (#1): cheap now (index; only changed files are read)
-                    try { LongChat.db()?.sync(cid, hist) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: LongChat.db.synccid hist", e) }
+                    try { LongChat.db()?.sync(cid, hist) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: LongChat.db.synccid hist", e) }
                     // One mind: every turn goes into the journal (searchable, queued for the idle review).
                     Mind.journal(cid, hist)
                 }
@@ -2143,7 +2143,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** A self-command handled on-device: shown and remembered like a normal exchange. */
         fun selfTurn(text: String, reply: String, byVoice: Boolean, chip: String = "⚡ ${BrandName.NAME} itself") {
             // v0.30.6: while a turn runs (or a burst is open) the history mustn't get lines in the middle of a tool call:
-            // the exchange waits in the inbox, in order, as one user-side note ("Blaze already answered this one").
+            // the exchange waits in the inbox, in order, as one user-side note ("Argus already answered this one").
             val defer = busy || waiting
             val uid = add(Role.USER, text)
             if (defer) inbox.add(Inbound(uid, text, emptyList(), false, null, raw = JSONObject().put("role", "user")
@@ -2174,8 +2174,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // rule decides whether it means stop, steer or chat (BusyRoute's regex read "Oh wait" / "Google first" wrongly). The Stop button stops.
             if (busyNow && attachments.isEmpty() && notificationContext.isNullOrBlank() && agentId == null && specialistId == null &&
                 SelfControl.match(shown) == null) { ChatBurstLive.follow(this, shown, byVoice, untrusted); return }
-            // v0.32.0 split: Blaze is busy with a task, so Halo takes this one (unless it's "@blaze …": that steers Blaze).
-            // v0.45.28: and the other way round: while Halo works on a task, Blaze takes your messages ("@halo …" steers Halo).
+            // v0.32.0 split: Argus is busy with a task, so Halo takes this one (unless it's "@blaze …": that steers Argus).
+            // v0.45.28: and the other way round: while Halo works on a task, Argus takes your messages ("@halo …" steers Halo).
             if (busyNow && soloRunning && attachments.isEmpty() && notificationContext.isNullOrBlank() && agentId == null && specialistId == null &&
                 Settings.bool("duo_on", true) && Settings.bool("duo_split", true) && SelfControl.match(shown) == null) {
                 val r = Duo.route(shown, false)
@@ -2215,9 +2215,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             }
         }
 
-        /** 0.46.3: the bubble is marked sent at once (the message is with Blaze, not waiting on the network or the loop). */
+        /** 0.46.3: the bubble is marked sent at once (the message is with Argus, not waiting on the network or the loop). */
         private fun markSent(id: Long) {
-            try { msgs.firstOrNull { it.id == id }?.gid?.let { Delivery.tracker().apply(listOf(it), Delivery.Ev.LOCAL_PICKUP) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: markSent", e) }
+            try { msgs.firstOrNull { it.id == id }?.gid?.let { Delivery.tracker().apply(listOf(it), Delivery.Ev.LOCAL_PICKUP) } } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: markSent", e) }
         }
 
 
@@ -2227,7 +2227,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         /** 0.46.3: one plain line from Halo beside the running task (not part of its history until it ends). */
         private fun sideLine(text: String) {
-            val live = LiveMsg(Duo.Who.BLAZE, -1L, side = true)   // 0.51.0: Blaze, first person (no Halo)
+            val live = LiveMsg(Duo.Who.BLAZE, -1L, side = true)   // 0.51.0: Argus, first person (no Halo)
             live.end(text)
             synchronized(sideHist) { sideHist.add(JSONObject().put("role", "assistant").put("content", OnePersona.tag() + text)) }
         }
@@ -2238,9 +2238,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             inbox.add(Inbound(id, Duo.route(shown, false).text, emptyList(), false, null))
             focus = focus + id
             markSent(id)
-            com.blaze.assistant.device.Haptics.tick(app)
+            com.argus.assistant.device.Haptics.tick(app)
             // 0.52.0: no "Got it, I've passed that…" bubble (ChatPolicy): the bubble is marked sent and the work pill shows it taken up.
-            if (com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) sideLine(BusyRoute.steered(runningTask()))
+            if (com.argus.assistant.ui.ChatPolicy.STATUS_LINES) sideLine(BusyRoute.steered(runningTask()))
             persist()
             // the turn reads it at its next step; if it ends first, the next turn starts with it
             scope.launch { job?.join(); drain() }
@@ -2258,7 +2258,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val id = post(shown, attachments)
             inbox.add(Inbound(id, shown, attachments, byVoice, untrusted))
             focus = focus + id
-            com.blaze.assistant.device.Haptics.tick(app)
+            com.argus.assistant.device.Haptics.tick(app)
             persist()   // so it shows in the chat list right away, even if you leave
         }
 
@@ -2267,12 +2267,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
          * [ack] = tick now (a queued message already ticked when it was sent).
          */
         private fun startTurn(items0: List<Inbound>, notificationContext: String?, ack: Boolean) {
-            // v0.31.2 Halo x Blaze: "@halo …", "@blaze …", "@all …" or a team job with no tag. The tags are taken out of
-            // what the model reads (the bubble keeps them). Background agents, routines and notification replies stay Blaze.
+            // v0.31.2 Halo x Argus: "@halo …", "@blaze …", "@all …" or a team job with no tag. The tags are taken out of
+            // what the model reads (the bubble keeps them). Background agents, routines and notification replies stay Argus.
             val users0 = items0.filter { it.raw == null }
             val duoOk = agentId == null && specialistId == null && notificationContext.isNullOrBlank() && users0.isNotEmpty() &&
                 users0.none { it.text.startsWith("[Scheduled routine") } && Settings.bool("duo_on", true)
-            // 0.51.0 one persona: @halo / @all / team all collapse to a Blaze turn (tags still stripped).
+            // 0.51.0 one persona: @halo / @all / team all collapse to a Argus turn (tags still stripped).
             val route = if (!duoOk) Duo.Route(Duo.Mode.BLAZE, "", false)
                 else OnePersona.collapse(Duo.route(users0.joinToString("\n") { it.text }, teamOn = false))
             val items = if (!route.explicit) items0 else items0.map { m ->
@@ -2312,10 +2312,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val callState = CallState().also { it.quick = ThinkBudget.quick(shown, attachments.size) }
             turnFrom = users[0].id
             // 0.45.20: the bubbles start at Sending (the label under the latest one); the run / local loop moves them on.
-            try { users.forEach { u -> msgs.firstOrNull { it.id == u.id }?.gid?.let { Delivery.tracker().sending(it) } } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: delivery sending", e) }
+            try { users.forEach { u -> msgs.firstOrNull { it.id == u.id }?.gid?.let { Delivery.tracker().sending(it) } } } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: delivery sending", e) }
             beginTurn(msgs.lastOrNull { it.id == users[0].id }?.at ?: System.currentTimeMillis())
-            // Heads-ups Blaze posted into this chat as notifications, and the one being replied to: the model
-            // sees what Blaze had said, so "yes", "remind me later" or "who's that?" make sense (v0.8.0).
+            // Heads-ups Argus posted into this chat as notifications, and the one being replied to: the model
+            // sees what Argus had said, so "yes", "remind me later" or "who's that?" make sense (v0.8.0).
             val tips = synchronized(unseenTips) { unseenTips.toList().also { unseenTips.clear() } }
             // v0.45.0 (#38): "Continue where you stopped" (or "continue" / "resume") picks up the interrupted task with its goal
             // and what was already done; anything else the user says starts something new and the stopped task is let go.
@@ -2340,7 +2340,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // Instant acknowledgment: the orb and a tick react before any thinking happens.
             mood = Mood.THINKING
             LlmClient.prewarm()   // speed plan step 10: open the connection while the fast lane checks
-            if (!routine && ack) com.blaze.assistant.device.Haptics.tick(app)
+            if (!routine && ack) com.argus.assistant.device.Haptics.tick(app)
             // Work in the background (HQ 22 Oct 20:35). 0.45.29: no ack line at all (it reworded the user's message, e.g.
             // "I play guitar" -> "Playing guitar a little."); a task still running after Ack.FAST_MS only goes on the ledger.
             val gate = Ack.Gate().also { ackGate = it }
@@ -2358,7 +2358,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 kotlinx.coroutines.delay(1100)
                 var waited = 0
                 while (job?.isActive == true && waited < 600) {
-                    if (waited % 9 == 0 && Voice.state.value == Voice.State.IDLE) com.blaze.assistant.device.Sounds.working()
+                    if (waited % 9 == 0 && Voice.state.value == Voice.State.IDLE) com.argus.assistant.device.Sounds.working()
                     kotlinx.coroutines.delay(1000); waited++
                 }
             }
@@ -2398,9 +2398,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // v0.45.28: either one working leaves the other free (side talk, and the wait line below).
                 soloRunning = true; soloWho = voice
                 val nudge = if (notificationContext.isNullOrBlank() && agentId == null && specialistId == null && Settings.bool("duo_on", true) &&
-                    com.blaze.assistant.ui.ChatPolicy.STATUS_LINES && Settings.bool("duo_wait_line", false) && !WaitNudge.skip(voice, shown)) startWaitNudge(voice, shown, turnFrom) else null
+                    com.argus.assistant.ui.ChatPolicy.STATUS_LINES && Settings.bool("duo_wait_line", false) && !WaitNudge.skip(voice, shown)) startWaitNudge(voice, shown, turnFrom) else null
                 try { runLoop() } finally { soloRunning = false; nudge?.cancel() }
-                // v0.31.2: Halo's solo answer is marked as Halo's in the history, so Blaze knows who said it.
+                // v0.31.2: Halo's solo answer is marked as Halo's in the history, so Argus knows who said it.
                 if (voice == Duo.Who.HALO) tagLast(Duo.Who.HALO)
             }
             job?.invokeOnCompletion { scope.launch { flushSide() } }   // v0.32.0: Halo's side talk joins the history after
@@ -2426,7 +2426,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val elapsed = ((System.currentTimeMillis() - t0) / 1000).toInt()
                     val req = JSONArray().put(JSONObject().put("role", "system").put("content",
                         WaitNudge.system(idle, worker, WaitNudge.firstName(Settings.greetName()), task, elapsed)))
-                    try { val c = duoContext(idle, 6); for (i in 0 until c.length()) req.put(c.get(i)) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: wait line context", e) }
+                    try { val c = duoContext(idle, 6); for (i in 0 until c.length()) req.put(c.get(i)) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: wait line context", e) }
                     req.put(JSONObject().put("role", "user").put("content", WaitNudge.CUE))
                     LlmClient.liteTurn = true
                     val raw = try {
@@ -2444,7 +2444,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             }
         }
 
-        /** v0.31.2: prefixes the newest plain assistant line in the history with [Halo] / [Blaze] (once). */
+        /** v0.31.2: prefixes the newest plain assistant line in the history with [Halo] / [Argus] (once). */
         private fun tagLast(who: Duo.Who) {
             for (i in history.length() - 1 downTo 0) {
                 val h = history.optJSONObject(i) ?: continue
@@ -2456,7 +2456,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             }
         }
 
-        // ---------------------------------------------------------------- v0.31.2 Halo x Blaze duo lanes
+        // ---------------------------------------------------------------- v0.31.2 Halo x Argus duo lanes
 
         // v0.45.0: the old uncalled runDuo / duoAll / duoTeam / duoSay / duoType lanes were removed (docs/removed.md);
         // the live @all is runConversation -> duoBoth.
@@ -2469,7 +2469,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         private fun roomEdit(room: Long, id: Long, text: String) { rooms = rooms + (room to rooms[room].orEmpty().map { if (it.id == id) it.copy(text = text) else it }) }
         private fun roomDrop(room: Long, id: Long) { rooms = rooms + (room to rooms[room].orEmpty().filterNot { it.id == id }) }
 
-        /** The room so far as transcript lines (the user's messages, Blaze's and Halo's; tool steps left out). */
+        /** The room so far as transcript lines (the user's messages, Argus's and Halo's; tool steps left out). */
         private fun roomLines(room: Long): List<Duo.RoomLine> = rooms[room].orEmpty().mapNotNull { m ->
             when (m.role) { Role.USER -> Duo.RoomLine(Settings.userName.ifBlank { "User" } + " (the user)", m.text)
                 Role.BLAZE -> Duo.RoomLine(Duo.Who.of(m.speaker).display, m.text); else -> null } }
@@ -2532,12 +2532,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         ?: throw LlmClient.LlmException("${who.display} went quiet. Tap Retry.")
                 } finally { gate.flush(); gate.close() }
                 reply.remove("_reasoning")
-                try { Usage.record(req, reply, LlmClient.lastUsage) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Usage.recordreq reply LlmClient.lastUsag", e) }
+                try { Usage.record(req, reply, LlmClient.lastUsage) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: Usage.recordreq reply LlmClient.lastUsag", e) }
                 if (useTools) try {
                     if ((reply.optJSONArray("tool_calls")?.length() ?: 0) == 0) (reply.opt("content") as? String)?.let { txt ->
                         (CallScan.toCalls(txt, tools!!) ?: ToolCalls.fromText(txt, tools) ?: ToolLeak.toCalls(txt, tools))?.let { (c, rest) -> reply.put("tool_calls", c); reply.put("content", if (rest.isBlank()) JSONObject.NULL else CallScan.clean(ToolLeak.strip(rest))) } }
                     ToolCalls.normalize(reply, tools!!)
-                } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: if reply.optJSONArraytool_calls.length 0", e) }
+                } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: if reply.optJSONArraytool_calls.length 0", e) }
                 if ((reply.optJSONArray("tool_calls")?.length() ?: 0) == 0) {
                     // v0.43.0: a message that is (or holds) a tool call written as text: run it if it's allowed here, else
                     // ask once for a plain answer, else a plain fallback line. Raw function syntax is never shown.
@@ -2578,7 +2578,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val args = try { JSONObject(fn.optString("arguments", "{}").ifBlank { "{}" }) } catch (_: Exception) { JSONObject() }
                     val result = if (name !in Duo.ROOM_TOOLS && !(side && name in Duo.SIDE_SCHEDULE_TOOLS && tools?.let { name in ToolCalls.names(it) } == true)) "Error: only research tools work in the meeting room (${Duo.ROOM_TOOLS.joinToString()})."
                     else if (side) {
-                        // Halo's side lane: never touches Blaze's voice or work card (her steps show as a hint in her bubble).
+                        // Halo's side lane: never touches Argus's voice or work card (her steps show as a hint in her bubble).
                         try { runTool(name, args, shots) } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                     } else {
                         voice = who; roomSink = room
@@ -2603,7 +2603,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val jobs = Duo.Who.values().associateWith { w ->
                 async {
                     try { duoCall(w, build(w), tools, room) { t -> if (claim(w)) lives.getValue(w).show(t) }.also { if (duoVisible(it, true).isNotEmpty()) claim(w) } }
-                    catch (e: CancellationException) { throw e } catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("duo race ${w.id}", e); "" }
+                    catch (e: CancellationException) { throw e } catch (e: Exception) { com.argus.assistant.device.CrashLog.error("duo race ${w.id}", e); "" }
                 }
             }
             val watch = launch {
@@ -2630,17 +2630,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return out
         }
 
-        // ---------------------------------------------------------------- v0.32.0 split: Halo free while Blaze works
+        // ---------------------------------------------------------------- v0.32.0 split: Halo free while Argus works
 
-        /** Your message while Blaze is busy: Halo answers it on the side (one at a time, in order). */
+        /** Your message while Argus is busy: Halo answers it on the side (one at a time, in order). */
         private fun sideSend(shown: String, text: String) {
             val id = post(shown, emptyList())
             sideIds += id
             sideQueue.add(id to text.ifBlank { shown })
-            com.blaze.assistant.device.Haptics.tick(app)
+            com.argus.assistant.device.Haptics.tick(app)
             persist()
             if (sideJob?.isActive == true) return
-            // 0.46.4: Halo's side lane is always chat-fast (BrainRace CHAT: fastest brain, 8 s first token, hedged), never behind Blaze's turn
+            // 0.46.4: Halo's side lane is always chat-fast (BrainRace CHAT: fastest brain, 8 s first token, hedged), never behind Argus's turn
             sideJob = scope.launch(ctxTag + Agent.sideFlag.asContextElement(true) + CallState().also { it.raceKind = BrainRace.Kind.CHAT }.element()) {
                 split = true
                 try {
@@ -2650,20 +2650,20 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             sideJob?.invokeOnCompletion { scope.launch { flushSide() } }
         }
 
-        /** v0.45.28: [who] = the free one (Halo while Blaze works, Blaze while Halo works). */
+        /** v0.45.28: [who] = the free one (Halo while Argus works, Argus while Halo works). */
         private suspend fun haloSide(mid: Long, text: String, who: Duo.Who = Duo.Who.HALO) {
             val user = JSONObject().put("role", "user").put("content", text)
             synchronized(sideHist) { sideHist.add(user) }
             val req = JSONArray().put(JSONObject().put("role", "system").put("content",
                 OnePersona.sideSystem(Settings.greetName(), runningTask().ifBlank { lastUserText() }, status) + "\n" + BusyRoute.status(runningTask(), status, currentStep) + TurnContext.RULE + "\n" + TurnContextSource.block(text)))
-            try { val c = duoContext(who, 12); for (i in 0 until c.length()) req.put(c.get(i)) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: val c duoContextDuo.Who.HALO 12 for i in", e) }
+            try { val c = duoContext(who, 12); for (i in 0 until c.length()) req.put(c.get(i)) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: val c duoContextDuo.Who.HALO 12 for i in", e) }
             synchronized(sideHist) { sideHist.forEach { req.put(it) } }
             val live = LiveMsg(who, -1L, side = true)
             sideStep = { st -> live.hint(st) }
-            // v0.45.9: a schedule ask, or a yes to Halo's / Blaze's schedule offer ("@halo Yes"), gets the calendar and reminder tools.
+            // v0.45.9: a schedule ask, or a yes to Halo's / Argus's schedule offer ("@halo Yes"), gets the calendar and reminder tools.
             val lastReply = msgs.lastOrNull { it.role == Role.BLAZE && it.id < mid }?.text.orEmpty()
             val sched = TurnContext.scheduleAsk(text) || TurnContext.scheduleFollowUp(text, lastReply)
-            // v0.45.9 (ToolTruth): the side lane runs only research tools, so a tool-shaped message goes to Blaze's full lane
+            // v0.45.9 (ToolTruth): the side lane runs only research tools, so a tool-shaped message goes to Argus's full lane
             // (it joins the running task at its next step, or starts the next turn), never "I can't" from Halo.
             if (!sched) {   // 2026-11-16 model-first: no keyword guess; every side message joins the full lane with its tools
                 live.end("")
@@ -2672,26 +2672,26 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 inbox.add(Inbound(mid, text, emptyList(), false, null))
                 focus = focus + mid
                 markSent(mid)
-                if (job?.isActive == true && com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) sideLine(BusyRoute.steered(runningTask()))
+                if (job?.isActive == true && com.argus.assistant.ui.ChatPolicy.STATUS_LINES) sideLine(BusyRoute.steered(runningTask()))
                 scope.launch { job?.join(); drain() }
                 persist()
                 return
             }
             // 0.46.4: Halo answers within a couple of seconds: if no word came by BrainRace.HALO_HOLD_MS, a plain line says
-            // where Blaze is (the app's own state, no model); the model's reply replaces it when it comes.
-            val raw = try { BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { if (who == Duo.Who.HALO && com.blaze.assistant.ui.ChatPolicy.STATUS_LINES) BrainRace.haloHolding(runningTask(), status) else "" }, { live.show(it) }) { say ->
+            // where Argus is (the app's own state, no model); the model's reply replaces it when it comes.
+            val raw = try { BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { if (who == Duo.Who.HALO && com.argus.assistant.ui.ChatPolicy.STATUS_LINES) BrainRace.haloHolding(runningTask(), status) else "" }, { live.show(it) }) { say ->
                 duoCall(who, req, roomTools(if (sched) Duo.SIDE_SCHEDULE_TOOLS else emptySet()), -1L, side = true) {
-                // 0.45.19: a handoff line ("Passed to Blaze, let me know…") never shows, not even while it streams.
+                // 0.45.19: a handoff line ("Passed to Argus, let me know…") never shows, not even while it streams.
                 if (!Ack.isGeneric(it)) say(it) } } }
                 catch (e: CancellationException) { live.end(""); throw e }
-                catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: side reply", e); "" }   // ChatBurst: a failed side reply goes to the main lane
+                catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: side reply", e); "" }   // ChatBurst: a failed side reply goes to the main lane
             val relay = Duo.isRelay(raw)
-            // 0.45.19: a relay is Blaze's job, so Halo's handoff line ("passing that straight to Blaze") is never kept: Blaze's
+            // 0.45.19: a relay is Argus's job, so Halo's handoff line ("passing that straight to Argus") is never kept: Argus's
             // answer is the one clean reply (it used to sit glued under Halo's name with "Done ✓").
             val shownText = if (relay) "" else duoVisible(raw, final = true)
             live.end(shownText)
             if (relay || ChatBurst.dropped(shownText)) {
-                // For Blaze: it joins Blaze's running task at its next step (or starts Blaze's next turn).
+                // For Argus: it joins Argus's running task at its next step (or starts Argus's next turn).
                 synchronized(sideHist) { sideHist.remove(user) }
                 sideIds -= mid
                 inbox.add(Inbound(mid, text, emptyList(), false, null))
@@ -2702,7 +2702,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             persist()
         }
 
-        /** Once neither lane runs, Halo's side talk joins the history (never in the middle of Blaze's tool calls). */
+        /** Once neither lane runs, Halo's side talk joins the history (never in the middle of Argus's tool calls). */
         private fun flushSide() {
             if (job?.isActive == true || sideJob?.isActive == true) return
             val got = synchronized(sideHist) { sideHist.toList().also { sideHist.clear() } }
@@ -2728,7 +2728,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val maxTurns = Settings.str("duo_max_turns", "24").toIntOrNull()?.coerceIn(4, 200) ?: 24
             var room = -1L
             // 0.45.20: the app picked the message up itself (no run): the label under the bubble says Sent.
-            try { Delivery.tracker().apply(msgs.filter { it.role == Role.USER && it.id >= fromMsg }.map { it.gid }, Delivery.Ev.LOCAL_PICKUP) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: delivery duo", e) }
+            try { Delivery.tracker().apply(msgs.filter { it.role == Role.USER && it.id >= fromMsg }.map { it.gid }, Delivery.Ev.LOCAL_PICKUP) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: delivery duo", e) }
             try {
                 mood = Mood.THINKING
                 duoChatOpenAt = 0L
@@ -2753,7 +2753,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val facts = ""   // v0.43.0 duoFacts was a live check of the Linux desktop (removed in wave B-4)
                 // v0.43.0: an @all chat message gets both answers at once (parallel, streamed, 45 s cap each) instead of a
                 // race + a second, sequential answer + more back-and-forth, which took about two minutes on a phone.
-                // 0.45.20 (item 9): Blaze answers, then Halo adds only what Blaze missed or stays quiet (DuoAll).
+                // 0.45.20 (item 9): Argus answers, then Halo adds only what Argus missed or stays quiet (DuoAll).
                 if (kind == Duo.Kind.CHAT) { duoDoer(name, facts); duoChatOpenAt = System.currentTimeMillis() }
                 else while (true) {
                     pullUser()
@@ -2802,7 +2802,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 if (Settings.showRoute) msgs.lastOrNull { it.role == Role.BLAZE && !it.meta.startsWith(Duo.ROOM_CARD) }
                     ?.let { addMeta(it.id, "\u2726 ${BrandName.NAME} · %.1f s".format((System.currentTimeMillis() - t0) / 1000.0)) }
-                com.blaze.assistant.device.Haptics.done(app)
+                com.argus.assistant.device.Haptics.done(app)
             } catch (e: CancellationException) { throw e
             } catch (e: Exception) {
                 add(Role.ERROR, e.message ?: "${BrandName.NAME} lost the connection. Tap Retry.")
@@ -2818,9 +2818,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
 
         /**
-         * v0.43.0 @all chat: Blaze and Halo answer at the same time, each streaming into its own bubble, each capped at
+         * v0.43.0 @all chat: Argus and Halo answer at the same time, each streaming into its own bubble, each capped at
          * [Duo.PARALLEL_LIMIT_MS]. One that fails or runs late gets a plain line; the other's answer still stands.
-         * Timed with TurnTimer (logcat BlazeSpeed + the speed log): first word and total per companion.
+         * Timed with TurnTimer (logcat ArgusSpeed + the speed log): first word and total per companion.
          */
         private suspend fun duoBoth(name: String?, facts: String): Unit = kotlinx.coroutines.coroutineScope {
             val timer = TurnTimer()
@@ -2840,7 +2840,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     } catch (e: CancellationException) { live.end(""); throw e
                     } catch (e: Exception) {
                         live.end("")
-                        if (e !is DuoLate) com.blaze.assistant.device.CrashLog.error("duo all ${w.id}", e)
+                        if (e !is DuoLate) com.argus.assistant.device.CrashLog.error("duo all ${w.id}", e)
                         Triple("", System.currentTimeMillis() - t0, e is DuoLate)
                     }
                 }
@@ -2857,21 +2857,21 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             try {
                 val firstMs = first.values.minOrNull() ?: -1L
                 SpeedLog.add(SpeedLog.Entry(t0, firstMs.coerceAtLeast(0), timer.total(), 1, 0, 0, "duo-all", timer.line()))
-                android.util.Log.i("BlazeSpeed", "@all parallel: ${timer.line()}")
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: val firstMs first.values.minOrNull 1L", e) }
+                android.util.Log.i("ArgusSpeed", "@all parallel: ${timer.line()}")
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: val firstMs first.values.minOrNull 1L", e) }
             persist()
             Unit
         }
 
         /**
-         * 0.45.20 (feature batch item 9): @all chat. Blaze, the doer, answers first (streamed, capped at
-         * [Duo.PARALLEL_LIMIT_MS]); Halo then reads it and adds only what Blaze missed, in a sentence or two, or stays
-         * quiet ([DuoAll.haloLine]): never two full answers. If Blaze fails, Halo answers alone.
+         * 0.45.20 (feature batch item 9): @all chat. Argus, the doer, answers first (streamed, capped at
+         * [Duo.PARALLEL_LIMIT_MS]); Halo then reads it and adds only what Argus missed, in a sentence or two, or stays
+         * quiet ([DuoAll.haloLine]): never two full answers. If Argus fails, Halo answers alone.
          */
         private suspend fun duoDoer(name: String?, facts: String) {
             val t0 = System.currentTimeMillis()
             fun base(w: Duo.Who) = Duo.soul(w) + (if (!name.isNullOrBlank()) "\nThe user's name is $name." else "")
-            // Blaze streams into its bubble; Halo's add-on is checked whole first (a repeat never flashes up and vanishes).
+            // Argus streams into its bubble; Halo's add-on is checked whole first (a repeat never flashes up and vanishes).
             suspend fun ask(w: Duo.Who, sys: String, stream: Boolean): String {
                 val live = if (stream) LiveMsg(w, -1L) else null
                 val req = JSONArray().put(JSONObject().put("role", "system").put("content", sys + facts))
@@ -2885,14 +2885,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 } catch (e: CancellationException) { live?.end(""); throw e
                 } catch (e: Exception) {
                     live?.end("")
-                    if (e !is DuoLate) com.blaze.assistant.device.CrashLog.error("duo all ${w.id}", e)
+                    if (e !is DuoLate) com.argus.assistant.device.CrashLog.error("duo all ${w.id}", e)
                     ""
                 }
             }
-            val blaze = ask(Duo.Who.BLAZE, DuoAll.blazeSystem(base(Duo.Who.BLAZE)), stream = true)
-            if (blaze.isNotEmpty()) history.put(JSONObject().put("role", "assistant").put("content", Duo.tag(Duo.Who.BLAZE) + blaze))
+            val argus = ask(Duo.Who.BLAZE, DuoAll.argusSystem(base(Duo.Who.BLAZE)), stream = true)
+            if (blaze.isNotEmpty()) history.put(JSONObject().put("role", "assistant").put("content", Duo.tag(Duo.Who.BLAZE) + argus))
             if (blaze.isEmpty()) {
-                // Blaze couldn't answer: Halo answers on her own (briefly), so the user still gets one reply.
+                // Argus couldn't answer: Halo answers on her own (briefly), so the user still gets one reply.
                 val h = ask(Duo.Who.HALO, Duo.parallelSystem(Duo.Who.HALO, name), stream = false)
                 val line = duoVisible(h, final = true)
                 if (line.isNotEmpty()) {
@@ -2900,14 +2900,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     history.put(JSONObject().put("role", "assistant").put("content", Duo.tag(Duo.Who.HALO) + line))
                 } else add(Role.ERROR, Duo.BOTH_LATE)
             } else {
-                val raw = ask(Duo.Who.HALO, DuoAll.haloSystem(base(Duo.Who.HALO), blaze), stream = false)
-                val line = if (raw.contains(DuoAll.QUIET, ignoreCase = true)) "" else DuoAll.haloLine(duoVisible(raw, final = true), blaze)
+                val raw = ask(Duo.Who.HALO, DuoAll.haloSystem(base(Duo.Who.HALO), argus), stream = false)
+                val line = if (raw.contains(DuoAll.QUIET, ignoreCase = true)) "" else DuoAll.haloLine(duoVisible(raw, final = true), argus)
                 if (line.isNotEmpty()) {
                     msgs = msgs + ChatMessage(ids.getAndIncrement(), Role.BLAZE, line, speaker = Duo.Who.HALO.id)
                     history.put(JSONObject().put("role", "assistant").put("content", Duo.tag(Duo.Who.HALO) + line))
                 }
             }
-            try { android.util.Log.i("BlazeSpeed", "@all doer+brief: ${System.currentTimeMillis() - t0} ms") } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: duo speed", e) }
+            try { android.util.Log.i("ArgusSpeed", "@all doer+brief: ${System.currentTimeMillis() - t0} ms") } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: duo speed", e) }
             persist()
         }
 
@@ -2981,7 +2981,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val base = ctxFrom.coerceIn(0, history.length())
             val st = LongChat.State(lcSummary, maxOf(lcUpto, base))
             // One mind's context ladder: recent turns word for word; then the rolling summary + tail; then lookup
-            // (pinned core + index + the last few turns, and Blaze looks the rest up).
+            // (pinned core + index + the last few turns, and Argus looks the rest up).
             var rung = Mind.Rung.RECENT
             var windowed = false
             val from: Int
@@ -3018,13 +3018,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 AnswerStyle.turnHint(lastUserText()) +
                 // 0.53.6: the user said to stop and answer: answer from what was found (WrapUp)
                 (if (WrapUp.asks(lastUserText())) WrapUp.HINT else "") +
-                // v0.28.4: "take me to the blaze-agent repo" / "what version are you": look it up in Blaze's docs, never guess.
-                (if (BlazeDocs.isAboutBlaze(lastUserText())) BlazeDocs.TURN_HINT else "") +
+                // v0.28.4: "take me to the blaze-agent repo" / "what version are you": look it up in Argus's docs, never guess.
+                (if (ArgusDocs.isAboutArgus(lastUserText())) ArgusDocs.TURN_HINT else "") +
                 // v0.26.1: an in-chat diagram / chart is drawn in the reply itself (no files, preview or use_skill).
                 (if (turnView == null && turnDesignNote.isEmpty() && Settings.bool("rich_replies", true) && VisualRoute.inChat(lastUserText())) VisualRoute.HINT else "") +
-                // v0.31.2 Halo x Blaze: both know the other exists; on "@halo" turns the agent speaks as Halo.
+                // v0.31.2 Halo x Argus: both know the other exists; on "@halo" turns the agent speaks as Halo.
                 (if (agentId == null) OnePersona.awareness() else "") +   // 0.51.0: no partner line
-                // 0.51.0 BlazeQuery evidence pack (automatic, judged, compact) + terminal-first route hint
+                // 0.51.0 ArgusQuery evidence pack (automatic, judged, compact) + terminal-first route hint
                 queryBlock + ExecRoute.hint(turnExec) +
                 // v0.45.9: the [context] block last (cached ~60 s; built from local data only, never a network call).
                 "\n" + TurnContextSource.block(lastUserText())
@@ -3063,7 +3063,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (!(Voice.lastTurnByVoice && Voice.shouldSpeak() && Settings.bool("speak_streaming", true))) return
             if (!text.startsWith(spokenPrefix)) return
             // v0.41.0: narration before a tool call ("Looking at your series…") becomes a step and is never spoken.
-            if (spokenPrefix.isEmpty() && !com.blaze.assistant.voice.SpokenText.streamOk(text, streamNoTools)) return
+            if (spokenPrefix.isEmpty() && !com.argus.assistant.voice.SpokenText.streamOk(text, streamNoTools)) return
             val ends = Regex("[.!?](\\s|$)|\n").findAll(text, spokenPrefix.length).map { it.range.first + 1 }
                 .filter { e -> text.substring(e).isNotBlank() }.toList()
             val end = ends.lastOrNull() ?: return
@@ -3096,7 +3096,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val r = AutoCompact.range(history, st, force, tt)
             val req = LongChat.summariseRequest(lcSummary, history, r.first, r.last + 1)
             // 0.49.0 tiered memory: the turns that fold are paged verbatim into the cache tier (never dropped).
-            if (!isPrivate) { val page = com.blaze.assistant.memory.ChatTier.pageText(history, r.first, r.last + 1); com.blaze.assistant.memory.CacheTier.pageOut(id, page) }
+            if (!isPrivate) { val page = com.argus.assistant.memory.ChatTier.pageText(history, r.first, r.last + 1); com.argus.assistant.memory.CacheTier.pageOut(id, page) }
             var txt = try {
                 LlmClient.complete(req, null, null, null, LlmClient.Lane.BACKGROUND).optString("content").substringAfterLast("</think>").trim()
             } catch (e: CancellationException) { throw e } catch (_: Exception) { "" }
@@ -3113,9 +3113,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         private var pagedUpto = 0
         @Volatile var cacheBlock = ""
 
-        /** 0.51.0 BlazeQuery: this turn's evidence pack (auto-injected), its evidence (for command checks) and the turn it belongs to. */
+        /** 0.51.0 ArgusQuery: this turn's evidence pack (auto-injected), its evidence (for command checks) and the turn it belongs to. */
         @Volatile var queryBlock = ""
-        @Volatile var queryEvidence: List<com.blaze.assistant.agent.query.Evidence> = emptyList()
+        @Volatile var queryEvidence: List<com.argus.assistant.agent.query.Evidence> = emptyList()
         @Volatile private var queryTurn = 0L
         /** 0.51.0 terminal-first: where this turn's work should happen (ExecRoute). */
         @Volatile var turnExec = ExecRoute.Exec.ANY
@@ -3123,10 +3123,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** The pack for the chat lane: at most ~1,000 characters, cut at a line end. */
         private fun liteQuery(): String = queryBlock.let { q -> if (q.length <= 1_000) q else q.take(1_000).substringBeforeLast('\n') + "\n" }
 
-        /** 0.51.0: a shell command checked against this turn's BlazeQuery evidence ("" when there is none). */
+        /** 0.51.0: a shell command checked against this turn's ArgusQuery evidence ("" when there is none). */
         private fun queryVerify(cmd: String): String = try {
             val ev = queryEvidence
-            if (ev.isEmpty()) "" else com.blaze.assistant.agent.query.Verify.note(com.blaze.assistant.agent.query.Verify.check(cmd, ev))
+            if (ev.isEmpty()) "" else com.argus.assistant.agent.query.Verify.note(com.argus.assistant.agent.query.Verify.check(cmd, ev))
         } catch (_: Throwable) { "" }
 
         /**
@@ -3143,13 +3143,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val snap = JSONArray()
                 for (i in 0 until history.length()) snap.put(if (i >= from) history.opt(i) else JSONObject())
                 if (!isPrivate) {
-                    val done = com.blaze.assistant.memory.CacheTier.pageHistory(id, snap, from)
-                    for ((b, ref) in done) com.blaze.assistant.memory.CacheTier.apply(history, b, ref)
+                    val done = com.argus.assistant.memory.CacheTier.pageHistory(id, snap, from)
+                    for ((b, ref) in done) com.argus.assistant.memory.CacheTier.apply(history, b, ref)
                     if (done.isNotEmpty()) persist()
                 }
                 pagedUpto = history.length()
-                cacheBlock = if (isPrivate) "" else com.blaze.assistant.memory.CacheTier.promptBlock(id)
-            } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: pageLargeInputs", e) }
+                cacheBlock = if (isPrivate) "" else com.argus.assistant.memory.CacheTier.promptBlock(id)
+            } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: pageLargeInputs", e) }
         }
 
         private suspend fun longChatTool(name: String, args: JSONObject): String {
@@ -3218,17 +3218,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (why != TurnEnd.Reason.DONE) add(Role.BLAZE, TurnEnd.line(why, lastStep))
                     else scope.launch { kotlinx.coroutines.delay(TurnEnd.DONE_GRACE_MS); if (TurnEnd.doneLineDue(msgs.filterNot { it.meta == Ack.META }.map { it.role }, job?.isActive == true, inbox.isNotEmpty())) { add(Role.BLAZE, TurnEnd.line(why, lastStep)); persist() } }
                 }
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnEnd", e) }
-            // Low-data mode: how much this task used (Blaze's own traffic: models, web, browser).
-            if (Settings.lowData) try { DataMeter.chip(bytes0)?.let { chip -> msgs.lastOrNull { it.role == Role.BLAZE }?.let { addMeta(it.id, chip) } } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: DataMeter.chipbytes0.let chip msgs.lastO", e) }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: TurnEnd", e) }
+            // Low-data mode: how much this task used (Argus's own traffic: models, web, browser).
+            if (Settings.lowData) try { DataMeter.chip(bytes0)?.let { chip -> msgs.lastOrNull { it.role == Role.BLAZE }?.let { addMeta(it.id, chip) } } } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: DataMeter.chipbytes0.let chip msgs.lastO", e) }
             LlmClient.liteTurn = false
             LlmClient.heavyTurn = false
             turnModel?.let { tm -> if (TurnModel.current === tm) TurnModel.current = null }
             // v0.42.0: a run still waiting for the phone is stopped; one still answering stays saved and is picked up later.
-            cloudTurn?.let { try { CloudRuns.endTurn(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: CloudRuns.endTurnit", e) } }
+            cloudTurn?.let { try { CloudRuns.endTurn(it) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: CloudRuns.endTurnit", e) } }
             lastTurnDesign = ViewRouter.byId("design")?.let { d -> synchronized(turnOk) { turnOk.any { ClaimGuard.backs(d, it) } } } == true
-            if (agentId == null) com.blaze.assistant.phone.Pointer.done()
-            try { finishAck() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: finishAck", e) }
+            if (agentId == null) com.argus.assistant.phone.Pointer.done()
+            try { finishAck() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: finishAck", e) }
             thinking = ""
             mood = Mood.IDLE
             currentStep = 0
@@ -3252,17 +3252,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         suspend fun runLoop() {
             // Lazy start: blaze.db opens off the main thread; a turn that starts right after launch waits for it (suspends).
-            try { Mind.await() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mind.await", e) }
+            try { Mind.await() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: Mind.await", e) }
             pageLargeInputs()   // 0.49.0: a big paste or file goes to the cache before anything is built from the history
             var turnEnd = TurnEnd.Reason.DONE   // v0.45.6: why the turn ended, for the silent-ending watchdog
             turnDesignRender = null; turnDesignRenderSet = false
             val bytes0 = DataMeter.used()
-            // v0.41.0 speed: every phase of the turn is timed (TurnTimer → logcat BlazeSpeed, slow log, speed log).
+            // v0.41.0 speed: every phase of the turn is timed (TurnTimer → logcat ArgusSpeed, slow log, speed log).
             val timer = TurnTimer()
             if (agentId == null) StartTrace.stage("turn")   // v0.45.9: finer marks before the wire
             // v0.45.9 ChipGate: chips only offer what this phone can do (calendar, weather, music, SMS…); local checks only.
             // Off the send path: the reply's chips are read long after this lands.
-            if (agentId == null) io.launch { try { ChipGate.caps = TurnContextSource.caps() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: ChipGate.caps", e) } }
+            if (agentId == null) io.launch { try { ChipGate.caps = TurnContextSource.caps() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: ChipGate.caps", e) } }
             // 0.45.16: an explicit topic switch drops the earlier topic's names from this turn's chips (ChipGate.stale).
             if (agentId == null) try { val ask = lastUserText(); val prev = msgs.takeLast(13).filter { it.text != ask }; ChipGate.stale = ChipGate.staleTerms(ask, prev.map { it.text }, prev.filter { it.role == Role.USER }.map { it.text }) } catch (e: Throwable) { ChipGate.stale = emptySet() }
             Memory.turnKey = timer.start
@@ -3280,22 +3280,22 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // v0.41.0 speed: the independent lookups before the first model call (tool list, current design, skills,
                 // specialists, plan memory) start together instead of one after another. Each is cheap to throw away.
                 val stateQ0 = !routine && PhoneState.kind(userNow) != null
-                val selfQ0 = !routine && BlazeDocs.isAboutBlaze(userNow)
+                val selfQ0 = !routine && ArgusDocs.isAboutArgus(userNow)
                 val plainDev0 = !routine && !bulk && FastActions.plainDevice(userNow)
                 val par = kotlinx.coroutines.CoroutineScope(kotlin.coroutines.coroutineContext + Dispatchers.IO)
-                // 0.51.0 BlazeQuery ("involuntary omniscience"): fires the moment the turn starts, in parallel with the prompt
-                // assembly below. The reply waits at most BlazeQuery.HOT_MS for the pack; later results reach the next model
+                // 0.51.0 ArgusQuery ("involuntary omniscience"): fires the moment the turn starts, in parallel with the prompt
+                // assembly below. The reply waits at most ArgusQuery.HOT_MS for the pack; later results reach the next model
                 // steps of this turn (onLate), later turns (topic reuse) and cache_search. Main chat only, never private chats.
                 val bqStart = System.currentTimeMillis()
                 val bqTurn = timer.start
                 queryTurn = bqTurn; queryBlock = ""; queryEvidence = emptyList()
                 val bqRecent = try { msgs.takeLast(10).filter { (it.role == Role.USER || it.role == Role.BLAZE) && it.text != userNow && it.text.isNotBlank() }.takeLast(6).map { it.text.take(400) } } catch (_: Throwable) { emptyList() }
-                val dQuery = if (agentId == null && spNow == null && !routine && !isPrivate && com.blaze.assistant.agent.query.QueryRuntime.enabled() && Settings.bool("tiered_memory", true))
+                val dQuery = if (agentId == null && spNow == null && !routine && !isPrivate && com.argus.assistant.agent.query.QueryRuntime.enabled() && Settings.bool("tiered_memory", true))
                     par.async {
-                        val code = com.blaze.assistant.agent.query.NeedDetect.isCode(userNow)
-                        com.blaze.assistant.agent.query.BlazeQuery.hot(com.blaze.assistant.agent.query.BlazeQuery.Request(id, userNow, bqRecent,
-                            com.blaze.assistant.composer.ModelChoice.current.value, com.blaze.assistant.agent.query.EvidencePack.budgetTokens(ctxWindow(), false, code), isPrivate),
-                            com.blaze.assistant.agent.query.QueryRuntime.env()) { late ->
+                        val code = com.argus.assistant.agent.query.NeedDetect.isCode(userNow)
+                        com.argus.assistant.agent.query.ArgusQuery.hot(com.argus.assistant.agent.query.ArgusQuery.Request(id, userNow, bqRecent,
+                            com.argus.assistant.composer.ModelChoice.current.value, com.argus.assistant.agent.query.EvidencePack.budgetTokens(ctxWindow(), false, code), isPrivate),
+                            com.argus.assistant.agent.query.QueryRuntime.env()) { late ->
                             if (queryTurn == bqTurn && late.block.isNotEmpty()) { queryBlock = late.block; queryEvidence = late.evidence }
                         }
                     } else null
@@ -3323,14 +3323,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val groupsOn = HashSet<String>().apply {
                     if (bulk) addAll(ToolRouter.groups.map { it.id })
                     addAll(ToolPick.ALWAYS_GROUPS); addAll(ToolRouter.usedIn(history))
-                    if (com.blaze.assistant.stage.StageStore.let { s -> s.state.value.items.isNotEmpty() || s.shelf.value.isNotEmpty() }) add("stage")   // + the glance layer's shelf
+                    if (com.argus.assistant.stage.StageStore.let { s -> s.state.value.items.isNotEmpty() || s.shelf.value.isNotEmpty() }) add("stage")   // + the glance layer's shelf
                     turnExec = ExecRoute.Exec.ANY
                 }
                 timer.mark("route"); if (agentId == null) StartTrace.stage("route")
                 // v0.45.1 speed: the memory block (kept per turn by PromptMemo) and the orient screen read start now, while
                 // the tool list, skills and specialists are still being looked up. The screen is read on the main thread as
                 // before (the accessibility service's element numbers live there); it just no longer waits its turn.
-                par.launch(Dispatchers.Default) { try { Memory.promptBlock(userNow) } catch (e: CancellationException) { throw e } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: memory warm", e) } }
+                par.launch(Dispatchers.Default) { try { Memory.promptBlock(userNow) } catch (e: CancellationException) { throw e } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: memory warm", e) } }
                 val dOrient = if (!routine && "screen" in groupsOn) par.async(Dispatchers.Main) {
                     try { orientRead() } catch (e: CancellationException) { throw e } catch (_: Throwable) { "" to "" } } else null
                 val allTools0 = TeamTools.keep(id, dTools.await())   // P0-AG-01: a bound bot's tool subset
@@ -3341,13 +3341,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     for (i in 0 until src.length()) src.getJSONObject(i).let { t -> if (t.optJSONObject("function")?.optString("name") !in BgAgents.leadOnly) put(t) } }, agentPlan)
                 timer.mark("tools"); if (agentId == null) StartTrace.stage("tools")
                 // 0.45.19: every bubble's final sanitizer knows this app's tool names (CallScan).
-                try { CallScan.learn(ToolCalls.names(allTools0)) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CallScan.learn", e) }
+                try { CallScan.learn(ToolCalls.names(allTools0)) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CallScan.learn", e) }
                 // v0.23.0 views + skills: the view this request needs (its tools on) and the skills that match it,
                 // looked up before the first model call with no extra model call. Shown on the work card.
                 // v0.23.2 follow-on edits: right after a design (or from the Design view's own box), "show engine" edits that design.
                 val curDesign = dDesign.await()
                 val followOn = !routine && agentId == null && curDesign != null &&
-                    (lastTurnDesign || com.blaze.assistant.ui.Views.showing.value == "design" || Designs.recent())
+                    (lastTurnDesign || com.argus.assistant.ui.Views.showing.value == "design" || Designs.recent())
                 turnView = if (bulk) null else ViewRouter.route(userNow, followOn)
                 turnDesignNote = if (followOn && curDesign != null && turnView?.id == "design" && ViewRouter.route(userNow)?.id != "design")
                     ViewRouter.followOnHint(curDesign.title, curDesign.kind, curDesign.path) else ""
@@ -3359,23 +3359,23 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 turnBook = VerifyBook()
                 oneShot.clear(); loopGuard.clear()
                 // v0.45.0 (#18): "no, that's wrong" right after a saved plan → that plan is never replayed.
-                lastPlanKey?.let { k -> if (PlanGate.correction(userNow)) try { TapLoop.Plans.drop(k) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: TapLoop.Plans.dropk", e) } }
+                lastPlanKey?.let { k -> if (PlanGate.correction(userNow)) try { TapLoop.Plans.drop(k) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: TapLoop.Plans.dropk", e) } }
                 lastPlanKey = null
                 // v0.45.0 (#38): a resumed task keeps the goal (and constraints) it was stopped with.
                 val resuming = resumeGoal != null
-                // 0.45.29 (stale "Yes"): a short yes answers only the newest Blaze / Halo message, and only while it is fresh.
+                // 0.45.29 (stale "Yes"): a short yes answers only the newest Argus / Halo message, and only while it is fresh.
                 turnBind = if (bulk || agentId != null || resuming) null else try {
                     val uid = msgs.lastOrNull { it.role == Role.USER && it.id !in sideIds }?.id ?: Long.MAX_VALUE
                     val newest = msgs.lastOrNull { it.role == Role.BLAZE && it.id < uid && it.text.isNotBlank() && it.meta != Ack.META }
                         ?.let { FollowUpBind.Said(it.speaker.ifBlank { "${BrandName.NAME}" }.replaceFirstChar { c -> c.uppercase() }, it.text, it.at) }
                     FollowUpBind.bind(userNow, newest, System.currentTimeMillis())
-                } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: FollowUpBind", e); null }
+                } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: FollowUpBind", e); null }
                 turnGoal = if (bulk) null else resumeGoal ?: GoalPin.of(userNow, GoalPin.userTexts(history).let { l -> if (l.lastOrNull()?.contains(userNow.trim().take(40)) == true) l.dropLast(1) else l }, turnBind)
                 // 0.52.1 (owner: "memory of tasks and old context"): a vague reference back ("I signed you in", "retry it",
                 // "continue", "same as before but for X") is resolved to the task it means; its record goes into the prompt.
                 turnSignInWall = ""; turnSignedIn = ""
                 turnRef = if (bulk || agentId != null) null else try { TaskMemory.resolve(userNow, TaskMemoryStore.forChat(id)) }
-                    catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TaskMemory.resolve", e); null }
+                    catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: TaskMemory.resolve", e); null }
                 turnTaskId = turnRef?.rec?.id
                 turnRef?.let { r -> if (r.kind == TaskMemory.Kind.SIGNED_IN) turnSignedIn = r.rec?.needsSignIn.orEmpty() }
                 // 2026-11-19: a NEW message that only seems to name an old task no longer brings it back to ACTIVE.
@@ -3394,7 +3394,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 turnSkills = dSkills.await()
                 // v0.26.2: a phone-state question ("am I on mute?") is answered from the Phone now line: no skill packs, no tool loop.
                 val stateQ = stateQ0
-                // v0.28.4: a question about Blaze itself ("take me to blaze-agent repo in github") is a docs lookup: no coding skills
+                // v0.28.4: a question about Argus itself ("take me to blaze-agent repo in github") is a docs lookup: no coding skills
                 // (≈ 6,000 chars of them were pulled in by "repo" / "github") and no Coder specialist.
                 val selfQ = selfQ0
                 if (stateQ || selfQ) turnSkills = SkillMatch.Result.NONE
@@ -3414,7 +3414,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 // 0.53.3 (owner: "remove the pills"): which skills / specialist loaded is technical; it goes to the trace, never the chat.
                 try { listOf(SpecialistMatch.cardLine(turnSpecs), SkillMatch.cardLine(turnSkills)).filter { it.isNotBlank() }
-                    .takeIf { it.isNotEmpty() }?.let { android.util.Log.i("BlazeSkills", it.joinToString(" | ")) } } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
+                    .takeIf { it.isNotEmpty() }?.let { android.util.Log.i("ArgusSkills", it.joinToString(" | ")) } } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                 // v0.44.0 fewer tools per turn: ToolRouter's groups, then ToolPick (core split into cues, capped).
                 val usedNames = ToolPick.usedNames(history)
                 if (turnView != null) groupsOn += "make"
@@ -3429,8 +3429,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (widened && widenNames.isEmpty()) { sizeLine = "tools all ${allTools.length()} (widened)"; return allTools }
                     // v0.45.9 (ToolTruth): every agent request carries the full registered list (gateway 0.8.2 drops calls to tools not in it).
                     // 0.45.29: a browser task's steps carry the browser tools (+ ask / search / memory); asking for another widens again.
-                    if (!bulk && com.blaze.assistant.browser.BrowserFocus.active(synchronized(turnTools) { turnTools.toList() })) {
-                        val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools, ToolPick.core(SimpleMode.simple) + widenNames); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
+                    if (!bulk && com.argus.assistant.browser.BrowserFocus.active(synchronized(turnTools) { turnTools.toList() })) {
+                        val b = com.argus.assistant.browser.BrowserFocus.subset(allTools, ToolPick.core(SimpleMode.simple) + widenNames); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
                     if (ToolTruth.full) { sizeLine = "tools all ${allTools.length()}"; return ToolTruth.forRequest(allTools) { allTools } }
                     // 2026-11-18: older turns hidden (summary / lookup rung) → this chat's read-back tools ride along (ToolPick.pinnedCues).
                     val pinned = ToolPick.pinnedCues(lastRung, ctxFrom); groupsOn += pinned
@@ -3458,18 +3458,18 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     else { dOrient?.cancel(); "" }).let { o ->
                     if (planHint.isEmpty()) o else if (o.isBlank()) planHint else "$o\n\n$planHint" }
                 timer.mark("orient")
-                // 0.51.0 BlazeQuery: take the pack if it is ready within its budget (counted from the send), never wait longer.
+                // 0.51.0 ArgusQuery: take the pack if it is ready within its budget (counted from the send), never wait longer.
                 if (dQuery != null) {
-                    val left = (com.blaze.assistant.agent.query.BlazeQuery.HOT_MS + 150L - (System.currentTimeMillis() - bqStart)).coerceAtLeast(0L)
+                    val left = (com.argus.assistant.agent.query.ArgusQuery.HOT_MS + 150L - (System.currentTimeMillis() - bqStart)).coerceAtLeast(0L)
                     val pk = try { kotlinx.coroutines.withTimeoutOrNull(left) { dQuery.await() } } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
                     if (pk == null) { lateSteps += "blazequery"; dQuery.cancel() }
                     else if (pk.block.isNotEmpty() && queryBlock.isEmpty()) { queryBlock = pk.block; queryEvidence = pk.evidence }
-                    try { android.util.Log.i("BlazeQuery", "${pk?.status ?: "LATE"} ${pk?.reason.orEmpty()} ${System.currentTimeMillis() - bqStart} ms, ${queryBlock.length} chars") } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
+                    try { android.util.Log.i("ArgusQuery", "${pk?.status ?: "LATE"} ${pk?.reason.orEmpty()} ${System.currentTimeMillis() - bqStart} ms, ${queryBlock.length} chars") } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                     timer.mark("blazequery")
                 }
                 var orientSent = false
                 // Chat lane: small talk and plain questions = one light call with no tools.
-                val lastBlaze = msgs.lastOrNull { it.role == Role.BLAZE }?.text.orEmpty()
+                val lastArgus = msgs.lastOrNull { it.role == Role.BLAZE }?.text.orEmpty()
                 var lite = false   // 2026-11-16 model-first: no regex picks a no-tools "chat" lane; every turn gets the full lane
                 var firstMs = -1L
                 // v0.45.3 speed_stats: when the first words appeared on screen, and the gateway's time to answer headers.
@@ -3510,7 +3510,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 try {
                     if (ct != null) { ct.gids = turnGids; turnGids.firstOrNull()?.let { ct.firstCid = Delivery.tracker().cidForSend(it) } }
                     else Delivery.tracker().apply(turnGids, Delivery.Ev.LOCAL_PICKUP)
-                } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: delivery turn", e) }
+                } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: delivery turn", e) }
                 if (agentId == null) StepPills.begin(id)
                 // v0.45.0 (#17): one turn id and one preferred route for every step of a main-chat turn.
                 turnModel = if (agentId == null && !bulk) TurnModel("t-$id-$turnStart").also { TurnModel.current = it } else null
@@ -3524,7 +3524,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 for (step in 0 until maxSteps) {
                     currentStep = step + 1
                     if (step > 0) timer.mark("tool work")
-                    // v0.30.6 rapid messages: what you sent while Blaze worked (already in the chat) joins here, before the next model call.
+                    // v0.30.6 rapid messages: what you sent while Argus worked (already in the chat) joins here, before the next model call.
                     takeInbox(midTurn = step > 0)
                     // Steering: what the user added while this chat worked joins before the next model call.
                     generateSequence { steer.poll() }.toList().takeIf { it.isNotEmpty() }?.let { notes ->
@@ -3587,7 +3587,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (orientNow) { req.put(JSONObject().put("role", "user").put("content", orientNote)); orientSent = true }
                     tools = if (lite) JSONArray() else pickTools()
                     // v0.45.9 (ToolTruth): the tool list each request carries (count + names), in logcat and the speed line.
-                    run { val t0 = tools; try { android.util.Log.i("BlazeTools", "step ${step + 1}: " + ToolTruth.line(t0)) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("tools-line", e) } }
+                    run { val t0 = tools; try { android.util.Log.i("ArgusTools", "step ${step + 1}: " + ToolTruth.line(t0)) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("tools-line", e) } }
                     // v0.44.0 model routing: an action turn goes to the strong lineup (ModelRoute); plain chat stays fast.
                     // v0.45.3: Autopilot no longer makes every turn "heavy": a plain question on Autopilot (the default) took the
                     // strong lineup with the small fast routes pushed last. Routines / specialists (bulk) still always do.
@@ -3667,7 +3667,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             live.set(false); gate.flush()
                             if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
                             add(Role.STEP, "Reading the screen as text (the picture was slow)")
-                            val text = com.blaze.assistant.phone.BlazeAccessibilityService.instance?.readScreen() ?: "Phone control isn't connected, so the screen can't be read as text."
+                            val text = com.argus.assistant.phone.ArgusAccessibilityService.instance?.readScreen() ?: "Phone control isn't connected, so the screen can't be read as text."
                             r = VisionFast.withoutShots(r, SHOT_NOTE, text)
                             VisionFast.pruneShots(history, SHOT_NOTE)
                         }
@@ -3694,7 +3694,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     timer.mark(if (liteNow) "chat model" else "model")
                     reply.optString("_reasoning").takeIf { it.isNotBlank() }?.let { if (turnThink.isNotEmpty()) turnThink.append("\n\n"); turnThink.append(it) }
                     ReasoningReplay.keep(reply)   // 0.54.0: a tool step's thinking goes back next step
-                    try { Usage.record(req, reply, LlmClient.lastUsage) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Usage.recordreq reply LlmClient.lastUsag", e) }
+                    try { Usage.record(req, reply, LlmClient.lastUsage) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: Usage.recordreq reply LlmClient.lastUsag", e) }
                     // v0.33.1 token ledger: where this call's input tokens went (system prompt, schemas per group, results per tool…).
                     run { val r0 = req; val t0 = tools; val pp = if (lite) emptyList() else lastPromptParts
                         kotlinx.coroutines.withContext(Dispatchers.Default) { TokenLedger.record(r0, t0); TokenLedger.recordSections(pp) } }
@@ -3703,7 +3703,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         val inT = u?.optInt("prompt_tokens")?.takeIf { it > 0 } ?: (LongChat.tokens(req) + tools.toString().length / 4)
                         val outT = u?.optInt("completion_tokens")?.takeIf { it > 0 } ?: (LongChat.text(reply).length / 4)
                         meter = Meter(inT, outT, LongChat.meterLimit(ctxWindow()))
-                    } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: val u LlmClient.lastUsage", e) }
+                    } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: val u LlmClient.lastUsage", e) }
                     if (lite) {
                         lite = false
                         LlmClient.liteTurn = false
@@ -3757,14 +3757,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             val named = ToolTruth.choiceName(history, ToolTruth.names(tools))
                             ReplyFix.keepFlowTool(reply, named, lastUserText())
                             if (ReplyFix.fixEventDays(reply, lastUserText(), java.time.LocalDate.now()) > 0) CallState.current().errors.add("event day moved to the day asked")
-                        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ReplyFix", e) }
+                        } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("ReplyFix", e) }
                         if (!lite) ToolPick.missing(reply, tools).takeIf { it.isNotEmpty() }?.let { miss ->
                             // 0.52.1: only real tools join (a made-up name stays out; the unknown-tool answer handles it)
                             val real = ToolPick.names(allTools).toSet()
                             val add = miss.filter { it in real }
                             if (add.isNotEmpty() && !widenNames.containsAll(add)) { widened = true; widenNames += add; add(Role.STEP, "Loading more tools") } }
                     } catch (e: Exception) {
-                        com.blaze.assistant.device.CrashLog.error("tool gatekeeper", e)
+                        com.argus.assistant.device.CrashLog.error("tool gatekeeper", e)
                         // 0.45.15 (review 22 Oct #6): a reply the gatekeeper choked on never goes on with broken calls.
                         try { ToolCalls.dropMalformed(reply, allTools).takeIf { it > 0 }?.let { CallState.current().errors.add("dropped $it malformed tool call(s)") } } catch (_: Throwable) { reply.remove("tool_calls") }
                     }
@@ -3780,7 +3780,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (!routine && !credGuarded && (reply.optJSONArray("tool_calls")?.length() ?: 0) == 0) try {
                         val said = ReplyParts.split((reply.opt("content") as? String).orEmpty(), final = true).text
                         if (CredAsk.asks(said)) {
-                            val host = kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.browser.BrowserEngine.host() }
+                            val host = kotlinx.coroutines.withContext(Dispatchers.Main) { com.argus.assistant.browser.BrowserEngine.host() }
                             CredAsk.decide(said, host, formAsks[host] ?: 0, credGuarded, ToolCalls.names(allTools), lastUserText())?.let { c ->
                                 credGuarded = true
                                 if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
@@ -3788,7 +3788,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 CallState.current().errors.add("chat credentials ask replaced by the secure form")
                             }
                         }
-                    } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CredAsk", e) }
+                    } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CredAsk", e) }
                     // 0.46.6 (Secure form): a reply asking for a key, token, password, card or code in the chat becomes the Secure Form card(s).
                     if (!routine && !credGuarded && (reply.optJSONArray("tool_calls")?.length() ?: 0) == 0) try {
                         val said = ReplyParts.split((reply.opt("content") as? String).orEmpty(), final = true).text
@@ -3798,7 +3798,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             reply.put("content", JSONObject.NULL).put("tool_calls", calls)
                             CallState.current().errors.add("chat secret ask replaced by the Secure Form")
                         }
-                    } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("SecretAsk", e) }
+                    } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("SecretAsk", e) }
                     kotlinx.coroutines.yield()
                     history.put(reply)
 
@@ -3878,9 +3878,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 reply.put("content", textOut)
                                 pendingFollowups = emptyList()
                             }
-                        } else if (com.blaze.assistant.stage.StageStore.enabled) {
+                        } else if (com.argus.assistant.stage.StageStore.enabled) {
                             // 0.46.1: "Browser's open" / "the timer card is up" with no card on the Stage -> one re-prompt to show it, then the truth.
-                            val onStage = com.blaze.assistant.stage.StageStore.state.value.items.map { it.kind.id }.toSet()
+                            val onStage = com.argus.assistant.stage.StageStore.state.value.items.map { it.kind.id }.toSet()
                             val card = synchronized(turnOk) { ClaimGuard.unbackedCard(shown, turnOk.toList(), onStage) }
                             if (card != null) {
                                 if (!claimNudged && nudgesLeft > 0 && step < maxSteps - 3) {
@@ -3923,14 +3923,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 LlmClient.richTurn = true
                                 kotlinx.coroutines.withTimeoutOrNull(12_000L) { LlmClient.complete(req, null, null, null, LlmClient.Lane.BACKGROUND) }
                                     ?.let { RichRepair.fixedBlock(b.kind, (it.opt("content") as? String).orEmpty()) }
-                            } catch (e: CancellationException) { throw e } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: rich repair", e); null }
+                            } catch (e: CancellationException) { throw e } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: rich repair", e); null }
                             if (fixed != null) { textOut = RichRepair.splice(textOut, b, fixed); reply.put("content", textOut) }
                         }
-                        // 0.45.19-speed: while Blaze Phone is in play, "booked / paid / confirmed" needs a phone_read THIS turn that saw a
+                        // 0.45.19-speed: while Argus Phone is in play, "booked / paid / confirmed" needs a phone_read THIS turn that saw a
                         // confirmation; a status question counts too (device test: "Booking confirmed!" with nothing booked).
                         run {
-                            val phoneDone = synchronized(turnDone) { turnDone.filter { it.name in com.blaze.assistant.browser.phone.PhonePolicy.TOOLS }.map { it.name to it.why } }
-                            com.blaze.assistant.browser.phone.PhoneClaimGuard.review(textOut, phoneDone, phoneDone.isNotEmpty() || (try { com.blaze.assistant.browser.phone.PhoneBrowser.active } catch (_: Throwable) { false }))
+                            val phoneDone = synchronized(turnDone) { turnDone.filter { it.name in com.argus.assistant.browser.phone.PhonePolicy.TOOLS }.map { it.name to it.why } }
+                            com.argus.assistant.browser.phone.PhoneClaimGuard.review(textOut, phoneDone, phoneDone.isNotEmpty() || (try { com.argus.assistant.browser.phone.PhoneBrowser.active } catch (_: Throwable) { false }))
                                 ?.let { textOut = it; reply.put("content", textOut); pendingFollowups = emptyList(); rewroteClaim = true }
                         }
                         val miss = (check as? ClaimCheck.Outcome.Unbacked)?.action
@@ -3989,17 +3989,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if ((calls == null || calls.length() == 0)) try {
                         val times = TimeEcho.setTimes(synchronized(turnSetResults) { turnSetResults.toList() })
                         if (times.isNotEmpty()) { val g = TimeEcho.fix(textOut, times); if (g != textOut) { CallState.current().errors.add("reply named another time than the alarm set; fixed to ${times.first()}"); textOut = g; reply.put("content", g) } }
-                    } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("TimeEcho", e) }
+                    } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("TimeEcho", e) }
                     // v0.45.13 replay round 1: an unconfirmed phone action is never left unsaid in the reply.
                     if ((calls == null || calls.length() == 0) && !rewroteClaim) try {
                         val g = UnconfirmedEcho.fix(textOut, synchronized(turnDone) { turnDone.toList() })
                         if (g != textOut) { CallState.current().errors.add("reply left out that the action wasn't confirmed; said so"); textOut = g; reply.put("content", g) }
-                    } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("UnconfirmedEcho", e) }
+                    } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("UnconfirmedEcho", e) }
                     // 0.45.19: a switch read back on the phone ends with one line saying what was read ("Done ✓ Dark mode is on.").
                     if ((calls == null || calls.length() == 0) && !rewroteClaim) try {
                         val g = ToggleReply.fix(textOut, synchronized(turnDone) { turnDone.toList() })
                         if (g != textOut) { textOut = g; reply.put("content", g) }
-                    } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ToggleReply", e) }
+                    } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("ToggleReply", e) }
                     if ((calls == null || calls.length() == 0) && step < maxSteps - 4 && gateLeft > 0 && nudgesLeft > 0 && !routine) {
                         val nudge = when {
                             FakeCall.looksFake(ReplyParts.split(textOut, final = true).text, ToolCalls.names(allTools), actedThisTurn, lastUserText(), lookedThisTurn) -> FakeCall.NUDGE
@@ -4018,7 +4018,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             continue
                         }
                     }
-                    // v0.45.5 (#1): a reply that only repeats Blaze's own context (Awareness, the system prompt) or a context tool's
+                    // v0.45.5 (#1): a reply that only repeats Argus's own context (Awareness, the system prompt) or a context tool's
                     // result is never the answer: ask once more, then say plainly that it went wrong.
                     if ((calls == null || calls.length() == 0)) {
                         val shown = RapidMessages.display(ReplyParts.split(textOut, final = true).text)
@@ -4045,7 +4045,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             val g = ScheduleTruth.fix(textOut, TurnContextSource.block(lu), true, lu)
                             if (g != textOut) { CallState.current().errors.add("schedule answer didn't match the phone's schedule; rebuilt"); textOut = g; reply.put("content", g) }
                         }
-                    } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ScheduleTruth", e) }
+                    } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("ScheduleTruth", e) }
                     // v0.26.2: an empty final answer (reasoning only, or only tags) is never shown as "Done.": a specific line
                     // when the user asked for an action and a tool succeeded; else ask the model once more, then fail plainly.
                     if ((calls == null || calls.length() == 0) && RapidMessages.display(ReplyParts.split(textOut, final = true).text).isBlank()) {
@@ -4080,12 +4080,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 ?.let { ReplyLedger.accept(ReplyParts.split(it, final = true).text, owed) }
                             if (more != null) { textOut = ReplyLedger.merge(textOut, more); reply.put("content", textOut) }
                         }
-                    } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ReplyLedger", e) }
+                    } catch (e: CancellationException) { throw e } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("ReplyLedger", e) }
                     if (calls == null || calls.length() == 0) {
                         // v0.27.x: the reply only describes what the design tool really produced (a flat diagram is not "3D").
                         // v0.33.3: "Here's your app list" always comes with the list (the tappable app card).
                         turnAppsCard?.let { card ->
-                            val g = com.blaze.assistant.phone.AppFinder.ensureCard(textOut, card, lastUserText())
+                            val g = com.argus.assistant.phone.AppFinder.ensureCard(textOut, card, lastUserText())
                             if (g != textOut) { textOut = g; reply.put("content", g) }
                         }
                         if (Designs.touched.isNotEmpty()) {
@@ -4094,7 +4094,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         }
                         // v0.45.6: no "Done" / "ready" unless the Design view proved it drew; Motion asks get the honest Motion status.
                         if (turnDesignRenderSet || DesignTruth.isMotionAsk(lastUserText())) {
-                            val g = DesignTruth.ground(textOut, if (turnDesignRenderSet) turnDesignRender else com.blaze.assistant.ui.DesignStatus.Status(com.blaze.assistant.ui.DesignStatus.State.RENDERED, "", 0),
+                            val g = DesignTruth.ground(textOut, if (turnDesignRenderSet) turnDesignRender else com.argus.assistant.ui.DesignStatus.Status(com.argus.assistant.ui.DesignStatus.State.RENDERED, "", 0),
                                 DesignTruth.isMotionAsk(lastUserText()), Designs.touched.any { Designs.is3d(it) })
                             if (g != textOut) { textOut = g; reply.put("content", g) }
                         }
@@ -4105,16 +4105,16 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         var fbPlan = false; var fbGroups: Set<String>? = null   // v0.45.0 reactions: what this turn taught (TurnFeedback)
                         if (!routine && !bulk && agentId == null && !isPrivate && PlanGate.keep(logNow, proofNudged || claimNudged, rewroteClaim)) try {
                             planRec.recipe()?.let { TapLoop.Plans.put(userNow, it); lastPlanKey = userNow; fbPlan = true }
-                        } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: planRec.recipe.let TapLoop.Plans.putuser", e) }
+                        } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: planRec.recipe.let TapLoop.Plans.putuser", e) }
                         val secs = (System.currentTimeMillis() - turnStart) / 1000.0
-                    if (step > 0) { com.blaze.assistant.device.Haptics.done(app); com.blaze.assistant.device.Sounds.done() }
-                        com.blaze.assistant.device.CrashLog.slow("turn ($step steps, ${LlmClient.lastRoute})", System.currentTimeMillis() - turnStart)
+                    if (step > 0) { com.argus.assistant.device.Haptics.done(app); com.argus.assistant.device.Sounds.done() }
+                        com.argus.assistant.device.CrashLog.slow("turn ($step steps, ${LlmClient.lastRoute})", System.currentTimeMillis() - turnStart)
                         // v0.33.1 learned tool router: what this request's words needed, from the tools that really ran.
                         if (!routine && !bulk && agentId == null && !isPrivate && PlanGate.learn(logNow, proofNudged || claimNudged)) try {
                             val used = synchronized(turnTools) { turnTools.toList() }.mapNotNull { ToolRouter.groupOf(it) }.filter { it != "more" }.toSet()
                             kotlinx.coroutines.withContext(Dispatchers.IO) { LearnedRoutes.learn(userNow, used) }
                             fbGroups = used
-                        } catch (e: CancellationException) { throw e } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: val used synchronizedturnTools turnTools", e) }
+                        } catch (e: CancellationException) { throw e } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: val used synchronizedturnTools turnTools", e) }
                         // v0.45.0 (#19, #6, #17): nudges, Cloud-run continues / restarts and route changes go in the speed line.
                         val extra = listOf(sizeLine, "tools sent ${tools.length()}", if (nudgeCount > 0) "nudges $nudgeCount" else "", if (lateSteps.isNotEmpty()) "late: " + lateSteps.joinToString(",") else "",
                             if (LlmClient.lastMaxGapMs >= 1500) "longest pause in the stream ${TurnTimer.fmt(LlmClient.lastMaxGapMs)} (${LlmClient.lastServedBy.ifBlank { "model" }})" else "",
@@ -4129,8 +4129,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             tools.length(), req.toString().length + tools.toString().length, LlmClient.lastRoute, timer.line() + (if (extra.isNotBlank()) " · $extra" else ""),
                             shownMs = (if (shownAt > 0) shownAt else System.currentTimeMillis()) - (msgs.firstOrNull { it.id == turnFrom }?.at?.takeIf { it in 1..turnStart } ?: turnStart), headersMs = hdrMs,
                             visibleMs = (if (agentId == null) StartTrace.take()?.visibleMs else null) ?: -1, wireMs = (if (agentId == null) StartTrace.take()?.wireMs else null) ?: -1))
-                        if (agentId == null) StartTrace.take()?.let { m -> try { android.util.Log.i("BlazeSpeed", StartTrace.line(m)) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeSpeed start line", e) } }
-                        try { android.util.Log.i("BlazeSpeed", "turn ${step + 1} steps, ${LlmClient.lastRoute}: ${timer.line()}" + (if (extra.isNotBlank()) " · $extra" else "")) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: android.util.Log.iBlazeSpeed turn step 1", e) }
+                        if (agentId == null) StartTrace.take()?.let { m -> try { android.util.Log.i("ArgusSpeed", StartTrace.line(m)) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: ArgusSpeed start line", e) } }
+                        try { android.util.Log.i("ArgusSpeed", "turn ${step + 1} steps, ${LlmClient.lastRoute}: ${timer.line()}" + (if (extra.isNotBlank()) " · $extra" else "")) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: android.util.Log.iArgusSpeed turn step 1", e) }
                         val idsBefore = ids.get()
                         addReply(liveId, textOut, turnThink.toString(), pendingFollowups,
                             if (Settings.showRoute) "☁ " + listOf(LlmClient.lastRoute.ifBlank { "${BrandName.NAME} Cloud" }.replace(" · ", " / "),
@@ -4154,7 +4154,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         if ((fbPlan || fbGroups != null) && !isPrivate) try {
                             val gids = msgs.filter { it.role == Role.BLAZE && (it.id == liveId || it.id >= idsBefore) }.map { it.gid }
                             TurnFeedback.record(gids, id, userNow, fbPlan, fbGroups, turnStart / 1000, System.currentTimeMillis() / 1000)
-                        } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: TurnFeedback.record", e) }
+                        } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: TurnFeedback.record", e) }
                         break
                     }
                     // Text that came with tool calls is narration, shown as a step; its reasoning joins the turn's.
@@ -4186,20 +4186,20 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val preStepped = HashSet<Int>()
                     val pre: Map<Int, String> = run {
                         val pick = (0 until calls.length()).filter { i -> val n = callName(i)
-                            com.blaze.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && calls.getJSONObject(i).optString("id") !in cutCalls && i !in refusedCmds && surfaceNote(n, quiet = true) == null &&
-                                loopGuard.check(n, callArgs(i)) == null && oneShot.earlier(n, callArgs(i)) == null && com.blaze.assistant.policy.PolicyRuntime.quiet(id, n, callArgs(i).toString(), agentPlan) }   // 0.53.1: a call that may card stays in order
+                            com.argus.assistant.orchestra.ToolScheduler.Resources.prefetchable(n) && n !in unknownCalls && calls.getJSONObject(i).optString("id") !in cutCalls && i !in refusedCmds && surfaceNote(n, quiet = true) == null &&
+                                loopGuard.check(n, callArgs(i)) == null && oneShot.earlier(n, callArgs(i)) == null && com.argus.assistant.policy.PolicyRuntime.quiet(id, n, callArgs(i).toString(), agentPlan) }   // 0.53.1: a call that may card stays in order
                         if (pick.size < 2 || !Settings.bool("parallel_tools", true)) return@run emptyMap()
-                        val tcs = pick.map { i -> com.blaze.assistant.orchestra.ToolScheduler.Call(calls.getJSONObject(i).optString("id", "call_$step$i"), callName(i), callArgs(i)) }
+                        val tcs = pick.map { i -> com.argus.assistant.orchestra.ToolScheduler.Call(calls.getJSONObject(i).optString("id", "call_$step$i"), callName(i), callArgs(i)) }
                         val toolMs = Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L
-                        val res = com.blaze.assistant.orchestra.ToolScheduler.run(tcs, { c ->
+                        val res = com.argus.assistant.orchestra.ToolScheduler.run(tcs, { c ->
                             Recovery.run(c.name, OneShot.risky(c.name), toolMs) { runTool(c.name, c.args, shots) }.also { r -> oneShot.record(c.name, c.args, r) }
-                        }, timeoutMs = toolMs + 15_000L, listener = object : com.blaze.assistant.orchestra.ToolScheduler.Listener {
-                            override fun started(index: Int, call: com.blaze.assistant.orchestra.ToolScheduler.Call) {
+                        }, timeoutMs = toolMs + 15_000L, listener = object : com.argus.assistant.orchestra.ToolScheduler.Listener {
+                            override fun started(index: Int, call: com.argus.assistant.orchestra.ToolScheduler.Call) {
                                 // each call's step shows the moment it starts (the work pill counts it live)
                                 if (call.name !in Friendly.selfNarrating) { addStep(Friendly.say(call.name, call.args), Friendly.exact(call.name, call.args)); preStepped += pick[index] }
                             }
                         })
-                        try { android.util.Log.i("BlazeSpeed", "parallel tools: " + com.blaze.assistant.orchestra.ToolScheduler.describe(tcs)) } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
+                        try { android.util.Log.i("ArgusSpeed", "parallel tools: " + com.argus.assistant.orchestra.ToolScheduler.describe(tcs)) } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                         pick.zip(res).associate { (i, r) -> i to r.output }
                     }
                     for (i in 0 until calls.length()) {
@@ -4234,8 +4234,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         ?: oneShot.earlier(name, args)?.also { add(Role.STEP, "Not repeating ${Friendly.say(name, args).trimEnd('.', '\u2026')}: it already ran") }
                             ?: (Recovery.run(name, OneShot.risky(name), Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L) {
                                 // 0.52.0: the screen, the browser, files and named terminal sessions are held in the locks every agent shares
-                                com.blaze.assistant.orchestra.KeyedLocks.shared.with(com.blaze.assistant.orchestra.ToolScheduler.Resources.lockClaims(
-                                    com.blaze.assistant.orchestra.ToolScheduler.Resources.claims(name, args))) { runTool(name, args, shots) } }
+                                com.argus.assistant.orchestra.KeyedLocks.shared.with(com.argus.assistant.orchestra.ToolScheduler.Resources.lockClaims(
+                                    com.argus.assistant.orchestra.ToolScheduler.Resources.claims(name, args))) { runTool(name, args, shots) } }
                                 .also { r -> oneShot.record(name, args, r) })
                         if (!result.startsWith("Not run:") && cutNow == null) loopGuard.record(name, args, result)
                         // 0.52.1: a sign-in wall on a web surface is remembered with the task (so "I signed you in" finds it).
@@ -4258,7 +4258,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         // get QUICK_MS, then the check finishes in the background and flips the receipt when it ends.
                         // 0.46.0: a list result becomes an exact table card (no retyped rows); the model writes only the comment.
                         try { ToolCards.card(name, args, result)?.let { card -> turnCards += card; LlmClient.richTurn = true; result = result.trimEnd() + "\n" + ToolCards.NOTE } }
-                        catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: tool card", e) }
+                        catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: tool card", e) }
                         val book = turnBook
                         val strictV = VerifyPolicy.strict()
                         val vMode = VerifyPolicy.mode(name, strictV)
@@ -4303,17 +4303,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         turnToolCalls++
                         if (name == SaveFile.TOOL) SaveFile.pathIn(result)?.let { savedPath = it }
                         if (name == "set_alarm" || name == "set_timer" || name == "create_routine") turnSetResults += result
-                        if (name == "run_plan" || name == "read_screen" || name == com.blaze.assistant.phone.SettingsJump.TOOL) groupsOn += "screen"
-                        if (name in screenActions && !result.startsWith("Error") && !result.startsWith("Couldn't")) com.blaze.assistant.device.Haptics.tick(app)
+                        if (name == "run_plan" || name == "read_screen" || name == com.argus.assistant.phone.SettingsJump.TOOL) groupsOn += "screen"
+                        if (name in screenActions && !result.startsWith("Error") && !result.startsWith("Couldn't")) com.argus.assistant.device.Haptics.tick(app)
                         // v0.30.4 batching: several screen actions in one reply run back to back with a short settle; the
                         // screen is read once, after the last of them.
                         if (name == "do_actions" || (name in screenActions && !FastActions.isScreen(result))) {
                             if (i in readAt || name == "do_actions") result += screenAfter(result)
-                            else com.blaze.assistant.phone.BlazeAccessibilityService.instance?.settle(700, 150)
+                            else com.argus.assistant.phone.ArgusAccessibilityService.instance?.settle(700, 150)
                         }
                         // 0.49.0 cache tier: a very long result is cached (head + TOC sent); a long one keeps the artifact aside.
-                        val keepWhole = !Settings.longChat || LongChat.keeps(name) || FastActions.isScreen(result) || name in com.blaze.assistant.memory.CacheTier.names
-                        val sentResult = if (keepWhole) result else (com.blaze.assistant.memory.CacheTier.asideTool(id, name, result)
+                        val keepWhole = !Settings.longChat || LongChat.keeps(name) || FastActions.isScreen(result) || name in com.argus.assistant.memory.CacheTier.names
+                        val sentResult = if (keepWhole) result else (com.argus.assistant.memory.CacheTier.asideTool(id, name, result)
                             ?: if (result.length > LongChat.ASIDE_OVER) kotlinx.coroutines.withContext(Dispatchers.IO) { LongChat.aside(result) } else result)
                         history.put(
                             JSONObject().put("role", "tool")
@@ -4356,7 +4356,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 msgs = msgs.map { if (it.id == id) it.copy(meta = "usedup:${e.pid}|${e.model}") else it }
             } catch (e: LlmClient.LlmException) {
                 keepForResume()
-                // v0.45.4: signed out of Blaze Cloud with nothing else to answer: a Sign in card, the message waits and is
+                // v0.45.4: signed out of Argus Cloud with nothing else to answer: a Sign in card, the message waits and is
                 // sent by itself once the account lands (SignInGate).
                 if (SignInGate.applies(e.code, e.message)) {
                     val cid = add(Role.ERROR, SignInGate.LINE)
@@ -4366,7 +4366,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.ERROR, e.message ?: "Something went wrong.")
                 }
             } catch (e: Exception) {
-                com.blaze.assistant.device.CrashLog.error("agent loop", e)
+                com.argus.assistant.device.CrashLog.error("agent loop", e)
                 keepForResume()
                 add(Role.ERROR, e.message ?: "Something went wrong.")
             } finally {
@@ -4448,7 +4448,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             for (step in 0 until 16) {
                 val reply = LlmClient.complete(msgs, if (tools.length() > 0) tools else null, null, null, LlmClient.Lane.STEPS)
                 reply.remove("_reasoning")
-                try { Usage.record(msgs, reply, LlmClient.lastUsage) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Usage.recordmsgs reply LlmClient.lastUsa", e) }
+                try { Usage.record(msgs, reply, LlmClient.lastUsage) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: Usage.recordmsgs reply LlmClient.lastUsa", e) }
                 val unknown = try {
                     if ((reply.optJSONArray("tool_calls")?.length() ?: 0) == 0) (reply.opt("content") as? String)?.let { txt ->
                         (CallScan.toCalls(txt, all) ?: ToolCalls.fromText(txt, all) ?: ToolLeak.toCalls(txt, all))?.let { (c, rest) -> reply.put("tool_calls", c); reply.put("content", if (rest.isBlank()) JSONObject.NULL else CallScan.clean(ToolLeak.strip(rest))) } }
@@ -4478,9 +4478,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val call = calls.getJSONObject(i)
                     val fn = call.getJSONObject("function")
                     val args = try { JSONObject(fn.optString("arguments", "{}").ifBlank { "{}" }) } catch (_: Exception) { JSONObject() }
-                    com.blaze.assistant.orchestra.ToolScheduler.Call(call.optString("id", "s$step$i"), fn.getString("name"), args)
+                    com.argus.assistant.orchestra.ToolScheduler.Call(call.optString("id", "s$step$i"), fn.getString("name"), args)
                 }
-                val outs = com.blaze.assistant.orchestra.ToolScheduler.run(batch, { c ->
+                val outs = com.argus.assistant.orchestra.ToolScheduler.run(batch, { c ->
                     var result = if (c.name in unknown) "Error: there is no tool called \"${c.name}\". Use one of the tools you were given (exact name)." else runTool(c.name, c.args, shots)
                     if (c.name == "do_actions" || (c.name in screenActions && !FastActions.isScreen(result))) result += screenAfter(result)
                     result
@@ -4515,13 +4515,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         /** Fresh compact screen after an action, so the model doesn't spend a turn on read_screen (the orient loop's "look after"). */
         suspend fun screenAfter(result: String): String {
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance ?: return ""
+            val svc = com.argus.assistant.phone.ArgusAccessibilityService.instance ?: return ""
             if (!Settings.phoneControl || result.startsWith("Error") || result.startsWith("No app") || result.startsWith("Phone control is off") || result.startsWith("Not done yet")) return ""
             // 0.45.19: a result the phone already read back (verified by state) needs only a short settle before the look
             if (result.contains(ActCheck.OK)) svc.settle(500, 120) else svc.settle(1200, 200)
             val s = svc.readScreen(diff = true)
             orient.saw(svc.currentPkg())
-            return "\n\nScreen now:\n" + s + com.blaze.assistant.phone.Watchers.drain()
+            return "\n\nScreen now:\n" + s + com.argus.assistant.phone.Watchers.drain()
         }
 
         /** v0.30.7: screen tools whose steps go into plan memory (run_plan records its own steps). */
@@ -4536,19 +4536,19 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         /** browser_secure_input: secure card in the chat → values straight into the page; the model gets placeholders. */
         private suspend fun secureInput(args: JSONObject): String {
-            val B = com.blaze.assistant.browser.BrowserEngine
-            val S = com.blaze.assistant.browser.SecureInput
-            val V = com.blaze.assistant.browser.Vault
+            val B = com.argus.assistant.browser.BrowserEngine
+            val S = com.argus.assistant.browser.SecureInput
+            val V = com.argus.assistant.browser.Vault
             val host = kotlinx.coroutines.withContext(Dispatchers.Main) { B.host() }
             if (host.isBlank()) return "No page is open in ${BrandName.NAME}'s browser. Open the sign-in page with browser_open first, then call this again."
             // v0.28.2: no secure form or saved login on a plain-http page (except this phone / the LAN).
             val pageUrl = kotlinx.coroutines.withContext(Dispatchers.Main) { B.url() }
-            if (!com.blaze.assistant.connect.UrlSafety.autofillAllowed(pageUrl)) return com.blaze.assistant.connect.UrlSafety.AUTOFILL_REFUSED
+            if (!com.argus.assistant.connect.UrlSafety.autofillAllowed(pageUrl)) return com.argus.assistant.connect.UrlSafety.AUTOFILL_REFUSED
             // 0.45.19: fields written as a JSON string or a word list ("email, password") still open the form.
             val fields = S.parseFields(args.optJSONArray("fields") ?: CallScan.secureArgs(args)?.optJSONArray("fields"))
             if (fields.isEmpty()) return "Error: give fields, e.g. [{\"name\":\"email\",\"kind\":\"email\"},{\"name\":\"password\",\"kind\":\"password\"}]."
             if (fields.any { S.isCardField(it) }) return "Card details are never collected in the chat. Show the live browser with browser_show so the user types them on the page, or stop before paying."
-            if (fields.any { it.kind == com.blaze.assistant.browser.SecureInput.Kind.PASSWORD }) B.passwordRefused()?.let { return it }
+            if (fields.any { it.kind == com.argus.assistant.browser.SecureInput.Kind.PASSWORD }) B.passwordRefused()?.let { return it }
             val asks = (formAsks[host] ?: 0) + 1; formAsks[host] = asks
             if (asks > 50) return "The user cancelled the form for $host in this task. Don't ask again: stop this sign-in and say what you needed."
             if (asks > 3) return "I've already asked for this on $host 3 times. Don't ask again: use ask_user to offer Continue with Google, a passkey, or the user doing it themselves in the live browser (browser_show)."
@@ -4557,11 +4557,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val title = args.optString("title").ifBlank { "Details for $host" }
             val answer = if (fromVault) {
                 add(Role.STEP, "Using your saved details for $host")
-                com.blaze.assistant.browser.SecureInput.Answer(names.associateWith { V.get(host, it).orEmpty() }, false)
+                com.argus.assistant.browser.SecureInput.Answer(names.associateWith { V.get(host, it).orEmpty() }, false)
             } else {
                 add(Role.STEP, "Waiting for you: ${title.take(60)}")
                 mood = Mood.IDLE
-                val a = askSecure(com.blaze.assistant.browser.SecureInput.Request(ids.getAndIncrement(), host, title, args.optString("reason"), fields,
+                val a = askSecure(com.argus.assistant.browser.SecureInput.Request(ids.getAndIncrement(), host, title, args.optString("reason"), fields,
                     args.optBoolean("submit", true), kotlinx.coroutines.CompletableDeferred()), this)
                 mood = Mood.ACTING
                 a ?: run {
@@ -4587,10 +4587,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             add(Role.STEP, "Needs phone control")
             if (!confirm(PermissionGate.TITLE, PermissionGate.REASON, PermissionGate.ACTION, always = true))
                 return PermissionGate.notDone(name, PermissionGate.Outcome.DECLINED)
-            val on = { com.blaze.assistant.phone.BlazeAccessibilityService.instance != null }
-            com.blaze.assistant.ui.ComeBack.watch(app) { on() }
+            val on = { com.argus.assistant.phone.ArgusAccessibilityService.instance != null }
+            com.argus.assistant.ui.ComeBack.watch(app) { on() }
             // 0.53.7: the card's button opens Settings itself (an Activity start from the tap); this is the fallback.
-            if (!PermissionGate.takeOpened() && !com.blaze.assistant.phone.PhoneControl.openSettings(app)) {
+            if (!PermissionGate.takeOpened() && !com.argus.assistant.phone.PhoneControl.openSettings(app)) {
                 add(Role.STEP, "Couldn't open Settings")
                 return PermissionGate.NO_SETTINGS
             }
@@ -4610,9 +4610,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         private suspend fun screenGate(name: String, args: JSONObject): String? {
             val taint = kotlin.coroutines.coroutineContext[ConfirmGate.Taint] ?: return null
-            val label = args.optString("text").ifBlank { if (args.has("element")) com.blaze.assistant.phone.BlazeAccessibilityService.instance?.labelOf(args.optInt("element")).orEmpty() else "" }
+            val label = args.optString("text").ifBlank { if (args.has("element")) com.argus.assistant.phone.ArgusAccessibilityService.instance?.labelOf(args.optInt("element")).orEmpty() else "" }
                 .ifBlank { args.optString("button") }.trim()
-            val app0 = com.blaze.assistant.phone.BlazeAccessibilityService.instance?.currentApp() ?: "the app"
+            val app0 = com.argus.assistant.phone.ArgusAccessibilityService.instance?.currentApp() ?: "the app"
             val what = when (name) { "type_text" -> "type \u201c${label.take(40)}\u201d"; "press_button" -> "press ${label.ifBlank { "a button" }.take(30)}"
                 "run_plan" -> "run a saved set of taps"; else -> "tap \u201c${label.take(40)}\u201d" }
             return when (ConfirmGate.screenAct(name, label, taint.source != null, taint.outside, taint.screenOk)) {
@@ -4639,16 +4639,16 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             MemoryLoop.gate(name, user, memoryLookups, songResolved.ifBlank { MemoryLoop.concrete(user).orEmpty() })?.let { add(Role.STEP, "Skipping another memory check"); return it }
             if (MemoryLoop.isLookup(name)) memoryLookups++
             if (TeamHooks.isBound(id)) TeamHooks.call(id, name, SecretVault.scrub(args.toString()))
-            val out = com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots) }   // P1-TM-05 job tools; P2-SF-01 policy
+            val out = com.argus.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots) }   // P1-TM-05 job tools; P2-SF-01 policy
             if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out)); ToolTrail.result(id, Friendly.exact(name, args)) { SecretVault.scrub(out) }   // M4 tool rows
-            if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
+            if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
             return out
         }
 
         private suspend fun runToolScreen(name: String, args: JSONObject, shots: MutableList<String>): String {
-            if (!com.blaze.assistant.phone.ScreenWork.isScreenTool(name)) return runToolInner(name, args, shots)
-            val tok = com.blaze.assistant.phone.ScreenWork.begin()
-            try { return runToolInner(name, args, shots) } finally { com.blaze.assistant.phone.ScreenWork.end(tok) }
+            if (!com.argus.assistant.phone.ScreenWork.isScreenTool(name)) return runToolInner(name, args, shots)
+            val tok = com.argus.assistant.phone.ScreenWork.begin()
+            try { return runToolInner(name, args, shots) } finally { com.argus.assistant.phone.ScreenWork.end(tok) }
         }
 
         private suspend fun runToolInner(name: String, args: JSONObject, shots: MutableList<String>): String {
@@ -4661,24 +4661,24 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (agentId == null) FollowUpBind.toolGate(turnBind, name, args.toString())?.let { (t, d) ->
                 if (!confirm(t, d, "Do it", always = true)) return FollowUpBind.REFUSED
             }
-            // v0.43.0 Bank mode: Blaze has stepped back, so it doesn't look at or act on the screen until the user turns it off.
-            if (com.blaze.assistant.bank.BankMode.active && (name in Orient.acting || name in Orient.looking || name == "open_app" || name == "search_in_app"))
+            // v0.43.0 Bank mode: Argus has stepped back, so it doesn't look at or act on the screen until the user turns it off.
+            if (com.argus.assistant.bank.BankMode.active && (name in Orient.acting || name in Orient.looking || name == "open_app" || name == "search_in_app"))
                 return "Bank mode is on: ${BrandName.NAME} has stepped back so the user's banking app works, and doesn't read or use the screen. " +
                     "Tell the user, and offer to turn Bank mode off (bank_mode action=off) when they're done banking."
             deviceLast(name, args)?.let { return it }
             // 0.45.20 (item 15): phone control is asked for the first time a task needs it, with the reason, not in setup.
-            if (PermissionGate.shouldAsk(name, com.blaze.assistant.phone.BlazeAccessibilityService.instance != null, Settings.phoneControl))
+            if (PermissionGate.shouldAsk(name, com.argus.assistant.phone.ArgusAccessibilityService.instance != null, Settings.phoneControl))
                 phoneControlGate(name)?.let { return it }
             // 0.45.18: screen actions after outside content (web, messages, email…) need the user's OK (ConfirmGate.screenAct).
             if (name in ConfirmGate.screenActs) screenGate(name, args)?.let { return it }
             // Visible pointer (v0.21.0): while the user has the pointer, screen actions wait for them.
-            if (name in Orient.acting && com.blaze.assistant.phone.Pointer.enabled) pointerGate()?.let { return it }
+            if (name in Orient.acting && com.argus.assistant.phone.Pointer.enabled) pointerGate()?.let { return it }
             // Orient loop (v0.20.0): know where we are before acting on the screen.
             val (held, glance) = try { orientFirst(name, args) } catch (e: CancellationException) { throw e } catch (_: Throwable) { null to "" }
             if (held != null) return held
             // v0.30.7 plan memory: the element's words before it's acted on (numbers change, words replay).
-            val recName = if (name == com.blaze.assistant.phone.SettingsJump.TOOL) "open_settings" else name
-            val recSvc = com.blaze.assistant.phone.BlazeAccessibilityService.instance
+            val recName = if (name == com.argus.assistant.phone.SettingsJump.TOOL) "open_settings" else name
+            val recSvc = com.argus.assistant.phone.ArgusAccessibilityService.instance
             val recLabel = if ((name == "tap" || name == "type_text") && args.has("element") && args.optString("text").isBlank())
                 try { recSvc?.labelOf(args.optInt("element")).orEmpty() } catch (_: Throwable) { "" } else ""
             recSvc?.lastToggle = null
@@ -4692,9 +4692,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             }
             val r0 = SecretVault.scrub(try { runToolRaw(name, runArgs, shots) }
                 catch (e: CancellationException) { throw e }
-                catch (e: Throwable) { com.blaze.assistant.device.CrashLog.error("tool $name", e); ToolGuide.crash(name, e) })
+                catch (e: Throwable) { com.argus.assistant.device.CrashLog.error("tool $name", e); ToolGuide.crash(name, e) })
             // v0.39.0: a finished undoable action under Autopilot gets the 10-second Undo bar; a missing access gets a fix card.
-            if (agentId == null && this === curRef) try { UndoCenter.afterTool(name, args, r0, Modes.autopilot || ackGate?.tracked == true, undoBefore) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: UndoCenter.afterToolname args r0 Modes.a", e) }
+            if (agentId == null && this === curRef) try { UndoCenter.afterTool(name, args, r0, Modes.autopilot || ackGate?.tracked == true, undoBefore) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: UndoCenter.afterToolname args r0 Modes.a", e) }
             val fix = if (agentId == null) FixCards.kindOf(r0, name) else null
             if (fix != null) FixCards.afterTool(name, r0)
             val r = if (fix != null) r0 + FixCards.NOTE else r0
@@ -4707,17 +4707,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             ConfirmGate.sourceOf(name)?.let { taint.mark(it) }
             // v0.30.4: any result that carries the screen (open_settings, a stopped run_plan) counts as a look, so the next
             // numbered tap isn't bounced with "Looking at the screen first" (a whole extra model round trip).
-            if ((name in Orient.looking || FastActions.isScreen(r)) && !r.startsWith("Phone control")) com.blaze.assistant.phone.BlazeAccessibilityService.instance?.let { orient.saw(it.currentPkg()) }
+            if ((name in Orient.looking || FastActions.isScreen(r)) && !r.startsWith("Phone control")) com.argus.assistant.phone.ArgusAccessibilityService.instance?.let { orient.saw(it.currentPkg()) }
             return if (r.isBlank()) ToolGuide.empty(name) else glance + r
         }
 
         /**
          * Before a screen action: GO, a compact glance put in front of the result, or (for numbered taps
-         * on a screen Blaze hasn't seen this turn) hold the action and return the fresh screen instead.
+         * on a screen Argus hasn't seen this turn) hold the action and return the fresh screen instead.
          */
         private suspend fun orientFirst(name: String, args: JSONObject): Pair<String?, String> {
             if (name !in Orient.acting || !Settings.phoneControl) return null to ""
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance ?: return null to ""
+            val svc = com.argus.assistant.phone.ArgusAccessibilityService.instance ?: return null to ""
             val now = svc.currentPkg()
             return when (Orient.decide(name, args, orient, now)) {
                 Orient.Decision.GO -> null to ""
@@ -4738,7 +4738,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         /** v0.45.14: the pointer never pauses a run; the only stop from the screen is its Stop chip, which ends the task. */
         private fun pointerGate(): String? {
-            if (!com.blaze.assistant.phone.Pointer.takeStop()) return null
+            if (!com.argus.assistant.phone.Pointer.takeStop()) return null
             add(Role.STEP, "You stopped me"); job?.cancel()
             return "Stopped by the user."
         }
@@ -4747,7 +4747,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         private fun orientContext(): String = orientRead().let { (pkg, note) -> if (pkg.isNotEmpty()) orient.saw(pkg); note }
 
         /** v0.45.6: what the Design view proved about this turn's design (set by the design tool step). */
-        @Volatile var turnDesignRender: com.blaze.assistant.ui.DesignStatus.Status? = null
+        @Volatile var turnDesignRender: com.argus.assistant.ui.DesignStatus.Status? = null
         @Volatile var turnDesignRenderSet = false
 
         /** v0.45.3: commands the user approved on this step's batch card (exact command keys; cleared each step). */
@@ -4755,7 +4755,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         private fun cmdBatchOkClear() = cmdBatchOk.clear()
 
         private fun cmdRoots(): List<String> = CommandPolicy.DEFAULT_ROOTS + listOfNotNull(
-            try { com.blaze.assistant.terminal.Terminal.home().absolutePath } catch (_: Throwable) { null },
+            try { com.argus.assistant.terminal.Terminal.home().absolutePath } catch (_: Throwable) { null },
             try { app.filesDir.absolutePath } catch (_: Throwable) { null })
 
         private fun cmdExact(kind: CommandPolicy.Kind, text: String) = kind.name + ":" + text.trim().replace(Regex("\\s+"), " ")
@@ -4785,7 +4785,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** The command a tool call would run, for the batch card (null = not a command). */
         private fun cmdOf(name: String, args: JSONObject): Pair<CommandPolicy.Kind, String>? = when (name) {
             "run_shell" -> if (InAppRoute.toolFor(args.optString("command")) != null) null else CommandPolicy.Kind.SHELL to args.optString("command")
-            com.blaze.assistant.terminal.Git.NAME -> CommandPolicy.Kind.GIT to ("git " + args.optString("action").takeIf { it.isNotBlank() && it != "raw" }.orEmpty() + " " + args.optString("args")).trim()
+            com.argus.assistant.terminal.Git.NAME -> CommandPolicy.Kind.GIT to ("git " + args.optString("action").takeIf { it.isNotBlank() && it != "raw" }.orEmpty() + " " + args.optString("args")).trim()
             else -> null
         }
 
@@ -4802,7 +4802,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val need = calls.mapIndexedNotNull { i, (n, a) ->
                 val c = cmdOf(n, a) ?: return@mapIndexedNotNull null
                 if (c.second.isBlank()) return@mapIndexedNotNull null
-                val risky = (n == "run_shell" && com.blaze.assistant.terminal.Terminal.risky(c.second)) || (n == com.blaze.assistant.terminal.Git.NAME && com.blaze.assistant.terminal.Git.risky(a))
+                val risky = (n == "run_shell" && com.argus.assistant.terminal.Terminal.risky(c.second)) || (n == com.argus.assistant.terminal.Git.NAME && com.argus.assistant.terminal.Git.risky(a))
                 val lvl = CommandPolicy.level(c.first, c.second, risky, roots)
                 val key = CommandPolicy.key(c.first, c.second)
                 if (CommandPolicy.decide(lvl, key, cmdGrants.chat(id), cmdGrants.always(), tainted) == CommandPolicy.Decision.RUN) null else Triple(i, c, lvl)
@@ -4823,28 +4823,28 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** v0.45.1: the orient read without touching the turn's orient state ((package, note); note "" = nothing to say). */
         private fun orientRead(): Pair<String, String> {
             if (!Settings.phoneControl || agentId != null) return "" to ""
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance ?: return "" to ""
+            val svc = com.argus.assistant.phone.ArgusAccessibilityService.instance ?: return "" to ""
             val pkg = svc.currentPkg()
-            if (pkg.isBlank() || pkg == app.packageName) return "" to ""   // Blaze's own chat is on screen: nothing to orient on yet
+            if (pkg.isBlank() || pkg == app.packageName) return "" to ""   // Argus's own chat is on screen: nothing to orient on yet
             return try { Orient.contextNote(Orient.compact(svc.readScreen())).let { pkg to it } } catch (_: Throwable) { "" to "" }
         }
 
         /** Runs terminal work, then puts any new pictures / audio / video it wrote into the Gallery and this reply. */
         private suspend fun withMediaScan(block: suspend () -> String): String {
             val started = System.currentTimeMillis() - 2000
-            try { com.blaze.assistant.media.Media.installHelpers(com.blaze.assistant.terminal.Terminal.home()) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Media.installH", e) }
+            try { com.argus.assistant.media.Media.installHelpers(com.argus.assistant.terminal.Terminal.home()) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: Media.installH", e) }
             val out = block()
             val found = kotlinx.coroutines.withContext(Dispatchers.IO) {
                 try {
-                    val roots = listOf(com.blaze.assistant.terminal.Terminal.home(), java.io.File(com.blaze.assistant.terminal.Linux.rootfs(), "root"))
+                    val roots = listOf(com.argus.assistant.terminal.Terminal.home(), java.io.File(com.argus.assistant.terminal.Linux.rootfs(), "root"))
                     roots.filter { it.isDirectory }.flatMap { r ->
                         r.walkTopDown().maxDepth(4).onEnter { d -> d.name !in setOf("node_modules", "blaze_lib", "site-packages", ".cache", ".git", "phone") || d == r }
-                            .filter { it.isFile && it.lastModified() >= started && it.length() > 1000 && com.blaze.assistant.media.Media.isMedia(it) }.toList()
+                            .filter { it.isFile && it.lastModified() >= started && it.length() > 1000 && com.argus.assistant.media.Media.isMedia(it) }.toList()
                     }.distinctBy { it.canonicalPath }.sortedBy { it.lastModified() }.takeLast(6)
                 } catch (_: Exception) { emptyList() }
             }
             if (found.isEmpty()) return out
-            val names = found.mapNotNull { f -> try { com.blaze.assistant.media.Media.add(f).also { g -> synchronized(pendingMedia) { if (g.absolutePath !in pendingMedia) pendingMedia += g.absolutePath } }.name } catch (_: Exception) { null } }
+            val names = found.mapNotNull { f -> try { com.argus.assistant.media.Media.add(f).also { g -> synchronized(pendingMedia) { if (g.absolutePath !in pendingMedia) pendingMedia += g.absolutePath } }.name } catch (_: Exception) { null } }
             if (names.isNotEmpty()) add(Role.STEP, "Added to your Gallery: " + names.joinToString())
             return out + "\n[Shown to the user in the chat and saved in their Gallery: ${names.joinToString()}. No need to export or link them.]"
         }
@@ -4855,13 +4855,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
          * Autopilot; destructive ones always ask, see McpConfig.needsApproval).
          */
         private suspend fun mcpCall(name: String, args: JSONObject): String {
-            val m = com.blaze.assistant.connect.Mcp
+            val m = com.argus.assistant.connect.Mcp
             val t = m.find(name) ?: return "That MCP tool isn't available any more (its server is off, removed or unreachable). Use find_tool or another way."
             val label = "${t.server.name} \u00b7 ${t.tool.name}"
-            if (t.mode == com.blaze.assistant.connect.McpConfig.OFF) return "Refused: the user turned ${t.tool.name} off in Settings \u203a MCP servers."
-            if (com.blaze.assistant.connect.McpConfig.needsApproval(t.override, t.tool.risk, Modes.autopilot)) {
+            if (t.mode == com.argus.assistant.connect.McpConfig.OFF) return "Refused: the user turned ${t.tool.name} off in Settings \u203a MCP servers."
+            if (com.argus.assistant.connect.McpConfig.needsApproval(t.override, t.tool.risk, Modes.autopilot)) {
                 val shown = args.toString(2).let { if (it.length > 900) it.take(900) + "\n\u2026" else it }
-                val warn = if (t.tool.risk == com.blaze.assistant.connect.McpConfig.Risk.WRITE) "This tool can delete or change data on ${t.server.name}.\n" else ""
+                val warn = if (t.tool.risk == com.argus.assistant.connect.McpConfig.Risk.WRITE) "This tool can delete or change data on ${t.server.name}.\n" else ""
                 if (!confirm("Allow $label?", warn + shown, "Allow"))
                     return "The user did NOT approve ${t.tool.name}. Don't retry it; say what you were about to do and ask how they'd like to proceed."
             }
@@ -4886,17 +4886,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         suspend fun runToolRaw(name: String, args: JSONObject, shots: MutableList<String>): String {
             turnTools.add(name)
             // 0.53.4: with GitHub connected, a GitHub link is read through the connection (private repos too), never scraped.
-            if (name in com.blaze.assistant.connect.GitHubRoute.redirectFrom) {
+            if (name in com.argus.assistant.connect.GitHubRoute.redirectFrom) {
                 val u = args.optString("url").ifBlank { args.optString("target") }
-                val gh = try { com.blaze.assistant.connect.Connectors.githubUrl(app, u) } catch (e: CancellationException) { throw e } catch (_: Throwable) { null }
+                val gh = try { com.argus.assistant.connect.Connectors.githubUrl(app, u) } catch (e: CancellationException) { throw e } catch (_: Throwable) { null }
                 if (gh != null) { add(Role.STEP, "Checking GitHub"); return gh }
             }
             // v0.45.1: a tool that may change the screen (anything but a read) makes the next screen read walk the tree again.
-            if (name != "read_screen" && name != "look_at_screen") com.blaze.assistant.phone.BlazeAccessibilityService.touched()
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance
+            if (name != "read_screen" && name != "look_at_screen") com.argus.assistant.phone.ArgusAccessibilityService.touched()
+            val svc = com.argus.assistant.phone.ArgusAccessibilityService.instance
             // Record phone actions (with the element's label, since numbers change) for task replay.
-            if (name in setOf("open_app", "tap", "type_text", "scroll", "press_button", "run_plan", "do_actions", "search_in_app", "read_screen")) com.blaze.assistant.phone.Watchers.taskTick()
-            if (name in setOf("open_app", "tap", "type_text", "scroll", "press_button", "open_url", "search_in_app", com.blaze.assistant.phone.SettingsJump.TOOL) && trace.length() < 40) {
+            if (name in setOf("open_app", "tap", "type_text", "scroll", "press_button", "run_plan", "do_actions", "search_in_app", "read_screen")) com.argus.assistant.phone.Watchers.taskTick()
+            if (name in setOf("open_app", "tap", "type_text", "scroll", "press_button", "open_url", "search_in_app", com.argus.assistant.phone.SettingsJump.TOOL) && trace.length() < 40) {
                 val label = args.optString("text").takeIf { name == "tap" && it.isNotBlank() }
                     ?: if (name == "tap" || name == "type_text") svc?.labelOf(args.optInt("element")).orEmpty() else ""
                 trace.put(JSONObject().put("tool", name).put("args", JSONObject(args.toString()).apply { remove("element") }).put("label", label))
@@ -4926,17 +4926,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         "If the terminal isn't installed yet, call linux_install first and wait for it, then run_code. Never send the user an AI picture instead of a real chart."
                 } else {
                     add(Role.STEP, "Drawing \u201c${args.optString("prompt").take(60)}\u201d")
-                    com.blaze.assistant.media.Media.generate(args.optString("prompt"), args.optInt("width", 1024), args.optInt("height", 1024),
+                    com.argus.assistant.media.Media.generate(args.optString("prompt"), args.optInt("width", 1024), args.optInt("height", 1024),
                         if (args.has("seed")) args.optInt("seed") else null, args.optString("model")).fold(
                         { f -> synchronized(pendingMedia) { pendingMedia += f.absolutePath }
                             "Image made and shown to the user in the chat (saved in their Gallery as ${f.name}). Reply with one short line about it; don't describe it at length or paste a link." },
                         { e -> "Image service failed (${e.message}). Try once more with a simpler prompt, or draw it with run_code (Python + Pillow) and save it under /root/phone/." })
                 }
                 "gallery" -> {
-                    val M = com.blaze.assistant.media.Media
+                    val M = com.argus.assistant.media.Media
                     when (args.optString("action")) {
                         "add" -> {
-                            val f = com.blaze.assistant.terminal.DevTools.resolve(args.optString("path"))
+                            val f = com.argus.assistant.terminal.DevTools.resolve(args.optString("path"))
                             if (!f.isFile) "No such file: ${args.optString("path")}"
                             else { val g = M.add(f, args.optString("title")); synchronized(pendingMedia) { if (g.absolutePath !in pendingMedia) pendingMedia += g.absolutePath }
                                 add(Role.STEP, "Added ${g.name} to your Gallery"); "Added to the Gallery and shown in the chat as ${g.name}." }
@@ -4948,12 +4948,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     }
                 }
                 "ask_pc" -> {
-                    val L = com.blaze.assistant.link.DesktopLink
+                    val L = com.argus.assistant.link.DesktopLink
                     add(Role.STEP, "Asking ${L.pcName}: \u201c${args.optString("task").take(60)}\u201d")
                     L.askPc(args.optString("task"), args.optBoolean("new_conversation")) { line -> add(Role.STEP, "${L.pcName}: ${line.take(90)}") }
                 }
                 // v0.33.1 content-hash cache (identical lookups reused, private chats never) + speculative fetch of the top results on Wi-Fi.
-                // 0.50.0: no web search for a question about Blaze, this chat or the user's own data (SearchRoute).
+                // 0.50.0: no web search for a question about Argus, this chat or the user's own data (SearchRoute).
                 "web_search" -> run {   // 2026-11-16 model-first: the model's query runs as it wrote it (no webNote / SearchGuard refusals)
                     add(Role.STEP, "Searching the web for \u201c${args.optString("query").take(50)}\u201d")
                     val r = ToolCache.cached(name, args, lastUserText(), isPrivate) { Web.search(args.optString("query")) }
@@ -4962,29 +4962,29 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     searches.saw(r); searches.done(args.optString("query"), SearchGuard.okResult(r))
                     r }
                 "fetch_page" -> { add(Role.STEP, "Reading ${args.optString("url").removePrefix("https://").take(50)}")
-                    val a = JSONObject(args.toString()).put("url", ToolLeak.fixBlazeUrl(args.optString("url")))
+                    val a = JSONObject(args.toString()).put("url", ToolLeak.fixArgusUrl(args.optString("url")))
                     ToolCache.cached(name, a, lastUserText(), isPrivate) { Web.fetch(a.optString("url")) }.also { if (sideFlag.get() != true) pendingSources.addFetch(a.optString("url"), it); searches.saw(it) } }
-                "blazerouter" -> { add(Role.STEP, "BlazeRouter: " + args.optString("action")); BlazeRouter.run(app, args) }
-                in com.blaze.assistant.home.HomeTools.NAMES -> { add(Role.STEP, com.blaze.assistant.home.HomeTools.step(name, args)); kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.home.HomeBoard.runTool(name, args) } }
-                BlazeDocs.TOOL_SEARCH -> { add(Role.STEP, "Looking it up in ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.search(args) } }
-                BlazeDocs.TOOL_READ -> { add(Role.STEP, "Reading ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.read(args) } }
+                "blazerouter" -> { add(Role.STEP, "ArgusRouter: " + args.optString("action")); ArgusRouter.run(app, args) }
+                in com.argus.assistant.home.HomeTools.NAMES -> { add(Role.STEP, com.argus.assistant.home.HomeTools.step(name, args)); kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.home.HomeBoard.runTool(name, args) } }
+                ArgusDocs.TOOL_SEARCH -> { add(Role.STEP, "Looking it up in ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { ArgusDocs.search(args) } }
+                ArgusDocs.TOOL_READ -> { add(Role.STEP, "Reading ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { ArgusDocs.read(args) } }
                 ProjectDocs.TOOL_SEARCH -> { add(Role.STEP, "Checking the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.search(id, args) } }
                 ProjectDocs.TOOL_READ -> { add(Role.STEP, "Reading the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.read(id, args) } }
-                com.blaze.assistant.proactive.FollowUps.TOOL -> { add(Role.STEP, "Checking what you need to get back to"); com.blaze.assistant.proactive.FollowUps.run(args) }
-                com.blaze.assistant.bank.BankMode.TOOL -> { add(Role.STEP, if (args.optString("action") == "off") "Turning Bank mode off" else if (args.optString("action") == "on") "Turning Bank mode on" else "Checking Bank mode"); com.blaze.assistant.bank.BankMode.runTool(app, args) }
-                com.blaze.assistant.proactive.Jarvis.TOOL -> { add(Role.STEP, "Changing how often I reach out"); com.blaze.assistant.proactive.Jarvis.run(args) }
-                Awareness.TOOL -> { add(Role.STEP, "Checking what's going on"); kotlinx.coroutines.withContext(Dispatchers.IO) { Awareness.report(com.blaze.assistant.ui.Views.all.map { Triple(it.name, it.id, it.desc) }) } }
+                com.argus.assistant.proactive.FollowUps.TOOL -> { add(Role.STEP, "Checking what you need to get back to"); com.argus.assistant.proactive.FollowUps.run(args) }
+                com.argus.assistant.bank.BankMode.TOOL -> { add(Role.STEP, if (args.optString("action") == "off") "Turning Bank mode off" else if (args.optString("action") == "on") "Turning Bank mode on" else "Checking Bank mode"); com.argus.assistant.bank.BankMode.runTool(app, args) }
+                com.argus.assistant.proactive.Jarvis.TOOL -> { add(Role.STEP, "Changing how often I reach out"); com.argus.assistant.proactive.Jarvis.run(args) }
+                Awareness.TOOL -> { add(Role.STEP, "Checking what's going on"); kotlinx.coroutines.withContext(Dispatchers.IO) { Awareness.report(com.argus.assistant.ui.Views.all.map { Triple(it.name, it.id, it.desc) }) } }
                 SelfKnowledge.TOOL -> { add(Role.STEP, "Checking my own setup"); kotlinx.coroutines.withContext(Dispatchers.IO) { SelfKnowledge.report(app, args.optString("section")) } }
-                com.blaze.assistant.ui.Views.TOOL -> {
-                    val v = com.blaze.assistant.ui.Views.find(args.optString("view"))
-                    if (v == null) "Unknown view. Pick one of: " + com.blaze.assistant.ui.Views.all.joinToString { it.id }
+                com.argus.assistant.ui.Views.TOOL -> {
+                    val v = com.argus.assistant.ui.Views.find(args.optString("view"))
+                    if (v == null) "Unknown view. Pick one of: " + com.argus.assistant.ui.Views.all.joinToString { it.id }
                     else {
-                        add(Role.STEP, com.blaze.assistant.ui.Views.step(args))
-                        // v0.24.6: Blaze asks first with an "Open in <view>?" chip in the chat, unless the user asked for the view.
+                        add(Role.STEP, com.argus.assistant.ui.Views.step(args))
+                        // v0.24.6: Argus asks first with an "Open in <view>?" chip in the chat, unless the user asked for the view.
                         val tgt = args.optString("target").ifBlank { if (v.id == "design") kotlinx.coroutines.withContext(Dispatchers.IO) { Designs.current()?.path }.orEmpty() else "" }
-                        val opened = if (agentId == null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Views.openOrOffer(v.id, tgt, lastUserText(), Modes.autopilot) } else false
+                        val opened = if (agentId == null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.argus.assistant.ui.Views.openOrOffer(v.id, tgt, lastUserText(), Modes.autopilot) } else false
                         if (v.id == "design" && tgt.isBlank()) "There is no design to show yet: make one with the design tool (action=create)."
-                        else if (!opened) "Offered to open ${v.name} with an \u201c${com.blaze.assistant.ui.Views.offerLabel(v.id)}\u201d chip in the chat; the user opens it with one tap. Don't say it's already open."
+                        else if (!opened) "Offered to open ${v.name} with an \u201c${com.argus.assistant.ui.Views.offerLabel(v.id)}\u201d chip in the chat; the user opens it with one tap. Don't say it's already open."
                         else "Opened ${v.name}" + (if (v.id == "design") " showing $tgt" else "") + ". The user can tap Exit to come back to the chat."
                     }
                 }
@@ -4997,18 +4997,18 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         if (note.isNotEmpty()) out0.copy(text = out0.text + note) else out0
                     } else out0
                     val renderT0 = System.currentTimeMillis()
-                    val opened = out.open?.let { path -> if (agentId == null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Views.openOrOffer("design", path, lastUserText(), Modes.autopilot) } else false }
+                    val opened = out.open?.let { path -> if (agentId == null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.argus.assistant.ui.Views.openOrOffer("design", path, lastUserText(), Modes.autopilot) } else false }
                     // v0.45.6: never "Done" unless it rendered: wait briefly for the Design view's load / draw report on this version.
                     val render = if (opened == true && out.open != null) {
-                        com.blaze.assistant.ui.DesignStatus.requestReload()
-                        var st: com.blaze.assistant.ui.DesignStatus.Status? = null
+                        com.argus.assistant.ui.DesignStatus.requestReload()
+                        var st: com.argus.assistant.ui.DesignStatus.Status? = null
                         val until = renderT0 + 15_000
                         while (System.currentTimeMillis() < until) {
-                            st = com.blaze.assistant.ui.DesignStatus.since(out.open, renderT0)
-                            if (st != null && st.state != com.blaze.assistant.ui.DesignStatus.State.PENDING) break
+                            st = com.argus.assistant.ui.DesignStatus.since(out.open, renderT0)
+                            if (st != null && st.state != com.argus.assistant.ui.DesignStatus.State.PENDING) break
                             kotlinx.coroutines.delay(250)
                         }
-                        st?.takeIf { it.state != com.blaze.assistant.ui.DesignStatus.State.PENDING }
+                        st?.takeIf { it.state != com.argus.assistant.ui.DesignStatus.State.PENDING }
                     } else null
                     turnDesignRender = render; turnDesignRenderSet = true
                     (if (opened == false) out.text + "\n(Design isn't open yet: the user has an \u201cOpen in Design?\u201d chip in the chat.)" else out.text) + DesignTruth.toolLine(render)
@@ -5022,8 +5022,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, "You answered: ${a.take(80)}")
                     "The user answered: $a"
                 }
-                in com.blaze.assistant.proactive.Triggers.names -> { add(Role.STEP, if (name == "create_trigger") "Setting up \u201c${args.optString("name")}\u201d" else "Checking triggers")
-                    com.blaze.assistant.proactive.Triggers.run(name, args) }
+                in com.argus.assistant.proactive.Triggers.names -> { add(Role.STEP, if (name == "create_trigger") "Setting up \u201c${args.optString("name")}\u201d" else "Checking triggers")
+                    com.argus.assistant.proactive.Triggers.run(name, args) }
                 "run_shell" -> {
                     val cmd = args.optString("command")
                     // v0.45.6: "music_ops play" typed as a shell line runs as the in-app tool (no card, no terminal).
@@ -5031,22 +5031,22 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (inApp != null) return runTool(inApp.first, JSONObject(inApp.second as Map<*, *>), shots)
                     add(Role.STEP, "$ " + cmd.take(70))
                     // v0.45.3: Normal mode runs safe commands without a card, keeps asking for risky ones (CommandPolicy); Autopilot as before.
-                    if (!cmdOk(CommandPolicy.Kind.SHELL, cmd, "Run this command?", cmd.take(200), "Run", com.blaze.assistant.terminal.Terminal.risky(cmd)) {
-                            !com.blaze.assistant.terminal.Terminal.risky(cmd) || confirm("Run this command?", cmd.take(200), "Run") })
+                    if (!cmdOk(CommandPolicy.Kind.SHELL, cmd, "Run this command?", cmd.take(200), "Run", com.argus.assistant.terminal.Terminal.risky(cmd)) {
+                            !com.argus.assistant.terminal.Terminal.risky(cmd) || confirm("Run this command?", cmd.take(200), "Run") })
                         "The user did NOT approve running that command."
-                    else if (args.optBoolean("background")) kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.terminal.Terminal.startJob(cmd, args.optBoolean("linux"), args.optInt("max_minutes", 0)) }
-                    else com.blaze.assistant.terminal.StorageAccess.annotate(cmd,   // 0.53.4: say when scoped storage hid the files
-                        withMediaScan { com.blaze.assistant.terminal.Terminal.run(cmd, args.optInt("timeout_seconds", 60), args.optBoolean("linux")) } + queryVerify(cmd),
-                        com.blaze.assistant.terminal.StorageAccess.granted(app))
+                    else if (args.optBoolean("background")) kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.terminal.Terminal.startJob(cmd, args.optBoolean("linux"), args.optInt("max_minutes", 0)) }
+                    else com.argus.assistant.terminal.StorageAccess.annotate(cmd,   // 0.53.4: say when scoped storage hid the files
+                        withMediaScan { com.argus.assistant.terminal.Terminal.run(cmd, args.optInt("timeout_seconds", 60), args.optBoolean("linux")) } + queryVerify(cmd),
+                        com.argus.assistant.terminal.StorageAccess.granted(app))
                 }
                 "run_ussd" -> {
                     val code = args.optString("code")
                     add(Role.STEP, "Dialling $code")
-                    if (com.blaze.assistant.phone.Ussd.risky(code) && !confirm("Dial $code?", "This looks like a mobile money or multi-step code.", "Dial", always = true))
+                    if (com.argus.assistant.phone.Ussd.risky(code) && !confirm("Dial $code?", "This looks like a mobile money or multi-step code.", "Dial", always = true))
                         "The user did NOT approve dialling $code."
-                    else com.blaze.assistant.phone.Ussd.run(app, code)
+                    else com.argus.assistant.phone.Ussd.run(app, code)
                 }
-                in com.blaze.assistant.terminal.DevTools.names -> {
+                in com.argus.assistant.terminal.DevTools.names -> {
                     add(Role.STEP, when (name) {
                         "run_code" -> "Running ${args.optString("language", "code")}"
                         "file_write", "file_edit" -> "Writing ${args.optString("path").takeLast(50)}"
@@ -5056,41 +5056,41 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         else -> name.replace('_', ' ')
                     })
                     if (name == "file_delete" && !confirm("Delete this?", args.optString("path").take(200), "Delete", always = true)) "The user did NOT approve deleting that."
-                    else if (name == "run_code") withMediaScan { com.blaze.assistant.terminal.DevTools.run(app, name, args) }
-                    else com.blaze.assistant.terminal.DevTools.run(app, name, args)
+                    else if (name == "run_code") withMediaScan { com.argus.assistant.terminal.DevTools.run(app, name, args) }
+                    else com.argus.assistant.terminal.DevTools.run(app, name, args)
                 }
-                in com.blaze.assistant.phone.PimEdit.names -> {
-                    val (title, detail) = com.blaze.assistant.phone.PimEdit.describe(name, args)
+                in com.argus.assistant.phone.PimEdit.names -> {
+                    val (title, detail) = com.argus.assistant.phone.PimEdit.describe(name, args)
                     add(Role.STEP, title.removeSuffix("?"))
                     if (!confirm(title, detail.take(200), if (name == "delete_event") "Delete" else "Save", always = name.startsWith("delete"))) "The user did NOT approve that change."
-                    else kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.phone.PimEdit.run(app, name, args) }
+                    else kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.phone.PimEdit.run(app, name, args) }
                 }
-                com.blaze.assistant.terminal.Git.NAME -> {
+                com.argus.assistant.terminal.Git.NAME -> {
                     add(Role.STEP, "git ${args.optString("action")} ${args.optString("repo").ifBlank { args.optString("branch") }}".trim())
                     val gitLine = cmdOf(name, args)?.second.orEmpty()
-                    if (!cmdOk(CommandPolicy.Kind.GIT, gitLine, "Run this git command?", gitLine.take(200), "Run", com.blaze.assistant.terminal.Git.risky(args)) {
-                            !com.blaze.assistant.terminal.Git.risky(args) || confirm("Run this git command?", "git " + args.optString("args").take(200), "Run") }) "The user did NOT approve that git command."
-                    else com.blaze.assistant.terminal.Git.run(args)
+                    if (!cmdOk(CommandPolicy.Kind.GIT, gitLine, "Run this git command?", gitLine.take(200), "Run", com.argus.assistant.terminal.Git.risky(args)) {
+                            !com.argus.assistant.terminal.Git.risky(args) || confirm("Run this git command?", "git " + args.optString("args").take(200), "Run") }) "The user did NOT approve that git command."
+                    else com.argus.assistant.terminal.Git.run(args)
                 }
-                com.blaze.assistant.phone.Location.NAME -> { add(Role.STEP, "Checking location"); kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.phone.Location.run(app) } }
-                "linux_install" -> { add(Role.STEP, "Installing Alpine Linux"); com.blaze.assistant.terminal.Linux.install() }
+                com.argus.assistant.phone.Location.NAME -> { add(Role.STEP, "Checking location"); kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.phone.Location.run(app) } }
+                "linux_install" -> { add(Role.STEP, "Installing Alpine Linux"); com.argus.assistant.terminal.Linux.install() }
                 "terminal_jobs" -> kotlinx.coroutines.withContext(Dispatchers.IO) {
-                    if (args.optInt("id", 0) > 0) com.blaze.assistant.terminal.Terminal.jobLog(args.optInt("id"), args.optInt("lines", 80)) else com.blaze.assistant.terminal.Terminal.listJobs() }
+                    if (args.optInt("id", 0) > 0) com.argus.assistant.terminal.Terminal.jobLog(args.optInt("id"), args.optInt("lines", 80)) else com.argus.assistant.terminal.Terminal.listJobs() }
                 "preview_server" -> {
                     val port = args.optInt("port")
                     val url = "http://127.0.0.1:$port" + args.optString("path").let { if (it.isBlank()) "" else if (it.startsWith("/")) it else "/$it" }
                     add(Role.STEP, "Opening localhost:$port")
-                    val r = try { com.blaze.assistant.browser.BrowserEngine.open(app, url, true) } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
-                    kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.browser.BrowserTools.show(app) }
+                    val r = try { com.argus.assistant.browser.BrowserEngine.open(app, url, true) } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
+                    kotlinx.coroutines.withContext(Dispatchers.Main) { com.argus.assistant.browser.BrowserTools.show(app) }
                     if (r.contains("ERR_CONNECTION_REFUSED", true) || r.contains("net::ERR", true)) "Nothing is answering on port $port yet. Check the job with terminal_jobs, or start the server with run_shell background=true.\n$r" else r
                 }
-                "self_test" -> { add(Role.STEP, "Running a self-check"); com.blaze.assistant.device.SelfCheck.report(app) }
-                "terminal_stop" -> com.blaze.assistant.terminal.Terminal.stopJob(args.optInt("id"))
-                com.blaze.assistant.terminal.Servers.NAME -> {
+                "self_test" -> { add(Role.STEP, "Running a self-check"); com.argus.assistant.device.SelfCheck.report(app) }
+                "terminal_stop" -> com.argus.assistant.terminal.Terminal.stopJob(args.optInt("id"))
+                com.argus.assistant.terminal.Servers.NAME -> {
                     add(Role.STEP, when (args.optString("action")) { "start" -> "Starting the ${args.optString("name").ifBlank { "" }} server".replace("  ", " "); "stop" -> "Stopping a server"; "restart" -> "Restarting a server"; "logs" -> "Reading a server's log"; else -> "Checking the servers" })
-                    kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.terminal.Servers.run(args) }
+                    kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.terminal.Servers.run(args) }
                 }
-                "termux_run" -> { add(Role.STEP, "Termux: " + args.optString("command").take(60)); com.blaze.assistant.terminal.Terminal.runInTermux(app, args.optString("command"), args.optBoolean("background", true)) }
+                "termux_run" -> { add(Role.STEP, "Termux: " + args.optString("command").take(60)); com.argus.assistant.terminal.Terminal.runInTermux(app, args.optString("command"), args.optBoolean("background", true)) }
                 "delegate" -> delegate(args)
                 "create_specialist" -> createSpecialist(args)
                 "recall_memory" -> { add(Role.STEP, if (MemoryIntent.meansAll(args.optString("query"))) "Looking through what I remember" else "Checking memory"); Memory.recall(args.optString("query")) }
@@ -5099,7 +5099,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, when (act) { "setup_check", "status" -> "Checking my setup"; "install" -> "Installing ${args.optString("what")}"; "open" -> "Opening ${args.optString("target")}"; else -> "Adjusting myself: $act" })
                     if (act == "install") SelfSetup.install(app, args.optString("what")) else SelfControl.run(app, act, args)
                 }
-                "device_status" -> { add(Role.STEP, "Checking the phone"); com.blaze.assistant.device.DeviceStatus.describe(app) }
+                "device_status" -> { add(Role.STEP, "Checking the phone"); com.argus.assistant.device.DeviceStatus.describe(app) }
                 // v0.45.9: "save this file" saves the last code block (or the given content) to Downloads/Blaze; Normal mode, no card.
                 SaveFile.TOOL -> {
                     val texts = ArrayList<String>()
@@ -5112,13 +5112,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 GatewayWeather.TOOL -> { add(Role.STEP, "Checking the weather")
                     kotlinx.coroutines.withContext(Dispatchers.IO) { GatewayWeather.run(args, Settings.gatewayToken()) { lastFix() } } }
-                com.blaze.assistant.mediaapps.store.JamendoSource.TOOL -> { add(Role.STEP, "Setting up Jamendo"); com.blaze.assistant.mediaapps.store.JamendoSource.init(app); com.blaze.assistant.mediaapps.store.JamendoSource.runTool(args) }
+                com.argus.assistant.mediaapps.store.JamendoSource.TOOL -> { add(Role.STEP, "Setting up Jamendo"); com.argus.assistant.mediaapps.store.JamendoSource.init(app); com.argus.assistant.mediaapps.store.JamendoSource.runTool(args) }
                 "look_at_screen" -> if (Settings.lowData) {
                     add(Role.STEP, "Reading the screen (low-data mode)")
-                    "Low-data mode is on, so no screenshot was taken. Screen as text:\n" + (com.blaze.assistant.phone.BlazeAccessibilityService.instance?.readScreen() ?: "Phone control isn't connected.")
+                    "Low-data mode is on, so no screenshot was taken. Screen as text:\n" + (com.argus.assistant.phone.ArgusAccessibilityService.instance?.readScreen() ?: "Phone control isn't connected.")
                 } else {
                     // v0.33.3: the accessibility tree first (instant); a picture only when it isn't enough or pixels=true.
-                    val text = if (args.optBoolean("pixels")) null else com.blaze.assistant.phone.BlazeAccessibilityService.instance?.readScreen()
+                    val text = if (args.optBoolean("pixels")) null else com.argus.assistant.phone.ArgusAccessibilityService.instance?.readScreen()
                     if (text != null && VisionFast.textEnough(text)) {
                         add(Role.STEP, "Reading the screen")
                         text + "\n[Read as text, which is faster than a picture. If you must see images, a game, video or a map, call look_at_screen with pixels=true.]"
@@ -5128,13 +5128,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         if (shot.startsWith("data:")) { shots += shot; "Screenshot taken. It is attached in the next message." } else shot
                     }
                 }
-                com.blaze.assistant.orchestra.OrchestraRuns.TOOL -> {
+                com.argus.assistant.orchestra.OrchestraRuns.TOOL -> {
                     // 0.52.0: a blueprint run (planner → parallel agents → verify / stitch) as one background agent with its work pill
                     val goal = args.optString("goal").trim()
                     if (goal.isEmpty()) "Error: say the goal." else {
-                        val ask = com.blaze.assistant.orchestra.OrchestraRuns.decode(com.blaze.assistant.orchestra.OrchestraRuns.encode(goal, args.optString("pipeline"), args.optString("inputs")))
-                        val bg = BgAgents.start(com.blaze.assistant.orchestra.OrchestraRuns.encode(goal, ask.shape.id, ask.inputs),
-                            args.optString("title").ifBlank { Dispatch.title(goal) }, id, com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST)
+                        val ask = com.argus.assistant.orchestra.OrchestraRuns.decode(com.argus.assistant.orchestra.OrchestraRuns.encode(goal, args.optString("pipeline"), args.optString("inputs")))
+                        val bg = BgAgents.start(com.argus.assistant.orchestra.OrchestraRuns.encode(goal, ask.shape.id, ask.inputs),
+                            args.optString("title").ifBlank { Dispatch.title(goal) }, id, com.argus.assistant.orchestra.OrchestraRuns.SPECIALIST)
                         val mid = add(Role.BLAZE, "Blueprint ${bg.id}: ${bg.title}")
                         msgs = msgs.map { if (it.id == mid) it.copy(meta = BgAgents.CARD + bg.id) else it }
                         persist()
@@ -5158,15 +5158,15 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 "call_control" -> {
                     add(Role.STEP, when (args.optString("action")) { "speaker" -> if (args.optBoolean("on", true)) "Loudspeaker on" else "Loudspeaker off"; "mute" -> if (args.optBoolean("on", true)) "Muting" else "Unmuting"
                         "end" -> "Hanging up"; "answer" -> "Answering"; "decline" -> "Declining"; "start_blaze_call" -> "Starting a call"; "keypad" -> "Pressing ${args.optString("digits")}"; else -> "Call controls" })
-                    com.blaze.assistant.phone.CallControl.run(app, args)
+                    com.argus.assistant.phone.CallControl.run(app, args)
                 }
                 "clipboard" -> {
-                    val C = com.blaze.assistant.phone.ClipAccess
+                    val C = com.argus.assistant.phone.ClipAccess
                     when (args.optString("action")) {
                         "set" -> { add(Role.STEP, "Copying to your clipboard"); kotlinx.coroutines.withContext(Dispatchers.Main) { C.setText(app, args.optString("text")) }; "Copied to the clipboard." }
                         "set_image" -> {
                             val p = args.optString("path")
-                            val f = com.blaze.assistant.media.Media.find(p) ?: com.blaze.assistant.terminal.DevTools.resolve(p)
+                            val f = com.argus.assistant.media.Media.find(p) ?: com.argus.assistant.terminal.DevTools.resolve(p)
                             if (!f.isFile) "No such file: $p" else { add(Role.STEP, "Copying ${f.name} to your clipboard"); kotlinx.coroutines.withContext(Dispatchers.Main) { C.setFile(app, f) } }
                         }
                         "clear" -> { kotlinx.coroutines.withContext(Dispatchers.Main) { C.clear(app) }; "Clipboard cleared." }
@@ -5192,23 +5192,23 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // v0.33.3: fuzzy (label + package + category), off the main thread, and the chat draws the result as a card.
                 "list_apps" -> {
                     add(Role.STEP, "Checking your apps")
-                    val (text, card) = kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.phone.InstalledApps.listTool(app, args.optString("filter")) }
+                    val (text, card) = kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.phone.InstalledApps.listTool(app, args.optString("filter")) }
                     if (card != null) turnAppsCard = card
                     text
                 }
-                in com.blaze.assistant.phone.AndroidControl.names -> {
+                in com.argus.assistant.phone.AndroidControl.names -> {
                     add(Role.STEP, if (name == "blaze_camera") "Opening ${BrandName.NAME} Camera" else name.replace('_', ' ').replaceFirstChar { it.uppercase() })
-                    // v0.28.x: Blaze Camera brings its capture back into this chat, as an answer to the user's last message.
+                    // v0.28.x: Argus Camera brings its capture back into this chat, as an answer to the user's last message.
                     val a2 = if (name != "blaze_camera") args else JSONObject(args.toString()).put("_chat", id)
                         .put("_asked", msgs.lastOrNull { it.role == Role.USER }?.text.orEmpty())
-                    try { kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.phone.AndroidControl.run(app, name, a2) } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
+                    try { kotlinx.coroutines.withContext(Dispatchers.Main) { com.argus.assistant.phone.AndroidControl.run(app, name, a2) } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
                 in SkillPacks.names -> {
                     skillGate(name, args)?.let { return it }
                     add(Role.STEP, when (name) { "use_skill" -> "Reading skill \u201c${args.optString("name")}\u201d"; "install_skill" -> "Installing skills"; "write_skill" -> "Saving a skill"; "save_workflow" -> "Saving a workflow"; else -> "Reading a skill file" })
                     try { SkillPacks.run(name, args) } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
-                "watch" -> { add(Role.STEP, "Setting a watcher"); com.blaze.assistant.phone.Watchers.run(args) }
+                "watch" -> { add(Role.STEP, "Setting a watcher"); com.argus.assistant.phone.Watchers.run(args) }
                 "goal" -> { add(Role.STEP, if (args.optString("action") == "add") "Planning \u201c${args.optString("title").take(40)}\u201d" else "Updating the plan"); Autonomy.goal(args) }
                 "standing_permission" -> { add(Role.STEP, "Updating permissions"); Autonomy.setPermission(args) }
                 in Processes.names -> {
@@ -5217,15 +5217,15 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 "create_routine", "list_routines", "delete_routine", "schedule_command" -> {
                     add(Role.STEP, if (name == "create_routine" || name == "schedule_command") "Scheduling \"${args.optString("name")}\"" else "Checking routines")
-                    try { com.blaze.assistant.routine.Routines.run(name, args) } catch (e: Exception) { "Error: ${e.message}" }
+                    try { com.argus.assistant.routine.Routines.run(name, args) } catch (e: Exception) { "Error: ${e.message}" }
                 }
-                in com.blaze.assistant.phone.Skills.names -> {
-                    add(Role.STEP, com.blaze.assistant.phone.Skills.describe(name, args))
-                    com.blaze.assistant.phone.Skills.run(app, name, args)
+                in com.argus.assistant.phone.Skills.names -> {
+                    add(Role.STEP, com.argus.assistant.phone.Skills.describe(name, args))
+                    com.argus.assistant.phone.Skills.run(app, name, args)
                 }
-                com.blaze.assistant.update.Updater.TOOL -> {
-                    if (this === curRef) com.blaze.assistant.update.Updater.showCard()
-                    com.blaze.assistant.update.Updater.fromTool(app, args.optBoolean("install", true))
+                com.argus.assistant.update.Updater.TOOL -> {
+                    if (this === curRef) com.argus.assistant.update.Updater.showCard()
+                    com.argus.assistant.update.Updater.fromTool(app, args.optBoolean("install", true))
                 }
                 in Learning.toolNames -> {
                     skillGate(name, args)?.let { return it }
@@ -5233,41 +5233,41 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     try { Learning.run(app, name, args) } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
                 "search_screen_memory" -> { add(Role.STEP, "Searching screen memory"); ScreenMemory.search(app, args.optString("query"), args.optString("app").ifBlank { null }) }
-                "recent_notifications" -> { add(Role.STEP, "Checking notifications"); com.blaze.assistant.notify.NotificationBrain.list(args.optString("app").ifBlank { null }, args.optDouble("hours", 6.0)) }
-                com.blaze.assistant.phone.Messaging.NAME -> { add(Role.STEP, "Messaging ${args.optString("to")}"); com.blaze.assistant.phone.Messaging.run(app, args) }
-                com.blaze.assistant.browser.BrowserTools.SECURE -> secureInput(args)
+                "recent_notifications" -> { add(Role.STEP, "Checking notifications"); com.argus.assistant.notify.NotificationBrain.list(args.optString("app").ifBlank { null }, args.optDouble("hours", 6.0)) }
+                com.argus.assistant.phone.Messaging.NAME -> { add(Role.STEP, "Messaging ${args.optString("to")}"); com.argus.assistant.phone.Messaging.run(app, args) }
+                com.argus.assistant.browser.BrowserTools.SECURE -> secureInput(args)
                 SecretDesk.TOOL -> {
                     mood = Mood.IDLE
                     val r = SecretDesk.run(args, { add(Role.STEP, it) }, away = { label -> if (!inForeground) Notifier.actionRequired(label, "Secure form") }, context = lastUserText())
                     mood = Mood.ACTING
                     r
                 }
-                in com.blaze.assistant.appstore.StoreTools.names -> {
-                    com.blaze.assistant.appstore.AppStore.init(app); com.blaze.assistant.appstore.AppStore.refresh()
-                    add(Role.STEP, com.blaze.assistant.appstore.StoreTools.describe(name, args))
-                    com.blaze.assistant.appstore.StoreTools.run(name, args) { t, d -> confirm(t, d, "install", always = true) }
+                in com.argus.assistant.appstore.StoreTools.names -> {
+                    com.argus.assistant.appstore.AppStore.init(app); com.argus.assistant.appstore.AppStore.refresh()
+                    add(Role.STEP, com.argus.assistant.appstore.StoreTools.describe(name, args))
+                    com.argus.assistant.appstore.StoreTools.run(name, args) { t, d -> confirm(t, d, "install", always = true) }
                 }
-                in com.blaze.assistant.browser.phone.PhoneBrowserTools.names -> {
-                    // 0.45.19 Blaze Phone: one screen, so parallel specialists take turns (the first to use it holds it).
+                in com.argus.assistant.browser.phone.PhoneBrowserTools.names -> {
+                    // 0.45.19 Argus Phone: one screen, so parallel specialists take turns (the first to use it holds it).
                     agentId?.let { me -> Dispatch.phone.take(me) { h -> BgAgents.get(h)?.live == true }?.let {
                         return "${BrandName.NAME} Phone is in use by another agent right now. Use web_search / fetch_page for this step, or finish without it." } }
-                    add(Role.STEP, com.blaze.assistant.browser.phone.PhoneBrowserTools.describe(name, args))
-                    // 0.45.19 fix 4: who drives Blaze Phone now, so the picture-in-picture Stop cancels exactly this turn.
-                    com.blaze.assistant.browser.phone.PhoneBrowser.own(id, agentId)
-                    val drv = com.blaze.assistant.browser.phone.PhoneBrowser.Driver(app) { reason, site ->
+                    add(Role.STEP, com.argus.assistant.browser.phone.PhoneBrowserTools.describe(name, args))
+                    // 0.45.19 fix 4: who drives Argus Phone now, so the picture-in-picture Stop cancels exactly this turn.
+                    com.argus.assistant.browser.phone.PhoneBrowser.own(id, agentId)
+                    val drv = com.argus.assistant.browser.phone.PhoneBrowser.Driver(app) { reason, site ->
                         if (!inForeground) Notifier.actionRequired("Take control: ${reason.take(50)}", site,
                             "${BrandName.NAME} needs you on ${BrandName.NAME} Phone ($site): ${reason.take(80)}. Tap, then Take control.") }
-                    com.blaze.assistant.browser.phone.PhoneBrowserTools.run(drv, name, args, shots) { t, d, a -> confirm(t, d, a, always = true) }
+                    com.argus.assistant.browser.phone.PhoneBrowserTools.run(drv, name, args, shots) { t, d, a -> confirm(t, d, a, always = true) }
                 }
-                in com.blaze.assistant.browser.BrowserTools.names -> {
+                in com.argus.assistant.browser.BrowserTools.names -> {
                     // v0.26.2: parallel specialists take turns with the one background browser (the first to use it holds it).
                     agentId?.let { me -> Dispatch.browser.take(me) { h -> BgAgents.get(h)?.live == true }?.let { return it } }
-                    add(Role.STEP, com.blaze.assistant.browser.BrowserTools.describe(name, args))
-                    com.blaze.assistant.browser.BrowserTools.run(app, name, args)
+                    add(Role.STEP, com.argus.assistant.browser.BrowserTools.describe(name, args))
+                    com.argus.assistant.browser.BrowserTools.run(app, name, args)
                 }
-                "reply_to_notification" -> { add(Role.STEP, "Replying"); com.blaze.assistant.notify.NotificationBrain.reply(app, args.optInt("number"), args.optString("text")) }
+                "reply_to_notification" -> { add(Role.STEP, "Replying"); com.argus.assistant.notify.NotificationBrain.reply(app, args.optInt("number"), args.optString("text")) }
                 "run_plan" -> runPlan(args)
-                com.blaze.assistant.phone.SettingsJump.TOOL -> com.blaze.assistant.phone.SettingsJump.run(app, args)
+                com.argus.assistant.phone.SettingsJump.TOOL -> com.argus.assistant.phone.SettingsJump.run(app, args)
                 "do_actions" -> {
                     val steps = args.optJSONArray("steps") ?: JSONArray()
                     val log = StringBuilder()
@@ -5301,8 +5301,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             // 0.45.19: verify by STATE first (dark mode, Wi-Fi, Bluetooth… read from the system), then the switch
                             // re-found and re-read; polled with a timeout. A theme switch recreates the screen, so the old node
                             // read back "unknown" while Dark theme was on, and the reply said both (StateCheck).
-                            val vr = com.blaze.assistant.phone.ToggleVerify.after(app, svc, label, wantId, want)
-                            r.trimEnd() + " " + com.blaze.assistant.phone.ToggleVerify.marker(vr)
+                            val vr = com.argus.assistant.phone.ToggleVerify.after(app, svc, label, wantId, want)
+                            r.trimEnd() + " " + com.argus.assistant.phone.ToggleVerify.marker(vr)
                         }
                     }
                 }
@@ -5310,69 +5310,69 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     name in LongChat.names -> longChatTool(name, args)
                     name == PdfPages.TOOL -> { add(Role.STEP, "Looking at the PDF again")
                         val (reply, pic) = PdfPages.show(app, args); if (pic != null) shots += pic; reply }
-                    name in com.blaze.assistant.memory.CacheTier.names -> {
+                    name in com.argus.assistant.memory.CacheTier.names -> {
                         add(Role.STEP, when (name) { "cache_search" -> "Searching the document for \u201c${args.optString("query").take(40)}\u201d"
                             "cache_summarize" -> "Reading the whole document"; "cache_toc" -> "Looking at the document's contents"; else -> "Reading the document" })
-                        com.blaze.assistant.memory.CacheTier.run(name, args, id)
+                        com.argus.assistant.memory.CacheTier.run(name, args, id)
                     }
                     name == "notif_reply" -> { add(Role.STEP, "Replying to ${args.optString("conversation").take(40)}")
-                        com.blaze.assistant.notify.Conversations.reply(app, args.optString("conversation"), args.optString("text")) }
-                    name in com.blaze.assistant.notify.Conversations.toolNames -> { add(Role.STEP, if (name == "notif_read") "Reading the chat with ${args.optString("conversation").take(40)}" else "Checking your chats")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.Conversations.run(app, name, args) } }
-                    name == com.blaze.assistant.phone.SafeWalk.TOOL -> { add(Role.STEP, "Safe Walk")
-                        com.blaze.assistant.phone.SafeWalk.run(app, args) }
-                    name == com.blaze.assistant.device.PhoneHealth.TOOL -> { add(Role.STEP, "Checking your phone's health")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.device.PhoneHealth.run(app, args) } }
-                    name == com.blaze.assistant.mediaapps.CoverArt.TOOL -> { add(Role.STEP, "Forging cover art")
-                        com.blaze.assistant.mediaapps.CoverArt.run(app, args) }
-                    name == com.blaze.assistant.voice.ReadAloud.TOOL -> { add(Role.STEP, if (args.optString("action") == "stop") "Stopping" else "Reading aloud")
-                        com.blaze.assistant.voice.ReadAloud.run(app, args) }
-                    name == com.blaze.assistant.mediaapps.BeatLab.TOOL -> { add(Role.STEP, if (args.optString("action") == "record") "Listening to your hum" else "Making the beat")
-                        com.blaze.assistant.mediaapps.BeatLab.run(app, args) }
-                    name == com.blaze.assistant.mediaapps.ClipStudio.TOOL -> { add(Role.STEP, "Cutting the reel")
-                        com.blaze.assistant.mediaapps.ClipStudio.run(app, args) }
+                        com.argus.assistant.notify.Conversations.reply(app, args.optString("conversation"), args.optString("text")) }
+                    name in com.argus.assistant.notify.Conversations.toolNames -> { add(Role.STEP, if (name == "notif_read") "Reading the chat with ${args.optString("conversation").take(40)}" else "Checking your chats")
+                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.notify.Conversations.run(app, name, args) } }
+                    name == com.argus.assistant.phone.SafeWalk.TOOL -> { add(Role.STEP, "Safe Walk")
+                        com.argus.assistant.phone.SafeWalk.run(app, args) }
+                    name == com.argus.assistant.device.PhoneHealth.TOOL -> { add(Role.STEP, "Checking your phone's health")
+                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.device.PhoneHealth.run(app, args) } }
+                    name == com.argus.assistant.mediaapps.CoverArt.TOOL -> { add(Role.STEP, "Forging cover art")
+                        com.argus.assistant.mediaapps.CoverArt.run(app, args) }
+                    name == com.argus.assistant.voice.ReadAloud.TOOL -> { add(Role.STEP, if (args.optString("action") == "stop") "Stopping" else "Reading aloud")
+                        com.argus.assistant.voice.ReadAloud.run(app, args) }
+                    name == com.argus.assistant.mediaapps.BeatLab.TOOL -> { add(Role.STEP, if (args.optString("action") == "record") "Listening to your hum" else "Making the beat")
+                        com.argus.assistant.mediaapps.BeatLab.run(app, args) }
+                    name == com.argus.assistant.mediaapps.ClipStudio.TOOL -> { add(Role.STEP, "Cutting the reel")
+                        com.argus.assistant.mediaapps.ClipStudio.run(app, args) }
                     name == Marketplace.TOOL -> { add(Role.STEP, when (args.optString("action")) { "browse" -> "Browsing the skill marketplace"; "share" -> "Packing your skill"; else -> "Reviewing the skill pack" })
                         Marketplace.run(app, args) }
                     name == DuoWorkspace.TOOL -> { add(Role.STEP, "Workspace: ${args.optString("action")}")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { DuoWorkspace.run(app, args) } }
-                    name == com.blaze.assistant.phone.flash.FlashRunner.TOOL -> { add(Role.STEP, "Working on the screen: ${args.optString("goal").take(50)}")
-                        com.blaze.assistant.phone.flash.FlashRunner.run(app, args) }
-                    name == com.blaze.assistant.phone.CallCopilot.TOOL -> { add(Role.STEP, "Call Copilot"); com.blaze.assistant.phone.CallCopilot.run(app, args) }
+                    name == com.argus.assistant.phone.flash.FlashRunner.TOOL -> { add(Role.STEP, "Working on the screen: ${args.optString("goal").take(50)}")
+                        com.argus.assistant.phone.flash.FlashRunner.run(app, args) }
+                    name == com.argus.assistant.phone.CallCopilot.TOOL -> { add(Role.STEP, "Call Copilot"); com.argus.assistant.phone.CallCopilot.run(app, args) }
                     name == HaloStudio.TOOL -> "Halo is now part of ${BrandName.NAME} (0.51.0): there's no separate Halo persona to tune. Change ${BrandName.NAME}'s personality in Settings › Personality."
-                    name == com.blaze.assistant.agent.query.QueryRuntime.TOOL -> {
+                    name == com.argus.assistant.agent.query.QueryRuntime.TOOL -> {
                         add(Role.STEP, "Researching \u201c${args.optString("question").take(50)}\u201d")
                         val recent = try { msgs.takeLast(8).filter { it.role == Role.USER || it.role == Role.BLAZE }.map { it.text.take(300) } } catch (_: Throwable) { emptyList() }
-                        com.blaze.assistant.agent.query.QueryRuntime.runTool(args, id, recent, isPrivate) { line -> scope.launch { if (mood != Mood.IDLE) status = line } }
+                        com.argus.assistant.agent.query.QueryRuntime.runTool(args, id, recent, isPrivate) { line -> scope.launch { if (mood != Mood.IDLE) status = line } }
                     }
-                    name == com.blaze.assistant.notify.GroupBrain.TOOL -> { add(Role.STEP, "Reading ${args.optString("group").take(40)}")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.GroupBrain.run(args) } }
+                    name == com.argus.assistant.notify.GroupBrain.TOOL -> { add(Role.STEP, "Reading ${args.optString("group").take(40)}")
+                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.notify.GroupBrain.run(args) } }
                     name == TimeCapsule.TOOL -> { add(Role.STEP, if (args.optString("action") == "seal") "Sealing a time capsule" else "Time capsules")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { TimeCapsule.run(app, args) } }
-                    name == com.blaze.assistant.notify.MoneyRadar.TOOL -> { add(Role.STEP, "Checking Money Radar")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.MoneyRadar.run(app, args) } }
-                    name == com.blaze.assistant.device.CameraMathTool.TOOL -> { add(Role.STEP, "Working it out")
-                        com.blaze.assistant.device.CameraMathTool.run(args) }
-                    name == com.blaze.assistant.media.GalleryOps.TOOL -> { add(Role.STEP, com.blaze.assistant.media.GalleryOps.describe(args))
-                        com.blaze.assistant.media.GalleryOps.run(app, args) }
-                    name in com.blaze.assistant.stage.StageTools.NAMES -> { add(Role.STEP, com.blaze.assistant.stage.StageTools.step(name, args))
-                        com.blaze.assistant.stage.StageStore.run(app, name, args) }
+                    name == com.argus.assistant.notify.MoneyRadar.TOOL -> { add(Role.STEP, "Checking Money Radar")
+                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.notify.MoneyRadar.run(app, args) } }
+                    name == com.argus.assistant.device.CameraMathTool.TOOL -> { add(Role.STEP, "Working it out")
+                        com.argus.assistant.device.CameraMathTool.run(args) }
+                    name == com.argus.assistant.media.GalleryOps.TOOL -> { add(Role.STEP, com.argus.assistant.media.GalleryOps.describe(args))
+                        com.argus.assistant.media.GalleryOps.run(app, args) }
+                    name in com.argus.assistant.stage.StageTools.NAMES -> { add(Role.STEP, com.argus.assistant.stage.StageTools.step(name, args))
+                        com.argus.assistant.stage.StageStore.run(app, name, args) }
                     name == GlanceTool.NAME -> { add(Role.STEP, GlanceTool.step(args)); GlanceStore.run(app, args) }
-                    name == com.blaze.assistant.mediaapps.MusicTools.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.MusicTools.describe(args))
-                        com.blaze.assistant.mediaapps.MusicTools.run(app, args) }
-                    name == com.blaze.assistant.mediaapps.VideoTools.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.VideoTools.describe(args))
-                        com.blaze.assistant.mediaapps.VideoTools.run(app, args) }
-                    name == com.blaze.assistant.movies.MovieTools.TOOL -> { add(Role.STEP, com.blaze.assistant.movies.MovieTools.describe(args))
-                        com.blaze.assistant.movies.MovieTools.run(app, args, lastUserText()) }
-                    name == com.blaze.assistant.mediaapps.MediaFetch.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.MediaFetch.describe(args))
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.mediaapps.MediaFetch.run(app, args) } }
-                    name == com.blaze.assistant.life.LifeLogs.TOOL -> { add(Role.STEP, com.blaze.assistant.life.LifeLogs.describe(args))
-                        com.blaze.assistant.life.LifeLogs.run(app, args) }
+                    name == com.argus.assistant.mediaapps.MusicTools.TOOL -> { add(Role.STEP, com.argus.assistant.mediaapps.MusicTools.describe(args))
+                        com.argus.assistant.mediaapps.MusicTools.run(app, args) }
+                    name == com.argus.assistant.mediaapps.VideoTools.TOOL -> { add(Role.STEP, com.argus.assistant.mediaapps.VideoTools.describe(args))
+                        com.argus.assistant.mediaapps.VideoTools.run(app, args) }
+                    name == com.argus.assistant.movies.MovieTools.TOOL -> { add(Role.STEP, com.argus.assistant.movies.MovieTools.describe(args))
+                        com.argus.assistant.movies.MovieTools.run(app, args, lastUserText()) }
+                    name == com.argus.assistant.mediaapps.MediaFetch.TOOL -> { add(Role.STEP, com.argus.assistant.mediaapps.MediaFetch.describe(args))
+                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.argus.assistant.mediaapps.MediaFetch.run(app, args) } }
+                    name == com.argus.assistant.life.LifeLogs.TOOL -> { add(Role.STEP, com.argus.assistant.life.LifeLogs.describe(args))
+                        com.argus.assistant.life.LifeLogs.run(app, args) }
                     name == Seller.TOOL -> { add(Role.STEP, if (args.optString("action") == "set") "Saving the brand kit" else "Reading the brand kit")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { Seller.run(args) } }
                     name == Flashcards.TOOL -> { add(Role.STEP, if (args.optString("action") == "add") "Making flashcards" else "Checking your flashcards")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { Flashcards.run(args) } }
-                    com.blaze.assistant.connect.Mcp.handles(name) -> mcpCall(name, args)
-                    com.blaze.assistant.connect.Connectors.handles(name) -> { add(Role.STEP, com.blaze.assistant.connect.Connectors.describe(name)); com.blaze.assistant.connect.Connectors.run(app, name, args) }
+                    com.argus.assistant.connect.Mcp.handles(name) -> mcpCall(name, args)
+                    com.argus.assistant.connect.Connectors.handles(name) -> { add(Role.STEP, com.argus.assistant.connect.Connectors.describe(name)); com.argus.assistant.connect.Connectors.run(app, name, args) }
                     else -> { add(Role.STEP, PhoneTools.describe(name, args)); PhoneTools.run(app, name, args) }
                 }
             }
@@ -5385,7 +5385,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
          * expected text appeared) — no model call until the script finishes or gets stuck.
          */
         suspend fun runPlan(args: JSONObject): String {
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance
+            val svc = com.argus.assistant.phone.ArgusAccessibilityService.instance
                 ?: return "Phone control isn't connected. Ask the user to turn on ${BrandName.NAME} in Accessibility settings."
             val steps = args.optJSONArray("steps") ?: return "Error: no steps."
             val n = minOf(steps.length(), 15)
@@ -5436,7 +5436,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         }
                         // v0.30.7: settings pages by intent inside a plan (open_settings + tap in ONE call).
                         "open_settings" -> {
-                            val r = com.blaze.assistant.phone.SettingsJump.run(app, JSONObject().put("page", st.optString("page"))
+                            val r = com.argus.assistant.phone.SettingsJump.run(app, JSONObject().put("page", st.optString("page"))
                                 .apply { st.optString("app").takeIf { it.isNotBlank() }?.let { put("app", it) } })
                             if (TapLoop.failed(r)) fail = r.substringBefore("\n").take(200)
                         }
@@ -5461,9 +5461,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 if (r.startsWith("Couldn't") || r.startsWith("No element")) fail = r
                                 else if (want != null) {
                                     // 0.45.19: a switch step toward a wanted state is verified by state / re-read, like the tap tool.
-                                    val vr = com.blaze.assistant.phone.ToggleVerify.after(app, svc, label.ifBlank { target }, id, want)
-                                    planChecks += com.blaze.assistant.phone.ToggleVerify.marker(vr)
-                                    if (vr.status == com.blaze.assistant.phone.StateCheck.Status.CONTRADICTED) fail = com.blaze.assistant.phone.StateCheck.contradicted(vr)
+                                    val vr = com.argus.assistant.phone.ToggleVerify.after(app, svc, label.ifBlank { target }, id, want)
+                                    planChecks += com.argus.assistant.phone.ToggleVerify.marker(vr)
+                                    if (vr.status == com.argus.assistant.phone.StateCheck.Status.CONTRADICTED) fail = com.argus.assistant.phone.StateCheck.contradicted(vr)
                                 }
                                 trace.put(JSONObject().put("tool", "tap").put("args", JSONObject().put("text", label)).put("label", label))
                             }
@@ -5484,7 +5484,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         "home" -> svc.press("home")
                         "wait" -> kotlinx.coroutines.delay((st.optDouble("seconds", 1.0).coerceIn(0.2, 10.0) * 1000).toLong())
                         "search_in_app" -> {
-                            val r = com.blaze.assistant.phone.AppSearch.run(app, st.optString("app"), st.optString("query"), st.optBoolean("play"))
+                            val r = com.argus.assistant.phone.AppSearch.run(app, st.optString("app"), st.optString("query"), st.optBoolean("play"))
                             if (r.startsWith("Error") || r.startsWith("No app")) fail = r
                         }
                         else -> fail = "unknown step \u201c${st.optString("do")}\u201d"
@@ -5508,7 +5508,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // v0.30.7 plan memory: the step as it worked (a switch tap remembers which way it ended up).
                 planRec.ok(JSONObject(st.toString()).apply {
                     if (st.optString("do") == "tap" && !st.has("want")) svc.lastToggle?.let { put("want", TapLoop.wantWord(it)) } })
-                com.blaze.assistant.device.Haptics.tick(app)
+                com.argus.assistant.device.Haptics.tick(app)
             }
             lastPlan = FastActions.PlanRun(keys, n, false, svc.currentPkg())
             val words = svc.visibleWords().filter { it.length in 2..60 }.take(25)
@@ -5589,14 +5589,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         /** 0.45.20: a run event: the delivery label (Sent / Read) of the turn's bubbles, and the step pill. */
         private fun runEvent(ct: CloudRuns.Turn, o: JSONObject) {
-            try { Delivery.eventOf(o)?.let { Delivery.tracker().apply(ct.gids, it) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: delivery event", e) }
+            try { Delivery.eventOf(o)?.let { Delivery.tracker().apply(ct.gids, it) } } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Agent: delivery event", e) }
             if (agentId == null) StepPills.onEvent(id, o)
         }
 
         /**
          * Ack-and-background without words (0.45.29): a task still running after Ack.FAST_MS goes on the task ledger
          * (TaskKeeper: kept alive when the user leaves, never lost silently) and the quiet task chip shows. Nothing is
-         * added to the chat and nothing is notified: the next thing the user sees from Blaze is what the model wrote.
+         * added to the chat and nothing is notified: the next thing the user sees from Argus is what the model wrote.
          */
         fun trackTask(gate: Ack.Gate, turnUser: Long, said: String) {
             if (gate !== ackGate) return
@@ -5628,7 +5628,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             announce()
         }
 
-        /** When Blaze finishes while you're in another app, post its answer as a notification. */
+        /** When Argus finishes while you're in another app, post its answer as a notification. */
         fun announce() {
             if (sessions.values.none { it !== this && it.job?.isActive == true }) Notifier.doneWorking()
             val last = msgs.lastOrNull() ?: return
@@ -5641,7 +5641,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     Voice.speak(rest.ifBlank { " " }, queue = true)
                 } else Voice.speak(VoiceFiller.spoken(last.text, synchronized(turnTools) { turnTools.isNotEmpty() }))
             }
-            if (!isPrivate) try { com.blaze.assistant.widget.BlazeWidget.update(app, last.text.take(240)) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeWidget.u", e) }
+            if (!isPrivate) try { com.argus.assistant.widget.ArgusWidget.update(app, last.text.take(240)) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Agent: ArgusWidget.u", e) }
             if (this === curRef && (inForeground || overlayOpen)) return
             // v0.24.4: a private chat's words never land in the notification shade.
             if (isPrivate) { Notifier.reply("${BrandName.NAME} answered in your private chat.", last.role == Role.ERROR, id); return }

@@ -1,11 +1,11 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
-import com.blaze.assistant.agent.Processes
+import com.argus.assistant.agent.Processes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,7 +45,7 @@ object Watchers {
     @Volatile private var acting = false
     private var lastHumanNote = 0L
 
-    /** While Blaze is doing a phone task, task-only watchers (the built-in helpers) are live. */
+    /** While Argus is doing a phone task, task-only watchers (the built-in helpers) are live. */
     @Volatile var taskUntil = 0L
     fun taskTick() { taskUntil = SystemClock.uptimeMillis() + 90_000 }
 
@@ -127,7 +127,7 @@ object Watchers {
 
     // ---------- Event loop ----------
 
-    fun onEvent(svc: BlazeAccessibilityService, pkg: String) {
+    fun onEvent(svc: ArgusAccessibilityService, pkg: String) {
         if (list.isEmpty() || scheduled || acting) return
         scheduled = true
         // v0.45.23 perf: at most one full-tree scan per CHECK_GAP_MS (content-changed events can arrive ~10/s from any app);
@@ -146,7 +146,7 @@ object Watchers {
         }
     }
 
-    private fun check(svc: BlazeAccessibilityService, pkgHint: String) {
+    private fun check(svc: ArgusAccessibilityService, pkgHint: String) {
         val root = svc.rootInActiveWindow ?: return
         val pkg = root.packageName?.toString() ?: pkgHint
         if (pkg == svc.packageName) return
@@ -167,7 +167,7 @@ object Watchers {
         }
     }
 
-    private fun fire(svc: BlazeAccessibilityService, root: AccessibilityNodeInfo, w: W, hit: AccessibilityNodeInfo) {
+    private fun fire(svc: ArgusAccessibilityService, root: AccessibilityNodeInfo, w: W, hit: AccessibilityNodeInfo) {
         w.lastFired = SystemClock.uptimeMillis()
         val after = {
             synchronized(this) {

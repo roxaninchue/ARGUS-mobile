@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.ComponentName
 import android.content.Context
@@ -114,21 +114,21 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.blaze.assistant.mediaapps.store.StoreDetail
-import com.blaze.assistant.mediaapps.store.StoreItem
-import com.blaze.assistant.mediaapps.store.StoreSource
-import com.blaze.assistant.ui.BackButton
-import com.blaze.assistant.ui.BlazeDialog
-import com.blaze.assistant.ui.BlazeMenu
-import com.blaze.assistant.ui.BlazeShapes
-import com.blaze.assistant.ui.BlazeTextField
-import com.blaze.assistant.ui.BlazeTheme
-import com.blaze.assistant.ui.DialogColors
-import com.blaze.assistant.ui.EmptyState
-import com.blaze.assistant.ui.KitSearch
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.MotionTokens
-import com.blaze.assistant.ui.PillButton
+import com.argus.assistant.mediaapps.store.StoreDetail
+import com.argus.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreSource
+import com.argus.assistant.ui.BackButton
+import com.argus.assistant.ui.ArgusDialog
+import com.argus.assistant.ui.ArgusMenu
+import com.argus.assistant.ui.ArgusShapes
+import com.argus.assistant.ui.ArgusTextField
+import com.argus.assistant.ui.BlazeTheme
+import com.argus.assistant.ui.DialogColors
+import com.argus.assistant.ui.EmptyState
+import com.argus.assistant.ui.KitSearch
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.MotionTokens
+import com.argus.assistant.ui.PillButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -136,8 +136,8 @@ import kotlinx.coroutines.withContext
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 
 /**
- * v0.30.1 Blaze Music: its own full-screen app inside Blaze (like Blaze Browser and Terminal), with the
- * Library | Store pill. Playback runs in [MusicService] (keeps playing with Blaze closed); this screen is a
+ * v0.30.1 Argus Music: its own full-screen app inside Argus (like Argus Browser and Terminal), with the
+ * Library | Store pill. Playback runs in [MusicService] (keeps playing with Argus closed); this screen is a
  * MediaController onto it. v0.34.1: Player and Library are one tab: the full now-playing opens as a sheet over the
  * Library (tab "player" = the sheet is open) and swipes down into the mini-player; playback never stops for it.
  */
@@ -156,10 +156,10 @@ class MusicActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
+        if (com.argus.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge()
         intent?.getStringExtra(EXTRA_TAB)?.takeIf { it.isNotBlank() }?.let { tab.value = it }
-        com.blaze.assistant.mediaapps.store.JamendoSource.init(this)
+        com.argus.assistant.mediaapps.store.JamendoSource.init(this)
         lifecycleScope.launch(Dispatchers.IO) { MediaLib.ensure(this@MusicActivity); Downloads.resumePending(this@MusicActivity) }
         StoragePermission.asker = {
             if (Build.VERSION.SDK_INT < 29 && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
@@ -265,7 +265,7 @@ fun trackOf(m: MediaItem?): Track? {
 
 @Composable
 fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClose: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val np = remember { NowPlaying() }
     val store = remember { StoreState("audio") }
@@ -275,9 +275,9 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
     var djOpen by remember { mutableStateOf(false) }
     var account by remember { mutableStateOf(false) }
     var addSongsTo by remember { mutableStateOf<String?>(null) }
-    val djOn by BlazeDj.on.collectAsState()
+    val djOn by ArgusDj.on.collectAsState()
     LaunchedEffect(tab) { if (tab != "player") under = MusicNav.normalize(tab) }
-    LaunchedEffect(Unit) { BlazeDj.load(ctx) }
+    LaunchedEffect(Unit) { ArgusDj.load(ctx) }
     DisposableEffect(ctl) {
         val l = object : Player.Listener { override fun onEvents(player: Player, events: Player.Events) { np.read(player) } }
         ctl?.addListener(l); ctl?.let { np.read(it) }
@@ -300,20 +300,20 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
         p.prepare(); p.play()
     }
     fun go(id: String) { open = null; onTab(id) }
-    fun askBlaze(text: String) {
-        com.blaze.assistant.agent.Agent.sharedDraft.value = com.blaze.assistant.agent.Agent.SharedDraft(text)
+    fun askArgus(text: String) {
+        com.argus.assistant.agent.Agent.sharedDraft.value = com.argus.assistant.agent.Agent.SharedDraft(text)
         onClose()
     }
 
     // 0.52.2: one ARGUS look. Unification: the shell's space background; the shared header (MediaTopBar) carries the
     // light / dark switch.
-    com.blaze.assistant.ui.space.SpaceBackdrop {
+    com.argus.assistant.ui.space.SpaceBackdrop {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             val page = if (tab == "player") under else MusicNav.normalize(tab)
             MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Your library"; "create" -> "Create"; else -> "Music" },
                 onAccount = { account = true }, onClose = onClose) {
                 RoundIcon(Icons.Rounded.Headphones, if (djOn) "${BrandName.NAME} DJ is on" else "${BrandName.NAME} DJ", tint = if (djOn) c.accent else c.ink,
-                    fill = com.blaze.assistant.ui.space.spaceLook().track) { djOpen = true }
+                    fill = com.argus.assistant.ui.space.spaceLook().track) { djOpen = true }
             }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 val o = open
@@ -326,9 +326,9 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
                     when (t) {
                         "store" -> StoreView("audio", store) { item, d, src -> playStream(ctl, item, d, src); MusicContext.set("Search"); onTab("player") }
                         "search" -> MusicSearchPage(::playList, openTile = { open = it }, onStore = { go("store") },
-                            onVibe = { v -> MusicService.current?.djFresh(v) ?: run { BlazeDj.setVibe(ctx, v); djOpen = true } })
+                            onVibe = { v -> MusicService.current?.djFresh(v) ?: run { ArgusDj.setVibe(ctx, v); djOpen = true } })
                         "library" -> LibraryPage(np, ::playList, openTile = { open = it })
-                        "create" -> MusicCreatePage(onCreated = { open = it }, onAskBlaze = ::askBlaze)
+                        "create" -> MusicCreatePage(onCreated = { open = it }, onAskArgus = ::askArgus)
                         else -> MusicHomePage(np, openTile = { open = it }, playList = ::playList, onDj = { djOpen = true })
                     }
                 }
@@ -351,20 +351,20 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
     }
 }
 
-/** The account badge's sheet: who's signed in to Blaze, and the Music settings that matter. */
+/** The account badge's sheet: who's signed in to Argus, and the Music settings that matter. */
 @Composable
 private fun AccountDialog(onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
-    val name = remember { runCatching { com.blaze.assistant.agent.Settings.userName }.getOrDefault("") }
+    val name = remember { runCatching { com.argus.assistant.agent.Settings.userName }.getOrDefault("") }
     var saver by remember { mutableStateOf(MediaPrefs.dataSaver(ctx)) }
-    var voice by remember { mutableStateOf(BlazeDj.voiceOn(ctx)) }
-    BlazeDialog(title = name.ifBlank { "Your account" }, confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
+    var voice by remember { mutableStateOf(ArgusDj.voiceOn(ctx)) }
+    ArgusDialog(title = name.ifBlank { "Your account" }, confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
         Row(Modifier.fillMaxWidth().clickable { saver = !saver; MediaPrefs.setBool(ctx, MediaPrefs.DATA_SAVER, saver) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.Icon(Icons.Rounded.DataSaverOn, contentDescription = null, tint = c.ink)
             MText(if (saver) "Data saver on mobile data: on" else "Data saver on mobile data: off", 14.sp, c.ink, modifier = Modifier.padding(start = 10.dp))
         }
-        Row(Modifier.fillMaxWidth().clickable { voice = !voice; BlazeDj.setVoice(ctx, voice) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().clickable { voice = !voice; ArgusDj.setVoice(ctx, voice) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.Icon(Icons.Rounded.RecordVoiceOver, contentDescription = null, tint = c.ink)
             MText(if (voice) "${BrandName.NAME} DJ spoken intros: on" else "${BrandName.NAME} DJ spoken intros: off", 14.sp, c.ink, modifier = Modifier.padding(start = 10.dp))
         }
@@ -374,13 +374,13 @@ private fun AccountDialog(onDismiss: () -> Unit) {
 /** Playlist › Add: tap songs to add them (each tap adds one; already added ones are left out). */
 @Composable
 private fun AddSongsDialog(playlistId: String, onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val songs by MediaLib.songs.collectAsState()
     val lists by MediaLib.playlists.collectAsState()
     var q by remember { mutableStateOf("") }
     val inList = lists.firstOrNull { it.id == playlistId }?.keys?.toSet() ?: emptySet()
     val pool = remember(songs, q, inList) { LibraryGroups.search(songs, q).filter { it.key !in inList } }
-    BlazeDialog(title = "Add songs", confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
+    ArgusDialog(title = "Add songs", confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
         KitSearch(q, { q = it }, "Search your music")
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 380.dp)) {
             items(pool.take(200), key = { "add-" + it.key }) { t ->
@@ -424,7 +424,7 @@ private fun MiniPlayer(ctl: MediaController?, np: NowPlaying, onOpen: () -> Unit
 
 @Composable
 internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<Track>, Int, Boolean) -> Unit, onCollapse: () -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val t = trackOf(np.item)
     var view by remember { mutableStateOf("art") }   // art | queue | lyrics
@@ -471,7 +471,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                 }
                 Box {
                     RoundIcon(Icons.Rounded.MoreVert, "More") { more = true }
-                    BlazeMenu(more, { more = false }, buildList {
+                    ArgusMenu(more, { more = false }, buildList {
                         add(("Repeat: " + when (np.repeat) { Repeat.OFF -> "off"; Repeat.ALL -> "all"; Repeat.ONE -> "one" }) to {
                             ctl?.repeatMode = when (np.repeat.next()) { Repeat.ALL -> Player.REPEAT_MODE_ALL; Repeat.ONE -> Player.REPEAT_MODE_ONE; Repeat.OFF -> Player.REPEAT_MODE_OFF }; Unit })
                         add(("Speed: " + Speeds.label(np.speed)) to { ctl?.setPlaybackSpeed(Speeds.next(np.speed)); Unit })
@@ -479,11 +479,11 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                         add((if (fadeS == 0) "Fade between songs: off" else "Fade between songs: $fadeS s") to { fadeMenu = true })
                         add("Lyrics" to { view = if (view == "lyrics") "art" else "lyrics" })
                         add("Karaoke" to { view = if (view == "karaoke") "art" else "karaoke" })
-                        if (BlazeDj.on.value) add("${BrandName.NAME} DJ: more like this" to { MusicService.current?.djMoreLikeThis(); Unit })
+                        if (ArgusDj.on.value) add("${BrandName.NAME} DJ: more like this" to { MusicService.current?.djMoreLikeThis(); Unit })
                     }.map { (l, f) -> l to { more = false; f() } })
-                    BlazeMenu(eqMenu, { eqMenu = false }, MusicSmart.presets.keys.map { n ->
+                    ArgusMenu(eqMenu, { eqMenu = false }, MusicSmart.presets.keys.map { n ->
                         (n + if (n == eqName) "  \u2713" else "") to { eqName = n; MediaPrefs.setStr(ctx, MediaPrefs.EQ, n); MusicService.current?.applyEq(n); eqMenu = false } })
-                    BlazeMenu(fadeMenu, { fadeMenu = false }, listOf(0, 3, 6, 10).map { sec ->
+                    ArgusMenu(fadeMenu, { fadeMenu = false }, listOf(0, 3, 6, 10).map { sec ->
                         ((if (sec == 0) "No fade between songs" else "Fade $sec s between songs") + if (sec == fadeS) "  \u2713" else "") to {
                             fadeS = sec; MediaPrefs.setInt(ctx, MediaPrefs.CROSSFADE, sec); fadeMenu = false } })
                 }
@@ -493,7 +493,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
             var dx by remember { mutableFloatStateOf(0f) }
             // Landscape overhaul: on a short window the art box is capped (a full-width square would push the controls a
             // screen away); upright it is the full-width square as before.
-            val shortWin = com.blaze.assistant.ui.common.WindowLayout.isShort(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
+            val shortWin = com.argus.assistant.ui.common.WindowLayout.isShort(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
             val artBox = if (shortWin) Modifier.fillMaxWidth().height((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.6f).dp) else Modifier.fillMaxWidth().aspectRatio(1f)
             Box(artBox, contentAlignment = Alignment.Center) {
                 when (view) {
@@ -508,7 +508,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                                     when (NowPlayingGestures.skip(dx, size.width.toFloat())) { 1 -> ctl?.seekToNext(); -1 -> ctl?.seekToPrevious() }
                                     dx = 0f
                                 }, onHorizontalDrag = { ch, d -> ch.consume(); dx += d })
-                        }, BlazeShapes.large, target = 720)
+                        }, ArgusShapes.large, target = 720)
                 }
             }
             Spacer(Modifier.height(18.dp))
@@ -526,7 +526,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
             if (np.error.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MText(np.error, 12.5.sp, com.blaze.assistant.ui.BlazeBrush.orange, maxLines = 3, modifier = Modifier.weight(1f))
+                    MText(np.error, 12.5.sp, com.argus.assistant.ui.ArgusBrush.orange, maxLines = 3, modifier = Modifier.weight(1f))
                     PillButton("Skip", primary = false, icon = Icons.Rounded.SkipNext) { ctl?.let { it.seekToNext(); it.prepare(); it.play() } }
                 }
             }
@@ -552,7 +552,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 RoundIcon(Icons.Rounded.Shuffle, if (np.shuffle) "Shuffle on" else "Shuffle off", tint = if (np.shuffle) c.accent else c.sub) { ctl?.shuffleModeEnabled = !np.shuffle }
                 RoundIcon(Icons.Rounded.SkipPrevious, "Previous", size = 52) { ctl?.seekToPrevious() }
-                Box(Modifier.size(70.dp).clip(BlazeShapes.pill).background(c.ink).clickable(onClickLabel = if (np.playing) "Pause" else "Play") {
+                Box(Modifier.size(70.dp).clip(ArgusShapes.pill).background(c.ink).clickable(onClickLabel = if (np.playing) "Pause" else "Play") {
                     ctl?.let { if (it.isPlaying) it.pause() else { if (it.playbackState == Player.STATE_IDLE) it.prepare(); if (it.playbackState == Player.STATE_ENDED) it.seekTo(0, 0); it.play() } }
                 }, contentAlignment = Alignment.Center) {
                     androidx.compose.material3.Icon(if (np.playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = null, tint = c.paper, modifier = Modifier.size(38.dp))
@@ -562,7 +562,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                     val left = if (np.pos >= 0) SleepTimer.left(sleepAt, System.currentTimeMillis()) else 0L   // re-read as the position ticks
                     RoundIcon(Icons.Rounded.Bedtime, when { sleepAt == -1L -> "Sleep timer: end of song"; left > 0 -> "Sleep timer: " + TimeText.clock(left); else -> "Sleep timer" },
                         tint = if (sleepAt != 0L) c.accent else c.sub) { sleepMenu = true }
-                    BlazeMenu(sleepMenu, { sleepMenu = false }, buildList {
+                    ArgusMenu(sleepMenu, { sleepMenu = false }, buildList {
                         if (sleepAt != 0L) add("Turn off" to { MusicService.sleepAt.value = 0L })
                         SleepTimer.presetsMin.forEach { m -> add("$m minutes" to { MusicService.sleepAt.value = System.currentTimeMillis() + m * 60_000L }) }
                         add("End of this song" to { MusicService.sleepAt.value = -1L })
@@ -593,7 +593,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
 /** v0.34.1: your other songs under the player; a tap plays that song with the library as the queue. */
 @Composable
 private fun MoreFromLibrary(np: NowPlaying, playList: (List<Track>, Int, Boolean) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val songs by MediaLib.songs.collectAsState()
     val playingKey = np.item?.mediaId
     val others = remember(songs, playingKey) { songs.withIndex().filter { it.value.key != playingKey }.take(60) }
@@ -604,7 +604,7 @@ private fun MoreFromLibrary(np: NowPlaying, playList: (List<Track>, Int, Boolean
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(others, key = { it.value.key }) { iv ->
                 val t = iv.value
-                Column(Modifier.width(88.dp).clip(BlazeShapes.small).clickable(onClickLabel = "Play ${t.title}") { playList(songs, iv.index, false) }) {
+                Column(Modifier.width(88.dp).clip(ArgusShapes.small).clickable(onClickLabel = "Play ${t.title}") { playList(songs, iv.index, false) }) {
                     Art(t, Modifier.size(88.dp), target = 200)
                     Spacer(Modifier.height(4.dp))
                     MText(t.title, 12.sp, c.ink, FontWeight.Medium)
@@ -617,8 +617,8 @@ private fun MoreFromLibrary(np: NowPlaying, playList: (List<Track>, Int, Boolean
 
 @Composable
 private fun Chip(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, on: Boolean, onClick: () -> Unit) {
-    val c = LocalBlaze.current
-    Row(Modifier.clip(BlazeShapes.pill).background(if (on) c.ink else c.faint).clickable(onClickLabel = text, onClick = onClick)
+    val c = LocalArgus.current
+    Row(Modifier.clip(ArgusShapes.pill).background(if (on) c.ink else c.faint).clickable(onClickLabel = text, onClick = onClick)
         .padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.material3.Icon(icon, contentDescription = null, tint = if (on) c.paper else c.ink, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(6.dp))
@@ -629,7 +629,7 @@ private fun Chip(text: String, icon: androidx.compose.ui.graphics.vector.ImageVe
 /** Up next, in play order. Long-press the handle and drag to move a song (when shuffle is off); × removes it. */
 @Composable
 private fun QueueList(ctl: MediaController?, np: NowPlaying) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val rowH = 60.dp
     val rowPx = with(LocalDensity.current) { rowH.toPx() }
     var dragFrom by remember { mutableIntStateOf(-1) }
@@ -646,7 +646,7 @@ private fun QueueList(ctl: MediaController?, np: NowPlaying) {
             val t = trackOf(np.queue.getOrNull(idx)) ?: return@itemsIndexed
             val me = dragFrom == pos
             Row(Modifier.fillMaxWidth().height(rowH).graphicsLayer { if (me) { translationY = dragDy; shadowElevation = 12f } }
-                .clip(BlazeShapes.small).background(if (me) c.faint else Color.Transparent)
+                .clip(ArgusShapes.small).background(if (me) c.faint else Color.Transparent)
                 .clickable { ctl?.seekToDefaultPosition(idx); ctl?.play() }, verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { TrackRow(t, false, onClick = { ctl?.seekToDefaultPosition(idx); ctl?.play() }) }
                 RoundIcon(Icons.Rounded.Close, "Remove from queue", size = 38, tint = c.sub) { ctl?.removeMediaItem(idx) }
@@ -671,7 +671,7 @@ private fun QueueList(ctl: MediaController?, np: NowPlaying) {
 
 @Composable
 private fun LyricsView(t: Track, pos: Long, karaoke: Boolean = false) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     var res by remember(t.key) { mutableStateOf<Lyrics.Result?>(null) }
     var err by remember(t.key) { mutableStateOf("") }
@@ -714,7 +714,7 @@ private fun LyricsView(t: Track, pos: Long, karaoke: Boolean = false) {
 
 @Composable
 private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) -> Unit, openTile: (MusicHome.Tile) -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val songs by MediaLib.songs.collectAsState()
     val liked by MediaLib.liked.collectAsState()
@@ -792,7 +792,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
             selected = if (selecting) t.key in sel else null) {
             Box {
                 RoundIcon(Icons.Rounded.MoreVert, "More", size = 40, tint = c.sub) { menu = true }
-                BlazeMenu(menu, { menu = false }, buildList {
+                ArgusMenu(menu, { menu = false }, buildList {
                     add((if (t.key in liked) "Remove from Liked" else "Like") to { MediaLib.toggleLike(t.key) })
                     add("Add to playlist\u2026" to { addTo = listOf(t.key) })
                     if (playlist != null) {
@@ -830,7 +830,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             (LibraryView.chips + listOf("liked" to "Liked", "foryou" to "For you")).forEach { (id, label) ->
                 val on = section == id
-                Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.ink else c.faint).clickable { section = id; group = null; openList = null; sel = LibrarySelection.clear() }
+                Box(Modifier.clip(ArgusShapes.pill).background(if (on) c.ink else c.faint).clickable { section = id; group = null; openList = null; sel = LibrarySelection.clear() }
                     .padding(horizontal = 14.dp, vertical = 7.dp)) { MText(label, 13.sp, if (on) c.paper else c.sub, FontWeight.Medium) }
             }
         }
@@ -840,7 +840,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
             Spacer(Modifier.weight(1f))
             Box {
                 RoundIcon(Icons.Rounded.SwapVert, "Sort: ${sortBy.label}", size = 40, tint = c.sub) { sortMenu = true }
-                BlazeMenu(sortMenu, { sortMenu = false }, PlaylistMeta.Sort.values().filter { it != PlaylistMeta.Sort.CUSTOM }.map { o -> o.label to { sortBy = o; sortMenu = false } })
+                ArgusMenu(sortMenu, { sortMenu = false }, PlaylistMeta.Sort.values().filter { it != PlaylistMeta.Sort.CUSTOM }.map { o -> o.label to { sortBy = o; sortMenu = false } })
             }
             RoundIcon(if (grid) Icons.Rounded.ViewAgenda else Icons.Rounded.GridView, if (grid) "Show as list" else "Show as grid", size = 40, tint = c.sub) { grid = !grid }
         }
@@ -855,7 +855,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                     if (downloaded.isEmpty()) item { EmptyState("Nothing downloaded yet", "Songs you save from Search play offline and show up here.", mark = false) }
                     else if (grid) items(downloaded.chunked(3), key = { "dg" + it.first().key }) { row ->
                         Row(Modifier.padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            row.forEach { t -> Column(Modifier.weight(1f).clip(BlazeShapes.small).clickable { MusicContext.set("Downloaded"); playList(downloaded, downloaded.indexOf(t), false) }) {
+                            row.forEach { t -> Column(Modifier.weight(1f).clip(ArgusShapes.small).clickable { MusicContext.set("Downloaded"); playList(downloaded, downloaded.indexOf(t), false) }) {
                                 Art(t, Modifier.fillMaxWidth().aspectRatio(1f), target = 240); MText(t.title, 12.sp, c.ink, modifier = Modifier.padding(top = 4.dp)) } }
                             repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
@@ -869,7 +869,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         item {
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 itemsIndexed(rec, key = { _, t -> "r" + t.key }) { i, t ->
-                                    Column(Modifier.width(118.dp).clip(BlazeShapes.small).clickable { playList(rec, i, false) }) {
+                                    Column(Modifier.width(118.dp).clip(ArgusShapes.small).clickable { playList(rec, i, false) }) {
                                         Art(t, Modifier.size(118.dp), target = 240)
                                         Spacer(Modifier.height(4.dp))
                                         MText(t.title, 12.5.sp, c.ink, FontWeight.Medium)
@@ -903,8 +903,8 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                     if (g == null) {
                         if (groups.isEmpty()) item { EmptyState("Nothing here yet", "Download some music in the Store.") }
                         items(groups, key = { section + it.first }) { (name, list) ->
-                            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).clickable { group = name }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Art(list.first(), Modifier.size(52.dp), if (section == "artists") BlazeShapes.pill else BlazeShapes.small, target = 140)
+                            Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).clickable { group = name }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Art(list.first(), Modifier.size(52.dp), if (section == "artists") ArgusShapes.pill else ArgusShapes.small, target = 140)
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     MText(name, 14.5.sp, c.ink, FontWeight.Medium)
@@ -927,8 +927,8 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                     val open = lists.firstOrNull { it.id == openList }
                     if (open == null) {
                         item {
-                            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).clickable { naming = null to "" }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(52.dp).clip(BlazeShapes.small).background(c.faint), contentAlignment = Alignment.Center) {
+                            Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).clickable { naming = null to "" }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.size(52.dp).clip(ArgusShapes.small).background(c.faint), contentAlignment = Alignment.Center) {
                                     androidx.compose.material3.Icon(Icons.Rounded.Add, contentDescription = null, tint = c.ink)
                                 }
                                 Spacer(Modifier.width(12.dp)); MText("New playlist", 14.5.sp, c.ink, FontWeight.Medium)
@@ -936,14 +936,14 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         }
                         if (grid) items(lists.chunked(2), key = { "pg" + it.first().id }) { row ->
                             Row(Modifier.padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                row.forEach { p -> Column(Modifier.weight(1f).clip(BlazeShapes.small).clickable { openTile(MusicHome.Tile(p.id, p.name, p.keys, "playlist")) }) {
+                                row.forEach { p -> Column(Modifier.weight(1f).clip(ArgusShapes.small).clickable { openTile(MusicHome.Tile(p.id, p.name, p.keys, "playlist")) }) {
                                     CoverTile(p.id, p.keys.take(8).mapNotNull { byKey[it] }, Modifier.fillMaxWidth().aspectRatio(1f))
                                     MText(p.name, 13.sp, c.ink, FontWeight.Medium, modifier = Modifier.padding(top = 4.dp)) } }
                                 if (row.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
                         else items(lists, key = { "p" + it.id }) { p ->
-                            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).clickable { openTile(MusicHome.Tile(p.id, p.name, p.keys, "playlist")) }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).clickable { openTile(MusicHome.Tile(p.id, p.name, p.keys, "playlist")) }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 CoverTile(p.id, p.keys.take(8).mapNotNull { byKey[it] }, Modifier.size(52.dp))
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
@@ -977,11 +977,11 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
     }
 
     addTo?.let { keys ->
-        BlazeDialog("Add to playlist", confirm = "New playlist", onConfirm = { addTo = null; naming = null to ""; pendingAdd = keys; sel = LibrarySelection.clear() }, dismiss = "Cancel", onDismiss = { addTo = null }) {
+        ArgusDialog("Add to playlist", confirm = "New playlist", onConfirm = { addTo = null; naming = null to ""; pendingAdd = keys; sel = LibrarySelection.clear() }, dismiss = "Cancel", onDismiss = { addTo = null }) {
             Column(Modifier.fillMaxWidth()) {
                 if (lists.isEmpty()) MText("No playlists yet.", 13.sp, DialogColors.body)
                 lists.forEach { p ->
-                    Box(Modifier.fillMaxWidth().clip(BlazeShapes.small).clickable {
+                    Box(Modifier.fillMaxWidth().clip(ArgusShapes.small).clickable {
                         MediaLib.setPlaylists(PlaylistOps.add(lists, p.id, keys, System.currentTimeMillis())); addTo = null; sel = LibrarySelection.clear()
                         Toast.makeText(ctx, "Added to ${p.name}", Toast.LENGTH_SHORT).show()
                     }.padding(horizontal = 8.dp, vertical = 12.dp)) { MText(p.name, 15.sp, DialogColors.title) }
@@ -991,7 +991,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
     }
     naming?.let { (id, start) ->
         var name by remember(id) { mutableStateOf(start) }
-        BlazeDialog(if (id == null) "New playlist" else "Rename playlist", confirm = "Save", onConfirm = {
+        ArgusDialog(if (id == null) "New playlist" else "Rename playlist", confirm = "Save", onConfirm = {
             val now = System.currentTimeMillis()
             if (id == null) {
                 val nid = MediaLib.newPlaylistId()
@@ -1001,16 +1001,16 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
             } else MediaLib.setPlaylists(PlaylistOps.rename(lists, id, name, now))
             pendingAdd = null; naming = null
         }, dismiss = "Cancel", onDismiss = { naming = null; pendingAdd = null }) {
-            BlazeTextField(name, { name = it }, "Playlist name", Modifier.fillMaxWidth())
+            ArgusTextField(name, { name = it }, "Playlist name", Modifier.fillMaxWidth())
         }
     }
     confirmDel?.let { t ->
-        BlazeDialog("Delete \u201c${t.title.take(40)}\u201d?", "It's removed from your phone and from every playlist.", confirm = "Delete", warm = true,
+        ArgusDialog("Delete \u201c${t.title.take(40)}\u201d?", "It's removed from your phone and from every playlist.", confirm = "Delete", warm = true,
             onConfirm = { MediaLib.deleteDownload(ctx, t.key); confirmDel = null }, dismiss = "Cancel", onDismiss = { confirmDel = null })
     }
     confirmMany?.let { picked ->
         val (title, body) = LibrarySelection.deleteText(picked, "audio")
-        BlazeDialog(title, body, confirm = "Delete", warm = true, onConfirm = {
+        ArgusDialog(title, body, confirm = "Delete", warm = true, onConfirm = {
             val keys = LibrarySelection.deletable(picked).map { it.key }
             confirmMany = null; sel = LibrarySelection.clear()
             scope.launch { withContext(Dispatchers.IO) { MediaLib.deleteDownloads(ctx, keys) } }
@@ -1026,7 +1026,7 @@ private var pendingAdd: List<String>? = null
 /** Karaoke: the line being sung, big, filling left to right as it goes; the next line under it. */
 @Composable
 private fun KaraokeView(lines: List<LyricLine>, pos: Long) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val cur = Lrc.current(lines, pos)
     val line = lines.getOrNull(cur)
     val next = lines.getOrNull(cur + 1)
@@ -1047,10 +1047,10 @@ private fun KaraokeView(lines: List<LyricLine>, pos: Long) {
     }
 }
 
-/** For you: Blaze DJ, daily mixes, smart playlists, Wrapped, playlist import and the tag fixer. */
+/** For you: Argus DJ, daily mixes, smart playlists, Wrapped, playlist import and the tag fixer. */
 @Composable
 private fun ForYou(songs: List<Track>, liked: List<String>, playList: (List<Track>, Int, Boolean) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val plays by MediaLib.plays.collectAsState()
@@ -1085,9 +1085,9 @@ private fun ForYou(songs: List<Track>, liked: List<String>, playList: (List<Trac
         fun ListRow(l: MusicSmart.SmartList) {
             val tracks = l.keys.mapNotNull { byKey[it] }
             if (tracks.isEmpty()) return
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(BlazeShapes.small).clickable { playList(tracks, 0, false) }.padding(8.dp),
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(ArgusShapes.small).clickable { playList(tracks, 0, false) }.padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Art(tracks.first(), Modifier.size(52.dp), BlazeShapes.small, target = 140)
+                Art(tracks.first(), Modifier.size(52.dp), ArgusShapes.small, target = 140)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     MText(l.name, 14.5.sp, c.ink, FontWeight.SemiBold)
@@ -1099,7 +1099,7 @@ private fun ForYou(songs: List<Track>, liked: List<String>, playList: (List<Trac
         if (mixes.isNotEmpty()) { Spacer(Modifier.height(12.dp)); MText("Daily mixes", 15.sp, c.ink, FontWeight.SemiBold); mixes.forEach { ListRow(it) } }
         if (smart.isNotEmpty()) { Spacer(Modifier.height(12.dp)); MText("Smart playlists", 15.sp, c.ink, FontWeight.SemiBold); smart.forEach { ListRow(it) } }
     }
-    wrapped?.let { w -> BlazeDialog("Your Wrapped", w, confirm = "Nice", onConfirm = { wrapped = null }, onDismiss = { wrapped = null }) }
+    wrapped?.let { w -> ArgusDialog("Your Wrapped", w, confirm = "Nice", onConfirm = { wrapped = null }, onDismiss = { wrapped = null }) }
     if (importing) ImportDialog { importing = false }
 }
 
@@ -1110,17 +1110,17 @@ private fun ImportDialog(onDismiss: () -> Unit) {
     var text by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var msg by remember { mutableStateOf("") }
-    BlazeDialog("Import a playlist", "Paste a YouTube or Spotify playlist link (Spotify albums work too). ${BrandName.NAME} finds each song, downloads it and builds the playlist.",
+    ArgusDialog("Import a playlist", "Paste a YouTube or Spotify playlist link (Spotify albums work too). ${BrandName.NAME} finds each song, downloads it and builds the playlist.",
         confirm = if (busy) "Importing\u2026" else if (msg.isNotBlank()) "Done" else "Import", onConfirm = {
-            if (msg.isNotBlank()) { onDismiss(); return@BlazeDialog }
-            if (busy || text.isBlank()) return@BlazeDialog
+            if (msg.isNotBlank()) { onDismiss(); return@ArgusDialog }
+            if (busy || text.isBlank()) return@ArgusDialog
             busy = true
             scope.launch {
                 msg = try { MusicExtras.importPlaylist(ctx, text.trim()) } catch (e: Exception) { "Couldn't import: ${e.message ?: "no connection"}" }
                 busy = false
             }
         }, dismiss = "Cancel", onDismiss = onDismiss) {
-        BlazeTextField(text, { text = it; msg = "" }, "https://open.spotify.com/playlist/\u2026", Modifier.fillMaxWidth())
+        ArgusTextField(text, { text = it; msg = "" }, "https://open.spotify.com/playlist/\u2026", Modifier.fillMaxWidth())
         if (msg.isNotBlank()) { Spacer(Modifier.height(8.dp)); MText(msg, 13.sp, DialogColors.body, maxLines = 8) }
     }
 }

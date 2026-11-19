@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.ToolVerify.Status
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.ToolVerify.Status
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray

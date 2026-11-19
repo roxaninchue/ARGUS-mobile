@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
-import com.blaze.assistant.phone.BlazeAccessibilityService
-import com.blaze.assistant.phone.PhoneTools
+import com.argus.assistant.phone.ArgusAccessibilityService
+import com.argus.assistant.phone.PhoneTools
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
@@ -93,7 +93,7 @@ object Learning {
     suspend fun replay(ctx: Context, name: String): String {
         val s = _skills.value.firstOrNull { it.name == name } ?: return "No skill called \"$name\"."
         val steps = s.replay ?: return "\"$name\" has no recorded steps; follow its written steps instead:\n${s.steps}"
-        val svc = BlazeAccessibilityService.instance ?: return "Phone control is off, so I can't replay \"$name\"."
+        val svc = ArgusAccessibilityService.instance ?: return "Phone control is off, so I can't replay \"$name\"."
         saveSkills(_skills.value.map { if (it.name == name) it.copy(uses = it.uses + 1) else it })
         val log = StringBuilder()
         for (i in 0 until steps.length()) {
@@ -116,7 +116,7 @@ object Learning {
                     } else svc.type(id, args.optString("text"))
                 }
                 // v0.30.7: settings pages by intent replay too (recorded since this version).
-                com.blaze.assistant.phone.SettingsJump.TOOL -> com.blaze.assistant.phone.SettingsJump.run(ctx, args).substringBefore(" Screen now:")
+                com.argus.assistant.phone.SettingsJump.TOOL -> com.argus.assistant.phone.SettingsJump.run(ctx, args).substringBefore(" Screen now:")
                 else -> PhoneTools.run(ctx, tool, args)
             }
             log.append("Step ${i + 1} ($tool${if (label.isNotEmpty()) " \"$label\"" else ""}): $res\n")

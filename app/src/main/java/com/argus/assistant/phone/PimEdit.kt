@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.Manifest
 import android.content.ContentProviderOperation
@@ -7,7 +7,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
 import android.provider.ContactsContract
-import com.blaze.assistant.device.Perms
+import com.argus.assistant.device.Perms
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat

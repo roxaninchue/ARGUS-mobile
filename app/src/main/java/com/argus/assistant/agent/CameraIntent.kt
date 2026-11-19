@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.device.CameraModes.Mode
+import com.argus.assistant.device.CameraModes.Mode
 import java.text.Normalizer
 
 /**
- * v0.28.x Blaze Camera: plain requests that mean "use the camera" open it in the right mode with no model call and
+ * v0.28.x Argus Camera: plain requests that mean "use the camera" open it in the right mode with no model call and
  * no guessing (CameraIntentTest). "scan this document for me" → Document, "look at this" / "can you see this" → Ask,
  * "read this sign" → Text, "translate this menu" → Translate, "scan this QR" → Scan, "take a photo" → Photo. Typed or
  * spoken ("Hey Blaze, scan this document"); English, French, Spanish and Portuguese. The capture comes back into the
@@ -48,7 +48,7 @@ object CameraIntent {
         Mode.TEXT to r("""^(read|lis|lire|lisez|lee|leer|leia|ler)( $det)?( (sign|signs|label|text|board|poster|notice|note|card|menu|whiteboard|blackboard|plate|writing|words|panneau|texte|etiquette|affiche|tableau|letrero|cartel|texto|etiqueta|aviso|pizarra|placa|quadro))?( (out )?(to me|aloud|out loud))?$"""),
         Mode.TEXT to r("""^what does (this|that|the) (sign|label|board|poster|notice|note|card|writing) say$"""),
         Mode.TEXT to r("""^(copy|grab|get|extract) (the )?(text|words) (from|off|on) (this|that) (sign|label|board|poster|note|card|paper|page|whiteboard)$"""),
-        // Ask: show Blaze something.
+        // Ask: show Argus something.
         Mode.ASK to r("""^(look at|take a look at|have a look at|check out|see|regarde|mira|olha|veja)( $det)?( (thing|object|plant|flower|bug|insect|animal|food|dish|item|product|rash|part|machine|chose|objet|plante|cosa|objeto|planta|coisa))?$"""),
         Mode.ASK to r("""^(take a look|have a look|look|regarde|mira|olha)$"""),
         Mode.ASK to r("""^(can|could) you see (this|that|it|me|what i'?m holding|what i'?m pointing at)$"""),
@@ -57,7 +57,7 @@ object CameraIntent {
         Mode.ASK to r("""^what am i (looking at|holding|pointing at)$"""),
         Mode.ASK to r("""^(identify|recognise|recognize|describe) (this|that|what i'?m holding|what i'?m looking at)( (thing|object|plant|flower|bug|insect|animal|food|dish|item|product))?$"""),
         Mode.ASK to r("""^(qu'est-ce que c'est|c'est quoi ca|que es esto|o que e isso|o que e isto)$"""),
-        // Photo: Blaze takes one and looks at it.
+        // Photo: Argus takes one and looks at it.
         Mode.PHOTO to r("""^(take|snap) (a |one )?(photo|picture|pic|selfie|shot)( of (this|that|it|me))?$"""),
         Mode.PHOTO to r("""^(prends|prend) une (photo|selfie)( de (ca|ceci))?$|^(toma|saca) una (foto|selfie)( de esto)?$|^(tira) uma (foto|selfie)( disso)?$"""),
     )

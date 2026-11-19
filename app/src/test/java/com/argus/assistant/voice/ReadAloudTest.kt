@@ -1,4 +1,4 @@
-package com.blaze.assistant.voice
+package com.argus.assistant.voice
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

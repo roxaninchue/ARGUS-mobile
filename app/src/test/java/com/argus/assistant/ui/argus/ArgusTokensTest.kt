@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -124,7 +124,7 @@ class ArgusTokensTest {
     /** ARGUS is the only look (16 Nov 2026): always on, whatever an older build stored under `argus_look`. */
     @Test fun theLookIsAlwaysOn() {
         assertTrue(ArgusLookFlag.DEFAULT)
-        val theme = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/ui/argus/ArgusTheme.kt").readText()
+        val theme = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }.resolve("com/argus/assistant/ui/argus/ArgusTheme.kt").readText()
         assertTrue("fun lookOn(): Boolean = true" in theme)
     }
 

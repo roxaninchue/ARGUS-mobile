@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -95,7 +95,7 @@ data class Reaction(val emoji: String, val by: String = "user", val at: Long = S
     fun toJson(): JSONObject = JSONObject().put("e", emoji).put("by", by).put("at", at)
 
     companion object {
-        /** The fixed small set offered in the picker (👍 / 👎 also teach Blaze; see ReactionLearn). */
+        /** The fixed small set offered in the picker (👍 / 👎 also teach Argus; see ReactionLearn). */
         val PICKS = listOf("👍", "👎", "❤️", "😂", "😮", "🙏")
         const val UP = "👍"
         const val DOWN = "👎"

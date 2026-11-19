@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import kotlinx.coroutines.CoroutineScope
@@ -18,7 +18,7 @@ object TaskMemoryStore {
     private const val FILE = "task_records.json"
     private const val SAVE_DEBOUNCE_MS = 800L
     private val recs = CopyOnWriteArrayList<TaskMemory.Rec>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.blaze.assistant.device.CrashLog.guard)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.argus.assistant.device.CrashLog.guard)
     @Volatile private var file: File? = null
     @Volatile private var saveJob: Job? = null
     @Volatile var loaded = false; private set
@@ -28,7 +28,7 @@ object TaskMemoryStore {
         val f = File(ctx.applicationContext.filesDir, FILE); file = f
         scope.launch {
             val list = try { if (f.exists()) TaskMemory.decode(f.readText()) else emptyList() } catch (_: Throwable) { emptyList() }
-            // Blaze closed mid-task: an ACTIVE task is now STOPPED (it can be continued), never silently "running".
+            // Argus closed mid-task: an ACTIVE task is now STOPPED (it can be continued), never silently "running".
             val fixed = list.map { if (it.state == TaskMemory.State.ACTIVE) it.copy(state = TaskMemory.State.STOPPED) else it }
             val newer = recs.toList()
             recs.clear(); recs.addAll((fixed + newer).distinctBy { it.id }.takeLast(TaskMemory.KEEP))
@@ -61,7 +61,7 @@ object TaskMemoryStore {
                 val tmp = File(f.parentFile, "$FILE.tmp")
                 tmp.writeText(TaskMemory.encode(recs.toList()))
                 if (!tmp.renameTo(f)) { f.writeText(tmp.readText()); tmp.delete() }
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("TaskMemoryStore: save", e) }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("TaskMemoryStore: save", e) }
         }
     }
 

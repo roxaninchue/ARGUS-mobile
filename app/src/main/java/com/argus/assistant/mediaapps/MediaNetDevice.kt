@@ -1,10 +1,10 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import com.blaze.assistant.connect.Entitlements
-import com.blaze.assistant.mediaapps.MediaNet.Link
+import com.argus.assistant.connect.Entitlements
+import com.argus.assistant.mediaapps.MediaNet.Link
 import java.time.YearMonth
 import java.time.ZoneOffset
 
@@ -21,7 +21,7 @@ object MediaNetDevice {
             caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED), caps.linkDownstreamBandwidthKbps)
     } catch (_: Exception) { Link.WEAK }
 
-    /** Data Saver applies now: Blaze's own (on, on a metered network) or Android's system Data Saver on a metered network. */
+    /** Data Saver applies now: Argus's own (on, on a metered network) or Android's system Data Saver on a metered network. */
     fun saving(ctx: Context): Boolean = MediaPrefs.saving(ctx) || try {
         val cm = ctx.getSystemService(ConnectivityManager::class.java)
         cm != null && cm.isActiveNetworkMetered && cm.restrictBackgroundStatus == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED

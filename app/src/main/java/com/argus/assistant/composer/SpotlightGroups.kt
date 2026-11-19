@@ -1,9 +1,9 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.composer.SpotlightSearch.Act
-import com.blaze.assistant.composer.SpotlightSearch.Icon
-import com.blaze.assistant.composer.SpotlightSearch.Row
+import com.argus.assistant.BrandName
+import com.argus.assistant.composer.SpotlightSearch.Act
+import com.argus.assistant.composer.SpotlightSearch.Icon
+import com.argus.assistant.composer.SpotlightSearch.Row
 
 /**
  * 0.52.2 the ARGUS Home's pull-down Spotlight, pure part (SpotlightGroupsTest). It builds on [SpotlightSearch] (views,
@@ -63,7 +63,7 @@ object SpotlightGroups {
             .map { it to Fuzzy.score(t, it.text.take(600)) }.filter { it.second >= CHAT_MIN }.take(CHATS_MAX)
             .map { (m, s) -> Row("chat:${m.id}", Icon.CHAT, snippet(m.text, t), if (m.mine) "You said \u00b7 open the chat" else "${BrandName.NAME} said \u00b7 open the chat", Act.RunAction("history"), s) }
             .toList()
-        val mem = Row("mem:$t", Icon.SEARCH, "Search my memory for \u2018$t\u2019", "${BrandName.NAME} looks it up in what it remembers", Act.AskBlaze("Search your memory for: $t"), 1)
+        val mem = Row("mem:$t", Icon.SEARCH, "Search my memory for \u2018$t\u2019", "${BrandName.NAME} looks it up in what it remembers", Act.AskArgus("Search your memory for: $t"), 1)
         return hits + mem
     }
 
@@ -85,7 +85,7 @@ object SpotlightGroups {
         else -> listOf("Set an alarm for tomorrow", "Turn on Do Not Disturb", "Play something relaxing")
     }
 
-    fun suggestedRows(hour: Int): List<Row> = suggested(hour).map { s -> Row("sug:$s", Icon.CHAT, s, "Ask ${BrandName.NAME}", Act.AskBlaze(s), 0) }
+    fun suggestedRows(hour: Int): List<Row> = suggested(hour).map { s -> Row("sug:$s", Icon.CHAT, s, "Ask ${BrandName.NAME}", Act.AskArgus(s), 0) }
 
     fun recentRows(recent: List<String>): List<Row> = recent.map { q -> Row("recent:$q", Icon.SEARCH, q, "Recent search", Act.Complete(q), 0) }
 

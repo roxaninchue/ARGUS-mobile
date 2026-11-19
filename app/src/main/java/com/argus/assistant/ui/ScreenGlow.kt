@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.graphics.PixelFormat
 import android.os.Build
@@ -24,9 +24,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.phone.BlazeAccessibilityService
-import com.blaze.assistant.phone.ScreenWork
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.phone.ArgusAccessibilityService
+import com.argus.assistant.phone.ScreenWork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,14 +35,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * 0.50.0: while Blaze controls the screen ([ScreenWork.active]), Blaze's own particles drift along the screen edges over a
- * soft glow, so the user can see Blaze is working; gone ~1 s after the last step. Low-RAM rules:
+ * 0.50.0: while Argus controls the screen ([ScreenWork.active]), Argus's own particles drift along the screen edges over a
+ * soft glow, so the user can see Argus is working; gone ~1 s after the last step. Low-RAM rules:
  *  - one window, added only while active and removed after; nothing runs while idle (the watcher suspends on the flow);
  *  - the existing [EdgeParticles] (40 dots, ~24 fps, one Canvas, no bitmaps or blur; frozen when the phone is warm or
  *    saving battery) over a still gradient glow; reduced motion = the glow only;
  *  - never takes a touch: FLAG_NOT_TOUCHABLE + NOT_FOCUSABLE, and on Android 12+ an app overlay's alpha is kept at 0.8 (the
  *    platform's "untrusted touch" limit) so taps pass through to the app below. The accessibility overlay is preferred.
- * Settings › Look & feel "Glow while Blaze uses the screen" (screen_glow, default on) switches it off.
+ * Settings › Look & feel "Glow while Argus uses the screen" (screen_glow, default on) switches it off.
  */
 object ScreenGlow {
     private var view: View? = null
@@ -52,14 +52,14 @@ object ScreenGlow {
 
     val enabled: Boolean get() = try { Settings.bool("screen_glow", true) } catch (_: Throwable) { true }
 
-    /** Started once from BlazeApp (after the first frame). Suspends while Blaze isn't touching the screen. */
+    /** Started once from ArgusApp (after the first frame). Suspends while Argus isn't touching the screen. */
     fun watch(ctx: Context) {
         if (watch != null) return
         val app = ctx.applicationContext
-        watch = CoroutineScope(Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard).launch {
+        watch = CoroutineScope(Dispatchers.Main + com.argus.assistant.device.CrashLog.guard).launch {
             while (true) {
                 ScreenWork.active.first { it }
-                if (enabled && !com.blaze.assistant.bank.BankMode.active) show(app)
+                if (enabled && !com.argus.assistant.bank.BankMode.active) show(app)
                 while (true) { delay(400); ScreenWork.refresh(); if (!ScreenWork.active.value) break }
                 hide()
             }
@@ -67,7 +67,7 @@ object ScreenGlow {
     }
 
     private fun host(ctx: Context): Pair<Context, Int>? {
-        BlazeAccessibilityService.instance?.let { return it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
+        ArgusAccessibilityService.instance?.let { return it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
         if (Overlay.canDrawOverApps(ctx)) return ctx to WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         return null
     }
@@ -109,7 +109,7 @@ object EdgeParticleMath {
 }
 
 /**
- * Blaze's own signature edge particles ([EdgeParticles], the assistant-summon effect: white dots with blue / orange sparks
+ * Argus's own signature edge particles ([EdgeParticles], the assistant-summon effect: white dots with blue / orange sparks
  * drifting round the border) over a soft warm glow, faded in and out with [visible]. With reduced motion only the still
  * glow shows (no frames).
  */

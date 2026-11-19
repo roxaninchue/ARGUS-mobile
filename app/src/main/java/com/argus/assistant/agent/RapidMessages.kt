@@ -1,15 +1,15 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * v0.30.6 rapid messages. Blazeinchue: "Let's make blaze like hark where I can send messages after messages with no pause and
- * blaze highlights the one it's responding to and such (or replies to rapid succession questions that are related with
+ * v0.30.6 rapid messages. Blazeinchue: "Let's make argus like hark where I can send messages after messages with no pause and
+ * argus highlights the one it's responding to and such (or replies to rapid succession questions that are related with
  * one message)".
  *
- * - The composer never blocks. A message sent while Blaze works shows at once and joins the running turn at its next
+ * - The composer never blocks. A message sent while Argus works shows at once and joins the running turn at its next
  *   step (between tool calls); one sent just after the turn ended starts the next turn. Typed messages a moment apart
- *   while Blaze is idle are batched into one turn ([burstWait]). Nothing is dropped or reordered, never two turns at once.
+ *   while Argus is idle are batched into one turn ([burstWait]). Nothing is dropped or reordered, never two turns at once.
  * - The model sees every user message with a short id (`[m7] …`) and starts each reply with `[re:m7]` / `[re:m7,m8]`
  *   ([PROMPT_RULE]). The marker is never shown ([display]); it says which message(s) the reply answers ([split]), so a
  *   reply that isn't right under its message gets a quote chip above it ([chipMap]).
@@ -108,7 +108,7 @@ object RapidMessages {
     }
 
     /**
-     * Quote chips per Blaze reply id: a reply that answers several messages, or one message that isn't the message right
+     * Quote chips per Argus reply id: a reply that answers several messages, or one message that isn't the message right
      * above it (other messages or replies came in between), quotes them. Only user messages still in [list] count. One pass.
      */
     fun chipMap(list: List<ChatMessage>): Map<Long, List<Long>> {
@@ -160,7 +160,7 @@ object RapidMessages {
      * for more (typed in the chat; not voice, Magic Hand, routines or background agents).
      */
     fun route(busy: Boolean, waiting: Boolean, burst: Boolean): Route = if (!START_NOW) legacyRoute(busy, waiting, burst) else when {
-        // v0.45.8 (user 08:52, "seconds between Send and Blaze starting"): a typed message no longer waits GRACE_MS..BURST_MAX_MS
+        // v0.45.8 (user 08:52, "seconds between Send and Argus starting"): a typed message no longer waits GRACE_MS..BURST_MAX_MS
         // for more. The first message goes on the wire at once; messages sent right after join the running turn at its next
         // step (MID_TURN), or start the next turn when it ends. [burst] no longer delays anything.
         busy -> Route.MID_TURN

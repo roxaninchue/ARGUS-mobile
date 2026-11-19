@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -29,8 +29,8 @@ class BubblesTest {
         // (topStart, topEnd, bottomEnd, bottomStart)
         val me = Bubbles.corners(ME, GroupPos.SINGLE)
         assertEquals(Bubbles.TAIL, me[1]); assertEquals(Bubbles.BIG, me[0]); assertEquals(Bubbles.BIG, me[3])
-        val blaze = Bubbles.corners(B, GroupPos.SINGLE)
-        assertEquals(Bubbles.TAIL, blaze[0]); assertEquals(Bubbles.BIG, blaze[1])
+        val argus = Bubbles.corners(B, GroupPos.SINGLE)
+        assertEquals(Bubbles.TAIL, argus[0]); assertEquals(Bubbles.BIG, argus[1])
         val mid = Bubbles.corners(ME, GroupPos.MIDDLE)
         assertEquals(Bubbles.JOIN, mid[1]); assertEquals(Bubbles.JOIN, mid[2])
         assertNotEquals(Bubbles.corners(B, GroupPos.FIRST), Bubbles.corners(B, GroupPos.LAST))

@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.splash
+package com.argus.assistant.ui.splash
 
-import com.blaze.assistant.home.WeatherKind
+import com.argus.assistant.home.WeatherKind
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -204,18 +204,18 @@ object CloudSplashSpec {
 object HomeIntroSpec {
     const val DOTS_OUT_MS = 240L
     // RC2: the durations live in HomeMotion (shared with the composer), measured from the approved video.
-    const val GLIDE_MS = com.blaze.assistant.ui.HomeMotion.GLIDE_MS
-    const val OUTLINE_AT = com.blaze.assistant.ui.HomeMotion.OUTLINE_AT
-    const val OUTLINE_MS = com.blaze.assistant.ui.HomeMotion.OUTLINE_MS
-    const val TILES_AT = com.blaze.assistant.ui.HomeMotion.TILES_AT
-    const val TILES_MS = com.blaze.assistant.ui.HomeMotion.TILES_MS
-    const val TYPE_PLACE_AT = com.blaze.assistant.ui.HomeMotion.TYPE_PLACE_AT
-    const val TYPE_COND_AT = com.blaze.assistant.ui.HomeMotion.TYPE_COND_AT
-    const val TYPE_SUN_AT = com.blaze.assistant.ui.HomeMotion.TYPE_SUN_AT
-    const val TYPE_MS = com.blaze.assistant.ui.HomeMotion.TYPE_MS
-    const val BOARD_FILL_AT = com.blaze.assistant.ui.HomeMotion.BOARD_FILL_AT
-    const val FILL_MS = com.blaze.assistant.ui.HomeMotion.FILL_MS
-    const val CARDS_AT = com.blaze.assistant.ui.HomeMotion.CARDS_AT
+    const val GLIDE_MS = com.argus.assistant.ui.HomeMotion.GLIDE_MS
+    const val OUTLINE_AT = com.argus.assistant.ui.HomeMotion.OUTLINE_AT
+    const val OUTLINE_MS = com.argus.assistant.ui.HomeMotion.OUTLINE_MS
+    const val TILES_AT = com.argus.assistant.ui.HomeMotion.TILES_AT
+    const val TILES_MS = com.argus.assistant.ui.HomeMotion.TILES_MS
+    const val TYPE_PLACE_AT = com.argus.assistant.ui.HomeMotion.TYPE_PLACE_AT
+    const val TYPE_COND_AT = com.argus.assistant.ui.HomeMotion.TYPE_COND_AT
+    const val TYPE_SUN_AT = com.argus.assistant.ui.HomeMotion.TYPE_SUN_AT
+    const val TYPE_MS = com.argus.assistant.ui.HomeMotion.TYPE_MS
+    const val BOARD_FILL_AT = com.argus.assistant.ui.HomeMotion.BOARD_FILL_AT
+    const val FILL_MS = com.argus.assistant.ui.HomeMotion.FILL_MS
+    const val CARDS_AT = com.argus.assistant.ui.HomeMotion.CARDS_AT
 
     /** u when everything (cards and chat bar) has settled for [cards] cards after the board (5 = with To-do). */
     fun end(cards: Int): Long = HomeSequence.end(HomeSequence.orderFor(cards), CARDS_AT)

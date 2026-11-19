@@ -1,13 +1,13 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.CommandPolicy
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.Autonomy
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.Job
-import com.blaze.assistant.team.Permissions
-import com.blaze.assistant.team.Rule
+import com.argus.assistant.agent.CommandPolicy
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.Autonomy
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.Job
+import com.argus.assistant.team.Permissions
+import com.argus.assistant.team.Rule
 import org.json.JSONObject
 
 /**
@@ -41,7 +41,7 @@ object PolicyCalls {
     }
 
     /** Origin of a job's run (JobsRuntime sets it on the bound chat; unbound Manager jobs are looked up). */
-    fun originOf(job: Job): com.blaze.assistant.agent.TeamHooks.Origin = com.blaze.assistant.agent.TeamHooks.Origin(
+    fun originOf(job: Job): com.argus.assistant.agent.TeamHooks.Origin = com.argus.assistant.agent.TeamHooks.Origin(
         trigger = job.source.substringBefore(':').ifBlank { "user" },
         chain = listOfNotNull(job.source.takeIf { it.startsWith("bot:") }?.removePrefix("bot:")?.takeIf { it.isNotBlank() }),
         jobId = job.id, text = (job.title + " " + job.notes + " " + job.brief.take(600)).trim(), confirmed = job.confirmed)

@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.ChatNav
+import com.argus.assistant.agent.ChatNav
 
 /**
  * v0.45.8: Design is its own full-screen app view, like Music and Video: it opens from its own entry (Views › Design,

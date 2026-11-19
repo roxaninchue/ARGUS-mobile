@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.ChatMessage
+import com.argus.assistant.agent.ChatMessage
 
 /**
  * v0.28.4: how long a turn's work took, for the work card ("Worked · 4 steps · 33s").

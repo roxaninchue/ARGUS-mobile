@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -43,8 +43,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Mood
+import com.argus.assistant.R
+import com.argus.assistant.agent.Mood
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,22 +60,22 @@ data class BlazeColors(
     val faint: Color,
     val accent: Color,
     val dark: Boolean,
-    /** 0.45.29: the opaque base of the user's bubble and of Blaze's / Halo's for the theme ([BubbleTones]); Unspecified = neutral. */
+    /** 0.45.29: the opaque base of the user's bubble and of Argus's / Halo's for the theme ([BubbleTones]); Unspecified = neutral. */
     val bubbleMe: Color = Color.Unspecified,
-    val bubbleBlaze: Color = Color.Unspecified,
+    val bubbleArgus: Color = Color.Unspecified,
 )
 
 // v0.31.0: greyscale. Light keeps working (Settings → theme) but the glass look is designed dark-first.
 // Unification: the ground and the accent are the shell's (SpacePalette light ground, Argus Blue at 5.1:1 on it).
 val LightColors = BlazeColors(
-    paper = Color(com.blaze.assistant.ui.space.SpacePalette.GROUND_LIGHT),
+    paper = Color(com.argus.assistant.ui.space.SpacePalette.GROUND_LIGHT),
     ink = Color(0xFF0A0A0A),
     body = Color(0xD10A0A0A),
     sub = Color(0x990A0A0A),
     weak = Color(0x5C0A0A0A),
     hair = Color(0x24384056),
     faint = Color(0x10384056),
-    accent = Color(com.blaze.assistant.ui.space.SpacePalette.BLUE_LIGHT),
+    accent = Color(com.argus.assistant.ui.space.SpacePalette.BLUE_LIGHT),
     dark = false
 )
 
@@ -92,18 +92,18 @@ val DarkColors = BlazeColors(
     dark = true
 )
 
-val LocalBlaze = staticCompositionLocalOf { LightColors }
+val LocalArgus = staticCompositionLocalOf { LightColors }
 
 /**
  * The colours in [dark] mode, with [lookAccent] from Look & feel when one is picked (deepened on light grounds so it
  * still reads). 0.52.2: one ARGUS look (the Living Themes are gone); the chat bubbles take the ARGUS tones ([BubbleTones]).
  */
-fun blazePalette(dark: Boolean, lookAccent: Long? = null): BlazeColors {
+fun argusPalette(dark: Boolean, lookAccent: Long? = null): BlazeColors {
     val base = if (dark) DarkColors else LightColors
     val c = lookAccent?.let { a -> base.copy(accent = Color(if (dark) a else BubbleTones.onLight(a))) } ?: base
     return c.copy(
         bubbleMe = Color(BubbleTones.base(dark, mine = true, ink = c.ink.toArgb().toLong() and 0xFFFFFFFFL, lookAccent = lookAccent)),
-        bubbleBlaze = Color(BubbleTones.base(dark, mine = false, ink = c.body.toArgb().toLong() and 0xFFFFFFFFL)),
+        bubbleArgus = Color(BubbleTones.base(dark, mine = false, ink = c.body.toArgb().toLong() and 0xFFFFFFFFL)),
     )
 }
 
@@ -117,7 +117,7 @@ object FontPick {
     val system = androidx.compose.runtime.mutableStateOf(false)
     fun refresh() {
         // Owner 2026-11-14: the app language decides (replies always follow the user's language)
-        system.value = try { com.blaze.assistant.i18n.AppLang.current.systemFont } catch (_: Throwable) { false }
+        system.value = try { com.argus.assistant.i18n.AppLang.current.systemFont } catch (_: Throwable) { false }
     }
 }
 
@@ -139,7 +139,7 @@ object Type {
     val Sans: FontFamily get() = if (FontPick.system.value) FontFamily.Default else Inter
     val Display: FontFamily get() = if (FontPick.system.value) FontFamily.Default else InterTight
     /** The text font for [text]: the system font when it has letters Inter lacks (so a reply is never drawn in two fonts). */
-    fun sansFor(text: String): FontFamily = if (FontPick.system.value || com.blaze.assistant.agent.Scripts.needsSystemFont(text)) FontFamily.Default else Inter
+    fun sansFor(text: String): FontFamily = if (FontPick.system.value || com.argus.assistant.agent.Scripts.needsSystemFont(text)) FontFamily.Default else Inter
     val Mono = FontFamily.Monospace
 
     /** 0.52.1: Material's type scale in the brand font, so every stock Text / button reads Inter (Light → Bold). */
@@ -159,8 +159,8 @@ object Type {
 
 /** Light/dark override; "system" follows the phone. Backed by Settings.themeMode. */
 object ThemeMode {
-    val mode = androidx.compose.runtime.mutableStateOf(try { com.blaze.assistant.agent.Settings.themeMode } catch (_: Exception) { "system" })
-    fun set(m: String) { mode.value = m; try { com.blaze.assistant.agent.Settings.themeMode = m } catch (_: Throwable) { } }
+    val mode = androidx.compose.runtime.mutableStateOf(try { com.argus.assistant.agent.Settings.themeMode } catch (_: Exception) { "system" })
+    fun set(m: String) { mode.value = m; try { com.argus.assistant.agent.Settings.themeMode = m } catch (_: Throwable) { } }
 }
 
 @Composable
@@ -175,9 +175,9 @@ fun BlazeTheme(content: @Composable () -> Unit) {
     val dark = LookLogic.darkFor(ThemeMode.mode.value, hour, systemDark = if (ThemeMode.mode.value == "phone") phoneDark else true)
     val accentHex by Look.accent.collectAsState()
     // An accent picked in Look & feel drives the app's accents; on light grounds a pale accent is deepened so it still reads.
-    val c = androidx.compose.runtime.remember(dark, accentHex) { blazePalette(dark, LookLogic.parseAccent(accentHex)) }
-    // v0.24.5: Material's own colours mapped to Blaze, so no default purple / lavender can leak into anything Material draws.
-    androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark, c.accent), shapes = BlazeShapes.material, typography = Type.material()) {
+    val c = androidx.compose.runtime.remember(dark, accentHex) { argusPalette(dark, LookLogic.parseAccent(accentHex)) }
+    // v0.24.5: Material's own colours mapped to Argus, so no default purple / lavender can leak into anything Material draws.
+    androidx.compose.material3.MaterialTheme(colorScheme = argusScheme(dark, c.accent), shapes = ArgusShapes.material, typography = Type.material()) {
         // 0.52.4: Settings › Appearance › Size scales every dp and sp by one factor (1.0 leaves the phone's own density).
         val scale by Look.scale.collectAsState()
         val base = androidx.compose.ui.platform.LocalDensity.current
@@ -185,20 +185,20 @@ fun BlazeTheme(content: @Composable () -> Unit) {
             if (scale == 1f) base else androidx.compose.ui.unit.Density(base.density * scale, base.fontScale * scale)
         }
         // Owner 2026-11-14: right-to-left languages (Arabic) lay the whole app out right to left
-        val rtl = com.blaze.assistant.i18n.AppLang.lang(com.blaze.assistant.i18n.AppLang.code.value).rtl
-        androidx.compose.runtime.LaunchedEffect(com.blaze.assistant.i18n.AppLang.code.value) { FontPick.refresh() }
-        CompositionLocalProvider(LocalBlaze provides c, androidx.compose.ui.platform.LocalDensity provides density,
+        val rtl = com.argus.assistant.i18n.AppLang.lang(com.argus.assistant.i18n.AppLang.code.value).rtl
+        androidx.compose.runtime.LaunchedEffect(com.argus.assistant.i18n.AppLang.code.value) { FontPick.refresh() }
+        CompositionLocalProvider(LocalArgus provides c, androidx.compose.ui.platform.LocalDensity provides density,
             androidx.compose.ui.platform.LocalLayoutDirection provides if (rtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr,
             content = content)
     }
 }
 
 /**
- * v0.24.8 "no square UI": the one set of corner radii every Blaze surface uses. Inputs and buttons are pills or [medium],
+ * v0.24.8 "no square UI": the one set of corner radii every Argus surface uses. Inputs and buttons are pills or [medium],
  * cards [medium], sheets and dialogs [large], tiny marks (checkboxes, tags inside rows) [small]. Nothing is square:
  * `ui/NoSquareTest` fails the build if RectangleShape or RoundedCornerShape(0 appears in ui/.
  */
-object BlazeShapes {
+object ArgusShapes {
     val xs = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
     val small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
     val medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
@@ -216,25 +216,25 @@ object BlazeShapes {
  * (menus, the + menu) use the [small] tile or a bare [rowIcon]; buttons and chips lead with a [buttonIcon]. Drawn by
  * IconTile in IconKit.kt, so no screen picks its own sizes.
  */
-object BlazeIconStyle {
+object ArgusIconStyle {
     // Unification: the sizes and the tint strength are the shell's tokens (SpaceIcons), so both systems draw one tile.
-    val tile = com.blaze.assistant.ui.space.SpaceIcons.TILE_DP.dp
-    val tileIcon = com.blaze.assistant.ui.space.SpaceIcons.TILE_ICON_DP.dp
-    val small = com.blaze.assistant.ui.space.SpaceIcons.SMALL_DP.dp
-    val smallIcon = com.blaze.assistant.ui.space.SpaceIcons.SMALL_ICON_DP.dp
-    val rowIcon = com.blaze.assistant.ui.space.SpaceIcons.ROW_ICON_DP.dp
-    val buttonIcon = com.blaze.assistant.ui.space.SpaceIcons.BUTTON_ICON_DP.dp
-    val gap = com.blaze.assistant.ui.space.SpaceIcons.GAP_DP.dp
+    val tile = com.argus.assistant.ui.space.SpaceIcons.TILE_DP.dp
+    val tileIcon = com.argus.assistant.ui.space.SpaceIcons.TILE_ICON_DP.dp
+    val small = com.argus.assistant.ui.space.SpaceIcons.SMALL_DP.dp
+    val smallIcon = com.argus.assistant.ui.space.SpaceIcons.SMALL_ICON_DP.dp
+    val rowIcon = com.argus.assistant.ui.space.SpaceIcons.ROW_ICON_DP.dp
+    val buttonIcon = com.argus.assistant.ui.space.SpaceIcons.BUTTON_ICON_DP.dp
+    val gap = com.argus.assistant.ui.space.SpaceIcons.GAP_DP.dp
     val shape = androidx.compose.foundation.shape.CircleShape
-    fun fillAlpha(dark: Boolean): Float = com.blaze.assistant.ui.space.SpaceIcons.fillAlpha(dark)
+    fun fillAlpha(dark: Boolean): Float = com.argus.assistant.ui.space.SpaceIcons.fillAlpha(dark)
 }
 
-/** Primary buttons: the classic Blaze blue, solid (v0.25.2; the v0.24.8 orange-to-blue gradient is gone). */
+/** Primary buttons: the classic Argus blue, solid (v0.25.2; the v0.24.8 orange-to-blue gradient is gone). */
 /**
  * v0.31.0: monochrome. [primary] is a bright frosted-glass fill that white text reads on (every existing caller draws
  * white text on it); [blue] / [orange] keep their names but are greys / a desaturated warm for warnings.
  */
-object BlazeBrush {
+object ArgusBrush {
     val orange = Color(0xFFD6B48E)
     val blue = ArgusBrand.Electric   // unification: the shell's Electric, for fills and rings only, never under text
     val primary: androidx.compose.ui.graphics.Brush get() = ArgusBrand.primary   // unification: solid Argus Blue, white text
@@ -242,11 +242,11 @@ object BlazeBrush {
 }
 
 /**
- * Material colour scheme from Blaze's tokens (v0.24.5): blue primary, orange secondary, Blaze surfaces; never purple.
+ * Material colour scheme from Argus's tokens (v0.24.5): blue primary, orange secondary, Argus surfaces; never purple.
  * Unification: the primary is the app's accent ([accent], the one Look and feel picked, else the shell's: Electric text
  * in dark, Argus Blue in light), so a Material slider or progress bar matches the shell and the accent picker.
  */
-fun blazeScheme(dark: Boolean, accent: Color? = null): androidx.compose.material3.ColorScheme {
+fun argusScheme(dark: Boolean, accent: Color? = null): androidx.compose.material3.ColorScheme {
     // v0.31.0: Material's slots mapped to the greyscale glass palette, so stock components pick up the look.
     // Containers are opaque greys (Material layers them), surfaces sit a step above the near-black ground.
     return if (dark) androidx.compose.material3.darkColorScheme(
@@ -278,9 +278,9 @@ fun blazeScheme(dark: Boolean, accent: Color? = null): androidx.compose.material
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ThemeButton(modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    Box(modifier.size(38.dp).hairline(c.hair, BlazeShapes.pill).combinedClickable(
+    Box(modifier.size(38.dp).hairline(c.hair, ArgusShapes.pill).combinedClickable(
         onClick = { ThemeMode.set(if (c.dark) "light" else "dark") },
         onLongClick = { ThemeMode.set("system"); android.widget.Toast.makeText(ctx, "Following your phone's theme", android.widget.Toast.LENGTH_SHORT).show() }
     ), contentAlignment = Alignment.Center) {
@@ -305,7 +305,7 @@ fun ThemeButton(modifier: Modifier = Modifier) {
 
 /** Uppercase mono label, like the site's eyebrows and nav. */
 @Composable
-fun Label(text: String, color: Color = LocalBlaze.current.sub, size: TextUnit = 11.sp, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) {
+fun Label(text: String, color: Color = LocalArgus.current.sub, size: TextUnit = 11.sp, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) {
     Text(
         text.uppercase(),
         modifier = modifier,
@@ -325,10 +325,10 @@ fun Modifier.hairlineTop(color: Color) = drawBehind {
 }
 
 /**
- * 1dp outline that follows a rounded [shape] (v0.24.8: [BlazeShapes.medium] by default, never square) and clips what comes
+ * 1dp outline that follows a rounded [shape] (v0.24.8: [ArgusShapes.medium] by default, never square) and clips what comes
  * after it (content, ripples) to the same shape. Give the background before it the same shape: `.background(x, shape)`.
  */
-fun Modifier.hairline(color: Color, shape: androidx.compose.ui.graphics.Shape = BlazeShapes.medium) =
+fun Modifier.hairline(color: Color, shape: androidx.compose.ui.graphics.Shape = ArgusShapes.medium) =
     clip(shape).border(1.dp, color, shape)
 
 /** v0.29.4: the particle blues (light theme: a deep sky blue on paper; dark: a bright periwinkle on charcoal). */
@@ -340,17 +340,17 @@ object ParticleBlue {
 
 private data class Dot(val x: Float, val y: Float, val r: Float, val vx: Float, val vy: Float)
 
-/** Faint drifting particle dots (the site's button-hover particles), livelier while Blaze works. */
+/** Faint drifting particle dots (the site's button-hover particles), livelier while Argus works. */
 @Composable
 fun ParticleField(mood: Mood, modifier: Modifier = Modifier, overlay: Boolean = false, paused: Boolean = false) {
-    val c = LocalBlaze.current
-    if (!com.blaze.assistant.agent.Settings.particles) return
+    val c = LocalArgus.current
+    if (!com.argus.assistant.agent.Settings.particles) return
     val energy by animateFloatAsState(if (mood == Mood.IDLE) 0f else 1f, tween(700), label = "e")
     // A slow clock instead of 60/120 fps: ~12 fps when idle, ~30 fps while working.
     var time by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     val busy = mood != Mood.IDLE
-    // 0.46.4 heat audit: a still frame while idle or while the phone is warm / saving battery (Thermal); moves only while Blaze works
-    val hot by com.blaze.assistant.device.Thermal.hot.collectAsState()
+    // 0.46.4 heat audit: a still frame while idle or while the phone is warm / saving battery (Thermal); moves only while Argus works
+    val hot by com.argus.assistant.device.Thermal.hot.collectAsState()
     LaunchedEffect(busy, paused, hot) {
         if (paused || hot || !busy) return@LaunchedEffect
         var last = 0L
@@ -385,15 +385,15 @@ fun ParticleField(mood: Mood, modifier: Modifier = Modifier, overlay: Boolean = 
 }
 
 /**
- * Brand mark (v0.24.8): Blaze's mascot in a dark circle (it used to be a square with a pixel "B"). While Blaze works a
+ * Brand mark (v0.24.8): Argus's mascot in a dark circle (it used to be a square with a pixel "B"). While Argus works a
  * thin orange-to-blue ring spins around it.
  */
 @Composable
 fun BrandMark(mood: Mood, size: Dp, modifier: Modifier = Modifier) {
     val busy = mood != Mood.IDLE
-    Box(modifier.size(size).clip(BlazeShapes.pill).background(Color(com.blaze.assistant.phone.Mascot.ICON_BG), BlazeShapes.pill),
+    Box(modifier.size(size).clip(ArgusShapes.pill).background(Color(com.argus.assistant.phone.Mascot.ICON_BG), ArgusShapes.pill),
         contentAlignment = Alignment.Center) {
-        // v0.32.0: the new Blaze icon (glass drop in its gold halo); a spinning ring around it while Blaze works.
+        // v0.32.0: the new Argus icon (glass drop in its gold halo); a spinning ring around it while Argus works.
         DuoEmblem(size * 1.05f, animate = busy)
     }
 }

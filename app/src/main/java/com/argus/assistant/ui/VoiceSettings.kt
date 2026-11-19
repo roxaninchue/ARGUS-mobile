@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.foundation.background
@@ -16,13 +16,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.voice.Voice
 
-/** Blaze's voice: which voice, how fast, how high, which language it listens in, and call options. */
+/** Argus's voice: which voice, how fast, how high, which language it listens in, and call options. */
 @Composable
 fun VoiceTuning() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     var voiceName by remember { mutableStateOf(Settings.str("tts_voice", "")) }
     var rate by remember { mutableStateOf(Settings.str("tts_rate", "1.0")) }
@@ -86,7 +86,7 @@ private fun nice(v: android.speech.tts.Voice): String {
 
 @Composable
 private fun VoiceRow(title: String, sub: String, picked: Boolean, onPick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth().padding(bottom = 6.dp).hairline(if (picked) c.accent else c.hair).clickable(onClick = onPick).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
@@ -99,7 +99,7 @@ private fun VoiceRow(title: String, sub: String, picked: Boolean, onPick: () -> 
 
 @Composable
 private fun Chips(options: List<Pair<String, String>>, value: String, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth()) {
         options.forEach { (v, l) ->
             Box(Modifier.weight(1f).padding(end = 6.dp).hairline(if (value == v) c.ink else c.hair)

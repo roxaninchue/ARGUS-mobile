@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.readableWidth
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.readableWidth
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -44,17 +44,17 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.Project
-import com.blaze.assistant.ui.BackTitle
-import com.blaze.assistant.ui.BlazeDialog
-import com.blaze.assistant.ui.BlazeIconStyle
-import com.blaze.assistant.ui.BlazeMenu
-import com.blaze.assistant.ui.IconTile
-import com.blaze.assistant.ui.BlazeTextField
-import com.blaze.assistant.ui.ChatRow
-import com.blaze.assistant.ui.RenameChatDialog
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.Project
+import com.argus.assistant.ui.BackTitle
+import com.argus.assistant.ui.ArgusDialog
+import com.argus.assistant.ui.ArgusIconStyle
+import com.argus.assistant.ui.ArgusMenu
+import com.argus.assistant.ui.IconTile
+import com.argus.assistant.ui.ArgusTextField
+import com.argus.assistant.ui.ChatRow
+import com.argus.assistant.ui.RenameChatDialog
 
 /**
  * 0.52.3 Projects tab in the Hark look (replaces ProjectsPane): the list is a serif "Projects" headline, a line on what a
@@ -94,14 +94,14 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SpaceHeadline(tr("Projects"), Modifier.weight(1f))
                 // light / dark here too (every screen has the switch; ThemeEverywhereTest)
-                com.blaze.assistant.ui.ThemeSwitch(tint = look.ink)
+                com.argus.assistant.ui.ThemeSwitch(tint = look.ink)
             }
             Spacer(Modifier.height(6.dp))
         }
         Text(trBrand(SpaceProjectRows.INTRO), style = SpaceType.bodyText(look.sub))
         Spacer(Modifier.height(16.dp))
         SpaceCard {
-            BlazeTextField(name, { name = it }, "New project name", modifier = Modifier.fillMaxWidth(),
+            ArgusTextField(name, { name = it }, "New project name", modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { create() }))
             Spacer(Modifier.height(12.dp))
             SpacePillButton(tr("New project"), { create() }, primary = true, plus = true, tag = SpaceTags.PROJECT_NEW, enabled = name.isNotBlank())
@@ -113,7 +113,7 @@ private fun ProjectList(projects: List<Project>, chats: List<ChatMeta>, busy: Se
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // 0.52.4: the shared round icon tile (a folder) instead of the name's initial
                     IconTile(Icons.Rounded.Folder, tint = look.accent)
-                    Spacer(Modifier.width(BlazeIconStyle.gap))
+                    Spacer(Modifier.width(ArgusIconStyle.gap))
                     Column(Modifier.weight(1f)) {
                         Text(p.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.section(look.ink))
                         Text(SpaceProjectRows.count(p.chats, existing).let { n -> if (n == 1) tr("1 chat") else tr("{0} chats", n) }, style = SpaceType.meta(look.sub))
@@ -148,7 +148,7 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
     var menuFor by remember { mutableStateOf("") }
     var renaming by remember { mutableStateOf<ChatMeta?>(null) }
     var deleting by remember { mutableStateOf<ChatMeta?>(null) }
-    val P = com.blaze.assistant.agent.Projects
+    val P = com.argus.assistant.agent.Projects
     // Unification 6/9: the header spans the screen so its back circle sits at the gutter like the top bar's round
     // button (it sat ~34 dp in when the whole column was padded); the cards under it take the gutter themselves.
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).readableWidth()) {
@@ -160,7 +160,7 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
             SpaceCard {
                 CardHead(Icons.Rounded.EditNote) { SpaceHeadline(tr("Instructions"), size = SpaceTypeScale.SECTION.sp) }
                 Spacer(Modifier.height(8.dp))
-                BlazeTextField(ins, { ins = it; onInstructions(open.id, it) }, "What ${BrandName.NAME} should know in every chat here",
+                ArgusTextField(ins, { ins = it; onInstructions(open.id, it) }, "What ${BrandName.NAME} should know in every chat here",
                     modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 72.dp)
             }
             Spacer(Modifier.height(12.dp))
@@ -169,12 +169,12 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
                     IconTile(Icons.Rounded.PushPin, tint = look.accent, small = true)
                     Spacer(Modifier.width(10.dp))
                     SpaceHeadline(tr("Brief"), Modifier.weight(1f), size = SpaceTypeScale.SECTION.sp)
-                    // The real count (BlazeDb.tokens) against the hard cap; typing or pasting past it is cut at the cap.
+                    // The real count (ArgusDb.tokens) against the hard cap; typing or pasting past it is cut at the cap.
                     val used = P.tokens(brief)
                     Text(tr("{0} / {1} tokens", used, P.BRIEF_TOKENS), style = SpaceType.caption(if (used >= P.BRIEF_TOKENS * 9 / 10) look.accent else look.sub))
                 }
                 Spacer(Modifier.height(8.dp))
-                BlazeTextField(brief, { t -> val fit = P.cutTokens(t, P.BRIEF_TOKENS); cut = fit.length < t.length; brief = fit; onBrief(open.id, fit) },
+                ArgusTextField(brief, { t -> val fit = P.cutTokens(t, P.BRIEF_TOKENS); cut = fit.length < t.length; brief = fit; onBrief(open.id, fit) },
                     "Pinned brief: purpose and rules first, then key files and what's in progress. ${BrandName.NAME} keeps it up to date.",
                     modifier = Modifier.fillMaxWidth(), singleLine = false, minHeight = 96.dp)
                 if (cut) Text(tr("The brief is at its 600-token cap, so the rest was cut. Put longer details in Instructions: {0} searches them when it needs them.", BrandName.NAME),
@@ -188,7 +188,7 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
                 list.forEach { ch ->
                     Box {
                         ChatRow(ch, ch.id in busy, chip = if (ch.id in needsYou) "Needs you" else "", onMore = { menuFor = ch.id }) { onChat(ch.id) }
-                        if (menuFor == ch.id) BlazeMenu(true, onDismiss = { menuFor = "" },
+                        if (menuFor == ch.id) ArgusMenu(true, onDismiss = { menuFor = "" },
                             items = listOf("Rename" to { renaming = ch }, "Delete chat" to { deleting = ch }))
                     }
                 }
@@ -200,7 +200,7 @@ private fun ProjectPage(open: Project, chats: List<ChatMeta>, busy: Set<String>,
         }
     }
     renaming?.let { ch -> RenameChatDialog(ch.title, onDone = { t -> renaming = null; if (t.isNotBlank()) onRenameChat(ch.id, t) }, onDismiss = { renaming = null }) }
-    deleting?.let { ch -> BlazeDialog(title = "Delete \u201c${ch.title.ifBlank { "this chat" }.take(40)}\u201d?",
+    deleting?.let { ch -> ArgusDialog(title = "Delete \u201c${ch.title.ifBlank { "this chat" }.take(40)}\u201d?",
         body = tr("Its messages are removed from this phone. The project, its instructions and its other chats stay."),
         confirm = tr("Delete"), onConfirm = { deleting = null; onDeleteChat(ch.id) }, warm = true, dismiss = tr("Keep"), onDismiss = { deleting = null }) }
 }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
-import com.blaze.assistant.notify.ChatThreads.Line
-import com.blaze.assistant.notify.ChatThreads.Target
+import com.argus.assistant.notify.ChatThreads.Line
+import com.argus.assistant.notify.ChatThreads.Target
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

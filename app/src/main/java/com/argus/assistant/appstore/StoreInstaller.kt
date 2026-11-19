@@ -1,4 +1,4 @@
-package com.blaze.assistant.appstore
+package com.argus.assistant.appstore
 
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
  * by session id in [StoreSessions].
  */
 object StoreInstaller {
-    const val ACTION = "com.blaze.assistant.appstore.INSTALL_STATUS"
+    const val ACTION = "com.argus.assistant.appstore.INSTALL_STATUS"
     const val EXTRA_PKG = "store_pkg"
 
     fun canInstall(ctx: Context): Boolean = Build.VERSION.SDK_INT < 26 || ctx.packageManager.canRequestPackageInstalls()

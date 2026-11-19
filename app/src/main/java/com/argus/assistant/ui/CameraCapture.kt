@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -20,9 +20,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
-import com.blaze.assistant.device.CameraFlow
-import com.blaze.assistant.device.CameraFlow.Step
-import com.blaze.assistant.device.CameraSupport
+import com.argus.assistant.device.CameraFlow
+import com.argus.assistant.device.CameraFlow.Step
+import com.argus.assistant.device.CameraSupport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,9 +31,9 @@ import java.io.File
 /**
  * v0.28.x camera-fix: chat "+ → Camera" on every phone ([CameraFlow] decides, this runs it).
  * Camera permission (asked, explained, or sent to Settings) → the phone's camera app with explicit URI grants →
- * Blaze's own CameraX camera → the photo picker. Every failure is logged with its real exception (CameraSupport.log
+ * Argus's own CameraX camera → the photo picker. Every failure is logged with its real exception (CameraSupport.log
  * → Settings → Device & diagnostics → crash report) and the toast says what actually happened.
- * The pending photo path survives Blaze being killed behind the camera app (common on low-RAM phones).
+ * The pending photo path survives Argus being killed behind the camera app (common on low-RAM phones).
  *
  * Returns the function to call from the + menu; [Dialogs] must be placed once in the screen.
  */
@@ -137,11 +137,11 @@ fun rememberCameraCapture(onPhoto: (Uri) -> Unit, onPickPhoto: () -> Unit): Came
 
     return CameraCapture(open = { runner.go(false, false) }, dialogs = {
         when (dialog) {
-            Step.RATIONALE -> BlazeDialog(title = tr("Allow the camera?"),
+            Step.RATIONALE -> ArgusDialog(title = tr("Allow the camera?"),
                 body = tr("Android needs {0} to have the Camera permission before any camera can take a picture for your chat. Nothing is recorded unless you press the shutter.", BrandName.NAME),
                 confirm = tr("Allow"), onConfirm = { dialog = null; perm.launch(Manifest.permission.CAMERA) },
                 dismiss = tr("Pick a photo"), onDismiss = { dialog = null; onPickPhoto() })
-            Step.SETTINGS -> BlazeDialog(title = tr("Camera is off for {0}", BrandName.NAME),
+            Step.SETTINGS -> ArgusDialog(title = tr("Camera is off for {0}", BrandName.NAME),
                 body = tr("Camera access was turned off for {0}. Switch it on in Settings → Permissions → Camera, then tap Camera again. Or pick a photo you already have.", BrandName.NAME),
                 confirm = tr("Open Settings"), onConfirm = { dialog = null; openAppSettings(ctx) },
                 dismiss = tr("Pick a photo"), onDismiss = { dialog = null; onPickPhoto() })

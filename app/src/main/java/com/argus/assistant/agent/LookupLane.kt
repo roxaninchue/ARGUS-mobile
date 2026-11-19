@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -6,7 +6,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * 0.46.3 lookup fast lane + answer first (report: "Blaze takes forever when asked to find something online").
+ * 0.46.3 lookup fast lane + answer first (report: "Argus takes forever when asked to find something online").
  *
  * A lookup question goes search → the top 2-3 pages fetched IN PARALLEL (each with its own timeout) → one call to the
  * fastest capable model → the answer, with its source pills, as soon as 2 or more solid sources agree. Then, off the turn,
@@ -44,7 +44,7 @@ object LookupLane {
     // ---------------- routing ----------------
     private val ask = Regex("""(?i)^\s*(?:what|who|whom|whose|when|where|which|why|how (?:much|many|old|long|tall|big|far|fast|do|does|did|is|are|to)|is|are|was|were|does|did|do|can|find(?: out)?|look up|lookup|search(?: for)?|google|check|tell me|latest|current|price of|cost of|news)\b""")
     private val personal = Regex("""(?i)\b(?:my (?:phone|files?|photos?|messages?|texts?|calendar|alarms?|contacts?|notes?|music|songs?|battery|storage|settings|apps?|email|inbox)|remind|alarm|timer|text (?:him|her|them|mom|dad)|call |open |play |turn (?:on|off)|set (?:a|an|the)|send |screenshot|on (?:my|this) phone|you (?:remember|know about me))\b""")
-    /** Things Blaze answers without the web (itself, the clock, the weather card, sums, a chat), so they never take the lane. */
+    /** Things Argus answers without the web (itself, the clock, the weather card, sums, a chat), so they never take the lane. */
     private val notWeb = Regex("""(?i)\b(?:you|your|yourself|(?:argus|blaze)|halo|time is it|what time|today'?s date|what day is|weather|forecast|how are|joke|poem|story|translate|calculate|meaning of life)\b|^[\d\s+\-*/().x=?]+$|\bremember\b""")
     private val needsInteraction = Regex("""(?i)\b(?:book|buy|order|sign (?:me )?(?:in|up)|log ?in|fill (?:in|out)|apply|checkout|reserve|subscribe|my account|download)\b""")
 
@@ -178,7 +178,7 @@ object LookupLane {
 
     /** Reads the model's JSON reply into an [Answer] (lenient; plain text = the answer backed by every page). */
     fun parse(raw: String, pages: List<Page>): Answer {
-        val o = com.blaze.assistant.phone.flash.FlashParse.json(raw)
+        val o = com.argus.assistant.phone.flash.FlashParse.json(raw)
         if (o == null) return Answer(raw.trim(), pages.map { it.url })
         val idx = o.optJSONArray("sources")
         val sup = if (idx == null) pages.map { it.url } else (0 until idx.length()).mapNotNull { pages.getOrNull(idx.optInt(it) - 1)?.url }

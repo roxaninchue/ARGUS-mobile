@@ -1,4 +1,4 @@
-package com.blaze.assistant.orchestra
+package com.argus.assistant.orchestra
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore

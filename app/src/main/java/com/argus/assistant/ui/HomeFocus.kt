@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -82,12 +82,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.home.HomeGrid
-import com.blaze.assistant.home.InterestsFeed
-import com.blaze.assistant.home.NextUp
-import com.blaze.assistant.home.QuickActions
-import com.blaze.assistant.home.WeatherBoard
-import com.blaze.assistant.ui.splash.CloudGlyphPainter
+import com.argus.assistant.home.HomeGrid
+import com.argus.assistant.home.InterestsFeed
+import com.argus.assistant.home.NextUp
+import com.argus.assistant.home.QuickActions
+import com.argus.assistant.home.WeatherBoard
+import com.argus.assistant.ui.splash.CloudGlyphPainter
 
 /**
  * RC2 card focus ("spotlight a card"): tapping a card's top / header lifts that card forward, large and centred, from

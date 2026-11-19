@@ -1,12 +1,12 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.verticalScroll
-import com.blaze.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.cutoutSafe
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -32,27 +32,27 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Mood
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Mood
+import com.argus.assistant.agent.Role
+import com.argus.assistant.voice.Voice
 import kotlinx.coroutines.delay
 
 /**
- * Call Blaze: a full-screen, hands-free voice call. You talk, Blaze answers out loud, and the
- * mic reopens on its own. Tap anywhere while Blaze is talking to cut in. "Bye" or the red
+ * Call Argus: a full-screen, hands-free voice call. You talk, Argus answers out loud, and the
+ * mic reopens on its own. Tap anywhere while Argus is talking to cut in. "Bye" or the red
  * button ends the call. Questions and confirmations still show as cards you can tap.
  */
 /** v0.31: the call screen is always the dark glass look (whatever the app theme). */
 @Composable
 fun CallScreen(onHangUp: () -> Unit) {
     DarkSystemBars()   // always dark: keep the status bar icons light over it
-    androidx.compose.runtime.CompositionLocalProvider(LocalBlaze provides DarkColors.mono) { CallScreenBody(onHangUp) }
+    androidx.compose.runtime.CompositionLocalProvider(LocalArgus provides DarkColors.mono) { CallScreenBody(onHangUp) }
 }
 
 @Composable
 private fun CallScreenBody(onHangUp: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val view = LocalView.current
     val mood by Agent.mood.collectAsState()
     val voice by Voice.state.collectAsState()
@@ -64,8 +64,8 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
     val muted by Voice.callMute.collectAsState()
     val speakerOn by Voice.callSpeaker.collectAsState()
     val earpiece = !speakerOn
-    remember { Voice.callMute.value = false; Voice.callSpeaker.value = !com.blaze.assistant.agent.Settings.bool("call_earpiece", false); 0 }
-    val greet = remember { com.blaze.assistant.agent.Settings.bool("call_greet", true) }
+    remember { Voice.callMute.value = false; Voice.callSpeaker.value = !com.argus.assistant.agent.Settings.bool("call_earpiece", false); 0 }
+    val greet = remember { com.argus.assistant.agent.Settings.bool("call_greet", true) }
     var seconds by remember { mutableStateOf(0) }
     val startEnded = remember { Voice.callEnded.value }
 
@@ -83,11 +83,11 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
         view.keepScreenOn = true
         Voice.hushBeeps(true)
         if (greet) Voice.speak(listOf("Hey, I'm here. What's up?", "Hi! What can I do?", "Hey, go ahead.").random())
-        com.blaze.assistant.device.Haptics.tick(view.context)
+        com.argus.assistant.device.Haptics.tick(view.context)
         onDispose { if (Voice.inCall) { Voice.inCall = false; Voice.cancelListening(); Voice.stopSpeaking(); Voice.setEarpiece(false); Voice.hushBeeps(false); view.keepScreenOn = false } }
     }
     LaunchedEffect(Unit) { while (true) { delay(1000); seconds++ } }
-    // Speaker and mute can change from the buttons or from Blaze itself (call_control).
+    // Speaker and mute can change from the buttons or from Argus itself (call_control).
     LaunchedEffect(speakerOn) { Voice.setEarpiece(!speakerOn) }
     LaunchedEffect(muted) { Voice.callMuted = muted; if (muted) Voice.cancelListening() }
     LaunchedEffect(ended) { if (ended != startEnded) hangUp() }
@@ -108,7 +108,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
         muted -> "Muted"
         voice == Voice.State.LISTENING -> "Listening"
         voice == Voice.State.SPEAKING -> "${BrandName.NAME} is talking · tap to cut in"
-        mood != Mood.IDLE -> agentStatus.ifBlank { com.blaze.assistant.agent.Friendly.between(null) }
+        mood != Mood.IDLE -> agentStatus.ifBlank { com.argus.assistant.agent.Friendly.between(null) }
         else -> "Connecting"
     }
     val caption = when {
@@ -120,14 +120,14 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
 
     Box(Modifier.fillMaxSize().background(GlassTokens.bg).glassBackground(true)
         .clickable(remember { MutableInteractionSource() }, indication = null) {
-            // Barge in: stop Blaze talking and listen right away.
+            // Barge in: stop Argus talking and listen right away.
             if (voice == Voice.State.SPEAKING && !muted) { Voice.stopSpeaking(); Voice.conversationListen() }
             else if (voice == Voice.State.IDLE && mood == Mood.IDLE && !muted) Voice.conversationListen()
         }) {
         // Landscape overhaul: on a phone on its side the name and the orb sit left, the caption, cards and the call
         // buttons right (stacked they need ~600 dp); upright it is the one column as before.
         val cfg = androidx.compose.ui.platform.LocalConfiguration.current
-        val side = com.blaze.assistant.ui.common.WindowLayout.sideBySide(cfg.screenWidthDp.toFloat(), cfg.screenHeightDp.toFloat())
+        val side = com.argus.assistant.ui.common.WindowLayout.sideBySide(cfg.screenWidthDp.toFloat(), cfg.screenHeightDp.toFloat())
         val head: @Composable () -> Unit = {
             Spacer(Modifier.height(28.dp))
             Label(tr("CALL"), color = c.ink.copy(alpha = 0.55f), size = 10.sp)
@@ -148,7 +148,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
             Spacer(Modifier.height(14.dp))
 
             // Questions and "are you sure?" still need a tap; show them right here.
-            Box(Modifier.fillMaxWidth()) { Column { ConfirmCard(); com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark); QuestionCard() } }
+            Box(Modifier.fillMaxWidth()) { Column { ConfirmCard(); com.argus.assistant.ui.team.cards.ArgusCards(dark = LocalArgus.current.dark); QuestionCard() } }
 
             Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 26.dp), horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically) {
@@ -190,7 +190,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
 
 @Composable
 private fun CallButton(label: String, on: Boolean, onClick: () -> Unit, glyph: @Composable (Color) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(60.dp).clip(CircleShape).then(if (on) Modifier.background(GlassTokens.accent, CircleShape) else Modifier.glass(CircleShape, GlassIntensity.Medium, shadow = false))
             .clickable(onClick = onClick), contentAlignment = Alignment.Center) { glyph(if (on) GlassTokens.onAccent else GlassTokens.ink) }
@@ -199,10 +199,10 @@ private fun CallButton(label: String, on: Boolean, onClick: () -> Unit, glyph: @
     }
 }
 
-/** The big orb: grows with your voice, breathes while Blaze talks, spins while it thinks. */
+/** The big orb: grows with your voice, breathes while Argus talks, spins while it thinks. */
 @Composable
 private fun CallOrb(size: Dp, mood: Mood, voice: Voice.State, level: Float, muted: Boolean) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val t = rememberInfiniteTransition(label = "call")
     val breathe by t.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "b")
     val spin by t.animateFloat(0f, 360f, infiniteRepeatable(tween(1600, easing = LinearEasing)), label = "s")

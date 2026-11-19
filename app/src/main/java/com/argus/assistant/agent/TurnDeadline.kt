@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.9 (user, 12:12: "save this file" took 56 minutes, 11:15 → 12:11 CAT). What in the code let one turn run that long:

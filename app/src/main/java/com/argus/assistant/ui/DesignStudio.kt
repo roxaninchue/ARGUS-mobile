@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -60,7 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.DesignPage
+import com.argus.assistant.agent.DesignPage
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -89,7 +89,7 @@ fun Modifier.dotGrid(color: Color, step: Float = 40f): Modifier = drawBehind {
 fun PageCanvas(doc: DesignPage.Doc, view: PageView, selected: String?, outlines: Boolean, highlight: String? = null,
                onSelect: (String?) -> Unit, onChange: (DesignPage.El) -> Unit, onEditText: (DesignPage.El) -> Unit,
                modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val dens = LocalDensity.current
     val docNow by rememberUpdatedState(doc)
     val selectedNow by rememberUpdatedState(selected)
@@ -172,8 +172,8 @@ private fun SelectionFrame(e: DesignPage.El, s: Float, zoom: Float, dark: Boolea
             Box(Modifier.offset { IntOffset((w * at.x - hsPx / 2).roundToInt(), (h * at.y - hsPx / 2).roundToInt()) }.size(hs.dp)
                 .pointerInput(e.id, handle) { detectDragGestures { ch, d -> ch.consume(); onDrag(handle, d.x, d.y) } }
                 .semantics { contentDescription = tr("Resize {0}", handle.name.lowercase()) }, contentAlignment = Alignment.Center) {
-                Box(Modifier.size(if (corner) dot.dp else (dot * 0.8f).dp).clip(BlazeShapes.pill).background(Color.White, BlazeShapes.pill)
-                    .border((1.5f / zoom).dp, blue, BlazeShapes.pill))
+                Box(Modifier.size(if (corner) dot.dp else (dot * 0.8f).dp).clip(ArgusShapes.pill).background(Color.White, ArgusShapes.pill)
+                    .border((1.5f / zoom).dp, blue, ArgusShapes.pill))
             }
         }
     }
@@ -184,8 +184,8 @@ private fun SelectionFrame(e: DesignPage.El, s: Float, zoom: Float, dark: Boolea
 /** A round frosted icon button (the rail, the header). */
 @Composable
 fun StudioIcon(icon: ImageVector, label: String, on: Boolean = false, size: Int = 36, onClick: () -> Unit) {
-    val c = LocalBlaze.current
-    Box(Modifier.size(size.dp).clip(BlazeShapes.pill).then(if (on) Modifier.background(c.ink, BlazeShapes.pill) else Modifier)
+    val c = LocalArgus.current
+    Box(Modifier.size(size.dp).clip(ArgusShapes.pill).then(if (on) Modifier.background(c.ink, ArgusShapes.pill) else Modifier)
         .clickable(onClick = onClick).semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
         Icon(icon, null, tint = if (on) c.paper else c.ink, modifier = Modifier.size(19.dp))
     }
@@ -194,9 +194,9 @@ fun StudioIcon(icon: ImageVector, label: String, on: Boolean = false, size: Int 
 /** A floating frosted pill on the stage. */
 @Composable
 fun StudioPill(text: String, small: String = "", icon: ImageVector? = null, on: Boolean = false, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
-    val c = LocalBlaze.current
-    Row(modifier.height(30.dp).clip(BlazeShapes.pill)
-        .then(if (on) Modifier.background(c.ink, BlazeShapes.pill) else Modifier.glass(BlazeShapes.pill, GlassIntensity.Medium, shadow = false))
+    val c = LocalArgus.current
+    Row(modifier.height(30.dp).clip(ArgusShapes.pill)
+        .then(if (on) Modifier.background(c.ink, ArgusShapes.pill) else Modifier.glass(ArgusShapes.pill, GlassIntensity.Medium, shadow = false))
         .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(horizontal = 11.dp),
         verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) { Icon(icon, null, tint = if (on) c.paper else c.ink, modifier = Modifier.size(15.dp)); if (text.isNotEmpty()) Spacer(Modifier.width(5.dp)) }
@@ -208,12 +208,12 @@ fun StudioPill(text: String, small: String = "", icon: ImageVector? = null, on: 
 /** The element action bar over the stage: Text, Colour, Front, Ask, Remove. */
 @Composable
 fun ElementBar(e: DesignPage.El, onText: () -> Unit, onColour: () -> Unit, onFront: () -> Unit, onAsk: () -> Unit, onRemove: () -> Unit, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
-    Row(modifier.clip(BlazeShapes.pill).background(c.menuSurface, BlazeShapes.pill).border(1.dp, c.hair2, BlazeShapes.pill).padding(4.dp),
+    val c = LocalArgus.current
+    Row(modifier.clip(ArgusShapes.pill).background(c.menuSurface, ArgusShapes.pill).border(1.dp, c.hair2, ArgusShapes.pill).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
         @Composable fun b(icon: ImageVector, label: String, show: Boolean = true, f: () -> Unit) {
             if (!show) return
-            Row(Modifier.height(32.dp).clip(BlazeShapes.pill).clickable(onClick = f).padding(horizontal = 10.dp).semantics { contentDescription = label },
+            Row(Modifier.height(32.dp).clip(ArgusShapes.pill).clickable(onClick = f).padding(horizontal = 10.dp).semantics { contentDescription = label },
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, tint = c.ink, modifier = Modifier.size(15.dp))
                 if (label != "Remove") { Spacer(Modifier.width(5.dp)); Text(label, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 12.sp, color = c.ink)) }
@@ -230,11 +230,11 @@ fun ElementBar(e: DesignPage.El, onText: () -> Unit, onColour: () -> Unit, onFro
 /** The critic chip: score and the one thing to fix. */
 @Composable
 fun CriticChip(cr: DesignPage.Critique, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val tone = when { cr.score >= 85 -> GlassTokens.success; cr.score >= 65 -> GlassTokens.warning; else -> GlassTokens.error }
-    Row(Modifier.height(30.dp).clip(BlazeShapes.pill).glass(BlazeShapes.pill, GlassIntensity.Medium, shadow = false).clickable(onClick = onClick)
+    Row(Modifier.height(30.dp).clip(ArgusShapes.pill).glass(ArgusShapes.pill, GlassIntensity.Medium, shadow = false).clickable(onClick = onClick)
         .padding(start = 5.dp, end = 11.dp).semantics { contentDescription = tr("Design check {0}: {1}", cr.score, cr.note) }, verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(21.dp).clip(BlazeShapes.pill).background(tone, BlazeShapes.pill), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(21.dp).clip(ArgusShapes.pill).background(tone, ArgusShapes.pill), contentAlignment = Alignment.Center) {
             Text("${cr.score}", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 10.sp, color = Color(0xFF0B0B0C)))
         }
         Spacer(Modifier.width(7.dp))
@@ -245,7 +245,7 @@ fun CriticChip(cr: DesignPage.Critique, onClick: () -> Unit) {
 /** A bottom sheet inside the studio (over a scrim), the concept's frosted sheet. */
 @Composable
 fun StudioSheet(title: String, subtitle: String = "", onDismiss: () -> Unit, right: (@Composable () -> Unit)? = null, content: @Composable () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)).pointerInput(Unit) { detectTapGestures { onDismiss() } })
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(8.dp)
@@ -253,7 +253,7 @@ fun StudioSheet(title: String, subtitle: String = "", onDismiss: () -> Unit, rig
             .background(c.menuSurface).border(1.dp, c.hair, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 36.dp, bottomEnd = 36.dp))
             .pointerInput(Unit) { detectTapGestures { } }
             .padding(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 20.dp)) {
-            Box(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 12.dp).size(38.dp, 5.dp).clip(BlazeShapes.pill).background(c.hair2, BlazeShapes.pill))
+            Box(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 12.dp).size(38.dp, 5.dp).clip(ArgusShapes.pill).background(c.hair2, ArgusShapes.pill))
             Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(title, modifier = Modifier.weight(1f), maxLines = 1,
                     style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, color = c.ink))
@@ -267,12 +267,12 @@ fun StudioSheet(title: String, subtitle: String = "", onDismiss: () -> Unit, rig
 /** Format sheet: the page sizes, each drawn to its ratio. */
 @Composable
 fun FormatGrid(current: String, onPick: (DesignPage.Format) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     DesignPage.FORMATS.chunked(3).forEach { row ->
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             row.forEach { f ->
                 val on = f.id == current
-                Column(Modifier.weight(1f).clip(BlazeShapes.medium).border(1.5.dp, if (on) c.ink else c.hair, BlazeShapes.medium).clickable { onPick(f) }
+                Column(Modifier.weight(1f).clip(ArgusShapes.medium).border(1.5.dp, if (on) c.ink else c.hair, ArgusShapes.medium).clickable { onPick(f) }
                     .padding(top = 12.dp, bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     val k = 34f / maxOf(f.w, f.h)
                     Box(Modifier.size((f.w * k).dp, (f.h * k).dp).border(1.5.dp, if (on) c.ink else c.sub, RoundedCornerShape(4.dp)))
@@ -288,7 +288,7 @@ fun FormatGrid(current: String, onPick: (DesignPage.Format) -> Unit) {
 /** Colour sheet body: Text / Fill target, the wheel, and a size slider for text. */
 @Composable
 fun ColourSheetBody(e: DesignPage.El, target: String, onTarget: (String) -> Unit, onColour: (String) -> Unit, onSize: (Double) -> Unit, onDone: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val value = if (target == "fill") e.fill.ifBlank { "#4DA8FF" } else e.color
     ColorWheelPicker(value, onColour, Modifier.fillMaxWidth())
     if (e.isText) {
@@ -308,11 +308,11 @@ fun ColourSheetBody(e: DesignPage.El, target: String, onTarget: (String) -> Unit
 /** The Text / Fill switch in the colour sheet's title row. */
 @Composable
 fun ColourTarget(target: String, canText: Boolean, onTarget: (String) -> Unit) {
-    val c = LocalBlaze.current
-    Row(Modifier.clip(BlazeShapes.pill).background(c.faint, BlazeShapes.pill).padding(3.dp)) {
+    val c = LocalArgus.current
+    Row(Modifier.clip(ArgusShapes.pill).background(c.faint, ArgusShapes.pill).padding(3.dp)) {
         listOf("color" to "Text", "fill" to "Fill").filter { it.first == "fill" || canText }.forEach { (k, label) ->
             val on = target == k
-            Box(Modifier.height(28.dp).clip(BlazeShapes.pill).then(if (on) Modifier.background(c.raised, BlazeShapes.pill) else Modifier)
+            Box(Modifier.height(28.dp).clip(ArgusShapes.pill).then(if (on) Modifier.background(c.raised, ArgusShapes.pill) else Modifier)
                 .clickable { onTarget(k) }.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
                 Text(label, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, color = if (on) c.ink else c.sub))
             }
@@ -323,9 +323,9 @@ fun ColourTarget(target: String, canText: Boolean, onTarget: (String) -> Unit) {
 /** Text sheet body: edit an element's words. */
 @Composable
 fun TextSheetBody(initial: String, onSave: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var t by remember(initial) { mutableStateOf(initial) }
-    Box(Modifier.fillMaxWidth().heightIn(min = 90.dp).clip(BlazeShapes.medium).background(c.faint, BlazeShapes.medium).border(1.dp, c.hair, BlazeShapes.medium).padding(14.dp)) {
+    Box(Modifier.fillMaxWidth().heightIn(min = 90.dp).clip(ArgusShapes.medium).background(c.faint, ArgusShapes.medium).border(1.dp, c.hair, ArgusShapes.medium).padding(14.dp)) {
         BasicTextField(t, { t = it }, cursorBrush = SolidColor(c.accent), textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink),
             modifier = Modifier.fillMaxWidth())
     }

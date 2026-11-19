@@ -1,6 +1,6 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.team.ActionClass
+import com.argus.assistant.team.ActionClass
 
 /**
  * P2-SF-03: the ONE needs-you query. Everything that waits on the user (pending approvals and drafts, open question
@@ -9,7 +9,7 @@ import com.blaze.assistant.team.ActionClass
  * the widget / QS tile / launcher badge). No surface counts pending things on its own; NeedsYouSourceTest scans for that.
  *
  * Pure Kotlin (no android.* / org.json): the sources come in as plain data ([CardSrc], [JobSrc]) so NeedsYouTest runs on
- * the JVM. The Android side ([com.blaze.assistant.ui.team.NeedsYouFeed]) maps PolicyRuntime's cards and team.db jobs
+ * the JVM. The Android side ([com.argus.assistant.ui.team.NeedsYouFeed]) maps PolicyRuntime's cards and team.db jobs
  * onto these and publishes the list as a StateFlow.
  *
  * Decisions are not made here: an approval answered from the Inbox goes through PolicyRuntime.answer(card id, …), the

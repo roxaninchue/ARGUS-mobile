@@ -1,12 +1,12 @@
-package com.blaze.assistant
+package com.argus.assistant
 
 /**
- * 0.52.1: the app's user-facing name in ONE place (Blaze → Argus). Every user-visible string, prompt and label reads it,
+ * 0.52.1: the app's user-facing name in ONE place (Argus → Argus). Every user-visible string, prompt and label reads it,
  * so a future rename is a one-line change here (plus res/values/strings.xml, the manifest labels and the assets, which
  * can't read Kotlin constants; see docs/RENAME-ARGUS.md).
  *
  * Deliberately NOT renamed (installs, sync and sign-in depend on them): the applicationId and Kotlin package
- * com.blaze.assistant, database / file / pref / folder names, gateway URLs and hosts, the X-Blaze-* headers and
+ * com.argus.assistant, database / file / pref / folder names, gateway URLs and hosts, the X-Argus-* headers and
  * blaze_* request fields, user agents, repo names and the CLI binary name.
  */
 object BrandName {

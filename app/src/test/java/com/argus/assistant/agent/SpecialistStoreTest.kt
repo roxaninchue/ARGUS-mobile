@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
@@ -19,7 +19,7 @@ class SpecialistStoreTest {
         assertEquals(1, l.size)
         val s = l[0]
         assertEquals("shopify", s.id); assertEquals(setOf("web", "memory"), s.groups); assertTrue(s.custom)
-        assertEquals("", s.playbook); assertEquals(Specialists.USER, s.madeBy); assertFalse(s.byBlaze)
+        assertEquals("", s.playbook); assertEquals(Specialists.USER, s.madeBy); assertFalse(s.byArgus)
         assertEquals(emptyList<Specialists.Spec>(), Specialists.parse("not json"))
         assertEquals(emptyList<Specialists.Spec>(), Specialists.parse(""))
     }
@@ -31,7 +31,7 @@ class SpecialistStoreTest {
         assertEquals("farm", o.getString("id")); assertEquals("web", o.getString("groups")); assertEquals("Advises farmers", o.getString("prompt"))
         assertEquals("# P", o.getString("playbook")); assertEquals("blaze", o.getString("made_by"))
         assertEquals(listOf(s), Specialists.parse(json))
-        // A spec without a playbook writes no playbook key (an older Blaze reads it exactly as before).
+        // A spec without a playbook writes no playbook key (an older Argus reads it exactly as before).
         assertFalse(JSONArray(Specialists.toJson(listOf(s.copy(playbook = "")))).getJSONObject(0).has("playbook"))
     }
 
@@ -56,7 +56,7 @@ class SpecialistStoreTest {
             listOf("web", "memory"), farm, emptyList(), builtIns)
         assertTrue(ok.message, ok.ok)
         val s = ok.spec!!
-        assertEquals("farming-advisor", s.id); assertTrue(s.byBlaze); assertTrue(s.custom); assertEquals(farm.trim(), s.playbook)
+        assertEquals("farming-advisor", s.id); assertTrue(s.byArgus); assertTrue(s.custom); assertEquals(farm.trim(), s.playbook)
         // Saved and loaded back like any custom one; matched in later turns by its name.
         val back = Specialists.parse(Specialists.toJson(listOf(s))).single()
         assertEquals(s, back)

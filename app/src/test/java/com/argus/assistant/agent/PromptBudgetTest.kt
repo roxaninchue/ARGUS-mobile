@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.JdbcSql
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.JdbcSql
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -21,7 +21,7 @@ import java.io.File
 class PromptBudgetTest {
     private val sqls = ArrayList<Sql>()
 
-    @After fun tearDown() { Mind.use(null); BlazeDocs.use(null); Projects.use(emptyList()); ProjectDocs.use(null); sqls.forEach { try { it.close() } catch (_: Exception) { } } }
+    @After fun tearDown() { Mind.use(null); ArgusDocs.use(null); Projects.use(emptyList()); ProjectDocs.use(null); sqls.forEach { try { it.close() } catch (_: Exception) { } } }
 
     private fun first(vararg paths: String): File? = paths.map { File(it) }.firstOrNull { it.isFile }
 
@@ -40,11 +40,11 @@ class PromptBudgetTest {
     }
 
     /** The memory + docs part of the system prompt, exactly as Agent.systemPrompt builds it (Memory.promptBlock + the docs line). */
-    private fun dynamicPart(q: String) = Memory.promptBlock(q) + BlazeDocs.PROMPT_LINE
+    private fun dynamicPart(q: String) = Memory.promptBlock(q) + ArgusDocs.PROMPT_LINE
 
     @Test fun fiveHundredMemoriesAndAllDocsStayOutOfThePrompt() {
         val sql = JdbcSql().also { sqls += it }
-        val blaze = BlazeDb(sql); val mind = MindStore(blaze, sql)
+        val argus = ArgusDb(sql); val mind = MindStore(argus, sql)
         Mind.use(mind)
         val q = "where is your repo and what do you know about my sister"
         val empty = dynamicPart(q)
@@ -59,14 +59,14 @@ class PromptBudgetTest {
             texts += t
         }
         assertEquals(500, mind.all().size)
-        val docs = BlazeDocs.Store(sql, { blaze.meta(it) }, { k, v -> blaze.setMeta(k, v) })
-        val tools = JSONArray().apply { BlazeDocs.tools().forEach { put(it) } }
-        assertTrue(BlazeDocs.ensure(docs, "h", "test", { docFiles() }, tools))
-        BlazeDocs.use(docs)
+        val docs = ArgusDocs.Store(sql, { blaze.meta(it) }, { k, v -> blaze.setMeta(k, v) })
+        val tools = JSONArray().apply { ArgusDocs.tools().forEach { put(it) } }
+        assertTrue(ArgusDocs.ensure(docs, "h", "test", { docFiles() }, tools))
+        ArgusDocs.use(docs)
         assertTrue(docs.count() > 20)
 
         val full = dynamicPart(q)
-        val growth = BlazeDb.tokens(full) - BlazeDb.tokens(empty)
+        val growth = ArgusDb.tokens(full) - ArgusDb.tokens(empty)
         assertTrue("grew by $growth tokens", growth < 6_000)
         // Much tighter in practice: the core is capped at CORE_MAX chars, the index at INDEX_PER_KIND subjects per kind.
         assertTrue("grew by $growth tokens", growth < 1_500)
@@ -78,10 +78,10 @@ class PromptBudgetTest {
         assertTrue(full.contains("memory_search"))
         val docLines = docFiles().flatMap { it.second.lines() }.map { it.trim() }.filter { it.length > 60 }
         assertTrue(docLines.size > 50)
-        assertFalse("a docs line is in the prompt", docLines.any { full.contains(it) && !BlazeDocs.PROMPT_LINE.contains(it) })
+        assertFalse("a docs line is in the prompt", docLines.any { full.contains(it) && !ArgusDocs.PROMPT_LINE.contains(it) })
         // The docs line is the same, whatever is indexed.
-        assertEquals(BlazeDocs.PROMPT_LINE, full.substring(full.length - BlazeDocs.PROMPT_LINE.length))
-        assertTrue(BlazeDocs.PROMPT_LINE.contains(BlazeDocs.REPO_URL))
+        assertEquals(ArgusDocs.PROMPT_LINE, full.substring(full.length - ArgusDocs.PROMPT_LINE.length))
+        assertTrue(ArgusDocs.PROMPT_LINE.contains(ArgusDocs.REPO_URL))
     }
 
     /**
@@ -104,7 +104,7 @@ class PromptBudgetTest {
             val none = Projects.promptLine("other-chat")
             assertEquals("", none)
             val block = Projects.promptLine("c1")
-            val t = BlazeDb.tokens(block)
+            val t = ArgusDb.tokens(block)
             assertTrue("project adds $t tokens", t <= 700)
             assertTrue(block.contains("Purpose: the ins project."))
             assertTrue(block.contains("Purpose: the brief project."))
@@ -114,7 +114,7 @@ class PromptBudgetTest {
             assertFalse(tail.any { it.length > 20 && block.contains(it) })
         }
         // An empty project costs one short line.
-        assertTrue(BlazeDb.tokens(Projects.pinned(Project("p2", "Small"))) < 10)
+        assertTrue(ArgusDb.tokens(Projects.pinned(Project("p2", "Small"))) < 10)
         // The tail is still reachable.
         val sql = JdbcSql().also { sqls += it }; val meta = HashMap<String, String>()
         val docs = ProjectDocs.Store(sql, { meta[it].orEmpty() }, { k, v -> meta[k] = v })

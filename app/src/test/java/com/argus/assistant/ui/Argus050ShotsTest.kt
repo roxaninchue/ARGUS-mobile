@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -33,20 +33,20 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33], qualifiers = "w360dp-h780dp-xhdpi", application = android.app.Application::class)
-class Blaze050ShotsTest {
+class Argus050ShotsTest {
     @get:Rule(order = 0) val onlyWithShots = org.junit.rules.TestRule { base, _ ->
         object : org.junit.runners.model.Statement() {
             override fun evaluate() { assumeTrue(System.getProperty("blaze.shots") == "1"); base.evaluate() }
         }
     }
     @get:Rule(order = 1) val rule = createAndroidComposeRule<androidx.activity.ComponentActivity>()
-    @org.junit.Before fun initSettings() { try { com.blaze.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
+    @org.junit.Before fun initSettings() { try { com.argus.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
 
     private fun capture(name: String): Bitmap {
         val root = rule.activity.window.decorView
         val bmp = Bitmap.createBitmap(root.width.coerceAtLeast(1), root.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
         root.draw(android.graphics.Canvas(bmp))
-        val dir = File(System.getProperty("blaze.shotsDir") ?: "build/shots", "Blaze050ShotsTest").apply { mkdirs() }
+        val dir = File(System.getProperty("blaze.shotsDir") ?: "build/shots", "Argus050ShotsTest").apply { mkdirs() }
         File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
         return bmp
     }
@@ -63,8 +63,8 @@ class Blaze050ShotsTest {
     private fun frame(name: String, dark: Boolean, expect: String, body: @Composable () -> Unit) {
         MotionTokens.setEnabledForTests(false)
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides (if (dark) DarkColors else LightColors)) {
-                val c = LocalBlaze.current
+            CompositionLocalProvider(LocalArgus provides (if (dark) DarkColors else LightColors)) {
+                val c = LocalArgus.current
                 Column(Modifier.fillMaxSize().background(c.paper)) {
                     Box(Modifier.weight(1f).fillMaxWidth())
                     body()

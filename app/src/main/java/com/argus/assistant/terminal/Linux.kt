@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 import android.content.Context
 import android.os.Build
@@ -9,7 +9,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * A real Linux (Alpine) inside Blaze, run with PRoot like UserLAnd/Termux do: no root needed.
+ * A real Linux (Alpine) inside Argus, run with PRoot like UserLAnd/Termux do: no root needed.
  * `apk add python3 nodejs git openjdk17 …` all work. The rootfs (~3.5 MB) is downloaded once
  * into filesDir/linux/alpine; PRoot and its loader ship in the APK as native libs.
  */

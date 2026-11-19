@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
@@ -14,7 +14,7 @@ import java.io.File
  * went as a Cloud run when the on-phone brain wasn't ready (cap 75 s, CloudRuns/TurnDeadline.CLOUD_STEP_MS), then the
  * brains one after another inside the 150 s step budget (TurnDeadline.STEP_MS): the on-phone brain first whenever it was
  * installed (start under the setup lock, then 20 s first chunk per model with thinking counted as a chunk, 100 s total,
- * 4 models), the gateway (Nous, then Blaze Cloud) with no first-token cap at all (120 s read timeout reset by every
+ * 4 models), the gateway (Nous, then Argus Cloud) with no first-token cap at all (120 s read timeout reset by every
  * keep-alive, 3 tries, backoff 1 s / 3 s, rate limits retried).
  * "After" runs the real [HedgeRace] in virtual time with the 0.46.4 limits and the [BrainRace.order] lists (asserted in
  * BrainRaceTest). Virtual time, deterministic.
@@ -57,7 +57,7 @@ class BrainBenchTest {
         var t = 0L
         val stepEnd: Long
         if (!fx.phoneReady) {
-            // Cloud run (Blaze Cloud lineup on the gateway), up to 75 s, then direct with what is left of 150 s
+            // Cloud run (Argus Cloud lineup on the gateway), up to 75 s, then direct with what is left of 150 s
             if (!fx.runQueued) return fx.brains[B.CLOUD]?.first
             t += 75_000
         }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
@@ -11,7 +11,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import com.blaze.assistant.agent.Agent
+import com.argus.assistant.agent.Agent
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -19,7 +19,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Notification brain: with notification access on, Blaze keeps the last ~150 notifications
+ * Notification brain: with notification access on, Argus keeps the last ~150 notifications
  * in memory only (never written to disk) so it can answer "what did I miss?" and reply to chats
  * through the notification's own reply action.
  */
@@ -124,6 +124,6 @@ class NotificationBrain : NotificationListenerService() {
             items.addLast(Item(sbn.key, sbn.postTime, app, title, text, reply))
             while (items.size > 150) items.removeFirst()
         }
-        try { com.blaze.assistant.proactive.Triggers.onNotification(this, app, title, text) } catch (_: Exception) { }
+        try { com.argus.assistant.proactive.Triggers.onNotification(this, app, title, text) } catch (_: Exception) { }
     }
 }

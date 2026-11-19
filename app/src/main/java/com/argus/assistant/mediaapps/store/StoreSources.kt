@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps.store
+package com.argus.assistant.mediaapps.store
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,7 +12,7 @@ import java.net.URL
  */
 object StoreSources {
     /** The YouTube plug-in's class (module :youtube). Absent in builds without the youtube/ folder. */
-    const val YOUTUBE_CLASS = "com.blaze.assistant.mediaapps.youtube.YouTubeSource"
+    const val YOUTUBE_CLASS = "com.argus.assistant.mediaapps.youtube.YouTubeSource"
 
     /** A Kotlin `object` StoreSource by class name, or null when that module isn't in this build. */
     fun plugin(className: String): StoreSource? = try {

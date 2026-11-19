@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -198,7 +198,7 @@ object ModelCatalog {
     }
 
     internal fun http(method: String, url: String, body: String?, headers: Map<String, String>): Pair<Int, String> {
-        val conn = com.blaze.assistant.connect.UrlSafety.open(url)
+        val conn = com.argus.assistant.connect.UrlSafety.open(url)
         conn.requestMethod = method
         conn.connectTimeout = 20_000
         conn.readTimeout = 45_000

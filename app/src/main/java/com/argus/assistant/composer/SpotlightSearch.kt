@@ -1,7 +1,7 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * 0.47 Spotlight v2 search (pure; SpotlightSearchTest). Everything comes from the [SelfMap] plus the user's media library.
  *
@@ -10,8 +10,8 @@ import com.blaze.assistant.BrandName
  *  - "@view arg" → views; a known view + Enter opens its inline preview inside Spotlight ("@browser google.com/food");
  *  - plain text  → map matches; a view shows twice: "Views > Terminal" (full view, leaves Home) and "Terminal"
  *                  (inline preview, stays on Home); fuzzy library hits "Music > Library > {song}" / "Video > Library > {title}";
- *                  models ("inf" → Blaze Inferno · Smartest).
- * Never an empty list (no "nothing found" row): every query ends with Browse, Music, Video and "Ask Blaze about '<q>'" (sends into chat).
+ *                  models ("inf" → Argus Inferno · Smartest).
+ * Never an empty list (no "nothing found" row): every query ends with Browse, Music, Video and "Ask Argus about '<q>'" (sends into chat).
  */
 object SpotlightSearch {
     enum class Icon { VIEW, TERMINAL, MUSIC, VIDEO, BROWSER, SETTINGS, ACTION, CHAT, SEARCH, PREVIEW }
@@ -28,7 +28,7 @@ object SpotlightSearch {
         data class Browse(val query: String) : Act()
         data class MusicSearch(val query: String) : Act()
         data class VideoSearch(val query: String) : Act()
-        data class AskBlaze(val query: String) : Act()
+        data class AskArgus(val query: String) : Act()
         data class RunCommand(val command: String, val distro: String) : Act()
         /** Replace the field with [text] (e.g. "@browser "), keep Spotlight open. */
         data class Complete(val text: String) : Act()
@@ -79,7 +79,7 @@ object SpotlightSearch {
         if (cmd.isNotEmpty()) {
             rows += Row("cmd", Icon.TERMINAL, "! $cmd", if (d.installed) "Run in ${d.name} \u00b7 here on Home" else "${d.name} isn't installed \u00b7 tap to set it up",
                 if (d.installed) Act.RunCommand(cmd, d.id) else Act.OpenView("terminal"), 100)
-            rows += Row("cmd:ask", Icon.CHAT, "Ask ${BrandName.NAME} to run it", "${BrandName.NAME} runs \u201c$cmd\u201d and explains the result", Act.AskBlaze("Run this in the terminal (${d.name}): $cmd"), 50)
+            rows += Row("cmd:ask", Icon.CHAT, "Ask ${BrandName.NAME} to run it", "${BrandName.NAME} runs \u201c$cmd\u201d and explains the result", Act.AskArgus("Run this in the terminal (${d.name}): $cmd"), 50)
         } else {
             rows += Row("cmd:hint", Icon.TERMINAL, "Type a command", "Runs in ${d.name}" + (if (d.installed) "" else " (not installed yet)"), Act.Complete("!"), 100)
         }
@@ -133,14 +133,14 @@ object SpotlightSearch {
             .sortedByDescending { it.second }.take(LIBRARY_MAX)
             .map { (m, s) -> Row("lib:${app.lowercase()}:${m.key}", icon, "$app > Library > ${m.title}", m.artist.ifBlank { "In your library" }, act(m.key), s - 3) }.toList()
 
-    /** Never an empty list: Browse, Music, Video and Ask Blaze, always in this order at the end. */
+    /** Never an empty list: Browse, Music, Video and Ask Argus, always in this order at the end. */
     fun fallbacks(q: String): List<Row> {
         val shown = if (q.isBlank()) "anything" else "\u2018$q\u2019"
         return listOf(
             Row("fb:browse", Icon.BROWSER, "Browse $shown", "Search the web in a preview", Act.Browse(q), -1),
             Row("fb:music", Icon.MUSIC, "Music: search $shown", "Find songs in ${BrandName.NAME} Music", Act.MusicSearch(q), -2),
             Row("fb:video", Icon.VIDEO, "Video: search $shown", "Find videos in ${BrandName.NAME} Video", Act.VideoSearch(q), -3),
-            Row("fb:ask", Icon.CHAT, "Ask ${BrandName.NAME} about \u2018$q\u2019".let { if (q.isBlank()) "Ask ${BrandName.NAME}" else it }, "Sends it into the chat", Act.AskBlaze(q), -4),
+            Row("fb:ask", Icon.CHAT, "Ask ${BrandName.NAME} about \u2018$q\u2019".let { if (q.isBlank()) "Ask ${BrandName.NAME}" else it }, "Sends it into the chat", Act.AskArgus(q), -4),
         )
     }
 

@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -54,7 +54,7 @@ class MfaTest {
         assertTrue(r is Mfa.Outcome.Signed)
         assertEquals("sess_1", (r as Mfa.Outcome.Signed).body.optString("token"))
         assertEquals(tok, srv.seen[0].optString("mfa_token")); assertEquals("123456", srv.seen[0].optString("code"))
-        assertTrue(BlazeAccount.User.from(r.body.optJSONObject("user"))!!.twoFactor)
+        assertTrue(ArgusAccount.User.from(r.body.optJSONObject("user"))!!.twoFactor)
     }
 
     @Test fun recoveryCodeSignsIn() {
@@ -115,20 +115,20 @@ class MfaTest {
     @Test fun providerFlagsAndUser() {
         val live = JSONObject("""{"version":"0.9.0","login":{"email":true},"connectors":{},"web_login":true,"password_reset":true,"two_factor":true}""")
         assertEquals(mapOf("web_login" to true, "password_reset" to true, "two_factor" to true, "app_redirect" to false,
-            "two_factor_app" to true, "two_factor_email" to false), BlazeAccount.featureFlags(live))
+            "two_factor_app" to true, "two_factor_email" to false), ArgusAccount.featureFlags(live))
         val v091 = JSONObject("""{"version":"0.9.1","two_factor":true,"two_factor_methods":{"app":true,"email":true}}""")
-        assertTrue(BlazeAccount.featureFlags(v091)["two_factor_email"]!!)
+        assertTrue(ArgusAccount.featureFlags(v091)["two_factor_email"]!!)
         val old = JSONObject("""{"login":{"email":true},"connectors":{}}""")
-        assertTrue(BlazeAccount.featureFlags(old).values.none { it })
-        val u = BlazeAccount.User.from(JSONObject("""{"id":"u1","email":"a@b.c","has_password":true,"two_factor":true,"providers":["google"]}"""))!!
+        assertTrue(ArgusAccount.featureFlags(old).values.none { it })
+        val u = ArgusAccount.User.from(JSONObject("""{"id":"u1","email":"a@b.c","has_password":true,"two_factor":true,"providers":["google"]}"""))!!
         assertTrue(u.twoFactor && u.hasPassword)
-        assertTrue(BlazeAccount.User.from(u.json())!!.twoFactor)
-        assertFalse(BlazeAccount.User.from(JSONObject("""{"id":"u2"}"""))!!.twoFactor)
+        assertTrue(ArgusAccount.User.from(u.json())!!.twoFactor)
+        assertFalse(ArgusAccount.User.from(JSONObject("""{"id":"u2"}"""))!!.twoFactor)
         // 0.9.0 user: two_factor alone means the app; 0.9.1 names the methods
         assertTrue(u.twoFactorApp && !u.twoFactorEmail)
-        val e = BlazeAccount.User.from(JSONObject("""{"id":"u3","two_factor":true,"two_factor_methods":{"app":false,"email":true}}"""))!!
+        val e = ArgusAccount.User.from(JSONObject("""{"id":"u3","two_factor":true,"two_factor_methods":{"app":false,"email":true}}"""))!!
         assertTrue(e.twoFactor && e.twoFactorEmail && !e.twoFactorApp)
-        val back = BlazeAccount.User.from(e.json())!!
+        val back = ArgusAccount.User.from(e.json())!!
         assertTrue(back.twoFactorEmail && !back.twoFactorApp)
     }
 

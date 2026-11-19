@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.webkit.WebView
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
@@ -77,11 +77,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.Glass
-import com.blaze.assistant.ui.GlassIconButton
-import com.blaze.assistant.ui.MascotArt
-import com.blaze.assistant.ui.MascotGlyph
-import com.blaze.assistant.ui.Type
+import com.argus.assistant.ui.Glass
+import com.argus.assistant.ui.GlassIconButton
+import com.argus.assistant.ui.MascotArt
+import com.argus.assistant.ui.MascotGlyph
+import com.argus.assistant.ui.Type
 import kotlin.math.roundToInt
 
 /** Where a link from the pointer opens. */

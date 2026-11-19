@@ -1,4 +1,4 @@
-package com.blaze.assistant.memory
+package com.argus.assistant.memory
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

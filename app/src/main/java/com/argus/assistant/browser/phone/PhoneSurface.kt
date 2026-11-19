@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 import android.app.Presentation
 import android.content.Context
@@ -19,13 +19,13 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.io.ByteArrayOutputStream
 
 /**
- * 0.45.19 Blaze Phone browser: Blaze's own screen. A private VirtualDisplay (no MediaProjection, nothing of the user's
- * screen: only Blaze's own window is on it) backed by an ImageReader, with a Presentation window holding the WebView.
+ * 0.45.19 Argus Phone browser: Argus's own screen. A private VirtualDisplay (no MediaProjection, nothing of the user's
+ * screen: only Argus's own window is on it) backed by an ImageReader, with a Presentation window holding the WebView.
  * The page renders and runs there while the user is in other apps.
  *
  * Frames: the compositor only produces an image when the page drew something new ("on change"). The newest image is
  * held (one at a time, nothing converted) and turned into a bitmap only when the live view watches (throttled by
- * [PhonePolicy.frameInterval]: ≤5 fps while Blaze acts, ≤2 idle, lower in low-RAM mode) or a screenshot asks. Two
+ * [PhonePolicy.frameInterval]: ≤5 fps while Argus acts, ≤2 idle, lower in low-RAM mode) or a screenshot asks. Two
  * reusable bitmaps (double buffer) for the live view, so frames cost no allocations.
  *
  * Everything here runs on the main thread except the reader callback, which runs on its own [HandlerThread].
@@ -46,9 +46,9 @@ class PhoneSurface(private val app: Context, val cfg: PhonePolicy.Config) {
     private val gate = PhonePolicy.FrameGate()
     private val buffers = arrayOfNulls<Bitmap>(2)
     private var next = 0
-    /** Someone is looking at frames (the chat tile or Blaze Phone full-screen). */
+    /** Someone is looking at frames (the chat tile or Argus Phone full-screen). */
     @Volatile var watching = 0
-    /** Last time Blaze acted (frames come faster for a few seconds after). */
+    /** Last time Argus acted (frames come faster for a few seconds after). */
     @Volatile var actedAt = 0L
     /** Called on the reader thread with a fresh frame (a reused bitmap: draw it, don't keep it past the next frame). */
     @Volatile var onFrame: ((Bitmap, Int, Int) -> Unit)? = null
@@ -57,7 +57,7 @@ class PhoneSurface(private val app: Context, val cfg: PhonePolicy.Config) {
 
     val ok: Boolean get() = presentation != null
 
-    /** Builds the display and shows [web] on it. False when this phone refuses (then Blaze browses offscreen, no frames). */
+    /** Builds the display and shows [web] on it. False when this phone refuses (then Argus browses offscreen, no frames). */
     fun start(web: WebView): Boolean {
         if (presentation != null) { put(web); return true }
         return try {
@@ -82,12 +82,12 @@ class PhoneSurface(private val app: Context, val cfg: PhonePolicy.Config) {
             put(web)
             true
         } catch (e: Throwable) {
-            com.blaze.assistant.device.CrashLog.quiet("PhoneSurface.start", e)
+            com.argus.assistant.device.CrashLog.quiet("PhoneSurface.start", e)
             release(); false
         }
     }
 
-    /** Puts [web] on Blaze's screen (from wherever it was, e.g. back from the user's full-screen control). */
+    /** Puts [web] on Argus's screen (from wherever it was, e.g. back from the user's full-screen control). */
     fun put(web: WebView) {
         val root = container ?: return
         if (web.parent === root) return
@@ -125,10 +125,10 @@ class PhoneSurface(private val app: Context, val cfg: PhonePolicy.Config) {
         pl.buffer.rewind()
         b.copyPixelsFromBuffer(pl.buffer)
         b
-    } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("PhoneSurface.toBitmap", e); null }
+    } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("PhoneSurface.toBitmap", e); null }
 
     /**
-     * A screenshot of Blaze's screen now (the newest frame; waits up to [waitMs] for one when none came yet), scaled to
+     * A screenshot of Argus's screen now (the newest frame; waits up to [waitMs] for one when none came yet), scaled to
      * [maxWidth], as JPEG bytes (what the gateway's vision models take). Null when there is no display.
      */
     suspend fun screenshot(maxWidth: Int = cfg.shotMaxWidth, quality: Int = cfg.jpegQuality, waitMs: Long = 1500): ByteArray? {
@@ -154,7 +154,7 @@ class PhoneSurface(private val app: Context, val cfg: PhonePolicy.Config) {
             full.recycle()
             bos.toByteArray()
         }
-    } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("PhoneSurface.screenshot", e); null }
+    } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("PhoneSurface.screenshot", e); null }
 
     /** Bytes the surface holds right now (display buffers + live bitmaps), for phone_status's RAM line. */
     fun bytesHeld(): Long {

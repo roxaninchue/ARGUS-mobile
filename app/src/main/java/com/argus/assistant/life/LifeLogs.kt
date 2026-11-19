@@ -1,17 +1,17 @@
-package com.blaze.assistant.life
+package com.argus.assistant.life
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Mind
-import com.blaze.assistant.agent.MindLogs
-import com.blaze.assistant.agent.MindReview
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Mind
+import com.argus.assistant.agent.MindLogs
+import com.argus.assistant.agent.MindReview
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,7 +31,7 @@ import java.util.Locale
  * journal (kind "life_log"), which the idle review turns into memories marked "(inferred)".
  *
  * Always visible: a persistent notification with Pause and Stop, plus Android's mic indicator. Pauses itself during
- * phone calls, while another app records, while Blaze's own voice is listening, and below 15% battery unless charging.
+ * phone calls, while another app records, while Argus's own voice is listening, and below 15% battery unless charging.
  * "Brainstorm with me" is the same with a summary (ideas, decisions, next steps) in the chat and memory on stop.
  */
 object LifeLogs {
@@ -188,7 +188,7 @@ object LifeLogs {
         if (sm.next.isNotEmpty()) { append("\n**Next steps**\n"); sm.next.forEach { append("- $it\n") } }
     }.trimEnd()
 
-    /** After a brainstorm stops: summary to the chat (and a notification when Blaze isn't open) and to memory. */
+    /** After a brainstorm stops: summary to the chat (and a notification when Argus isn't open) and to memory. */
     internal fun summarize(conv: String, startedAt: Long) {
         scope.launch(Dispatchers.IO) {
             val d = Mind.db() ?: return@launch
@@ -210,7 +210,7 @@ object LifeLogs {
             }
             kotlinx.coroutines.withContext(Dispatchers.Main) {
                 Agent.note(out, asReply = true)
-                if (!Agent.inForeground) try { com.blaze.assistant.notify.Notifier.reply(out, false) } catch (_: Throwable) { }
+                if (!Agent.inForeground) try { com.argus.assistant.notify.Notifier.reply(out, false) } catch (_: Throwable) { }
             }
         }
     }

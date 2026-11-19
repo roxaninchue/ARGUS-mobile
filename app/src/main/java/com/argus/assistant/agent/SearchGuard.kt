@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.46.3 (report: a reply about adding a video source came after "lots of ZRA searches"). Per turn, a web search runs only

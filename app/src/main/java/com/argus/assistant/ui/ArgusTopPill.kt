@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,14 +44,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Mood
+import com.argus.assistant.agent.Mood
 
 /**
- * 0.52.1 (owner, screenshot sc-5ce1629eddc5): a small pill under the top bar with the Blaze mark (and the project name
+ * 0.52.1 (owner, screenshot sc-5ce1629eddc5): a small pill under the top bar with the Argus mark (and the project name
  * when you are in a project). Tapping it opens an overlay of options; for now the options are the views that exist:
  * Chat, Projects, Home, Agents (background tasks) and Terminal.
  */
-object BlazeTopPillModel {
+object ArgusTopPillModel {
     data class Option(val id: String, val label: String, val sub: String)
 
     /** The overlay's options, in order. Home only where Home is a tab (not in Simple mode's swipe layout). */
@@ -76,8 +76,8 @@ object BlazeTopPillModel {
 }
 
 @Composable
-fun BlazeTopPill(label: String, mood: Mood = Mood.IDLE, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+fun ArgusTopPill(label: String, mood: Mood = Mood.IDLE, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = LocalArgus.current
     Box(modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), contentAlignment = Alignment.Center) {
         Row(Modifier.widthIn(max = 240.dp).glass(RoundedCornerShape(18.dp), GlassIntensity.Medium, shadow = false)
             .clickable(role = Role.Button, onClickLabel = tr("Open views"), onClick = onClick)
@@ -95,16 +95,16 @@ fun BlazeTopPill(label: String, mood: Mood = Mood.IDLE, onClick: () -> Unit, mod
 
 /** The overlay: a scrim and a glass card of options under the pill. Tapping outside closes it. */
 @Composable
-fun BlazeTopOverlay(open: Boolean, current: String, options: List<BlazeTopPillModel.Option>, onPick: (String) -> Unit, onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+fun ArgusTopOverlay(open: Boolean, current: String, options: List<ArgusTopPillModel.Option>, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+    val c = LocalArgus.current
     AnimatedVisibility(open, enter = MotionTokens.overlayIn(fromTop = true), exit = MotionTokens.overlayOut(fromTop = true)) {
-        Box(Modifier.fillMaxSize().background(com.blaze.assistant.ui.space.SpaceOverlay.scrim)
+        Box(Modifier.fillMaxSize().background(com.argus.assistant.ui.space.SpaceOverlay.scrim)
             .clickable(remember { MutableInteractionSource() }, null, onClick = onDismiss)
             .semantics { contentDescription = tr("Close views") }) {
             Column(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 104.dp, start = 24.dp, end = 24.dp)
                 .widthIn(max = 360.dp).fillMaxWidth()
                 .glass(RoundedCornerShape(24.dp), GlassIntensity.High, shadow = false)
-                .background(com.blaze.assistant.ui.space.SpaceOverlay.surface(c.dark))
+                .background(com.argus.assistant.ui.space.SpaceOverlay.surface(c.dark))
                 .clickable(remember { MutableInteractionSource() }, null) { }
                 .padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 options.forEach { o ->
@@ -113,7 +113,7 @@ fun BlazeTopOverlay(open: Boolean, current: String, options: List<BlazeTopPillMo
                         .clickable(role = Role.Button, onClickLabel = tr("Open {0}", o.label)) { onPick(o.id) }
                         .padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(34.dp).clip(CircleShape).background(c.faint), contentAlignment = Alignment.Center) {
-                            Icon(BlazeTopPillModel.icon(o.id), contentDescription = null, tint = c.ink, modifier = Modifier.size(18.dp))
+                            Icon(ArgusTopPillModel.icon(o.id), contentDescription = null, tint = c.ink, modifier = Modifier.size(18.dp))
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {

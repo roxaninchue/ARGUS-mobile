@@ -1,27 +1,27 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.Window
-import com.blaze.assistant.agent.ChatNav
+import com.argus.assistant.agent.ChatNav
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Proxy
 
 /**
- * 0.45.19 Blaze Phone UI fix 7: ONE rule for the system Back button. From Blaze Phone and from every other window,
- * view, sheet and page Blaze has, Back returns to the Blaze chat in one press. The chat itself is the root (Back there
- * does what it always did: a private chat asks before leaving, otherwise Android leaves Blaze).
+ * 0.45.19 Argus Phone UI fix 7: ONE rule for the system Back button. From Argus Phone and from every other window,
+ * view, sheet and page Argus has, Back returns to the Argus chat in one press. The chat itself is the root (Back there
+ * does what it always did: a private chat asks before leaving, otherwise Android leaves Argus).
  *
  * How it stays central (future screens get it without doing anything):
  *  - Inside the main window, the chat shell publishes what is in front ([shellNow]) and how to get back to the chat
  *    ([toChat]); every view is reached through the shell's own state (settings pages, Views, sheets, Projects, Home,
  *    Design, Gallery, Search, menus), so a new one is just another value of that state and [front] already names it.
- *  - Every Blaze activity's window gets a key interceptor when it is created ([install], from BlazeApp), before any
- *    Compose BackHandler or onBackPressed sees the key; an activity that needs a last step before leaving (Blaze Phone
+ *  - Every Argus activity's window gets a key interceptor when it is created ([install], from ArgusApp), before any
+ *    Compose BackHandler or onBackPressed sees the key; an activity that needs a last step before leaving (Argus Phone
  *    hands back, Video keeps a playing video in picture-in-picture) implements [ToChat]. A new activity is covered the
  *    moment it is in the manifest.
  *  - Exempt on purpose ([OWN_BACK], [EXEMPT_ACTIVITIES]): the app lock (Back never skips it), first-run setup, a live
@@ -31,7 +31,7 @@ import java.lang.reflect.Proxy
  */
 object BackRule {
     const val CHAT = "chat"
-    const val MAIN_ACTIVITY = "com.blaze.assistant.MainActivity"
+    const val MAIN_ACTIVITY = "com.argus.assistant.MainActivity"
 
     /** Everything the chat shell can show over (or instead of) the main chat. */
     data class Shell(
@@ -102,17 +102,17 @@ object BackRule {
 
     /** Views.special screens that are their own activity (ChatScreen.openView opens exactly these; BackRuleTest checks). */
     val SPECIAL_ACTIVITY = mapOf(
-        "browser" to "com.blaze.assistant.browser.BrowserActivity",
-        "phonebrowser" to "com.blaze.assistant.browser.phone.PhoneBrowserActivity",
-        "terminal" to "com.blaze.assistant.terminal.BlazeTerminalActivity",
-        "music" to "com.blaze.assistant.mediaapps.MusicActivity",
-        "video" to "com.blaze.assistant.mediaapps.VideoActivity",
+        "browser" to "com.argus.assistant.browser.BrowserActivity",
+        "phonebrowser" to "com.argus.assistant.browser.phone.PhoneBrowserActivity",
+        "terminal" to "com.argus.assistant.terminal.ArgusTerminalActivity",
+        "music" to "com.argus.assistant.mediaapps.MusicActivity",
+        "video" to "com.argus.assistant.mediaapps.VideoActivity",
     )
     /** Views.special screens drawn by the chat shell itself. */
     val SPECIAL_SHELL = setOf("gallery", "home", "projects", "design")
 
     /** What the shell shows after opening [v] from [base] (null = [v] is its own activity, see [SPECIAL_ACTIVITY]). */
-    fun shellFor(v: BlazeView, base: Shell = Shell()): Shell? = when (v.special) {
+    fun shellFor(v: ArgusView, base: Shell = Shell()): Shell? = when (v.special) {
         "gallery" -> base.copy(gallery = true)
         "home" -> base.copy(tab = if (base.argus) ChatNav.LIFE else ChatNav.HOME)
         "projects" -> base.copy(tab = ChatNav.PROJECTS)
@@ -123,13 +123,13 @@ object BackRule {
 
     /** Activities that return a result to the chat that opened them (Back cancels; the chat is under them anyway). */
     val EXEMPT_ACTIVITIES = mapOf(
-        "com.blaze.assistant.device.PermissionActivity" to "transparent permission prompt; Back cancels it and returns to the screen that asked",
-        "com.blaze.assistant.ui.CameraActivity" to "${BrandName.NAME} Camera for a photo the chat asked for; Back cancels the capture and returns to the chat",
+        "com.argus.assistant.device.PermissionActivity" to "transparent permission prompt; Back cancels it and returns to the screen that asked",
+        "com.argus.assistant.ui.CameraActivity" to "${BrandName.NAME} Camera for a photo the chat asked for; Back cancels the capture and returns to the chat",
     )
 
     /** Does Back in this activity go straight to the chat? (MainActivity: only when the shell's front isn't the chat.) */
     fun activityGoesToChat(className: String): Boolean =
-        className.startsWith("com.blaze.assistant.") && className != MAIN_ACTIVITY && className !in EXEMPT_ACTIVITIES
+        className.startsWith("com.argus.assistant.") && className != MAIN_ACTIVITY && className !in EXEMPT_ACTIVITIES
 
     /** An activity's last step before Back leaves it for the chat. Without it: finish and bring the chat forward. */
     interface ToChat { fun backToChat() }
@@ -173,7 +173,7 @@ object BackRule {
         when (a) {
             is Shelled -> a.backToChat()
             is ToChat -> a.backToChat()
-            else -> com.blaze.assistant.mediaapps.BackToChat.go(a)
+            else -> com.argus.assistant.mediaapps.BackToChat.go(a)
         }
     }
 
@@ -184,7 +184,7 @@ object BackRule {
         val st = keyStep(e.keyCode, down, up, e.isCanceled, e.repeatCount, if (down) takes(a) else false, armed[a] == true)
         if (down) { if (st.consume) armed[a] = true else armed.remove(a) }
         if (up) armed.remove(a)
-        if (st.act) try { go(a) } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BackRule.go", t) }
+        if (st.act) try { go(a) } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("BackRule.go", t) }
         return st.consume
     }
 
@@ -206,10 +206,10 @@ object BackRule {
         return true
     }
 
-    /** From BlazeApp.onCreate: every Blaze activity gets the rule when it is created. */
+    /** From ArgusApp.onCreate: every Argus activity gets the rule when it is created. */
     fun install(app: Application) {
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
-            override fun onActivityCreated(a: Activity, b: Bundle?) { try { wrap(a) } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BackRule.wrap", t) } }
+            override fun onActivityCreated(a: Activity, b: Bundle?) { try { wrap(a) } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("BackRule.wrap", t) } }
             override fun onActivityStarted(a: Activity) {}
             override fun onActivityResumed(a: Activity) {}
             override fun onActivityPaused(a: Activity) {}

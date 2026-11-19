@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
- * Specialists on every turn (v0.24.3, core skill blaze-specialists). Before the first model call Blaze picks the
+ * Specialists on every turn (v0.24.3, core skill blaze-specialists). Before the first model call Argus picks the
  * specialist(s) the request looks like (shopping, booking, coding, research, study, design, writing, planning,
  * inbox, phone) with a keyword score — no extra model call — and:
  *  - attaches that specialist's skill packs to the turn's skills (full text within SkillMatch's budget),

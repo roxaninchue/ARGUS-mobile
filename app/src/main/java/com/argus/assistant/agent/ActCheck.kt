@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * v0.45.13 verify-after-act (phone-control sweep 0). A phone action is "done" only when the phone READ IT BACK:
  * the accessibility tree, the Clock / Calendar / Contacts providers, Settings, NotificationManager (DND), Wi-Fi /
@@ -12,13 +12,13 @@ import com.blaze.assistant.BrandName
  *   "Not confirmed: <what is left> Next step: <…>"    -> unverified (the model must say so; never "done")
  *
  * Seen on a phone (0.45.9, Wed 21 Oct 2026 17:13 CAT): "remove the alarm" answered "Alarm removed." and posted it as a
- * notification while Samsung Clock still showed "… (Blaze A2)" 18:15 switched ON. process(delete) only fired
+ * notification while Samsung Clock still showed "… (Argus A2)" 18:15 switched ON. process(delete) only fired
  * AlarmClock.ACTION_DISMISS_ALARM, dropped the registry row and its result was classed verified by default.
  *
  * Also here, pure (ActCheckTest):
  *  - [GoalCheck]: opening an app (or a Settings page) is step one, never the goal. A final "done" for a multi-step ask
  *    whose only verified results are opens is caught and the flow continues (one nudge), then said honestly.
- *  - [TimeEcho]: a reply about an alarm / timer / reminder Blaze set this turn says the time that was really set.
+ *  - [TimeEcho]: a reply about an alarm / timer / reminder Argus set this turn says the time that was really set.
  *  - [PhoneCases]: the strict case set (each with its proof tools and verifier) used by the in-app self-test runner
  *    (PhoneQa) and the model-side replay.
  */
@@ -128,7 +128,7 @@ object UnconfirmedEcho {
      * 0.45.19 (phone 09:21): "I couldn't confirm it: couldn't read the switch back. Dark mode is now turned on." said two
      * things. The reply is ONE honest voice: when the last phone action wasn't confirmed, a reply that claims it worked is
      * replaced (never prefixed) by one honest line; for a switch that was turned but couldn't be read back that line is
-     * "I turned it on but couldn't check it; it should be on." ([com.blaze.assistant.phone.StateCheck.honest]).
+     * "I turned it on but couldn't check it; it should be on." ([com.argus.assistant.phone.StateCheck.honest]).
      */
     fun fix(reply: String, done: List<ClaimCheck.Done>): String {
         val act = openAct(done) ?: return reply
@@ -141,7 +141,7 @@ object UnconfirmedEcho {
             if (related && HONEST.containsMatchIn(r) && !CLAIM.containsMatchIn(r)) return reply
             return reply.trimEnd() + "\n\n" + caveat(act.name, why)
         }
-        val honestLine = com.blaze.assistant.phone.StateCheck.honestFrom(why)
+        val honestLine = com.argus.assistant.phone.StateCheck.honestFrom(why)
         val claims = CLAIM.containsMatchIn(reply)
         if (HONEST.containsMatchIn(reply)) {
             // honest already, unless it also claims success (the contradiction): then the one honest line
@@ -165,19 +165,19 @@ object ToggleReply {
         val acts = done.filter { it.name in UnconfirmedEcho.ACTIONS || it.name == "run_plan" || it.name == "do_actions" }
         val last = acts.lastOrNull() ?: return reply
         if (last.status != ToolVerify.Status.VERIFIED) return reply
-        val (word, on) = com.blaze.assistant.phone.StateCheck.parseEvidence(last.why) ?: return reply
+        val (word, on) = com.argus.assistant.phone.StateCheck.parseEvidence(last.why) ?: return reply
         val r = reply.trim()
         if (r.length > 160 || r.contains('\n') || r.contains("?")) return reply
         // the reply must be about this switch (or a bare "Done") and must not say a failure
         val about = r.contains(word, ignoreCase = true) || Regex("(?i)^(done|all set|ok(?:ay)?|it'?s (?:now )?(?:on|off))\\b").containsMatchIn(r)
         if (!about || UnconfirmedEcho.HONEST.containsMatchIn(r)) return reply
-        return com.blaze.assistant.phone.StateCheck.doneLine(word, on)
+        return com.argus.assistant.phone.StateCheck.doneLine(word, on)
     }
 }
 
 /**
  * v0.45.13 (phone 17:12): the chat said a time that wasn't the one set. A reply that names an alarm / timer / reminder
- * Blaze set THIS turn must say the time that was really set ([actual], "18:15"). Pure.
+ * Argus set THIS turn must say the time that was really set ([actual], "18:15"). Pure.
  */
 object TimeEcho {
     private val timeRe = Regex("(?i)\\b([01]?\\d|2[0-3])[:.]([0-5]\\d)(?:\\s*([ap])\\.?m\\.?)?\\b")

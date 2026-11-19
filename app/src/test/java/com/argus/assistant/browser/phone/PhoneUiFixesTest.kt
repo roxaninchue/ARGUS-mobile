@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -14,14 +14,14 @@ import org.robolectric.annotation.Config
 import java.io.File
 
 /**
- * 0.45.19 Blaze Phone UI fixes 4 (picture-in-picture), 6 (Take control: only Hand back) and 9 (sweep), strict 5/5.
+ * 0.45.19 Argus Phone UI fixes 4 (picture-in-picture), 6 (Take control: only Hand back) and 9 (sweep), strict 5/5.
  * The window itself (floating, its buttons, tap to expand) needs a real phone; see PHONE_UI_FIXES.md.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33], application = android.app.Application::class)
 class PhoneUiFixesTest {
     private fun root(): File = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-    private fun src(p: String) = File(root(), "com/blaze/assistant/$p").readText()
+    private fun src(p: String) = File(root(), "com/argus/assistant/$p").readText()
     private fun manifest(): String = listOf(File("src/main/AndroidManifest.xml"), File("app/src/main/AndroidManifest.xml")).first { it.isFile }.readText()
     private fun activityBlock(name: String) = manifest().substringAfter("android:name=\"$name\"").substringBefore(">")
 
@@ -32,7 +32,7 @@ class PhoneUiFixesTest {
     }
 
     // ------------------------------------------------------------------ fix 4: picture-in-picture
-    @Test fun pipFollowsOnlyWhileBlazeWorksOnBlazePhone() = fiveTimes("pip working") { run ->
+    @Test fun pipFollowsOnlyWhileArgusWorksOnArgusPhone() = fiveTimes("pip working") { run ->
         val chat = "chat-$run"
         assertTrue(PhonePip.working(PhonePolicy.Mode.AGENT, chat, setOf(chat)))
         assertTrue("waiting for the user counts", PhonePip.working(PhonePolicy.Mode.WAITING, chat, setOf(chat, "x")))
@@ -55,9 +55,9 @@ class PhoneUiFixesTest {
             assertFalse("opening ${BrandName.NAME}'s own screen is not leaving", PhonePip.enterOnLeaveHint(sdk, true, true))
             assertFalse(PhonePip.enterOnLeaveHint(sdk, false, false))
         }
-        assertTrue(PhonePip.ownScreen("com.blaze.assistant", "com.blaze.assistant"))
-        assertFalse(PhonePip.ownScreen("com.google.android.apps.maps", "com.blaze.assistant"))
-        assertFalse(PhonePip.ownScreen(null, "com.blaze.assistant"))
+        assertTrue(PhonePip.ownScreen("com.argus.assistant", "com.argus.assistant"))
+        assertFalse(PhonePip.ownScreen("com.google.android.apps.maps", "com.argus.assistant"))
+        assertFalse(PhonePip.ownScreen(null, "com.argus.assistant"))
     }
 
     @Test fun pipWindowShapeButtonsAndLabel() = fiveTimes("pip window") { run ->
@@ -76,7 +76,7 @@ class PhoneUiFixesTest {
 
     @Test fun stopReallyCancelsTheDrivingTurn() = fiveTimes("pip stop") { run ->
         val stopped = mutableListOf<String>(); val cancelled = mutableListOf<String>()
-        // A main-chat turn drives Blaze Phone.
+        // A main-chat turn drives Argus Phone.
         PhoneBrowser.own("chat-$run", null)
         assertTrue(PhoneBrowser.stopTask({ stopped += it; true }, { cancelled += it }))
         assertEquals(listOf("chat-$run"), stopped); assertTrue(cancelled.isEmpty())
@@ -110,13 +110,13 @@ class PhoneUiFixesTest {
         assertTrue(main.contains("override fun onPictureInPictureModeChanged"))
         // 0.46.1: or a Stage video's picture, when that is what followed the user out.
         // Account lock: nothing of ARGUS in PiP while the lock screen shows either.
-        assertTrue("only the live view in PiP", main.contains("if (pip.value && !locked.value && gate.value == null) { if (videoPip.value) com.blaze.assistant.ui.StageVideoPip() else com.blaze.assistant.browser.phone.PhonePipView() }"))
+        assertTrue("only the live view in PiP", main.contains("if (pip.value && !locked.value && gate.value == null) { if (videoPip.value) com.argus.assistant.ui.StageVideoPip() else com.argus.assistant.browser.phone.PhonePipView() }"))
         assertTrue("the chat is not drawn in PiP", main.contains("if (!pip.value) p.place(0, 0)"))
         assertTrue(main.contains("FLAG_ACTIVITY_NO_USER_ACTION"))
         val screen = src("browser/phone/PhoneBrowserActivity.kt")
         assertTrue(screen.contains("if (pip.value) PhonePipView()"))
         assertTrue(screen.contains("override fun onUserLeaveHint()"))
-        assertTrue(src("agent/Agent.kt").contains("com.blaze.assistant.browser.phone.PhoneBrowser.own(id, agentId)"))
+        assertTrue(src("agent/Agent.kt").contains("com.argus.assistant.browser.phone.PhoneBrowser.own(id, agentId)"))
     }
 
     // ------------------------------------------------------------------ fix 6: Take control → only Hand back

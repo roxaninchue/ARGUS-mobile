@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -7,7 +7,7 @@ import java.io.File
 /**
  * v0.45.0 reactions as feedback (R4), cheap: no model call.
  *
- * When a turn ends, [record] keeps what it taught Blaze, keyed by the global id of every bubble of its reply: the
+ * When a turn ends, [record] keeps what it taught Argus, keyed by the global id of every bubble of its reply: the
  * request, whether its phone plan was saved (TapLoop.Plans) and which tool groups the learned router counted.
  * A 👍 / 👎 on any of those bubbles then:
  *  - 👍  reinforces the saved plan (one more good use);

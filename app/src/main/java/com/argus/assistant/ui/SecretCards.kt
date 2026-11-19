@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,8 +45,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.SecretDesk
-import com.blaze.assistant.agent.SecretVault
+import com.argus.assistant.agent.SecretDesk
+import com.argus.assistant.agent.SecretVault
 
 
 /** The live Secure Form card: whatever request_secret is waiting on, then a short "Saved securely" line. */
@@ -66,16 +66,16 @@ fun SecretRequestCard() {
 
 @Composable
 private fun LockBadge() {
-    val c = LocalBlaze.current
-    Box(Modifier.size(28.dp).clip(BlazeShapes.pill).background(c.accent.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
+    val c = LocalArgus.current
+    Box(Modifier.size(28.dp).clip(ArgusShapes.pill).background(c.accent.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
         Icon(Icons.Rounded.Lock, contentDescription = null, tint = c.accent, modifier = Modifier.size(16.dp))
     }
 }
 
 @Composable
 fun SavedSecurelyLine(label: String, preview: String) {
-    val c = LocalBlaze.current
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(BlazeShapes.large, GlassIntensity.High).padding(horizontal = 14.dp, vertical = 10.dp),
+    val c = LocalArgus.current
+    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(ArgusShapes.large, GlassIntensity.High).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
@@ -93,17 +93,17 @@ fun SavedSecurelyLine(label: String, preview: String) {
 @Composable
 fun SecretForm(kind: SecretVault.Kind, label: String, service: String, hint: String, fields: List<SecretVault.FieldSpec>,
                onSave: (Map<String, String>) -> Unit, onCancel: () -> Unit, purpose: String = "") {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val clip = LocalClipboardManager.current
     val values = remember(fields) { mutableStateMapOf<String, String>() }
     val shown = remember(fields) { mutableStateMapOf<String, Boolean>() }
     val ready = SecretFormRules.ready(kind, fields, values)
-    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(BlazeShapes.large, GlassIntensity.High).padding(16.dp)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(ArgusShapes.large, GlassIntensity.High).padding(16.dp)
         .semantics { contentDescription = tr("Secure form: {0}", label) }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             LockBadge()
             Spacer(Modifier.width(10.dp))
-            Label(tr("Secure form") + if (service.isNotBlank()) " · ${com.blaze.assistant.agent.SecretUse.displayName(service).take(30)}" else "",
+            Label(tr("Secure form") + if (service.isNotBlank()) " · ${com.argus.assistant.agent.SecretUse.displayName(service).take(30)}" else "",
                 color = c.accent, size = 10.sp, maxLines = 1, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
@@ -118,7 +118,7 @@ fun SecretForm(kind: SecretVault.Kind, label: String, service: String, hint: Str
         fields.forEachIndexed { i, f ->
             val masked = f.masked && shown[f.name] != true
             Label(f.label, size = 10.sp, modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp, bottom = 4.dp))
-            Row(Modifier.fillMaxWidth().clip(BlazeShapes.pill).background(c.field, BlazeShapes.pill).hairline(c.fieldLine, BlazeShapes.pill).padding(start = 18.dp),
+            Row(Modifier.fillMaxWidth().clip(ArgusShapes.pill).background(c.field, ArgusShapes.pill).hairline(c.fieldLine, ArgusShapes.pill).padding(start = 18.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
                     if (values[f.name].isNullOrEmpty()) Text(placeholder(kind, f), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
@@ -131,7 +131,7 @@ fun SecretForm(kind: SecretVault.Kind, label: String, service: String, hint: Str
                         cursorBrush = SolidColor(c.accent), modifier = Modifier.fillMaxWidth())
                 }
                 // Paste: straight from the clipboard into the field (never through the chat), then the clipboard is cleared.
-                Box(Modifier.size(40.dp).clip(BlazeShapes.pill).clickable(onClickLabel = tr("Paste")) {
+                Box(Modifier.size(40.dp).clip(ArgusShapes.pill).clickable(onClickLabel = tr("Paste")) {
                     clip.getText()?.text?.trim()?.takeIf { it.isNotEmpty() }?.let { values[f.name] = it.replace("\n", ""); clip.setText(AnnotatedString("")) }
                 }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.ContentPaste, contentDescription = tr("Paste"), tint = c.sub, modifier = Modifier.size(18.dp))
@@ -175,8 +175,8 @@ fun SecretPasteCard() {
 
 @Composable
 fun SecretPasteHold(labels: List<String>, masked: String, onSave: () -> Unit, onSend: () -> Unit) {
-    val c = LocalBlaze.current
-    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(BlazeShapes.large, GlassIntensity.High).padding(16.dp)) {
+    val c = LocalArgus.current
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(ArgusShapes.large, GlassIntensity.High).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             LockBadge()
             Spacer(Modifier.width(10.dp))
@@ -185,7 +185,7 @@ fun SecretPasteHold(labels: List<String>, masked: String, onSave: () -> Unit, on
         }
         Text(tr("Save it securely instead? {0} gets a stand-in, never the value.", BrandName.NAME) + if (labels.isNotEmpty()) " (${labels.joinToString(", ")})" else "",
             modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
-        Text(masked.take(240), maxLines = 3, modifier = Modifier.padding(top = 8.dp).fillMaxWidth().clip(BlazeShapes.small).background(c.field).padding(10.dp),
+        Text(masked.take(240), maxLines = 3, modifier = Modifier.padding(top = 8.dp).fillMaxWidth().clip(ArgusShapes.small).background(c.field).padding(10.dp),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.Lock, contentDescription = null, tint = c.sub, modifier = Modifier.size(13.dp))

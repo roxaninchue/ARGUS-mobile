@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent.engines
+package com.argus.assistant.agent.engines
 
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.ToolRouter
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.ToolRouter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
@@ -20,8 +20,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.readableWidth
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.readableWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -35,9 +35,9 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import com.blaze.assistant.assist.BlazeInteractionService
-import com.blaze.assistant.voice.WakeModel
-import com.blaze.assistant.voice.WakeWordService
+import com.argus.assistant.assist.ArgusInteractionService
+import com.argus.assistant.voice.WakeModel
+import com.argus.assistant.voice.WakeWordService
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,11 +54,11 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.agent.ModelCatalog
-import com.blaze.assistant.agent.Providers
-import com.blaze.assistant.agent.Quota
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.agent.ModelCatalog
+import com.argus.assistant.agent.Providers
+import com.argus.assistant.agent.Quota
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,7 +73,7 @@ import androidx.compose.ui.draw.clip
 @Composable
 fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> Unit, onDismiss: () -> Unit,
                    onTab: (String) -> Unit = {}, onSearch: () -> Unit = {}) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val first = remember { settingsStart(start) }
     var page by remember { mutableStateOf(first) }
@@ -85,7 +85,7 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
         val p = page
         if (p == null || (first != null && p == first)) onDismiss()
         // P1-SH-06: the ARGUS tree (You page) has its own parents (the only tree since 16 Nov 2026).
-        else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)
+        else page = com.argus.assistant.ui.argus.settings.ArgusSettings.parentOf(p)
     }
     BackHandler { if (SettingsSearch.open.value) SettingsSearch.close() else back() }
     // BackRule's window interceptor sees the phone's Back before this BackHandler; it asks here first (backToChat).
@@ -95,7 +95,7 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
             when {
                 SettingsSearch.open.value -> { SettingsSearch.close(); true }
                 p == null || (first != null && p == first) -> false
-                else -> { page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p); true }
+                else -> { page = com.argus.assistant.ui.argus.settings.ArgusSettings.parentOf(p); true }
             }
         }
         onDispose { BackRule.settingsBack = null }
@@ -103,12 +103,12 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
     // A new page starts with the search closed and empty.
     LaunchedEffect(page) { SettingsSearch.close() }
     val current = settingsPages.firstOrNull { it.id == page }
-    val account by com.blaze.assistant.connect.BlazeAccount.view.collectAsState()
-    val ents by com.blaze.assistant.connect.Entitlements.snap.collectAsState()
+    val account by com.argus.assistant.connect.ArgusAccount.view.collectAsState()
+    val ents by com.argus.assistant.connect.Entitlements.snap.collectAsState()
     val scope = rememberCoroutineScope()
     val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty() }
 
-    com.blaze.assistant.ui.space.SpaceBackdrop {
+    com.argus.assistant.ui.space.SpaceBackdrop {
     // Landscape overhaul: clear of the camera cutout on its side, and rows stop at a readable width (centred) on a phone
     // on its side or a tablet; an upright phone is narrower than the cap, so it is unchanged.
     Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().cutoutSafe().readableWidth()) {
@@ -116,16 +116,16 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
             // P1-SH-06: the You page (04 §4.11). The 0.52.3 profile (SpaceProfileScreen) left with the look switch, 16 Nov 2026.
             val me = account.user
             val dark = AppTheme.darkNow()
-            androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides com.blaze.assistant.ui.argus.ArgusColors.of(dark)) {
+            androidx.compose.runtime.CompositionLocalProvider(com.argus.assistant.ui.argus.LocalArgusColors provides com.argus.assistant.ui.argus.ArgusColors.of(dark)) {
                 // 16 Nov 2026: a magnifier in the top bar that slides open to the left (no floating pill).
                 SearchTitle("You", onBack = { onDismiss() }, placeholder = "Search settings", modifier = Modifier.padding(vertical = 2.dp), right = { ThemeSwitch() })
-                com.blaze.assistant.ui.argus.settings.YouPage(
-                    name = com.blaze.assistant.ui.space.trBrand(com.blaze.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName)),
-                    email = com.blaze.assistant.i18n.tr(com.blaze.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null)),
+                com.argus.assistant.ui.argus.settings.YouPage(
+                    name = com.argus.assistant.ui.space.trBrand(com.argus.assistant.ui.space.SpaceProfile.title(me?.name, Settings.userName)),
+                    email = com.argus.assistant.i18n.tr(com.argus.assistant.ui.space.SpaceProfile.subtitle(me?.email, me != null)),
                     signedIn = me != null,
-                    planLine = ents?.let { com.blaze.assistant.connect.Billing.planName(it.plan) }.orEmpty(),
+                    planLine = ents?.let { com.argus.assistant.connect.Billing.planName(it.plan) }.orEmpty(),
                     onPage = { page = it },
-                    onSignOut = { scope.launch { com.blaze.assistant.connect.BlazeAccount.signOut() } },
+                    onSignOut = { scope.launch { com.argus.assistant.connect.ArgusAccount.signOut() } },
                     modifier = Modifier.weight(1f),
                     version = version,
                     query = SettingsSearch.query.value,
@@ -139,8 +139,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                 right = { ThemeSwitch() })
             Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
                 when (page) {
-                    com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE -> com.blaze.assistant.ui.space.SpaceSystemPage { page = it }
-                    com.blaze.assistant.ui.space.SpaceProfile.FEEDBACK_PAGE -> com.blaze.assistant.ui.space.SpaceFeedbackPage(version)
+                    com.argus.assistant.ui.space.SpaceProfile.SYSTEM_PAGE -> com.argus.assistant.ui.space.SpaceSystemPage { page = it }
+                    com.argus.assistant.ui.space.SpaceProfile.FEEDBACK_PAGE -> com.argus.assistant.ui.space.SpaceFeedbackPage(version)
                     "permissions" -> { PermissionsPage { page = it }; ControlPage(a11yOn, onOpenAccessibility) }
                     "updates" -> UpdatesPage()
                     "about" -> AboutPage()
@@ -169,22 +169,22 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "privacy" -> {
                         SecuritySection(); Spacer(Modifier.height(18.dp))
                         // P2-SF-04: Approvals & permissions (standing allows, autonomy, send scope, SpendGuard)
-                        androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
-                            com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
-                            com.blaze.assistant.ui.argus.kit.SettingsGroup(listOf(com.blaze.assistant.ui.argus.kit.SettingsItem("shield-check",
+                        androidx.compose.runtime.CompositionLocalProvider(com.argus.assistant.ui.argus.LocalArgusColors provides
+                            com.argus.assistant.ui.argus.ArgusColors.of(LocalArgus.current.mono.dark)) {
+                            com.argus.assistant.ui.argus.kit.SettingsGroup(listOf(com.argus.assistant.ui.argus.kit.SettingsItem("shield-check",
                                 "Approvals & permissions", onClick = { page = "policy" }),
                                 // P2-SF-05: Activity (audit log)
-                                com.blaze.assistant.ui.argus.kit.SettingsItem("list-checks", "Activity", onClick = { page = "activity" })))
+                                com.argus.assistant.ui.argus.kit.SettingsItem("list-checks", "Activity", onClick = { page = "activity" })))
                         }
                         Spacer(Modifier.height(18.dp)); BankModePage()
                     }
-                    "policy" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
-                        com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
-                        com.blaze.assistant.ui.argus.settings.PermissionsLive()
+                    "policy" -> androidx.compose.runtime.CompositionLocalProvider(com.argus.assistant.ui.argus.LocalArgusColors provides
+                        com.argus.assistant.ui.argus.ArgusColors.of(LocalArgus.current.mono.dark)) {
+                        com.argus.assistant.ui.argus.settings.PermissionsLive()
                     }
-                    "activity" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
-                        com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
-                        com.blaze.assistant.ui.argus.settings.ActivityLive()
+                    "activity" -> androidx.compose.runtime.CompositionLocalProvider(com.argus.assistant.ui.argus.LocalArgusColors provides
+                        com.argus.assistant.ui.argus.ArgusColors.of(LocalArgus.current.mono.dark)) {
+                        com.argus.assistant.ui.argus.settings.ActivityLive()
                     }
                     "proactive" -> ProactivePage()
                     "dashboard" -> DashboardPage()
@@ -192,9 +192,9 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "backup" -> {
                         BackupSection()
                         Spacer(Modifier.height(22.dp))
-                        androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
-                            com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
-                            com.blaze.assistant.ui.argus.settings.ATeamBackupLive()
+                        androidx.compose.runtime.CompositionLocalProvider(com.argus.assistant.ui.argus.LocalArgusColors provides
+                            com.argus.assistant.ui.argus.ArgusColors.of(LocalArgus.current.mono.dark)) {
+                            com.argus.assistant.ui.argus.settings.ATeamBackupLive()
                         }
                     }
                     "learn" -> LearnPage()
@@ -205,7 +205,7 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "logins" -> SavedLoginsPage()
                     "secrets" -> SavedSecretsPage()
                     "phonebrowser" -> PhoneBrowserSettingsPage()
-                    "watches" -> com.blaze.assistant.phone.MagicHandWatchesPage()
+                    "watches" -> com.argus.assistant.phone.MagicHandWatchesPage()
                 }
                 Spacer(Modifier.height(30.dp))
             }
@@ -216,19 +216,19 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
 
 @Composable
 private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var control by remember { mutableStateOf(Settings.phoneControl) }
     Spacer(Modifier.height(8.dp))
     ToggleRow("Phone control", "Open apps, tap, type and scroll for you", control) { control = !control; Settings.phoneControl = control }
-    // v0.24.5: the pointer is always shown while Blaze controls apps (no switch; the old show_pointer pref is ignored).
+    // v0.24.5: the pointer is always shown while Argus controls apps (no switch; the old show_pointer pref is ignored).
     Text(tr("{0}'s mascot pointer is always on screen while it controls your phone. It never blocks your taps or {1}'s. Tap the small Stop chip at the bottom-left to stop.", BrandName.NAME, BrandName.NAME),
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.weak))
     Spacer(Modifier.height(12.dp))
     Row(Modifier.fillMaxWidth().hairline(if (a11yOn) c.hair else c.accent).clickable(onClick = onOpenAccessibility).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(6.dp).background(if (a11yOn) c.accent else c.weak, BlazeShapes.pill))
+        Box(Modifier.size(6.dp).background(if (a11yOn) c.accent else c.weak, ArgusShapes.pill))
         Spacer(Modifier.width(10.dp))
-        Text(if (a11yOn) "Accessibility access is on" else "Turn on \u201cBlaze phone control\u201d in Accessibility",
+        Text(if (a11yOn) "Accessibility access is on" else "Turn on \u201cArgus phone control\u201d in Accessibility",
             modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
         Label(tr("Open →"), color = c.accent)
     }
@@ -240,7 +240,7 @@ private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
 
 @Composable
 internal fun Field(label: String, value: String, onChange: (String) -> Unit, placeholder: String, secret: Boolean = false) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     // v0.45.7: every password / passphrase field gets a show/hide eye (sign-in, create account, reset, cloud sync).
     var reveal by remember { mutableStateOf(false) }
     Label(label, modifier = Modifier.padding(bottom = 8.dp))
@@ -264,7 +264,7 @@ internal fun Field(label: String, value: String, onChange: (String) -> Unit, pla
 /** v0.45.7: the eye on a secret field: 40 dp target, "Show password" / "Hide password" for TalkBack. */
 @Composable
 internal fun RevealEye(reveal: Boolean, onToggle: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.size(40.dp).clip(androidx.compose.foundation.shape.CircleShape).clickable(onClickLabel = SecretField.label(reveal), onClick = onToggle),
         contentAlignment = Alignment.Center) {
         androidx.compose.material3.Icon(if (reveal) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
@@ -278,19 +278,19 @@ internal fun RevealEye(reveal: Boolean, onToggle: () -> Unit) {
  */
 @Composable
 private fun LanguagePage() {
-    val c = LocalBlaze.current.mono
-    val sel = com.blaze.assistant.i18n.AppLang.code.value
-    Text(com.blaze.assistant.i18n.tr("The app shows in this language. ${BrandName.NAME} always replies in the language you write in."),
+    val c = LocalArgus.current.mono
+    val sel = com.argus.assistant.i18n.AppLang.code.value
+    Text(com.argus.assistant.i18n.tr("The app shows in this language. ${BrandName.NAME} always replies in the language you write in."),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub), modifier = Modifier.padding(vertical = 8.dp))
-    com.blaze.assistant.i18n.AppLang.PICKABLE.forEach { o ->
+    com.argus.assistant.i18n.AppLang.PICKABLE.forEach { o ->
         val on = o.code == sel
         Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).clickable(onClickLabel = o.name) {
-                Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, o.code); com.blaze.assistant.i18n.AppLang.apply(o.code); FontPick.refresh()
+                Settings.setStr(com.argus.assistant.i18n.AppLang.PREF, o.code); com.argus.assistant.i18n.AppLang.apply(o.code); FontPick.refresh()
             }.padding(vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
             // The name in its own script, drawn by the system font when Inter lacks its letters.
             Text(o.name, modifier = Modifier.weight(1f),
                 style = TextStyle(fontFamily = Type.sansFor(o.name), fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, fontSize = 17.sp, color = c.ink))
-            if (on) androidx.compose.material3.Icon(Icons.Rounded.Check, contentDescription = com.blaze.assistant.i18n.tr("Selected"), tint = c.accent, modifier = Modifier.size(20.dp))
+            if (on) androidx.compose.material3.Icon(Icons.Rounded.Check, contentDescription = com.argus.assistant.i18n.tr("Selected"), tint = c.accent, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -298,7 +298,7 @@ private fun LanguagePage() {
 /** Provider dropdown: the built-in services plus a custom OpenAI-compatible one. */
 @Composable
 private fun ProviderPicker(pid: String, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var open by remember { mutableStateOf(false) }
     Label(tr("AI provider"), modifier = Modifier.padding(bottom = 8.dp))
     Row(
@@ -316,12 +316,12 @@ private fun ProviderPicker(pid: String, onPick: (String) -> Unit) {
                 val on = p.id == pid
                 val hasKey = Settings.keyFor(p.id).isNotBlank()
                 Row(
-                    Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (on) PageGlass.fill(c, 0.10f) else androidx.compose.ui.graphics.Color.Transparent)
+                    Modifier.fillMaxWidth().clip(ArgusShapes.small).background(if (on) PageGlass.fill(c, 0.10f) else androidx.compose.ui.graphics.Color.Transparent)
                         .clickable { onPick(p.id); open = false }
                         .hairlineBottom(c.hair).padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(Modifier.size(6.dp).background(if (on) c.accent else c.paper, BlazeShapes.pill))
+                    Box(Modifier.size(6.dp).background(if (on) c.accent else c.paper, ArgusShapes.pill))
                     Spacer(Modifier.width(10.dp))
                     Text(p.name, modifier = Modifier.weight(1f),
                         style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = c.ink))
@@ -336,7 +336,7 @@ private fun ProviderPicker(pid: String, onPick: (String) -> Unit) {
 /** Plan & quota: balance, rate limits and plan as the provider reports them to this key. */
 @Composable
 private fun QuotaPanel(key: String, pid: String, model: String, base: String) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val scope = rememberCoroutineScope()
     val uri = LocalUriHandler.current
     var report by remember { mutableStateOf<Quota.Report?>(null) }
@@ -392,24 +392,24 @@ private fun QuotaPanel(key: String, pid: String, model: String, base: String) {
 @Composable
 internal fun ToggleRow(title: String, sub: String, on: Boolean, icon: androidx.compose.ui.graphics.vector.ImageVector? = MenuIcons.forSetting(title).vector(),
                        onToggle: () -> Unit) {
-    val look = com.blaze.assistant.ui.space.spaceLook()
-    com.blaze.assistant.ui.space.SpaceToggleRow(title, on, Modifier.hairlineBottom(look.hair), sub = sub, icon = icon,
+    val look = com.argus.assistant.ui.space.spaceLook()
+    com.argus.assistant.ui.space.SpaceToggleRow(title, on, Modifier.hairlineBottom(look.hair), sub = sub, icon = icon,
         padStart = 0.dp, padEnd = 0.dp, onToggle = onToggle)
 }
 
 @Composable
 private fun VoiceSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     var speak by remember { mutableStateOf(Settings.speakReplies) }
     var wake by remember { mutableStateOf(Settings.wakeWord) }
-    var isDefault by remember { mutableStateOf(BlazeInteractionService.isDefault(ctx)) }
+    var isDefault by remember { mutableStateOf(ArgusInteractionService.isDefault(ctx)) }
     val dl by WakeModel.progress.collectAsState()
     var modelReady by remember { mutableStateOf(WakeModel.ready(ctx)) }
     var err by remember { mutableStateOf("") }
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        while (true) { isDefault = BlazeInteractionService.isDefault(ctx); kotlinx.coroutines.delay(1500) }
+        while (true) { isDefault = ArgusInteractionService.isDefault(ctx); kotlinx.coroutines.delay(1500) }
     }
     val micPerm = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
@@ -447,10 +447,10 @@ private fun VoiceSection() {
     Spacer(Modifier.height(16.dp))
     Row(
         Modifier.fillMaxWidth().hairline(if (isDefault) c.hair else c.accent)
-            .clickable { BlazeInteractionService.openPicker(ctx) }.padding(16.dp),
+            .clickable { ArgusInteractionService.openPicker(ctx) }.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(6.dp).background(if (isDefault) c.accent else c.weak, BlazeShapes.pill))
+        Box(Modifier.size(6.dp).background(if (isDefault) c.accent else c.weak, ArgusShapes.pill))
         Spacer(Modifier.width(10.dp))
         Text(
             if (isDefault) "${BrandName.NAME} is your default assistant" else "Make ${BrandName.NAME} your default assistant",
@@ -469,7 +469,7 @@ private fun VoiceSection() {
 
 @Composable
 private fun OrbSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var on by remember { mutableStateOf(Overlay.orbShowing) }
     var allowed by remember { mutableStateOf(Overlay.canDrawOverApps(ctx)) }
@@ -493,25 +493,25 @@ private fun OrbSection() {
 
 @Composable
 private fun PersonaSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var pid by remember { mutableStateOf(Settings.personaId) }
     var custom by remember { mutableStateOf(Settings.customPersona) }
     var stream by remember { mutableStateOf(Settings.streamReplies) }
     Spacer(Modifier.height(22.dp))
     Label(tr("Personality"), modifier = Modifier.padding(bottom = 8.dp))
     Column(Modifier.fillMaxWidth().hairline(c.hair)) {
-        com.blaze.assistant.agent.Personas.all.forEach { p ->
-            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (p.id == pid) PageGlass.fill(c, 0.10f) else androidx.compose.ui.graphics.Color.Transparent)
+        com.argus.assistant.agent.Personas.all.forEach { p ->
+            Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).background(if (p.id == pid) PageGlass.fill(c, 0.10f) else androidx.compose.ui.graphics.Color.Transparent)
                 .clickable { pid = p.id; Settings.personaId = p.id }.padding(horizontal = 14.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(6.dp).background(if (p.id == pid) c.accent else Color.Transparent, BlazeShapes.pill))
+                Box(Modifier.size(6.dp).background(if (p.id == pid) c.accent else Color.Transparent, ArgusShapes.pill))
                 Spacer(Modifier.width(10.dp))
                 Text(p.name, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Display, fontSize = 15.sp, color = c.ink))
                 Text(p.blurb, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
             }
         }
     }
-    if (pid == com.blaze.assistant.agent.Personas.CUSTOM) {
+    if (pid == com.argus.assistant.agent.Personas.CUSTOM) {
         Spacer(Modifier.height(10.dp))
         Field("Describe ${BrandName.NAME}'s personality", custom, { custom = it; Settings.customPersona = it },
             "e.g. Talk like a calm big brother, mix in some Nyanja, keep it short")
@@ -519,18 +519,18 @@ private fun PersonaSection() {
     Spacer(Modifier.height(6.dp))
     var dots by remember { mutableStateOf(Settings.particles) }
     ToggleRow("Background particles", "Drifting dots. Turn off for the smoothest, lightest feel", dots) { dots = !dots; Settings.particles = dots }
-    // 0.50.0: Blaze's edge particles while it controls the screen (ui/ScreenGlow)
+    // 0.50.0: Argus's edge particles while it controls the screen (ui/ScreenGlow)
     var glowOn by remember { mutableStateOf(Settings.bool("screen_glow", true)) }
     ToggleRow("Glow while ${BrandName.NAME} uses the screen", "Particles round the screen edges while ${BrandName.NAME} taps and types for you", glowOn) { glowOn = !glowOn; Settings.setBool("screen_glow", glowOn) }
     ToggleRow("Stream replies", "Words appear as ${BrandName.NAME} writes them", stream) { stream = !stream; Settings.streamReplies = stream }
-    // 0.51.0 BlazeQuery (Halo Persona Studio removed: Halo is part of Blaze now)
+    // 0.51.0 ArgusQuery (Halo Persona Studio removed: Halo is part of Argus now)
     var bqOn by remember { mutableStateOf(Settings.bool("blazequery", true)) }
-    ToggleRow("BlazeQuery: fresh facts for every reply", "Checks trusted sources (official docs, registries, release notes; never Wikipedia) as you send, and gives ${BrandName.NAME} a short summary. Nothing is sent from private chats", bqOn) { bqOn = !bqOn; Settings.setBool("blazequery", bqOn) }
+    ToggleRow("ArgusQuery: fresh facts for every reply", "Checks trusted sources (official docs, registries, release notes; never Wikipedia) as you send, and gives ${BrandName.NAME} a short summary. Nothing is sent from private chats", bqOn) { bqOn = !bqOn; Settings.setBool("blazequery", bqOn) }
 }
 
 @Composable
 private fun BackupSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var msg by remember { mutableStateOf("") }
     val exporter = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -546,7 +546,7 @@ private fun BackupSection() {
         uri ?: return@rememberLauncherForActivityResult
         msg = try {
             val n = Settings.importJson(ctx.contentResolver.openInputStream(uri)!!.bufferedReader().readText())
-            com.blaze.assistant.agent.Memory.init(ctx, mergeLegacy = true)
+            com.argus.assistant.agent.Memory.init(ctx, mergeLegacy = true)
             "Restored $n settings. Close and reopen Settings to see them."
         } catch (e: Exception) { "That file isn't a ${BrandName.NAME} backup." }
     }
@@ -569,7 +569,7 @@ private fun BackupSection() {
 
 @Composable
 private fun SkillsSection() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var tick by remember { mutableStateOf(0) }
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -578,8 +578,8 @@ private fun SkillsSection() {
     Label(tr("Skills"), modifier = Modifier.padding(bottom = 8.dp))
     val subs = mapOf("Contacts" to "Find people by name", "Messages" to "Read and send texts (asks before sending)",
         "Calls" to "Recent calls, place calls (asks first)", "Calendar" to "Read and add events")
-    com.blaze.assistant.phone.Skills.groups.forEach { (name, perms) ->
-        val on = remember(tick) { com.blaze.assistant.phone.Skills.granted(ctx, perms) }
+    com.argus.assistant.phone.Skills.groups.forEach { (name, perms) ->
+        val on = remember(tick) { com.argus.assistant.phone.Skills.granted(ctx, perms) }
         ToggleRow(name, subs[name] ?: "", on) {
             if (!on) launcher.launch(perms)
             else ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -592,11 +592,11 @@ private fun SkillsSection() {
 
 @Composable
 private fun UsageSection() {
-    val c = LocalBlaze.current.mono
-    val v by com.blaze.assistant.agent.Usage.version.collectAsState()
-    val today = remember(v) { com.blaze.assistant.agent.Usage.today() }
-    val month = remember(v) { com.blaze.assistant.agent.Usage.month() }
-    fun fmt(t: com.blaze.assistant.agent.Usage.Totals): String {
+    val c = LocalArgus.current.mono
+    val v by com.argus.assistant.agent.Usage.version.collectAsState()
+    val today = remember(v) { com.argus.assistant.agent.Usage.today() }
+    val month = remember(v) { com.argus.assistant.agent.Usage.month() }
+    fun fmt(t: com.argus.assistant.agent.Usage.Totals): String {
         val tok = t.input + t.output
         val tk = if (tok >= 1_000_000) "%.1fM".format(tok / 1e6) else if (tok >= 1000) "%.1fk".format(tok / 1e3) else "$tok"
         val cost = if (t.priced) (if (t.cost < 0.01 && t.cost > 0) "<$0.01" else "$%.2f".format(t.cost)) else "price unknown"
@@ -605,7 +605,7 @@ private fun UsageSection() {
     Spacer(Modifier.height(22.dp))
     Row(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
         Label(tr("Usage"), modifier = Modifier.weight(1f))
-        ActionText("Reset", color = c.sub, size = 10.sp, modifier = Modifier.clickable { com.blaze.assistant.agent.Usage.reset() })
+        ActionText("Reset", color = c.sub, size = 10.sp, modifier = Modifier.clickable { com.argus.assistant.agent.Usage.reset() })
     }
     Column(Modifier.fillMaxWidth().hairline(c.hair)) {
         listOf("Today" to today, "This month" to month).forEach { (k, t) ->
@@ -630,12 +630,12 @@ private fun SecuritySection() {
 }
 
 
-/** More keys for the same provider: when one runs out, Blaze moves to the next with the same model. */
+/** More keys for the same provider: when one runs out, Argus moves to the next with the same model. */
 @Composable
 internal fun ExtraKeys(pid: String) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var tick by remember { mutableStateOf(0) }
-    val extras = remember(pid, tick) { com.blaze.assistant.agent.KeyRing.extras(pid) }
+    val extras = remember(pid, tick) { com.argus.assistant.agent.KeyRing.extras(pid) }
     var adding by remember(pid) { mutableStateOf("") }
     Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         extras.forEachIndexed { i, k ->
@@ -643,12 +643,12 @@ internal fun ExtraKeys(pid: String) {
                 Text(tr("Key {0}  \u2022\u2022\u2022\u2022{1}", i + 2, k.takeLast(4)), modifier = Modifier.weight(1f),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.ink))
                 ActionText("Remove", color = c.accent, size = 9.sp, modifier = Modifier.clickable {
-                    com.blaze.assistant.agent.KeyRing.removeExtra(pid, k); tick++ }.padding(6.dp))
+                    com.argus.assistant.agent.KeyRing.removeExtra(pid, k); tick++ }.padding(6.dp))
             }
         }
         Field("Add another key (optional)", adding, { adding = it }, "Used when the first key runs out", secret = true)
         if (adding.isNotBlank()) ActionText("Save this key", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
-            com.blaze.assistant.agent.KeyRing.add(pid, adding); com.blaze.assistant.agent.KeyRing.clear(pid); adding = ""; tick++
+            com.argus.assistant.agent.KeyRing.add(pid, adding); com.argus.assistant.agent.KeyRing.clear(pid); adding = ""; tick++
         }.padding(vertical = 8.dp))
     }
 }

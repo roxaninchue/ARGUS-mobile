@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.34.0 Blaze Camera: stacking, HDR fusion, document corners, pro maths and reading prices / sums / barcodes. */
+/** v0.34.0 Argus Camera: stacking, HDR fusion, document corners, pro maths and reading prices / sums / barcodes. */
 class CameraSmartTest {
     private fun grey(v: Int) = (0xFF shl 24) or (v shl 16) or (v shl 8) or v
 

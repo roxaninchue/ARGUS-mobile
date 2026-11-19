@@ -1,16 +1,16 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 import android.content.Context
 import android.database.sqlite.SQLiteCursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteProgram
-import com.blaze.assistant.agent.ChatNav
-import com.blaze.assistant.agent.ChatStore
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.agent.ChatNav
+import com.argus.assistant.agent.ChatStore
+import com.argus.assistant.store.Sql
 
 /**
  * P1-SH-01: [Sql] over team.db's own [TeamDb] connection (framework SQLite), so the team stores share the helper that
- * created and migrated the file. Not [com.blaze.assistant.store.AndroidSql]: that is the bundled SQLite, and two SQLite
+ * created and migrated the file. Not [com.argus.assistant.store.AndroidSql]: that is the bundled SQLite, and two SQLite
  * libraries holding locks on one WAL file in one process can corrupt it. Arguments are bound with their real types
  * (a cursor factory binds the query's), never as strings.
  */
@@ -60,7 +60,7 @@ class TeamSql(private val db: SQLiteDatabase) : Sql {
 
 /**
  * P1-SH-01: the app's one team graph (store + threads over team.db), opened on first use off the main thread. The Team
- * screen reads it. Since 2026-11-17 a LOCAL bot's turns run on [com.blaze.assistant.agent.engines.AgentSessionDriver]
+ * screen reads it. Since 2026-11-17 a LOCAL bot's turns run on [com.argus.assistant.agent.engines.AgentSessionDriver]
  * (the bot's thread screen sends them); other engines have none yet.
  */
 object TeamGraph {
@@ -78,7 +78,7 @@ object TeamGraph {
             // 2026-11-17 (owner: bots open their own chat): every on-phone bot runs on the phone's agent loop. The Manager's
             // thread is the main Chat, so BotThreads never sends for it here.
             Graph(sql, store, BotThreads(sql, store, ChatStore.argus { ChatNav.MAIN }, engineFor = { b ->
-                if (b.engine.kind == com.blaze.assistant.team.EngineKind.LOCAL) com.blaze.assistant.agent.engines.AgentSessionDriver.engine else null }))
+                if (b.engine.kind == com.argus.assistant.team.EngineKind.LOCAL) com.argus.assistant.agent.engines.AgentSessionDriver.engine else null }))
         }.also { g = it }
     }
 }

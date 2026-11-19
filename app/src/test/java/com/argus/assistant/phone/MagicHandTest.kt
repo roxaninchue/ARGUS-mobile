@@ -1,13 +1,13 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.phone.MagicHandLogic.Action
-import com.blaze.assistant.phone.MagicHandLogic.Gesture
-import com.blaze.assistant.phone.MagicHandLogic.Intent
-import com.blaze.assistant.phone.MagicHandLogic.Kind
-import com.blaze.assistant.phone.MagicHandLogic.Mode
-import com.blaze.assistant.phone.MagicHandLogic.P
+import com.argus.assistant.BrandName
+import com.argus.assistant.phone.MagicHandLogic.Action
+import com.argus.assistant.phone.MagicHandLogic.Gesture
+import com.argus.assistant.phone.MagicHandLogic.Intent
+import com.argus.assistant.phone.MagicHandLogic.Kind
+import com.argus.assistant.phone.MagicHandLogic.Mode
+import com.argus.assistant.phone.MagicHandLogic.P
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -134,9 +134,9 @@ class MagicHandTest {
 
     // ---------- teach → workflow ----------
     @Test fun teachRecorderFoldsAndSkipsOwnApp() {
-        val r = MagicHandTeach.Recorder("com.blaze.assistant")
+        val r = MagicHandTeach.Recorder("com.argus.assistant")
         r.window("com.whatsapp", "WhatsApp", "Chats")
-        r.window("com.blaze.assistant", "${BrandName.NAME}", "Magic Hand")   // ignored
+        r.window("com.argus.assistant", "${BrandName.NAME}", "Magic Hand")   // ignored
         r.click("com.whatsapp", "WhatsApp", "New chat", "com.whatsapp:id/fab", "android.widget.ImageButton")
         r.window("com.whatsapp", "WhatsApp", "Select contact")
         r.window("com.whatsapp", "WhatsApp", "Contacts")         // replaces the previous screen step
@@ -153,7 +153,7 @@ class MagicHandTest {
     }
 
     @Test fun teachToWorkflow() {
-        val r = MagicHandTeach.Recorder("com.blaze.assistant")
+        val r = MagicHandTeach.Recorder("com.argus.assistant")
         r.window("com.android.settings", "Settings", "Settings")
         r.click("com.android.settings", "Settings", "Connections", "com.android.settings:id/title", "android.widget.TextView")
         r.click("com.android.settings", "Settings", "Wi-Fi", "", "android.widget.Switch")
@@ -172,7 +172,7 @@ class MagicHandTest {
         val d2 = MagicHandTeach.toWorkflow(r.steps, "", "")
         assertEquals("Taught: Settings", d2.name); assertTrue(d2.trigger.isNotBlank())
         // And the saved file says tested: false (v0.24.3 workflow format).
-        val md = com.blaze.assistant.agent.SkillPacks.workflowMd(w.name, w.trigger, w.steps, w.checks, w.tags, w.tested)
+        val md = com.argus.assistant.agent.SkillPacks.workflowMd(w.name, w.trigger, w.steps, w.checks, w.tags, w.tested)
         assertTrue(md.contains("tested: false")); assertTrue(md.contains("workflow: true")); assertTrue(md.contains("## Steps\n1. Open Settings"))
     }
 

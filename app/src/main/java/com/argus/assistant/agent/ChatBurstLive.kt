@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.voice.Voice
 
 /**
  * Android glue for [ChatBurst] (2026-11-13 double-text fix). Agent.send() calls [follow] for a message that arrives while
@@ -58,7 +58,7 @@ object ChatBurstLive {
                 s.msgs = s.msgs.filterNot { it.id in gone }
                 s.resume = null
                 s.persist()
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ChatBurst: tidy", e) }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("ChatBurst: tidy", e) }
             scope.launch { s.drain() }
         }
     }

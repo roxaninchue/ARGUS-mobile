@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -12,16 +12,16 @@ class TabDietTest {
         assertEquals(setOf(3), TabDiet.keepLive(ids, 3, uiVisible = true, attached = setOf(3), agentTabId = null, agentIdleMs = Long.MAX_VALUE))
     }
 
-    @Test fun hiddenBrowserWithIdleBlazeKeepsNothing() {
+    @Test fun hiddenBrowserWithIdleArgusKeepsNothing() {
         assertEquals(emptySet<Int>(), TabDiet.keepLive(ids, 3, uiVisible = false, attached = emptySet(), agentTabId = 5, agentIdleMs = TabDiet.AGENT_KEEP_MS + 1))
     }
 
-    @Test fun blazesTabStaysAwakeWhileItWorks() {
+    @Test fun argussTabStaysAwakeWhileItWorks() {
         assertEquals(setOf(3, 5), TabDiet.keepLive(ids, 3, uiVisible = true, attached = setOf(3), agentTabId = 5, agentIdleMs = 5_000))
         assertEquals(setOf(5), TabDiet.keepLive(ids, 5, uiVisible = false, attached = emptySet(), agentTabId = 5, agentIdleMs = 60_000))
     }
 
-    @Test fun memoryPressureShortensBlazesWindow() {
+    @Test fun memoryPressureShortensArgussWindow() {
         assertEquals(emptySet<Int>(), TabDiet.keepLive(ids, 5, uiVisible = false, attached = emptySet(), agentTabId = 5, agentIdleMs = 60_000, pressed = true))
         assertEquals(setOf(5), TabDiet.keepLive(ids, 5, uiVisible = false, attached = emptySet(), agentTabId = 5, agentIdleMs = 10_000, pressed = true))
     }

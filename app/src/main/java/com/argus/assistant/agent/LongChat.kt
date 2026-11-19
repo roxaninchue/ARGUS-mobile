@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
@@ -12,7 +12,7 @@ import java.io.File
 import java.security.MessageDigest
 
 /**
- * Long-chat engine (v0.15.0), a port of Blaze Desktop's internal/longchat: Blaze never re-reads
+ * Long-chat engine (v0.15.0), a port of Blaze Desktop's internal/longchat: Argus never re-reads
  * the whole chat.
  *
  *  - Rolling summary: when the un-summarised part of a chat is over [budget] (12k tokens on free
@@ -48,7 +48,7 @@ object LongChat {
     val keepWhole = setOf("use_skill", "skill_file", "read_artifact", "read_turn", "search_chat", "update_brief", "ask_user")
 
     /**
-     * 0.45.29: true when [name]'s result is never set aside. Browser pages (browser_* and the Blaze Phone browser's phone_*)
+     * 0.45.29: true when [name]'s result is never set aside. Browser pages (browser_* and the Argus Phone browser's phone_*)
      * were cut to their first 40 and last 20 lines, so the model never saw most of a page; their readers now fit a budget
      * themselves (BrowserRead.BUDGET) and stay whole, here and in Cloud runs (which read the same history).
      */
@@ -175,7 +175,7 @@ object LongChat {
     // ---------------- artifacts ----------------
 
     @Volatile var artifactDirOverride: File? = null
-    private fun artifactDir(): File = artifactDirOverride ?: File(com.blaze.assistant.terminal.Terminal.home(), ".blaze/artifacts")
+    private fun artifactDir(): File = artifactDirOverride ?: File(com.argus.assistant.terminal.Terminal.home(), ".blaze/artifacts")
     private val idRe = Regex("^[a-f0-9]{12}$")
 
     /** Saves a big tool result and returns what the model sees instead. Small results come back unchanged. */

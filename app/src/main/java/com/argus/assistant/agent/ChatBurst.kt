@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 2026-11-13 double-text fix. Owner (13 Nov 2026): "EVERY message the user sends must be answered, including new

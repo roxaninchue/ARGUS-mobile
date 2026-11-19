@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.46.4 (Rocky 19:41: "what's up??" ran the web lookup lane and came back as "The page lists 'what's up?' among the
@@ -30,7 +30,7 @@ object SmallTalk {
     fun chitChat(text: String): Boolean = classify(text) == Kind.CHAT
 
     private val ackRx = Regex("""(?i)^(?:ok(?:ay|ie)?|k+|kk|alright|aight|sure|yeah|yep|yup|yes|no|nope|nah|go ahead|do it|please)\b[\s!?.,]*$""")
-    /** A bare yes / no / ok: after a question from Blaze it answers that question (part of a task), so it keeps the full lane. */
+    /** A bare yes / no / ok: after a question from Argus it answers that question (part of a task), so it keeps the full lane. */
     fun ack(text: String): Boolean = ackRx.matches(text.trim())
 
     /** The rule tier alone (no lookup check; LookupLane.isLookup calls this). */

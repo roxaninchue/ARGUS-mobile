@@ -1,7 +1,7 @@
-package com.blaze.assistant.appstore
+package com.argus.assistant.appstore
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import java.io.File
 
 /**
@@ -13,7 +13,7 @@ import java.io.File
  *   installed-signer check for updates → VirusTotal hash lookup → Android's PackageInstaller session (the user confirms
  *   in Android's own dialog, every time) → the session's status → package manager check.
  *
- *  - No silent installs, no Shizuku, ADB or root. Blaze Phone's sandbox and the release page are not install targets.
+ *  - No silent installs, no Shizuku, ADB or root. Argus Phone's sandbox and the release page are not install targets.
  *  - A SHA-256 mismatch, a wrong package or a wrong signer stops before the scan and before any install; the file is
  *    deleted. An update whose signer differs from the installed app's signer stops the same way.
  *  - VirusTotal runs before every install. malicious > 0 blocks. No key / unknown file / lookup failed / suspicious =
@@ -93,7 +93,7 @@ class InstallPipeline(private val env: Env) {
         suspend fun confirmRisk(title: String, detail: String): Boolean
         /** PackageManager.canRequestPackageInstalls(). */
         fun canInstall(): Boolean
-        /** Opens Settings › Install unknown apps for Blaze (ACTION_MANAGE_UNKNOWN_APP_SOURCES). */
+        /** Opens Settings › Install unknown apps for Argus (ACTION_MANAGE_UNKNOWN_APP_SOURCES). */
         fun requestInstallPermission()
         /** True once [canInstall] turns true within [timeoutMs] (the user came back from Settings). */
         suspend fun awaitInstallPermission(timeoutMs: Long): Boolean
@@ -128,7 +128,7 @@ class InstallPipeline(private val env: Env) {
         } catch (e: Exception) { false }
         if (!go) return stop(StoreStep.CANCELLED, "Not installed: you said no.")
 
-        // 2. Android's "install unknown apps" permission for Blaze (asked once; never worked around).
+        // 2. Android's "install unknown apps" permission for Argus (asked once; never worked around).
         if (!env.canInstall()) {
             report.on(StoreStep.PERMISSION, StorePolicy.PERMISSION, 0, 0)
             try { env.requestInstallPermission() } catch (_: Exception) { }

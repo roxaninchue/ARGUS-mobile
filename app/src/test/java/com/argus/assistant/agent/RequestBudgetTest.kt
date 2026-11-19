@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -112,7 +112,7 @@ class RequestBudgetTest {
     }
 
     @Test fun wiredIntoEveryModelCall() {
-        val src = java.io.File("src/main/java/com/blaze/assistant/agent/LlmClient.kt").let { if (it.exists()) it else java.io.File("app/src/main/java/com/blaze/assistant/agent/LlmClient.kt") }.readText()
+        val src = java.io.File("src/main/java/com/argus/assistant/agent/LlmClient.kt").let { if (it.exists()) it else java.io.File("app/src/main/java/com/argus/assistant/agent/LlmClient.kt") }.readText()
         assertTrue(src.contains("RequestBudget.fit(clean0, tools)"))
     }
 }

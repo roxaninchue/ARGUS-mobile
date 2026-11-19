@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -39,7 +39,7 @@ class WebLiteTest {
     @Test fun liteIsInTheChainAndTheGivingUpLineSaysWhatToDoNext() {
         assertTrue(SearchChain.Source.DDG_LITE in SearchChain.order(false))
         assertEquals(SearchChain.Source.DDG_LITE, SearchChain.order(false)[2])
-        val src = listOf(java.io.File("src/main/java/com/blaze/assistant/agent/Web.kt"), java.io.File("app/src/main/java/com/blaze/assistant/agent/Web.kt")).first { it.exists() }.readText()
+        val src = listOf(java.io.File("src/main/java/com/argus/assistant/agent/Web.kt"), java.io.File("app/src/main/java/com/argus/assistant/agent/Web.kt")).first { it.exists() }.readText()
         assertTrue(!src.contains("Try different words before concluding it doesn't exist."))
         assertTrue(src.contains("At most one retry with different words"))
     }

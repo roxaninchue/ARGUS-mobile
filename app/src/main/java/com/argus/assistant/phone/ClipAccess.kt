@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -11,8 +11,8 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import androidx.core.content.FileProvider
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,12 +21,12 @@ import org.json.JSONArray
 import java.io.File
 
 /**
- * Full clipboard access for Blaze.
+ * Full clipboard access for Argus.
  *
- * Android 10+ only lets the app that has input focus read the clipboard. When Blaze isn't on
+ * Android 10+ only lets the app that has input focus read the clipboard. When Argus isn't on
  * screen we briefly add a 1-pixel focusable window (through the accessibility service, or the
  * "draw over apps" permission), read the clipboard while it has focus, and remove it again: the
- * same trick clipboard-manager apps use. Text clips Blaze sees are kept in a short history.
+ * same trick clipboard-manager apps use. Text clips Argus sees are kept in a short history.
  */
 object ClipAccess {
     private const val HISTORY = "clip_history"
@@ -36,10 +36,10 @@ object ClipAccess {
 
     private fun cm(ctx: Context) = ctx.getSystemService(ClipboardManager::class.java)
 
-    /** Run [block] while Blaze holds input focus, so Android allows clipboard reads. */
+    /** Run [block] while Argus holds input focus, so Android allows clipboard reads. */
     private suspend fun <T> withFocus(ctx: Context, block: () -> T): T = withContext(Dispatchers.Main) {
         if (Agent.inForeground) return@withContext block()
-        val (host, type) = BlazeAccessibilityService.instance?.let { it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
+        val (host, type) = ArgusAccessibilityService.instance?.let { it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
             ?: if (android.provider.Settings.canDrawOverlays(ctx)) ctx.applicationContext to WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else return@withContext block() // no way to take focus; try anyway (works on older Android)
         val wm = host.getSystemService(WindowManager::class.java)

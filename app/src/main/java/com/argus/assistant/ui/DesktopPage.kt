@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,16 +29,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.link.DesktopLink
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.link.DesktopLink
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.launch
 
-/** Settings › Blaze Desktop: pair this phone with Blaze on a computer by scanning its QR code. */
+/** Settings › Blaze Desktop: pair this phone with Argus on a computer by scanning its QR code. */
 @Composable
 internal fun DesktopPage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val scope = rememberCoroutineScope()
     val paired by DesktopLink.pairedFlow.collectAsState()
     val connected by DesktopLink.connected.collectAsState()

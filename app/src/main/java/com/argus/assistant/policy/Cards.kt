@@ -1,8 +1,8 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.orchestra.KeyedLocks
-import com.blaze.assistant.orchestra.ToolScheduler
-import com.blaze.assistant.team.ActionClass
+import com.argus.assistant.orchestra.KeyedLocks
+import com.argus.assistant.orchestra.ToolScheduler
+import com.argus.assistant.team.ActionClass
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope

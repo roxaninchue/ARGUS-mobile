@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
 /**
- * 0.51.0 BlazeQuery evidence pack: the only part of BlazeQuery that enters a prompt. A few hyper-short facts with short
+ * 0.51.0 ArgusQuery evidence pack: the only part of ArgusQuery that enters a prompt. A few hyper-short facts with short
  * citation ids ([q1]…), each line ≤ [LINE_MAX] characters, inside a token budget scaled by the route's context window
  * ([budgetTokens]). The full fetched text stays in the cache tier (doc id in the header) for cache_search / cache_read.
  * Never a page dump. Pure (EvidencePackTest).

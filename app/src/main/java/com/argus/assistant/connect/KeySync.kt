@@ -1,10 +1,10 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.util.Base64
-import com.blaze.assistant.agent.KeyRing
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.KeyRing
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,7 +26,7 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Model API keys follow the Blaze account: Blaze Desktop, Blaze CLI and this app merge the
+ * Model API keys follow the Argus account: Blaze Desktop, Blaze CLI and this app merge the
  * same encrypted copy through blaze-auth (GET/POST /v1/keys). Same wire format and merge rules
  * as internal/keystore/sync.go in Blaze-dekstop and Blaze-cli; change them together.
  *
@@ -48,7 +48,7 @@ object KeySync {
     /** Pseudo-provider for the MCP server list (see the header). */
     const val MCP = "mcp"
     /**
-     * v0.25.0: Blaze Cloud holds the model keys, so the phone no longer uploads or downloads provider keys: only the
+     * v0.25.0: Argus Cloud holds the model keys, so the phone no longer uploads or downloads provider keys: only the
      * MCP server list syncs. Provider entries already on the account pass through untouched (Desktop still reads them),
      * and the old key prefs on this phone stay as they were, unused.
      */
@@ -75,14 +75,14 @@ object KeySync {
     fun localChange(pid: String) {
         if (!applies(pid)) return
         Settings.setStr(stampKey(pid), System.currentTimeMillis().toString())
-        if (!BlazeAccount.signedIn()) return
+        if (!ArgusAccount.signedIn()) return
         pending?.cancel()
         pending = scope.launch { delay(DEBOUNCE_MS); runCatching { sync() } }
     }
 
     /** At app start: sync when signed in and the last sync is over an hour old. */
     fun syncIfStale() {
-        if (!BlazeAccount.signedIn() || System.currentTimeMillis() - lastSync() < 3_600_000L) return
+        if (!ArgusAccount.signedIn() || System.currentTimeMillis() - lastSync() < 3_600_000L) return
         scope.launch { runCatching { sync() } }
     }
 
@@ -151,7 +151,7 @@ object KeySync {
     }
 
     private fun http(method: String, token: String, body: JSONObject? = null): Pair<Int, JSONObject> {
-        val c = UrlSafety.open(BlazeAccount.base() + "/v1/keys")
+        val c = UrlSafety.open(ArgusAccount.base() + "/v1/keys")
         try {
             c.requestMethod = method
             c.connectTimeout = 15_000; c.readTimeout = 20_000
@@ -207,13 +207,13 @@ object KeySync {
     }
 
     private fun syncLocked(): String {
-        val token = BlazeAccount.sessionToken()
+        val token = ArgusAccount.sessionToken()
         if (token.isBlank()) return "Sign in to your ${BrandName.NAME} account to sync your MCP servers."
         repeat(3) {
             val (code, st) = http("GET", token)
             when {
                 code == 404 || code == 405 -> throw Unsupported()
-                code == 401 -> { BlazeAccount.checkSession(); return "You're signed out. Sign in again." }
+                code == 401 -> { ArgusAccount.checkSession(); return "You're signed out. Sign in again." }
                 code >= 400 -> throw Exception("http $code")
             }
             val key = Base64.decode(st.optString("key"), Base64.DEFAULT)
@@ -239,7 +239,7 @@ object KeySync {
             val (pc, _) = http("POST", token, JSONObject().put("rev", rev).put("blob", out))
             when {
                 pc == 409 -> return@repeat   // another device wrote first: merge on top of it
-                pc == 401 -> { BlazeAccount.checkSession(); return "You're signed out. Sign in again." }
+                pc == 401 -> { ArgusAccount.checkSession(); return "You're signed out. Sign in again." }
                 pc >= 400 -> throw Exception("http $pc")
             }
             Settings.setStr(LAST, System.currentTimeMillis().toString())
@@ -248,5 +248,5 @@ object KeySync {
         return "Other devices kept changing keys; try again."
     }
 
-    private fun names(ids: List<String>) = ids.joinToString(", ") { if (it == MCP) "MCP servers" else com.blaze.assistant.agent.Providers.byId(it).name.substringBefore(" (") }
+    private fun names(ids: List<String>) = ids.joinToString(", ") { if (it == MCP) "MCP servers" else com.argus.assistant.agent.Providers.byId(it).name.substringBefore(" (") }
 }

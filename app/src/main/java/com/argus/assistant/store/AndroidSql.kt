@@ -1,4 +1,4 @@
-package com.blaze.assistant.store
+package com.argus.assistant.store
 
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement

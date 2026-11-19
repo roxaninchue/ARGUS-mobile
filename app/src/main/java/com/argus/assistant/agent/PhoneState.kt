@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.26.2: questions about the phone's own state ("what sound profile is my phone set to?", "am I on mute?",

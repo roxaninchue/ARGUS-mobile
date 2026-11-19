@@ -1,6 +1,6 @@
-package com.blaze.assistant.mediaapps.store
+package com.argus.assistant.mediaapps.store
 
-import com.blaze.assistant.mediaapps.TimeText
+import com.argus.assistant.mediaapps.TimeText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -14,7 +14,7 @@ import java.net.URL
  * live) or a direct link to a media file, get the qualities, download it like any Store item.
  *
  * YouTube links go to the YouTube plug-in first when this build has it ([resolve]); when it's missing or fails,
- * Blaze's own small InnerTube player client tries several app clients (ANDROID_VR → ANDROID → IOS), probes the
+ * Argus's own small InnerTube player client tries several app clients (ANDROID_VR → ANDROID → IOS), probes the
  * stream url and hands out plain stream urls (no signature JavaScript). Direct links are read once (type and size)
  * and downloaded as they are; a web page with an og:video / og:audio file works too.
  *
@@ -38,7 +38,7 @@ object LinkSource : StoreSource {
     suspend fun resolve(link: String, kind: String): Pair<StoreItem, StoreSource> {
         val url = LinkParse.firstUrl(link) ?: throw StoreError("That doesn't look like a link. Paste a YouTube link or a link to a music or video file.")
         LinkParse.youtubeId(url)?.let { vid ->
-            // v0.33.0: links always use Blaze's own clients (the plug-in's streams were refused mid-download).
+            // v0.33.0: links always use Argus's own clients (the plug-in's streams were refused mid-download).
             // v0.33.0: the real title and channel (oEmbed) instead of "YouTube video".
             val (t, a) = try { LinkYt.oembed(vid) } catch (_: Exception) { "" to "" }
             return StoreItem(YouTubeStoreSource.id, vid, t.ifBlank { "YouTube video" }, a, thumb = "https://i.ytimg.com/vi/$vid/mqdefault.jpg", licence = "YouTube",
@@ -79,7 +79,7 @@ object LinkSource : StoreSource {
     suspend fun ytCaptions(vid: String): List<StoreSubtitle> {
         val visitor = try { LinkYt.visitorId() } catch (_: Exception) { "" }
         for (cl in LinkYt.clients) {
-            val tracks = try { com.blaze.assistant.mediaapps.Subs.ytTracks(LinkYt.player(cl, vid, visitor)) } catch (_: Exception) { emptyList() }
+            val tracks = try { com.argus.assistant.mediaapps.Subs.ytTracks(LinkYt.player(cl, vid, visitor)) } catch (_: Exception) { emptyList() }
             if (tracks.isNotEmpty()) return tracks
         }
         return emptyList()
@@ -222,9 +222,9 @@ object LinkParse {
         if (out.isEmpty()) throw StoreError("YouTube only offered protected streams for this video")
         val thumbs = vd.optJSONObject("thumbnail")?.optJSONArray("thumbnails") ?: JSONArray()
         val thumb = if (thumbs.length() > 0) thumbs.optJSONObject(thumbs.length() - 1)?.optString("url").orEmpty() else "https://i.ytimg.com/vi/$vid/hqdefault.jpg"
-        // v0.34.0: the caption tracks go with the streams, so Blaze Video can side-load them as subtitles.
+        // v0.34.0: the caption tracks go with the streams, so Argus Video can side-load them as subtitles.
         return StoreDetail("yt:$vid", vd.optString("title").ifBlank { "YouTube video" }, vd.optString("author"), vd.optString("lengthSeconds").toIntOrNull() ?: 0,
-            thumb, out, "YouTube", subtitles = com.blaze.assistant.mediaapps.Subs.ytTracks(root))
+            thumb, out, "YouTube", subtitles = com.argus.assistant.mediaapps.Subs.ytTracks(root))
     }
 
     /** Music: AAC (m4a) qualities then Opus, best first. Video: H.264 heights ≤ 1080p (video + best AAC, merged) and progressive files, best first. */

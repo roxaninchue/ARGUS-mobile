@@ -1,7 +1,7 @@
-package com.blaze.assistant.update
+package com.argus.assistant.update
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -13,7 +13,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.file.Files
 
-/** v0.45.4: updates come only from the Blaze site's versions.json; never from GitHub. */
+/** v0.45.4: updates come only from the Argus site's versions.json; never from GitHub. */
 class VersionFeedTest {
     private val sha = "a".repeat(64)
     private fun json(version: String = "0.45.4", url: String = "https://blazeinchue.pages.dev/dl/android/v0.45.4", s: String = sha, schema: Int = 1) =
@@ -97,7 +97,7 @@ class VersionFeedTest {
         assertTrue(VersionFeed.sources(a) == listOf(a.url))
         for (h in hosts) assertFalse(h, h.contains("github"))
         // And the update code itself names no GitHub host or token.
-        val root = listOf(File("src/main/java/com/blaze/assistant/update"), File("app/src/main/java/com/blaze/assistant/update")).first { it.isDirectory }
+        val root = listOf(File("src/main/java/com/argus/assistant/update"), File("app/src/main/java/com/argus/assistant/update")).first { it.isDirectory }
         for (f in root.listFiles()!!.filter { it.name.endsWith(".kt") }) {
             val t = f.readText().lowercase()
             for (bad in listOf("github.com", "api.github", "githubusercontent", "connectors.access(\"github\")"))

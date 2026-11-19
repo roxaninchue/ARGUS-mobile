@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
 
-/** v0.30.x Blaze Camera Pro: zoom presets, the protractor dial (log scale), digital zoom, focus, exposure, timer. */
+/** v0.30.x Argus Camera Pro: zoom presets, the protractor dial (log scale), digital zoom, focus, exposure, timer. */
 class CameraZoomTest {
     private fun near(expected: Float, actual: Float, tol: Float = 1e-3f) =
         assertTrue("expected $expected, got $actual", abs(expected - actual) <= tol)

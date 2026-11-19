@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import org.json.JSONArray
@@ -21,14 +21,14 @@ object ChatStore {
      * v0.45.0 (#1): headers come from the chat index; only changed files are read (see ChatIndex).
      * P1-TM-02: the user's chats only; bot threads' chats (`team-…`, BotThreads) are kept here too but never listed.
      */
-    fun list(): List<ChatMeta> = if (::index.isInitialized) com.blaze.assistant.team.BotThreads.userChats(index.list()) else emptyList()
+    fun list(): List<ChatMeta> = if (::index.isInitialized) com.argus.assistant.team.BotThreads.userChats(index.list()) else emptyList()
 
     /**
      * P1-TM-02: the ARGUS thread's read-only view of these chats ([current] = the chat ARGUS is in now). No data move:
      * BotThreads reads the chat files as they are; nothing here writes.
      */
-    fun argus(current: () -> String?): com.blaze.assistant.team.ArgusChats =
-        com.blaze.assistant.team.ArgusChats.of(::list, { id -> file(id).takeIf { it.isFile }?.readText() }, current)
+    fun argus(current: () -> String?): com.argus.assistant.team.ArgusChats =
+        com.argus.assistant.team.ArgusChats.of(::list, { id -> file(id).takeIf { it.isFile }?.readText() }, current)
 
     fun search(q: String): List<ChatMeta> {
         val needle = q.trim().lowercase()
@@ -59,14 +59,14 @@ object ChatStore {
     fun saveText(head: JSONObject, text: String?): Boolean {
         val o = head
         if (PrivateChat.isPrivateId(o.optString("id"))) return true   // v0.24.4: private chats are never written
-        val ok = try { if (text == null) index.save(o) else index.saveText(o, text) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("chat save", e); false }
+        val ok = try { if (text == null) index.save(o) else index.saveText(o, text) } catch (e: Exception) { com.argus.assistant.device.CrashLog.error("chat save", e); false }
         if (!ok) {
             val reason = saveFailReason(dir)
-            com.blaze.assistant.device.CrashLog.write("ERROR chat save failed (${o.optString("id")}): $reason")
+            com.argus.assistant.device.CrashLog.write("ERROR chat save failed (${o.optString("id")}): $reason")
             try { onSaveFailed?.invoke(o.optString("id"), reason) } catch (_: Throwable) { }
             return false
         }
-        com.blaze.assistant.connect.CloudSync.localChange(com.blaze.assistant.connect.SyncKinds.CHATS)   // v0.40.0 (off by default)
+        com.argus.assistant.connect.CloudSync.localChange(com.argus.assistant.connect.SyncKinds.CHATS)   // v0.40.0 (off by default)
         return true
     }
 
@@ -83,6 +83,6 @@ object ChatStore {
 
     fun rename(id: String, title: String) = load(id)?.let { save(it.put("title", title.trim().ifEmpty { "Chat" })) }
     fun setPinned(id: String, pinned: Boolean) = load(id)?.let { save(it.put("pinned", pinned)) }
-    fun delete(id: String) { file(id).delete(); index.forget(id); com.blaze.assistant.connect.CloudSync.localChange(com.blaze.assistant.connect.SyncKinds.CHATS) }
+    fun delete(id: String) { file(id).delete(); index.forget(id); com.argus.assistant.connect.CloudSync.localChange(com.argus.assistant.connect.SyncKinds.CHATS) }
     fun deleteAll() { dir.listFiles()?.forEach { it.delete() }; index.clear() }
 }

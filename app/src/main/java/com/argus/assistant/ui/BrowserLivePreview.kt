@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.view.View
 import android.webkit.WebView
 import android.widget.FrameLayout
@@ -44,22 +44,22 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.blaze.assistant.browser.BrowserEngine
-import com.blaze.assistant.browser.BrowserLive
-import com.blaze.assistant.browser.BrowserTools
+import com.argus.assistant.browser.BrowserEngine
+import com.argus.assistant.browser.BrowserLive
+import com.argus.assistant.browser.BrowserTools
 
 /**
- * v0.30.5: while Blaze works in its background browser, Home shows what it's doing in a fixed glass window (the same
+ * v0.30.5: while Argus works in its background browser, Home shows what it's doing in a fixed glass window (the same
  * window as Home's web pages, [TiltGlassPane]). Preview only: the page never gets a tap or a key from here. Tapping
  * the page or Watch opens the full browser (BrowserTools.show); × hides the window until the next task.
  *
- * The page is Blaze's own tab WebView, borrowed while the window is up: it keeps the phone-screen size Blaze browses
- * at (so nothing re-lays out under Blaze) and is only scaled down to the window's width. The full browser takes it
+ * The page is Argus's own tab WebView, borrowed while the window is up: it keeps the phone-screen size Argus browses
+ * at (so nothing re-lays out under Argus) and is only scaled down to the window's width. The full browser takes it
  * back whenever it opens; the window gives it back (unscaled, offscreen) when it closes.
  */
 @Composable
 fun BrowserLivePreview(onHide: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val d = LocalDensity.current
     val step by BrowserLive.step.collectAsState()
@@ -112,7 +112,7 @@ fun BrowserLivePreview(onHide: () -> Unit) {
         })
 }
 
-/** A phone-shaped window: the whole page Blaze sees, scaled down, no taller than 80% of Home. */
+/** A phone-shaped window: the whole page Argus sees, scaled down, no taller than 80% of Home. */
 private fun previewSize(mw: Dp, mh: Dp, ratio: Float): DpSize {
     val chrome = 66.dp   // title bar + rims
     val rims = (GlassPaneLook.RIM_DP * 2).dp
@@ -122,7 +122,7 @@ private fun previewSize(mw: Dp, mh: Dp, ratio: Float): DpSize {
     return DpSize(sw + rims, sw * ratio + chrome)
 }
 
-/** Puts Blaze's tab page in the window at its own size, scaled to fit. Never takes it from the full browser. */
+/** Puts Argus's tab page in the window at its own size, scaled to fit. Never takes it from the full browser. */
 private fun hostPage(f: FrameLayout, w: WebView?, vw: Int, vh: Int, scale: Float) {
     // An old tab (switched or closed) goes back offscreen.
     for (i in f.childCount - 1 downTo 0) {

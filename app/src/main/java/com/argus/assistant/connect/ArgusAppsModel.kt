@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 import org.json.JSONArray
 import org.json.JSONObject

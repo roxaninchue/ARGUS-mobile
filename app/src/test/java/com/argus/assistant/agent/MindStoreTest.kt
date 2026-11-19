@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.JdbcSql
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.BrandName
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.JdbcSql
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -33,7 +33,7 @@ class MindStoreTest {
 
     private fun open(name: String = "blaze.db"): MindStore {
         val s = JdbcSql("jdbc:sqlite:" + File(dir, name).path).also { sqls += it }
-        return MindStore(BlazeDb(s), s)
+        return MindStore(ArgusDb(s), s)
     }
 
     private fun hist(vararg lines: String) = JSONArray().apply {
@@ -47,16 +47,16 @@ class MindStoreTest {
         go.conn.createStatement().use { it.executeUpdate(v1) }
         fun master(s: Sql, onlyV1: Boolean) = s.query("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name") {
             "${it.text(0)}|${it.text(1)}|${it.text(2)}" }.filter { !onlyV1 || !it.split('|')[1].startsWith("mind_") }
-        val blazeSql = sqls.first()
-        assertEquals("the v1 tables, indexes and triggers are Desktop's, untouched", master(go, false), master(blazeSql, true))
+        val argusSql = sqls.first()
+        assertEquals("the v1 tables, indexes and triggers are Desktop's, untouched", master(go, false), master(argusSql, true))
         assertEquals(1, st.blaze.version())
-        assertTrue(master(blazeSql, false).any { it.contains("|mind_journal|") })
+        assertTrue(master(argusSql, false).any { it.contains("|mind_journal|") })
         // What Mind saves is a normal blaze.db memory: Desktop / CLI read it with their own code.
         Mind.use(st)
         assertEquals("saved", Mind.save("preference", "food", "No pork, on weekdays").first)
         val row = st.blaze.memories().single()
         assertEquals("No pork, on weekdays", row.text); assertEquals("preference", row.category)
-        assertTrue(row.created in (BlazeDb.now() - 5)..(BlazeDb.now() + 1))   // unix seconds, like Go
+        assertTrue(row.created in (ArgusDb.now() - 5)..(ArgusDb.now() + 1))   // unix seconds, like Go
         // And a memory the CLI wrote shows up in Mind, kind and subject guessed.
         st.blaze.add("My sister Mutale lives in Kitwe")
         val m = Mind.all().first { it.text.startsWith("My sister") }
@@ -261,7 +261,7 @@ class MindStoreTest {
     @Test fun newerSchemaFromDesktopIsRefused() {
         val f = File(dir, "newer.db")
         JdbcSql("jdbc:sqlite:" + f.path).apply { exec("PRAGMA user_version = 2"); close() }
-        try { open("newer.db"); fail() } catch (e: BlazeDb.NewerSchema) { assertTrue(e.message!!.startsWith("Your memory was saved by a newer version of ${BrandName.NAME}")) }
+        try { open("newer.db"); fail() } catch (e: ArgusDb.NewerSchema) { assertTrue(e.message!!.startsWith("Your memory was saved by a newer version of ${BrandName.NAME}")) }
         assertNotNull(Mind.NEWER)
     }
 

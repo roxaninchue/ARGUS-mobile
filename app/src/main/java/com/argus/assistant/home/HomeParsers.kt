@@ -1,7 +1,7 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
@@ -500,11 +500,11 @@ object Plain {
  * 4-day lines from Open-Meteo in the same units. Pure (HomeWeatherTest).
  */
 object HomeWeather {
-    fun toData(n: com.blaze.assistant.agent.GatewayWeather.Now, place: String, units: String, lines: List<WidgetLine>,
+    fun toData(n: com.argus.assistant.agent.GatewayWeather.Now, place: String, units: String, lines: List<WidgetLine>,
                tz: TimeZone = TimeZone.getDefault()): WidgetData {
-        val t = com.blaze.assistant.agent.GatewayWeather.tempLabel(units, n.unit)
-        val w = com.blaze.assistant.agent.GatewayWeather.windLabel(units, n.windUnit)
-        val time = com.blaze.assistant.agent.GatewayWeather.localTime(n.observedAt, tz)
+        val t = com.argus.assistant.agent.GatewayWeather.tempLabel(units, n.unit)
+        val w = com.argus.assistant.agent.GatewayWeather.windLabel(units, n.windUnit)
+        val time = com.argus.assistant.agent.GatewayWeather.localTime(n.observedAt, tz)
         val cond = n.condition.ifBlank { n.summary }.replaceFirstChar { it.titlecase(Locale.getDefault()) }
         return WidgetData(headline = place, value = "${Math.round(n.temperature)}$t",
             change = listOfNotNull(cond.takeIf { it.isNotBlank() } ?: (if (n.isDay) null else "Clear night"),

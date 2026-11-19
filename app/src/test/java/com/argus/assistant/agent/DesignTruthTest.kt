@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.ui.DesignStatus
-import com.blaze.assistant.ui.DesignStatus.State
+import com.argus.assistant.ui.DesignStatus
+import com.argus.assistant.ui.DesignStatus.State
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

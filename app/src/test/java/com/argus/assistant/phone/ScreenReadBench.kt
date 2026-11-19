@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,7 +37,7 @@ class ScreenReadBench {
         a0.fetches.set(0)
         val before = (1..reads).map { val t = System.nanoTime(); oldRead(a0, r0); ms(System.nanoTime() - t) }
         val fb = a0.fetches.get() / reads
-        // after: between reads, what a phone sends while Blaze works: 1-3 small content changes (a switch row, a clock,
+        // after: between reads, what a phone sends while Argus works: 1-3 small content changes (a switch row, a clock,
         // a counter), now and then a new window; every FULL_EVERY reads the safety full walk.
         val a1 = FakeAccess(ipcUs * 1000); val r1 = make(); val tree = ScreenTree(a1)
         val pool = Executors.newFixedThreadPool(4)

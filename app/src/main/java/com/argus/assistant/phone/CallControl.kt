@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -11,8 +11,8 @@ import android.media.AudioManager
 import android.os.Build
 import android.telecom.TelecomManager
 import android.view.accessibility.AccessibilityNodeInfo
-import com.blaze.assistant.device.Perms
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.device.Perms
+import com.argus.assistant.voice.Voice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -23,7 +23,7 @@ import org.json.JSONObject
  * Call controls: speaker, mute, end, answer, decline, hold, keypad and call volume.
  *
  * Two kinds of call:
- *  - a call with Blaze itself (the call screen): handled directly through [Voice].
+ *  - a call with Argus itself (the call screen): handled directly through [Voice].
  *  - a real phone call: Android's telecom API where it allows it (answer / end, needs the
  *    "answer phone calls" permission), the phone's own in-call buttons through the accessibility
  *    service for speaker / mute / hold / keypad (so it works on Samsung and other dialers), and
@@ -62,11 +62,11 @@ object CallControl {
         val on = if (a.has("on")) a.optBoolean("on") else true
         if (action == "start_blaze_call") {
             if (Voice.inCall) return "You're already on a call with the user."
-            ctx.startActivity(com.blaze.assistant.IntentKey.sign(ctx, Intent(ctx, com.blaze.assistant.MainActivity::class.java).setAction(com.blaze.assistant.MainActivity.ACTION_CALL)
+            ctx.startActivity(com.argus.assistant.IntentKey.sign(ctx, Intent(ctx, com.argus.assistant.MainActivity::class.java).setAction(com.argus.assistant.MainActivity.ACTION_CALL)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)))
             return "Started a voice call with the user. Say one short line to greet them."
         }
-        // A call with Blaze itself.
+        // A call with Argus itself.
         if (Voice.inCall && !phoneCall(ctx)) return when (action) {
             "speaker" -> { Voice.callSpeaker.value = on; "Loudspeaker ${if (on) "on" else "off (earpiece)"}." }
             "mute" -> { Voice.callMute.value = on; if (on) "Muted the mic. Tell the user to tap Unmute to talk again." else "Mic unmuted." }
@@ -180,7 +180,7 @@ object CallControl {
         n.viewIdResourceName?.substringAfterLast('/')?.replace('_', ' ')).map { it.trim().lowercase() }
 
     private fun findAny(want: List<String>, exact: Boolean = false): AccessibilityNodeInfo? {
-        val root = BlazeAccessibilityService.instance?.rootInActiveWindow ?: return null
+        val root = ArgusAccessibilityService.instance?.rootInActiveWindow ?: return null
         val w = want.map { it.lowercase() }
         var best: AccessibilityNodeInfo? = null
         fun walk(n: AccessibilityNodeInfo?, depth: Int) {
@@ -198,14 +198,14 @@ object CallControl {
     }
 
     private suspend fun tapAny(want: List<String>, exact: Boolean = false): Boolean {
-        val svc = BlazeAccessibilityService.instance ?: return false
+        val svc = ArgusAccessibilityService.instance ?: return false
         val n = findAny(want, exact) ?: return false
         return svc.tapNode(n)
     }
 
     /** Set an on/off call button; null when the button isn't on screen. */
     private suspend fun toggle(ctx: Context, want: List<String>, on: Boolean): Boolean? {
-        val svc = BlazeAccessibilityService.instance ?: return null
+        val svc = ArgusAccessibilityService.instance ?: return null
         val n = findAny(want) ?: return null
         val desc = if (Build.VERSION.SDK_INT >= 30) n.stateDescription?.toString()?.lowercase().orEmpty() else ""
         val state = when {

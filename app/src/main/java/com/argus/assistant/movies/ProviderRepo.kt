@@ -1,13 +1,13 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URI
 
 /**
- * 0.46.2 user-added provider repos ("sources"). Blaze ships none and suggests none: the user types or pastes a repo URL.
+ * 0.46.2 user-added provider repos ("sources"). Argus ships none and suggests none: the user types or pastes a repo URL.
  * A repo is a folder with manifest.json (an array of {value, display_name, version, icon, type, disabled, hasSettings}) and
  * dist/<value>/{posts,meta,stream,catalog}.js (+ optional episodes.js), the module layout of Vega-format provider repos.
  * Pure; ProviderRepoTest.
@@ -39,12 +39,12 @@ object ProviderRepo {
     val SAFE_ID = Regex("^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
 
     /**
-     * Blaze's own example repo (Vega format: Internet Archive + Blender open movies), preinstalled as "Blaze Official". Its source
-     * lives in Blaze's GitLab (blazeinchue-group/blaze-providers-example); the public copy is served from Blaze's site.
+     * Argus's own example repo (Vega format: Internet Archive + Blender open movies), preinstalled as "Argus Official". Its source
+     * lives in Argus's GitLab (blazeinchue-group/blaze-providers-example); the public copy is served from Argus's site.
      */
     const val OFFICIAL_BASE = "https://blazeinchue.pages.dev/providers/blaze-official"
     const val OFFICIAL_LABEL = "${BrandName.NAME} Official"
-    /** What the Add source field shows as its example (Blaze's own repo, never a third-party one). */
+    /** What the Add source field shows as its example (Argus's own repo, never a third-party one). */
     const val EXAMPLE = OFFICIAL_BASE
 
     private val SHORTHAND = Regex("^([A-Za-z0-9][A-Za-z0-9-]{0,38})/([A-Za-z0-9._-]{1,100})$")
@@ -136,7 +136,7 @@ object UrlGuard {
 }
 
 /**
- * 0.46.2 one-tap add-source links that communities share (Blaze hosts no list): blaze://add-source?url=<repo> and
+ * 0.46.2 one-tap add-source links that communities share (Argus hosts no list): blaze://add-source?url=<repo> and
  * https://blazeinchue.pages.dev/add-source?url=<repo> (the site page opens the app, or offers the APK). Pure; AddSourceLinkTest.
  */
 object AddSourceLink {

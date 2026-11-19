@@ -1,4 +1,4 @@
-package com.blaze.assistant.routine
+package com.argus.assistant.routine
 
 import android.Manifest
 import android.content.ContentUris
@@ -125,7 +125,7 @@ object RoutineCalendar {
             }
             id
         }
-    } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("RoutineCalendar.sync", e); null }
+    } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("RoutineCalendar.sync", e); null }
 
     /** An alert [minutes] before the event, shown by the calendar app. */
     fun alert(ctx: Context, eventId: Long, minutes: Int) {
@@ -143,6 +143,6 @@ object RoutineCalendar {
     fun remove(ctx: Context, eventId: Long) {
         if (eventId <= 0 || !allowed(ctx)) return
         try { ctx.contentResolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId), null, null) }
-        catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("RoutineCalendar.remove", e) }
+        catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("RoutineCalendar.remove", e) }
     }
 }

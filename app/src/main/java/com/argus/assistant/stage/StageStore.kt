@@ -1,7 +1,7 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.NotificationChannel
@@ -12,11 +12,11 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.glance.ShelfDb
-import com.blaze.assistant.glance.ShelfSource
-import com.blaze.assistant.store.AndroidSql
+import com.argus.assistant.R
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.glance.ShelfDb
+import com.argus.assistant.glance.ShelfSource
+import com.argus.assistant.store.AndroidSql
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -177,7 +177,7 @@ object StageStore {
     /** 0.46.1 the timer card's sound choice: ring (default), vibrate only, or silent (a quiet notification). */
     private const val CH_VIBRATE = "stage_timer_vibrate"; private const val CH_SILENT = "stage_timer_silent"
     val SOUNDS = listOf("ring", "vibrate", "silent")
-    const val ACT_ALARM = "com.blaze.assistant.stage.ALARM"; const val ACT_PAUSE = "com.blaze.assistant.stage.PAUSE"; const val ACT_STOP = "com.blaze.assistant.stage.STOP"
+    const val ACT_ALARM = "com.argus.assistant.stage.ALARM"; const val ACT_PAUSE = "com.argus.assistant.stage.PAUSE"; const val ACT_STOP = "com.argus.assistant.stage.STOP"
     private fun nid(id: String) = 0x5A00 + (id.hashCode() and 0xFF)
     private fun pi(ctx: Context, act: String, id: String) = PendingIntent.getBroadcast(ctx, (act + id).hashCode(),
         Intent(ctx, StageTimerReceiver::class.java).setAction(act).putExtra("id", id), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -206,7 +206,7 @@ object StageStore {
     private fun cancelAlarm(ctx: Context, t: TimerState) { try { ctx.getSystemService(AlarmManager::class.java)?.cancel(pi(ctx, ACT_ALARM, t.id)) } catch (_: Exception) { } }
     private fun cancel(ctx: Context, t: TimerState) { cancelAlarm(ctx, t); try { nm(ctx).cancel(nid(t.id)) } catch (_: Throwable) { } }
 
-    /** The lock-screen countdown (the system draws the ticking chronometer; Blaze does nothing per second). */
+    /** The lock-screen countdown (the system draws the ticking chronometer; Argus does nothing per second). */
     @SuppressLint("MissingPermission")
     private fun ongoing(ctx: Context, t: TimerState) {
         try {
@@ -253,7 +253,7 @@ object StageStore {
                 val c = args.optString("control").trim().lowercase()
                 if (item.kind == StageKind.TIMER && c.isNotEmpty()) { timerOp(ctx, item.id, c, StageTimer.parseMinutes(args.opt("minutes")?.toString()) ?: 5.0); extra = " Timer: $c." }
                 else if (item.kind == StageKind.TIMER && args.has("minutes")) { replaceTimer(ctx, item); extra = " Timer set to ${item.props["minutes"]} min." }
-                if (item.kind == StageKind.MUSIC && args.optString("query").isNotBlank()) extra = " " + com.blaze.assistant.mediaapps.StageMusic.play(ctx, args.optString("query"))
+                if (item.kind == StageKind.MUSIC && args.optString("query").isNotBlank()) extra = " " + com.argus.assistant.mediaapps.StageMusic.play(ctx, args.optString("query"))
             }
             (r.note + extra).trim() + ""
         }
@@ -275,9 +275,9 @@ object StageStore {
             if (t?.running == true) " Running: ends in ${StageTimer.words(StageTimer.remaining(t, System.currentTimeMillis()))}."
             else " Ready with a Start button (${StageTimer.words(t?.left ?: 0L)}); it's not running until the user taps Start."
         }
-        StageKind.MUSIC -> " " + com.blaze.assistant.mediaapps.StageMusic.play(ctx, args.optString("query"))
-        StageKind.VIDEO -> if (item.props["url"].isNullOrBlank()) " No video given: the card offers ${BrandName.NAME} Video." else { com.blaze.assistant.ui.StageVideo.autoplay = true; "" }
-        StageKind.FLASHCARDS -> com.blaze.assistant.agent.Flashcards.queue(item.props["deck"].orEmpty()).size.let { n ->
+        StageKind.MUSIC -> " " + com.argus.assistant.mediaapps.StageMusic.play(ctx, args.optString("query"))
+        StageKind.VIDEO -> if (item.props["url"].isNullOrBlank()) " No video given: the card offers ${BrandName.NAME} Video." else { com.argus.assistant.ui.StageVideo.autoplay = true; "" }
+        StageKind.FLASHCARDS -> com.argus.assistant.agent.Flashcards.queue(item.props["deck"].orEmpty()).size.let { n ->
             if (n == 0) " That deck has nothing due (or doesn't exist): add cards with flashcards action=add." else " $n card${if (n == 1) "" else "s"} to go." }
         StageKind.BROWSER -> browserShown(ctx, args.optString("url").trim().ifBlank { args.optString("query").trim() })
         else -> ""
@@ -285,7 +285,7 @@ object StageStore {
 
     /** 0.46.1 the browser card shows the built-in browser's current tab (the one browser_* tools drive); a url opens there. */
     private suspend fun browserShown(ctx: Context, url: String): String {
-        val e = com.blaze.assistant.browser.BrowserEngine
+        val e = com.argus.assistant.browser.BrowserEngine
         withContext(Dispatchers.Main) { e.init(ctx) }
         return if (url.isNotEmpty()) {
             val r = try { e.open(ctx, url, newTab = false) } catch (x: Exception) { "Couldn't open $url: ${x.message}" }

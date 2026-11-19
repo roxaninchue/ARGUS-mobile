@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -56,12 +56,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.DarkColors
-import com.blaze.assistant.ui.MotionTokens
-import com.blaze.assistant.ui.pressScale
+import com.argus.assistant.ui.DarkColors
+import com.argus.assistant.ui.MotionTokens
+import com.argus.assistant.ui.pressScale
 
 /**
- * v0.29.8: Blaze Terminal's menus as a Blaze bottom sheet (rounded, dark, Blaze blue, an icon per row, MotionTokens
+ * v0.29.8: Argus Terminal's menus as a Argus bottom sheet (rounded, dark, Argus blue, an icon per row, MotionTokens
  * timing) instead of the plain white Android pop-up that clashed with the black terminal. Used for ⋮ and +.
  */
 object TermSheet {
@@ -81,12 +81,12 @@ object TermSheet {
     }
 
     /**
-     * The terminal's palette. derived from light / dark ([com.blaze.assistant.ui.TermPalette]); the
+     * The terminal's palette. derived from light / dark ([com.argus.assistant.ui.TermPalette]); the
      * activity sets it on start and whenever light / dark changes, and the sheet recomposes.
      */
     object Palette {
-        private var p by mutableStateOf(com.blaze.assistant.ui.TermPalette.of(true))
-        fun set(colors: com.blaze.assistant.ui.TermPalette.Colors) { p = colors }
+        private var p by mutableStateOf(com.argus.assistant.ui.TermPalette.of(true))
+        fun set(colors: com.argus.assistant.ui.TermPalette.Colors) { p = colors }
         val bg: Color get() = Color(p.bg)
         val sheet: Color get() = Color(p.sheet)
         val row: Color get() = Color(p.row)

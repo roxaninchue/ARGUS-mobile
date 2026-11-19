@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -9,8 +9,8 @@ import org.json.JSONObject
  * v0.28.5 project docs: a project's full instructions, full brief and older notes as an on-demand lookup, not prompt text.
  *
  * The prompt pins only [Projects.pinned] (name + the top of the instructions and brief, ≤ ~600 tokens, + one lookup line).
- * Everything is chunked (BlazeDocs.chunk: by heading, ~150–600 tokens, the user's text unscrubbed) into blaze.db: table
- * `project_docs` + FTS5 `project_docs_fts`, keyed by project, the same style as BlazeDocs / MindStore's side tables
+ * Everything is chunked (ArgusDocs.chunk: by heading, ~150–600 tokens, the user's text unscrubbed) into blaze.db: table
+ * `project_docs` + FTS5 `project_docs_fts`, keyed by project, the same style as ArgusDocs / MindStore's side tables
  * (prefixed names; schema v1 and user_version untouched). The project list in prefs (`projects_json`, now with `notes`)
  * stays the source of truth, so nothing is lost if blaze.db can't open: the index is rebuilt from it whenever a
  * project's signature (sha1 of its texts) changes ([ensure], called lazily before every search / read).
@@ -41,7 +41,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS project_docs_fts USING fts5(pid UNINDEXED, id
 
     /** Every chunk of [p]: ids like `instructions#3`, `brief#1`, `note2#1`. */
     fun chunksOf(p: Project): List<Chunk> = docsOf(p).flatMap { (doc, kind, title, text) ->
-        BlazeDocs.chunk(doc, text, "", MIN_TOKENS, MAX_TOKENS, scrubSecrets = false).mapIndexed { i, c ->
+        ArgusDocs.chunk(doc, text, "", MIN_TOKENS, MAX_TOKENS, scrubSecrets = false).mapIndexed { i, c ->
             Chunk(c.id, p.id, kind, if (c.section.isBlank()) title else "$title > ${c.section}", i, c.text)
         }
     }
@@ -54,7 +54,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS project_docs_fts USING fts5(pid UNINDEXED, id
 
     class Store(private val sql: Sql, private val getMeta: (String) -> String, private val setMeta: (String, String) -> Unit) {
         private val lock = Any()
-        init { for (st in BlazeDb.statements(TABLES)) sql.exec(st) }
+        init { for (st in ArgusDb.statements(TABLES)) sql.exec(st) }
 
         fun count(pid: String): Int = sql.query("SELECT count(*) FROM project_docs WHERE pid=?", pid) { it.long(0).toInt() }.first()
 
@@ -82,7 +82,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS project_docs_fts USING fts5(pid UNINDEXED, id
 
         /** Best chunks of project [pid] for [query] (bm25: title ×4, kind ×2, text ×1). */
         fun search(pid: String, query: String, limit: Int): List<Hit> {
-            val fq = BlazeDb.ftsQuery(query, 32); if (fq.isEmpty()) return emptyList()
+            val fq = ArgusDb.ftsQuery(query, 32); if (fq.isEmpty()) return emptyList()
             return try {
                 sql.query("SELECT id, title, snippet(project_docs_fts, 4, '', '', '…', 40) FROM project_docs_fts WHERE project_docs_fts MATCH ? AND pid = ? " +
                     "ORDER BY bm25(project_docs_fts, 0.0, 0.0, 2.0, 4.0, 1.0) LIMIT ?", fq, pid, limit.coerceIn(1, 8)) { Hit(it.text(0), it.text(1), it.text(2)) }
@@ -180,7 +180,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS project_docs_fts USING fts5(pid UNINDEXED, id
         }
         if (store == null) store = try {
             val mem = HashMap<String, String>()
-            Store(Mind.openBlaze(java.io.File(":memory:")), { mem[it].orEmpty() }, { k, v -> mem[k] = v })
+            Store(Mind.openArgus(java.io.File(":memory:")), { mem[it].orEmpty() }, { k, v -> mem[k] = v })
         } catch (_: Throwable) { null }
         return store
     }

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 /**
  * 2026-11-19 (owner spec, feat/notch-glance): the notch overlay's rules, pure so NotchOverlayTest runs them on the JVM.

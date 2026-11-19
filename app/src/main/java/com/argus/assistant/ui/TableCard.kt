@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -124,7 +124,7 @@ fun TableCardView(t: RichKit.TableCard, modifier: Modifier = Modifier) {
 /** v0.30.5: a table too wide for the phone, one block per row: the first cell bold, then each other column as "Header  value". */
 @Composable
 private fun TableStacked(t: RichKit.TableCard) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp)) {
         t.rows.forEachIndexed { i, row ->
             if (i > 0) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp).height(1.dp).background(TableCardStyle.Divider))
@@ -157,7 +157,7 @@ private fun TableGridCard(t: RichKit.TableCard) {
     var maxOff by remember { mutableIntStateOf(0) }
     var stickyW by remember { mutableIntStateOf(0) }
     val scroll = rememberScrollableState { d -> val old = off; off = (off - d).coerceIn(0f, maxOff.toFloat()); old - off }
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Layout(
         modifier = Modifier.fillMaxWidth().clipToBounds()
             .scrollable(scroll, Orientation.Horizontal, enabled = maxOff > 0)

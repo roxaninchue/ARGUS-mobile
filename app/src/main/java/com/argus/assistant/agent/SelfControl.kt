@@ -1,24 +1,24 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import com.blaze.assistant.ui.Overlay
-import com.blaze.assistant.voice.Voice
-import com.blaze.assistant.voice.WakeWordService
+import com.argus.assistant.ui.Overlay
+import com.argus.assistant.voice.Voice
+import com.argus.assistant.voice.WakeWordService
 import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
 /**
- * Blaze knowing and steering itself: "shut down", "stop", "be quiet", "hide the orb"… are handled
+ * Argus knowing and steering itself: "shut down", "stop", "be quiet", "hide the orb"… are handled
  * on-device before anything else (so they never get misread as a phone command), and the model
  * gets a blaze_self tool for the rest (switch model, change a setting, read its own crash log).
  */
 object SelfControl {
-    /** The open Blaze screen, so "close" can actually close it. */
+    /** The open Argus screen, so "close" can actually close it. */
     @Volatile var activity: WeakReference<android.app.Activity>? = null
     private val main = Handler(Looper.getMainLooper())
 
@@ -45,7 +45,7 @@ object SelfControl {
         // v0.26.2: "what sound profile is my phone set to?", "am I on mute?" → straight from the phone's own readings.
         PhoneState.kind(text)?.let { k ->
             try {
-                val snap = com.blaze.assistant.device.DeviceStatus.snap(ctx)
+                val snap = com.argus.assistant.device.DeviceStatus.snap(ctx)
                 val nm = ctx.getSystemService(android.app.NotificationManager::class.java)
                 val dnd = nm != null && nm.currentInterruptionFilter > android.app.NotificationManager.INTERRUPTION_FILTER_ALL
                 return PhoneState.answer(k, snap.ringer, dnd, snap.battery, snap.charging, snap.network)
@@ -103,7 +103,7 @@ object SelfControl {
             else "I need permission to draw over other apps first. It's in Settings → Floating orb."
         "wake_off" -> { Settings.wakeWord = false; WakeWordService.stop(ctx); "Stopped listening for \u201cHey ${BrandName.NAME}\u201d." }
         "wake_on" -> { Settings.wakeWord = true; WakeWordService.start(ctx)
-            if (com.blaze.assistant.voice.WakeModel.ready(ctx)) "Listening for \u201cHey ${BrandName.NAME}\u201d." else "Turned on. The voice model still needs downloading in Settings → Voice." }
+            if (com.argus.assistant.voice.WakeModel.ready(ctx)) "Listening for \u201cHey ${BrandName.NAME}\u201d." else "Turned on. The voice model still needs downloading in Settings → Voice." }
         "voice_off" -> { Settings.speakReplies = false; Voice.stopSpeaking(); "Okay, I'll answer in text only." }
         "voice_on" -> { Settings.speakReplies = true; "Okay, I'll read answers aloud when you ask by voice." }
         "status", "setup_check" -> SelfSetup.report(ctx)
@@ -112,8 +112,8 @@ object SelfControl {
         // v0.33.1: where the tokens go, per feature, plus the tool cache and the learned router.
         "token_ledger" -> TokenLedger.report() + "\n" + ToolCache.stats() + "\n" + LearnedRoutes.stats()
         "tool_stats" -> ToolStats.report() + (LlmClient.lastHealed.takeIf { it.isNotBlank() }?.let { "\n\nLast self-healed error: ${it.take(200)}" } ?: "")
-        "crash_log" -> com.blaze.assistant.device.CrashLog.read().takeLast(3000).ifBlank { "No errors logged." }
-        // v0.25.0: no model choice any more; Blaze Cloud picks per message.
+        "crash_log" -> com.argus.assistant.device.CrashLog.read().takeLast(3000).ifBlank { "No errors logged." }
+        // v0.25.0: no model choice any more; Argus Cloud picks per message.
         "set_model" -> "${BrandName.NAME} picks the best free model for every message by itself. There's nothing to choose."
         "set_persona" -> {
             val id = args.optString("persona")
@@ -148,7 +148,7 @@ object SelfControl {
         val v = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault("?")
         return buildString {
             append("${BrandName.NAME} $v. Brain: ${BrandName.NAME} Cloud (picks the best free model per message). Personality: ${Personas.byId(Settings.personaId).name}.\n")
-            append("Phone control ${if (Settings.phoneControl && com.blaze.assistant.phone.BlazeAccessibilityService.instance != null) "on" else "off"}, ")
+            append("Phone control ${if (Settings.phoneControl && com.argus.assistant.phone.ArgusAccessibilityService.instance != null) "on" else "off"}, ")
             append("wake word ${if (Settings.wakeWord) "on" else "off"}, read aloud ${if (Settings.speakReplies) "on" else "off"}, ")
             append("fast lane ${if (Settings.fastLane) "on" else "off"}, orb ${if (Overlay.orbShowing) "showing" else "hidden"}.\n")
             append("Changeable with set_setting: ${boolKeys.keys.joinToString()}.")
@@ -156,7 +156,7 @@ object SelfControl {
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", "blaze_self")
-        .put("description", "Control ${BrandName.NAME} itself: close/go quiet, stop the task, hide or show the floating orb, wake word on/off, read-aloud on/off, switch AI model or personality, change one of ${BrandName.NAME}'s settings, check its own setup (setup_check: what's installed, granted or missing — use it to guide the user through full setup), open the exact system/Blaze screen that fixes something, install Linux / the voice model / the fast lane, read its crash log to diagnose a problem, or token_ledger: where its tokens go per feature (biggest costs + fixes), the tool cache and the learned router.")
+        .put("description", "Control ${BrandName.NAME} itself: close/go quiet, stop the task, hide or show the floating orb, wake word on/off, read-aloud on/off, switch AI model or personality, change one of ${BrandName.NAME}'s settings, check its own setup (setup_check: what's installed, granted or missing — use it to guide the user through full setup), open the exact system/Argus screen that fixes something, install Linux / the voice model / the fast lane, read its crash log to diagnose a problem, or token_ledger: where its tokens go per feature (biggest costs + fixes), the tool cache and the learned router.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("close", "stop", "hide_orb", "show_orb", "wake_on", "wake_off",
                 "voice_on", "voice_off", "status", "setup_check", "open", "install", "crash_log", "speed_stats", "tool_stats", "token_ledger", "set_model", "set_persona", "set_setting"))))

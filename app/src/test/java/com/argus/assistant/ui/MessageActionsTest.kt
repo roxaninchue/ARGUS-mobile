@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -23,8 +23,8 @@ class MessageActionsTest {
     }
 
     @Test fun footerUsesTheIconRow() {
-        val src = java.io.File("src/main/java/com/blaze/assistant/ui/Bubbles.kt").readText()
+        val src = java.io.File("src/main/java/com/argus/assistant/ui/Bubbles.kt").readText()
         assertTrue(src.contains("MessageActionIcons.kindOf(a.first)"))
-        assertTrue(java.io.File("src/main/java/com/blaze/assistant/ui/MessageActions.kt").readText().contains("onLongClick"))
+        assertTrue(java.io.File("src/main/java/com/argus/assistant/ui/MessageActions.kt").readText().contains("onLongClick"))
     }
 }

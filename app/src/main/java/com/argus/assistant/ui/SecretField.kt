@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /** v0.45.7: show/hide state of a password or passphrase field (pure, unit-tested). */
 object SecretField {

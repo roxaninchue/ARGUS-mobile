@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -11,7 +11,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  *  - a risky one-shot tool (OneShot.risky: messages, calls, payments, deletes) is NEVER retried: a second try could
  *    send twice. Its failure goes to the model as is;
  *  - a call that doesn't finish in time is stopped and reported honestly: for a risky tool "couldn't confirm, it may
- *    or may not have gone through, not retried" (unverified, so Blaze never claims it), for others a plain error.
+ *    or may not have gone through, not retried" (unverified, so Argus never claims it), for others a plain error.
  *  - Stop (cancellation) always goes straight through.
  * Pure Kotlin (coroutines only); RecoveryTest.
  */

@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import android.app.Activity
 import android.content.Intent
@@ -27,7 +27,7 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.unit.dp
 
 /**
- * Wave A item 26: Back out of Blaze Video / Blaze Music always lands on the agent chat.
+ * Wave A item 26: Back out of Argus Video / Argus Music always lands on the agent chat.
  * Both apps live in their own task, so a plain finish() used to drop the user on the launcher
  * or whatever task sat underneath. The player keeps going: Music in its service, a playing
  * video in picture-in-picture over the chat.
@@ -46,10 +46,10 @@ object BackToChat {
     fun keepVideo(playing: Boolean, pipCapable: Boolean): Boolean = playing && pipCapable
 
     fun chatIntent(a: Activity): Intent =
-        Intent(a, com.blaze.assistant.MainActivity::class.java)
+        Intent(a, com.argus.assistant.MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             // RC2 (HomeRoute): with the new Home on, coming back lands on Home, not the old chat screen
-            .putExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME, true)
+            .putExtra(com.argus.assistant.ui.HomeRoute.EXTRA_HOME, true)
 
     /** Bring the chat forward. [finish] closes the media screen; false leaves it in PiP. */
     fun go(a: Activity, finish: Boolean = true) {

@@ -1,10 +1,10 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * 0.50.0: is Blaze controlling the screen right now? Drives the edge particles overlay ([com.blaze.assistant.ui.ScreenGlow]):
+ * 0.50.0: is Argus controlling the screen right now? Drives the edge particles overlay ([com.argus.assistant.ui.ScreenGlow]):
  * on while any screen action runs (tap, type, scroll, a tap plan, opening an app…), off [LINGER_MS] after the last one ends
  * (so a run of steps shows one steady glow, not a flicker), and never stuck on: a step that never reports back is dropped
  * after [MAX_MS]. The bookkeeping is [Clock] (pure, ScreenWorkTest); the object wires it to the wall clock.

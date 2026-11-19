@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.content.Context
 import android.content.Intent
@@ -54,14 +54,14 @@ object SettingsJump {
             ?: return "Unknown settings page \u201c$raw\u201d. Pages: ${SettingsRoute.pageNames.joinToString(", ")}."
         val plan = SettingsRoute.plan(page, pkg, Build.VERSION.SDK_INT)
             ?: return "That page needs an app: call open_settings again with app=\u2026"
-        val svc = BlazeAccessibilityService.instance
+        val svc = ArgusAccessibilityService.instance
         var used = -1
         for ((i, l) in plan.launches.withIndex()) {
             val intent = intentOf(l)
             // No resolveActivity check: package visibility (Android 11+) can hide Settings from queries, while
             // startActivity with an implicit intent still works. A missing page throws and the next one is tried.
             val before = svc?.currentPkg().orEmpty()
-            try { com.blaze.assistant.device.ActivityStart.start(ctx, intent) } catch (_: Exception) { continue }   // 0.49.0: from the open Blaze screen when there is one
+            try { com.argus.assistant.device.ActivityStart.start(ctx, intent) } catch (_: Exception) { continue }   // 0.49.0: from the open Argus screen when there is one
             used = i
             if (svc != null) {
                 val end = android.os.SystemClock.uptimeMillis() + 2500

@@ -1,7 +1,7 @@
-package com.blaze.assistant.dashboard
+package com.argus.assistant.dashboard
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -17,9 +17,9 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
- * v0.33.0 Desktop Bridge: the dashboard grows into Blaze on a big screen. Besides chats (which can still drive the
- * phone), a laptop on the same Wi-Fi gets the phone's clipboard both ways, Blaze's files (Gallery: pictures, music,
- * videos, documents Blaze made) to download, and uploads straight into the phone's Download/Blaze folder. Open it by
+ * v0.33.0 Desktop Bridge: the dashboard grows into Argus on a big screen. Besides chats (which can still drive the
+ * phone), a laptop on the same Wi-Fi gets the phone's clipboard both ways, Argus's files (Gallery: pictures, music,
+ * videos, documents Argus made) to download, and uploads straight into the phone's Download/Blaze folder. Open it by
  * scanning the QR code in Settings › Dashboard with a laptop/tablet camera, or typing the short link. Every call needs
  * the secret token. Pure path checks in [safeName] / [allowed] (BridgeTest).
  */
@@ -34,15 +34,15 @@ object Bridge {
     } catch (_: Exception) { false }
 
     fun roots(ctx: Context): List<File> = listOfNotNull(
-        try { com.blaze.assistant.media.Media.init(ctx); com.blaze.assistant.media.Media.items.value.firstOrNull()?.file?.parentFile } catch (_: Throwable) { null },
+        try { com.argus.assistant.media.Media.init(ctx); com.argus.assistant.media.Media.items.value.firstOrNull()?.file?.parentFile } catch (_: Throwable) { null },
         uploadDir(), File(ctx.filesDir, "mediaapps"))
 
     fun uploadDir(): File = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Blaze").apply { mkdirs() }
 
     fun files(ctx: Context): JSONArray {
         val a = JSONArray()
-        try { com.blaze.assistant.media.Media.init(ctx); com.blaze.assistant.media.Media.items.value.take(200).forEach { m ->
-            a.put(JSONObject().put("name", m.file.name).put("kind", m.kind).put("title", m.title).put("size", m.file.length()).put("time", m.time).put("path", m.file.absolutePath)) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Bridge: Media.initctx ", e) }
+        try { com.argus.assistant.media.Media.init(ctx); com.argus.assistant.media.Media.items.value.take(200).forEach { m ->
+            a.put(JSONObject().put("name", m.file.name).put("kind", m.kind).put("title", m.title).put("size", m.file.length()).put("time", m.time).put("path", m.file.absolutePath)) } } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Bridge: Media.initctx ", e) }
         uploadDir().listFiles()?.sortedByDescending { it.lastModified() }?.take(100)?.forEach { f ->
             a.put(JSONObject().put("name", f.name).put("kind", "upload").put("title", f.name).put("size", f.length()).put("time", f.lastModified()).put("path", f.absolutePath)) }
         return a
@@ -51,11 +51,11 @@ object Bridge {
     private fun <T> onMain(block: () -> T): T? {
         if (Looper.myLooper() == Looper.getMainLooper()) return block()
         var r: T? = null; val l = CountDownLatch(1)
-        Handler(Looper.getMainLooper()).post { try { r = block() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Bridge: r block", e) } finally { l.countDown() } }
+        Handler(Looper.getMainLooper()).post { try { r = block() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Bridge: r block", e) } finally { l.countDown() } }
         l.await(3, TimeUnit.SECONDS); return r
     }
 
-    /** Android only lets the foreground app read the clipboard; null means "open Blaze on the phone first". */
+    /** Android only lets the foreground app read the clipboard; null means "open Argus on the phone first". */
     fun clipboard(ctx: Context): String? = onMain { ctx.getSystemService(ClipboardManager::class.java)?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(ctx)?.toString() }
 
     fun setClipboard(ctx: Context, text: String): Boolean = onMain { ctx.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("From your computer", text)); true } == true

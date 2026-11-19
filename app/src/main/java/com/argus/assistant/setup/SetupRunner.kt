@@ -1,9 +1,9 @@
-package com.blaze.assistant.setup
+package com.argus.assistant.setup
 
 import android.content.Context
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.setup.SetupPlan.Phase
-import com.blaze.assistant.setup.SetupPlan.Status
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.setup.SetupPlan.Phase
+import com.argus.assistant.setup.SetupPlan.Status
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
  * each job (Linux.install, LinuxReadyRunner.ensure, SkillLibrary.seed, WakeModel.download,
  * FastLane.download), one at a time per item, Wi-Fi items only on Wi-Fi, failures retried with a back-off. It runs in
  * the app's own scope, so leaving the setup screen (or the app) doesn't stop it; settled results are saved and the next
- * start resumes what is left ([later], from BlazeApp's after-first-frame queue, about 30 s after the first frame).
+ * start resumes what is left ([later], from ArgusApp's after-first-frame queue, about 30 s after the first frame).
  */
 object SetupRunner {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -79,14 +79,14 @@ object SetupRunner {
     }
 
     /**
-     * BlazeApp, after the first frame: for people past onboarding (or who started setup before), what is left is set up
+     * ArgusApp, after the first frame: for people past onboarding (or who started setup before), what is left is set up
      * by itself [SetupPlan.LATER_MS] later, so it never competes with start-up. First-run users get it when onboarding finishes.
      */
     fun later(ctx: Context) {
         val app = ctx.applicationContext
         scope.launch {
             delay(SetupPlan.LATER_MS)
-            val onboarded = try { Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, false) } catch (_: Throwable) { false }
+            val onboarded = try { Settings.bool(com.argus.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, false) } catch (_: Throwable) { false }
             if (SetupPlan.startLater(onboarded, started(), _state.value)) start(app)
         }
     }
@@ -105,25 +105,25 @@ object SetupRunner {
     private fun probe(id: String): Status? = try {
         when (id) {
             "linux" -> when {
-                !com.blaze.assistant.terminal.Linux.supported() -> Status(Phase.SKIPPED, note = "Not available on this phone's CPU")
-                com.blaze.assistant.terminal.Linux.installed() -> Status(Phase.DONE)
+                !com.argus.assistant.terminal.Linux.supported() -> Status(Phase.SKIPPED, note = "Not available on this phone's CPU")
+                com.argus.assistant.terminal.Linux.installed() -> Status(Phase.DONE)
                 else -> null
             }
-            "tools" -> if (!com.blaze.assistant.terminal.Linux.supported()) Status(Phase.SKIPPED, note = "Comes with the Linux workspace") else null
-            "voice" -> if (com.blaze.assistant.voice.WakeModel.ready(app)) Status(Phase.DONE) else null
+            "tools" -> if (!com.argus.assistant.terminal.Linux.supported()) Status(Phase.SKIPPED, note = "Comes with the Linux workspace") else null
+            "voice" -> if (com.argus.assistant.voice.WakeModel.ready(app)) Status(Phase.DONE) else null
             "quick" -> when {
-                !com.blaze.assistant.agent.FastLane.supported(app) -> Status(Phase.SKIPPED, note = "Not available on this phone")
-                com.blaze.assistant.agent.FastLane.ready(app) -> Status(Phase.DONE)
+                !com.argus.assistant.agent.FastLane.supported(app) -> Status(Phase.SKIPPED, note = "Not available on this phone")
+                com.argus.assistant.agent.FastLane.ready(app) -> Status(Phase.DONE)
                 else -> null
             }
             else -> null
         }
-    } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("SetupRunner.probe $id", t); null }
+    } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("SetupRunner.probe $id", t); null }
 
     private suspend fun run(i: SetupPlan.Item) {
         set(i.id, Status(Phase.RUNNING))
         val result: Status = try { work(i) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (t: Throwable) {
-            com.blaze.assistant.device.CrashLog.quiet("SetupRunner ${i.id}", t)
+            com.argus.assistant.device.CrashLog.quiet("SetupRunner ${i.id}", t)
             SetupPlan.failed(_state.value[i.id], t.message ?: t.javaClass.simpleName, System.currentTimeMillis())
         }
         set(i.id, result)
@@ -136,25 +136,25 @@ object SetupRunner {
         probe(i.id)?.let { if (SetupPlan.settled(it)) return it }
         return when (i.id) {
             "linux" -> {
-                val watch = scope.launch { while (isActive) { val t = com.blaze.assistant.terminal.Linux.status.value; if (t.isNotBlank()) set(i.id, Status(Phase.RUNNING, percentIn(t), t.take(60))); delay(500) } }
-                val r = try { com.blaze.assistant.terminal.Linux.install() } finally { watch.cancel() }
-                if (com.blaze.assistant.terminal.Linux.installed()) Status(Phase.DONE) else fail(r)
+                val watch = scope.launch { while (isActive) { val t = com.argus.assistant.terminal.Linux.status.value; if (t.isNotBlank()) set(i.id, Status(Phase.RUNNING, percentIn(t), t.take(60))); delay(500) } }
+                val r = try { com.argus.assistant.terminal.Linux.install() } finally { watch.cancel() }
+                if (com.argus.assistant.terminal.Linux.installed()) Status(Phase.DONE) else fail(r)
             }
             "tools" -> {
-                com.blaze.assistant.terminal.LinuxReadyRunner.ensure("alpine", force = true)
-                val marker = java.io.File(com.blaze.assistant.terminal.Linux.rootfs(), com.blaze.assistant.terminal.LinuxReady.MARKER)
+                com.argus.assistant.terminal.LinuxReadyRunner.ensure("alpine", force = true)
+                val marker = java.io.File(com.argus.assistant.terminal.Linux.rootfs(), com.argus.assistant.terminal.LinuxReady.MARKER)
                 if (marker.exists()) Status(Phase.DONE) else fail("The Linux tools didn't finish")
             }
-            "skills" -> { com.blaze.assistant.agent.SkillLibrary.seed(app); Status(Phase.DONE) }
+            "skills" -> { com.argus.assistant.agent.SkillLibrary.seed(app); Status(Phase.DONE) }
             "voice" -> {
-                val watch = scope.launch { com.blaze.assistant.voice.WakeModel.progress.collect { p -> if (p in 0..100) set(i.id, Status(Phase.RUNNING, p)) } }
-                val r = try { com.blaze.assistant.voice.WakeModel.download(app) } finally { watch.cancel() }
-                if (r.isSuccess && com.blaze.assistant.voice.WakeModel.ready(app)) Status(Phase.DONE) else fail(r.exceptionOrNull()?.message ?: "Download failed")
+                val watch = scope.launch { com.argus.assistant.voice.WakeModel.progress.collect { p -> if (p in 0..100) set(i.id, Status(Phase.RUNNING, p)) } }
+                val r = try { com.argus.assistant.voice.WakeModel.download(app) } finally { watch.cancel() }
+                if (r.isSuccess && com.argus.assistant.voice.WakeModel.ready(app)) Status(Phase.DONE) else fail(r.exceptionOrNull()?.message ?: "Download failed")
             }
             "quick" -> {
-                val watch = scope.launch { com.blaze.assistant.agent.FastLane.progress.collect { p -> if (p in 0..100) set(i.id, Status(Phase.RUNNING, p)) } }
-                val r = try { com.blaze.assistant.agent.FastLane.download(app) } finally { watch.cancel() }
-                if (r.isSuccess && com.blaze.assistant.agent.FastLane.ready(app)) Status(Phase.DONE) else fail(r.exceptionOrNull()?.message ?: "Download failed")
+                val watch = scope.launch { com.argus.assistant.agent.FastLane.progress.collect { p -> if (p in 0..100) set(i.id, Status(Phase.RUNNING, p)) } }
+                val r = try { com.argus.assistant.agent.FastLane.download(app) } finally { watch.cancel() }
+                if (r.isSuccess && com.argus.assistant.agent.FastLane.ready(app)) Status(Phase.DONE) else fail(r.exceptionOrNull()?.message ?: "Download failed")
             }
             else -> Status(Phase.SKIPPED)
         }
@@ -164,7 +164,7 @@ object SetupRunner {
     internal fun percentIn(line: String): Int = Regex("(\\d{1,3})\\s?%").find(line)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it in 0..100 } ?: -1
 
     private fun net(unmeteredOnly: Boolean): Boolean = try {
-        if (unmeteredOnly) com.blaze.assistant.terminal.LinuxReadyRunner.unmetered() && com.blaze.assistant.terminal.LinuxReadyRunner.online()
-        else com.blaze.assistant.terminal.LinuxReadyRunner.online()
+        if (unmeteredOnly) com.argus.assistant.terminal.LinuxReadyRunner.unmetered() && com.argus.assistant.terminal.LinuxReadyRunner.online()
+        else com.argus.assistant.terminal.LinuxReadyRunner.online()
     } catch (_: Throwable) { false }
 }

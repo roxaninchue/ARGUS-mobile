@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -84,7 +84,7 @@ object SyncMerge {
     private fun withIds(o: JSONObject): JSONObject {
         val arr = o.optJSONArray("messages") ?: return o
         val c = JSONObject(o.toString()); val a = c.getJSONArray("messages")
-        if (com.blaze.assistant.agent.Gid.fill(a) == 0) return o
+        if (com.argus.assistant.agent.Gid.fill(a) == 0) return o
         return c
     }
     private fun canon(o: JSONObject): String {
@@ -113,7 +113,7 @@ object SyncMerge {
 
     /** A message's own global id, or "" for one saved before ids (or given a derived one: those match by role@at). */
     private fun explicitGid(m: JSONObject): String =
-        m.optString("gid").takeIf { it.isNotEmpty() && !com.blaze.assistant.agent.Gid.isLegacy(it) }.orEmpty()
+        m.optString("gid").takeIf { it.isNotEmpty() && !com.argus.assistant.agent.Gid.isLegacy(it) }.orEmpty()
 
     /**
      * Merges two copies of a chat file (ChatStore JSON): messages are the union by [msgKey], ordered by time; ids are
@@ -129,7 +129,7 @@ object SyncMerge {
         val cleared = maxOf(a.optLong(CLEARED), b.optLong(CLEARED))
         val byKey = LinkedHashMap<String, JSONObject>()
         // v0.45.0 (#37): messages with a global id match by it (two bubbles of one reply may share role@at); a copy without
-        // one (an older Blaze, or saved before ids) matches by role@at, joining the id'd message with the same role@at.
+        // one (an older Argus, or saved before ids) matches by role@at, joining the id'd message with the same role@at.
         // Reactions are kept from [a] (this phone's copy); they travel as their own items.
         val reactA = HashMap<String, Any?>()   // key → this phone's reactions (null = it has the message, without any)
         val gidAt = HashMap<String, String>()
@@ -173,7 +173,7 @@ object SyncMerge {
             if (!used.add(id)) { id = next++; used += id; copy.put("id", id) }
             arr.put(copy)
         }
-        com.blaze.assistant.agent.Gid.fill(arr)
+        com.argus.assistant.agent.Gid.fill(arr)
         out.put("messages", arr)
         if (cleared > 0) out.put(CLEARED, cleared)
         out.put("updated", maxOf(a.optLong("updated"), b.optLong("updated")))

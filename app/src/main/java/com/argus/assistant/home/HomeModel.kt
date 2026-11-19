@@ -1,4 +1,4 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -168,8 +168,8 @@ object Ago {
  * them too. Nothing is fetched.
  *
  * 2026-11-18 (first-run checklist): an item may carry a [Item.key] (`k`, a stable id the app matches on, e.g. the
- * "Set up ARGUS" steps of [com.blaze.assistant.setup.SetupChecklist]) and an [Item.open] (`open`, what a tap on the row
- * opens: a [com.blaze.assistant.agent.SelfSetup.open] target). Both are optional and kept through every edit.
+ * "Set up ARGUS" steps of [com.argus.assistant.setup.SetupChecklist]) and an [Item.open] (`open`, what a tap on the row
+ * opens: a [com.argus.assistant.agent.SelfSetup.open] target). Both are optional and kept through every edit.
  */
 object HomeTodo {
     data class Item(val text: String, val done: Boolean, val key: String = "", val open: String = "")

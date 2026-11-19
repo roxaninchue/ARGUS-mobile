@@ -1,4 +1,4 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
 import org.json.JSONArray
 import org.json.JSONObject

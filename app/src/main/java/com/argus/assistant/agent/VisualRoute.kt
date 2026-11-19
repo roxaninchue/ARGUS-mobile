@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.26.1 (Jack): "draw a flowchart of how solar panels work" went through the diagrams skill, wrote a

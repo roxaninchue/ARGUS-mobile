@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.SimpleMode.Work
+import com.argus.assistant.agent.SimpleMode.Work
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

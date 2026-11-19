@@ -1,16 +1,16 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.48.0 RC5 (owner's phone, chat over Home): "can you control my phone?" -> Blaze offered to set it up -> "okay!" ->
+ * 0.48.0 RC5 (owner's phone, chat over Home): "can you control my phone?" -> Argus offered to set it up -> "okay!" ->
  * "I'll open the accessibility settings now." -> "okay, do it!" -> "Opening accessibility settings for you now." and NOTHING
  * opened. Two holes, both in words, not in the UI:
  *  1. "okay, do it!" took the chat lane (one call, NO tools): it starts with "okay" (small talk) and is short, so
  *     [ChatLane.fits] let it through, and the chat lane's model just said it was opening the page.
  *  2. The full lane's "I'll open the accessibility settings now." had no tool call behind it, and the claim checks only
  *     look at past-tense claims ("I opened…") about what the user's own message asked for.
- * Pure (ActionPromiseTest): [consent] (a bare go-ahead), [offers] (Blaze's last message offered / announced an action),
+ * Pure (ActionPromiseTest): [consent] (a bare go-ahead), [offers] (Argus's last message offered / announced an action),
  * [promises] (a reply announcing that it is doing something right now), and the one corrective [nudge] / [honest] line.
  */
 object ActionPromise {
@@ -33,9 +33,9 @@ object ActionPromise {
 
     private val offerRx = Regex("""\b(?:want me to|shall i|should i|would you like me to|do you want me to|i can (?:do|set|open|turn|walk|start|take|get)|i'?ll|i will|let me|i'?m going to|i am going to|first up|next up|ready when you are|say the word)\b""", ic)
 
-    /** Blaze's previous message offered or announced an action (so a go-ahead answers it and needs the tools). */
-    fun offers(lastBlaze: String): Boolean {
-        val t = lastBlaze.takeLast(600)
+    /** Argus's previous message offered or announced an action (so a go-ahead answers it and needs the tools). */
+    fun offers(lastArgus: String): Boolean {
+        val t = lastArgus.takeLast(600)
         return t.isNotBlank() && (offerRx.containsMatchIn(t) || (t.trim().endsWith("?") && actionVerb.containsMatchIn(t)))
     }
 
@@ -50,7 +50,7 @@ object ActionPromise {
 
     private fun sentences(text: String): List<String> = text.split(Regex("""(?<=[.!?…])\s+|\n+""")).map { it.trim().trimStart('*', '-', '•', ' ') }.filter { it.isNotEmpty() }
 
-    /** The sentences of [reply] that say Blaze is doing something on the phone right now (empty = none). */
+    /** The sentences of [reply] that say Argus is doing something on the phone right now (empty = none). */
     fun promises(reply: String): List<String> = sentences(reply).filter { s ->
         !s.endsWith("?") && !notNow.containsMatchIn(s) && (nowRx.containsMatchIn(s) || soonRx.containsMatchIn(s))
     }

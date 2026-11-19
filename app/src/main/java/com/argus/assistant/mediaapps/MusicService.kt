@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
@@ -32,7 +32,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * v0.30.1 Blaze Music's player: media3 ExoPlayer in a MediaSessionService, so music keeps playing with Blaze closed,
+ * v0.30.1 Argus Music's player: media3 ExoPlayer in a MediaSessionService, so music keeps playing with Argus closed,
  * with the media notification and lock-screen / Bluetooth / headset controls. Audio focus is handled (a call or another
  * app's sound pauses or ducks it) and unplugging headphones pauses it. Sleep timer and the shuffle order live here.
  */
@@ -180,36 +180,36 @@ class MusicService : MediaLibraryService() {
                 var v = if (cf > 0 && player.isPlaying) MusicSmart.fadeVolume(player.currentPosition, player.duration, cf) else 1f
                 val at = sleepAt.value
                 if (at > 0 && MediaPrefs.bool(this@MusicService, MediaPrefs.SLEEP_FADE, true)) v *= MusicSmart.sleepVolume(at - System.currentTimeMillis())
-                v *= BlazeDj.duck   // 0.46.4: the DJ's spoken intro ducks the music
+                v *= ArgusDj.duck   // 0.46.4: the DJ's spoken intro ducks the music
                 if (kotlin.math.abs(player.volume - v) > 0.01f) player.volume = v
             } catch (_: Exception) { }
             main.postDelayed(this, 200)
         }
     }
 
-    /** Blaze DJ: keeps the music going with songs you play most (and liked ones), never the last 20 again. */
+    /** Argus DJ: keeps the music going with songs you play most (and liked ones), never the last 20 again. */
     fun startDj(on: Boolean = true) {
         MediaPrefs.setBool(this, MediaPrefs.DJ, on)
-        BlazeDj.on.value = on
-        if (!on) { BlazeDj.release(); return }
+        ArgusDj.on.value = on
+        if (!on) { ArgusDj.release(); return }
         if (player.mediaItemCount == 0) {
-            val picks = BlazeDj.picks(10)
+            val picks = ArgusDj.picks(10)
             if (picks.isEmpty()) return
             player.setMediaItems(picks.map { item(it) }); player.prepare(); player.play()
             MusicContext.set("${BrandName.NAME} DJ")
-            BlazeDj.say(this, DjSpeech.start(picks[0], BlazeDj.vibe.value, BlazeDj.hour()))
+            ArgusDj.say(this, DjSpeech.start(picks[0], ArgusDj.vibe.value, ArgusDj.hour()))
         } else { djTopUp(force = true); if (!player.isPlaying) { player.prepare(); player.play() } }
     }
 
-    /** 0.46.4 Blaze DJ from the Music screen: a fresh DJ set now (replaces the queue), in the chosen vibe. */
+    /** 0.46.4 Argus DJ from the Music screen: a fresh DJ set now (replaces the queue), in the chosen vibe. */
     fun djFresh(v: DjPlan.Vibe? = null) {
-        if (v != null) BlazeDj.setVibe(this, v)
-        MediaPrefs.setBool(this, MediaPrefs.DJ, true); BlazeDj.on.value = true
-        val picks = BlazeDj.picks(12)
+        if (v != null) ArgusDj.setVibe(this, v)
+        MediaPrefs.setBool(this, MediaPrefs.DJ, true); ArgusDj.on.value = true
+        val picks = ArgusDj.picks(12)
         if (picks.isEmpty()) return
         player.setMediaItems(picks.map { item(it) }); player.shuffleModeEnabled = false; player.prepare(); player.play()
         MusicContext.set("${BrandName.NAME} DJ")
-        BlazeDj.say(this, if (v != null) DjSpeech.changed(v) + " " + DjSpeech.next(picks[0]) else DjSpeech.start(picks[0], BlazeDj.vibe.value, BlazeDj.hour()))
+        ArgusDj.say(this, if (v != null) DjSpeech.changed(v) + " " + DjSpeech.next(picks[0]) else DjSpeech.start(picks[0], ArgusDj.vibe.value, ArgusDj.hour()))
     }
 
     /** 0.46.4 "More like this": songs like the one playing go next (same artist, same album, then often played). */
@@ -219,7 +219,7 @@ class MusicService : MediaLibraryService() {
         val more = DjPlan.moreLikeThis(cur, MediaLib.songs.value.filter { it.key !in have }, MediaLib.plays.value, MediaLib.recent.value, 6)
         if (more.isEmpty()) return
         player.addMediaItems(player.currentMediaItemIndex + 1, more.map { item(it) })
-        BlazeDj.say(this, DjSpeech.moreLike(cur))
+        ArgusDj.say(this, DjSpeech.moreLike(cur))
     }
 
     private fun djTopUp(force: Boolean = false) {
@@ -227,7 +227,7 @@ class MusicService : MediaLibraryService() {
         val left = player.mediaItemCount - 1 - player.currentMediaItemIndex
         if (left >= 2 && !force) return
         val have = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }.toSet()
-        val picks = BlazeDj.picks(8, have)
+        val picks = ArgusDj.picks(8, have)
         if (picks.isNotEmpty()) player.addMediaItems(picks.map { item(it) })
     }
 
@@ -256,7 +256,7 @@ class MusicService : MediaLibraryService() {
     override fun onCreate() {
         super.onCreate()
         MediaLib.ensure(this)
-        BlazeDj.load(this)
+        ArgusDj.load(this)
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(StreamCache.factory(this, http))
                 .setLoadErrorHandlingPolicy(StreamCache.dropPolicy()))   // 0.45.19: drops play on from buffer + cache
@@ -268,17 +268,17 @@ class MusicService : MediaLibraryService() {
         player.addListener(object : Player.Listener {
             override fun onShuffleModeEnabledChanged(on: Boolean) { if (on) reshuffle(); session?.setCustomLayout(layout()) }
             override fun onRepeatModeChanged(mode: Int) { session?.setCustomLayout(layout()) }
-            override fun onIsPlayingChanged(playing: Boolean) { if (!playing) { saveQueue(); flushPlay() } else startPlay(); com.blaze.assistant.agent.AwarenessHooks.music(player) }
+            override fun onIsPlayingChanged(playing: Boolean) { if (!playing) { saveQueue(); flushPlay() } else startPlay(); com.argus.assistant.agent.AwarenessHooks.music(player) }
             override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
                 item?.mediaId?.let { id -> MediaLib.find(id)?.let { MediaLib.played(it) } }
                 startPlay()
                 djTopUp()
-                // 0.46.4 Blaze DJ: a short plain intro for the next song (only when it moved on by itself, voice on, no battery saver).
+                // 0.46.4 Argus DJ: a short plain intro for the next song (only when it moved on by itself, voice on, no battery saver).
                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && MediaPrefs.bool(this@MusicService, MediaPrefs.DJ, false))
-                    item?.mediaId?.let { id -> MediaLib.find(id) }?.let { BlazeDj.say(this@MusicService, DjSpeech.next(it)) }
+                    item?.mediaId?.let { id -> MediaLib.find(id) }?.let { ArgusDj.say(this@MusicService, DjSpeech.next(it)) }
                 prefetchNext()
                 offlineSkip(false)
-                com.blaze.assistant.agent.AwarenessHooks.music(player, songChanged = true)
+                com.argus.assistant.agent.AwarenessHooks.music(player, songChanged = true)
             }
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 try { eq?.release() } catch (_: Exception) { }
@@ -293,7 +293,7 @@ class MusicService : MediaLibraryService() {
                 main.removeCallbacks(offlineStall)
                 if (state == Player.STATE_BUFFERING && player.playWhenReady && !NetWatch.now(this@MusicService)) main.postDelayed(offlineStall, NetHonesty.OFFLINE_SKIP_MS)
                 if (state == Player.STATE_ENDED && sleepAt.value == -1L) sleepAt.value = 0
-                // Blaze DJ: the queue ran out, so it adds more and carries on.
+                // Argus DJ: the queue ran out, so it adds more and carries on.
                 if (state == Player.STATE_ENDED && sleepAt.value == 0L && MediaPrefs.bool(this@MusicService, MediaPrefs.DJ, false)) {
                     val before = player.mediaItemCount
                     djTopUp(force = true)
@@ -301,7 +301,7 @@ class MusicService : MediaLibraryService() {
                 }
             }
             override fun onPositionDiscontinuity(old: Player.PositionInfo, new: Player.PositionInfo, reason: Int) {
-                com.blaze.assistant.agent.AwarenessHooks.music(player)
+                com.argus.assistant.agent.AwarenessHooks.music(player)
                 // "End of song" sleep timer: stop when the song changes on its own.
                 if (sleepAt.value == -1L && reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) { player.pause(); sleepAt.value = 0 }
             }
@@ -313,7 +313,7 @@ class MusicService : MediaLibraryService() {
             .setCustomLayout(layout()).build()
         // 0.46.1: the Stage starts this service with no screen and no controller connected; adding the session here is what
         // makes media3 post the media notification (lock screen, shade, MediaStyle with art, seek, prev / play / next).
-        try { session?.let { addSession(it) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("MusicService.addSession", e) }
+        try { session?.let { addSession(it) } } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("MusicService.addSession", e) }
         current = this
         main.post(sleepTick)
         main.post(fadeTick)
@@ -400,7 +400,7 @@ class MusicService : MediaLibraryService() {
         if (!id.startsWith("stream:") || !retried.add(id)) return
         val parts = id.split(":", limit = 3)
         if (parts.size < 3) return
-        val src = com.blaze.assistant.mediaapps.store.StoreSources.get(parts[1]) ?: return
+        val src = com.argus.assistant.mediaapps.store.StoreSources.get(parts[1]) ?: return
         val index = player.currentMediaItemIndex
         val pos = player.currentPosition
         scope.launch {
@@ -428,13 +428,13 @@ class MusicService : MediaLibraryService() {
         val rep = if (::player.isInitialized) player.repeatMode else Player.REPEAT_MODE_OFF
         val shuffle = CommandButton.Builder().setSessionCommand(SessionCommand(CMD_SHUFFLE, Bundle.EMPTY))
             .setDisplayName(if (sh) "Shuffle on" else "Shuffle off")
-            .setIconResId(if (sh) com.blaze.assistant.R.drawable.ic_n_shuffle_on else com.blaze.assistant.R.drawable.ic_n_shuffle_off).build()
+            .setIconResId(if (sh) com.argus.assistant.R.drawable.ic_n_shuffle_on else com.argus.assistant.R.drawable.ic_n_shuffle_off).build()
         val repeat = CommandButton.Builder().setSessionCommand(SessionCommand(CMD_REPEAT, Bundle.EMPTY))
             .setDisplayName(when (rep) { Player.REPEAT_MODE_ALL -> "Loop all"; Player.REPEAT_MODE_ONE -> "Loop one"; else -> "Loop off" })
             .setIconResId(when (rep) {
-                Player.REPEAT_MODE_ALL -> com.blaze.assistant.R.drawable.ic_n_repeat_all
-                Player.REPEAT_MODE_ONE -> com.blaze.assistant.R.drawable.ic_n_repeat_one
-                else -> com.blaze.assistant.R.drawable.ic_n_repeat_off
+                Player.REPEAT_MODE_ALL -> com.argus.assistant.R.drawable.ic_n_repeat_all
+                Player.REPEAT_MODE_ONE -> com.argus.assistant.R.drawable.ic_n_repeat_one
+                else -> com.argus.assistant.R.drawable.ic_n_repeat_off
             }).build()
         return ImmutableList.of(shuffle, repeat)
     }
@@ -487,9 +487,9 @@ class MusicService : MediaLibraryService() {
 
         override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
             // Account lock: Android Auto (and any other app) is turned away; playback pauses.
-            if (!com.blaze.assistant.connect.AccountLock.mediaAccepts(com.blaze.assistant.connect.AccountGate.locked(), controller.packageName, packageName)) {
+            if (!com.argus.assistant.connect.AccountLock.mediaAccepts(com.argus.assistant.connect.AccountGate.locked(), controller.packageName, packageName)) {
                 if (player.isPlaying) player.pause()
-                com.blaze.assistant.connect.AccountGate.notice(this@MusicService)
+                com.argus.assistant.connect.AccountGate.notice(this@MusicService)
                 return MediaSession.ConnectionResult.reject()
             }
             val cmds = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
@@ -516,8 +516,8 @@ class MusicService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
-        com.blaze.assistant.agent.AwarenessHooks.musicStopped()
-        BlazeDj.release()
+        com.argus.assistant.agent.AwarenessHooks.musicStopped()
+        ArgusDj.release()
         saveQueue(); flushPlay()
         main.removeCallbacks(sleepTick); main.removeCallbacks(saver); main.removeCallbacks(fadeTick)
         try { eq?.release() } catch (_: Exception) { }
@@ -539,7 +539,7 @@ object AutoTree {
 }
 
 /**
- * 0.46.1 cover art for the notification / lock screen: a local song without a saved cover gets a "blazeart:" uri that this
+ * 0.46.1 cover art for the notification / lock screen: a local song without a saved cover gets a "argusart:" uri that this
  * loader answers with the song's embedded picture (MediaMetadataRetriever, off the main thread); everything else goes to
  * media3's own loader.
  */

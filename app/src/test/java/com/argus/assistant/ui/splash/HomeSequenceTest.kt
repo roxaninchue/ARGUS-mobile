@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui.splash
+package com.argus.assistant.ui.splash
 
-import com.blaze.assistant.home.HomeGrid
-import com.blaze.assistant.ui.HomeSkyRule
-import com.blaze.assistant.ui.HomeSkySpec
+import com.argus.assistant.home.HomeGrid
+import com.argus.assistant.ui.HomeSkyRule
+import com.argus.assistant.ui.HomeSkySpec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -1,16 +1,16 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.46.4 Music revamp: nav, close-to-chat, cover mosaic, colour fallback, now-playing gestures, Blaze DJ plan + plain speech. */
+/** 0.46.4 Music revamp: nav, close-to-chat, cover mosaic, colour fallback, now-playing gestures, Argus DJ plan + plain speech. */
 class MusicRevampTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
     private fun t(i: Int, artist: String = "A$i", art: String = "", title: String = "Song $i", album: String = "", ms: Long = 200_000, added: Long = i.toLong()) =
         Track("k$i", "/m/$i.mp3", title, artist, album, ms, art, "download", added)
 
@@ -27,7 +27,7 @@ class MusicRevampTest {
         assertTrue(MusicNav.showMini("search", true)); assertFalse(MusicNav.showMini("player", true)); assertFalse(MusicNav.showMini("home", false))
     }
 
-    @Test fun closeAlwaysReturnsToBlazeChat() {
+    @Test fun closeAlwaysReturnsToArgusChat() {
         assertEquals("chat", MusicNav.CLOSE_TARGET)
         val m = src("mediaapps/MusicActivity.kt")
         assertTrue("onClose = { BackToChat.go(this) }" in m)
@@ -141,13 +141,13 @@ class MusicRevampTest {
         assertFalse(DjSpeech.plain("Let's embark on a sonic journey"))
         assertFalse(DjSpeech.plain("Sit back and enjoy the vibes"))
         // Off on battery saver, and the user can turn it off.
-        val dj = src("mediaapps/BlazeDj.kt")
+        val dj = src("mediaapps/ArgusDj.kt")
         assertTrue("fun speaks(ctx: Context): Boolean = voiceOn(ctx) && !lowPower(ctx)" in dj)
         assertTrue("isPowerSaveMode" in dj)
     }
 
     @Test fun ownLookNoOtherBrandAndNoCliNames() {
-        val files = listOf("mediaapps/MusicShell.kt", "mediaapps/MusicHub.kt", "mediaapps/BlazeDj.kt", "mediaapps/VideoShell.kt", "mediaapps/VideoHub.kt")
+        val files = listOf("mediaapps/MusicShell.kt", "mediaapps/MusicHub.kt", "mediaapps/ArgusDj.kt", "mediaapps/VideoShell.kt", "mediaapps/VideoHub.kt")
         for (f in files) {
             val s = src(f)
             assertFalse("$f names Spotify", Regex("(?i)spotify").containsMatchIn(s))

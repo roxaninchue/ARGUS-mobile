@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -105,25 +105,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.blaze.assistant.mediaapps.store.Choice
-import com.blaze.assistant.mediaapps.store.JamendoSource
-import com.blaze.assistant.mediaapps.store.LinkParse
-import com.blaze.assistant.mediaapps.store.LinkSource
-import com.blaze.assistant.mediaapps.store.StoreDetail
-import com.blaze.assistant.mediaapps.store.StoreItem
-import com.blaze.assistant.mediaapps.store.StoreSource
-import com.blaze.assistant.mediaapps.store.StoreSources
-import com.blaze.assistant.ui.BlazeBrush
-import com.blaze.assistant.ui.BlazeDialog
-import com.blaze.assistant.ui.BlazeShapes
-import com.blaze.assistant.ui.BlazeTextField
-import com.blaze.assistant.ui.DialogColors
-import com.blaze.assistant.ui.EmptyState
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.MotionTokens
-import com.blaze.assistant.ui.PillButton
-import com.blaze.assistant.ui.Type
-import com.blaze.assistant.ui.rememberHomeImage
+import com.argus.assistant.mediaapps.store.Choice
+import com.argus.assistant.mediaapps.store.JamendoSource
+import com.argus.assistant.mediaapps.store.LinkParse
+import com.argus.assistant.mediaapps.store.LinkSource
+import com.argus.assistant.mediaapps.store.StoreDetail
+import com.argus.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreSource
+import com.argus.assistant.mediaapps.store.StoreSources
+import com.argus.assistant.ui.ArgusBrush
+import com.argus.assistant.ui.ArgusDialog
+import com.argus.assistant.ui.ArgusShapes
+import com.argus.assistant.ui.ArgusTextField
+import com.argus.assistant.ui.DialogColors
+import com.argus.assistant.ui.EmptyState
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.MotionTokens
+import com.argus.assistant.ui.PillButton
+import com.argus.assistant.ui.Type
+import com.argus.assistant.ui.rememberHomeImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -134,7 +134,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.VpnKey
 
 /**
- * v0.30.1: pieces shared by Blaze Music and Blaze Video: the Library | Store pill (the same look as the
+ * v0.30.1: pieces shared by Argus Music and Argus Video: the Library | Store pill (the same look as the
  * Chat | Projects | Home pill), cover art, rows, and the Store (search any StoreSource as a plain thumbnail grid with
  * licences, preview, quality choice, download queue). Never a web view. v0.34.1: the player is no longer a tab; it opens
  * as a sheet over the Library ([PlayerSheet]) and collapses into a mini-player ([MiniBar]).
@@ -143,7 +143,7 @@ import androidx.compose.material.icons.rounded.VpnKey
 /** The same pill as Chat | Projects | Home (ui/Shell.kt): faint track, the chosen tab filled with ink, fading across. */
 @Composable
 fun AppPill(tabs: List<Pair<String, String>>, value: String, modifier: Modifier = Modifier, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(modifier.clip(RoundedCornerShape(20.dp)).background(c.faint).padding(3.dp)) {
         tabs.forEach { (id, label) ->
             val on = value == id
@@ -158,7 +158,7 @@ fun AppPill(tabs: List<Pair<String, String>>, value: String, modifier: Modifier 
 }
 
 @Composable
-fun MText(text: String, size: TextUnit = 14.sp, color: Color = LocalBlaze.current.ink, weight: FontWeight = FontWeight.Normal,
+fun MText(text: String, size: TextUnit = 14.sp, color: Color = LocalArgus.current.ink, weight: FontWeight = FontWeight.Normal,
           maxLines: Int = 1, modifier: Modifier = Modifier) {
     Text(text, modifier = modifier, maxLines = maxLines, overflow = TextOverflow.Ellipsis,
         style = TextStyle(fontFamily = Type.Sans, fontWeight = weight, fontSize = size, lineHeight = size * 1.3f, color = color))
@@ -166,9 +166,9 @@ fun MText(text: String, size: TextUnit = 14.sp, color: Color = LocalBlaze.curren
 
 /** A round icon button (40 dp in a 44 dp target). */
 @Composable
-fun RoundIcon(icon: ImageVector, desc: String, modifier: Modifier = Modifier, size: Int = 44, tint: Color = LocalBlaze.current.ink,
+fun RoundIcon(icon: ImageVector, desc: String, modifier: Modifier = Modifier, size: Int = 44, tint: Color = LocalArgus.current.ink,
               fill: Color = Color.Transparent, onClick: () -> Unit) {
-    Box(modifier.size(size.dp).clip(BlazeShapes.pill).background(fill, BlazeShapes.pill).clickable(onClickLabel = desc, onClick = onClick)
+    Box(modifier.size(size.dp).clip(ArgusShapes.pill).background(fill, ArgusShapes.pill).clickable(onClickLabel = desc, onClick = onClick)
         .semantics { contentDescription = desc }, contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size((size * 0.52f).dp))
     }
@@ -226,10 +226,10 @@ fun rememberArt(t: Track?, target: Int = 320): ImageBitmap? {
 
 /** Cover art, or a soft gradient with a note / film mark when there's none. */
 @Composable
-fun Art(t: Track?, modifier: Modifier, shape: androidx.compose.ui.graphics.Shape = BlazeShapes.small, target: Int = 320) {
+fun Art(t: Track?, modifier: Modifier, shape: androidx.compose.ui.graphics.Shape = ArgusShapes.small, target: Int = 320) {
     val img = rememberArt(t, target)
-    val c = LocalBlaze.current
-    Box(modifier.clip(shape).background(Brush.linearGradient(listOf(BlazeBrush.blue.copy(alpha = 0.55f), BlazeBrush.orange.copy(alpha = 0.45f)))),
+    val c = LocalArgus.current
+    Box(modifier.clip(shape).background(Brush.linearGradient(listOf(ArgusBrush.blue.copy(alpha = 0.55f), ArgusBrush.orange.copy(alpha = 0.45f)))),
         contentAlignment = Alignment.Center) {
         if (img != null) Image(img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         else Icon(if (t?.kind == "video") Icons.Rounded.Movie else Icons.Rounded.MusicNote, contentDescription = null,
@@ -241,7 +241,7 @@ fun Art(t: Track?, modifier: Modifier, shape: androidx.compose.ui.graphics.Shape
 @Composable
 fun NetThumb(url: String, modifier: Modifier, content: @Composable BoxScope.() -> Unit = {}) {
     val img = rememberHomeImage(url)
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(modifier.background(c.faint)) {
         if (img != null) Image(img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         content()
@@ -252,7 +252,7 @@ fun NetThumb(url: String, modifier: Modifier, content: @Composable BoxScope.() -
 @Composable
 fun BoxScope.DurationBadge(text: String) {
     if (text.isBlank()) return
-    Box(Modifier.align(Alignment.BottomEnd).padding(6.dp).clip(BlazeShapes.xs).background(Color.Black.copy(alpha = 0.78f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+    Box(Modifier.align(Alignment.BottomEnd).padding(6.dp).clip(ArgusShapes.xs).background(Color.Black.copy(alpha = 0.78f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
         Text(text, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 11.sp, color = Color.White))
     }
 }
@@ -303,7 +303,7 @@ class StoreState(kind: String) {
  */
 @Composable
 fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, StoreSource) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val jobs by Downloads.jobs.collectAsState()
@@ -452,14 +452,14 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
     }
 
     val square = state.results.isNotEmpty() && state.results.all { it.square }
-    LazyVerticalGrid(GridCells.Fixed(com.blaze.assistant.ui.common.WindowLayout.gridColumns(if (square) 3 else 2, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat())), Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 96.dp),
+    LazyVerticalGrid(GridCells.Fixed(com.argus.assistant.ui.common.WindowLayout.gridColumns(if (square) 3 else 2, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat())), Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 96.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (sources.size > 1) item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 // Wave A 27: "All" first and on by default; tapping a source again goes back to All.
                 (listOf(ForYou.ALL to "All") + sources.map { it.id to it.name }).forEach { (id, name) ->
                     val on = id == state.source
-                    Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.ink else c.faint).clickable {
+                    Box(Modifier.clip(ArgusShapes.pill).background(if (on) c.ink else c.faint).clickable {
                         state.source = ForYou.toggle(state.source, id).let { if (on && id == ForYou.ALL) ForYou.ALL else it }
                         state.results = emptyList(); state.next = ""; state.error = ""; state.searched = false; state.loading = false; state.gen++
                     }.semantics { selected = on }.padding(horizontal = 12.dp, vertical = 7.dp)) {
@@ -470,7 +470,7 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BlazeTextField(state.query, { state.query = it }, "Search " + (src?.name ?: if (kind == "video") "videos" else "music"),
+                ArgusTextField(state.query, { state.query = it }, "Search " + (src?.name ?: if (kind == "video") "videos" else "music"),
                     Modifier.weight(1f), keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { state.recent = RecentSearches.remember(ctx, kind, state.query); search() }))
                 Spacer(Modifier.width(8.dp))
@@ -483,16 +483,16 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 MText("Recent", 12.sp, c.sub, FontWeight.Medium)
                 recent.forEach { q ->
-                    Box(Modifier.clip(BlazeShapes.pill).background(c.faint).clickable { state.query = q; state.recent = RecentSearches.remember(ctx, kind, q); search() }
+                    Box(Modifier.clip(ArgusShapes.pill).background(c.faint).clickable { state.query = q; state.recent = RecentSearches.remember(ctx, kind, q); search() }
                         .padding(horizontal = 12.dp, vertical = 7.dp)) { MText(q, 12.5.sp, c.ink) }
                 }
-                Box(Modifier.clip(BlazeShapes.pill).clickable { RecentSearches.forget(ctx, kind); state.recent = emptyList() }
+                Box(Modifier.clip(ArgusShapes.pill).clickable { RecentSearches.forget(ctx, kind); state.recent = emptyList() }
                     .padding(horizontal = 8.dp, vertical = 7.dp)) { MText("Clear", 12.sp, c.sub) }
             }
         }
         // v0.32.1: "Download by link": a YouTube link or a direct file link, for when the Store's own search fails.
         item(span = { GridItemSpan(maxLineSpan) }) {
-            Row(Modifier.clip(BlazeShapes.pill).background(c.faint).clickable { state.linkOpen = true }
+            Row(Modifier.clip(ArgusShapes.pill).background(c.faint).clickable { state.linkOpen = true }
                 .padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Link, null, Modifier.size(16.dp), tint = c.accent)
                 Spacer(Modifier.width(6.dp))
@@ -507,8 +507,8 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 (listOf(ForYou.ALL to "All") + ideas.map { it to it }).forEach { (id, label) ->
                     val on = state.chip == id
-                    Box(Modifier.clip(BlazeShapes.pill).background(if (on) c.accent.copy(alpha = 0.22f) else c.faint)
-                        .border(1.dp, if (on) c.accent.copy(alpha = 0.7f) else Color.Transparent, BlazeShapes.pill)
+                    Box(Modifier.clip(ArgusShapes.pill).background(if (on) c.accent.copy(alpha = 0.22f) else c.faint)
+                        .border(1.dp, if (on) c.accent.copy(alpha = 0.7f) else Color.Transparent, ArgusShapes.pill)
                         .clickable {
                             state.chip = ForYou.toggle(state.chip, id)
                             state.results = emptyList(); state.next = ""; state.error = ""; state.loading = false; state.gen++
@@ -612,9 +612,9 @@ fun LinkDialog(kind: String, onDismiss: () -> Unit, onReady: (StoreItem, StoreSo
             MText("Paste a YouTube link (video, Shorts, YouTube Music) or a link to a " + (if (kind == "video") "video" else "music") + " file.",
                 13.sp, DialogColors.body, maxLines = 3)
             Spacer(Modifier.height(12.dp))
-            BlazeTextField(text, { text = it; err = "" }, "https://youtu.be/\u2026", Modifier.fillMaxWidth(),
+            ArgusTextField(text, { text = it; err = "" }, "https://youtu.be/\u2026", Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go), keyboardActions = KeyboardActions(onGo = { go() }))
-            if (err.isNotBlank()) { Spacer(Modifier.height(8.dp)); MText(err, 13.sp, BlazeBrush.orange, maxLines = 5) }
+            if (err.isNotBlank()) { Spacer(Modifier.height(8.dp)); MText(err, 13.sp, ArgusBrush.orange, maxLines = 5) }
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
                 PillButton("Cancel", primary = false, onClick = onDismiss)
@@ -627,24 +627,24 @@ fun LinkDialog(kind: String, onDismiss: () -> Unit, onReady: (StoreItem, StoreSo
 /** Jamendo's "not configured" card: where to get a client_id, and a field to paste it. */
 @Composable
 fun JamendoSetup(text: String, onSaved: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var id by remember { mutableStateOf("") }
     var checking by remember { mutableStateOf(false) }
     var bad by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().clip(BlazeShapes.medium).background(c.faint).padding(14.dp)) {
+    Column(Modifier.fillMaxWidth().clip(ArgusShapes.medium).background(c.faint).padding(14.dp)) {
         MText("Set up Jamendo", 14.sp, c.ink, FontWeight.Medium)
         Spacer(Modifier.height(4.dp))
         MText(text, 12.5.sp, c.sub, maxLines = 5)
         Spacer(Modifier.height(10.dp))
-        // v0.30.5 (Blazeinchue: "a simple button to take them where they have to go, or simply asking Blaze to get it"):
-        // Blaze can do it (its browser + the jamendo_setup tool), or the dev portal opens in the browser.
+        // v0.30.5 (Blazeinchue: "a simple button to take them where they have to go, or simply asking Argus to get it"):
+        // Argus can do it (its browser + the jamendo_setup tool), or the dev portal opens in the browser.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PillButton("Ask ${BrandName.NAME} to set it up", primary = true, icon = Icons.Rounded.AutoAwesome) {
-                com.blaze.assistant.agent.Agent.send("Set up the Jamendo Store in ${BrandName.NAME} Music for me: get a free Jamendo API client_id on " +
+                com.argus.assistant.agent.Agent.send("Set up the Jamendo Store in ${BrandName.NAME} Music for me: get a free Jamendo API client_id on " +
                     JamendoSource.DEVPORTAL + " (ask me before creating an account) and save it with " + JamendoSource.TOOL + ".")
-                runCatching { ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java)
+                runCatching { ctx.startActivity(android.content.Intent(ctx, com.argus.assistant.MainActivity::class.java)
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
             }
             PillButton("Get a free ID", primary = false, icon = Icons.Rounded.VpnKey) {
@@ -654,7 +654,7 @@ fun JamendoSetup(text: String, onSaved: () -> Unit) {
         }
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BlazeTextField(id, { id = it }, "Jamendo client_id", Modifier.weight(1f))
+            ArgusTextField(id, { id = it }, "Jamendo client_id", Modifier.weight(1f))
             Spacer(Modifier.width(8.dp))
             PillButton("Save", primary = true) {
                 val v = id.trim()
@@ -666,7 +666,7 @@ fun JamendoSetup(text: String, onSaved: () -> Unit) {
                 }
             }
         }
-        if (checking || bad) MText(if (checking) "Checking with Jamendo\u2026" else "Jamendo didn't accept that ID.", 12.sp, if (bad) BlazeBrush.orange else c.sub,
+        if (checking || bad) MText(if (checking) "Checking with Jamendo\u2026" else "Jamendo didn't accept that ID.", 12.sp, if (bad) ArgusBrush.orange else c.sub,
             modifier = Modifier.padding(top = 6.dp))
     }
 }
@@ -678,16 +678,16 @@ object StoragePermission {
     /** 0.45.20 (item 15): the notification prompt, just in time (a download starting), set by the screen that can ask. */
     var notifAsker: (() -> Unit)? = null
     fun askNotifications() { notifAsker?.invoke() }
-    /** Android 9 and older: shared Music/Movies/Downloads need the storage permission (Blaze's own storage doesn't). */
+    /** Android 9 and older: shared Music/Movies/Downloads need the storage permission (Argus's own storage doesn't). */
     fun needsForExport(ctx: Context): Boolean = Build.VERSION.SDK_INT < 29 &&
         androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != android.content.pm.PackageManager.PERMISSION_GRANTED
 }
 
 @Composable
 fun DownloadsList(jobs: List<DlJob>) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
-    Column(Modifier.fillMaxWidth().clip(BlazeShapes.medium).background(c.faint).padding(vertical = 6.dp)) {
+    Column(Modifier.fillMaxWidth().clip(ArgusShapes.medium).background(c.faint).padding(vertical = 6.dp)) {
         MText("Downloads", 12.sp, c.sub, FontWeight.Medium, modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp))
         // Wave B 18: a soft plan line only when the plan's cap is what keeps two or more waiting (no button, no nag).
         val lim by Downloads.limit.collectAsState()
@@ -695,36 +695,36 @@ fun DownloadsList(jobs: List<DlJob>) {
             MText(it, 11.5.sp, c.sub, maxLines = 2, modifier = Modifier.padding(horizontal = 14.dp))
         }
         // Wave B 3: this month's meters for the kinds in the list (server numbers; hidden on an unlimited plan).
-        val ent by com.blaze.assistant.connect.Entitlements.snap.collectAsState()
+        val ent by com.argus.assistant.connect.Entitlements.snap.collectAsState()
         ent?.let { s ->
-            val kinds = jobs.map { com.blaze.assistant.connect.Entitlements.kindOf(it.kind) }.distinct()
+            val kinds = jobs.map { com.argus.assistant.connect.Entitlements.kindOf(it.kind) }.distinct()
             kinds.forEach { k ->
                 val ctr = (if (k == "video") s.video else s.song) ?: return@forEach
-                val f = com.blaze.assistant.connect.Entitlements.fraction(ctr) ?: return@forEach
-                val warn = com.blaze.assistant.connect.Entitlements.near(ctr)
+                val f = com.argus.assistant.connect.Entitlements.fraction(ctr) ?: return@forEach
+                val warn = com.argus.assistant.connect.Entitlements.near(ctr)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp)) {
-                    MText((if (k == "video") "Video downloads \u00b7 " else "Song downloads \u00b7 ") + com.blaze.assistant.connect.Entitlements.line(ctr), 11.5.sp,
-                        if (warn) BlazeBrush.orange else c.sub)
+                    MText((if (k == "video") "Video downloads \u00b7 " else "Song downloads \u00b7 ") + com.argus.assistant.connect.Entitlements.line(ctr), 11.5.sp,
+                        if (warn) ArgusBrush.orange else c.sub)
                     Spacer(Modifier.height(3.dp))
-                    LinearProgressIndicator(progress = { f }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(BlazeShapes.pill),
-                        color = if (warn) BlazeBrush.orange else c.accent, trackColor = c.hair)
+                    LinearProgressIndicator(progress = { f }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(ArgusShapes.pill),
+                        color = if (warn) ArgusBrush.orange else c.accent, trackColor = c.hair)
                 }
             }
         }
         jobs.forEach { j ->
             Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                NetThumb(j.thumb, Modifier.size(44.dp).clip(BlazeShapes.xs))
+                NetThumb(j.thumb, Modifier.size(44.dp).clip(ArgusShapes.xs))
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     MText(j.title, 13.sp, c.ink, FontWeight.Medium)
                     val line = DlVerify.statusLine(j) { TimeText.size(it) }
-                    MText(line, 11.5.sp, if (j.status == DlStatus.FAILED) BlazeBrush.orange else c.sub)
+                    MText(line, 11.5.sp, if (j.status == DlStatus.FAILED) ArgusBrush.orange else c.sub)
                     if (j.active || j.status == DlStatus.PAUSED) {
                         Spacer(Modifier.height(4.dp))
                         // Wave B 19: verifying / saving show a moving bar, never a bar stuck at 100%.
-                        if (j.phase.isNotEmpty()) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(3.dp).clip(BlazeShapes.pill),
+                        if (j.phase.isNotEmpty()) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(3.dp).clip(ArgusShapes.pill),
                             color = c.accent, trackColor = c.hair)
-                        else LinearProgressIndicator(progress = { j.progress }, modifier = Modifier.fillMaxWidth().height(3.dp).clip(BlazeShapes.pill),
+                        else LinearProgressIndicator(progress = { j.progress }, modifier = Modifier.fillMaxWidth().height(3.dp).clip(ArgusShapes.pill),
                             color = c.accent, trackColor = c.hair)
                     }
                 }
@@ -784,7 +784,7 @@ fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: 
                 Spacer(Modifier.height(14.dp))
                 when {
                     err.isNotBlank() -> {
-                        MText(err, 13.sp, BlazeBrush.orange, maxLines = 5)
+                        MText(err, 13.sp, ArgusBrush.orange, maxLines = 5)
                         Spacer(Modifier.height(10.dp))
                         PillButton("Try again", primary = false, icon = Icons.Rounded.Refresh) { tries++ }
                     }
@@ -795,9 +795,9 @@ fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: 
                         Spacer(Modifier.height(6.dp))
                         choices.forEach { ch ->
                             val on = ch.id == pick
-                            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(BlazeShapes.small)
+                            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(ArgusShapes.small)
                                 .background(if (on) DialogColors.primary.copy(alpha = 0.18f) else Color.Transparent)
-                                .border(1.dp, if (on) DialogColors.primary else DialogColors.border, BlazeShapes.small)
+                                .border(1.dp, if (on) DialogColors.primary else DialogColors.border, ArgusShapes.small)
                                 .clickable { pick = ch.id }.semantics { selected = on }.padding(horizontal = 14.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 MText(ch.label, 14.sp, DialogColors.title, FontWeight.Medium, modifier = Modifier.weight(1f))
@@ -820,20 +820,20 @@ fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: 
                     if (dl.isNotBlank() || st.isNotBlank()) {
                         Spacer(Modifier.height(10.dp))
                         if (st.isNotBlank()) MText((if (kind == "video") "Watch: " else "Play: ") + st + if (saving) " · data saver (${streamChoice?.label.orEmpty().take(24)})" else "",
-                            12.sp, if (metered) BlazeBrush.orange else DialogColors.body, maxLines = 2)
+                            12.sp, if (metered) ArgusBrush.orange else DialogColors.body, maxLines = 2)
                         if (dl.isNotBlank()) MText("Download: " + dl.substringBefore(" · "), 12.sp, DialogColors.body)
                     }
                 }
                 // Wave B 3: what this month's plan has left, from the server (GET /v1/entitlements), never a hardcoded number.
-                val ent by com.blaze.assistant.connect.Entitlements.snap.collectAsState()
-                LaunchedEffect(Unit) { if (ent == null) withContext(Dispatchers.IO) { runCatching { com.blaze.assistant.connect.Entitlements.cached(ctx) } } }
-                val leftLine = com.blaze.assistant.connect.Entitlements.sheetLine(ent, if (kind == "video") "video" else "song")
+                val ent by com.argus.assistant.connect.Entitlements.snap.collectAsState()
+                LaunchedEffect(Unit) { if (ent == null) withContext(Dispatchers.IO) { runCatching { com.argus.assistant.connect.Entitlements.cached(ctx) } } }
+                val leftLine = com.argus.assistant.connect.Entitlements.sheetLine(ent, if (kind == "video") "video" else "song")
                 if (d != null && choices.isNotEmpty() && leftLine.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
                     val none = leftLine.startsWith("No ")
-                    MText(leftLine, 12.sp, if (none) BlazeBrush.orange else DialogColors.body, maxLines = 2)
+                    MText(leftLine, 12.sp, if (none) ArgusBrush.orange else DialogColors.body, maxLines = 2)
                 }
-                if (confirmWatch && d != null) BlazeDialog("Watch on mobile data?", "This stream uses about ${TimeText.size(streamBytes)} of your data. Downloaded videos play offline for free.",
+                if (confirmWatch && d != null) ArgusDialog("Watch on mobile data?", "This stream uses about ${TimeText.size(streamBytes)} of your data. Downloaded videos play offline for free.",
                     confirm = "Watch", onConfirm = { confirmWatch = false; onPlay(d) }, dismiss = "Not now", onDismiss = { confirmWatch = false })
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
@@ -853,10 +853,10 @@ fun PreviewSheet(kind: String, item: StoreItem, source: StoreSource, onDismiss: 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 fun TrackRow(t: Track, playing: Boolean, onClick: () -> Unit, onLongClick: (() -> Unit)? = null, selected: Boolean? = null,
              trailing: @Composable () -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // Wave B item 20: press-and-hold starts multi-select; [selected] non-null = selection mode (pick mark instead of ⋮).
     val tap = if (onLongClick != null) Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick) else Modifier.clickable(onClick = onClick)
-    Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (playing || selected == true) c.faint else Color.Transparent).then(tap)
+    Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).background(if (playing || selected == true) c.faint else Color.Transparent).then(tap)
         .padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Art(t, Modifier.size(46.dp), target = 140)
         Spacer(Modifier.width(12.dp))
@@ -881,7 +881,7 @@ val DownloadIcon: ImageVector get() = Icons.Rounded.Download
  */
 @Composable
 fun PlayerSheet(expanded: Boolean, onCollapse: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val scope = rememberCoroutineScope()
     val drag = remember { Animatable(0f) }
     val gone = with(LocalDensity.current) { 140.dp.toPx() }
@@ -901,7 +901,7 @@ fun PlayerSheet(expanded: Boolean, onCollapse: () -> Unit, modifier: Modifier = 
                 .clickable(onClickLabel = "Collapse the player", onClick = onCollapse)
                 .semantics { contentDescription = "Player. Drag down to go back to the Library; it keeps playing." },
                 contentAlignment = Alignment.Center) {
-                Box(Modifier.size(width = 40.dp, height = 5.dp).clip(BlazeShapes.pill).background(c.weak.copy(alpha = 0.55f)))
+                Box(Modifier.size(width = 40.dp, height = 5.dp).clip(ArgusShapes.pill).background(c.weak.copy(alpha = 0.55f)))
             }
             Box(Modifier.weight(1f).fillMaxWidth()) { content() }
         }
@@ -916,9 +916,9 @@ fun PlayerSheet(expanded: Boolean, onCollapse: () -> Unit, modifier: Modifier = 
 @Composable
 fun MiniBar(t: Track?, subtitle: String, playing: Boolean, progress: Float, onOpen: () -> Unit, onPlayPause: () -> Unit, onClose: () -> Unit,
             artRatio: Float = 1f, insets: Boolean = true, extra: @Composable () -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // 0.46.4: docked above the Music / Video bottom nav ([insets] = false), the nav takes the gesture-bar inset instead.
-    Column((if (insets) Modifier.navigationBarsPadding() else Modifier).padding(10.dp).widthIn(max = 560.dp).fillMaxWidth().clip(BlazeShapes.medium)
+    Column((if (insets) Modifier.navigationBarsPadding() else Modifier).padding(10.dp).widthIn(max = 560.dp).fillMaxWidth().clip(ArgusShapes.medium)
         .background(if (c.dark) Color(0xFF1C1C20) else Color(0xFFF1F1F3)).clickable(onClickLabel = "Open player", onClick = onOpen)) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Art(t, Modifier.height(44.dp).aspectRatio(artRatio), target = 160)
@@ -1061,7 +1061,7 @@ fun rememberThumb(url: String): ThumbState {
     val ctx = LocalContext.current
     return produceState(ThumbState(null, url.isNotBlank()), url) {
         value = if (url.isBlank()) ThumbState(null, false)
-        else ThumbState(runCatching { com.blaze.assistant.ui.HomeImages.load(ctx, url) }.getOrNull(), false)
+        else ThumbState(runCatching { com.argus.assistant.ui.HomeImages.load(ctx, url) }.getOrNull(), false)
     }.value
 }
 
@@ -1071,12 +1071,12 @@ fun rememberThumb(url: String): ThumbState {
  */
 @Composable
 fun ResultCard(r: StoreItem, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val thumb = rememberThumb(r.thumb)
     when (LiveSearch.card(r.title, r.thumb, thumb.loading)) {
         LiveSearch.Card.SKELETON -> SkeletonTile(r.square)
-        else -> Column(Modifier.clip(BlazeShapes.small).clickable(onClick = onClick)) {
-            val shape = Modifier.fillMaxWidth().aspectRatio(if (r.square) 1f else 16f / 9f).clip(BlazeShapes.small)
+        else -> Column(Modifier.clip(ArgusShapes.small).clickable(onClick = onClick)) {
+            val shape = Modifier.fillMaxWidth().aspectRatio(if (r.square) 1f else 16f / 9f).clip(ArgusShapes.small)
             Box(shape.background(c.faint.copy(alpha = if (thumb.loading) pulse() else 1f))) {
                 thumb.img?.let { Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
                 DurationBadge(r.durationText)
@@ -1103,7 +1103,7 @@ private fun pulse(): Float {
 /** A loading placeholder shaped like a result card; it pulses softly, and holds still on battery saver. */
 @Composable
 fun SkeletonTile(square: Boolean) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val still = remember { (ctx.getSystemService(android.os.PowerManager::class.java))?.isPowerSaveMode == true }
     val a = if (still) 0.55f else {
@@ -1112,10 +1112,10 @@ fun SkeletonTile(square: Boolean) {
             androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse), label = "a").value
     }
     Column(Modifier.semantics { contentDescription = "Loading" }) {
-        Box(Modifier.fillMaxWidth().aspectRatio(if (square) 1f else 16f / 9f).clip(BlazeShapes.small).background(c.faint.copy(alpha = a)))
+        Box(Modifier.fillMaxWidth().aspectRatio(if (square) 1f else 16f / 9f).clip(ArgusShapes.small).background(c.faint.copy(alpha = a)))
         Spacer(Modifier.height(8.dp))
-        Box(Modifier.fillMaxWidth(0.9f).height(11.dp).clip(BlazeShapes.pill).background(c.faint.copy(alpha = a)))
+        Box(Modifier.fillMaxWidth(0.9f).height(11.dp).clip(ArgusShapes.pill).background(c.faint.copy(alpha = a)))
         Spacer(Modifier.height(6.dp))
-        Box(Modifier.fillMaxWidth(0.55f).height(10.dp).clip(BlazeShapes.pill).background(c.faint.copy(alpha = a * 0.8f)))
+        Box(Modifier.fillMaxWidth(0.55f).height(10.dp).clip(ArgusShapes.pill).background(c.faint.copy(alpha = a * 0.8f)))
     }
 }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.phone.MagicHandSafety.Verdict
-import com.blaze.assistant.phone.MagicHandSafety.Win
+import com.argus.assistant.phone.MagicHandSafety.Verdict
+import com.argus.assistant.phone.MagicHandSafety.Win
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -41,8 +41,8 @@ class MagicHandSafetyTest {
         assertEquals(0 to 60, S.clamp(0, 0, size, w, h, nav, topInset = 60))
     }
 
-    @Test fun teachIgnoresSystemAppsAndBlaze() {
-        val own = "com.blaze.assistant"
+    @Test fun teachIgnoresSystemAppsAndArgus() {
+        val own = "com.argus.assistant"
         listOf("com.android.systemui", "android", "com.samsung.android.app.smartcapture", "com.sec.android.app.launcher",
             "com.samsung.android.honeyboard", "com.google.android.inputmethod.latin", own, "com.example.screenshot.pro", "")
             .forEach { assertTrue(it, S.ignoreForTeach(it, own)) }
@@ -57,7 +57,7 @@ class MagicHandSafetyTest {
         assertEquals("", S.humanLabel("ChatListFragment"))
         assertEquals("Send", S.humanLabel(" Send ")); assertEquals("New chat", S.humanLabel("New chat"))
         assertEquals("WhatsApp", S.humanLabel("WhatsApp")); assertEquals("Wi-Fi", S.humanLabel("Wi-Fi"))
-        val r = MagicHandTeach.Recorder("com.blaze.assistant")
+        val r = MagicHandTeach.Recorder("com.argus.assistant")
         r.window("com.whatsapp", "WhatsApp", "Chats")
         r.window("com.whatsapp", "WhatsApp", "MainUiViewForStandAlone\$7")   // dropped: not a screen title
         r.click("com.whatsapp", "WhatsApp", "Send", "com.whatsapp:id/send", "android.widget.ImageButton")

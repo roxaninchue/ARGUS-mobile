@@ -1,19 +1,19 @@
-package com.blaze.assistant.assist
+package com.argus.assistant.assist
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.TileService
-import com.blaze.assistant.MainActivity
+import com.argus.assistant.MainActivity
 
-/** Quick Settings tile: one tap opens Blaze listening. */
-class BlazeTile : TileService() {
+/** Quick Settings tile: one tap opens Argus listening. */
+class ArgusTile : TileService() {
     @SuppressLint("StartActivityAndCollapseDeprecated")
     override fun onClick() {
         // Account lock: the tile opens the lock screen (no listening).
-        val i = if (com.blaze.assistant.connect.AccountGate.locked()) com.blaze.assistant.connect.AccountGate.lockIntent(this)
-        else com.blaze.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
+        val i = if (com.argus.assistant.connect.AccountGate.locked()) com.argus.assistant.connect.AccountGate.lockIntent(this)
+        else com.argus.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(MainActivity.EXTRA_LISTEN, true))
         if (Build.VERSION.SDK_INT >= 34) {

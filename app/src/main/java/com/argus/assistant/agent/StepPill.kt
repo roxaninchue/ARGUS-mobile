@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +22,7 @@ import org.json.JSONObject
  * JSON, braces, URLs or code, at most [MAX] characters, no trailing period. A step that fails the check is dropped (the
  * pill keeps the previous line) rather than shown half-cleaned.
  *
- * [current] is the visible line as a StateFlow so other surfaces (the Blaze Phone PiP) can mirror it.
+ * [current] is the visible line as a StateFlow so other surfaces (the Argus Phone PiP) can mirror it.
  * Pure [Machine] (StepPillTest drives it with explicit times); [StepPills] is the app's single live instance.
  */
 object StepPill {
@@ -242,14 +242,14 @@ object StepTool {
 }
 
 /**
- * The app's live pill: one turn at a time per chat; [current] is what the chat (and the Blaze Phone PiP) shows.
+ * The app's live pill: one turn at a time per chat; [current] is what the chat (and the Argus Phone PiP) shows.
  * Publishing is scheduled so a step that came in during the first [StepPill.SHOW_AFTER_MS] appears exactly then.
  */
 object StepPills {
     data class Pill(val chat: String, val text: String, val specialist: Boolean)
 
     private val _current = MutableStateFlow<Pill?>(null)
-    /** The visible pill (null = none). Mirrored by the Blaze Phone PiP. */
+    /** The visible pill (null = none). Mirrored by the Argus Phone PiP. */
     val current: StateFlow<Pill?> = _current.asStateFlow()
 
     private val m = StepPill.Machine()

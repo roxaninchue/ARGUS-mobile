@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.27.x: "show me your memories" answers from the memory table, fast, in chat.
  *
- * Joey typed "show me your memories" and Blaze spent 1m40s checking memory, being re-prompted twice and then
- * reopening an old solar-panel diagram in Design. A request to see what Blaze remembers is now recognised
+ * Joey typed "show me your memories" and Argus spent 1m40s checking memory, being re-prompted twice and then
+ * reopening an old solar-panel diagram in Design. A request to see what Argus remembers is now recognised
  * before any model call ([isListRequest]) and answered from the saved lines, grouped by kind ([format]),
  * with a short note on how to change or delete them. No Design, no tool loop.
  * Pure Kotlin, unit-tested in IntentHonestyTest.
@@ -30,7 +30,7 @@ object MemoryIntent {
     private val notThis = Regex("""\b(?:ram|storage|space|free|full|usage|used|card|sd|leak|gb|mb|photos?|pictures?|gallery|videos?|""" +
         """memories (?:from|of|in|with)|remember (?:that|this|to)|forget|delete|remove|erase|clear|wipe|save|add)\b""", ic)
 
-    /** Is [text] a request to see what Blaze remembers about the user? */
+    /** Is [text] a request to see what Argus remembers about the user? */
     fun isListRequest(text: String): Boolean {
         val t = text.trim()
         if (t.isEmpty() || t.startsWith("/") || t.length > 120) return false

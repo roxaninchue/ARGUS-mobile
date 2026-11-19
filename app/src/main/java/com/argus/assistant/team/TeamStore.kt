@@ -1,7 +1,7 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.agent.Specialists
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.agent.Specialists
+import com.argus.assistant.store.Sql
 
 /**
  * P1-TM-01: the team roster in team.db (the `bots` + `bot_apps` + `bot_soul_versions` tables of [TeamSchema]), over

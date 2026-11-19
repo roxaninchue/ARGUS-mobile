@@ -1,12 +1,12 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
 import androidx.compose.foundation.layout.fillMaxHeight
-import com.blaze.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.cutoutSafe
 
 import androidx.compose.ui.semantics.heading
-import com.blaze.assistant.ui.common.withGutter
+import com.argus.assistant.ui.common.withGutter
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,29 +47,29 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.store.Sql
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.BotThreads
-import com.blaze.assistant.team.JobStore
-import com.blaze.assistant.team.TeamStore
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.BotOrb
-import com.blaze.assistant.ui.argus.ManagerOrb
-import com.blaze.assistant.ui.argus.OrbFace
-import com.blaze.assistant.ui.argus.OrbSize
-import com.blaze.assistant.ui.argus.icons.Lucide
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusField
-import com.blaze.assistant.ui.argus.kit.ArgusSearch
-import com.blaze.assistant.ui.argus.kit.ArgusSheet
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
-import com.blaze.assistant.ui.argus.kit.FilterChips
-import com.blaze.assistant.ui.argus.kit.Segmented
-import com.blaze.assistant.ui.argus.kit.ChipModel
+import com.argus.assistant.store.Sql
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.BotThreads
+import com.argus.assistant.team.JobStore
+import com.argus.assistant.team.TeamStore
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.BotOrb
+import com.argus.assistant.ui.argus.ManagerOrb
+import com.argus.assistant.ui.argus.OrbFace
+import com.argus.assistant.ui.argus.OrbSize
+import com.argus.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusField
+import com.argus.assistant.ui.argus.kit.ArgusSearch
+import com.argus.assistant.ui.argus.kit.ArgusSheet
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.ui.argus.kit.FilterChips
+import com.argus.assistant.ui.argus.kit.Segmented
+import com.argus.assistant.ui.argus.kit.ChipModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -98,7 +98,7 @@ fun JobsPage(
 ) {
     val c = Argus.colors
     // Landscape overhaul: rows centred at a readable width (0 gutter upright); the FAB stays at the rows' edge
-    com.blaze.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize()) { gutter ->
+    com.argus.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize()) { gutter ->
     Box(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp).withGutter(gutter)) {
             item(key = "search") { ArgusSearch(query, onQuery, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), placeholder = tr("Search jobs")) }
@@ -152,27 +152,27 @@ fun JobRow(r: JobRowModel, onOpen: () -> Unit, onDone: () -> Unit, avatar: (@Com
 fun JobSheet(s: JobSheetModel.Sheet, onDismiss: () -> Unit, onRetry: () -> Unit, onDone: () -> Unit, onCancel: () -> Unit) {
     val c = Argus.colors
     ArgusSheet(onDismiss = onDismiss, title = s.title, primary = s.retry, onPrimary = onRetry, cancel = tr("Close")) {
-        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(520.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
+        Column(Modifier.fillMaxWidth().heightIn(max = com.argus.assistant.ui.common.WindowUi.sheetBody(520.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
             JobSheetBody(s, onDone, onCancel)
         }
     }
 }
 
 /**
- * Landscape overhaul: the job's detail beside the list when the page is wide ([com.blaze.assistant.ui.common.WindowLayout.twoPane]),
+ * Landscape overhaul: the job's detail beside the list when the page is wide ([com.argus.assistant.ui.common.WindowLayout.twoPane]),
  * the same lines as [JobSheet] with its title and Retry on top. [s] null = nothing picked yet.
  */
 @Composable
 fun JobDetailPane(s: JobSheetModel.Sheet?, onRetry: () -> Unit, onDone: () -> Unit, onCancel: () -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier) {
     val c = Argus.colors
     if (s == null) {
-        com.blaze.assistant.ui.argus.kit.EmptyState(title = tr("Pick a job"), icon = "list-checks", body = tr("Its status, brief, result and log show here."), modifier = modifier)
+        com.argus.assistant.ui.argus.kit.EmptyState(title = tr("Pick a job"), icon = "list-checks", body = tr("Its status, brief, result and log show here."), modifier = modifier)
         return
     }
     Column(modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(s.title, style = ArgusType.sheetTitle, color = c.ink, modifier = Modifier.weight(1f).semantics { heading() })
-            com.blaze.assistant.ui.argus.kit.ArgusIconButton("x", tr("Close"), onClose)
+            com.argus.assistant.ui.argus.kit.ArgusIconButton("x", tr("Close"), onClose)
         }
         JobSheetBody(s, onDone, onCancel)
         s.retry?.let { r -> ArgusButton(r, onRetry, Modifier.padding(top = 12.dp), kind = ButtonKind.PRIMARY) }
@@ -252,7 +252,7 @@ fun JobsPageScreen(
     var tick by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
     var bot by remember { mutableStateOf<String?>(null) }
-    var data by remember { mutableStateOf<Triple<List<com.blaze.assistant.team.Job>, Map<String, Bot>, List<Bot>>?>(null) }
+    var data by remember { mutableStateOf<Triple<List<com.argus.assistant.team.Job>, Map<String, Bot>, List<Bot>>?>(null) }
     var sheet by remember { mutableStateOf<JobSheetModel.Sheet?>(null) }
     var newOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -270,8 +270,8 @@ fun JobsPageScreen(
     fun act(f: () -> Unit) { scope.launch { withContext(Dispatchers.IO) { runCatching(f) }; tick++ } }
     // Landscape overhaul: list | detail side by side on a wide page (a phone on its side, a tablet); the sheet otherwise
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
-    val split = com.blaze.assistant.ui.common.WindowLayout.twoPane(maxWidth.value, maxHeight.value)
-    val listW = com.blaze.assistant.ui.common.WindowLayout.listPaneWidth(maxWidth.value)
+    val split = com.argus.assistant.ui.common.WindowLayout.twoPane(maxWidth.value, maxHeight.value)
+    val listW = com.argus.assistant.ui.common.WindowLayout.listPaneWidth(maxWidth.value)
     Row(Modifier.fillMaxSize()) {
     JobsPage(
         state, query, { query = it }, onFilter, { bot = it },

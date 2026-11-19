@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -14,7 +14,7 @@ import java.io.File
  */
 class ModelFirstTest {
     private fun root(): File = listOf(File("."), File("..")).first { File(it, "docs").isDirectory && File(it, "app").isDirectory }
-    private fun agentSrc(): String = File(root(), "app/src/main/java/com/blaze/assistant/agent/Agent.kt").readText()
+    private fun agentSrc(): String = File(root(), "app/src/main/java/com/argus/assistant/agent/Agent.kt").readText()
 
     @Test fun busyMessagesGoToTheModelNotAKeywordRouter() {
         val src = agentSrc()
@@ -53,7 +53,7 @@ class ModelFirstTest {
 
     @Test fun noShoutingRulesInTheChatPrompt() {
         val shouts = listOf("Answer EVERY user message", "never leave one out", "answer every one of them")
-        val files = listOf("RapidMessages.kt", "ChatBurst.kt", "ChatLane.kt").map { File(root(), "app/src/main/java/com/blaze/assistant/agent/$it").readText() }
+        val files = listOf("RapidMessages.kt", "ChatBurst.kt", "ChatLane.kt").map { File(root(), "app/src/main/java/com/argus/assistant/agent/$it").readText() }
         for (f in files) for (s in shouts) assertFalse(s, f.lines().any { s in it && !it.trimStart().startsWith("*") && !it.trimStart().startsWith("//") })
     }
 
@@ -72,7 +72,7 @@ class ModelFirstTest {
         assertFalse("no capitals-only orders", Regex("\\b[A-Z]{4,}\\b").containsMatchIn(core.replace("ARGUS", "")))
         // The default personality's first system message is this core, byte for byte, and new enough to win over a cached remote copy.
         val asset = org.json.JSONObject(File(root(), "app/src/main/assets/persona-v1.json").readText())
-        assertTrue(asset.getString("system") == core.replace(com.blaze.assistant.BrandName.NAME, "Argus"))
+        assertTrue(asset.getString("system") == core.replace(com.argus.assistant.BrandName.NAME, "Argus"))
         assertTrue(SharedPersona.VersionCmp.compare(asset.getString("version"), "1.0.7") > 0)
         // A picked personality gets the same agent role and way of working.
         assertTrue(agentSrc().contains("s(\"assistant\", AgentPersona.PICKED)"))
@@ -81,7 +81,7 @@ class ModelFirstTest {
         for (gone in listOf("small talk need no tools", "offer 1 to 3 concrete next steps", "NOT A CHAT BUDDY"))
             assertFalse(gone, (HarnessPrompt.CORE + TurnContext.RULE + Duo.ASSISTANT_RULES + core).contains(gone))
         // Nothing detects the words: no regex or keyword list in the persona.
-        val src = File(root(), "app/src/main/java/com/blaze/assistant/agent/AgentPersona.kt").readText()
+        val src = File(root(), "app/src/main/java/com/argus/assistant/agent/AgentPersona.kt").readText()
         assertFalse(src.contains("Regex(") || src.contains("containsMatchIn") || src.contains(".contains("))
     }
 
@@ -95,7 +95,7 @@ class ModelFirstTest {
         // It rides on every main-chat request, whatever the message says.
         assertTrue(agentSrc().contains("\"\\n\" + TurnContextSource.block(lastUserText())"))
         // The tools say what they can do with a finished or stale entry.
-        fun main(f: String) = File(root(), "app/src/main/java/com/blaze/assistant/$f").readText()
+        fun main(f: String) = File(root(), "app/src/main/java/com/argus/assistant/$f").readText()
         assertTrue(main("phone/Skills.kt").contains("before move_event reschedules it or delete_event removes it"))
         assertTrue(main("routine/Routines.kt").contains("Delete a reminder or routine by name, for example one whose event has happened"))
         assertTrue(main("routine/Routines.kt").contains("before delete_routine removes it or process (by its ID) pauses or reschedules it"))
@@ -117,9 +117,9 @@ class ModelFirstTest {
      * (composerFill) and the send that follows reads the box; nothing rewrites the text between the tap and the model.
      */
     @Test fun textAssistNeverSendsUnseenText() {
-        val screen = File(root(), "app/src/main/java/com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val screen = File(root(), "app/src/main/java/com/argus/assistant/ui/ChatScreen.kt").readText()
         val block = screen.substring(screen.indexOf("TextAssist.rewrite(t, lines)")).let { it.substring(0, it.indexOf("return@send")) }
-        assertTrue(block.contains("input = com.blaze.assistant.ui.argus.kit.composerFill(better)"))
+        assertTrue(block.contains("input = com.argus.assistant.ui.argus.kit.composerFill(better)"))
         assertFalse("assist never sends by itself", block.contains("send("))
         assertFalse("Agent.kt never calls text assist", agentSrc().contains("TextAssist."))
     }

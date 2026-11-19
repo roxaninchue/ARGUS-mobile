@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.app.ActivityManager
 import android.content.Context
 import android.view.ViewGroup
@@ -81,23 +81,23 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
-import com.blaze.assistant.stage.ChatMode
-import com.blaze.assistant.stage.MotionSpec
-import com.blaze.assistant.stage.PerfTier
-import com.blaze.assistant.stage.StageAction
-import com.blaze.assistant.stage.StageItem
-import com.blaze.assistant.stage.StageKind
-import com.blaze.assistant.stage.StageLayers
-import com.blaze.assistant.stage.StageMode
-import com.blaze.assistant.stage.StagePerf
-import com.blaze.assistant.stage.StageReducer
-import com.blaze.assistant.stage.StageSlot
-import com.blaze.assistant.stage.StageStore
-import com.blaze.assistant.stage.StageTimer
-import com.blaze.assistant.stage.StageTools
+import com.argus.assistant.stage.ChatMode
+import com.argus.assistant.stage.MotionSpec
+import com.argus.assistant.stage.PerfTier
+import com.argus.assistant.stage.StageAction
+import com.argus.assistant.stage.StageItem
+import com.argus.assistant.stage.StageKind
+import com.argus.assistant.stage.StageLayers
+import com.argus.assistant.stage.StageMode
+import com.argus.assistant.stage.StagePerf
+import com.argus.assistant.stage.StageReducer
+import com.argus.assistant.stage.StageSlot
+import com.argus.assistant.stage.StageStore
+import com.argus.assistant.stage.StageTimer
+import com.argus.assistant.stage.StageTools
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.blaze.assistant.movies.StageMovies
+import com.argus.assistant.movies.StageMovies
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -118,14 +118,14 @@ object StageVideo {
     private var player: androidx.media3.exoplayer.ExoPlayer? = null
     private var url: String = ""
     /** 0.46.2 Movies: what's playing when it came from a movie source (resume position, subtitles, request headers). */
-    @Volatile var movie: com.blaze.assistant.movies.MoviePlay? = null
+    @Volatile var movie: com.argus.assistant.movies.MoviePlay? = null
         private set
     private val http = androidx.media3.datasource.DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true)
         .setConnectTimeoutMs(15_000).setReadTimeoutMs(20_000)
     /** Play as soon as it's ready: only for a video just shown, never for a card restored after the app was closed. */
     @Volatile var autoplay = false
     val SPEEDS = listOf(1f, 1.25f, 1.5f, 2f, 0.5f, 0.75f)
-    fun player(ctx: Context, u: String, m: com.blaze.assistant.movies.MoviePlay? = null): androidx.media3.exoplayer.ExoPlayer {
+    fun player(ctx: Context, u: String, m: com.argus.assistant.movies.MoviePlay? = null): androidx.media3.exoplayer.ExoPlayer {
         val p = player ?: androidx.media3.exoplayer.ExoPlayer.Builder(ctx.applicationContext)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(androidx.media3.datasource.DefaultDataSource.Factory(ctx.applicationContext, http)))
             .build().also { player = it }
@@ -137,16 +137,16 @@ object StageVideo {
                 .setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(movie?.title).build())
                 .setSubtitleConfigurations(movie?.subtitles.orEmpty().mapIndexed { i, t -> androidx.media3.common.MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(t.url))
                     .setMimeType(t.mime).setLanguage(t.lang.ifBlank { null }).setLabel(t.label.ifBlank { t.lang.ifBlank { "Subtitles" } }).setId("s$i").build() }).build()
-            val at = movie?.let { com.blaze.assistant.movies.Movies.lib.value.resumeAt(it.key) } ?: 0L
+            val at = movie?.let { com.argus.assistant.movies.Movies.lib.value.resumeAt(it.key) } ?: 0L
             p.setMediaItem(item, at); p.prepare(); p.playWhenReady = autoplay; autoplay = false
             // Music pauses while a video plays (two sounds at once is never wanted).
-            try { com.blaze.assistant.mediaapps.MusicService.current?.transport("pause") } catch (_: Exception) { } }
+            try { com.argus.assistant.mediaapps.MusicService.current?.transport("pause") } catch (_: Exception) { } }
         return p
     }
     /** 0.46.2 continue watching: the movie's position goes to the Movies library (called every few seconds and on close). */
     fun saveProgress() {
         val m = movie ?: return; val p = player ?: return
-        try { if (p.currentPosition > 0) com.blaze.assistant.movies.Movies.progress(m, p.currentPosition, p.duration.coerceAtLeast(0)) } catch (_: Exception) { }
+        try { if (p.currentPosition > 0) com.argus.assistant.movies.Movies.progress(m, p.currentPosition, p.duration.coerceAtLeast(0)) } catch (_: Exception) { }
     }
     fun position(): Long = try { player?.currentPosition ?: 0L } catch (_: Exception) { 0L }
     /** The next playback speed after [now] ("1" -> "1.25" … -> "0.75" -> "1"); applied to the player. */
@@ -157,7 +157,7 @@ object StageVideo {
         return if (n == n.toInt().toFloat()) n.toInt().toString() else n.toString()
     }
     fun pause() { try { saveProgress(); player?.pause() } catch (_: Exception) { } }
-    /** A Stage video is playing now (MainActivity takes it into picture-in-picture when the user leaves Blaze). */
+    /** A Stage video is playing now (MainActivity takes it into picture-in-picture when the user leaves Argus). */
     fun playing(): Boolean = try { player?.isPlaying == true } catch (_: Exception) { false }
     /** Bumped when the picture-in-picture window gives the player back, so the card's view takes the video surface again. */
     val gen = androidx.compose.runtime.mutableIntStateOf(0)
@@ -167,33 +167,33 @@ object StageVideo {
 
 /**
  * 0.46.1 the browser card's WebView: the built-in browser's current tab (the same WebView browser_* tools drive), hosted
- * while the card is big and given back (offscreen, paused once Blaze is idle) when it shrinks or the app goes to the background.
+ * while the card is big and given back (offscreen, paused once Argus is idle) when it shrinks or the app goes to the background.
  */
 object StageWeb {
     fun now(): StageBrowserNow = try {
-        val e = com.blaze.assistant.browser.BrowserEngine
+        val e = com.argus.assistant.browser.BrowserEngine
         e.tab()?.let { t -> StageBrowserNow(true, t.title, t.url, t.progress, t.canBack, t.canForward) } ?: StageBrowserNow()
     } catch (_: Throwable) { StageBrowserNow() }
 
     fun op(ctx: Context, op: String) {
-        val e = com.blaze.assistant.browser.BrowserEngine
+        val e = com.argus.assistant.browser.BrowserEngine
         try {
             e.init(ctx)
             val t = e.tab()
             when {
-                op.startsWith("go:") -> { val q = op.removePrefix("go:"); if (t == null) e.newTab(ctx, com.blaze.assistant.browser.BrowserEngine.toUrl(q)) else e.load(t, q) }
+                op.startsWith("go:") -> { val q = op.removePrefix("go:"); if (t == null) e.newTab(ctx, com.argus.assistant.browser.BrowserEngine.toUrl(q)) else e.load(t, q) }
                 t == null -> {}
                 op == "back" -> e.back(t)
                 op == "forward" -> e.forward(t)
                 op == "reload" -> t.web.reload()
                 op == "stop" -> t.live?.stopLoading()
             }
-        } catch (x: Throwable) { com.blaze.assistant.device.CrashLog.quiet("StageWeb.op", x) }
+        } catch (x: Throwable) { com.argus.assistant.device.CrashLog.quiet("StageWeb.op", x) }
     }
 
     /** Takes the WebView back from the card: offscreen size again, dialogs to the app, the tab may sleep. */
     fun release(v: android.webkit.WebView?) {
-        val e = com.blaze.assistant.browser.BrowserEngine
+        val e = com.argus.assistant.browser.BrowserEngine
         try { v?.let { w -> (w.parent as? ViewGroup)?.removeView(w); e.layoutOffscreen(w) }; e.attach(null); e.setUiVisible(false) } catch (_: Throwable) { }
     }
 }
@@ -233,10 +233,10 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
         }
     }
     // Music: the one MusicService (the same media session as the notification and lock screen), read once a second.
-    var music by remember { mutableStateOf(com.blaze.assistant.mediaapps.StageMusicLogic.Snapshot()) }
+    var music by remember { mutableStateOf(com.argus.assistant.mediaapps.StageMusicLogic.Snapshot()) }
     var musicPoke by remember { mutableIntStateOf(0) }
     val hasMusic = st.items.any { it.kind == StageKind.MUSIC }
-    LaunchedEffect(hasMusic, now, musicPoke) { if (hasMusic) music = com.blaze.assistant.mediaapps.StageMusic.snapshot() }
+    LaunchedEffect(hasMusic, now, musicPoke) { if (hasMusic) music = com.argus.assistant.mediaapps.StageMusic.snapshot() }
     // A closed video card frees the shared player.
     val hasVideo = st.items.any { it.kind == StageKind.VIDEO }
     LaunchedEffect(hasVideo) {
@@ -245,11 +245,11 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
         while (hasVideo) { delay(10_000); StageVideo.saveProgress() }
     }
     val movieScope = androidx.compose.runtime.rememberCoroutineScope()
-    val movieLib by com.blaze.assistant.movies.Movies.lib.collectAsState()
+    val movieLib by com.argus.assistant.movies.Movies.lib.collectAsState()
     val hasBrowser = st.items.any { it.kind == StageKind.BROWSER }
-    LaunchedEffect(hasBrowser) { if (hasBrowser) com.blaze.assistant.browser.BrowserEngine.init(ctx) }
+    LaunchedEffect(hasBrowser) { if (hasBrowser) com.argus.assistant.browser.BrowserEngine.init(ctx) }
 
-    fun cards(i: StageItem) = try { com.blaze.assistant.agent.Flashcards.queue(i.props["deck"].orEmpty()).let { q ->
+    fun cards(i: StageItem) = try { com.argus.assistant.agent.Flashcards.queue(i.props["deck"].orEmpty()).let { q ->
         i.props["seed"]?.toLongOrNull()?.let { q.shuffled(kotlin.random.Random(it)) } ?: q } } catch (_: Exception) { emptyList() }
 
     fun data(i: StageItem): StageData = when (i.kind) {
@@ -267,7 +267,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
     fun event(i: StageItem, e: StageEvent) {
         when (e) {
             is StageEvent.Timer -> StageStore.timerOp(ctx, i.id, e.op, e.minutes)
-            is StageEvent.Music -> { com.blaze.assistant.mediaapps.StageMusic.op(ctx, e.op); musicPoke++ }
+            is StageEvent.Music -> { com.argus.assistant.mediaapps.StageMusic.op(ctx, e.op); musicPoke++ }
             is StageEvent.QuizAnswer -> {
                 val qs = StageTools.questions(i.props["questions"]); val round = StageQuiz.round(i.props, qs.size)
                 val qi = round.getOrNull(i.props["at"]?.toIntOrNull() ?: 0) ?: return
@@ -283,7 +283,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
             StageEvent.Flip -> update(i, mapOf("flipped" to if (i.props["flipped"] == "true") "" else "true"))
             StageEvent.Shuffle -> update(i, mapOf("seed" to System.nanoTime().toString(), "flipped" to ""))
             is StageEvent.Card -> {
-                cards(i).firstOrNull()?.let { com.blaze.assistant.agent.Flashcards.answer(it.id, e.grade) }
+                cards(i).firstOrNull()?.let { com.argus.assistant.agent.Flashcards.answer(it.id, e.grade) }
                 update(i, mapOf("flipped" to "", "seen" to ((i.props["seen"]?.toIntOrNull() ?: 0) + 1).toString(),
                     "known" to ((i.props["known"]?.toIntOrNull() ?: 0) + if (e.grade >= 2) 1 else 0).toString()))
             }
@@ -304,15 +304,15 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
                 e.op == "speed" -> update(i, mapOf("speed" to StageVideo.nextSpeed(i.props["speed"].orEmpty())))
                 e.op == "fullscreen" -> if (i.immersive) {
                     StageStore.dispatch(StageAction.Show(i.kind, mapOf("immersive" to "false"), StageMode.HERO, null, i.id))
-                    StageStore.dispatch(StageAction.SetChrome(topBar = true, reply = com.blaze.assistant.stage.ReplyBar.FULL))
+                    StageStore.dispatch(StageAction.SetChrome(topBar = true, reply = com.argus.assistant.stage.ReplyBar.FULL))
                 } else { StageStore.dispatch(StageAction.Show(i.kind, mapOf("immersive" to "true"), StageMode.HERO, null, i.id)); StageStore.dispatch(StageAction.Resize(i.id, 1f)) }
                 else -> {}
             }
-            StageEvent.OpenFull -> if (i.kind == StageKind.BROWSER) com.blaze.assistant.browser.BrowserTools.show(ctx)
-                else if (i.kind == StageKind.VIDEO && com.blaze.assistant.movies.MoviePlay.parse(i.props["movie"]) != null) {
-                    // 0.46.2: the movie goes on in Blaze Video at the same spot (the card's player pauses).
-                    val m = com.blaze.assistant.movies.MoviePlay.parse(i.props["movie"])!!; val at = StageVideo.position(); StageVideo.pause()
-                    com.blaze.assistant.mediaapps.VideoActivity.openMovie(ctx, m, at)
+            StageEvent.OpenFull -> if (i.kind == StageKind.BROWSER) com.argus.assistant.browser.BrowserTools.show(ctx)
+                else if (i.kind == StageKind.VIDEO && com.argus.assistant.movies.MoviePlay.parse(i.props["movie"]) != null) {
+                    // 0.46.2: the movie goes on in Argus Video at the same spot (the card's player pauses).
+                    val m = com.argus.assistant.movies.MoviePlay.parse(i.props["movie"])!!; val at = StageVideo.position(); StageVideo.pause()
+                    com.argus.assistant.mediaapps.VideoActivity.openMovie(ctx, m, at)
                 } else i.kind.fullView?.let { Views.open(it) }
             StageEvent.Expand -> StageStore.dispatch(StageAction.Expand(i.id))
             StageEvent.Shrink -> StageStore.dispatch(StageAction.Shrink(i.id))
@@ -323,20 +323,20 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
 
     val videoSlot: @Composable (StageItem) -> (@Composable (Modifier) -> Unit) = { i ->
         { m -> key(StageVideo.gen.intValue) { AndroidView(factory = { c -> androidx.media3.ui.PlayerView(c).apply { useController = true; setShowSubtitleButton(true)
-                player = StageVideo.player(c, i.props["url"].orEmpty(), com.blaze.assistant.movies.MoviePlay.parse(i.props["movie"])) } },
+                player = StageVideo.player(c, i.props["url"].orEmpty(), com.argus.assistant.movies.MoviePlay.parse(i.props["movie"])) } },
             modifier = m, onRelease = { it.player = null }) } }
     }
     // The browser card's WebView (hero only: a collapsed card draws a title row, no WebView).
     val webSlot: @Composable (Modifier) -> Unit = { m ->
-        val tab = com.blaze.assistant.browser.BrowserEngine.tab()
+        val tab = com.argus.assistant.browser.BrowserEngine.tab()
         val live = tab?.live
         val lifecycle = androidx.compose.ui.platform.LocalLifecycleOwner.current.lifecycle
         var shown by remember { mutableIntStateOf(0) }
         DisposableEffect(lifecycle) {
             val obs = androidx.lifecycle.LifecycleEventObserver { _, ev ->
                 when (ev) {
-                    androidx.lifecycle.Lifecycle.Event.ON_START -> { com.blaze.assistant.browser.BrowserEngine.setUiVisible(true); shown++ }
-                    androidx.lifecycle.Lifecycle.Event.ON_STOP -> com.blaze.assistant.browser.BrowserEngine.setUiVisible(false)
+                    androidx.lifecycle.Lifecycle.Event.ON_START -> { com.argus.assistant.browser.BrowserEngine.setUiVisible(true); shown++ }
+                    androidx.lifecycle.Lifecycle.Event.ON_STOP -> com.argus.assistant.browser.BrowserEngine.setUiVisible(false)
                     else -> {}
                 }
             }
@@ -346,7 +346,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
         if (tab != null) key(tab.id, live, shown) {
             AndroidView(factory = { c -> FrameLayout(c) }, modifier = m, update = { f ->
                 val w = tab.web
-                com.blaze.assistant.browser.BrowserEngine.attach(f.context)
+                com.argus.assistant.browser.BrowserEngine.attach(f.context)
                 if (w.parent !== f) { (w.parent as? ViewGroup)?.removeView(w); f.removeAllViews(); f.addView(w, FrameLayout.LayoutParams(-1, -1)) }
             }, onRelease = { f -> val w = (0 until f.childCount).map { f.getChildAt(it) }.filterIsInstance<android.webkit.WebView>().firstOrNull(); f.removeAllViews(); StageWeb.release(w) })
         }
@@ -425,7 +425,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
                             onDragEnd = { val l = StageReducer.chatCountForDrag(st.chat.count, with(dens) { dragDy.toDp().value }); StageStore.dispatch(StageAction.SetChat(l.mode, l.count)); dragDy = 0f },
                             onDragCancel = { dragDy = 0f })
                     }.semantics { contentDescription = tr("Drag to show more or fewer messages") }, contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(LocalBlaze.current.hair))
+                        Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(LocalArgus.current.hair))
                     }
                     Box(Modifier.fillMaxWidth().zIndex(StageLayers.CHAT).height((st.chat.count * 64 + 24).dp.coerceAtMost(with(dens) { (stageH * 0.6f).toDp() }))) { chat(Modifier.fillMaxSize()) }
                 }
@@ -456,7 +456,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
         // Top bar hidden: a small tab brings it back.
         if (!st.topBar) Box(Modifier.align(Alignment.TopCenter).zIndex(StageLayers.DOCK).padding(top = 2.dp).clip(RoundedCornerShape(50)).clickable(onClickLabel = tr("Show the top bar")) {
             StageStore.dispatch(StageAction.SetChrome(topBar = true)) }.padding(horizontal = 18.dp, vertical = 4.dp)) {
-            Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(LocalBlaze.current.hair))
+            Box(Modifier.size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(LocalArgus.current.hair))
         }
         // The drag ghost: its own window over the whole screen (above the chat, every widget, the top and reply bars), lifted a
         // little (scale + a static shadow; only its position changes while the finger moves). The window never takes touches
@@ -515,7 +515,7 @@ private fun Modifier.onWindowPos(f: (Offset) -> Unit): Modifier =
     this.onGloballyPositioned { f(it.positionInWindow()) }
 
 /**
- * 0.46.1 picture-in-picture for a Stage video: when the user leaves Blaze while a Stage video plays, MainActivity enters
+ * 0.46.1 picture-in-picture for a Stage video: when the user leaves Argus while a Stage video plays, MainActivity enters
  * picture-in-picture and draws only this (the shared player, no controls); back in the app the card takes the video again.
  */
 @Composable

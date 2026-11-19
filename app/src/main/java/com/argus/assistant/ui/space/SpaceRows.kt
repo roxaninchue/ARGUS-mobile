@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -52,13 +52,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.BackTitle
-import com.blaze.assistant.ui.BlazeIconStyle
-import com.blaze.assistant.ui.BlazeSwitchTrack
-import com.blaze.assistant.ui.IconTile
-import com.blaze.assistant.ui.LeadIcon
-import com.blaze.assistant.ui.MenuRowShape
-import com.blaze.assistant.ui.MotionTokens
+import com.argus.assistant.ui.BackTitle
+import com.argus.assistant.ui.ArgusIconStyle
+import com.argus.assistant.ui.ArgusSwitchTrack
+import com.argus.assistant.ui.IconTile
+import com.argus.assistant.ui.LeadIcon
+import com.argus.assistant.ui.MenuRowShape
+import com.argus.assistant.ui.MotionTokens
 
 /*
  * Unification 5/9: the shell's list parts, shared by the profile page and every settings page. They grew out of the
@@ -171,7 +171,7 @@ fun SpaceRow(
     }
 }
 
-/** A row with the one switch ([BlazeSwitchTrack]) at its end; the whole row toggles and reads as a switch. */
+/** A row with the one switch ([ArgusSwitchTrack]) at its end; the whole row toggles and reads as a switch. */
 @Composable
 fun SpaceToggleRow(
     title: String,
@@ -186,7 +186,7 @@ fun SpaceToggleRow(
     onToggle: () -> Unit,
 ) {
     SpaceRow(title, modifier.toggleable(value = on, role = Role.Switch, onValueChange = { onToggle() }), sub = sub, icon = icon, size = size,
-        tag = tag, padStart = padStart, padEnd = padEnd, trailing = { BlazeSwitchTrack(on) })
+        tag = tag, padStart = padStart, padEnd = padEnd, trailing = { ArgusSwitchTrack(on) })
 }
 
 /**
@@ -268,8 +268,8 @@ fun SpaceMenuCard(items: List<SpaceMenuItem>, onDismiss: () -> Unit = {}) {
                 .padding(horizontal = 12.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 val icon = item.icon
                 if (icon != null) LeadIcon(icon, look.ink)
-                else if (anyIcon) Spacer(Modifier.width(BlazeIconStyle.rowIcon))
-                if (anyIcon) Spacer(Modifier.width(BlazeIconStyle.gap))
+                else if (anyIcon) Spacer(Modifier.width(ArgusIconStyle.rowIcon))
+                if (anyIcon) Spacer(Modifier.width(ArgusIconStyle.gap))
                 Text(item.label, style = SpaceType.body(SpaceTypeScale.META.sp, look.ink))
             }
         }

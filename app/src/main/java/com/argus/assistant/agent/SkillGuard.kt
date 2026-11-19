@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.30.5 (Blazeinchue: "create higher measures stopping blaze from calling unrelated skills and also keep track of often
+ * v0.30.5 (Blazeinchue: "create higher measures stopping argus from calling unrelated skills and also keep track of often
  * performed tasks so it can give priority to creating skills for them").
  *
  *  - [relevant] / [gate]: use_skill and run_skill only load a skill that shares real words with what the user is asking

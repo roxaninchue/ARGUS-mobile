@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -13,7 +13,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Brain order Nous reserve → Blaze Cloud (Owner 16 Nov 2026: the on-device brain that led it is gone). A failure at ANY turn of a task (turn 1, turn 8)
+ * Brain order Nous reserve → Argus Cloud (Owner 16 Nov 2026: the on-device brain that led it is gone). A failure at ANY turn of a task (turn 1, turn 8)
  * never shows an error while a brain is left: the next brain answers with the same context and the task finishes.
  * Simulates the agent's tool loop: each turn is one model call through [Failover.run]; an escaping exception would be
  * the error bubble.

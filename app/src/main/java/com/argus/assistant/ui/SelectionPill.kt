@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -56,15 +56,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 /**
- * v0.27.2: Compose's text-selection menu, routed to Blaze's own pill. [onShow] gets the selection box and the
+ * v0.27.2: Compose's text-selection menu, routed to Argus's own pill. [onShow] gets the selection box and the
  * "copy" / "select all" callbacks Compose offers (copy also ends the selection).
  */
-class BlazeTextToolbar(val onShow: (Rect, (() -> Unit)?, (() -> Unit)?) -> Unit, val onHide: () -> Unit) : TextToolbar {
+class ArgusTextToolbar(val onShow: (Rect, (() -> Unit)?, (() -> Unit)?) -> Unit, val onHide: () -> Unit) : TextToolbar {
     override var status: TextToolbarStatus = TextToolbarStatus.Hidden
         private set
     override fun showMenu(rect: Rect, onCopyRequested: (() -> Unit)?, onPasteRequested: (() -> Unit)?,
@@ -95,11 +95,11 @@ class CaptureClipboard(private val real: ClipboardManager) : ClipboardManager by
 
 /** The things the pill's actions do outside the chat (browser, share sheet, speech). */
 object SelectionDo {
-    /** Search or open a link in Blaze's own browser, in a new tab. */
-    fun openInBlazeBrowser(ctx: Context, text: String) {
+    /** Search or open a link in Argus's own browser, in a new tab. */
+    fun openInArgusBrowser(ctx: Context, text: String) {
         val url = SelectionActions.browserUrl(text)
         try {
-            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url), ctx, com.blaze.assistant.browser.BrowserActivity::class.java)
+            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url), ctx, com.argus.assistant.browser.BrowserActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
         } catch (_: Exception) { toast(ctx, "Couldn't open ${BrandName.NAME}'s browser") }
     }
@@ -115,8 +115,8 @@ object SelectionDo {
         val t = SelectionActions.speakable(text)
         if (t.isBlank()) return
         try {
-            if (!com.blaze.assistant.voice.Voice.ttsOk()) { toast(ctx, "Text-to-speech isn't ready yet"); return }
-            com.blaze.assistant.voice.Voice.speak(t)
+            if (!com.argus.assistant.voice.Voice.ttsOk()) { toast(ctx, "Text-to-speech isn't ready yet"); return }
+            com.argus.assistant.voice.Voice.speak(t)
         } catch (_: Exception) { toast(ctx, "Text-to-speech isn't ready yet") }
     }
 
@@ -127,7 +127,7 @@ object SelectionDo {
 }
 
 /**
- * v0.27.2: the black selection pill (Copy · Quote · Select all · Search · Ask Blaze · Translate · Define · Read aloud ·
+ * v0.27.2: the black selection pill (Copy · Quote · Select all · Search · Ask Argus · Translate · Define · Read aloud ·
  * Share). It is as wide as its actions up to the screen minus 12 dp each side, then scrolls sideways with a snapping
  * fling and a haptic tick on each settle. A fade + chevron on an edge says more is there; the first time it opens it
  * peeks the next actions once (never with Remove animations on). Draw it in a full-screen box; it does not block
@@ -183,11 +183,11 @@ fun SelectionPill(rect: Rect, actions: List<SelectionActions.Action>, ink: Color
             .widthIn(max = maxWidth - 24.dp)
             .alpha(if (pillW == 0) 0f else 1f)
             .onSizeChanged { pillW = it.width; pillH = it.height }
-            .shadow(8.dp, BlazeShapes.pill).clip(BlazeShapes.pill).background(ink, BlazeShapes.pill)) {
+            .shadow(8.dp, ArgusShapes.pill).clip(ArgusShapes.pill).background(ink, ArgusShapes.pill)) {
             LazyRow(state = state, flingBehavior = fling, contentPadding = PaddingValues(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 items(actions, key = { it.name }) { a ->
-                    Box(Modifier.clip(BlazeShapes.pill).clickable { onAction(a) }.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                    Box(Modifier.clip(ArgusShapes.pill).clickable { onAction(a) }.padding(horizontal = 14.dp, vertical = 12.dp)) {
                         ActionText(a.label, color = paper, size = 11.sp)
                     }
                 }

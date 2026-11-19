@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui.team.thread
+package com.argus.assistant.ui.team.thread
 
-import com.blaze.assistant.agent.StepPill
-import com.blaze.assistant.agent.StepTool
-import com.blaze.assistant.agent.ToolTrail
-import com.blaze.assistant.ui.team.thread.ThreadModel.State
-import com.blaze.assistant.ui.team.thread.ThreadModel.Step
-import com.blaze.assistant.ui.team.thread.ThreadModel.ThreadItem
+import com.argus.assistant.agent.StepPill
+import com.argus.assistant.agent.StepTool
+import com.argus.assistant.agent.ToolTrail
+import com.argus.assistant.ui.team.thread.ThreadModel.State
+import com.argus.assistant.ui.team.thread.ThreadModel.Step
+import com.argus.assistant.ui.team.thread.ThreadModel.ThreadItem
 
 /**
  * Milestone 4: the main ARGUS chat's tool calls as the A-team thread's rows (group → kind → call), reusing
@@ -15,7 +15,7 @@ import com.blaze.assistant.ui.team.thread.ThreadModel.ThreadItem
  *    ([ThreadItem.Live]: the current line, a count, and its calls grouped by kind once opened).
  *  - Once the turn is over the run folds into a [ThreadItem.Work] chip, drawn above the message that ended it
  *    ([Turns.before], keyed by that message's id); a finished run with nothing after it is [Turns.tail].
- *  - A step message is a call when its meta is [com.blaze.assistant.agent.Friendly.exact]'s text (`name(args)` or
+ *  - A step message is a call when its meta is [com.argus.assistant.agent.Friendly.exact]'s text (`name(args)` or
  *    `$ cmd` for a shell); other step lines (narration) only feed the live line. A call's result comes from
  *    [ToolTrail] by the same exact text (first unused match, then the same tool's next result).
  *  - An acknowledgement reply ([Msg.ack]) does not end a turn, so "On it" never splits one turn's chip in two.
@@ -161,8 +161,8 @@ object ChatToolRows {
 
     data class Flows(val before: Map<Long, Flow>, val live: Flow?, val tail: Flow?)
 
-    /** Narration steps (Agent marks them [com.blaze.assistant.agent.Narration.META]). */
-    fun isSay(m: Msg): Boolean = com.blaze.assistant.agent.Narration.isNarration(m.meta) && m.text.isNotBlank()
+    /** Narration steps (Agent marks them [com.argus.assistant.agent.Narration.META]). */
+    fun isSay(m: Msg): Boolean = com.argus.assistant.agent.Narration.isNarration(m.meta) && m.text.isNotBlank()
 
     /** [run]'s messages as a flow: narration → [Seg.Say]; calls of one tool in a row → one [Seg.Tools]. Pure. */
     fun flowOf(run: List<Msg>, results: List<ToolTrail.Result>, used: BooleanArray, live: Boolean): List<Seg> {

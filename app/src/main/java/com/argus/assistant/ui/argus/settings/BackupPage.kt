@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.argus.settings
+package com.argus.assistant.ui.argus.settings
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,19 +20,19 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.team.ATeamImport
-import com.blaze.assistant.team.ATeamImporter
-import com.blaze.assistant.team.ImportPrefs
-import com.blaze.assistant.team.JobStore
-import com.blaze.assistant.team.TeamGraph
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusField
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.SettingsGroup
-import com.blaze.assistant.ui.argus.kit.SettingsItem
+import com.argus.assistant.BrandName
+import com.argus.assistant.team.ATeamImport
+import com.argus.assistant.team.ATeamImporter
+import com.argus.assistant.team.ImportPrefs
+import com.argus.assistant.team.JobStore
+import com.argus.assistant.team.TeamGraph
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusField
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.SettingsGroup
+import com.argus.assistant.ui.argus.kit.SettingsItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -142,11 +142,11 @@ private fun Lines(lines: List<String>) {
 /** The settings an import may set, on the app's own prefs. */
 private object LivePrefs : ImportPrefs {
     override var userName: String
-        get() = try { com.blaze.assistant.agent.Settings.userName } catch (_: Throwable) { "" }
-        set(v) { try { com.blaze.assistant.agent.Settings.userName = v } catch (_: Throwable) { } }
+        get() = try { com.argus.assistant.agent.Settings.userName } catch (_: Throwable) { "" }
+        set(v) { try { com.argus.assistant.agent.Settings.userName = v } catch (_: Throwable) { } }
     override var themeMode: String
-        get() = com.blaze.assistant.ui.ThemeMode.mode.value
-        set(v) { com.blaze.assistant.ui.ThemeMode.set(v) }
+        get() = com.argus.assistant.ui.ThemeMode.mode.value
+        set(v) { com.argus.assistant.ui.ThemeMode.set(v) }
 }
 
 /** Biggest file the picker reads (a Demo-team backup is ~6 KB; one with long chats a few hundred KB). */
@@ -217,7 +217,7 @@ fun ATeamBackupLive() {
                             if (it.bots.changes > 0) p.file.bots.forEach { b -> runCatching { g.threads.rosterChanged(b.bot.id) } }
                         }
                     }
-                    runCatching { com.blaze.assistant.team.JobsRuntime.kick() }
+                    runCatching { com.argus.assistant.team.JobsRuntime.kick() }
                     paste = null
                     ATeamStage.Done(r)
                 } catch (e: Exception) { ATeamStage.Failed("Nothing was imported: ${e.message ?: "unknown error"}") }

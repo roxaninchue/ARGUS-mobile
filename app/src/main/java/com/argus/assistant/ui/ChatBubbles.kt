@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,15 +46,15 @@ import java.util.Calendar
 import java.util.Locale
 
 /*
- * 0.45.20 chat bubbles (user spec A). Yours on the right, Blaze's on the left; rounded, a small tail on the first bubble
+ * 0.45.20 chat bubbles (user spec A). Yours on the right, Argus's on the left; rounded, a small tail on the first bubble
  * of a run, at most ~80 % of the width, the time inside at the bottom right, "Today" / "Yesterday" chips between days,
- * runs grouped with tighter spacing. Frosted (semi-opaque) so the theme's scene shows through, in Blaze's own greys and
+ * runs grouped with tighter spacing. Frosted (semi-opaque) so the theme's scene shows through, in Argus's own greys and
  * the theme accent (never WhatsApp green), and readable in light and dark over every theme: each fill's opacity is the
  * least that keeps the text at WCAG AA (4.5:1) over the darkest AND brightest thing that can sit behind it
  * ([BubblePalette]); ChatUi20Test checks every theme. No backdrop blur (a RenderEffect behind every bubble is too heavy
  * for low-end phones): the frost is the fill plus a soft top sheen.
  *
- * Bubbles.kt keeps the old public composables (UserBubble, BlazeBubble) and draws them in [ChatBubble].
+ * Bubbles.kt keeps the old public composables (UserBubble, ArgusBubble) and draws them in [ChatBubble].
  */
 
 /** The time shown inside the bubble being drawn ("" = none). Entry provides it for the last bubble of a run. */
@@ -76,24 +76,24 @@ object BubblePalette {
     /** Everything that can sit behind a bubble: pure black, pure white and the page colour (scenes sit between). */
     fun grounds(c: BlazeColors): List<Color> = listOf(Color.Black, Color.White, c.paper.copy(alpha = 1f))
 
-    /** 0.45.29: the theme's own bubble base when the palette has one ([blazePalette], [BubbleTones]); else the neutral below. */
+    /** 0.45.29: the theme's own bubble base when the palette has one ([argusPalette], [BubbleTones]); else the neutral below. */
     private fun base(c: BlazeColors, mine: Boolean): Color = when {
         mine && c.bubbleMe != Color.Unspecified -> c.bubbleMe
-        !mine && c.bubbleBlaze != Color.Unspecified -> c.bubbleBlaze
+        !mine && c.bubbleArgus != Color.Unspecified -> c.bubbleArgus
         c.dark && mine -> lerp(Color(0xFF26262C), c.accent.copy(alpha = 1f), 0.26f)
         c.dark -> Color(0xFF1B1B20)
         mine -> lerp(Color.White, c.accent.copy(alpha = 1f), 0.14f)
         else -> Color.White
     }
 
-    /** The text drawn in the bubble: your words in full ink, Blaze's in the body ink (as everywhere in the app). */
+    /** The text drawn in the bubble: your words in full ink, Argus's in the body ink (as everywhere in the app). */
     fun text(c: BlazeColors, mine: Boolean): Color = if (mine) c.ink else c.body
 
     private val memo = java.util.concurrent.ConcurrentHashMap<String, Float>()
 
     /**
      * The least opacity (>= [floor], steps of 0.01) at which [fg] over [b] stays at [ratio] on every ground in [gs].
-     * 1 when even a solid fill can't (never for Blaze's palettes).
+     * 1 when even a solid fill can't (never for Argus's palettes).
      */
     fun minAlpha(b: Color, fg: Color, gs: List<Color>, floor: Float, ratio: Double = Contrast.AA_TEXT + 0.1): Float =
         memo.getOrPut("${b.value}|${fg.value}|${gs.joinToString { it.value.toString() }}|$floor|$ratio") {
@@ -194,7 +194,7 @@ fun Modifier.bubbleLongPress(onLong: (() -> Unit)?): Modifier = if (onLong == nu
  */
 @Composable
 fun ChatBubble(side: Side, pos: GroupPos, modifier: Modifier = Modifier, wide: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val mine = side == Side.ME
     val time = LocalBubbleTime.current
     val menu = LocalBubbleMenu.current
@@ -242,7 +242,7 @@ object BubbleDays {
 /** The small centred day chip. */
 @Composable
 fun DayChip(label: String, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
         Text(label, modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(BubblePalette.capsule(c), RoundedCornerShape(10.dp))
             .semantics { heading() }.padding(horizontal = 12.dp, vertical = 4.dp),

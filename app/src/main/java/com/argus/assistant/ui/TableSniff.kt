@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * v0.31.1 table detection (pure, unit-testable). Models often wrap a Markdown pipe table in a ``` fence, write it without

@@ -1,10 +1,10 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.45.19-speed (device test: mid-task, "what is Blaze Phone doing?" was answered "Booking confirmed!" with nothing
- * booked): while Blaze Phone is in play, a reply may say booked / ordered / paid / confirmed only when a phone_read in
+ * 0.45.19-speed (device test: mid-task, "what is Argus Phone doing?" was answered "Booking confirmed!" with nothing
+ * booked): while Argus Phone is in play, a reply may say booked / ordered / paid / confirmed only when a phone_read in
  * this same turn saw a confirmation on the page (a confirmation number or confirmation text: its verdict line was
  * VERIFIED). Any other such sentence is replaced by the plain truth: not booked yet.
  *
@@ -32,7 +32,7 @@ object PhoneClaimGuard {
     fun claims(reply: String): List<String> = sentences(reply).filter { claim.containsMatchIn(it) && !negation.containsMatchIn(it) }
 
     /**
-     * Did a phone_read this turn see a confirmation? [phoneDone]: this turn's Blaze Phone calls in order, as
+     * Did a phone_read this turn see a confirmation? [phoneDone]: this turn's Argus Phone calls in order, as
      * (tool name, verification why) with why from ToolVerify.phoneVerdict ("page verified: …" / "page not verified").
      * The newest phone_read decides (a later read that lost the confirmation, or shows an error, wins).
      */
@@ -43,7 +43,7 @@ object PhoneClaimGuard {
 
     /**
      * The reply with any unbacked booked / paid / confirmed sentence replaced by [HONEST] (once, where the first was),
-     * or null when nothing needs changing. [inPlay]: this turn used Blaze Phone or Blaze Phone has a task open.
+     * or null when nothing needs changing. [inPlay]: this turn used Argus Phone or Argus Phone has a task open.
      */
     fun review(reply: String, phoneDone: List<Pair<String, String>>, inPlay: Boolean): String? {
         if (!inPlay || reply.isBlank()) return null

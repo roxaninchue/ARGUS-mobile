@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
                     var taps by rememberSaveable { mutableIntStateOf(0) }
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
                         horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Hello from Blaze", style = MaterialTheme.typography.headlineMedium)
+                        Text("Hello from Argus", style = MaterialTheme.typography.headlineMedium)
                         Button(onClick = { taps++ }) { Text("Tapped $taps times") }
                     }
                 }

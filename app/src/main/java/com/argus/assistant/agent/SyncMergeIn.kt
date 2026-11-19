@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.0 (#37): a chat file that cloud sync changed is merged INTO the open chat instead of replacing it.

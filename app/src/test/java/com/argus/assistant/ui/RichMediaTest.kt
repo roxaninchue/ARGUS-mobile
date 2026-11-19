@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -72,9 +72,9 @@ class RichMediaTest {
     }
 
     @Test fun orchestraBlocksRenderAsRichBlocks() {
-        val doc = com.blaze.assistant.orchestra.DocCard.block("Solar", "/x/solar.md", "# Solar\n\n## A\nx\n\n## B\ny")
+        val doc = com.argus.assistant.orchestra.DocCard.block("Solar", "/x/solar.md", "# Solar\n\n## A\nx\n\n## B\ny")
         assertTrue(blocks(doc).any { it is RichReplies.Block.Doc })
-        val gal = com.blaze.assistant.orchestra.Pipelines.gallery(org.json.JSONObject("""{"title":"T","items":[{"title":"A","subtitle":"x","image":"https://i/a.jpg","url":"https://u/a","why":"#1"}]}"""))
+        val gal = com.argus.assistant.orchestra.Pipelines.gallery(org.json.JSONObject("""{"title":"T","items":[{"title":"A","subtitle":"x","image":"https://i/a.jpg","url":"https://u/a","why":"#1"}]}"""))
         assertTrue(blocks(gal).any { it is RichReplies.Block.Gallery })
     }
 }

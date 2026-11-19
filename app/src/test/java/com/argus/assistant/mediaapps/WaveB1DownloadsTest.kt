@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

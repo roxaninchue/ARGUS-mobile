@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
 /**
  * Living UI 0.2.2: a steps row says what was done ("Checked the weather · Ndola", "Searched your mail · invoices"), not

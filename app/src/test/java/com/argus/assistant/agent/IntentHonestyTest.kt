@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,7 +16,7 @@ import java.nio.file.Files
 
 /**
  * v0.27.x intent + honesty: "show me your memories" lists memories (no Design), retries stay on the request,
- * the design reply is grounded in what the tool made (2D is not 3D), and Blaze offers to do things only when it can.
+ * the design reply is grounded in what the tool made (2D is not 3D), and Argus offers to do things only when it can.
  */
 class IntentHonestyTest {
 

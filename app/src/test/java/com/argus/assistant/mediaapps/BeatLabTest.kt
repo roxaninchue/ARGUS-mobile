@@ -1,6 +1,6 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.BeatLab.Dsp
+import com.argus.assistant.mediaapps.BeatLab.Dsp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

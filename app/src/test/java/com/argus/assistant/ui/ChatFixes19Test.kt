@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.agent.ToolLeak
-import com.blaze.assistant.browser.phone.PhoneBrowserTools
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Role
+import com.argus.assistant.agent.ToolLeak
+import com.argus.assistant.browser.phone.PhoneBrowserTools
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,8 +11,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 0.45.19 chat fix 4: the chat sweep. Blaze Phone's status pill was white on light grey; element refs ("Tapping e61")
- * reached the status line; Halo's bubble and Blaze's answer shared one group (Blaze's words under Halo's name, one action
+ * 0.45.19 chat fix 4: the chat sweep. Argus Phone's status pill was white on light grey; element refs ("Tapping e61")
+ * reached the status line; Halo's bubble and Argus's answer shared one group (Argus's words under Halo's name, one action
  * row); raw call text must never reach a bubble. Strict 5/5.
  */
 class ChatFixes19Test {
@@ -37,7 +37,7 @@ class ChatFixes19Test {
         assertEquals("Choosing 2 nights", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "select").put("option", "2 nights")))
     }
 
-    @Test fun haloAndBlazeNeverShareAGroup() = fiveTimes { r ->
+    @Test fun haloAndArgusNeverShareAGroup() = fiveTimes { r ->
         val t = 1_000_000L + r
         val msgs = listOf(
             ChatMessage(1, Role.USER, "cancle booking", at = t),
@@ -46,7 +46,7 @@ class ChatFixes19Test {
         )
         val items = buildItems(msgs, working = false)
         assertEquals(listOf(GroupPos.SINGLE, GroupPos.SINGLE, GroupPos.SINGLE), items.map { it.pos })
-        // Blaze's own ack and result still share one group: one timestamp / action row, on the last one.
+        // Argus's own ack and result still share one group: one timestamp / action row, on the last one.
         val ackThenResult = listOf(
             ChatMessage(1, Role.USER, "turn on dark mode", at = t),
             ChatMessage(2, Role.BLAZE, "Turning on dark mode.", meta = "ack", at = t + 2_100),

@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.link.PcMessages
+import com.argus.assistant.link.PcMessages
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -52,11 +52,11 @@ class MarketerPackTest {
         // The always flag must bypass standing permissions and Autopilot in Agent.confirm (read the source:
         // Agent needs Android at init).
         val root = listOf(File("src/main"), File("app/src/main")).first { it.isDirectory }
-        val agent = File(root, "java/com/blaze/assistant/agent/Agent.kt").readText()
+        val agent = File(root, "java/com/argus/assistant/agent/Agent.kt").readText()
         // v0.28.2: the decision moved to ConfirmGate (pure, see ConfirmGateTest); always = the card shows.
         assertTrue(agent.contains("ConfirmGate.decide(always,"))
         assertEquals(ConfirmGate.Decision.SHOW, ConfirmGate.decide(always = true, destructive = false, preApproved = true, autopilot = true, tainted = false))
-        assertTrue(File(root, "java/com/blaze/assistant/link/DesktopLink.kt").readText().contains("always = true, from = pcName"))
+        assertTrue(File(root, "java/com/argus/assistant/link/DesktopLink.kt").readText().contains("always = true, from = pcName"))
     }
 
     @Test fun marketerSkillsShipWithMatchingHashes() {
@@ -75,7 +75,7 @@ class MarketerPackTest {
     }
 
     @Test fun digestJobIsWeeklyOnMonday() {
-        assertEquals(1, com.blaze.assistant.routine.Routines.parseDays("mon"))
+        assertEquals(1, com.argus.assistant.routine.Routines.parseDays("mon"))
         assertTrue(Seller.DIGEST_PROMPT.contains("weekly-digest"))
     }
 }

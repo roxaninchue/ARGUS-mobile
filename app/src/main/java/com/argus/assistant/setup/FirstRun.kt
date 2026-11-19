@@ -1,15 +1,15 @@
-package com.blaze.assistant.setup
+package com.argus.assistant.setup
 
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.agent.LlmClient
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.device.CrashLog
-import com.blaze.assistant.home.HomeBoard
-import com.blaze.assistant.home.HomeTodo
+import com.argus.assistant.agent.LlmClient
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.device.CrashLog
+import com.argus.assistant.home.HomeBoard
+import com.argus.assistant.home.HomeTodo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,7 +20,7 @@ import kotlinx.coroutines.withContext
 /**
  * 2026-11-18 first run, after sign-in (owner's spec): ARGUS introduces itself in the chat and the "Set up ARGUS" checklist
  * is in Life. Owner 2026-11-19, faster intro: the app puts the checklist there and the introduction lands with it
- * ([com.blaze.assistant.agent.Agent.introduce], [FirstRunIntro]): in English the fixed introduction at once, in another
+ * ([com.argus.assistant.agent.Agent.introduce], [FirstRunIntro]): in English the fixed introduction at once, in another
  * language one model reply with no tools (the fixed one, translated, when no model answers in time). Once per install ([PREF_WELCOMED]). Life keeps the list in step with the
  * phone ([sync], on each visit) and a tap on a step opens its screen ([open]).
  */
@@ -35,12 +35,12 @@ object FirstRun {
         fun ok(what: String, f: () -> Boolean): Boolean = try { f() } catch (t: Throwable) { CrashLog.quiet("FirstRun.probe $what", t); false }
         return SetupChecklist.Probe(
             calendarPermission = ok("calendar") { granted(ctx, Manifest.permission.READ_CALENDAR) },
-            googleConnected = ok("google") { com.blaze.assistant.connect.Connectors.connected("google") },
+            googleConnected = ok("google") { com.argus.assistant.connect.Connectors.connected("google") },
             notifications = ok("notifications") { Build.VERSION.SDK_INT < 33 || granted(ctx, Manifest.permission.POST_NOTIFICATIONS) },
-            wakeWord = ok("wake") { Settings.wakeWord && com.blaze.assistant.voice.WakeModel.ready(ctx) },
-            defaultAssistant = ok("assistant") { com.blaze.assistant.assist.BlazeInteractionService.isDefault(ctx) },
-            desktopPaired = ok("desktop") { com.blaze.assistant.link.DesktopLink.paired },
-            phoneControl = ok("a11y") { com.blaze.assistant.phone.BlazeAccessibilityService.isEnabled(ctx) },
+            wakeWord = ok("wake") { Settings.wakeWord && com.argus.assistant.voice.WakeModel.ready(ctx) },
+            defaultAssistant = ok("assistant") { com.argus.assistant.assist.ArgusInteractionService.isDefault(ctx) },
+            desktopPaired = ok("desktop") { com.argus.assistant.link.DesktopLink.paired },
+            phoneControl = ok("a11y") { com.argus.assistant.phone.ArgusAccessibilityService.isEnabled(ctx) },
         )
     }
 
@@ -61,7 +61,7 @@ object FirstRun {
         if (Settings.bool(PREF_WELCOMED, false)) return
         Settings.setBool(PREF_WELCOMED, true)
         scope.launch {
-            val lang = com.blaze.assistant.i18n.AppLang.current
+            val lang = com.argus.assistant.i18n.AppLang.current
             val write: (suspend () -> String?)? = if (!FirstRunIntro.needsModel(lang.code)) null else {
                 val open = SetupChecklist.open(SetupChecklist.fresh(SetupChecklist.detected(probe(app))))
                 val ask: suspend () -> String? = {
@@ -70,7 +70,7 @@ object FirstRun {
                 }
                 ask
             }
-            com.blaze.assistant.agent.Agent.introduce(com.blaze.assistant.i18n.tr(FirstRunIntro.FALLBACK), write,
+            com.argus.assistant.agent.Agent.introduce(com.argus.assistant.i18n.tr(FirstRunIntro.FALLBACK), write,
                 beforePost = { withContext(Dispatchers.IO) { ensureChecklist(app) } })
         }
     }
@@ -89,7 +89,7 @@ object FirstRun {
     /** A tap on a to-do row that names a screen: opens it (SelfSetup knows the system screens and ARGUS's own pages). */
     fun open(ctx: Context, item: HomeTodo.Item): Boolean {
         if (item.open.isBlank()) return false
-        return try { com.blaze.assistant.agent.SelfSetup.open(ctx, item.open); true }
+        return try { com.argus.assistant.agent.SelfSetup.open(ctx, item.open); true }
         catch (t: Throwable) { CrashLog.quiet("FirstRun.open", t); false }
     }
 }

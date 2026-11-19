@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
@@ -14,10 +14,10 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.media3.common.MediaItem
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.mediaapps.*
-import com.blaze.assistant.movies.*
-import com.blaze.assistant.ui.space.SpaceBackdrop
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.mediaapps.*
+import com.argus.assistant.movies.*
+import com.argus.assistant.ui.space.SpaceBackdrop
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -63,7 +63,7 @@ class MediaRevampShotsTest {
 
     private fun frame(name: String, content: @androidx.compose.runtime.Composable () -> Unit) {
         rule.mainClock.autoAdvance = false
-        rule.setContent { CompositionLocalProvider(LocalBlaze provides DarkColors) { Box(Modifier.fillMaxSize().background(DarkColors.paper)) { content() } } }
+        rule.setContent { CompositionLocalProvider(LocalArgus provides DarkColors) { Box(Modifier.fillMaxSize().background(DarkColors.paper)) { content() } } }
         rule.mainClock.advanceTimeBy(800)
         assertTrue("$name frame is blank", distinct(capture(name)) > 12)
     }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
-import com.blaze.assistant.agent.ToolRouter
-import com.blaze.assistant.agent.ViewRouter
+import com.argus.assistant.agent.ToolRouter
+import com.argus.assistant.agent.ViewRouter
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals

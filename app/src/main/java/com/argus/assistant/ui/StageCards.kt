@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -126,19 +126,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.mediaapps.Repeat
-import com.blaze.assistant.mediaapps.StageMusicLogic
-import com.blaze.assistant.stage.StageItem
-import com.blaze.assistant.stage.StageKind
-import com.blaze.assistant.stage.StageTimer
-import com.blaze.assistant.stage.StageTools
-import com.blaze.assistant.stage.TimerState
+import com.argus.assistant.mediaapps.Repeat
+import com.argus.assistant.mediaapps.StageMusicLogic
+import com.argus.assistant.stage.StageItem
+import com.argus.assistant.stage.StageKind
+import com.argus.assistant.stage.StageTimer
+import com.argus.assistant.stage.StageTools
+import com.argus.assistant.stage.TimerState
 import org.json.JSONArray
 
 /**
- * Blaze Stage cards: the stateless faces of every hero and widget. They get plain data ([StageData]) and report taps
+ * Argus Stage cards: the stateless faces of every hero and widget. They get plain data ([StageData]) and report taps
  * ([StageEvent]); StageHost feeds them live values (the timer once a second, the music state once a second) so the
- * screenshot tests can draw every card in any theme without services. Only theme colours ([LocalBlaze]) are used.
+ * screenshot tests can draw every card in any theme without services. Only theme colours ([LocalArgus]) are used.
  * 0.46.1: icons, not words (Material Symbols Rounded, each with a content description), denser layouts, and the basics
  * every card was missing (music queue / shuffle / repeat / seek / art, timer presets and steps, quiz hint / back / review,
  * flashcards know / don't know / shuffle / progress, plan and note editing, the browser card).
@@ -151,7 +151,7 @@ data class StageBrowserNow(val hasTab: Boolean = false, val title: String = "", 
 data class StageData(val now: Long = 0L, val timer: TimerState? = null, val music: StageMusicLogic.Snapshot = StageMusicLogic.Snapshot(),
                      val cardFront: String = "", val cardBack: String = "", val cardsLeft: Int = 0, val browser: StageBrowserNow = StageBrowserNow(),
                      /** 0.46.2 Movies: continue watching, shown on an empty video card. */
-                     val movies: List<com.blaze.assistant.movies.Progress> = emptyList())
+                     val movies: List<com.argus.assistant.movies.Progress> = emptyList())
 
 sealed class StageEvent {
     data class Timer(val op: String, val minutes: Double = 1.0) : StageEvent()
@@ -180,11 +180,11 @@ sealed class StageEvent {
 }
 
 @Composable
-internal fun stageSurface(): Color { val c = LocalBlaze.current; return if (c.dark) Color(0xFF16161A).copy(alpha = 0.92f) else Color.White.copy(alpha = 0.94f) }
+internal fun stageSurface(): Color { val c = LocalArgus.current; return if (c.dark) Color(0xFF16161A).copy(alpha = 0.92f) else Color.White.copy(alpha = 0.94f) }
 
 @Composable
 internal fun StageCardFrame(modifier: Modifier = Modifier, desc: String, radius: Dp = 22.dp, content: @Composable BoxScope.() -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(modifier.clip(RoundedCornerShape(radius)).background(stageSurface()).border(1.dp, c.hair, RoundedCornerShape(radius))
         .semantics { contentDescription = desc }, content = content)
 }
@@ -193,7 +193,7 @@ internal fun StageCardFrame(modifier: Modifier = Modifier, desc: String, radius:
 @Composable
 internal fun StageIconButton(icon: ImageVector, desc: String, modifier: Modifier = Modifier, primary: Boolean = false, on: Boolean = false,
                              size: Dp = 44.dp, enabled: Boolean = true, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val bg = when { primary -> c.accent; on -> c.accent.copy(alpha = 0.16f); else -> Color.Transparent }
     val tint = when { primary -> if (c.dark) Color.Black else Color.White; on -> c.accent; !enabled -> c.sub.copy(alpha = 0.4f); else -> c.ink }
     Box(modifier.size(size).clip(CircleShape).background(bg).clickable(enabled = enabled, role = Role.Button, onClickLabel = desc) { onClick() }
@@ -205,7 +205,7 @@ internal fun StageIconButton(icon: ImageVector, desc: String, modifier: Modifier
 /** A small text chip for values (presets "25m", speed "1.5x"); actions are icons. */
 @Composable
 private fun ValueChip(text: String, desc: String, selected: Boolean = false, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.clip(RoundedCornerShape(50)).background(if (selected) c.accent.copy(alpha = 0.18f) else c.faint)
         .border(1.dp, if (selected) c.accent else c.hair, RoundedCornerShape(50))
         .clickable(role = Role.Button, onClickLabel = desc) { onClick() }.semantics { contentDescription = desc }
@@ -217,7 +217,7 @@ private fun ValueChip(text: String, desc: String, selected: Boolean = false, onC
 /** The thin header every hero has: title, shrink, and the ⋯ menu (move, shrink, open in full view, close, reset layout). */
 @Composable
 private fun HeroHeader(item: StageItem, on: (StageEvent) -> Unit, extra: @Composable () -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(item.props["title"]?.ifBlank { null } ?: item.kind.label, color = c.ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
             overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).semantics { heading() })
@@ -269,7 +269,7 @@ internal fun heroDesc(item: StageItem, d: StageData): String = when (item.kind) 
 
 @Composable
 private fun TimerFace(item: StageItem, t: TimerState?, now: Long, low: Boolean, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     if (t == null) { Text(tr("Timer"), color = c.sub); return }
     val left = StageTimer.remaining(t, now)
     val p = StageTimer.progress(t, now)
@@ -310,7 +310,7 @@ private fun TimerFace(item: StageItem, t: TimerState?, now: Long, low: Boolean, 
             val sound = item.props["sound"].orEmpty().ifBlank { "ring" }
             StageIconButton(when (sound) { "vibrate" -> Icons.Rounded.Vibration; "silent" -> Icons.Rounded.NotificationsOff; else -> Icons.Rounded.NotificationsActive },
                 "Alert sound: $sound. Tap to change", size = 40.dp) {
-                val all = com.blaze.assistant.stage.StageStore.SOUNDS
+                val all = com.argus.assistant.stage.StageStore.SOUNDS
                 on(StageEvent.Props(mapOf("sound" to all[(all.indexOf(sound) + 1).mod(all.size)])))
             }
             if (!t.started && !t.done) {
@@ -336,10 +336,10 @@ private fun TimerFace(item: StageItem, t: TimerState?, now: Long, low: Boolean, 
 /** The cover: the song's own art (saved cover, embedded picture) or a themed placeholder. */
 @Composable
 private fun MusicArt(e: StageMusicLogic.Entry?, modifier: Modifier) {
-    val c = LocalBlaze.current
-    val track = remember(e?.key, e?.art) { e?.let { com.blaze.assistant.mediaapps.MediaLib.find(it.key)
-        ?: com.blaze.assistant.mediaapps.Track(it.key, it.uri, it.title, it.artist, art = it.art) } }
-    val img = com.blaze.assistant.mediaapps.rememberArt(track)
+    val c = LocalArgus.current
+    val track = remember(e?.key, e?.art) { e?.let { com.argus.assistant.mediaapps.MediaLib.find(it.key)
+        ?: com.argus.assistant.mediaapps.Track(it.key, it.uri, it.title, it.artist, art = it.art) } }
+    val img = com.argus.assistant.mediaapps.rememberArt(track)
     Box(modifier.clip(RoundedCornerShape(22.dp))
         .background(Brush.linearGradient(listOf(c.accent.copy(alpha = if (c.dark) 0.55f else 0.85f), c.accent.copy(alpha = 0.25f), c.faint))),
         contentAlignment = Alignment.Center) {
@@ -351,7 +351,7 @@ private fun MusicArt(e: StageMusicLogic.Entry?, modifier: Modifier) {
 /** A draggable seek slider. The bar follows the finger while dragging and seeks on release (one seek, not one per frame). */
 @Composable
 private fun SeekBar(posMs: Long, durMs: Long, modifier: Modifier = Modifier, onSeek: (Long) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var drag by remember { mutableStateOf<Float?>(null) }
     val shown = drag ?: StageMusicLogic.frac(posMs, durMs)
     val shownMs = drag?.let { (it * durMs).toLong() } ?: posMs
@@ -386,7 +386,7 @@ private fun SeekBar(posMs: Long, durMs: Long, modifier: Modifier = Modifier, onS
 
 @Composable
 private fun MusicFace(item: StageItem, s: StageMusicLogic.Snapshot, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val m = StageMusicLogic.card(s)
     val showQueue = item.props["queue"] == "true"
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()) {
@@ -425,7 +425,7 @@ private fun MusicFace(item: StageItem, s: StageMusicLogic.Snapshot, on: (StageEv
 
 @Composable
 private fun MusicQueue(s: StageMusicLogic.Snapshot, m: StageMusicLogic.Card, modifier: Modifier, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     if (s.queue.isEmpty()) { Box(modifier, contentAlignment = Alignment.Center) { Text(tr("The queue is empty"), color = c.sub, fontSize = 13.sp) }; return }
     // Now playing first, then up next in play order (shuffle-aware); every row is the player's own index.
     val rows = listOfNotNull(s.index.takeIf { it in s.queue.indices }) + m.upNext
@@ -455,9 +455,9 @@ private fun MusicQueue(s: StageMusicLogic.Snapshot, m: StageMusicLogic.Card, mod
 
 @Composable
 private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifier) -> Unit)?, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val url = item.props["url"].orEmpty()
-    val results = remember(item.props["results"]) { com.blaze.assistant.movies.StageMoviesLogic.results(item.props["results"]) }
+    val results = remember(item.props["results"]) { com.argus.assistant.movies.StageMoviesLogic.results(item.props["results"]) }
     val err = item.props["error"].orEmpty()
     if (video != null && url.isNotBlank() && !StageVideoUrl.isYouTube(url)) {
         Column(Modifier.fillMaxSize()) {
@@ -475,7 +475,7 @@ private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifi
         }
         return
     }
-    // 0.46.2 Movies: search results (tap = play here), else Continue watching, else the Blaze Video button.
+    // 0.46.2 Movies: search results (tap = play here), else Continue watching, else the Argus Video button.
     val busy = item.props["busy"] == "true"
     if (results.isNotEmpty() || item.props["query"] != null) {
         Column(Modifier.fillMaxSize()) {
@@ -511,7 +511,7 @@ private fun sourceName(id: String): String = when { id == "archive" -> "Internet
 /** One movie line on the video card: title, a small detail line, and a play icon (the whole row plays it). */
 @Composable
 private fun MovieRow(title: String, sub: String, busy: Boolean, onPlay: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(enabled = !busy, role = Role.Button, onClickLabel = tr("Play {0}", title)) { onPlay() }
         .padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(start = 4.dp)) {
@@ -542,7 +542,7 @@ object StageQuiz {
 
 @Composable
 private fun QuizFace(item: StageItem, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val qs = StageTools.questions(item.props["questions"])
     if (qs.isEmpty()) { Text(tr("No questions"), color = c.sub); return }
     val round = StageQuiz.round(item.props, qs.size)
@@ -611,7 +611,7 @@ private fun QuizFace(item: StageItem, on: (StageEvent) -> Unit) {
 
 @Composable
 private fun CardsFace(item: StageItem, d: StageData, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val seen = item.props["seen"]?.toIntOrNull() ?: 0
     val known = item.props["known"]?.toIntOrNull() ?: 0
     if (d.cardFront.isBlank()) {
@@ -652,7 +652,7 @@ private fun CardsFace(item: StageItem, d: StageData, on: (StageEvent) -> Unit) {
 
 @Composable
 private fun PlanFace(item: StageItem, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val items = StageTools.items(item.props["items"])
     val done = item.props["done"].orEmpty().split(',').mapNotNull { it.trim().toIntOrNull() }.toSet()
     if (item.props["editing"] == "true") { PlanEditor(items, done, on); return }
@@ -675,7 +675,7 @@ private fun PlanFace(item: StageItem, on: (StageEvent) -> Unit) {
 /** Plan editing: change, delete and add lines; saved with the check (done ticks follow their lines). */
 @Composable
 private fun PlanEditor(items: List<String>, done: Set<Int>, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val lines = remember(items) { mutableStateListOf<Pair<Int, String>>().apply { items.forEachIndexed { i, s -> add(i to s) } } }
     var fresh by remember { mutableStateOf("") }
     fun commit() {
@@ -710,7 +710,7 @@ private fun PlanEditor(items: List<String>, done: Set<Int>, on: (StageEvent) -> 
 
 @Composable
 private fun NoteFace(item: StageItem, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     if (item.props["editing"] != "true") {
         Text(item.props["text"].orEmpty(), color = c.ink, fontSize = 16.sp, modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()))
         return
@@ -729,7 +729,7 @@ private fun NoteFace(item: StageItem, on: (StageEvent) -> Unit) {
 
 @Composable
 private fun BrowserFace(b: StageBrowserNow, web: (@Composable (Modifier) -> Unit)?, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var input by remember(b.url) { mutableStateOf(b.url.removePrefix("https://").removePrefix("www.")) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -771,7 +771,7 @@ internal fun kindIcon(k: StageKind): ImageVector = when (k) {
 
 @Composable
 fun StageWidget(item: StageItem, d: StageData, modifier: Modifier = Modifier, narrow: Boolean = false, video: (@Composable (Modifier) -> Unit)? = null, on: (StageEvent) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val (title, sub) = widgetText(item, d)
     StageCardFrame(modifier.widthIn(min = if (narrow) 60.dp else 120.dp, max = if (narrow) 68.dp else 230.dp).height(if (narrow) 64.dp else 52.dp), desc = "$title, $sub. Tap to make it big", radius = 16.dp) {
         if (item.kind == StageKind.VIDEO && video != null && !item.props["url"].isNullOrBlank() && !StageVideoUrl.isYouTube(item.props["url"].orEmpty())) {
@@ -828,7 +828,7 @@ internal fun widgetText(item: StageItem, d: StageData): Pair<String, String> {
 /** The chat as a small tile (the newest message); tap = the chat back. */
 @Composable
 fun StageChatTile(last: String, modifier: Modifier = Modifier, onOpen: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     StageCardFrame(modifier.widthIn(min = 140.dp, max = 260.dp).height(52.dp).clickable(role = Role.Button, onClickLabel = tr("Show the chat")) { onOpen() }, desc = "Chat: $last. Tap to show the chat", radius = 16.dp) {
         Row(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.AutoMirrored.Rounded.Chat, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
@@ -840,7 +840,7 @@ fun StageChatTile(last: String, modifier: Modifier = Modifier, onOpen: () -> Uni
 /** The reply bar folded into a small floating pill (never gone); tap = the full reply bar back. */
 @Composable
 fun StageReplyPill(modifier: Modifier = Modifier, onOpen: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(modifier.clip(RoundedCornerShape(50)).background(stageSurface()).border(1.dp, c.hair, RoundedCornerShape(50))
         .clickable(role = Role.Button, onClickLabel = tr("Show the reply bar")) { onOpen() }.semantics { contentDescription = tr("Message {0}", BrandName.NAME) }
         .padding(horizontal = 18.dp, vertical = 10.dp)) {
@@ -856,7 +856,7 @@ data class StageMenuAction(val icon: ImageVector, val label: String, val run: ()
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StageMenuGrid(actions: List<StageMenuAction>, onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var tip by remember { mutableStateOf("") }
     Column(Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(22.dp)).background(stageSurface()).border(1.dp, c.hair, RoundedCornerShape(22.dp)).padding(10.dp)) {
         actions.chunked(4).forEach { row ->

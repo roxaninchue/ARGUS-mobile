@@ -1,6 +1,6 @@
-package com.blaze.assistant.memory
+package com.argus.assistant.memory
 
-import com.blaze.assistant.agent.LongChat
+import com.argus.assistant.agent.LongChat
 import org.json.JSONArray
 
 /**

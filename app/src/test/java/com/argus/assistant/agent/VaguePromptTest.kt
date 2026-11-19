@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.TaskMemory.Rec
-import com.blaze.assistant.agent.TaskMemory.State
-import com.blaze.assistant.agent.TaskMemory.Surface
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.TaskMemory.Rec
+import com.argus.assistant.agent.TaskMemory.State
+import com.argus.assistant.agent.TaskMemory.Surface
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,7 +23,7 @@ class VaguePromptTest {
     data class Case(val scenario: List<Rec>, val text: String, val expect: String?)
 
     // ---- fixtures: each scenario is one chat's task records (what the conversation did before) ----
-    private val gitlab = Rec("a1", "c", "Check my GitLab pipeline for BlazeMobile", State.WAITING_USER, Surface.BROWSER, needsSignIn = "gitlab.com", updated = min(10),
+    private val gitlab = Rec("a1", "c", "Check my GitLab pipeline for ArgusMobile", State.WAITING_USER, Surface.BROWSER, needsSignIn = "gitlab.com", updated = min(10),
         findings = listOf("GitLab asked for a sign-in in the Browser"), next = "open the pipelines page once signed in")
     private val weather = Rec("a2", "c", "What's the weather in Lusaka today", State.DONE, updated = min(2), findings = listOf("27°C, sunny"))
     private val sA = listOf(gitlab, weather)
@@ -148,7 +148,7 @@ class VaguePromptTest {
         assertEquals("a1", r.rec?.id)
         assertTrue(block, block.contains("in-app Browser"))
         assertTrue(block, block.contains("never switch"))
-        // and the guard stops a switch to Blaze Phone for that task
+        // and the guard stops a switch to Argus Phone for that task
         assertTrue(TaskMemory.surfaceGuard("phone_open", r.rec, "I signed you in", now)!!.startsWith("Not run"))
         assertEquals(null, TaskMemory.surfaceGuard("browser_read", r.rec, "I signed you in", now))
         assertEquals(null, TaskMemory.surfaceGuard("phone_open", r.rec, "use ${BrandName.NAME} Phone instead", now))

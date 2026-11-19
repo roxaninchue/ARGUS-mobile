@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.TaskMemory.Rec
-import com.blaze.assistant.agent.TaskMemory.State
-import com.blaze.assistant.memory.ChatTier
+import com.argus.assistant.agent.TaskMemory.Rec
+import com.argus.assistant.agent.TaskMemory.State
+import com.argus.assistant.memory.ChatTier
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals

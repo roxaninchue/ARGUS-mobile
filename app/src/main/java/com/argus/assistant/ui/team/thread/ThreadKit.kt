@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.team.thread
+package com.argus.assistant.ui.team.thread
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,23 +58,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.agent.StepTool
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.OrbSize
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Lucide
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
-import com.blaze.assistant.ui.argus.kit.KitAvatar
-import com.blaze.assistant.ui.argus.kit.KitSpec
-import com.blaze.assistant.ui.team.thread.ThreadModel.CardModel
-import com.blaze.assistant.ui.team.thread.ThreadModel.State
-import com.blaze.assistant.ui.team.thread.ThreadModel.Step
-import com.blaze.assistant.ui.team.thread.ThreadModel.ThreadItem
+import com.argus.assistant.agent.StepTool
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.OrbSize
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.ui.argus.kit.KitAvatar
+import com.argus.assistant.ui.argus.kit.KitSpec
+import com.argus.assistant.ui.team.thread.ThreadModel.CardModel
+import com.argus.assistant.ui.team.thread.ThreadModel.State
+import com.argus.assistant.ui.team.thread.ThreadModel.Step
+import com.argus.assistant.ui.team.thread.ThreadModel.ThreadItem
 import kotlinx.coroutines.delay
 
 /**
@@ -94,8 +94,8 @@ data class ThreadActions(
     val saveFile: (path: String) -> Unit = {},
     val openHandoff: (fromId: String, toId: String) -> Unit = { _, _ -> },
     /** P2-SF-02: the live card behind a pending card row (null = closed, or not on this phone's screen). */
-    val liveCard: (cardId: String) -> com.blaze.assistant.policy.Card? = { null },
-    val answerCard: (cardId: String, answer: com.blaze.assistant.policy.CardAnswer) -> Unit = { _, _ -> },
+    val liveCard: (cardId: String) -> com.argus.assistant.policy.Card? = { null },
+    val answerCard: (cardId: String, answer: com.argus.assistant.policy.CardAnswer) -> Unit = { _, _ -> },
 )
 
 /** What AgentText draws its words with (AM's Md / RichBlocks on the phone). */
@@ -435,7 +435,7 @@ fun ThreadItemView(item: ThreadItem, actions: ThreadActions, body: AgentBody = p
             is CardModel.Ok -> OkCard(k, actions)
             is CardModel.File -> FileCard(k, actions)
             is CardModel.Handoff -> HandoffCard(k, actions)
-            is CardModel.Decision -> com.blaze.assistant.ui.team.cards.DecisionThreadCard(k, actions.liveCard(k.id), actions.answerCard)
+            is CardModel.Decision -> com.argus.assistant.ui.team.cards.DecisionThreadCard(k, actions.liveCard(k.id), actions.answerCard)
             is CardModel.Other -> PlainThreadCard(k)
         }
     }

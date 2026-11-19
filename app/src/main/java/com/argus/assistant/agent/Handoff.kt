@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.52.1 (owner: "long work must not die"): a turn that is about to hit its time budget (TurnDeadline), or whose model

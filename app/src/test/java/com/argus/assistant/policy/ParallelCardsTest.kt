@@ -1,10 +1,10 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.ToolTruth
-import com.blaze.assistant.orchestra.ToolScheduler
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.Autonomy
-import com.blaze.assistant.team.Permissions
+import com.argus.assistant.agent.ToolTruth
+import com.argus.assistant.orchestra.ToolScheduler
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.Autonomy
+import com.argus.assistant.team.Permissions
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

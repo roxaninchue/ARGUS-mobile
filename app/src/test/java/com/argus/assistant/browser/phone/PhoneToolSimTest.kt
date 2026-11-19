@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -10,7 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 0.45.19 Blaze Phone browser: strict 5/5 JVM sims, one per tool. Each run drives the real tool code
+ * 0.45.19 Argus Phone browser: strict 5/5 JVM sims, one per tool. Each run drives the real tool code
  * ([PhoneBrowserTools.run]) against [DemoSite], a scripted sign-in + table-booking site (login → home → booking form →
  * review → confirmation), and must pass all 5 times. The WebView itself (real taps, the off-screen display, frames) is
  * covered by the device steps in PHONE_BROWSER_STATUS.md; Robolectric's WebView runs no JavaScript.
@@ -145,7 +145,7 @@ class PhoneToolSimTest {
         act(d, "scroll", "direction" to "down")
         act(d, "click", "target" to "Continue")
         assertEquals("review", d.page)
-        // Card numbers are never typed by Blaze.
+        // Card numbers are never typed by Argus.
         assertTrue(act(d, "type", "target" to "e11", "text" to "4242424242424242").contains("card field"))
         // "Confirm booking" asks the user first; a no stops it.
         approve = false
@@ -210,7 +210,7 @@ class PhoneToolSimTest {
         assertTrue(run(d, "phone_status").contains("${BrandName.NAME} is driving"))
     }
 
-    @Test fun whileTheUserDrivesBlazeWaits() {
+    @Test fun whileTheUserDrivesArgusWaits() {
         val d = DemoSite(); signIn(d); d.mode = PhonePolicy.Mode.USER
         assertTrue(act(d, "click", "target" to "e4").contains("in control"))
         assertEquals("home", d.page)

@@ -1,7 +1,7 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.Specialists
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.Specialists
 
 /**
  * P1-TM-01: the rules over a [Bot] that every store, screen and tool shares. Pure (no Android, no I/O), so each rule is

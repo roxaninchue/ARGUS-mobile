@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -33,7 +33,7 @@ class WaitRowTest {
     }
 
     @Test fun chatScreenPutsThePillBesideTheDrop() {
-        val src = listOf("src/main/java/com/blaze/assistant/ui/ChatScreen.kt", "app/src/main/java/com/blaze/assistant/ui/ChatScreen.kt")
+        val src = listOf("src/main/java/com/argus/assistant/ui/ChatScreen.kt", "app/src/main/java/com/argus/assistant/ui/ChatScreen.kt")
             .map { java.io.File(it) }.first { it.isFile }.readText()
         val row = src.substringAfter("0.45.24: the live line sits beside the drop").substringBefore("// v0.26.0:")
         assertTrue(row.contains("verticalAlignment = Alignment.CenterVertically"))

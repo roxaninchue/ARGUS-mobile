@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.23.2: strips reasoning and chat-template tokens that some free models leak into the visible

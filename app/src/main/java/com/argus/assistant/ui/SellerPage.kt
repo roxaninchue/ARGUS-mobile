@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,8 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Brand
-import com.blaze.assistant.agent.Seller
+import com.argus.assistant.agent.Brand
+import com.argus.assistant.agent.Seller
 import androidx.compose.ui.draw.clip
 
 /**
@@ -35,7 +35,7 @@ import androidx.compose.ui.draw.clip
  */
 @Composable
 internal fun SellerPage(digest0: Boolean? = null) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val b0 = remember { Seller.brand() }
     var name by remember { mutableStateOf(b0.name) }
     var colors by remember { mutableStateOf((listOf(b0.paper, b0.ink) + b0.accents).filter { it.isNotBlank() }.joinToString(", ")) }
@@ -53,7 +53,7 @@ internal fun SellerPage(digest0: Boolean? = null) {
     if (swatches.isNotEmpty()) Row(Modifier.padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         swatches.take(6).forEach { h ->
             val col = runCatching { Color(android.graphics.Color.parseColor(h)) }.getOrNull()
-            if (col != null) Box(Modifier.size(28.dp).background(col, BlazeShapes.medium).hairline(c.hair))
+            if (col != null) Box(Modifier.size(28.dp).background(col, ArgusShapes.medium).hairline(c.hair))
         }
     }
     Field("Store or brand name", name, { name = it; saved = "" }, "HomeGlow")
@@ -61,7 +61,7 @@ internal fun SellerPage(digest0: Boolean? = null) {
     Field("Fonts (headings, body)", fonts, { fonts = it; saved = "" }, "Playfair Display, Inter")
     Field("Voice and audience", notes, { notes = it; saved = "" }, "Warm, cosy home decor for young renters")
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.height(44.dp).clip(BlazeShapes.pill).glassButton(c).clickable {
+        Box(Modifier.height(44.dp).clip(ArgusShapes.pill).glassButton(c).clickable {
             val cs = colors.split(',').map { it.trim() }.filter { it.isNotBlank() }
             Seller.saveBrand(Seller.brand().copy(name = name.trim(), paper = cs.getOrElse(0) { "" }, ink = cs.getOrElse(1) { "" }, accents = cs.drop(2),
                 fonts = fonts.split(',').map { it.trim() }.filter { it.isNotBlank() }, notes = notes.trim()))

@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.Project
-import com.blaze.assistant.agent.Projects
+import com.argus.assistant.agent.Project
+import com.argus.assistant.agent.Projects
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

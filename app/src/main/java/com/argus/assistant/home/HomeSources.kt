@@ -1,12 +1,12 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.CalendarContract
-import com.blaze.assistant.connect.Http
+import com.argus.assistant.connect.Http
 import org.json.JSONObject
 import java.util.Locale
 
@@ -16,7 +16,7 @@ import java.util.Locale
  * read the phone (calendar, routines, memories, usage stats). Never throws: a failure is a [WidgetData] with a plain line.
  */
 object HomeSources {
-    private const val UA = "Mozilla/5.0 (Linux; Android 13) BlazeHome/1.0"
+    private const val UA = "Mozilla/5.0 (Linux; Android 13) ArgusHome/1.0"
 
     /** Swappable for tests. Returns (status, body). */
     @Volatile var net: (String, Map<String, String>) -> Pair<Int, String> = { url, h ->
@@ -87,14 +87,14 @@ object HomeSources {
             }
         }
         // v0.45.7: metric outside the US (a phone set to en-US in Ndola got °F / mph); imperial only when picked or in the US.
-        val units = com.blaze.assistant.agent.GatewayWeather.unitsFor(cfg.optString("units"), country, lat, lon)
+        val units = com.argus.assistant.agent.GatewayWeather.unitsFor(cfg.optString("units"), country, lat, lon)
         val f = units == "imperial"
         val forecast = try { OpenMeteo.parse(get(OpenMeteo.forecastUrl(lat, lon, f), "the weather"), place) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { null }
         // The same source as chat's get_weather: gateway /v1/weather (signed in). Open-Meteo direct is the fallback.
-        val token = com.blaze.assistant.agent.Settings.gatewayToken()
+        val token = com.argus.assistant.agent.Settings.gatewayToken()
         val now = if (token.isBlank()) null else try {
-            val (code, body) = com.blaze.assistant.agent.GatewayWeather.fetch(lat, lon, units, token)
-            if (code in 200..299) com.blaze.assistant.agent.GatewayWeather.parse(body) else null
+            val (code, body) = com.argus.assistant.agent.GatewayWeather.fetch(lat, lon, units, token)
+            if (code in 200..299) com.argus.assistant.agent.GatewayWeather.parse(body) else null
         } catch (e: Exception) { null }
         if (now != null) return Result(HomeWeather.toData(now, place, units, forecast?.lines.orEmpty()).copy(sunset = forecast?.sunset.orEmpty()), learned)
         val d = forecast ?: OpenMeteo.parse(get(OpenMeteo.forecastUrl(lat, lon, f), "the weather"), place)
@@ -210,7 +210,7 @@ object HomeSources {
 
     private fun github(w: Widget, now: Long): WidgetData {
         val repo = GitHubFeed.repo(w.opt("repo"))
-        val token = try { if (com.blaze.assistant.connect.Connectors.connected("github")) com.blaze.assistant.connect.Connectors.access("github") else null } catch (_: Throwable) { null }
+        val token = try { if (com.argus.assistant.connect.Connectors.connected("github")) com.argus.assistant.connect.Connectors.access("github") else null } catch (_: Throwable) { null }
         val h = mapOf("Accept" to "application/vnd.github+json")
         if (repo == null) {
             if (token.isNullOrBlank()) throw SourceError("Add a repo like owner/name, or connect GitHub in Accounts for your notifications.")
@@ -249,7 +249,7 @@ object HomeSources {
     }
 
     private fun routines(now: Long): WidgetData {
-        val R = com.blaze.assistant.routine.Routines
+        val R = com.argus.assistant.routine.Routines
         val list = try { R.all.value.filter { it.enabled }.map { it to R.next(it, now) }.filter { it.second > now }.sortedBy { it.second } } catch (_: Throwable) { emptyList() }
         if (list.isEmpty()) return WidgetData(headline = "Next routine", change = "No routines yet. Ask ${BrandName.NAME}, e.g. \u201cevery weekday at 7, brief me\u201d.", action = "ask:Set up a morning routine for me")
         val (r, at) = list.first()
@@ -260,9 +260,9 @@ object HomeSources {
     private val deadlineRe = Regex("(?i)\\b(due|deadline|exam|test|assignment|submit|submission|quiz|presentation|project due)\\b")
 
     private fun deadlines(now: Long): WidgetData {
-        val R = com.blaze.assistant.routine.Routines
+        val R = com.argus.assistant.routine.Routines
         val oneOffs = try { R.all.value.filter { it.enabled && it.at > now }.sortedBy { it.at }.map { WidgetLine(it.name, Dates.dayTime(it.at), "", "Reminder") } } catch (_: Throwable) { emptyList() }
-        val mems = try { com.blaze.assistant.agent.Mind.all().filter { deadlineRe.containsMatchIn(it.text) }.sortedByDescending { it.id }.take(6)
+        val mems = try { com.argus.assistant.agent.Mind.all().filter { deadlineRe.containsMatchIn(it.text) }.sortedByDescending { it.id }.take(6)
             .map { WidgetLine(it.text.take(120), it.subject.takeIf { s -> s.isNotBlank() }.orEmpty(), "", "From memory") } } catch (_: Throwable) { emptyList() }
         val lines = (oneOffs + mems).take(8)
         if (lines.isEmpty()) return WidgetData(headline = "Deadlines", change = "No deadlines yet. Tell ${BrandName.NAME} about one, e.g. \u201cmy essay is due Friday\u201d.", action = "ask:Help me track my deadlines")

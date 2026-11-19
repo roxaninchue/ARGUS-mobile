@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui.argus.settings
+package com.argus.assistant.ui.argus.settings
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /**
  * P1-SH-06 Settings re-tree (04 §4.11), pure so SettingsAliasTest checks it on the JVM. The root is the You page: the
  * name (tap = Profile, the ARGUS account), the plan card (Usage and plan), a top group, then TEAM, YOU & PHONE and
- * SYSTEM, Sign out and the floating "Search settings" pill. Every row opens an existing page id ([com.blaze.assistant.ui.settingsPages]),
+ * SYSTEM, Sign out and the floating "Search settings" pill. Every row opens an existing page id ([com.argus.assistant.ui.settingsPages]),
  * so nothing moved: pages keep their prefs, and every pre-0.53 id still opens (old row ids through settingsAliases).
  *
  * The 0.52.3 profile (SpaceProfile / SpaceSettings) stays as is for the shell with `argus_look` off.

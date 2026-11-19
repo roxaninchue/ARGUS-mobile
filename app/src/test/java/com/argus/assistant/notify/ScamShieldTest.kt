@@ -1,4 +1,4 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

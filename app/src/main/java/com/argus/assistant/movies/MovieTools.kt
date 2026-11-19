@@ -1,7 +1,7 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,7 +10,7 @@ import org.json.JSONObject
 
 /**
  * 0.46.2 agent tool `movies` (and the in-app route for "play the movie …", "search movies …", "continue watching"): everything
- * lands on the Stage video card (shown in place; its open-in-full-view button goes to Blaze Video). Official sources only by
+ * lands on the Stage video card (shown in place; its open-in-full-view button goes to Argus Video). Official sources only by
  * default: Internet Archive public-domain films, Blender open movies, the user's own videos, their Jellyfin server. Providers
  * the user installed are used only when the user asked for one (named it, or said "my providers").
  */
@@ -82,12 +82,12 @@ object MovieTools {
         val src = Movies.source(pr.play.source)
         val p = try { if (pr.play.url.isNotBlank()) pr.play else MovieHub.refresh(src ?: return "That movie's source isn't available any more.", pr.play, Movies.maxHeight(ctx)) }
             catch (e: Exception) { return "Couldn't continue \u201c${pr.play.title}\u201d: ${e.message}" }
-        return withContext(Dispatchers.Main) { show(ctx, p) } + " From " + com.blaze.assistant.mediaapps.TimeText.clock(pr.posMs) + "."
+        return withContext(Dispatchers.Main) { show(ctx, p) } + " From " + com.argus.assistant.mediaapps.TimeText.clock(pr.posMs) + "."
     }
 
     private fun show(ctx: Context, p: MoviePlay): String =
-        if (com.blaze.assistant.stage.StageStore.enabled) StageMovies.show(p)
-        else { com.blaze.assistant.mediaapps.VideoActivity.openMovie(ctx, p); "Playing \u201c${p.title}\u201d in ${BrandName.NAME} Video." }
+        if (com.argus.assistant.stage.StageStore.enabled) StageMovies.show(p)
+        else { com.argus.assistant.mediaapps.VideoActivity.openMovie(ctx, p); "Playing \u201c${p.title}\u201d in ${BrandName.NAME} Video." }
 
     private fun failed(s: MovieHub.Search) = if (s.failed.isEmpty()) "" else " (Didn't answer: " + s.failed.joinToString(", ") { it.source.name } + ".)"
 

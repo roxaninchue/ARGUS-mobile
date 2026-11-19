@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -11,12 +11,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Modifier
 
 /**
- * 0.45.20 (spec A): a bubble's actions on long-press, so only the latest Blaze reply keeps a small action row.
+ * 0.45.20 (spec A): a bubble's actions on long-press, so only the latest Argus reply keeps a small action row.
  * [items] = label to action (null action = shown disabled).
  */
 @Composable
 fun BubbleMenu(open: Boolean, items: List<Pair<String, (() -> Unit)?>>, onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     DropdownMenu(open, onDismissRequest = onDismiss) {
         items.forEach { (label, act) ->
             // 0.52.4: a leading icon from the label (Copy, Quote, Retry, React…), as in every other menu

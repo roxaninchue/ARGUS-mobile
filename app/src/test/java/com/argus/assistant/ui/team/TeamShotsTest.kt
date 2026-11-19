@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
 import android.graphics.Bitmap
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -8,14 +8,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.team.Avatar
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotKind
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.BotThreads
-import com.blaze.assistant.ui.argus.ArgusGround
-import com.blaze.assistant.ui.argus.ArgusTheme
-import com.blaze.assistant.ui.argus.kit.KitA11y
+import com.argus.assistant.team.Avatar
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotKind
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.BotThreads
+import com.argus.assistant.ui.argus.ArgusGround
+import com.argus.assistant.ui.argus.ArgusTheme
+import com.argus.assistant.ui.argus.kit.KitA11y
 import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeTrue
 import org.junit.Rule

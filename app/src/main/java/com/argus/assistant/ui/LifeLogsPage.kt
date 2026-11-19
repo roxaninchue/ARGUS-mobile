@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,15 +24,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Mind
-import com.blaze.assistant.agent.MindLogs
-import com.blaze.assistant.life.Diarize
-import com.blaze.assistant.life.LifeAudio
-import com.blaze.assistant.life.LifeLogWorker
-import com.blaze.assistant.life.LifeLogs
-import com.blaze.assistant.notify.Conversations
-import com.blaze.assistant.notify.NotificationBrain
-import com.blaze.assistant.voice.WakeModel
+import com.argus.assistant.agent.Mind
+import com.argus.assistant.agent.MindLogs
+import com.argus.assistant.life.Diarize
+import com.argus.assistant.life.LifeAudio
+import com.argus.assistant.life.LifeLogWorker
+import com.argus.assistant.life.LifeLogs
+import com.argus.assistant.notify.Conversations
+import com.argus.assistant.notify.NotificationBrain
+import com.argus.assistant.voice.WakeModel
 import kotlinx.coroutines.launch
 
 /**
@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = -1, previewChunks: Int = -1, previewModel: Boolean? = null) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val live by LifeLogs.state.collectAsState()
@@ -55,7 +55,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
     var refresh by remember { mutableStateOf(0) }
     var recordMode by remember { mutableStateOf(LifeLogs.recordMode) }
     var keepAudio by remember { mutableStateOf(LifeLogWorker.keepAudio) }
-    var voices by remember { mutableStateOf(Diarize.knownFromJson(com.blaze.assistant.agent.Settings.str(LifeLogWorker.PREF_VOICES, "[]")).map { it.name }) }
+    var voices by remember { mutableStateOf(Diarize.knownFromJson(com.argus.assistant.agent.Settings.str(LifeLogWorker.PREF_VOICES, "[]")).map { it.name }) }
     val chunks = if (previewChunks >= 0) previewChunks else remember(refresh, s.on) { try { Mind.db()?.let { MindLogs.count(it, MindLogs.LIFE) } ?: 0 } catch (_: Exception) { 0 } }
     val today = if (previewToday >= 0) previewToday else remember(refresh, s.on, s.last) { LifeLogs.todayMs() }
 
@@ -125,7 +125,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
         V18Button("Review my last recording again", primary = false) { note = LifeLogs.reviewLast(ctx) }
         V18Note(if (voices.isEmpty()) "Voices ${BrandName.NAME} knows: none yet. After each review, voices ${BrandName.NAME} could name (\u201cYou\u201d, a friend's name) are remembered, so they're recognised next time."
             else "Voices ${BrandName.NAME} knows: ${voices.joinToString(", ")}", top = 8)
-        if (voices.isNotEmpty()) V18Button("Forget voices", primary = false) { com.blaze.assistant.agent.Settings.setStr(LifeLogWorker.PREF_VOICES, "[]"); voices = emptyList() }
+        if (voices.isNotEmpty()) V18Button("Forget voices", primary = false) { com.argus.assistant.agent.Settings.setStr(LifeLogWorker.PREF_VOICES, "[]"); voices = emptyList() }
     }
 
     V18Section("On-device speech")
@@ -155,7 +155,7 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
  */
 @Composable
 internal fun RepliesPage(previewAccess: Boolean? = null) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val access = previewAccess ?: remember { NotificationBrain.enabled(ctx) }
     var logOn by remember { mutableStateOf(Conversations.logOn) }
@@ -170,15 +170,15 @@ internal fun RepliesPage(previewAccess: Boolean? = null) {
     if (access) V18Note("On. Ask \u201cwhat did Gloria say?\u201d or \u201creply to the family group\u201d.")
     else { V18Note("Off. Turn on notification access for ${BrandName.NAME} to use replies."); V18Button("Open notification access") {
         try { ctx.startActivity(NotificationBrain.settingsIntent()) } catch (_: Exception) { } } }
-    var shield by remember { mutableStateOf(com.blaze.assistant.notify.ScamShield.on) }
+    var shield by remember { mutableStateOf(com.argus.assistant.notify.ScamShield.on) }
     ToggleRow("Scam Shield", "Warns you when an SMS or chat message looks like a mobile-money scam, a fake prize or a phishing link (checked on the phone)", shield) {
-        shield = !shield; com.blaze.assistant.notify.ScamShield.on = shield }
-    var money by remember { mutableStateOf(com.blaze.assistant.notify.MoneyRadar.on) }
+        shield = !shield; com.argus.assistant.notify.ScamShield.on = shield }
+    var money by remember { mutableStateOf(com.argus.assistant.notify.MoneyRadar.on) }
     ToggleRow("Money Radar", "Keeps a receipt vault from mobile-money and bank SMS, spots bills you pay monthly and warns before data bundles run out or expire. Only amounts, payees and balances are kept, on the phone", money) {
-        money = !money; com.blaze.assistant.notify.MoneyRadar.on = money; if (money) com.blaze.assistant.notify.MoneyRadar.schedule(ctx) }
-    var copilot by remember { mutableStateOf(com.blaze.assistant.phone.CallCopilot.on) }
+        money = !money; com.argus.assistant.notify.MoneyRadar.on = money; if (money) com.argus.assistant.notify.MoneyRadar.schedule(ctx) }
+    var copilot by remember { mutableStateOf(com.argus.assistant.phone.CallCopilot.on) }
     ToggleRow("Call Copilot", "Live captions during phone calls (best on speaker), suggested answers, and a summary with to-dos when you hang up. Captions only, no audio is kept", copilot) {
-        copilot = !copilot; com.blaze.assistant.phone.CallCopilot.on = copilot; if (copilot) com.blaze.assistant.phone.CallCopilot.init(ctx) }
+        copilot = !copilot; com.argus.assistant.phone.CallCopilot.on = copilot; if (copilot) com.argus.assistant.phone.CallCopilot.init(ctx) }
     ToggleRow("Keep chat logs", "A rolling log per conversation in ${BrandName.NAME}'s memory, so replies have more context than the last few messages", logOn) {
         logOn = !logOn; Conversations.setLog(logOn) }
     V18Note("Codes, PINs and bank or mobile-money messages are never stored or read out.", top = 8)

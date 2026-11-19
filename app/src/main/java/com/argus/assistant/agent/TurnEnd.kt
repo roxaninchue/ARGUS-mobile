@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.6 (phone 21:29: "play music" ended with the screen-control overlay paused and nothing in the chat): every turn
@@ -25,7 +25,7 @@ object TurnEnd {
         return roles.drop(lastUser + 1).none { it == Role.BLAZE || it == Role.ERROR }
     }
 
-    /** The closing line for a silent ending. [lastStep] = the last step shown ("Opening BlazeFX"), "" if none. */
+    /** The closing line for a silent ending. [lastStep] = the last step shown ("Opening ArgusFX"), "" if none. */
     fun line(reason: Reason, lastStep: String = ""): String {
         val at = lastStep.trim().removeSuffix("\u2026").removeSuffix("...").take(80).let { if (it.isNotEmpty()) " (last step: $it)" else "" }
         return when (reason) {

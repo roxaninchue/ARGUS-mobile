@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.work.Constraints
@@ -11,7 +11,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,16 +31,16 @@ import java.util.concurrent.TimeUnit
 
 /**
  * v0.40.0 Cloud sync (Settings › Account › Cloud sync, `/sync`): optional, end-to-end encrypted live sync of chats,
- * memory, settings and designs between phones signed in to the same Blaze account. **Off by default.**
+ * memory, settings and designs between phones signed in to the same Argus account. **Off by default.**
  *
  *  - The user picks a sync passphrase. The key is derived from it on the phone ([SyncCrypto], PBKDF2 with the salt the
  *    gateway keeps) and stored Keystore-encrypted here ("conn_tok_" pref, so it never leaves the phone and a backup
  *    restored elsewhere can't read it). The passphrase itself is never stored or sent. A second phone checks the
  *    passphrase against the encrypted check blob before it syncs anything.
- *  - The Blaze Gateway (/v1/sync, gateway 0.4.0) keeps only ciphertext per item; [SyncEngine] does a round: pull,
- *    merge, push. Live: a push ~5 s after a local change, a round when Blaze comes to the front and every 60 s while
+ *  - The Argus Gateway (/v1/sync, gateway 0.4.0) keeps only ciphertext per item; [SyncEngine] does a round: pull,
+ *    merge, push. Live: a push ~5 s after a local change, a round when Argus comes to the front and every 60 s while
  *    it's open, and a WorkManager job every 15 min in the background (network required).
- *  - Never synced: the Blaze session, connector tokens, API keys, the PC pairing, permissions (see [SyncedSettings]).
+ *  - Never synced: the Argus session, connector tokens, API keys, the PC pairing, permissions (see [SyncedSettings]).
  */
 object CloudSync {
     private const val ON = "cloudsync_on"
@@ -86,7 +86,7 @@ object CloudSync {
             off = kindsOff(), skipped = skipped ?: v.skipped)
     }
 
-    /** At app start (BlazeApp). Nothing happens while sync is off. */
+    /** At app start (ArgusApp). Nothing happens while sync is off. */
     fun init(ctx: Context) {
         app = ctx.applicationContext
         publish()
@@ -113,44 +113,44 @@ object CloudSync {
         val all = listOf(
             // v0.45.0 (#37): chats as small items: the chat's own fields, one item per message, one per reaction.
             ChatHeadAdapter(sp) { id ->
-                try { com.blaze.assistant.agent.Agent.reloadFromSync(id) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CloudSync: Agent.reloadFr", e) }
+                try { com.argus.assistant.agent.Agent.reloadFromSync(id) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CloudSync: Agent.reloadFr", e) }
             },
             MessageAdapter(sp) { id -> st.get(SyncKinds.CHATS, id).let { e -> e != null && (e.deleted || sp.peek(id) == null) } },
             ReactionAdapter(sp),
             MemoryAdapter(object : MemoryStore {
-                override fun all() = com.blaze.assistant.agent.Mind.all().map { MemoryStore.Line(it.kind, it.subject, it.text, it.related, it.updated) }
-                override fun add(l: MemoryStore.Line) { com.blaze.assistant.agent.Mind.save(l.kind, l.subject, l.text, l.related, max = com.blaze.assistant.agent.Mind.MERGED_MAX) }
+                override fun all() = com.argus.assistant.agent.Mind.all().map { MemoryStore.Line(it.kind, it.subject, it.text, it.related, it.updated) }
+                override fun add(l: MemoryStore.Line) { com.argus.assistant.agent.Mind.save(l.kind, l.subject, l.text, l.related, max = com.argus.assistant.agent.Mind.MERGED_MAX) }
                 override fun remove(l: MemoryStore.Line) {
-                    com.blaze.assistant.agent.Mind.all().filter { MemoryAdapter.idOf(it.text) == MemoryAdapter.idOf(l.text) }
-                        .forEach { com.blaze.assistant.agent.Mind.delete(it.id) }
+                    com.argus.assistant.agent.Mind.all().filter { MemoryAdapter.idOf(it.text) == MemoryAdapter.idOf(l.text) }
+                        .forEach { com.argus.assistant.agent.Mind.delete(it.id) }
                 }
             }),
             SettingsAdapter(object : PrefStore {
                 override fun all(): Map<String, Any?> = Settings.rawAll()
                 override fun put(key: String, v: Any?) = Settings.rawPut(key, v)
             }) { reloadSettings() },
-            DesignAdapter({ com.blaze.assistant.agent.Designs.root() }),
+            DesignAdapter({ com.argus.assistant.agent.Designs.root() }),
         )
         return all.filter { kindOn(group(it.kind)) }
     }
 
     /** Settings that are live state elsewhere pick up the synced values. */
     private fun reloadSettings() {
-        try { com.blaze.assistant.agent.SimpleMode.load() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CloudSync: SimpleMode.loa", e) }
-        try { com.blaze.assistant.agent.SwipeNav.load() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CloudSync: SwipeNav.load", e) }
-        try { com.blaze.assistant.ui.Look.reload() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CloudSync: Look.reload", e) }
+        try { com.argus.assistant.agent.SimpleMode.load() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CloudSync: SimpleMode.loa", e) }
+        try { com.argus.assistant.agent.SwipeNav.load() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CloudSync: SwipeNav.load", e) }
+        try { com.argus.assistant.ui.Look.reload() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CloudSync: Look.reload", e) }
     }
 
     // ---------------- the gateway ----------------
 
-    /** Blaze Gateway root (the same Worker that answers chat; its /v1/sync routes). */
-    fun base(): String = com.blaze.assistant.agent.Providers.GATEWAY_BASE.trimEnd('/').removeSuffix("/v1")
+    /** Argus Gateway root (the same Worker that answers chat; its /v1/sync routes). */
+    fun base(): String = com.argus.assistant.agent.Providers.GATEWAY_BASE.trimEnd('/').removeSuffix("/v1")
 
     class HttpError(val code: Int, val err: String) : Exception("http $code $err")
     class Offline(cause: Exception) : Exception(cause.message, cause)
 
     private fun http(method: String, path: String, body: JSONObject? = null): JSONObject {
-        val token = BlazeAccount.sessionToken()
+        val token = ArgusAccount.sessionToken()
         if (token.isBlank()) throw HttpError(401, "signed_out")
         val c = try { UrlSafety.open(base() + path) } catch (e: Exception) { throw Offline(e) }
         var ok = false
@@ -227,7 +227,7 @@ object CloudSync {
      */
     suspend fun enable(passphrase: String): String = withContext(Dispatchers.IO) {
         val pass = passphrase.trim()
-        if (!BlazeAccount.signedIn()) return@withContext "Sign in to your ${BrandName.NAME} account first. Cloud sync keeps your copy with your account."
+        if (!ArgusAccount.signedIn()) return@withContext "Sign in to your ${BrandName.NAME} account first. Cloud sync keeps your copy with your account."
         if (pass.length < 8) return@withContext "Use a passphrase of at least 8 characters."
         try {
             val m = metaOf(http("GET", "/v1/sync/meta"))
@@ -241,7 +241,7 @@ object CloudSync {
                 if (!SyncCrypto.checks(key, m.check)) throw SyncCrypto.BadPassphrase()
             }
             Settings.setSecret(KEY, SyncCrypto.b64(key))
-            Settings.setStr(UID, BlazeAccount.user()?.id.orEmpty())
+            Settings.setStr(UID, ArgusAccount.user()?.id.orEmpty())
             Settings.setBool(ON, true)
             stateFile()?.delete()   // a fresh start against the account's copy
             app?.let { schedule(it, true) }
@@ -295,12 +295,12 @@ object CloudSync {
             if (applying || !isOn() || !kindOn(kind) || key() == null) return
             pending?.cancel()
             pending = scope.launch { delay(DEBOUNCE_MS); runCatching { sync() } }
-        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CloudSync: if applying isOn kindOnkind key null ret", e) }   // unit tests and early start: prefs may not be ready
+        } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CloudSync: if applying isOn kindOnkind key null ret", e) }   // unit tests and early start: prefs may not be ready
     }
 
     fun syncSoon() { if (isOn()) scope.launch { runCatching { sync() } } }
 
-    /** MainActivity: a round when Blaze comes to the front, then one a minute while it stays there. */
+    /** MainActivity: a round when Argus comes to the front, then one a minute while it stays there. */
     fun foreground(front: Boolean) {
         try {
             loop?.cancel(); loop = null
@@ -308,7 +308,7 @@ object CloudSync {
             loop = scope.launch {
                 while (isActive) { runCatching { sync() }; delay(LOOP_MS) }
             }
-        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CloudSync: loop.cancel loop null", e) }
+        } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CloudSync: loop.cancel loop null", e) }
     }
 
     private fun schedule(ctx: Context, on: Boolean) {
@@ -318,12 +318,12 @@ object CloudSync {
             val req = PeriodicWorkRequestBuilder<CloudSyncWorker>(15, TimeUnit.MINUTES)
                 .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build()
             wm.enqueueUniquePeriodicWork(WORK, ExistingPeriodicWorkPolicy.KEEP, req)
-        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CloudSync: val wm WorkManager.getInstancectx", e) }
+        } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CloudSync: val wm WorkManager.getInstancectx", e) }
     }
 
     /** Sync now: also retries items that were skipped for size or a full cloud copy. Returns the status line. */
     suspend fun syncNow(): String {
-        try { val st = state(); st.retrySkipped(); st.save() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CloudSync: val st state st.retrySkipped st.save", e) }
+        try { val st = state(); st.retrySkipped(); st.save() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("CloudSync: val st state st.retrySkipped st.save", e) }
         return sync(manual = true)
     }
 
@@ -333,10 +333,10 @@ object CloudSync {
         lock.withLock {
             val key = key()
             if (key == null) { publish("Enter your sync passphrase to keep syncing."); return@withLock _view.value.status }
-            if (!BlazeAccount.signedIn() || BlazeAccount.sessionToken().isBlank()) {
+            if (!ArgusAccount.signedIn() || ArgusAccount.sessionToken().isBlank()) {
                 publish("You're signed out. Sign in to your ${BrandName.NAME} account to keep syncing."); return@withLock _view.value.status
             }
-            val uid = BlazeAccount.user()?.id.orEmpty()
+            val uid = ArgusAccount.user()?.id.orEmpty()
             if (Settings.str(UID).isNotEmpty() && uid.isNotEmpty() && uid != Settings.str(UID)) {
                 turnOff("You signed in to a different ${BrandName.NAME} account, so cloud sync is off. Turn it on again for this account.")
                 return@withLock _view.value.status
@@ -365,7 +365,7 @@ object CloudSync {
                 Settings.setSecret(KEY, "")
                 "The passphrase was changed on another phone. Enter the new one to keep syncing."
             } catch (e: HttpError) {
-                if (e.code == 401) runCatching { BlazeAccount.checkSession() }
+                if (e.code == 401) runCatching { ArgusAccount.checkSession() }
                 plain(e)
             } catch (e: Exception) { plain(e) } finally { applying = false }
             publish(msg, busy = false)

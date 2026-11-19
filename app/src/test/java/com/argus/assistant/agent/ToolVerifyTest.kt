@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.ToolVerify.Status
+import com.argus.assistant.agent.ToolVerify.Status
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -14,7 +14,7 @@ class ToolVerifyTest {
     private class Fake(val fg: String? = null,
                        val alarm: Pair<Int, Int>? = null, val size: Long? = null) : ToolVerify.Probes {
         override suspend fun foreground() = fg
-        override val self = "com.blaze.assistant"
+        override val self = "com.argus.assistant"
         override suspend fun nextAlarm() = alarm
         override fun fileSize(path: String) = size
     }
@@ -52,7 +52,7 @@ class ToolVerifyTest {
         assertEquals("com.whatsapp", ToolVerify.packageIn("Opened com.whatsapp. It is installed"))
         val r = "Opened WhatsApp (com.whatsapp). It is installed, so never offer to install it."
         assertEquals(Status.VERIFIED, check("open_app", a(), r, Fake(fg = "com.whatsapp")).status)
-        assertEquals(Status.UNVERIFIED, check("open_app", a(), r, Fake(fg = "com.blaze.assistant")).status)
+        assertEquals(Status.UNVERIFIED, check("open_app", a(), r, Fake(fg = "com.argus.assistant")).status)
         assertEquals(Status.UNVERIFIED, check("open_app", a(), r, Fake(fg = null)).status)
     }
 

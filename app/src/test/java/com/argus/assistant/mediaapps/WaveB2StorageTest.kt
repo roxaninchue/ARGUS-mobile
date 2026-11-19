@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -57,7 +57,7 @@ class WaveB2StorageTest {
 
     @Test fun noMediaStoreInsertForNewDownloads() {
         // Source guard: publish() must not touch MediaStore any more (wave B 1); exportShared() is the only insert.
-        val f = listOf("src/main/java/com/blaze/assistant/mediaapps/MediaFiles.kt", "app/src/main/java/com/blaze/assistant/mediaapps/MediaFiles.kt").map { File(it) }.first { it.isFile }
+        val f = listOf("src/main/java/com/argus/assistant/mediaapps/MediaFiles.kt", "app/src/main/java/com/argus/assistant/mediaapps/MediaFiles.kt").map { File(it) }.first { it.isFile }
         val s = f.readText()
         val pub = s.substringAfter("fun publish(").substringBefore("fun exportShared(")
         assertFalse(Regex("\\bMediaStore\\b").containsMatchIn(pub)); assertTrue(pub.contains("privateDir(") && pub.contains("AtomicMove.move"))

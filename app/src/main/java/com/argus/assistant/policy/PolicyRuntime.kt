@@ -1,21 +1,21 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.ConfirmGate
-import com.blaze.assistant.agent.Modes
-import com.blaze.assistant.agent.SecretVault
-import com.blaze.assistant.agent.TeamHooks
-import com.blaze.assistant.connect.Mcp
-import com.blaze.assistant.connect.McpConfig
-import com.blaze.assistant.store.Sql
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.BotThreads
-import com.blaze.assistant.team.JobsRuntime
-import com.blaze.assistant.team.RowBodies
-import com.blaze.assistant.team.RowKind
-import com.blaze.assistant.team.Rule
-import com.blaze.assistant.team.TeamStore
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.ConfirmGate
+import com.argus.assistant.agent.Modes
+import com.argus.assistant.agent.SecretVault
+import com.argus.assistant.agent.TeamHooks
+import com.argus.assistant.connect.Mcp
+import com.argus.assistant.connect.McpConfig
+import com.argus.assistant.store.Sql
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.BotThreads
+import com.argus.assistant.team.JobsRuntime
+import com.argus.assistant.team.RowBodies
+import com.argus.assistant.team.RowKind
+import com.argus.assistant.team.Rule
+import com.argus.assistant.team.TeamStore
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.coroutineContext
@@ -47,14 +47,14 @@ object PolicyRuntime {
     @Volatile private var audit: AuditStore? = null
 
     val approvals = Approvals(sink = object : Approvals.Sink {
-        override fun put(a: com.blaze.assistant.team.Approval) { store?.put(a) }
+        override fun put(a: com.argus.assistant.team.Approval) { store?.put(a) }
         override fun resolve(id: String, status: Approvals.Status, at: Long, by: String?) { store?.resolve(id, status, at, by) }
     })
 
     /** The card the notification shows (its Allow / Don't answer this one). */
     @Volatile private var notified: String? = null
 
-    val center = CardCenter(com.blaze.assistant.orchestra.KeyedLocks.shared, onShow = { c -> notify(c) }, onGone = { c -> unnotify(c) })
+    val center = CardCenter(com.argus.assistant.orchestra.KeyedLocks.shared, onShow = { c -> notify(c) }, onGone = { c -> unnotify(c) })
 
     /** Team threads keep a card row for a bot's card: pending, then its final state. */
     private val rowOf = ConcurrentHashMap<String, Pair<String, Long>>()   // card id → (bot, seq)
@@ -108,7 +108,7 @@ object PolicyRuntime {
         TeamHooks.onUserMessage = { chat, bot -> approvals.userMessage(chat, bot?.takeIf { it != BotRules.MANAGER_ID }) }
     }
 
-    private fun cardsOn(): Boolean = try { com.blaze.assistant.agent.Settings.bool("argus_cards", true) } catch (_: Throwable) { true }
+    private fun cardsOn(): Boolean = try { com.argus.assistant.agent.Settings.bool("argus_cards", true) } catch (_: Throwable) { true }
 
     /** One tool call: [block] runs it. [agentPlan] = a background agent started in Plan. */
     suspend fun run(chatId: String, tool: String, args: String, agentPlan: Boolean, block: suspend () -> String): String {
@@ -130,7 +130,7 @@ object PolicyRuntime {
         val own = binding == null && jobId == null
         val r = try { request(chatId, tool, args, agentPlan, binding, jobId, own) } catch (e: Throwable) {
             if (e is CancellationException) throw e
-            com.blaze.assistant.device.CrashLog.quiet("PolicyRuntime.request", e)
+            com.argus.assistant.device.CrashLog.quiet("PolicyRuntime.request", e)
             // a bound bot fails closed; the user's own chats and jobs keep running as before (their tools' own confirms)
             return if (binding != null && binding.botId != BotRules.MANAGER_ID) "Error: $tool wasn't checked, so it didn't run. Tell the user." else block()
         }
@@ -178,7 +178,7 @@ object PolicyRuntime {
             val now = System.currentTimeMillis()
             a.append(Audit.Draft(now, r.botId, r.chain, r.ctx.trigger.name.lowercase(), r.tool, r.call.cls.name, r.argsFull, decision, by, status, amt?.minor))
             if (amt != null && approvalId != null) a.spend(r.botId, approvalId, amt.minor, amt.currency ?: r.ctx.perms.currency, amt.merchant, now)
-        }.onFailure { com.blaze.assistant.device.CrashLog.quiet("PolicyRuntime.audit", it) }
+        }.onFailure { com.argus.assistant.device.CrashLog.quiet("PolicyRuntime.audit", it) }
     }
 
     /** P2-SF-04 gap closed by P2-SF-05: what a SPEND call's args say it pays, against this month's spend_ledger. */
@@ -205,7 +205,7 @@ object PolicyRuntime {
     } catch (e: CancellationException) { throw e } catch (_: Throwable) { false }
 
     private fun botName(botId: String): String =
-        if (botId == BotRules.MANAGER_ID) com.blaze.assistant.BrandName.NAME else team?.get(botId)?.name ?: botId
+        if (botId == BotRules.MANAGER_ID) com.argus.assistant.BrandName.NAME else team?.get(botId)?.name ?: botId
 
     private suspend fun request(chatId: String, tool: String, args: String, agentPlan: Boolean, binding: TeamHooks.Binding?, jobId: String?,
                                 own: Boolean): PolicyGate.Request? {
@@ -251,14 +251,14 @@ object PolicyRuntime {
         if (a.isEmpty()) return null
         return when {
             a.contains("gmail") || a.contains("calendar") || a.contains("drive") || a.contains("google") || a.contains("classroom") -> "google"
-            else -> runCatching { com.blaze.assistant.connect.Connectors.all.firstOrNull { a.contains(it.id) || a.contains(it.name.lowercase()) }?.id }.getOrNull()
+            else -> runCatching { com.argus.assistant.connect.Connectors.all.firstOrNull { a.contains(it.id) || a.contains(it.name.lowercase()) }?.id }.getOrNull()
         }
     }
 
     /** Is [app] connected now (Connectors by id or name; "Gmail" / "Calendar" / "Drive" are Google). */
     fun connected(app: String): Boolean {
         val id = connectorFor(app) ?: return false
-        return runCatching { com.blaze.assistant.connect.Connectors.connected(id) }.getOrDefault(false)
+        return runCatching { com.argus.assistant.connect.Connectors.connected(id) }.getOrDefault(false)
     }
 
     private fun notify(c: Card) {
@@ -267,9 +267,9 @@ object PolicyRuntime {
             notified = c.id
             val why = Agent.taskOf(c.chatId)
             when (c.kind) {
-                Cards.Kind.APPROVAL -> com.blaze.assistant.notify.Notifier.confirm(c.title, listOfNotNull(c.note, c.detail).joinToString("\n"), "Allow", why)
-                Cards.Kind.DRAFT -> com.blaze.assistant.notify.Notifier.confirm(c.title, "Send to ${c.draft?.to}\n\n${c.draft?.body.orEmpty()}", "Send", why)
-                Cards.Kind.QUESTION, Cards.Kind.CONNECT -> com.blaze.assistant.notify.Notifier.actionRequired(c.title, c.botName, c.detail.take(300))
+                Cards.Kind.APPROVAL -> com.argus.assistant.notify.Notifier.confirm(c.title, listOfNotNull(c.note, c.detail).joinToString("\n"), "Allow", why)
+                Cards.Kind.DRAFT -> com.argus.assistant.notify.Notifier.confirm(c.title, "Send to ${c.draft?.to}\n\n${c.draft?.body.orEmpty()}", "Send", why)
+                Cards.Kind.QUESTION, Cards.Kind.CONNECT -> com.argus.assistant.notify.Notifier.actionRequired(c.title, c.botName, c.detail.take(300))
             }
         }
     }
@@ -283,7 +283,7 @@ object PolicyRuntime {
         runCatching {
             if (notified == null) center.shown.value.firstOrNull { it.state == Cards.State.PENDING }?.let { notify(it) }
             if (notified == null) Agent.pendingConfirm.value?.let { p ->
-                com.blaze.assistant.notify.Notifier.confirm(p.title, p.detail, p.action, Agent.taskOf(null))
+                com.argus.assistant.notify.Notifier.confirm(p.title, p.detail, p.action, Agent.taskOf(null))
             }
         }
     }
@@ -292,8 +292,8 @@ object PolicyRuntime {
         if (notified != c.id) return
         notified = null
         runCatching {
-            if (c.kind == Cards.Kind.QUESTION || c.kind == Cards.Kind.CONNECT) com.blaze.assistant.notify.Notifier.clearAction()
-            else com.blaze.assistant.notify.Notifier.clearConfirm()
+            if (c.kind == Cards.Kind.QUESTION || c.kind == Cards.Kind.CONNECT) com.argus.assistant.notify.Notifier.clearAction()
+            else com.argus.assistant.notify.Notifier.clearConfirm()
         }
     }
 }

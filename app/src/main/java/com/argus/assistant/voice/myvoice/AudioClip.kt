@@ -1,4 +1,4 @@
-package com.blaze.assistant.voice.myvoice
+package com.argus.assistant.voice.myvoice
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

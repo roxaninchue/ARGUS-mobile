@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -89,7 +89,7 @@ class OrbGeometryTest {
 
     @Test fun theManagerIsAFriendlyBlobToo() {
         assertEquals(BotShape.BLOB, OrbGeometry.shape(OrbGeometry.MANAGER_FACE))
-        val src = java.io.File(listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }, "com/blaze/assistant/ui/argus/BotOrb.kt").readText()
+        val src = java.io.File(listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }, "com/argus/assistant/ui/argus/BotOrb.kt").readText()
         val mgr = src.substringAfter("fun ManagerOrb(").substringBefore("\n}\n")
         assertTrue(mgr.contains("drawBotBody(OrbGeometry.MANAGER_FACE") && !mgr.contains("drawArgusMark"))
     }

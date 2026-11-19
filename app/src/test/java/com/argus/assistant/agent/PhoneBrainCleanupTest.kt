@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -24,8 +24,8 @@ class PhoneBrainCleanupTest {
     @Test fun prefsAndWiring() {
         assertTrue("backup_brain" in PhoneBrainCleanup.LEGACY_PREFS && "backup_brain_mobile_data" in PhoneBrainCleanup.LEGACY_PREFS && "offline_brain" in PhoneBrainCleanup.LEGACY_PREFS)
         val root = listOf("src/main/java", "app/src/main/java").map(::File).first { it.exists() }
-        val setup = File(root, "com/blaze/assistant/setup/SetupPlan.kt").readText()
+        val setup = File(root, "com/argus/assistant/setup/SetupPlan.kt").readText()
         assertFalse("On-device backup brain" in setup)
-        assertFalse("BackupBrain.askMobile" in File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText())
+        assertFalse("BackupBrain.askMobile" in File(root, "com/argus/assistant/ui/ChatScreen.kt").readText())
     }
 }

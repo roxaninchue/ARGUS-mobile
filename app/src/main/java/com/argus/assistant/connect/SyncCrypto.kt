@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -14,7 +14,7 @@ import javax.crypto.spec.SecretKeySpec
 
 /**
  * v0.40.0 cloud sync, the crypto (pure JVM, unit-tested in SyncCryptoTest). End to end: the key comes from a passphrase
- * the user picks and never leaves the phone; the Blaze Gateway stores only what [seal] returns.
+ * the user picks and never leaves the phone; the Argus Gateway stores only what [seal] returns.
  *
  *  key   = PBKDF2-HMAC-SHA256(passphrase, salt, [ITERATIONS], 256 bits); the salt is random, kept on the gateway
  *  blob  = base64(nonce[12] || AES-256-GCM(gzip(plaintext), aad = "blaze-sync-v1|<kind>|<id>"))

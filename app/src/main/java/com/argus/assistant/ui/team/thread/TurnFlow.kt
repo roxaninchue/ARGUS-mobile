@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.team.thread
+package com.argus.assistant.ui.team.thread
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
@@ -45,14 +45,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.icons.Lucide
-import com.blaze.assistant.ui.team.thread.ChatToolRows.Flow
-import com.blaze.assistant.ui.team.thread.ChatToolRows.Run
-import com.blaze.assistant.ui.team.thread.ChatToolRows.Seg
-import com.blaze.assistant.ui.team.thread.ThreadModel.State
-import com.blaze.assistant.ui.team.thread.ThreadModel.Step
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.team.thread.ChatToolRows.Flow
+import com.argus.assistant.ui.team.thread.ChatToolRows.Run
+import com.argus.assistant.ui.team.thread.ChatToolRows.Seg
+import com.argus.assistant.ui.team.thread.ThreadModel.State
+import com.argus.assistant.ui.team.thread.ThreadModel.Step
 
 /**
  * 0.53.3 (owner, 14 Nov 2026, with Claude / Gemini screenshots: "group similar tool calls", "tools and answers coming

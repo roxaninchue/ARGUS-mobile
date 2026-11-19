@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.JdbcSql
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -20,31 +20,31 @@ import java.io.File
 /**
  * v0.26.3 on the app's own start-up path (Robolectric's SQLite for the old mind.db, sqlite-jdbc standing in for
  * the bundled SQLite): the first launch backs up mind.db and moves the mind into blaze.db with nothing lost; the next
- * launch goes straight to blaze.db; a blaze.db that can't open, or one from a newer Blaze, leaves Blaze on mind.db
+ * launch goes straight to blaze.db; a blaze.db that can't open, or one from a newer Argus, leaves Argus on mind.db
  * with a plain line. Also: the same memories give the same prompt and tool output on both stores.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33], application = android.app.Application::class)
 class MindUpgradeTest {
     private lateinit var ctx: Context
-    private val defaultOpen = Mind.openBlaze
+    private val defaultOpen = Mind.openArgus
 
-    private val blazeFile get() = File(ctx.filesDir, "blaze.db")
+    private val argusFile get() = File(ctx.filesDir, "blaze.db")
     private fun backups() = File(ctx.filesDir, "backup").listFiles()?.filter { it.name.startsWith("mind-") && it.name.endsWith(".db") } ?: emptyList()
 
     @Before fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Mind.resetForTests()
-        Mind.openBlaze = { JdbcSql("jdbc:sqlite:" + it.path) }
+        Mind.openArgus = { JdbcSql("jdbc:sqlite:" + it.path) }
         ctx.deleteDatabase("mind.db")
-        listOf("", "-wal", "-shm").forEach { File(blazeFile.path + it).delete() }
+        listOf("", "-wal", "-shm").forEach { File(argusFile.path + it).delete() }
         File(ctx.filesDir, "backup").deleteRecursively()
     }
 
     @After fun tearDown() {
         try { Mind.db()?.close() } catch (_: Throwable) { }
         Mind.resetForTests()
-        Mind.openBlaze = defaultOpen
+        Mind.openArgus = defaultOpen
     }
 
     private val t0 = 1_760_000_000_000L
@@ -83,7 +83,7 @@ class MindUpgradeTest {
         waitFor("blaze.db")
         assertEquals(1, backups().size)
         assertTrue("mind.db is kept", ctx.getDatabasePath("mind.db").exists())
-        assertTrue(blazeFile.exists())
+        assertTrue(argusFile.exists())
         assertEquals(oldMems, Mind.all().map { listOf(it.id, it.kind, it.subject, it.text, it.related) })
         assertEquals("the same prompt block", oldBlock, Mind.promptBlock())
         assertTrue(Mind.run("memory_search", JSONObject().put("query", "cousin")).contains("Gloria"))
@@ -110,10 +110,10 @@ class MindUpgradeTest {
         again.close()
     }
 
-    @Test fun blazeDbThatCantOpenKeepsMindDb() {
+    @Test fun argusDbThatCantOpenKeepsMindDb() {
         NativeSqlite.assume()
         val old = Mind.Db(ctx); old.writableDatabase; fill(old); old.close()
-        Mind.openBlaze = { throw java.io.IOException("no bundled SQLite") }
+        Mind.openArgus = { throw java.io.IOException("no bundled SQLite") }
         Mind.init(ctx)
         assertEquals("mind.db", Mind.storeName)
         assertEquals(Mind.UNAVAILABLE, Mind.notice)
@@ -122,19 +122,19 @@ class MindUpgradeTest {
         assertTrue(backups().isEmpty())
     }
 
-    @Test fun newerBlazeDbIsLeftAloneWithAPlainLine() {
+    @Test fun newerArgusDbIsLeftAloneWithAPlainLine() {
         NativeSqlite.assume()
         val old = Mind.Db(ctx); old.writableDatabase; fill(old); old.close()
-        JdbcSql("jdbc:sqlite:" + blazeFile.path).apply { exec("CREATE TABLE future(x)"); exec("PRAGMA user_version = 5"); close() }
-        val before = blazeFile.readBytes()
+        JdbcSql("jdbc:sqlite:" + argusFile.path).apply { exec("CREATE TABLE future(x)"); exec("PRAGMA user_version = 5"); close() }
+        val before = argusFile.readBytes()
         Mind.init(ctx)
         assertEquals("mind.db", Mind.storeName)
         assertEquals(Mind.NEWER, Mind.notice)
         assertTrue(Mind.run("memory_search", JSONObject().put("query", "cousin")).contains("Gloria"))
-        assertTrue("blaze.db untouched", before.contentEquals(blazeFile.readBytes()))
+        assertTrue("blaze.db untouched", before.contentEquals(argusFile.readBytes()))
     }
 
-    @Test fun freshInstallStartsOnBlazeDb() {
+    @Test fun freshInstallStartsOnArgusDb() {
         Mind.init(ctx)
         assertEquals("blaze.db", Mind.storeName)
         assertFalse("no mind.db is made", ctx.getDatabasePath("mind.db").exists())
@@ -145,7 +145,7 @@ class MindUpgradeTest {
         NativeSqlite.assume()
         val old = Mind.Db(ctx, null); old.writableDatabase
         val s = JdbcSql()
-        val neu = MindStore(BlazeDb(s), s)
+        val neu = MindStore(ArgusDb(s), s)
         fill(old); fill(neu)
         fun outputs(d: Mind.Store): List<String> {
             Mind.use(d)

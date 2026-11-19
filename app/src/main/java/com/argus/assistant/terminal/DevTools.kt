@@ -1,7 +1,7 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -20,7 +20,7 @@ import java.net.URL
  * Developer tools for the agent, built so a weak model can't trip over shell quoting:
  * structured file read/write/edit/list/search, run_code with auto-installed runtimes,
  * job logs and stdin, a real HTTP client, downloads, export to the phone's Downloads,
- * and a terminal health check. Paths: "~/x" or "x" = Blaze home (also /root/phone in Linux),
+ * and a terminal health check. Paths: "~/x" or "x" = Argus home (also /root/phone in Linux),
  * "/root/..." or "linux:/..." = inside Alpine, anything else absolute = the phone path.
  */
 object DevTools {
@@ -209,12 +209,12 @@ object DevTools {
         // v0.28.2: never send credentials in the clear to the internet (a LAN / localhost server is fine), and a
         // credentialed request to plain http doesn't follow redirects off the LAN.
         val hdrs = a.optJSONObject("headers")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }.orEmpty()
-        val secret = com.blaze.assistant.connect.UrlSafety.carriesSecret(url, hdrs)
-        if (secret) com.blaze.assistant.connect.UrlSafety.problem(url)?.let { return "Refused. $it" }
+        val secret = com.argus.assistant.connect.UrlSafety.carriesSecret(url, hdrs)
+        if (secret) com.argus.assistant.connect.UrlSafety.problem(url)?.let { return "Refused. $it" }
         val c = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = a.optString("method", "GET").uppercase()
             connectTimeout = 15_000; readTimeout = a.optInt("timeout_seconds", 30).coerceIn(5, 120) * 1000
-            instanceFollowRedirects = !(secret && com.blaze.assistant.connect.UrlSafety.isPlainHttp(url))
+            instanceFollowRedirects = !(secret && com.argus.assistant.connect.UrlSafety.isPlainHttp(url))
             setRequestProperty("User-Agent", "Blaze/1.0 (Android)")
             a.optJSONObject("headers")?.let { h -> h.keys().forEach { k -> setRequestProperty(k, h.optString(k)) } }
         }
@@ -244,7 +244,7 @@ object DevTools {
         return "Downloaded ${"%.1f".format(total / 1e6)} MB to ${show(f)}."
     }
 
-    /** Copy a file from Blaze's private home to the phone's Downloads/Blaze so the user (and other apps) can open it. */
+    /** Copy a file from Argus's private home to the phone's Downloads/Blaze so the user (and other apps) can open it. */
     private fun export(a: JSONObject): String {
         val f = resolve(a.optString("path"))
         if (!f.isFile) return "No such file: ${show(f)}"
@@ -252,7 +252,7 @@ object DevTools {
         if (Build.VERSION.SDK_INT >= 29) {
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, f.name); put(MediaStore.Downloads.MIME_TYPE, mime)
-                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Blaze")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Argus")
             }
             val uri = app.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return "Couldn't create the file in Downloads."
             app.contentResolver.openOutputStream(uri)?.use { out -> f.inputStream().use { it.copyTo(out) } }

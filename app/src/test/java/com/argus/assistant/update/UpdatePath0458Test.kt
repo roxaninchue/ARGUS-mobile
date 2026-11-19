@@ -1,8 +1,8 @@
-package com.blaze.assistant.update
+package com.argus.assistant.update
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.PrefCoerce
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.PrefCoerce
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -38,12 +38,12 @@ class UpdatePath0458Test {
         assertTrue(code >= 156)
         // 0.52.1: pin the current release (188 / 0.52.1); the update path only needs it higher than every older one.
         assertTrue(code >= 188 && Regex("versionName = \"0\\.5\\d\\.\\d+\"").containsMatchIn(g))
-        assertTrue(g.contains("applicationId = \"com.blaze.assistant\""))
+        assertTrue(g.contains("applicationId = \"com.argus.assistant\""))
         assertTrue(156 > 153)
     }
 
     @Test fun installChecksAreThe0455Ones() {
-        val u = src("src/main/java/com/blaze/assistant/update/Updater.kt")
+        val u = src("src/main/java/com/argus/assistant/update/Updater.kt")
         assertTrue(u.contains("VersionFeed.sources(entry)"))
         assertTrue(u.contains("entry.sha256"))
         assertTrue(u.contains("info.packageName != ctx.packageName"))
@@ -69,7 +69,7 @@ class UpdatePath0458Test {
         assertTrue(ops.contains(PrefCoerce.Op.PutBool("haptics", true)))
         assertTrue(ops.none { (it as? PrefCoerce.Op.Remove)?.key == "look_theme" })
         // The startup hook still runs it once.
-        val s = src("src/main/java/com/blaze/assistant/agent/Settings.kt")
+        val s = src("src/main/java/com/argus/assistant/agent/Settings.kt")
         assertTrue(s.contains("PrefCoerce.migrate(prefs.all)"))
         assertTrue(s.contains("PrefCoerce.MIGRATED"))
     }

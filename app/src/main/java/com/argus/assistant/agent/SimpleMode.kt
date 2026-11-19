@@ -1,13 +1,13 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
  * v0.39.0 Simple / Advanced. Simple (the default, new installs and upgrades alike) only HIDES technical things:
- * Terminal and Jobs, MCP servers, BlazeRouter and the brain / model pickers, and developer pages (usage meters,
+ * Terminal and Jobs, MCP servers, ArgusRouter and the brain / model pickers, and developer pages (usage meters,
  * dashboard, prompt commands, skill library, sub-agents). Nothing is removed: every view still opens from its
- * /command and Blaze can still open it with open_view; Advanced shows everything as before.
+ * /command and Argus can still open it with open_view; Advanced shows everything as before.
  *
  * Pref `ui_mode` = "simple" | "advanced". The rules are pure (SimpleModeTest).
  */
@@ -26,7 +26,7 @@ object SimpleMode {
     val TECH_PLUS = setOf("plan", "atfile")
 
     /** The line under the switch in Settings: what Simple keeps out of sight. */
-    const val HIDDEN_LINE = "Terminal, MCP, BlazeRouter, AI models and developer settings"
+    const val HIDDEN_LINE = "Terminal, MCP, ArgusRouter, AI models and developer settings"
 
     /** What a saved value means: Simple unless "advanced" was chosen (pure). */
     fun of(saved: String?): String = if (saved?.trim()?.lowercase() == ADVANCED) ADVANCED else SIMPLE
@@ -45,7 +45,7 @@ object SimpleMode {
     enum class Work { CARD, HINT, NONE }
 
     /**
-     * Simple mode keeps the chat clean: while Blaze works, one small quiet line; when it's done, nothing extra (the
+     * Simple mode keeps the chat clean: while Argus works, one small quiet line; when it's done, nothing extra (the
      * answer is the point). Advanced, or Settings › Show every step, keeps the full step card with Details.
      */
     fun work(simple: Boolean, showSteps: Boolean, live: Boolean): Work = when {

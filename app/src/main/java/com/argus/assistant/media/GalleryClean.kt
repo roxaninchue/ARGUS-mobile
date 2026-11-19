@@ -1,4 +1,4 @@
-package com.blaze.assistant.media
+package com.argus.assistant.media
 
 import android.content.ContentUris
 import android.content.Context
@@ -12,14 +12,14 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import com.blaze.assistant.media.GalleryModel.Entry
+import com.argus.assistant.media.GalleryModel.Entry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
  * v0.34.0 Gallery, the Android side: the clean-up scan (duplicates + blurry photos from 128 px thumbnails, cached
- * by file and date), the 30-day Trash (Blaze's own files move to filesDir/gallery_trash; phone photos use Android's
+ * by file and date), the 30-day Trash (Argus's own files move to filesDir/gallery_trash; phone photos use Android's
  * own trash on Android 11+, which also empties itself after 30 days), location stripping for shares, and saving an
  * edited copy.
  */
@@ -52,7 +52,7 @@ object GalleryClean {
     private fun saveIndex(ctx: Context, l: List<GalleryTools.Trashed>) { index(ctx).writeText(GalleryTools.trashJson(l)) }
 
     /**
-     * Moves to the Trash. Blaze's files move at once; phone photos (Android 11+) come back as an [IntentSender] for
+     * Moves to the Trash. Argus's files move at once; phone photos (Android 11+) come back as an [IntentSender] for
      * Android's own "Move to trash?" prompt. On Android 10 and older, phone photos are deleted as before.
      */
     suspend fun trash(ctx: Context, list: List<Entry>): Pair<Int, IntentSender?> = withContext(Dispatchers.IO) {
@@ -98,7 +98,7 @@ object GalleryClean {
         saveIndex(ctx, all - old.toSet())
     }
 
-    /** Phone photos in Android's trash (Android 11+), to show next to Blaze's own. */
+    /** Phone photos in Android's trash (Android 11+), to show next to Argus's own. */
     fun phoneTrash(ctx: Context): List<Uri> {
         if (Build.VERSION.SDK_INT < 30) return emptyList()
         val out = ArrayList<Uri>()
@@ -118,7 +118,7 @@ object GalleryClean {
 
     /**
      * Copies of the JPEG / PNG / WebP pictures with every GPS tag removed (in the cache's share/ folder), for sharing.
-     * Other items pass through unchanged. Returns the entries to share (copies are Blaze files).
+     * Other items pass through unchanged. Returns the entries to share (copies are Argus files).
      */
     fun withoutLocation(ctx: Context, list: List<Entry>): List<Entry> {
         val dir = File(ctx.cacheDir, "share").apply { mkdirs(); listFiles()?.filter { System.currentTimeMillis() - it.lastModified() > 86_400_000L }?.forEach { it.delete() } }
@@ -164,7 +164,7 @@ object GalleryClean {
         return out
     }
 
-    /** Saves an edited copy into Blaze's Gallery (the original stays). */
+    /** Saves an edited copy into Argus's Gallery (the original stays). */
     suspend fun saveCopy(ctx: Context, b: Bitmap, title: String): File = withContext(Dispatchers.IO) {
         val f = File(ctx.cacheDir, "edit_" + System.currentTimeMillis() + ".jpg")
         f.outputStream().use { b.compress(Bitmap.CompressFormat.JPEG, 92, it) }

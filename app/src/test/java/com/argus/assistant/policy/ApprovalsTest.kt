@@ -1,13 +1,13 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.CommandPolicy
-import com.blaze.assistant.agent.ConfirmGate
-import com.blaze.assistant.store.JdbcSql
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.Autonomy
-import com.blaze.assistant.team.Permissions
-import com.blaze.assistant.team.Rule
-import com.blaze.assistant.team.TeamSchema
+import com.argus.assistant.agent.CommandPolicy
+import com.argus.assistant.agent.ConfirmGate
+import com.argus.assistant.store.JdbcSql
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.Autonomy
+import com.argus.assistant.team.Permissions
+import com.argus.assistant.team.Rule
+import com.argus.assistant.team.TeamSchema
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async

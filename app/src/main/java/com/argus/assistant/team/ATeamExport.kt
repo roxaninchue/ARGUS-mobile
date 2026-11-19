@@ -1,4 +1,4 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -17,7 +17,7 @@ object ATeamExport {
 
     const val FORMAT = "argus-team-export"
     const val MANAGER_ID = "manager"
-    /** A-team BOT_FACES order, the same as [com.blaze.assistant.ui.argus.OrbFace]. */
+    /** A-team BOT_FACES order, the same as [com.argus.assistant.ui.argus.OrbFace]. */
     val FACES = listOf("Orbit", "Tilt", "Steep", "Pure", "Twin", "Polar")
     /** A-team manager.js KINDS. */
     val PROFILE_KINDS = listOf("name", "style", "goal", "project", "preference", "person", "date", "place", "rule", "note")

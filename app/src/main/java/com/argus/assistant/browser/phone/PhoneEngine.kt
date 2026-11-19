@@ -1,13 +1,13 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
-import com.blaze.assistant.browser.SecureInput
-import com.blaze.assistant.browser.phone.PhoneDriver.ActResult
-import com.blaze.assistant.browser.phone.PhoneDriver.FocusInfo
-import com.blaze.assistant.browser.phone.PhoneDriver.Target
+import com.argus.assistant.browser.SecureInput
+import com.argus.assistant.browser.phone.PhoneDriver.ActResult
+import com.argus.assistant.browser.phone.PhoneDriver.FocusInfo
+import com.argus.assistant.browser.phone.PhoneDriver.Target
 import org.json.JSONObject
 
 /**
- * 0.45.19 Blaze Phone browser: how a page is read and acted on (reads, locating elements, taps, typing, waits), as pure
+ * 0.45.19 Argus Phone browser: how a page is read and acted on (reads, locating elements, taps, typing, waits), as pure
  * Kotlin over a [PageHost]. [PhoneBrowser] runs it on the real WebView; the perf harness (PhonePerfTest) runs the same
  * code on a simulated page with a virtual clock.
  *
@@ -137,7 +137,7 @@ class PhoneEngine(private val h: PageHost) {
     suspend fun type(t: Target, text0: String, clear: Boolean, submit: Boolean): ActResult {
         val url = h.url()
         val secret = SecureInput.hasPlaceholder(text0)
-        if (secret && !com.blaze.assistant.connect.UrlSafety.autofillAllowed(url)) return ActResult(false, com.blaze.assistant.connect.UrlSafety.AUTOFILL_REFUSED)
+        if (secret && !com.argus.assistant.connect.UrlSafety.autofillAllowed(url)) return ActResult(false, com.argus.assistant.connect.UrlSafety.AUTOFILL_REFUSED)
         val text = if (!secret) text0 else SecureInput.resolve(text0, SecureInput.hostOf(url)).first?.also { SecureInput.hide(it) }
             ?: return ActResult(false, "No saved value for that placeholder on this site. Ask the user to take control (phone_handoff) so they type it themselves.")
         val dom = h.dom()

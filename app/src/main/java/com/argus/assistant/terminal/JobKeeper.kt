@@ -1,7 +1,7 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,7 +12,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.blaze.assistant.R
+import com.argus.assistant.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,7 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Keeps background terminal jobs alive when Blaze is closed (a foreground service holds the
+ * Keeps background terminal jobs alive when Argus is closed (a foreground service holds the
  * process), enforces each job's time budget, and posts a notification when a job finishes or
  * fails, with the last lines of its output. Stops itself when no jobs are left.
  */
@@ -52,7 +52,7 @@ class JobKeeper : Service() {
         if (loop?.isActive != true) loop = scope.launch {
             while (true) {
                 delay(2000)
-                Terminal.sweep { msg -> com.blaze.assistant.notify.Notifier.proactive(msg, "", false) }
+                Terminal.sweep { msg -> com.argus.assistant.notify.Notifier.proactive(msg, "", false) }
                 val left = Terminal.jobCount()
                 if (left == 0) { stopSelf(); break }
                 try { getSystemService(NotificationManager::class.java).notify(78, note("$left running")) } catch (_: Exception) { }

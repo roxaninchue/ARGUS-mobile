@@ -1,12 +1,12 @@
-package com.blaze.assistant.agent.engines
+package com.argus.assistant.agent.engines
 
-import com.blaze.assistant.agent.TeamHooks
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotKind
-import com.blaze.assistant.team.EngineKind
-import com.blaze.assistant.team.Row
-import com.blaze.assistant.team.Rule
-import com.blaze.assistant.team.TeamJson
+import com.argus.assistant.agent.TeamHooks
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotKind
+import com.argus.assistant.team.EngineKind
+import com.argus.assistant.team.Row
+import com.argus.assistant.team.Rule
+import com.argus.assistant.team.TeamJson
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -186,12 +186,12 @@ class RowMapper(private val botId: String, private val generation: Int, firstSeq
     companion object {
         /**
          * The live line for an event, or null. P1-SH-04: on its way to a screen, so it is shown-safe: a step's text only
-         * when [com.blaze.assistant.agent.StepPill.clean] passes it (no raw tool, model or provider names, code or
-         * URLs), a tool call by what it does ([com.blaze.assistant.agent.StepTool.label]), never by its name.
+         * when [com.argus.assistant.agent.StepPill.clean] passes it (no raw tool, model or provider names, code or
+         * URLs), a tool call by what it does ([com.argus.assistant.agent.StepTool.label]), never by its name.
          */
         fun activity(e: TeamHooks.Event): String? = when (e) {
-            is TeamHooks.Event.Message -> if (e.role == "STEP") com.blaze.assistant.agent.StepPill.clean(e.text) else null
-            is TeamHooks.Event.ToolCall -> com.blaze.assistant.agent.StepTool.label(e.name).now
+            is TeamHooks.Event.Message -> if (e.role == "STEP") com.argus.assistant.agent.StepPill.clean(e.text) else null
+            is TeamHooks.Event.ToolCall -> com.argus.assistant.agent.StepTool.label(e.name).now
             else -> null
         }
     }

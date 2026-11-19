@@ -1,10 +1,10 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.connect.McpConfig.Server
-import com.blaze.assistant.connect.McpConfig.Tool
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.connect.McpConfig.Server
+import com.argus.assistant.connect.McpConfig.Tool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong
  * be set to Ask / Always / Off.
  *
  * The list is the mcp.json shape Blaze CLI and Desktop use ({"mcpServers": {...}}, see [McpConfig]),
- * stored encrypted (headers hold tokens) and synced through the Blaze account with the model keys
+ * stored encrypted (headers hold tokens) and synced through the Argus account with the model keys
  * (entry "mcp" in the /v1/keys blob, see [KeySync]).
  */
 object Mcp {
@@ -52,7 +52,7 @@ object Mcp {
         val saved = Settings.secret(PREF)
         var list = try { McpConfig.parse(saved) } catch (_: Exception) { emptyList() }
         if (saved.isBlank()) {
-            // Blaze for Android 1.7 – 0.8.0 kept servers in "mcp_servers" with a token per id.
+            // Argus for Android 1.7 – 0.8.0 kept servers in "mcp_servers" with a token per id.
             val legacy = Settings.str("mcp_servers", "")
             if (legacy.isNotBlank()) {
                 list = McpConfig.fromLegacy(legacy) { Settings.secret("mcp_tok_$it") }

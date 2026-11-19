@@ -1,11 +1,11 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.34.0 Blaze Music: smart playlists, mixes, Wrapped, DJ, EQ, fades, tags, covers and playlist import parsing. */
+/** v0.34.0 Argus Music: smart playlists, mixes, Wrapped, DJ, EQ, fades, tags, covers and playlist import parsing. */
 class MusicSmartTest {
     private val day = 86_400_000L
     private val now = 1000 * day

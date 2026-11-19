@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.ConfirmGate.ScreenDecision.ASK
-import com.blaze.assistant.agent.ConfirmGate.ScreenDecision.ASK_ONCE
-import com.blaze.assistant.agent.ConfirmGate.ScreenDecision.PASS
+import com.argus.assistant.agent.ConfirmGate.ScreenDecision.ASK
+import com.argus.assistant.agent.ConfirmGate.ScreenDecision.ASK_ONCE
+import com.argus.assistant.agent.ConfirmGate.ScreenDecision.PASS
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.view.View
@@ -56,7 +56,7 @@ import androidx.compose.ui.viewinterop.AndroidView
  * v0.29.3: a web page inside a floating pane of glass, like a small monitor sitting on the Home board. The page scrolls and
  * its links open inside the pane. Tapping outside does nothing (only the × closes it, or Back).
  *
- * v0.29.9: selecting words on the page shows the chat's selection pill (Copy, Quote, Select all, Search, Ask Blaze,
+ * v0.29.9: selecting words on the page shows the chat's selection pill (Copy, Quote, Select all, Search, Ask Argus,
  * Translate, Define, Read aloud, Share).
  *
  * v0.30.5: back to the first window: a fixed size, no moving, no resizing ([TiltGlassPane]). The page is only for
@@ -67,14 +67,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 @Composable
 fun GlassWindow(startUrl: String, onClose: () -> Unit, onOpenOutside: (String) -> Unit,
                 onAsk: ((String) -> Unit)? = null, onQuote: ((String) -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val d = LocalDensity.current
     var title by remember { mutableStateOf(host(startUrl)) }
     var current by remember { mutableStateOf(startUrl) }
     var progress by remember { mutableStateOf(0) }
     var web by remember { mutableStateOf<PillWebView?>(null) }
-    // v0.29.9: the page's text selection → Blaze's selection pill.
+    // v0.29.9: the page's text selection → Argus's selection pill.
     var sel by remember { mutableStateOf<PageSelectMode?>(null) }
     var selTick by remember { mutableIntStateOf(0) }
     var selText by remember { mutableStateOf("") }
@@ -160,7 +160,7 @@ fun GlassWindow(startUrl: String, onClose: () -> Unit, onOpenOutside: (String) -
                                 SelectionActions.Action.QUOTE -> onQuote?.invoke(t)
                                 // Search stays in the pane (Back returns to the page); a selected link opens there too.
                                 SelectionActions.Action.SEARCH, SelectionActions.Action.OPEN_LINK -> web?.loadUrl(SelectionActions.browserUrl(t))
-                                SelectionActions.Action.ASK -> onAsk?.invoke(SelectionActions.askPrompt(t)) ?: SelectionDo.openInBlazeBrowser(ctx, t)
+                                SelectionActions.Action.ASK -> onAsk?.invoke(SelectionActions.askPrompt(t)) ?: SelectionDo.openInArgusBrowser(ctx, t)
                                 SelectionActions.Action.TRANSLATE -> onAsk?.invoke(SelectionActions.translatePrompt(t, SelectionDo.phoneLanguage()))
                                 SelectionActions.Action.DEFINE -> onAsk?.invoke(SelectionActions.definePrompt(t))
                                 SelectionActions.Action.READ_ALOUD -> SelectionDo.readAloud(ctx, t)
@@ -203,7 +203,7 @@ private fun clipText(ctx: android.content.Context): String = try {
 /** v0.30.5: round title-bar buttons that read on the near-opaque frame in light and dark (the × is the strong one). */
 @Composable
 internal fun GlassButton(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, strong: Boolean = false, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val fill = when {
         strong && c.dark -> Brush.linearGradient(listOf(Color.White.copy(alpha = 0.92f), Color.White.copy(alpha = 0.78f)))
         strong -> Brush.linearGradient(listOf(Color(0xFF111110), Color(0xFF2A2A2E)))

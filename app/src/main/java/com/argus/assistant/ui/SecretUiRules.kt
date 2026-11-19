@@ -1,13 +1,13 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.SecretVault
+import com.argus.assistant.agent.SecretVault
 
 /** 0.46.6 Secure form: what the card needs filled before Save (pure, SecretDeskTest). */
 object SecretFormRules {
     /** A login needs only the password (some sites have no username); everything else needs every field. */
     fun ready(kind: SecretVault.Kind, fields: List<SecretVault.FieldSpec>, values: Map<String, String>): Boolean = when (kind) {
         SecretVault.Kind.LOGIN -> values["password"].orEmpty().isNotBlank()
-        SecretVault.Kind.CARD -> com.blaze.assistant.agent.PasteGuard.luhn(values["number"].orEmpty().filter { it.isDigit() }) &&
+        SecretVault.Kind.CARD -> com.argus.assistant.agent.PasteGuard.luhn(values["number"].orEmpty().filter { it.isDigit() }) &&
             Regex("^\\s*(0[1-9]|1[0-2])\\s*/\\s*\\d{2}(\\d{2})?\\s*$").matches(values["exp"].orEmpty()) && Regex("^\\d{3,4}$").matches(values["cvc"].orEmpty().trim())
         else -> fields.all { values[it.name].orEmpty().isNotBlank() }
     }

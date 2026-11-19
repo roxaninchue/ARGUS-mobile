@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 /**
  * P0-SH-01: the ARGUS design tokens of docs/overhaul/04-design-ia.md §2 (A-team v2 + liquid glass, the effective values

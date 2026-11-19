@@ -1,4 +1,4 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 /**
  * 0.47 Spotlight: small, allocation-light fuzzy scoring (pure, FuzzyTest / SpotlightSearchTest).

@@ -1,4 +1,4 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -20,7 +20,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 import java.util.concurrent.TimeUnit
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -29,7 +29,7 @@ import kotlin.math.sqrt
 
 /**
  * v0.33.0 Autopilot Routines: more trigger events, so one sentence ("when I get to campus, go silent, open my timetable
- * and turn on Wi-Fi") becomes a trigger whose prompt Blaze runs on its own:
+ * and turn on Wi-Fi") becomes a trigger whose prompt Argus runs on its own:
  * - place_arrive / place_leave: a saved place ("Campus@-12.80,28.21,200"; "here" = where the phone is now). Checked every
  *   15 minutes from the last location fix (no extra battery drain from GPS polling).
  * - bluetooth: a Bluetooth device connects (match = part of its name; blank = any).

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import org.json.JSONObject
@@ -11,7 +11,7 @@ import java.security.MessageDigest
  * seeded into ~/skills on start.
  *
  * Seeding is version-aware and never overwrites your work: a bundled skill is written when it's
- * missing, upgraded only when its SKILL.md still matches what Blaze last wrote (you haven't edited
+ * missing, upgraded only when its SKILL.md still matches what Argus last wrote (you haven't edited
  * it) and the shipped version is newer, and never brought back after you delete it (Restore does).
  * The manifest is ~/skills/.bundled.json. Skills can be switched off without deleting them.
  */
@@ -28,7 +28,7 @@ object SkillLibrary {
     fun titleOf(md: String): String = Regex("(?m)^title:\\s*(.+)$").find(md.substringBefore("\n---", md).take(2000))?.groupValues?.get(1)?.trim()?.trim('"', '\'')?.trim().orEmpty()
 
     private lateinit var app: Context
-    private fun root() = File(com.blaze.assistant.terminal.Terminal.home(), "skills").apply { mkdirs() }
+    private fun root() = File(com.argus.assistant.terminal.Terminal.home(), "skills").apply { mkdirs() }
     private fun manifestFile() = File(root(), ".bundled.json")
 
     private fun sha(s: String): String = MessageDigest.getInstance("SHA-256")
@@ -42,7 +42,7 @@ object SkillLibrary {
 
     private fun asset(name: String) = app.assets.open("skills/$name/SKILL.md").bufferedReader().use { it.readText() }
 
-    /** name → {version, sha, deleted} as last written by Blaze. */
+    /** name → {version, sha, deleted} as last written by Argus. */
     private fun manifest(): JSONObject = try { JSONObject(manifestFile().readText()) } catch (_: Exception) { JSONObject() }
     private fun saveManifest(m: JSONObject) { runCatching { manifestFile().writeText(m.toString(1)) } }
 
@@ -101,7 +101,7 @@ object SkillLibrary {
         if (CoreSkills.isCore(dirName)) return                              // core skills can't be deleted (Restore original resets edits)
         File(root(), dirName).deleteRecursively()
         SkillMatch.invalidate()
-        com.blaze.assistant.connect.SkillSync.localChange()
+        com.argus.assistant.connect.SkillSync.localChange()
         val m = manifest()
         m.optJSONObject(dirName)?.let { m.put(dirName, it.put("deleted", true)); saveManifest(m) }
         setOn(dirName, true)

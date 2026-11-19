@@ -1,8 +1,8 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.LinkParse
-import com.blaze.assistant.mediaapps.store.StoreError
-import com.blaze.assistant.mediaapps.store.StoreSources
+import com.argus.assistant.mediaapps.store.LinkParse
+import com.argus.assistant.mediaapps.store.StoreError
+import com.argus.assistant.mediaapps.store.StoreSources
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -64,7 +64,7 @@ class LinkSourceTest {
 
     @Test fun probeReadsPastTheFirstBytes() {
         assertEquals(0L, LinkParse.probeAt(500_000)); assertEquals(1_500_000L, LinkParse.probeAt(3_200_000)); assertEquals(1_500_000L, LinkParse.probeAt(0))
-        assertEquals("VISIONOS", com.blaze.assistant.mediaapps.store.LinkYt.clients.first().name)
+        assertEquals("VISIONOS", com.argus.assistant.mediaapps.store.LinkYt.clients.first().name)
     }
 
     @Test fun youtubeRefusal() {

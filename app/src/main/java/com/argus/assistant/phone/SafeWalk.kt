@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
@@ -16,16 +16,16 @@ import android.location.LocationManager
 import android.os.Build
 import android.telephony.SmsManager
 import androidx.core.app.NotificationCompat
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.R
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Settings
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 /**
- * v0.33.0 Safe Walk: "walk me home" / "I'm taking a taxi, check on me". You pick a trusted contact and a time; Blaze shows
+ * v0.33.0 Safe Walk: "walk me home" / "I'm taking a taxi, check on me". You pick a trusted contact and a time; Argus shows
  * an ongoing notification with an "I'm safe" button. If you haven't checked in when the time is up, it buzzes you for 2
  * minutes, then texts the contact your last location (map link) and where you said you were going, and keeps texting the
  * latest location every 10 minutes (3 times) until you tap "I'm safe". Starting it shows a confirmation card that says
@@ -35,9 +35,9 @@ object SafeWalk {
     const val TOOL = "safe_walk"
     private const val CH = "blaze_safewalk"
     private const val NID = 4400
-    private const val ACT_CHECK = "com.blaze.assistant.SAFEWALK_CHECK"
-    private const val ACT_SAFE = "com.blaze.assistant.SAFEWALK_SAFE"
-    private const val ACT_EXTEND = "com.blaze.assistant.SAFEWALK_EXTEND"
+    private const val ACT_CHECK = "com.argus.assistant.SAFEWALK_CHECK"
+    private const val ACT_SAFE = "com.argus.assistant.SAFEWALK_SAFE"
+    private const val ACT_EXTEND = "com.argus.assistant.SAFEWALK_EXTEND"
 
     data class Walk(val name: String, val number: String, val dueAt: Long, val dest: String, val stage: Int)
 

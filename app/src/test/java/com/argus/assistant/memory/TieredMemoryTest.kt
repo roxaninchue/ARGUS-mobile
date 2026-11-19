@@ -1,9 +1,9 @@
-package com.blaze.assistant.memory
+package com.argus.assistant.memory
 
-import com.blaze.assistant.agent.AutoCompact
-import com.blaze.assistant.agent.LongChat
-import com.blaze.assistant.agent.Mind
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.agent.AutoCompact
+import com.argus.assistant.agent.LongChat
+import com.argus.assistant.agent.Mind
+import com.argus.assistant.store.JdbcSql
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject

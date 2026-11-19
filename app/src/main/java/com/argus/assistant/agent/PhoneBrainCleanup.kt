@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
@@ -29,9 +29,9 @@ object PhoneBrainCleanup {
     suspend fun runOnce(ctx: Context) = withContext(Dispatchers.IO) {
         if (Settings.bool(PREF_DONE, false)) return@withContext
         try {
-            com.blaze.assistant.terminal.Linux.init(ctx)
-            leftovers(ctx.filesDir, com.blaze.assistant.terminal.Linux.base(), com.blaze.assistant.terminal.Linux.rootfs()).forEach { it.deleteRecursively() }
-        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("PhoneBrainCleanup", e) }
+            com.argus.assistant.terminal.Linux.init(ctx)
+            leftovers(ctx.filesDir, com.argus.assistant.terminal.Linux.base(), com.argus.assistant.terminal.Linux.rootfs()).forEach { it.deleteRecursively() }
+        } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("PhoneBrainCleanup", e) }
         try { ctx.deleteSharedPreferences(PREFS_FILE) } catch (_: Throwable) { }
         try { Settings.removeKeys(LEGACY_PREFS) } catch (_: Throwable) { }
         Settings.setBool(PREF_DONE, true)

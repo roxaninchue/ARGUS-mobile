@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Role
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Role
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

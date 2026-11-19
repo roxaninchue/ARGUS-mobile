@@ -1,4 +1,4 @@
-package com.blaze.assistant.routine
+package com.argus.assistant.routine
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -59,9 +59,9 @@ class RoutineCalendarTest {
         val o = r().copy(eventId = 42).toJson()
         assertEquals(42L, o.getLong("event_id"))
         val root = listOf(File("."), File("..")).first { File(it, "app").isDirectory }
-        val recv = File(root, "app/src/main/java/com/blaze/assistant/routine/RoutineReceiver.kt").readText()
+        val recv = File(root, "app/src/main/java/com/argus/assistant/routine/RoutineReceiver.kt").readText()
         assertTrue(recv.contains("RoutineLater.queue(ctx, id, System.currentTimeMillis())"))
-        val routines = File(root, "app/src/main/java/com/blaze/assistant/routine/Routines.kt").readText()
+        val routines = File(root, "app/src/main/java/com/argus/assistant/routine/Routines.kt").readText()
         assertTrue(routines.contains("save(cur() + r); calendar(r.id); return r"))
         assertTrue(routines.contains("uncalendar(ev)"))
     }

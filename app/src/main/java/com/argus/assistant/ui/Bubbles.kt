@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -75,14 +75,14 @@ import java.util.Locale
  * messaging platform just with our classic theme."
  *
  * Same palette, fonts and mono labels; what changes is the shape: your messages are ink bubbles on the right,
- * Blaze's are soft bubbles on the left, consecutive messages from one side group with tight spacing and
+ * Argus's are soft bubbles on the left, consecutive messages from one side group with tight spacing and
  * asymmetric corners (the sharp corner points at the sender), and one quiet timestamp closes each group.
  * The grouping logic is pure (unit-tested in BubblesTest); the composables are stateless (ShotsTest draws them).
  */
 
-/** Blaze's bubble: a soft fill a step off the paper (not a box, no outline). */
+/** Argus's bubble: a soft fill a step off the paper (not a box, no outline). */
 val BlazeColors.bubble: Color get() = if (dark) Color(0x1AFFFFFF) else Color(0xFFEFEFEC)
-/** A card inside a Blaze bubble (code, tables): lighter than the bubble so it reads as inset. */
+/** A card inside a Argus bubble (code, tables): lighter than the bubble so it reads as inset. */
 val BlazeColors.inset: Color get() = if (dark) Color(0x12FFFFFF) else Color(0xFFFAFAF8)
 
 /** The fill behind the content being drawn, so fades inside answer cards match it (null = the paper). */
@@ -115,7 +115,7 @@ object Bubbles {
         fun joins(i: Int): Boolean { // item i continues item i-1's group
             if (i <= 0 || i >= n) return false
             if (sides[i] != sides[i - 1]) return false
-            // 0.45.19: Halo's message and Blaze's never share a group (Blaze's answer under Halo's name, one action row).
+            // 0.45.19: Halo's message and Argus's never share a group (Argus's answer under Halo's name, one action row).
             if (whos.isNotEmpty() && whos.getOrElse(i) { "" } != whos.getOrElse(i - 1) { "" }) return false
             val a = ats.getOrElse(i - 1) { 0L }; val b = ats.getOrElse(i) { 0L }
             return a <= 0 || b <= 0 || b - a < gapMs
@@ -172,7 +172,7 @@ object Bubbles {
 
 /**
  * v0.29.4: see-through bubbles. The fill is a light tint (so particles and the page show through) and a clear 1.2dp
- * outline marks where each bubble starts and ends. Yours is tinted with the accent blue, Blaze's is neutral.
+ * outline marks where each bubble starts and ends. Yours is tinted with the accent blue, Argus's is neutral.
  *
  * v0.29.5/0.29.6: nearly clear glass. The fills are a whisper of tint (no opaque backing anywhere, cards inside included)
  * and the particles drift across the thread. The text keeps a soft halo in the page colour ([halo]) so it stays readable.
@@ -184,7 +184,7 @@ object GlassBubble {
      * v0.30.5: glass that fits the theme (Blazeinchue: "give chat boxes the glass look as well fitted to the theme").
      * Dark: a translucent white-tinted glass with a faint light hairline. Light: a translucent white frost with a soft
      * darker hairline. Both are brighter at the top and keep the text halo, so particles still drift through. Your
-     * bubbles carry a whisper of the accent; Blaze's are neutral. No blue outline.
+     * bubbles carry a whisper of the accent; Argus's are neutral. No blue outline.
      */
     private fun tint(c: BlazeColors, mine: Boolean): Color = if (mine) lerp(Color.White, c.accent, if (c.dark) 0.35f else 0.10f) else Color.White
     /** Top and bottom alpha of a bubble's glass. */
@@ -207,7 +207,7 @@ object GlassBubble {
 
     /** The glass's top colour (for fades inside answer cards, [LocalBubble]). */
     fun mineFill(c: BlazeColors): Color = alphas(c, true).let { tint(c, true).copy(alpha = it.first) }
-    fun blazeFill(c: BlazeColors): Color = alphas(c, false).let { tint(c, false).copy(alpha = it.first) }
+    fun argusFill(c: BlazeColors): Color = alphas(c, false).let { tint(c, false).copy(alpha = it.first) }
     /** Strips and chips in the thread (follow-ups): clear with a hairline instead of a grey slab. */
     fun stripFill(c: BlazeColors): Color = Color.Transparent
     fun stripEdge(c: BlazeColors): Color = c.ink.copy(alpha = if (c.dark) 0.22f else 0.16f)
@@ -222,7 +222,7 @@ fun Modifier.chatGlass(c: BlazeColors, mine: Boolean, shape: androidx.compose.ui
     clip(shape).background(GlassBubble.fill(c, mine), shape).border(1.dp, GlassBubble.edge(c), shape)
 
 /*
- * v0.31.0 borderless thread: no bubbles. Nothing boxes a message in to say whose it is. Blaze's text runs full width,
+ * v0.31.0 borderless thread: no bubbles. Nothing boxes a message in to say whose it is. Argus's text runs full width,
  * plain on the background; yours is set right-aligned, medium weight and a touch dimmer. Cards (work, confirm, rich
  * previews) are the only glass in the thread. [chatGlass] stays for those cards.
  */
@@ -233,7 +233,7 @@ fun Modifier.chatGlass(c: BlazeColors, mine: Boolean, shape: androidx.compose.ui
  */
 @Composable
 fun UserBubble(text: String, quoted: String = "", pos: GroupPos = GroupPos.SINGLE, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     ChatBubble(Side.ME, pos, modifier.padding(vertical = 1.dp)) {
         if (quoted.isNotEmpty()) {
             Row(Modifier.padding(bottom = 4.dp).height(IntrinsicSize.Min)) {
@@ -246,27 +246,27 @@ fun UserBubble(text: String, quoted: String = "", pos: GroupPos = GroupPos.SINGL
         // v0.28.1: your own message renders its markdown too (## App, 1. **Offline mode**), never raw symbols.
         val ink = BubblePalette.text(c, true)
         // 0.46.6: a pasted secret saved securely shows as "🔒 GitLab token", never as a raw handle.
-        val shown = remember(text, ink) { Md.render(com.blaze.assistant.agent.SecretVault.displayHandles(text), ink, ink.copy(alpha = 0.10f)) }
+        val shown = remember(text, ink) { Md.render(com.argus.assistant.agent.SecretVault.displayHandles(text), ink, ink.copy(alpha = 0.10f)) }
         SelectionContainer {
             Text(shown, style = TextStyle(fontFamily = Type.sansFor(text), fontSize = 15.sp, lineHeight = 21.sp, color = ink))
         }
     }
 }
 
-/** Blaze's message. 0.45.20: a bubble on the left ([ChatBubble]); [wide] content (tables, code) may use more width. */
+/** Argus's message. 0.45.20: a bubble on the left ([ChatBubble]); [wide] content (tables, code) may use more width. */
 @Composable
-fun BlazeBubble(pos: GroupPos = GroupPos.SINGLE, modifier: Modifier = Modifier, fill: Color? = null, wide: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+fun ArgusBubble(pos: GroupPos = GroupPos.SINGLE, modifier: Modifier = Modifier, fill: Color? = null, wide: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     ChatBubble(Side.BLAZE, pos, modifier.padding(vertical = 1.dp), wide = wide) { content() }
 }
 
 /**
- * A Blaze reply (screenshots and the thread use the same one). fix/chat-flat-ui (owner, 14 Nov 2026: "just like normal
+ * A Argus reply (screenshots and the thread use the same one). fix/chat-flat-ui (owner, 14 Nov 2026: "just like normal
  * ai chats ... no chat box around generated text ... but user prompts keep them"): no bubble, fill or border. The reply
  * runs full width as plain text on the page; cards inside it (code, tables, rich blocks) keep their own surface, and a
  * long-press still opens the message menu. [pos] is kept for callers (a flat reply has no tail to shape).
  */
 @Composable
-fun BlazeReply(key: Long, text: String, pos: GroupPos = GroupPos.SINGLE, live: Boolean = false) {
+fun ArgusReply(key: Long, text: String, pos: GroupPos = GroupPos.SINGLE, live: Boolean = false) {
     FlatReply(Modifier.padding(vertical = 1.dp)) { AnswerBody(key, text, live = live) }
 }
 
@@ -280,11 +280,11 @@ fun FlatReply(modifier: Modifier = Modifier, content: @Composable ColumnScope.()
     }
 }
 
-/** An error: in Blaze's bubble with a small desaturated warm label. */
+/** An error: in Argus's bubble with a small desaturated warm label. */
 @Composable
 fun ErrorBubble(text: String, pos: GroupPos = GroupPos.SINGLE) {
-    val c = LocalBlaze.current
-    BlazeBubble(pos) {
+    val c = LocalArgus.current
+    ArgusBubble(pos) {
         Label(tr("Error"), color = GlassTokens.error, size = 9.sp)
         Spacer(Modifier.height(4.dp))
         SelectionContainer {
@@ -297,7 +297,7 @@ fun ErrorBubble(text: String, pos: GroupPos = GroupPos.SINGLE) {
 @Composable
 fun MetaLine(side: Side, time: String, actions: List<Pair<String, (() -> Unit)?>> = emptyList(), chip: String = "", chipHot: Boolean = false,
              orbSlot: ((androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().padding(top = 1.dp), horizontalArrangement = if (side == Side.ME) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically) {
         if (time.isNotBlank()) Text(time, style = TextStyle(fontFamily = Type.Mono, fontSize = 10.sp, color = c.weak),
@@ -321,14 +321,14 @@ fun MetaLine(side: Side, time: String, actions: List<Pair<String, (() -> Unit)?>
 
 @Composable
 private fun MetaDot() {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.size(2.dp).clip(CircleShape).background(c.weak))
 }
 
 /** A tappable rounded pill (follow-ups, answers to a question, Try suggestions). */
 @Composable
 fun SoftPill(text: String, modifier: Modifier = Modifier, lead: String = "", fill: Color? = null, ink: Color? = null, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // v0.45.7: always opaque (a see-through fill is laid on the page colour) with a visible border.
     Row(modifier.widthIn(max = 320.dp).clip(RoundedCornerShape(20.dp)).background(if (fill == null || fill == c.bubble) ChipStyle.fill(c) else Contrast.solid(fill, c.paper))
         .border(1.dp, ChipStyle.edge(c), RoundedCornerShape(20.dp)).clickable(onClick = onClick)
@@ -362,7 +362,7 @@ fun SendMark(color: Color, stop: Boolean, size: Dp = 16.dp) {
  */
 @Composable
 fun FollowupRow(list: List<String>, modifier: Modifier = Modifier, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val labels = Bubbles.chipRow(list)
     if (labels.isEmpty()) return
     val haptic = LocalHapticFeedback.current

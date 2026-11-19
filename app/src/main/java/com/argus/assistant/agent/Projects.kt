@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +11,7 @@ import org.json.JSONObject
  * a project only lists their ids, so deleting a project never deletes a chat.
  */
 data class Project(val id: String, val name: String, val instructions: String = "", val chats: List<String> = emptyList(), val updated: Long = 0L,
-                   /** Pinned brief (v0.15.0): purpose, rules, key files, in progress. Capped at [Projects.BRIEF_TOKENS] (v0.28.5); Blaze edits it with update_brief. */
+                   /** Pinned brief (v0.15.0): purpose, rules, key files, in progress. Capped at [Projects.BRIEF_TOKENS] (v0.28.5); Argus edits it with update_brief. */
                    val brief: String = "",
                    /** v0.28.5: older notes (earlier briefs, the full text of a brief that was trimmed to fit). Searchable with project_docs_search, never pinned. */
                    val notes: List<ProjectNote> = emptyList())
@@ -62,7 +62,7 @@ object Projects {
     }
     fun rename(id: String, name: String) = save(_all.value.map { if (it.id == id) it.copy(name = name.trim().ifBlank { it.name }) else it })
     fun setInstructions(id: String, text: String) = save(_all.value.map { if (it.id == id) it.copy(instructions = text) else it })
-    /** v0.28.5: the brief's hard cap, in BlazeDb.tokens (bytes / 4), enforced on every save. */
+    /** v0.28.5: the brief's hard cap, in ArgusDb.tokens (bytes / 4), enforced on every save. */
     const val BRIEF_TOKENS = 600
     /** Old name kept for callers: the cap in bytes. */
     const val BRIEF_MAX = BRIEF_TOKENS * 4
@@ -72,7 +72,7 @@ object Projects {
     const val MAX_NOTES = 30
     const val NOTE_MAX_CHARS = 40_000
 
-    fun tokens(s: String): Int = com.blaze.assistant.store.BlazeDb.tokens(s)
+    fun tokens(s: String): Int = com.argus.assistant.store.ArgusDb.tokens(s)
 
     /** [s] cut to at most [maxTok] tokens on a character boundary (never splits a surrogate pair). */
     fun cutTokens(s: String, maxTok: Int): String {
@@ -135,7 +135,7 @@ object Projects {
     fun setBrief(id: String, text: String) = save(_all.value.map { if (it.id == id) it.copy(brief = cutTokens(text, BRIEF_TOKENS), updated = System.currentTimeMillis()) else it })
 
     /**
-     * update_brief (Blaze's brief-updater): the new brief is squeezed and, if still over the cap, trimmed to its top part
+     * update_brief (Argus's brief-updater): the new brief is squeezed and, if still over the cap, trimmed to its top part
      * with the whole text kept as a note; the brief it replaces is kept as a note too. Returns the reply for the model.
      */
     fun updateBrief(id: String, text: String, now: Long = System.currentTimeMillis()): String {

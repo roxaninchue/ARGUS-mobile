@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.LinkParse
-import com.blaze.assistant.mediaapps.store.StoreSubtitle
+import com.argus.assistant.mediaapps.store.LinkParse
+import com.argus.assistant.mediaapps.store.StoreSubtitle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

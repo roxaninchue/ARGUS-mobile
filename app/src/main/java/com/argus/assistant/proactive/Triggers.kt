@@ -1,14 +1,14 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
@@ -71,7 +71,7 @@ object Triggers {
         val tid = System.currentTimeMillis()
         save(all.value + Trigger(tid, name.ifBlank { prompt.take(30) }, ev, m, prompt))
         if (ev.startsWith("place_")) Autopilot.schedulePlaces(app)
-        return "Trigger \"$name\" saved: when $ev${if (match.isNotBlank()) " ($match)" else ""}, I'll: $prompt [ID ${com.blaze.assistant.agent.Processes.idFor("trigger", tid.toString())}]"
+        return "Trigger \"$name\" saved: when $ev${if (match.isNotBlank()) " ($match)" else ""}, I'll: $prompt [ID ${com.argus.assistant.agent.Processes.idFor("trigger", tid.toString())}]"
     }
     fun rename(id: Long, name: String) = save(all.value.map { if (it.id == id) it.copy(name = name.trim()) else it })
     fun remove(id: Long) = save(all.value.filterNot { it.id == id })
@@ -118,7 +118,7 @@ object Triggers {
 
     private fun fire(t: Trigger, detail: String) {
         if (System.currentTimeMillis() - t.lastFired < 60_000) return   // no storms
-        if (com.blaze.assistant.connect.AccountGate.locked()) { com.blaze.assistant.connect.AccountGate.notice(); return }   // account lock: skipped
+        if (com.argus.assistant.connect.AccountGate.locked()) { com.argus.assistant.connect.AccountGate.notice(); return }   // account lock: skipped
         save(all.value.map { if (it.id == t.id) it.copy(lastFired = System.currentTimeMillis()) else it })
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             Agent.runRoutine("⚡ ${t.name}", "[Trigger fired: $detail]\n${t.prompt}")

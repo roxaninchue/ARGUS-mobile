@@ -1,4 +1,4 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals

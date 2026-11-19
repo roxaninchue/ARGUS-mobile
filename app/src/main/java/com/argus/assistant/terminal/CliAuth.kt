@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
@@ -6,13 +6,13 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * 0.48.0 RC4: the `blaze` CLI inside the phone's Linux is signed in to the same Blaze account as the app, so the
- * terminal never shows "Sign in to Blaze to start" while the app is signed in.
+ * 0.48.0 RC4: the `argus` CLI inside the phone's Linux is signed in to the same Argus account as the app, so the
+ * terminal never shows "Sign in to Argus to start" while the app is signed in.
  *
  * How (no token of the app is ever copied):
- *  - The app asks blaze-auth for a device code ([com.blaze.assistant.connect.BlazeAccount.mintCliSession]), approves it
+ *  - The app asks blaze-auth for a device code ([com.argus.assistant.connect.ArgusAccount.mintCliSession]), approves it
  *    itself with its own session, and redeems it: a NEW session named "Blaze CLI (this phone)". Signing out of the CLI
- *    (`blaze logout`) therefore never signs the app out, and the app can end the CLI's session on its own.
+ *    (`argus logout`) therefore never signs the app out, and the app can end the CLI's session on its own.
  *  - That session goes where the CLI keeps its sign-in when there is no OS keychain (headless Linux, as in PRoot):
  *    `~/.blaze/secrets.json` ({"blaze-account:session": token}, 0600, other keys kept) plus the cached user in
  *    `~/.blaze/desktop/account.json` (0600), in /root of every installed distro. Folders are 0700.
@@ -25,7 +25,7 @@ import java.io.File
 object CliAuthLogic {
     /** The CLI's session key in its private-file keychain fallback (blaze-cli account.go `sessionKey`). */
     const val SESSION_KEY = "blaze-account:session"
-    const val CLIENT = "${com.blaze.assistant.BrandName.NAME} CLI (this phone)"
+    const val CLIENT = "${com.argus.assistant.BrandName.NAME} CLI (this phone)"
 
     fun secretsFile(rootfs: File) = File(rootfs, "root/.blaze/secrets.json")
     fun accountFile(rootfs: File) = File(rootfs, "root/.blaze/desktop/account.json")
@@ -67,16 +67,16 @@ object CliAuth {
     private const val MINE = "cli_auth_written"
 
     /** Fire-and-forget: brings every installed distro's CLI in line with the app's sign-in. Never blocks the caller. */
-    fun sync() { scope.launch { runCatching { syncNow() }.onFailure { com.blaze.assistant.device.CrashLog.quiet("CliAuth: sync", null) } } }
+    fun sync() { scope.launch { runCatching { syncNow() }.onFailure { com.argus.assistant.device.CrashLog.quiet("CliAuth: sync", null) } } }
 
     private fun rootfses(): List<File> = runCatching {
         Distros.installedIds().map { if (it == "alpine") Linux.rootfs() else Linux.rootfs(it) }
     }.getOrDefault(emptyList())
 
     suspend fun syncNow(): Unit = lock.withLock {
-        val acct = com.blaze.assistant.connect.BlazeAccount
+        val acct = com.argus.assistant.connect.ArgusAccount
         val user = acct.user()?.takeIf { acct.sessionToken().isNotBlank() }
-        var minted: Pair<String, com.blaze.assistant.connect.BlazeAccount.User>? = null
+        var minted: Pair<String, com.argus.assistant.connect.ArgusAccount.User>? = null
         for (rf in rootfses()) {
             val sf = CliAuthLogic.secretsFile(rf); val af = CliAuthLogic.accountFile(rf)
             val secrets = runCatching { sf.takeIf { it.isFile }?.readText() }.getOrNull()
@@ -85,7 +85,7 @@ object CliAuth {
             when (CliAuthLogic.need(user?.id, cliSession, cliUser)) {
                 CliAuthLogic.Need.NOTHING -> {}
                 CliAuthLogic.Need.CLEAR -> {
-                    // Only a session we wrote: the user's own `blaze login` (another account, no app) stays theirs.
+                    // Only a session we wrote: the user's own `argus login` (another account, no app) stays theirs.
                     if (cliUser in mine()) { runCatching { acct.endSession(cliSession) }; write(sf, CliAuthLogic.withSession(secrets, null)); af.delete() }
                 }
                 CliAuthLogic.Need.WRITE -> {
@@ -102,8 +102,8 @@ object CliAuth {
     /** Signing out of the app: the CLI sessions we wrote end too (call before the app's own session is cleared or after; it needs none). */
     fun signedOut() = sync()
 
-    private fun mine(): Set<String> = runCatching { com.blaze.assistant.agent.Settings.str(MINE).split(',').filter { it.isNotBlank() }.toSet() }.getOrDefault(emptySet())
-    private fun remember(id: String) { runCatching { com.blaze.assistant.agent.Settings.setStr(MINE, (mine() + id).joinToString(",")) } }
+    private fun mine(): Set<String> = runCatching { com.argus.assistant.agent.Settings.str(MINE).split(',').filter { it.isNotBlank() }.toSet() }.getOrDefault(emptySet())
+    private fun remember(id: String) { runCatching { com.argus.assistant.agent.Settings.setStr(MINE, (mine() + id).joinToString(",")) } }
 
     /** Writes [text] to [f] readable by its owner only (0600), its folders 0700; tmp + rename. */
     private fun write(f: File, text: String) {

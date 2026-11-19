@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.readableWidth
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.readableWidth
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,14 +27,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.team.JobStore
-import com.blaze.assistant.team.JobsRuntime
-import com.blaze.assistant.team.TeamGraph
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.kit.EmptyState
-import com.blaze.assistant.ui.argus.kit.FilterChips
-import com.blaze.assistant.ui.argus.kit.MenuRow
+import com.argus.assistant.team.JobStore
+import com.argus.assistant.team.JobsRuntime
+import com.argus.assistant.team.TeamGraph
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.kit.EmptyState
+import com.argus.assistant.ui.argus.kit.FilterChips
+import com.argus.assistant.ui.argus.kit.MenuRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,7 +81,7 @@ fun DeskPage(
     var needYou by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         try { graph = withContext(Dispatchers.IO) { TeamGraph.get(ctx.applicationContext) } }
-        catch (t: Throwable) { failed = true; com.blaze.assistant.device.CrashLog.quiet("DeskPage.open", t) }
+        catch (t: Throwable) { failed = true; com.argus.assistant.device.CrashLog.quiet("DeskPage.open", t) }
     }
     val g = graph
     // the Jobs chip's count (Needs you), read every few seconds whichever segment is on
@@ -95,11 +95,11 @@ fun DeskPage(
     }
     // Landscape overhaul: on a short window (a phone on its side) the title and the segment chips share one row, so the
     // page keeps its height for the jobs; upright it is the title over the chips as before.
-    val compact = com.blaze.assistant.ui.common.WindowLayout.compactHeader(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
+    val compact = com.argus.assistant.ui.common.WindowLayout.compactHeader(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
     Column(modifier.fillMaxSize().cutoutSafe()) {
         // P2-SF-03: the Inbox chip, the banner and the Inbox segment all read the one needs-you list
         val needs = rememberNeedsYou()
-        val chips = DeskModel.chips(com.blaze.assistant.policy.NeedsYou.count(needs), needYou, projectsCount)
+        val chips = DeskModel.chips(com.argus.assistant.policy.NeedsYou.count(needs), needYou, projectsCount)
         val pick: (String) -> Unit = { k -> DeskModel.Segment.of(k)?.let { DeskState.show(it) } }
         if (compact) androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -110,17 +110,17 @@ fun DeskPage(
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 6.dp).semantics { heading() })
             FilterChips(chips, seg.key, pick, Modifier.padding(bottom = 6.dp))
         }
-        if (seg != DeskModel.Segment.INBOX) com.blaze.assistant.policy.NeedsYou.banner(needs).let { b ->
-            com.blaze.assistant.ui.argus.kit.NeedYouBanner(b.count, b.bots, { DeskState.show(DeskModel.Segment.INBOX) },
+        if (seg != DeskModel.Segment.INBOX) com.argus.assistant.policy.NeedsYou.banner(needs).let { b ->
+            com.argus.assistant.ui.argus.kit.NeedYouBanner(b.count, b.bots, { DeskState.show(DeskModel.Segment.INBOX) },
                 Modifier.padding(bottom = 6.dp), approvalsOnly = b.approvalsOnly)
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (seg) {
                 DeskModel.Segment.INBOX -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                     // what the main Chat itself is asking (a question / OK there) is answered in Chat
-                    if (inboxWaiting > 0) com.blaze.assistant.ui.argus.kit.ArgusButton(tr("Chat is waiting on you \u00b7 Open"),
+                    if (inboxWaiting > 0) com.argus.assistant.ui.argus.kit.ArgusButton(tr("Chat is waiting on you \u00b7 Open"),
                         { nav.open(DeskModel.Targets.CHAT) }, Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        size = com.blaze.assistant.ui.argus.kit.ButtonSize.S, icon = "message-circle")
+                        size = com.argus.assistant.ui.argus.kit.ButtonSize.S, icon = "message-circle")
                     InboxList(needs, onOpen = { DeskState.show(DeskModel.Segment.JOBS) })
                     Spacer(Modifier.height(24.dp))
                 }

@@ -1,4 +1,4 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

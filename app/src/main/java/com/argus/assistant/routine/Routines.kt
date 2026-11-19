@@ -1,7 +1,7 @@
-package com.blaze.assistant.routine
+package com.argus.assistant.routine
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -35,7 +35,7 @@ data class Routine(val id: Int, val name: String, val prompt: String, val hour: 
     fun timeLabel() = "%02d:%02d".format(hour, minute)
 }
 
-/** Scheduled prompts Blaze runs by itself ("every weekday at 7, brief me"). */
+/** Scheduled prompts Argus runs by itself ("every weekday at 7, brief me"). */
 object Routines {
     private lateinit var app: Context
     private lateinit var prefs: SharedPreferences
@@ -52,9 +52,9 @@ object Routines {
         // then 305 ms setting alarms): reading the routines and setting their alarms run on a background thread.
         Thread({
             try { _all.value = load() } finally { loaded.countDown() }
-            try { scheduleAll() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Routines.scheduleAll", e) }
-            try { calendarAll() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Routines.calendarAll", e) }
-            try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }
+            try { scheduleAll() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Routines.scheduleAll", e) }
+            try { calendarAll() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Routines.calendarAll", e) }
+            try { com.argus.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }
         }, "blaze-routines").start()
     }
 
@@ -73,7 +73,7 @@ object Routines {
         _all.value = list
         prefs.edit().putString("routines", JSONArray(list.map { it.toJson() }).toString()).apply()
         scheduleAll()
-        try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: the next turn's [context] block is rebuilt
+        try { com.argus.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: the next turn's [context] block is rebuilt
     }
 
     fun get(id: Int) = cur().firstOrNull { it.id == id }
@@ -153,7 +153,7 @@ object Routines {
             // TODAY's weekday, not every day (it used to fall through to 127 = daily).
             else -> listOf("mon", "tue", "wed", "thu", "fri", "sat", "sun").foldIndexed(0) { i, acc, d ->
                 if (Regex("\\b$d(day|s|nesday|sday|rsday|rs|r|urday)?s?\\b").containsMatchIn(t)) acc or (1 shl i) else acc }
-                .let { if (it != 0) it else if ("week" in t) com.blaze.assistant.agent.ScheduleDay.bit(java.time.LocalDate.now().dayOfWeek) else 127 }
+                .let { if (it != 0) it else if ("week" in t) com.argus.assistant.agent.ScheduleDay.bit(java.time.LocalDate.now().dayOfWeek) else 127 }
         }
     }
 
@@ -233,7 +233,7 @@ object Routines {
             val date = a.optString("date").trim()
             val at = if (date.isNotBlank()) try { java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).parse("$date %02d:%02d".format(h, m))?.time ?: 0L } catch (_: Exception) { 0L } else 0L
             val r = if (at > 0) addAt(a.getString("name"), a.getString("prompt"), at) else add(a.getString("name"), a.getString("prompt"), h, m, parseDays(a.optString("days", "daily")))
-            "Created routine \"${r.name}\" at ${r.timeLabel()}, ${r.daysLabel()}${if (RoutineCalendar.allowed(app)) ", with an alert on the calendar" else "; calendar access is off, so it isn't on the calendar"}. [ID ${com.blaze.assistant.agent.Processes.idFor("routine", r.id.toString())}]"
+            "Created routine \"${r.name}\" at ${r.timeLabel()}, ${r.daysLabel()}${if (RoutineCalendar.allowed(app)) ", with an alert on the calendar" else "; calendar access is off, so it isn't on the calendar"}. [ID ${com.argus.assistant.agent.Processes.idFor("routine", r.id.toString())}]"
         }
         "schedule_command" -> {
             val every = a.optInt("every_minutes", 0)
@@ -241,7 +241,7 @@ object Routines {
             val (h, m) = t.split(":").let { it[0].trim().toInt() to (it.getOrNull(1)?.trim()?.take(2)?.toInt() ?: 0) }
             val r = addCommand(a.getString("name"), a.getString("command"), h, m, if (every > 0) 127 else parseDays(a.optString("days", "daily")),
                 a.optBoolean("linux"), a.optString("notify", "always"), every)
-            "Scheduled \"${r.name}\": ${if (every > 0) r.daysLabel() else "${r.timeLabel()} ${r.daysLabel()}"}, runs `${r.command.take(80)}`. [ID ${com.blaze.assistant.agent.Processes.idFor("routine", r.id.toString())}]"
+            "Scheduled \"${r.name}\": ${if (every > 0) r.daysLabel() else "${r.timeLabel()} ${r.daysLabel()}"}, runs `${r.command.take(80)}`. [ID ${com.argus.assistant.agent.Processes.idFor("routine", r.id.toString())}]"
         }
         // v0.45.9: dated, so a Sunday item can't be read as today's (the phone: "today you have church" on a Wednesday).
         "list_routines" -> cur().takeIf { it.isNotEmpty() }?.let { l -> listLine(l, System.currentTimeMillis()) } ?: "No routines yet."

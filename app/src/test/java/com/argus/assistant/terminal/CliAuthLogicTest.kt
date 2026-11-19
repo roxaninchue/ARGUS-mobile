@@ -1,7 +1,7 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -9,7 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** 0.48.0 RC4: the terminal's `blaze` CLI follows the app's sign-in (files the CLI reads with no OS keychain). */
+/** 0.48.0 RC4: the terminal's `argus` CLI follows the app's sign-in (files the CLI reads with no OS keychain). */
 class CliAuthLogicTest {
     @Test fun whereTheCliKeepsItsSignIn() {
         val rf = File("/x/linux/alpine")

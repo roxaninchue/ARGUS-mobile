@@ -1,7 +1,7 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import com.dokar.quickjs.QuickJs
 import com.dokar.quickjs.binding.asyncFunction
 import com.dokar.quickjs.binding.function
@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 0.46.2 runs one function of a user-added provider module in a fresh QuickJS context (engine: dokar3/quickjs-kt, Apache-2.0).
- * The module sees only [SandboxPrelude]: HTTP through [SandboxHttp] (guarded, capped, no cookies or Blaze headers), Jsoup-backed
- * cheerio, a per-provider key/value store (64 KB) and its own settings. No file system, no Android APIs, no Blaze secrets,
+ * The module sees only [SandboxPrelude]: HTTP through [SandboxHttp] (guarded, capped, no cookies or Argus headers), Jsoup-backed
+ * cheerio, a per-provider key/value store (64 KB) and its own settings. No file system, no Android APIs, no Argus secrets,
  * tokens or accounts. Limits: memory cap, stack cap, [Limits.timeoutMs] per call, [Limits.maxRequests] requests per call.
  * QuickJS here has no interrupt hook, so a module stuck in a busy loop is abandoned on the engine lane (the call fails,
  * the source is marked Failing and [abandoned] counts it; [ProviderStore] turns a source off after repeated hangs).
@@ -87,7 +87,7 @@ class ProviderSandbox(private val http: SandboxHttp = DefaultSandboxHttp, privat
             try {
                 val am = ctx.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
                 lowRam = lowRamFor(am.isLowRamDevice, am.memoryClass)
-                com.blaze.assistant.ui.HomeImages.configure(lowRam)
+                com.argus.assistant.ui.HomeImages.configure(lowRam)
             } catch (_: Throwable) { }
         }
 
@@ -132,7 +132,7 @@ class ProviderSandbox(private val http: SandboxHttp = DefaultSandboxHttp, privat
         @Volatile private var offLaneLogged = false
         internal fun noteOffLane(where: String) {
             offLane.incrementAndGet()
-            if (!offLaneLogged) { offLaneLogged = true; try { com.blaze.assistant.device.CrashLog.write("provider engine misuse: $where") } catch (_: Throwable) { } }
+            if (!offLaneLogged) { offLaneLogged = true; try { com.argus.assistant.device.CrashLog.write("provider engine misuse: $where") } catch (_: Throwable) { } }
         }
     }
 
@@ -166,16 +166,16 @@ class ProviderSandbox(private val http: SandboxHttp = DefaultSandboxHttp, privat
             scope.launch(lane.dispatcher) { runEngine(lane, moduleCode, exportName, args, env, done, gaveUp) }
         } catch (e: Throwable) { Gate.release(); return Result(null, friendly(e), emptyList(), System.currentTimeMillis() - t0) }
         // The in-flight marker tells the next start if the process died in here.
-        val mark = com.blaze.assistant.device.CrashLog.enter("provider call ${exportName ?: "catalog"}")
+        val mark = com.argus.assistant.device.CrashLog.enter("provider call ${exportName ?: "catalog"}")
         val r = try { withTimeoutOrNull(limits.timeoutMs) { done.await() } } catch (e: Throwable) {
             // The caller gave up (cancelled): only stop waiting. The engine winds down and closes on its own lane.
             gaveUp.set(true)
-            scope.launch { runCatching { done.await() }; com.blaze.assistant.device.CrashLog.leave(mark) }
+            scope.launch { runCatching { done.await() }; com.argus.assistant.device.CrashLog.leave(mark) }
             throw e
         }
-        if (r != null) { com.blaze.assistant.device.CrashLog.leave(mark); return r }
+        if (r != null) { com.argus.assistant.device.CrashLog.leave(mark); return r }
         gaveUp.set(true)
-        scope.launch { runCatching { done.await() }; com.blaze.assistant.device.CrashLog.leave(mark) }
+        scope.launch { runCatching { done.await() }; com.argus.assistant.device.CrashLog.leave(mark) }
         // Timed out: the call is abandoned on its lane, which closes the engine there when (if) it ends. Never cancel the job
         // from here: quickjs-kt's cancellation touches the native runtime from this thread (SIGSEGV in JS_DefineProperty, CI run
         // 40341276397). Its fetches and timers now fail at once so it ends soon; a pure busy loop keeps the lane until the app

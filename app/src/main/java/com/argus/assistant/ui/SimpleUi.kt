@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
@@ -75,22 +75,22 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.FixCards
-import com.blaze.assistant.agent.SimpleHome
-import com.blaze.assistant.agent.UndoCenter
+import com.argus.assistant.agent.FixCards
+import com.argus.assistant.agent.SimpleHome
+import com.argus.assistant.agent.UndoCenter
 import kotlinx.coroutines.delay
 import java.util.Calendar
 
 /*
  * v0.39.0 Simple mode pieces for the chat, drawn with the app's own look (glass, greys, the Duo colours): the home
- * greeting and starters, the @blaze / @halo / @all row, the big hold-to-talk mic, reply chips under Blaze's
+ * greeting and starters, the @blaze / @halo / @all row, the big hold-to-talk mic, reply chips under Argus's
  * questions, the one-button fix card and the 10-second Undo bar. Layout and wording follow the Simple mockups.
  */
 
 /** "Good afternoon, Sam" and two starters that fit the hour. */
 @Composable
 fun SimpleWelcome(name: String, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 24.dp)) {
         Text(SimpleHome.greeting(hour, name), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 34.sp,
@@ -108,7 +108,7 @@ fun SimpleWelcome(name: String, onPick: (String) -> Unit) {
 /** A large rounded chip (starters, reply chips). [primary] = the filled one. */
 @Composable
 fun SimpleChip(text: String, primary: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val shape = RoundedCornerShape(26.dp)
     Box(modifier.heightIn(min = 48.dp).clip(shape)
         .let { if (primary) it.glassPrimary(shape) else it.glass(shape, GlassIntensity.Low, shadow = false) }
@@ -118,7 +118,7 @@ fun SimpleChip(text: String, primary: Boolean = false, modifier: Modifier = Modi
     }
 }
 
-/** Yes / No / Later / Do it for me under a question from Blaze. */
+/** Yes / No / Later / Do it for me under a question from Argus. */
 @Composable
 fun ReplyChipRow(chips: List<SimpleHome.Chip>, onPick: (String) -> Unit) {
     if (chips.isEmpty()) return
@@ -129,12 +129,12 @@ fun ReplyChipRow(chips: List<SimpleHome.Chip>, onPick: (String) -> Unit) {
 
 /**
  * Type · the big hold-to-talk mic · Photo. Hold the mic to talk (the phone's own speech recogniser, as before),
- * let go to send. A quick tap also starts listening, and a tap while listening stops and sends. While Blaze works the mic becomes Stop.
+ * let go to send. A quick tap also starts listening, and a tap while listening stops and sends. While Argus works the mic becomes Stop.
  */
 @Composable
 fun HoldToTalkBar(listening: Boolean, busy: Boolean, onHold: () -> Unit, onRelease: () -> Unit, onType: () -> Unit, onPhoto: () -> Unit, onStop: () -> Unit) {
-    val c = LocalBlaze.current
-    val level by com.blaze.assistant.voice.Voice.level.collectAsState()
+    val c = LocalArgus.current
+    val level by com.argus.assistant.voice.Voice.level.collectAsState()
     val grow by animateFloatAsState(if (listening) 1.06f + level * 0.12f else 1f, tween(160), label = "mic")
     val isListening = androidx.compose.runtime.rememberUpdatedState(listening)
     Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically,
@@ -142,8 +142,8 @@ fun HoldToTalkBar(listening: Boolean, busy: Boolean, onHold: () -> Unit, onRelea
         SideButton(Icons.Rounded.Keyboard, "Type", onType)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(104.dp).scale(grow).clip(CircleShape).background(DuoColors.blazeBlue.copy(alpha = if (listening) 0.28f else 0.14f)))
-                Box(Modifier.size(84.dp).clip(CircleShape).background(if (busy) c.ink else DuoColors.blazeBlue)
+                Box(Modifier.size(104.dp).scale(grow).clip(CircleShape).background(DuoColors.argusBlue.copy(alpha = if (listening) 0.28f else 0.14f)))
+                Box(Modifier.size(84.dp).clip(CircleShape).background(if (busy) c.ink else DuoColors.argusBlue)
                     .semantics { contentDescription = if (busy) "Stop ${BrandName.NAME}" else if (listening) "Stop listening and send" else "Hold to talk" }
                     .pointerInput(busy) {
                         if (busy) detectTapGestures(onTap = { onStop() })
@@ -169,7 +169,7 @@ fun HoldToTalkBar(listening: Boolean, busy: Boolean, onHold: () -> Unit, onRelea
 
 @Composable
 private fun SideButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(56.dp).clip(CircleShape).glass(CircleShape, GlassIntensity.Low, shadow = false).clickable(onClick = onClick)
             .semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
@@ -184,7 +184,7 @@ private fun SideButton(icon: androidx.compose.ui.graphics.vector.ImageVector, la
 fun fixIntent(ctx: android.content.Context, k: FixCards.Kind): Intent {
     val pkg = Uri.parse("package:" + ctx.packageName)
     return when (k) {
-        FixCards.Kind.PHONE_CONTROL -> try { com.blaze.assistant.phone.PhoneControl.fixIntent(ctx) } catch (_: Throwable) { Intent(k.action) }
+        FixCards.Kind.PHONE_CONTROL -> try { com.argus.assistant.phone.PhoneControl.fixIntent(ctx) } catch (_: Throwable) { Intent(k.action) }
         FixCards.Kind.OVERLAY, FixCards.Kind.APP_PERMISSION -> Intent(k.action, pkg)
         // 0.53.4: the per-app All files access page (Android 11+); Android 8-10 grant storage on the app's page.
         FixCards.Kind.ALL_FILES -> if (android.os.Build.VERSION.SDK_INT >= 30) Intent(k.action, pkg)
@@ -198,7 +198,7 @@ fun fixIntent(ctx: android.content.Context, k: FixCards.Kind): Intent {
 fun FixCard() {
     val fix by FixCards.current.collectAsState()
     val f = fix ?: return
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     GlassCard(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 4.dp).appearIn(true), intensity = GlassIntensity.High) {
         Text(f.headline, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
@@ -223,7 +223,7 @@ fun FixCard() {
 fun BoxScope.UndoCountdownBar(onUndone: (String) -> Unit) {
     val offer by UndoCenter.current.collectAsState()
     val o = offer ?: return
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var now by remember(o.n) { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(o.n) {
         while (true) { now = System.currentTimeMillis(); if (UndoCenter.expired(o, now)) { if (UndoCenter.current.value?.n == o.n) UndoCenter.dismiss(); break }; delay(200) }
@@ -257,7 +257,7 @@ internal val homeRequests = kotlinx.coroutines.flow.MutableStateFlow(0)
 
 /**
  * v0.39.0 Swipe navigation: Home (the existing Home cards) with a grab handle at the bottom, raised above the system
- * navigation / gesture area by the nav-bar inset plus [com.blaze.assistant.agent.SwipeNav.HANDLE_MARGIN_DP]. Drag
+ * navigation / gesture area by the nav-bar inset plus [com.argus.assistant.agent.SwipeNav.HANDLE_MARGIN_DP]. Drag
  * the handle up (or tap it) and Chat slides up over Home, following the finger.
  */
 @Composable
@@ -266,20 +266,20 @@ fun HomeSurface(progress: Float, onAsk: (String) -> Unit, onQuote: (String) -> U
                 onDragStart: suspend kotlinx.coroutines.CoroutineScope.(Offset) -> Unit,
                 onDragStop: suspend kotlinx.coroutines.CoroutineScope.(Float) -> Unit,
                 /** 0.48.0 RC4: the shell owns the composer (it routes approvals, project / private chats and voice into it). */
-                composer: com.blaze.assistant.ui.composer.ComposerState = com.blaze.assistant.ui.composer.rememberComposerState(),
+                composer: com.argus.assistant.ui.composer.ComposerState = com.argus.assistant.ui.composer.rememberComposerState(),
                 onProfile: () -> Unit = {},
                 cards: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {},
                 /** RC4: the old full chat sheet is gone; no swipe up to it. */
                 swipeToChat: Boolean = true) {
     // v0.45.8: the strip sits on Home's own ground (HomePane bottom slot), so the scene behind Home never shows through
     // under "Swipe up to chat" (on a dark Home, a light ink scene used to); with a theme, Home and the strip both show it.
-    // 0.47 chat composer: the bottom Blaze button ("Swipe up to chat" strip) is replaced by the chat bar (profile · Message Blaze · +);
+    // 0.47 chat composer: the bottom Argus button ("Swipe up to chat" strip) is replaced by the chat bar (profile · Message Argus · +);
     // chat and Spotlight open over the blurred Home. Swiping up on the bar still slides the full chat over Home.
     // RC2: asks from Home (Quick actions, the board's "ask" buttons) open the chat OVER Home (the composer), not the full
     // chat sheet; a quote goes into the bar. The bar fades while a Home card is focused, and a tap on it closes the card.
-    // RC4: one Blaze look: the bar, the chat over Home and Spotlight use Home's dark glass palette whatever the app theme.
-    androidx.compose.runtime.CompositionLocalProvider(LocalBlaze provides (if (com.blaze.assistant.ui.HomeRedesign.enabled) DarkColors.mono else LocalBlaze.current)) {
-    com.blaze.assistant.ui.composer.BlazeComposerHome(state = composer, onProfile = onProfile, cards = cards,
+    // RC4: one Argus look: the bar, the chat over Home and Spotlight use Home's dark glass palette whatever the app theme.
+    androidx.compose.runtime.CompositionLocalProvider(LocalArgus provides (if (com.argus.assistant.ui.HomeRedesign.enabled) DarkColors.mono else LocalArgus.current)) {
+    com.argus.assistant.ui.composer.ArgusComposerHome(state = composer, onProfile = onProfile, cards = cards,
         barModifier = Modifier.graphicsLayer { alpha = (1f - progress * 2f).coerceIn(0f, 1f) * (1f - HomeFocusBus.amount) * HomeIntroBus.barAlpha.floatValue }
             .then(if (HomeFocusBus.active) Modifier.pointerInput(Unit) {
                 awaitPointerEventScope { while (true) { val e = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
@@ -287,13 +287,13 @@ fun HomeSurface(progress: Float, onAsk: (String) -> Unit, onQuote: (String) -> U
             } else Modifier)
             .then(if (swipeToChat) Modifier.draggable(drag, androidx.compose.foundation.gestures.Orientation.Vertical, onDragStarted = onDragStart, onDragStopped = onDragStop) else Modifier),
         onLeaveHome = onOpen) {
-        HomePane(onAsk = { t -> if (HomeRoute.askOverHome(com.blaze.assistant.ui.HomeRedesign.enabled)) composer.send(t) else onAsk(t) },
-            onQuote = { t -> if (HomeRoute.askOverHome(com.blaze.assistant.ui.HomeRedesign.enabled)) { composer.text = t; composer.openChat() } else onQuote(t) },
-            askToast = !com.blaze.assistant.ui.HomeRedesign.enabled, edgeToEdge = true, bottom = {
+        HomePane(onAsk = { t -> if (HomeRoute.askOverHome(com.argus.assistant.ui.HomeRedesign.enabled)) composer.send(t) else onAsk(t) },
+            onQuote = { t -> if (HomeRoute.askOverHome(com.argus.assistant.ui.HomeRedesign.enabled)) { composer.text = t; composer.openChat() } else onQuote(t) },
+            askToast = !com.argus.assistant.ui.HomeRedesign.enabled, edgeToEdge = true, bottom = {
             // RC4: room for the bar AND the keyboard while it is up, so Home's cards scroll clear of the bar instead of
             // sitting under it (Quick actions used to bleed into the input).
             Spacer(Modifier.fillMaxWidth().windowInsetsBottomHeight(WindowInsets.ime.union(WindowInsets.navigationBars)))
-            Spacer(Modifier.fillMaxWidth().height((com.blaze.assistant.ui.composer.ChatBarTokens.HEIGHT_DP + 8).dp))
+            Spacer(Modifier.fillMaxWidth().height((com.argus.assistant.ui.composer.ChatBarTokens.HEIGHT_DP + 8).dp))
         })
     }
     }

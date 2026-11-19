@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -76,19 +76,19 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.agent.StepTool
-import com.blaze.assistant.agent.ToolTrail
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.living.LivingLayout.Box as CardBox
-import com.blaze.assistant.ui.living.LivingLayout.Camera
-import com.blaze.assistant.ui.living.LivingModel.Card
-import com.blaze.assistant.ui.living.LivingModel.Kind
-import com.blaze.assistant.ui.living.LivingModel.State
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Role
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.agent.StepTool
+import com.argus.assistant.agent.ToolTrail
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.living.LivingLayout.Box as CardBox
+import com.argus.assistant.ui.living.LivingLayout.Camera
+import com.argus.assistant.ui.living.LivingModel.Card
+import com.argus.assistant.ui.living.LivingModel.Kind
+import com.argus.assistant.ui.living.LivingModel.State
 import kotlinx.coroutines.launch
 
 /**
@@ -110,7 +110,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMotion: Boolean, modifier: Modifier = Modifier,
                  wide: Boolean = false, title: String? = null, note: String? = null, onTitle: (() -> Unit)? = null) {
-    val dark = LocalBlaze.current.dark
+    val dark = LocalArgus.current.dark
     val p = remember(dark) { LivingSpec.palette(dark) }
     val messages by Agent.messages.collectAsState()
     val chatHere by Agent.chatId.collectAsState()
@@ -123,16 +123,16 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
     }
 
     val board = remember(messages, trail, chatHere, working, keep) {
-        LivingModel.board(messages.asSequence().filter { keep?.invoke(it) != false && it.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD).not() }
+        LivingModel.board(messages.asSequence().filter { keep?.invoke(it) != false && it.meta.startsWith(com.argus.assistant.agent.BgAgents.CARD).not() }
             .mapNotNull { m ->
                 val r = when (m.role) { Role.USER -> LivingModel.Role.USER; Role.BLAZE -> LivingModel.Role.BLAZE; Role.STEP -> LivingModel.Role.STEP; else -> null }
-                r?.let { LivingModel.Msg(m.id, it, m.text, if (m.role == Role.STEP) m.meta else "", m.at, ack = m.role == Role.BLAZE && m.meta == com.blaze.assistant.agent.Ack.META) }
+                r?.let { LivingModel.Msg(m.id, it, m.text, if (m.role == Role.STEP) m.meta else "", m.at, ack = m.role == Role.BLAZE && m.meta == com.argus.assistant.agent.Ack.META) }
             }.toList(), working, trail[chatHere].orEmpty(),
             label = { name, running -> StepTool.label(name).let { if (running) it.now else it.done } })
     }
     val plan = remember(board, wide) { LivingLayout.plan(board, wide) }
     // 0.2.1 landscape header: the open chat's title as the history drawer names it, and the earlier-chat note
-    val chatsVersion by com.blaze.assistant.ui.team.ChatModeRuntime.version.collectAsState()
+    val chatsVersion by com.argus.assistant.ui.team.ChatModeRuntime.version.collectAsState()
     val privateOn by Agent.privateChat.collectAsState()
     val head = remember(wide, title, note, chatsVersion, messages.size, privateOn) {
         when {
@@ -140,10 +140,10 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
             title != null -> title to note
             privateOn -> tr("Private chat") to null
             else -> {
-                val chats = com.blaze.assistant.ui.team.ChatModeRuntime.chats()
-                val t = com.blaze.assistant.ui.team.ChatDrawerModel.state(chats, messages.map(com.blaze.assistant.ui.team.ChatModeRuntime::msg), emptyList(),
+                val chats = com.argus.assistant.ui.team.ChatModeRuntime.chats()
+                val t = com.argus.assistant.ui.team.ChatDrawerModel.state(chats, messages.map(com.argus.assistant.ui.team.ChatModeRuntime::msg), emptyList(),
                     System.currentTimeMillis(), java.time.ZoneId.systemDefault()).entries.firstOrNull { it.current }?.title
-                (t ?: com.blaze.assistant.ui.team.ChatDrawerModel.NEW_TITLE) to (if (chats.readOnly) com.blaze.assistant.ui.team.ChatModeCopy.READ_ONLY else null)
+                (t ?: com.argus.assistant.ui.team.ChatDrawerModel.NEW_TITLE) to (if (chats.readOnly) com.argus.assistant.ui.team.ChatModeCopy.READ_ONLY else null)
             }
         }
     }
@@ -240,7 +240,7 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
                         }
                     })
             }
-            .semantics { contentDescription = tr("Living canvas: what {0} is working on", com.blaze.assistant.BrandName.NAME) }
+            .semantics { contentDescription = tr("Living canvas: what {0} is working on", com.argus.assistant.BrandName.NAME) }
         ) {
             dots(cam, density, dotColor)
             val stroke = Stroke(width = (1.2f * density).coerceAtLeast(1f), cap = StrokeCap.Round)
@@ -259,7 +259,7 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
             }
         }
 
-        if (plan.boxes.isEmpty()) Text(tr("When {0} works, you watch it here: the pages it reads, the files it writes and what it runs.", com.blaze.assistant.BrandName.NAME),
+        if (plan.boxes.isEmpty()) Text(tr("When {0} works, you watch it here: the pages it reads, the files it writes and what it runs.", com.argus.assistant.BrandName.NAME),
             color = Color(p.mute), fontSize = 14.sp, modifier = Modifier.align(Alignment.Center).padding(32.dp))
 
         // 0.2.1 landscape: the chat's title (and the earlier-chat note) at the top left, on the pill's line
@@ -367,7 +367,7 @@ private fun CardHost(b: CardBox, cam: () -> Camera, density: Float, p: LivingSpe
         }
         .wrapContentSize(Alignment.TopStart, unbounded = true)
         .requiredSize(b.w.dp, b.h.dp)) {
-        Box(Modifier.fillMaxSize().shadow(if (LocalBlaze.current.dark) 0.dp else 6.dp, shape, clip = false, ambientColor = Color(p.shadow), spotColor = Color(p.shadow))
+        Box(Modifier.fillMaxSize().shadow(if (LocalArgus.current.dark) 0.dp else 6.dp, shape, clip = false, ambientColor = Color(p.shadow), spotColor = Color(p.shadow))
             .clip(shape).background(Color(p.card)).border(1.dp, Color(p.cardEdge), shape)) {
             when (b.card.kind) {
                 Kind.PROMPT -> PromptCard(b.card, p)
@@ -580,7 +580,7 @@ private fun ResultCardView(r: ResultCard, p: LivingSpec.Palette) = Column(Modifi
             val img by produceState<ImageBitmap?>(null, r.file) {
                 value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     try {
-                        com.blaze.assistant.media.Media.find(r.file)?.let { f ->
+                        com.argus.assistant.media.Media.find(r.file)?.let { f ->
                             val o = android.graphics.BitmapFactory.Options().apply { inSampleSize = 4 }
                             android.graphics.BitmapFactory.decodeFile(f.absolutePath, o)?.asImageBitmap()
                         }
@@ -758,7 +758,7 @@ private fun StatusPill(status: String, working: Boolean, p: LivingSpec.Palette, 
 @Composable
 fun LivingSwitch(modifier: Modifier = Modifier) {
     val view by LivingSpec.view.collectAsState()
-    val dark = LocalBlaze.current.dark
+    val dark = LocalArgus.current.dark
     val p = remember(dark) { LivingSpec.palette(dark) }
     val shape = RoundedCornerShape(22.dp)
     Box(modifier.fillMaxWidth().padding(vertical = 6.dp), contentAlignment = Alignment.Center) {

@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,9 +27,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.connect.BlazeAccount
-import com.blaze.assistant.connect.CloudSync
-import com.blaze.assistant.connect.SyncKinds
+import com.argus.assistant.connect.ArgusAccount
+import com.argus.assistant.connect.CloudSync
+import com.argus.assistant.connect.SyncKinds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -39,11 +39,11 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun CloudSyncPage(onSignIn: () -> Unit = {}) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val scope = rememberCoroutineScope()
-    val acct by BlazeAccount.view.collectAsState()
+    val acct by ArgusAccount.view.collectAsState()
     val v by CloudSync.view.collectAsState()
-    val simple by com.blaze.assistant.agent.SimpleMode.simpleFlow.collectAsState()
+    val simple by com.argus.assistant.agent.SimpleMode.simpleFlow.collectAsState()
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { delay(20_000); now = System.currentTimeMillis() } }
 
@@ -146,14 +146,14 @@ private fun PassphraseSetup(needsExisting: Boolean, onDone: () -> Unit) {
 
 @Composable
 private fun SyncNote(text: String, top: Int = 0) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Text(text, modifier = Modifier.padding(top = top.dp, bottom = 10.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub))
 }
 
 @Composable
 private fun SyncButton(text: String, primary: Boolean = true, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.fillMaxWidth().height(44.dp).then(if (primary) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f))
         .clickable(onClick = onClick), contentAlignment = Alignment.Center) { ButtonText(text, color = if (primary) c.paper else c.ink, size = 13.sp) }
 }
@@ -161,7 +161,7 @@ private fun SyncButton(text: String, primary: Boolean = true, onClick: () -> Uni
 /** The row on Settings › Account that opens Cloud sync. */
 @Composable
 fun CloudSyncRow(onOpen: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val v by CloudSync.view.collectAsState()
     Row(Modifier.fillMaxWidth().hairline(c.hair).clickable(onClick = onOpen).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {

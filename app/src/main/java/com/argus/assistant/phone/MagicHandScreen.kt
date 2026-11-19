@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import android.graphics.Bitmap
 import android.graphics.Rect
@@ -8,7 +8,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * Magic Hand (v0.24.7), Android side of "what's under the tip": the deepest visible node at a screen point (Blaze's
+ * Magic Hand (v0.24.7), Android side of "what's under the tip": the deepest visible node at a screen point (Argus's
  * own overlays skipped), its child-index path from the window root (for watches), re-reading a watched node,
  * the text inside a region, a screenshot crop and on-device OCR (ML Kit, bundled Latin model: no network).
  */
@@ -18,7 +18,7 @@ object MagicHandScreen {
         val kind: MagicHandLogic.Kind get() = MagicHandLogic.kindOf(element)
     }
 
-    private fun roots(svc: BlazeAccessibilityService): List<AccessibilityNodeInfo> = try {
+    private fun roots(svc: ArgusAccessibilityService): List<AccessibilityNodeInfo> = try {
         svc.windows.filter { it.type != AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY }.mapNotNull { it.root }
             .filter { it.packageName?.toString() != svc.packageName }
     } catch (_: Exception) { emptyList() }.ifEmpty { listOfNotNull(svc.rootInActiveWindow) }
@@ -51,7 +51,7 @@ object MagicHandScreen {
     }
 
     /** The deepest visible node with something to say at (x, y). */
-    fun at(svc: BlazeAccessibilityService, x: Int, y: Int): Hit? {
+    fun at(svc: ArgusAccessibilityService, x: Int, y: Int): Hit? {
         for (root in roots(svc)) {
             if (!box(root).contains(x, y)) continue
             var cur = root
@@ -79,7 +79,7 @@ object MagicHandScreen {
     }
 
     /** Finds a watched node again: by view id first (when it's unique), else by its path. Null when not on screen. */
-    fun reread(svc: BlazeAccessibilityService, w: MagicHandWatch.Watch): String? {
+    fun reread(svc: ArgusAccessibilityService, w: MagicHandWatch.Watch): String? {
         val root = roots(svc).firstOrNull { it.packageName?.toString() == w.pkg } ?: return null
         if (w.viewId.isNotBlank()) {
             val found = try { root.findAccessibilityNodeInfosByViewId(w.viewId) } catch (_: Exception) { emptyList() }
@@ -92,7 +92,7 @@ object MagicHandScreen {
     }
 
     /** Text of every visible node inside [b] (the fallback when OCR finds nothing), top to bottom. */
-    fun textIn(svc: BlazeAccessibilityService, b: MagicHandLogic.Box): String {
+    fun textIn(svc: ArgusAccessibilityService, b: MagicHandLogic.Box): String {
         val out = ArrayList<Pair<Int, String>>()
         fun walk(n: AccessibilityNodeInfo, d: Int) {
             if (d > 40 || n.isPassword) return
@@ -109,7 +109,7 @@ object MagicHandScreen {
      * v0.27.0: the screen boxes of the text blocks around [b] (nodes with text or a description, visible, not
      * passwords), for snapping the grab box to the text on release. At most [max] boxes.
      */
-    fun textBoxes(svc: BlazeAccessibilityService, b: MagicHandLogic.Box, max: Int = 200): List<MagicHandLogic.Box> {
+    fun textBoxes(svc: ArgusAccessibilityService, b: MagicHandLogic.Box, max: Int = 200): List<MagicHandLogic.Box> {
         val out = ArrayList<MagicHandLogic.Box>()
         fun walk(n: AccessibilityNodeInfo, d: Int) {
             if (d > 40 || out.size >= max || n.isPassword || !n.isVisibleToUser) return
@@ -124,7 +124,7 @@ object MagicHandScreen {
     }
 
     /** A full-resolution screenshot (Android 11+), or null. */
-    suspend fun screenshot(svc: BlazeAccessibilityService): Bitmap? {
+    suspend fun screenshot(svc: ArgusAccessibilityService): Bitmap? {
         if (android.os.Build.VERSION.SDK_INT < 30) return null
         return suspendCancellableCoroutine { cont ->
             try {

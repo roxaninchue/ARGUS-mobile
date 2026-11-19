@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -7,7 +7,7 @@ import org.junit.Test
 
 class BuildModeTest {
     @Test fun makeRequestsForAnArtifactTurnItOn() {
-        listOf("make me a landing page for my bakery", "build an app that tracks my study hours", "design a logo for Blaze Foods",
+        listOf("make me a landing page for my bakery", "build an app that tracks my study hours", "design a logo for Argus Foods",
             "create a pitch deck for the investor meeting", "write a python script that renames my photos", "make a snake game",
             "can you build me a portfolio website?", "create a CV for me").forEach { assertTrue(it, BuildMode.wants(it)) }
     }

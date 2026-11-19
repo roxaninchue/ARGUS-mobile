@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.SkillLibrary
+import com.argus.assistant.agent.SkillLibrary
 
 /**
  * Settings › Skill library (v0.19.0 look, Desktop's Settings › Skills): bundled skills (from Blaze Desktop)
@@ -32,7 +32,7 @@ import com.blaze.assistant.agent.SkillLibrary
  */
 @Composable
 fun SkillLibraryPage(rows0: List<SkillLibrary.Row>? = null, open0: String = "", query0: String = "") {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var tick by remember { mutableIntStateOf(0) }
     var open by remember { mutableStateOf(open0) }
     var query by remember { mutableStateOf(query0) }

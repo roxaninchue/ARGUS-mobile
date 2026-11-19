@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.flow.first
 import android.Manifest
 import android.content.Context
@@ -90,14 +90,14 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.blaze.assistant.MainActivity
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Mood
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.assist.BlazeInteractionService
-import com.blaze.assistant.phone.BlazeAccessibilityService
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.MainActivity
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Mood
+import com.argus.assistant.agent.Role
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.assist.ArgusInteractionService
+import com.argus.assistant.phone.ArgusAccessibilityService
+import com.argus.assistant.voice.Voice
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 /** Lets a ComposeView live outside an Activity (assistant session window, floating orb). */
@@ -133,7 +133,7 @@ object Overlay {
 
     /** A context + window type that may draw over other apps, or null. */
     private fun host(ctx: Context): Pair<Context, Int>? {
-        BlazeAccessibilityService.instance?.let { return it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
+        ArgusAccessibilityService.instance?.let { return it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
         if (canDrawOverApps(ctx)) return ctx.applicationContext to WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         return null
     }
@@ -154,8 +154,8 @@ object Overlay {
 
     fun showOrb(ctx: Context): Boolean {
         // v0.43.0: nothing floats over other apps while Bank mode is on.
-        if (com.blaze.assistant.bank.BankMode.active) return false
-        if (com.blaze.assistant.connect.AccountGate.locked()) return false   // account lock: the orb stays hidden (its pin is kept)
+        if (com.argus.assistant.bank.BankMode.active) return false
+        if (com.argus.assistant.connect.AccountGate.locked()) return false   // account lock: the orb stays hidden (its pin is kept)
         if (orbView != null) return true
         val (hc, type) = host(ctx) ?: return false
         val wm = hc.getSystemService(WindowManager::class.java)
@@ -253,13 +253,13 @@ object Overlay {
     @Volatile private var cardUntil = 0L
 
     /**
-     * While Blaze works and you're in another app, a slim card pops up at the top for a few seconds
+     * While Argus works and you're in another app, a slim card pops up at the top for a few seconds
      * (step + Stop), then hides; the notification shade keeps the progress. Tap it to open the panel.
      */
     fun watchTasks(ctx: Context) {
         if (cardWatch != null) return
         val app = ctx.applicationContext
-        cardWatch = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard).launch {
+        cardWatch = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main + com.argus.assistant.device.CrashLog.guard).launch {
             var wasBusy = false; var wasFg = Agent.inForeground
             while (true) {
                 // v0.45.23 perf: nothing to show while no chat is busy, so suspend until one is instead of waking every 400 ms.
@@ -269,11 +269,11 @@ object Overlay {
                 }
                 val busy = Agent.busyChats.value.isNotEmpty()
                 val now = System.currentTimeMillis()
-                // Pop up briefly when a task starts (or you leave Blaze mid-task), then get out of the way.
+                // Pop up briefly when a task starts (or you leave Argus mid-task), then get out of the way.
                 // The ongoing notification keeps showing progress and Stop.
                 if (busy && (!wasBusy || (wasFg && !Agent.inForeground))) {
                     cardUntil = now + 3500
-                    if (!Agent.inForeground) com.blaze.assistant.notify.Notifier.working(Agent.lastStep())
+                    if (!Agent.inForeground) com.argus.assistant.notify.Notifier.working(Agent.lastStep())
                 }
                 if (!busy && wasBusy) cardUntil = 0L
                 wasBusy = busy; wasFg = Agent.inForeground
@@ -295,7 +295,7 @@ object Overlay {
         val owner = OverlayOwner().also { it.start() }
         val v = composeView(ctx, owner) {
             TaskCard(onOpen = { cardUntil = 0L; hideCard(); openApp(ctx, false) }, onStop = { Agent.stopAll() },
-                onMinimise = { cardUntil = 0L; hideCard(); com.blaze.assistant.notify.Notifier.working(Agent.lastStep()) })
+                onMinimise = { cardUntil = 0L; hideCard(); com.argus.assistant.notify.Notifier.working(Agent.lastStep()) })
         }
         try { wm.addView(v, lp); cardView = v; cardOwner = owner } catch (_: Exception) { owner.destroy() }
     }
@@ -305,12 +305,12 @@ object Overlay {
         cardOwner?.destroy(); cardView = null; cardOwner = null
     }
 
-    /** Open the chat panel over the current app: the assistant session if Blaze is the assistant, else an overlay. */
+    /** Open the chat panel over the current app: the assistant session if Argus is the assistant, else an overlay. */
     fun openPanel(ctx: Context, listen: Boolean) {
         // Account lock: no panel over other apps; the lock screen instead.
-        if (com.blaze.assistant.connect.AccountGate.locked()) { try { ctx.startActivity(com.blaze.assistant.connect.AccountGate.lockIntent(ctx)) } catch (_: Exception) { }; return }
-        com.blaze.assistant.agent.LlmClient.prewarm()
-        if (BlazeInteractionService.showPanel(listen)) return
+        if (com.argus.assistant.connect.AccountGate.locked()) { try { ctx.startActivity(com.argus.assistant.connect.AccountGate.lockIntent(ctx)) } catch (_: Exception) { }; return }
+        com.argus.assistant.agent.LlmClient.prewarm()
+        if (ArgusInteractionService.showPanel(listen)) return
         if (panelView != null) return
         val h = host(ctx)
         // Typing needs a window the keyboard can reach; the app-overlay type supports that.
@@ -351,7 +351,7 @@ object Overlay {
     }
 
     fun openApp(ctx: Context, listen: Boolean) {
-        ctx.startActivity(com.blaze.assistant.IntentKey.sign(ctx, Intent(ctx, MainActivity::class.java)
+        ctx.startActivity(com.argus.assistant.IntentKey.sign(ctx, Intent(ctx, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(MainActivity.EXTRA_LISTEN, listen)))
     }
@@ -364,10 +364,10 @@ object Overlay {
 
 // ---------------- UI ----------------
 
-/** The round Blaze orb: pixel B in the middle, a ring that breathes while listening or working. */
+/** The round Argus orb: pixel B in the middle, a ring that breathes while listening or working. */
 @Composable
 fun OrbFace(size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val mood by Agent.mood.collectAsState()
     val voice by Voice.state.collectAsState()
     val level by Voice.level.collectAsState()
@@ -385,7 +385,7 @@ fun OrbFace(size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
 
 @Composable
 private fun OrbRing(size: androidx.compose.ui.unit.Dp, level: Float) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val t = rememberInfiniteTransition(label = "orb")
     val spin by t.animateFloat(0f, 360f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "spin")
     val breathe by t.animateFloat(0.9f, 1.05f, infiniteRepeatable(tween(1400), RepeatMode.Reverse), label = "b")
@@ -411,10 +411,10 @@ private fun Orb(
         .pointerInput(Unit) { detectTapGestures(onTap = { onTap() }, onLongPress = { onLongPress() }) })
 }
 
-/** The orb bursting into Blaze's pixel particles, then gone. */
+/** The orb bursting into Argus's pixel particles, then gone. */
 @Composable
 private fun Scatter(size: androidx.compose.ui.unit.Dp, onGone: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val p = remember { androidx.compose.animation.core.Animatable(0f) }
     val bits = remember {
         val r = kotlin.random.Random(System.nanoTime())
@@ -441,7 +441,7 @@ private fun Scatter(size: androidx.compose.ui.unit.Dp, onGone: () -> Unit) {
  */
 @Composable
 private fun ParticleBin(shown: Boolean, hot: Boolean) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val vis by animateFloatAsState(if (shown) 1f else 0f, tween(240), label = "vis")
     val heat by animateFloatAsState(if (hot) 1f else 0f, tween(180), label = "heat")
     if (!shown && vis <= 0.001f) return   // nothing drawn, no frames, while you aren't dragging
@@ -481,12 +481,12 @@ private fun ParticleBin(shown: Boolean, hot: Boolean) {
     }
 }
 
-// v0.24.6: AssistPanel moved to ui/AssistPanel.kt (rounded Blaze look, icon buttons, mascot, edge particles).
+// v0.24.6: AssistPanel moved to ui/AssistPanel.kt (rounded Argus look, icon buttons, mascot, edge particles).
 
 @Composable
 private fun PanelButton(label: String, onClick: () -> Unit) {
-    Box(Modifier.clip(BlazeShapes.pill).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 10.dp)) {
-        Label(label, color = if (label == "Pin orb") LocalBlaze.current.accent else LocalBlaze.current.sub, size = if (label == "×") 16.sp else 10.sp)
+    Box(Modifier.clip(ArgusShapes.pill).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 10.dp)) {
+        Label(label, color = if (label == "Pin orb") LocalArgus.current.accent else LocalArgus.current.sub, size = if (label == "×") 16.sp else 10.sp)
     }
 }
 
@@ -494,7 +494,7 @@ private fun PanelButton(label: String, onClick: () -> Unit) {
 /** Where a swipe on the work banner sends it (v0.24.5). Pure (OverlayBannerTest / PointerTest). */
 enum class BannerSwipe { NONE, MINIMISE, OPEN }
 
-/** Up, left or right past [thresholdPx] minimises into the notification; down past it opens Blaze; a short drag springs back. */
+/** Up, left or right past [thresholdPx] minimises into the notification; down past it opens Argus; a short drag springs back. */
 fun bannerSwipe(dx: Float, dy: Float, thresholdPx: Float): BannerSwipe = when {
     dy > thresholdPx && dy > kotlin.math.abs(dx) -> BannerSwipe.OPEN
     dy < -thresholdPx || kotlin.math.abs(dx) > thresholdPx * 1.4f -> BannerSwipe.MINIMISE
@@ -502,15 +502,15 @@ fun bannerSwipe(dx: Float, dy: Float, thresholdPx: Float): BannerSwipe = when {
 }
 
 /**
- * The "Blaze is working" banner shown over other apps (v0.24.5 look): a fully rounded dark Blaze card with a subtle
+ * The "Argus is working" banner shown over other apps (v0.24.5 look): a fully rounded dark Argus card with a subtle
  * border and shadow, the mascot inside a spinning ring, the status in brand colours, and Stop as a rounded pill.
- * Swipe up / left / right: it slides away and minimises into the ongoing notification. Swipe down or tap: opens Blaze.
+ * Swipe up / left / right: it slides away and minimises into the ongoing notification. Swipe down or tap: opens Argus.
  */
 @Composable
 fun TaskCard(onOpen: () -> Unit, onStop: () -> Unit, onMinimise: () -> Unit = {}, step0: String? = null, tasks0: Int? = null) {
     val msgs by Agent.messages.collectAsState()
     val busy by Agent.busyChats.collectAsState()
-    val stepRaw = step0 ?: msgs.lastOrNull { it.role == com.blaze.assistant.agent.Role.STEP }?.text ?: "Working"
+    val stepRaw = step0 ?: msgs.lastOrNull { it.role == com.argus.assistant.agent.Role.STEP }?.text ?: "Working"
     val tasks = tasks0 ?: busy.size
     // A plan checklist shows its current line; "2/5" tells you how far along it is.
     val lines = stepRaw.lines()
@@ -560,7 +560,7 @@ fun TaskCard(onOpen: () -> Unit, onStop: () -> Unit, onMinimise: () -> Unit = {}
         .clip(shape)
         .clickable(onClick = onOpen)
         .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        DuoEmblem(40.dp, animate = true) // v0.32.0: new Blaze icon
+        DuoEmblem(40.dp, animate = true) // v0.32.0: new Argus icon
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Text(if (tasks > 1) "${BrandName.NAME} \u00b7 $tasks tasks" else "${BrandName.NAME} is working", maxLines = 1,

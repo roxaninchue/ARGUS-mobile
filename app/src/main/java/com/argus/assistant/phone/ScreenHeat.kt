@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 /** 0.46.4 heat audit: phone-control work only during a phone task, screenshots rate-capped. Pure (HeatTest). */
 object ScreenHeat {

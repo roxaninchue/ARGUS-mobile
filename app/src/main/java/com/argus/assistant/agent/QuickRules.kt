@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONObject
 
@@ -100,13 +100,13 @@ object QuickRules {
             "previous", "previous song", "previous track", "last song", "go back a song" -> return "media_control" to JSONObject().put("action", "previous")
         }
 
-        // Blaze's own settings: "open your voice settings", "blaze brain settings", "voice settings again".
+        // Argus's own settings: "open your voice settings", "argus brain settings", "voice settings again".
         Regex("""^(?:(?:please |can you |could you )?(?:open|show|go to|take me to|bring up)?\s*)?(?:the |my )?(your |(?:argus|blaze)'?s? )?([a-z &]{2,20}?) (?:settings|setting|page)(?: again| please)?$""").matchEntire(t)?.let { m ->
             val own = m.groupValues[1].isNotBlank()
             val what = m.groupValues[2].trim()
-            val blazeOnly = setOf("voice", "wake word", "brain", "ai", "terminal", "persona", "personality", "memory", "routines", "orb", "call", "calls", "speech")
+            val argusOnly = setOf("voice", "wake word", "brain", "ai", "terminal", "persona", "personality", "memory", "routines", "orb", "call", "calls", "speech")
             val page = settingsPageFor(what)
-            if (page.isNotEmpty() && (own || what in blazeOnly)) return "blaze_self" to JSONObject().put("action", "open").put("target", page)
+            if (page.isNotEmpty() && (own || what in argusOnly)) return "blaze_self" to JSONObject().put("action", "open").put("target", page)
         }
 
         // "wifi settings", "battery settings" → that Android page. "whatsapp settings" (another app's own settings)
@@ -129,7 +129,7 @@ object QuickRules {
         // Open an app: "open whatsapp", "launch the camera", "go to settings". Single target only.
         Regex("""^(?:open|launch|start|go to|take me to|bring up|show me|run) (?:the |my |up )?([a-z0-9][a-z0-9 .+&'-]{1,28}?)(?: app)?$""").matchEntire(t)?.let { m ->
             val app = m.groupValues[1].trim()
-            if (com.blaze.assistant.phone.AppMatch.clean(app).isNotEmpty() && app.split(' ').size <= 3 && !Regex("\\b(and|then|search|play|on|in|with|to|for|about)\\b").containsMatchIn(app)
+            if (com.argus.assistant.phone.AppMatch.clean(app).isNotEmpty() && app.split(' ').size <= 3 && !Regex("\\b(and|then|search|play|on|in|with|to|for|about)\\b").containsMatchIn(app)
                 && !Regex(".+ (settings?|preferences|options|menu|chats?|status|profile|page)$").matches(app))
                 return "open_app" to JSONObject().put("name", app)
         }

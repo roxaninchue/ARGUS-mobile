@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -66,14 +66,14 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.device.CameraZoom
-import com.blaze.assistant.device.Haptics
+import com.argus.assistant.device.CameraZoom
+import com.argus.assistant.device.Haptics
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * v0.30.x Blaze Camera Pro: zoom presets, the half-circle zoom dial (protractor), tap-to-focus ring with an exposure
+ * v0.30.x Argus Camera Pro: zoom presets, the half-circle zoom dial (protractor), tap-to-focus ring with an exposure
  * slider, the rule-of-thirds grid and the timer countdown. Stateless: [LiveCamera] owns the camera and the state, and
  * ShotsTest draws the same controls over a fake preview. The maths lives in [CameraZoom] (CameraZoomTest).
  */
@@ -118,7 +118,7 @@ class CameraProActions(
     val onFocusTouch: () -> Unit = {},
 )
 
-/** Blaze's accent on the dark camera (the dark theme's blue reads on black in either app theme). */
+/** Argus's accent on the dark camera (the dark theme's blue reads on black in either app theme). */
 internal val CamAccent = GlassTokens.accent   // v0.31: monochrome
 /** The part of the dial past the lens's hardware max (digital zoom). */
 private val CamDigital = GlassTokens.warning

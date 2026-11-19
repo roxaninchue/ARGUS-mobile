@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.ui.RichReplies.Block
+import com.argus.assistant.BrandName
+import com.argus.assistant.ui.RichReplies.Block
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

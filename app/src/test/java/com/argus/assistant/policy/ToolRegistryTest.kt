@@ -1,6 +1,6 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.team.ActionClass
+import com.argus.assistant.team.ActionClass
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -17,7 +17,7 @@ import java.io.File
  * really builds, under Gradle.)
  */
 class ToolRegistryTest {
-    private val src = listOf(File("app/src/main/java"), File("src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant")
+    private val src = listOf(File("app/src/main/java"), File("src/main/java")).first { it.isDirectory }.resolve("com/argus/assistant")
 
     /** Strings the patterns catch that are not agent tools: form-field names (CallScan / CredAsk) and Needle / text-call examples. */
     private val notTools = setOf("email", "password", "username", "pin", "add_agent", "add_task", "complete_task", "reschedule_task",
@@ -107,10 +107,10 @@ class ToolRegistryTest {
     @Test fun commandsAreClassedPerCommand() {
         val rm = PolicyCalls.classify("run_shell", JSONObject().put("command", "rm -rf /root/old").toString())
         assertEquals(ActionClass.DELETE, rm.call.cls)
-        assertEquals(com.blaze.assistant.agent.CommandPolicy.Level.RISKY, rm.command)
+        assertEquals(com.argus.assistant.agent.CommandPolicy.Level.RISKY, rm.command)
         val ls = PolicyCalls.classify("run_shell", JSONObject().put("command", "ls -la").toString())
         assertEquals(ActionClass.READ, ls.call.cls)
-        assertEquals(com.blaze.assistant.agent.CommandPolicy.Level.SAFE, ls.command)
+        assertEquals(com.argus.assistant.agent.CommandPolicy.Level.SAFE, ls.command)
         assertEquals(ActionClass.WRITE_REMOTE, PolicyCalls.classify("git", JSONObject().put("action", "push").toString()).call.cls)
         assertEquals(ActionClass.READ, PolicyCalls.classify("git", JSONObject().put("action", "raw").put("args", "log -3").toString()).call.cls)
         assertEquals(ActionClass.WRITE_LOCAL, PolicyCalls.classify("run_shell", "not json").call.cls)

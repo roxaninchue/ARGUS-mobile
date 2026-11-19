@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,7 +28,7 @@ class HoldingTest {
     }
 
     private fun src(rel: String): String {
-        val roots = listOf(File("src/main/java/com/blaze/assistant"), File("app/src/main/java/com/blaze/assistant"))
+        val roots = listOf(File("src/main/java/com/argus/assistant"), File("app/src/main/java/com/argus/assistant"))
         val root = roots.first { it.isDirectory }
         return File(root, rel).readText()
     }
@@ -36,8 +36,8 @@ class HoldingTest {
     @Test fun pinnedFactsAreGoneFromTheApp() {
         val roots = listOf(File("src/main/java"), File("app/src/main/java"))
         val root = roots.first { it.isDirectory }
-        assertFalse(File(root, "com/blaze/assistant/agent/PinnedStore.kt").exists())
-        assertFalse(File(root, "com/blaze/assistant/agent/PinnedFacts.kt").exists())
+        assertFalse(File(root, "com/argus/assistant/agent/PinnedStore.kt").exists())
+        assertFalse(File(root, "com/argus/assistant/agent/PinnedFacts.kt").exists())
         val hits = root.walkTopDown().filter { it.isFile && it.extension == "kt" }
             .filter { f -> f.readText().let { it.contains("PinnedStore") || it.contains("PinnedFacts") || it.contains("pinAsk(") } }
             .map { it.name }.toList()

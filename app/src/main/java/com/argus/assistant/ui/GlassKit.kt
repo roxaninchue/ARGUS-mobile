@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.app.ActivityManager
 import android.content.Context
@@ -74,7 +74,7 @@ import androidx.compose.ui.window.DialogProperties
  *   GlassCard { }                            Column card (22 dp corners, 16 dp padding)
  *   GlassPill { }                            Row pill (chips, inputs, segmented controls)
  *   GlassButton("Save", primary = true) { }  text button (primary = brighter glass, white ink)
- *   GlassIconButton(icon, desc) { }          round icon button (BlazeGlass.kt, restyled)
+ *   GlassIconButton(icon, desc) { }          round icon button (ArgusGlass.kt, restyled)
  *   GlassTopBar(title, navigation, actions)  page header strip
  *   GlassSheet(onDismiss) { }                bottom sheet surface with grab handle
  *   GlassViewer(title, onDismiss) { }        full-screen glass window (dialog) with a close button
@@ -90,15 +90,15 @@ enum class GlassIntensity(val top: Float, val bottom: Float, val rim: Float, val
 
 object GlassTokens {
     /** The dark ground every glass tile sits on. */
-    val bg = Color(com.blaze.assistant.ui.space.SpacePalette.OBSIDIAN)   // unification: the shell's Obsidian
+    val bg = Color(com.argus.assistant.ui.space.SpacePalette.OBSIDIAN)   // unification: the shell's Obsidian
     val bgTop = Color(0xFF06103D)   // 0.52.1 Argus cobalt-black (ArgusBrand.CobaltNight)
     val ink = Color(0xFFF2F2F3)
     val body = Color(0xDEF2F2F3)
     val sub = Color(0x9EF2F2F3)
     val weak = Color(0x5CF2F2F3)
     /** Monochrome accent (focus rings, "on" states, links). */
-    val accent = Color(com.blaze.assistant.ui.space.SpacePalette.ELECTRIC_TEXT)   // unification: the shell's Electric text tint, 8.5:1 on black
-    val onAccent = Color(com.blaze.assistant.ui.space.SpacePalette.OBSIDIAN)
+    val accent = Color(com.argus.assistant.ui.space.SpacePalette.ELECTRIC_TEXT)   // unification: the shell's Electric text tint, 8.5:1 on black
+    val onAccent = Color(com.argus.assistant.ui.space.SpacePalette.OBSIDIAN)
     /** Semantic colours, desaturated. */
     val error = Color(0xFFD9918A)
     val warning = Color(0xFFD6C08E)
@@ -117,7 +117,7 @@ object GlassTokens {
     val pillShape = RoundedCornerShape(50)
 
     /** RenderEffect blur exists from API 31; skipped on low-RAM phones. */
-    fun blurSupported(ctx: Context): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && com.blaze.assistant.device.Thermal.now().blur &&
+    fun blurSupported(ctx: Context): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && com.argus.assistant.device.Thermal.now().blur &&
         !(try { (ctx.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.isLowRamDevice == true } catch (_: Throwable) { false })
 
     /** Fill brush for a glass tile (pure; [dark] = the theme). */
@@ -149,7 +149,7 @@ object GlassTokens {
 
 /** The primary action surface (buttons, Send, Confirm), theme-aware: frost on dark, solid ink on light. */
 fun Modifier.glassPrimary(shape: Shape = GlassTokens.pillShape, enabled: Boolean = true): Modifier = composed {
-    val dark = LocalBlaze.current.dark
+    val dark = LocalArgus.current.dark
     if (dark) glass(shape, GlassIntensity.High, shadow = false).background(GlassTokens.primaryFill(true, enabled), shape)
     else clip(shape).background(GlassTokens.primaryFill(false, enabled), shape).border(1.dp, Color.White.copy(alpha = 0.10f), shape)
 }
@@ -160,7 +160,7 @@ fun Modifier.glassPrimary(shape: Shape = GlassTokens.pillShape, enabled: Boolean
  */
 fun Modifier.glass(shape: Shape = GlassTokens.cardShape, intensity: GlassIntensity = GlassIntensity.Medium, shadow: Boolean = true,
                    sheen: Boolean = true): Modifier = composed {
-    val dark = LocalBlaze.current.dark
+    val dark = LocalArgus.current.dark
     // v0.31.2 ("remove those weird white rectangles in chat boxes and just leave the grey"): Android draws an elevation
     // shadow as if its caster were opaque, so under this see-through fill the shadow's hollow middle showed as a pale
     // rectangle inside a dark ring. Glass gets no elevation shadow now: just the grey frost, the sheen and the rim.
@@ -221,7 +221,7 @@ fun GlassPill(modifier: Modifier = Modifier, intensity: GlassIntensity = GlassIn
 @Composable
 fun GlassButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, primary: Boolean = false, enabled: Boolean = true,
                 height: Dp = 44.dp, danger: Boolean = false) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val press = remember { MutableInteractionSource() }
     val fg = when {
         primary && !danger -> GlassTokens.onPrimary(c.dark, enabled)
@@ -243,7 +243,7 @@ fun GlassButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier
 @Composable
 fun GlassTopBar(title: String, modifier: Modifier = Modifier, subtitle: String = "", navigation: (@Composable () -> Unit)? = null,
                 actions: (@Composable RowScope.() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp)
         .glass(RoundedCornerShape(24.dp), GlassIntensity.Low, shadow = false).heightIn(min = 52.dp).padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically) {
@@ -261,7 +261,7 @@ fun GlassTopBar(title: String, modifier: Modifier = Modifier, subtitle: String =
 /** A bottom sheet surface on glass with a grab handle. Place it at the bottom of a Box; [onDismiss] is for callers' scrims. */
 @Composable
 fun GlassSheet(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(modifier.fillMaxWidth().glass(GlassTokens.sheetShape, GlassIntensity.High).padding(top = 8.dp)) {
         Box(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 6.dp).size(width = 36.dp, height = 4.dp).clip(CircleShape)
             .background(c.ink.copy(alpha = 0.25f)))
@@ -276,10 +276,10 @@ fun GlassSheet(modifier: Modifier = Modifier, content: @Composable ColumnScope.(
 @Composable
 fun GlassViewer(title: String, onDismiss: () -> Unit, subtitle: String = "", content: @Composable BoxScope.() -> Unit) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        val c = LocalBlaze.current
-        Box(Modifier.fillMaxSize().background(com.blaze.assistant.ui.space.SpaceOverlay.scrim).padding(horizontal = 10.dp, vertical = 28.dp)) {
+        val c = LocalArgus.current
+        Box(Modifier.fillMaxSize().background(com.argus.assistant.ui.space.SpaceOverlay.scrim).padding(horizontal = 10.dp, vertical = 28.dp)) {
             Column(Modifier.fillMaxSize().appearIn(true, riseDp = 18f).glass(RoundedCornerShape(28.dp), GlassIntensity.High)
-                .background(com.blaze.assistant.ui.space.SpaceOverlay.surface(c.dark))) {
+                .background(com.argus.assistant.ui.space.SpaceOverlay.surface(c.dark))) {
                 Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -297,7 +297,7 @@ fun GlassViewer(title: String, onDismiss: () -> Unit, subtitle: String = "", con
 /** A thin glass hairline between rows inside a glass card. */
 @Composable
 fun GlassDivider(modifier: Modifier = Modifier) {
-    val line = if (LocalBlaze.current.dark) Color.White.copy(alpha = 0.12f) else GlassTokens.lightInk.copy(alpha = 0.10f)
+    val line = if (LocalArgus.current.dark) Color.White.copy(alpha = 0.12f) else GlassTokens.lightInk.copy(alpha = 0.10f)
     Box(modifier.fillMaxWidth().height(1.dp).background(Brush.horizontalGradient(listOf(Color.Transparent, line, Color.Transparent))))
 }
 

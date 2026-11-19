@@ -1,8 +1,8 @@
-package com.blaze.assistant.mediaapps.store
+package com.argus.assistant.mediaapps.store
 
 
 /**
- * v0.30.1: the Store tabs of Blaze Music and Blaze Video show results from several sources behind one interface,
+ * v0.30.1: the Store tabs of Argus Music and Argus Video show results from several sources behind one interface,
  * [StoreSource]. Every source turns a search into [StoreItem]s (picture, title, author, length, licence) and an item
  * into downloadable [StoreFormat]s / [Choice]s; the download queue (Downloads.kt) and the screens only ever see these
  * types. Registered in the app's StoreSources.all.

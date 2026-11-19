@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -48,7 +48,7 @@ data class Brand(val name: String = "", val source: String = "", val paper: Stri
 
 object Seller {
     @Volatile var brandFileOverride: File? = null
-    private fun brandFile(): File = brandFileOverride ?: File(com.blaze.assistant.terminal.Terminal.home(), ".blaze/brand.json")
+    private fun brandFile(): File = brandFileOverride ?: File(com.argus.assistant.terminal.Terminal.home(), ".blaze/brand.json")
 
     fun brand(): Brand = try { brandFile().takeIf { it.isFile }?.let { Brand.from(JSONObject(it.readText())) } ?: Brand() } catch (_: Exception) { Brand() }
 
@@ -95,11 +95,11 @@ object Seller {
     const val DIGEST_NAME = "Weekly store digest"
     const val DIGEST_PROMPT = "Use the weekly-digest skill: sum up last week's store orders and the top social posts, and suggest the next 3 posts. Keep it short."
 
-    fun digestOn(): Boolean = com.blaze.assistant.routine.Routines.all.value.any { it.name == DIGEST_NAME && it.enabled }
+    fun digestOn(): Boolean = com.argus.assistant.routine.Routines.all.value.any { it.name == DIGEST_NAME && it.enabled }
 
     /** Switch the digest job on (Monday 08:00) or off. */
     fun setDigest(on: Boolean, hour: Int = 8, minute: Int = 0) {
-        val R = com.blaze.assistant.routine.Routines
+        val R = com.argus.assistant.routine.Routines
         R.all.value.filter { it.name == DIGEST_NAME }.forEach { R.delete(it.id) }
         if (on) R.add(DIGEST_NAME, DIGEST_PROMPT, hour, minute, R.parseDays("mon"))
     }

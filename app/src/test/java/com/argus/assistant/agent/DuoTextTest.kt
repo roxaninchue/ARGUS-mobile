@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.43.0: tool calls written as text in Halo x Blaze messages (Halo's whole reply was "browser_show()"). */
+/** v0.43.0: tool calls written as text in Halo x Argus messages (Halo's whole reply was "browser_show()"). */
 class DuoTextTest {
     private val room = setOf("web_search", "fetch_page", "recall_memory")
 

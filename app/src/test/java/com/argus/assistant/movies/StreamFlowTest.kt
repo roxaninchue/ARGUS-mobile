@@ -1,4 +1,4 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
@@ -102,7 +102,7 @@ class StreamFlowTest {
 
     @Test fun playerGetsHeadersMimeAndFallback() {
         val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-        val v = java.io.File(root, "com/blaze/assistant/mediaapps/VideoActivity.kt").readText()
+        val v = java.io.File(root, "com/argus/assistant/mediaapps/VideoActivity.kt").readText()
         assertTrue("http.setDefaultRequestProperties(hdr)" in v && "http.setUserAgent(hdr[\"User-Agent\"])" in v)
         assertTrue("MimeTypes.APPLICATION_M3U8" in v && "MimeTypes.APPLICATION_MPD" in v && ".setMimeType(mime)" in v)
         assertTrue("if (!movieFailed(error.errorCodeName)) retryStream(error)" in v)

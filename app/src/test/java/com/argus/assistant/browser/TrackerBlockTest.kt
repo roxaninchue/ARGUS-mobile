@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

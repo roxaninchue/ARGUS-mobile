@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -22,7 +22,7 @@ class ChatUi20Test {
 
     /** The palette BlazeTheme builds for accent [id] in [dark] (same rule as Theme.kt). */
     private fun palette(id: Long?, dark: Boolean): BlazeColors {
-        return blazePalette(dark, id)
+        return argusPalette(dark, id)
     }
 
     /** Pure black, pure white, the page, and the ARGUS grounds (obsidian, cobalt night, Argus Blue, Electric, Steel). */
@@ -65,7 +65,7 @@ class ChatUi20Test {
         val electric = palette(0xFF1286FF, true); val amber = palette(0xFFF59E0B, true)
         assertTrue(BubblePalette.fill(electric, true) != BubblePalette.fill(amber, true))
         assertTrue(BubblePalette.fill(electric, false) == BubblePalette.fill(amber, false))
-        // Blaze's own greys and the theme accent, never WhatsApp's green.
+        // Argus's own greys and the theme accent, never WhatsApp's green.
         for (id in themes) for (dark in listOf(false, true)) for (mine in listOf(true, false)) {
             val f = BubblePalette.fill(palette(id, dark), mine)
             assertTrue("$id $dark $mine greenish", !(f.green > f.red + 0.08f && f.green > f.blue + 0.08f))
@@ -95,12 +95,12 @@ class ChatUi20Test {
     }
 
     @Test fun chatScreen_hooks() = five {
-        val src = listOf(File("src/main/java/com/blaze/assistant/ui/ChatScreen.kt"), File("app/src/main/java/com/blaze/assistant/ui/ChatScreen.kt")).first { it.exists() }.readText()
+        val src = listOf(File("src/main/java/com/argus/assistant/ui/ChatScreen.kt"), File("app/src/main/java/com/argus/assistant/ui/ChatScreen.kt")).first { it.exists() }.readText()
         assertTrue("delivery only under the latest user bubble", src.contains("delivery = if (item.m.id == lastUserId)"))
-        assertTrue("action row only on the latest ${BrandName.NAME} reply", src.contains("showActs = item.m.id == lastBlazeId && mood == Mood.IDLE"))
+        assertTrue("action row only on the latest ${BrandName.NAME} reply", src.contains("showActs = item.m.id == lastArgusId && mood == Mood.IDLE"))
         assertTrue(src.contains("StepPillRow(") && src.contains("DayChip(") && src.contains("BubbleMenu("))
         // No ticks anywhere in the label.
-        val label = listOf(File("src/main/java/com/blaze/assistant/ui/DeliveryStatus.kt"), File("app/src/main/java/com/blaze/assistant/ui/DeliveryStatus.kt")).first { it.exists() }.readText()
+        val label = listOf(File("src/main/java/com/argus/assistant/ui/DeliveryStatus.kt"), File("app/src/main/java/com/argus/assistant/ui/DeliveryStatus.kt")).first { it.exists() }.readText()
         assertTrue(!label.contains("\u2713") && !label.contains("Icons.") && label.contains("LiveRegionMode.Polite"))
     }
 }

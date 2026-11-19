@@ -1,14 +1,14 @@
-package com.blaze.assistant.update
+package com.argus.assistant.update
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 import java.io.File
 import java.net.URI
 import java.security.MessageDigest
 
 /**
- * v0.45.4: where updates come from. One file on the Blaze site, nothing else:
+ * v0.45.4: where updates come from. One file on the Argus site, nothing else:
  * https://blazeinchue.pages.dev/versions.json = {schema:1, android:{version, url, sha256, notes}, desktop…, cli…}.
  * The APK is downloaded only from android.url (it redirects to the release registry) and must match android.sha256.
  * Pure JVM (no Android), tested in VersionFeedTest.

@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.connect.Classroom
-import com.blaze.assistant.routine.Routine
-import com.blaze.assistant.routine.Routines
+import com.argus.assistant.connect.Classroom
+import com.argus.assistant.routine.Routine
+import com.argus.assistant.routine.Routines
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -116,7 +116,7 @@ class StudentPackTest {
         val names = Classroom.tools { n, d, p, r -> JSONObject().put("function", JSONObject().put("name", n).put("description", d)) }
             .map { it.getJSONObject("function").getString("name") }.toSet()
         assertEquals(Classroom.toolNames, names)
-        val modes = File(listOf("src/main", "app/src/main").first { File(it).isDirectory }, "java/com/blaze/assistant/agent/Modes.kt").readText()
+        val modes = File(listOf("src/main", "app/src/main").first { File(it).isDirectory }, "java/com/argus/assistant/agent/Modes.kt").readText()
         listOf("classroom_courses", "classroom_coursework").forEach { assertTrue(it, modes.contains("\"$it\"")) }
     }
 }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.DesignPage.Frame
-import com.blaze.assistant.agent.DesignPage.Handle
+import com.argus.assistant.agent.DesignPage.Frame
+import com.argus.assistant.agent.DesignPage.Handle
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -109,7 +109,7 @@ class DesignPageTest {
     @Test fun studioSourcesNeverNameTheOtherAssistant() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
         val files = listOf("agent/DesignPage.kt", "ui/DesignStudio.kt", "ui/ColorWheel.kt", "ui/DesignView.kt")
-            .map { File(root, "com/blaze/assistant/$it") }
+            .map { File(root, "com/argus/assistant/$it") }
         val word = String(charArrayOf('h', 'a', 'r', 'k'))
         files.forEach { assertTrue(it.name, !it.readText().lowercase().contains(word)) }
     }

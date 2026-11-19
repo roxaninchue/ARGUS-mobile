@@ -1,4 +1,4 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
 import org.json.JSONObject
 
@@ -80,7 +80,7 @@ object HomeSchedule {
 
     /**
      * Whether a background pass may use the network now: not on a metered network when the user chose Wi-Fi only, and
-     * not on a metered network while the phone's Data Saver restricts Blaze in the background.
+     * not on a metered network while the phone's Data Saver restricts Argus in the background.
      */
     fun mayRun(metered: Boolean, dataSaverRestricts: Boolean, wifiOnly: Boolean): Boolean =
         !(metered && (wifiOnly || dataSaverRestricts))
@@ -102,7 +102,7 @@ object WidgetIntent {
     private val coins = setOf("bitcoin", "btc", "ethereum", "eth", "solana", "sol", "dogecoin", "doge", "xrp", "ripple", "cardano", "ada", "bnb", "litecoin", "ltc",
         "tether", "usdt", "toncoin", "ton", "tron", "trx", "polkadot", "dot", "shiba", "avalanche", "chainlink")
 
-    /** Understands the common asks; null means "let Blaze work it out" (it then uses home_widget_add). */
+    /** Understands the common asks; null means "let Argus work it out" (it then uses home_widget_add). */
     fun parse(text: String): WidgetSpec? {
         val t = text.trim().trimEnd('.', '!', '?')
         val l = t.lowercase()
@@ -236,7 +236,7 @@ object Interests {
     fun starterWeather() = WidgetSpec(WidgetTypes.WEATHER, "Weather", "Weather", JSONObject().put("use_location", true))
 
     /**
-     * Generic starters when Blaze knows little about the user: weather, top stories for the phone's region, the next
+     * Generic starters when Argus knows little about the user: weather, top stories for the phone's region, the next
      * routine and a "tell me what you're into" card.
      */
     fun starters(): List<WidgetSpec> = listOf(
@@ -256,7 +256,7 @@ object Interests {
     }
 
     /**
-     * Personalised suggestions from what Blaze remembers (memory texts). Each hit carries a confidence; callers fall back
+     * Personalised suggestions from what Argus remembers (memory texts). Each hit carries a confidence; callers fall back
      * to [starters] when nothing is confident. Types the user removed before ([removedCategories]) are skipped.
      */
     data class Suggestion(val spec: WidgetSpec, val confidence: Double, val why: String)

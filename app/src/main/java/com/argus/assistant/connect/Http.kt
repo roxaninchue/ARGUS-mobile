@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 import java.net.HttpURLConnection
 import java.net.URL

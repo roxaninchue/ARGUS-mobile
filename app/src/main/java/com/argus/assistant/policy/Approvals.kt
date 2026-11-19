@@ -1,9 +1,9 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.store.Sql
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.Approval
-import com.blaze.assistant.team.Rule
+import com.argus.assistant.store.Sql
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.Approval
+import com.argus.assistant.team.Rule
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap

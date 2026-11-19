@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.settings
+package com.argus.assistant.ui.argus.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,19 +18,19 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.policy.Audit
-import com.blaze.assistant.policy.AuditStore
-import com.blaze.assistant.policy.AuditView
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
-import com.blaze.assistant.ui.argus.kit.ChipModel
-import com.blaze.assistant.ui.argus.kit.Segmented
-import com.blaze.assistant.ui.argus.kit.SettingsGroup
-import com.blaze.assistant.ui.argus.kit.SettingsItem
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.policy.Audit
+import com.argus.assistant.policy.AuditStore
+import com.argus.assistant.policy.AuditView
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.ui.argus.kit.ChipModel
+import com.argus.assistant.ui.argus.kit.Segmented
+import com.argus.assistant.ui.argus.kit.SettingsGroup
+import com.argus.assistant.ui.argus.kit.SettingsItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -104,9 +104,9 @@ fun ActivityLive() {
     LaunchedEffect(Unit) {
         runCatching {
             withContext(Dispatchers.IO) {
-                val g = com.blaze.assistant.team.TeamGraph.get(ctx)
+                val g = com.argus.assistant.team.TeamGraph.get(ctx)
                 val roster = g.store.all()
-                Triple(AuditStore(g.sql).all(), roster.associate { it.id to it.name } + (com.blaze.assistant.team.BotRules.MANAGER_ID to com.blaze.assistant.BrandName.NAME),
+                Triple(AuditStore(g.sql).all(), roster.associate { it.id to it.name } + (com.argus.assistant.team.BotRules.MANAGER_ID to com.argus.assistant.BrandName.NAME),
                     roster.mapNotNull { b -> b.parentId?.let { b.id to it } }.toMap())
             }
         }.onSuccess { (e, n, t) -> entries = e; names = n; teams = t }
@@ -118,7 +118,7 @@ fun ActivityLive() {
                     writeText(if (csv) AuditView.csv(entries) else AuditView.json(entries))
                 }
             }
-            ctx.startActivity(com.blaze.assistant.media.Media.shareIntent(f))
+            ctx.startActivity(com.argus.assistant.media.Media.shareIntent(f))
         }
     } })
 }

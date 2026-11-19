@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -27,7 +27,7 @@ class IconOnlyTest {
     }
 
     @Test fun stageCardsUseVectorIconsWithDescriptions() {
-        val files = listOf("ui/StageCards.kt", "ui/StageHost.kt").map { File(root(), "com/blaze/assistant/$it").readText() }
+        val files = listOf("ui/StageCards.kt", "ui/StageHost.kt").map { File(root(), "com/argus/assistant/$it").readText() }
         val glyphText = Regex("""Text\(\s*"(?:\\u[0-9A-Fa-f]{4}|[\u2190-\u2BFF\u2600-\u27BF]|\\uD83[CD]\\uD[C-F][0-9A-Fa-f]{2})+"""")
         for (src in files) {
             assertTrue("a Stage card draws a glyph as text: " + glyphText.find(src)?.value, glyphText.find(src) == null)

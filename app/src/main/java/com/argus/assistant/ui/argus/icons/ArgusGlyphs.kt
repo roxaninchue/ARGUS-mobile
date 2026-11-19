@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.icons
+package com.argus.assistant.ui.argus.icons
 
 /**
  * ARGUS's own line icons, drawn here (not generated, not from Lucide) on Lucide's 24-unit grid and with its stroke, so

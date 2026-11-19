@@ -1,4 +1,4 @@
-package com.blaze.assistant.routine
+package com.argus.assistant.routine
 
 import android.content.Context
 import androidx.work.Constraints
@@ -39,7 +39,7 @@ class RoutineLaterWorker(ctx: Context, p: WorkerParameters) : CoroutineWorker(ct
     override suspend fun doWork(): Result {
         val id = inputData.getInt("id", -1)
         val due = inputData.getLong("due", System.currentTimeMillis())
-        if (id < 0 || com.blaze.assistant.connect.AccountGate.locked()) return Result.success()
+        if (id < 0 || com.argus.assistant.connect.AccountGate.locked()) return Result.success()
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { RoutineService.runRoutine(applicationContext, id, due) }
         return Result.success()
     }

@@ -1,4 +1,4 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
 /**
  * 0.46.0 Stage motion tiers, so the Stage feels smooth on every phone (incl. 2-3 GB RAM ones). Only transform + alpha ever

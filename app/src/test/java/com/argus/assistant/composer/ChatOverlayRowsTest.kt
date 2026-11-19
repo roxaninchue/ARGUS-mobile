@@ -1,9 +1,9 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Role
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Role
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

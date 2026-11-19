@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
-import com.blaze.assistant.ui.argus.icons.ArgusGlyphs
-import com.blaze.assistant.ui.argus.icons.LucidePaths
+import com.argus.assistant.ui.argus.icons.ArgusGlyphs
+import com.argus.assistant.ui.argus.icons.LucidePaths
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -24,7 +24,7 @@ class ArgusGlyphsTest {
 
     @Test fun chatHistoryButtonUsesIt() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        val src = File(root, "com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
+        val src = File(root, "com/argus/assistant/ui/team/ChatDrawer.kt").readText()
         assertTrue(src.contains("ArgusGlyphs.MENU_TAPER, \"Chat history\""))
         assertFalse(src.contains("\"rows-3\", \"Chat history\""))
     }

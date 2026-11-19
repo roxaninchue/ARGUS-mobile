@@ -1,11 +1,11 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.composer.SpotlightSearch.Act
-import com.blaze.assistant.composer.SpotlightSearch.Distro
-import com.blaze.assistant.composer.SpotlightSearch.Media
-import com.blaze.assistant.composer.SpotlightSearch.Mode
+import com.argus.assistant.BrandName
+import com.argus.assistant.composer.SpotlightSearch.Act
+import com.argus.assistant.composer.SpotlightSearch.Distro
+import com.argus.assistant.composer.SpotlightSearch.Media
+import com.argus.assistant.composer.SpotlightSearch.Mode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -66,12 +66,12 @@ class SpotlightSearchTest {
 
     // ---------------------------------------------------------------- fallbacks never empty
 
-    @Test fun unmatchedQueryOffersBrowseMusicVideoAndAskBlaze() {
+    @Test fun unmatchedQueryOffersBrowseMusicVideoAndAskArgus() {
         val r = s("zqxjv kkwp")
         assertEquals(Mode.PLAIN, r.mode)
         assertEquals(listOf("fb:browse", "fb:music", "fb:video", "fb:ask"), r.rows.map { it.id })
         assertEquals("Ask ${BrandName.NAME} about \u2018zqxjv kkwp\u2019", r.rows.last().title)
-        assertEquals(Act.AskBlaze("zqxjv kkwp"), r.rows.last().act)
+        assertEquals(Act.AskArgus("zqxjv kkwp"), r.rows.last().act)
         assertFalse(r.rows.any { it.title.contains("No results", true) })
     }
 
@@ -86,7 +86,7 @@ class SpotlightSearchTest {
         for (q in qs) assertTrue(SpotlightSearch.search(q, emptyList()).rows.isNotEmpty())
     }
 
-    @Test fun matchedQueriesStillEndWithAskBlaze() {
+    @Test fun matchedQueriesStillEndWithAskArgus() {
         val r = s("music")
         assertEquals("fb:ask", r.rows.last().id)
         assertTrue(r.rows.size <= SpotlightSearch.MAX_ROWS)

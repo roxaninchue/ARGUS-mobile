@@ -1,12 +1,12 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Base64
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,13 +27,13 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 
 /**
- * Blaze accounts, the same ones Blaze Desktop uses, through blaze-auth (the free Cloudflare
+ * Argus accounts, the same ones Blaze Desktop uses, through blaze-auth (the free Cloudflare
  * Worker in the Blaze-dekstop repo, cloud/). Email + password, or Sign in with Google / GitHub
  * in the browser (PKCE, redirect caught on a random 127.0.0.1 port, one-time code redeemed with
  * our verifier). The session token is Keystore-encrypted ("conn_tok_" prefs are secrets); the
  * signed-in user's name and email are cached for the UI.
  */
-object BlazeAccount {
+object ArgusAccount {
     const val DEFAULT_BASE = "https://blaze-auth.blaze-app.workers.dev"
     private const val SESSION = "conn_tok_blaze_session"
     private const val USER = "blaze_account_user"
@@ -90,7 +90,7 @@ object BlazeAccount {
     /** Call once at app start: shows the cached user straight away, then checks the session and providers. */
     fun start() {
         val cached = Settings.str(USER).takeIf { it.isNotBlank() }?.let { runCatching { User.from(JSONObject(it)) }.getOrNull() }
-        // v0.45.4: Android ended Blaze while the browser sign-in was open: keep saying so until blaze://auth/cb lands.
+        // v0.45.4: Android ended Argus while the browser sign-in was open: keep saying so until blaze://auth/cb lands.
         val waiting = runCatching { AuthReturn.load(pendingStore, System.currentTimeMillis()) }.getOrNull()?.takeIf { it.flow == "login" && cached == null }
         _view.value = _view.value.copy(user = cached, pending = waiting?.provider.orEmpty())
         scope.launch { refreshProviders(true); checkSession(); KeySync.syncIfStale(); SkillSync.syncIfStale() }
@@ -223,7 +223,7 @@ object BlazeAccount {
             val had = _view.value.user != null || Settings.secret(SESSION).isNotBlank()
             Settings.setSecret(SESSION, ""); Settings.setStr(USER, "")
             _view.value = _view.value.copy(user = null)
-            if (had) runCatching { com.blaze.assistant.terminal.CliAuth.signedOut() }   // RC4: the terminal's CLI signs out too
+            if (had) runCatching { com.argus.assistant.terminal.CliAuth.signedOut() }   // RC4: the terminal's CLI signs out too
             AccountGate.recompute()   // account lock: signed out locks ARGUS
             return
         }
@@ -231,12 +231,12 @@ object BlazeAccount {
         Settings.setSecret(SESSION, token); Settings.setStr(USER, user.json().toString())
         _view.value = _view.value.copy(user = user)
         if (fresh) { KeySync.syncSoon(); SkillSync.syncSoon() }   // just signed in: bring this account's model keys here, and ours there
-        // RC4: the terminal's `blaze` CLI is signed in to the same account (its own session; nothing to do when it already is).
-        runCatching { com.blaze.assistant.terminal.CliAuth.sync() }
+        // RC4: the terminal's `argus` CLI is signed in to the same account (its own session; nothing to do when it already is).
+        runCatching { com.argus.assistant.terminal.CliAuth.sync() }
     }
 
     /**
-     * 0.48.0 RC4: a NEW session for the `blaze` CLI in the phone's Linux, for the signed-in account, through blaze-auth's
+     * 0.48.0 RC4: a NEW session for the `argus` CLI in the phone's Linux, for the signed-in account, through blaze-auth's
      * device-code flow (start → approve with this app's session → redeem). The app's own token never leaves the app.
      * Blocking (network); null when signed out or the service refused. Never logs the token.
      */
@@ -573,8 +573,8 @@ object BlazeAccount {
             "</div></body>"
     }
 
-    /** Chrome / Samsung Internet open Blaze from this link (the running app, nothing in it). */
-    internal const val OPEN_APP = "intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.blaze.assistant;end"
+    /** Chrome / Samsung Internet open Argus from this link (the running app, nothing in it). */
+    internal const val OPEN_APP = "intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.argus.assistant;end"
 
     // ---------------- app redirect (v0.45.4): blaze://auth/cb ----------------
 
@@ -625,7 +625,7 @@ object BlazeAccount {
     }
 
     /**
-     * MainActivity hands every blaze://auth/cb link here. The sign-in still waiting takes it. If Android ended Blaze
+     * MainActivity hands every blaze://auth/cb link here. The sign-in still waiting takes it. If Android ended Argus
      * while the browser was open, the saved sign-in is finished from here (login only; a connector's caller is gone).
      */
     fun onAppRedirect(ctx: Context, link: String) {
@@ -673,7 +673,7 @@ object BlazeAccount {
         _view.value = _view.value.copy(message = "")
     }
 
-    /** Deletes the Blaze account. Connected accounts and keys on this phone stay. Returns "" or a plain sentence. */
+    /** Deletes the Argus account. Connected accounts and keys on this phone stay. Returns "" or a plain sentence. */
     suspend fun delete(): String = withContext(Dispatchers.IO) {
         val tok = Settings.secret(SESSION)
         if (tok.isNotBlank()) try {

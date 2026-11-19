@@ -1,14 +1,14 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
  * Speed readout (speed plan step 14): every cloud turn logs time to first token, total time,
  * steps, how many tools were sent and how big the prompt was, so each speed change can be
- * measured on whatever phone Blaze runs on.
+ * measured on whatever phone Argus runs on.
  */
 object SpeedLog {
     data class Entry(val at: Long, val firstMs: Long, val totalMs: Long, val steps: Int, val tools: Int, val promptChars: Int, val route: String,
@@ -78,7 +78,7 @@ object SpeedLog {
 
     /** v0.45.1: screen reads since start: full tree walks (average time) and reads served from the last walk. */
     fun screenLine(): String = try {
-        com.blaze.assistant.phone.BlazeAccessibilityService.instance?.let { s -> screenLine(s.walksDone, s.walksReused, s.walkMsTotal) }.orEmpty()
+        com.argus.assistant.phone.ArgusAccessibilityService.instance?.let { s -> screenLine(s.walksDone, s.walksReused, s.walkMsTotal) }.orEmpty()
     } catch (_: Throwable) { "" }
 
     fun screenLine(walks: Int, reused: Int, ms: Long): String =

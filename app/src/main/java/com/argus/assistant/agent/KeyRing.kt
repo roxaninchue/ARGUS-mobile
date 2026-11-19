@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -20,7 +20,7 @@ object KeyRing {
     private fun saveExtras(pid: String, l: List<String>) {
         if (l.distinct() == extras(pid)) return
         setExtrasSynced(pid, l)
-        com.blaze.assistant.connect.KeySync.localChange(pid)   // follows the Blaze account to the PC
+        com.argus.assistant.connect.KeySync.localChange(pid)   // follows the Argus account to the PC
     }
 
     /** Replaces the extras without a new change stamp (used by key sync). */

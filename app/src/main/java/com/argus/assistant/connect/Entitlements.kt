@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -140,12 +140,12 @@ object Entitlements {
         return _snap.value
     }
 
-    private fun who(): String = runCatching { com.blaze.assistant.agent.Settings.gatewayToken().takeLast(10) }.getOrDefault("")
+    private fun who(): String = runCatching { com.argus.assistant.agent.Settings.gatewayToken().takeLast(10) }.getOrDefault("")
 
     private fun call(method: String, path: String, body: String?): Pair<Int, String> {
-        val c = UrlSafety.open(com.blaze.assistant.agent.Providers.GATEWAY_BASE.trimEnd('/') + path)
+        val c = UrlSafety.open(com.argus.assistant.agent.Providers.GATEWAY_BASE.trimEnd('/') + path)
         c.requestMethod = method; c.connectTimeout = 8_000; c.readTimeout = 10_000
-        c.setRequestProperty("Authorization", "Bearer " + com.blaze.assistant.agent.Settings.gatewayToken())
+        c.setRequestProperty("Authorization", "Bearer " + com.argus.assistant.agent.Settings.gatewayToken())
         try {
             if (body != null) { c.doOutput = true; c.setRequestProperty("Content-Type", "application/json"); c.outputStream.use { it.write(body.toByteArray()) } }
             val code = c.responseCode
@@ -155,7 +155,7 @@ object Entitlements {
         } finally { c.disconnect() }
     }
 
-    private fun signedIn() = runCatching { com.blaze.assistant.agent.Settings.gatewayToken().isNotBlank() }.getOrDefault(false)
+    private fun signedIn() = runCatching { com.argus.assistant.agent.Settings.gatewayToken().isNotBlank() }.getOrDefault(false)
 
     /** Call on IO. Refreshes when [force] or the snapshot is stale; returns what we have (cache when offline). */
     fun refresh(ctx: Context, force: Boolean = false): Snapshot? {

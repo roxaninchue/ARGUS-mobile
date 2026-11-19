@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.53.6 (Finn's screenshot: "I think that's plenty, just give what you found" got "I couldn't confirm it: not checked

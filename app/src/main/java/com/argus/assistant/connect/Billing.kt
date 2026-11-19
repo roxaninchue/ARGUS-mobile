@@ -1,12 +1,12 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.45.3: Blaze Cloud paid plans and checkout (gateway billing API; yearly terms since gateway 0.6.2).
+ * v0.45.3: Argus Cloud paid plans and checkout (gateway billing API; yearly terms since gateway 0.6.2).
  *
  *  - GET /v1/billing/methods: plans (id, price_usd, price_usd_year), payment methods (details, ref_label, hint,
  *    amounts {plan: "ZMW 200"}, amounts_year {plan: "ZMW 2000"}), periods {month:{days:30}, year:{days:365}}.
@@ -103,12 +103,12 @@ object Billing {
         JSONObject(body).optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
     } catch (_: Exception) { null } ?: if (code == 401) "Sign in to ${BrandName.NAME} first." else "The payment couldn't be sent ($code). Try again in a moment."
 
-    /** The gateway calls (signed in with the Blaze account token). */
+    /** The gateway calls (signed in with the Argus account token). */
     object Client {
         private fun call(method: String, path: String, body: String?): Pair<Int, String> {
-            val c = UrlSafety.open(com.blaze.assistant.agent.Providers.GATEWAY_BASE.trimEnd('/') + path)
+            val c = UrlSafety.open(com.argus.assistant.agent.Providers.GATEWAY_BASE.trimEnd('/') + path)
             c.requestMethod = method; c.connectTimeout = 15_000; c.readTimeout = 30_000
-            c.setRequestProperty("Authorization", "Bearer " + com.blaze.assistant.agent.Settings.gatewayToken())
+            c.setRequestProperty("Authorization", "Bearer " + com.argus.assistant.agent.Settings.gatewayToken())
             try {
                 if (body != null) { c.doOutput = true; c.setRequestProperty("Content-Type", "application/json"); c.outputStream.use { it.write(body.toByteArray()) } }
                 val code = c.responseCode

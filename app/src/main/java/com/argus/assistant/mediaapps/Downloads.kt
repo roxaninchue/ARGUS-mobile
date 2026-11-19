@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -18,12 +18,12 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.blaze.assistant.R
-import com.blaze.assistant.mediaapps.store.Choice
-import com.blaze.assistant.mediaapps.store.StoreDetail
-import com.blaze.assistant.mediaapps.store.StoreError
-import com.blaze.assistant.mediaapps.store.StoreItem
-import com.blaze.assistant.mediaapps.store.StoreSources
+import com.argus.assistant.R
+import com.argus.assistant.mediaapps.store.Choice
+import com.argus.assistant.mediaapps.store.StoreDetail
+import com.argus.assistant.mediaapps.store.StoreError
+import com.argus.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreSources
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * v0.30.1: the Store's download queue (wave B 18: several at once, see DlConcurrency; wave B 19: verified, see DlVerify). In order, run by a WorkManager worker in the foreground (progress
- * notification), so it keeps going with Blaze closed and comes back after the app is killed or the phone restarts.
+ * notification), so it keeps going with Argus closed and comes back after the app is killed or the phone restarts.
  * Each stream is fetched in 8 MB HTTP ranges into a .part file, so a dropped connection resumes where it stopped.
  * Expired or refused stream urls are fetched again from YouTube; network errors retry with backoff (2 s … 5 min, up to
  * 8 tries, reset whenever bytes arrive); no network = wait for it. Pause keeps the .part files; Cancel deletes them.
@@ -187,13 +187,13 @@ class MediaDownloadWorker(ctx: Context, params: WorkerParameters) : CoroutineWor
         var job = Downloads.update(j0.id) { it.copy(status = DlStatus.RUNNING) } ?: return null
         try {
             if (!DlLogic.hasSpace(MediaFiles.freeBytes(c), job))
-                throw Fatal("Not enough space: needs ${com.blaze.assistant.mediaapps.TimeText.size(DlLogic.spaceNeeded(job))} free")
+                throw Fatal("Not enough space: needs ${com.argus.assistant.mediaapps.TimeText.size(DlLogic.spaceNeeded(job))} free")
             // v0.45.18: the plan's monthly limit. The server counts (atomic); the download starts only on its yes.
-            if (!job.counted) when (val g = com.blaze.assistant.connect.Entitlements.consume(c, job.kind, job.videoId)) {
-                com.blaze.assistant.connect.Entitlements.Gate.Ok -> job = Downloads.update(job.id) { it.copy(counted = true) } ?: throw Stop()
-                com.blaze.assistant.connect.Entitlements.Gate.Skip -> {}
-                is com.blaze.assistant.connect.Entitlements.Gate.Blocked -> throw Fatal(g.message)
-                is com.blaze.assistant.connect.Entitlements.Gate.Offline -> throw Transient(g.why)
+            if (!job.counted) when (val g = com.argus.assistant.connect.Entitlements.consume(c, job.kind, job.videoId)) {
+                com.argus.assistant.connect.Entitlements.Gate.Ok -> job = Downloads.update(job.id) { it.copy(counted = true) } ?: throw Stop()
+                com.argus.assistant.connect.Entitlements.Gate.Skip -> {}
+                is com.argus.assistant.connect.Entitlements.Gate.Blocked -> throw Fatal(g.message)
+                is com.argus.assistant.connect.Entitlements.Gate.Offline -> throw Transient(g.why)
             }
             var refreshed = 0
             for (i in job.parts.indices) {

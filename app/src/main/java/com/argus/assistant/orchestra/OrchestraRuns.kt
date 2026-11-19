@@ -1,9 +1,9 @@
-package com.blaze.assistant.orchestra
+package com.argus.assistant.orchestra
 
 import android.content.Context
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.BgAgents
-import com.blaze.assistant.composer.ModelChoice
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.BgAgents
+import com.argus.assistant.composer.ModelChoice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -17,8 +17,8 @@ import java.io.File
  *  - the planner agent writes the blueprint (Pipelines.skeleton + its JSON), then the [Orchestrator] runs every node
  *    as its own agent (Session.runNode: a specialist tool loop with the node's tier — planners on Inferno, coders and
  *    writers on Flare, searches on Spark, unless the user picked a tier), up to [BgAgents.cap] at once;
- *  - builds and tests go through Blaze Terminal (the terminal-first route), each in the run's own project folder;
- *  - the run's state is saved after every node (filesDir/orchestra/<id>.json), so a run cut by Blaze closing picks up
+ *  - builds and tests go through Argus Terminal (the terminal-first route), each in the run's own project folder;
+ *  - the run's state is saved after every node (filesDir/orchestra/<id>.json), so a run cut by Argus closing picks up
  *    where it was (BgAgents re-queues it with resume = true and the finished nodes are not redone);
  *  - every node event is one step on the run's work pill ("Blueprint · 14 steps · 3m 2s ›").
  *
@@ -63,7 +63,7 @@ object OrchestraRuns {
     /** Runs blueprint [bg] to the end; returns the agent's reply (Markdown with its rich block). Throws on cancel. */
     suspend fun run(bg: BgAgents.Bg, step: (String, Int, List<String>) -> Unit): Pair<Boolean, String> {
         val ask = decode(bg.task)
-        val root = "/root/phone/Blaze/blueprints/${bg.id.lowercase()}"
+        val root = "/root/phone/Argus/blueprints/${bg.id.lowercase()}"
         val saved = file(bg.id)?.takeIf { it.exists() }?.let { f -> try { BlueprintStore.restore(JSONObject(withContext(Dispatchers.IO) { f.readText() })) } catch (_: Exception) { null } }
         val store = saved ?: BlueprintStore(Pipelines.skeleton(ask.shape, ask.goal, bg.id, ask.inputs)).also { it.note("meta/root", root) }
         active[bg.id] = store
@@ -92,7 +92,7 @@ object OrchestraRuns {
             override suspend fun exec(command: String): Pair<Int, String> = exec0("cd '$root' && $command", 900)
             override suspend fun saveDoc(title: String, markdown: String): String {
                 val r = session.runNode("", "", "", saveDoc = markdown to title)
-                return com.blaze.assistant.agent.SaveFile.pathIn(r) ?: r.take(200)
+                return com.argus.assistant.agent.SaveFile.pathIn(r) ?: r.take(200)
             }
         }
         val cfg = Orchestrator.Config(maxParallel = try { BgAgents.cap() } catch (_: Throwable) { 2 })
@@ -104,9 +104,9 @@ object OrchestraRuns {
         return outcome.ok to result(store, outcome)
     }
 
-    /** Blaze Terminal (the terminal-first route): (exit code, output). */
+    /** Argus Terminal (the terminal-first route): (exit code, output). */
     private suspend fun exec0(cmd: String, timeoutSec: Int = 120): Pair<Int, String> {
-        val out = com.blaze.assistant.terminal.Terminal.run("$cmd; echo \"__BLAZE_EXIT=\$?\"", timeoutSec, linux = true)
+        val out = com.argus.assistant.terminal.Terminal.run("$cmd; echo \"__BLAZE_EXIT=\$?\"", timeoutSec, linux = true)
         val code = Regex("__BLAZE_EXIT=(\\d+)").findAll(out).lastOrNull()?.groupValues?.get(1)?.toIntOrNull() ?: 1
         return code to out.replace(Regex("__BLAZE_EXIT=\\d+\\s*$"), "").trimEnd()
     }

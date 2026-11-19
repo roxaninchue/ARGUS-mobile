@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * v0.45.7: what the Cloud sync switch shows. Before a passphrase is set the switch said ON while the label said

@@ -1,36 +1,36 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** 0.45.20 feature batch items 9 (@all: Blaze does, Halo brief or quiet) and 10 (no voice filler). Strict 5/5. */
+/** 0.45.20 feature batch items 9 (@all: Argus does, Halo brief or quiet) and 10 (no voice filler). Strict 5/5. */
 class DuoAll20Test {
     private fun five(f: () -> Unit) = repeat(5) { f() }
 
-    @Test fun halo_quietOrBrief_neverRepeatsBlaze() = five {
-        val blaze = "The Eiffel Tower is 330 metres tall and was finished in 1889 for the World's Fair."
-        assertEquals("", DuoAll.haloLine("[[quiet]]", blaze))
-        assertEquals("", DuoAll.haloLine("  ", blaze))
-        assertEquals("a rephrase is a repeat", "", DuoAll.haloLine("It is 330 metres tall, finished in 1889 for the World's Fair.", blaze))
-        val add = DuoAll.haloLine("Lifts to the top close at 22:30 in winter. Book ahead. Also bring a jacket. And water.", blaze)
+    @Test fun halo_quietOrBrief_neverRepeatsArgus() = five {
+        val argus = "The Eiffel Tower is 330 metres tall and was finished in 1889 for the World's Fair."
+        assertEquals("", DuoAll.haloLine("[[quiet]]", argus))
+        assertEquals("", DuoAll.haloLine("  ", argus))
+        assertEquals("a rephrase is a repeat", "", DuoAll.haloLine("It is 330 metres tall, finished in 1889 for the World's Fair.", argus))
+        val add = DuoAll.haloLine("Lifts to the top close at 22:30 in winter. Book ahead. Also bring a jacket. And water.", argus)
         assertEquals("Lifts to the top close at 22:30 in winter. Book ahead.", add)
         assertTrue(DuoAll.haloLine("x ".repeat(400) + "unique words here", "").length <= DuoAll.HALO_CHARS)
     }
 
     @Test fun prompts_blazeDoes_haloAddsOnlyWhatsMissing() = five {
-        val b = DuoAll.blazeSystem("SOUL")
+        val b = DuoAll.argusSystem("SOUL")
         assertTrue(b.startsWith("SOUL") && b.contains("You are the doer") && b.contains("don't hand anything to Halo"))
         val h = DuoAll.haloSystem("SOUL", "${BrandName.NAME} said this.")
         assertTrue(h.contains("${BrandName.NAME} said this.") && h.contains(DuoAll.QUIET) && h.contains("Never repeat") && h.contains("never use tools"))
     }
 
-    @Test fun agent_allChatRunsBlazeFirstThenHalo() = five {
-        val src = listOf(File("src/main/java/com/blaze/assistant/agent/Agent.kt"), File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
+    @Test fun agent_allChatRunsArgusFirstThenHalo() = five {
+        val src = listOf(File("src/main/java/com/argus/assistant/agent/Agent.kt"), File("app/src/main/java/com/argus/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         assertTrue(src.contains("if (kind == Duo.Kind.CHAT) { duoDoer(name, facts)"))
         val body = src.substringAfter("private suspend fun duoDoer(").substringBefore("/** After both agreed")
         assertTrue("${BrandName.NAME} before Halo", body.indexOf("ask(Duo.Who.BLAZE") in 0 until body.indexOf("DuoAll.haloSystem"))
@@ -52,7 +52,7 @@ class DuoAll20Test {
     }
 
     @Test fun voice_ruleAndHooksAreWired() = five {
-        val src = listOf(File("src/main/java/com/blaze/assistant/agent/Agent.kt"), File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
+        val src = listOf(File("src/main/java/com/argus/assistant/agent/Agent.kt"), File("app/src/main/java/com/argus/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         assertTrue(src.contains("s(\"voice\", VoiceFiller.RULE)"))
         assertTrue(src.contains("VoiceFiller.spoken(last.text"))
         assertTrue(src.contains("VoiceFiller.onlyFiller(part)"))

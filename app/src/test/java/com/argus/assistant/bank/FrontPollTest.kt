@@ -1,4 +1,4 @@
-package com.blaze.assistant.bank
+package com.argus.assistant.bank
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

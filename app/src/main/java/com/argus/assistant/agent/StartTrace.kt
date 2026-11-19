@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.8 the start of a reply, timed on the monotonic clock (System.nanoTime, never the wall clock), from the Send tap:

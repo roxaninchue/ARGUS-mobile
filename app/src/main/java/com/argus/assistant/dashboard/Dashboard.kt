@@ -1,18 +1,18 @@
-package com.blaze.assistant.dashboard
+package com.argus.assistant.dashboard
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.ChatStore
-import com.blaze.assistant.agent.IntentCache
-import com.blaze.assistant.agent.Learning
-import com.blaze.assistant.agent.Memory
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.agent.Usage
-import com.blaze.assistant.device.DeviceStatus
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.ChatStore
+import com.argus.assistant.agent.IntentCache
+import com.argus.assistant.agent.Learning
+import com.argus.assistant.agent.Memory
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.agent.Usage
+import com.argus.assistant.device.DeviceStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,14 +28,14 @@ import java.net.ServerSocket
 import java.net.Socket
 
 /**
- * Blaze's local dashboard: a tiny web server on the phone (default 127.0.0.1:8787) with a page to
- * chat with Blaze and see analytics. "Share on Wi-Fi" lets a laptop on the same network open it,
+ * Argus's local dashboard: a tiny web server on the phone (default 127.0.0.1:8787) with a page to
+ * chat with Argus and see analytics. "Share on Wi-Fi" lets a laptop on the same network open it,
  * protected by a token in the link.
  */
 object Dashboard {
     const val PORT = 8787
     private var server: ServerSocket? = null
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.blaze.assistant.device.CrashLog.guard)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.argus.assistant.device.CrashLog.guard)
     val running = MutableStateFlow(false)
     private lateinit var app: Context
 
@@ -63,7 +63,7 @@ object Dashboard {
         app = ctx.applicationContext
         if (server != null) return
         val s = try { ServerSocket(PORT, 16, if (lan) InetAddress.getByName("0.0.0.0") else InetAddress.getByName("127.0.0.1")) }
-            catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("dashboard start", e); return }
+            catch (e: Exception) { com.argus.assistant.device.CrashLog.error("dashboard start", e); return }
         server = s; boundLan = lan; running.value = true
         scope.launch {
             while (!s.isClosed) {
@@ -73,7 +73,7 @@ object Dashboard {
                     catch (e: DashHttp.BadRequest) { runCatching { send(c.getOutputStream(), e.code, "text/plain", e.message.orEmpty()) } }
                     catch (e: java.net.SocketTimeoutException) { }
                     catch (e: java.io.IOException) { }
-                    catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("dashboard request", e); runCatching { send(c.getOutputStream(), 500, "text/plain", "${BrandName.NAME} dashboard error") } }
+                    catch (e: Exception) { com.argus.assistant.device.CrashLog.error("dashboard request", e); runCatching { send(c.getOutputStream(), 500, "text/plain", "${BrandName.NAME} dashboard error") } }
                     finally { runCatching { c.close() } }
                 }
             }
@@ -116,12 +116,12 @@ object Dashboard {
             path == "/api/chat" -> {
                 val m = Agent.messagesOf(q["id"].orEmpty()) ?: emptyList()
                 send(out, 200, "application/json", JSONArray().apply { m.forEach { put(JSONObject().put("role", it.role.name).put("text", it.text).put("meta", it.meta)
-                    .put("id", it.gid).apply { if (it.reactions.isNotEmpty()) put("reactions", com.blaze.assistant.agent.Reaction.json(it.reactions)) }) } }.toString())
+                    .put("id", it.gid).apply { if (it.reactions.isNotEmpty()) put("reactions", com.argus.assistant.agent.Reaction.json(it.reactions)) }) } }.toString())
             }
             path == "/api/send" && method == "POST" -> {
                 val o = try { JSONObject(body) } catch (_: Exception) { JSONObject() }
                 val (id, reply) = runBlocking { Agent.askIn(o.optString("chat").ifBlank { null }, o.optString("text"),
-                    untrusted = if (remote) com.blaze.assistant.agent.ConfirmGate.DASHBOARD else null) }
+                    untrusted = if (remote) com.argus.assistant.agent.ConfirmGate.DASHBOARD else null) }
                 send(out, 200, "application/json", JSONObject().put("chat", id).put("reply", reply).toString())
             }
             // v0.33.0 Desktop Bridge.
@@ -157,7 +157,7 @@ object Dashboard {
             .put("month", JSONObject().put("tokens", m.input + m.output).put("cost", m.cost).put("calls", m.calls))
             .put("daily", JSONArray(Usage.daily(14)))
             .put("chats", ChatStore.list().size).put("memories", Memory.facts.value.size).put("skills", Learning.skills.value.size)
-            .put("instant", IntentCache.size()).put("jobs", com.blaze.assistant.terminal.Terminal.jobCount())
+            .put("instant", IntentCache.size()).put("jobs", com.argus.assistant.terminal.Terminal.jobCount())
             .put("device", JSONObject().put("battery", d.battery).put("charging", d.charging).put("temp", d.tempC)
                 .put("storageFree", d.freeStorageGb).put("storageTotal", d.totalStorageGb).put("ramFree", d.freeRamMb).put("ramTotal", d.totalRamMb).put("network", d.network))
             .put("warnings", JSONArray(DeviceStatus.warnings(d)))

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,15 +12,15 @@ import java.io.File
  */
 class OnboardingLandscapeTest {
     private val src: String = File(listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory },
-        "com/blaze/assistant/ui/space/SpaceOnboarding.kt").readText()
+        "com/argus/assistant/ui/space/SpaceOnboarding.kt").readText()
     private val intro: String = File(listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory },
-        "com/blaze/assistant/ui/space/SpaceIntro.kt").readText()
+        "com/argus/assistant/ui/space/SpaceIntro.kt").readText()
     private fun body(fn: String, s: String = src) = s.substringAfter("private fun $fn(").substringBefore("\n}\n")
 
     /** Owner 2026-11-19: no pop-out box; a wheel on the page with a framed middle row, snapping, sized for a short window. */
     @Test fun languageIsAWheelOnThePage() {
         val b = body("LanguageStep")
-        assertTrue("com.blaze.assistant.ui.common.WindowUi.short()" in b)
+        assertTrue("com.argus.assistant.ui.common.WindowUi.short()" in b)
         assertTrue("cutoutSafe()" in b && "BoxWithConstraints(" in b)
         assertTrue("one each side on a short window", "LanguagePick.side(short)" in b && "LanguagePick.height(short)" in b)
         assertTrue("the frame is the middle row", "Modifier.align(Alignment.Center).size(wheelW.dp, LanguagePick.ROW_H.dp)" in b)

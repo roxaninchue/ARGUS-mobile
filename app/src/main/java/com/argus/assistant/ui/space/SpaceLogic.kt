@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /*
  * 0.52.3 "ARGUS x Hark" shell: the pure rules behind the new look (no Compose, no Android), so the unit tests pin them
@@ -277,7 +277,7 @@ object SpaceHomeCards {
 /**
  * The profile page (Hark's settings): a big name + e-mail header, a plan card, then two grouped cards of icon + label +
  * chevron rows, a sign-out row, and the floating Search pill. Each row opens an existing settings page by id
- * ([com.blaze.assistant.ui.SettingsScreen]). 0.52.3: this replaces the old Settings list, Advanced and the brain pages.
+ * ([com.argus.assistant.ui.SettingsScreen]). 0.52.3: this replaces the old Settings list, Advanced and the brain pages.
  */
 object SpaceProfile {
     enum class Icon { PROFILE, SCHEDULE, ACCOUNTS, WALLET, HOLDING, SECURITY, SYSTEM, FEEDBACK, ABOUT, PLAN, SIGN_OUT }
@@ -353,9 +353,9 @@ object SpaceSettings {
  * [IntroClip]), [Step.LANGUAGE] one pill with the app language (the phone's to begin with, AppLang.initial) that opens into the list
  * ([LanguagePick]), then [Step.SIGN_IN] (account lock: no way past it signed out). On a fresh install the account lock
  * screen is the sign-in, so MainActivity plays INTRO and LANGUAGE before it ([beforeLock]) and ChatScreen finishes
- * onboarding after it. Finishing starts the downloads ([com.blaze.assistant.setup.SetupPlan]), which finish in the
+ * onboarding after it. Finishing starts the downloads ([com.argus.assistant.setup.SetupPlan]), which finish in the
  * background (Life shows "Finishing setup"; nothing waits on them), and hands over to
- * [com.blaze.assistant.setup.FirstRun]: the "Set up ARGUS" checklist in Life and ARGUS's own introduction in the chat.
+ * [com.argus.assistant.setup.FirstRun]: the "Set up ARGUS" checklist in Life and ARGUS's own introduction in the chat.
  * No permission screens: every permission is asked when a task needs it, or from the checklist.
  */
 object SpaceOnboarding {

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import java.util.concurrent.ConcurrentHashMap
 

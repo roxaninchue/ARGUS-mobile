@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -8,7 +8,7 @@ import java.io.File
 
 /**
  * Student pack (v0.16.0): flashcards with spaced repetition, shown in the Learn view and filled by
- * the tutor skill through the `flashcards` tool. Stored in ~/learn/cards.json (Blaze's home, so the
+ * the tutor skill through the `flashcards` tool. Stored in ~/learn/cards.json (Argus's home, so the
  * terminal and skills can read it too, and updates never touch it).
  *
  * Scheduling (phase 2, 2026-11-18) is FSRS 4.5: each card keeps a stability and a difficulty; a miss relearns
@@ -134,7 +134,7 @@ object Flashcards {
     // ---------------- store ----------------
 
     @Volatile var fileOverride: File? = null
-    private fun file(): File = fileOverride ?: File(com.blaze.assistant.terminal.Terminal.home(), "learn/cards.json")
+    private fun file(): File = fileOverride ?: File(com.argus.assistant.terminal.Terminal.home(), "learn/cards.json")
 
     private val _cards = MutableStateFlow<List<Card>>(emptyList())
     val cards: StateFlow<List<Card>> = _cards

@@ -1,12 +1,12 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * 0.45.20 (feature batch item 9, the duo rule of 2026-10-21): @all no longer gets two full answers at once ("both
- * yapping"). Blaze is the doer and answers first (the work, the tools when the turn needs them). Halo then sees Blaze's
- * answer and either adds what Blaze missed or got wrong in a sentence or two, or stays quiet. A Halo line that repeats
- * Blaze is dropped ([haloLine]). Pure; DuoAllTest.
+ * yapping"). Argus is the doer and answers first (the work, the tools when the turn needs them). Halo then sees Argus's
+ * answer and either adds what Argus missed or got wrong in a sentence or two, or stays quiet. A Halo line that repeats
+ * Argus is dropped ([haloLine]). Pure; DuoAllTest.
  */
 object DuoAll {
     /** Halo's quiet tag: nothing worth adding. */
@@ -14,18 +14,18 @@ object DuoAll {
     /** Halo's add-on is short: at most this many sentences and characters. */
     const val HALO_SENTENCES = 2
     const val HALO_CHARS = 280
-    /** Word overlap with Blaze's answer at or above this = a repeat (dropped). */
+    /** Word overlap with Argus's answer at or above this = a repeat (dropped). */
     const val SAME = 0.6
 
-    fun blazeSystem(base: String): String = base +
+    fun argusSystem(base: String): String = base +
         "\nThe user wrote to you and Halo together (@all). You are the doer: answer the user fully yourself, in your normal " +
         "length (short for small talk). Halo reads your answer afterwards and only adds what you missed, so don't mention Halo, " +
         "don't hand anything to Halo and don't wait for Halo. End with exactly one control tag on its own at the very end: " +
         "[[to: user]] if you asked the user something, else [[done]]."
 
-    fun haloSystem(base: String, blazeAnswer: String): String = base +
+    fun haloSystem(base: String, argusAnswer: String): String = base +
         "\nThe user wrote to you and ${BrandName.NAME} together (@all). ${BrandName.NAME} has ALREADY answered; here is ${BrandName.NAME}'s answer:\n\"\"\"\n" +
-        blazeAnswer.take(4000) + "\n\"\"\"\n" +
+        argusAnswer.take(4000) + "\n\"\"\"\n" +
         "Your job: be brief and accurate. If ${BrandName.NAME}'s answer is right and complete, reply with exactly $QUIET and nothing else. " +
         "Otherwise add ONLY what ${BrandName.NAME} missed or got wrong, in one or two short sentences. Never repeat, rephrase or praise " +
         "${BrandName.NAME}'s answer, never greet again if ${BrandName.NAME} already greeted, and never use tools for this. No control tags other than $QUIET."
@@ -35,19 +35,19 @@ object DuoAll {
 
     private fun bag(t: String): Set<String> = words.findAll(t.lowercase()).map { it.value }.filter { it.length > 2 }.toSet()
 
-    /** Share of Halo's words that Blaze's answer already has (0..1). */
-    fun overlap(halo: String, blaze: String): Double {
+    /** Share of Halo's words that Argus's answer already has (0..1). */
+    fun overlap(halo: String, argus: String): Double {
         val h = bag(halo); if (h.isEmpty()) return 1.0
-        val b = bag(blaze)
+        val b = bag(argus)
         return h.count { it in b }.toDouble() / h.size
     }
 
-    /** What Halo's raw reply shows: "" for quiet, empty, or a repeat of Blaze; else at most two sentences / 280 chars. */
-    fun haloLine(raw: String, blazeAnswer: String): String {
+    /** What Halo's raw reply shows: "" for quiet, empty, or a repeat of Argus; else at most two sentences / 280 chars. */
+    fun haloLine(raw: String, argusAnswer: String): String {
         if (raw.contains(QUIET, ignoreCase = true)) return ""
         var t = tag.replace(raw, "").trim()
         if (t.isEmpty()) return ""
-        if (blazeAnswer.isNotBlank() && overlap(t, blazeAnswer) >= SAME) return ""
+        if (argusAnswer.isNotBlank() && overlap(t, argusAnswer) >= SAME) return ""
         val sentences = Regex("(?<=[.!?])\\s+").split(t).filter { it.isNotBlank() }
         if (sentences.size > HALO_SENTENCES) t = sentences.take(HALO_SENTENCES).joinToString(" ")
         if (t.length > HALO_CHARS) t = t.take(HALO_CHARS - 1).substringBeforeLast(' ').trimEnd(',', ';', ':') + "\u2026"

@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.JdbcSql
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.JdbcSql
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -37,28 +37,28 @@ class ProjectDocsTest {
     @Test fun fitKeepsTheTopWithinTheCap() {
         val f = Projects.fit(long("alpha"))
         assertTrue(f.trimmed)
-        assertTrue("${BlazeDb.tokens(f.text)} tokens", BlazeDb.tokens(f.text) <= Projects.BRIEF_TOKENS)
+        assertTrue("${ArgusDb.tokens(f.text)} tokens", ArgusDb.tokens(f.text) <= Projects.BRIEF_TOKENS)
         assertTrue(f.text.startsWith("Purpose: ship the alpha app.\nRules: never force-push main."))
         assertFalse(f.text.contains("quokkaharbour"))
         // Whitespace alone never costs words.
         val spaced = (1..200).joinToString("\n\n\n") { "rule $it    keep   it" }
         val g = Projects.fit(spaced)
-        if (BlazeDb.tokens(Projects.squeeze(spaced)) <= Projects.BRIEF_TOKENS) { assertFalse(g.trimmed); assertTrue(g.text.contains("rule 200 keep it")) }
+        if (ArgusDb.tokens(Projects.squeeze(spaced)) <= Projects.BRIEF_TOKENS) { assertFalse(g.trimmed); assertTrue(g.text.contains("rule 200 keep it")) }
         // A short brief is kept exactly.
         assertEquals("Purpose: x", Projects.fit("  Purpose: x \n").text)
         // One giant line and multi-byte text still fit.
-        assertTrue(BlazeDb.tokens(Projects.fit("é".repeat(5_000)).text) <= Projects.BRIEF_TOKENS)
-        assertTrue(BlazeDb.tokens(Projects.fit("x".repeat(9_000)).text) <= Projects.BRIEF_TOKENS)
+        assertTrue(ArgusDb.tokens(Projects.fit("é".repeat(5_000)).text) <= Projects.BRIEF_TOKENS)
+        assertTrue(ArgusDb.tokens(Projects.fit("x".repeat(9_000)).text) <= Projects.BRIEF_TOKENS)
     }
 
     @Test fun editorCutNeverPassesTheCap() {
         assertEquals("short", Projects.cutTokens("short", Projects.BRIEF_TOKENS))
         val cut = Projects.cutTokens("😀".repeat(2_000), Projects.BRIEF_TOKENS)
-        assertTrue(BlazeDb.tokens(cut) <= Projects.BRIEF_TOKENS)
+        assertTrue(ArgusDb.tokens(cut) <= Projects.BRIEF_TOKENS)
         assertEquals(0, cut.length % 2)   // never half a surrogate pair
         Projects.use(listOf(Project("p1", "One", chats = listOf("c1"))))
         Projects.setBrief("p1", long("beta"))
-        assertTrue(BlazeDb.tokens(Projects.get("p1")!!.brief) <= Projects.BRIEF_TOKENS)
+        assertTrue(ArgusDb.tokens(Projects.get("p1")!!.brief) <= Projects.BRIEF_TOKENS)
     }
 
     @Test fun updateBriefCompressesAndKeepsEverythingAsNotes() {
@@ -66,7 +66,7 @@ class ProjectDocsTest {
         val full = long("gamma")
         val reply = Projects.updateBrief("p1", full, now = 1_000L)
         val p = Projects.get("p1")!!
-        assertTrue(BlazeDb.tokens(p.brief) <= Projects.BRIEF_TOKENS)
+        assertTrue(ArgusDb.tokens(p.brief) <= Projects.BRIEF_TOKENS)
         assertTrue(p.brief.startsWith("Purpose: ship the gamma app."))
         assertTrue(reply, reply.contains("cap is 600"))
         assertTrue(p.notes.any { it.text == "Purpose: old brief text" })
@@ -82,7 +82,7 @@ class ProjectDocsTest {
         val big = long("delta", 9_000)
         val list = listOf(Project("a", "A", brief = big), Project("b", "B", brief = "Purpose: fine"))
         val out = Projects.migrate(list, 5L)
-        assertTrue(BlazeDb.tokens(out[0].brief) <= Projects.BRIEF_TOKENS)
+        assertTrue(ArgusDb.tokens(out[0].brief) <= Projects.BRIEF_TOKENS)
         assertEquals(big, out[0].notes.single().text)
         assertEquals(list[1], out[1])
         assertEquals(out, Projects.migrate(out, 6L))   // idempotent
@@ -101,7 +101,7 @@ class ProjectDocsTest {
         assertFalse(st.ensure(a))   // nothing changed: no reindex
         val chunks = ProjectDocs.chunksOf(a)
         assertTrue(chunks.size > 5)
-        assertTrue(chunks.all { BlazeDb.tokens(it.text) <= ProjectDocs.MAX_TOKENS + 20 })
+        assertTrue(chunks.all { ArgusDb.tokens(it.text) <= ProjectDocs.MAX_TOKENS + 20 })
         assertEquals(chunks.size, st.count("a"))
 
         val hits = st.search("a", "quokkaharbour", 4)

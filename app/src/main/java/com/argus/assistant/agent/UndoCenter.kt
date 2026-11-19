@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * v0.39.0 Undo bar: when Blaze finishes an undoable action on its own (Autopilot), the chat shows "<what> · You have
+ * v0.39.0 Undo bar: when Argus finishes an undoable action on its own (Autopilot), the chat shows "<what> · You have
  * 10 seconds to undo" with an Undo button. Only actions with a real way back register one ([undoFor]); everything
  * else just gets its plain line. Pure parts: [secondsLeft], [label], [undoable] (UndoCenterTest).
  */
@@ -45,10 +45,10 @@ object UndoCenter {
      * Called after every tool. Under Autopilot, a finished routine change registers its way back. Never throws.
      * [before] is the routine list as it was before the tool ran (for delete), from [snapshot].
      */
-    fun afterTool(tool: String, args: org.json.JSONObject, result: String, autopilot: Boolean, before: List<com.blaze.assistant.routine.Routine>?) {
+    fun afterTool(tool: String, args: org.json.JSONObject, result: String, autopilot: Boolean, before: List<com.argus.assistant.routine.Routine>?) {
         if (!autopilot || tool !in undoable || result.startsWith("Error") || result.startsWith("No routine") || result.startsWith("Unknown")) return
         try {
-            val R = com.blaze.assistant.routine.Routines
+            val R = com.argus.assistant.routine.Routines
             when (tool) {
                 "create_routine", "schedule_command" -> {
                     val name = args.optString("name")
@@ -63,6 +63,6 @@ object UndoCenter {
         } catch (_: Throwable) { }
     }
 
-    fun snapshot(tool: String): List<com.blaze.assistant.routine.Routine>? =
-        if (tool == "delete_routine") try { com.blaze.assistant.routine.Routines.all.value } catch (_: Throwable) { null } else null
+    fun snapshot(tool: String): List<com.argus.assistant.routine.Routine>? =
+        if (tool == "delete_routine") try { com.argus.assistant.routine.Routines.all.value } catch (_: Throwable) { null } else null
 }

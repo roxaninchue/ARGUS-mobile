@@ -1,6 +1,6 @@
-package com.blaze.assistant.memory
+package com.argus.assistant.memory
 
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.Sql
 import java.io.File
 import java.io.RandomAccessFile
 import java.io.Reader
@@ -44,7 +44,7 @@ class CacheStore(private val sql: Sql, val dir: File, var capBytes: Long = CAP_B
             "title TEXT NOT NULL, chapter TEXT NOT NULL DEFAULT '', level INTEGER NOT NULL DEFAULT 0, gist TEXT NOT NULL DEFAULT '', " +
             "gisted INTEGER NOT NULL DEFAULT 0, start INTEGER NOT NULL, len INTEGER NOT NULL, chars INTEGER NOT NULL, UNIQUE(doc, idx))")
         sql.exec("CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)")
-        // 0.51.0 BlazeQuery: one row per fetched topic (short-term, expires), pointing at its cache document
+        // 0.51.0 ArgusQuery: one row per fetched topic (short-term, expires), pointing at its cache document
         sql.exec("CREATE TABLE IF NOT EXISTS bq(topic TEXT PRIMARY KEY, doc TEXT NOT NULL, chat TEXT NOT NULL, created INTEGER NOT NULL, " +
             "expires INTEGER NOT NULL, pack TEXT NOT NULL, judged INTEGER NOT NULL DEFAULT 0, hits INTEGER NOT NULL DEFAULT 0)")
         fts = openFts()
@@ -232,9 +232,9 @@ class CacheStore(private val sql: Sql, val dir: File, var capBytes: Long = CAP_B
         return gone
     }
 
-    // ---------------- 0.51.0 BlazeQuery topics (short-term, with TTL) ----------------
+    // ---------------- 0.51.0 ArgusQuery topics (short-term, with TTL) ----------------
 
-    /** A BlazeQuery topic: [pack] = the judged evidence as JSON (BlazeQuery.encode), [doc] = the document with the full text. */
+    /** A ArgusQuery topic: [pack] = the judged evidence as JSON (ArgusQuery.encode), [doc] = the document with the full text. */
     data class Bq(val topic: String, val doc: String, val chat: String, val created: Long, val expires: Long, val pack: String, val judged: Boolean, val hits: Int)
 
     private fun bqOf(r: Sql.Row) = Bq(r.text(0), r.text(1), r.text(2), r.long(3), r.long(4), r.text(5), r.long(6) != 0L, r.long(7).toInt())

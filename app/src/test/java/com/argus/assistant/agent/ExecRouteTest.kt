@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -46,7 +46,7 @@ class ExecRouteTest {
 }
 
 class OnePersonaTest {
-    @Test fun everyDuoRouteCollapsesToBlazeWithTagsStripped() {
+    @Test fun everyDuoRouteCollapsesToArgusWithTagsStripped() {
         val h = OnePersona.collapse(Duo.route("@halo what do you think?"))
         assertEquals(Duo.Mode.BLAZE, h.mode); assertEquals("what do you think?", h.text); assertTrue(h.explicit)
         assertEquals(Duo.Mode.BLAZE, OnePersona.collapse(Duo.route("@all plan my week")).mode)
@@ -55,11 +55,11 @@ class OnePersonaTest {
         assertEquals(plain, OnePersona.collapse(plain))
     }
 
-    @Test fun savedHaloStateReadsAsBlaze() {
+    @Test fun savedHaloStateReadsAsArgus() {
         for (w in listOf("halo", "all", "blaze", null, "")) assertEquals("blaze", OnePersona.who(w))
         assertEquals("", OnePersona.speaker("halo"))
         assertEquals("", OnePersona.awareness())
-        assertEquals("blaze", com.blaze.assistant.ui.TalkArcMath.normalize("halo"))
+        assertEquals("blaze", com.argus.assistant.ui.TalkArcMath.normalize("halo"))
     }
 
     @Test fun migrationRunsOnceAndKeepsTheSideLane() {
@@ -72,7 +72,7 @@ class OnePersonaTest {
         assertTrue(OnePersona.migrate({ strs[it] }, { k, v -> strs[k] = v }, { k, d -> bools[k] ?: d }, { k, v -> bools[k] = v }).isEmpty())
     }
 
-    @Test fun sideLaneSpeaksAsBlazeInTheFirstPerson() {
+    @Test fun sideLaneSpeaksAsArgusInTheFirstPerson() {
         val p = OnePersona.sideSystem(null, "book a room", "")
         assertTrue(p.startsWith(Duo.BLAZE_SOUL))
         assertTrue(p.contains("first person"))

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
 import android.graphics.Bitmap
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -11,10 +11,10 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.ScheduleDay
-import com.blaze.assistant.ui.argus.ArgusGround
-import com.blaze.assistant.ui.argus.ArgusTheme
-import com.blaze.assistant.ui.space.SpaceAnswer
+import com.argus.assistant.agent.ScheduleDay
+import com.argus.assistant.ui.argus.ArgusGround
+import com.argus.assistant.ui.argus.ArgusTheme
+import com.argus.assistant.ui.space.SpaceAnswer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue

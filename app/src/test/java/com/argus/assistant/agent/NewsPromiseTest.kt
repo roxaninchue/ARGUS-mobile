@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.46.0 regression: "@halo making a huge blaze update!!…" got "Halo's got the modular screens … locked in … it'll be yours". */
+/** 0.46.0 regression: "@halo making a huge argus update!!…" got "Halo's got the modular screens … locked in … it'll be yours". */
 class NewsPromiseTest {
     private val user = "@halo making a huge blaze update!! Modular screens and study coach, you'll hear about them when they're ready!"
     private val bad = "Halo's got the modular screens and study coach locked in\u2014just a few more sparks to fire and it'll be yours."

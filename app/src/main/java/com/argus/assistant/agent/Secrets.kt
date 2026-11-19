@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -18,7 +18,7 @@ object Secrets {
     private const val ALIAS = "blaze_secrets"
     private const val PREFIX = "enc1:"
 
-    /** True when this phone already has Blaze's Keystore key. False on a fresh install or a restore onto a new phone. */
+    /** True when this phone already has Argus's Keystore key. False on a fresh install or a restore onto a new phone. */
     fun hasKey(): Boolean = try {
         KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.containsAlias(ALIAS)
     } catch (_: Exception) { true }   // can't tell: assume yes, so nothing is dropped by mistake
@@ -50,7 +50,7 @@ object Secrets {
         } catch (e: Exception) {
             // Keystore unavailable: keep working rather than lose the key, but say so (log + self-check).
             plainFallbacks++
-            com.blaze.assistant.device.CrashLog.error("Secrets.encrypt fell back to plain text", e)
+            com.argus.assistant.device.CrashLog.error("Secrets.encrypt fell back to plain text", e)
             plain
         }
     }

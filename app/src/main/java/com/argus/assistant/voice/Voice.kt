@@ -1,7 +1,7 @@
-package com.blaze.assistant.voice
+package com.argus.assistant.voice
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -12,16 +12,16 @@ import android.speech.tts.TextToSpeech
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.Locale
-import com.blaze.assistant.voice.myvoice.MyVoice
-import com.blaze.assistant.voice.myvoice.VoiceRoute
-import com.blaze.assistant.voice.gemini.GeminiTts
-import com.blaze.assistant.voice.gemini.GeminiVoice
+import com.argus.assistant.voice.myvoice.MyVoice
+import com.argus.assistant.voice.myvoice.VoiceRoute
+import com.argus.assistant.voice.gemini.GeminiTts
+import com.argus.assistant.voice.gemini.GeminiVoice
 
 /**
  * Speech in (Android's recognizer) and speech out. Main thread only.
  * v0.28.0: speech out goes through one route ([out]): the phone's TextToSpeech, or "My voice" (the user's own voice,
  * cloned on the phone by [MyVoice]) when they chose it. Every caller (voice replies, calls, Read aloud, proactive
- * notices) still just calls speak / speakPart / say, so all of Blaze's speech follows the choice.
+ * notices) still just calls speak / speakPart / say, so all of Argus's speech follows the choice.
  */
 object Voice {
     enum class State { IDLE, LISTENING, SPEAKING }
@@ -44,17 +44,17 @@ object Voice {
      */
     @Volatile var listenHandled = 0
 
-    /** Call Blaze: a full-screen voice call. While on, replies are always spoken and the mic reopens after each one. */
+    /** Call Argus: a full-screen voice call. While on, replies are always spoken and the mic reopens after each one. */
     @Volatile var inCall = false
     @Volatile var callMuted = false
-    /** Bumped to ask the chat screen to open the call screen (launcher shortcut, "call Blaze"). */
+    /** Bumped to ask the chat screen to open the call screen (launcher shortcut, "call Argus"). */
     val callRequests = MutableStateFlow(0)
     /** Bumped when the caller ends the call by voice ("bye", "that's all"). */
     val callEnded = MutableStateFlow(0)
-    /** Call screen state, shared so Blaze can flip it by voice ("put me on loudspeaker", "mute"). */
+    /** Call screen state, shared so Argus can flip it by voice ("put me on loudspeaker", "mute"). */
     val callSpeaker = MutableStateFlow(true)
     val callMute = MutableStateFlow(false)
-    fun shouldSpeak() = inCall || com.blaze.assistant.agent.Settings.speakReplies
+    fun shouldSpeak() = inCall || com.argus.assistant.agent.Settings.speakReplies
 
     /** True when the current turn started by voice, so the reply is read aloud. */
     @Volatile var lastTurnByVoice = false
@@ -93,7 +93,7 @@ object Voice {
             override fun tell(text: String) = tellGeminiOnce(text)
         }
         // 0.46.6 (0.46.5 report: Voice.init 307 ms on main at start): the phone's TTS engine binds after the first frames.
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ try { startTts() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Voice.startTts", e) } }, 1500)
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ try { startTts() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Voice.startTts", e) } }, 1500)
     }
 
     private fun startTts() {
@@ -122,7 +122,7 @@ object Voice {
         if (id?.startsWith("end-") == true && inCall) { callEnded.value = callEnded.value + 1; return }
         if (inCall && !callMuted && id?.startsWith("blaze-") == true) {
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ if (inCall && !callMuted) conversationListen() }, 250)
-        } else if (com.blaze.assistant.agent.Settings.bool("voice_loop", true) && lastTurnByVoice && id?.startsWith("blaze-") == true) {
+        } else if (com.argus.assistant.agent.Settings.bool("voice_loop", true) && lastTurnByVoice && id?.startsWith("blaze-") == true) {
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ conversationListen() }, 200)
         } else WakeWordService.resume(app)
     }
@@ -176,19 +176,19 @@ object Voice {
 
     /**
      * Conversation mode: after a spoken answer, listen again. Ends on silence (twice), or on
-     * "thanks"/"that's all"; "stop"/"cancel" stops whatever Blaze is doing.
+     * "thanks"/"that's all"; "stop"/"cancel" stops whatever Argus is doing.
      */
     fun conversationListen() {
-        com.blaze.assistant.agent.LlmClient.prewarm()   // keep the connection warm while we talk
+        com.argus.assistant.agent.LlmClient.prewarm()   // keep the connection warm while we talk
         listen({ raw ->
             val t = raw.trim()
             when {
                 t.isBlank() && inCall -> { if (!callMuted) android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ if (inCall && !callMuted) conversationListen() }, 300) }
-                endWords.matches(t) && inCall && com.blaze.assistant.agent.Settings.bool("call_bye", true) -> { lastTurnByVoice = false; speakEnd("Talk soon.") }
+                endWords.matches(t) && inCall && com.argus.assistant.agent.Settings.bool("call_bye", true) -> { lastTurnByVoice = false; speakEnd("Talk soon.") }
                 t.isBlank() -> { silentTurns++; if (silentTurns < 2) android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ conversationListen() }, 150) else silentTurns = 0 }
-                stopWords.matches(t) -> { silentTurns = 0; com.blaze.assistant.agent.Agent.stopAll(); com.blaze.assistant.device.Sounds.done() }
+                stopWords.matches(t) -> { silentTurns = 0; com.argus.assistant.agent.Agent.stopAll(); com.argus.assistant.device.Sounds.done() }
                 endWords.matches(t) -> { silentTurns = 0; lastTurnByVoice = false; speakEnd("Anytime.") }
-                else -> { silentTurns = 0; com.blaze.assistant.agent.Agent.send(t, byVoice = true) }
+                else -> { silentTurns = 0; com.argus.assistant.agent.Agent.send(t, byVoice = true) }
             }
         }, { })
     }
@@ -242,7 +242,7 @@ object Voice {
         val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, com.blaze.assistant.agent.Settings.str("stt_lang", "").ifBlank { Locale.getDefault().toLanguageTag() })
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, com.argus.assistant.agent.Settings.str("stt_lang", "").ifBlank { Locale.getDefault().toLanguageTag() })
         r.startListening(i)
     }
 
@@ -312,7 +312,7 @@ object Voice {
         } catch (_: Exception) { }
     }
 
-    /** Blaze's voice, speed and pitch from settings. */
+    /** Argus's voice, speed and pitch from settings. */
     fun applyPrefs() {
         val t = tts ?: return
         if (!ttsReady) return
@@ -320,7 +320,7 @@ object Voice {
     }
 
     private fun applyPrefsNow(t: TextToSpeech) {
-        val S = com.blaze.assistant.agent.Settings
+        val S = com.argus.assistant.agent.Settings
         try {
             t.setSpeechRate(S.str("tts_rate", "1.0").toFloatOrNull() ?: 1f)
             t.setPitch(S.str("tts_pitch", "1.0").toFloatOrNull() ?: 1f)

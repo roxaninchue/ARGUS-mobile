@@ -1,15 +1,15 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.home.InterestsFeed
-import com.blaze.assistant.home.NextUp
-import com.blaze.assistant.home.QuickActions
-import com.blaze.assistant.home.TodoFeed
-import com.blaze.assistant.home.WeatherBoard
-import com.blaze.assistant.home.WeatherKind
-import com.blaze.assistant.home.Widget
-import com.blaze.assistant.home.WidgetData
-import com.blaze.assistant.home.WidgetIntent
-import com.blaze.assistant.home.WidgetLine
+import com.argus.assistant.home.InterestsFeed
+import com.argus.assistant.home.NextUp
+import com.argus.assistant.home.QuickActions
+import com.argus.assistant.home.TodoFeed
+import com.argus.assistant.home.WeatherBoard
+import com.argus.assistant.home.WeatherKind
+import com.argus.assistant.home.Widget
+import com.argus.assistant.home.WidgetData
+import com.argus.assistant.home.WidgetIntent
+import com.argus.assistant.home.WidgetLine
 
 /** Sample Home data shaped like the approved preview, built through the real mappers (news widgets -> Interests, etc.). */
 object HomeRedesignSample {
@@ -40,7 +40,7 @@ object HomeRedesignSample {
             music = HomeMusicNow("Track name", "Artist", 62_000L, 228_000L, playing = true),
             tasks = tasks, taskCount = tasks.size,
             next = NextUp.Item(NextUp.Kind.REMINDER, "Reminder", NOW + 3_600_000L),
-            actions = QuickActions.build(com.blaze.assistant.agent.SimpleHome.starters(9).map { it.label to it.prompt }, InterestsFeed.labels(ws), emptyList()),
+            actions = QuickActions.build(com.argus.assistant.agent.SimpleHome.starters(9).map { it.label to it.prompt }, InterestsFeed.labels(ws), emptyList()),
             h24 = false, now = NOW)
     }
 }

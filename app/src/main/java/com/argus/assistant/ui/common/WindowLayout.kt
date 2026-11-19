@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.common
+package com.argus.assistant.ui.common
 
 import kotlin.math.max
 import kotlin.math.min

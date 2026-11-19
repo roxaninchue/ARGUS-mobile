@@ -1,7 +1,7 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.Sql
 
 /**
  * v0.29.0: Home board widgets and their cached content in blaze.db. Prefixed tables (`home_widgets`, `home_cache`,
@@ -14,7 +14,7 @@ class HomeStore(private val sql: Sql) {
     init { migrate() }
 
     private fun migrate() {
-        for (st in BlazeDb.statements(TABLES)) sql.exec(st)
+        for (st in ArgusDb.statements(TABLES)) sql.exec(st)
         // Later columns are added here with addColumn(...) so old installs catch up without a schema bump.
         addColumn("home_widgets", "taps", "INTEGER NOT NULL DEFAULT 0")
         setMeta("schema", SCHEMA.toString())
@@ -108,7 +108,7 @@ class HomeStore(private val sql: Sql) {
      * the card still shows cached data with a stale tag.
      */
     fun saveData(id: String, d: WidgetData, now: Long = System.currentTimeMillis()) = synchronized(lock) {
-        try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: weather feeds the [context] block
+        try { com.argus.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: weather feeds the [context] block
         val old = data(id)
         if (d.error.isNotBlank() && old != null && !old.empty) {
             sql.exec("UPDATE home_cache SET error=? WHERE id=?", d.error, id)

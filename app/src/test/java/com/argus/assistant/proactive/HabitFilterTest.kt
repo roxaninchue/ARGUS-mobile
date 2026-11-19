@@ -1,6 +1,6 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
-import com.blaze.assistant.proactive.HabitFilter.Why
+import com.argus.assistant.proactive.HabitFilter.Why
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -9,7 +9,7 @@ import org.junit.Test
 
 /** v0.27.0: habit offers only for apps the user opens on purpose. */
 class HabitFilterTest {
-    private val self = "com.blaze.assistant"
+    private val self = "com.argus.assistant"
     private val kbs = setOf("com.google.android.inputmethod.latin", "com.touchtype.swiftkey", "com.example.fancykeys")
     private val homes = setOf("com.sec.android.app.launcher", "com.example.myhome")
 

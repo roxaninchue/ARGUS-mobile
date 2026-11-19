@@ -1,13 +1,13 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 
 /**
- * v0.38.0 Jarvis mode, the pure part (JarvisLogicTest). Blaze isn't a chat box that waits: it gets to know the user
+ * v0.38.0 Jarvis mode, the pure part (JarvisLogicTest). Argus isn't a chat box that waits: it gets to know the user
  * (a real question now and then, saved to memory from their reply), glances at the screen to offer help in the
- * moment, can take a look through the front camera while Blaze is open, watches app usage, and sets up routines
+ * moment, can take a look through the front camera while Argus is open, watches app usage, and sets up routines
  * for itself. How much of that happens is the [Level]; screen and camera glances are separate switches on top.
  */
 object JarvisLogic {
@@ -19,7 +19,7 @@ object JarvisLogic {
     /**
      * What a level allows. [questionsPerDay] getting-to-know-you questions, at least [questionGapMin] apart;
      * a screen glance every [glanceEveryMin] (when that switch is on); a camera look every [cameraEveryMin];
-     * [selfRoutines]: Blaze creates its own routines (true) or only offers them (false); [routineEveryDays].
+     * [selfRoutines]: Argus creates its own routines (true) or only offers them (false); [routineEveryDays].
      */
     data class Limits(val questionsPerDay: Int, val questionGapMin: Int, val glanceEveryMin: Int, val cameraEveryMin: Int,
                       val selfRoutines: Boolean, val routineEveryDays: Int)
@@ -59,7 +59,7 @@ object JarvisLogic {
 
     // ---------------- getting to know the user ----------------
 
-    /** [covered]: memory words that mean Blaze already knows this ([topic] is skipped when any is in memory). */
+    /** [covered]: memory words that mean Argus already knows this ([topic] is skipped when any is in memory). */
     data class Question(val id: String, val topic: String, val text: String, val covered: List<String>)
 
     val bank: List<Question> = listOf(
@@ -97,7 +97,7 @@ object JarvisLogic {
 
     // ---------------- screen glances ----------------
 
-    /** Apps whose screens Blaze never reads on its own: banks, wallets, mobile money, passwords, authenticators. */
+    /** Apps whose screens Argus never reads on its own: banks, wallets, mobile money, passwords, authenticators. */
     private val sensitivePkg = Regex(
         "bank|wallet|pay\\b|\\.pay|paypal|venmo|cashapp|revolut|wise|momo|mpesa|m-pesa|airtelmoney|mtn|zamtel|zanaco|absa|stanbic|fnb|" +
             "password|1password|bitwarden|lastpass|keepass|dashlane|authenticator|authy|\\.otp|2fa|vault|keychain|" +
@@ -112,7 +112,7 @@ object JarvisLogic {
 
     fun sensitive(pkg: String, screen: String): Boolean = sensitivePkg.containsMatchIn(pkg) || sensitiveText.containsMatchIn(screen)
 
-    /** A glance is worth taking: a real app (not Blaze, not the launcher), the same one not glanced at for 20 minutes. */
+    /** A glance is worth taking: a real app (not Argus, not the launcher), the same one not glanced at for 20 minutes. */
     fun glanceable(pkg: String, ownPkg: String, launcher: Boolean, lastPkg: String, lastAt: Long, now: Long): Boolean {
         if (pkg.isBlank() || pkg == ownPkg || launcher) return false
         return !(pkg == lastPkg && now - lastAt < 20 * 60_000L)
@@ -139,7 +139,7 @@ object JarvisLogic {
         return Glance(o.optString("say").trim().take(240), o.optString("suggest").trim().take(60), o.optString("note").trim().take(140))
     }
 
-    /** A routine Blaze wants for itself. Mon=1 … Sun=64 as in Routines; 127 = every day. */
+    /** A routine Argus wants for itself. Mon=1 … Sun=64 as in Routines; 127 = every day. */
     data class RoutineIdea(val name: String, val prompt: String, val hour: Int, val minute: Int, val days: Int, val why: String)
 
     fun parseRoutine(raw: String?): RoutineIdea? {
@@ -151,13 +151,13 @@ object JarvisLogic {
         return RoutineIdea(name.take(40), prompt.take(400), h, m, d, o.optString("why").trim().take(160))
     }
 
-    /** A question Blaze wrote itself (fits what's going on), or "" to use the bank's. */
+    /** A question Argus wrote itself (fits what's going on), or "" to use the bank's. */
     fun parseQuestion(raw: String?): String {
         val q = obj(raw)?.optString("question")?.trim().orEmpty()
         return if (q.length in 8..180 && q.endsWith("?")) q else ""
     }
 
-    /** Routines Blaze made for itself carry this prefix, so the user can see (and remove) them. */
+    /** Routines Argus made for itself carry this prefix, so the user can see (and remove) them. */
     const val SELF_PREFIX = "${BrandName.NAME} · "
 
     private fun obj(raw: String?): JSONObject? {

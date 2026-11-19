@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 
 /**
- * v0.28.1 (Blazeinchue): Enter never sends. In every message box (the chat composer, the assist panel, "Ask Blaze about this
+ * v0.28.1 (Blazeinchue): Enter never sends. In every message box (the chat composer, the assist panel, "Ask Argus about this
  * page", a specialist's Steer / Follow-up box, Design's "ask for a change") the keyboard's Enter key, and a hardware
  * keyboard's Enter, insert a new line; only the send button sends. The fields are multi-line (never singleLine) and
  * have no KeyboardActions / key handlers tied to Enter or ImeAction.Send. Tested in ComposerKeysTest.

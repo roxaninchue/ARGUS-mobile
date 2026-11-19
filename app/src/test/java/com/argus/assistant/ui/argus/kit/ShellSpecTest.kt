@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import com.blaze.assistant.ui.argus.kit.ShellSpec.Composer.Trailing as T
-import com.blaze.assistant.ui.argus.kit.ShellSpec.Notch.Pull as P
+import com.argus.assistant.ui.argus.kit.ShellSpec.Composer.Trailing as T
+import com.argus.assistant.ui.argus.kit.ShellSpec.Notch.Pull as P
 
 /** P1-SH-01: the shell's rules (04 §2.8 Chrome, §3.2): composer states, placeholders, notch pulls, chips, toasts. */
 class ShellSpecTest {
@@ -85,22 +85,22 @@ class ShellSpecTest {
         assertFalse(C.liftsWithKeyboard(spotlight = false, search = true, drawer = false, settings = false))
         assertFalse(C.liftsWithKeyboard(spotlight = false, search = false, drawer = true, settings = false))
         assertFalse(C.liftsWithKeyboard(spotlight = false, search = false, drawer = false, settings = true))
-        val screen = java.io.File("src/main/java/com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val screen = java.io.File("src/main/java/com/argus/assistant/ui/ChatScreen.kt").readText()
         assertTrue(screen.contains("liftsWithKeyboard(") && screen.contains("if (lift) Modifier.imePadding()"))
     }
 
     /** Owner 2026-11-14: one continuous surface: drawer over the whole screen, chip and chatbox one glass. */
     @Test fun shellReadsAsOneSurface() {
-        val screen = java.io.File("src/main/java/com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val screen = java.io.File("src/main/java/com/argus/assistant/ui/ChatScreen.kt").readText()
         assertTrue(screen.contains("ChatDrawerLayer()"))
         // 18 Nov 2026: the chip row (model · effort · text assist) is the composer's top row; the model chip stays flat in it
         assertTrue(screen.contains("ComposerTopRow("))
-        val picker = java.io.File("src/main/java/com/blaze/assistant/ui/argus/kit/ModelPicker.kt").readText()
+        val picker = java.io.File("src/main/java/com/argus/assistant/ui/argus/kit/ModelPicker.kt").readText()
         assertTrue(picker.contains("ModelChip(force = force, flat = true)"))
         assertFalse("no chip pill over the composer", screen.contains("ModelChip(Modifier.padding(start = 18.dp))"))
-        val drawer = java.io.File("src/main/java/com/blaze/assistant/ui/team/ChatDrawer.kt").readText()
+        val drawer = java.io.File("src/main/java/com/argus/assistant/ui/team/ChatDrawer.kt").readText()
         assertTrue("drawer edge rounded (NoSquareTest)", drawer.contains("drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)"))
-        val shell = java.io.File("src/main/java/com/blaze/assistant/ui/argus/kit/KitShell.kt").readText()
+        val shell = java.io.File("src/main/java/com/argus/assistant/ui/argus/kit/KitShell.kt").readText()
         assertTrue(shell.contains("top: (@Composable () -> Unit)? = null"))
     }
 }

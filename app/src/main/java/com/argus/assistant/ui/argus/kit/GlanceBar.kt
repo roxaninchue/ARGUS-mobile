@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 
 /**
  * 2026-11-19 (owner, round 2): the glance page's own top row, laid out exactly like [ArgusTopBar] (same height, same

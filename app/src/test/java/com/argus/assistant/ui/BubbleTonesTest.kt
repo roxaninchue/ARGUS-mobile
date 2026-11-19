@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -23,27 +23,27 @@ class BubbleTonesTest {
 
     @Test fun everyPaletteDefinesBubbleColours() {
         for (dark in modes) for (a in accents) {
-            val c = blazePalette(dark, a)
+            val c = argusPalette(dark, a)
             assertTrue("dark=$dark accent=$a: no user bubble colour", c.bubbleMe != Color.Unspecified)
-            assertTrue("dark=$dark accent=$a: no ${BrandName.NAME} bubble colour", c.bubbleBlaze != Color.Unspecified)
+            assertTrue("dark=$dark accent=$a: no ${BrandName.NAME} bubble colour", c.bubbleArgus != Color.Unspecified)
             assertEquals("opaque base", 1f, c.bubbleMe.alpha, 0f)
         }
     }
 
     @Test fun theAccentTintsTheUserBubbleOnly() {
         for (dark in modes) {
-            val fills = accents.map { BubblePalette.fill(blazePalette(dark, it), true) }
+            val fills = accents.map { BubblePalette.fill(argusPalette(dark, it), true) }
             assertEquals("dark=$dark: two accents share a user bubble", fills.size, fills.toSet().size)
-            val blaze = accents.map { BubblePalette.fill(blazePalette(dark, it), false) }.toSet()
+            val argus = accents.map { BubblePalette.fill(argusPalette(dark, it), false) }.toSet()
             assertEquals("dark=$dark: ${BrandName.NAME}'s bubble never follows the accent", 1, blaze.size)
         }
-        assertTrue(blazePalette(true).bubbleMe != blazePalette(false).bubbleMe)
+        assertTrue(argusPalette(true).bubbleMe != argusPalette(false).bubbleMe)
     }
 
     @Test fun everyPaletteReadsAtAA_lightAndDark() {
         var checked = 0
         for (dark in modes) for (acc in accents) {
-            val c = blazePalette(dark, acc)
+            val c = argusPalette(dark, acc)
             for (mine in listOf(true, false)) {
                 val a = BubblePalette.fill(c, mine).alpha
                 assertTrue("dark=$dark accent=$acc mine=$mine alpha $a", a >= BubblePalette.FROST && a < 1f)
@@ -62,7 +62,7 @@ class BubbleTonesTest {
 
     @Test fun aPaleCustomAccentStillReads() {
         // A near-white Look & feel accent in dark mode: the tone is mixed in less until the text reads.
-        val c = blazePalette(true, 0xFFF8F8F8)
+        val c = argusPalette(true, 0xFFF8F8F8)
         val solid = Contrast.over(c.bubbleMe, Color.Black)
         assertTrue(Contrast.ratio(c.ink, solid) >= BubbleTones.SOLID_MIN)
         for (g in listOf(Color.Black, Color.White, c.paper.copy(alpha = 1f))) {

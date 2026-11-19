@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.ui.graphics.drawscope.clipRect
 
 import androidx.compose.ui.draw.drawWithContent
@@ -129,18 +129,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.blaze.assistant.home.Ago
-import com.blaze.assistant.home.HomeBoard
-import com.blaze.assistant.home.Interests
-import com.blaze.assistant.home.StackState
-import com.blaze.assistant.home.Stacks
-import com.blaze.assistant.home.Widget
-import com.blaze.assistant.home.WidgetData
-import com.blaze.assistant.home.WidgetIntent
-import com.blaze.assistant.home.WidgetLine
-import com.blaze.assistant.home.WidgetSize
-import com.blaze.assistant.home.WidgetStack
-import com.blaze.assistant.home.WidgetTypes
+import com.argus.assistant.home.Ago
+import com.argus.assistant.home.HomeBoard
+import com.argus.assistant.home.Interests
+import com.argus.assistant.home.StackState
+import com.argus.assistant.home.Stacks
+import com.argus.assistant.home.Widget
+import com.argus.assistant.home.WidgetData
+import com.argus.assistant.home.WidgetIntent
+import com.argus.assistant.home.WidgetLine
+import com.argus.assistant.home.WidgetSize
+import com.argus.assistant.home.WidgetStack
+import com.argus.assistant.home.WidgetTypes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -227,7 +227,7 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSky() {
 // ---------------------------------------------------------------- the screen
 
 /**
- * The Home tab. [onAsk] hands a plain-words request to Blaze (the main chat runs it with the home_widget_* tools).
+ * The Home tab. [onAsk] hands a plain-words request to Argus (the main chat runs it with the home_widget_* tools).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -241,7 +241,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
              askToast: Boolean = true,
              /** 0.47: the chat composer's slot on the redesigned Home (drawn at the bottom over the grid). */
              chatBar: (@Composable androidx.compose.foundation.layout.BoxScope.() -> Unit)? = null) {
-    val base = LocalBlaze.current.mono
+    val base = LocalArgus.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val widgets by HomeBoard.widgets.collectAsState()
@@ -264,11 +264,11 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { delay(60_000); now = System.currentTimeMillis() } }
     // v0.30.5: looking at Home marks what's on it as seen (Home heads-ups only tell about things you haven't seen).
-    LaunchedEffect(Unit) { com.blaze.assistant.home.HomeBoard.markSeen() }
+    LaunchedEffect(Unit) { com.argus.assistant.home.HomeBoard.markSeen() }
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(3_500); toast = "" } }
-    // v0.30.5: Blaze's browser at work → the live preview window.
-    val busyChats by com.blaze.assistant.agent.Agent.busyChats.collectAsState()
-    val liveStep by com.blaze.assistant.browser.BrowserLive.step.collectAsState()
+    // v0.30.5: Argus's browser at work → the live preview window.
+    val busyChats by com.argus.assistant.agent.Agent.busyChats.collectAsState()
+    val liveStep by com.argus.assistant.browser.BrowserLive.step.collectAsState()
     var liveNow by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var liveHidden by remember { mutableStateOf(false) }
     val working = busyChats.isNotEmpty()
@@ -277,7 +277,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
         if (!working) liveHidden = false   // the next task shows it again
         while (working) { delay(5_000); liveNow = System.currentTimeMillis() }
     }
-    val liveShowing = com.blaze.assistant.browser.BrowserLive.showing(liveStep, working, liveNow) && com.blaze.assistant.browser.BrowserEngine.tabs.isNotEmpty()
+    val liveShowing = com.argus.assistant.browser.BrowserLive.showing(liveStep, working, liveNow) && com.argus.assistant.browser.BrowserEngine.tabs.isNotEmpty()
 
     // Coming back from a permission / Usage access screen: retry the cards that asked for it.
     val owner = LocalLifecycleOwner.current
@@ -316,10 +316,10 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
     fun action(w: Widget, a: String) {
         when {
             a == "location" -> scope.launch {
-                com.blaze.assistant.device.Perms.ensure(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                com.argus.assistant.device.Perms.ensure(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 HomeBoard.refresh(w.id)
             }
-            a == "calendar" -> scope.launch { com.blaze.assistant.device.Perms.ensure(ctx, android.Manifest.permission.READ_CALENDAR); HomeBoard.refresh(w.id) }
+            a == "calendar" -> scope.launch { com.argus.assistant.device.Perms.ensure(ctx, android.Manifest.permission.READ_CALENDAR); HomeBoard.refresh(w.id) }
             a == "city" -> cityFor = w.id
             a == "usage" -> openUsageAccess(ctx)
             a == "interests" -> { onboarded = false }
@@ -327,10 +327,10 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
         }
     }
 
-    CompositionLocalProvider(LocalBlaze provides c, LocalGlass provides glass) {
+    CompositionLocalProvider(LocalArgus provides c, LocalGlass provides glass) {
         Box(Modifier.fillMaxSize().then(if (skyHome) Modifier else if (themed) Modifier else Modifier.homeBackground(c, HomeBoard.background, HomeBoard.bgColor, look))) {
             if (skyHome) HomeSkyBackground(night = remember(widgets, data, now / 600_000L) {
-                val t = java.time.LocalTime.now(); com.blaze.assistant.home.WeatherBoard.from(widgets, data, t.hour, t.minute).night
+                val t = java.time.LocalTime.now(); com.argus.assistant.home.WeatherBoard.from(widgets, data, t.hour, t.minute).night
             }, modifier = Modifier.fillMaxSize())
             if (bgImage != null && HomeBoard.background == "image") {
                 // v0.29.3: the photo shows in full now; the glass cards keep text readable over it.
@@ -343,7 +343,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
                     HomeBoard.finishOnboarding(chosen, subs, typed, skipped = false); onboarded = true
                 }, onSkip = { HomeBoard.finishOnboarding(emptySet(), emptySet(), "", skipped = true); onboarded = true })
             } else if (redesign) {
-                // Lazy start: the new Home (splash, grid) is composed from the frame after Blaze's first frame; the sky is the first frame.
+                // Lazy start: the new Home (splash, grid) is composed from the frame after Argus's first frame; the sky is the first frame.
                 if (firstFrameShown()) HomeRedesignScreen(onAsk = { t -> onAsk(t); if (askToast) toast = "Asked ${BrandName.NAME}. The answer is in Chat." }, onOpenLink = { u -> open(u, null) },
                     onAllWidgets = { showBoard = true }, onPickInterests = { onboarded = false }, drawSky = false,
                     reserveBottom = false, chatBar = chatBar)
@@ -352,7 +352,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
                 val stacks = remember(widgets) { Stacks.build(widgets) }
                 LaunchedEffect(stacks) { stackState = stackState.prune(stacks) }
                 PullToRefreshBox(isRefreshing = refreshing, onRefresh = { HomeBoard.pullToRefresh() }, modifier = Modifier.fillMaxSize()) {
-                    // Lazy start: the cards are composed from the frame after Blaze's first frame (ui/FirstFrame.kt).
+                    // Lazy start: the cards are composed from the frame after Argus's first frame (ui/FirstFrame.kt).
                     if (firstFrameShown()) HomeBoardView(stacks, data, loading, offline, now, stackState,
                         stamp = Ago.of(maxOf(HomeBoard.lastRefresh, data.values.maxOfOrNull { it.fetched } ?: 0L), now),
                         onToggle = { stackState = stackState.toggle(it) },
@@ -373,10 +373,10 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             }
             if (toast.isNotBlank()) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp).navigationBarsPadding()) { HomeToast(toast) }
             glassUrl?.let { u -> GlassWindow(u, onClose = { glassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
-                // v0.29.9: the selection pill on the page: Ask / Translate / Define go to Blaze, Quote goes into the chat box.
+                // v0.29.9: the selection pill on the page: Ask / Translate / Define go to Argus, Quote goes into the chat box.
                 onAsk = { t -> onAsk(t); toast = "Asked ${BrandName.NAME}. The answer is in Chat." },
                 onQuote = { t -> onQuote(t) }) }
-            // v0.30.5: while Blaze works in its browser, a fixed glass window previews the page (× hides it until the next task).
+            // v0.30.5: while Argus works in its browser, a fixed glass window previews the page (× hides it until the next task).
             if (glassUrl == null && onboarded && liveShowing && !liveHidden) BrowserLivePreview(onHide = { liveHidden = true })
 
             menuFor?.let { id ->
@@ -426,22 +426,22 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             cityFor?.let { id ->
                 var city by remember { mutableStateOf("") }
                 androidx.compose.ui.window.Dialog(onDismissRequest = { cityFor = null }) {
-                    BlazeDialogCard(tr("Which city?"), tr("I'll show the weather there."), confirm = tr("Show weather"), onConfirm = {
+                    ArgusDialogCard(tr("Which city?"), tr("I'll show the weather there."), confirm = tr("Show weather"), onConfirm = {
                         if (city.isNotBlank()) HomeBoard.setConfig(id, mapOf("city" to city.trim(), "use_location" to false))
                         cityFor = null
                     }, dismiss = tr("Cancel"), onDismiss = { cityFor = null }) {
-                        BlazeTextField(city, { city = it }, "e.g. Lagos, Lima, Manila")
+                        ArgusTextField(city, { city = it }, "e.g. Lagos, Lima, Manila")
                     }
                 }
             }
             askChange?.let { w ->
                 var t by remember { mutableStateOf("") }
                 androidx.compose.ui.window.Dialog(onDismissRequest = { askChange = null }) {
-                    BlazeDialogCard(tr("Change \u201c{0}\u201d", w.title), tr("Say it in plain words, e.g. \u201cshow Chelsea instead\u201d or \u201cmake it euros\u201d."), confirm = tr("Ask {0}", BrandName.NAME), onConfirm = {
+                    ArgusDialogCard(tr("Change \u201c{0}\u201d", w.title), tr("Say it in plain words, e.g. \u201cshow Chelsea instead\u201d or \u201cmake it euros\u201d."), confirm = tr("Ask {0}", BrandName.NAME), onConfirm = {
                         if (t.isNotBlank()) { onAsk("Change my Home widget \u201c${w.title}\u201d (id ${w.id}): ${t.trim()}"); toast = "Asked ${BrandName.NAME}. The answer is in Chat." }
                         askChange = null
                     }, dismiss = tr("Cancel"), onDismiss = { askChange = null }) {
-                        BlazeTextField(t, { t = it }, "What should change?", singleLine = false)
+                        ArgusTextField(t, { t = it }, "What should change?", singleLine = false)
                     }
                 }
             }
@@ -541,7 +541,7 @@ fun HomeBoardView(
     onAction: (Widget, String) -> Unit, onVisible: (String) -> Unit, onReorder: (List<String>) -> Unit, onMove: (String, Int) -> Unit,
     onRemove: (String) -> Unit, onCustomise: () -> Unit, onCreate: () -> Unit, listState: LazyListState = rememberLazyListState(),
 ) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val order = remember { mutableStateListOf<WidgetStack>() }
     var dragKey by remember { mutableStateOf<String?>(null) }
     var dragY by remember { mutableFloatStateOf(0f) }
@@ -594,7 +594,7 @@ fun HomeBoardView(
 
 @Composable
 private fun BoardHeader(stamp: String, offline: Boolean, onCustomise: () -> Unit, onCreate: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -614,7 +614,7 @@ private fun BoardHeader(stamp: String, offline: Boolean, onCustomise: () -> Unit
 
 @Composable
 private fun RoundIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, onClick: () -> Unit, filled: Boolean = false, size: Int = 40) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = desc, role = Role.Button, onClick = onClick).semantics { contentDescription = desc },
         contentAlignment = Alignment.Center) {
         Box(Modifier.size(size.dp).homeSurface(c, LocalGlass.current, CircleShape, if (filled) GlassIntensity.High else GlassIntensity.Low, shadow = filled),
@@ -646,7 +646,7 @@ fun StackItem(
     onAction: (Widget, String) -> Unit, onVisible: (String) -> Unit, canUp: Boolean = true, canDown: Boolean = true,
     onMove: (String, Int) -> Unit = { _, _ -> }, onRemove: (String) -> Unit = {},
 ) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     LaunchedEffect(s.main.id) { onVisible(s.main.id) }
     Column(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth()) {
@@ -708,7 +708,7 @@ fun typeIcon(type: String): androidx.compose.ui.graphics.vector.ImageVector = wh
 /** The icon tile at the top of a card: a small rounded square in a soft accent gradient with a crisp white icon. */
 @Composable
 fun TypeTile(type: String, size: Int = 28) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.size(size.dp).glass(RoundedCornerShape((size * 0.36f).dp), GlassIntensity.High, shadow = false), contentAlignment = Alignment.Center) {
         Icon(typeIcon(type), contentDescription = null, tint = c.ink, modifier = Modifier.size((size * 0.58f).dp))
     }
@@ -723,7 +723,7 @@ fun WidgetCard(
     onClick: () -> Unit, onMenu: () -> Unit, onLine: (WidgetLine) -> Unit, onAction: (String) -> Unit,
     canUp: Boolean = true, canDown: Boolean = true, onMove: (String, Int) -> Unit = { _, _ -> }, onRemove: (String) -> Unit = {},
 ) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val size = WidgetSize.norm(w.size)
     val stale = d != null && Ago.stale(d.fetched, now, offline, d.error)
     val summary = buildString {
@@ -796,7 +796,7 @@ fun WidgetCard(
 
 @Composable
 private fun WidgetBody(w: Widget, d: WidgetData, size: String, onLine: (WidgetLine) -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     if (d.value.isNotBlank() || d.headline.isNotBlank()) {
         if (d.value.isNotBlank()) {
             Text(d.value, maxLines = if (size == WidgetSize.S) 1 else 2, overflow = TextOverflow.Ellipsis,
@@ -827,7 +827,7 @@ private fun WidgetBody(w: Widget, d: WidgetData, size: String, onLine: (WidgetLi
             Spacer(Modifier.height(4.dp))
         }
         d.lines.take(n).forEachIndexed { i, l ->
-            Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).let { if (l.url.isNotBlank()) it.clickable(onClickLabel = tr("Open {0}", l.title)) { onLine(l) } else it }
+            Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).let { if (l.url.isNotBlank()) it.clickable(onClickLabel = tr("Open {0}", l.title)) { onLine(l) } else it }
                 .let { if (i > 0) it.hairlineTopInset(c.hair, 0.dp) else it }.padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(l.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.5.sp, lineHeight = 18.sp, color = c.ink))
@@ -853,7 +853,7 @@ private fun WidgetBody(w: Widget, d: WidgetData, size: String, onLine: (WidgetLi
 
 // ---------------------------------------------------------------- long-press menu
 
-/** Move up / down, Resize S M L, Hide, Remove, Refresh, Ask Blaze to change. */
+/** Move up / down, Resize S M L, Hide, Remove, Refresh, Ask Argus to change. */
 @Composable
 fun WidgetMenuCard(w: Widget, onPick: (String) -> Unit) {
     val shape = RoundedCornerShape(24.dp)
@@ -861,7 +861,7 @@ fun WidgetMenuCard(w: Widget, onPick: (String) -> Unit) {
         Text(w.title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 6.dp).semantics { heading() },
             style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = DialogColors.title))
         @Composable fun item(label: String, id: String, warm: Boolean = false) {
-            Box(Modifier.fillMaxWidth().padding(horizontal = 6.dp).clip(BlazeShapes.small).clickable(onClickLabel = label) { onPick(id) }
+            Box(Modifier.fillMaxWidth().padding(horizontal = 6.dp).clip(ArgusShapes.small).clickable(onClickLabel = label) { onPick(id) }
                 .heightIn(min = 46.dp).padding(horizontal = 12.dp, vertical = 12.dp), contentAlignment = Alignment.CenterStart) {
                 Text(label, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.5.sp, color = if (warm) DialogColors.primaryWarm else DialogColors.title))
             }
@@ -891,7 +891,7 @@ fun CustomiseSheet(
     onWifiOnly: (Boolean) -> Unit, onHours: (Int) -> Unit, onSize: (String, String) -> Unit, onHidden: (String, Boolean) -> Unit,
     onMove: (String, Int) -> Unit, onClose: () -> Unit, imagePicker: (@Composable () -> Unit)? = null,
 ) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var bg by remember(background) { mutableStateOf(background) }
     var bgc by remember(bgColor) { mutableIntStateOf(bgColor) }
     var acc by remember(accent) { mutableStateOf(accent) }
@@ -952,7 +952,7 @@ fun CustomiseSheet(
 
 @Composable
 private fun SizeChips(size: String, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row {
         listOf("S", "M", "L").forEach { s ->
             val on = WidgetSize.norm(size) == s
@@ -966,7 +966,7 @@ private fun SizeChips(size: String, onPick: (String) -> Unit) {
 
 @Composable
 private fun SmallIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, enabled: Boolean, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.size(36.dp).clip(CircleShape).clickable(enabled = enabled, onClickLabel = desc, onClick = onClick).semantics { contentDescription = desc }, contentAlignment = Alignment.Center) {
         Icon(icon, null, tint = if (enabled) c.ink else c.weak, modifier = Modifier.size(20.dp))
     }
@@ -974,7 +974,7 @@ private fun SmallIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, des
 
 @Composable
 private fun Swatch(brush: Brush, on: Boolean, desc: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.size(40.dp).clip(CircleShape).border(if (on) 2.dp else 1.dp, if (on) c.ink else c.hair2, CircleShape).padding(4.dp).clip(CircleShape).background(brush)
         .clickable(onClickLabel = desc, onClick = onClick).semantics { contentDescription = desc; selected = on })
 }
@@ -984,14 +984,14 @@ private fun Swatch(brush: Brush, on: Boolean, desc: String, onClick: () -> Unit)
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CreateWidgetSheet(onAdd: (String) -> Unit, onClose: () -> Unit, initial: String = "") {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var t by remember { mutableStateOf(initial) }
     Column(Modifier.fillMaxWidth().homeSheet(c).navigationBarsPadding()
         .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp)) {
         Text(tr("Create a widget"), modifier = Modifier.semantics { heading() }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = c.ink))
         Text(tr("Say what you want to see, in plain words."), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         Spacer(Modifier.height(12.dp))
-        BlazeTextField(t, { t = it }, "e.g. show me Arsenal scores")
+        ArgusTextField(t, { t = it }, "e.g. show me Arsenal scores")
         Spacer(Modifier.height(10.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Show me Arsenal scores", "Track Bitcoin price", "New videos from MKBHD", "Weather in Tokyo", "USD to EUR", "Tech news").forEach { ex ->
@@ -1008,7 +1008,7 @@ fun CreateWidgetSheet(onAdd: (String) -> Unit, onClose: () -> Unit, initial: Str
 
 @Composable
 fun HomeChip(label: String, on: Boolean, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.then(if (on) Modifier.clip(GlassTokens.pillShape).background(c.ink).border(1.dp, c.ink, GlassTokens.pillShape) else Modifier.homeSurface(c, LocalGlass.current, GlassTokens.pillShape, GlassIntensity.Low, shadow = false))
         .clickable(onClickLabel = label, role = Role.Checkbox, onClick = onClick).semantics { selected = on }
         .heightIn(min = 40.dp).padding(horizontal = 14.dp, vertical = 9.dp), contentAlignment = Alignment.Center) {
@@ -1021,7 +1021,7 @@ fun HomeChip(label: String, on: Boolean, onClick: () -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun InterestPicker(onDone: (Set<String>, Set<String>, String) -> Unit, onSkip: () -> Unit, initialChosen: Set<String> = emptySet(), initialSubs: Set<String> = emptySet()) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var chosen by remember { mutableStateOf(initialChosen) }
     var subs by remember { mutableStateOf(initialSubs) }
     var typed by remember { mutableStateOf("") }
@@ -1043,7 +1043,7 @@ fun InterestPicker(onDone: (Set<String>, Set<String>, String) -> Unit, onSkip: (
                 }
             }
             GroupHead("Anything else?", "Optional. A team, a creator, a coin, a topic\u2026", modifier = Modifier.padding(top = 14.dp))
-            BlazeTextField(typed, { typed = it }, "e.g. Kaizer Chiefs, Veritasium, Formula 1")
+            ArgusTextField(typed, { typed = it }, "e.g. Kaizer Chiefs, Veritasium, Formula 1")
             Spacer(Modifier.height(16.dp))
         }
         Row(Modifier.fillMaxWidth().then(LocalGlass.current?.let { Modifier.background(it.fill) } ?: Modifier.glass(GlassTokens.sheetShape, GlassIntensity.High, shadow = false)).padding(horizontal = 18.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {

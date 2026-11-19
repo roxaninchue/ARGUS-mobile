@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -37,17 +37,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.home.HomeTodo
-import com.blaze.assistant.home.Widget
-import com.blaze.assistant.home.WidgetData
-import com.blaze.assistant.home.WidgetLine
-import com.blaze.assistant.home.WidgetTypes
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.home.HomeTodo
+import com.argus.assistant.home.Widget
+import com.argus.assistant.home.WidgetData
+import com.argus.assistant.home.WidgetLine
+import com.argus.assistant.home.WidgetTypes
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Lucide
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -74,12 +74,12 @@ class LifeBoardActions(
 
 /** The live board's actions (the Home board store). The page never fetches; a panel asks to be filled when it shows. */
 fun liveBoardActions(ctx: android.content.Context) = LifeBoardActions(
-    onVisible = { com.blaze.assistant.home.HomeBoard.visible(it) },
-    onTodo = { w, list -> com.blaze.assistant.home.HomeBoard.setConfig(w.id, mapOf("items" to HomeTodo.toJson(list))) },
-    onOpen = { _, item -> com.blaze.assistant.setup.FirstRun.open(ctx, item) },
-    onLine = { _, l -> com.blaze.assistant.ui.openHomeLink(ctx, l.url) },
-    onRefresh = { com.blaze.assistant.home.HomeBoard.refresh(it.id) },
-    onRemove = { com.blaze.assistant.home.HomeBoard.remove(it.id) },
+    onVisible = { com.argus.assistant.home.HomeBoard.visible(it) },
+    onTodo = { w, list -> com.argus.assistant.home.HomeBoard.setConfig(w.id, mapOf("items" to HomeTodo.toJson(list))) },
+    onOpen = { _, item -> com.argus.assistant.setup.FirstRun.open(ctx, item) },
+    onLine = { _, l -> com.argus.assistant.ui.openHomeLink(ctx, l.url) },
+    onRefresh = { com.argus.assistant.home.HomeBoard.refresh(it.id) },
+    onRemove = { com.argus.assistant.home.HomeBoard.remove(it.id) },
 )
 
 /** The calendar card's state, fed by [LifePage]: the month on show, the picked day and that day's items. */
@@ -87,7 +87,7 @@ class LifeCal(
     val month: YearMonth,
     val selected: LocalDate,
     val today: LocalDate,
-    val items: List<com.blaze.assistant.agent.ScheduleDay.Item> = emptyList(),
+    val items: List<com.argus.assistant.agent.ScheduleDay.Item> = emptyList(),
     val onSelect: (LocalDate) -> Unit = {},
     val onMonth: (Int) -> Unit = {},
 )

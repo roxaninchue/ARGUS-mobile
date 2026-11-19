@@ -1,6 +1,6 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.agent.TeamHooks
+import com.argus.assistant.agent.TeamHooks
 
 /**
  * P1-TM-04: what the bot editor and the team tools both write: one bot's editable fields (A-team agentSheet + agent_create
@@ -9,7 +9,7 @@ import com.blaze.assistant.agent.TeamHooks
  *
  * Limits (A-team): name 60 ([BotRules.NAME_MAX]), label (A-team "role") 60, email 120 and `x@y.z` or empty, portfolio
  * 600, instructions (the SOUL) 4000. Effort low / medium / high / xhigh ("max" reads as xhigh). Mode personal / teammate.
- * Face 0..5 in [com.blaze.assistant.ui.argus.OrbFace] order ([FACES]); null = picked from the name. Colour any `#rrggbb`;
+ * Face 0..5 in [com.argus.assistant.ui.argus.OrbFace] order ([FACES]); null = picked from the name. Colour any `#rrggbb`;
  * the swatches are A-team COLORS ([COLORS], the same as ArgusTokens.BOT_COLORS). Reports to the Manager or another bot
  * on the team: never itself, never in a loop.
  */

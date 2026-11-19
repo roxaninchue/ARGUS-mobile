@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.ui.RichKit
+import com.argus.assistant.ui.RichKit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -48,19 +48,19 @@ class ThinkingLabelTest {
     // ReasoningBlock / "Hide reasoning" toggle stays gone, and the working row keeps its ThinkingLabel.
     @Test fun chatUiFoldsReasoningAboveTheReply() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val chat = File(root, "com/argus/assistant/ui/ChatScreen.kt").readText()
         assertFalse(chat.contains("ReasoningBlock"))
         assertFalse(chat.contains("Hide reasoning"))
         assertTrue(chat.contains("ThinkingLabel.label"))
         assertTrue("the reply row draws the folded section", chat.contains("ThoughtSection(m.id, thought"))
         assertTrue("only behind the setting", chat.contains("if (Settings.showReasoning) {"))
         assertTrue("the row picks saved or live thinking", chat.contains("ThoughtFold.pick("))
-        val section = File(root, "com/blaze/assistant/ui/ThoughtSection.kt").readText()
+        val section = File(root, "com/argus/assistant/ui/ThoughtSection.kt").readText()
         assertTrue("tap to open or close", section.contains("Show the thinking") && section.contains("Hide the thinking"))
         assertTrue("header from the pure rules", section.contains("ThoughtFold.header("))
         // Still never the word "reasoning" in the section's header.
-        for (h in listOf(com.blaze.assistant.ui.ThoughtFold.header(true, false, 0), com.blaze.assistant.ui.ThoughtFold.header(false, true, 4_200)))
+        for (h in listOf(com.argus.assistant.ui.ThoughtFold.header(true, false, 0), com.argus.assistant.ui.ThoughtFold.header(false, true, 4_200)))
             assertFalse(h.lowercase().contains("reasoning"))
-        assertEquals("Thought for 4s", com.blaze.assistant.ui.ThoughtFold.header(false, true, 4_200))
+        assertEquals("Thought for 4s", com.argus.assistant.ui.ThoughtFold.header(false, true, 4_200))
     }
 }

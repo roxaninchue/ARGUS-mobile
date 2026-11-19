@@ -1,4 +1,4 @@
-package com.blaze.assistant.orchestra
+package com.argus.assistant.orchestra
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -91,7 +91,7 @@ object Pipelines {
         suspend fun agent(ctx: NodeContext, prompt: String): String
         /** Creates a folder (in the project root of the run). */
         suspend fun mkdir(path: String): Boolean = true
-        /** Runs a shell command in the run's project folder (Blaze Terminal); (exit code, output). */
+        /** Runs a shell command in the run's project folder (Argus Terminal); (exit code, output). */
         suspend fun exec(command: String): Pair<Int, String> = 0 to ""
         /** Saves the finished document; returns where (a path the doc card opens). */
         suspend fun saveDoc(title: String, markdown: String): String = ""

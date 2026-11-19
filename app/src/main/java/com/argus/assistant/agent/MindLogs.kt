@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
@@ -10,7 +10,7 @@ import android.database.sqlite.SQLiteDatabase
  * turns them into memories.
  *
  * The journal gets a `kind` column ('chat' for every existing row). It is added in place with ALTER TABLE, without
- * bumping the database version, so an older Blaze still opens mind.db and simply ignores the column.
+ * bumping the database version, so an older Argus still opens mind.db and simply ignores the column.
  *
  * v0.26.3: the journal is in blaze.db ([MindStore], mind_journal, which has `kind` from the start); these calls go
  * through [Mind.Store]. The *Old functions are the mind.db versions, used by [Mind.Db].

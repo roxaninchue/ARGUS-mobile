@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 /**
  * 2026-11-18 (owner screenshot: Google Classroom opened in the wrong account). A phone signed in to several Google accounts

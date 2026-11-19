@@ -1,9 +1,9 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import org.json.JSONObject
 
 /**
- * 0.45.29 browser tasks, the page scripts of Blaze's background browser ([BrowserEngine]), ported from the Blaze Phone
+ * 0.45.29 browser tasks, the page scripts of Argus's background browser ([BrowserEngine]), ported from the Argus Phone
  * browser engine (browser/phone/PhoneScripts.kt), which did these things right:
  *
  *  - Stable element numbers: an element keeps its `data-bz` number for the page's life (a WeakMap is the truth; a
@@ -14,7 +14,7 @@ import org.json.JSONObject
  *  - Real input: a click sends pointer and mouse down / up at the element's centre before click(), and says when the
  *    element is covered (a cookie banner), hidden or disabled instead of clicking something else.
  *  - Honest results: typing checks the value landed, a `<select>` is chosen by option, keys and waits report what happened.
- *  - Secret values (passwords, codes, card fields, values Blaze typed from the vault) never leave the page.
+ *  - Secret values (passwords, codes, card fields, values Argus typed from the vault) never leave the page.
  */
 object BrowserScripts {
     private const val COMMON = """

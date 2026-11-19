@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
-import com.blaze.assistant.agent.SearchRoute
+import com.argus.assistant.agent.SearchRoute
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.51.0 BlazeQuery query planning: 1–4 targeted sub-queries written from the conversation, never the raw user sentence.
+ * 0.51.0 ArgusQuery query planning: 1–4 targeted sub-queries written from the conversation, never the raw user sentence.
  *
  *  - [plan] (hot path, no model, < 1 ms): the conversation-aware query of 0.50 ([SearchRoute.query]: pronouns resolved from
  *    earlier turns, filler dropped), plus intent-specific variants: the error line itself for an error, "release notes" for a

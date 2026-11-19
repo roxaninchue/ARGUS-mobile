@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.52.1 (owner: the song-download loop). "Download that song" turns kept calling memory_search / recall_memory over

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
@@ -18,11 +18,11 @@ import java.util.Locale
 /**
  * Opt-in screen memory: when you switch apps, keeps a short text snapshot of what was on screen,
  * only on this phone (filesDir/screen_memory.json, last 300). Screens with password fields are skipped.
- * Blaze can search it ("what was that address I saw in Chrome?").
+ * Argus can search it ("what was that address I saw in Chrome?").
  */
 object ScreenMemory {
     private const val MAX = 300
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.argus.assistant.device.CrashLog.guard)
     private val skipPkgs = listOf("com.android.systemui", "launcher", "keyguard", "password", "bitwarden", "1password", "lastpass", "authenticator")
     private val list = ArrayList<JSONObject>()
     @Volatile private var loaded = false

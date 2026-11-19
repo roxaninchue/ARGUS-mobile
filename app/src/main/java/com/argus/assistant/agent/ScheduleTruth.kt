@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.9 replay fix (live gateway, Sunday 25 Oct with "Church 9:00–12:30" at 08:30 in the [context] block): 1 in 5

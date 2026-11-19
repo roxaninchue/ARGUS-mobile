@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.StepTool.Kind
-import com.blaze.assistant.ui.argus.icons.LucidePaths
-import com.blaze.assistant.ui.argus.icons.LucideSpec
+import com.argus.assistant.agent.StepTool.Kind
+import com.argus.assistant.ui.argus.icons.LucidePaths
+import com.argus.assistant.ui.argus.icons.LucideSpec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals

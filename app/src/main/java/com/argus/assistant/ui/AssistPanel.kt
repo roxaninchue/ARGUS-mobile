@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.foundation.background
@@ -69,14 +69,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Attachment
-import com.blaze.assistant.agent.Attachments
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Mood
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Attachment
+import com.argus.assistant.agent.Attachments
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Mood
+import com.argus.assistant.agent.Role
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.voice.Voice
 import kotlinx.coroutines.launch
 
 /** Header buttons of the assistant panel, in order (pure, tested). Compact shows Magic Hand, Show more and Close (v0.24.7: the hand). */
@@ -86,16 +86,16 @@ object PanelButtons {
 }
 
 /**
- * Compact chat over any app (v0.24.6 look): a fully rounded dark Blaze card, the mascot with a listening pulse,
+ * Compact chat over any app (v0.24.6 look): a fully rounded dark Argus card, the mascot with a listening pulse,
  * round icon buttons (described for TalkBack) instead of NEW / PIN / OPEN / LESS / ×, a rounded input pill that
- * also takes pictures from the keyboard, round mic / stop and send buttons, and Blaze's particles running along the
+ * also takes pictures from the keyboard, round mic / stop and send buttons, and Argus's particles running along the
  * screen edges while it's summoned (they stop when it's dismissed).
  * [preview*] parameters are for screenshots only.
  */
 @Composable
 fun AssistPanel(autoListen: Boolean, onClose: () -> Unit, onPin: () -> Unit, onExpand: () -> Unit,
                 previewMessages: List<ChatMessage>? = null, previewListening: Boolean = false, previewCompact: Boolean? = null) {
-    CompositionLocalProvider(LocalBlaze provides DarkColors) {
+    CompositionLocalProvider(LocalArgus provides DarkColors) {
         AssistPanelBody(autoListen, onClose, onPin, onExpand, previewMessages, previewListening, previewCompact)
     }
 }
@@ -147,7 +147,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
     }
     fun submit() {
         if (text.isBlank() && pending.isEmpty()) return
-        // v0.30.6 rapid messages: sending while Blaze works is fine (the message joins the turn). 16 Nov 2026: no "/" commands.
+        // v0.30.6 rapid messages: sending while Argus works is fine (the message joins the turn). 16 Nov 2026: no "/" commands.
         Agent.send(text, attachments = pending); text = ""; pending = emptyList()
     }
 
@@ -162,12 +162,12 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 .shadow(20.dp, card, ambientColor = Color.Black, spotColor = Color.Black)
                 .clip(card).background(Glass.surface).border(1.dp, Glass.border, card)
         ) {
-            // v0.33.0 Screen Doctor: "What's this?" over the app you summoned Blaze on.
-            if (previewMessages != null && !busy && com.blaze.assistant.assist.ScreenDoctor.fresh()) {   // v0.39.0: the Duo strip has the chip now
+            // v0.33.0 Screen Doctor: "What's this?" over the app you summoned Argus on.
+            if (previewMessages != null && !busy && com.argus.assistant.assist.ScreenDoctor.fresh()) {   // v0.39.0: the Duo strip has the chip now
                 Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(tr("What's this?"), modifier = Modifier.clip(RoundedCornerShape(50)).background(Glass.raised)
                         .clickable { Voice.cancelListening(); touched = true
-                            val sd = com.blaze.assistant.assist.ScreenDoctor
+                            val sd = com.argus.assistant.assist.ScreenDoctor
                             Agent.send(sd.prompt(sd.text, sd.app, text.trim()), attachments = sd.attachments()); sd.clear(); text = "" }
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Glass.cyan))
@@ -176,11 +176,11 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
                 }
             }
-            // v0.39.0 home-button sheet: who's listening (Halo x Blaze), what Blaze sees, and one-tap chips.
+            // v0.39.0 home-button sheet: who's listening (Halo x Argus), what Argus sees, and one-tap chips.
             if (previewMessages == null) AssistDuoStrip(listening = listening, busy = busy, partial = partial,
                 onChip = { prompt, withScreen ->
                     Voice.cancelListening(); touched = true
-                    val sd = com.blaze.assistant.assist.ScreenDoctor
+                    val sd = com.argus.assistant.assist.ScreenDoctor
                     if (withScreen && sd.fresh()) { Agent.send(sd.prompt(sd.text, sd.app, prompt), attachments = sd.attachments()) } else Agent.send(prompt)
                 },
                 onType = { Voice.cancelListening(); touched = true })
@@ -193,7 +193,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                     val status = when {
                         listening -> "Listening"
                         voice == Voice.State.SPEAKING -> "Speaking"
-                        busy -> agentStatus.ifBlank { com.blaze.assistant.agent.Friendly.between(null) }
+                        busy -> agentStatus.ifBlank { com.argus.assistant.agent.Friendly.between(null) }
                         else -> "Ready"
                     }
                     Text(status, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -211,7 +211,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                         when (b) {
                             PanelButtons.B.HAND -> {
                                 // v0.24.7: summon Magic Hand over the app underneath; the panel gets out of the way.
-                                val err = com.blaze.assistant.phone.MagicHand.summon(ctx)
+                                val err = com.argus.assistant.phone.MagicHand.summon(ctx)
                                 if (err != null) note = err else { Voice.cancelListening(); onClose() }
                             }
                             PanelButtons.B.NEW -> { Voice.cancelListening(); Agent.clear(); text = "" }
@@ -250,7 +250,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 }
             }
             ConfirmCard()
-            com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark)   // P2-SF-02
+            com.argus.assistant.ui.team.cards.ArgusCards(dark = LocalArgus.current.dark)   // P2-SF-02
             QuestionCard()
             if (listening || note.isNotEmpty()) {
                 Text(if (note.isNotEmpty()) note else partial.ifBlank { "Listening\u2026" },
@@ -293,23 +293,23 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
 }
 
 /**
- * v0.39.0 the home-button sheet's top strip: "Blaze & Halo" with the Duo dots and a plain status, "Sees: <app>"
- * (from the assist structure the system hands Blaze, or Awareness), the live words while listening, and chips:
+ * v0.39.0 the home-button sheet's top strip: "Argus & Halo" with the Duo dots and a plain status, "Sees: <app>"
+ * (from the assist structure the system hands Argus, or Awareness), the live words while listening, and chips:
  * What is this? / Reply for me / @halo / Type instead. Replies come back as drafts with a Send button (ConfirmCard).
  */
 @Composable
 private fun AssistDuoStrip(listening: Boolean, busy: Boolean, partial: String, onChip: (String, Boolean) -> Unit, onType: () -> Unit) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    val sd = com.blaze.assistant.assist.ScreenDoctor
+    val sd = com.argus.assistant.assist.ScreenDoctor
     val label = remember(sd.app) {
         val pkg = sd.app
-        if (pkg.isBlank()) com.blaze.assistant.agent.Awareness.get("screen")?.title.orEmpty()
+        if (pkg.isBlank()) com.argus.assistant.agent.Awareness.get("screen")?.title.orEmpty()
         else try { ctx.packageManager.getApplicationLabel(ctx.packageManager.getApplicationInfo(pkg, 0)).toString() } catch (_: Exception) { pkg.substringAfterLast('.') }
     }
-    val sees = com.blaze.assistant.agent.SimpleHome.seesLine(label)
+    val sees = com.argus.assistant.agent.SimpleHome.seesLine(label)
     Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(9.dp).clip(CircleShape).background(DuoColors.blazeBlue))
+            Box(Modifier.size(9.dp).clip(CircleShape).background(DuoColors.argusBlue))
             Spacer(Modifier.width(3.dp))
             Box(Modifier.size(9.dp).clip(CircleShape).background(DuoColors.haloGold))
             Spacer(Modifier.width(8.dp))

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -33,7 +33,7 @@ import kotlin.math.roundToInt
  */
 @Composable
 fun SwipeToQuote(enabled: Boolean, onQuote: () -> Unit, content: @Composable () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -64,7 +64,7 @@ fun SwipeToQuote(enabled: Boolean, onQuote: () -> Unit, content: @Composable () 
                     val next = (x.value + drag * 0.6f).coerceIn(0f, max)   // a little resistance, like WhatsApp
                     if (next == x.value) return@detectHorizontalDragGestures
                     change.consume()
-                    if (!armed[0] && next >= threshold) { armed[0] = true; com.blaze.assistant.device.Haptics.tick(ctx) }
+                    if (!armed[0] && next >= threshold) { armed[0] = true; com.argus.assistant.device.Haptics.tick(ctx) }
                     else if (armed[0] && next < threshold) armed[0] = false
                     scope.launch { x.snapTo(next) }
                 }

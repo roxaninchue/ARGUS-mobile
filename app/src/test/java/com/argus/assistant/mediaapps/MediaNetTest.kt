@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.connect.Entitlements
-import com.blaze.assistant.mediaapps.MediaNet.Link
+import com.argus.assistant.connect.Entitlements
+import com.argus.assistant.mediaapps.MediaNet.Link
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -18,7 +18,7 @@ import java.io.IOException
 class MediaNetTest {
     private val MB = MediaNet.MB
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     // A 4-minute 320 kbps song (40 bytes/ms) over a flaky 800 kbps link with 300 ms per request.
     private val songMs = 240_000L

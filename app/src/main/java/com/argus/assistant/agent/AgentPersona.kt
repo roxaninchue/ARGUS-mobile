@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /**
  * 2026-11-16 agent-first persona (owner: "ARGUS must understand that it is an agent-first AI, not a chatbot … a goal, not

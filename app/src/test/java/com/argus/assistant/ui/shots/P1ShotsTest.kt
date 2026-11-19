@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.shots
+package com.argus.assistant.ui.shots
 
 import android.graphics.Bitmap
 import android.graphics.Canvas

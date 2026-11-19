@@ -1,11 +1,11 @@
-package com.blaze.assistant.glance
+package com.argus.assistant.glance
 
 import android.content.Context
-import com.blaze.assistant.agent.BgAgents
-import com.blaze.assistant.agent.Processes
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.routine.Routines
-import com.blaze.assistant.stage.StageStore
+import com.argus.assistant.agent.BgAgents
+import com.argus.assistant.agent.Processes
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.routine.Routines
+import com.argus.assistant.stage.StageStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

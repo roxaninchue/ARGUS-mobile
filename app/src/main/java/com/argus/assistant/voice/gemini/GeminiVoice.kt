@@ -1,13 +1,13 @@
-package com.blaze.assistant.voice.gemini
+package com.argus.assistant.voice.gemini
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Handler
 import android.os.Looper
-import com.blaze.assistant.agent.KeyRing
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.voice.myvoice.SpeechChunker
+import com.argus.assistant.agent.KeyRing
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.voice.myvoice.SpeechChunker
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
@@ -15,8 +15,8 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * v0.41.0 "Gemini voice": Blaze's replies spoken by Gemini text-to-speech with the user's own Gemini API key (the
- * Gemini key in Blaze's keys, which also arrives through the Blaze account). The reply is cut into sentences
+ * v0.41.0 "Gemini voice": Argus's replies spoken by Gemini text-to-speech with the user's own Gemini API key (the
+ * Gemini key in Argus's keys, which also arrives through the Argus account). The reply is cut into sentences
  * (SpeechChunker); each is made on the "gemini-tts" thread while the one before plays on "gemini-play", so speech
  * starts after the first short sentence. Any failure (no key, no connection, used up) hands the rest of the reply to
  * the phone's voice under the same utterance id, and the user is told once, in plain words.
@@ -40,7 +40,7 @@ object GeminiVoice {
     fun key(): String = try { KeyRing.all("gemini").firstOrNull().orEmpty() } catch (_: Throwable) { "" }
     fun hasKey() = key().isNotBlank()
 
-    /** Saves a pasted key as the Gemini key (the same one Blaze's other Gemini features use). */
+    /** Saves a pasted key as the Gemini key (the same one Argus's other Gemini features use). */
     fun saveKey(k: String): Boolean = try { KeyRing.add("gemini", k.trim()) || KeyRing.all("gemini").contains(k.trim()) } catch (_: Throwable) { false }
 
     @Volatile var lastError = ""

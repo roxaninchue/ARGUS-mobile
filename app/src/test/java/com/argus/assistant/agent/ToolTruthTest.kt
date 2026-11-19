@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -23,9 +23,9 @@ class ToolTruthTest {
         fun add(what: String, f: () -> Any) {
             try { when (val v = f()) { is JSONObject -> t.put(v); is List<*> -> v.forEach { t.put(it) } } } catch (e: Throwable) { missed += "$what (${e.javaClass.simpleName})" }
         }
-        add("Terminal") { com.blaze.assistant.terminal.Terminal.shellTools() }
-        add("Routines") { com.blaze.assistant.routine.Routines.tools() }
-        add("Skills") { com.blaze.assistant.phone.Skills.definitions() }
+        add("Terminal") { com.argus.assistant.terminal.Terminal.shellTools() }
+        add("Routines") { com.argus.assistant.routine.Routines.tools() }
+        add("Skills") { com.argus.assistant.phone.Skills.definitions() }
         add("Weather") { GatewayWeather.tool() }
         add("SaveFile") { SaveFile.tool() }
         add("Mind") { Mind.tools() }   // Agent.tools() adds these when Mind is ready (memory_search)
@@ -78,9 +78,9 @@ class ToolTruthTest {
     }
 
     @Test fun chatLaneSourceChecksToolShape() {
-        val src = listOf(File("src/main/java/com/blaze/assistant/agent/ChatLane.kt"), File("app/src/main/java/com/blaze/assistant/agent/ChatLane.kt")).first { it.exists() }.readText()
+        val src = listOf(File("src/main/java/com/argus/assistant/agent/ChatLane.kt"), File("app/src/main/java/com/argus/assistant/agent/ChatLane.kt")).first { it.exists() }.readText()
         assertTrue(src.contains("if (ToolTruth.toolShaped(t) || SaveFile.wantsSave(t)) return false"))
-        val agent = listOf(File("src/main/java/com/blaze/assistant/agent/Agent.kt"), File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
+        val agent = listOf(File("src/main/java/com/argus/assistant/agent/Agent.kt"), File("app/src/main/java/com/argus/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         // 2026-11-16 model-first (docs/MODEL-FIRST.md): no keyword guess picks the lane any more; every message gets the full lane.
         assertFalse(agent.contains("ToolTruth.toolShaped("))
         assertTrue(agent.contains("var lite = false"))
@@ -129,7 +129,7 @@ class ToolTruthTest {
         assertEquals(null, ToolTruth.choiceFor("hi ${BrandName.NAME}", emptyList(), all))
     }
 
-    @Test fun blazeMusicPlayIsMusicOps() {
+    @Test fun argusMusicPlayIsMusicOps() {
         val tools = listOf("music_ops", "search_in_app", "run_plan")
         assertEquals("music_ops", ToolTruth.choiceFor("play Calm Down by Rema in ${BrandName.NAME} Music", emptyList(), tools))
         assertEquals("music_ops", ToolTruth.choiceFor("put on something chill from my downloads", emptyList(), tools))

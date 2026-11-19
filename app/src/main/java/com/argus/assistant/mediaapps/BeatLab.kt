@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +19,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * v0.33.0 Beat Lab: hum a melody and Blaze turns it into a beat. On the phone, no internet: the hum is recorded (or a
+ * v0.33.0 Beat Lab: hum a melody and Argus turns it into a beat. On the phone, no internet: the hum is recorded (or a
  * WAV you give), its pitch is tracked (YIN), split into notes, the key is found and the notes snapped to it, chords are
  * picked bar by bar to fit the melody, and a beat is rendered (drums, bass, chord pad and your melody as a lead) at the
  * tempo you want. The WAV lands in the Music library; Halo can then write lyrics on the chords. Pure DSP in [Dsp]

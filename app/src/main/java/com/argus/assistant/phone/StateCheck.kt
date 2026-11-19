@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 /**
  * 0.45.19 phone tasks (user testing 0.45.18, Fri 23 Oct 09:21): "turn on dark mode" answered

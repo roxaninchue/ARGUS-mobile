@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -110,7 +110,7 @@ private val pictureShape = RoundedCornerShape(16.dp)
 /** One picture: the image, a soft placeholder while it loads, its alt text if it can't. */
 @Composable
 fun RichPicture(img: RichReplies.Img, modifier: Modifier = Modifier, ratio: Float = 4f / 3f, crop: Boolean = true) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val override = RichImages.Local.current
     val bmp by produceState(override?.invoke(img.url) ?: RichImages.cached(img.url), img.url) {
@@ -150,7 +150,7 @@ fun RichImageGroup(imgs: List<RichReplies.Img>, animatorScale: Float = 1f) {
  */
 @Composable
 fun RichDeck(imgs: List<RichReplies.Img>, animatorScale: Float = 1f, start: Int = 0) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val n = imgs.size
     var index by androidx.compose.runtime.remember { mutableIntStateOf(start.coerceIn(0, (n - 1).coerceAtLeast(0))) }
     val off = RichReplies.animationsOff(animatorScale)
@@ -216,7 +216,7 @@ fun RichDeck(imgs: List<RichReplies.Img>, animatorScale: Float = 1f, start: Int 
 
 @Composable
 private fun DeckArrow(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.size(34.dp).clip(CircleShape).background(c.faint).clickable(onClickLabel = desc, onClick = onClick), contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = desc, tint = c.ink, modifier = Modifier.size(20.dp))
     }
@@ -225,7 +225,7 @@ private fun DeckArrow(icon: androidx.compose.ui.graphics.vector.ImageVector, des
 /** Step-flow card: numbered blue dots joined by a line, a bold title and its detail per step. */
 @Composable
 fun RichSteps(steps: List<RichReplies.Step>, text: @Composable (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val orange = Color(0xFF4C7DFF); val blue = Color(0xFF4C7DFF) // v0.25.2: classic solid blue, no orange
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.faint).padding(horizontal = 12.dp, vertical = 12.dp)) {
         steps.forEachIndexed { i, s ->
@@ -250,14 +250,14 @@ fun RichSteps(steps: List<RichReplies.Step>, text: @Composable (String) -> Unit)
 }
 
 /**
- * An inline diagram. v0.26.3: Mermaid is drawn on the phone ([DiagramRenderer], bundled mermaid.js, Blaze's colours in
+ * An inline diagram. v0.26.3: Mermaid is drawn on the phone ([DiagramRenderer], bundled mermaid.js, Argus's colours in
  * light and dark, cached), so it works offline and in private chats; the web renderers are only the fallback. While it
  * draws, a quiet placeholder; if nothing can draw it, one plain line with "Show code" (the source is never the picture).
  * Copy keeps the source.
  */
 @Composable
 fun RichDiagram(d: RichReplies.Block.Diagram, maxH: androidx.compose.ui.unit.Dp = 420.dp) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val override = RichImages.Local.current   // screenshots and tests bring their own pictures
     val look = DiagramRender.look(c.dark)

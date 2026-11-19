@@ -1,4 +1,4 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray

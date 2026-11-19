@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 /**
  * Owner 2026-11-15 (Finn: the + sheet "looks ugly and not a part of the whole page because it sits on top of the chatbox
@@ -69,7 +69,7 @@ object PlusMenuSpec {
     /** Rows that open a page get a chevron; the rest act in place. */
     fun opensPage(id: String): Boolean = id == "apps" || id == "skills"
 
-    /** The Lucide icon for a + entry ([com.blaze.assistant.ui.plusItems] ids). */
+    /** The Lucide icon for a + entry ([com.argus.assistant.ui.plusItems] ids). */
     fun icon(id: String, on: Boolean = false): String = when (id) {
         "camera" -> "camera"
         "blazecam" -> "scan-text"

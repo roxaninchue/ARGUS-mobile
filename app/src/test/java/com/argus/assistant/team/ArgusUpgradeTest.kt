@@ -1,10 +1,10 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.agent.ChatIndex
-import com.blaze.assistant.agent.engines.LocalEngine
-import com.blaze.assistant.agent.engines.LocalEngineTest.FakeLlm
-import com.blaze.assistant.agent.engines.LocalEngineTest.FakeLoop
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.agent.ChatIndex
+import com.argus.assistant.agent.engines.LocalEngine
+import com.argus.assistant.agent.engines.LocalEngineTest.FakeLlm
+import com.argus.assistant.agent.engines.LocalEngineTest.FakeLoop
+import com.argus.assistant.store.JdbcSql
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray

@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.ManagerChats
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.ManagerChats
 import java.time.Instant
 import java.time.ZoneId
 

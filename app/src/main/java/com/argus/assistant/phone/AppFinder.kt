@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 /**
  * v0.33.3, pure (AppFinderTest): finding the user's installed apps by what they ask for.

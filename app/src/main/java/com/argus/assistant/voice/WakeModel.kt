@@ -1,4 +1,4 @@
-package com.blaze.assistant.voice
+package com.argus.assistant.voice
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers

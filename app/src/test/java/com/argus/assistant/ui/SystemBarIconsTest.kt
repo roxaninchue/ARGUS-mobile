@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -10,7 +10,7 @@ import org.junit.Test
  */
 class SystemBarIconsTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     @Test fun iconsFollowTheAppTheme() {
         assertTrue("light ARGUS: dark icons", SystemBarIcons.darkIcons(appDark = false, darkScreenShowing = false))

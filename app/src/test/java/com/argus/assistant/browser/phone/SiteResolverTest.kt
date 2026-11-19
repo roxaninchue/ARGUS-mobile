@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -15,7 +15,7 @@ import org.junit.Test
  * 0.45.19-speed, user rule 8: vague names resolve to the right page. Strict 5/5: every case runs five variants (other
  * wordings, and the search results rotated so the right one sits at a different rank with an ad on top) and all five
  * must give exactly the expected page, or the expected question when only the user can say. Search results are
- * fixtures in the exact text format [com.blaze.assistant.agent.Web.search] returns (parsed by [SiteResolver.parseSearch]).
+ * fixtures in the exact text format [com.argus.assistant.agent.Web.search] returns (parsed by [SiteResolver.parseSearch]).
  */
 class SiteResolverTest {
     private fun results(vararg r: Pair<String, String>) = r.toList()

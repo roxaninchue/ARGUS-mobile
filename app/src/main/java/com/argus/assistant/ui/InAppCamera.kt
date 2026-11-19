@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.app.Activity
 import android.content.ClipData
@@ -116,15 +116,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.device.BlazeCamera
-import com.blaze.assistant.device.CameraFlow
-import com.blaze.assistant.device.CameraModes
-import com.blaze.assistant.device.CameraModes.Mode
-import com.blaze.assistant.device.CameraModes.Origin
-import com.blaze.assistant.device.CameraModes.Route
-import com.blaze.assistant.device.CameraSupport
-import com.blaze.assistant.device.CameraTimer
-import com.blaze.assistant.device.CameraZoom
+import com.argus.assistant.device.ArgusCamera
+import com.argus.assistant.device.CameraFlow
+import com.argus.assistant.device.CameraModes
+import com.argus.assistant.device.CameraModes.Mode
+import com.argus.assistant.device.CameraModes.Origin
+import com.argus.assistant.device.CameraModes.Route
+import com.argus.assistant.device.CameraSupport
+import com.argus.assistant.device.CameraTimer
+import com.argus.assistant.device.CameraZoom
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -136,13 +136,13 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
 /**
- * v0.28.x Blaze Camera (CameraX). Two jobs:
+ * v0.28.x Argus Camera (CameraX). Two jobs:
  *  1. The fallback for + → Camera when the phone's camera app can't be used (none installed / exported, blocked by
  *     a work profile, Secure Folder or policy, or it ignored EXTRA_OUTPUT): Origin.CHAT_ATTACH, one photo into the
  *     file the chat passed, no mode bar.
- *  2. Blaze Camera with a mode bar (Scan · Text · Ask · Photo · Translate · Document), opened from + → Blaze Camera,
+ *  2. Argus Camera with a mode bar (Scan · Text · Ask · Photo · Translate · Document), opened from + → Argus Camera,
  *     Magic Hand, the blaze_camera tool, or a plain request ("read this sign"). Where a capture goes is
- *     [CameraModes.route]; [BlazeCamera.deliver] hands it over.
+ *     [CameraModes.route]; [ArgusCamera.deliver] hands it over.
  * Preview, shutter, front/back flip only when both lenses exist, flash only when the lens has one, pinch-zoom and
  * tap-to-focus, its own permission handling, ~1600 px upright JPEGs (1280 px on low-RAM phones), insets-aware.
  * v0.30.x Camera Pro (ui/CameraPro.kt, device/CameraZoom.kt): zoom presets, the half-circle zoom dial, digital zoom
@@ -158,15 +158,15 @@ class CameraActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
+        if (com.argus.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge()
         val path = intent.getStringExtra(EXTRA_PATH)
         val origin = if (path != null) Origin.CHAT_ATTACH
-            else runCatching { Origin.valueOf(intent.getStringExtra(BlazeCamera.EXTRA_ORIGIN) ?: "") }.getOrDefault(Origin.STANDALONE)
+            else runCatching { Origin.valueOf(intent.getStringExtra(ArgusCamera.EXTRA_ORIGIN) ?: "") }.getOrDefault(Origin.STANDALONE)
         val asked = CameraModes.parse(intent.getStringExtra(EXTRA_MODE))
-        val start = CameraModes.startMode(asked, BlazeCamera.lastMode, origin)
-        val chat = intent.getStringExtra(BlazeCamera.EXTRA_CHAT)
-        val prompt = intent.getStringExtra(BlazeCamera.EXTRA_PROMPT)
+        val start = CameraModes.startMode(asked, ArgusCamera.lastMode, origin)
+        val chat = intent.getStringExtra(ArgusCamera.EXTRA_CHAT)
+        val prompt = intent.getStringExtra(ArgusCamera.EXTRA_PROMPT)
         setContent {
             BlazeTheme {
                 CameraScreen(start, origin, path?.let { File(it) }, chat, prompt,
@@ -271,7 +271,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
     val owner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val lowRam = remember { BlazeCamera.lowRam(ctx) }
+    val lowRam = remember { ArgusCamera.lowRam(ctx) }
     val modes = CameraModes.barFor(origin)
     var mode by rememberSaveable { mutableStateOf(start.id) }
     val m = CameraModes.parse(mode) ?: Mode.PHOTO
@@ -325,7 +325,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
                 imageCaptureTargetSize = CameraController.OutputSize(if (landscape) Size(long, short) else Size(short, long))
             }
             imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-            // Blaze handles pinch and tap itself (CameraPro): pinch has to run on past the lens's max into digital zoom,
+            // Argus handles pinch and tap itself (CameraPro): pinch has to run on past the lens's max into digital zoom,
             // and a tap shows the focus ring and exposure slider.
             isPinchToZoomEnabled = false
             isTapToFocusEnabled = false
@@ -482,9 +482,9 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
                 if (scanned != null) { img.close(); return@Analyzer }
                 scanFrame(scanner, img) { s -> ContextCompat.getMainExecutor(ctx).execute { if (scanned == null) {
                     scanned = s
-                    com.blaze.assistant.device.Haptics.tick(ctx)
+                    com.argus.assistant.device.Haptics.tick(ctx)
                     if (CameraModes.route(Mode.SCAN, origin) == Route.SEND_TURN) {
-                        BlazeCamera.deliver(ctx, Mode.SCAN, origin, chat, asked, code = s.raw); onDone(true, null)
+                        ArgusCamera.deliver(ctx, Mode.SCAN, origin, chat, asked, code = s.raw); onDone(true, null)
                     }
                 } } }
             })
@@ -496,7 +496,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
     val docScan = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { r ->
         val res = if (r.resultCode == Activity.RESULT_OK) com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(r.data) else null
         val uri = res?.pdf?.uri ?: res?.pages?.firstOrNull()?.imageUri
-        if (uri != null) { BlazeCamera.deliver(ctx, Mode.DOCUMENT, origin, chat, asked, doc = uri); onDone(true, null) }
+        if (uri != null) { ArgusCamera.deliver(ctx, Mode.DOCUMENT, origin, chat, asked, doc = uri); onDone(true, null) }
         else note = "Hold the page flat inside the frame and tap the shutter."
     }
     var triedDocScanner by rememberSaveable { mutableStateOf(false) }
@@ -537,7 +537,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
                     val words = withContext(Dispatchers.Default) { CameraSupport.normalize(out); readText(out) }
                     busy = false; note = ""
                     if (route == Route.CARD) textCard = out to words
-                    else { BlazeCamera.deliver(ctx, m, origin, chat, asked, photo = out, ocr = words); onDone(true, null) }
+                    else { ArgusCamera.deliver(ctx, m, origin, chat, asked, photo = out, ocr = words); onDone(true, null) }
                 }
                 m == Mode.DOCUMENT -> {
                     withContext(Dispatchers.IO) { CameraSupport.normalize(out) }
@@ -547,7 +547,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
                 else -> {
                     withContext(Dispatchers.IO) { CameraSupport.normalize(out) }
                     busy = false
-                    BlazeCamera.deliver(ctx, m, origin, chat, asked, photo = out); onDone(true, null)
+                    ArgusCamera.deliver(ctx, m, origin, chat, asked, photo = out); onDone(true, null)
                 }
             }
         }
@@ -561,7 +561,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
         out.parentFile?.mkdirs()
         if (m == Mode.PHOTO && shotKind != "normal") {
             scope.launch {
-                val ok = com.blaze.assistant.device.CameraStack.capture(ctx, controller, shotKind, out, lowRam, evLower, evUpper, evStep, ev) { note = it }
+                val ok = com.argus.assistant.device.CameraStack.capture(ctx, controller, shotKind, out, lowRam, evLower, evUpper, evStep, ev) { note = it }
                 if (ok) handlePhoto(out, digital) else { busy = false; note = "The camera didn't give the frames for that shot. Try a normal photo." }
             }
             return
@@ -584,7 +584,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
             val start = SystemClock.elapsedRealtime(); var shown = -1
             while (true) {
                 val left = CameraTimer.remaining(start, SystemClock.elapsedRealtime(), timer)
-                if (left != shown) { shown = left; countdown = left; if (left > 0) com.blaze.assistant.device.Haptics.tick(ctx) }
+                if (left != shown) { shown = left; countdown = left; if (left > 0) com.argus.assistant.device.Haptics.tick(ctx) }
                 if (left <= 0) break
                 delay(40)
             }
@@ -603,7 +603,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
     val proActions = remember {
         CameraProActions(
             onZoom = { setZoom(it) },
-            onPreset = { p -> com.blaze.assistant.device.Haptics.tick(ctx); glideTo(p) },
+            onPreset = { p -> com.argus.assistant.device.Haptics.tick(ctx); glideTo(p) },
             onDial = { open -> dialOpen = open; dialTouch = SystemClock.uptimeMillis() },
             onDialTouch = { dialTouch = SystemClock.uptimeMillis() },
             onDialRelease = {
@@ -668,7 +668,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
             if (nm != m) {
                 mode = nm.id; note = ""; scanned = null
                 countJob[0]?.cancel(); countJob[0] = null; countdown = 0
-                if (CameraModes.remembers(origin)) BlazeCamera.lastMode = nm.id
+                if (CameraModes.remembers(origin)) ArgusCamera.lastMode = nm.id
             }
         },
         onClose = { onDone(false, null) },
@@ -677,22 +677,22 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
         onShutter = { shutter() },
     )
     scanned?.takeIf { CameraModes.route(Mode.SCAN, origin) == Route.CARD }?.let { s ->
-        ScanCard(s, onAsk = { BlazeCamera.deliver(ctx, Mode.SCAN, origin, chat, null, code = s.raw, routeOverride = Route.DRAFT); onDone(true, null) },
+        ScanCard(s, onAsk = { ArgusCamera.deliver(ctx, Mode.SCAN, origin, chat, null, code = s.raw, routeOverride = Route.DRAFT); onDone(true, null) },
             onAgain = { scanned = null }, onDone = { onDone(true, null) })
     }
     cropDoc?.let { f ->
         DocumentCrop(f, onCancel = { cropDoc = null }, onDone = { corners ->
             scope.launch {
-                if (corners != null) com.blaze.assistant.device.CameraStack.cropDocument(f, corners)
+                if (corners != null) com.argus.assistant.device.CameraStack.cropDocument(f, corners)
                 cropDoc = null
-                BlazeCamera.deliver(ctx, Mode.DOCUMENT, origin, chat, asked, photo = f); onDone(true, null)
+                ArgusCamera.deliver(ctx, Mode.DOCUMENT, origin, chat, asked, photo = f); onDone(true, null)
             }
         })
     }
     textCard?.let { (file, words) ->
         TextCard(words,
-            onTranslate = { BlazeCamera.deliver(ctx, Mode.TRANSLATE, origin, chat, null, photo = file, ocr = words, routeOverride = Route.SEND_TURN); onDone(true, null) },
-            onAsk = { BlazeCamera.deliver(ctx, Mode.TEXT, origin, chat, null, photo = file, ocr = words, routeOverride = Route.DRAFT); onDone(true, null) },
+            onTranslate = { ArgusCamera.deliver(ctx, Mode.TRANSLATE, origin, chat, null, photo = file, ocr = words, routeOverride = Route.SEND_TURN); onDone(true, null) },
+            onAsk = { ArgusCamera.deliver(ctx, Mode.TEXT, origin, chat, null, photo = file, ocr = words, routeOverride = Route.DRAFT); onDone(true, null) },
             onAgain = { textCard = null }, onDone = { onDone(true, null) })
     }
 }
@@ -729,18 +729,18 @@ private fun scanFrame(scanner: com.google.mlkit.vision.barcode.BarcodeScanner, i
 /** On-device OCR with Magic Hand's warm ML Kit recogniser, lines in reading order. */
 private suspend fun readText(f: File): String = try {
     val bmp = BitmapFactory.decodeFile(f.path) ?: throw IllegalStateException("couldn't decode the photo")
-    val lines = com.blaze.assistant.phone.MagicHandScreen.lines(bmp)
-    com.blaze.assistant.phone.MagicHandOcr.keep(lines, com.blaze.assistant.phone.MagicHandLogic.Box(0, 0, bmp.width, bmp.height), 0.01f)
+    val lines = com.argus.assistant.phone.MagicHandScreen.lines(bmp)
+    com.argus.assistant.phone.MagicHandOcr.keep(lines, com.argus.assistant.phone.MagicHandLogic.Box(0, 0, bmp.width, bmp.height), 0.01f)
 } catch (e: Throwable) { CameraSupport.log("OCR failed", e); "" }
 
 private fun flashMode(f: String) = when (f) { "on" -> ImageCapture.FLASH_MODE_ON; "auto" -> ImageCapture.FLASH_MODE_AUTO; else -> ImageCapture.FLASH_MODE_OFF }
 
-/** Gallery copy for open_camera outside a chat: Pictures/Blaze (Android 10+, no storage permission), else Blaze's own Pictures folder. */
+/** Gallery copy for open_camera outside a chat: Pictures/Blaze (Android 10+, no storage permission), else Argus's own Pictures folder. */
 private fun saveToGallery(ctx: Context, f: File): String? = try {
     if (Build.VERSION.SDK_INT >= 29) {
         val v = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, f.name); put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Blaze"); put(MediaStore.Images.Media.IS_PENDING, 1)
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Argus"); put(MediaStore.Images.Media.IS_PENDING, 1)
         }
         val cr = ctx.contentResolver
         val uri = cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v) ?: throw IllegalStateException("MediaStore insert failed")
@@ -755,13 +755,13 @@ private fun saveToGallery(ctx: Context, f: File): String? = try {
     }
 } catch (e: Exception) { CameraSupport.log("gallery save failed", e); null }
 
-/** Text read by Blaze Camera as a .txt in Downloads/Blaze (Android 10+), else Blaze's own Documents folder. */
+/** Text read by Argus Camera as a .txt in Downloads/Blaze (Android 10+), else Argus's own Documents folder. */
 private fun saveText(ctx: Context, text: String): String? = try {
     val name = "blaze-text-${System.currentTimeMillis()}.txt"
     if (Build.VERSION.SDK_INT >= 29) {
         val v = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, name); put(MediaStore.Downloads.MIME_TYPE, "text/plain")
-            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Blaze")
+            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Argus")
         }
         val uri = ctx.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v) ?: throw IllegalStateException("MediaStore insert failed")
         ctx.contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
@@ -782,7 +782,7 @@ private fun camStart(ctx: Context, i: Intent): Boolean = try { ctx.startActivity
 
 @Composable
 private fun ResultSheet(title: String, content: @Composable () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).windowInsetsPadding(WindowInsets.safeDrawing), contentAlignment = Alignment.BottomCenter) {
         Column(Modifier.fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(22.dp)).background(DialogColors.Dark.surface, RoundedCornerShape(22.dp))
             .glass(RoundedCornerShape(22.dp), GlassIntensity.High, shadow = false).padding(18.dp)) {
@@ -795,7 +795,7 @@ private fun ResultSheet(title: String, content: @Composable () -> Unit) {
 
 @Composable
 private fun CamChips(items: List<Pair<String, () -> Unit>>) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items.forEachIndexed { i, (label, f) ->
             Box(Modifier.clip(RoundedCornerShape(50)).background(if (i == 0) c.accent else c.paper).clickable(onClickLabel = label, onClick = f)
@@ -809,7 +809,7 @@ private fun CamChips(items: List<Pair<String, () -> Unit>>) {
 @Composable
 private fun TextCard(words: String, onTranslate: () -> Unit, onAsk: () -> Unit, onAgain: () -> Unit, onDone: () -> Unit) {
     val ctx = LocalContext.current
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     ResultSheet(if (words.isBlank()) "No text found" else "Text") {
         if (words.isBlank()) Text(tr("{0} couldn't read any words. Move closer, hold steady and try again.", BrandName.NAME),
             style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = c.ink))
@@ -817,11 +817,11 @@ private fun TextCard(words: String, onTranslate: () -> Unit, onAsk: () -> Unit, 
             Text(words, style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 21.sp, color = c.ink))
         }
         // v0.34.0: prices and sums the camera read, worked out.
-        val prices = remember(words) { com.blaze.assistant.device.CameraSmart.prices(words) }
-        val sums = remember(words) { com.blaze.assistant.device.CameraSmart.sums(words).mapNotNull { e -> Expr.eval(e)?.let { v -> e to v } }.take(4) }
+        val prices = remember(words) { com.argus.assistant.device.CameraSmart.prices(words) }
+        val sums = remember(words) { com.argus.assistant.device.CameraSmart.sums(words).mapNotNull { e -> Expr.eval(e)?.let { v -> e to v } }.take(4) }
         if (prices.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            val tot = com.blaze.assistant.device.CameraSmart.totals(prices).entries.joinToString(" + ") { (k, v) -> "$k ${"%,.2f".format(v)}" }
+            val tot = com.argus.assistant.device.CameraSmart.totals(prices).entries.joinToString(" + ") { (k, v) -> "$k ${"%,.2f".format(v)}" }
             Text("${prices.size} price" + (if (prices.size == 1) "" else "s") + " \u00b7 total $tot", style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = c.ink))
         }
         sums.forEach { (e, v) ->
@@ -842,7 +842,7 @@ private fun TextCard(words: String, onTranslate: () -> Unit, onAsk: () -> Unit, 
 @Composable
 private fun ScanCard(s: Scanned, onAsk: () -> Unit, onAgain: () -> Unit, onDone: () -> Unit) {
     val ctx = LocalContext.current
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val wifi = CameraModes.parseWifi(s.raw)
     val shown = when {
         wifi != null -> "Wi-Fi \u201c${wifi.ssid}\u201d"
@@ -868,14 +868,14 @@ private fun ScanCard(s: Scanned, onAsk: () -> Unit, onAgain: () -> Unit, onDone:
         CameraModes.CodeKind.PHONE -> "Phone number"; CameraModes.CodeKind.EMAIL -> "Email"; else -> "Code" }) {
         SelectionContainer { Text(shown, style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, lineHeight = 21.sp, color = c.ink)) }
         // v0.34.0: a product barcode (EAN / UPC) is looked up on Open Food Facts (free, open data).
-        if (com.blaze.assistant.device.CameraSmart.isProductCode(s.raw)) {
+        if (com.argus.assistant.device.CameraSmart.isProductCode(s.raw)) {
             val product by androidx.compose.runtime.produceState<String?>(null, s.raw) {
                 value = "Looking up the product\u2026"
                 value = withContext(Dispatchers.IO) {
                     try {
                         val h = java.net.URL("https://world.openfoodfacts.org/api/v2/product/${s.raw.trim()}.json?fields=product_name,brands,quantity").openConnection() as java.net.HttpURLConnection
                         h.connectTimeout = 8000; h.readTimeout = 10000; h.setRequestProperty("User-Agent", "Blaze/0.34 (Android)")
-                        com.blaze.assistant.device.CameraSmart.product(h.inputStream.bufferedReader().use { it.readText() }) ?: "Not in Open Food Facts yet."
+                        com.argus.assistant.device.CameraSmart.product(h.inputStream.bufferedReader().use { it.readText() }) ?: "Not in Open Food Facts yet."
                     } catch (_: Exception) { "Couldn't look it up (no connection)." }
                 }
             }
@@ -904,7 +904,7 @@ private fun joinWifi(ctx: Context, w: CameraModes.Wifi) {
 }
 
 /**
- * Blaze Camera's controls over any preview (stateless, so ShotsTest draws it with a fake preview). Insets-aware for
+ * Argus Camera's controls over any preview (stateless, so ShotsTest draws it with a fake preview). Insets-aware for
  * gesture nav, 3-button nav, cut-outs and landscape. The mode bar is TalkBack tabs; motion follows Remove animations.
  */
 @Composable
@@ -1039,7 +1039,7 @@ private fun DocumentCrop(f: File, onCancel: () -> Unit, onDone: (List<Pair<Float
         }
     }
     val b = bmp
-    var corners by remember(b) { mutableStateOf(if (b != null) com.blaze.assistant.device.CameraSmart.defaultCorners(b.width, b.height) else emptyList()) }
+    var corners by remember(b) { mutableStateOf(if (b != null) com.argus.assistant.device.CameraSmart.defaultCorners(b.width, b.height) else emptyList()) }
     androidx.compose.ui.window.Dialog(onDismissRequest = onCancel, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(Color.Black).padding(12.dp)) {
             Text(tr("Drag the corners onto the page"), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Color.White))
@@ -1053,7 +1053,7 @@ private fun DocumentCrop(f: File, onCancel: () -> Unit, onDone: (List<Pair<Float
                         androidx.compose.foundation.Canvas(Modifier.fillMaxSize().pointerInput(b) {
                             val sx = b.width / size.width.toFloat(); val sy = b.height / size.height.toFloat()
                             detectDragGestures(
-                                onDragStart = { o -> drag = com.blaze.assistant.device.CameraSmart.nearest(corners, o.x * sx, o.y * sy) },
+                                onDragStart = { o -> drag = com.argus.assistant.device.CameraSmart.nearest(corners, o.x * sx, o.y * sy) },
                                 onDragEnd = { drag = -1 },
                                 onDrag = { ch, d ->
                                     ch.consume()

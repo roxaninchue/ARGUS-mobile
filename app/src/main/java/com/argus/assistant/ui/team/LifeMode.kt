@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.withGutter
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.withGutter
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,20 +50,20 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Lucide
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
-import com.blaze.assistant.ui.argus.kit.ProgressLine
-import com.blaze.assistant.ui.argus.kit.SettingsGroup
-import com.blaze.assistant.ui.argus.kit.SettingsItem
-import com.blaze.assistant.ui.space.SpaceAnswer
+import com.argus.assistant.BrandName
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.ui.argus.kit.ProgressLine
+import com.argus.assistant.ui.argus.kit.SettingsGroup
+import com.argus.assistant.ui.argus.kit.SettingsItem
+import com.argus.assistant.ui.space.SpaceAnswer
 
 /** Where the Life page sends the user (the shell wires these, as it does for the 0.52 Home). */
 class LifeNav(
@@ -108,17 +108,17 @@ fun LifeMode(
     nav: LifeNav,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
-    board: List<Pair<String, List<com.blaze.assistant.home.Widget>>> = emptyList(),
-    boardData: Map<String, com.blaze.assistant.home.WidgetData> = emptyMap(),
+    board: List<Pair<String, List<com.argus.assistant.home.Widget>>> = emptyList(),
+    boardData: Map<String, com.argus.assistant.home.WidgetData> = emptyMap(),
     boardActions: LifeBoardActions = LifeBoardActions(),
     cal: LifeCal? = null,
     fold: LifeFold = LifeFold(),
 ) {
     val c = Argus.colors
-    var menuFor by remember { mutableStateOf<com.blaze.assistant.home.Widget?>(null) }
+    var menuFor by remember { mutableStateOf<com.argus.assistant.home.Widget?>(null) }
     androidx.compose.runtime.CompositionLocalProvider(LocalLifeFold provides fold) {
     // Landscape overhaul: clear of the cutout, cards centred at a readable width; 0 gutter upright
-    com.blaze.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize().cutoutSafe()) { gutter ->
+    com.argus.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize().cutoutSafe()) { gutter ->
     LazyColumn(Modifier.fillMaxSize().testTag(LifeTags.PAGE), contentPadding = contentPadding.withGutter(gutter), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         for (s in state.sections) {
             // Owner 2026-11-14: what ARGUS keeps on the dashboard, one folding header per category, a panel per item
@@ -137,7 +137,7 @@ fun LifeMode(
                     if (!fold.isFolded(LifeBoard.SECTION + "Calendar")) LifeCalendarCard(cal, nav.onOpenSchedule)
                 }
                 LifeModel.Section.DAY_LINE -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(state.day?.takeIf { com.blaze.assistant.i18n.AppLang.code.value != com.blaze.assistant.i18n.AppLang.DEFAULT }
+                    Text(state.day?.takeIf { com.argus.assistant.i18n.AppLang.code.value != com.argus.assistant.i18n.AppLang.DEFAULT }
                         ?.let { LifeModel.dayLine(it, java.util.Locale.getDefault()) { s, a -> tr(s, *a) } } ?: state.dayLine, style = ArgusType.serifHello, color = c.ink,
                         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp).testTag(LifeTags.DAY).semantics { heading() })
                     LifeQuickAccess(nav.onConnect, nav.onApps)
@@ -172,9 +172,9 @@ fun LifeMode(
     }
     }
     menuFor?.let { w ->
-        com.blaze.assistant.ui.argus.kit.ArgusSheet(onDismiss = { menuFor = null }, title = w.title) {
-            com.blaze.assistant.ui.argus.kit.MenuRow("refresh-cw", tr("Refresh"), { menuFor = null; boardActions.onRefresh(w) })
-            com.blaze.assistant.ui.argus.kit.MenuRow("trash-2", tr("Remove from Life"), { menuFor = null; boardActions.onRemove(w) }, danger = true)
+        com.argus.assistant.ui.argus.kit.ArgusSheet(onDismiss = { menuFor = null }, title = w.title) {
+            com.argus.assistant.ui.argus.kit.MenuRow("refresh-cw", tr("Refresh"), { menuFor = null; boardActions.onRefresh(w) })
+            com.argus.assistant.ui.argus.kit.MenuRow("trash-2", tr("Remove from Life"), { menuFor = null; boardActions.onRemove(w) }, danger = true)
         }
     }
 }
@@ -243,7 +243,7 @@ private fun DomainGrid(domains: List<LifeModel.DomainTile>, onTap: (LifeModel.Do
         if (!LocalLifeFold.current.isFolded(LifeBoard.SECTION + "Your life")) Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             // Landscape overhaul: two tiles a row upright, three or four when the page is wide
             androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val cols = com.blaze.assistant.ui.common.WindowLayout.cardColumns(maxWidth.value, 200f, maxCols = 4).coerceAtLeast(2)
+            val cols = com.argus.assistant.ui.common.WindowLayout.cardColumns(maxWidth.value, 200f, maxCols = 4).coerceAtLeast(2)
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             for (pair in domains.chunked(cols)) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 for (d in pair) {
@@ -304,7 +304,7 @@ private fun Panels(weather: LifeModel.Weather?, answer: SpaceAnswer.Card?, asks:
 
 /**
  * P1-SH-05: Life's page in the ARGUS shell with the live app's data. The day's items are read off the main thread
- * ([com.blaze.assistant.agent.TurnContextSource.dayEntries]: routines, alarms, calendar when allowed), again when the
+ * ([com.argus.assistant.agent.TurnContextSource.dayEntries]: routines, alarms, calendar when allowed), again when the
  * routines change and every minute (the now mark and "still ahead"). The chat's messages are collected here, so a
  * streaming reply only recomposes this page.
  */
@@ -318,48 +318,48 @@ fun LifePage(
     setupPercent: Int,
     modifier: Modifier = Modifier,
 ) {
-    val messages by com.blaze.assistant.agent.Agent.messages.collectAsState()
-    val routines by com.blaze.assistant.routine.Routines.all.collectAsState()
-    val widgets by com.blaze.assistant.home.HomeBoard.widgets.collectAsState()
-    val board by com.blaze.assistant.home.HomeBoard.data.collectAsState()
-    var items by remember { mutableStateOf<List<com.blaze.assistant.agent.ScheduleDay.Item>>(emptyList()) }
+    val messages by com.argus.assistant.agent.Agent.messages.collectAsState()
+    val routines by com.argus.assistant.routine.Routines.all.collectAsState()
+    val widgets by com.argus.assistant.home.HomeBoard.widgets.collectAsState()
+    val board by com.argus.assistant.home.HomeBoard.data.collectAsState()
+    var items by remember { mutableStateOf<List<com.argus.assistant.agent.ScheduleDay.Item>>(emptyList()) }
     var now by remember { mutableStateOf(java.time.ZonedDateTime.now()) }
     LaunchedEffect(routines) {
         while (true) {
             now = java.time.ZonedDateTime.now()
             items = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                try { com.blaze.assistant.agent.ScheduleDay.itemsOn(now.toLocalDate(), now.zone, com.blaze.assistant.agent.TurnContextSource.dayEntries(now)) }
-                catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("LifePage.items", t); emptyList() }
+                try { com.argus.assistant.agent.ScheduleDay.itemsOn(now.toLocalDate(), now.zone, com.argus.assistant.agent.TurnContextSource.dayEntries(now)) }
+                catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("LifePage.items", t); emptyList() }
             }
             kotlinx.coroutines.delay(60_000L - (System.currentTimeMillis() % 60_000L))
         }
     }
     val answer = remember(messages, working) {
-        SpaceAnswer.card(0L, messages.takeLast(40).filter { it.role == com.blaze.assistant.agent.Role.USER || it.role == com.blaze.assistant.agent.Role.BLAZE }
-            .map { SpaceAnswer.Msg(it.id, it.role == com.blaze.assistant.agent.Role.BLAZE, com.blaze.assistant.agent.ToolLeak.bubbleText(it.text)) }, working)
+        SpaceAnswer.card(0L, messages.takeLast(40).filter { it.role == com.argus.assistant.agent.Role.USER || it.role == com.argus.assistant.agent.Role.BLAZE }
+            .map { SpaceAnswer.Msg(it.id, it.role == com.argus.assistant.agent.Role.BLAZE, com.argus.assistant.agent.ToolLeak.bubbleText(it.text)) }, working)
     }
     val weather = remember(widgets, board, now) {
-        val w = widgets.firstOrNull { it.type == com.blaze.assistant.home.WidgetTypes.WEATHER }
+        val w = widgets.firstOrNull { it.type == com.argus.assistant.home.WidgetTypes.WEATHER }
         val d = w?.let { board[it.id] }
         d?.let { LifeModel.weather(it.value, it.change, it.headline, it.fetched, System.currentTimeMillis()) }
     }
     // Owner 2026-11-14: the dashboard ARGUS fills (newest header first, each folds), the month calendar and the picked day
     val groups = remember(widgets) { LifeBoard.groups(widgets) }
-    var folded by remember { mutableStateOf(LifeBoard.folded(try { com.blaze.assistant.agent.Settings.str(LifeBoard.FOLD_KEY) } catch (_: Throwable) { "" })) }
+    var folded by remember { mutableStateOf(LifeBoard.folded(try { com.argus.assistant.agent.Settings.str(LifeBoard.FOLD_KEY) } catch (_: Throwable) { "" })) }
     val fold = LifeFold(folded) { k ->
         folded = LifeBoard.toggle(folded, k)
-        try { com.blaze.assistant.agent.Settings.setStr(LifeBoard.FOLD_KEY, LifeBoard.save(folded)) } catch (_: Throwable) {}
+        try { com.argus.assistant.agent.Settings.setStr(LifeBoard.FOLD_KEY, LifeBoard.save(folded)) } catch (_: Throwable) {}
     }
     val today = now.toLocalDate()
     var month by remember { mutableStateOf(java.time.YearMonth.from(today)) }
     var picked by remember { mutableStateOf(today) }
-    var dayItems by remember { mutableStateOf<List<com.blaze.assistant.agent.ScheduleDay.Item>>(emptyList()) }
+    var dayItems by remember { mutableStateOf<List<com.argus.assistant.agent.ScheduleDay.Item>>(emptyList()) }
     LaunchedEffect(picked, items) {
         dayItems = if (picked == today) items else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val at = picked.atStartOfDay(now.zone).plusHours(12)
-                com.blaze.assistant.agent.ScheduleDay.itemsOn(picked, now.zone, com.blaze.assistant.agent.TurnContextSource.dayEntries(at))
-            } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("LifePage.day", t); emptyList() }
+                com.argus.assistant.agent.ScheduleDay.itemsOn(picked, now.zone, com.argus.assistant.agent.TurnContextSource.dayEntries(at))
+            } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("LifePage.day", t); emptyList() }
         }
     }
     val cal = LifeCal(month, picked, today, dayItems, onSelect = { picked = it }, onMonth = { d -> month = month.plusMonths(d.toLong()) })
@@ -368,7 +368,7 @@ fun LifePage(
     // 2026-11-18: the first-run checklist ticks the steps done outside ARGUS (a permission in Android's settings) on each visit.
     val life = androidx.compose.ui.platform.LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(life) {
-        val obs = androidx.lifecycle.LifecycleEventObserver { _, e -> if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) com.blaze.assistant.setup.FirstRun.sync(ctx) }
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e -> if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) com.argus.assistant.setup.FirstRun.sync(ctx) }
         life.lifecycle.addObserver(obs)
         onDispose { life.lifecycle.removeObserver(obs) }
     }

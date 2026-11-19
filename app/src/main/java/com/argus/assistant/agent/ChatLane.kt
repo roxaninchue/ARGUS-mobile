@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -27,30 +27,30 @@ object ChatLane {
     // Anything that smells of live data, the user's own stuff or an action goes to the tool lane.
     private val needsTools = Regex("""\b(weather|news|latest|current|currently|today|tonight|tomorrow|yesterday|now|this week|price|prices|cost|exchange rate|score|scores|search|google|look ?up|find|near|nearby|open|close|send|call|text|sms|whatsapp|remind|reminder|alarm|timer|set|turn|switch|enable|disable|play|pause|stop|start|check|my|mine|our|download|install|book|order|buy|schedule|calendar|email|mail|inbox|message|messages|screen|phone|app|apps|file|files|photo|battery|wifi|bluetooth|volume|time|date|run|code|shell|terminal|git|repo|website|url|link|http|again|same|do it|go ahead|continue|retry|remember|forget|delete|cancel|image|images|picture|pic|draw|paint|generate|create|make|design|logo|wallpaper|beat|beats|music|song|audio|gallery|python|script)\b|https?://|\.(com|org|zm|net)\b|\d{3,}""", RegexOption.IGNORE_CASE)
 
-    /** 0.48.0 RC5: words that always ask Blaze to act (never plain chat, even inside a short "okay, …"). */
+    /** 0.48.0 RC5: words that always ask Argus to act (never plain chat, even inside a short "okay, …"). */
     private val goAhead = Regex("""(?i)\b(?:do it|go ahead|go for it|proceed|carry on|try again)\b""")
 
-    /** True when [text] can be answered by plain chat. [lastAssistant] = Blaze's previous message. */
+    /** True when [text] can be answered by plain chat. [lastAssistant] = Argus's previous message. */
     fun fits(text: String, lastAssistant: String): Boolean {
         if (!Settings.bool("chat_lane", true)) return false
         val t = text.trim()
         if (t.isEmpty() || t.length > 300 || t.startsWith("[") || t.startsWith("/")) return false
-        // 0.48.0 RC5: a go-ahead for what Blaze just offered or announced is part of that task and needs the tools ("okay, do it!"
+        // 0.48.0 RC5: a go-ahead for what Argus just offered or announced is part of that task and needs the tools ("okay, do it!"
         // after "I'll open the accessibility settings now." took this no-tools lane, and the reply only SAID it was opening them).
         if (ActionPromise.consent(t) && ActionPromise.offers(lastAssistant)) return false
         if (goAhead.containsMatchIn(t)) return false
         // 0.46.4: small talk always takes the chat lane (no tools, no search, no sources), except a yes to a schedule offer
-        // (a bare "yes" / "ok" answering Blaze's own question is part of that task and keeps the full lane)
+        // (a bare "yes" / "ok" answering Argus's own question is part of that task and keeps the full lane)
         if (SmallTalk.chitChat(t) && !TurnContext.scheduleFollowUp(t, lastAssistant) && !(SmallTalk.ack(t) && lastAssistant.trim().endsWith("?"))) return true
         if (ToolRouter.guess(t).isNotEmpty()) return false
         // v0.45.9 (ToolTruth): this lane sends no tools, so anything tool-shaped goes to the full lane.
         if (ToolTruth.toolShaped(t) || SaveFile.wantsSave(t)) return false
         // v0.45.9: "ok" / "yes" to a calendar or reminder offer needs the schedule tools, not the plain chat lane.
         if (TurnContext.scheduleFollowUp(t, lastAssistant)) return false
-        // v0.27.x: "how do I get / install / enable X" goes to the tool lane, so Blaze can offer to do it (AnswerStyle).
+        // v0.27.x: "how do I get / install / enable X" goes to the tool lane, so Argus can offer to do it (AnswerStyle).
         if (AnswerStyle.offerVerb(t) != null) return false
         val small = smalltalk.containsMatchIn(t)
-        // A short reply to a question Blaze just asked is probably part of a task ("yes", "the second one").
+        // A short reply to a question Argus just asked is probably part of a task ("yes", "the second one").
         if (!small && lastAssistant.trim().endsWith("?") && t.split(Regex("\\s+")).size < 8) return false
         // 2026-11-14: "hey what's the news" is a request, greeting or not (it used to slip through under 40 chars).
         if (needsTools.containsMatchIn(t)) return false

@@ -1,13 +1,13 @@
-package com.blaze.assistant.agent.engines
+package com.argus.assistant.agent.engines
 
-import com.blaze.assistant.agent.TeamHooks
-import com.blaze.assistant.team.Avatar
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotKind
-import com.blaze.assistant.team.EngineKind
-import com.blaze.assistant.team.Row
-import com.blaze.assistant.team.Rule
-import com.blaze.assistant.team.TeamJson
+import com.argus.assistant.agent.TeamHooks
+import com.argus.assistant.team.Avatar
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotKind
+import com.argus.assistant.team.EngineKind
+import com.argus.assistant.team.Row
+import com.argus.assistant.team.Rule
+import com.argus.assistant.team.TeamJson
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
@@ -48,7 +48,7 @@ class LocalEngineTest {
             var reason = "DONE"
             try {
                 for (step in 0 until 8) {
-                    val system = listOfNotNull("You are Blaze.", TeamHooks.identityBlock(threadId))   // requestMessages()
+                    val system = listOfNotNull("You are Argus.", TeamHooks.identityBlock(threadId))   // requestMessages()
                     val tools = allTools.filter { it == "load_tools" || TeamHooks.allows(threadId, it) }   // TeamTools.keep
                     when (val r = llm.complete(system, tools)) {
                         is FakeLlm.Reply.Say -> { TeamHooks.message(threadId, "BLAZE", r.text); break }
@@ -111,7 +111,7 @@ class LocalEngineTest {
         val llm = FakeLlm(FakeLlm.Reply.Say("Hi."))
         engine(FakeLoop(llm, all)).turn(bot(), TurnInput("t2", "bot:ledger", "hi")) {}.toList()
         val sys = llm.systems.single()
-        assertEquals("You are Blaze.", sys[0])
+        assertEquals("You are Argus.", sys[0])
         assertTrue(sys[1].contains("Name: Ledger (Money)") && sys[1].contains("Life area: money") && sys[1].contains("Careful with money."))
         assertEquals(listOf("load_tools", "web_search", "bank_balance"), llm.toolLists.single())   // core + its group
     }
@@ -142,7 +142,7 @@ class LocalEngineTest {
         assertTrue(long.length < LocalEngine.SOUL_MAX + 200)
         val llm = FakeLlm(FakeLlm.Reply.Say("Hello, I'm ARGUS."))
         engine(FakeLoop(llm, all), soul = null).turn(bot(kind = BotKind.MANAGER), TurnInput("t4", "main", "hi")) {}.toList()
-        assertEquals(listOf("You are Blaze."), llm.systems.single())             // no identity block: today's chat, unchanged
+        assertEquals(listOf("You are Argus."), llm.systems.single())             // no identity block: today's chat, unchanged
         assertEquals(all, llm.toolLists.single())
     }
 
@@ -191,7 +191,7 @@ class LocalEngineTest {
 
     /** Owner rule: Agent.kt grows by at most 20 lines for the seam (5,807 lines before P0-AG-01). */
     @Test fun agentKtSeamStaysSmall() {
-        val f = listOf(File("app/src/main/java"), File("src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/agent/Agent.kt")
+        val f = listOf(File("app/src/main/java"), File("src/main/java")).first { it.isDirectory }.resolve("com/argus/assistant/agent/Agent.kt")
         val lines = f.readLines()
         assertTrue("Agent.kt is ${lines.size} lines", lines.size <= 5807 + 20)
         val seam = lines.count { "TeamHooks" in it || "TeamTools" in it || "P0-AG-01" in it }

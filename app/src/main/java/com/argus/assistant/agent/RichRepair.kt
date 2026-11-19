@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.ui.RichJson
-import com.blaze.assistant.ui.RichKit
+import com.argus.assistant.ui.RichJson
+import com.argus.assistant.ui.RichKit
 
 /**
  * 0.46.0 rich blocks right on the first try: a reply whose rich block (```table / chart / choices / form / compare / tool) still
@@ -24,8 +24,8 @@ object RichRepair {
             "table" -> RichKit.table(body) != null; "chart" -> RichKit.chart(body) != null; "choices" -> RichKit.choices(body) != null
             "form" -> RichKit.form(body) != null; "compare" -> RichKit.compare(body) != null; "tool" -> RichKit.tool(body) != null
             "apps" -> RichKit.apps(body) != null
-            "gallery" -> com.blaze.assistant.ui.RichMedia.gallery(body) != null; "links" -> com.blaze.assistant.ui.RichMedia.links(body) != null
-            "doc" -> com.blaze.assistant.ui.RichMedia.doc(body) != null; "details" -> com.blaze.assistant.ui.RichMedia.details(body) != null
+            "gallery" -> com.argus.assistant.ui.RichMedia.gallery(body) != null; "links" -> com.argus.assistant.ui.RichMedia.links(body) != null
+            "doc" -> com.argus.assistant.ui.RichMedia.doc(body) != null; "details" -> com.argus.assistant.ui.RichMedia.details(body) != null
             else -> true
         }
     } catch (_: Exception) { false }

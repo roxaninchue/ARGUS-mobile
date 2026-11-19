@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
@@ -113,26 +113,26 @@ import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
-import com.blaze.assistant.mediaapps.store.StoreDetail
-import com.blaze.assistant.mediaapps.store.StoreItem
-import com.blaze.assistant.mediaapps.store.StoreSource
-import com.blaze.assistant.mediaapps.store.StoreSubtitle
-import com.blaze.assistant.mediaapps.store.LinkSource
+import com.argus.assistant.mediaapps.store.StoreDetail
+import com.argus.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreSource
+import com.argus.assistant.mediaapps.store.StoreSubtitle
+import com.argus.assistant.mediaapps.store.LinkSource
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.media3.exoplayer.source.MediaSource
 import android.widget.Toast
-import com.blaze.assistant.ui.BackButton
-import com.blaze.assistant.ui.BlazeBrush
-import com.blaze.assistant.ui.BlazeDialog
-import com.blaze.assistant.ui.BlazeMenu
-import com.blaze.assistant.ui.BlazeShapes
-import com.blaze.assistant.ui.BlazeTheme
-import com.blaze.assistant.ui.DialogColors
-import com.blaze.assistant.ui.EmptyState
-import com.blaze.assistant.ui.KitSearch
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.MotionTokens
-import com.blaze.assistant.ui.PillButton
+import com.argus.assistant.ui.BackButton
+import com.argus.assistant.ui.ArgusBrush
+import com.argus.assistant.ui.ArgusDialog
+import com.argus.assistant.ui.ArgusMenu
+import com.argus.assistant.ui.ArgusShapes
+import com.argus.assistant.ui.BlazeTheme
+import com.argus.assistant.ui.DialogColors
+import com.argus.assistant.ui.EmptyState
+import com.argus.assistant.ui.KitSearch
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.MotionTokens
+import com.argus.assistant.ui.PillButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -142,12 +142,12 @@ import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Refresh
 
 /**
- * v0.30.1 Blaze Video: its own full-screen app inside Blaze with the Library | Store pill (v0.34.1: the player is a
+ * v0.30.1 Argus Video: its own full-screen app inside Argus with the Library | Store pill (v0.34.1: the player is a
  * sheet over the Library, tab "player" = the sheet is open; swiping it down leaves a mini-player and keeps playing). ExoPlayer with
  * gestures (left half up/down = brightness, right half = volume, double-tap ±10 s; no swipe-seek since wave A),
  * fullscreen with rotation, picture-in-picture, speed, subtitle and audio-track choice, and resume where you left off.
  */
-class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToChat {
+class VideoActivity : ComponentActivity(), com.argus.assistant.ui.BackRule.ToChat {
     companion object {
         fun open(ctx: Context, tab: String = "") = ctx.startActivity(Intent(ctx, VideoActivity::class.java)
             .putExtra(MusicActivity.EXTRA_TAB, tab).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
@@ -157,7 +157,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
             .putExtra(EXTRA_PLAY, key).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
         const val EXTRA_MOVIE = "blaze_video_movie"; const val EXTRA_AT = "blaze_video_at"; const val EXTRA_ADD_SOURCE = "blaze_video_add_source"
         /** 0.46.2 Movies: play a movie (from the Stage card's "open in full view", or a file opened from another app) at [at] ms (-1 = resume). */
-        fun openMovie(ctx: Context, p: com.blaze.assistant.movies.MoviePlay, at: Long = -1L) = ctx.startActivity(Intent(ctx, VideoActivity::class.java)
+        fun openMovie(ctx: Context, p: com.argus.assistant.movies.MoviePlay, at: Long = -1L) = ctx.startActivity(Intent(ctx, VideoActivity::class.java)
             .putExtra(EXTRA_MOVIE, p.toJson().toString()).putExtra(EXTRA_AT, at)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_GRANT_READ_URI_PERMISSION))
         /** The open Video app (same process), for the agent's video_ops tool. */
@@ -188,7 +188,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
 
     private fun onEnded() {
         val t = current.value ?: return
-        if (t.source == "movie") { movie?.let { com.blaze.assistant.movies.Movies.progress(it, player.duration.coerceAtLeast(1), player.duration) }; return }
+        if (t.source == "movie") { movie?.let { com.argus.assistant.movies.Movies.progress(it, player.duration.coerceAtLeast(1), player.duration) }; return }
         if (t.source != "stream") MediaPrefs.markFinished(this, t.key, System.currentTimeMillis())
         if (!MediaPrefs.autoplay(this) || t.source == "stream") return
         val next = VideoSmart.next(t, MediaLib.videos.value) ?: return
@@ -220,7 +220,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         return if (cues.isEmpty()) null else local to cues
     }
 
-    /** "Recap so far": what was said up to here, summed up by Blaze's model. Null result = it couldn't. */
+    /** "Recap so far": what was said up to here, summed up by Argus's model. Null result = it couldn't. */
     suspend fun recap(): String {
         val t = current.value ?: return "Nothing is playing."
         work.value = "Writing a recap…"
@@ -229,7 +229,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
             val text = VideoSmart.transcript(cues, player.currentPosition)
             if (text.isBlank()) return "Nothing has been said yet at this point."
             val msgs = org.json.JSONArray().put(org.json.JSONObject().put("role", "user").put("content", VideoSmart.recapPrompt(t.title, text)))
-            val out = com.blaze.assistant.agent.LlmClient.complete(msgs, null, null, null, com.blaze.assistant.agent.LlmClient.Lane.BACKGROUND)
+            val out = com.argus.assistant.agent.LlmClient.complete(msgs, null, null, null, com.argus.assistant.agent.LlmClient.Lane.BACKGROUND)
                 .optString("content").substringAfterLast("</think>").trim()
             return out.ifBlank { "${BrandName.NAME} couldn't write a recap right now. Try again in a moment." }
         } catch (e: Exception) {
@@ -238,7 +238,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
     }
 
     /**
-     * AI subtitle translation: the subtitles that are on (or the first available) translated into [language] by Blaze's
+     * AI subtitle translation: the subtitles that are on (or the first available) translated into [language] by Argus's
      * model in batches, kept with the video as a new track "<language> (AI translation)" and turned on.
      */
     suspend fun translate(language: String): String {
@@ -252,7 +252,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
                 work.value = "Translating subtitles to $lang · ${i + 1} of ${batches.size}"
                 val msgs = org.json.JSONArray().put(org.json.JSONObject().put("role", "user").put("content", VideoSmart.translatePrompt(b, lang)))
                 val reply = try {
-                    com.blaze.assistant.agent.LlmClient.complete(msgs, null, null, null, com.blaze.assistant.agent.LlmClient.Lane.BACKGROUND)
+                    com.argus.assistant.agent.LlmClient.complete(msgs, null, null, null, com.argus.assistant.agent.LlmClient.Lane.BACKGROUND)
                         .optString("content").substringAfterLast("</think>")
                 } catch (_: Exception) { "" }
                 out += VideoSmart.applyTranslation(b, reply)
@@ -274,7 +274,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
 
     /**
      * Wave A 25: "Translate to" [code]. A YouTube caption track is machine-translated by YouTube (fast, free, kept with
-     * the video); anything else goes through Blaze's AI translation. The language is remembered for the next video.
+     * the video); anything else goes through Argus's AI translation. The language is remembered for the next video.
      */
     fun translateTo(code: String, scope: kotlinx.coroutines.CoroutineScope) {
         SubsLoader.setPref(this, code)
@@ -315,14 +315,14 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         // 0.46.2 an add-source link: the Movies tab shows the source and a single Install button.
         i?.getStringExtra(EXTRA_ADD_SOURCE)?.let { u ->
             i.removeExtra(EXTRA_ADD_SOURCE)
-            com.blaze.assistant.movies.AddSourceLink.parse(com.blaze.assistant.movies.AddSourceLink.make(u, https = false))?.let { ok ->
+            com.argus.assistant.movies.AddSourceLink.parse(com.argus.assistant.movies.AddSourceLink.make(u, https = false))?.let { ok ->
                 pendingSource.value = ok; tab.value = "sources"; browse.value = "sources" }
             return
         }
         i?.getStringExtra(EXTRA_MOVIE)?.let { j ->
             i.removeExtra(EXTRA_MOVIE)
             val at = i.getLongExtra(EXTRA_AT, -1L)
-            com.blaze.assistant.movies.MoviePlay.parse(j)?.takeIf { it.url.isNotBlank() }?.let { p -> window.decorView.post { playMovie(p, at) } }
+            com.argus.assistant.movies.MoviePlay.parse(j)?.takeIf { it.url.isNotBlank() }?.let { p -> window.decorView.post { playMovie(p, at) } }
             return
         }
         val key = i?.getStringExtra(EXTRA_PLAY)?.takeIf { it.isNotBlank() } ?: return
@@ -359,11 +359,11 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
+        if (com.argus.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge()
         intent?.getStringExtra(MusicActivity.EXTRA_TAB)?.takeIf { it.isNotBlank() }?.let { tab.value = VideoNav.normalize(it); if (tab.value != "player") browse.value = tab.value }
-        com.blaze.assistant.mediaapps.store.JamendoSource.init(this)
-        com.blaze.assistant.movies.Movies.init(this)
+        com.argus.assistant.mediaapps.store.JamendoSource.init(this)
+        com.argus.assistant.movies.Movies.init(this)
         lifecycleScope.launch(Dispatchers.IO) { MediaLib.ensure(this@VideoActivity); Downloads.resumePending(this@VideoActivity); smartCleanup() }
         intros = MediaPrefs.intros(this).toMutableMap()
         live = this
@@ -378,7 +378,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
             .build()
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                com.blaze.assistant.agent.AwarenessHooks.video(player, current.value)
+                com.argus.assistant.agent.AwarenessHooks.video(player, current.value)
                 if (isPlaying) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); savePos() }
                 if (Build.VERSION.SDK_INT >= 26) runCatching { setPictureInPictureParams(pipParams()) }
             }
@@ -415,20 +415,20 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
 
     fun savePos() {
         val t = current.value ?: return
-        if (t.source == "movie") { movie?.let { if (player.currentPosition > 0) com.blaze.assistant.movies.Movies.progress(it, player.currentPosition, player.duration.coerceAtLeast(0)) }; return }
+        if (t.source == "movie") { movie?.let { if (player.currentPosition > 0) com.argus.assistant.movies.Movies.progress(it, player.currentPosition, player.duration.coerceAtLeast(0)) }; return }
         if (t.source == "stream") return
         MediaLib.savePosition(t.key, player.currentPosition, player.duration.coerceAtLeast(0))
-        com.blaze.assistant.agent.AwarenessHooks.video(player, t)
+        com.argus.assistant.agent.AwarenessHooks.video(player, t)
     }
 
     // ---------------------------------------------------------------- 0.46.2 Movies
     /** The movie playing now (Movies tab, a Stage card opened in full view, or a file from another app). */
-    var movie: com.blaze.assistant.movies.MoviePlay? = null
+    var movie: com.argus.assistant.movies.MoviePlay? = null
         private set
 
     /** Plays a movie from any Movies source: its stream (with the source's request headers) and subtitles, resumed where it was left. */
     // 0.46.5: every stream the source returned, tried in order (StreamPlan); movieTry = the one playing now.
-    private var movieTries: List<com.blaze.assistant.movies.MoviePlay> = emptyList()
+    private var movieTries: List<com.argus.assistant.movies.MoviePlay> = emptyList()
     private var movieTry = 0
     private var movieWatch: kotlinx.coroutines.Job? = null
     /** Shown in the player when no stream from the source played (one plain line); "" otherwise. */
@@ -436,10 +436,10 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
     /** Still trying another stream: the player hides intermediate errors. */
     fun movieTrying(): Boolean = current.value?.source == "movie" && movieMsg.value.isBlank() && movieTry < movieTries.size - 1
 
-    fun playMovie(p: com.blaze.assistant.movies.MoviePlay, at: Long = -1L) {
+    fun playMovie(p: com.argus.assistant.movies.MoviePlay, at: Long = -1L) {
         if (!::player.isInitialized) return
         movieTries = listOf(p.copy(alternates = emptyList())) + p.alternates.filter { it.link != p.url }.map { s ->
-            p.copy(url = s.link, type = s.type, headers = com.blaze.assistant.movies.StreamPlan.headers(s.headers),
+            p.copy(url = s.link, type = s.type, headers = com.argus.assistant.movies.StreamPlan.headers(s.headers),
                 subtitles = s.subtitles.ifEmpty { p.subtitles }, alternates = emptyList()) }
         movieTry = 0
         startMovie(movieTries[0], at)
@@ -450,23 +450,23 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         val m = movie ?: return false
         if (current.value?.source != "movie" || movieTries.isEmpty() || m.source == "local") return false
         movieWatch?.cancel()
-        com.blaze.assistant.device.CrashLog.write(com.blaze.assistant.movies.StreamPlan.logLine(m.source, movieTry, movieTries.size,
-            com.blaze.assistant.movies.StreamPlan.kind(m.type, m.url), reason))
-        val next = com.blaze.assistant.movies.StreamPlan.next(movieTry, movieTries.size)
-        if (next == null) { movieMsg.value = com.blaze.assistant.movies.StreamPlan.FAIL_TEXT; player.stop(); return true }
+        com.argus.assistant.device.CrashLog.write(com.argus.assistant.movies.StreamPlan.logLine(m.source, movieTry, movieTries.size,
+            com.argus.assistant.movies.StreamPlan.kind(m.type, m.url), reason))
+        val next = com.argus.assistant.movies.StreamPlan.next(movieTry, movieTries.size)
+        if (next == null) { movieMsg.value = com.argus.assistant.movies.StreamPlan.FAIL_TEXT; player.stop(); return true }
         movieTry = next
         startMovie(movieTries[next], player.currentPosition.coerceAtLeast(0).takeIf { it > 0 } ?: -1L)
         return true
     }
 
-    private fun startMovie(p: com.blaze.assistant.movies.MoviePlay, at: Long = -1L) {
+    private fun startMovie(p: com.argus.assistant.movies.MoviePlay, at: Long = -1L) {
         movieMsg.value = ""
         savePos()
-        current.value?.let { com.blaze.assistant.agent.AwarenessHooks.videoLeft(player, it, clear = false) }
+        current.value?.let { com.argus.assistant.agent.AwarenessHooks.videoLeft(player, it, clear = false) }
         upNext.value = null; heightCap = 0
         movie = p
         // The headers / referer the source returned go with every request of this stream (manifest, segments, redirects).
-        val hdr = com.blaze.assistant.movies.StreamPlan.headers(p.headers)
+        val hdr = com.argus.assistant.movies.StreamPlan.headers(p.headers)
         http.setDefaultRequestProperties(hdr)
         http.setUserAgent(hdr["User-Agent"])
         val t = Track("movie:" + p.key, p.url, p.title, sourceLabel(p.source), "", 0, p.image, "movie", 0, "", "video", "", p.source)
@@ -475,14 +475,14 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         resetSubs(p.subtitles.filter { it.mime == "text/vtt" }.mapIndexed { i, s -> StoreSubtitle("mv$i", s.url, s.lang, s.label.ifBlank { s.lang }) })
         Subs.pick(subsAvailable.value, SubsLoader.pref(this))?.let { subsLoaded += it; pendingSub = it.id }
         subsLoaded.addAll(subsAvailable.value.filter { s -> subsLoaded.none { it.id == s.id } })
-        val pos = if (at >= 0) at else com.blaze.assistant.movies.Movies.lib.value.resumeAt(p.key)
+        val pos = if (at >= 0) at else com.argus.assistant.movies.Movies.lib.value.resumeAt(p.key)
         load(pos, true)
         tab.value = "player"
-        com.blaze.assistant.agent.AwarenessHooks.video(player, t)
+        com.argus.assistant.agent.AwarenessHooks.video(player, t)
         if (p.source != "local") {
             movieWatch?.cancel()
             movieWatch = lifecycleScope.launch {
-                delay(com.blaze.assistant.movies.StreamPlan.START_TIMEOUT_MS)
+                delay(com.argus.assistant.movies.StreamPlan.START_TIMEOUT_MS)
                 if (movie === p && player.playbackState != Player.STATE_READY && player.playbackState != Player.STATE_ENDED && player.currentPosition < 1_000) movieFailed("start timeout")
             }
         }
@@ -496,7 +496,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         if (uri != null) {
             runCatching { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
             val name = runCatching { contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null } }.getOrNull()
-            playMovie(com.blaze.assistant.movies.MovieOpenActivity.play(uri, name ?: uri.lastPathSegment.orEmpty()))
+            playMovie(com.argus.assistant.movies.MovieOpenActivity.play(uri, name ?: uri.lastPathSegment.orEmpty()))
         }
     }
     fun pickMovieFile() { runCatching { pickMovie.launch(arrayOf("video/*")) } }
@@ -507,7 +507,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
     fun play(t: Track) {
         savePos()
         movie = null; http.setDefaultRequestProperties(emptyMap())
-        current.value?.takeIf { it.key != t.key }?.let { com.blaze.assistant.agent.AwarenessHooks.videoLeft(player, it, clear = false) }
+        current.value?.takeIf { it.key != t.key }?.let { com.argus.assistant.agent.AwarenessHooks.videoLeft(player, it, clear = false) }
         upNext.value = null
         current.value = t
         MediaLib.played(t)
@@ -521,7 +521,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         val noSaved = pendingSub == null
         load(at, true)
         tab.value = "player"
-        com.blaze.assistant.agent.AwarenessHooks.video(player, t)
+        com.argus.assistant.agent.AwarenessHooks.video(player, t)
         val vid = t.videoId.removePrefix("yt:")
         if ((t.storeSource == "youtube" || t.videoId.startsWith("yt:")) && Regex("^[A-Za-z0-9_-]{11}$").matches(vid)) lifecycleScope.launch {
             val yt = try { LinkSource.ytCaptions(vid) } catch (_: Exception) { emptyList() }
@@ -552,9 +552,9 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         // 0.45.20: a stepped-down rendition caches under its own key (bytes of two renditions never mix under one key).
         val ck = if (heightCap > 0) "${t.key}~${heightCap}p" else t.key
         // 0.46.5: HLS / DASH from a source's stream type (URLs often don't say), so Media3 picks the right loader.
-        val mime = movie?.takeIf { t.source == "movie" }?.let { m -> when (com.blaze.assistant.movies.StreamPlan.kind(m.type, playUris.first())) {
-            com.blaze.assistant.movies.StreamPlan.Kind.HLS -> androidx.media3.common.MimeTypes.APPLICATION_M3U8
-            com.blaze.assistant.movies.StreamPlan.Kind.DASH -> androidx.media3.common.MimeTypes.APPLICATION_MPD
+        val mime = movie?.takeIf { t.source == "movie" }?.let { m -> when (com.argus.assistant.movies.StreamPlan.kind(m.type, playUris.first())) {
+            com.argus.assistant.movies.StreamPlan.Kind.HLS -> androidx.media3.common.MimeTypes.APPLICATION_M3U8
+            com.argus.assistant.movies.StreamPlan.Kind.DASH -> androidx.media3.common.MimeTypes.APPLICATION_MPD
             else -> null } }
         val first = MediaItem.Builder().setMediaId(t.key).setUri(playUris.first()).setMimeType(mime).setCustomCacheKey(if (stream) StreamCache.key(ck) else null)
             .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).build()).setSubtitleConfigurations(subs).build()
@@ -794,7 +794,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
     /** v0.34.1: the mini-player's close: stops the video and forgets it (the next play starts fresh). */
     fun closePlayer() {
         savePos()
-        com.blaze.assistant.agent.AwarenessHooks.videoLeft(player, current.value, clear = true)
+        com.argus.assistant.agent.AwarenessHooks.videoLeft(player, current.value, clear = true)
         upNext.value = null
         player.stop()
         player.clearMediaItems()
@@ -807,7 +807,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         if (!::player.isInitialized) { super.onDestroy(); return }
         if (live === this) live = null
         savePos()
-        if (current.value != null) com.blaze.assistant.agent.AwarenessHooks.videoLeft(player, current.value, clear = true)
+        if (current.value != null) com.argus.assistant.agent.AwarenessHooks.videoLeft(player, current.value, clear = true)
         player.release()
         super.onDestroy()
     }
@@ -815,7 +815,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
 
 @Composable
 private fun VideoApp(a: VideoActivity) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val tab by a.tab
@@ -823,7 +823,7 @@ private fun VideoApp(a: VideoActivity) {
     val full by a.fullscreen
     val store = remember { StoreState("video") }
     // 0.46.4 revamp: Home · Search · Library · Sources; a film's details open over the page; the player is a sheet.
-    var detail by remember { mutableStateOf<Pair<com.blaze.assistant.movies.MovieSource, com.blaze.assistant.movies.MoviePost>?>(null) }
+    var detail by remember { mutableStateOf<Pair<com.argus.assistant.movies.MovieSource, com.argus.assistant.movies.MoviePost>?>(null) }
     var libChip by remember { mutableStateOf("videos") }
     var account by remember { mutableStateOf(false) }
     var note by remember { mutableStateOf("") }
@@ -840,13 +840,13 @@ private fun VideoApp(a: VideoActivity) {
 
     val cur by a.current
     fun go(id: String) { detail = null; a.tab.value = id; a.browse.value = id }
-    val open: (com.blaze.assistant.movies.MovieSource, com.blaze.assistant.movies.MoviePost) -> Unit = { s, p -> detail = s to p }
-    val resume: (com.blaze.assistant.movies.Progress) -> Unit = { pr -> scope.launch {
+    val open: (com.argus.assistant.movies.MovieSource, com.argus.assistant.movies.MoviePost) -> Unit = { s, p -> detail = s to p }
+    val resume: (com.argus.assistant.movies.Progress) -> Unit = { pr -> scope.launch {
         try { a.playMovie(resumePlay(ctx, pr)) } catch (e: Exception) { note = e.message ?: "Couldn't continue" } } }
     val page = VideoNav.normalize(if (tab == "player") a.browse.value else tab)
     // 0.52.2: one ARGUS look. Unification: the shell's space background; the shared header (MediaTopBar) carries the
     // light / dark switch.
-    com.blaze.assistant.ui.space.SpaceBackdrop {
+    com.argus.assistant.ui.space.SpaceBackdrop {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             if (detail == null) MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Library"; "sources" -> "Sources"; else -> "Video" },
                 onAccount = { account = true }, onClose = { a.leaveToChat() })
@@ -854,13 +854,13 @@ private fun VideoApp(a: VideoActivity) {
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 val d = detail
                 if (d != null) {
-                    val lib by com.blaze.assistant.movies.Movies.lib.collectAsState()
-                    val more by produceState(emptyList<com.blaze.assistant.movies.MoviePost>(), d.first.id, d.second.link) {
+                    val lib by com.argus.assistant.movies.Movies.lib.collectAsState()
+                    val more by produceState(emptyList<com.argus.assistant.movies.MoviePost>(), d.first.id, d.second.link) {
                         value = withContext(Dispatchers.IO) { runCatching { d.first.rows().flatMap { it.second } }.getOrDefault(emptyList()) }
                             .let { VideoDetailsLogic.moreLikeThis(d.second, it) }
                     }
                     MovieDetailsLoader(d.first, d.second, lib.inWatchlist(d.second.link, d.second.source), onBack = { detail = null },
-                        onWatchlist = { com.blaze.assistant.movies.Movies.toggleWatchlist(d.second) }, onPlay = { a.playMovie(it) },
+                        onWatchlist = { com.argus.assistant.movies.Movies.toggleWatchlist(d.second) }, onPlay = { a.playMovie(it) },
                         more = more, onMore = { p -> detail = d.first to p })
                 } else when (page) {
                     "store" -> StoreView("video", store) { item, dd, src -> a.watch(item, dd, src) }
@@ -889,10 +889,10 @@ private fun VideoApp(a: VideoActivity) {
         }
         PlayerSheet(tab == "player", onCollapse = { a.tab.value = a.browse.value }) { PlayerTab(a) }
         if (account) {
-            val name = remember { runCatching { com.blaze.assistant.agent.Settings.userName }.getOrDefault("") }
+            val name = remember { runCatching { com.argus.assistant.agent.Settings.userName }.getOrDefault("") }
             var autoplay by remember { mutableStateOf(MediaPrefs.autoplay(ctx)) }
             var saver by remember { mutableStateOf(MediaPrefs.dataSaver(ctx)) }
-            com.blaze.assistant.ui.BlazeDialog(title = name.ifBlank { "Your account" }, confirm = "Done", onConfirm = { account = false }, onDismiss = { account = false }) {
+            com.argus.assistant.ui.ArgusDialog(title = name.ifBlank { "Your account" }, confirm = "Done", onConfirm = { account = false }, onDismiss = { account = false }) {
                 Row(Modifier.fillMaxWidth().clickable { autoplay = !autoplay; MediaPrefs.setBool(ctx, MediaPrefs.AUTOPLAY, autoplay) }.padding(vertical = 8.dp)) {
                     MText(if (autoplay) "Play the next episode by itself: on" else "Play the next episode by itself: off", 14.sp, c.ink) }
                 Row(Modifier.fillMaxWidth().clickable { saver = !saver; MediaPrefs.setBool(ctx, MediaPrefs.DATA_SAVER, saver) }.padding(vertical = 8.dp)) {
@@ -924,7 +924,7 @@ private fun VideoMini(a: VideoActivity) {
 
 @Composable
 private fun PlayerTab(a: VideoActivity) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val t by a.current
     if (t == null) { EmptyState("Nothing playing", "Pick a video in Library, or find one in the Store."); return }
     // v0.34.1: under the video, the rest of your library (one tap switches), so the bottom is never blank.
@@ -945,7 +945,7 @@ private fun PlayerTab(a: VideoActivity) {
                 MText("More from your library \u00b7 ${others.size}", 15.sp, c.ink, FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
             }
             items(VideoKeys.unique(others) { "more-" + it.key }, key = { "more-" + it.key }) { v ->
-                Column(Modifier.clip(BlazeShapes.small).clickable(onClickLabel = "Play ${v.title}") { a.play(v) }) {
+                Column(Modifier.clip(ArgusShapes.small).clickable(onClickLabel = "Play ${v.title}") { a.play(v) }) {
                     Box {
                         Art(v, Modifier.fillMaxWidth().aspectRatio(16f / 9f), target = 320)
                         Box(Modifier.align(Alignment.BottomEnd)) { DurationBadgeText(if (v.durationMs > 0) TimeText.clock(v.durationMs) else "") }
@@ -1072,17 +1072,17 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
                         })
                 })
         }
-        if (buffering) LinearProgressIndicator(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(2.dp), color = BlazeBrush.blue, trackColor = Color.Transparent)
+        if (buffering) LinearProgressIndicator(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(2.dp), color = ArgusBrush.blue, trackColor = Color.Transparent)
         // 0.45.20: honest network line on streams: weak network after 1.5 s, retrying + Retry after 10 s, offline from saved.
         val online by remember { NetWatch.start(ctx) }.collectAsState()
         val stalledMs = rememberStallMs(buffering && p.playWhenReady)
         val net = NetHonesty.play(stalledMs, online, cur?.source == "stream")
         if (error.isBlank()) NetNote(net, online, onRetry = { p.seekTo(p.currentPosition); p.prepare(); p.play() },
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 56.dp, start = 16.dp, end = 16.dp), onDark = true)
-        if (hint.isNotEmpty()) Box(Modifier.align(Alignment.Center).clip(BlazeShapes.medium).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = 16.dp, vertical = 10.dp)) {
+        if (hint.isNotEmpty()) Box(Modifier.align(Alignment.Center).clip(ArgusShapes.medium).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = 16.dp, vertical = 10.dp)) {
             MText(hint, 15.sp, Color.White, FontWeight.Medium)
         }
-        if (error.isNotBlank()) Column(Modifier.align(Alignment.Center).padding(24.dp).clip(BlazeShapes.medium).background(Color.Black.copy(alpha = 0.75f)).padding(16.dp),
+        if (error.isNotBlank()) Column(Modifier.align(Alignment.Center).padding(24.dp).clip(ArgusShapes.medium).background(Color.Black.copy(alpha = 0.75f)).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
             MText(error, 13.5.sp, Color.White, maxLines = 4)
             Spacer(Modifier.height(10.dp))
@@ -1099,7 +1099,7 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
                 while (true) { left = VideoSmart.countdown(a.upNextAt, System.currentTimeMillis()); if (left < 0) break; delay(250) }
                 a.play(nx)
             }
-            Column(Modifier.align(Alignment.BottomEnd).padding(16.dp).clip(BlazeShapes.medium).background(Color.Black.copy(alpha = 0.8f)).padding(14.dp)) {
+            Column(Modifier.align(Alignment.BottomEnd).padding(16.dp).clip(ArgusShapes.medium).background(Color.Black.copy(alpha = 0.8f)).padding(14.dp)) {
                 MText("Up next in ${left.coerceAtLeast(0)}", 12.sp, Color.White.copy(alpha = 0.8f))
                 MText(nx.title, 14.sp, Color.White, FontWeight.SemiBold, maxLines = 2)
                 Spacer(Modifier.height(8.dp))
@@ -1109,7 +1109,7 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
                 }
             }
         }
-        if (busyWork.isNotBlank()) Box(Modifier.align(Alignment.TopStart).padding(10.dp).clip(BlazeShapes.small).background(Color.Black.copy(alpha = 0.7f)).padding(horizontal = 10.dp, vertical = 6.dp)) {
+        if (busyWork.isNotBlank()) Box(Modifier.align(Alignment.TopStart).padding(10.dp).clip(ArgusShapes.small).background(Color.Black.copy(alpha = 0.7f)).padding(horizontal = 10.dp, vertical = 6.dp)) {
             MText(busyWork, 12.sp, Color.White)
         }
         if (controls) AnimatedVisibility(show && error.isBlank() && !locked, Modifier.fillMaxSize(), enter = MotionTokens.fade(), exit = MotionTokens.fadeAway()) {
@@ -1117,7 +1117,7 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
                 Row(Modifier.align(Alignment.TopEnd).padding(6.dp)) {
                     Box {
                         RoundIcon(Icons.Rounded.Speed, "Speed ${Speeds.label(speed)}", tint = Color.White) { speedMenu = true }
-                        BlazeMenu(speedMenu, { speedMenu = false }, Speeds.all.map { s -> (Speeds.label(s) + if (s == speed) "  \u2713" else "") to { p.setPlaybackSpeed(s) } })
+                        ArgusMenu(speedMenu, { speedMenu = false }, Speeds.all.map { s -> (Speeds.label(s) + if (s == speed) "  \u2713" else "") to { p.setPlaybackSpeed(s) } })
                     }
                     RoundIcon(Icons.Rounded.Lock, "Lock the screen", tint = Color.White) { locked = true; show = false }
                     RoundIcon(Icons.Rounded.AspectRatio, if (filled) "Fit to screen" else "Fill the screen", tint = Color.White) { filled = !filled }
@@ -1126,7 +1126,7 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
                     Box {
                         RoundIcon(Icons.Rounded.MoreVert, "More", tint = Color.White) { moreMenu = true }
                         val lang = java.util.Locale.getDefault().getDisplayLanguage(java.util.Locale.ENGLISH)
-                        BlazeMenu(moreMenu, { moreMenu = false }, buildList<Pair<String, () -> Unit>> {
+                        ArgusMenu(moreMenu, { moreMenu = false }, buildList<Pair<String, () -> Unit>> {
                             add("Recap so far" to { scope.launch { a.recapText.value = a.recap() } })
                             add("Translate subtitles to $lang (AI)" to { scope.launch { val r = a.translate(lang); android.widget.Toast.makeText(ctx, r, android.widget.Toast.LENGTH_LONG).show() } })
                             if (a.seriesKey(a.current.value) != null) add("Mark the end of the intro here" to { a.markIntroEnd() })
@@ -1156,7 +1156,7 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
                         RoundIcon(if (full) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen, if (full) "Exit full screen" else "Full screen", tint = Color.White) { a.setFullscreen(!full) }
                     }
                     ScrubBar(frac, { drag = it; show = true }, { drag?.let { f -> p.seekTo((f * dur).toLong()) }; drag = null },
-                        active = BlazeBrush.blue, rest = Color.White.copy(alpha = 0.3f), knob = Color.White, label = "Seek video")
+                        active = ArgusBrush.blue, rest = Color.White.copy(alpha = 0.3f), knob = Color.White, label = "Seek video")
                 }
             }
         }
@@ -1168,7 +1168,7 @@ private fun PlayerSurface(a: VideoActivity, controls: Boolean) {
         }
     }
     if (tracksOpen) TracksDialog(a) { tracksOpen = false }
-    recap?.let { r -> BlazeDialog("Recap so far", r, confirm = "Keep watching", onConfirm = { a.recapText.value = null }, onDismiss = { a.recapText.value = null }) }
+    recap?.let { r -> ArgusDialog("Recap so far", r, confirm = "Keep watching", onConfirm = { a.recapText.value = null }, onDismiss = { a.recapText.value = null }) }
 }
 
 /**
@@ -1216,7 +1216,7 @@ private fun TracksDialog(a: VideoActivity, onDismiss: () -> Unit) {
         // Wave A 25: "Translate to" any language; the viewer's own language first.
         val dev = java.util.Locale.getDefault().language
         val langs = Subs.translateTo.sortedBy { !Subs.sameLang(it.first, dev) }
-        BlazeDialog("Translate subtitles to", confirm = "Back", onConfirm = { translating = false }, onDismiss = { translating = false }) {
+        ArgusDialog("Translate subtitles to", confirm = "Back", onConfirm = { translating = false }, onDismiss = { translating = false }) {
             Column(Modifier.fillMaxWidth().heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
                 if (Subs.translationBase(available) == null)
                     MText("This video has no YouTube captions, so ${BrandName.NAME}'s AI translates the subtitles it has. That takes a minute.", 12.5.sp, DialogColors.body, maxLines = 3)
@@ -1226,7 +1226,7 @@ private fun TracksDialog(a: VideoActivity, onDismiss: () -> Unit) {
         }
         return
     }
-    BlazeDialog("Subtitles and audio", confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
+    ArgusDialog("Subtitles and audio", confirm = "Done", onConfirm = onDismiss, onDismiss = onDismiss) {
         Column(Modifier.fillMaxWidth().heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
             MText("Subtitles", 12.sp, DialogColors.body, FontWeight.Medium)
             Option("Off", !anyOn) { a.subtitlesOff() }
@@ -1250,7 +1250,7 @@ private fun TracksDialog(a: VideoActivity, onDismiss: () -> Unit) {
 
 @Composable
 private fun Option(text: String, on: Boolean, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).background(if (on) DialogColors.primary.copy(alpha = 0.18f) else Color.Transparent)
+    Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).background(if (on) DialogColors.primary.copy(alpha = 0.18f) else Color.Transparent)
         .clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
         MText(text, 14.5.sp, DialogColors.title, if (on) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.weight(1f))
         if (on) MText("\u2713", 14.sp, DialogColors.primary)
@@ -1260,7 +1260,7 @@ private fun Option(text: String, on: Boolean, onClick: () -> Unit) {
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun VideoLibrary(a: VideoActivity) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val videos by MediaLib.videos.collectAsState()
     val recent by MediaLib.recentVideos.collectAsState()
@@ -1327,7 +1327,7 @@ private fun VideoLibrary(a: VideoActivity) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(VideoKeys.unique(cont) { "c|" + it.key }, key = { "c|" + it.key }) { t ->
-                        Column(Modifier.width(200.dp).clip(BlazeShapes.small).clickable { a.play(t) }) {
+                        Column(Modifier.width(200.dp).clip(ArgusShapes.small).clickable { a.play(t) }) {
                             Box {
                                 Art(t, Modifier.fillMaxWidth().aspectRatio(16f / 9f), target = 400)
                                 val d = t.durationMs.takeIf { it > 0 }
@@ -1356,7 +1356,7 @@ private fun VideoLibrary(a: VideoActivity) {
                     Spacer(Modifier.height(6.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         items(VideoKeys.unique(eps) { "s|" + it.key }, key = { "s|" + it.key }) { t ->
-                            Column(Modifier.width(150.dp).clip(BlazeShapes.small).clickable { a.play(t) }) {
+                            Column(Modifier.width(150.dp).clip(ArgusShapes.small).clickable { a.play(t) }) {
                                 Art(t, Modifier.fillMaxWidth().aspectRatio(16f / 9f), target = 300)
                                 val e = VideoSmart.episode(t.title)
                                 MText(if (e != null) "S${e.season} \u00b7 E${e.episode}" else t.title, 12.sp, c.ink, FontWeight.Medium)
@@ -1379,7 +1379,7 @@ private fun VideoLibrary(a: VideoActivity) {
         items(VideoKeys.unique(shown) { it.key }, key = { "v|" + it.key }) { t ->
             var menu by remember { mutableStateOf(false) }
             val picked = selecting && t.key in sel
-            Column(Modifier.clip(BlazeShapes.small).background(if (picked) c.faint else Color.Transparent).combinedClickable(
+            Column(Modifier.clip(ArgusShapes.small).background(if (picked) c.faint else Color.Transparent).combinedClickable(
                 onClick = { if (selecting) sel = LibrarySelection.toggle(sel, t.key) else a.play(t) },
                 onLongClick = { sel = if (selecting) LibrarySelection.toggle(sel, t.key) else LibrarySelection.start(t.key) })) {
                 Box {
@@ -1394,11 +1394,11 @@ private fun VideoLibrary(a: VideoActivity) {
                     }
                     if (t.source == "download" && !selecting) Box {
                         RoundIcon(Icons.Rounded.MoreVert, "More", size = 36, tint = c.sub) { menu = true }
-                        BlazeMenu(menu, { menu = false }, export.menu({ listOf(t) }, true) + ("Delete from phone" to { confirmDel = t }))
+                        ArgusMenu(menu, { menu = false }, export.menu({ listOf(t) }, true) + ("Delete from phone" to { confirmDel = t }))
                     }
                     if (t.source == ImportRules.SOURCE && !selecting) Box {
                         RoundIcon(Icons.Rounded.MoreVert, "More", size = 36, tint = c.sub) { menu = true }
-                        BlazeMenu(menu, { menu = false }, listOf("Remove from library" to { scope.launch { withContext(Dispatchers.IO) { MediaLib.removeImports(ctx, listOf(t.key)) } }; Unit }))
+                        ArgusMenu(menu, { menu = false }, listOf("Remove from library" to { scope.launch { withContext(Dispatchers.IO) { MediaLib.removeImports(ctx, listOf(t.key)) } }; Unit }))
                     }
                 }
             }
@@ -1406,12 +1406,12 @@ private fun VideoLibrary(a: VideoActivity) {
     }
     }
     confirmDel?.let { t ->
-        BlazeDialog("Delete \u201c${t.title.take(40)}\u201d?", "It's removed from your phone.", confirm = "Delete", warm = true,
+        ArgusDialog("Delete \u201c${t.title.take(40)}\u201d?", "It's removed from your phone.", confirm = "Delete", warm = true,
             onConfirm = { MediaLib.deleteDownload(ctx, t.key); confirmDel = null }, dismiss = "Cancel", onDismiss = { confirmDel = null })
     }
     confirmMany?.let { picked ->
         val (title, body) = LibrarySelection.deleteText(picked, "video")
-        BlazeDialog(title, body, confirm = "Delete", warm = true, onConfirm = {
+        ArgusDialog(title, body, confirm = "Delete", warm = true, onConfirm = {
             val keys = LibrarySelection.deletable(picked).map { it.key }
             confirmMany = null; sel = LibrarySelection.clear()
             scope.launch { withContext(Dispatchers.IO) { MediaLib.deleteDownloads(ctx, keys) } }
@@ -1422,7 +1422,7 @@ private fun VideoLibrary(a: VideoActivity) {
 @Composable
 private fun DurationBadgeText(text: String) {
     if (text.isBlank()) return
-    Box(Modifier.padding(6.dp).clip(BlazeShapes.xs).background(Color.Black.copy(alpha = 0.78f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+    Box(Modifier.padding(6.dp).clip(ArgusShapes.xs).background(Color.Black.copy(alpha = 0.78f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
         MText(text, 11.sp, Color.White, FontWeight.Medium)
     }
 }

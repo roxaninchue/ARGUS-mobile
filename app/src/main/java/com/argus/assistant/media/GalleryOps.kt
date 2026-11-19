@@ -1,7 +1,7 @@
-package com.blaze.assistant.media
+package com.argus.assistant.media
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

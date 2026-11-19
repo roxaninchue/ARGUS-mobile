@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
-import com.blaze.assistant.browser.phone.PhonePolicy.Gate
-import com.blaze.assistant.browser.phone.PhonePolicy.Mode
+import com.argus.assistant.browser.phone.PhonePolicy.Gate
+import com.argus.assistant.browser.phone.PhonePolicy.Mode
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -11,7 +11,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.45.19 Blaze Phone browser: the pure rules (PhonePolicy) the engine and the tools follow. */
+/** 0.45.19 Argus Phone browser: the pure rules (PhonePolicy) the engine and the tools follow. */
 class PhoneBrowserTest {
     // ------------------------------------------------------------------ sessions persist per site
     @Test fun oneProfilePerSiteAcrossSubdomainsAndRuns() {
@@ -31,7 +31,7 @@ class PhoneBrowserTest {
         val s = PhonePolicy.sessionFor("https://example.com", true)
         assertTrue(s.profile!!.startsWith(PhonePolicy.PROFILE_PREFIX))
         assertNotEquals("blaze-private", s.profile)   // BrowserEngine's private-tab profile
-        assertNotEquals("blazeos", s.profile)         // BlazeOS's
+        assertNotEquals("blazeos", s.profile)         // ArgusOS's
         assertNotEquals("Default", s.profile)
         assertTrue(Regex("^[a-z0-9_-]+$").matches(s.profile!!))
         assertTrue(PhonePolicy.profileName("x".repeat(200)).length <= PhonePolicy.PROFILE_PREFIX.length + 60)
@@ -149,7 +149,7 @@ class PhoneBrowserTest {
         assertEquals(Gate.CONFIRM, PhonePolicy.gate("click", "Next", PhonePolicy.Node("e6", "button", "Next", "", "submit"), pageHasCard = true))
     }
 
-    @Test fun cardFieldsAreNeverTypedByBlaze() {
+    @Test fun cardFieldsAreNeverTypedByArgus() {
         val card = PhonePolicy.Node("e4", "textbox", "Card number", "", "text", card = true, sensitive = true)
         assertEquals(Gate.REFUSE, PhonePolicy.gate("type", "Card number", card))
         assertEquals(Gate.PASS, PhonePolicy.gate("type", "Email", PhonePolicy.Node("e1", "textbox", "Email", "")))

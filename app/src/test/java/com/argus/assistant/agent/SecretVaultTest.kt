@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.SecretTestKit.CARD
-import com.blaze.assistant.agent.SecretTestKit.CF
+import com.argus.assistant.agent.SecretTestKit.CARD
+import com.argus.assistant.agent.SecretTestKit.CF
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -39,9 +39,9 @@ class SecretVaultTest {
         assertEquals("•••• 4242", e.preview)
         assertFalse(SecretVault.list().toString().contains(CARD))
         assertFalse(SecretVault.list().toString().contains("12/29"))
-        assertFalse(com.blaze.assistant.ui.SavedSecretsText.canReveal(e))
+        assertFalse(com.argus.assistant.ui.SavedSecretsText.canReveal(e))
         assertFalse(file.readText().contains(CARD))
-        assertFalse(com.blaze.assistant.ui.SecretFormRules.canReveal(SecretVault.Kind.CARD, SecretVault.fieldsFor(SecretVault.Kind.CARD).first()))
+        assertFalse(com.argus.assistant.ui.SecretFormRules.canReveal(SecretVault.Kind.CARD, SecretVault.fieldsFor(SecretVault.Kind.CARD).first()))
     }
 
     @Test fun oneTimeCodeStaysInMemoryAndExpires() {
@@ -85,7 +85,7 @@ class SecretVaultTest {
     }
 
     @Test fun agoText() {
-        assertEquals("never", com.blaze.assistant.ui.SavedSecretsText.ago(0, 5))
-        assertEquals("2 h ago", com.blaze.assistant.ui.SavedSecretsText.ago(0 + 1, 1 + 2 * 3_600_000L))
+        assertEquals("never", com.argus.assistant.ui.SavedSecretsText.ago(0, 5))
+        assertEquals("2 h ago", com.argus.assistant.ui.SavedSecretsText.ago(0 + 1, 1 + 2 * 3_600_000L))
     }
 }

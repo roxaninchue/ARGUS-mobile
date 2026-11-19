@@ -1,4 +1,4 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 /**
  * P0-TM-01: team.db's schema as versioned migration steps. Pure (only SQL text), so the DDL is checked on the JVM

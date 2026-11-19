@@ -1,6 +1,6 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
-import com.blaze.assistant.connect.AccountLock.Reason
+import com.argus.assistant.connect.AccountLock.Reason
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -74,7 +74,7 @@ class AccountLockTest {
         assertNull(AccountLock.fromResponse(500, """{"error":"account_locked"}"""))
     }
 
-    @Test fun blazeAuthFlatAccountLocked() {
+    @Test fun argusAuthFlatAccountLocked() {
         assertEquals(Reason.EMAIL_UNVERIFIED, AccountLock.fromResponse(403, """{"error":"account_locked","reason":"email_unverified"}"""))
         assertEquals(Reason.DISPOSABLE_EMAIL, AccountLock.fromResponse(403, """{"error":"account_locked","reason":"disposable_email"}"""))
         assertEquals(Reason.DISPOSABLE_EMAIL, AccountLock.fromResponse(403, """{"error":"disposable_email"}"""))
@@ -96,12 +96,12 @@ class AccountLockTest {
     // ---------------------------------------------------------------- side doors (pure parts)
 
     @Test fun onlyStopAndDontWorkWhileLocked() {
-        for (a in listOf("com.blaze.assistant.STOP", "com.blaze.assistant.STOP_HAND", "com.blaze.assistant.DENY")) assertTrue(a, AccountLock.actionAllowed(true, a))
-        for (a in listOf("com.blaze.assistant.REPLY", "com.blaze.assistant.ALLOW", "com.blaze.assistant.DO", null)) assertFalse("$a", AccountLock.actionAllowed(true, a))
-        assertTrue(AccountLock.actionAllowed(false, "com.blaze.assistant.DO"))
-        assertTrue(AccountLock.mediaAccepts(false, "com.google.android.projection.gearhead", "com.blaze.assistant"))
-        assertFalse("Android Auto is turned away", AccountLock.mediaAccepts(true, "com.google.android.projection.gearhead", "com.blaze.assistant"))
-        assertTrue(AccountLock.mediaAccepts(true, "com.blaze.assistant", "com.blaze.assistant"))
+        for (a in listOf("com.argus.assistant.STOP", "com.argus.assistant.STOP_HAND", "com.argus.assistant.DENY")) assertTrue(a, AccountLock.actionAllowed(true, a))
+        for (a in listOf("com.argus.assistant.REPLY", "com.argus.assistant.ALLOW", "com.argus.assistant.DO", null)) assertFalse("$a", AccountLock.actionAllowed(true, a))
+        assertTrue(AccountLock.actionAllowed(false, "com.argus.assistant.DO"))
+        assertTrue(AccountLock.mediaAccepts(false, "com.google.android.projection.gearhead", "com.argus.assistant"))
+        assertFalse("Android Auto is turned away", AccountLock.mediaAccepts(true, "com.google.android.projection.gearhead", "com.argus.assistant"))
+        assertTrue(AccountLock.mediaAccepts(true, "com.argus.assistant", "com.argus.assistant"))
     }
 
     // ---------------------------------------------------------------- the email code
@@ -246,26 +246,26 @@ class AccountLockTest {
     // ---------------------------------------------------------------- wiring (source checks)
 
     private fun root(): File = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-    private fun src(p: String) = File(root(), "com/blaze/assistant/$p").readText()
+    private fun src(p: String) = File(root(), "com/argus/assistant/$p").readText()
 
     @Test fun lockScreenComesFirstAndEveryDoorAsksTheGate() {
         val main = src("MainActivity.kt")
         val route = main.indexOf("AccountLockRoute(acct)")
         assertTrue("the lock screen is drawn before the app (and its first-run language step)", route > 0 && route < main.indexOf("ChatScreen()"))
-        for (a in listOf("browser/phone/PhoneBrowserActivity.kt", "terminal/BlazeTerminalActivity.kt", "mediaapps/MusicActivity.kt", "movies/AddSourceActivity.kt",
+        for (a in listOf("browser/phone/PhoneBrowserActivity.kt", "terminal/ArgusTerminalActivity.kt", "mediaapps/MusicActivity.kt", "movies/AddSourceActivity.kt",
                 "movies/MovieOpenActivity.kt", "mediaapps/VideoActivity.kt", "siteapps/SiteAppActivity.kt", "browser/BrowserActivity.kt", "ui/InAppCamera.kt"))
-            assertTrue(a, src(a).contains("super.onCreate(savedInstanceState)\n        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return"))
+            assertTrue(a, src(a).contains("super.onCreate(savedInstanceState)\n        if (com.argus.assistant.connect.AccountGate.bounce(this)) return"))
         assertTrue("VideoActivity survives a bounced onCreate", src("mediaapps/VideoActivity.kt").contains("if (!::player.isInitialized) { super.onDestroy(); return }"))
-        assertTrue(src("notify/Notifier.kt").contains("private fun allowed() = !com.blaze.assistant.connect.AccountGate.locked() && ("))
+        assertTrue(src("notify/Notifier.kt").contains("private fun allowed() = !com.argus.assistant.connect.AccountGate.locked() && ("))
         assertTrue(src("notify/Notifier.kt").contains("AccountLock.actionAllowed(gate.locked(), intent.action)"))
-        assertTrue(src("assist/BlazeAssist.kt").contains("AccountLockCard(locked"))
+        assertTrue(src("assist/ArgusAssist.kt").contains("AccountLockCard(locked"))
         assertTrue(src("voice/WakeWordService.kt").contains("AccountGate.locked()) return   // account lock: the wake word stays off"))
         assertTrue(src("mediaapps/MusicService.kt").contains("MediaSession.ConnectionResult.reject()"))
         assertTrue(src("routine/RoutineReceiver.kt").contains("AccountGate.locked()) { Routines.ran(id)"))
-        assertTrue(src("proactive/Triggers.kt").contains("AccountGate.locked()) { com.blaze.assistant.connect.AccountGate.notice(); return }"))
+        assertTrue(src("proactive/Triggers.kt").contains("AccountGate.locked()) { com.argus.assistant.connect.AccountGate.notice(); return }"))
         for (f in listOf("agent/LlmClient.kt", "agent/CloudRuns.kt", "connect/Entitlements.kt")) assertTrue(f, src(f).contains("AccountGate.report(code"))
         assertFalse("no Skip for now", src("ui/space/SpaceLogic.kt").contains("Skip for now"))
-        val acct = src("connect/BlazeAccount.kt")
+        val acct = src("connect/ArgusAccount.kt")
         assertTrue(acct.contains("put(\"device\", DeviceId.get())") && acct.contains("SignupCode.pendingOf(status, o"))
     }
 }

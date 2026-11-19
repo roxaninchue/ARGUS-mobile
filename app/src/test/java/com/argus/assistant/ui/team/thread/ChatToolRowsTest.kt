@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.team.thread
+package com.argus.assistant.ui.team.thread
 
-import com.blaze.assistant.agent.StepTool
-import com.blaze.assistant.agent.ToolTrail
-import com.blaze.assistant.ui.team.thread.ChatToolRows.Msg
-import com.blaze.assistant.ui.team.thread.ThreadModel.State
+import com.argus.assistant.agent.StepTool
+import com.argus.assistant.agent.ToolTrail
+import com.argus.assistant.ui.team.thread.ChatToolRows.Msg
+import com.argus.assistant.ui.team.thread.ThreadModel.State
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -101,11 +101,11 @@ class ChatToolRowsTest {
     // 0.53.3: Claude-style flow: the model's words between grouped runs of the same tool.
     @Test fun flowInterleavesWordsAndGroupsSameTool() {
         val ms = listOf(user(1, 0),
-            Msg(2, true, "I'll search first.", com.blaze.assistant.agent.Narration.META, 10),
+            Msg(2, true, "I'll search first.", com.argus.assistant.agent.Narration.META, 10),
             step(3, "Searching the web for a", "web_search(query=dots benchmarks)", 11),
             step(4, "Searching the web for b", "web_search(query=dots 3 note preview)", 12),
             step(5, "Reading hf.co", "fetch_page(url=https://hf.co/x)", 13),
-            Msg(6, true, "Found it.", com.blaze.assistant.agent.Narration.META, 14),
+            Msg(6, true, "Found it.", com.argus.assistant.agent.Narration.META, 14),
             reply(7, 20))
         val res = listOf(res("web_search(query=dots benchmarks)", "1. a", 11), ToolTrail.Result("web_search(query=dots 3 note preview)", "Error: blocked", true, 12))
         val f = ChatToolRows.flows(ms, working = false, results = res).before[7L]!!

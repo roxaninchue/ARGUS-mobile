@@ -1,6 +1,6 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /**
  * Account lock: throwaway (disposable) email addresses can't hold an ARGUS account. blaze-auth 0.10.0 has the final say

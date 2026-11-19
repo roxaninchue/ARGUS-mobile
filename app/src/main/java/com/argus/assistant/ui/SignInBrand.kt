@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * 2026-11-15: the "Continue with Google" / "Continue with GitHub" buttons (onboarding's sign-in step and Settings ›

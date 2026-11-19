@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

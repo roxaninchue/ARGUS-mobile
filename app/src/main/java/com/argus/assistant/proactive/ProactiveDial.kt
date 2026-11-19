@@ -1,6 +1,6 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

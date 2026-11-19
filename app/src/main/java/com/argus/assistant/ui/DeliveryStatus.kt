@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -34,8 +34,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Delivery
-import com.blaze.assistant.agent.DeliveryState
+import com.argus.assistant.agent.Delivery
+import com.argus.assistant.agent.DeliveryState
 
 /**
  * 0.45.20 delivery label (user spec B, contract §1): under your LATEST bubble only, right-aligned, small and muted but
@@ -63,7 +63,7 @@ object DeliveryView {
 
     /**
      * What the label shows for the latest user bubble. [tracked] = the tracker's state (null: never tracked, e.g. older
-     * chats or a local-only answer); [answered] = a real Blaze reply (not the ack) came after it; [busy] = a turn is
+     * chats or a local-only answer); [answered] = a real Argus reply (not the ack) came after it; [busy] = a turn is
      * running in this chat now. Read only ever comes from a real event or a real reply, never from time passing.
      */
     fun effective(tracked: DeliveryState?, answered: Boolean, busy: Boolean): DeliveryState = when {
@@ -79,7 +79,7 @@ object DeliveryView {
 
 @Composable
 fun DeliveryLabel(state: DeliveryState, modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ink = BubblePalette.capsuleInk(c)
     val failed = state == DeliveryState.NOT_SENT
     Row(modifier.fillMaxWidth().padding(top = 4.dp, end = 6.dp), horizontalArrangement = Arrangement.End) {

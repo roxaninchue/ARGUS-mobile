@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -71,7 +71,7 @@ class HideModels19Test {
     }
 
     @Test fun whatHappenedSheetIsDeveloperOnly() = fiveTimes {
-        val src = srcFile("java/com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val src = srcFile("java/com/argus/assistant/ui/ChatScreen.kt").readText()
         val addLine = src.lines().single { it.contains("add(\"What happened\"") }
         assertTrue(addLine, addLine.contains("DevFlags.modelInfo()"))
         val dialogLine = src.lines().single { it.contains("TraceDialog(m.trace)") }
@@ -81,7 +81,7 @@ class HideModels19Test {
         assertTrue(src.contains("ReplyChips.shown(m.meta)"))
     }
 
-    @Test fun promptsSayBlazeIsBlaze() = fiveTimes {
+    @Test fun promptsSayArgusIsArgus() = fiveTimes {
         assertTrue(Duo.ASSISTANT_RULES.contains("Never say which AI model, company or provider runs you"))
         for (p in listOf(Duo.sideSystem(null, "t", ""), Duo.allSystem(Duo.Who.HALO, null), Duo.allSystem(Duo.Who.BLAZE, null)))
             assertTrue(p.contains(Duo.IDENTITY_RULES))
@@ -101,15 +101,15 @@ class HideModels19Test {
 }
 
 /**
- * The string literals the user can see: every Kotlin string in the UI packages (ui/, notify/, Blaze Phone's screens and
+ * The string literals the user can see: every Kotlin string in the UI packages (ui/, notify/, Argus Phone's screens and
  * status lines) and the agent files that write user-facing lines, plus every Android string resource. Comments are
  * skipped; the developer-only "What happened" sheet holds no names either, so nothing is excluded.
  */
 object UiStrings {
-    private val kotlinDirs = listOf("java/com/blaze/assistant/ui", "java/com/blaze/assistant/notify")
+    private val kotlinDirs = listOf("java/com/argus/assistant/ui", "java/com/argus/assistant/notify")
     private val kotlinFiles = listOf(
-        "java/com/blaze/assistant/browser/phone/PhoneBrowserActivity.kt", "java/com/blaze/assistant/browser/phone/PhoneBrowserTools.kt",
-        "java/com/blaze/assistant/agent/Ack.kt", "java/com/blaze/assistant/agent/PlainError.kt", "java/com/blaze/assistant/agent/Friendly.kt",
+        "java/com/argus/assistant/browser/phone/PhoneBrowserActivity.kt", "java/com/argus/assistant/browser/phone/PhoneBrowserTools.kt",
+        "java/com/argus/assistant/agent/Ack.kt", "java/com/argus/assistant/agent/PlainError.kt", "java/com/argus/assistant/agent/Friendly.kt",
     )
 
     private fun main(): File = listOf(File("src/main"), File("app/src/main")).first { it.isDirectory }

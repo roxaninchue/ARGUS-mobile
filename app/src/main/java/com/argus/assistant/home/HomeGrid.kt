@@ -1,4 +1,4 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
 import java.util.Calendar
 import java.util.Locale
@@ -204,7 +204,7 @@ object TodoFeed {
     private val doneMark = Regex("^\\s*(\\[x]|✓|✔|☑)\\s*", RegexOption.IGNORE_CASE)
     private val openMark = Regex("^\\s*(\\[ ]|☐|-)\\s*")
 
-    /** A list widget Blaze made ("To-do", "Tasks", "Checklist": a custom widget with items). */
+    /** A list widget Argus made ("To-do", "Tasks", "Checklist": a custom widget with items). */
     fun isTodo(w: Widget): Boolean = w.type == WidgetTypes.CUSTOM && !w.hidden && (listName.containsMatchIn(w.title) || listName.containsMatchIn(w.category))
 
     /** Tasks from every to-do list widget, in board order. A line marked "[x]" / "✓" or noted "done" is done. */

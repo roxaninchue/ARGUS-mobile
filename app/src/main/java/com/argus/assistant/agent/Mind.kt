@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
@@ -14,13 +14,13 @@ import org.json.JSONObject
  *
  *  - One continuous conversation ([MAIN]); projects keep their own threads.
  *  - journal: every turn of every conversation (old chats imported once, idempotently), with FTS, queued for review.
- *  - memories: the source of truth for what Blaze knows (profile, preference, person, project, decision, fact), with FTS.
+ *  - memories: the source of truth for what Argus knows (profile, preference, person, project, decision, fact), with FTS.
  *    [save] dedupes: same kind + subject and word overlap >= 0.5 rewrites the line (newest wins), identical text is a no-op.
  *  - The prompt carries only [MIND_RULE], the pinned core and the subject index ([promptBlock]); everything else is looked up.
  *  - Context ladder ([rung]): recent turns, then the rolling summary, then lookup (core + index + last [LOOKUP_TAIL] messages).
  *
  * Storage (v0.26.3): filesDir/blaze.db, the same SQLite file format as Blaze Desktop and Blaze CLI (schema v1, FTS5) on a
- * bundled modern SQLite ([MindStore], store/BlazeDb.kt). The old databases/mind.db (Android's SQLite, FTS4, [Db]) is
+ * bundled modern SQLite ([MindStore], store/ArgusDb.kt). The old databases/mind.db (Android's SQLite, FTS4, [Db]) is
  * backed up and copied over once, kept as it was, and used again only if blaze.db can't be opened.
  * The pure parts (dedupe, core, index, ladder, extraction parsing) are unit-tested on the JVM.
  */
@@ -483,7 +483,7 @@ object Mind {
             try {
                 if (replace) db.delete("memories_fts", "docid=?", arrayOf(id.toString()))
                 db.insert("memories_fts", null, ContentValues().apply { put("docid", id); put("subject", subject); put("text", text) })
-            } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Mind: if replace db.deletememories_fts docid a", e) }
+            } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Mind: if replace db.deletememories_fts docid a", e) }
         }
 
         /** Insert or rewrite through [decide]. Returns (outcome, id); outcome is "saved", "updated" or "same". */
@@ -541,14 +541,14 @@ object Mind {
                 db.setTransactionSuccessful()
             } finally { db.endTransaction() }
             ftsPut(db, keep, s, t, true)
-            if (fts) for (id in drop.distinct()) if (id != keep) try { db.delete("memories_fts", "docid=?", arrayOf(id.toString())) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Mind: merge fts", e) }
+            if (fts) for (id in drop.distinct()) if (id != keep) try { db.delete("memories_fts", "docid=?", arrayOf(id.toString())) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Mind: merge fts", e) }
             return true
         }
 
         @Synchronized override fun delete(id: Long) {
             retired?.let { it.delete(id); return }
             writableDatabase.delete("memories", "id=?", arrayOf(id.toString()))
-            if (fts) try { writableDatabase.delete("memories_fts", "docid=?", arrayOf(id.toString())) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Mind: writableDatabase.deletememories_fts doci", e) }
+            if (fts) try { writableDatabase.delete("memories_fts", "docid=?", arrayOf(id.toString())) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Mind: writableDatabase.deletememories_fts doci", e) }
         }
 
         override fun search(query: String, kind: String?, limit: Int): List<Mem> {
@@ -561,7 +561,7 @@ object Mind {
             if (fts && q.isNotEmpty()) try {
                 readableDatabase.rawQuery("SELECT m.id, m.kind, m.subject, m.text, m.related, m.source_turn, m.created, m.updated FROM memories m " +
                     "JOIN memories_fts f ON f.docid=m.id WHERE memories_fts MATCH ? LIMIT 200", arrayOf(q)).use { c -> while (c.moveToNext()) memOf(c).let { rows[it.id] = it } }
-            } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Mind: readableDatabase.rawQuerySELECT m.id m.k", e) }
+            } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Mind: readableDatabase.rawQuerySELECT m.id m.k", e) }
             // Plain substring matches too (FTS missing, or words FTS tokenises differently).
             all().filter { m -> ws.any { w -> (m.subject + " " + m.text + " " + m.related).contains(w, true) } }.forEach { rows[it.id] = it }
             return rows.values.filter { k == null || it.kind == k }
@@ -634,20 +634,20 @@ object Mind {
 
     private fun changed() {
         version++
-        try { onChange?.invoke() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: onChange.invoke", e) }
-        com.blaze.assistant.connect.CloudSync.localChange(com.blaze.assistant.connect.SyncKinds.MEMORY)   // v0.40.0 (off by default)
+        try { onChange?.invoke() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: onChange.invoke", e) }
+        com.argus.assistant.connect.CloudSync.localChange(com.argus.assistant.connect.SyncKinds.MEMORY)   // v0.40.0 (off by default)
     }
 
     private val initLock = Any()
 
     /** How blaze.db is opened: the bundled SQLite on the phone; tests swap in sqlite-jdbc. */
-    @Volatile var openBlaze: (java.io.File) -> com.blaze.assistant.store.Sql = { com.blaze.assistant.store.AndroidSql(it.path) }
+    @Volatile var openArgus: (java.io.File) -> com.argus.assistant.store.Sql = { com.argus.assistant.store.AndroidSql(it.path) }
 
     /**
      * Opens the mind. v0.26.3: blaze.db (filesDir) on the bundled SQLite is the store. The first launch after the
      * update finds the old databases/mind.db: the app keeps working on it while a background thread backs it up
      * (filesDir/backup/mind-<time>.db) and copies it into blaze.db ([MindStore.importFrom]); then blaze.db takes
-     * over. mind.db is never deleted. If blaze.db can't open (or was written by a newer Blaze), mind.db stays the
+     * over. mind.db is never deleted. If blaze.db can't open (or was written by a newer Argus), mind.db stays the
      * store and [notice] says why in one line.
      */
     fun init(ctx: Context) {
@@ -657,23 +657,23 @@ object Mind {
             val app = ctx.applicationContext
             val oldFile = app.getDatabasePath("mind.db")
             val hadOld = oldFile.exists()
-            val blaze: MindStore? = try {
-                val sql = openBlaze(java.io.File(app.filesDir, "blaze.db"))
-                try { MindStore(com.blaze.assistant.store.BlazeDb(sql), sql) } catch (e: Throwable) { try { sql.close() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: MindStorecom.blaze.assistant.store.${BrandName.NAME}", e) }; throw e }
-            } catch (e: com.blaze.assistant.store.BlazeDb.NewerSchema) {
+            val argus: MindStore? = try {
+                val sql = openArgus(java.io.File(app.filesDir, "blaze.db"))
+                try { MindStore(com.argus.assistant.store.ArgusDb(sql), sql) } catch (e: Throwable) { try { sql.close() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: MindStorecom.argus.assistant.store.${BrandName.NAME}", e) }; throw e }
+            } catch (e: com.argus.assistant.store.ArgusDb.NewerSchema) {
                 notice = NEWER; null
             } catch (_: Throwable) {
                 notice = if (hadOld) UNAVAILABLE else null; null
             }
-            if (blaze != null && (blaze.imported() || !hadOld)) {
-                try { blaze.markFresh() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: blaze.markFresh", e) }
-                db = blaze; return
+            if (argus != null && (blaze.imported() || !hadOld)) {
+                try { blaze.markFresh() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: blaze.markFresh", e) }
+                db = argus; return
             }
             val old = try { Db(app).also { it.writableDatabase } } catch (_: Throwable) { null }
-            if (blaze == null) { db = old; return }
-            if (old == null) { db = blaze; return }   // mind.db there but unreadable: start on blaze.db, leave the file alone
+            if (argus == null) { db = old; return }
+            if (old == null) { db = argus; return }   // mind.db there but unreadable: start on blaze.db, leave the file alone
             db = old
-            Thread({ upgrade(app, old, blaze) }, "blaze-mind-copy").apply { isDaemon = true; priority = Thread.MIN_PRIORITY }.start()
+            Thread({ upgrade(app, old, argus) }, "blaze-mind-copy").apply { isDaemon = true; priority = Thread.MIN_PRIORITY }.start()
         }
     }
 
@@ -685,12 +685,12 @@ object Mind {
      * meanwhile (writers wait, then go to blaze.db through [Db.retired]). A failure leaves mind.db as the store and
      * the copy runs again on the next launch.
      */
-    private fun upgrade(ctx: Context, old: Db, blaze: MindStore) {
+    private fun upgrade(ctx: Context, old: Db, argus: MindStore) {
         try {
             synchronized(old) {
                 blaze.importFrom(old, backup = { backupOld(ctx, old) })
-                old.retired = blaze
-                db = blaze
+                old.retired = argus
+                db = argus
             }
             changed()
         } catch (_: Throwable) {
@@ -700,7 +700,7 @@ object Mind {
 
     /** Copies databases/mind.db (and its WAL) to filesDir/backup/mind-<time>.db. Returns the copy's path. */
     fun backupOld(ctx: Context, old: Db, now: Long = System.currentTimeMillis()): String {
-        try { old.writableDatabase.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: old.writableDatabase.rawQueryPRAGMA wal_", e) }
+        try { old.writableDatabase.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() } } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: old.writableDatabase.rawQueryPRAGMA wal_", e) }
         val src = ctx.getDatabasePath("mind.db")
         val dir = java.io.File(ctx.filesDir, "backup").apply { mkdirs() }
         val out = java.io.File(dir, "mind-$now.db")
@@ -730,7 +730,7 @@ object Mind {
             opened?.let { it to false } ?: kotlinx.coroutines.CompletableDeferred<Store?>().also { opened = it }.let { it to true }
         }
         if (start) Thread({
-            try { init(app) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: openLater", e) }
+            try { init(app) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: openLater", e) }
             d.complete(db)
         }, "blaze-mind-open").apply { isDaemon = true }.start()
         if (then != null) {
@@ -741,7 +741,7 @@ object Mind {
     }
 
     private fun runThen(then: () -> Unit) {
-        try { then() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: after open", e) }
+        try { then() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: after open", e) }
     }
 
     /**
@@ -764,7 +764,7 @@ object Mind {
         val main = try { android.os.Looper.getMainLooper()?.isCurrentThread == true } catch (_: Throwable) { false }
         if (!LazyStart.mayWaitForMind(main, !d.isCompleted)) return db
         return try { kotlinx.coroutines.runBlocking { kotlinx.coroutines.withTimeoutOrNull(LazyStart.MIND_WAIT_MS) { d.await() } } } catch (e: Throwable) {
-            com.blaze.assistant.device.CrashLog.quiet("Mind: dbOrWait", e); db
+            com.argus.assistant.device.CrashLog.quiet("Mind: dbOrWait", e); db
         }
     }
 
@@ -852,7 +852,7 @@ object Mind {
         val (kind, subject) = MemoryMerge.pick(mems)
         val keep = mems.first()
         val ok = try { d.mergeInto(keep.id, merged, kind, subject, MemoryMerge.related(mems), mems.drop(1).map { it.id }) }
-            catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Mind: merge", e); false }
+            catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Mind: merge", e); false }
         return if (ok) keep.id to "" else 0L to "Couldn't merge right now."
     }
 
@@ -867,16 +867,16 @@ object Mind {
      */
     fun consolidate(cancelled: () -> Boolean = { false }, progress: (done: Int, total: Int) -> Unit = { _, _ -> }): Int {
         val d = db ?: return 0
-        val groups = try { MemoryMerge.groups(d.all(), cancelled) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Mind: tidy groups", e); return 0 }
+        val groups = try { MemoryMerge.groups(d.all(), cancelled) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Mind: tidy groups", e); return 0 }
         var n = 0
-        try { progress(0, groups.size) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: tidy progress", e) }
+        try { progress(0, groups.size) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: tidy progress", e) }
         for ((i, g) in groups.withIndex()) {
             if (cancelled()) break
             try {
                 val rows = g.mapNotNull { d.mem(it.id) }
                 if (rows.size == g.size && mergeRows(d, rows).first > 0) n++
-            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: tidy group", e) }
-            try { progress(i + 1, groups.size) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Mind: tidy progress", e) }
+            } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: tidy group", e) }
+            try { progress(i + 1, groups.size) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("Mind: tidy progress", e) }
         }
         if (n > 0) changed()
         return n
@@ -885,7 +885,7 @@ object Mind {
     fun delete(id: Long) { db?.delete(id); changed() }
 
     /** The journal after a chat was saved (Agent.persist). */
-    fun journal(conv: String, h: JSONArray) { if (PrivateChat.isPrivateId(conv)) return; try { db?.journal(conv, h) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Mind: db.journalconv h", e) } }
+    fun journal(conv: String, h: JSONArray) { if (PrivateChat.isPrivateId(conv)) return; try { db?.journal(conv, h) } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("Mind: db.journalconv h", e) } }
 
     // ---------------- migration ----------------
 

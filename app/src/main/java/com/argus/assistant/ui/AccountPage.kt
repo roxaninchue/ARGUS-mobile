@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,8 +32,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.connect.BlazeAccount
-import com.blaze.assistant.connect.KeySync
+import com.argus.assistant.connect.ArgusAccount
+import com.argus.assistant.connect.KeySync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,24 +46,24 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 
-/** Settings › Account: the Blaze account shared with Blaze Desktop. */
+/** Settings › Account: the Argus account shared with Blaze Desktop. */
 @Composable
 fun AccountPage(onOpen: (String) -> Unit = {}) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
-    val v by BlazeAccount.view.collectAsState()
+    val v by ArgusAccount.view.collectAsState()
     var busy by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { BlazeAccount.refreshProviders(); BlazeAccount.checkSession() } }
+    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { ArgusAccount.refreshProviders(); ArgusAccount.checkSession() } }
 
     Spacer(Modifier.height(10.dp))
     val u = v.user
     if (u != null) {
         // ---------- signed in ----------
         Row(Modifier.fillMaxWidth().hairline(c.hair).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(40.dp).clip(BlazeShapes.pill).background(c.ink, BlazeShapes.pill), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(40.dp).clip(ArgusShapes.pill).background(c.ink, ArgusShapes.pill), contentAlignment = Alignment.Center) {
                 Text((u.name.ifBlank { u.email }).take(1).uppercase(),
                     style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 18.sp, color = c.paper))
             }
@@ -71,7 +71,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
             Column(Modifier.weight(1f)) {
                 Text(u.name.ifBlank { u.email }, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
                 if (u.name.isNotBlank()) Text(u.email, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
-                val how = (u.providers.map { BlazeAccount.title(it) } + if (u.hasPassword) listOf("Email") else emptyList()).distinct()
+                val how = (u.providers.map { ArgusAccount.title(it) } + if (u.hasPassword) listOf("Email") else emptyList()).distinct()
                 if (how.isNotEmpty()) Label(tr("Signs in with ") + how.joinToString(", "), color = c.weak, size = 9.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
@@ -91,19 +91,19 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
             scope.launch { KeySync.sync(); syncing = false }
         }
         if (keyStatus.isNotEmpty()) Note(keyStatus, top = 8)
-        val skillStatus by com.blaze.assistant.connect.SkillSync.status.collectAsState()
+        val skillStatus by com.argus.assistant.connect.SkillSync.status.collectAsState()
         var syncingSkills by remember { mutableStateOf(false) }
         Spacer(Modifier.height(8.dp))
         AccountButton(if (syncingSkills) "Syncing skills…" else "Sync skills now", primary = false) {
             if (syncingSkills) return@AccountButton
             syncingSkills = true
-            scope.launch { com.blaze.assistant.connect.SkillSync.sync(); syncingSkills = false }
+            scope.launch { com.argus.assistant.connect.SkillSync.sync(); syncingSkills = false }
         }
         if (skillStatus.isNotEmpty()) Note(skillStatus, top = 8)
         // v0.45.3: password and two-step verification (blaze-auth 0.9.0; each part only when the server offers it).
         SecuritySection(u, v.features)
         Spacer(Modifier.height(8.dp))
-        AccountButton("Sign out", primary = false) { scope.launch { BlazeAccount.signOut() } }
+        AccountButton("Sign out", primary = false) { scope.launch { ArgusAccount.signOut() } }
         Spacer(Modifier.height(24.dp))
         var confirm by remember { mutableStateOf(false) }
         if (!confirm) ActionText("Delete account", color = c.accent, size = 10.sp, modifier = Modifier.clickable { confirm = true }.padding(vertical = 8.dp))
@@ -115,7 +115,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
                     AccountButton(if (busy) "Deleting…" else "Delete for good") {
                         if (busy) return@AccountButton
                         busy = true
-                        scope.launch { err = BlazeAccount.delete(); busy = false; confirm = false }
+                        scope.launch { err = ArgusAccount.delete(); busy = false; confirm = false }
                     }
                 }
             }
@@ -137,12 +137,12 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
     if (v.message.isNotEmpty() && err.isEmpty()) Note(v.message)
 
     if (v.pending.isNotEmpty()) {
-        Note("Finish signing in with ${BlazeAccount.title(v.pending)} in your browser, then come back.")
-        AccountButton("Cancel", primary = false) { BlazeAccount.cancel() }
+        Note("Finish signing in with ${ArgusAccount.title(v.pending)} in your browser, then come back.")
+        AccountButton("Cancel", primary = false) { ArgusAccount.cancel() }
     } else {
         // 2026-11-15: the real Google G and GitHub mark on brand-style buttons (SignInBrand)
         for (p in SignInBrand.PROVIDERS) if (v.login[p] == true) {
-            ProviderButton(p) { err = BlazeAccount.signInWith(ctx, p) }
+            ProviderButton(p) { err = ArgusAccount.signInWith(ctx, p) }
             Spacer(Modifier.height(8.dp))
         }
         if (v.login["google"] == true || v.login["github"] == true) Label(tr("or with email"), color = c.weak, size = 9.sp, modifier = Modifier.padding(vertical = 10.dp))
@@ -152,13 +152,13 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
     if (signUp) Field("Name", name, { name = it }, "Optional")
     Field("Email", email, { email = it }, "you@example.com")
     // Account lock: a throwaway address is named before anything is sent (blaze-auth refuses it anyway).
-    if (signUp && com.blaze.assistant.connect.ThrowawayEmail.isThrowaway(email)) Note(com.blaze.assistant.connect.ThrowawayEmail.MESSAGE)
+    if (signUp && com.argus.assistant.connect.ThrowawayEmail.isThrowaway(email)) Note(com.argus.assistant.connect.ThrowawayEmail.MESSAGE)
     Field("Password", pass, { pass = it }, if (signUp) "At least 8 characters" else "Your password", secret = true)
     AccountButton(if (busy) "One moment…" else if (signUp) "Create account" else "Sign in") {
         if (busy) return@AccountButton
-        busy = true; err = ""; BlazeAccount.clearMessage()
+        busy = true; err = ""; ArgusAccount.clearMessage()
         scope.launch {
-            err = BlazeAccount.email(signUp, name, email, pass)
+            err = ArgusAccount.email(signUp, name, email, pass)
             if (err.isEmpty()) pass = ""
             busy = false
         }
@@ -169,7 +169,7 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
         Label(tr("Forgot password?"), color = c.accent, size = 10.sp, modifier = Modifier.clickable {
             if (busy) return@clickable
             busy = true; err = ""
-            scope.launch { err = BlazeAccount.forgotPassword(email); busy = false }
+            scope.launch { err = ArgusAccount.forgotPassword(email); busy = false }
         }.padding(bottom = 14.dp))
     }
     if (err.isNotEmpty()) Note(err)
@@ -177,14 +177,14 @@ fun AccountPage(onOpen: (String) -> Unit = {}) {
 
 @Composable
 private fun Note(text: String, top: Int = 0) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Text(text, modifier = Modifier.padding(top = top.dp, bottom = 10.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub))
 }
 
 @Composable
 private fun AccountButton(text: String, primary: Boolean = true, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.fillMaxWidth().height(44.dp).then(if (primary) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f))
         .clickable(onClick = onClick), contentAlignment = Alignment.Center) { ButtonText(text, color = if (primary) c.paper else c.ink, size = 13.sp) }
 }
@@ -195,7 +195,7 @@ private fun AccountButton(text: String, primary: Boolean = true, onClick: () -> 
  */
 @Composable
 private fun ProviderButton(provider: String, onClick: () -> Unit) {
-    val dark = LocalBlaze.current.dark
+    val dark = LocalArgus.current.dark
     val st = SignInBrand.style(dark)
     val shape = RoundedCornerShape(50)
     val label = tr(SignInBrand.label(provider))
@@ -205,8 +205,8 @@ private fun ProviderButton(provider: String, onClick: () -> Unit) {
         .semantics(mergeDescendants = true) { contentDescription = label; role = Role.Button }
         .padding(horizontal = SignInBrand.START_DP.dp), contentAlignment = Alignment.Center) {
         val logo = when (provider) {
-            SignInBrand.GOOGLE -> com.blaze.assistant.R.drawable.logo_google_g
-            SignInBrand.GITHUB -> com.blaze.assistant.R.drawable.logo_github_mark
+            SignInBrand.GOOGLE -> com.argus.assistant.R.drawable.logo_google_g
+            SignInBrand.GITHUB -> com.argus.assistant.R.drawable.logo_github_mark
             else -> 0
         }
         if (logo != 0) {
@@ -222,8 +222,8 @@ private fun ProviderButton(provider: String, onClick: () -> Unit) {
 
 /** v0.45.3: the second sign-in step when the account has two-step verification on (5 minutes, 5 tries; codes by app, email or recovery). */
 @Composable
-private fun MfaStep(p: com.blaze.assistant.connect.Mfa.Pending, note: String) {
-    val c = LocalBlaze.current.mono
+private fun MfaStep(p: com.argus.assistant.connect.Mfa.Pending, note: String) {
+    val c = LocalArgus.current.mono
     val scope = rememberCoroutineScope()
     // "app", "email" or "recovery"; an account without the app starts on email (the code was sent automatically).
     var mode by remember(p.token) { mutableStateOf(if (p.app) "app" else "email") }
@@ -234,32 +234,32 @@ private fun MfaStep(p: com.blaze.assistant.connect.Mfa.Pending, note: String) {
     LaunchedEffect(p.token) {
         while (true) {
             now = System.currentTimeMillis()
-            if (p.leftMs(now) == 0L) { BlazeAccount.cancelMfa(com.blaze.assistant.connect.Mfa.EXPIRED); break }
+            if (p.leftMs(now) == 0L) { ArgusAccount.cancelMfa(com.argus.assistant.connect.Mfa.EXPIRED); break }
             kotlinx.coroutines.delay(1_000)
         }
     }
     val send = {
         if (!busy) {
             busy = true; err = ""
-            scope.launch { BlazeAccount.sendMfaEmail(); busy = false }
+            scope.launch { ArgusAccount.sendMfaEmail(); busy = false }
         }
     }
-    Note("Two-step verification is on for this account" + (if (p.via != "email") " (signed in with ${BlazeAccount.title(p.via)})" else "") + ". " +
+    Note("Two-step verification is on for this account" + (if (p.via != "email") " (signed in with ${ArgusAccount.title(p.via)})" else "") + ". " +
         when (mode) {
             "recovery" -> "Enter one of your recovery codes. Each one works once."
-            "email" -> if (p.emailSent) "We sent a code to ${com.blaze.assistant.connect.Mfa.sentTo(p)}. Enter the 6-digit code from the email."
-                       else "Sending a code to ${com.blaze.assistant.connect.Mfa.sentTo(p)}…"
+            "email" -> if (p.emailSent) "We sent a code to ${com.argus.assistant.connect.Mfa.sentTo(p)}. Enter the 6-digit code from the email."
+                       else "Sending a code to ${com.argus.assistant.connect.Mfa.sentTo(p)}…"
             else -> "Enter the 6-digit code from your authenticator app."
         })
-    Label(com.blaze.assistant.connect.Mfa.stateLine(p, now), color = c.weak, size = 9.sp, modifier = Modifier.padding(bottom = 8.dp))
+    Label(com.argus.assistant.connect.Mfa.stateLine(p, now), color = c.weak, size = 9.sp, modifier = Modifier.padding(bottom = 8.dp))
     Field(if (mode == "recovery") "Recovery code" else "Code", code, { code = it }, if (mode == "recovery") "abcde-12345" else "123456")
     AccountButton(if (busy) "One moment…" else "Verify") {
         if (busy) return@AccountButton
         busy = true; err = ""
-        scope.launch { err = BlazeAccount.verifyMfa(code, mode == "recovery"); if (err.isNotEmpty()) code = ""; busy = false }
+        scope.launch { err = ArgusAccount.verifyMfa(code, mode == "recovery"); if (err.isNotEmpty()) code = ""; busy = false }
     }
     if (mode == "email" && p.email) {
-        val line = com.blaze.assistant.connect.Mfa.sendLine(p, now)
+        val line = com.argus.assistant.connect.Mfa.sendLine(p, now)
         Spacer(Modifier.height(8.dp))
         AccountButton(if (p.emailSent) "Send a new code" else "Send the code", primary = false) {
             if (p.canSend(now)) send() else { err = line }
@@ -275,7 +275,7 @@ private fun MfaStep(p: com.blaze.assistant.connect.Mfa.Pending, note: String) {
     if (mode != "recovery" && p.recovery) Label(tr("Use a recovery code instead"), color = c.accent, size = 10.sp,
         modifier = Modifier.clickable { mode = "recovery"; code = ""; err = "" }.padding(top = 12.dp))
     Label(tr("Back to sign-in"), color = c.accent, size = 10.sp,
-        modifier = Modifier.clickable { BlazeAccount.cancelMfa() }.padding(vertical = 12.dp))
+        modifier = Modifier.clickable { ArgusAccount.cancelMfa() }.padding(vertical = 12.dp))
     val shown = err.ifEmpty { if (mode == "email") note else "" }
     if (shown.isNotEmpty()) Note(shown)
 }
@@ -285,8 +285,8 @@ private fun MfaStep(p: com.blaze.assistant.connect.Mfa.Pending, note: String) {
  * whose email isn't confirmed yet. Verify, and Resend (3 mails per step, the first included; then the server says no).
  */
 @Composable
-private fun VerifyStep(p: com.blaze.assistant.connect.SignupCode.Pending, note: String) {
-    val c = LocalBlaze.current.mono
+private fun VerifyStep(p: com.argus.assistant.connect.SignupCode.Pending, note: String) {
+    val c = LocalArgus.current.mono
     val scope = rememberCoroutineScope()
     var code by remember(p.token) { mutableStateOf("") }
     var busy by remember(p.token) { mutableStateOf(false) }
@@ -295,37 +295,37 @@ private fun VerifyStep(p: com.blaze.assistant.connect.SignupCode.Pending, note: 
     LaunchedEffect(p.token) {
         while (true) {
             now = System.currentTimeMillis()
-            if (p.expired(now)) { BlazeAccount.cancelVerify(com.blaze.assistant.connect.SignupCode.EXPIRED); break }
+            if (p.expired(now)) { ArgusAccount.cancelVerify(com.argus.assistant.connect.SignupCode.EXPIRED); break }
             kotlinx.coroutines.delay(1_000)
         }
     }
     Note("Confirm your email to finish. We sent a 6-digit code to ${p.sentTo}. Check your spam folder if it isn't there.")
-    Label(com.blaze.assistant.connect.SignupCode.stateLine(p, now), color = c.weak, size = 9.sp, modifier = Modifier.padding(bottom = 8.dp))
+    Label(com.argus.assistant.connect.SignupCode.stateLine(p, now), color = c.weak, size = 9.sp, modifier = Modifier.padding(bottom = 8.dp))
     Field("Code", code, { code = it }, "123456")
     AccountButton(if (busy) "One moment…" else "Verify") {
         if (busy) return@AccountButton
         busy = true; err = ""
-        scope.launch { err = BlazeAccount.verifySignup(code); if (err.isNotEmpty()) code = ""; busy = false }
+        scope.launch { err = ArgusAccount.verifySignup(code); if (err.isNotEmpty()) code = ""; busy = false }
     }
     Spacer(Modifier.height(8.dp))
-    val line = com.blaze.assistant.connect.SignupCode.resendLine(p, now)
+    val line = com.argus.assistant.connect.SignupCode.resendLine(p, now)
     AccountButton("Resend", primary = false) {
         if (busy) return@AccountButton
         if (!p.canResend(now)) { err = line; return@AccountButton }
         busy = true; err = ""
-        scope.launch { err = BlazeAccount.resendSignup(); busy = false }
+        scope.launch { err = ArgusAccount.resendSignup(); busy = false }
     }
     if (line.isNotEmpty()) Label(line, color = c.weak, size = 9.sp, modifier = Modifier.padding(top = 6.dp))
     Label(tr("Back to sign-in"), color = c.accent, size = 10.sp,
-        modifier = Modifier.clickable { BlazeAccount.cancelVerify() }.padding(vertical = 12.dp))
+        modifier = Modifier.clickable { ArgusAccount.cancelVerify() }.padding(vertical = 12.dp))
     val shown = err.ifEmpty { note }
     if (shown.isNotEmpty()) Note(shown)
 }
 
 /** v0.45.3: Settings › Account › password and two-step verification. */
 @Composable
-private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>) {
-    val c = LocalBlaze.current.mono
+private fun SecuritySection(u: ArgusAccount.User, features: Map<String, Boolean>) {
+    val c = LocalArgus.current.mono
     val scope = rememberCoroutineScope()
     var open by remember { mutableStateOf("") }   // "", "password", "2fa"
     var busy by remember { mutableStateOf(false) }
@@ -342,7 +342,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
             if (busy) return@AccountButton
             busy = true
             scope.launch {
-                val e = BlazeAccount.setPassword(neu, if (u.hasPassword) cur else "")
+                val e = ArgusAccount.setPassword(neu, if (u.hasPassword) cur else "")
                 msg = e.ifEmpty { "Password saved." + if (u.hasPassword) " Other devices were signed out." else " You can now sign in with your email too." }
                 if (e.isEmpty()) { open = ""; cur = ""; neu = "" }
                 busy = false
@@ -364,7 +364,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
                 AccountButton(if (busy) "Sending…" else "Email me a code") {
                     if (busy) return@AccountButton
                     busy = true
-                    scope.launch { BlazeAccount.emailCodeSend(if (on) "enable" else "disable").onSuccess { sentTo = it.ifBlank { u.email } }.onFailure { msg = it.message ?: "" }; busy = false }
+                    scope.launch { ArgusAccount.emailCodeSend(if (on) "enable" else "disable").onSuccess { sentTo = it.ifBlank { u.email } }.onFailure { msg = it.message ?: "" }; busy = false }
                 }
                 if (!on && u.twoFactorApp) { Spacer(Modifier.height(6.dp)); Label(tr("I'll use a code from the app"), color = c.accent, size = 10.sp,
                     modifier = Modifier.clickable { sentTo = "your authenticator app" }.padding(vertical = 6.dp)) }
@@ -375,7 +375,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
                     if (busy) return@AccountButton
                     busy = true
                     scope.launch {
-                        val e = BlazeAccount.emailCodeSet(on, code)
+                        val e = ArgusAccount.emailCodeSet(on, code)
                         msg = e.ifEmpty { if (on) "Email codes are on." else "Email codes are off." }
                         if (e.isEmpty()) { open = ""; sentTo = "" }
                         code = ""; busy = false
@@ -407,7 +407,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
                     AccountButton(if (busy) "One moment…" else "Turn off") {
                         if (busy) return@AccountButton
                         busy = true
-                        scope.launch { val e = BlazeAccount.mfaDisable(code); msg = e.ifEmpty { "Two-step verification is off." }; if (e.isEmpty()) open = ""; code = ""; busy = false }
+                        scope.launch { val e = ArgusAccount.mfaDisable(code); msg = e.ifEmpty { "Two-step verification is off." }; if (e.isEmpty()) open = ""; code = ""; busy = false }
                     }
                 }
                 setup == null -> {
@@ -415,7 +415,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
                     AccountButton(if (busy) "One moment…" else "Turn on") {
                         if (busy) return@AccountButton
                         busy = true
-                        scope.launch { BlazeAccount.mfaSetup().onSuccess { setup = it }.onFailure { msg = it.message ?: "" }; busy = false }
+                        scope.launch { ArgusAccount.mfaSetup().onSuccess { setup = it }.onFailure { msg = it.message ?: "" }; busy = false }
                     }
                 }
                 else -> {
@@ -432,7 +432,7 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
                     AccountButton(if (busy) "Checking…" else "Confirm and turn on") {
                         if (busy) return@AccountButton
                         busy = true
-                        scope.launch { BlazeAccount.mfaEnable(code).onSuccess { codes = it; setup = null; msg = "" }.onFailure { msg = it.message ?: "" }; code = ""; busy = false }
+                        scope.launch { ArgusAccount.mfaEnable(code).onSuccess { codes = it; setup = null; msg = "" }.onFailure { msg = it.message ?: "" }; code = ""; busy = false }
                     }
                 }
             }
@@ -447,11 +447,11 @@ private fun SecuritySection(u: BlazeAccount.User, features: Map<String, Boolean>
  */
 @Composable
 private fun UsageSection(onPlan: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
-    val s by com.blaze.assistant.connect.Entitlements.snap.collectAsState()
+    val s by com.argus.assistant.connect.Entitlements.snap.collectAsState()
     var tried by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { com.blaze.assistant.connect.Entitlements.refresh(ctx) }; tried = true }
+    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { com.argus.assistant.connect.Entitlements.refresh(ctx) }; tried = true }
     val snap = s
     Column(Modifier.fillMaxWidth().padding(top = 8.dp).hairline(c.hair).padding(16.dp)) {
         Text(tr("This month"), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
@@ -459,16 +459,16 @@ private fun UsageSection(onPlan: () -> Unit) {
             Text(if (tried) "Can't load your limits right now." else "Loading your limits\u2026", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
             return@Column
         }
-        Text(com.blaze.assistant.connect.Billing.planName(snap.plan) + " plan", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+        Text(com.argus.assistant.connect.Billing.planName(snap.plan) + " plan", style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
         Spacer(Modifier.height(8.dp))
         // Wave B 3: a meter per counter, numbers straight from the server.
         snap.song?.let { UsageMeter("Song downloads", it) }
         snap.video?.let { UsageMeter("Video downloads", it) }
-        val par = com.blaze.assistant.connect.Entitlements.parallelLine(snap)
+        val par = com.argus.assistant.connect.Entitlements.parallelLine(snap)
         if (par.isNotBlank()) UsageLine("At once", par, false)
-        val reset = com.blaze.assistant.connect.Entitlements.resetLine(snap.resetAtMs)
+        val reset = com.argus.assistant.connect.Entitlements.resetLine(snap.resetAtMs)
         if (reset.isNotBlank()) Label(reset, color = c.weak, size = 9.sp, modifier = Modifier.padding(top = 6.dp))
-        val nudge = com.blaze.assistant.connect.Entitlements.nudge(snap)
+        val nudge = com.argus.assistant.connect.Entitlements.nudge(snap)
         if (nudge.isNotBlank()) {
             Text(nudge, modifier = Modifier.padding(top = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
             ActionText("See plans", color = c.accent, size = 10.sp, modifier = Modifier.clickable(onClick = onPlan).padding(vertical = 8.dp))
@@ -478,16 +478,16 @@ private fun UsageSection(onPlan: () -> Unit) {
 
 /** Wave B 3: label + "x of y left" on one row, a 6 dp meter under it (full width, so nothing squishes at 360 dp). */
 @Composable
-fun UsageMeter(label: String, counter: com.blaze.assistant.connect.Entitlements.Counter) {
-    val c = LocalBlaze.current.mono
-    val E = com.blaze.assistant.connect.Entitlements
+fun UsageMeter(label: String, counter: com.argus.assistant.connect.Entitlements.Counter) {
+    val c = LocalArgus.current.mono
+    val E = com.argus.assistant.connect.Entitlements
     val warn = E.near(counter)
     Column(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
         UsageLine(label, E.line(counter), warn)
         E.fraction(counter)?.let { f ->
             Spacer(Modifier.height(4.dp))
             Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.hair)) {
-                Box(Modifier.fillMaxWidth(f).height(6.dp).clip(RoundedCornerShape(3.dp)).background(if (warn) BlazeBrush.orange else c.ink))
+                Box(Modifier.fillMaxWidth(f).height(6.dp).clip(RoundedCornerShape(3.dp)).background(if (warn) ArgusBrush.orange else c.ink))
             }
             Text(E.usedLine(counter), modifier = Modifier.padding(top = 3.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
         }
@@ -496,7 +496,7 @@ fun UsageMeter(label: String, counter: com.blaze.assistant.connect.Entitlements.
 
 @Composable
 private fun UsageLine(label: String, value: String, warn: Boolean) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
         Text(value, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = if (warn) c.accent else c.ink))

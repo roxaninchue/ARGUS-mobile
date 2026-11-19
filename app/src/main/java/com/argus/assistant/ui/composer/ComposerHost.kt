@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.composer
+package com.argus.assistant.ui.composer
 
-import com.blaze.assistant.composer.ComposerLook
+import com.argus.assistant.composer.ComposerLook
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,16 +36,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.ui.GlassTokens
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.MotionTokens
+import com.argus.assistant.ui.GlassTokens
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.MotionTokens
 import kotlinx.coroutines.launch
 
 /**
  * 0.47 chat composer + Spotlight v2: the ONE integration entry point.
  *
  * Wrap the Home content (the widget area) in it and it adds, on top:
- *  - the chat bar at the bottom (profile · "Message Blaze" · +), never blurred;
+ *  - the chat bar at the bottom (profile · "Message Argus" · +), never blurred;
  *  - while chat or Spotlight is up: ONE cached blur over the Home content (API 31+, off on low-RAM / hot phones, where the
  *    dim alone shows) plus a dim, and the chat over Home or the Spotlight panel in the widget area.
  * Home should reserve [ChatBarTokens.HEIGHT_DP] (+ the navigation bar) under its cards so the bar never hides a card.
@@ -53,13 +53,13 @@ import kotlinx.coroutines.launch
  * [barModifier] lets the host keep its own gesture on the bar (e.g. swipe up for the full chat). [onLeaveHome] shows the
  * full app for things that live there (settings pages, private chat, "Open the full chat").
  *
- * For a layout with its own bottom slot, use the parts instead: [rememberComposerState], [BlazeChatBar],
+ * For a layout with its own bottom slot, use the parts instead: [rememberComposerState], [ArgusChatBar],
  * [ComposerOverlay] and [Modifier.composerBlur].
  */
 @Composable
-fun BlazeComposerHome(modifier: Modifier = Modifier, state: ComposerState = rememberComposerState(), barModifier: Modifier = Modifier,
+fun ArgusComposerHome(modifier: Modifier = Modifier, state: ComposerState = rememberComposerState(), barModifier: Modifier = Modifier,
                       onLeaveHome: () -> Unit = {}, onProfile: () -> Unit = {},
-                      /** RC4: what Blaze is waiting on (approvals, questions, secure forms…), shown under the chat over Home. */
+                      /** RC4: what Argus is waiting on (approvals, questions, secure forms…), shown under the chat over Home. */
                       cards: @Composable ColumnScope.() -> Unit = {},
                       content: @Composable () -> Unit) {
     Box(modifier.fillMaxSize()) {
@@ -69,25 +69,25 @@ fun BlazeComposerHome(modifier: Modifier = Modifier, state: ComposerState = reme
         val barShown by animateFloatAsState(if (state.spotlightOpen) 0f else 1f, MotionTokens.fast(), label = "bar")
         if (barShown > 0f) Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().imePadding()
             .graphicsLayer { alpha = barShown }.then(barModifier)) {
-            BlazeChatBar(state, onProfile = onProfile)
+            ArgusChatBar(state, onProfile = onProfile)
         }
     }
 }
 
 /**
  * The dim + chat over Home, and the floating Spotlight panel. Draw it above the (blurred) Home content and below
- * [BlazeChatBar]. Handles Back (closes Spotlight, then the chat).
+ * [ArgusChatBar]. Handles Back (closes Spotlight, then the chat).
  */
 @Composable
 fun ComposerOverlay(state: ComposerState, onLeaveHome: () -> Unit = {}, modifier: Modifier = Modifier, cards: @Composable ColumnScope.() -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             state.attaching = true
             scope.launch {
-                val a = runCatching { com.blaze.assistant.agent.Attachments.load(ctx, uri) }.getOrNull()
+                val a = runCatching { com.argus.assistant.agent.Attachments.load(ctx, uri) }.getOrNull()
                 if (a != null) state.attachments.add(a)
                 state.attaching = false
             }
@@ -98,7 +98,7 @@ fun ComposerOverlay(state: ComposerState, onLeaveHome: () -> Unit = {}, modifier
     val solid = rememberComposerSolid()
     androidx.compose.runtime.CompositionLocalProvider(LocalComposerSolid provides solid) {
     Box(modifier) {
-        if (dim > 0f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = dim }.background(if (com.blaze.assistant.ui.ChatExpand.on && state.chatOpen) c.paper else ComposerLook.scrim(c, blur = !solid))
+        if (dim > 0f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = dim }.background(if (com.argus.assistant.ui.ChatExpand.on && state.chatOpen) c.paper else ComposerLook.scrim(c, blur = !solid))
             .clickable(remember { MutableInteractionSource() }, indication = null) { if (state.spotlightOpen) state.closeSpotlight() })
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(bottom = (ChatBarTokens.HEIGHT_DP + 8).dp)) {
             AnimatedVisibility(state.chatOpen && !state.spotlightOpen, modifier = Modifier.weight(1f),
@@ -114,7 +114,7 @@ fun ComposerOverlay(state: ComposerState, onLeaveHome: () -> Unit = {}, modifier
             state.pickerOpen -> state.pickerOpen = false
             state.preview != null -> state.preview = null
             state.spotlightOpen -> state.closeSpotlight()
-            com.blaze.assistant.ui.ChatExpand.on -> com.blaze.assistant.ui.ChatExpand.restore()
+            com.argus.assistant.ui.ChatExpand.on -> com.argus.assistant.ui.ChatExpand.restore()
             else -> state.closeChat()
         }
     }
@@ -156,7 +156,7 @@ fun Modifier.composerBlur(on: Boolean, radius: androidx.compose.ui.unit.Dp = 22.
 
 /**
  * 0.48.0: true where the Home blur is unavailable ([GlassTokens.blurSupported] false: low-RAM phones, API < 31, hot
- * phones). Chat and Spotlight then sit on a strong solid scrim and Blaze's bubble is opaque.
+ * phones). Chat and Spotlight then sit on a strong solid scrim and Argus's bubble is opaque.
  */
 val LocalComposerSolid = androidx.compose.runtime.compositionLocalOf { false }
 

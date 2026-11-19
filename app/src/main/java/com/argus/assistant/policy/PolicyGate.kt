@@ -1,8 +1,8 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.ConfirmGate
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.Rule
+import com.argus.assistant.agent.ConfirmGate
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.Rule
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

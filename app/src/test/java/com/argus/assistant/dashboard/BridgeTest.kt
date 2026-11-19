@@ -1,4 +1,4 @@
-package com.blaze.assistant.dashboard
+package com.argus.assistant.dashboard
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

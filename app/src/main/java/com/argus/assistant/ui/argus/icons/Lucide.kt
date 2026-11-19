@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.icons
+package com.argus.assistant.ui.argus.icons
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor

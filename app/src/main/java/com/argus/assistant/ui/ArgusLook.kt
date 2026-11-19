@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -50,12 +50,12 @@ object LookLogic {
 
 /** Look & feel prefs as live state: the accent (and the reload cloud sync calls). */
 object Look {
-    private fun s(k: String, d: String) = try { com.blaze.assistant.agent.Settings.str(k, d) } catch (_: Throwable) { d }
+    private fun s(k: String, d: String) = try { com.argus.assistant.agent.Settings.str(k, d) } catch (_: Throwable) { d }
     val accent = MutableStateFlow(s("look_accent", ""))
-    fun setAccent(v: String) { accent.value = v; try { com.blaze.assistant.agent.Settings.setStr("look_accent", v) } catch (_: Throwable) { } }
+    fun setAccent(v: String) { accent.value = v; try { com.argus.assistant.agent.Settings.setStr("look_accent", v) } catch (_: Throwable) { } }
     /** 0.52.4: the app's size factor (Settings › Appearance › Size); BlazeTheme scales density and fonts by it. */
     val scale = MutableStateFlow(LookLogic.parseScale(s("look_scale", "")))
-    fun setScale(v: Float) { val k = LookLogic.snapScale(v); scale.value = k; try { com.blaze.assistant.agent.Settings.setStr("look_scale", k.toString()) } catch (_: Throwable) { } }
+    fun setScale(v: Float) { val k = LookLogic.snapScale(v); scale.value = k; try { com.argus.assistant.agent.Settings.setStr("look_scale", k.toString()) } catch (_: Throwable) { } }
     /** Cloud sync brought Look & feel from another phone. */
     fun reload() { accent.value = s("look_accent", ""); scale.value = LookLogic.parseScale(s("look_scale", "")) }
 }
@@ -66,7 +66,7 @@ object Look {
  * BubblePalette then holds 4.5:1 over any ground).
  */
 object BubbleTones {
-    data class Tones(val mine: Long, val blaze: Long)
+    data class Tones(val mine: Long, val argus: Long)
 
     /** The ARGUS tones (the user's bubble a calm cobalt, ARGUS's a steel blue-grey). */
     val ARGUS = Tones(0xFF3D7EFF, 0xFF5A6070)

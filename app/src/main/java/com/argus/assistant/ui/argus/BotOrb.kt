@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun BotOrb(face: OrbFace, color: Long, size: Dp = OrbSize.MD.dp, state: OrbState = OrbState.IDLE, amplitude: Float = 0f,
-           reducedMotion: Boolean = com.blaze.assistant.ui.argus.settings.ArgusPrefs.reducedNow(), contentDescription: String? = null, modifier: Modifier = Modifier) {
+           reducedMotion: Boolean = com.argus.assistant.ui.argus.settings.ArgusPrefs.reducedNow(), contentDescription: String? = null, modifier: Modifier = Modifier) {
     val p = LocalArgusColors.current.palette
     val spin = if (state == OrbState.WORKING && !reducedMotion) {
         val t = rememberInfiniteTransition(label = "orb")
@@ -59,7 +59,7 @@ fun BotOrb(face: OrbFace, color: Long, size: Dp = OrbSize.MD.dp, state: OrbState
  */
 @Composable
 fun ManagerOrb(size: Dp = OrbSize.MD.dp, state: OrbState = OrbState.IDLE, contentDescription: String? = "Manager", modifier: Modifier = Modifier,
-               reducedMotion: Boolean = com.blaze.assistant.ui.argus.settings.ArgusPrefs.reducedNow()) {
+               reducedMotion: Boolean = com.argus.assistant.ui.argus.settings.ArgusPrefs.reducedNow()) {
     val p = LocalArgusColors.current.palette
     val look = if (state == OrbState.WORKING && !reducedMotion) {
         val t = rememberInfiniteTransition(label = "manager")

@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.argus.settings
+package com.argus.assistant.ui.argus.settings
 
-import com.blaze.assistant.ui.LookLogic
-import com.blaze.assistant.ui.settingsPageByName
-import com.blaze.assistant.ui.settingsPages
-import com.blaze.assistant.ui.settingsStart
+import com.argus.assistant.ui.LookLogic
+import com.argus.assistant.ui.settingsPageByName
+import com.argus.assistant.ui.settingsPages
+import com.argus.assistant.ui.settingsStart
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -19,7 +19,7 @@ import java.io.File
  */
 class SettingsAliasTest {
     private val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-    private val sheet by lazy { File(root, "com/blaze/assistant/ui/SettingsSheet.kt").readText() }
+    private val sheet by lazy { File(root, "com/argus/assistant/ui/SettingsSheet.kt").readText() }
 
     private val PRE_053 = listOf("system", "feedback", "look", "language", "doing", "bank", "voice", "permissions", "account", "updates",
         "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "watches", "secrets", "logins",
@@ -58,21 +58,21 @@ class SettingsAliasTest {
         for (r in ArgusSettings.ROWS) { assertTrue("${r.id} → ${r.page}", r.page in ids); assertTrue("no branch for ${r.page}", drawn(r.page)) }
         assertTrue(ArgusSettings.ACCOUNT_PAGE in ids && ArgusSettings.PLAN_PAGE in ids)
         // the pages nobody may remove are on it (0.52.3 rule)
-        assertTrue(ArgusSettings.TREE.containsAll(com.blaze.assistant.ui.space.SpaceSettings.REQUIRED))
+        assertTrue(ArgusSettings.TREE.containsAll(com.argus.assistant.ui.space.SpaceSettings.REQUIRED))
         assertEquals(listOf(null, "Team", "You & phone", "System"), ArgusSettings.GROUPS.map { it.title })
         assertEquals(ArgusSettings.ROWS.size, ArgusSettings.ROWS.map { it.id }.toSet().size)
         assertEquals("rows open different pages", ArgusSettings.ROWS.size, ArgusSettings.ROWS.map { it.page }.toSet().size)
         assertTrue("no Models & engines row: always ARGUS Cloud", ArgusSettings.ROWS.none { it.page == "ai" || it.id == "models" })
         assertTrue("no Team & bots or Jobs row", ArgusSettings.ROWS.none { it.page == "specialists" || it.page == "terminal" })
-        for (r in ArgusSettings.ROWS) assertTrue("${r.icon} is a Lucide icon", r.icon in com.blaze.assistant.ui.argus.icons.LucidePaths.ICONS)
+        for (r in ArgusSettings.ROWS) assertTrue("${r.icon} is a Lucide icon", r.icon in com.argus.assistant.ui.argus.icons.LucidePaths.ICONS)
     }
 
     @Test fun backGoesToTheYouPage() {
         assertEquals("secrets", ArgusSettings.parentOf("logins"))
         for (p in listOf("look", "voice", "permissions", "updates", "plan", "sync", "about")) assertNull(p, ArgusSettings.parentOf(p))
         assertNull(ArgusSettings.parentOf(null))
-        assertTrue("Back uses the ARGUS tree", "else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in sheet)
-        assertTrue("the You page is the only root (no 0.52.3 profile)", "com.blaze.assistant.ui.space.SpaceProfileScreen(" !in sheet && "com.blaze.assistant.ui.argus.settings.YouPage(" in sheet)
+        assertTrue("Back uses the ARGUS tree", "else page = com.argus.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in sheet)
+        assertTrue("the You page is the only root (no 0.52.3 profile)", "com.argus.assistant.ui.space.SpaceProfileScreen(" !in sheet && "com.argus.assistant.ui.argus.settings.YouPage(" in sheet)
         assertTrue("no look switch left in Settings", "Argus.lookOn()" !in sheet)
         assertTrue("Back from a page keeps the You page's scroll", "val youScroll = rememberScrollState()" in sheet && "scroll = youScroll)" in sheet)
     }
@@ -88,8 +88,8 @@ class SettingsAliasTest {
         assertEquals("", settingsPageByName("zzzz"))
         for (gone in listOf("team and bots", "Team & bots", "computers", "linux", "jobs", "diagnostics", "device & diagnostics")) assertEquals(gone, "", settingsPageByName(gone))
         // agent.settingsPageFor (QuickRules, open_settings) is the same function
-        val self = File(root, "com/blaze/assistant/agent/SelfSetup.kt").readText()
-        assertTrue("fun settingsPageFor(raw: String): String = com.blaze.assistant.ui.settingsPageByName(raw)" in self)
+        val self = File(root, "com/argus/assistant/agent/SelfSetup.kt").readText()
+        assertTrue("fun settingsPageFor(raw: String): String = com.argus.assistant.ui.settingsPageByName(raw)" in self)
     }
 
     @Test fun searchFindsRowsByWordsAndPageText() {
@@ -113,7 +113,7 @@ class SettingsAliasTest {
         // "phone" follows the phone (LookLogic's else branch with the real system value)
         assertFalse(LookLogic.darkFor("phone", 12, systemDark = false))
         assertTrue(LookLogic.darkFor("phone", 12, systemDark = true))
-        for (f in listOf("ui/Theme.kt", "ui/AppTheme.kt")) assertTrue(f, "ThemeMode.mode.value == \"phone\"" in File(root, "com/blaze/assistant/$f").readText())
+        for (f in listOf("ui/Theme.kt", "ui/AppTheme.kt")) assertTrue(f, "ThemeMode.mode.value == \"phone\"" in File(root, "com/argus/assistant/$f").readText())
         assertEquals(ArgusSettings.Hand.LEFT, ArgusSettings.Hand.of("left"))
         assertEquals(ArgusSettings.Hand.RIGHT, ArgusSettings.Hand.of(null))
         assertEquals(listOf("cancel", "ok"), ArgusSettings.buttonOrder("ok", "cancel", ArgusSettings.Hand.RIGHT))
@@ -121,11 +121,11 @@ class SettingsAliasTest {
         assertTrue(ArgusSettings.reducedMotion(true, 1f))
         assertTrue("phone animations off", ArgusSettings.reducedMotion(false, 0f))
         assertFalse(ArgusSettings.reducedMotion(false, 1f))
-        assertEquals(com.blaze.assistant.ui.argus.Ground.entries.map { it.name }, ArgusSettings.GROUNDS.map { it.first })
+        assertEquals(com.argus.assistant.ui.argus.Ground.entries.map { it.name }, ArgusSettings.GROUNDS.map { it.first })
         // ARGUS is the only look (16 Nov 2026): no look switch and no accent on Appearance
-        val look = File(root, "com/blaze/assistant/ui/SimplePages.kt").readText()
-        assertTrue("com.blaze.assistant.ui.argus.settings.ArgusAppearanceLive()" in look)
-        val you = File(root, "com/blaze/assistant/ui/argus/settings/YouPage.kt").readText()
+        val look = File(root, "com/argus/assistant/ui/SimplePages.kt").readText()
+        assertTrue("com.argus.assistant.ui.argus.settings.ArgusAppearanceLive()" in look)
+        val you = File(root, "com/argus/assistant/ui/argus/settings/YouPage.kt").readText()
         val section = you.substringAfter("fun ArgusAppearanceSection(")
         assertTrue("no look switch", "ArgusLookFlag.KEY" !in you && "onLook" !in section)
         assertTrue("no accent", "Accent" !in section)

@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.SecretTestKit.CF
-import com.blaze.assistant.agent.SecretTestKit.GL
+import com.argus.assistant.agent.SecretTestKit.CF
+import com.argus.assistant.agent.SecretTestKit.GL
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

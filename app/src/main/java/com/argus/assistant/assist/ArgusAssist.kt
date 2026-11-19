@@ -1,4 +1,4 @@
-package com.blaze.assistant.assist
+package com.argus.assistant.assist
 
 import android.content.Context
 import android.content.Intent
@@ -9,30 +9,30 @@ import android.service.voice.VoiceInteractionService
 import android.service.voice.VoiceInteractionSession
 import android.service.voice.VoiceInteractionSessionService
 import android.speech.RecognitionService
-import com.blaze.assistant.MainActivity
+import com.argus.assistant.MainActivity
 import android.view.View
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.ui.AssistPanel
-import com.blaze.assistant.ui.Overlay
-import com.blaze.assistant.ui.OverlayOwner
-import com.blaze.assistant.ui.composeView
-import com.blaze.assistant.voice.Voice
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.ui.AssistPanel
+import com.argus.assistant.ui.Overlay
+import com.argus.assistant.ui.OverlayOwner
+import com.argus.assistant.ui.composeView
+import com.argus.assistant.voice.Voice
 
 /**
- * Lets Blaze be picked as the phone's Digital assistant app (instead of Gemini etc).
- * Long-press power / home, or the corner swipe, then opens Blaze listening.
+ * Lets Argus be picked as the phone's Digital assistant app (instead of Gemini etc).
+ * Long-press power / home, or the corner swipe, then opens Argus listening.
  */
-class BlazeInteractionService : VoiceInteractionService() {
+class ArgusInteractionService : VoiceInteractionService() {
     companion object {
-        @Volatile private var instance: BlazeInteractionService? = null
+        @Volatile private var instance: ArgusInteractionService? = null
 
         /** Called by the wake-word listener. True when the session could be shown. */
         fun showFromWake(): Boolean = showPanel(listen = true)
 
-        /** Show Blaze's panel over the current app. False when Blaze isn't the active assistant. */
+        /** Show Argus's panel over the current app. False when Argus isn't the active assistant. */
         fun showPanel(listen: Boolean): Boolean {
             val s = instance ?: return false
             return try { s.showSession(Bundle().apply { putBoolean("listen", listen) }, 0); true }
@@ -61,15 +61,15 @@ class BlazeInteractionService : VoiceInteractionService() {
     override fun onShutdown() { instance = null; super.onShutdown() }
 }
 
-class BlazeSessionService : VoiceInteractionSessionService() {
-    override fun onNewSession(args: Bundle?): VoiceInteractionSession = BlazeSession(this)
+class ArgusSessionService : VoiceInteractionSessionService() {
+    override fun onNewSession(args: Bundle?): VoiceInteractionSession = ArgusSession(this)
 }
 
 /**
  * What appears when you long-press home/power (or say "Hey Blaze"): an orb and a compact
- * chat over the app you're in, instead of jumping to Blaze's full screen.
+ * chat over the app you're in, instead of jumping to Argus's full screen.
  */
-class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
+class ArgusSession(ctx: Context) : VoiceInteractionSession(ctx) {
     private val owner = OverlayOwner()
     private var listen = mutableStateOf(0)
     private var autoListen = true
@@ -83,9 +83,9 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
     override fun onCreateContentView(): View = composeView(context, owner) {
         val n by listen
         // Account lock: the long-press shows only a Sign in card (it opens the lock screen).
-        val lock by com.blaze.assistant.connect.AccountGate.lock.collectAsState()
+        val lock by com.argus.assistant.connect.AccountGate.lock.collectAsState()
         val locked = lock
-        if (locked != null) com.blaze.assistant.ui.AccountLockCard(locked, onSignIn = { openApp(); hide() }, onClose = { hide() })
+        if (locked != null) com.argus.assistant.ui.AccountLockCard(locked, onSignIn = { openApp(); hide() }, onClose = { hide() })
         else androidx.compose.runtime.key(n) {
             AssistPanel(
                 autoListen = autoListen,
@@ -101,7 +101,7 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
         // Long-press of home/power arrives with SHOW_WITH_ASSIST; start listening right away.
         autoListen = args?.getBoolean("listen", true) ?: true
         // Account lock: no listening and no screen reading while locked (the panel is just the Sign in card).
-        if (com.blaze.assistant.connect.AccountGate.locked()) { autoListen = false; ScreenDoctor.clear() }
+        if (com.argus.assistant.connect.AccountGate.locked()) { autoListen = false; ScreenDoctor.clear() }
         Agent.overlayOpen = true
         listen.value = listen.value + 1
     }
@@ -114,9 +114,9 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
 
     override fun onDestroy() { owner.destroy(); super.onDestroy() }
 
-    // v0.33.0 Screen Doctor: the screen's text and a screenshot, only when the user summons Blaze over an app.
+    // v0.33.0 Screen Doctor: the screen's text and a screenshot, only when the user summons Argus over an app.
     override fun onHandleAssist(state: AssistState) {
-        if (com.blaze.assistant.connect.AccountGate.locked()) return   // account lock: the screen isn't read
+        if (com.argus.assistant.connect.AccountGate.locked()) return   // account lock: the screen isn't read
         try { ScreenDoctor.clear(); ScreenDoctor.onStructure(state.assistStructure) } catch (_: Throwable) { }
     }
     @Deprecated("pre-29 path")
@@ -124,22 +124,22 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
         if (Build.VERSION.SDK_INT < 29) try { ScreenDoctor.clear(); ScreenDoctor.onStructure(structure) } catch (_: Throwable) { }
     }
     override fun onHandleScreenshot(screenshot: android.graphics.Bitmap?) {
-        if (com.blaze.assistant.connect.AccountGate.locked()) return
+        if (com.argus.assistant.connect.AccountGate.locked()) return
         try { ScreenDoctor.onScreenshot(screenshot) } catch (_: Throwable) { }
     }
 
     private fun openApp() {
-        val i = if (com.blaze.assistant.connect.AccountGate.locked()) com.blaze.assistant.connect.AccountGate.lockIntent(context)
+        val i = if (com.argus.assistant.connect.AccountGate.locked()) com.argus.assistant.connect.AccountGate.lockIntent(context)
             else Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         try { if (Build.VERSION.SDK_INT >= 29) startAssistantActivity(i) else context.startActivity(i) }
         catch (_: Exception) { try { context.startActivity(i) } catch (_: Exception) { } }
     }
 }
 
-/** Android requires an assistant to name a recognizer; Blaze uses the phone's own. Account lock: it refuses too. */
-class BlazeRecognitionService : RecognitionService() {
+/** Android requires an assistant to name a recognizer; Argus uses the phone's own. Account lock: it refuses too. */
+class ArgusRecognitionService : RecognitionService() {
     override fun onStartListening(intent: Intent?, cb: Callback?) {
-        if (com.blaze.assistant.connect.AccountGate.locked()) { com.blaze.assistant.connect.AccountGate.notice(this); cb?.error(android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS); return }
+        if (com.argus.assistant.connect.AccountGate.locked()) { com.argus.assistant.connect.AccountGate.notice(this); cb?.error(android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS); return }
         cb?.error(android.speech.SpeechRecognizer.ERROR_CLIENT)
     }
     override fun onCancel(cb: Callback?) {}

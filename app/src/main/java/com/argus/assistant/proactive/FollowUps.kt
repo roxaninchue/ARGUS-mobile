@@ -1,7 +1,7 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -12,13 +12,13 @@ import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.blaze.assistant.agent.Awareness
-import com.blaze.assistant.agent.LlmClient
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.notify.ChatThreads
-import com.blaze.assistant.notify.Conversations
-import com.blaze.assistant.proactive.FollowUpLogic.Item
-import com.blaze.assistant.proactive.FollowUpLogic.Status
+import com.argus.assistant.agent.Awareness
+import com.argus.assistant.agent.LlmClient
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.notify.ChatThreads
+import com.argus.assistant.notify.Conversations
+import com.argus.assistant.proactive.FollowUpLogic.Item
+import com.argus.assistant.proactive.FollowUpLogic.Status
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,16 +34,16 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * v0.38.0 Follow-ups, the Android side ([FollowUpLogic] holds the rules). Fed by [Conversations] (each new message in a
  * chat app's notification, the user's own replies included), the accessibility service (an app opened, Send tapped)
- * and Blaze's own replies. Asks "Are you going?" with Yes / No buttons, sets the reminder, nudges in the app, and shows
+ * and Argus's own replies. Asks "Are you going?" with Yes / No buttons, sets the reminder, nudges in the app, and shows
  * what's open in the prompt (Awareness) and through the follow_ups tool.
  */
 object FollowUps {
     // v0.45.5 hotfix: was "followups", the key of the "Suggested follow-ups" switch (a boolean): the list overwrote the switch
     // and every turn crashed reading it (PrefCoerce). Settings.init moves an old list here once.
-    private const val PREF = com.blaze.assistant.agent.PrefCoerce.FOLLOWUP_ITEMS
+    private const val PREF = com.argus.assistant.agent.PrefCoerce.FOLLOWUP_ITEMS
     private const val CH = "blaze_followups"
     const val TOOL = "follow_ups"
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.blaze.assistant.device.CrashLog.guard)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.argus.assistant.device.CrashLog.guard)
     @Volatile private var app: Context? = null
     private val pending = ConcurrentHashMap<String, Long>()   // conversation → last look (debounce)
 
@@ -57,7 +57,7 @@ object FollowUps {
 
     fun all(): List<Item> = FollowUpLogic.fromJson(Settings.str(PREF, "[]"))
     private fun save(list: List<Item>) {
-        try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: open follow-ups feed the [context] block
+        try { com.argus.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: open follow-ups feed the [context] block
         val now = System.currentTimeMillis()
         Settings.setStr(PREF, FollowUpLogic.toJson(list.filter { FollowUpLogic.live(it, now) || now - it.created < 7 * 86_400_000L }.takeLast(40)))
     }
@@ -125,23 +125,23 @@ object FollowUps {
         // Unreleased after 0.52.3: a plan Argus noticed on its own is a heads-up the dial judges (Off / Low drop it).
         if (!ProactiveDial.allows(Proactive.level, ProactiveDial.Source.FOLLOW_UP, false, Proactive.paused)) return
         val why = ProactiveDial.Why.newPlan(i.person, i.app)
-        try { com.blaze.assistant.agent.Agent.recordHeadsUp(text, why) } catch (_: Throwable) { }
+        try { com.argus.assistant.agent.Agent.recordHeadsUp(text, why) } catch (_: Throwable) { }
         if (Proactive.quietNow()) return
         fun act(a: String, code: Int) = PendingIntent.getBroadcast(ctx, (i.id + a).hashCode() + code, Intent(ctx, FollowUpReceiver::class.java).setAction(a).putExtra("id", i.id),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val goingWord = if (i.ask.isBlank() || i.ask.contains("going", true) || i.ask.contains("coming", true)) "Yes, I'm going" else "Yes"
-        // 0.45.19: a follow-up is a text in the one Blaze thread (avatar, alerting channel), with its own buttons.
+        // 0.45.19: a follow-up is a text in the one Argus thread (avatar, alerting channel), with its own buttons.
         val acts = mutableListOf(NotificationCompat.Action.Builder(0, goingWord, act(FollowUpReceiver.GOING, 1)).build(),
             NotificationCompat.Action.Builder(0, "No", act(FollowUpReceiver.NOT_GOING, 2)).build())
         if (i.needsReply) acts.add(1, NotificationCompat.Action.Builder(0, "I replied", act(FollowUpReceiver.REPLIED, 3)).build())
-        com.blaze.assistant.notify.Notifier.post(text, com.blaze.assistant.notify.BlazeThread.Kind.FOLLOW_UP, context = text, extra = acts, reply = false, why = why)
+        com.argus.assistant.notify.Notifier.post(text, com.argus.assistant.notify.ArgusThread.Kind.FOLLOW_UP, context = text, extra = acts, reply = false, why = why)
     }
 
-    fun cancelNotification(ctx: Context, id: String) { try { NotificationManagerCompat.from(ctx).cancel(9100 + Math.floorMod(id.hashCode(), 400)); com.blaze.assistant.notify.Notifier.clearReplies() } catch (_: Throwable) { } }
+    fun cancelNotification(ctx: Context, id: String) { try { NotificationManagerCompat.from(ctx).cancel(9100 + Math.floorMod(id.hashCode(), 400)); com.argus.assistant.notify.Notifier.clearReplies() } catch (_: Throwable) { } }
 
     // ---------------- answers ----------------
 
-    /** Going: a reminder 30 minutes before (when there's a time), and Blaze keeps nudging until they've replied. */
+    /** Going: a reminder 30 minutes before (when there's a time), and Argus keeps nudging until they've replied. */
     fun going(id: String): String {
         val now = System.currentTimeMillis()
         var said = ""
@@ -149,7 +149,7 @@ object FollowUps {
             val at = FollowUpLogic.reminderAt(i.whenAt, now)
             var set = i.reminderSet
             if (at > 0 && !i.reminderSet) try {
-                com.blaze.assistant.routine.Routines.addAt("${i.topic.replaceFirstChar { it.uppercase() }} with ${i.person}",
+                com.argus.assistant.routine.Routines.addAt("${i.topic.replaceFirstChar { it.uppercase() }} with ${i.person}",
                     "Remind the user, warmly and briefly: ${i.topic} with ${i.person} ${i.whenText}. " +
                         "Check follow_ups: if they still haven't replied to ${i.person}, offer to send a quick reply on ${i.app}.", at)
                 set = true
@@ -230,9 +230,9 @@ object FollowUps {
 
 class FollowUpReceiver : BroadcastReceiver() {
     companion object {
-        const val GOING = "com.blaze.assistant.FOLLOWUP_GOING"
-        const val NOT_GOING = "com.blaze.assistant.FOLLOWUP_NOT_GOING"
-        const val REPLIED = "com.blaze.assistant.FOLLOWUP_REPLIED"
+        const val GOING = "com.argus.assistant.FOLLOWUP_GOING"
+        const val NOT_GOING = "com.argus.assistant.FOLLOWUP_NOT_GOING"
+        const val REPLIED = "com.argus.assistant.FOLLOWUP_REPLIED"
     }
 
     override fun onReceive(ctx: Context, i: Intent) {

@@ -1,11 +1,11 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
-import com.blaze.assistant.mediaapps.store.Choice
-import com.blaze.assistant.mediaapps.store.StoreItem
-import com.blaze.assistant.mediaapps.store.YouTubeStoreSource
+import com.argus.assistant.mediaapps.store.Choice
+import com.argus.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.YouTubeStoreSource
 import org.json.JSONArray
 import org.json.JSONObject
 

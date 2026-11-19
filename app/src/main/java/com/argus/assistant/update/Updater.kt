@@ -1,7 +1,7 @@
-package com.blaze.assistant.update
+package com.argus.assistant.update
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,7 +10,7 @@ import android.content.pm.PackageInstaller
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings as AndroidSettings
-import com.blaze.assistant.agent.Agent
+import com.argus.assistant.agent.Agent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -26,7 +26,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * In-chat self-update. v0.45.4: reads the Blaze site's versions.json ([VersionFeed]), downloads android.url in the app
+ * In-chat self-update. v0.45.4: reads the Argus site's versions.json ([VersionFeed]), downloads android.url in the app
  * (resumable, [ApkDownload]), checks it against android.sha256 and the signing key, and installs it through
  * PackageInstaller. Prefs, keys and models live in app storage, so an update keeps them all.
  */
@@ -104,24 +104,24 @@ object Updater {
     private val KEY_LAST_CHECK = "update_last_check"
     private val KEY_DISMISSED = "update_banner_dismissed"
 
-    /** v0.45.4: the "Blaze X.Y.Z is available" banner (null = hidden). */
+    /** v0.45.4: the "Argus X.Y.Z is available" banner (null = hidden). */
     data class Banner(val version: String, val line: String, val notes: String, val legacy: Boolean = false)
     private val _banner = MutableStateFlow<Banner?>(null)
     val banner: StateFlow<Banner?> = _banner
 
     /**
-     * v0.45.4: at most once a day, on app open, a quiet look at versions.json. A newer Blaze shows a small banner the
+     * v0.45.4: at most once a day, on app open, a quiet look at versions.json. A newer Argus shows a small banner the
      * user can dismiss (that version then stays hidden). Offline or any error: nothing is shown and the day isn't used up.
      */
     fun checkInBackground(ctx: Context) {
         val now = System.currentTimeMillis()
-        val last = try { com.blaze.assistant.agent.Settings.str(KEY_LAST_CHECK, "0").toLongOrNull() ?: 0L } catch (_: Exception) { return }
+        val last = try { com.argus.assistant.agent.Settings.str(KEY_LAST_CHECK, "0").toLongOrNull() ?: 0L } catch (_: Exception) { return }
         if (!VersionFeed.due(now, last) || job?.isActive == true) return
         val app = ctx.applicationContext
         scope.launch {
             val a = withContext(Dispatchers.IO) { try { latest() } catch (_: Exception) { null } } ?: return@launch
-            try { com.blaze.assistant.agent.Settings.setStr(KEY_LAST_CHECK, now.toString()) } catch (_: Exception) { }
-            val dismissed = try { com.blaze.assistant.agent.Settings.str(KEY_DISMISSED, "") } catch (_: Exception) { "" }
+            try { com.argus.assistant.agent.Settings.setStr(KEY_LAST_CHECK, now.toString()) } catch (_: Exception) { }
+            val dismissed = try { com.argus.assistant.agent.Settings.str(KEY_DISMISSED, "") } catch (_: Exception) { "" }
             VersionFeed.banner(a, installed(app), dismissed)?.let { val note = legacyNote(app); _banner.value = Banner(a.version, note ?: it, a.notes, note != null) }
         }
     }
@@ -129,7 +129,7 @@ object Updater {
     /** The banner's ×: hide it and don't show this version again. */
     fun dismissBanner() {
         val b = _banner.value ?: return
-        try { com.blaze.assistant.agent.Settings.setStr(KEY_DISMISSED, b.version) } catch (_: Exception) { }
+        try { com.argus.assistant.agent.Settings.setStr(KEY_DISMISSED, b.version) } catch (_: Exception) { }
         _banner.value = null
     }
 
@@ -233,12 +233,12 @@ object Updater {
                         }
                     }
                 } catch (e: ApkDownload.Cancelled) { throw kotlinx.coroutines.CancellationException("Stopped") }
-                catch (e: ApkDownload.GaveUp) { com.blaze.assistant.device.CrashLog.error("Update download", e)
+                catch (e: ApkDownload.GaveUp) { com.argus.assistant.device.CrashLog.error("Update download", e)
                     throw UpdateError("The connection kept dropping, so I stopped for now. What's downloaded is kept: tap Retry and I'll carry on from there.") }
                 catch (e: ApkDownload.Damaged) { f.delete(); throw UpdateError(e.message ?: VersionFeed.SHA_MISMATCH) }
                 f
             }
-            // Check it before Android sees it: same app, newer build, signed by the key this Blaze trusts.
+            // Check it before Android sees it: same app, newer build, signed by the key this Argus trusts.
             withContext(Dispatchers.IO) { verify(ctx, apk) }?.let { apk.delete(); return fail(it) }
             _state.value = State.Installing(version)
             withContext(Dispatchers.IO) { installApk(ctx, apk) }
@@ -246,13 +246,13 @@ object Updater {
         } catch (e: UpdateError) { fail(e.message ?: "Update failed.") }
         catch (e: java.net.UnknownHostException) { fail("No internet connection. Connect and tap Retry.") }
         catch (e: java.net.SocketTimeoutException) { fail("The ${BrandName.NAME} site is taking too long to answer. Tap Retry.") }
-        catch (e: java.io.IOException) { com.blaze.assistant.device.CrashLog.error("Update", e); fail("The connection dropped while checking for the update. Tap Retry.") }
+        catch (e: java.io.IOException) { com.argus.assistant.device.CrashLog.error("Update", e); fail("The connection dropped while checking for the update. Tap Retry.") }
         catch (e: kotlinx.coroutines.CancellationException) {
             _state.value = State.Idle
             try { File(ctx.cacheDir, "update").listFiles()?.forEach { it.delete() } } catch (_: Exception) { }
             throw e
         }
-        catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("Update", e); fail("Something went wrong with the update. Tap Retry and I'll try again.") }
+        catch (e: Exception) { com.argus.assistant.device.CrashLog.error("Update", e); fail("Something went wrong with the update. Tap Retry and I'll try again.") }
     }
 
     private class UpdateError(msg: String) : Exception(msg)
@@ -276,10 +276,10 @@ object Updater {
     }
 
     /**
-     * 0.45.16: Blaze's signing key changed in 0.45.15 (the old key was public). A phone whose Blaze can't take the new
+     * 0.45.16: Argus's signing key changed in 0.45.15 (the old key was public). A phone whose Argus can't take the new
      * build in place is told the one fix: uninstall once and reinstall from the site. The site says the same.
      */
-    /** 0.45.18: the installed Blaze's signer fingerprints (lowercase hex SHA-256), empty when they can't be read. */
+    /** 0.45.18: the installed Argus's signer fingerprints (lowercase hex SHA-256), empty when they can't be read. */
     @Suppress("DEPRECATION")
     private fun installedSigners(ctx: Context): Set<String> = try {
         fun sha(b: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
@@ -310,14 +310,14 @@ object Updater {
         if (Build.VERSION.SDK_INT >= 28) {
             val si = info.signingInfo ?: return "That download isn't signed, so I didn't install it."
             trusted = mine.signingInfo.apkContentsSigners.map { sha(it.toByteArray()) }.toSet()
-            // A build signed with a newer key in Blaze's key lineage lists the old key in its history.
+            // A build signed with a newer key in Argus's key lineage lists the old key in its history.
             offered = (si.apkContentsSigners + (si.signingCertificateHistory ?: emptyArray())).map { sha(it.toByteArray()) }.toSet()
         } else {
             trusted = mine.signatures.map { sha(it.toByteArray()) }.toSet()
             offered = (info.signatures ?: emptyArray()).map { sha(it.toByteArray()) }.toSet()
         }
         if (trusted.isEmpty() || !offered.containsAll(trusted)) return KEY_CHANGED
-        // 0.45.15 key rotation: from now on every Blaze update is signed by the private release key (the old key is public and
+        // 0.45.15 key rotation: from now on every Argus update is signed by the private release key (the old key is public and
         // burned). On Android 9+ the download's current signer must be that key; the old key only counts as its history.
         if (Build.VERSION.SDK_INT >= 28) {
             val current = info.signingInfo?.apkContentsSigners?.map { sha(it.toByteArray()) }?.toSet().orEmpty()

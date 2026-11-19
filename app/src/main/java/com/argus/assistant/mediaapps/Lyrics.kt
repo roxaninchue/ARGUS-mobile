@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.StoreError
-import com.blaze.assistant.mediaapps.store.StoreHttp
+import com.argus.assistant.mediaapps.store.StoreError
+import com.argus.assistant.mediaapps.store.StoreHttp
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File

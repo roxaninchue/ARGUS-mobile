@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -37,12 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.ChatMeta
-import com.blaze.assistant.agent.Mood
-import com.blaze.assistant.agent.Project
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.ChatMeta
+import com.argus.assistant.agent.Mood
+import com.argus.assistant.agent.Project
+import com.argus.assistant.agent.Role
+import com.argus.assistant.agent.Settings
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -77,8 +77,8 @@ open class ShotsTest {
     private fun shot(name: String, dark: Boolean = false, content: @Composable () -> Unit) {
         rule.mainClock.autoAdvance = false
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides if (dark) DarkColors else LightColors) {
-                Box(Modifier.fillMaxSize().background(LocalBlaze.current.paper)) { content() }
+            CompositionLocalProvider(LocalArgus provides if (dark) DarkColors else LightColors) {
+                Box(Modifier.fillMaxSize().background(LocalArgus.current.paper)) { content() }
             }
         }
         rule.mainClock.advanceTimeBy(1200)
@@ -106,7 +106,7 @@ open class ShotsTest {
     @Composable
     private fun ThreadSample(busy: Boolean = true) {
         val gap: @Composable (GroupPos, Boolean) -> Unit = { p, first -> Spacer(Modifier.height(Bubbles.gapAbove(p, first))) }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = com.blaze.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 14.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = com.argus.assistant.ui.space.SpaceInsets.GUTTER_DP.dp, vertical = 14.dp)) {
             UserBubble("Hey ${BrandName.NAME}", pos = GroupPos.FIRST)
             gap(GroupPos.LAST, false)
             UserBubble("Make me a one-page portfolio site and show it to me", pos = GroupPos.LAST)
@@ -114,10 +114,10 @@ open class ShotsTest {
             gap(GroupPos.FIRST, false)
             WorkCard(doneSteps, live = false, startAt = t0 + 9_000, endAt = t0 + 9_000 + 191_000)
             gap(GroupPos.MIDDLE, false)
-            BlazeReply(1, "Done. Your portfolio is in **~/site/index.html** with a hero, three project cards and a contact form.\n\n" +
+            ArgusReply(1, "Done. Your portfolio is in **~/site/index.html** with a hero, three project cards and a contact form.\n\n" +
                 "| Section | What's in it |\n|---|---|\n| Hero | Name, one line, photo |\n| Projects | 3 cards |\n| Contact | Email form |", GroupPos.MIDDLE)
             gap(GroupPos.LAST, false)
-            BlazeReply(2, "Want a dark version too?", GroupPos.LAST)
+            ArgusReply(2, "Want a dark version too?", GroupPos.LAST)
             MetaLine(Side.BLAZE, "09:44", listOf("Copy" to {}, "Quote" to {}, "Retry" to {}), chip = "Memory updated")
             gap(GroupPos.SINGLE, false)
             UserBubble("What's on Friday?", quoted = "Want a dark version too?", pos = GroupPos.SINGLE)
@@ -126,7 +126,7 @@ open class ShotsTest {
             if (busy) WorkCard(liveSteps, live = true, startAt = t0 + 90_000, endAt = 0, status = "Reading 3 new emails", now = t0 + 90_000 + 72_000,
                 meter = "in 4.2k · out 0.6k")
             else {
-                BlazeReply(3, "Friday: **CIT102 lab at 10:00**, then the NET103 quiz at 14:00. Nothing in the evening.", GroupPos.SINGLE)
+                ArgusReply(3, "Friday: **CIT102 lab at 10:00**, then the NET103 quiz at 14:00. Nothing in the evening.", GroupPos.SINGLE)
                 MetaLine(Side.BLAZE, "09:46", listOf("Copy" to {}, "Quote" to {}, "Retry" to {}))
                 SoftPill("Remind me Thursday night", lead = "↳") {}
             }
@@ -153,7 +153,7 @@ open class ShotsTest {
     // v0.24.1: the reference pill composer (+, rotating hint, mic → send, stop) in both themes.
     @Composable
     private fun ComposerStates() {
-        val c = LocalBlaze.current
+        val c = LocalArgus.current
         Column(Modifier.fillMaxWidth().background(c.paper).padding(vertical = 10.dp)) {
             Label("Idle · rotating hint", size = 9.sp, modifier = Modifier.padding(start = 20.dp, top = 6.dp))
             Composer(TextFieldValue(""), {}, busy = false, canSend = false, plusOpen = false, chip = "", agents = 0, listening = false, speaking = false,
@@ -172,7 +172,7 @@ open class ShotsTest {
     @Test fun composerPill() = shot("43-composer") {
         Column(Modifier.fillMaxSize()) {
             ComposerStates()
-            CompositionLocalProvider(LocalBlaze provides DarkColors) { ComposerStates() }
+            CompositionLocalProvider(LocalArgus provides DarkColors) { ComposerStates() }
         }
     }
 
@@ -183,14 +183,14 @@ open class ShotsTest {
     @Test fun avatar() = shot("05-avatar-menu") {
         Chat()
         AvatarMenu("Sam", "sam@example.com", listOf(
-            MenuItem("account", "Account", "Signed in"), MenuItem("settings", "Settings"), MenuItem("router", "BlazeRouter", "AUTO"),
+            MenuItem("account", "Account", "Signed in"), MenuItem("settings", "Settings"), MenuItem("router", "ArgusRouter", "AUTO"),
             MenuItem("views", "All views", "/VIEWS"), MenuItem("control", "Phone control", "ON"), MenuItem("themes", "Themes", "Classic"),
             MenuItem("update", "Check for updates", "v0.15.0"), MenuItem("signout", "Sign out")), onPick = {}, onDismiss = {})
     }
     @Test fun projects() = shot("06-projects") {
         Column(Modifier.fillMaxSize()) {
             ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
-            com.blaze.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p1", "Northrise CS year 2", chats = listOf("c2")), Project("p2", "HomeGlow store", chats = listOf("c3", "c4")),
+            com.argus.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p1", "Northrise CS year 2", chats = listOf("c2")), Project("p2", "HomeGlow store", chats = listOf("c3", "c4")),
                 Project("p3", "Portfolio", chats = listOf("c1"))), chats, busy = setOf("c3"), needsYou = setOf("c1"), openId = "",
                 onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
         }
@@ -210,27 +210,27 @@ open class ShotsTest {
     @Test fun selectionPill() = shot("61-selection-pill") {
         Chat(busy = false)
         SelectionPill(androidx.compose.ui.geometry.Rect(60f, 700f, 420f, 760f), SelectionActions.forUnknown(likelyShort = true),
-            ink = LocalBlaze.current.ink, paper = LocalBlaze.current.paper, nudge = false) { }
+            ink = LocalArgus.current.ink, paper = LocalArgus.current.paper, nudge = false) { }
     }
     // v0.28.0: My voice setup (download in progress, recording with the level meter) and a finished test.
     @Test fun myVoiceSetup() = shot("63-my-voice-setup") {
         androidx.compose.foundation.layout.Column(Modifier.padding(horizontal = 20.dp)) {
-            MyVoiceCard(MyVoiceUi(chosen = false, pack = com.blaze.assistant.voice.myvoice.VoicePack.State.Working(
-                com.blaze.assistant.voice.myvoice.VoicePack.Step.MODEL, 41_000_000, 98_336_520), metered = true, downloadMb = 107,
+            MyVoiceCard(MyVoiceUi(chosen = false, pack = com.argus.assistant.voice.myvoice.VoicePack.State.Working(
+                com.argus.assistant.voice.myvoice.VoicePack.Step.MODEL, 41_000_000, 98_336_520), metered = true, downloadMb = 107,
                 recording = true, seconds = 7.4f, level = 0.62f), setupOpen = true)
         }
     }
     @Test fun myVoiceTested() = shot("64-my-voice-tested", dark = true) {
         androidx.compose.foundation.layout.Column(Modifier.padding(horizontal = 20.dp)) {
-            MyVoiceCard(MyVoiceUi(chosen = false, pack = com.blaze.assistant.voice.myvoice.VoicePack.State.Ready, metered = false, downloadMb = 107,
-                recorded = com.blaze.assistant.voice.myvoice.AudioClip.Prepared(FloatArray(240_000), 24_000, 9.1f, com.blaze.assistant.voice.myvoice.AudioClip.Verdict.OK),
-                test = com.blaze.assistant.voice.myvoice.MyVoice.TestResult(true, 1.4f, 6_200, 4.4f, 9_000), message = "Sounds good."), setupOpen = true)
+            MyVoiceCard(MyVoiceUi(chosen = false, pack = com.argus.assistant.voice.myvoice.VoicePack.State.Ready, metered = false, downloadMb = 107,
+                recorded = com.argus.assistant.voice.myvoice.AudioClip.Prepared(FloatArray(240_000), 24_000, 9.1f, com.argus.assistant.voice.myvoice.AudioClip.Verdict.OK),
+                test = com.argus.assistant.voice.myvoice.MyVoice.TestResult(true, 1.4f, 6_200, 4.4f, 9_000), message = "Sounds good."), setupOpen = true)
         }
     }
     @Test fun selectionPillDark() = shot("62-selection-pill-dark", dark = true) {
         Chat(busy = false)
         SelectionPill(androidx.compose.ui.geometry.Rect(60f, 700f, 420f, 760f), SelectionActions.forUnknown(likelyShort = false),
-            ink = LocalBlaze.current.ink, paper = LocalBlaze.current.paper, nudge = false) { }
+            ink = LocalArgus.current.ink, paper = LocalArgus.current.paper, nudge = false) { }
     }
     @Test fun questionInline() = shot("42-question-inline", dark = true) {
         Column(Modifier.fillMaxSize()) {
@@ -250,7 +250,7 @@ open class ShotsTest {
         Column(Modifier.fillMaxSize()) {
             ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {})
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
-                Label("Settings \u203a BlazeRouter", size = 10.sp, modifier = Modifier.padding(top = 18.dp))
+                Label("Settings \u203a ArgusRouter", size = 10.sp, modifier = Modifier.padding(top = 18.dp))
                 RouterPage(onClassic = {})
             }
         }
@@ -258,7 +258,7 @@ open class ShotsTest {
     @Test fun projectBrief() = shot("10-project-brief") {
         Column(Modifier.fillMaxSize()) {
             ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
-            com.blaze.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p2", "HomeGlow store", "Friendly, short replies. Prices in USD.", chats = listOf("c3", "c4"),
+            com.argus.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p2", "HomeGlow store", "Friendly, short replies. Prices in USD.", chats = listOf("c3", "c4"),
                 brief = "Purpose: grow the HomeGlow Shopify store to 20 orders a week.\nRules: free tools only; every customer message needs Sam's OK.\n" +
                     "Key files: ~/homeglow/products.csv, ~/homeglow/brand.md\nIn progress: 5 new lamp listings, TikTok week 3.")),
                 chats, busy = setOf("c3"), needsYou = emptySet(), openId = "p2",
@@ -272,22 +272,22 @@ open class ShotsTest {
                 UserBubble("Where did we land on the lamp prices?")
                 WorkCard(listOf(step(21, "Looking back through this chat for \u201clamp prices\u201d"), step(22, "Reading an earlier message")), live = false,
                     startAt = t0, endAt = t0 + 14_000, meter = "in 26.9k · out 0.4k", meterHigh = true)
-                BlazeReply(23, "On turn 41 we set **$24.99** for the moon lamp and **$19.99** for the mini, with free shipping over $35.")
+                ArgusReply(23, "On turn 41 we set **$24.99** for the moon lamp and **$19.99** for the mini, with free shipping over $35.")
             }
         }
     }
 
     private fun seedCards() {
         val f = File(System.getProperty("java.io.tmpdir"), "blaze-shots-cards-" + System.nanoTime() + ".json")
-        com.blaze.assistant.agent.Flashcards.fileOverride = f
-        com.blaze.assistant.agent.Flashcards.reset()
-        com.blaze.assistant.agent.Flashcards.add("CIT102 loops", listOf(
+        com.argus.assistant.agent.Flashcards.fileOverride = f
+        com.argus.assistant.agent.Flashcards.reset()
+        com.argus.assistant.agent.Flashcards.add("CIT102 loops", listOf(
             "What does range(2, 10, 3) produce?" to "2, 5, 8 (start 2, stop before 10, step 3)",
             "When does a while loop's else block run?" to "When the loop ends without break",
             "What does break do inside nested loops?" to "Leaves only the innermost loop"))
-        com.blaze.assistant.agent.Flashcards.add("NET103 OSI layers", listOf("Layer 3?" to "Network (IP, routing)", "Layer 4?" to "Transport (TCP, UDP)"))
-        com.blaze.assistant.agent.Flashcards.add("COM102 citations", listOf("APA in-text, one author?" to "(Author, Year)"))
-        com.blaze.assistant.agent.Flashcards.load().filter { it.deck == "COM102 citations" }.forEach { com.blaze.assistant.agent.Flashcards.answer(it.id, com.blaze.assistant.agent.Flashcards.GOOD) }
+        com.argus.assistant.agent.Flashcards.add("NET103 OSI layers", listOf("Layer 3?" to "Network (IP, routing)", "Layer 4?" to "Transport (TCP, UDP)"))
+        com.argus.assistant.agent.Flashcards.add("COM102 citations", listOf("APA in-text, one author?" to "(Author, Year)"))
+        com.argus.assistant.agent.Flashcards.load().filter { it.deck == "COM102 citations" }.forEach { com.argus.assistant.agent.Flashcards.answer(it.id, com.argus.assistant.agent.Flashcards.GOOD) }
     }
     @Test fun learn() { seedCards(); shot("12-learn") {
         Column(Modifier.fillMaxSize()) {
@@ -302,8 +302,8 @@ open class ShotsTest {
         }
     } }
     @Test fun seller() {
-        com.blaze.assistant.agent.Seller.brandFileOverride = File(System.getProperty("java.io.tmpdir"), "blaze-shots-brand-" + System.nanoTime() + ".json")
-        com.blaze.assistant.agent.Seller.saveBrand(com.blaze.assistant.agent.Brand(name = "HomeGlow", paper = "#fffaf2", ink = "#1d1a16",
+        com.argus.assistant.agent.Seller.brandFileOverride = File(System.getProperty("java.io.tmpdir"), "blaze-shots-brand-" + System.nanoTime() + ".json")
+        com.argus.assistant.agent.Seller.saveBrand(com.argus.assistant.agent.Brand(name = "HomeGlow", paper = "#fffaf2", ink = "#1d1a16",
             accents = listOf("#e8743b", "#2f5d50"), fonts = listOf("Playfair Display", "Inter"), notes = "Warm, cosy home decor for young renters"))
         shot("14-seller") {
             Column(Modifier.fillMaxSize()) {
@@ -315,8 +315,8 @@ open class ShotsTest {
 
     // v0.20.0: background browser secure form, password-free sign-in and phone control banner.
     private val signIn = listOf(
-        com.blaze.assistant.browser.SecureInput.Field("email", "GitHub email or username", com.blaze.assistant.browser.SecureInput.Kind.EMAIL),
-        com.blaze.assistant.browser.SecureInput.Field("password", "GitHub password", com.blaze.assistant.browser.SecureInput.Kind.PASSWORD))
+        com.argus.assistant.browser.SecureInput.Field("email", "GitHub email or username", com.argus.assistant.browser.SecureInput.Kind.EMAIL),
+        com.argus.assistant.browser.SecureInput.Field("password", "GitHub password", com.argus.assistant.browser.SecureInput.Kind.PASSWORD))
     @Composable private fun BrowserChat(content: @Composable () -> Unit) {
         Column(Modifier.fillMaxSize()) {
             ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, mood = Mood.ACTING)
@@ -334,7 +334,7 @@ open class ShotsTest {
     }
     @Test fun secureFormDark() = shot("31-secure-form-dark", dark = true) {
         BrowserChat { SecureForm("api.groq.com", "Your Groq API key", "Paste it once; ${BrandName.NAME} saves it encrypted on this phone.",
-            listOf(com.blaze.assistant.browser.SecureInput.Field("groq_key", "Groq API key", com.blaze.assistant.browser.SecureInput.Kind.API_KEY)),
+            listOf(com.argus.assistant.browser.SecureInput.Field("groq_key", "Groq API key", com.argus.assistant.browser.SecureInput.Kind.API_KEY)),
             onSubmit = { _, _ -> }, onCancel = {}, onWatch = {}, notifPrompt = true) }
     }
     @Test fun noPasswordChoice() = shot("32-no-password-choice") {
@@ -344,17 +344,17 @@ open class ShotsTest {
                 UserBubble("Sign me in to GitHub")
                 WorkCard(listOf(step(41, "Browsing github.com/login"), step(42, "GitHub says this account can't use a password")), live = false, startAt = t0, endAt = t0 + 9_000)
             }
-            PhoneControlBanner(com.blaze.assistant.phone.PhoneControl.State.OFF) {}
+            PhoneControlBanner(com.argus.assistant.phone.PhoneControl.State.OFF) {}
             QuestionView("GitHub won't take a password for this account. How do you want to sign in?",
                 listOf("Continue with Google", "Use a passkey", "I'll do it in the browser"))
         }
     }
     @Test fun savedLogins() {
-        com.blaze.assistant.browser.Vault.fileOverride = File(System.getProperty("java.io.tmpdir"), "blaze-shots-vault-" + System.nanoTime() + ".json")
-        com.blaze.assistant.browser.Vault.seal = { it }; com.blaze.assistant.browser.Vault.open = { it }
-        com.blaze.assistant.browser.Vault.save("github.com", "email", "sam@example.com")
-        com.blaze.assistant.browser.Vault.save("github.com", "password", "not-a-real-one")
-        com.blaze.assistant.browser.Vault.save("console.groq.com", "groq_key", "gsk_not_real_0000")
+        com.argus.assistant.browser.Vault.fileOverride = File(System.getProperty("java.io.tmpdir"), "blaze-shots-vault-" + System.nanoTime() + ".json")
+        com.argus.assistant.browser.Vault.seal = { it }; com.argus.assistant.browser.Vault.open = { it }
+        com.argus.assistant.browser.Vault.save("github.com", "email", "sam@example.com")
+        com.argus.assistant.browser.Vault.save("github.com", "password", "not-a-real-one")
+        com.argus.assistant.browser.Vault.save("console.groq.com", "groq_key", "gsk_not_real_0000")
         shot("33-saved-logins") {
             Column(Modifier.fillMaxSize()) {
                 ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {}, viewChip = "Saved logins")
@@ -368,7 +368,7 @@ open class ShotsTest {
     /** The settings screen's frame (back arrow + title, then a padded scroll column), without its BackHandler. */
     @Composable
     private fun SettingsFrame(title: String, scroll: Boolean = true, content: @Composable () -> Unit) {
-        val c = LocalBlaze.current
+        val c = LocalArgus.current
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
@@ -382,7 +382,7 @@ open class ShotsTest {
 
     private val day = 86_400_000L
     private fun mem(id: Long, kind: String, subject: String, text: String, related: String = "", turn: Long = 0, ago: Int = 40 - id.toInt()) =
-        com.blaze.assistant.agent.Mind.Mem(id, kind, subject, text, related, turn, t0 - ago * day, t0 - ago * day)
+        com.argus.assistant.agent.Mind.Mem(id, kind, subject, text, related, turn, t0 - ago * day, t0 - ago * day)
     private val mems = listOf(
         mem(1, "profile", "You", "Sam: Computer Science student at Northrise University, Ndola"),
         mem(2, "profile", "You", "From Chingola, Zambia; finished school at Amano Christian School in 2025"),
@@ -417,7 +417,7 @@ open class ShotsTest {
 
     @Test fun skills() = shot("18-skills") {
         fun r(n: String, d: String, bundled: Boolean = true, on: Boolean = true, edited: Boolean = false, installed: Boolean = true, update: Boolean = false, core: Boolean = false) =
-            com.blaze.assistant.agent.SkillLibrary.Row(n, d, bundled, on, edited, installed, update, core)
+            com.argus.assistant.agent.SkillLibrary.Row(n, d, bundled, on, edited, installed, update, core)
         SettingsFrame("Skill library") {
             SkillLibraryPage(listOf(
                 r("blaze-voice", "How ${BrandName.NAME} sounds in every reply: answer first, short, one clear pick.", core = true),
@@ -435,23 +435,23 @@ open class ShotsTest {
     @Test fun schedule() = shot("19-schedule") {
         SettingsFrame("Routines") {
             SchedulePage(listOf(
-                com.blaze.assistant.routine.Routine(1, "Morning brief", "Summarise today's calendar and unread texts", 7, 0, 31),
-                com.blaze.assistant.routine.Routine(2, "Weekly store digest", "Run the weekly-digest skill", 8, 0, 1),
-                com.blaze.assistant.routine.Routine(3, "CIT102 lab 3 due", "Remind me: CIT102 lab 3 is due tomorrow", 9, 0, 0, at = t0 + 3 * day),
-                com.blaze.assistant.routine.Routine(4, "Back up notes", "", 22, 30, 127, enabled = false, command = "tar czf ~/backup/notes.tgz ~/notes", linux = true)),
+                com.argus.assistant.routine.Routine(1, "Morning brief", "Summarise today's calendar and unread texts", 7, 0, 31),
+                com.argus.assistant.routine.Routine(2, "Weekly store digest", "Run the weekly-digest skill", 8, 0, 1),
+                com.argus.assistant.routine.Routine(3, "CIT102 lab 3 due", "Remind me: CIT102 lab 3 is due tomorrow", 9, 0, 0, at = t0 + 3 * day),
+                com.argus.assistant.routine.Routine(4, "Back up notes", "", 22, 30, 127, enabled = false, command = "tar czf ~/backup/notes.tgz ~/notes", linux = true)),
                 now = t0)
         }
     }
 
     // 0.52.3: Settings opens on the profile page (Hark's grouped cards); the old list and Advanced are gone.
     @Test fun settingsList() = shot("20-settings") {
-        com.blaze.assistant.ui.space.SpaceProfileScreen("Sam Banda", "sam@example.com", signedIn = true, planLine = "Pro plan",
+        com.argus.assistant.ui.space.SpaceProfileScreen("Sam Banda", "sam@example.com", signedIn = true, planLine = "Pro plan",
             onPage = {}, onSignOut = {}, onSearch = {}, version = "0.52.3")
     }
 
     // owner 2026-11-18: first run is the logo clip, the language step (a wheel since 2026-11-19), then sign-in; this is the language step.
     @Test fun onboarding() = shot("22-onboarding") {
-        com.blaze.assistant.ui.space.SpaceOnboardingScreen(com.blaze.assistant.ui.space.SpaceOnboarding.Step.LANGUAGE, signedIn = true,
+        com.argus.assistant.ui.space.SpaceOnboardingScreen(com.argus.assistant.ui.space.SpaceOnboarding.Step.LANGUAGE, signedIn = true,
             onNext = {}, accountCard = {})
     }
 
@@ -481,22 +481,22 @@ open class ShotsTest {
 
     @Test fun lifeLogs() = shot("26-life-logs") {
         SettingsFrame("Life logs") {
-            LifeLogsPage(preview = com.blaze.assistant.life.LifeLogs.State(on = true, engine = "offline Vosk model", since = t0,
+            LifeLogsPage(preview = com.argus.assistant.life.LifeLogs.State(on = true, engine = "offline Vosk model", since = t0,
                 last = "so the lamp photos are due on friday"), previewToday = 83 * 60_000L, previewChunks = 14, previewModel = true)
         }
     }
     @Test fun lifeLogsPaused() = shot("27-life-logs-paused", dark = true) {
         SettingsFrame("Life logs") {
-            LifeLogsPage(preview = com.blaze.assistant.life.LifeLogs.State(on = true, paused = "phone call", brainstorm = true, engine = "offline Vosk model", since = t0),
+            LifeLogsPage(preview = com.argus.assistant.life.LifeLogs.State(on = true, paused = "phone call", brainstorm = true, engine = "offline Vosk model", since = t0),
                 previewToday = 12 * 60_000L, previewChunks = 3, previewModel = false)
         }
     }
     @Test fun replies() {
-        val n = com.blaze.assistant.notify.Conversations
+        val n = com.argus.assistant.notify.Conversations
         n.reset()
-        n.add("com.whatsapp", "WhatsApp", "Gloria", false, listOf(com.blaze.assistant.notify.Conversations.Msg(t0, "Gloria", "Can you send the CIT102 notes?")), null)
-        n.add("com.whatsapp", "WhatsApp", "CS Year 2", true, listOf(com.blaze.assistant.notify.Conversations.Msg(t0 - 60_000, "Mutale", "Lab moved to 14:00")), null)
-        n.add("com.google.android.apps.messaging", "Messages", "Mum", false, listOf(com.blaze.assistant.notify.Conversations.Msg(t0 - 120_000, "Mum", "Call me tonight")), null)
+        n.add("com.whatsapp", "WhatsApp", "Gloria", false, listOf(com.argus.assistant.notify.Conversations.Msg(t0, "Gloria", "Can you send the CIT102 notes?")), null)
+        n.add("com.whatsapp", "WhatsApp", "CS Year 2", true, listOf(com.argus.assistant.notify.Conversations.Msg(t0 - 60_000, "Mutale", "Lab moved to 14:00")), null)
+        n.add("com.google.android.apps.messaging", "Messages", "Mum", false, listOf(com.argus.assistant.notify.Conversations.Msg(t0 - 120_000, "Mum", "Call me tonight")), null)
         try { n.setAuto("wa:gloria", true) } catch (_: Throwable) { }
         shot("28-replies") { SettingsFrame("Notification replies") { RepliesPage(previewAccess = true) } }
     }
@@ -509,7 +509,7 @@ open class ShotsTest {
                 UserBubble("Make me flashcards on CIT102 loops")
                 WorkCard(listOf(step(51, "Skills: study-flashcards, tutor"), step(52, "Making flashcards", "flashcards {\"action\":\"add\",\"deck\":\"CIT102 loops\"}"),
                     step(53, "Opening Learn")), live = false, startAt = t0, endAt = t0 + 21_000, open0 = true)
-                BlazeReply(54, "Made the **CIT102 loops** deck in Learn: 12 cards. It's open now; cards come back right before you'd forget them.")
+                ArgusReply(54, "Made the **CIT102 loops** deck in Learn: 12 cards. It's open now; cards come back right before you'd forget them.")
             }
         }
     }
@@ -518,8 +518,8 @@ open class ShotsTest {
     // here because Robolectric has no WebGL; on the phone the same parts render in three.js with orbit controls.
     @Test fun design3d() {
         val dir = java.nio.file.Files.createTempDirectory("shots-designs").toFile()
-        com.blaze.assistant.agent.Designs.rootOverride = dir
-        com.blaze.assistant.agent.Designs.templateLoader = { File("src/main/assets/skills/three-d-design/assets/mockup.html").readText() }
+        com.argus.assistant.agent.Designs.rootOverride = dir
+        com.argus.assistant.agent.Designs.templateLoader = { File("src/main/assets/skills/three-d-design/assets/mockup.html").readText() }
         fun part(id: String, shape: String, vararg kv: Pair<String, Any>) = org.json.JSONObject().put("id", id).put("shape", shape).apply { kv.forEach { (k, v) -> put(k, v) } }
         fun a(vararg n: Number) = org.json.JSONArray(n.toList())
         val parts = org.json.JSONArray()
@@ -532,7 +532,7 @@ open class ShotsTest {
             .put(part("fin-1", "box", "size" to a(0.08, 1.8, 1.1), "position" to a(0.0, 1.6, 0.85), "rotation" to a(0, 90, 0), "color" to "#d8342c"))
             .put(part("fin-2", "box", "size" to a(0.08, 1.8, 1.1), "position" to a(0.74, 1.6, -0.43), "rotation" to a(0, -30, 0), "color" to "#d8342c"))
             .put(part("fin-3", "box", "size" to a(0.08, 1.8, 1.1), "position" to a(-0.74, 1.6, -0.43), "rotation" to a(0, 30, 0), "color" to "#d8342c"))
-        val made = com.blaze.assistant.agent.Designs.run(org.json.JSONObject().put("action", "create").put("kind", "3d").put("title", "Tall modern rocket")
+        val made = com.argus.assistant.agent.Designs.run(org.json.JSONObject().put("action", "create").put("kind", "3d").put("title", "Tall modern rocket")
             .put("units", "m").put("parts", parts))
         shot("36-design-3d") {
             Column(Modifier.fillMaxSize()) {
@@ -540,14 +540,14 @@ open class ShotsTest {
                 Box(Modifier.weight(1f)) { DesignView(made.open ?: "", busy = false, status = "", onAsk = {}, onOpenInBrowser = {}, home = null, preview = false) }
             }
         }
-        com.blaze.assistant.agent.Designs.rootOverride = null
+        com.argus.assistant.agent.Designs.rootOverride = null
     }
 
     // v0.23.3: three.js couldn't start (the test phone with WebGL turned off): the same parts drawn natively, the real error, Retry.
     @Test fun design3dFallback() {
         val dir = java.nio.file.Files.createTempDirectory("shots-designs").toFile()
-        com.blaze.assistant.agent.Designs.rootOverride = dir
-        com.blaze.assistant.agent.Designs.templateLoader = { File("src/main/assets/skills/three-d-design/assets/mockup.html").readText() }
+        com.argus.assistant.agent.Designs.rootOverride = dir
+        com.argus.assistant.agent.Designs.templateLoader = { File("src/main/assets/skills/three-d-design/assets/mockup.html").readText() }
         fun part(id: String, shape: String, vararg kv: Pair<String, Any>) = org.json.JSONObject().put("id", id).put("shape", shape).apply { kv.forEach { (k, v) -> put(k, v) } }
         fun a(vararg n: Number) = org.json.JSONArray(n.toList())
         val parts = org.json.JSONArray()
@@ -557,7 +557,7 @@ open class ShotsTest {
             .put(part("fin-1", "box", "size" to a(0.08, 1.6, 1.0), "position" to a(0.0, 1.5, 0.8), "rotation" to a(0, 90, 0), "color" to "#d8342c"))
             .put(part("fin-2", "box", "size" to a(0.08, 1.6, 1.0), "position" to a(0.7, 1.5, -0.4), "rotation" to a(0, -30, 0), "color" to "#d8342c"))
             .put(part("fin-3", "box", "size" to a(0.08, 1.6, 1.0), "position" to a(-0.7, 1.5, -0.4), "rotation" to a(0, 30, 0), "color" to "#d8342c"))
-        val made = com.blaze.assistant.agent.Designs.run(org.json.JSONObject().put("action", "create").put("kind", "3d").put("title", "Simple Rocket")
+        val made = com.argus.assistant.agent.Designs.run(org.json.JSONObject().put("action", "create").put("kind", "3d").put("title", "Simple Rocket")
             .put("units", "m").put("parts", parts))
         shot("37-design-3d-fallback") {
             Column(Modifier.fillMaxSize()) {
@@ -566,12 +566,12 @@ open class ShotsTest {
                     initialFailure = "WebGL is turned off in this phone's WebView (no WebGL 1 or 2), so three.js can't draw.") }
             }
         }
-        com.blaze.assistant.agent.Designs.rootOverride = null
+        com.argus.assistant.agent.Designs.rootOverride = null
     }
 
     // v0.21.0: the visible pointer over another app with a swipe path and a ripple; v0.45.14: the Stop chip, no paused bar.
     @Test fun pointer() = shot("34-pointer") {
-        val c = LocalBlaze.current
+        val c = LocalArgus.current
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFFF4F4F4))) {
             Column(Modifier.fillMaxSize().padding(top = 90.dp, start = 18.dp, end = 18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf("Wi-Fi", "Bluetooth", "Mobile data", "Airplane mode", "Hotspot").forEach {
@@ -615,16 +615,16 @@ open class ShotsTest {
         Column(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF212226)).padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Text("Launcher icon", style = TextStyle(fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFFBBBBBB)))
             Box(Modifier.size(216.dp)) {
-                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.blaze.assistant.R.drawable.ic_launcher_background), null, Modifier.size(216.dp))
-                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.blaze.assistant.R.drawable.ic_launcher_foreground), null, Modifier.size(216.dp))
+                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.argus.assistant.R.drawable.ic_launcher_background), null, Modifier.size(216.dp))
+                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.argus.assistant.R.drawable.ic_launcher_foreground), null, Modifier.size(216.dp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 Box(Modifier.size(108.dp).background(androidx.compose.ui.graphics.Color(0xFFDDE3F0))) {
-                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.blaze.assistant.R.drawable.ic_launcher_monochrome), null, Modifier.size(108.dp),
+                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.argus.assistant.R.drawable.ic_launcher_monochrome), null, Modifier.size(108.dp),
                         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(androidx.compose.ui.graphics.Color(0xFF2A3550)))
                 }
                 Box(Modifier.size(108.dp).background(androidx.compose.ui.graphics.Color(0xFF333333)), contentAlignment = Alignment.Center) {
-                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.blaze.assistant.R.drawable.ic_stat_blaze), null, Modifier.size(72.dp))
+                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.argus.assistant.R.drawable.ic_stat_blaze), null, Modifier.size(72.dp))
                 }
                 PointerGlyph(scale = 1.7f)
             }
@@ -632,18 +632,18 @@ open class ShotsTest {
         }
     }
 
-    // v0.24.5: the "Leave private chat?" dialog in the Blaze dialog look (dark card, pill buttons), over a dimmed chat.
+    // v0.24.5: the "Leave private chat?" dialog in the Argus dialog look (dark card, pill buttons), over a dimmed chat.
     @Test fun privateLeaveDialog() = shot("46-private-leave-dialog", dark = true) {
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF26262A))) {
             Text("Private chat", Modifier.padding(24.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color(0xFFF0F0EE)))
             Box(Modifier.fillMaxSize().background(DialogColors.scrim).padding(24.dp), contentAlignment = Alignment.Center) {
-                BlazeDialogCard(com.blaze.assistant.agent.PrivateChat.LEAVE_TITLE, com.blaze.assistant.agent.PrivateChat.LEAVE_TEXT,
+                ArgusDialogCard(com.argus.assistant.agent.PrivateChat.LEAVE_TITLE, com.argus.assistant.agent.PrivateChat.LEAVE_TEXT,
                     confirm = "Leave", onConfirm = {}, dismiss = "Stay", warm = true)
             }
         }
     }
 
-    // v0.24.5: the floating work banner (rounded dark card, mascot in a spinning ring, Stop pill) over a light and a dark app, and the Blaze menu.
+    // v0.24.5: the floating work banner (rounded dark card, mascot in a spinning ring, Stop pill) over a light and a dark app, and the Argus menu.
     @Test fun workBanner() = shot("47-work-banner") {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFFF4F4F4)).padding(top = 36.dp, start = 12.dp, end = 12.dp)) {
@@ -652,7 +652,7 @@ open class ShotsTest {
             Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFF111110)).padding(top = 36.dp, start = 12.dp, end = 12.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     TaskCard(onOpen = {}, onStop = {}, step0 = "Comparing prices at 3 shops", tasks0 = 2)
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) { BlazeMenuCard(listOf("Close all tabs" to {}, "New tab" to {})) }
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) { ArgusMenuCard(listOf("Close all tabs" to {}, "New tab" to {})) }
                 }
             }
         }
@@ -660,8 +660,8 @@ open class ShotsTest {
 
     // v0.23.4: Settings › Brains / Auto, models per provider with cooling counts, one provider opened.
     // v0.24.7 Magic Hand: the dock over an app, the menu (shared pointer tiles), grab, teach review and the watches page.
-    private fun handState() = com.blaze.assistant.phone.MagicHandState.point(com.blaze.assistant.phone.MagicHandState.start(false),
-        "K1,299", com.blaze.assistant.phone.MagicHandLogic.Kind.VALUE, "Jumia")
+    private fun handState() = com.argus.assistant.phone.MagicHandState.point(com.argus.assistant.phone.MagicHandState.start(false),
+        "K1,299", com.argus.assistant.phone.MagicHandLogic.Kind.VALUE, "Jumia")
 
     @Composable private fun FakeApp(content: @Composable () -> Unit) {
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFFF4F4F4))) {
@@ -673,9 +673,9 @@ open class ShotsTest {
                 Spacer(Modifier.height(6.dp))
                 Text("In stock · free delivery in Lusaka", style = TextStyle(fontSize = 14.sp, color = androidx.compose.ui.graphics.Color(0xFF555555)))
             }
-            Box(Modifier.padding(start = 96.dp, top = 112.dp)) { com.blaze.assistant.phone.MagicHandGlyph(64, lit = true, carrying = false) }
+            Box(Modifier.padding(start = 96.dp, top = 112.dp)) { com.argus.assistant.phone.MagicHandGlyph(64, lit = true, carrying = false) }
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                CompositionLocalProvider(LocalBlaze provides DarkColors) { content() }
+                CompositionLocalProvider(LocalArgus provides DarkColors) { content() }
             }
         }
     }
@@ -683,40 +683,40 @@ open class ShotsTest {
     @Test fun magicHandDock() = shot("48-magic-hand-dock") {
         FakeApp {
             Column {
-                com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.answered(
-                    com.blaze.assistant.phone.MagicHandState.asking(handState(), "K1,299"),
-                    "That's the **price** of the Galaxy A15: K1,299, about average for Lusaka right now."), com.blaze.assistant.phone.DockCalls())
-                com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.confirm(
-                    com.blaze.assistant.phone.MagicHandState.carry(handState(), "Meet at 6 by the gate"),
-                    com.blaze.assistant.phone.MagicHandLogic.Intent.DROP, "Message"), com.blaze.assistant.phone.DockCalls())
+                com.argus.assistant.phone.MagicHandDock(com.argus.assistant.phone.MagicHandState.answered(
+                    com.argus.assistant.phone.MagicHandState.asking(handState(), "K1,299"),
+                    "That's the **price** of the Galaxy A15: K1,299, about average for Lusaka right now."), com.argus.assistant.phone.DockCalls())
+                com.argus.assistant.phone.MagicHandDock(com.argus.assistant.phone.MagicHandState.confirm(
+                    com.argus.assistant.phone.MagicHandState.carry(handState(), "Meet at 6 by the gate"),
+                    com.argus.assistant.phone.MagicHandLogic.Intent.DROP, "Message"), com.argus.assistant.phone.DockCalls())
             }
         }
     }
 
     @Test fun magicHandMenu() = shot("49-magic-hand-menu") {
         FakeApp {
-            com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.menu(handState(), "K1,299",
-                com.blaze.assistant.phone.MagicHandLogic.Kind.VALUE, "Jumia"), com.blaze.assistant.phone.DockCalls())
+            com.argus.assistant.phone.MagicHandDock(com.argus.assistant.phone.MagicHandState.menu(handState(), "K1,299",
+                com.argus.assistant.phone.MagicHandLogic.Kind.VALUE, "Jumia"), com.argus.assistant.phone.DockCalls())
         }
     }
 
     @Test fun magicHandGrab() = shot("50-magic-hand-grab") {
         FakeApp {
-            com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.grabbed(handState(),
-                "Galaxy A15 128GB\nK1,299\nIn stock · free delivery in Lusaka", "Jumia"), com.blaze.assistant.phone.DockCalls())
+            com.argus.assistant.phone.MagicHandDock(com.argus.assistant.phone.MagicHandState.grabbed(handState(),
+                "Galaxy A15 128GB\nK1,299\nIn stock · free delivery in Lusaka", "Jumia"), com.argus.assistant.phone.DockCalls())
         }
     }
 
     @Test fun magicHandTeachReview() = shot("51-magic-hand-teach-review") {
         FakeApp {
             val steps = listOf(
-                com.blaze.assistant.phone.MagicHandTeach.Step(com.blaze.assistant.phone.MagicHandTeach.Kind.OPEN_APP, "com.whatsapp", app = "WhatsApp"),
-                com.blaze.assistant.phone.MagicHandTeach.Step(com.blaze.assistant.phone.MagicHandTeach.Kind.TAP, "com.whatsapp", app = "WhatsApp", label = "Mum", viewId = "com.whatsapp:id/conversations_row_contact_name"),
-                com.blaze.assistant.phone.MagicHandTeach.Step(com.blaze.assistant.phone.MagicHandTeach.Kind.TYPE, "com.whatsapp", app = "WhatsApp", label = "Message", text = "On my way"),
-                com.blaze.assistant.phone.MagicHandTeach.Step(com.blaze.assistant.phone.MagicHandTeach.Kind.TAP, "com.whatsapp", app = "WhatsApp", label = "Send"),
-            ).map(com.blaze.assistant.phone.MagicHandTeach::line)
-            com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.review(
-                com.blaze.assistant.phone.MagicHandState.teach(handState()), steps, "Tell Mum I'm on my way"), com.blaze.assistant.phone.DockCalls())
+                com.argus.assistant.phone.MagicHandTeach.Step(com.argus.assistant.phone.MagicHandTeach.Kind.OPEN_APP, "com.whatsapp", app = "WhatsApp"),
+                com.argus.assistant.phone.MagicHandTeach.Step(com.argus.assistant.phone.MagicHandTeach.Kind.TAP, "com.whatsapp", app = "WhatsApp", label = "Mum", viewId = "com.whatsapp:id/conversations_row_contact_name"),
+                com.argus.assistant.phone.MagicHandTeach.Step(com.argus.assistant.phone.MagicHandTeach.Kind.TYPE, "com.whatsapp", app = "WhatsApp", label = "Message", text = "On my way"),
+                com.argus.assistant.phone.MagicHandTeach.Step(com.argus.assistant.phone.MagicHandTeach.Kind.TAP, "com.whatsapp", app = "WhatsApp", label = "Send"),
+            ).map(com.argus.assistant.phone.MagicHandTeach::line)
+            com.argus.assistant.phone.MagicHandDock(com.argus.assistant.phone.MagicHandState.review(
+                com.argus.assistant.phone.MagicHandState.teach(handState()), steps, "Tell Mum I'm on my way"), com.argus.assistant.phone.DockCalls())
         }
     }
 
@@ -724,10 +724,10 @@ open class ShotsTest {
     @Test fun magicHandTeachIntro() = shot("55-magic-hand-teach-intro") {
         FakeApp {
             Column {
-                com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.intro(handState(), firstTime = true), com.blaze.assistant.phone.DockCalls())
-                com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.teachSteps(
-                    com.blaze.assistant.phone.MagicHandState.teach(handState()), listOf("Open WhatsApp (package com.whatsapp)", "Tap \u201cMum\u201d")),
-                    com.blaze.assistant.phone.DockCalls())
+                com.argus.assistant.phone.MagicHandDock(com.argus.assistant.phone.MagicHandState.intro(handState(), firstTime = true), com.argus.assistant.phone.DockCalls())
+                com.argus.assistant.phone.MagicHandDock(com.argus.assistant.phone.MagicHandState.teachSteps(
+                    com.argus.assistant.phone.MagicHandState.teach(handState()), listOf("Open WhatsApp (package com.whatsapp)", "Tap \u201cMum\u201d")),
+                    com.argus.assistant.phone.DockCalls())
             }
         }
     }
@@ -735,13 +735,13 @@ open class ShotsTest {
     @Test fun magicHandWatches() = shot("52-magic-hand-watches", dark = true) {
         val now = 1_760_000_000_000L
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
-            com.blaze.assistant.phone.MagicHandWatchesPage(listOf(
-                com.blaze.assistant.phone.MagicHandWatch.Watch("1", "com.jumia.android", "Jumia", "Price", listOf(0, 3, 1), "", "", "K1,099", now - 86_400_000, now - 20 * 60_000, now - 20 * 60_000, "K1,299"),
-                com.blaze.assistant.phone.MagicHandWatch.Watch("2", "com.fotmob", "FotMob", "Score", listOf(0, 1), "", "", "2 - 1", now - 3_600_000, now - 3 * 3_600_000),
-                com.blaze.assistant.phone.MagicHandWatch.Watch("3", "com.dhl", "DHL", "Status", listOf(2), "", "", "Out for delivery", now - 60_000),
+            com.argus.assistant.phone.MagicHandWatchesPage(listOf(
+                com.argus.assistant.phone.MagicHandWatch.Watch("1", "com.jumia.android", "Jumia", "Price", listOf(0, 3, 1), "", "", "K1,099", now - 86_400_000, now - 20 * 60_000, now - 20 * 60_000, "K1,299"),
+                com.argus.assistant.phone.MagicHandWatch.Watch("2", "com.fotmob", "FotMob", "Score", listOf(0, 1), "", "", "2 - 1", now - 3_600_000, now - 3 * 3_600_000),
+                com.argus.assistant.phone.MagicHandWatch.Watch("3", "com.dhl", "DHL", "Status", listOf(2), "", "", "Out for delivery", now - 60_000),
             ), now = now)
             Spacer(Modifier.height(24.dp))
-            com.blaze.assistant.phone.MagicHandWatchesPage(emptyList(), now = now)
+            com.argus.assistant.phone.MagicHandWatchesPage(emptyList(), now = now)
         }
     }
     // v0.24.9 rich replies: step flow, a section picture beside its text, a 3-picture row, the tilted deck and a diagram.
@@ -793,22 +793,22 @@ open class ShotsTest {
     // v0.26.2: specialists handed out at once (cards with Steer / Stop, one already done) and the follow-up chips as one swipe row.
     @Test fun specialistsAndChipRow() = shot("60-specialists-chip-row") {
         val now = System.currentTimeMillis()
-        com.blaze.assistant.agent.BgAgents.preview(listOf(
-            com.blaze.assistant.agent.BgAgents.Bg("B3", "Galaxy A15 at Game", "brief", "main", "bg-1", status = com.blaze.assistant.agent.BgAgents.DONE,
+        com.argus.assistant.agent.BgAgents.preview(listOf(
+            com.argus.assistant.agent.BgAgents.Bg("B3", "Galaxy A15 at Game", "brief", "main", "bg-1", status = com.argus.assistant.agent.BgAgents.DONE,
                 created = now - 50_000, started = now - 48_000, ended = now - 9_000, steps = 5,
                 result = "K3,499 at Game Manda Hill, in stock, free delivery to Ndola in 3 days.", specialist = "shopper"),
-            com.blaze.assistant.agent.BgAgents.Bg("B4", "Galaxy A15 at Jumia", "brief", "main", "bg-2", status = com.blaze.assistant.agent.BgAgents.RUNNING,
+            com.argus.assistant.agent.BgAgents.Bg("B4", "Galaxy A15 at Jumia", "brief", "main", "bg-2", status = com.argus.assistant.agent.BgAgents.RUNNING,
                 created = now - 50_000, started = now - 47_000, steps = 3, last = "Reading the Jumia listing", specialist = "shopper"),
-            com.blaze.assistant.agent.BgAgents.Bg("B5", "Phone prices this year", "brief", "main", "bg-3", status = com.blaze.assistant.agent.BgAgents.QUEUED,
+            com.argus.assistant.agent.BgAgents.Bg("B5", "Phone prices this year", "brief", "main", "bg-3", status = com.argus.assistant.agent.BgAgents.QUEUED,
                 created = now - 49_000, specialist = "researcher"),
         ))
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Sending Shopper ×2 and Researcher to work on this at the same time. Results land here as each one finishes.",
-                style = TextStyle(fontSize = 15.sp, color = LocalBlaze.current.ink))
+                style = TextStyle(fontSize = 15.sp, color = LocalArgus.current.ink))
             AgentCard("B4")
             AgentCard("B5")
             AgentCard("B3")
-            Text("Game has it for K3,499 with free delivery to Ndola. Waiting on Jumia and the price check.", style = TextStyle(fontSize = 15.sp, color = LocalBlaze.current.ink))
+            Text("Game has it for K3,499 with free delivery to Ndola. Waiting on Jumia and the price check.", style = TextStyle(fontSize = 15.sp, color = LocalArgus.current.ink))
             FollowupRow(listOf("Which one is cheaper?", "Add delivery to the total", "Remind me on payday", "Compare the A25 too")) { }
         }
     }
@@ -817,9 +817,9 @@ open class ShotsTest {
     // The grab card the instant the finger lifts: shimmer lines, actions already usable (Copy queued).
     @Test fun magicHandGrabReading() = shot("65-magic-hand-grab-reading") {
         FakeApp {
-            val r = com.blaze.assistant.phone.MagicHandState.reading(handState(), "Jumia")
-            com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.tapGrab(r,
-                com.blaze.assistant.phone.MagicHandState.GrabAction.COPY).first, com.blaze.assistant.phone.DockCalls())
+            val r = com.argus.assistant.phone.MagicHandState.reading(handState(), "Jumia")
+            com.argus.assistant.phone.MagicHandDock(com.argus.assistant.phone.MagicHandState.tapGrab(r,
+                com.argus.assistant.phone.MagicHandState.GrabAction.COPY).first, com.argus.assistant.phone.DockCalls())
         }
     }
 
@@ -827,15 +827,15 @@ open class ShotsTest {
     @Test fun userBubbleMarkdown() = shot("66-user-bubble-markdown") {
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             UserBubble("## App\n1. **Offline mode**: works without data\n2. **Voice notes**: *quick* capture\n- Sync with `git`\n- See [the repo](https://gitlab.com/blazeinchue/Blaze-agent)")
-            BlazeReply(66, "## Plan\n1. **Offline mode** first: cache the last 50 chats.\n2. Then *voice notes*.", GroupPos.SINGLE)
+            ArgusReply(66, "## Plan\n1. **Offline mode** first: cache the last 50 chats.\n2. Then *voice notes*.", GroupPos.SINGLE)
         }
     }
 
     // The update card: retrying on a dropped connection, and the plain failure line (sentence case).
     @Test fun updateCard() = shot("67-update-card") {
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            UpdateCard(com.blaze.assistant.update.Updater.State.Downloading("0.28.1", 46, "Connection dropped, I'll keep trying in 8 s."))
-            UpdateCard(com.blaze.assistant.update.Updater.State.Failed("The connection kept dropping, so I stopped for now. What's downloaded is kept: tap Retry and I'll carry on from there."))
+            UpdateCard(com.argus.assistant.update.Updater.State.Downloading("0.28.1", 46, "Connection dropped, I'll keep trying in 8 s."))
+            UpdateCard(com.argus.assistant.update.Updater.State.Failed("The connection kept dropping, so I stopped for now. What's downloaded is kept: tap Retry and I'll carry on from there."))
         }
     }
 
@@ -843,11 +843,11 @@ open class ShotsTest {
     @Test fun imageStack() = shot("68-image-stack") {
         val pics = listOf(fakePicture(0), fakePicture(1), fakePicture(2))
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(22.dp)).background(LocalBlaze.current.ink).padding(4.dp)) {
+            Box(Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(22.dp)).background(LocalArgus.current.ink).padding(4.dp)) {
                 ImageStackFrame(pics, top = 0, progress = 0f, onTap = {}, onExpand = {})
             }
             UserBubble("Which of these three looks best for the poster?")
-            Box(Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(22.dp)).background(LocalBlaze.current.ink).padding(4.dp)) {
+            Box(Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(22.dp)).background(LocalArgus.current.ink).padding(4.dp)) {
                 ImageStackFrame(pics, top = 0, progress = -0.35f, onTap = {}, onExpand = {})
             }
         }
@@ -861,7 +861,7 @@ open class ShotsTest {
     private fun SentPictureThread() {
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SentBubble("What plant is this?", "", listOf("/sdcard/Pictures/plant.jpg"), emptyList(), GroupPos.SINGLE, bitmaps = listOf(fakePicture(1)))
-            BlazeReply(1L, "That looks like a **Monstera deliciosa**. Water it when the top few centimetres of soil are dry.")
+            ArgusReply(1L, "That looks like a **Monstera deliciosa**. Water it when the top few centimetres of soil are dry.")
             UserBubble("Thanks!")
         }
     }
@@ -874,14 +874,14 @@ open class ShotsTest {
     // The table card: bold title, divider, muted headers, wrapping cells, sticky first column, sideways scroll with fades.
     @Test fun tableCard() = shot("70-table-card") {
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            BlazeBubble(GroupPos.SINGLE) {
+            ArgusBubble(GroupPos.SINGLE) {
                 TableCardView(RichKit.TableCard("Airtel data bundles", listOf("Bundle", "Price", "Data", "Valid for", "Best for"), listOf(
                     listOf("Daily", "K5", "1 GB", "24 hours", "A quick top-up"),
                     listOf("Weekly", "K30", "5 GB", "7 days", "Light browsing and **WhatsApp**"),
                     listOf("Monthly", "K100", "25 GB", "30 days", "Streaming lectures and YouTube"),
                 )))
             }
-            BlazeBubble(GroupPos.SINGLE) {
+            ArgusBubble(GroupPos.SINGLE) {
                 TableCardView(RichKit.TableCard("Exam week", listOf("Day", "Course"), listOf(listOf("Mon", "CIT102 lab"), listOf("Wed", "NET103 quiz, room 4"))))
             }
         }
@@ -894,7 +894,7 @@ open class ShotsTest {
     @Test fun projectPageBack() = shot("71-project-page-back", dark = true) {
         Column(Modifier.fillMaxSize()) {
             ShellTopBar("projects", {}, {}, {}, true, {}, "Sam", {})
-            com.blaze.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p9", "New project", chats = listOf("pc1", "pc2"))), pcChats, busy = emptySet(), needsYou = emptySet(), openId = "p9",
+            com.argus.assistant.ui.space.SpaceProjectsScreen(listOf(Project("p9", "New project", chats = listOf("pc1", "pc2"))), pcChats, busy = emptySet(), needsYou = emptySet(), openId = "p9",
                 onOpen = {}, onBack = {}, onCreate = {}, onChat = {}, onNewChat = {}, onInstructions = { _, _ -> }, onDelete = {})
         }
     }
@@ -906,7 +906,7 @@ open class ShotsTest {
                 UserBubble("What's left before the beta?", pos = GroupPos.SINGLE)
                 MetaLine(Side.ME, "17:31", listOf("Copy" to {}, "Retry" to {}))
                 Spacer(Modifier.height(16.dp))
-                BlazeReply(81, "Five things:\n\n1. **Sign-in** on the test phone\n2. Store screenshots\n3. Privacy page\n4. Crash check\n5. Beta invite text", GroupPos.SINGLE)
+                ArgusReply(81, "Five things:\n\n1. **Sign-in** on the test phone\n2. Store screenshots\n3. Privacy page\n4. Crash check\n5. Beta invite text", GroupPos.SINGLE)
                 MetaLine(Side.BLAZE, "17:31", listOf("Copy" to {}, "Quote" to {}, "Retry" to {}))
             }
             Composer(TextFieldValue(""), {}, busy = false, canSend = false, plusOpen = false, chip = "", agents = 0,
@@ -924,8 +924,8 @@ open class ShotsTest {
     }
     // Main Chat after opening a project chat: still the one main thread (the Chat pill never shows a project chat).
     @Test fun mainChatUnchanged() = shot("74-main-chat-unchanged", dark = true) {
-        val nav = com.blaze.assistant.agent.ChatNav().openChat("p9", "pc2").switchTab(com.blaze.assistant.agent.ChatNav.CHAT)
-        check(nav.visibleChat == com.blaze.assistant.agent.Mind.MAIN)
+        val nav = com.argus.assistant.agent.ChatNav().openChat("p9", "pc2").switchTab(com.argus.assistant.agent.ChatNav.CHAT)
+        check(nav.visibleChat == com.argus.assistant.agent.Mind.MAIN)
         Chat(busy = false)
     }
     // Every page's back button: settings header, gallery-style header, search.
@@ -939,19 +939,19 @@ open class ShotsTest {
 
     // ---------- v0.28.4 blaze-docs ----------
     // "where is your source code": one docs lookup, the exact repo link, and the work card's real run time (2 s, not 97 min).
-    @Test fun blazeDocsRepo() = shot("76-blaze-docs-repo") {
+    @Test fun argusDocsRepo() = shot("76-blaze-docs-repo") {
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             UserBubble("where is your source code")
             WorkCard(listOf(ChatMessage(71, Role.STEP, "Looking it up in ${BrandName.NAME}'s docs", at = t0 + 1_000, startAt = t0)), live = false,
                 startAt = WorkTime.start(listOf(ChatMessage(71, Role.STEP, "x", at = t0 + 1_000, startAt = t0)), t0 - 97 * 60_000L),
                 endAt = t0 + 2_000, open0 = true)
-            BlazeReply(72, "My source code is on GitLab: [blazeinchue/Blaze-agent](https://gitlab.com/blazeinchue/Blaze-agent). " +
+            ArgusReply(72, "My source code is on GitLab: [blazeinchue/Blaze-agent](https://gitlab.com/blazeinchue/Blaze-agent). " +
                 "It's Kotlin with Jetpack Compose. Blaze Desktop is [Blaze-dekstop](https://gitlab.com/blazeinchue/Blaze-dekstop) and the CLI is " +
                 "[Blaze-cli](https://gitlab.com/blazeinchue/Blaze-cli).", GroupPos.SINGLE)
         }
     }
 
-    // ---------- v0.28.x Blaze Camera (fake preview: CameraX can't run in Robolectric) ----------
+    // ---------- v0.28.x Argus Camera (fake preview: CameraX can't run in Robolectric) ----------
     @Composable private fun FakePreview() {
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
             listOf(androidx.compose.ui.graphics.Color(0xFF3B4A5A), androidx.compose.ui.graphics.Color(0xFF8A7B63), androidx.compose.ui.graphics.Color(0xFF2E2A26))))) {
@@ -960,38 +960,38 @@ open class ShotsTest {
         }
     }
     // The mode bar (Ask selected), flash and flip shown.
-    @Test fun blazeCameraModes() = shot("80-blaze-camera-modes") {
-        CameraChrome(preview = { FakePreview() }, modes = com.blaze.assistant.device.CameraModes.bar,
-            mode = com.blaze.assistant.device.CameraModes.Mode.ASK, flash = "auto", canFlip = true, busy = false,
+    @Test fun argusCameraModes() = shot("80-blaze-camera-modes") {
+        CameraChrome(preview = { FakePreview() }, modes = com.argus.assistant.device.CameraModes.bar,
+            mode = com.argus.assistant.device.CameraModes.Mode.ASK, flash = "auto", canFlip = true, busy = false,
             onClose = {}, onFlash = {}, onFlip = {}, onShutter = {})
     }
     // Scan mode on a single-camera, no-flash phone: no shutter, no flip, no flash, the code frame.
-    @Test fun blazeCameraScan() = shot("81-blaze-camera-scan", dark = true) {
-        CameraChrome(preview = { FakePreview() }, modes = com.blaze.assistant.device.CameraModes.bar,
-            mode = com.blaze.assistant.device.CameraModes.Mode.SCAN, flash = null, canFlip = false, busy = false,
+    @Test fun argusCameraScan() = shot("81-blaze-camera-scan", dark = true) {
+        CameraChrome(preview = { FakePreview() }, modes = com.argus.assistant.device.CameraModes.bar,
+            mode = com.argus.assistant.device.CameraModes.Mode.SCAN, flash = null, canFlip = false, busy = false,
             onClose = {}, onFlash = {}, onFlip = {}, onShutter = {})
     }
     // + → Camera fallback when the phone's camera app can't be used: a plain camera, no mode bar.
-    @Test fun blazeCameraPlain() = shot("82-blaze-camera-plain") {
+    @Test fun argusCameraPlain() = shot("82-blaze-camera-plain") {
         CameraChrome(preview = { FakePreview() }, modes = emptyList(),
-            mode = com.blaze.assistant.device.CameraModes.Mode.PHOTO, flash = "off", canFlip = true, busy = false,
+            mode = com.argus.assistant.device.CameraModes.Mode.PHOTO, flash = "off", canFlip = true, busy = false,
             onClose = {}, onFlash = {}, onFlip = {}, onShutter = {})
     }
 
     // v0.30.x Camera Pro: the half-circle zoom dial open at 3.4x past a 4x lens (digital stretch tinted), grid on,
     // 3 s timer, and the focus ring with its exposure slider at +0.7 EV.
-    @Test fun blazeCameraProDial() = shot("84-blaze-camera-pro-dial", dark = true) {
-        CameraChrome(preview = { FakePreview() }, modes = com.blaze.assistant.device.CameraModes.bar,
-            mode = com.blaze.assistant.device.CameraModes.Mode.PHOTO, flash = "auto", canFlip = true, busy = false,
+    @Test fun argusCameraProDial() = shot("84-blaze-camera-pro-dial", dark = true) {
+        CameraChrome(preview = { FakePreview() }, modes = com.argus.assistant.device.CameraModes.bar,
+            mode = com.argus.assistant.device.CameraModes.Mode.PHOTO, flash = "auto", canFlip = true, busy = false,
             onClose = {}, onFlash = {}, onFlip = {}, onShutter = {},
             pro = CameraProState(zoom = 6.3f, minZoom = 1f, maxZoom = 10f, hwMax = 4f, presets = listOf(1f, 2f, 5f, 10f), dialOpen = true,
                 grid = true, timer = 3, focus = androidx.compose.ui.geometry.Offset(250f, 560f), focusOk = true,
                 evIndex = 4, evLower = -12, evUpper = 12, evStep = 1f / 6f))
     }
     // Zoom presets with an ultrawide (0.5 · 1x · 2 · 5 · 10), the 2 pill lit showing the live 3.4x, timer countdown.
-    @Test fun blazeCameraProPresets() = shot("85-blaze-camera-pro-presets") {
+    @Test fun argusCameraProPresets() = shot("85-blaze-camera-pro-presets") {
         CameraChrome(preview = { FakePreview() }, modes = emptyList(),
-            mode = com.blaze.assistant.device.CameraModes.Mode.PHOTO, flash = "off", canFlip = true, busy = false,
+            mode = com.argus.assistant.device.CameraModes.Mode.PHOTO, flash = "off", canFlip = true, busy = false,
             onClose = {}, onFlash = {}, onFlip = {}, onShutter = {},
             pro = CameraProState(zoom = 3.4f, minZoom = 0.5f, maxZoom = 10f, hwMax = 8f, presets = listOf(0.5f, 1f, 2f, 5f, 10f),
                 timer = 10, countdown = 7))
@@ -1001,19 +1001,19 @@ open class ShotsTest {
     @Test fun homeGlassSky() = shot("83-home-glass-sky", dark = true) {
         val now = System.currentTimeMillis()
         val ws = listOf(
-            com.blaze.assistant.home.Widget("w", com.blaze.assistant.home.WidgetTypes.WEATHER, "Weather", "Weather", order = 0),
-            com.blaze.assistant.home.Widget("n", com.blaze.assistant.home.WidgetTypes.NEWS, "AI news", "AI", order = 1),
+            com.argus.assistant.home.Widget("w", com.argus.assistant.home.WidgetTypes.WEATHER, "Weather", "Weather", order = 0),
+            com.argus.assistant.home.Widget("n", com.argus.assistant.home.WidgetTypes.NEWS, "AI news", "AI", order = 1),
         )
         val data = mapOf(
-            "w" to com.blaze.assistant.home.WidgetData(headline = "Ndola", value = "71°F", change = "Clear · feels 68°", fetched = now,
-                lines = listOf(com.blaze.assistant.home.WidgetLine("Today", "Cloudy", note = "89° / 66°"), com.blaze.assistant.home.WidgetLine("Fri", "Cloudy", note = "88° / 65°"))),
-            "n" to com.blaze.assistant.home.WidgetData(fetched = now, lines = listOf(
-                com.blaze.assistant.home.WidgetLine("Dependence on AI makes human brains less nimble, MIT professor says", "Fox News · 1 h ago"),
-                com.blaze.assistant.home.WidgetLine("Chipmaker sell-off sends investors to other stocks", "CNN · 9 h ago"))),
+            "w" to com.argus.assistant.home.WidgetData(headline = "Ndola", value = "71°F", change = "Clear · feels 68°", fetched = now,
+                lines = listOf(com.argus.assistant.home.WidgetLine("Today", "Cloudy", note = "89° / 66°"), com.argus.assistant.home.WidgetLine("Fri", "Cloudy", note = "88° / 65°"))),
+            "n" to com.argus.assistant.home.WidgetData(fetched = now, lines = listOf(
+                com.argus.assistant.home.WidgetLine("Dependence on AI makes human brains less nimble, MIT professor says", "Fox News · 1 h ago"),
+                com.argus.assistant.home.WidgetLine("Chipmaker sell-off sends investors to other stocks", "CNN · 9 h ago"))),
         )
-        CompositionLocalProvider(LocalBlaze provides LightColors, LocalGlass provides HomeGlass.light) {
+        CompositionLocalProvider(LocalArgus provides LightColors, LocalGlass provides HomeGlass.light) {
             Box(Modifier.fillMaxSize().drawBehind { drawSky() }) {
-                HomeBoardView(com.blaze.assistant.home.Stacks.build(ws), data, emptySet(), false, now, com.blaze.assistant.home.StackState(),
+                HomeBoardView(com.argus.assistant.home.Stacks.build(ws), data, emptySet(), false, now, com.argus.assistant.home.StackState(),
                     stamp = "Updated 1 min ago", onToggle = {}, onMenu = {}, onLine = { _, _ -> }, onOpen = { _, _ -> }, onAction = { _, _ -> },
                     onVisible = {}, onReorder = {}, onMove = { _, _ -> }, onRemove = {}, onCustomise = {}, onCreate = {})
             }
@@ -1023,45 +1023,45 @@ open class ShotsTest {
 
     /** Wave A 1 (items 4 + 26): video player with the thin scrub bar and no swipe-seek hint, plus the Music seek bar. */
     @Test fun waveA1PlayerScrub() = shot("90-wa1-player-scrub", dark = true) {
-        val c = LocalBlaze.current
+        val c = LocalArgus.current
         androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(androidx.compose.ui.graphics.Color(0xFF1B2733))) {
                 Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.35f)))
                 androidx.compose.foundation.layout.Column(Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 10.dp)) {
-                    com.blaze.assistant.mediaapps.MText("18:50 / 38:48", 12.sp, androidx.compose.ui.graphics.Color.White, modifier = Modifier.padding(start = 6.dp))
-                    com.blaze.assistant.mediaapps.ScrubBar(0.485f, {}, {}, active = com.blaze.assistant.ui.BlazeBrush.blue,
+                    com.argus.assistant.mediaapps.MText("18:50 / 38:48", 12.sp, androidx.compose.ui.graphics.Color.White, modifier = Modifier.padding(start = 6.dp))
+                    com.argus.assistant.mediaapps.ScrubBar(0.485f, {}, {}, active = com.argus.assistant.ui.ArgusBrush.blue,
                         rest = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.3f), knob = androidx.compose.ui.graphics.Color.White)
                 }
             }
             androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) {
-                com.blaze.assistant.mediaapps.MText("\$215M AI CEO: How I'd Build a Profitable AI Startup in 30 Days (2026 Playbook)", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold, maxLines = 3)
-                com.blaze.assistant.mediaapps.MText("Silicon Valley Girl \u00b7 YouTube", 13.sp, c.sub)
+                com.argus.assistant.mediaapps.MText("\$215M AI CEO: How I'd Build a Profitable AI Startup in 30 Days (2026 Playbook)", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold, maxLines = 3)
+                com.argus.assistant.mediaapps.MText("Silicon Valley Girl \u00b7 YouTube", 13.sp, c.sub)
                 androidx.compose.foundation.layout.Spacer(Modifier.height(32.dp))
-                com.blaze.assistant.mediaapps.MText("Music seek bar", 13.sp, c.sub)
-                com.blaze.assistant.mediaapps.ScrubBar(0.3f, {}, {}, active = c.ink, rest = c.hair, knob = c.ink)
+                com.argus.assistant.mediaapps.MText("Music seek bar", 13.sp, c.sub)
+                com.argus.assistant.mediaapps.ScrubBar(0.3f, {}, {}, active = c.ink, rest = c.hair, knob = c.ink)
             }
         }
     }
 
     /** Wave A 2 (items 27-28): the Store's two chip rows, "All" selected in both, and the For you header. */
     @Test fun waveA2ForYouChips() = shot("91-wa2-for-you-chips", dark = true) {
-        val c = LocalBlaze.current
+        val c = LocalArgus.current
         @Composable fun chips(labels: List<String>, on: Int, accent: Boolean) = androidx.compose.foundation.layout.Row(
             Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(vertical = 4.dp),
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
             labels.forEachIndexed { i, l ->
                 val sel = i == on
-                Box(Modifier.clip(com.blaze.assistant.ui.BlazeShapes.pill).background(if (sel) (if (accent) c.accent.copy(alpha = 0.22f) else c.ink) else c.faint)
+                Box(Modifier.clip(com.argus.assistant.ui.ArgusShapes.pill).background(if (sel) (if (accent) c.accent.copy(alpha = 0.22f) else c.ink) else c.faint)
                     .padding(horizontal = 12.dp, vertical = 7.dp)) {
-                    com.blaze.assistant.mediaapps.MText(l, 12.5.sp, if (sel) (if (accent) c.ink else c.paper) else c.sub, androidx.compose.ui.text.font.FontWeight.Medium)
+                    com.argus.assistant.mediaapps.MText(l, 12.5.sp, if (sel) (if (accent) c.ink else c.paper) else c.sub, androidx.compose.ui.text.font.FontWeight.Medium)
                 }
             }
         }
         androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().padding(14.dp)) {
             chips(listOf("All", "YouTube", "Public-domain films", "Blender open movies"), 0, false)
-            com.blaze.assistant.ui.BlazeTextField("", {}, "Search videos", Modifier.fillMaxWidth())
+            com.argus.assistant.ui.ArgusTextField("", {}, "Search videos", Modifier.fillMaxWidth())
             chips(listOf("All", "Tobs Manhwa", "His Story", "Silicon Valley Girl", "Tech reviews"), 0, true)
-            com.blaze.assistant.mediaapps.MText("For you", 15.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
+            com.argus.assistant.mediaapps.MText("For you", 15.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
             androidx.compose.foundation.layout.Spacer(Modifier.height(24.dp))
             chips(listOf("All", "Amapiano", "Afrobeats", "Gospel", "Hip hop", "R&B"), 0, true)
         }
@@ -1069,35 +1069,35 @@ open class ShotsTest {
 
     /** Wave A 3 (item 25): the Subtitles and audio menu (Translate to, readable audio name) and the Translate to list. */
     @Test fun waveA3Captions() = shot("92-wa3-captions", dark = true) {
-        val c = LocalBlaze.current
+        val c = LocalArgus.current
         @Composable fun row(t: String, on: Boolean = false) = androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth()
-            .clip(com.blaze.assistant.ui.BlazeShapes.small).background(if (on) c.accent.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent)
+            .clip(com.argus.assistant.ui.ArgusShapes.small).background(if (on) c.accent.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent)
             .padding(horizontal = 10.dp, vertical = 11.dp)) {
-            com.blaze.assistant.mediaapps.MText(t, 14.5.sp, c.ink, if (on) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal, modifier = Modifier.weight(1f))
-            if (on) com.blaze.assistant.mediaapps.MText("\u2713", 14.sp, c.accent)
+            com.argus.assistant.mediaapps.MText(t, 14.5.sp, c.ink, if (on) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal, modifier = Modifier.weight(1f))
+            if (on) com.argus.assistant.mediaapps.MText("\u2713", 14.sp, c.accent)
         }
         androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().padding(18.dp)) {
-            com.blaze.assistant.mediaapps.MText("Subtitles and audio", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
-            com.blaze.assistant.mediaapps.MText("Subtitles", 12.sp, c.sub)
+            com.argus.assistant.mediaapps.MText("Subtitles and audio", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
+            com.argus.assistant.mediaapps.MText("Subtitles", 12.sp, c.sub)
             row("Off"); row("English (auto-generated)"); row("Swahili (translated)", true); row("Translate to\u2026"); row("Load a subtitle file (.srt, .vtt)\u2026")
-            com.blaze.assistant.mediaapps.MText("Audio", 12.sp, c.sub)
-            row(com.blaze.assistant.mediaapps.Subs.audioName(null, "und", 0, 1), true)
+            com.argus.assistant.mediaapps.MText("Audio", 12.sp, c.sub)
+            row(com.argus.assistant.mediaapps.Subs.audioName(null, "und", 0, 1), true)
             androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp))
-            com.blaze.assistant.mediaapps.MText("Translate subtitles to", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
-            com.blaze.assistant.mediaapps.Subs.translateTo.take(6).forEach { (k, n) -> row(n, k == "sw") }
+            com.argus.assistant.mediaapps.MText("Translate subtitles to", 18.sp, c.ink, androidx.compose.ui.text.font.FontWeight.SemiBold)
+            com.argus.assistant.mediaapps.Subs.translateTo.take(6).forEach { (k, n) -> row(n, k == "sw") }
         }
     }
 
     /** Wave A 4 (item 17): skeleton cards while a live search loads (video 16:9 and music squares). */
     @Test fun waveA4Skeletons() = shot("93-wa4-skeletons", dark = true) {
         androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().padding(14.dp)) {
-            com.blaze.assistant.ui.BlazeTextField("ptogrammers liv", {}, "Search videos", Modifier.fillMaxWidth())
+            com.argus.assistant.ui.ArgusTextField("ptogrammers liv", {}, "Search videos", Modifier.fillMaxWidth())
             androidx.compose.foundation.layout.Spacer(Modifier.height(12.dp))
             for (r in 0 until 2) androidx.compose.foundation.layout.Row(Modifier.padding(bottom = 14.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
-                for (k in 0 until 2) Box(Modifier.weight(1f)) { com.blaze.assistant.mediaapps.SkeletonTile(false) }
+                for (k in 0 until 2) Box(Modifier.weight(1f)) { com.argus.assistant.mediaapps.SkeletonTile(false) }
             }
             androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
-                for (k in 0 until 3) Box(Modifier.weight(1f)) { com.blaze.assistant.mediaapps.SkeletonTile(true) }
+                for (k in 0 until 3) Box(Modifier.weight(1f)) { com.argus.assistant.mediaapps.SkeletonTile(true) }
             }
         }
     }
@@ -1105,10 +1105,10 @@ open class ShotsTest {
     /** Wave B 3 (item 20): press-and-hold multi-select: "N selected" bar and picked rows, at a 360 dp width. */
     @Test fun waveB3MultiSelect() = shot("94-wb3-multiselect", dark = true) {
         Column(Modifier.size(width = 360.dp, height = 640.dp).padding(14.dp)) {
-            com.blaze.assistant.mediaapps.SelectionBar("12 selected", false, {}, {}, {}, {}, {}, onAddToPlaylist = {})
+            com.argus.assistant.mediaapps.SelectionBar("12 selected", false, {}, {}, {}, {}, {}, onAddToPlaylist = {})
             Spacer(Modifier.height(8.dp))
             listOf("Midnight City" to true, "Nightcall" to false, "Strobe" to true).forEachIndexed { i, (n, on) ->
-                com.blaze.assistant.mediaapps.TrackRow(com.blaze.assistant.mediaapps.Track("k$i", "content://m/$i", n, "Artist $i", durationMs = 200_000L + i * 1000),
+                com.argus.assistant.mediaapps.TrackRow(com.argus.assistant.mediaapps.Track("k$i", "content://m/$i", n, "Artist $i", durationMs = 200_000L + i * 1000),
                     false, onClick = {}, onLongClick = {}, selected = on)
             }
         }

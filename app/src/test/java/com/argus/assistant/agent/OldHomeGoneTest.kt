@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -55,7 +55,7 @@ class OldHomeGoneTest {
         // ChatScreen draws the old Home (homePane / SpaceHomeLayer) only for pane "home", i.e. navShown.tab == HOME,
         // and builds its nav only from rootTab / decode / switchTab. No ChatNav(HOME) or copy(tab = HOME) anywhere in main.
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val chat = File(root, "com/argus/assistant/ui/ChatScreen.kt").readText()
         // ARGUS-only (16 Nov 2026): the old Home pane itself is gone, so no tab can draw it
         assertFalse("navShown.tab == ChatNav.HOME -> \"home\"" in chat || "homePane" in chat || "SpaceHomeLayer(" in chat)
         assertTrue("ARGUS-only: the shell starts on Team", "ChatNav(tab = ChatNav.TEAM)" in chat)

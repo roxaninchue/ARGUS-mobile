@@ -1,4 +1,4 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,8 +10,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.R
+import com.argus.assistant.agent.Settings
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File

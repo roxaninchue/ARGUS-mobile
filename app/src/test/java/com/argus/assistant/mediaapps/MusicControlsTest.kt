@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import androidx.media3.common.Player
 import org.junit.Assert.assertEquals

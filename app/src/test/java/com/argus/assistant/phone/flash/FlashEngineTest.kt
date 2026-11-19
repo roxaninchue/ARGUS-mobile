@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone.flash
+package com.argus.assistant.phone.flash
 
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

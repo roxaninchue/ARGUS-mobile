@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -6,7 +6,7 @@ import org.json.JSONTokener
 /**
  * v0.26.3 offline diagrams, the pure part (DiagramRenderTest). Mermaid is drawn on the phone by the bundled
  * mermaid.js (assets/diagram/mermaid.min.js) in an offscreen WebView ([DiagramRenderer]); the diagram's text never
- * leaves the phone. This object decides the order of renderers, the cache key, the look (Blaze's colours, light and
+ * leaves the phone. This object decides the order of renderers, the cache key, the look (Argus's colours, light and
  * dark) and writes the small HTML page that does the drawing, with the diagram text embedded as an escaped JS string
  * so it can never become markup or script.
  *
@@ -46,7 +46,7 @@ object DiagramRender {
         return java.security.MessageDigest.getInstance("SHA-256").digest(s.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
     }
 
-    /** Blaze's colours for a diagram (Theme.kt: paper / ink / accent), as CSS hex. */
+    /** Argus's colours for a diagram (Theme.kt: paper / ink / accent), as CSS hex. */
     data class Look(val dark: Boolean, val bg: String, val ink: String, val sub: String, val node: String, val border: String,
                     val line: String, val cluster: String, val note: String)
 
@@ -82,7 +82,7 @@ object DiagramRender {
         return (1..24).map { a[r.nextInt(a.length)] }.joinToString("")
     }
 
-    /** mermaid.initialize options: strict security (no clicks, no HTML in labels), Blaze's colours, SVG text labels. */
+    /** mermaid.initialize options: strict security (no clicks, no HTML in labels), Argus's colours, SVG text labels. */
     fun config(l: Look): String = JSONObject()
         .put("startOnLoad", false).put("securityLevel", "strict").put("theme", "base").put("htmlLabels", true)
         .put("fontFamily", "sans-serif").put("deterministicIds", true).put("maxTextSize", MAX_CODE)
@@ -103,7 +103,7 @@ object DiagramRender {
             .also { tv -> scale(l).forEachIndexed { i, c -> tv.put("cScale$i", c).put("cScaleLabel$i", l.ink).put("cScalePeer$i", l.border).put("git$i", c).put("gitBranchLabel$i", l.ink) } })
         .toString()
 
-    /** Section colours (mindmap branches, timeline sections, git branches): Blaze blues and greys that keep the label readable. */
+    /** Section colours (mindmap branches, timeline sections, git branches): Argus blues and greys that keep the label readable. */
     fun scale(l: Look): List<String> = if (l.dark)
         listOf("#2E3F7A", "#3A3A44", "#26407F", "#44444E", "#35477F", "#30303A", "#2B3B6E", "#4A4A55", "#3C4F8C", "#383842", "#22356B", "#42424C")
     else

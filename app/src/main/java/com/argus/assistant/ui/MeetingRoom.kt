@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.readableWidth
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.readableWidth
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,13 +31,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Duo
-import com.blaze.assistant.agent.Role
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Duo
+import com.argus.assistant.agent.Role
 
 /*
- * v0.32.0 the Meeting room. When Blaze and Halo take on a task they work it out here first: proposals, critiques, code,
+ * v0.32.0 the Meeting room. When Argus and Halo take on a task they work it out here first: proposals, critiques, code,
  * which tools they're using (and the searches they run), until they both agree. The verdict lands in the main chat.
  * You can read along and drop in at any time; when they need you, they ask in the main chat and the room waits.
  */
@@ -53,7 +53,7 @@ private fun roomHead(meta: String): String = when (Duo.cardState(meta)) {
 /** The room's card in the main chat: what they're working on, who's talking, how far along, and Open. */
 @Composable
 fun RoomCard(m: ChatMessage) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val rooms by Agent.rooms.collectAsState()
     val status by Agent.status.collectAsState()
     val list = rooms[m.id].orEmpty()
@@ -95,7 +95,7 @@ fun RoomCard(m: ChatMessage) {
 private fun DuoMark() {
     Canvas(Modifier.size(width = 20.dp, height = 10.dp)) {
         val r = size.height / 2f
-        drawCircle(DuoColors.blazeBlue, radius = r * 0.8f, center = androidx.compose.ui.geometry.Offset(r, r))
+        drawCircle(DuoColors.argusBlue, radius = r * 0.8f, center = androidx.compose.ui.geometry.Offset(r, r))
         drawCircle(DuoColors.haloGold, radius = r * 0.8f, center = androidx.compose.ui.geometry.Offset(size.width - r, r), style = Stroke(1.4.dp.toPx()))
     }
 }
@@ -103,7 +103,7 @@ private fun DuoMark() {
 /** The full-screen room: the transcript (with tool steps), and a box to drop in. */
 @Composable
 fun MeetingRoomScreen(roomId: Long, onDismiss: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val rooms by Agent.rooms.collectAsState()
     val messages by Agent.messages.collectAsState()
     val duoLive by Agent.duoLive.collectAsState()
@@ -151,7 +151,7 @@ fun MeetingRoomScreen(roomId: Long, onDismiss: () -> Unit) {
 
 @Composable
 private fun RoomEntry(m: ChatMessage, live: Boolean) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     when (m.role) {
         Role.USER -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
             Label(tr("YOU"), size = 9.sp, modifier = Modifier.padding(end = 4.dp, bottom = 2.dp))
@@ -171,7 +171,7 @@ private fun RoomEntry(m: ChatMessage, live: Boolean) {
             val who = Duo.Who.of(m.speaker)
             Column(Modifier.fillMaxWidth()) {
                 SpeakerName(who)
-                CompositionLocalProvider(LocalSpeaker provides who) { BlazeReply(m.id, m.text, GroupPos.SINGLE, live = live) }
+                CompositionLocalProvider(LocalSpeaker provides who) { ArgusReply(m.id, m.text, GroupPos.SINGLE, live = live) }
             }
         }
     }
@@ -180,7 +180,7 @@ private fun RoomEntry(m: ChatMessage, live: Boolean) {
 /** Drop in (live or waiting), or the closed state. A message here goes to the chat and straight into the room. */
 @Composable
 private fun RoomFooter(state: String, meta: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     if (state == Duo.DONE || state == Duo.STOPPED) {
         Text(roomHead(meta) + if (state == Duo.DONE) ". The verdict is in the chat." else ". Mention @all to start a new one.",
             modifier = Modifier.fillMaxWidth().padding(16.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.5.sp, color = c.sub))

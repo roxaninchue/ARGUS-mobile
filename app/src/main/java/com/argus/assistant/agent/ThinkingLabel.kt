@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.26.1: the chat no longer shows the model's raw reasoning. While a reasoning model thinks, a calm

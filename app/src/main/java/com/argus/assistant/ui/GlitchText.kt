@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import com.blaze.assistant.agent.GlitchSpans
+import com.argus.assistant.agent.GlitchSpans
 
 /**
  * fix/chat-flat-ui (owner, 14 Nov 2026): text whose [spans] are drawn glitched: a red / cyan colour split, thin

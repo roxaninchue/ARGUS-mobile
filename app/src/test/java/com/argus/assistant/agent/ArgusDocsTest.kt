@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.store.BlazeDb
-import com.blaze.assistant.store.JdbcSql
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.BrandName
+import com.argus.assistant.store.ArgusDb
+import com.argus.assistant.store.JdbcSql
+import com.argus.assistant.store.Sql
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -19,16 +19,16 @@ import java.io.File
  * blaze.db next to the memories, bm25 search ("repo" → the exact URL), the tool reference, no secrets in what ships,
  * and the GitHub near-miss fix from Blazeinchue's screenshot.
  */
-class BlazeDocsTest {
+class ArgusDocsTest {
     private val sqls = ArrayList<Sql>()
 
-    @After fun tearDown() { BlazeDocs.use(null); sqls.forEach { try { it.close() } catch (_: Exception) { } } }
+    @After fun tearDown() { ArgusDocs.use(null); sqls.forEach { try { it.close() } catch (_: Exception) { } } }
 
     private fun sql(): JdbcSql = JdbcSql().also { sqls += it }
 
-    private fun store(s: Sql = sql()): BlazeDocs.Store {
+    private fun store(s: Sql = sql()): ArgusDocs.Store {
         val meta = HashMap<String, String>()
-        return BlazeDocs.Store(s, { meta[it].orEmpty() }, { k, v -> meta[k] = v })
+        return ArgusDocs.Store(s, { meta[it].orEmpty() }, { k, v -> meta[k] = v })
     }
 
     private fun first(vararg paths: String): File? = paths.map { File(it) }.firstOrNull { it.isFile }
@@ -50,7 +50,7 @@ class BlazeDocsTest {
 
     private fun tool(name: String, desc: String) = JSONObject().put("type", "function").put("function", JSONObject().put("name", name).put("description", desc))
     private fun sampleTools() = JSONArray().apply {
-        BlazeDocs.tools().forEach { put(it) }
+        ArgusDocs.tools().forEach { put(it) }
         put(tool("web_search", "Search the web for anything. Returns results with links."))
         put(tool("browser_open", "Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background. No screen control needed."))
         put(tool("memory_search", "Search what you know about the user."))
@@ -61,9 +61,9 @@ class BlazeDocsTest {
     @Test fun chunksFollowHeadingsAndSizes() {
         val big = (1..400).joinToString(" ") { "Sentence number $it explains one more detail about installing ${BrandName.NAME} on a phone." }
         val md = "# Guide\nIntro line.\n\n## Install\n$big\n\n## Tiny one\nShort.\n\n## Tiny two\nAlso short.\n\n```\n# not a heading\n```\n\n### Deep\nDeep text."
-        val cs = BlazeDocs.chunk("guide", md, "9.9.9")
+        val cs = ArgusDocs.chunk("guide", md, "9.9.9")
         assertTrue(cs.size >= 4)
-        cs.forEach { assertTrue("${it.id} has ${BlazeDocs.tokens(it.text)} tokens", BlazeDocs.tokens(it.text) <= BlazeDocs.MAX_TOKENS) }
+        cs.forEach { assertTrue("${it.id} has ${ArgusDocs.tokens(it.text)} tokens", ArgusDocs.tokens(it.text) <= ArgusDocs.MAX_TOKENS) }
         assertEquals((1..cs.size).map { "guide#$it" }, cs.map { it.id })
         assertTrue(cs.all { it.doc == "guide" && it.version == "9.9.9" })
         // The long section is split, every part names its heading and section path.
@@ -80,13 +80,13 @@ class BlazeDocsTest {
     @Test fun realDocsChunkWithinBudget() {
         val files = docFiles()
         assertTrue("docs found", files.any { it.first == "about.md" })
-        val cs = BlazeDocs.chunksOf(files, "test", sampleTools())
+        val cs = ArgusDocs.chunksOf(files, "test", sampleTools())
         assertTrue(cs.size > 20)
         assertEquals(cs.size, cs.map { it.id }.toSet().size)
-        cs.forEach { assertTrue("${it.id}: ${BlazeDocs.tokens(it.text)} tokens", BlazeDocs.tokens(it.text) <= BlazeDocs.MAX_TOKENS) }
+        cs.forEach { assertTrue("${it.id}: ${ArgusDocs.tokens(it.text)} tokens", ArgusDocs.tokens(it.text) <= ArgusDocs.MAX_TOKENS) }
         // Most chunks are real sections, not crumbs (only a doc's last piece may be small).
         val docs = cs.groupBy { it.doc }
-        val crumbs = docs.values.sumOf { l -> l.dropLast(1).count { BlazeDocs.tokens(it.text) < BlazeDocs.MIN_TOKENS / 3 } }
+        val crumbs = docs.values.sumOf { l -> l.dropLast(1).count { ArgusDocs.tokens(it.text) < ArgusDocs.MIN_TOKENS / 3 } }
         assertTrue("crumbs: $crumbs", crumbs <= cs.size / 5)
     }
 
@@ -94,46 +94,46 @@ class BlazeDocsTest {
 
     @Test fun reindexIsIdempotentAndLeavesMemoriesAlone() {
         val s = sql()
-        val blaze = BlazeDb(s); val mind = MindStore(blaze, s)
+        val argus = ArgusDb(s); val mind = MindStore(argus, s)
         mind.save("profile", "You", "Lives in Ndola and studies computer science")
-        val st = BlazeDocs.Store(s, { blaze.meta(it) }, { k, v -> blaze.setMeta(k, v) })
+        val st = ArgusDocs.Store(s, { blaze.meta(it) }, { k, v -> blaze.setMeta(k, v) })
         val files = docFiles(); val tools = sampleTools()
-        assertTrue(BlazeDocs.ensure(st, "h1", "0.0.1", { files }, tools))
+        assertTrue(ArgusDocs.ensure(st, "h1", "0.0.1", { files }, tools))
         val n = st.count(); val ids = st.ids("about")
         assertTrue(n > 20)
         // Same build: nothing happens. Replace again by hand: the same rows, no duplicates.
-        assertFalse(BlazeDocs.ensure(st, "h1", "0.0.1", { error("must not read the docs again") }, tools))
-        st.replace(st.signature(), BlazeDocs.chunksOf(files, "0.0.1", tools))
+        assertFalse(ArgusDocs.ensure(st, "h1", "0.0.1", { error("must not read the docs again") }, tools))
+        st.replace(st.signature(), ArgusDocs.chunksOf(files, "0.0.1", tools))
         assertEquals(n, st.count()); assertEquals(ids, st.ids("about"))
         assertEquals(n, s.query("SELECT count(*) FROM blaze_docs_fts") { it.long(0).toInt() }.first())
         // A new build (or another tool list) replaces everything.
-        assertTrue(BlazeDocs.ensure(st, "h2", "0.0.2", { listOf("about.md" to "# About\nOnly this.") }, null))
+        assertTrue(ArgusDocs.ensure(st, "h2", "0.0.2", { listOf("about.md" to "# About\nOnly this.") }, null))
         assertEquals(1, st.count())
         assertEquals("0.0.2", st.read("about#1")!!.version)
-        assertTrue(BlazeDocs.ensure(st, "h2", "0.0.2", { listOf("about.md" to "# About\nOnly this.") }, sampleTools()))
+        assertTrue(ArgusDocs.ensure(st, "h2", "0.0.2", { listOf("about.md" to "# About\nOnly this.") }, sampleTools()))
         assertTrue(st.count() > 1)
         // Shared schema untouched: v1, memories still there, the signature in meta under a prefixed key.
         assertEquals(1, blaze.version())
         assertEquals(1, mind.all().size)
-        assertTrue(blaze.meta(BlazeDocs.META_SIG).startsWith("0.0.2:h2:"))
+        assertTrue(blaze.meta(ArgusDocs.META_SIG).startsWith("0.0.2:h2:"))
         for (t in listOf("blaze_docs", "blaze_docs_fts")) assertEquals(1L, s.query("SELECT count(*) FROM sqlite_master WHERE name=?", t) { it.long(0) }.first())
         // Opening again (next launch) keeps the rows.
-        assertEquals(st.count(), BlazeDocs.Store(s, { blaze.meta(it) }, { k, v -> blaze.setMeta(k, v) }).count())
+        assertEquals(st.count(), ArgusDocs.Store(s, { blaze.meta(it) }, { k, v -> blaze.setMeta(k, v) }).count())
     }
 
     // ---------------- search ----------------
 
     @Test fun repoQuestionsFindTheExactUrl() {
         val st = store()
-        BlazeDocs.ensure(st, "h", "test", { docFiles() }, sampleTools())
-        BlazeDocs.use(st)
+        ArgusDocs.ensure(st, "h", "test", { docFiles() }, sampleTools())
+        ArgusDocs.use(st)
         for (q in listOf("where is your repo", "take me to blaze-agent repo in github", "where is your source code")) {
             val hits = st.search(q, 5)
             assertTrue(q, hits.isNotEmpty())
             assertTrue("$q → ${hits.first().id}", hits.first().id.startsWith("about#"))
-            assertTrue(q, st.read(hits.first().id)!!.text.contains(BlazeDocs.REPO_URL))
-            val out = BlazeDocs.search(JSONObject().put("query", q))
-            assertTrue(out, out.contains(BlazeDocs.REPO_URL))
+            assertTrue(q, st.read(hits.first().id)!!.text.contains(ArgusDocs.REPO_URL))
+            val out = ArgusDocs.search(JSONObject().put("query", q))
+            assertTrue(out, out.contains(ArgusDocs.REPO_URL))
             assertTrue(out, out.contains("https://gitlab.com/blazeinchue/Blaze-dekstop"))
             assertFalse(out, out.contains("github.com/Blazeinchue/"))
         }
@@ -142,27 +142,27 @@ class BlazeDocsTest {
         assertTrue(st.search("how do I update blaze", 3).any { st.read(it.id)!!.text.contains("/update") })
         assertTrue(st.search("what language is blaze written in", 3).any { st.read(it.id)!!.text.contains("Kotlin") })
         assertTrue(st.search("which tool searches blaze docs", 5).any { it.doc == "tools" })
-        assertTrue(BlazeDocs.read(JSONObject().put("id", "nope#1")).startsWith("No docs section"))
-        assertTrue(BlazeDocs.read(JSONObject().put("id", "about#1")).startsWith("[about#1]"))
+        assertTrue(ArgusDocs.read(JSONObject().put("id", "nope#1")).startsWith("No docs section"))
+        assertTrue(ArgusDocs.read(JSONObject().put("id", "about#1")).startsWith("[about#1]"))
     }
 
     @Test fun versionQuestionsFindTheChangelog() {
         val dir = System.getProperty("blaze.docs.dir")?.let { File(it) }?.takeIf { File(it, "changelog/v0.28.1.md").isFile } ?: return
         val st = store()
-        BlazeDocs.ensure(st, "h", "test", { docFiles() }, null)
+        ArgusDocs.ensure(st, "h", "test", { docFiles() }, null)
         assertTrue(dir.path, st.search("what changed in 0.28.1", 3).any { it.doc == "changelog/v0.28.1" })
     }
 
     @Test fun toolReferenceComesFromTheToolList() {
-        val doc = BlazeDocs.toolsDoc(sampleTools()) { if (it.startsWith("browser_")) "browser" else null }
-        assertTrue(doc, doc.contains("- ${BlazeDocs.TOOL_SEARCH}: Search ${BrandName.NAME}'s own docs"))
+        val doc = ArgusDocs.toolsDoc(sampleTools()) { if (it.startsWith("browser_")) "browser" else null }
+        assertTrue(doc, doc.contains("- ${ArgusDocs.TOOL_SEARCH}: Search ${BrandName.NAME}'s own docs"))
         assertTrue(doc, doc.contains("## Tools: browser"))
         assertTrue(doc, doc.contains("- web_search: Search the web for anything."))
         assertFalse(doc, doc.contains("Returns results with links"))   // one line only
         assertEquals("Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background.",
-            BlazeDocs.oneLine("Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background. No screen control needed."))
-        assertTrue(BlazeDocs.oneLine("x".repeat(400)).length <= 160)
-        assertTrue(BlazeDocs.toolsHash(sampleTools()) != BlazeDocs.toolsHash(JSONArray().put(tool("a", "b"))))
+            ArgusDocs.oneLine("Open a web page (or search words) in ${BrandName.NAME}'s own built-in browser, in the background. No screen control needed."))
+        assertTrue(ArgusDocs.oneLine("x".repeat(400)).length <= 160)
+        assertTrue(ArgusDocs.toolsHash(sampleTools()) != ArgusDocs.toolsHash(JSONArray().put(tool("a", "b"))))
     }
 
     // ---------------- no secrets ----------------
@@ -170,18 +170,18 @@ class BlazeDocsTest {
     @Test fun noSecretsShip() {
         val samples = listOf("write to someone@example.com", "token ghp_" + "a".repeat(36), "project blaze-511220", "id " + "0123456789abcdef".repeat(2),
             "key sk-" + "x".repeat(24), "AIza" + "B".repeat(35), "storePassword = \"android\"")
-        for (s in samples) { assertTrue(s, BlazeDocs.hasSecret(s)); assertFalse(s, BlazeDocs.hasSecret(BlazeDocs.scrub(s))) }
-        assertFalse(BlazeDocs.hasSecret("Blaze v0.28.1 (versionCode 97), minSdk 26, https://gitlab.com/blazeinchue/Blaze-agent"))
+        for (s in samples) { assertTrue(s, ArgusDocs.hasSecret(s)); assertFalse(s, ArgusDocs.hasSecret(ArgusDocs.scrub(s))) }
+        assertFalse(ArgusDocs.hasSecret("Argus v0.28.1 (versionCode 97), minSdk 26, https://gitlab.com/blazeinchue/Blaze-agent"))
         val files = docFiles()
-        val cs = BlazeDocs.chunksOf(files, "test", sampleTools())
-        for (c in cs) assertFalse("${c.id} has a secret-like string", BlazeDocs.hasSecret(c.text) || BlazeDocs.hasSecret(c.section))
+        val cs = ArgusDocs.chunksOf(files, "test", sampleTools())
+        for (c in cs) assertFalse("${c.id} has a secret-like string", ArgusDocs.hasSecret(c.text) || ArgusDocs.hasSecret(c.section))
         assertFalse(cs.any { it.text.contains("511220") })
         // The generated files themselves are clean too (scrubbed at build time).
         if (System.getProperty("blaze.docs.dir")?.let { File(it, "manifest.json").isFile } == true)
-            for ((n, t) in files) assertFalse("$n has a secret-like string", BlazeDocs.hasSecret(t))
+            for ((n, t) in files) assertFalse("$n has a secret-like string", ArgusDocs.hasSecret(t))
         // about.md carries the build facts (filled in by Gradle when generated).
         val about = files.first { it.first == "about.md" }.second
-        assertTrue(about.contains(BlazeDocs.REPO_URL))
+        assertTrue(about.contains(ArgusDocs.REPO_URL))
         assertTrue(about.contains("https://gitlab.com/blazeinchue/Blaze-cli"))
         assertFalse(about.contains("github.com/"))
         assertTrue(about.contains("https://ai.blaze-app.workers.dev"))
@@ -190,32 +190,32 @@ class BlazeDocsTest {
     // ---------------- prompt + routing ----------------
 
     @Test fun promptLineIsShortAndPinsTheRepo() {
-        assertTrue(BlazeDocs.PROMPT_LINE.contains(BlazeDocs.REPO_URL))
-        assertTrue(BlazeDocs.PROMPT_LINE.contains(BlazeDocs.TOOL_SEARCH))
-        assertTrue(BlazeDocs.PROMPT_LINE.length < 420)
-        assertTrue(BlazeDocs.isAboutBlaze("take me to blaze-agent repo in github"))
-        assertTrue(BlazeDocs.isAboutBlaze("where is your source code"))
-        assertTrue(BlazeDocs.isAboutBlaze("what version are you"))
-        assertTrue(BlazeDocs.isAboutBlaze("How do I change ${BrandName.NAME} settings?"))
-        assertFalse(BlazeDocs.isAboutBlaze("what's the weather in Ndola"))
-        assertFalse(BlazeDocs.isAboutBlaze("open my github notifications"))
-        assertTrue(BlazeDocs.run(null, BlazeDocs.TOOL_SEARCH, JSONObject().put("query", "repo")).contains(BlazeDocs.REPO_URL))
+        assertTrue(ArgusDocs.PROMPT_LINE.contains(ArgusDocs.REPO_URL))
+        assertTrue(ArgusDocs.PROMPT_LINE.contains(ArgusDocs.TOOL_SEARCH))
+        assertTrue(ArgusDocs.PROMPT_LINE.length < 420)
+        assertTrue(ArgusDocs.isAboutArgus("take me to blaze-agent repo in github"))
+        assertTrue(ArgusDocs.isAboutArgus("where is your source code"))
+        assertTrue(ArgusDocs.isAboutArgus("what version are you"))
+        assertTrue(ArgusDocs.isAboutArgus("How do I change ${BrandName.NAME} settings?"))
+        assertFalse(ArgusDocs.isAboutArgus("what's the weather in Ndola"))
+        assertFalse(ArgusDocs.isAboutArgus("open my github notifications"))
+        assertTrue(ArgusDocs.run(null, ArgusDocs.TOOL_SEARCH, JSONObject().put("query", "repo")).contains(ArgusDocs.REPO_URL))
     }
 
     @Test fun githubNearMissesOpenTheRealRepo() {
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("https://github.com/Blazeinchue/Blaze-Agent"))
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("github.com/blazeinchue/blaze-agent"))
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.fixBlazeUrl("https://github.com/Blazeinchue/BLAZE-AGENT"))
-        assertEquals(BlazeDocs.REPO_URL + "/releases/latest", ToolLeak.fixBlazeUrl("https://github.com/Blazeinchue/Blaze_Agent/releases/latest"))
-        assertEquals("https://gitlab.com/blazeinchue/Blaze-dekstop", ToolLeak.fixBlazeUrl("https://github.com/Blazeinchue/Blaze-Desktop"))
-        assertEquals("https://gitlab.com/blazeinchue/Blaze-cli", ToolLeak.fixBlazeUrl("https://www.github.com/blazeinchue/blaze-cli.git"))
+        assertEquals(ArgusDocs.REPO_URL, ToolLeak.fixArgusUrl("https://github.com/Blazeinchue/Blaze-Agent"))
+        assertEquals(ArgusDocs.REPO_URL, ToolLeak.fixArgusUrl("github.com/blazeinchue/blaze-agent"))
+        assertEquals(ArgusDocs.REPO_URL, ToolLeak.fixArgusUrl("https://github.com/Blazeinchue/BLAZE-AGENT"))
+        assertEquals(ArgusDocs.REPO_URL + "/releases/latest", ToolLeak.fixArgusUrl("https://github.com/Blazeinchue/Argus_Agent/releases/latest"))
+        assertEquals("https://gitlab.com/blazeinchue/Blaze-dekstop", ToolLeak.fixArgusUrl("https://github.com/Blazeinchue/Blaze-Desktop"))
+        assertEquals("https://gitlab.com/blazeinchue/Blaze-cli", ToolLeak.fixArgusUrl("https://www.github.com/blazeinchue/blaze-cli.git"))
         // Someone else's repo of the same name, and other URLs, are left alone.
-        assertEquals("https://github.com/octocat/blaze-agent", ToolLeak.fixBlazeUrl("https://github.com/octocat/blaze-agent"))
-        assertEquals("https://example.com/Blaze-Agent", ToolLeak.fixBlazeUrl("https://example.com/Blaze-Agent"))
+        assertEquals("https://github.com/octocat/blaze-agent", ToolLeak.fixArgusUrl("https://github.com/octocat/blaze-agent"))
+        assertEquals("https://example.com/Blaze-Agent", ToolLeak.fixArgusUrl("https://example.com/Blaze-Agent"))
         // The leaked github_open alias: any owner or none.
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("repo", "blaze-agent")))
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("repo", "Blazeinchue/Blaze-Agent")))
-        assertEquals(BlazeDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("url", "https://github.com/Blazeinchue/Blaze-Agent")))
+        assertEquals(ArgusDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("repo", "blaze-agent")))
+        assertEquals(ArgusDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("repo", "Blazeinchue/Blaze-Agent")))
+        assertEquals(ArgusDocs.REPO_URL, ToolLeak.githubUrl(JSONObject().put("url", "https://github.com/Blazeinchue/Blaze-Agent")))
         assertEquals("https://gitlab.com/blazeinchue/Blaze-dekstop", ToolLeak.githubUrl(JSONObject().put("repo", "Blaze-Desktop")))
         assertEquals("https://github.com/octocat/hello", ToolLeak.githubUrl(JSONObject().put("repo", "octocat/hello")))
     }

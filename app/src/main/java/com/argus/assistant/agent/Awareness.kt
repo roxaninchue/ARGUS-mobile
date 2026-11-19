@@ -1,23 +1,23 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * v0.37.0 Awareness: Blaze knows what's going on in Blaze and on the phone right now, and what just happened. "Skip
+ * v0.37.0 Awareness: Argus knows what's going on in Argus and on the phone right now, and what just happened. "Skip
  * this song", "what was the movie I was just watching", "turn this up", "what's on my screen" work without asking.
  *
- *  - [Now]: live things, one per source key (the song in Blaze Music, the video in Blaze Video, another app's media
- *    session, the Blaze screen or view in front, the design open). Features call [set] /
+ *  - [Now]: live things, one per source key (the song in Argus Music, the video in Argus Video, another app's media
+ *    session, the Argus screen or view in front, the design open). Features call [set] /
  *    [clear] from their own callbacks; a playing item's position is worked out at read time, so nothing has to tick.
  *  - [Event]: what just happened ("watched Dune, stopped at 41:02 of 2:35:12"), newest first, kept 3 days on disk
- *    (filesDir/awareness.json) so "the movie I was just watching" still works after Blaze restarts.
+ *    (filesDir/awareness.json) so "the movie I was just watching" still works after Argus restarts.
  *  - [promptBlock]: a compact WHAT'S GOING ON line in every prompt's changing tail (never the cached prefix).
- *  - [TOOL] blaze_now: the full report: everything live, the last 30 events and every Blaze feature with what it's for
+ *  - [TOOL] blaze_now: the full report: everything live, the last 30 events and every Argus feature with what it's for
  *    and the tool that drives it.
  * The formatting is pure (AwarenessTest); Android readers (media sessions) plug in through [readers].
  */
@@ -28,7 +28,7 @@ object Awareness {
 
     /**
      * One live thing. [state] reads naturally before the title ("Playing", "Paused", "Watching", "On screen", "Open").
-     * [where] is the app or view ("Blaze Music", "Spotify", "Design"). [posMs] / [durMs] < 0 = no position; while
+     * [where] is the app or view ("Argus Music", "Spotify", "Design"). [posMs] / [durMs] < 0 = no position; while
      * [playing], the position moves on from [at].
      */
     data class Now(val key: String, val state: String, val title: String, val where: String, val detail: String = "",
@@ -70,7 +70,7 @@ object Awareness {
     fun nows(): List<Now> {
         val extra = readers.flatMap { r -> try { r() } catch (_: Throwable) { emptyList() } }
         val mine = live.values.toList()
-        // Another app's session for something Blaze already shows (Blaze Music's own session) is dropped.
+        // Another app's session for something Argus already shows (Argus Music's own session) is dropped.
         return mine + extra.filter { x -> mine.none { it.title.equals(x.title, true) } }
     }
 
@@ -102,7 +102,7 @@ object Awareness {
         return if (n.durMs > 0) p.coerceAtMost(n.durMs) else p
     }
 
-    /** One live item in words: "Playing \"Song\" by X in Blaze Music, 1:12 of 3:40". */
+    /** One live item in words: "Playing \"Song\" by X in Argus Music, 1:12 of 3:40". */
     fun line(n: Now, now: Long): String = buildString {
         append(n.state).append(" \"").append(n.title.take(90)).append('"')
         if (n.detail.isNotBlank()) append(' ').append(n.detail.take(60))
@@ -153,7 +153,7 @@ object Awareness {
 
     fun summaryBlock(now: Long = System.currentTimeMillis()): String = try { summary(nows(), recent(), now) } catch (_: Throwable) { "" }
 
-    /** Every Blaze feature: what it is, and how Blaze drives it. [views] come from the Views list (name, id, description). */
+    /** Every Argus feature: what it is, and how Argus drives it. [views] come from the Views list (name, id, description). */
     fun features(views: List<Triple<String, String, String>>, commands: String = ""): String = buildString {
         append("## ${BrandName.NAME} apps\n")
         append("- Chat: talking to ${BrandName.NAME} (this). Projects and Home (widgets) are its other tabs.\n")
@@ -163,10 +163,10 @@ object Awareness {
         append("- Camera: Photo (Night, HDR), Document, Text (prices, sums), barcodes. blaze_camera, camera_math.\n")
         append("- Browser: ${BrandName.NAME}'s own browser (browser_open / browser_show) and installed site apps.\n")
         append("- ${BrandName.NAME} Link: the paired PC (ask_pc).\n")
-        append("- Simple / Advanced (Settings): Simple hides Terminal, MCP, BlazeRouter, AI models and developer settings from lists; every view still works and you can open any of them.\n")
+        append("- Simple / Advanced (Settings): Simple hides Terminal, MCP, ArgusRouter, AI models and developer settings from lists; every view still works and you can open any of them.\n")
         append("- Home and Chat: with Swipe navigation (Settings › Navigation, the default) ${BrandName.NAME} opens on Home (weather, news, heads-ups); the user swipes up the handle for Chat and pulls down from the top for Home; open_view view=home shows Home. Classic tabs is the old Chat | Projects | Home pill. 'surface' in Live now says which is in front.\n")
         append("- Bank mode (the bank_mode tool, Settings › Bank mode): ${BrandName.NAME} steps back so banking apps run (phone control, the floating button, screen reading and notification reading pause). " +
-            "It can turn on by itself when a banking app opens. Never read, tap or type inside a banking app. Now: " + (try { com.blaze.assistant.bank.BankMode.statusLine() } catch (_: Throwable) { "unknown." }) + "\n")
+            "It can turn on by itself when a banking app opens. Never read, tap or type inside a banking app. Now: " + (try { com.argus.assistant.bank.BankMode.statusLine() } catch (_: Throwable) { "unknown." }) + "\n")
         append("- Things ${BrandName.NAME} is doing (open_view view=doing): routines and reminders with on/off, and a Today I\u2026 diary. Look & feel (open_view view=look): light / dark / auto, accent, the Home's tilt effect. Home: the ARGUS orb Home (pull the top notch down for Spotlight).\n")
         append("- Cloud sync (Settings › Account › Cloud sync; open_view view=sync): optional, off by default. Keeps chats, memory, settings and designs the same on the user's phones, end-to-end encrypted with a passphrase only they know. Sign-ins, keys, connected accounts and permissions never sync. Turning it on, the passphrase and deleting the cloud copy are the user's to do on that page.\n")
         if (views.isNotEmpty()) {

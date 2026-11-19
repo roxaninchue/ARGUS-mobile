@@ -1,8 +1,8 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
-import com.blaze.assistant.proactive.FollowUpLogic.Item
-import com.blaze.assistant.proactive.FollowUpLogic.Status
-import com.blaze.assistant.proactive.JarvisLogic.Level
+import com.argus.assistant.proactive.FollowUpLogic.Item
+import com.argus.assistant.proactive.FollowUpLogic.Status
+import com.argus.assistant.proactive.JarvisLogic.Level
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

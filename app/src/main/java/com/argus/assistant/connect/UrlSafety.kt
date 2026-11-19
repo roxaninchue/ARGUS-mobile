@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 /**
- * Blaze allows plain HTTP so it can reach the on-device runner, OAuth loopback and gateways or MCP servers
+ * Argus allows plain HTTP so it can reach the on-device runner, OAuth loopback and gateways or MCP servers
  * on the user's own network (see res/xml/network_security_config.xml). Android's XML can't express "LAN
  * only", so the rule is enforced here, in code (v0.28.2): model / gateway / MCP / connector / account calls
  * refuse http:// to a public host ([check], [open]), and no request ever sends credentials (Authorization,
@@ -46,10 +46,10 @@ object UrlSafety {
         return !isLocalHost(host(u))
     }
 
-    /** Blaze's browser: an http:// page shows "Not secure" in the address bar. */
+    /** Argus's browser: an http:// page shows "Not secure" in the address bar. */
     fun notSecure(pageUrl: String): Boolean = isPlainHttp(pageUrl)
 
-    /** Blaze's browser: secure forms and saved logins only fill https pages (or http on this phone / the LAN). */
+    /** Argus's browser: secure forms and saved logins only fill https pages (or http on this phone / the LAN). */
     fun autofillAllowed(pageUrl: String): Boolean {
         val u = pageUrl.trim()
         return u.regionMatches(0, "https://", 0, 8, ignoreCase = true) || (isPlainHttp(u) && isPrivateHost(host(u)))

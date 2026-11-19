@@ -1,6 +1,6 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.phone.MagicHandLogic.Box
+import com.argus.assistant.phone.MagicHandLogic.Box
 
 /**
  * Magic Hand grab box (v0.26.0), pure part (MagicHandBoxTest): after a circle-to-grab, the blue rectangle can be

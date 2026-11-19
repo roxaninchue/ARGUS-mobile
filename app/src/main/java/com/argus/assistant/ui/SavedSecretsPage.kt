@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.SecretVault
+import com.argus.assistant.agent.SecretVault
 
 
 /**
@@ -44,7 +44,7 @@ import com.blaze.assistant.agent.SecretVault
  */
 @Composable
 fun SavedSecretsPage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     var tick by remember { mutableIntStateOf(0) }
     val items = remember(tick) { try { SecretVault.list() } catch (_: Throwable) { emptyList() } }
@@ -58,7 +58,7 @@ fun SavedSecretsPage() {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Rounded.Lock, contentDescription = null, tint = c.sub, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(6.dp))
-        Text(com.blaze.assistant.agent.SecretDesk.COPY, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
+        Text(com.argus.assistant.agent.SecretDesk.COPY, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.body))
     }
     Text(tr("Keys, tokens, logins and cards you gave {0} through the Secure Form. They're encrypted with this phone's Keystore and never go into the chat, memory or the AI.", BrandName.NAME),
         modifier = Modifier.padding(top = 6.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 18.sp, color = c.sub))
@@ -74,7 +74,7 @@ fun SavedSecretsPage() {
         Column(Modifier.fillMaxWidth().padding(bottom = 12.dp).hairline(c.hair)) {
             Column(Modifier.fillMaxWidth().glassInset(c).padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Text(e.label, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 16.sp, color = c.ink))
-                Text(listOf(e.service.takeIf { it.isNotBlank() }?.let { com.blaze.assistant.agent.SecretUse.displayName(it) }, e.kind.title).filterNotNull().joinToString(" · "),
+                Text(listOf(e.service.takeIf { it.isNotBlank() }?.let { com.argus.assistant.agent.SecretUse.displayName(it) }, e.kind.title).filterNotNull().joinToString(" · "),
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 val shownValue = revealed?.takeIf { it.first == e.id }?.second
                 Text(shownValue ?: e.preview, modifier = Modifier.padding(top = 4.dp),

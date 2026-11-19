@@ -1,18 +1,18 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.device.CameraModes.CodeKind
-import com.blaze.assistant.device.CameraModes.Mode
-import com.blaze.assistant.device.CameraModes.Origin
-import com.blaze.assistant.device.CameraModes.Route
+import com.argus.assistant.BrandName
+import com.argus.assistant.device.CameraModes.CodeKind
+import com.argus.assistant.device.CameraModes.Mode
+import com.argus.assistant.device.CameraModes.Origin
+import com.argus.assistant.device.CameraModes.Route
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.28.x Blaze Camera: where each mode's capture goes, from each place the camera opens. */
+/** v0.28.x Argus Camera: where each mode's capture goes, from each place the camera opens. */
 class CameraModesTest {
     @Test fun requestsAndToolCallsAnswerInTheChat() {
         Mode.values().forEach { m ->
@@ -27,7 +27,7 @@ class CameraModesTest {
             assertEquals(Route.DRAFT, CameraModes.route(Mode.ASK, o))
             assertEquals(Route.CARD, CameraModes.route(Mode.TEXT, o))
             assertEquals(Route.CARD, CameraModes.route(Mode.SCAN, o))
-            assertEquals(Route.SEND_TURN, CameraModes.route(Mode.TRANSLATE, o))   // Blaze translates (no on-device model)
+            assertEquals(Route.SEND_TURN, CameraModes.route(Mode.TRANSLATE, o))   // Argus translates (no on-device model)
             assertEquals(Route.DRAFT, CameraModes.route(Mode.DOCUMENT, o))
         }
         assertEquals(Route.GALLERY, CameraModes.route(Mode.PHOTO, Origin.STANDALONE))
@@ -39,7 +39,7 @@ class CameraModesTest {
         Mode.values().forEach { assertEquals(it, CameraModes.parse(it.id)) }
     }
     @Test fun startModeAndMemory() {
-        assertEquals(Mode.ASK, CameraModes.startMode(null, "", Origin.CHAT_PLUS))         // + → Blaze Camera starts on Ask
+        assertEquals(Mode.ASK, CameraModes.startMode(null, "", Origin.CHAT_PLUS))         // + → Argus Camera starts on Ask
         assertEquals(Mode.TEXT, CameraModes.startMode(null, "text", Origin.CHAT_PLUS))    // then the last mode used
         assertEquals(Mode.SCAN, CameraModes.startMode(Mode.SCAN, "text", Origin.REQUEST)) // a request picks its own
         assertEquals(Mode.PHOTO, CameraModes.startMode(Mode.SCAN, "text", Origin.CHAT_ATTACH))

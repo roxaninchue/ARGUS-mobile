@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,18 +38,18 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.siteapps.SiteApp
-import com.blaze.assistant.siteapps.SiteInstaller
-import com.blaze.assistant.siteapps.SiteLogic
-import com.blaze.assistant.ui.Glass
-import com.blaze.assistant.ui.Type
+import com.argus.assistant.siteapps.SiteApp
+import com.argus.assistant.siteapps.SiteInstaller
+import com.argus.assistant.siteapps.SiteLogic
+import com.argus.assistant.ui.Glass
+import com.argus.assistant.ui.Type
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /*
  * 2026-11-18: Install app adds the site to ARGUS's Apps page (Life › Apps); "Also add to Home screen" pins it as well.
- * v0.33.2 Blaze browser › "Add to Home screen / Install app" (the site's real icon, its name, then a pinned launcher
+ * v0.33.2 Argus browser › "Add to Home screen / Install app" (the site's real icon, its name, then a pinned launcher
  * icon that opens it as its own app) and › "Installed apps" (open or uninstall).
  */
 

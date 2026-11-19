@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.content.Context
@@ -16,13 +16,13 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * Blaze's "hands": reads what is on screen and taps / types / scrolls.
- * The user turns it on in Settings > Accessibility > Blaze phone control.
+ * Argus's "hands": reads what is on screen and taps / types / scrolls.
+ * The user turns it on in Settings > Accessibility > Argus phone control.
  */
-class BlazeAccessibilityService : AccessibilityService() {
+class ArgusAccessibilityService : AccessibilityService() {
 
     companion object {
-        @Volatile var instance: BlazeAccessibilityService? = null
+        @Volatile var instance: ArgusAccessibilityService? = null
             private set
 
         /** v0.45.1: something may have changed the screen (an app opened, a tool ran): the next read walks the tree again. */
@@ -43,18 +43,18 @@ class BlazeAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
-        com.blaze.assistant.device.CrashLog.write("Phone control connected")
-        try { com.blaze.assistant.bank.BankMode.warm(this) } catch (_: Throwable) { }   // 0.46.6: app names off the main thread
-        try { com.blaze.assistant.bank.BankMode.a11yBack() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.error("bank restore reset", e) }
-        com.blaze.assistant.voice.WakeWordService.start(this)
-        if (com.blaze.assistant.agent.Settings.orbPinned) com.blaze.assistant.ui.Overlay.showOrb(this)
+        com.argus.assistant.device.CrashLog.write("Phone control connected")
+        try { com.argus.assistant.bank.BankMode.warm(this) } catch (_: Throwable) { }   // 0.46.6: app names off the main thread
+        try { com.argus.assistant.bank.BankMode.a11yBack() } catch (e: Throwable) { com.argus.assistant.device.CrashLog.error("bank restore reset", e) }
+        com.argus.assistant.voice.WakeWordService.start(this)
+        if (com.argus.assistant.agent.Settings.orbPinned) com.argus.assistant.ui.Overlay.showOrb(this)
         // v0.43.0: the user switched phone control back on by hand while Bank mode was on: Bank mode ends.
-        if (com.blaze.assistant.bank.BankMode.active && !com.blaze.assistant.bank.BankMode.state.value.auto) com.blaze.assistant.bank.BankMode.turnOff(this)
+        if (com.argus.assistant.bank.BankMode.active && !com.argus.assistant.bank.BankMode.state.value.auto) com.argus.assistant.bank.BankMode.turnOff(this)
     }
 
-    /** v0.43.0: true when the app in front is on the user's bank list. Blaze never reads or touches banking apps. */
+    /** v0.43.0: true when the app in front is on the user's bank list. Argus never reads or touches banking apps. */
     private fun bankInFront(): Boolean = try {
-        com.blaze.assistant.bank.BankMode.isBank(rootInActiveWindow?.packageName?.toString().orEmpty())
+        com.argus.assistant.bank.BankMode.isBank(rootInActiveWindow?.packageName?.toString().orEmpty())
     } catch (_: Throwable) { false }
 
     /** Time of the last screen change, so actions can wait for the UI to settle instead of sleeping. */
@@ -73,7 +73,7 @@ class BlazeAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         lastEventAt = android.os.SystemClock.uptimeMillis()
-        // v0.45.1: Blaze's own orb / overlay redraws don't change another app's tree (ScreenReadCache).
+        // v0.45.1: Argus's own orb / overlay redraws don't change another app's tree (ScreenReadCache).
         eventSeq++
         if (event.packageName?.toString() != packageName) otherEventSeq++
         // 0.45.19: the cached tree re-walks only what changed (ScreenTree); events of other windows don't touch it.
@@ -84,17 +84,17 @@ class BlazeAccessibilityService : AccessibilityService() {
             val p = event.packageName?.toString().orEmpty()
             if (p.isNotEmpty()) frontPkg = p
             if (p.isNotEmpty() && p != packageName) {
-                try { com.blaze.assistant.bank.BankMode.onFront(this, p) } catch (_: Throwable) { }
-                if (try { com.blaze.assistant.bank.BankMode.isBank(p) } catch (_: Throwable) { false }) { lastWindowPkg = p; return }
+                try { com.argus.assistant.bank.BankMode.onFront(this, p) } catch (_: Throwable) { }
+                if (try { com.argus.assistant.bank.BankMode.isBank(p) } catch (_: Throwable) { false }) { lastWindowPkg = p; return }
             }
-        } else if (try { com.blaze.assistant.bank.BankMode.isBank(event.packageName?.toString().orEmpty()) } catch (_: Throwable) { false }) return
+        } else if (try { com.argus.assistant.bank.BankMode.isBank(event.packageName?.toString().orEmpty()) } catch (_: Throwable) { false }) return
         try { Watchers.onEvent(this, event.packageName?.toString().orEmpty()) } catch (_: Exception) { }
         // v0.24.7 Magic Hand: watches re-read when their app comes up; teach mode records the user's own taps / typing.
         try { MagicHand.onEvent(this, event) } catch (_: Exception) { }
         // v0.38.0 follow-ups: Send tapped in a chat app with the waiting person's chat open counts as a reply.
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) try {
             val pkg = event.packageName?.toString().orEmpty()
-            if (pkg.isNotEmpty() && pkg != packageName) com.blaze.assistant.proactive.FollowUps.onClick(pkg,
+            if (pkg.isNotEmpty() && pkg != packageName) com.argus.assistant.proactive.FollowUps.onClick(pkg,
                 (event.contentDescription ?: event.text?.joinToString(" "))?.toString(), rootInActiveWindow)
         } catch (_: Throwable) { }
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED || event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return
@@ -102,14 +102,14 @@ class BlazeAccessibilityService : AccessibilityService() {
             val pkg = event.packageName?.toString().orEmpty()
             if (pkg.isNotEmpty() && pkg != lastWindowPkg && pkg != packageName) {
                 lastWindowPkg = pkg
-                com.blaze.assistant.agent.ScreenMemory.onWindow(this, pkg)
-                try { com.blaze.assistant.proactive.Triggers.onApp(pkg, appLabel(pkg)) } catch (_: Exception) { }
-                try { com.blaze.assistant.proactive.FollowUps.onAppOpened(pkg) } catch (_: Throwable) { }
+                com.argus.assistant.agent.ScreenMemory.onWindow(this, pkg)
+                try { com.argus.assistant.proactive.Triggers.onApp(pkg, appLabel(pkg)) } catch (_: Exception) { }
+                try { com.argus.assistant.proactive.FollowUps.onAppOpened(pkg) } catch (_: Throwable) { }
             }
             // v0.27.0: habit offers only from apps opened on purpose (no keyboards, home, system UI, overlays, brief visits).
             if (pkg.isNotEmpty()) try {
                 val dm = resources.displayMetrics
-                com.blaze.assistant.proactive.HabitApps.onWindow(this, pkg, { com.blaze.assistant.proactive.HabitApps.windowOf(this, event) },
+                com.argus.assistant.proactive.HabitApps.onWindow(this, pkg, { com.argus.assistant.proactive.HabitApps.windowOf(this, event) },
                     dm.widthPixels, dm.heightPixels)
             } catch (_: Exception) { }
         }
@@ -160,13 +160,13 @@ class BlazeAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         Pointer.done()
         MagicHand.stop()
-        com.blaze.assistant.ui.Overlay.hideOrb(this, unpin = false)
+        com.argus.assistant.ui.Overlay.hideOrb(this, unpin = false)
         instance = null
         super.onDestroy()
     }
 
     override fun onUnbind(intent: android.content.Intent?): Boolean {
-        com.blaze.assistant.device.CrashLog.write("Phone control disconnected (unbound by Android)")
+        com.argus.assistant.device.CrashLog.write("Phone control disconnected (unbound by Android)")
         MagicHand.stop()
         instance = null
         return super.onUnbind(intent)
@@ -197,7 +197,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         val out = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
             try {
                 val hw = android.graphics.Bitmap.wrapHardwareBuffer(buf.hardwareBuffer, buf.colorSpace) ?: return@withContext null
-                val scale = com.blaze.assistant.agent.VisionFast.scaleFor(hw.width, hw.height)
+                val scale = com.argus.assistant.agent.VisionFast.scaleFor(hw.width, hw.height)
                 // Scale straight from the hardware bitmap when possible (one software copy at the small size).
                 val small = try {
                     if (scale < 1f) android.graphics.Bitmap.createScaledBitmap(hw, (hw.width * scale).toInt().coerceAtLeast(1), (hw.height * scale).toInt().coerceAtLeast(1), true)
@@ -207,7 +207,7 @@ class BlazeAccessibilityService : AccessibilityService() {
                     val sw = hw.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
                     if (scale < 1f) android.graphics.Bitmap.createScaledBitmap(sw, (sw.width * scale).toInt().coerceAtLeast(1), (sw.height * scale).toInt().coerceAtLeast(1), true) else sw
                 } ?: return@withContext null
-                java.io.ByteArrayOutputStream().also { small.compress(android.graphics.Bitmap.CompressFormat.JPEG, com.blaze.assistant.agent.VisionFast.JPEG_QUALITY, it) }
+                java.io.ByteArrayOutputStream().also { small.compress(android.graphics.Bitmap.CompressFormat.JPEG, com.argus.assistant.agent.VisionFast.JPEG_QUALITY, it) }
             } catch (_: Exception) { null } finally { try { buf.hardwareBuffer.close() } catch (_: Exception) { } }
         } ?: return null
         return "data:image/jpeg;base64," + android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP)
@@ -223,7 +223,7 @@ class BlazeAccessibilityService : AccessibilityService() {
     private var lastReadAt = 0L
 
     // v0.45.1 speed: the last tree walk, reused by a read right after it when nothing can have changed (ScreenReadCache):
-    // same window, no accessibility event since, no action by Blaze since, at most ScreenReadCache.MAX_AGE_MS old.
+    // same window, no accessibility event since, no action by Argus since, at most ScreenReadCache.MAX_AGE_MS old.
     // waitFor / findTarget / anyField / visibleWords / look_at_screen used to walk the whole tree (one IPC per node)
     // several times in a row on a screen that hadn't moved.
     private class Walk(val windowId: Int, val pkg: String, val eventMark: Long, val actMark: Long, val at: Long,
@@ -237,7 +237,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     internal fun acted() { actSeq++ }
 
-    /** The newest event that can matter for a read of [pkg]: any event when Blaze itself is in front, else other apps' only. */
+    /** The newest event that can matter for a read of [pkg]: any event when Argus itself is in front, else other apps' only. */
     private fun eventMark(pkg: String): Long = if (pkg == packageName) eventSeq else otherEventSeq
 
     private fun role(n: AccessibilityNodeInfo): String {
@@ -286,9 +286,9 @@ class BlazeAccessibilityService : AccessibilityService() {
     /** Cached-tree counters (speed_stats). */
     val treeStats: String get() = "tree full ${tree.fullWalks}, partial ${tree.partialWalks}, subtrees reused ${tree.reusedSubtrees}, fetches ${tree.childFetches}"
 
-    /** 0.46.4 heat audit: when Blaze last read or acted on the screen (a phone task is active for [TASK_IDLE_MS] after). */
+    /** 0.46.4 heat audit: when Argus last read or acted on the screen (a phone task is active for [TASK_IDLE_MS] after). */
     @Volatile var lastUseAt = 0L
-    private fun taskActive(now: Long = android.os.SystemClock.uptimeMillis()) = lastUseAt > 0 && now - lastUseAt < com.blaze.assistant.phone.ScreenHeat.TASK_IDLE_MS
+    private fun taskActive(now: Long = android.os.SystemClock.uptimeMillis()) = lastUseAt > 0 && now - lastUseAt < com.argus.assistant.phone.ScreenHeat.TASK_IDLE_MS
 
     private fun treeEvent(e: AccessibilityEvent) {
         // 0.46.4: outside a phone task the cached tree is just dropped once; no per-event e.source binder calls
@@ -310,12 +310,12 @@ class BlazeAccessibilityService : AccessibilityService() {
     fun readScreen(diff: Boolean = false): String {
         lastUseAt = android.os.SystemClock.uptimeMillis()
         val root = rootInActiveWindow ?: run { elements.clear(); return "I can't see the screen right now (no active window)." }
-        if (bankInFront()) { elements.clear(); lastWalk = null; tree.clear(); return com.blaze.assistant.bank.BankModeLogic.REFUSE }
+        if (bankInFront()) { elements.clear(); lastWalk = null; tree.clear(); return com.argus.assistant.bank.BankModeLogic.REFUSE }
         val pkg = root.packageName?.toString() ?: "unknown"
         val t0 = android.os.SystemClock.uptimeMillis()
         val w = lastWalk
         val found: List<Pair<AccessibilityNodeInfo, String>> =
-            if (w != null && com.blaze.assistant.agent.ScreenReadCache.reusable(w.windowId == root.windowId && w.pkg == pkg,
+            if (w != null && com.argus.assistant.agent.ScreenReadCache.reusable(w.windowId == root.windowId && w.pkg == pkg,
                     eventMark(pkg) != w.eventMark, actSeq != w.actMark, t0 - w.at)) { walksReused++; w.found }
             else {
                 val evMark = eventMark(pkg); val acMark = actSeq   // taken before the walk: a change during it means "walk again"
@@ -366,7 +366,7 @@ class BlazeAccessibilityService : AccessibilityService() {
             if (changed.isEmpty() && gone.isEmpty()) return "Same screen in ${appLabel(pkg)}, nothing changed."
             if (changed.size + gone.size < found.size / 2 + 1) {
                 sb.append("Same screen in ").append(appLabel(pkg)).append(". Changed or new:\n")
-                changed.forEach { lines[it]?.takeIf { l -> !com.blaze.assistant.agent.TapLoop.bareRow(l) }?.let { l -> sb.append(l).append("\n") } }
+                changed.forEach { lines[it]?.takeIf { l -> !com.argus.assistant.agent.TapLoop.bareRow(l) }?.let { l -> sb.append(l).append("\n") } }
                 if (gone.isNotEmpty()) sb.append("Gone: ").append(gone.take(20).joinToString(" ") { "[$it]" }).append("\n")
                 sb.append("Other ").append(found.size - changed.size).append(" elements unchanged, same numbers.")
                 return sb.toString()
@@ -375,7 +375,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         sb.append(appLabel(pkg)).append(" (").append(pkg).append("). Elements, use the [number]:\n")
         // v0.30.7: unlabelled clickable rows ("[12] item") are left out: their labelled children follow, and a tap on a
         // child climbs to the clickable row anyway. Their numbers stay valid.
-        ordered.forEach { lines[it]?.takeIf { l -> !com.blaze.assistant.agent.TapLoop.bareRow(l) }?.let { l -> sb.append(l).append("\n") } }
+        ordered.forEach { lines[it]?.takeIf { l -> !com.argus.assistant.agent.TapLoop.bareRow(l) }?.let { l -> sb.append(l).append("\n") } }
         if (found.isEmpty()) sb.append("(nothing readable on screen)\n")
         val out = sb.toString()
         return if (out.length <= 6_000) out else out.take(6_000) + "\n…(more below; scroll to see it)"
@@ -410,7 +410,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     // 0.46.6: cached (BankMode's label cache, warmed off the main thread when the service connects); it ran on every new window.
     private fun appLabel(pkg: String): String = try {
-        com.blaze.assistant.bank.BankMode.labelOf(this, pkg).ifEmpty { pkg }
+        com.argus.assistant.bank.BankMode.labelOf(this, pkg).ifEmpty { pkg }
     } catch (_: Exception) { pkg }
 
     private fun element(id: Int): AccessibilityNodeInfo? = elements.getOrNull(id)
@@ -579,7 +579,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) return frontPkg
         return (rootInActiveWindow?.packageName?.toString().orEmpty()).also { if (it.isNotEmpty()) frontPkg = it }.ifEmpty { frontPkg }
     }
-    /** Package of the last TYPE_WINDOW_STATE_CHANGED event (any app, Blaze included). */
+    /** Package of the last TYPE_WINDOW_STATE_CHANGED event (any app, Argus included). */
     @Volatile var frontPkg: String = ""
 
     /** Words visible on screen (for checking a step worked, and short "what changed" notes). */
@@ -588,9 +588,9 @@ class BlazeAccessibilityService : AccessibilityService() {
         return elements.filterNotNull().flatMap { labelsOf(it) }.map { it.take(80) }.toSet()
     }
 
-    /** A soft ring where Blaze is about to tap, so you can watch it work. */
+    /** A soft ring where Argus is about to tap, so you can watch it work. */
     fun flash(id: Int) {
-        if (!com.blaze.assistant.agent.Settings.bool("show_taps", true) || com.blaze.assistant.agent.Settings.bool("speed_mode", false)) return
+        if (!com.argus.assistant.agent.Settings.bool("show_taps", true) || com.argus.assistant.agent.Settings.bool("speed_mode", false)) return
         val n = element(id) ?: return
         val r = Rect(); n.getBoundsInScreen(r)
         if (r.width() <= 2 || r.height() <= 2) return
@@ -643,7 +643,7 @@ class BlazeAccessibilityService : AccessibilityService() {
      * the middle of the element like a finger would.
      */
     suspend fun tap(id: Int, long: Boolean = false): String {
-        if (bankInFront()) return com.blaze.assistant.bank.BankModeLogic.REFUSE
+        if (bankInFront()) return com.argus.assistant.bank.BankModeLogic.REFUSE
         // v0.30.7: a tap that flipped a switch remembers which way it ended up (plan memory replays it with want=…).
         val before = try { switchState(id) } catch (_: Exception) { null }
         lastToggle = null
@@ -785,7 +785,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     /** Fresh read, then tap the element whose words match [label] (synonyms, off-screen rows scrolled in). Immune to stale numbers. */
     suspend fun tapText(label: String, long: Boolean = false): String {
-        if (bankInFront()) return com.blaze.assistant.bank.BankModeLogic.REFUSE
+        if (bankInFront()) return com.argus.assistant.bank.BankModeLogic.REFUSE
         val id = reveal(label) ?: return "No element matching \"$label\" on this screen, even after scrolling through it. Read the screen for the real labels."
         val scrolled = lastRevealScrolls
         val name = labelOf(id).ifBlank { label }.take(40)
@@ -794,7 +794,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     suspend fun type(id: Int, text: String, submit: Boolean = false): String {
         var node = element(id) ?: return "No element [$id]. Call read_screen again."
-        // v0.24.4: the pointer shows which field gets the text before Blaze focuses it (a non-field goes through tap()).
+        // v0.24.4: the pointer shows which field gets the text before Argus focuses it (a non-field goes through tap()).
         if (node.isEditable) centerOf(node)?.let { if (!pointTo(it.first, it.second)) return "Stopped before typing into [$id]: the user tapped Stop. Nothing was typed." }
         if (!node.isEditable) {
             // Search icons/bars often turn into a real field after a tap.
@@ -875,27 +875,27 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     // ---------- 0.46.3 flash engine (phone/flash): compact indexed tree, act on nodes, coordinate fallback ----------
 
-    private object FlashAccess : com.blaze.assistant.phone.flash.NodeAccess<AccessibilityNodeInfo>, ScreenTree.Access<AccessibilityNodeInfo> by NodeAccess {
+    private object FlashAccess : com.argus.assistant.phone.flash.NodeAccess<AccessibilityNodeInfo>, ScreenTree.Access<AccessibilityNodeInfo> by NodeAccess {
         override fun bounds(n: AccessibilityNodeInfo): IntArray { val r = Rect(); n.getBoundsInScreen(r); return intArrayOf(r.left, r.top, r.right, r.bottom) }
         override fun viewId(n: AccessibilityNodeInfo): String = n.viewIdResourceName.orEmpty()
     }
 
     /** One flash observation: the app in front, the indexed elements and their nodes. Null = no active window. */
     class FlashSnapshot(val pkg: String, val app: String, val w: Int, val h: Int,
-                        val items: List<Pair<AccessibilityNodeInfo, com.blaze.assistant.phone.flash.UiNode>>, val refused: String? = null)
+                        val items: List<Pair<AccessibilityNodeInfo, com.argus.assistant.phone.flash.UiNode>>, val refused: String? = null)
 
     fun flashSnapshot(): FlashSnapshot? {
         val root = rootInActiveWindow ?: return null
         val dm = resources.displayMetrics
         val pkg = root.packageName?.toString().orEmpty()
-        if (bankInFront()) return FlashSnapshot(pkg, appLabel(pkg), dm.widthPixels, dm.heightPixels, emptyList(), com.blaze.assistant.bank.BankModeLogic.REFUSE)
-        val items = try { com.blaze.assistant.phone.flash.FlashTree.build(root, FlashAccess, dm.widthPixels, dm.heightPixels) } catch (_: Throwable) { emptyList() }
+        if (bankInFront()) return FlashSnapshot(pkg, appLabel(pkg), dm.widthPixels, dm.heightPixels, emptyList(), com.argus.assistant.bank.BankModeLogic.REFUSE)
+        val items = try { com.argus.assistant.phone.flash.FlashTree.build(root, FlashAccess, dm.widthPixels, dm.heightPixels) } catch (_: Throwable) { emptyList() }
         return FlashSnapshot(pkg, appLabel(pkg), dm.widthPixels, dm.heightPixels, items)
     }
 
     /** Tap a node from a flash observation: accessibility click on it or its clickable parent, checked; else a touch at its centre. */
     suspend fun flashTap(node: AccessibilityNodeInfo, long: Boolean): String {
-        if (bankInFront()) return com.blaze.assistant.bank.BankModeLogic.REFUSE
+        if (bankInFront()) return com.argus.assistant.bank.BankModeLogic.REFUSE
         node.refresh()
         if (!node.isVisibleToUser) return "That element is gone (the screen changed)."
         val p0 = centerOf(node)
@@ -914,7 +914,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     /** Touch the screen at (x, y) px (the visual fallback when the tree is empty). */
     suspend fun flashTapAt(x: Float, y: Float, long: Boolean): String {
-        if (bankInFront()) return com.blaze.assistant.bank.BankModeLogic.REFUSE
+        if (bankInFront()) return com.argus.assistant.bank.BankModeLogic.REFUSE
         if (!pointTo(x, y, long)) return "Stopped: the user tapped Stop. Nothing was tapped."
         acted()
         return if (gestureTap(x, y, if (long) 800 else 60)) "Touched the screen there." else "Couldn't touch the screen there."
@@ -922,7 +922,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     /** Set the text of a field node (a non-field is tapped first; the focused field then gets the text). */
     suspend fun flashType(node: AccessibilityNodeInfo?, text: String, submit: Boolean): String {
-        if (bankInFront()) return com.blaze.assistant.bank.BankModeLogic.REFUSE
+        if (bankInFront()) return com.argus.assistant.bank.BankModeLogic.REFUSE
         var f = node
         if (f != null && !f.isEditable) { flashTap(f, false); settle(700, 150); f = null }
         if (f == null) f = rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.takeIf { it.isEditable }
@@ -970,7 +970,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     private suspend fun swipe(x1: Float, y1: Float, x2: Float, y2: Float): Boolean {
         val path = Path().apply { moveTo(x1, y1); lineTo(x2, y2) }
-        val ms = if (com.blaze.assistant.agent.Settings.bool("speed_mode", false)) 180L else 350L
+        val ms = if (com.argus.assistant.agent.Settings.bool("speed_mode", false)) 180L else 350L
         if (!pointTo(x1, y1)) return false
         Pointer.showPath(this, x1, y1, x2, y2, ms)
         Pointer.ownGesture(ms)

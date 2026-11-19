@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -28,22 +28,22 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Attachment
-import com.blaze.assistant.agent.Mood
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.browser.PointerActions
-import com.blaze.assistant.phone.MagicHandLogic.Action
-import com.blaze.assistant.phone.MagicHandLogic.Gesture
-import com.blaze.assistant.phone.MagicHandLogic.Intent as HandIntent
-import com.blaze.assistant.phone.MagicHandState.DockButton
-import com.blaze.assistant.phone.MagicHandState.GrabAction
-import com.blaze.assistant.phone.MagicHandState.Panel
-import com.blaze.assistant.ui.DarkColors
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.MascotArt
-import com.blaze.assistant.ui.OverlayOwner
-import com.blaze.assistant.ui.composeView
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Attachment
+import com.argus.assistant.agent.Mood
+import com.argus.assistant.agent.Role
+import com.argus.assistant.browser.PointerActions
+import com.argus.assistant.phone.MagicHandLogic.Action
+import com.argus.assistant.phone.MagicHandLogic.Gesture
+import com.argus.assistant.phone.MagicHandLogic.Intent as HandIntent
+import com.argus.assistant.phone.MagicHandState.DockButton
+import com.argus.assistant.phone.MagicHandState.GrabAction
+import com.argus.assistant.phone.MagicHandState.Panel
+import com.argus.assistant.ui.DarkColors
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.MascotArt
+import com.argus.assistant.ui.OverlayOwner
+import com.argus.assistant.ui.composeView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -58,7 +58,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 /**
- * Magic Hand (v0.24.7): Blaze's mascot as a pointer the user moves, summoned from the hand button in the quick
+ * Magic Hand (v0.24.7): Argus's mascot as a pointer the user moves, summoned from the hand button in the quick
  * assistant panel (hold Home). Three accessibility overlay windows: a non-touchable highlight layer, the hand (drag it;
  * the flame tip points), and the dock (status, menu, answer, confirm, grab, teach, Close).
  *
@@ -72,7 +72,7 @@ object MagicHand {
     val on: Boolean get() = _ui.value.on
 
     private val main = Handler(Looper.getMainLooper())
-    private var svc: BlazeAccessibilityService? = null
+    private var svc: ArgusAccessibilityService? = null
     private var wm: WindowManager? = null
     private var scope: CoroutineScope? = null
     private var hand: HandFrame? = null
@@ -129,23 +129,23 @@ object MagicHand {
         updateDockFocus(n.panel == Panel.TEACH_REVIEW)
     }
 
-    /** Private chat, or a private tab in Blaze's browser while it's in front. */
+    /** Private chat, or a private tab in Argus's browser while it's in front. */
     fun isPrivate(): Boolean {
         if (Agent.privateChat.value) return true
-        val s = svc ?: BlazeAccessibilityService.instance
+        val s = svc ?: ArgusAccessibilityService.instance
         return try {
-            com.blaze.assistant.browser.BrowserEngine.tab()?.isPrivate == true && s != null && s.currentPkg() == s.packageName
+            com.argus.assistant.browser.BrowserEngine.tab()?.isPrivate == true && s != null && s.currentPkg() == s.packageName
         } catch (_: Throwable) { false }
     }
 
     /** From the assistant panel's hand button. Returns a line to show when it can't start (phone control off), else null. */
     fun summon(ctx: Context): String? {
-        val s = BlazeAccessibilityService.instance ?: return MagicHandState.NEEDS_A11Y
+        val s = ArgusAccessibilityService.instance ?: return MagicHandState.NEEDS_A11Y
         main.postDelayed({ start(s) }, 250)
         return null
     }
 
-    private fun start(s: BlazeAccessibilityService) {
+    private fun start(s: ArgusAccessibilityService) {
         if (on) return
         svc = s
         val w = s.getSystemService(WindowManager::class.java) ?: return
@@ -154,7 +154,7 @@ object MagicHand {
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         _ui.value = MagicHandState.start(isPrivate())
         insets(s, w)
-        com.blaze.assistant.ui.MotionTokens.refresh(s)
+        com.argus.assistant.ui.MotionTokens.refresh(s)
         addHighlight(s, w)
         addDraw(s, w)
         addBox(s, w)
@@ -193,13 +193,13 @@ object MagicHand {
                     if (!on) break
                     when (MagicHandSafety.watchdog(SystemClock.uptimeMillis(), beatAt, touchAt)) {
                         MagicHandSafety.Verdict.OK -> Unit
-                        MagicHandSafety.Verdict.IDLE -> { com.blaze.assistant.device.CrashLog.write(MagicHandSafety.IDLE_NOTE); stop(); break }
+                        MagicHandSafety.Verdict.IDLE -> { com.argus.assistant.device.CrashLog.write(MagicHandSafety.IDLE_NOTE); stop(); break }
                         MagicHandSafety.Verdict.STALLED -> {
-                            com.blaze.assistant.device.CrashLog.write(MagicHandSafety.STALLED_NOTE)
+                            com.argus.assistant.device.CrashLog.write(MagicHandSafety.STALLED_NOTE)
                             main.postAtFrontOfQueue { stopNow() }
                             Thread.sleep(1_500)
                             // Still stuck: the windows belong to the frozen UI thread, so the only sure way to give the
-                            // phone back is to end Blaze's process (Android restarts the accessibility service by itself).
+                            // phone back is to end Argus's process (Android restarts the accessibility service by itself).
                             if (on && SystemClock.uptimeMillis() - beatAt > MagicHandSafety.STALL_MS) android.os.Process.killProcess(android.os.Process.myPid())
                             break
                         }
@@ -210,7 +210,7 @@ object MagicHand {
     }
 
     /** Observe (never consume) key presses while Magic Hand is on, so Back twice can close it. */
-    private fun keyFilter(s: BlazeAccessibilityService, on: Boolean) {
+    private fun keyFilter(s: ArgusAccessibilityService, on: Boolean) {
         try {
             val info = s.serviceInfo ?: return
             val f = android.accessibilityservice.AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
@@ -219,7 +219,7 @@ object MagicHand {
         } catch (_: Throwable) { }
     }
 
-    /** From BlazeAccessibilityService.onKeyEvent. Always returns false: Back, Home and Recents always reach Android. */
+    /** From ArgusAccessibilityService.onKeyEvent. Always returns false: Back, Home and Recents always reach Android. */
     fun onKey(e: android.view.KeyEvent): Boolean {
         if (!on) return false
         if (e.keyCode == android.view.KeyEvent.KEYCODE_BACK && e.action == android.view.KeyEvent.ACTION_UP) {
@@ -234,10 +234,10 @@ object MagicHand {
         try {
             val nm = s.getSystemService(android.app.NotificationManager::class.java) ?: return
             val stopPi = android.app.PendingIntent.getBroadcast(s, 41,
-                Intent(s, com.blaze.assistant.notify.ActionReceiver::class.java).setAction(com.blaze.assistant.notify.ActionReceiver.STOP_HAND),
+                Intent(s, com.argus.assistant.notify.ActionReceiver::class.java).setAction(com.argus.assistant.notify.ActionReceiver.STOP_HAND),
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
             val n = androidx.core.app.NotificationCompat.Builder(s, "blaze_work")
-                .setSmallIcon(com.blaze.assistant.R.drawable.ic_stat_blaze)
+                .setSmallIcon(com.argus.assistant.R.drawable.ic_stat_blaze)
                 .setContentTitle("Magic Hand is on")
                 .setContentText("Back twice, hold the dock, or tap Stop to close it.")
                 .setOngoing(true).setOnlyAlertOnce(true).setSilent(true)
@@ -258,7 +258,7 @@ object MagicHand {
             watchdog?.interrupt(); watchdog = null
             probeJob?.cancel(); probeJob = null
             svc?.let { keyFilter(it, false) }
-            try { (svc ?: BlazeAccessibilityService.instance)?.getSystemService(android.app.NotificationManager::class.java)?.cancel(NOTE_ID) } catch (_: Throwable) { }
+            try { (svc ?: ArgusAccessibilityService.instance)?.getSystemService(android.app.NotificationManager::class.java)?.cancel(NOTE_ID) } catch (_: Throwable) { }
             dockFocusable = false
             if (askedAgent && askJob?.isActive == true && Agent.mood.value != Mood.IDLE) try { Agent.stop() } catch (_: Throwable) { }
             askJob?.cancel(); askJob = null; askedAgent = false
@@ -292,7 +292,7 @@ object MagicHand {
         // Never touchable, never focusable: every touch goes straight through to the app and the system bars.
         val lp = WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, type(),
             MagicHandSafety.flags(MagicHandSafety.Win.HIGHLIGHT), PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START }
-        try { w.addView(v, lp); hi = v } catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("Magic Hand highlight", e) }
+        try { w.addView(v, lp); hi = v } catch (e: Exception) { com.argus.assistant.device.CrashLog.error("Magic Hand highlight", e) }
     }
 
     private fun addDock(s: Context, w: WindowManager) {
@@ -310,7 +310,7 @@ object MagicHand {
         )
         val inner = composeView(s, owner) {
             val u by ui.collectAsState()
-            CompositionLocalProvider(LocalBlaze provides DarkColors) { MagicHandDock(u, calls) }
+            CompositionLocalProvider(LocalArgus provides DarkColors) { MagicHandDock(u, calls) }
         }
         // The dock's own frame: a long-press anywhere on it closes Magic Hand (not while typing a name), Back while it
         // has the keyboard gives the keyboard back, and a touch outside it never gets swallowed (NOT_TOUCH_MODAL).
@@ -330,7 +330,7 @@ object MagicHand {
             y = bottomInset   // sits above the navigation bar / gesture area, never on it
         }
         try { w.addView(v, lp); dock = v; dockLp = lp; dockOwner = owner }
-        catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("Magic Hand dock", e); owner.destroy() }
+        catch (e: Exception) { com.argus.assistant.device.CrashLog.error("Magic Hand dock", e); owner.destroy() }
     }
 
     @Volatile private var dockFocusable = false
@@ -338,7 +338,7 @@ object MagicHand {
     private fun startTeach() {
         val s = svc ?: return
         if (!MagicHandGuard.canTeach(isPrivate())) { set { MagicHandState.back(it.copy(private = true), MagicHandGuard.PRIVATE_NOTE) }; return }
-        com.blaze.assistant.agent.Settings.setBool("mh_teach_intro_seen", true)
+        com.argus.assistant.agent.Settings.setBool("mh_teach_intro_seen", true)
         recorder = MagicHandTeach.Recorder(s.packageName)
         // The phone's own home apps and keyboards are never part of a routine.
         worker.execute {
@@ -421,13 +421,13 @@ object MagicHand {
             true
         }
         try { w.addView(frame, lp); hand = frame; handLp = lp; handOwner = owner }
-        catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("Magic Hand pointer", e); owner.destroy() }
+        catch (e: Exception) { com.argus.assistant.device.CrashLog.error("Magic Hand pointer", e); owner.destroy() }
     }
 
     private fun tip(): Pair<Int, Int> { val lp = handLp ?: return 0 to 0; return (lp.x + tipX).toInt() to (lp.y + tipY).toInt() }
 
     private fun appLabel(pkg: String): String = labels.getOrPut(pkg) {
-        try { val pm = (svc ?: BlazeAccessibilityService.instance)!!.packageManager; pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() }
+        try { val pm = (svc ?: ArgusAccessibilityService.instance)!!.packageManager; pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() }
         catch (_: Throwable) { pkg.substringAfterLast('.') }
     }
 
@@ -489,7 +489,7 @@ object MagicHand {
             DockButton.TEACH -> {
                 if (!MagicHandGuard.canTeach(isPrivate())) { set { MagicHandState.back(it.copy(private = true), MagicHandGuard.PRIVATE_NOTE) }; return }
                 // v0.25.0: explain first; recording starts on Start.
-                set { MagicHandState.intro(it, !com.blaze.assistant.agent.Settings.bool("mh_teach_intro_seen", false)) }
+                set { MagicHandState.intro(it, !com.argus.assistant.agent.Settings.bool("mh_teach_intro_seen", false)) }
             }
             DockButton.DONE -> {
                 val steps = recorder?.steps.orEmpty()
@@ -499,10 +499,10 @@ object MagicHand {
             }
             DockButton.DROP_CHAT -> dropInChat()
             DockButton.CAMERA -> {
-                // The hand would sit over the shutter: close it, then open Blaze Camera (last mode used).
+                // The hand would sit over the shutter: close it, then open Argus Camera (last mode used).
                 val c = svc?.applicationContext
                 stop()
-                if (c != null) com.blaze.assistant.device.BlazeCamera.open(c, null, com.blaze.assistant.device.CameraModes.Origin.MAGIC_HAND)
+                if (c != null) com.argus.assistant.device.ArgusCamera.open(c, null, com.argus.assistant.device.CameraModes.Origin.MAGIC_HAND)
             }
         }
     }
@@ -515,7 +515,7 @@ object MagicHand {
         val d = MagicHandTeach.toWorkflow(rec.steps, _ui.value.teachName, "")
         scope?.launch {
             val r = withContext(Dispatchers.IO) {
-                try { com.blaze.assistant.agent.SkillPacks.saveWorkflow(d.name, d.trigger, d.steps, d.checks, d.tags, tested = false) }
+                try { com.argus.assistant.agent.SkillPacks.saveWorkflow(d.name, d.trigger, d.steps, d.checks, d.tags, tested = false) }
                 catch (e: Exception) { "Couldn't save the workflow: ${e.message}" }
             }
             recorder = null
@@ -590,7 +590,7 @@ object MagicHand {
         return withContext(Dispatchers.Default) { MagicHandScreen.crop(full, box) }
     }
 
-    /** Point & ask: the element's words and a crop of the screen around it go to Blaze; the answer shows in the dock. */
+    /** Point & ask: the element's words and a crop of the screen around it go to Argus; the answer shows in the dock. */
     private fun ask(a: Action, h: MagicHandScreen.Hit?, custom: String? = null) {
         if (Agent.mood.value != Mood.IDLE) { set { MagicHandState.back(it, MagicHandState.BUSY) }; return }
         val app = h?.pkg?.let(::appLabel).orEmpty()
@@ -605,7 +605,7 @@ object MagicHand {
             if (!on || isPrivate()) { set { MagicHandState.back(it, MagicHandGuard.PRIVATE_NOTE) }; return@launch }
             val before = Agent.messages.value.lastOrNull()?.id ?: Long.MIN_VALUE
             askedAgent = true
-            Agent.send(q, byVoice = false, attachments = listOfNotNull(att), untrusted = com.blaze.assistant.agent.ConfirmGate.MAGIC_HAND)
+            Agent.send(q, byVoice = false, attachments = listOfNotNull(att), untrusted = com.argus.assistant.agent.ConfirmGate.MAGIC_HAND)
             val t0 = SystemClock.uptimeMillis()
             var seenBusy = false
             while (on && SystemClock.uptimeMillis() - t0 < 180_000) {
@@ -713,13 +713,13 @@ object MagicHand {
         if (on) {
             val n = hintsShown()
             set { MagicHandState.grabMode(it.copy(private = isPrivate()), true, MagicHandBox.showTip(n)) }
-            if (_ui.value.grabMode) com.blaze.assistant.agent.Settings.setStr("mh_grab_hints", (n + 1).coerceAtMost(99).toString())
+            if (_ui.value.grabMode) com.argus.assistant.agent.Settings.setStr("mh_grab_hints", (n + 1).coerceAtMost(99).toString())
         } else set { MagicHandState.grabMode(it, false) }
     }
 
-    private fun hintsShown(): Int = com.blaze.assistant.agent.Settings.str("mh_grab_hints", "0").toIntOrNull() ?: 0
-    private fun tipsShown(): Int = com.blaze.assistant.agent.Settings.str("mh_grab_tips", "0").toIntOrNull() ?: 0
-    private fun bumpTips(n: Int) { if (n <= MagicHandBox.TIPS_TIMES) com.blaze.assistant.agent.Settings.setStr("mh_grab_tips", (n + 1).toString()) }
+    private fun hintsShown(): Int = com.argus.assistant.agent.Settings.str("mh_grab_hints", "0").toIntOrNull() ?: 0
+    private fun tipsShown(): Int = com.argus.assistant.agent.Settings.str("mh_grab_tips", "0").toIntOrNull() ?: 0
+    private fun bumpTips(n: Int) { if (n <= MagicHandBox.TIPS_TIMES) com.argus.assistant.agent.Settings.setStr("mh_grab_tips", (n + 1).toString()) }
 
     /** A light haptic: a confirm on grab, a tick when the box snaps or goes back. */
     private fun tick(confirm: Boolean) {
@@ -749,7 +749,7 @@ object MagicHand {
         v.contentDescription = MagicHandState.GRAB_MODE_HINT
         val lp = WindowManager.LayoutParams(1, 1, type(), MagicHandSafety.flags(MagicHandSafety.Win.DRAW, active = false),
             PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 0; y = 0 }
-        try { w.addView(v, lp); drawView = v; drawLp = lp } catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("Magic Hand grab layer", e) }
+        try { w.addView(v, lp); drawView = v; drawLp = lp } catch (e: Exception) { com.argus.assistant.device.CrashLog.error("Magic Hand grab layer", e) }
     }
 
     /** The layer covers the screen above the navigation bar while Grab is on (never the bar itself). */
@@ -787,14 +787,14 @@ object MagicHand {
         return true
     }
 
-    private fun grabSource(s: BlazeAccessibilityService): String = lastHit?.pkg?.let(::appLabel) ?: s.currentPkg().let(::appLabel)
+    private fun grabSource(s: ArgusAccessibilityService): String = lastHit?.pkg?.let(::appLabel) ?: s.currentPkg().let(::appLabel)
 
     /**
      * The words inside [b]: OCR of a screenshot (Magic Hand's windows over it hidden), else the accessibility text.
      * v0.28.1: the crop has a margin and lines mostly outside [b] are dropped; the OCR runs on Dispatchers.Default
      * on the warm recogniser, downscaled. [full] reuses a screenshot already taken for this grab.
      */
-    private suspend fun readText(s: BlazeAccessibilityService, b: MagicHandLogic.Box, full: android.graphics.Bitmap? = null): String {
+    private suspend fun readText(s: ArgusAccessibilityService, b: MagicHandLogic.Box, full: android.graphics.Bitmap? = null): String {
         val shot = full ?: shotFor(b)
         val ocr = if (shot != null) withContext(Dispatchers.Default) {
             kotlinx.coroutines.withTimeoutOrNull(8_000) { MagicHandScreen.readRegion(shot, b, dp(MagicHandOcr.MARGIN_DP)) }.orEmpty()
@@ -813,7 +813,7 @@ object MagicHand {
         v.onTouch = ::onBoxTouch
         val lp = WindowManager.LayoutParams(1, 1, type(), MagicHandSafety.flags(MagicHandSafety.Win.BOX, active = false),
             PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 0; y = 0 }
-        try { w.addView(v, lp); boxView = v; boxLp = lp } catch (e: Exception) { com.blaze.assistant.device.CrashLog.error("Magic Hand grab box", e) }
+        try { w.addView(v, lp); boxView = v; boxLp = lp } catch (e: Exception) { com.argus.assistant.device.CrashLog.error("Magic Hand grab box", e) }
     }
 
     private fun showBox(b: MagicHandLogic.Box) {
@@ -826,7 +826,7 @@ object MagicHand {
         if (v.visibility != View.VISIBLE) {
             // v0.27.0: the box fades in (instant with Remove animations on).
             v.alpha = 0f; v.visibility = View.VISIBLE
-            v.animate().alpha(1f).setDuration(com.blaze.assistant.ui.MotionTokens.ms(com.blaze.assistant.ui.MotionTokens.SHORT)).start()
+            v.animate().alpha(1f).setDuration(com.argus.assistant.ui.MotionTokens.ms(com.argus.assistant.ui.MotionTokens.SHORT)).start()
         }
     }
 
@@ -924,7 +924,7 @@ object MagicHand {
                 if (isPrivate()) { set { MagicHandState.back(it, MagicHandGuard.PRIVATE_NOTE) }; return }
                 scope?.launch {
                     val src = _ui.value.grabSource
-                    val r = withContext(Dispatchers.IO) { try { com.blaze.assistant.agent.Memory.add((if (src.isNotBlank()) "Saved from $src: " else "Saved: ") + t.take(1500)) } catch (e: Exception) { "Couldn't save: ${e.message}" } }
+                    val r = withContext(Dispatchers.IO) { try { com.argus.assistant.agent.Memory.add((if (src.isNotBlank()) "Saved from $src: " else "Saved: ") + t.take(1500)) } catch (e: Exception) { "Couldn't save: ${e.message}" } }
                     set { MagicHandState.back(it, if (r.startsWith("Not saved") || r.startsWith("Couldn")) r else "Saved to memory.") }
                 }
             }
@@ -977,8 +977,8 @@ object MagicHand {
     }
 
     // ---------- accessibility events ----------
-    /** From BlazeAccessibilityService: watches re-read when their app comes to the front; teach records the user's own steps. */
-    fun onEvent(s: BlazeAccessibilityService, e: AccessibilityEvent) {
+    /** From ArgusAccessibilityService: watches re-read when their app comes to the front; teach records the user's own steps. */
+    fun onEvent(s: ArgusAccessibilityService, e: AccessibilityEvent) {
         val pkg = e.packageName?.toString().orEmpty()
         if (pkg.isEmpty() || pkg == s.packageName) return
         if (e.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
@@ -990,7 +990,7 @@ object MagicHand {
         if (!on || _ui.value.mode != MagicHandLogic.Mode.TEACH || _ui.value.panel == Panel.TEACH_REVIEW) return
         val type = e.eventType
         if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && type != AccessibilityEvent.TYPE_VIEW_CLICKED && type != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return
-        // v0.25.0: System UI, Android, launchers, screenshot tools, keyboards and Blaze are never part of a routine.
+        // v0.25.0: System UI, Android, launchers, screenshot tools, keyboards and Argus are never part of a routine.
         if (MagicHandSafety.ignoreForTeach(pkg, s.packageName, launchers, imes)) return
         if (isPrivate()) { recorder = null; set { MagicHandState.endTeach(it, MagicHandGuard.PRIVATE_NOTE) }; return }
         val now = SystemClock.uptimeMillis()
@@ -1031,7 +1031,7 @@ object MagicHand {
 
     private var watchPkg = ""
     private val watchCheck = Runnable {
-        val s = BlazeAccessibilityService.instance ?: return@Runnable
+        val s = ArgusAccessibilityService.instance ?: return@Runnable
         try { if (watchPkg.isNotBlank() && s.currentPkg() == watchPkg) MagicHandWatches.check(s, watchPkg) } catch (_: Exception) { }
     }
 

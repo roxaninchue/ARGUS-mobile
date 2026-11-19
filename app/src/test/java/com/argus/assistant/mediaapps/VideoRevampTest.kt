@@ -1,9 +1,9 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.movies.MovieInfo
-import com.blaze.assistant.movies.MoviePlay
-import com.blaze.assistant.movies.MoviePost
-import com.blaze.assistant.movies.Progress
+import com.argus.assistant.movies.MovieInfo
+import com.argus.assistant.movies.MoviePlay
+import com.argus.assistant.movies.MoviePost
+import com.argus.assistant.movies.Progress
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,7 +12,7 @@ import org.junit.Test
 /** 0.46.4 Video revamp: nav, Home row order + hero, details chips, player gestures. */
 class VideoRevampTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
     private fun post(i: Int, src: String = "archive", img: String = "https://archive.org/i/$i.jpg") = MoviePost("Film $i", "$src:$i", img, src)
 
     @Test fun navAndOldIds() {
@@ -84,7 +84,7 @@ class BrowseStateTest {
         assertTrue(BrowseState.nothing(listOf("p:a", "archive"), mapOf("p:a" to fail, "archive" to Result.success(emptyList())), 0))
         assertFalse(BrowseState.nothing(listOf("p:a", "archive"), mapOf("p:a" to fail, "archive" to null), 0))
         assertFalse(BrowseState.nothing(listOf("p:a"), mapOf("p:a" to fail), 2))
-        val v = java.io.File(listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }, "com/blaze/assistant/mediaapps").listFiles()!!
+        val v = java.io.File(listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }, "com/argus/assistant/mediaapps").listFiles()!!
             .filter { it.name in setOf("VideoShell.kt", "MoviesUi.kt") }.joinToString("\n") { it.readText() }
         assertFalse("never list failed sources", Regex("""didn't answer|Didn't answer""").containsMatchIn(v))
     }

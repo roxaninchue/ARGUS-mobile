@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * v0.45.28, pure (WaitNudgeTest): the free one's short line while its partner works on a task and the screen has gone
  * quiet ("Hang tight, Sam, Halo will be back with the results shortly…" in tone, never a fixed string). The words are
@@ -50,7 +50,7 @@ object WaitNudge {
     fun skip(worker: Duo.Who, userText: String): Boolean = worker == Duo.Who.HALO || NewsPromise.sharingNews(userText)
 
     /**
-     * 0.46.2 (phone: "Blaze's just weaving the data into something bright—think of it like stitching threads of gold"): a wait line
+     * 0.46.2 (phone: "Argus's just weaving the data into something bright—think of it like stitching threads of gold"): a wait line
      * is plain and factual or there is none. [poetic] = metaphor / imagery filler (the whole line is dropped); [progress] = a
      * progress or timing claim nobody measured (that sentence is dropped).
      */

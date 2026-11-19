@@ -1,9 +1,9 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import kotlin.random.Random
 
 /**
- * v0.30.1 Blaze Music / Blaze Video: the pure rules (no Android), unit tested in MediaLogicTest.
+ * v0.30.1 Argus Music / Argus Video: the pure rules (no Android), unit tested in MediaLogicTest.
  * Playback itself is media3 ExoPlayer; these decide what the screens show and what gets stored.
  */
 
@@ -160,9 +160,9 @@ object ResumeLogic {
 }
 
 object TimeText {
-    fun clock(ms: Long): String = com.blaze.assistant.mediaapps.store.StoreText.clock(ms)
-    fun parseClock(s: String): Int = com.blaze.assistant.mediaapps.store.StoreText.parseClock(s)
-    fun size(bytes: Long): String = com.blaze.assistant.mediaapps.store.StoreText.size(bytes)
+    fun clock(ms: Long): String = com.argus.assistant.mediaapps.store.StoreText.clock(ms)
+    fun parseClock(s: String): Int = com.argus.assistant.mediaapps.store.StoreText.parseClock(s)
+    fun size(bytes: Long): String = com.argus.assistant.mediaapps.store.StoreText.size(bytes)
 }
 
 object SleepTimer {

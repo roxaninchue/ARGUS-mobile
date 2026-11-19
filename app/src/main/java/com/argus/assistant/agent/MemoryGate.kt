@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.9: memory is for durable facts only. A greeting, a thank-you, an "ok", a mood ("doing good thanks!") or a

@@ -1,6 +1,6 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.store.JdbcSql
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -35,7 +35,7 @@ class NoSeedBotsTest {
 
     @Test fun theAppNoLongerSeeds() {
         val src = java.io.File(listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory },
-            "com/blaze/assistant/team/TeamSql.kt").readText()
+            "com/argus/assistant/team/TeamSql.kt").readText()
         assertTrue(src.contains("store.ensure(seedDomains = false)") && src.contains("retireUnusedSeeds()"))
     }
 }

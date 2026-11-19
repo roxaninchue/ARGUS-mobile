@@ -1,4 +1,4 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 import android.app.Activity
 import android.app.NotificationChannel
@@ -7,10 +7,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.MainActivity
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.connect.AccountLock.Reason
+import com.argus.assistant.BrandName
+import com.argus.assistant.MainActivity
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.connect.AccountLock.Reason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -48,12 +48,12 @@ object AccountGate {
     @Volatile private var checkingAt = 0L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /** BlazeApp, right after BlazeAccount.start: the upgrade grace, then the first answer. */
+    /** ArgusApp, right after ArgusAccount.start: the upgrade grace, then the first answer. */
     fun start(ctx: Context) {
         app = ctx.applicationContext
         runCatching {
             if (!Settings.bool(UPGRADED, false)) {
-                val u = BlazeAccount.user()
+                val u = ArgusAccount.user()
                 val v = AccountLock.upgradeLastOk(lastOk(), u != null, u?.emailVerified == true, System.currentTimeMillis())
                 if (v > 0L) Settings.setStr(LAST_OK, v.toString())
                 Settings.setBool(UPGRADED, true)
@@ -67,7 +67,7 @@ object AccountGate {
 
     /** The current state, from the account and the saved marks. */
     fun state(): AccountLock.State {
-        val u = BlazeAccount.user()
+        val u = ArgusAccount.user()
         return AccountLock.State(u != null, u?.emailVerified == true, u?.email.orEmpty(), lastOk(), rejected(),
             runCatching { Settings.bool(VERIFY_ON, false) }.getOrDefault(false))
     }
@@ -97,7 +97,7 @@ object AccountGate {
         // A 401 may be a stale gateway cache or a signed-out session: /v1/me decides (at most once a minute).
         if (r == Reason.SESSION_REJECTED && System.currentTimeMillis() - checkingAt > 60_000L) {
             checkingAt = System.currentTimeMillis()
-            scope.launch { runCatching { BlazeAccount.checkSession() } }
+            scope.launch { runCatching { ArgusAccount.checkSession() } }
         }
     }
 
@@ -141,7 +141,7 @@ object AccountGate {
      */
     fun notice(ctx: Context? = app) {
         val c = ctx?.applicationContext ?: return
-        if (noticeShown || !locked() || com.blaze.assistant.agent.Agent.inForeground) return
+        if (noticeShown || !locked() || com.argus.assistant.agent.Agent.inForeground) return
         if (Build.VERSION.SDK_INT >= 33 && c.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return
         noticeShown = true
         try {
@@ -149,7 +149,7 @@ object AccountGate {
             if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel(CHANNEL, "Sign-in", NotificationManager.IMPORTANCE_LOW)
                 .apply { description = "When ${BrandName.UPPER} needs you to sign in before it can do anything" })
             val n = androidx.core.app.NotificationCompat.Builder(c, CHANNEL)
-                .setSmallIcon(com.blaze.assistant.R.drawable.ic_stat_blaze)
+                .setSmallIcon(com.argus.assistant.R.drawable.ic_stat_blaze)
                 .setContentTitle(AccountLock.TITLE)
                 .setContentText(_lock.value?.let { AccountLock.message(it) } ?: AccountLock.message(Reason.SIGNED_OUT))
                 .setSilent(true).setOnlyAlertOnce(true).setAutoCancel(true)
@@ -164,10 +164,10 @@ object AccountGate {
         val c = app ?: return
         noticeShown = false
         android.os.Handler(android.os.Looper.getMainLooper()).post {
-            runCatching { com.blaze.assistant.ui.Overlay.closePanel(); com.blaze.assistant.ui.Overlay.hideOrb(c, unpin = false) }
-            runCatching { com.blaze.assistant.voice.WakeWordService.stop(c) }
-            runCatching { com.blaze.assistant.mediaapps.MusicService.lockPause() }
-            runCatching { com.blaze.assistant.notify.Notifier.clearReplies(); com.blaze.assistant.notify.Notifier.clearAction() }
+            runCatching { com.argus.assistant.ui.Overlay.closePanel(); com.argus.assistant.ui.Overlay.hideOrb(c, unpin = false) }
+            runCatching { com.argus.assistant.voice.WakeWordService.stop(c) }
+            runCatching { com.argus.assistant.mediaapps.MusicService.lockPause() }
+            runCatching { com.argus.assistant.notify.Notifier.clearReplies(); com.argus.assistant.notify.Notifier.clearAction() }
         }
     }
 
@@ -177,7 +177,7 @@ object AccountGate {
         noticeShown = false
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             runCatching { c.getSystemService(NotificationManager::class.java)?.cancel(NOTICE_ID) }
-            runCatching { if (Settings.orbPinned && com.blaze.assistant.ui.Overlay.canDrawOverApps(c)) com.blaze.assistant.ui.Overlay.showOrb(c) }
+            runCatching { if (Settings.orbPinned && com.argus.assistant.ui.Overlay.canDrawOverApps(c)) com.argus.assistant.ui.Overlay.showOrb(c) }
         }
     }
 }

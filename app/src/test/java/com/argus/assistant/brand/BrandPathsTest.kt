@@ -1,4 +1,4 @@
-package com.blaze.assistant.brand
+package com.argus.assistant.brand
 
 import org.junit.Assert.assertTrue
 import org.junit.Test

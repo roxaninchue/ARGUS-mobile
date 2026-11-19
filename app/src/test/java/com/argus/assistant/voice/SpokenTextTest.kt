@@ -1,7 +1,7 @@
-package com.blaze.assistant.voice
+package com.argus.assistant.voice
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

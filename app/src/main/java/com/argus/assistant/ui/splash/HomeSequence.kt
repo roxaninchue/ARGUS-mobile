@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.splash
+package com.argus.assistant.ui.splash
 
-import com.blaze.assistant.home.HomeGrid
+import com.argus.assistant.home.HomeGrid
 
 /**
  * 0.48.0 RC3 Home entry sequence, card by card, timed from the approved preview videos (540 x 1200, 30 fps; frame times in

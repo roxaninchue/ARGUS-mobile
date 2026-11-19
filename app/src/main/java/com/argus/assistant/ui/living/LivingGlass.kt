@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -35,9 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.browser.BrowserEngine
-import com.blaze.assistant.browser.BrowserLive
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.browser.BrowserEngine
+import com.argus.assistant.browser.BrowserLive
+import com.argus.assistant.i18n.tr
 import kotlinx.coroutines.delay
 
 /**
@@ -76,7 +76,7 @@ fun GlassPanel(url: String, working: Boolean, p: LivingSpec.Palette, now: String
     // the glass: takes every touch that isn't on Close, so the canvas and the page under it never get one
     Box(modifier.fillMaxSize().background(Color(0xE6000000))
         .pointerInput(Unit) { awaitPointerEventScope { while (true) { val e = awaitPointerEvent(); e.changes.forEach { it.consume() } } } }
-        .semantics { contentDescription = tr("Watching {0}'s browser, view only", com.blaze.assistant.BrandName.NAME) }) {
+        .semantics { contentDescription = tr("Watching {0}'s browser, view only", com.argus.assistant.BrandName.NAME) }) {
         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp)) {
             Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
                 LiveDot(working, p)

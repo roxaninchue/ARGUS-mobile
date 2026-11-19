@@ -1,9 +1,9 @@
-package com.blaze.assistant.voice
+package com.argus.assistant.voice
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * v0.45.13 (phone 17:14, 0.45.9): the wake-word notification said "Offline. Turn off in Blaze settings." all the time,
+ * v0.45.13 (phone 17:14, 0.45.9): the wake-word notification said "Offline. Turn off in Argus settings." all the time,
  * even with the phone online. "Offline" meant "the wake word runs on the phone", but it read as "you're offline" and it
  * never changed. Now the line says what the listener is really doing and is re-posted whenever that changes
  * (WakeWordService.note). Pure, so WakeNoteTest covers the wording and the de-duplication.

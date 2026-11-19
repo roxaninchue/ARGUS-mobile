@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.togetherWith
@@ -77,28 +77,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.browser.PointerTile
-import com.blaze.assistant.browser.PointerTiles
-import com.blaze.assistant.phone.MagicHandLogic.Action
-import com.blaze.assistant.phone.MagicHandLogic.Kind
-import com.blaze.assistant.phone.MagicHandState.DockButton
-import com.blaze.assistant.phone.MagicHandState.GrabAction
-import com.blaze.assistant.phone.MagicHandState.Panel
-import com.blaze.assistant.ui.EmptyState
-import com.blaze.assistant.ui.Glass
-import com.blaze.assistant.ui.GlassIconButton
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.MascotGlyph
-import com.blaze.assistant.ui.MotionTokens
-import com.blaze.assistant.ui.pressScale
-import com.blaze.assistant.ui.shimmer
-import com.blaze.assistant.ui.Md
-import com.blaze.assistant.ui.PageHead
-import com.blaze.assistant.ui.raised
-import com.blaze.assistant.ui.Type
+import com.argus.assistant.browser.PointerTile
+import com.argus.assistant.browser.PointerTiles
+import com.argus.assistant.phone.MagicHandLogic.Action
+import com.argus.assistant.phone.MagicHandLogic.Kind
+import com.argus.assistant.phone.MagicHandState.DockButton
+import com.argus.assistant.phone.MagicHandState.GrabAction
+import com.argus.assistant.phone.MagicHandState.Panel
+import com.argus.assistant.ui.EmptyState
+import com.argus.assistant.ui.Glass
+import com.argus.assistant.ui.GlassIconButton
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.MascotGlyph
+import com.argus.assistant.ui.MotionTokens
+import com.argus.assistant.ui.pressScale
+import com.argus.assistant.ui.shimmer
+import com.argus.assistant.ui.Md
+import com.argus.assistant.ui.PageHead
+import com.argus.assistant.ui.raised
+import com.argus.assistant.ui.Type
 
 /**
- * Magic Hand's dock (v0.24.7): one rounded dark Blaze card at the bottom of the screen with the mascot, a status
+ * Magic Hand's dock (v0.24.7): one rounded dark Argus card at the bottom of the screen with the mascot, a status
  * line, the menu (the v0.24.6 pointer tiles, through MagicHandMenu's mapper), the answer, the confirm card, grabbed
  * text, the teach review, and Close. Everything renders from [MagicHandState.Ui], so ShotsTest draws it as is.
  */
@@ -434,7 +434,7 @@ private fun Buttons(labels: List<Pair<String, Boolean>>, onPick: (Int) -> Unit) 
     }
 }
 
-/** The hand itself: Blaze's mascot with a ring that lights orange while something is under its tip. */
+/** The hand itself: Argus's mascot with a ring that lights orange while something is under its tip. */
 @Composable
 fun MagicHandGlyph(sizeDp: Int, lit: Boolean, carrying: Boolean) {
     Box(Modifier.size(sizeDp.dp), contentAlignment = Alignment.Center) {
@@ -450,7 +450,7 @@ fun MagicHandWatchesPage(preview: List<MagicHandWatch.Watch>? = null, now: Long 
     val live by MagicHandWatches.list.collectAsState()
     if (preview == null) androidx.compose.runtime.LaunchedEffect(Unit) { MagicHandWatches.load(ctx) }
     val list = (preview ?: live).sortedByDescending { it.created }
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     PageHead("Magic Hand", "Watches", "Values you held the hand on. ${BrandName.NAME} re-reads each one about once an hour while its app is open and tells you when it changes.")
     if (list.isEmpty()) EmptyState("Nothing watched yet", "Summon Magic Hand from the assistant panel, then hold it on a price, score or status and tap Watch.")
     else Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.raised)) {

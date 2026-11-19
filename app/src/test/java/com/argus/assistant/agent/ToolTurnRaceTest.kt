@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
@@ -134,7 +134,7 @@ class ToolTurnRaceTest {
     }
 
     @Test fun wiring() {
-        val f = { p: String -> listOf(File("src/main/java/com/blaze/assistant/agent/$p"), File("app/src/main/java/com/blaze/assistant/agent/$p")).first { it.exists() }.readText() }
+        val f = { p: String -> listOf(File("src/main/java/com/argus/assistant/agent/$p"), File("app/src/main/java/com/argus/assistant/agent/$p")).first { it.exists() }.readText() }
         val llm = f("LlmClient.kt"); val hr = f("HedgeRace.kt")
         assertTrue(llm.contains("parallel = BrainRace.parallel(tools?.length() ?: 0))"))
         assertTrue(hr.contains("val nobody = parallel && winner.get() == null && next < steps.size"))

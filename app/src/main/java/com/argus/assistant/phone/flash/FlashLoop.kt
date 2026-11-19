@@ -2,12 +2,12 @@
  * The flash observe-act loop, the pro plan-and-verify escalation and the stagnation rule ("the same action on the same
  * target twice with no change: stop retrying") follow the design of google/artemis (Apache-2.0, Copyright 2026 Google LLC:
  * artemis/agents/flash, artemis/agents/flash/flash_runner.md section 4, artemis/utils/image_diff.py). Rewritten in Kotlin
- * for Blaze. See THIRD_PARTY_NOTICES.md.
+ * for Argus. See THIRD_PARTY_NOTICES.md.
  */
-package com.blaze.assistant.phone.flash
+package com.argus.assistant.phone.flash
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /** What the engine saw: the app in front, the indexed elements, and (only when the tree is empty) a screenshot. */
 data class Obs(
     val app: String,
@@ -19,7 +19,7 @@ data class Obs(
     val shot: String? = null,
     /** dHash of the screenshot, for "did it change" when there is no tree. */
     val shotHash: Long? = null,
-    /** Set when Blaze must not read this screen (Bank mode); the text says why. */
+    /** Set when Argus must not read this screen (Bank mode); the text says why. */
     val refused: String? = null,
 ) {
     val sig: Long by lazy { FlashTree.signature(pkg, nodes, h) }

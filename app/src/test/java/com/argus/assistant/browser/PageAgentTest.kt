@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -70,7 +70,7 @@ class PageAgentTest {
     /** The sheet asks Allow / Not now itself and answers only its own pending step (never Agent.confirm). */
     @Test fun sheetAsksItself() {
         val root = listOf(File("."), File("..")).first { File(it, "app/src/main").isDirectory }
-        val src = File(root, "app/src/main/java/com/blaze/assistant/browser/PageAskSheet.kt").readText()
+        val src = File(root, "app/src/main/java/com/argus/assistant/browser/PageAskSheet.kt").readText()
         assertTrue(src.contains("PageAgent.Runner("))
         assertTrue(src.contains("Chip(\"Allow\", active = true) { d.complete(true) }"))
         assertTrue(src.contains("Chip(\"Not now\") { d.complete(false) }"))

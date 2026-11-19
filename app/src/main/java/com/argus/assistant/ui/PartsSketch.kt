@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -77,7 +77,7 @@ object PartsSketch {
             return sides + listOf(b.reversed(), t)
         }
         // v0.23.5: aliases ("Cylinder", "nosecone", "CylinderGeometry") resolve; anything unknown is drawn as a box.
-        val shape = com.blaze.assistant.agent.Designs.normShape(p).first.let { if (it in drawable || it == "group" || it == "custom") it else "box" }
+        val shape = com.argus.assistant.agent.Designs.normShape(p).first.let { if (it in drawable || it == "group" || it == "custom") it else "box" }
         return when (shape) {
             "box" -> { val (w, h, dd) = arr(p, "size", doubleArrayOf(100.0, 100.0, 100.0)).map { it / 2 }
                 val c = listOf(V(-w, -h, -dd), V(w, -h, -dd), V(w, h, -dd), V(-w, h, -dd), V(-w, -h, dd), V(w, -h, dd), V(w, h, dd), V(-w, h, dd))

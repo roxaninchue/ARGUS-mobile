@@ -1,7 +1,7 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -63,7 +63,7 @@ object PhoneHealth {
 
     fun run(ctx: Context, a: JSONObject): String {
         val now = System.currentTimeMillis()
-        val usage = com.blaze.assistant.home.HomeSources.usageAllowed(ctx)
+        val usage = com.argus.assistant.home.HomeSources.usageAllowed(ctx)
         val list = if (usage) apps(ctx) else emptyList()
         val unused = list.filter { it.lastUsed in 1 until now - 30L * 86_400_000L || it.lastUsed == 0L }.sortedByDescending { it.sizeMb }
         return when (a.optString("detail", "report")) {

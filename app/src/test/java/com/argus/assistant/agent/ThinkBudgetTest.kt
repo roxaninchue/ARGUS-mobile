@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.ThinkBudget.Level
+import com.argus.assistant.agent.ThinkBudget.Level
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

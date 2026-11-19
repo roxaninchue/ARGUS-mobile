@@ -1,19 +1,19 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.47 Spotlight v2: Blaze's self-map. ONE list of every view, action, setting and model Blaze has. Spotlight searches
+ * 0.47 Spotlight v2: Argus's self-map. ONE list of every view, action, setting and model Argus has. Spotlight searches
  * it ([SpotlightSearch]) and the agent reads it ([describe], about_blaze section "map"), so the two never disagree.
  *
- * Views come from [com.blaze.assistant.ui.Views.all] (the same list open_view uses); actions, settings and models are
+ * Views come from [com.argus.assistant.ui.Views.all] (the same list open_view uses); actions, settings and models are
  * declared here. Pure apart from [default] reading Views (SelfMapTest builds maps from plain lists with [of]).
  */
 object SelfMap {
     enum class Kind { VIEW, ACTION, SETTING }
 
     /**
-     * One thing Blaze can open or do. [target]: the view id a VIEW / SETTING opens, the action id, or the model family id.
+     * One thing Argus can open or do. [target]: the view id a VIEW / SETTING opens, the action id, or the model family id.
      * [preview]: a VIEW that can also show inline inside Spotlight (stays on Home).
      */
     data class Entry(val id: String, val kind: Kind, val title: String, val subtitle: String, val target: String,
@@ -62,7 +62,7 @@ object SelfMap {
     val default: List<Entry> by lazy { of(liveViews()) }
 
     private fun liveViews(): List<ViewInfo> = runCatching {
-        com.blaze.assistant.ui.Views.all.map { ViewInfo(it.id, it.name, it.desc, it.aliases) }
+        com.argus.assistant.ui.Views.all.map { ViewInfo(it.id, it.name, it.desc, it.aliases) }
     }.getOrNull()?.takeIf { it.isNotEmpty() } ?: FALLBACK_VIEWS
 
     val FALLBACK_VIEWS = listOf(

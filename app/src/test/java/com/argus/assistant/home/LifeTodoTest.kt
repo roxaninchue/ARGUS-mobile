@@ -1,6 +1,6 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.store.JdbcSql
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -61,19 +61,19 @@ class LifeTodoTest {
 
     @Test fun theChecklistKeepsItsKeysWhenTicked() {
         val s = store()
-        val r = com.blaze.assistant.setup.SetupChecklist.applyTo(s, emptyMap(), seededBefore = false, now = 1)
+        val r = com.argus.assistant.setup.SetupChecklist.applyTo(s, emptyMap(), seededBefore = false, now = 1)
         assertTrue(r.added)
         run(s, "action" to "done", "item" to "notifications")
-        val after = items(s, com.blaze.assistant.setup.SetupChecklist.TITLE)
+        val after = items(s, com.argus.assistant.setup.SetupChecklist.TITLE)
         val n = after.first { it.key == "notifications" }
         assertTrue(n.done); assertEquals("notifications", n.open)
-        assertTrue("still the checklist", com.blaze.assistant.setup.SetupChecklist.isChecklist(s.all().first().cfg()))
+        assertTrue("still the checklist", com.argus.assistant.setup.SetupChecklist.isChecklist(s.all().first().cfg()))
     }
 
     @Test fun argusPutsTheSetupChecklistInLifeWithSetup() {
         val s = store()
         s.add(Widget("", WidgetTypes.NEWS, "Tech", "News"), now = 1)
-        val CL = com.blaze.assistant.setup.SetupChecklist
+        val CL = com.argus.assistant.setup.SetupChecklist
         var seeded = 0
         val changed = ArrayList<String>()
         val r = HomeTools.run(s, LifeTodo.TOOL, JSONObject().put("action", "setup"), now = 2, onChange = { changed += it },
@@ -100,23 +100,23 @@ class LifeTodoTest {
 
     @Test fun plainAddsNeverLandOnTheSetupChecklist() {
         val s = store()
-        com.blaze.assistant.setup.SetupChecklist.applyTo(s, emptyMap(), seededBefore = false, now = 1)
+        com.argus.assistant.setup.SetupChecklist.applyTo(s, emptyMap(), seededBefore = false, now = 1)
         val r = run(s, "action" to "add", "item" to "Buy milk")
         assertTrue(r, r.startsWith("Added 1 item(s) to \u201cTo-do\u201d"))
         assertEquals(listOf("Buy milk"), items(s, "To-do").map { it.text })
-        assertTrue(items(s, com.blaze.assistant.setup.SetupChecklist.TITLE).none { it.text == "Buy milk" })
+        assertTrue(items(s, com.argus.assistant.setup.SetupChecklist.TITLE).none { it.text == "Buy milk" })
         // naming the checklist still reaches it
         run(s, "action" to "add", "item" to "Try a voice chat", "list_title" to "Set up ARGUS")
-        assertTrue(items(s, com.blaze.assistant.setup.SetupChecklist.TITLE).any { it.text == "Try a voice chat" })
+        assertTrue(items(s, com.argus.assistant.setup.SetupChecklist.TITLE).any { it.text == "Try a voice chat" })
     }
 
     @Test fun theToolIsDeclaredAndInTheBoardGroup() {
         assertTrue(LifeTodo.TOOL in HomeTools.NAMES)
         assertTrue(HomeTools.tools().any { it.getJSONObject("function").getString("name") == LifeTodo.TOOL })
-        fun c(a: String) = com.blaze.assistant.policy.ToolRegistry.classOf(LifeTodo.TOOL) { k -> if (k == "action") a else "" }
-        assertEquals(com.blaze.assistant.team.ActionClass.READ, c("list"))
-        assertEquals(com.blaze.assistant.team.ActionClass.WRITE_LOCAL, c("add"))
-        assertEquals(com.blaze.assistant.team.ActionClass.WRITE_LOCAL, c("remove"))
-        assertTrue(com.blaze.assistant.agent.ToolRouter.groups.first { it.id == "home" }.names(LifeTodo.TOOL))
+        fun c(a: String) = com.argus.assistant.policy.ToolRegistry.classOf(LifeTodo.TOOL) { k -> if (k == "action") a else "" }
+        assertEquals(com.argus.assistant.team.ActionClass.READ, c("list"))
+        assertEquals(com.argus.assistant.team.ActionClass.WRITE_LOCAL, c("add"))
+        assertEquals(com.argus.assistant.team.ActionClass.WRITE_LOCAL, c("remove"))
+        assertTrue(com.argus.assistant.agent.ToolRouter.groups.first { it.id == "home" }.names(LifeTodo.TOOL))
     }
 }

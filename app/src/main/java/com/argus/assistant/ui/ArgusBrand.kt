@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -10,7 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.space.SpacePalette
+import com.argus.assistant.ui.space.SpacePalette
 
 /**
  * 0.52.1 Argus brand tokens (owner's board work/ref/argus/argus-brand-reference.jpg; docs/BRAND.md). The palette, the

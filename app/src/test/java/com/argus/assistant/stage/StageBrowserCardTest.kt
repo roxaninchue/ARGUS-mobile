@@ -1,10 +1,10 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.ClaimGuard
-import com.blaze.assistant.agent.InAppRoute
-import com.blaze.assistant.agent.ViewRouter
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.ClaimGuard
+import com.argus.assistant.agent.InAppRoute
+import com.argus.assistant.agent.ViewRouter
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -12,7 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 0.46.1 the browser card. Report: "pull up browser card" opened the full-screen browser and Blaze said "Browser's open, tap Exit"
+ * 0.46.1 the browser card. Report: "pull up browser card" opened the full-screen browser and Argus said "Browser's open, tap Exit"
  * with no card. Now browser requests go to stage_show(kind=browser) on the Stage; the full view only on "full screen" / "full view";
  * and an "open" claim with no card behind it is caught.
  */

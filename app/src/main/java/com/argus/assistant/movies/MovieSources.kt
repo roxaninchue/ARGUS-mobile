@@ -1,4 +1,4 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -123,7 +123,7 @@ object ArchiveFeatureFilms : ArchiveMovieSource("archive", "Internet Archive",
 
 /** The Blender Studio open movies (CC BY) as archive.org hosts them. */
 object BlenderOpenMovies : ArchiveMovieSource("blender", "Blender open movies",
-    "identifier:(" + com.blaze.assistant.movies.BlenderIds.ids.joinToString(" OR ") + ")", "Creative Commons (CC BY)",
+    "identifier:(" + com.argus.assistant.movies.BlenderIds.ids.joinToString(" OR ") + ")", "Creative Commons (CC BY)",
     listOf("Blender open movies" to ("" to "downloads desc")))
 
 object BlenderIds {
@@ -212,7 +212,7 @@ class JsProviderSource(val entry: ProviderRepo.Entry, private val modules: (Stri
     /** [interactive] = the user opened it (details, episodes, streams): it gets the sandbox's kept lane, not the browse queue. */
     private suspend fun call(file: String, export: String?, args: JSONObject, interactive: Boolean = false): Any? {
         // 0.46.5: the crash log never names a source the user added (CrashLog.redact)
-        com.blaze.assistant.device.CrashLog.secret(entry.name, entry.value, env.settings["baseUrl"]?.let { u -> runCatching { java.net.URI(u.trim()).host }.getOrNull() })
+        com.argus.assistant.device.CrashLog.secret(entry.name, entry.value, env.settings["baseUrl"]?.let { u -> runCatching { java.net.URI(u.trim()).host }.getOrNull() })
         val code = modules(file) ?: throw IllegalStateException("${entry.name} is missing $file.js; update it in Providers")
         // 0.46.5: whatever the engine throws (an Error included) comes back as a normal failure of this source; never off to the UI
         val r = try { sandbox.invoke(code, export, args, env, interactive) } catch (e: kotlinx.coroutines.CancellationException) { throw e }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -18,7 +18,7 @@ import java.io.File
 class BrainRaceTest {
     @org.junit.Before fun drainLeaks() = LeakedMainLaunches.drain()
     private val R = BackupRoute.Step.RESERVE; private val C = BackupRoute.Step.CLOUD
-    private fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/agent/$p"), File("app/src/main/java/com/blaze/assistant/agent/$p")).first { it.exists() }.readText()
+    private fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/agent/$p"), File("app/src/main/java/com/argus/assistant/agent/$p")).first { it.exists() }.readText()
 
     @Test fun kinds() {
         // 0.46.6: no chat fast lane for tool turns: a lite or short message that offers tools is a TASK (one brain at a time)
@@ -34,7 +34,7 @@ class BrainRaceTest {
     }
 
     @Test fun orderNeverWaitsOnACold() {
-        // 0.52.1 (gw061): tool turns ask Blaze Cloud before the Nous reserve (Owner 16 Nov 2026: no on-phone brain any more)
+        // 0.52.1 (gw061): tool turns ask Argus Cloud before the Nous reserve (Owner 16 Nov 2026: no on-phone brain any more)
         assertEquals(listOf(C, R), BrainRace.order(BrainRace.Kind.TASK, signedIn = true))
         assertEquals(listOf(C, R), BrainRace.order(BrainRace.Kind.CODING, true))
         // 0.46.6: chat keeps the standing order (Nous → gateway); speed never puts the gateway before Nous
@@ -57,10 +57,10 @@ class BrainRaceTest {
         val l2 = BrainLedger(); l2.load(l.toJson()); assertEquals(3_400L, l2.ttft(R))
     }
 
-    @Test fun haloAnswersWithinTwoSecondsWhileBlazeIsBusy() = runTest {
-        // Blaze's turn is busy (hanging); Halo's side reply has its own call. The brain is slow: the holding line shows at 2 s.
+    @Test fun haloAnswersWithinTwoSecondsWhileArgusIsBusy() = runTest {
+        // Argus's turn is busy (hanging); Halo's side reply has its own call. The brain is slow: the holding line shows at 2 s.
         val shown = mutableListOf<Pair<Long, String>>()
-        val blaze = backgroundScope.launch { delay(10 * 60_000) }   // the stuck main turn, untouched by Halo
+        val argus = backgroundScope.launch { delay(10 * 60_000) }   // the stuck main turn, untouched by Halo
         val r = BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { BrainRace.haloHolding("check my GitLab tokens", "Reading 2 pages") }, { shown += testScheduler.currentTime to it }) { say ->
             delay(6_000); say("${BrandName.NAME} is still on it - about a minute more."); "${BrandName.NAME} is still on it - about a minute more." }
         assertEquals(2_000L, shown.first().first)

@@ -1,6 +1,6 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.phone.Pointer
+import com.argus.assistant.phone.Pointer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,7 +23,7 @@ class PointerTest {
     @Test fun neverBlocksTouchesAndNeverPauses() {
         val W = android.view.WindowManager.LayoutParams::class.java
         fun flag(n: String) = W.getField(n).getInt(null)
-        // The pointer window takes no touch at all: Blaze's taps and the user's go to the app under it.
+        // The pointer window takes no touch at all: Argus's taps and the user's go to the app under it.
         assertTrue(Pointer.DOT_FLAGS and flag("FLAG_NOT_TOUCHABLE") != 0)
         assertTrue(Pointer.DOT_FLAGS and flag("FLAG_NOT_FOCUSABLE") != 0)
         assertEquals(0, Pointer.DOT_FLAGS and flag("FLAG_WATCH_OUTSIDE_TOUCH"))
@@ -36,7 +36,7 @@ class PointerTest {
         val names = Pointer::class.java.declaredMethods.map { it.name.lowercase() } + Pointer::class.java.declaredFields.map { it.name.lowercase() }
         for (bad in listOf("pause", "resume", "gate", "mode", "doubletap", "showbar", "showcheck", "clickline", "checkclick"))
             assertTrue(bad, names.filterNot { it.contains("delegate") }.none { it.contains(bad) })
-        // The chip steps aside while Blaze's own gesture is in flight.
+        // The chip steps aside while Argus's own gesture is in flight.
         assertTrue(Pointer.chipHidden(1000, 1200)); assertFalse(Pointer.chipHidden(1300, 1200))
     }
 
@@ -54,13 +54,13 @@ class PointerTest {
         assertTrue(Pointer.enabled)                       // agent taps always show it; show_pointer is ignored
         assertTrue(Pointer.TOUCH_DP >= 56)
         assertTrue(Pointer.MASCOT_DP in 48..56)
-        // v0.32.0: the pointer is the Blaze icon (drop in halo) centred on the click point, inside the touch window.
+        // v0.32.0: the pointer is the Argus icon (drop in halo) centred on the click point, inside the touch window.
         assertEquals(Pointer.TOUCH_DP / 2f, Pointer.TIP_X_DP, 0.01f)
         assertEquals(Pointer.TOUCH_DP / 2f, Pointer.TIP_Y_DP, 0.01f)
     }
 
     @Test fun mascotIsLukesFlame() {
-        val M = com.blaze.assistant.phone.Mascot
+        val M = com.argus.assistant.phone.Mascot
         val b = M.bounds(M.body)
         assertEquals(-1f, b[0], 0.01f); assertEquals(1f, b[2], 0.01f); assertEquals(1f, b[3], 0.01f)   // round body, radius 1
         assertTrue(b[1] < -1.5f)                                                                        // the flame rises above it
@@ -87,11 +87,11 @@ class PointerTest {
 
     @Test fun workBannerSwipes() {
         val t = 100f
-        assertEquals(com.blaze.assistant.ui.BannerSwipe.MINIMISE, com.blaze.assistant.ui.bannerSwipe(0f, -150f, t))   // up
-        assertEquals(com.blaze.assistant.ui.BannerSwipe.MINIMISE, com.blaze.assistant.ui.bannerSwipe(-200f, 10f, t))  // left
-        assertEquals(com.blaze.assistant.ui.BannerSwipe.MINIMISE, com.blaze.assistant.ui.bannerSwipe(220f, 20f, t))   // right
-        assertEquals(com.blaze.assistant.ui.BannerSwipe.OPEN, com.blaze.assistant.ui.bannerSwipe(10f, 150f, t))       // down opens Blaze
-        assertEquals(com.blaze.assistant.ui.BannerSwipe.NONE, com.blaze.assistant.ui.bannerSwipe(30f, 40f, t))        // a nudge springs back
-        assertEquals(com.blaze.assistant.ui.BannerSwipe.NONE, com.blaze.assistant.ui.bannerSwipe(0f, 0f, t))
+        assertEquals(com.argus.assistant.ui.BannerSwipe.MINIMISE, com.argus.assistant.ui.bannerSwipe(0f, -150f, t))   // up
+        assertEquals(com.argus.assistant.ui.BannerSwipe.MINIMISE, com.argus.assistant.ui.bannerSwipe(-200f, 10f, t))  // left
+        assertEquals(com.argus.assistant.ui.BannerSwipe.MINIMISE, com.argus.assistant.ui.bannerSwipe(220f, 20f, t))   // right
+        assertEquals(com.argus.assistant.ui.BannerSwipe.OPEN, com.argus.assistant.ui.bannerSwipe(10f, 150f, t))       // down opens Argus
+        assertEquals(com.argus.assistant.ui.BannerSwipe.NONE, com.argus.assistant.ui.bannerSwipe(30f, 40f, t))        // a nudge springs back
+        assertEquals(com.argus.assistant.ui.BannerSwipe.NONE, com.argus.assistant.ui.bannerSwipe(0f, 0f, t))
     }
 }

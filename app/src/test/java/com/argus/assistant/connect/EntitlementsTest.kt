@@ -1,9 +1,9 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
-import com.blaze.assistant.connect.Entitlements.Gate
-import com.blaze.assistant.mediaapps.DlJob
-import com.blaze.assistant.mediaapps.DlLogic
-import com.blaze.assistant.mediaapps.DlPart
+import com.argus.assistant.connect.Entitlements.Gate
+import com.argus.assistant.mediaapps.DlJob
+import com.argus.assistant.mediaapps.DlLogic
+import com.argus.assistant.mediaapps.DlPart
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

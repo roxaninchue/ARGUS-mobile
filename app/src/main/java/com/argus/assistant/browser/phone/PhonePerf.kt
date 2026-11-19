@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 /**
- * 0.45.19-speed: Blaze Phone's own timings on this phone (page read; act until the tool returns with the page
+ * 0.45.19-speed: Argus Phone's own timings on this phone (page read; act until the tool returns with the page
  * re-read), newest [MAX] of each, so phone_status can show real p50 / p95 from the device.
  */
 object PhonePerf {

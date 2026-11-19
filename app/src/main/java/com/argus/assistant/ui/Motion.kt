@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.content.Context
 import androidx.compose.animation.EnterTransition

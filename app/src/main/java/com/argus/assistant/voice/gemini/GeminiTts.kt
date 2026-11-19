@@ -1,6 +1,6 @@
-package com.blaze.assistant.voice.gemini
+package com.argus.assistant.voice.gemini
 
-import com.blaze.assistant.voice.myvoice.AudioClip
+import com.argus.assistant.voice.myvoice.AudioClip
 import org.json.JSONArray
 import org.json.JSONObject
 

@@ -1,7 +1,7 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -9,7 +9,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.30.1 Blaze Music / Video: queue, playlists, downloads, quality picks and YouTube parsing. */
+/** v0.30.1 Argus Music / Video: queue, playlists, downloads, quality picks and YouTube parsing. */
 class MediaLogicTest {
     @Test fun repeatCycles() {
         assertEquals(Repeat.ALL, Repeat.OFF.next())

@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.proactive.ProactiveDial
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
+import com.argus.assistant.proactive.ProactiveDial
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.clickable
@@ -35,11 +35,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.IntentCache
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.device.CrashLog
-import com.blaze.assistant.device.DeviceStatus
-import com.blaze.assistant.device.SelfCheck
+import com.argus.assistant.agent.IntentCache
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.device.CrashLog
+import com.argus.assistant.device.DeviceStatus
+import com.argus.assistant.device.SelfCheck
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
@@ -47,14 +47,14 @@ import androidx.compose.ui.graphics.Color
 
 @Composable
 internal fun V18Note(text: String, top: Int = 0) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Text(text, modifier = Modifier.padding(top = top.dp, bottom = 10.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub))
 }
 
 @Composable
 internal fun V18Button(text: String, primary: Boolean = true, modifier: Modifier = Modifier.fillMaxWidth(), onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(modifier.height(44.dp).then(if (primary) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f))
         .clickable(onClick = onClick), contentAlignment = Alignment.Center) { ButtonText(text, color = if (primary) c.paper else c.ink, size = 13.sp) }
 }
@@ -64,7 +64,7 @@ internal fun V18Section(title: String) { Spacer(Modifier.height(24.dp)); Label(t
 
 @Composable
 internal fun Mono(text: String) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Text(text, modifier = Modifier.fillMaxWidth().hairline(c.hair).padding(12.dp),
         style = TextStyle(fontFamily = Type.Mono, fontSize = 12.sp, lineHeight = 18.sp, color = c.ink))
 }
@@ -73,33 +73,33 @@ internal fun Mono(text: String) {
 
 @Composable
 fun DashboardPage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
-    val running by com.blaze.assistant.dashboard.Dashboard.running.collectAsState()
-    var lan by remember { mutableStateOf(com.blaze.assistant.dashboard.Dashboard.lan) }
+    val running by com.argus.assistant.dashboard.Dashboard.running.collectAsState()
+    var lan by remember { mutableStateOf(com.argus.assistant.dashboard.Dashboard.lan) }
     var auto by remember { mutableStateOf(Settings.bool("dash_auto", false)) }
     V18Note("A web page served by ${BrandName.NAME} on your phone: chat with ${BrandName.NAME} (it can still use your phone), see tokens and cost per day, phone health, memories, skills and jobs.")
-    V18Button(if (running) "Open dashboard" else "Start & open dashboard") { com.blaze.assistant.dashboard.Dashboard.open(ctx) }
+    V18Button(if (running) "Open dashboard" else "Start & open dashboard") { com.argus.assistant.dashboard.Dashboard.open(ctx) }
     Spacer(Modifier.height(8.dp))
-    if (running) V18Button("Stop server", primary = false) { com.blaze.assistant.dashboard.Dashboard.stop() }
+    if (running) V18Button("Stop server", primary = false) { com.argus.assistant.dashboard.Dashboard.stop() }
     Spacer(Modifier.height(10.dp))
     ToggleRow("Share on Wi-Fi", "Open it from a laptop on the same network (link has a secret token)", lan) {
-        lan = !lan; com.blaze.assistant.dashboard.Dashboard.lan = lan; if (running) com.blaze.assistant.dashboard.Dashboard.restart(ctx) }
+        lan = !lan; com.argus.assistant.dashboard.Dashboard.lan = lan; if (running) com.argus.assistant.dashboard.Dashboard.restart(ctx) }
     ToggleRow("Start with ${BrandName.NAME}", "Keep the dashboard running in the background", auto) { auto = !auto; Settings.setBool("dash_auto", auto) }
     var gen by remember { mutableStateOf(0) }
     if (running) {
         V18Section("Links")
-        key(gen) { Mono(com.blaze.assistant.dashboard.Dashboard.localUrl() + (if (lan) "\n" + (com.blaze.assistant.dashboard.Dashboard.lanUrl() ?: "(not on Wi-Fi)") else "")) }
+        key(gen) { Mono(com.argus.assistant.dashboard.Dashboard.localUrl() + (if (lan) "\n" + (com.argus.assistant.dashboard.Dashboard.lanUrl() ?: "(not on Wi-Fi)") else "")) }
         Spacer(Modifier.height(8.dp))
         // v0.45.0: old links (and any copy seen on the network) stop working at once.
-        V18Button("Make a new link", primary = false) { com.blaze.assistant.dashboard.Dashboard.rotate(); gen++ }
+        V18Button("Make a new link", primary = false) { com.argus.assistant.dashboard.Dashboard.rotate(); gen++ }
         V18Note("Wi-Fi links expire when the server stops or sharing is switched off.")
-        if (lan) com.blaze.assistant.dashboard.Dashboard.lanUrl()?.let { u ->
+        if (lan) com.argus.assistant.dashboard.Dashboard.lanUrl()?.let { u ->
             Spacer(Modifier.height(8.dp))
             V18Button("Copy Wi-Fi link", primary = false) {
                 ctx.getSystemService(android.content.ClipboardManager::class.java)?.setPrimaryClip(android.content.ClipData.newPlainText("${BrandName.NAME} dashboard", u)) }
-            // v0.33.0 Desktop Bridge: scan with the laptop / tablet camera to open Blaze on the big screen.
-            val qr = remember(u) { com.blaze.assistant.dashboard.Bridge.qr(u)?.let { it.asImageBitmap() } }
+            // v0.33.0 Desktop Bridge: scan with the laptop / tablet camera to open Argus on the big screen.
+            val qr = remember(u) { com.argus.assistant.dashboard.Bridge.qr(u)?.let { it.asImageBitmap() } }
             if (qr != null) {
                 Spacer(Modifier.height(12.dp))
                 androidx.compose.foundation.Image(qr, "QR code for the Desktop Bridge link", modifier = Modifier.size(200.dp)
@@ -114,9 +114,9 @@ fun DashboardPage() {
 
 @Composable
 fun ProactivePage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
-    val P = com.blaze.assistant.proactive.Proactive
+    val P = com.argus.assistant.proactive.Proactive
     var on by remember { mutableStateOf(P.enabled) }
     var speak by remember { mutableStateOf(P.speak) }
     var every by remember { mutableStateOf(P.everyMin) }
@@ -147,10 +147,10 @@ fun ProactivePage() {
     var dial by remember { mutableStateOf(P.level) }
     Spacer(Modifier.height(12.dp))
     Label(tr("How proactive"), modifier = Modifier.padding(bottom = 8.dp))
-    com.blaze.assistant.ui.space.SpaceSegmented(ProactiveDial.Level.values().map { it.id to it.label }, dial.id,
+    com.argus.assistant.ui.space.SpaceSegmented(ProactiveDial.Level.values().map { it.id to it.label }, dial.id,
         Modifier.fillMaxWidth(), tag = "proactive_level") { id -> dial = ProactiveDial.Level.of(id); P.level = dial }
     V18Note(ProactiveDial.note(dial) + " Every heads-up says why it came.", top = 6)
-    if (!com.blaze.assistant.notify.NotificationBrain.enabled(ctx)) { Spacer(Modifier.height(6.dp)); NotificationAccessRow() }
+    if (!com.argus.assistant.notify.NotificationBrain.enabled(ctx)) { Spacer(Modifier.height(6.dp)); NotificationAccessRow() }
     val pm = ctx.getSystemService(android.os.PowerManager::class.java)
     if (pm?.isIgnoringBatteryOptimizations(ctx.packageName) != true) {
         Spacer(Modifier.height(8.dp))
@@ -161,13 +161,13 @@ fun ProactivePage() {
     }
 
     V18Section("Jarvis mode")
-    val J = com.blaze.assistant.proactive.Jarvis
+    val J = com.argus.assistant.proactive.Jarvis
     var lvl by remember { mutableStateOf(J.level) }
     var glances by remember { mutableStateOf(J.screenGlances) }
     var looks by remember { mutableStateOf(J.cameraLooks) }
     V18Note("${BrandName.NAME} reaches out on its own: a question now and then to get to know you (reply right in the notification), help offered in the moment, and routines it sets up for itself. Jarvis sets them up without asking; the others offer first.")
     Row(Modifier.fillMaxWidth()) {
-        com.blaze.assistant.proactive.JarvisLogic.Level.values().forEach { l ->
+        com.argus.assistant.proactive.JarvisLogic.Level.values().forEach { l ->
             Box(Modifier.weight(1f).height(40.dp).then(if (lvl == l) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f)).clickable { lvl = l; J.level = l },
                 contentAlignment = Alignment.Center) { ButtonText(l.label, color = if (lvl == l) c.paper else c.ink, size = 13.sp) }
         }
@@ -177,7 +177,7 @@ fun ProactivePage() {
     ToggleRow("Look through the camera", "One front-camera frame while ${BrandName.NAME} is open; never saved. Android shows its camera dot", looks) { looks = !looks; J.cameraLooks = looks }
     if (looks && androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED)
         V18Note("Camera looks need the camera permission: open ${BrandName.NAME} Camera once and allow it.", top = 4)
-    if (!com.blaze.assistant.home.HomeSources.usageAllowed(ctx)) {
+    if (!com.argus.assistant.home.HomeSources.usageAllowed(ctx)) {
         V18Note("Allow Usage access so ${BrandName.NAME} can see which apps you use and when, so it can time its help.", top = 6)
         V18Button("Allow usage access", primary = false) {
             try { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
@@ -185,17 +185,17 @@ fun ProactivePage() {
     }
 
     V18Section("Triggers")
-    val triggers by com.blaze.assistant.proactive.Triggers.all.collectAsState()
+    val triggers by com.argus.assistant.proactive.Triggers.all.collectAsState()
     V18Note("\u201cWhen X happens, do Y.\u201d Ask ${BrandName.NAME} in chat, e.g. \u201cwhen Mary texts, read it to me\u201d or \u201cwhen battery drops below 20, turn on saver\u201d.")
     if (triggers.isNotEmpty()) Column(Modifier.fillMaxWidth().hairline(c.hair)) {
         triggers.forEach { t ->
             Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).clickable { com.blaze.assistant.proactive.Triggers.toggle(t.id) }) {
+                Column(Modifier.weight(1f).clickable { com.argus.assistant.proactive.Triggers.toggle(t.id) }) {
                     Text(t.name, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = if (t.enabled) c.ink else c.weak))
                     Text("When ${t.event.replace('_', ' ')}${if (t.match.isNotBlank()) " · ${t.match}" else ""} → ${t.prompt}", maxLines = 2,
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
                 }
-                ActionText("×", color = c.sub, size = 14.sp, modifier = Modifier.clickable { com.blaze.assistant.proactive.Triggers.remove(t.id) }.padding(8.dp))
+                ActionText("×", color = c.sub, size = 14.sp, modifier = Modifier.clickable { com.argus.assistant.proactive.Triggers.remove(t.id) }.padding(8.dp))
             }
         }
     }
@@ -218,7 +218,7 @@ fun ProactivePage() {
 
 @Composable
 internal fun V18Field(hint: String, value: String, onChange: (String) -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Box(Modifier.fillMaxWidth().padding(bottom = 8.dp).hairline(c.hair).padding(12.dp)) {
         if (value.isEmpty()) Text(hint, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.weak))
         androidx.compose.foundation.text.BasicTextField(value, onChange, textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.ink),
@@ -235,9 +235,9 @@ fun VoiceExtras() {
     Label(tr("\u201cHey {0}\u201d sensitivity", BrandName.NAME), modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
     Row(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
         listOf("0.94" to "Strict", "0.88" to "Normal", "0.78" to "Easy").forEach { (v, l) ->
-            Box(Modifier.weight(1f).height(40.dp).background(if (conf == v) LocalBlaze.current.ink else LocalBlaze.current.paper, BlazeShapes.medium).hairline(LocalBlaze.current.hair)
+            Box(Modifier.weight(1f).height(40.dp).background(if (conf == v) LocalArgus.current.ink else LocalArgus.current.paper, ArgusShapes.medium).hairline(LocalArgus.current.hair)
                 .clickable { conf = v; Settings.setStr("wake_conf", v) }, contentAlignment = Alignment.Center) {
-                Label(l, color = if (conf == v) LocalBlaze.current.paper else LocalBlaze.current.ink, size = 10.sp) }
+                Label(l, color = if (conf == v) LocalArgus.current.paper else LocalArgus.current.ink, size = 10.sp) }
         }
     }
     V18Note("Strict wakes only on a clear \u201cHey ${BrandName.NAME}\u201d. Use Easy if it misses you.")
@@ -246,10 +246,10 @@ fun VoiceExtras() {
     var chg by remember { mutableStateOf(Settings.bool("wake_charging", true)) }
     var pk by remember { mutableStateOf(Settings.bool("wake_pocket", true)) }
     V18Section("Battery saver")
-    ToggleRow("Sound gate", "Only process audio when someone's speaking. Saves battery in quiet rooms", gate) { gate = !gate; Settings.setBool("wake_gate", gate); com.blaze.assistant.voice.WakeWordService.start(ctx) }
-    ToggleRow("Listen with screen off", "Off: the mic switches off when the screen does", off) { off = !off; Settings.setBool("wake_screen_off", off); com.blaze.assistant.voice.WakeWordService.start(ctx) }
-    if (!off) ToggleRow("\u2026but listen while charging", "Keep listening with the screen off while plugged in", chg) { chg = !chg; Settings.setBool("wake_charging", chg); com.blaze.assistant.voice.WakeWordService.start(ctx) }
-    ToggleRow("Pause in pocket", "Mic off while the phone is face down or in a pocket", pk) { pk = !pk; Settings.setBool("wake_pocket", pk); com.blaze.assistant.voice.WakeWordService.start(ctx) }
+    ToggleRow("Sound gate", "Only process audio when someone's speaking. Saves battery in quiet rooms", gate) { gate = !gate; Settings.setBool("wake_gate", gate); com.argus.assistant.voice.WakeWordService.start(ctx) }
+    ToggleRow("Listen with screen off", "Off: the mic switches off when the screen does", off) { off = !off; Settings.setBool("wake_screen_off", off); com.argus.assistant.voice.WakeWordService.start(ctx) }
+    if (!off) ToggleRow("\u2026but listen while charging", "Keep listening with the screen off while plugged in", chg) { chg = !chg; Settings.setBool("wake_charging", chg); com.argus.assistant.voice.WakeWordService.start(ctx) }
+    ToggleRow("Pause in pocket", "Mic off while the phone is face down or in a pocket", pk) { pk = !pk; Settings.setBool("wake_pocket", pk); com.argus.assistant.voice.WakeWordService.start(ctx) }
     ToggleRow("Conversation mode", "After ${BrandName.NAME} answers out loud, it listens again so you can keep talking", loop) { loop = !loop; Settings.setBool("voice_loop", loop) }
 }
 

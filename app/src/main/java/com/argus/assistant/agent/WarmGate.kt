@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.5 (#5/5b, gateway 0.6.9): POST /v1/warm on app open and when the user starts typing or taps the mic, at most

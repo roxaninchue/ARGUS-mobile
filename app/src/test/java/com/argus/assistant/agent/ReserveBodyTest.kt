@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -37,8 +37,8 @@ class ReserveBodyTest {
     }
 
     @Test fun crashGuardShowsPlainWordsNeverAClassName() {
-        assertEquals(Cloud.BUSY, com.blaze.assistant.device.CrashLog.lineFor(LlmClient.LlmException(Cloud.BUSY, 503)))
-        val other = com.blaze.assistant.device.CrashLog.lineFor(IllegalStateException("t8"))
+        assertEquals(Cloud.BUSY, com.argus.assistant.device.CrashLog.lineFor(LlmClient.LlmException(Cloud.BUSY, 503)))
+        val other = com.argus.assistant.device.CrashLog.lineFor(IllegalStateException("t8"))
         assertFalse(other.contains("t8")); assertFalse(other.contains("IllegalState"))
     }
 

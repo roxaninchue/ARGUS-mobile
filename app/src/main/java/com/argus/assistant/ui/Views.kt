@@ -1,20 +1,20 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Every screen Blaze has, in one place. Nothing was deleted in the 0.12 redesign: pages left the
+ * Every screen Argus has, in one place. Nothing was deleted in the 0.12 redesign: pages left the
  * sidebar and live here, reachable from /views, their own /command, Search, and open_view.
  * v0.24.0: the Archive (old chat list) is gone with the conversation switcher; old chats stay on disk and in
- * the journal, so Blaze still finds them with search_chat / search_past_chats.
+ * the journal, so Argus still finds them with search_chat / search_past_chats.
  *
  * [page] = a settings page id ("" = the settings list); [special] = a screen that isn't a settings page.
  */
-data class BlazeView(val id: String, val name: String, val desc: String, val page: String? = null,
+data class ArgusView(val id: String, val name: String, val desc: String, val page: String? = null,
                      val special: String? = null, val aliases: List<String> = emptyList(),
                      /** 2026-11-18: an app the user opens and uses (Music, Video…), shown on the Apps page; settings and chat are not. */
                      val app: Boolean = false,
@@ -24,50 +24,50 @@ data class BlazeView(val id: String, val name: String, val desc: String, val pag
 object Views {
     val all = listOf(
         // v0.39.0: Home (the Home cards). In Simple mode it sits under the chat: swipe up for Chat, pull down for Home.
-        BlazeView("home", "Home", "The ${BrandName.UPPER} Home: the living orb, the ask bar and Spotlight (pull the top notch down). ${BrandName.NAME} opens here", special = "home", aliases = listOf("home screen", "board", "widgets", "heads-ups", "notifications page")),
-        BlazeView("projects", "Projects", "Ongoing efforts with their own threads, brief and instructions", special = "projects", aliases = listOf("project"), app = true, icon = "folder"),
-        BlazeView("design", "Design", "Live preview of anything visual: 3D scenes, art, sites, UI mockups, diagrams, charts, posters, slides", special = "design", aliases = listOf("preview", "studio", "3d", "designs"), app = true, icon = "palette"),
-        BlazeView("memory", "Memory", "What ${BrandName.NAME} remembers and has learned", page = "memory", aliases = listOf("learning")),
-        BlazeView("learn", "Learn", "Flashcards with spaced repetition, Classroom, low-data mode", page = "learn", aliases = listOf("flashcards", "study", "student", "classroom"), app = true, icon = "graduation-cap"),
-        BlazeView("seller", "Seller", "Brand kit, store digest, posts, ads and listings", page = "seller", aliases = listOf("store", "shop", "marketing", "marketer", "brand"), app = true, icon = "shopping-bag"),
-        BlazeView("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell, Termux-style keys and tabs", special = "terminal", aliases = listOf("shell", "console", "termux", "bash", "alpine", "pty", "jobs", "job", "job log"), app = true, icon = "square-terminal"),
-        BlazeView("schedule", "Schedule", "Routines and timed tasks", page = "routines", aliases = listOf("routines"), app = true, icon = "calendar-clock"),
-        BlazeView("accounts", "Accounts", "Connected apps: Google, GitHub, Spotify, Notion", page = "connections", aliases = listOf("connections", "connectors")),
-        BlazeView("router", "Brain routing", "${BrandName.NAME} Cloud picks the model for every message", page = "ai", aliases = listOf("blazerouter", "dashboard-router")),
-        BlazeView("brain", "Brain", "${BrandName.NAME} Cloud: the best free model for every message", page = "ai", aliases = listOf("models", "model", "keys", "classic", "cloud")),
-        BlazeView("skills", "Skills", "Skill library: on, off, restore", page = "skills"),
-        BlazeView("music", "Music", "${BrandName.NAME} Music: your songs, playlists and a Store (Jamendo, Internet Archive" + (if (com.blaze.assistant.mediaapps.store.StoreSources.get("youtube") != null) ", YouTube" else "") + ") with downloads", special = "music", aliases = listOf("songs", "player", "music player", "playlist", "playlists"), app = true, icon = "music"),
-        BlazeView("video", "Video", "${BrandName.NAME} Video: your videos, continue watching, and a Store (public-domain films, Blender open movies" + (if (com.blaze.assistant.mediaapps.store.StoreSources.get("youtube") != null) ", YouTube" else "") + ")", special = "video", aliases = listOf("videos", "movies", "films", "video player"), app = true, icon = "clapperboard"),
-        BlazeView("apps", "App Store", "Free open-source apps from their developers' own releases. Not made by Blazeinchue; install at your own risk", page = "appstore", aliases = listOf("app store", "appstore", "open source apps", "foss apps", "get apps"), app = true, icon = "blocks"),
-        BlazeView("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made", special = "gallery", app = true, icon = "image"),
-        BlazeView("browser", "Browser", "${BrandName.NAME}'s own browser and tabs", special = "browser", app = true, icon = "globe"),
-        BlazeView("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: watch it log in and book, take control, hand back", special = "phonebrowser", aliases = listOf("blaze phone", "phone browser", "blaze phone browser", "blaze's phone"), app = true, icon = "smartphone"),
-        BlazeView("usage", "Usage", "Tokens and estimated cost", page = "usage", aliases = listOf("cost")),
-        BlazeView("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, call", page = "voice"),
-        BlazeView("control", "Phone control", "Accessibility, permissions", page = "control"),
-        BlazeView("logins", "Saved logins", "Sign-ins from the secure form: view, edit, delete", page = "logins", aliases = listOf("vault", "passwords", "logins")),
-        BlazeView("secrets", "Saved secrets", "Keys, tokens, logins and cards from the Secure Form", page = "secrets", aliases = listOf("saved secrets", "api keys", "tokens", "secrets")),
-        BlazeView("proactive", "Proactive", "Speak up on its own, triggers", page = "proactive", aliases = listOf("triggers")),
-        BlazeView("desktop", "${BrandName.NAME} Desktop", "Pair with ${BrandName.NAME} on your computer", page = "desktop", aliases = listOf("pc", "pair")),
-        BlazeView("dashboard", "Dashboard", "Local web dashboard", page = "dashboard"),
-        BlazeView("account", "${BrandName.NAME} account", "Sign in, shared with Desktop", page = "account"),
+        ArgusView("home", "Home", "The ${BrandName.UPPER} Home: the living orb, the ask bar and Spotlight (pull the top notch down). ${BrandName.NAME} opens here", special = "home", aliases = listOf("home screen", "board", "widgets", "heads-ups", "notifications page")),
+        ArgusView("projects", "Projects", "Ongoing efforts with their own threads, brief and instructions", special = "projects", aliases = listOf("project"), app = true, icon = "folder"),
+        ArgusView("design", "Design", "Live preview of anything visual: 3D scenes, art, sites, UI mockups, diagrams, charts, posters, slides", special = "design", aliases = listOf("preview", "studio", "3d", "designs"), app = true, icon = "palette"),
+        ArgusView("memory", "Memory", "What ${BrandName.NAME} remembers and has learned", page = "memory", aliases = listOf("learning")),
+        ArgusView("learn", "Learn", "Flashcards with spaced repetition, Classroom, low-data mode", page = "learn", aliases = listOf("flashcards", "study", "student", "classroom"), app = true, icon = "graduation-cap"),
+        ArgusView("seller", "Seller", "Brand kit, store digest, posts, ads and listings", page = "seller", aliases = listOf("store", "shop", "marketing", "marketer", "brand"), app = true, icon = "shopping-bag"),
+        ArgusView("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell, Termux-style keys and tabs", special = "terminal", aliases = listOf("shell", "console", "termux", "bash", "alpine", "pty", "jobs", "job", "job log"), app = true, icon = "square-terminal"),
+        ArgusView("schedule", "Schedule", "Routines and timed tasks", page = "routines", aliases = listOf("routines"), app = true, icon = "calendar-clock"),
+        ArgusView("accounts", "Accounts", "Connected apps: Google, GitHub, Spotify, Notion", page = "connections", aliases = listOf("connections", "connectors")),
+        ArgusView("router", "Brain routing", "${BrandName.NAME} Cloud picks the model for every message", page = "ai", aliases = listOf("blazerouter", "dashboard-router")),
+        ArgusView("brain", "Brain", "${BrandName.NAME} Cloud: the best free model for every message", page = "ai", aliases = listOf("models", "model", "keys", "classic", "cloud")),
+        ArgusView("skills", "Skills", "Skill library: on, off, restore", page = "skills"),
+        ArgusView("music", "Music", "${BrandName.NAME} Music: your songs, playlists and a Store (Jamendo, Internet Archive" + (if (com.argus.assistant.mediaapps.store.StoreSources.get("youtube") != null) ", YouTube" else "") + ") with downloads", special = "music", aliases = listOf("songs", "player", "music player", "playlist", "playlists"), app = true, icon = "music"),
+        ArgusView("video", "Video", "${BrandName.NAME} Video: your videos, continue watching, and a Store (public-domain films, Blender open movies" + (if (com.argus.assistant.mediaapps.store.StoreSources.get("youtube") != null) ", YouTube" else "") + ")", special = "video", aliases = listOf("videos", "movies", "films", "video player"), app = true, icon = "clapperboard"),
+        ArgusView("apps", "App Store", "Free open-source apps from their developers' own releases. Not made by Blazeinchue; install at your own risk", page = "appstore", aliases = listOf("app store", "appstore", "open source apps", "foss apps", "get apps"), app = true, icon = "blocks"),
+        ArgusView("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made", special = "gallery", app = true, icon = "image"),
+        ArgusView("browser", "Browser", "${BrandName.NAME}'s own browser and tabs", special = "browser", app = true, icon = "globe"),
+        ArgusView("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: watch it log in and book, take control, hand back", special = "phonebrowser", aliases = listOf("blaze phone", "phone browser", "blaze phone browser", "blaze's phone"), app = true, icon = "smartphone"),
+        ArgusView("usage", "Usage", "Tokens and estimated cost", page = "usage", aliases = listOf("cost")),
+        ArgusView("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, call", page = "voice"),
+        ArgusView("control", "Phone control", "Accessibility, permissions", page = "control"),
+        ArgusView("logins", "Saved logins", "Sign-ins from the secure form: view, edit, delete", page = "logins", aliases = listOf("vault", "passwords", "logins")),
+        ArgusView("secrets", "Saved secrets", "Keys, tokens, logins and cards from the Secure Form", page = "secrets", aliases = listOf("saved secrets", "api keys", "tokens", "secrets")),
+        ArgusView("proactive", "Proactive", "Speak up on its own, triggers", page = "proactive", aliases = listOf("triggers")),
+        ArgusView("desktop", "${BrandName.NAME} Desktop", "Pair with ${BrandName.NAME} on your computer", page = "desktop", aliases = listOf("pc", "pair")),
+        ArgusView("dashboard", "Dashboard", "Local web dashboard", page = "dashboard"),
+        ArgusView("account", "${BrandName.NAME} account", "Sign in, shared with Desktop", page = "account"),
         // v0.40.0: optional end-to-end encrypted live sync between your phones (off by default).
-        BlazeView("sync", "Cloud sync", "Keep chats, memory, settings and designs the same on all your phones: on/off, passphrase, what syncs, Sync now, delete the cloud copy", page = "sync", aliases = listOf("cloud sync", "sync", "backup to cloud", "other phone", "sync phones")),
-        // v0.39.0 Simple mode: what Blaze is doing on its own, and the living backgrounds.
-        BlazeView("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders with friendly names and on/off, and a \u201cToday I\u2026\u201d diary", page = "doing", aliases = listOf("things", "doing now", "diary", "activity", "today i")),
-        BlazeView("look", "Look & feel", "Light / Dark / Auto, accent colour, the Home's tilt effect", page = "look", aliases = listOf("theme", "themes", "background", "backgrounds", "wallpaper", "look and feel", "look & feel")),
-        BlazeView("settings", "Settings", "Behaviour, voice, privacy, backup", page = ""),
+        ArgusView("sync", "Cloud sync", "Keep chats, memory, settings and designs the same on all your phones: on/off, passphrase, what syncs, Sync now, delete the cloud copy", page = "sync", aliases = listOf("cloud sync", "sync", "backup to cloud", "other phone", "sync phones")),
+        // v0.39.0 Simple mode: what Argus is doing on its own, and the living backgrounds.
+        ArgusView("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders with friendly names and on/off, and a \u201cToday I\u2026\u201d diary", page = "doing", aliases = listOf("things", "doing now", "diary", "activity", "today i")),
+        ArgusView("look", "Look & feel", "Light / Dark / Auto, accent colour, the Home's tilt effect", page = "look", aliases = listOf("theme", "themes", "background", "backgrounds", "wallpaper", "look and feel", "look & feel")),
+        ArgusView("settings", "Settings", "Behaviour, voice, privacy, backup", page = ""),
     )
 
     /** The Apps page (Life › Apps): every view that is an app, in this list's order. Settings, chat and Home are not apps. */
-    val apps: List<BlazeView> get() = all.filter { it.app }
+    val apps: List<ArgusView> get() = all.filter { it.app }
 
-    fun find(id: String): BlazeView? {
+    fun find(id: String): ArgusView? {
         val k = id.trim().lowercase().removePrefix("/")
         return all.firstOrNull { it.id == k } ?: all.firstOrNull { k in it.aliases }
     }
 
-    fun filter(q: String): List<BlazeView> {
+    fun filter(q: String): List<ArgusView> {
         val f = q.trim().lowercase()
         if (f.isEmpty()) return all
         return all.filter { (it.name + " " + it.desc + " " + it.id + " " + it.aliases.joinToString(" ")).lowercase().contains(f) }
@@ -80,7 +80,7 @@ object Views {
 
     // ---------------- v0.24.6: ask before switching ----------------
 
-    /** "Open in Design?": a chip in the chat that opens the view on one tap (Blazeinchue: Blaze asks, it doesn't jump). */
+    /** "Open in Design?": a chip in the chat that opens the view on one tap (Blazeinchue: Argus asks, it doesn't jump). */
     data class Offer(val id: String, val target: String = "", val n: Long = System.nanoTime())
     val offer = MutableStateFlow<Offer?>(null)
 

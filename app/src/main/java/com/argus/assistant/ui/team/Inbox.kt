@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
 import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
@@ -31,25 +31,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.policy.CardAnswer
-import com.blaze.assistant.policy.Cards
-import com.blaze.assistant.policy.NeedsYou
-import com.blaze.assistant.policy.PolicyRuntime
-import com.blaze.assistant.team.JobRun
-import com.blaze.assistant.team.JobStore
-import com.blaze.assistant.team.TeamGraph
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.BotOrb
-import com.blaze.assistant.ui.argus.OrbFace
-import com.blaze.assistant.ui.argus.OrbSize
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
-import com.blaze.assistant.ui.argus.kit.ChipModel
-import com.blaze.assistant.ui.argus.kit.FilterChips
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.policy.CardAnswer
+import com.argus.assistant.policy.Cards
+import com.argus.assistant.policy.NeedsYou
+import com.argus.assistant.policy.PolicyRuntime
+import com.argus.assistant.team.JobRun
+import com.argus.assistant.team.JobStore
+import com.argus.assistant.team.TeamGraph
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.BotOrb
+import com.argus.assistant.ui.argus.OrbFace
+import com.argus.assistant.ui.argus.OrbSize
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.ui.argus.kit.ChipModel
+import com.argus.assistant.ui.argus.kit.FilterChips
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -82,7 +82,7 @@ object NeedsYouFeed {
         scope.launch { PolicyRuntime.cards.collect { publish() } }
         scope.launch(Dispatchers.IO) {
             while (true) {
-                runCatching { readJobs(app) }.onFailure { com.blaze.assistant.device.CrashLog.quiet("NeedsYouFeed.jobs", it) }
+                runCatching { readJobs(app) }.onFailure { com.argus.assistant.device.CrashLog.quiet("NeedsYouFeed.jobs", it) }
                 publish()   // also drops approvals whose 25 minutes ran out
                 delay(10_000)
             }
@@ -124,7 +124,7 @@ object NeedsYouFeed {
             else -> CardAnswer.Allow
         }
         if (allow && NeedsYou.needsBiometric(item)) {
-            com.blaze.assistant.ui.DeviceUnlock.ask(ctx, tr("Allow: {0}", item.title), subtitle = tr("Inbox")) { ok, _ -> done(ok && PolicyRuntime.answer(item.id, a)) }
+            com.argus.assistant.ui.DeviceUnlock.ask(ctx, tr("Allow: {0}", item.title), subtitle = tr("Inbox")) { ok, _ -> done(ok && PolicyRuntime.answer(item.id, a)) }
         } else done(PolicyRuntime.answer(item.id, a))
     }
 

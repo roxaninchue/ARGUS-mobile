@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity

@@ -1,6 +1,6 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.store.JdbcSql
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,7 +11,7 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * P0-TM-01: team.db's SQL ([TeamSchema]) on a real SQLite (sqlite-jdbc, like CacheStoreTest / BlazeDbTest): a fresh file
+ * P0-TM-01: team.db's SQL ([TeamSchema]) on a real SQLite (sqlite-jdbc, like CacheStoreTest / ArgusDbTest): a fresh file
  * gets every 05 §9.2 table with its columns, a v1 file migrates to the current version with its rows intact, the
  * foreign keys cascade, every step is one statement, and a newer file is refused. TeamDbTest runs the same steps
  * through the Android SQLiteOpenHelper.

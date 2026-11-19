@@ -1,13 +1,13 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.random.Random
 
 /**
- * 0.46.4 Blaze DJ: picks and orders songs from the user's own library (plays, likes, recent plays, time of day and a
+ * 0.46.4 Argus DJ: picks and orders songs from the user's own library (plays, likes, recent plays, time of day and a
  * vibe), with short optional spoken intros through the phone's text-to-speech. Off on battery saver. Speech is plain:
  * the song and artist, no metaphor filler (0.46.2 Halo rule, checked by [DjSpeech.plain] and MusicRevampTest).
  */
@@ -109,7 +109,7 @@ object DjSpeech {
 }
 
 /** The DJ at runtime: on / off, the vibe, whether it speaks, and its own text-to-speech (ducks the music while it talks). */
-object BlazeDj {
+object ArgusDj {
     const val VIBE = "music_dj_vibe"
     const val VOICE = "music_dj_voice"
     val on = MutableStateFlow(false)

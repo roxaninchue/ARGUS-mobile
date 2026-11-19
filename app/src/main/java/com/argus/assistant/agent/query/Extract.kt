@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
 /**
- * 0.51.0 BlazeQuery extraction: from a fetched page (Web.fetch's plain text: "# title" then one line per block element) to
+ * 0.51.0 ArgusQuery extraction: from a fetched page (Web.fetch's plain text: "# title" then one line per block element) to
  * the few passages that answer the query, with code blocks and command lines kept whole and in order.
  *
  *  - boilerplate lines (cookie banners, "Sign in", nav crumbs, "All rights reserved", share buttons) are dropped;

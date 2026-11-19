@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.53.3 (owner: "like Claude models I want tools and answers coming together, final reply at the end"): the words a model

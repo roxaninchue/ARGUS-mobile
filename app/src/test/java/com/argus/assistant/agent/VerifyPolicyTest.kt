@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.agent.ToolVerify.Status
-import com.blaze.assistant.agent.ToolVerify.Verdict
+import com.argus.assistant.agent.ToolVerify.Status
+import com.argus.assistant.agent.ToolVerify.Verdict
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -84,10 +84,10 @@ class VerifyPolicyTest {
     @Test fun timeoutsAreHonest() {
         assertEquals(Status.UNVERIFIED, VerifyPolicy.timedOut().status)
         assertTrue(VerifyPolicy.timedOut().why.contains("didn't finish"))
-        assertFalse(com.blaze.assistant.agent.Playbooks.Review(true, emptyList(), checked = false).checked)
+        assertFalse(com.argus.assistant.agent.Playbooks.Review(true, emptyList(), checked = false).checked)
         assertTrue(VerifyPolicy.NOT_REVIEWED.startsWith("(Not self-checked"))
         assertTrue(VerifyPolicy.MODEL_CHECK_MS in 3_000..20_000)
-        val src = java.io.File("src/main/java/com/blaze/assistant/agent/Agent.kt").readText()
+        val src = java.io.File("src/main/java/com/argus/assistant/agent/Agent.kt").readText()
         assertTrue(src.contains("CallState().also { it.lite = true }"))   // the quick route
         assertTrue(src.contains("Playbooks.Review(true, emptyList(), checked = false)"))
     }
@@ -122,7 +122,7 @@ class VerifyPolicyTest {
     }
 
     @Test fun agentUsesThePolicy() {
-        val src = java.io.File("src/main/java/com/blaze/assistant/agent/Agent.kt").readText()
+        val src = java.io.File("src/main/java/com/argus/assistant/agent/Agent.kt").readText()
         assertTrue(src.contains("VerifyPolicy.mode(name, strictV)"))
         assertTrue(src.contains("flipReceipt(book, li, di, fin)"))
         assertTrue(src.contains("b.stats.line()"))

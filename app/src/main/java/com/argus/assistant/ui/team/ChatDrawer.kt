@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.verticalScroll
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -63,30 +63,30 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.BgAgents
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.ChatStore
-import com.blaze.assistant.agent.ManagerChats
-import com.blaze.assistant.agent.Mood
-import com.blaze.assistant.agent.Projects
-import com.blaze.assistant.agent.ReplyChips
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.ManagerOrb
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusField
-import com.blaze.assistant.ui.argus.kit.ArgusIconButton
-import com.blaze.assistant.ui.argus.kit.ArgusSearch
-import com.blaze.assistant.ui.argus.kit.ArgusSheet
-import com.blaze.assistant.ui.argus.kit.ArgusToasts
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
-import com.blaze.assistant.ui.argus.kit.IconButtonKind
-import com.blaze.assistant.ui.argus.kit.MenuRow
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.BgAgents
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.ChatStore
+import com.argus.assistant.agent.ManagerChats
+import com.argus.assistant.agent.Mood
+import com.argus.assistant.agent.Projects
+import com.argus.assistant.agent.ReplyChips
+import com.argus.assistant.agent.Role
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.ManagerOrb
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusField
+import com.argus.assistant.ui.argus.kit.ArgusIconButton
+import com.argus.assistant.ui.argus.kit.ArgusSearch
+import com.argus.assistant.ui.argus.kit.ArgusSheet
+import com.argus.assistant.ui.argus.kit.ArgusToasts
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.ui.argus.kit.IconButtonKind
+import com.argus.assistant.ui.argus.kit.MenuRow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -100,7 +100,7 @@ import java.time.ZoneId
 /**
  * P1-SH-04 Chat mode's runtime: the Manager's chats ([ManagerChats], rules in ChatDrawerModel) read from and saved to
  * the chats folder, ✎ New chat = a new window + a fresh context on the main chat ([Agent.clear]) + the Manager's
- * generation bump ([com.blaze.assistant.team.BotThreads.fresh]). Thin Android glue; the rules are pure and tested
+ * generation bump ([com.argus.assistant.team.BotThreads.fresh]). Thin Android glue; the rules are pure and tested
  * (ManagerChatsTest, ChatDrawerTest). Port of A-team `app/www/talks.js` (v2.19-chat-drawer, 0788c808).
  */
 object ChatModeRuntime {
@@ -139,7 +139,7 @@ object ChatModeRuntime {
     private fun startFresh(ctx: Context) {
         if (Agent.mood.value == Mood.IDLE) Agent.clear(false) else pendingFresh = true
         val app = ctx.applicationContext
-        io.launch { try { com.blaze.assistant.team.TeamGraph.get(app).threads.fresh(BotRules.MANAGER_ID) } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ChatMode.fresh", t) } }
+        io.launch { try { com.argus.assistant.team.TeamGraph.get(app).threads.fresh(BotRules.MANAGER_ID) } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("ChatMode.fresh", t) } }
     }
 
     /** Before a send from Chat mode: an older chat is read-only, so the message goes to the newest one. */
@@ -163,7 +163,7 @@ object ChatModeRuntime {
      * ([Titles.ask]) names it from what most of it is about. Never for a chat you named; a failed call tries next turn.
      */
     private fun autoTitle(c: ManagerChats, g: Int) {
-        if (!com.blaze.assistant.agent.Settings.autoTitles) return
+        if (!com.argus.assistant.agent.Settings.autoTitles) return
         val ch = c.get(g) ?: return
         if (ch.named || ch.gone) return
         val w = c.window(g) ?: return
@@ -173,7 +173,7 @@ object ChatModeRuntime {
         if (!ManagerChats.titleDue(n, ch.autoN, ch.auto != null, lines.last { it.first }.second.length)) return
         val current = ch.auto ?: ChatDrawerModel.clean(lines.first { it.first }.second)
         io.launch {
-            val r = try { com.blaze.assistant.agent.Titles.ask("manager-$g", current, lines) } catch (t: Throwable) { null } ?: return@launch
+            val r = try { com.argus.assistant.agent.Titles.ask("manager-$g", current, lines) } catch (t: Throwable) { null } ?: return@launch
             synchronized(this@ChatModeRuntime) { chats().autoTitle(g, r.title, n) }
             changed()
         }
@@ -269,7 +269,7 @@ fun ChatModeFrame(
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 if (chrome) Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    ArgusIconButton(com.blaze.assistant.ui.argus.icons.ArgusGlyphs.MENU_TAPER, "Chat history", { ChatDrawerUi.open() }, kind = IconButtonKind.FLAT, badge = chats.anyUnseen())
+                    ArgusIconButton(com.argus.assistant.ui.argus.icons.ArgusGlyphs.MENU_TAPER, "Chat history", { ChatDrawerUi.open() }, kind = IconButtonKind.FLAT, badge = chats.anyUnseen())
                     Spacer(Modifier.weight(1f))
                     ArgusIconButton("lock", if (privateOn) "Private chat on" else "Private chat", onPrivate, kind = if (privateOn) IconButtonKind.GLASS else IconButtonKind.FLAT)
                     ArgusIconButton("square-pen", "New chat", { ChatModeRuntime.newChat(ctx) }, kind = IconButtonKind.FLAT)
@@ -463,7 +463,7 @@ fun ChatModeEmpty(name: String?, privateOn: Boolean, onAsk: (String) -> Unit, ho
     val clock = remember { java.time.LocalTime.now().hour }
     val hr = hour ?: clock
     // Landscape overhaul: centred while it fits, scrolls when it doesn't (a phone on its side), with a smaller orb there
-    val orb = com.blaze.assistant.ui.common.WindowLayout.heroOrbDp(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
+    val orb = com.argus.assistant.ui.common.WindowLayout.heroOrbDp(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.toFloat())
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState()).heightIn(min = if (constraints.hasBoundedHeight) maxHeight else 0.dp).padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {

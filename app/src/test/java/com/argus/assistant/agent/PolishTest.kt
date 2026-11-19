@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
-import com.blaze.assistant.ui.Bubbles
-import com.blaze.assistant.ui.RichKit
+import com.argus.assistant.ui.Bubbles
+import com.argus.assistant.ui.RichKit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

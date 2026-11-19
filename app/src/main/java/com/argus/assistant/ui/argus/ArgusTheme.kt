@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,9 +21,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.ui.drawArgusArcs
+import com.argus.assistant.R
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.ui.drawArgusArcs
 
 /**
  * P0-SH-01: the ARGUS theme (04 §2): [ArgusColors] via [LocalArgusColors], the ground via [LocalArgusGround], and

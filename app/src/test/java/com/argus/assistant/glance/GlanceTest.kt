@@ -1,7 +1,7 @@
-package com.blaze.assistant.glance
+package com.argus.assistant.glance
 
-import com.blaze.assistant.stage.ShelfCard
-import com.blaze.assistant.stage.StageKind
+import com.argus.assistant.stage.ShelfCard
+import com.argus.assistant.stage.StageKind
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -42,7 +42,7 @@ object StepPillView { const val TAG = "step_pill" }
 
 @Composable
 fun StepPillRow(text: String?, specialist: Boolean = false, modifier: Modifier = Modifier, inline: Boolean = false) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     // 0.45.24: beside the drop ([inline]); it leaves at once (no fade over the reply's first words). Remove animations: no fades at all.
     AnimatedVisibility(text != null, modifier = modifier, enter = MotionTokens.fade(), exit = if (inline) ExitTransition.None else MotionTokens.fadeAway()) {
         val shown = text.orEmpty()

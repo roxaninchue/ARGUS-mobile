@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * fix/chat-flat-ui (owner, 14 Nov 2026: "we'll show collapsible and expandable thinking process"): the rules of the

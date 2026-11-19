@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
@@ -16,9 +16,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.BgAgents
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Role
+import com.argus.assistant.agent.BgAgents
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Role
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
@@ -43,7 +43,7 @@ class RichMediaShotsTest {
         }
     }
     @get:Rule(order = 1) val rule = androidx.compose.ui.test.junit4.createAndroidComposeRule<androidx.activity.ComponentActivity>()
-    @org.junit.Before fun initSettings() { try { com.blaze.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
+    @org.junit.Before fun initSettings() { try { com.argus.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
 
     private fun capture(name: String): Bitmap {
         val root = rule.activity.window.decorView
@@ -64,7 +64,7 @@ class RichMediaShotsTest {
 
     private fun shoot(name: String, content: @androidx.compose.runtime.Composable () -> Unit) {
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides DarkColors, RichImages.Local provides fakeArt) {
+            CompositionLocalProvider(LocalArgus provides DarkColors, RichImages.Local provides fakeArt) {
                 Column(Modifier.fillMaxSize().background(Color(0xFF0E1424)).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) { content() }
             }
         }
@@ -95,7 +95,7 @@ class RichMediaShotsTest {
             BgAgents.Bg("B7", "Compare solar kits", "t", "c", "bg-x", status = BgAgents.RUNNING, created = now - 95_000, started = now - 95_000, steps = 6,
                 last = "Searching: solar kits under K5,000", specialist = "researcher", log = listOf("Searching: solar kits", "Reading 3 pages", "Searching: solar kits under K5,000")),
             BgAgents.Bg("B8", "Amapiano 2025 list", "t", "c", "bg-y", status = BgAgents.DONE, created = now - 215_000, started = now - 215_000, ended = now, steps = 57,
-                specialist = com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST)))
+                specialist = com.argus.assistant.orchestra.OrchestraRuns.SPECIALIST)))
         val steps = (0 until 4).map { ChatMessage(100L + it, Role.STEP, listOf("Searching the web", "Reading a page", "Writing notes", "Checking a claim")[it], at = now - 40_000 + it * 9_000L) }
         shoot("pills") {
             WorkCard(steps, live = true, startAt = now - 40_000, endAt = now, now = now)

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -40,7 +40,7 @@ class HomeRedesignTest {
         rule.onNodeWithText("IGN \u00b7 5 h ago").assertIsDisplayed()
     }
 
-    @Test fun quickActionsAskBlaze() {
+    @Test fun quickActionsAskArgus() {
         var asked = ""
         rule.setContent { HomeRedesignContent(HomeRedesignSample.state(), playIntro = false, drawSky = false, onAction = { asked = it.prompt }) }
         rule.onNodeWithText("on Programming, Startups and PlayStation news").assertIsDisplayed().performClick()

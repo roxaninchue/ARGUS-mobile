@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
@@ -11,7 +11,7 @@ import java.security.MessageDigest
  * reads one as JSON, and stores a copy from another phone. Chats and designs are files, so their adapters are plain
  * JVM code (SyncAdaptersTest); memory and settings live in blaze.db and prefs and are wired up in [CloudSync].
  *
- * What never syncs: the Blaze session, connector tokens and API keys (every "conn_tok_" / key pref), the PC pairing,
+ * What never syncs: the Argus session, connector tokens and API keys (every "conn_tok_" / key pref), the PC pairing,
  * permissions and other per-phone switches, private chats (never written to disk), and design version history.
  */
 object SyncKinds {
@@ -44,7 +44,7 @@ object SyncedSettings {
     val KEYS = setOf(
         // Simple / Advanced, navigation, Look & feel (not "look_photo": a path on this phone).
         "ui_mode", "nav_style", "look_bg", "look_accent", "look_music", "look_still", "theme_mode", "text_scale",
-        // How Blaze talks and shows its work.
+        // How Argus talks and shows its work.
         "persona", "persona_custom", "user_name", "show_reasoning", "show_steps", "show_route", "fold_answers", "followups",
         "stream", "task_card", "auto_titles", "auto_learn", "learn_approval", "long_chat",
         // Approvals and modes.
@@ -242,7 +242,7 @@ class SettingsAdapter(private val prefs: PrefStore, private val onApplied: () ->
 
     private fun synced(): Map<String, Any?> = prefs.all().filter { (k, v) -> SyncedSettings.synced(k) && SyncedSettings.encode(v) != null &&
         // v0.45.5 hotfix: never send a boolean setting that holds something else (the old "followups" list did).
-        !(k in com.blaze.assistant.agent.PrefCoerce.BOOL_KEYS && v is String && com.blaze.assistant.agent.PrefCoerce.parseBool(v) == null) }
+        !(k in com.argus.assistant.agent.PrefCoerce.BOOL_KEYS && v is String && com.argus.assistant.agent.PrefCoerce.parseBool(v) == null) }
 
     override fun stamps(): Map<String, String> = synced().mapValues { (_, v) -> SyncedSettings.stamp(v) }
 
@@ -257,8 +257,8 @@ class SettingsAdapter(private val prefs: PrefStore, private val onApplied: () ->
         if (!SyncedSettings.synced(item.id)) return
         // v0.45.5 hotfix: written with the type this phone uses ("true" from a peer becomes a Boolean; a non-boolean string
         // for a boolean key is refused), so a synced setting can never break a turn.
-        val v = if (item.deleted) null else com.blaze.assistant.agent.PrefCoerce.forSync(item.id, prefs.all()[item.id], SyncedSettings.decode(item.data!!))
-        if (v === com.blaze.assistant.agent.PrefCoerce.SKIP) return
+        val v = if (item.deleted) null else com.argus.assistant.agent.PrefCoerce.forSync(item.id, prefs.all()[item.id], SyncedSettings.decode(item.data!!))
+        if (v === com.argus.assistant.agent.PrefCoerce.SKIP) return
         prefs.put(item.id, v)
         onApplied()
     }

@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
-import com.blaze.assistant.ui.living.LivingModel.Board
-import com.blaze.assistant.ui.living.LivingModel.Card
-import com.blaze.assistant.ui.living.LivingModel.Kind
+import com.argus.assistant.ui.living.LivingModel.Board
+import com.argus.assistant.ui.living.LivingModel.Card
+import com.argus.assistant.ui.living.LivingModel.Kind
 import kotlin.math.max
 import kotlin.math.min
 

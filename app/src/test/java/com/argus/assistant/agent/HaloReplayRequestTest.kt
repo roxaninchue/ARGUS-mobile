@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertTrue
@@ -61,7 +61,7 @@ class HaloReplayRequestTest {
     /** v0.45.13: the list the phone really registers (registry + PhoneTools), as one request sends it: capped to ≤128 for this turn (ToolTruth.cap). */
     private val phoneAll: JSONArray by lazy {
         val t = JSONArray(); val all = tools; for (i in 0 until all.length()) t.put(all.get(i))
-        try { val p = com.blaze.assistant.phone.PhoneTools.definitions(); for (i in 0 until p.length()) t.put(p.get(i)) } catch (_: Throwable) { }
+        try { val p = com.argus.assistant.phone.PhoneTools.definitions(); for (i in 0 until p.length()) t.put(p.get(i)) } catch (_: Throwable) { }
         ToolTruth.clean(t)
     }
     private fun wire(msgs: JSONArray): JSONArray = ToolTruth.cap(msgs, phoneAll)
@@ -88,7 +88,7 @@ class HaloReplayRequestTest {
         val now = ZonedDateTime.of(2026, 10, 21, 17, 13, 0, 0, zone)
         val phone = JSONArray().also { t -> val all = tools; for (i in 0 until all.length()) t.put(all.get(i)) }
         val missed = ArrayList<String>()
-        try { val p = com.blaze.assistant.phone.PhoneTools.definitions(); for (i in 0 until p.length()) phone.put(p.get(i)) } catch (e: Throwable) { missed += "PhoneTools (${e.javaClass.simpleName})" }
+        try { val p = com.argus.assistant.phone.PhoneTools.definitions(); for (i in 0 until p.length()) phone.put(p.get(i)) } catch (e: Throwable) { missed += "PhoneTools (${e.javaClass.simpleName})" }
         val clean = ToolTruth.clean(phone)
         val names = ToolTruth.names(clean)
         val alarm = ScheduleDay.Entry("Demo app alarm", "alarm", ScheduleDay.Rule.Once(ZonedDateTime.of(2026, 10, 21, 18, 15, 0, 0, zone).toInstant()))
@@ -126,23 +126,23 @@ class HaloReplayRequestTest {
                 .put(turn("@halo how are you feeling??", wed, true, true))
                 .put(turn("doing good thanks!", wed.plusMinutes(1), false, true))
                 .put(turn("well as the assistant shouldn't you be telling me?", wed.plusMinutes(1), false, true))))
-            .put(JSONObject().put("id", "schedule-wednesday").put("calendar_result", com.blaze.assistant.phone.Skills.eventsResult(emptyList())).put("turns", JSONArray()
+            .put(JSONObject().put("id", "schedule-wednesday").put("calendar_result", com.argus.assistant.phone.Skills.eventsResult(emptyList())).put("turns", JSONArray()
                 .put(turn("anything on for today?", wedSched, false, true))
                 .put(turn("so what's on for today specifically?", wedSched.plusMinutes(1), false, true))))
-            .put(JSONObject().put("id", "schedule-sunday").put("calendar_result", com.blaze.assistant.phone.Skills.eventsResult(emptyList())).put("turns", JSONArray()
+            .put(JSONObject().put("id", "schedule-sunday").put("calendar_result", com.argus.assistant.phone.Skills.eventsResult(emptyList())).put("turns", JSONArray()
                 .put(turn("anything on for today?", sun, false, true))
                 .put(turn("so what's on for today specifically?", sun.plusMinutes(1), false, true))))
             .put(JSONObject().put("id", "hi-blaze").put("turns", JSONArray().put(turn("hi ${BrandName.NAME}", wed.plusMinutes(15), false, true))))
             // "View calendar": granted → the phone's calendar_events returns the fixture event; not granted → the tool shows
             // Android's one-tap prompt and (denied) returns Skills.CALENDAR_OFF.
-            .put(JSONObject().put("id", "view-calendar-granted").put("calendar_result", com.blaze.assistant.phone.Skills.eventsResult(listOf("Wed 21 Oct 15:00\u201316:00: Lab group meeting @ Room 4")))
+            .put(JSONObject().put("id", "view-calendar-granted").put("calendar_result", com.argus.assistant.phone.Skills.eventsResult(listOf("Wed 21 Oct 15:00\u201316:00: Lab group meeting @ Room 4")))
                 .put("turns", JSONArray().put(turn("View calendar", wed.plusMinutes(16), false, true, listOf(lab)))))
-            .put(JSONObject().put("id", "view-calendar-not-granted").put("calendar_result", com.blaze.assistant.phone.Skills.CALENDAR_OFF)
+            .put(JSONObject().put("id", "view-calendar-not-granted").put("calendar_result", com.argus.assistant.phone.Skills.CALENDAR_OFF)
                 .put("turns", JSONArray().put(turn("View calendar", wed.plusMinutes(16), false, true, calOff = true))))
         // 10:30 phone case: "@halo Yes" to Halo's own calendar offer got "I currently don't have the ability to access or view your calendar."
         val offer = "[Halo] I can check your Google Calendar, want me to?"
         scenarios.put(JSONObject().put("id", "halo-yes-to-calendar-offer")
-            .put("calendar_result", com.blaze.assistant.phone.Skills.eventsResult(listOf("Wed 21 Oct 15:00\u201316:00: Lab group meeting @ Room 4")))
+            .put("calendar_result", com.argus.assistant.phone.Skills.eventsResult(listOf("Wed 21 Oct 15:00\u201316:00: Lab group meeting @ Room 4")))
             .put("seed_history", JSONArray().put(JSONObject().put("role", "user").put("content", "@halo what's my day looking like?"))
                 .put(JSONObject().put("role", "assistant").put("content", offer)))
             .put("turns", JSONArray().put(turn("@halo Yes", wed.plusMinutes(18), true, false, listOf(lab), lastReply = offer))))

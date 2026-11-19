@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -382,10 +382,10 @@ object CloudRuns {
         fun send(method: String, path: String, body: String?, headers: Map<String, String>): Response
     }
 
-    /** The real gateway: HTTPS with the Blaze sign-in. */
+    /** The real gateway: HTTPS with the Argus sign-in. */
     class GatewayHttp(private val base: String = Providers.GATEWAY_BASE, private val token: () -> String = { Settings.gatewayToken() }) : Http {
         override fun send(method: String, path: String, body: String?, headers: Map<String, String>): Response {
-            val c = com.blaze.assistant.connect.UrlSafety.open(base.trimEnd('/') + path)
+            val c = com.argus.assistant.connect.UrlSafety.open(base.trimEnd('/') + path)
             c.requestMethod = method
             c.connectTimeout = 15_000
             // The gateway pings a stream every 15 s and ends it after ~25 s.
@@ -413,7 +413,7 @@ object CloudRuns {
                     st.gw = st.gw + g; g["x-request-id"]?.let { if (it !in st.requestIds) st.requestIds.add(it) } } } catch (_: Throwable) { }
                 var s = (if (code in 200..299) c.inputStream else c.errorStream) ?: java.io.ByteArrayInputStream(ByteArray(0))
                 // Account lock: a 401 / 403 body is short; read it for the lock check, then hand the same bytes on.
-                if (code == 401 || code == 403) { val b = s.use { it.readBytes() }; com.blaze.assistant.connect.AccountGate.report(code, String(b)); s = java.io.ByteArrayInputStream(b) }
+                if (code == 401 || code == 403) { val b = s.use { it.readBytes() }; com.argus.assistant.connect.AccountGate.report(code, String(b)); s = java.io.ByteArrayInputStream(b) }
                 val hs = c.getHeaderField("Retry-After")?.let { mapOf("retry-after" to it) } ?: emptyMap()
                 return Response(code, c.contentType.orEmpty(), s.bufferedReader(), onClose = { c.disconnect() }, headers = hs)
             } catch (e: IOException) { c.disconnect(); throw e }
@@ -778,7 +778,7 @@ object CloudRuns {
                     forget(id, true); t.runId = null
                     // 0.46.3: a run that failed for a reason another brain can fix (every model busy, no reply, too slow, a 5xx)
                     // never reaches the person: this step and the rest of the turn go on the phone's own loop, which retries
-                    // Blaze Cloud, then the backup brain, then the reserve, with the same context (Failover).
+                    // Argus Cloud, then the backup brain, then the reserve, with the same context (Failover).
                     if (handOff(code)) throw Fallback("failed $code: handed to the local loop")
                     val known = failure(code)
                     // Contract §3: a busy / quota failure says it in the gateway's honest words, with what to do next.
@@ -872,7 +872,7 @@ object CloudRuns {
             null
         } catch (e: LlmClient.LlmException) {
             if (!handOff(e)) throw e
-            // 0.46.3: busy / 5xx / timeout / network on the run: the local loop (Blaze Cloud retry, backup, reserve) takes it
+            // 0.46.3: busy / 5xx / timeout / network on the run: the local loop (Argus Cloud retry, backup, reserve) takes it
             t.off = true
             LlmClient.lastCloudError = "cloud run: ${e.message.orEmpty().take(200)} (handed to the local loop)"
             null

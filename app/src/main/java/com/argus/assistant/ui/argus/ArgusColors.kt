@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color

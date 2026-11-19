@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.agent.ChatNav
-import com.blaze.assistant.ui.argus.icons.LucidePaths
+import com.argus.assistant.agent.ChatNav
+import com.argus.assistant.ui.argus.icons.LucidePaths
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

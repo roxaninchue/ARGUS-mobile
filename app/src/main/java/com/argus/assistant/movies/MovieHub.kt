@@ -1,4 +1,4 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -24,13 +24,13 @@ object MovieHub {
     suspend fun search(sources: List<MovieSource>, query: String, parallel: Int = PARALLEL, timeoutMs: Long = SOURCE_TIMEOUT_MS): Search = coroutineScope {
         val gate = Semaphore(parallel.coerceAtLeast(1))
         Search(sources.map { s -> async { gate.withPermit {
-            try { withTimeoutOrNull(timeoutMs) { SourceResult(s, com.blaze.assistant.mediaapps.BrowseState.clean(s.search(query))) } ?: SourceResult(s, emptyList(), "took too long") }
+            try { withTimeoutOrNull(timeoutMs) { SourceResult(s, com.argus.assistant.mediaapps.BrowseState.clean(s.search(query))) } ?: SourceResult(s, emptyList(), "took too long") }
             catch (e: kotlinx.coroutines.CancellationException) { throw e }
             catch (e: Throwable) { SourceResult(s, emptyList(), (e.message ?: "error").take(160)) }   // 0.46.5: Errors too (engine OOM / stack)
         } } }.awaitAll())
     }
 
-    /** Sources Blaze may use for a request: official ones, plus user-installed providers only when the user asked for them. */
+    /** Sources Argus may use for a request: official ones, plus user-installed providers only when the user asked for them. */
     fun allowed(all: List<MovieSource>, allowProviders: Boolean, only: String = ""): List<MovieSource> {
         val pool = if (allowProviders) all else all.filter { it.official }
         if (only.isBlank()) return pool

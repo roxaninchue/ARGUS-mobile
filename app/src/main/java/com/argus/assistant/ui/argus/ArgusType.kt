@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui.argus
+package com.argus.assistant.ui.argus
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.R
+import com.argus.assistant.R
 
 /**
  * P0-SH-01: 04 §2.2 type as Compose text styles, from [ArgusTypeScale]. Inter and Inter Tight are the fonts AM already

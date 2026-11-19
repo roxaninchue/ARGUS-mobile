@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -26,14 +26,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 
 /**
- * The pointer as drawn by phone/Pointer.kt (v0.24.5: Blaze's flame mascot, gradient, eyes, glow, white edge; the tip is
- * the click point), from the same geometry ([com.blaze.assistant.phone.Mascot]), for screenshots. [ripple] 0..1 draws
+ * The pointer as drawn by phone/Pointer.kt (v0.24.5: Argus's flame mascot, gradient, eyes, glow, white edge; the tip is
+ * the click point), from the same geometry ([com.argus.assistant.phone.Mascot]), for screenshots. [ripple] 0..1 draws
  * the click ring and the squish; [pulse] is the gliding scale. [sizeDp] lets the icon shots draw it bigger.
  */
 @Composable
 fun PointerGlyph(ripple: Float = -1f, pulse: Float = 1f, modifier: Modifier = Modifier, scale: Float = 1f) {
-    val P = com.blaze.assistant.phone.Pointer
-    val M = com.blaze.assistant.phone.Mascot
+    val P = com.argus.assistant.phone.Pointer
+    val M = com.argus.assistant.phone.Mascot
     Canvas(modifier.size((P.TOUCH_DP * scale).dp)) {
         val d = density * scale
         val tx = P.TIP_X_DP * d; val ty = P.TIP_Y_DP * d
@@ -47,18 +47,18 @@ fun PointerGlyph(ripple: Float = -1f, pulse: Float = 1f, modifier: Modifier = Mo
     }
 }
 
-/** The Stop chip at the bottom-left edge while Blaze drives the phone (phone/Pointer.kt draws it with plain Views). */
+/** The Stop chip at the bottom-left edge while Argus drives the phone (phone/Pointer.kt draws it with plain Views). */
 @Composable
 fun PointerStopChip() {
-    Box(Modifier.clip(BlazeShapes.pill).background(Color(0xC81D1A16), BlazeShapes.pill).padding(horizontal = 10.dp, vertical = 5.dp)) {
+    Box(Modifier.clip(ArgusShapes.pill).background(Color(0xC81D1A16), ArgusShapes.pill).padding(horizontal = 10.dp, vertical = 5.dp)) {
         Text(tr("Stop"), maxLines = 1, softWrap = false, style = TextStyle(fontSize = 12.sp, color = Color.White))
     }
 }
 
-/** Draws Blaze's mascot with its tip at (tx, ty), [k] px per unit, squish (sx, sy): glow, shadow, gradient body, edge, eyes. */
+/** Draws Argus's mascot with its tip at (tx, ty), [k] px per unit, squish (sx, sy): glow, shadow, gradient body, edge, eyes. */
 fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMascot(tx: Float, ty: Float, k: Float, sx: Float = 1f, sy: Float = 1f,
                                                                 d: Float = density, edge: Boolean = true) {
-    val M = com.blaze.assistant.phone.Mascot
+    val M = com.argus.assistant.phone.Mascot
         fun at(u: FloatArray) = M.at(u, tx, ty, k, sx, sy).let { Offset(it[0], it[1]) }
         val body = Path().apply {
             M.walk(M.body, tx, ty, k, sx, sy, move = { x, y -> moveTo(x, y) }, cubic = { a1, b1, c1, d1, e1, f1 -> cubicTo(a1, b1, c1, d1, e1, f1) })
@@ -86,7 +86,7 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMascot(tx: Float, ty: F
 /** The mascot centred in a square of [size] (no tip marker), with an optional spinning ring around it (work banner). */
 @Composable
 fun MascotMark(size: androidx.compose.ui.unit.Dp, spin: Boolean = false, modifier: Modifier = Modifier) {
-    val M = com.blaze.assistant.phone.Mascot
+    val M = com.argus.assistant.phone.Mascot
     val angle = if (spin) {
         val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "ring")
         t.animateFloat(0f, 360f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1400,
@@ -105,7 +105,7 @@ fun MascotMark(size: androidx.compose.ui.unit.Dp, spin: Boolean = false, modifie
                 topLeft = Offset(sw, sw), size = androidx.compose.ui.geometry.Size(w - 2 * sw, w - 2 * sw),
                 style = Stroke(sw, cap = androidx.compose.ui.graphics.StrokeCap.Round))
         }
-        // v0.32.0: the new Blaze icon (glass drop in its gold halo) replaces the old flame face.
+        // v0.32.0: the new Argus icon (glass drop in its gold halo) replaces the old flame face.
         drawDuoEmblem(Offset(w / 2f, w / 2f), w * (if (spin) 0.86f else 1f), angle / 57.3f)
     }
 }

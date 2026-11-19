@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

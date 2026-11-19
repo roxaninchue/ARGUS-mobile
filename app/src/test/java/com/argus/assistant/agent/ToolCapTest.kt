@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -20,7 +20,7 @@ import java.io.File
 class ToolCapTest {
     private val all: JSONArray by lazy {
         val t = JSONArray(); val r = ToolTruthTest().registry().first; for (i in 0 until r.length()) t.put(r.get(i))
-        val p = com.blaze.assistant.phone.PhoneTools.definitions(); for (i in 0 until p.length()) t.put(p.get(i))
+        val p = com.argus.assistant.phone.PhoneTools.definitions(); for (i in 0 until p.length()) t.put(p.get(i))
         ToolTruth.clean(t)
     }
 
@@ -131,7 +131,7 @@ class ToolCapTest {
     }
 
     @Test fun setAlarmResultHasNoInstructionText() {
-        val src = listOf(File("src/main/java/com/blaze/assistant/phone/PhoneTools.kt"), File("app/src/main/java/com/blaze/assistant/phone/PhoneTools.kt")).first { it.exists() }.readText()
+        val src = listOf(File("src/main/java/com/argus/assistant/phone/PhoneTools.kt"), File("app/src/main/java/com/argus/assistant/phone/PhoneTools.kt")).first { it.exists() }.readText()
         assertFalse(src.contains("Say this exact time"))
         assertTrue(src.contains("Alarm set for \${\"%02d:%02d\".format(h, m)}, label \\u201c\$label\\u201d. [ID \$pid]"))
         val py = listOf(File("../tools/halo_replay.py"), File("tools/halo_replay.py")).firstOrNull { it.exists() }?.readText() ?: ""  // replay tools are not in the public build source
@@ -154,12 +154,12 @@ class ToolCapTest {
         // a retry of the same tool that worked settles it too
         val retry = listOf(ClaimCheck.Done("set_timer", ToolVerify.Status.UNVERIFIED, "x"), ClaimCheck.Done("set_timer", ToolVerify.Status.VERIFIED, "running"))
         assertNull(UnconfirmedEcho.open(retry))
-        val agent = listOf(File("src/main/java/com/blaze/assistant/agent/Agent.kt"), File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
+        val agent = listOf(File("src/main/java/com/argus/assistant/agent/Agent.kt"), File("app/src/main/java/com/argus/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         assertTrue(agent.contains("UnconfirmedEcho.fix(textOut, synchronized(turnDone) { turnDone.toList() })"))
     }
 
     @Test fun wireSitesUseTheCap() {
-        fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
+        fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }.readText()
         assertTrue(src("agent/LlmClient.kt").contains("val wire = ToolTruth.cap(messages, tools)"))
         assertTrue(src("agent/LlmClient.kt").contains("ToolTruth.choice(messages, wire)"))
         assertTrue(src("agent/CloudRuns.kt").contains("val sent = ToolTruth.cap(messages, tools)"))   // 0.45.15: the named choice is computed on the capped list

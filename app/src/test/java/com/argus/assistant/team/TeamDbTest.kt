@@ -1,4 +1,4 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 import android.content.ContentValues
 import android.content.Context

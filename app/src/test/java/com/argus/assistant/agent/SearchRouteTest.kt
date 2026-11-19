@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -11,7 +11,7 @@ import org.junit.Test
 
 /**
  * 0.50.0 (owner, 2026-11-01 16:32: 'what "/" commands do I have available?' searched the web and answered about Windows help
- * pages). No keyword-triggered web search: questions go to the model, questions about Blaze / the chat / the user's own data
+ * pages). No keyword-triggered web search: questions go to the model, questions about Argus / the chat / the user's own data
  * stay local, weather goes to the weather tool, and the quick lane runs only on an explicit "search…" request.
  */
 class SearchRouteTest {
@@ -55,7 +55,7 @@ class SearchRouteTest {
         assertEquals("the price of a Raspberry Pi 5", SearchRoute.explicitTopic("search the web for the price of a Raspberry Pi 5"))
     }
 
-    @Test fun aboutBlazeTheChatAndMyDataStayLocal() {
+    @Test fun aboutArgusTheChatAndMyDataStayLocal() {
         listOf("what can you do?", "which features does ${BrandName.NAME} have", "how do I turn on Halo in ${BrandName.NAME} settings", "what did I say earlier about the trip",
             "what's on my calendar today", "how many photos do I have", "what version are you", "do I have any alarms set?",
             "what skills do you have").forEach {

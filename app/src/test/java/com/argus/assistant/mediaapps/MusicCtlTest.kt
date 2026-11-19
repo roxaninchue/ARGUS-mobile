@@ -1,9 +1,9 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.mediaapps.MusicCtl.Decision
-import com.blaze.assistant.mediaapps.MusicCtl.State
+import com.argus.assistant.BrandName
+import com.argus.assistant.mediaapps.MusicCtl.Decision
+import com.argus.assistant.mediaapps.MusicCtl.State
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

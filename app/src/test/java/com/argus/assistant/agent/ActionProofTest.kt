@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -8,7 +8,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * v0.28.8: Blaze must never say it did something it didn't. Every row is (what the user asked, Blaze's final reply,
+ * v0.28.8: Argus must never say it did something it didn't. Every row is (what the user asked, Argus's final reply,
  * tools that succeeded this turn, the action that must be flagged or null). The first rows are real failures.
  */
 class ActionProofTest {
@@ -107,7 +107,7 @@ class ActionProofTest {
 
     /** message_contact may only say "Sent to" from the notification reply or after the on-screen check says SENT. */
     @Test fun messagingOnlyClaimsAfterTheCheck() {
-        val src = File("src/main/java/com/blaze/assistant/phone/Messaging.kt").readText()
+        val src = File("src/main/java/com/argus/assistant/phone/Messaging.kt").readText()
         val returns = Regex("""return "((?:[^"\\]|\\.)*)"""").findAll(src).map { it.range.first to it.groupValues[1] }.toList()
         val verdictAt = src.indexOf("SendCheck.Verdict.SENT")
         assertTrue(verdictAt > 0)

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.ContentValues
 import android.content.Context
@@ -11,9 +11,9 @@ import java.io.File
 
 /**
  * v0.45.9: the phone side of [SaveFile]. API 29+: MediaStore.Downloads into Download/Blaze (no permission needed). 0.53.2: a
- * file Blaze already saved under the same name is replaced in place (an edit, "polish it"), not saved again as "name (1)";
+ * file Argus already saved under the same name is replaced in place (an edit, "polish it"), not saved again as "name (1)";
  * if it can't be replaced, Android renames on the clash and the name read back is the one reported. Below 29, or if MediaStore refuses: the file goes to
- * Blaze's cache and the share / save sheet opens (the user picks Files / Drive), and the result says so.
+ * Argus's cache and the share / save sheet opens (the user picks Files / Drive), and the result says so.
  */
 object SaveFileAndroid {
     const val FOLDER = "Blaze"
@@ -45,7 +45,7 @@ object SaveFileAndroid {
             val shown = cr.query(uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: p.name
             return SaveFile.savedLine("Downloads/$FOLDER/$shown")
         } catch (e: Exception) {
-            com.blaze.assistant.device.CrashLog.quiet("SaveFile: MediaStore", e)
+            com.argus.assistant.device.CrashLog.quiet("SaveFile: MediaStore", e)
         }
         return try {
             val dir = File(ctx.cacheDir, "save").apply { mkdirs() }

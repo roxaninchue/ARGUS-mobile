@@ -1,6 +1,6 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.StoreSubtitle
+import com.argus.assistant.mediaapps.store.StoreSubtitle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,7 +13,7 @@ class WaveA3CaptionsTest {
     private val manFr = StoreSubtitle("yt-.fr", "https://www.youtube.com/api/timedtext?v=abc&lang=fr", "fr", "French")
     private val file = StoreSubtitle("file-x", "file:///data/x.vtt", "", "my.srt")
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     @Test fun audioNamesAreReadable() {
         assertEquals("Original audio", Subs.audioName(null, "und", 0, 1))

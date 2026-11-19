@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -24,7 +24,7 @@ import java.util.zip.ZipInputStream
 object SkillPacks {
     data class Pack(val name: String, val description: String, val dir: File)
 
-    private fun root(): File = File(com.blaze.assistant.terminal.Terminal.home(), "skills").apply { mkdirs() }
+    private fun root(): File = File(com.argus.assistant.terminal.Terminal.home(), "skills").apply { mkdirs() }
 
     private fun slug(s: String) = s.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').take(48).ifBlank { "skill" }
 
@@ -334,11 +334,11 @@ object SkillPacks {
         "use_skill" -> use(a.optString("name"))
         "find_skill" -> SkillMatch.find(a.optString("query").ifBlank { a.optString("name") })
         "skill_file" -> file(a.optString("name"), a.optString("path"))
-        "install_skill" -> install(a.optString("url")).also { SkillMatch.invalidate(); com.blaze.assistant.connect.SkillSync.localChange() }
-        "write_skill" -> write(a.optString("name"), a.optString("description"), a.optString("instructions")).also { com.blaze.assistant.connect.SkillSync.localChange() }
+        "install_skill" -> install(a.optString("url")).also { SkillMatch.invalidate(); com.argus.assistant.connect.SkillSync.localChange() }
+        "write_skill" -> write(a.optString("name"), a.optString("description"), a.optString("instructions")).also { com.argus.assistant.connect.SkillSync.localChange() }
         "save_workflow" -> saveWorkflow(a.optString("name"), a.optString("trigger"), textOrList(a, "steps"), textOrList(a, "checks"),
             a.optJSONArray("tags")?.let { t -> (0 until t.length()).map { t.optString(it) } } ?: emptyList(), a.optBoolean("tested", false))
-            .also { com.blaze.assistant.connect.SkillSync.localChange() }
+            .also { com.argus.assistant.connect.SkillSync.localChange() }
         else -> "Unknown tool"
     }
 }

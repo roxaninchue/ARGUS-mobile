@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -111,7 +111,7 @@ class StepPill20Test {
     }
 
     @Test fun pipHook_isExposedAsStateFlow() = five {
-        val f = listOf(File("src/main/java/com/blaze/assistant/agent/StepPill.kt"), File("app/src/main/java/com/blaze/assistant/agent/StepPill.kt")).first { it.exists() }.readText()
+        val f = listOf(File("src/main/java/com/argus/assistant/agent/StepPill.kt"), File("app/src/main/java/com/argus/assistant/agent/StepPill.kt")).first { it.exists() }.readText()
         assertTrue(f.contains("val current: StateFlow<Pill?>"))
     }
 }

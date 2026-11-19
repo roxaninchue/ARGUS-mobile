@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 /**
  * v0.45.26, pure (LinuxReadyTest): the package-manager commands of the Terminal's Linuxes (Alpine apk, Ubuntu/Debian apt,

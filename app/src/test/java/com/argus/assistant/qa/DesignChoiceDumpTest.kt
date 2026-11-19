@@ -1,8 +1,8 @@
-package com.blaze.assistant.qa
+package com.argus.assistant.qa
 
-import com.blaze.assistant.agent.Flashcards
-import com.blaze.assistant.agent.ToolRouter
-import com.blaze.assistant.agent.ToolTruth
+import com.argus.assistant.agent.Flashcards
+import com.argus.assistant.agent.ToolRouter
+import com.argus.assistant.agent.ToolTruth
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assume.assumeTrue

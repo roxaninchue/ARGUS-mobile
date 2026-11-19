@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
@@ -28,14 +28,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.BgAgents
+import com.argus.assistant.agent.BgAgents
 import kotlinx.coroutines.delay
 
 /**
  * 0.52.0: a background agent in the chat is ONE work pill, nothing else:
  * "● Working · Researcher · 5 steps · 40s ›" while it runs, "Worked · Researcher · 12 steps · 2m 3s ›" when done.
  * Tap it to see its steps (newest last) and, inside, Message (steer it, or a follow-up once done) and Stop.
- * Its result arrives as Blaze's reply right under it; the pill never shows status words of its own.
+ * Its result arrives as Argus's reply right under it; the pill never shows status words of its own.
  * Replaces the old AgentCard (status line, shimmer, Steer / Stop / Open buttons always on show).
  */
 object AgentPillText {
@@ -58,7 +58,7 @@ object AgentPillText {
 
     /** "Researcher" / "Agent" / "Blueprint" — the agent's role, never a status. */
     fun role(bg: BgAgents.Bg): String = when {
-        bg.specialist == com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST -> "Blueprint"
+        bg.specialist == com.argus.assistant.orchestra.OrchestraRuns.SPECIALIST -> "Blueprint"
         bg.specialist.isBlank() -> "Agent"
         else -> (try { BgAgents.spec(bg)?.name } catch (_: Throwable) { null } ?: bg.specialist).replaceFirstChar { it.uppercase() }
     }
@@ -66,7 +66,7 @@ object AgentPillText {
 
 @Composable
 fun AgentPill(id: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val all by BgAgents.all.collectAsState()
     val bg = all.firstOrNull { it.id == id } ?: return
     var tick by remember { mutableLongStateOf(System.currentTimeMillis()) }

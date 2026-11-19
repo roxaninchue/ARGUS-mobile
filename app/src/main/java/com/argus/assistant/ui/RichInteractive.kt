@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -68,11 +68,11 @@ import kotlin.math.min
 
 /**
  * v0.26.1 visual answers, drawn: native Compose charts (bar, line, pie, scatter; tap for the value), tappable choice
- * buttons, small forms, live mini tools and compare cards. Rounded cards in the Blaze theme, solid classic Blaze blue,
+ * buttons, small forms, live mini tools and compare cards. Rounded cards in the Argus theme, solid classic Argus blue,
  * no gradients, no WebView. Pure parsing and maths live in [RichKit] / [Expr].
  */
 object RichSend {
-    /** How a tapped choice or a submitted form becomes the user's next message (null = read-only, e.g. while Blaze works). */
+    /** How a tapped choice or a submitted form becomes the user's next message (null = read-only, e.g. while Argus works). */
     val Local = staticCompositionLocalOf<((String) -> Unit)?> { null }
 }
 
@@ -89,29 +89,29 @@ val chartColors = listOf(GlassTokens.accent, Color(0xFF8E8E96), GlassTokens.warn
 
 /** Controls' accent, theme-aware: frost white on dark, near-black ink on light (so picked pills stay visible). */
 @Composable
-private fun richAccent(): Color = if (LocalBlaze.current.dark) GlassTokens.accent else GlassTokens.lightInk
+private fun richAccent(): Color = if (LocalArgus.current.dark) GlassTokens.accent else GlassTokens.lightInk
 @Composable
-private fun richOnAccent(): Color = if (LocalBlaze.current.dark) GlassTokens.onAccent else Color.White
+private fun richOnAccent(): Color = if (LocalArgus.current.dark) GlassTokens.onAccent else Color.White
 
 @Composable
-private fun richFill(): Color { val c = LocalBlaze.current; return if (LocalBubble.current != null) GlassBubble.cardFill(c) else c.faint }
+private fun richFill(): Color { val c = LocalArgus.current; return if (LocalBubble.current != null) GlassBubble.cardFill(c) else c.faint }
 
 @Composable
 private fun CardTitle(text: String) {
     if (text.isBlank()) return
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Text(text, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(bottom = 8.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = c.ink))
 }
 
 @Composable
-private fun small(color: Color? = null) = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 16.sp, color = color ?: LocalBlaze.current.sub)
+private fun small(color: Color? = null) = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 16.sp, color = color ?: LocalArgus.current.sub)
 
 // ---------------- chart ----------------
 
 @Composable
 fun RichChart(ch: RichKit.Chart) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var sel by remember(ch) { mutableStateOf<Pair<Int, Int>?>(null) }
     val measurer = rememberTextMeasurer(cacheSize = 32)
     val axisStyle = TextStyle(fontFamily = Type.Sans, fontSize = 9.5.sp, color = c.sub)
@@ -248,7 +248,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.xLabels(labels: Lis
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Legend(items: List<Pair<String, Color>>, axes: String = "") {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     FlowRow(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         items.forEach { (n, col) ->
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -295,7 +295,7 @@ private fun PieChart(ch: RichKit.Chart, sel: Int?, onPick: (Int?) -> Unit) {
                 if (!v.isFinite() || v <= 0) return@forEachIndexed
                 Row(Modifier.clip(pillShape).clickable { onPick(if (sel == i) null else i) }.padding(horizontal = 4.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(9.dp).clip(CircleShape).background(chartColors[i % chartColors.size])); Spacer(Modifier.width(6.dp))
-                    Text("$l  ${Expr.format(v / total * 100, 0)}%", maxLines = 1, overflow = TextOverflow.Ellipsis, style = small(LocalBlaze.current.body))
+                    Text("$l  ${Expr.format(v / total * 100, 0)}%", maxLines = 1, overflow = TextOverflow.Ellipsis, style = small(LocalArgus.current.body))
                 }
             }
         }
@@ -307,7 +307,7 @@ private fun PieChart(ch: RichKit.Chart, sel: Int?, onPick: (Int?) -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RichChoices(ch: RichKit.Choices) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val send = RichSend.Local.current
     var picked by rememberSaveable(ch.toString()) { mutableStateOf("") }
     Column(Modifier.fillMaxWidth()) {
@@ -332,7 +332,7 @@ fun RichChoices(ch: RichKit.Choices) {
 
 @Composable
 private fun RichField(value: String, onChange: (String) -> Unit, placeholder: String, number: Boolean, enabled: Boolean, unit: String = "") {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.fillMaxWidth().clip(fieldShape).background(c.field).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) {
             if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.weak))
@@ -347,7 +347,7 @@ private fun RichField(value: String, onChange: (String) -> Unit, placeholder: St
 
 @Composable
 private fun Segments(options: List<String>, selected: String, enabled: Boolean, onPick: (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         options.forEach { o ->
             val on = o.equals(selected, ignoreCase = true)
@@ -368,7 +368,7 @@ private fun BlueButton(label: String, enabled: Boolean, onClick: () -> Unit) {
 
 @Composable
 fun RichForm(f: RichKit.Form) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val send = RichSend.Local.current
     val vals = remember(f) { mutableStateMapOf<String, String>().apply { f.fields.forEach { put(it.id, it.default) } } }
     var sent by rememberSaveable(f.toString()) { mutableStateOf(false) }
@@ -397,7 +397,7 @@ fun RichForm(f: RichKit.Form) {
 
 @Composable
 fun RichTool(t: RichKit.Tool) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val vals = remember(t) { mutableStateMapOf<String, Double>().apply { putAll(RichKit.defaults(t)) } }
     val texts = remember(t) { mutableStateMapOf<String, String>().apply { t.inputs.filter { it.type == RichKit.InputType.NUMBER }.forEach { put(it.id, Expr.format(it.default, if (it.default == Math.floor(it.default)) 0 else 2).replace(",", "")) } } }
     val outs = RichKit.compute(t, vals.toMap())
@@ -458,7 +458,7 @@ fun RichTool(t: RichKit.Tool) {
 
 @Composable
 fun RichCompare(cp: RichKit.Compare) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Column(Modifier.fillMaxWidth().clip(cardShape).background(richFill()).padding(14.dp)) {
         CardTitle(cp.title)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -494,7 +494,7 @@ fun RichCompare(cp: RichKit.Compare) {
 
 @Composable
 fun RichPending(kind: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val tr = rememberInfiniteTransition(label = "pending")
     val a by tr.animateFloat(0.35f, 1f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "pa")
     Row(Modifier.fillMaxWidth().clip(cardShape).background(richFill()).padding(horizontal = 14.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {

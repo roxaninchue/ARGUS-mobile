@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -59,8 +59,8 @@ object MagicHandWatches {
     }
 
     /** Re-reads the due watches of [pkg] if it's on screen; notifies about changes. Returns how many changed. */
-    fun check(svc: BlazeAccessibilityService, pkg: String, now: Long = System.currentTimeMillis()): Int {
-        if (com.blaze.assistant.agent.Agent.privateChat.value) return 0
+    fun check(svc: ArgusAccessibilityService, pkg: String, now: Long = System.currentTimeMillis()): Int {
+        if (com.argus.assistant.agent.Agent.privateChat.value) return 0
         val all = load(svc)
         val due = all.filter { it.pkg == pkg && MagicHandWatch.due(it, now) }
         if (due.isEmpty()) return 0
@@ -86,7 +86,7 @@ object MagicHandWatches {
         val open = app.packageManager.getLaunchIntentForPackage(w.pkg)?.let {
             android.app.PendingIntent.getActivity(app, w.id.hashCode(), it, android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)
         }
-        val n = NotificationCompat.Builder(app, CH).setSmallIcon(com.blaze.assistant.R.drawable.ic_stat_blaze).setColor(0xFF4C7DFF.toInt())
+        val n = NotificationCompat.Builder(app, CH).setSmallIcon(com.argus.assistant.R.drawable.ic_stat_blaze).setColor(0xFF4C7DFF.toInt())
             .setContentTitle(w.app.ifBlank { "${BrandName.NAME} watch" }).setContentText(c.summary(w.label))
             .setAutoCancel(true).apply { open?.let { setContentIntent(it) } }.build()
         try { NotificationManagerCompat.from(app).notify(7400 + (w.id.hashCode() and 0xff), n) } catch (_: SecurityException) { }
@@ -96,7 +96,7 @@ object MagicHandWatches {
 class MagicHandWatchWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
     override suspend fun doWork(): Result {
         try {
-            val svc = BlazeAccessibilityService.instance ?: return Result.success()
+            val svc = ArgusAccessibilityService.instance ?: return Result.success()
             val pkg = svc.currentPkg()
             if (pkg.isNotBlank()) kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { MagicHandWatches.check(svc, pkg) }
         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Throwable) { }

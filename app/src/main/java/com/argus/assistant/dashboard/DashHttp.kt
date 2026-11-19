@@ -1,4 +1,4 @@
-package com.blaze.assistant.dashboard
+package com.argus.assistant.dashboard
 
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream

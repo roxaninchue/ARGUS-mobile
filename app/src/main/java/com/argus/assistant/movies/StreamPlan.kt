@@ -1,8 +1,8 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 /**
  * 0.46.5 "I cannot actually watch": the generic stream flow for any source. A provider's stream / extract function returns
- * several streams (each with its own headers / referer); Blaze tries them in order with a short start timeout and moves to
+ * several streams (each with its own headers / referer); Argus tries them in order with a short start timeout and moves to
  * the next on an error, and only says "This source didn't give a playable video…" when none plays. Pure (StreamPlanTest).
  */
 object StreamPlan {

@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.splash
+package com.argus.assistant.ui.splash
 
-import com.blaze.assistant.home.WeatherKind
+import com.argus.assistant.home.WeatherKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -1,6 +1,6 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.phone.MagicHandLogic.Box
+import com.argus.assistant.phone.MagicHandLogic.Box
 
 /**
  * v0.28.1: the pure half of the grab read (unit tested in MagicHandOcrTest).

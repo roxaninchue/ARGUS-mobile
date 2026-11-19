@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -11,7 +11,7 @@ class WrapUpTest {
             assertTrue(t, WrapUp.asks(t))
         for (t in listOf("Find restaurants in Ndola", "Yea try Google maps", "give me directions to Pizza Inn", "is that enough water for a day?"))
             assertFalse(t, WrapUp.asks(t))
-        val agent = listOf(java.io.File("src/main/java/com/blaze/assistant/agent/Agent.kt"), java.io.File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
+        val agent = listOf(java.io.File("src/main/java/com/argus/assistant/agent/Agent.kt"), java.io.File("app/src/main/java/com/argus/assistant/agent/Agent.kt")).first { it.exists() }.readText()
         assertTrue(agent.contains("WrapUp.HINT"))
         assertTrue(agent.contains("if (WrapUp.asks(lastUserText())) 0 else RetryGuard.MAX"))
     }

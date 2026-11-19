@@ -1,9 +1,9 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.phone.MagicHandLogic.Box
-import com.blaze.assistant.phone.MagicHandLogic.P
-import com.blaze.assistant.phone.MagicHandState.DockButton
-import com.blaze.assistant.phone.MagicHandState.Panel
+import com.argus.assistant.phone.MagicHandLogic.Box
+import com.argus.assistant.phone.MagicHandLogic.P
+import com.argus.assistant.phone.MagicHandState.DockButton
+import com.argus.assistant.phone.MagicHandState.Panel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

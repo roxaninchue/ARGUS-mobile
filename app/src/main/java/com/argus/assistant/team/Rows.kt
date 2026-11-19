@@ -1,6 +1,6 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.store.Sql
 
 /**
  * P1-TM-02: the Bot HQ transcript-row model (BH-10) for every bot thread, stored in team.db `rows` (05 §9.2). It is a
@@ -15,9 +15,9 @@ import com.blaze.assistant.store.Sql
  *    going from running to done, keeps its seq and gets a higher updatedSeq. Readers upsert by seq and ask
  *    "everything with updatedSeq > N" ([RowStore.since], BH `listRows({afterRev})`).
  *  - Bot HQ keeps `next_seq` and `rev` on the bot; here one counter per (bot, generation) gives both (the same rule as
- *    [com.blaze.assistant.agent.engines.RowMapper]): the next number is max(updated_seq) + 1, so a new seq never meets an
+ *    [com.argus.assistant.agent.engines.RowMapper]): the next number is max(updated_seq) + 1, so a new seq never meets an
  *    older one and an update always moves updatedSeq forward. No schema change (team.db stays v2).
- *  - [RowStore.upsert] takes rows made elsewhere (an engine's [com.blaze.assistant.agent.engines.RowSink]): a row with
+ *  - [RowStore.upsert] takes rows made elsewhere (an engine's [com.argus.assistant.agent.engines.RowSink]): a row with
  *    a seq already there replaces it only when its updatedSeq is higher, so a late or repeated delivery never rolls a
  *    row back.
  *
@@ -38,7 +38,7 @@ object RowKind {
 }
 
 /**
- * Row bodies. The shapes are the ones [com.blaze.assistant.agent.engines.RowMapper] already writes (message
+ * Row bodies. The shapes are the ones [com.argus.assistant.agent.engines.RowMapper] already writes (message
  * `{from, text}`, event `{type, text}`, notice `{level, text}`, tool-call `{callId, name, args, state, output}`) plus
  * Bot HQ's card and provenance fields (`types.ts` CardBody, MessageBody.from → [via]). `from` is "user" or the bot id.
  */

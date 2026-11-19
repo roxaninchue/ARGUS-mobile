@@ -1,12 +1,12 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
-import com.blaze.assistant.ui.EdgeParticleMath
+import com.argus.assistant.ui.EdgeParticleMath
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.50.0: the edge particles show while Blaze acts on the screen, linger briefly, never stick, and stay on the edges. */
+/** 0.50.0: the edge particles show while Argus acts on the screen, linger briefly, never stick, and stay on the edges. */
 class ScreenWorkTest {
     @Test fun onWhileAStepRunsThenLingersThenOff() {
         val c = ScreenWork.Clock(linger = 1_000, max = 60_000)
@@ -33,11 +33,11 @@ class ScreenWorkTest {
     }
 
     @Test fun particlesStayOnTheEdges() {
-        // the glow reuses Blaze's edge particles (EdgePath): every dot sits within ~22 dp of an edge, the middle stays clear
+        // the glow reuses Argus's edge particles (EdgePath): every dot sits within ~22 dp of an edge, the middle stays clear
         val w = 1080f; val h = 2400f; val d = 2.75f
         for (i in 0..400) {
             val inset = 6f * d + (i % 11) / 10f * 10f * d
-            val o = com.blaze.assistant.ui.EdgePath.at(i / 400f * 3.3f - 1f, w, h, inset)
+            val o = com.argus.assistant.ui.EdgePath.at(i / 400f * 3.3f - 1f, w, h, inset)
             assertTrue("$o", o.x in 0f..w && o.y in 0f..h)
             val band = 17f * d
             assertTrue("$o", o.x <= band || o.y <= band || o.x >= w - band || o.y >= h - band)

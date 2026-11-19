@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * 2026-11-18 (owner screenshot: the "Ask instead" chip was near-white text on the near-white Glass.blue fill). The glass

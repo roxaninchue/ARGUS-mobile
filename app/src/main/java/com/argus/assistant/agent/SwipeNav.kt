@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
- * v0.39.0 Swipe navigation (Settings › Navigation, default; Classic tabs is the old pill), pure part (SwipeNavTest). Blaze opens on Home (the Home cards); Chat is a sheet
+ * v0.39.0 Swipe navigation (Settings › Navigation, default; Classic tabs is the old pill), pure part (SwipeNavTest). Argus opens on Home (the Home cards); Chat is a sheet
  * that slides up over it. [progress] 0 = Home showing, 1 = Chat fully up. Dragging the handle at the bottom of Home
  * up opens Chat; dragging down from Chat's top edge brings Home back; a release settles to whichever end the speed
  * or the distance points at, like a notification shade.

@@ -1,14 +1,14 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.ClaimCheck
-import com.blaze.assistant.agent.ClaimCheck.Done
-import com.blaze.assistant.agent.ClaimCheck.Outcome
-import com.blaze.assistant.agent.ConfirmGate
-import com.blaze.assistant.agent.ToolTruth
-import com.blaze.assistant.agent.ToolVerify
-import com.blaze.assistant.agent.ToolVerify.Status
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.ClaimCheck
+import com.argus.assistant.agent.ClaimCheck.Done
+import com.argus.assistant.agent.ClaimCheck.Outcome
+import com.argus.assistant.agent.ConfirmGate
+import com.argus.assistant.agent.ToolTruth
+import com.argus.assistant.agent.ToolVerify
+import com.argus.assistant.agent.ToolVerify.Status
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -17,7 +17,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.45.19 Blaze Phone browser: which asks route to the phone tools, and how the agent's plumbing treats them. */
+/** 0.45.19 Argus Phone browser: which asks route to the phone tools, and how the agent's plumbing treats them. */
 class PhoneToolsRoutingTest {
     private val names = listOf("phone_open", "phone_read", "phone_act", "phone_screenshot", "phone_wait", "phone_handoff", "phone_status",
         "browser_open", "browser_read", "web_search", "add_calendar_event", "create_routine", "set_alarm", "open_app", "memory_search", "run_shell",
@@ -106,7 +106,7 @@ class PhoneToolsRoutingTest {
     }
 
     @Test fun bookedCheckOnlyOnPhoneTurns() {
-        // A turn that never used Blaze Phone keeps the old behaviour (no new claim check).
+        // A turn that never used Argus Phone keeps the old behaviour (no new claim check).
         assertEquals(Outcome.Ok, ClaimCheck.review("Booked!", listOf(Done("web_search", Status.VERIFIED)), "how do I book a table at Nando's"))
     }
 

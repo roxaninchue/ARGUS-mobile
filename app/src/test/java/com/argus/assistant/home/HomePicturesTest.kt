@@ -1,7 +1,7 @@
-package com.blaze.assistant.home
+package com.argus.assistant.home
 
-import com.blaze.assistant.ui.GlassTilt
-import com.blaze.assistant.ui.HomeImages
+import com.argus.assistant.ui.GlassTilt
+import com.argus.assistant.ui.HomeImages
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

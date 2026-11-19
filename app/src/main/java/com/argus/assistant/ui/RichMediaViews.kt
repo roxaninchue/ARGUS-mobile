@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -40,14 +40,14 @@ private fun open(ctx: android.content.Context, url: String) {
 
 @Composable
 private fun BlockTitle(t: String) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     if (t.isNotBlank()) Text(t, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(bottom = 8.dp),
         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = c.ink))
 }
 
 @Composable
 fun RichGallery(g: RichMedia.Gallery) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     Column(Modifier.fillMaxWidth()) {
         BlockTitle(g.title)
@@ -85,7 +85,7 @@ fun RichGallery(g: RichMedia.Gallery) {
 
 @Composable
 fun RichLinks(l: RichMedia.Links) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         BlockTitle(l.title)
@@ -105,7 +105,7 @@ fun RichLinks(l: RichMedia.Links) {
 
 @Composable
 fun RichDoc(d: RichMedia.Doc) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     fun file(): File? = File(d.path).takeIf { it.isAbsolute }
     Row(Modifier.fillMaxWidth().clip(cardShape).background(c.faint).semantics { contentDescription = tr("Document {0}", d.title) }.padding(12.dp),
@@ -120,12 +120,12 @@ fun RichDoc(d: RichMedia.Doc) {
             Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 ActionText("Open", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
                     val f = file()
-                    if (f != null && f.exists()) try { ctx.startActivity(com.blaze.assistant.media.Media.viewIntent(f)) } catch (_: Exception) { }
+                    if (f != null && f.exists()) try { ctx.startActivity(com.argus.assistant.media.Media.viewIntent(f)) } catch (_: Exception) { }
                     else Toast.makeText(ctx, "Saved at ${d.path}", Toast.LENGTH_SHORT).show()
                 })
                 ActionText("Share", color = c.accent, size = 10.sp, modifier = Modifier.clickable {
                     val f = file()
-                    if (f != null && f.exists()) try { ctx.startActivity(com.blaze.assistant.media.Media.shareIntent(f)) } catch (_: Exception) { }
+                    if (f != null && f.exists()) try { ctx.startActivity(com.argus.assistant.media.Media.shareIntent(f)) } catch (_: Exception) { }
                     else try { ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, d.title + "\n" + d.path), null)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
                 })
@@ -136,7 +136,7 @@ fun RichDoc(d: RichMedia.Doc) {
 
 @Composable
 fun RichDetails(d: RichMedia.Details, text: @Composable (String) -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var open by remember(d.title) { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().clip(cardShape).background(c.faint)) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }.semantics { contentDescription = (if (open) "Hide " else "Show ") + d.title }

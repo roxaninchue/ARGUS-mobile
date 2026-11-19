@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -42,14 +42,14 @@ class SimpleHomeTest {
 
     @Test fun talkToTags() {
         assertEquals("@halo hi there", SimpleHome.tagged("hi there", "halo"))
-        // v0.45.28: "all" is no longer a pick; an old saved "all" counts as Blaze.
+        // v0.45.28: "all" is no longer a pick; an old saved "all" counts as Argus.
         assertEquals("plan a trip", SimpleHome.tagged("plan a trip", "all"))
         assertEquals("hi", SimpleHome.tagged("hi", "blaze"))
         assertEquals("/music", SimpleHome.tagged("/music", "halo"))
         assertEquals("hey @blaze do it", SimpleHome.tagged("hey @blaze do it", "halo"))
     }
 
-    @Test fun haloXBlazeIsAutomatic() {
+    @Test fun haloXArgusIsAutomatic() {
         assertEquals(listOf("blaze", "halo"), SimpleHome.TALK_TO)
         // Asked for both: @all whoever is picked.
         assertEquals("@all what do you both think?", SimpleHome.tagged("what do you both think?", "blaze"))
@@ -59,7 +59,7 @@ class SimpleHomeTest {
         assertTrue(Duo.isTeamTask(story))
         assertEquals(story, SimpleHome.tagged(story, "halo"))
         assertEquals(Duo.Mode.TEAM, Duo.route(SimpleHome.tagged(story, "halo")).mode)
-        // Everything else: Halo alone when Halo is picked, Blaze alone otherwise.
+        // Everything else: Halo alone when Halo is picked, Argus alone otherwise.
         assertEquals("@halo set an alarm for 6", SimpleHome.tagged("set an alarm for 6", "halo"))
         assertEquals(Duo.Mode.BLAZE, Duo.route(SimpleHome.tagged("set an alarm for 6", "all")).mode)
         assertFalse(Duo.wantsBoth("open twitter"))

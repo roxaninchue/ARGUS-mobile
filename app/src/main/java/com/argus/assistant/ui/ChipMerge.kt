@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * v0.43.0: long-press a suggestion chip and drop it on another to ask for both at once. Pure (unit tested in ChipMergeTest);

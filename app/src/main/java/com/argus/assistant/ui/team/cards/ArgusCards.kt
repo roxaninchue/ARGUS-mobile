@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.team.cards
+package com.argus.assistant.ui.team.cards
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,20 +29,20 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.policy.Card
-import com.blaze.assistant.policy.CardAnswer
-import com.blaze.assistant.policy.Cards
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTheme
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusField
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
-import com.blaze.assistant.ui.team.thread.ThreadModel.CardModel
+import com.argus.assistant.policy.Card
+import com.argus.assistant.policy.CardAnswer
+import com.argus.assistant.policy.Cards
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTheme
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusField
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.ui.team.thread.ThreadModel.CardModel
 
 /**
  * P2-SF-02: the cards (04 §2.8, Bot HQ card kinds) in the A-team look. Stateless: a card shows a [Card] (policy/Cards.kt)
@@ -83,7 +83,7 @@ fun ApprovalCard(card: Card, onAnswer: (CardAnswer) -> Unit, modifier: Modifier 
             ArgusButton(tr("Don't allow"), { onAnswer(CardAnswer.Deny) }, size = ButtonSize.S)
             if (card.always) ArgusButton(tr("Always allow"), { onAnswer(CardAnswer.Always) }, size = ButtonSize.S)
             ArgusButton(tr("Allow"), { onAnswer(CardAnswer.Allow) }, size = ButtonSize.S,
-                kind = if (card.cls == com.blaze.assistant.team.ActionClass.DELETE) ButtonKind.DANGER else ButtonKind.PRIMARY)
+                kind = if (card.cls == com.argus.assistant.team.ActionClass.DELETE) ButtonKind.DANGER else ButtonKind.PRIMARY)
         }
     }
 }
@@ -182,13 +182,13 @@ fun DecisionThreadCard(d: CardModel.Decision, live: Card?, onAnswer: (String, Ca
  */
 @Composable
 fun ArgusCards(modifier: Modifier = Modifier, dark: Boolean = androidx.compose.foundation.isSystemInDarkTheme()) {
-    val cards by com.blaze.assistant.policy.PolicyRuntime.cards.collectAsState()
+    val cards by com.argus.assistant.policy.PolicyRuntime.cards.collectAsState()
     if (cards.isEmpty()) return
     val ctx = LocalContext.current
     ArgusTheme(dark = dark) {
         Column(modifier.fillMaxWidth()) {
-            for (card in cards) CardView(card, { a -> com.blaze.assistant.policy.PolicyRuntime.answer(card.id, a) },
-                onConnect = { runCatching { com.blaze.assistant.agent.SelfSetup.open(ctx, "settings connections") } })
+            for (card in cards) CardView(card, { a -> com.argus.assistant.policy.PolicyRuntime.answer(card.id, a) },
+                onConnect = { runCatching { com.argus.assistant.agent.SelfSetup.open(ctx, "settings connections") } })
         }
     }
 }

@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -19,16 +19,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.browser.phone.PhoneBrowser
-import com.blaze.assistant.browser.phone.PhoneBrowserActivity
+import com.argus.assistant.browser.phone.PhoneBrowser
+import com.argus.assistant.browser.phone.PhoneBrowserActivity
 
 /**
- * 0.45.19 Settings › Advanced › Blaze Phone: open it, sign out of one site, or clear every Blaze Phone session. Blaze
+ * 0.45.19 Settings › Advanced › Argus Phone: open it, sign out of one site, or clear every Argus Phone session. Argus
  * Phone's sign-ins are its own (a WebView profile per site), apart from the user's browser and its private tabs.
  */
 @Composable
 fun PhoneBrowserSettingsPage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     var tick by remember { mutableIntStateOf(0) }
     var sure by remember { mutableStateOf(false) }

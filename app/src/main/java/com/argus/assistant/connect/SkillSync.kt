@@ -1,10 +1,10 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.util.Base64
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.agent.SkillLibrary
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.agent.SkillLibrary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,8 +31,8 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Skill sync through the Blaze account (blaze-auth `/v1/skills`, Worker 0.8.0): the user's own
- * skills (learned by Blaze, written or installed by them; not the bundled library, which every
+ * Skill sync through the Argus account (blaze-auth `/v1/skills`, Worker 0.8.0): the user's own
+ * skills (learned by Argus, written or installed by them; not the bundled library, which every
  * client ships in its own adapted form) follow the account to Blaze Desktop, the CLI and other phones.
  *
  *   blob = base64(nonce[12] || AES-256-GCM(gzip(json), aad "blaze-skills-v1"))
@@ -60,14 +60,14 @@ object SkillSync {
 
     /** A skill was written, installed or deleted here: sync shortly. */
     fun localChange() {
-        if (!BlazeAccount.signedIn()) return
+        if (!ArgusAccount.signedIn()) return
         pending?.cancel()
         pending = scope.launch { delay(5_000); runCatching { sync() } }
     }
 
     /** At app start: sync when signed in and the last sync is over an hour old. */
     fun syncIfStale() {
-        if (!BlazeAccount.signedIn() || System.currentTimeMillis() - lastSync() < 3_600_000L) return
+        if (!ArgusAccount.signedIn() || System.currentTimeMillis() - lastSync() < 3_600_000L) return
         scope.launch { runCatching { sync() } }
     }
 
@@ -75,7 +75,7 @@ object SkillSync {
 
     // ---------------- local skills ----------------
 
-    private fun root(): File = File(com.blaze.assistant.terminal.Terminal.home(), "skills").apply { mkdirs() }
+    private fun root(): File = File(com.argus.assistant.terminal.Terminal.home(), "skills").apply { mkdirs() }
     private fun manifestFile() = File(root(), ".sync.json")
     private fun manifest(): JSONObject = try { JSONObject(manifestFile().readText()) } catch (_: Exception) { JSONObject() }
 
@@ -161,7 +161,7 @@ object SkillSync {
     }
 
     private fun http(method: String, token: String, body: JSONObject? = null): Pair<Int, JSONObject> {
-        val c = UrlSafety.open(BlazeAccount.base() + "/v1/skills")
+        val c = UrlSafety.open(ArgusAccount.base() + "/v1/skills")
         try {
             c.requestMethod = method
             c.connectTimeout = 15_000; c.readTimeout = 30_000
@@ -205,13 +205,13 @@ object SkillSync {
     }
 
     private fun syncLocked(): String {
-        val token = BlazeAccount.sessionToken()
+        val token = ArgusAccount.sessionToken()
         if (token.isBlank()) return "Sign in to your ${BrandName.NAME} account to take your skills to all your devices."
         repeat(3) {
             val (code, st) = http("GET", token)
             when {
                 code == 404 || code == 405 -> throw Unsupported()
-                code == 401 -> { BlazeAccount.checkSession(); return "You're signed out. Sign in again." }
+                code == 401 -> { ArgusAccount.checkSession(); return "You're signed out. Sign in again." }
                 code >= 400 -> throw Exception("http $code")
             }
             val key = Base64.decode(st.optString("key"), Base64.DEFAULT)
@@ -240,7 +240,7 @@ object SkillSync {
             val (pc, _) = http("POST", token, JSONObject().put("rev", rev).put("blob", out))
             when {
                 pc == 409 -> return@repeat
-                pc == 401 -> { BlazeAccount.checkSession(); return "You're signed out. Sign in again." }
+                pc == 401 -> { ArgusAccount.checkSession(); return "You're signed out. Sign in again." }
                 pc >= 400 -> throw Exception("http $pc")
             }
             saveManifest(res.merged)

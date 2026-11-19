@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -13,7 +13,7 @@ import org.junit.Test
  */
 class ArgusLookTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     @Test fun mixIsPerChannelAndKeepsAlpha() {
         assertEquals(0xFF000000, LookLogic.mix(0xFF000000, 0xFFFFFFFF, 0f))
@@ -118,6 +118,6 @@ class ArgusLookTest {
             assertFalse("ArgusLook.kt still mentions $gone", gone in t.substringAfter("*/"))
         // the accent is the only live Look & feel state, and it reads / writes its own pref
         assertTrue("Settings.setStr(\"look_accent\"" in t)
-        assertFalse("ui/LookLogic.kt is merged into ArgusLook.kt", java.io.File(root, "com/blaze/assistant/ui/LookLogic.kt").exists())
+        assertFalse("ui/LookLogic.kt is merged into ArgusLook.kt", java.io.File(root, "com/argus/assistant/ui/LookLogic.kt").exists())
     }
 }

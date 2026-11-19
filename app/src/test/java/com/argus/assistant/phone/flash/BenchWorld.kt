@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone.flash
+package com.argus.assistant.phone.flash
 
 /**
  * 0.46.3 benchmark fixtures: a deterministic simulated phone (virtual clock, accessibility tree with bounds, gestures,

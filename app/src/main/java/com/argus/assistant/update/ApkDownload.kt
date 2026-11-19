@@ -1,4 +1,4 @@
-package com.blaze.assistant.update
+package com.argus.assistant.update
 
 import java.io.File
 import java.io.FileOutputStream
@@ -13,7 +13,7 @@ import java.io.InputStream
  *    answers 206 from that offset (a 200 starts over, a 416 means it's all there).
  *  - **Retries with backoff:** 2, 4, 8, 16, 30, 30… s between tries; a try that moved the download forward resets the
  *    count, so a connection that keeps dropping still finishes. [MAX_FAILS] tries in a row with no progress = give up.
- *  - **Sources:** v0.45.4: the one url from the Blaze site's versions.json (it redirects to the release registry). With
+ *  - **Sources:** v0.45.4: the one url from the Argus site's versions.json (it redirects to the release registry). With
  *    more than one source, after [SWITCH_AFTER] failures in a row the next one carries on from the same partial file.
  *  - **Network drops:** before each try, [Io.waitOnline] blocks until there's a connection again (state "Connection
  *    dropped, I'll keep trying"); mobile data is as good as Wi-Fi.

@@ -1,4 +1,4 @@
-package com.blaze.assistant.memory
+package com.argus.assistant.memory
 
 /**
  * Tables of contents for cached documents (0.49.0). Only these ever reach a prompt; the text stays on the phone.

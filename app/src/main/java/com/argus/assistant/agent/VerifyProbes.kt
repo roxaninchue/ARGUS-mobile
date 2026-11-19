@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.app.AlarmManager
 import android.content.Context
@@ -14,7 +14,7 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
     override val self: String get() = ctx.packageName
 
     override suspend fun foreground(): String? =
-        com.blaze.assistant.phone.BlazeAccessibilityService.instance?.currentPkg()?.takeIf { it.isNotBlank() }
+        com.argus.assistant.phone.ArgusAccessibilityService.instance?.currentPkg()?.takeIf { it.isNotBlank() }
 
     override suspend fun nextAlarm(): Pair<Int, Int>? = try {
         val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -36,9 +36,9 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
     // ---------- v0.45.13 verify-after-act ----------
 
     override suspend fun clockAlarmOn(pid: String, hhmm: String): Boolean? = try {
-        val r = com.blaze.assistant.phone.ClockUi.read(ctx, pid, hhmm)
-        // Back to Blaze after looking (the alarm was set with the Clock UI skipped).
-        try { ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) } catch (_: Throwable) { }
+        val r = com.argus.assistant.phone.ClockUi.read(ctx, pid, hhmm)
+        // Back to Argus after looking (the alarm was set with the Clock UI skipped).
+        try { ctx.startActivity(android.content.Intent(ctx, com.argus.assistant.MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) } catch (_: Throwable) { }
         r?.first
     } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Throwable) { null }
 
@@ -72,7 +72,7 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
     } catch (_: Throwable) { null }
 
     override suspend fun timerRunning(): Boolean? = try {
-        val nb = com.blaze.assistant.notify.NotificationBrain.instance
+        val nb = com.argus.assistant.notify.NotificationBrain.instance
         if (nb == null) null
         else nb.activeNotifications.orEmpty().any { sb ->
             val pk = sb.packageName.orEmpty()
@@ -84,10 +84,10 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
     } catch (_: Throwable) { null }
 
     override suspend fun nowPlaying(pkg: String): String? = try {
-        if (com.blaze.assistant.notify.NotificationBrain.instance == null) null
+        if (com.argus.assistant.notify.NotificationBrain.instance == null) null
         else {
             val msm = ctx.getSystemService(android.media.session.MediaSessionManager::class.java)
-            val list = msm?.getActiveSessions(android.content.ComponentName(ctx, com.blaze.assistant.notify.NotificationBrain::class.java)).orEmpty()
+            val list = msm?.getActiveSessions(android.content.ComponentName(ctx, com.argus.assistant.notify.NotificationBrain::class.java)).orEmpty()
             list.filter { it.packageName == pkg }.firstOrNull { it.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING ||
                 it.playbackState?.state == android.media.session.PlaybackState.STATE_BUFFERING }
                 ?.metadata?.getString(android.media.MediaMetadata.METADATA_KEY_TITLE).orEmpty()
@@ -95,7 +95,7 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
     } catch (_: Throwable) { null }
 
     override suspend fun screenWords(): String? = try {
-        com.blaze.assistant.phone.BlazeAccessibilityService.instance?.visibleWords()?.joinToString(" ")?.lowercase()
+        com.argus.assistant.phone.ArgusAccessibilityService.instance?.visibleWords()?.joinToString(" ")?.lowercase()
     } catch (_: Throwable) { null }
 
     override fun fileSize(path: String): Long? = try {

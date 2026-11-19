@@ -1,4 +1,4 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 import java.time.DayOfWeek
 import java.time.LocalDate

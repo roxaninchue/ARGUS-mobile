@@ -1,13 +1,13 @@
-package com.blaze.assistant.ui.team.thread
+package com.argus.assistant.ui.team.thread
 
-import com.blaze.assistant.agent.StepPill
-import com.blaze.assistant.agent.StepTool
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.EngineKind
-import com.blaze.assistant.team.Row
-import com.blaze.assistant.team.RowBodies
-import com.blaze.assistant.team.RowKind
+import com.argus.assistant.agent.StepPill
+import com.argus.assistant.agent.StepTool
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.EngineKind
+import com.argus.assistant.team.Row
+import com.argus.assistant.team.RowBodies
+import com.argus.assistant.team.RowKind
 
 /**
  * P1-SH-03: a bot thread's rows (P1-TM-02 RowStore) as what the thread draws (04 §2.8 Thread 14–30), pure so

@@ -1,10 +1,10 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import java.io.File
 import java.io.IOException
 
 /**
- * Wave B 1+2: pure rules for Blaze's private media storage and Export (unit-tested in WaveB2StorageTest).
+ * Wave B 1+2: pure rules for Argus's private media storage and Export (unit-tested in WaveB2StorageTest).
  */
 object MediaStorePolicy {
     const val ROOT = "media"
@@ -30,8 +30,8 @@ object MediaStorePolicy {
 
     /** Relative shared path for an export: Downloads/Blaze, or the kind's own Music/Blaze/Music, Movies/Blaze/Videos. */
     fun exportRel(kind: String, target: Target, downloadsDir: String = "Download", musicDir: String = "Music", moviesDir: String = "Movies"): String = when (target) {
-        Target.DOWNLOADS -> "$downloadsDir/Blaze"
-        else -> if (kind == "video") "$moviesDir/Blaze/Videos" else "$musicDir/Blaze/Music"
+        Target.DOWNLOADS -> "$downloadsDir/Argus"
+        else -> if (kind == "video") "$moviesDir/Argus/Videos" else "$musicDir/Argus/Music"
     }
 
     /** Share intent type for a set of files: one mime, "audio/ *"-style family, or anything. */

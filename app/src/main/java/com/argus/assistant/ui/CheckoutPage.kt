@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,7 +31,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.connect.Billing
+import com.argus.assistant.connect.Billing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,7 +39,7 @@ import kotlinx.coroutines.withContext
 /** v0.45.3: the Plan row on the Account page (opens [CheckoutPage]). */
 @Composable
 fun PlanRow(onOpen: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth().hairline(c.hair).clickable(onClick = onOpen).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(tr("Plan"), style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 17.sp, color = c.ink))
@@ -56,7 +56,7 @@ fun PlanRow(onOpen: () -> Unit) {
  */
 @Composable
 fun CheckoutPage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val scope = rememberCoroutineScope()
     var methods by remember { mutableStateOf<Billing.Methods?>(null) }
     var me by remember { mutableStateOf<Billing.Me?>(null) }

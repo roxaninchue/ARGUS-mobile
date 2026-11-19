@@ -1,9 +1,9 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.agent.Specialists
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.agent.Specialists
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before

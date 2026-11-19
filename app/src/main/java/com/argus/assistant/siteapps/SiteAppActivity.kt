@@ -1,4 +1,4 @@
-package com.blaze.assistant.siteapps
+package com.argus.assistant.siteapps
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
@@ -30,14 +30,14 @@ import androidx.webkit.WebViewFeature
  * chrome; the status / navigation bars take the manifest's theme_color; a splash with the icon and name on its
  * background_color until the first page has loaded; its own task in Recents (setTaskDescription with its name, icon and
  * colour; a distinct document per site); its own WebView profile (cookies and storage) when the phone's WebView supports
- * profiles; Back goes back inside the app; links off its scope open in Blaze's browser.
+ * profiles; Back goes back inside the app; links off its scope open in Argus's browser.
  */
 class SiteAppActivity : ComponentActivity() {
     companion object {
         const val EXTRA_ID = "site_id"
         fun profile(id: String) = "site-" + id.replace(Regex("[^A-Za-z0-9._-]"), "-")
 
-        /** Uninstall: the app's own profile is emptied (never Blaze's browser data). */
+        /** Uninstall: the app's own profile is emptied (never Argus's browser data). */
         fun wipeProfile(id: String) {
             if (!WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) return
             try {
@@ -53,7 +53,7 @@ class SiteAppActivity : ComponentActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
+        if (com.argus.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         val id = intent.getStringExtra(EXTRA_ID) ?: intent.data?.lastPathSegment.orEmpty()
         val app = SiteInstaller.find(this, id)
         if (app == null) { Toast.makeText(this, "This app was uninstalled.", Toast.LENGTH_SHORT).show(); finishAndRemoveTask(); return }
@@ -87,9 +87,9 @@ class SiteAppActivity : ComponentActivity() {
                 val u = req.url.toString()
                 if (SiteLogic.inScope(u, app.scope)) return false
                 // v0.33.3: intent://, market:, mailto:, tel:… and https links another installed app verifiably handles
-                // go to that app; other out-of-scope pages open in the Blaze browser. Subframes stay in the page.
+                // go to that app; other out-of-scope pages open in the Argus browser. Subframes stay in the page.
                 if (!req.isForMainFrame) return false
-                if (com.blaze.assistant.browser.AppLinks.handle(this@SiteAppActivity, view, req, view.url ?: app.startUrl)) return true
+                if (com.argus.assistant.browser.AppLinks.handle(this@SiteAppActivity, view, req, view.url ?: app.startUrl)) return true
                 val sc = req.url.scheme.orEmpty().lowercase()
                 if (sc == "http" || sc == "https") openOutside(req.url)
                 return true
@@ -137,12 +137,12 @@ class SiteAppActivity : ComponentActivity() {
         s.animate().alpha(0f).setDuration(220).withEndAction { (s.parent as? ViewGroup)?.removeView(s) }.start()
     }
 
-    /** Off-scope links: http(s) in Blaze's browser, anything else (mailto:, tel:) to the phone. */
+    /** Off-scope links: http(s) in Argus's browser, anything else (mailto:, tel:) to the phone. */
     private fun openOutside(u: Uri) {
         try {
             if (u.scheme == "http" || u.scheme == "https")
-                startActivity(Intent(Intent.ACTION_VIEW, u).setClass(this, com.blaze.assistant.browser.BrowserActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            else com.blaze.assistant.browser.AppLinks.openExternal(this, web, u)
+                startActivity(Intent(Intent.ACTION_VIEW, u).setClass(this, com.argus.assistant.browser.BrowserActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            else com.argus.assistant.browser.AppLinks.openExternal(this, web, u)
         } catch (_: Exception) { }
     }
 

@@ -1,4 +1,4 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -7,7 +7,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.46.0 Blaze Stage: the layout reducer (hero <-> widget, slots, max widgets, the movable chat, back / reset). */
+/** 0.46.0 Argus Stage: the layout reducer (hero <-> widget, slots, max widgets, the movable chat, back / reset). */
 class StageReducerTest {
     private fun show(s: StageState, k: StageKind, mode: StageMode = StageMode.HERO, props: Map<String, String> = emptyMap(), slot: StageSlot? = null) =
         StageReducer.reduce(s, StageAction.Show(k, props, mode, slot))

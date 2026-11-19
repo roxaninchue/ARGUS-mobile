@@ -1,6 +1,6 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
-import com.blaze.assistant.notify.MoneyRadar.Parse
+import com.argus.assistant.notify.MoneyRadar.Parse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

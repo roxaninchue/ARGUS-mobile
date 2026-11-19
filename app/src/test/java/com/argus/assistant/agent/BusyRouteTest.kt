@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -88,7 +88,7 @@ class BusyRouteTest {
 
     /** 2026-11-16 model-first (docs/MODEL-FIRST.md): BusyRoute's regex no longer decides; a busy message goes to the model first. */
     @Test fun agentSendsBusyMessagesToTheModelBeforeTheQueue() {
-        val src = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/agent/Agent.kt").readText()
+        val src = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/argus/assistant/agent/Agent.kt").readText()
         val send = src.substring(src.indexOf("        fun send(text: String, byVoice: Boolean = false, attachments: List<Attachment> = emptyList(), notificationContext"))
         val follow = send.indexOf("ChatBurstLive.follow(this, shown, byVoice, untrusted)")
         val queue = send.indexOf("RapidMessages.route(")

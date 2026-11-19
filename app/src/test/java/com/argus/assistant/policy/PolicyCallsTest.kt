@@ -1,12 +1,12 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.TeamHooks
-import com.blaze.assistant.team.Autonomy
-import com.blaze.assistant.team.Avatar
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotKind
-import com.blaze.assistant.team.Job
-import com.blaze.assistant.team.Rule
+import com.argus.assistant.agent.TeamHooks
+import com.argus.assistant.team.Autonomy
+import com.argus.assistant.team.Avatar
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotKind
+import com.argus.assistant.team.Job
+import com.argus.assistant.team.Rule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

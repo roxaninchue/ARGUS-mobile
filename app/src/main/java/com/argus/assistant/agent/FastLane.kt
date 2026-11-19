@@ -1,11 +1,11 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import com.blaze.assistant.phone.PhoneTools
-import com.blaze.assistant.phone.Skills
+import com.argus.assistant.phone.PhoneTools
+import com.argus.assistant.phone.Skills
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -169,7 +169,7 @@ object FastLane {
         // 0.48.0: one message = at most one direct command. A message the shortcut already saw (same key) never runs again.
         if (key != null && !Once.claim(key)) return null
         // "open it for me", "send that": only the full agent knows what "it" is (v0.28.9).
-        if (com.blaze.assistant.phone.AppMatch.refersBack(text)) { IntentCache.drop(text); return null }
+        if (com.argus.assistant.phone.AppMatch.refersBack(text)) { IntentCache.drop(text); return null }
         val t0 = System.currentTimeMillis()
         val one = OneCommand { n, a -> execute(ctx, n, a, confirm) }
         // Intent cache: a command that worked before runs again with no model at all.
@@ -266,7 +266,7 @@ object FastLane {
         if (!ready(ctx)) return@withContext false
         val d = dir(ctx)
         val tools = File(d, "team-tools.json")
-        tools.writeText(com.blaze.assistant.team.TeamCommands.NEEDLE_TOOLS)
+        tools.writeText(com.argus.assistant.team.TeamCommands.NEEDLE_TOOLS)
         val pb = ProcessBuilder(runner(ctx).absolutePath, "--model", model(ctx).absolutePath,
             "--tools", tools.absolutePath, "--serve", "--port", TEAM_PORT.toString(), "--threads", "2", "--max", "160")
             .directory(d).redirectErrorStream(true)
@@ -289,7 +289,7 @@ object FastLane {
      * One clause → the team calls Needle makes of it, or null when the lane can't run (no runner, no weights, fast lane
      * off, the runner died). Its `function_calls`, else its `suppressed_calls` (A-team needleCalls takes those too).
      */
-    suspend fun teamCalls(ctx: Context, clause: String): com.blaze.assistant.team.Router.Needle? {
+    suspend fun teamCalls(ctx: Context, clause: String): com.argus.assistant.team.Router.Needle? {
         if (!enabled(ctx) || clause.isBlank() || clause.length > 400) return null
         val t0 = System.currentTimeMillis()
         val out = teamLock.withLock {
@@ -302,7 +302,7 @@ object FastLane {
             } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { stopTeam(); return null }
         }
         lastUse = System.currentTimeMillis()
-        return com.blaze.assistant.team.Router.Needle(com.blaze.assistant.team.TeamCommands.needleReply(out.toString()), System.currentTimeMillis() - t0)
+        return com.argus.assistant.team.Router.Needle(com.argus.assistant.team.TeamCommands.needleReply(out.toString()), System.currentTimeMillis() - t0)
     }
 
     private fun teamPost(path: String, body: String): String {
@@ -322,12 +322,12 @@ object FastLane {
     private suspend fun execute(ctx: Context, name: String, a: JSONObject, confirm: suspend (String, String, String) -> Boolean): String? = when (name) {
         "open_app" -> if (a.optString("name").lowercase().removePrefix("the ").trim() in setOf("browser", "blaze browser", "argus browser", "web browser", "your browser", "internet"))
             { // 0.46.1: the browser is a card on the chat Stage by default (the full screen only when the Stage is off).
-              if (com.blaze.assistant.stage.StageStore.enabled) withContext(Dispatchers.Main) {
-                  com.blaze.assistant.stage.StageStore.run(ctx, com.blaze.assistant.stage.StageTools.SHOW, JSONObject().put("kind", "browser")); "The browser card is on the chat." }
-              else { com.blaze.assistant.browser.BrowserTools.show(ctx); "Browser's open." } }
+              if (com.argus.assistant.stage.StageStore.enabled) withContext(Dispatchers.Main) {
+                  com.argus.assistant.stage.StageStore.run(ctx, com.argus.assistant.stage.StageTools.SHOW, JSONObject().put("kind", "browser")); "The browser card is on the chat." }
+              else { com.argus.assistant.browser.BrowserTools.show(ctx); "Browser's open." } }
             else PhoneTools.run(ctx, "open_app", JSONObject().put("app_name", a.optString("name"))).let {
             if (it.startsWith("Opened") || it.startsWith("Opening")) it else null }
-        "open_settings_page" -> com.blaze.assistant.phone.AndroidControl.run(ctx, "open_settings_page", a).takeIf { it.startsWith("Opened") }
+        "open_settings_page" -> com.argus.assistant.phone.AndroidControl.run(ctx, "open_settings_page", a).takeIf { it.startsWith("Opened") }
         // 0.45.15 (device /phoneqa 22:40, timer 0/5: "Timer started for 2 min." from the intent cache, no timer running):
         // alarms and timers always go through the agent, which names the tool and reads the Clock back (ToolVerify).
         "set_alarm", "set_timer" -> null
@@ -350,7 +350,7 @@ object FastLane {
         "web_search" -> null   // the cloud agent searches properly (in-app or web_search)
         "navigate_to" -> null
         "blaze_self" -> SelfSetup.open(ctx, a.optString("target"))
-        "life_logs" -> com.blaze.assistant.life.LifeLogs.run(ctx, a)
+        "life_logs" -> com.argus.assistant.life.LifeLogs.run(ctx, a)
         else -> null
     }
 }

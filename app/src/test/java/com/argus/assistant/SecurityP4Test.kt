@@ -1,9 +1,9 @@
-package com.blaze.assistant
+package com.argus.assistant
 
 import android.content.Intent
-import com.blaze.assistant.bank.BankModeLogic
-import com.blaze.assistant.browser.SavedPages
-import com.blaze.assistant.device.CrashLog
+import com.argus.assistant.bank.BankModeLogic
+import com.argus.assistant.browser.SavedPages
+import com.argus.assistant.device.CrashLog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -14,7 +14,7 @@ import java.io.File
 
 /** v0.45.0 P4: security, UX and health items (#8, #9, #21, #24, #29, #33, #13 leftover, #27). */
 class SecurityP4Test {
-    private val call = "com.blaze.assistant.CALL"
+    private val call = "com.argus.assistant.CALL"
 
     // ---- #8 exported MainActivity ----
     @Test fun outsideAppCannotTriggerInternalEntryPoints() {
@@ -23,7 +23,7 @@ class SecurityP4Test {
         assertFalse(IntentKey.Policy.allowed(call, false, false, false, trusted = false, callAction = call).call)
     }
 
-    @Test fun blazeOwnIntentsStillWork() {
+    @Test fun argusOwnIntentsStillWork() {
         val a = IntentKey.Policy.allowed(null, listenExtra = true, openChat = true, openForm = true, trusted = true, callAction = call)
         assertTrue(a.listen); assertTrue(a.openChat); assertTrue(a.openForm)
         assertTrue(IntentKey.Policy.allowed(call, false, false, false, trusted = true, callAction = call).call)
@@ -43,7 +43,7 @@ class SecurityP4Test {
 
     // ---- #9 browser file access follows the page ----
     @Test fun fileAccessOnlyForSavedPages() {
-        assertTrue(SavedPages.fileAccessFor("file:///data/user/0/com.blaze.assistant/files/saved_pages/abcd1234.mht"))
+        assertTrue(SavedPages.fileAccessFor("file:///data/user/0/com.argus.assistant/files/saved_pages/abcd1234.mht"))
         assertFalse(SavedPages.fileAccessFor("https://example.com/"))
         assertFalse(SavedPages.fileAccessFor("http://example.com/saved_pages/abcd1234.mht"))
         assertFalse(SavedPages.fileAccessFor("file:///sdcard/Download/x.html"))
@@ -64,9 +64,9 @@ class SecurityP4Test {
 
     // ---- #13 leftover: Simple never hears about run_shell in the core prompt ----
     @Test fun simpleFilesLineHasNoTerminal() {
-        val s = com.blaze.assistant.agent.PromptProfile.filesLine(simple = true)
+        val s = com.argus.assistant.agent.PromptProfile.filesLine(simple = true)
         assertFalse(s.contains("run_shell")); assertFalse(s.contains("terminal", ignoreCase = true))
-        assertTrue(com.blaze.assistant.agent.PromptProfile.filesLine(simple = false).contains("run_shell"))
+        assertTrue(com.argus.assistant.agent.PromptProfile.filesLine(simple = false).contains("run_shell"))
     }
 
     // ---- #29 quiet catches log, but never cancellation ----
@@ -90,7 +90,7 @@ class SecurityP4Test {
 
     /** #29: the files cleaned in P4 keep no empty catch blocks. */
     @Test fun cleanedFilesHaveNoEmptyCatch() {
-        val cleaned = setOf("Agent.kt", "BlazeApp.kt", "Mind.kt", "CloudSync.kt", "BrowserEngine.kt", "Bridge.kt", "Dashboard.kt", "DashHttp.kt")
+        val cleaned = setOf("Agent.kt", "ArgusApp.kt", "Mind.kt", "CloudSync.kt", "BrowserEngine.kt", "Bridge.kt", "Dashboard.kt", "DashHttp.kt")
         val empty = Regex("""catch \(_: (Throwable|Exception)\) \{ ?\}""")
         val hits = mainSources().filter { it.name in cleaned }.flatMap { f -> f.readLines().mapIndexedNotNull { i, l -> if (empty.containsMatchIn(l)) "${f.name}:${i + 1}" else null } }
         assertTrue("empty catch blocks came back: $hits", hits.isEmpty())
@@ -102,7 +102,7 @@ class SecurityP4Test {
         listOf("fun runDuo(", "fun duoAll(", "fun duoTeam(", "fun duoSay(", "fun duoType(").forEach { assertFalse(it, agent.contains(it)) }
     }
 
-    /** #8: every internal entry point Blaze builds is signed. */
+    /** #8: every internal entry point Argus builds is signed. */
     @Test fun internalIntentsAreSigned() {
         val src = mainSources().filter { it.name != "MainActivity.kt" && it.name != "IntentKey.kt" }
         val unsigned = src.flatMap { f ->

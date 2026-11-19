@@ -1,12 +1,12 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
- * Lazy start (low-RAM release gate): the rules for what BlazeApp.onCreate may still do on the main thread, as pure
+ * Lazy start (low-RAM release gate): the rules for what ArgusApp.onCreate may still do on the main thread, as pure
  * functions so they are unit-tested (LazyStartTest). The work itself lives in Agent.init (main chat loaded off the main
  * thread), Mind.openLater / Mind.await (blaze.db opened off the main thread) and device/StartLater (after the first frame).
  */
 object LazyStart {
-    /** The goal for BlazeApp.onCreate on the owner's phone class (logged as "onCreate N ms"; over budget is a slow-log line). */
+    /** The goal for ArgusApp.onCreate on the owner's phone class (logged as "onCreate N ms"; over budget is a slow-log line). */
     const val ON_CREATE_BUDGET_MS = 200L
 
     /** How long a background caller waits for blaze.db to open before it falls back to the old list (never on main). */

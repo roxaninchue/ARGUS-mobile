@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * 0.53.7 (Finn, 2026-11-15: "I prefer if it uses its browser, phone and tools first before reaching for the device"):

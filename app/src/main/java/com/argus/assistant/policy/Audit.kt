@@ -1,6 +1,6 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.PasteGuard
+import com.argus.assistant.agent.PasteGuard
 import java.security.MessageDigest
 
 /**

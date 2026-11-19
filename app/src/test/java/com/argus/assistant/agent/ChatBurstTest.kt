@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -71,14 +71,14 @@ class ChatBurstTest {
 
     /** Owner rule: the logic lives here; Agent.kt only calls it, from send() and the side lane's safety net. */
     @Test fun agentRoutesBusyFollowUpsThroughChatBurst() {
-        val src = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/agent/Agent.kt").readText()
+        val src = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/argus/assistant/agent/Agent.kt").readText()
         val send = src.substring(src.indexOf("        fun send(text: String, byVoice: Boolean = false"))
         val busy = send.lines().first { "ChatBurstLive.follow(" in it }
         assertTrue(busy, busy.contains("ChatBurstLive.follow(this, shown, byVoice, untrusted); return"))
         assertFalse(busy, busy.contains("sideSend"))
         assertTrue(src.contains("if (relay || ChatBurst.dropped(shownText)) {"))
         assertFalse(src.contains("lost the connection.\"); return }"))
-        val lane = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/blaze/assistant/agent/ChatLane.kt").readText()
+        val lane = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }.resolve("com/argus/assistant/agent/ChatLane.kt").readText()
         assertFalse(lane.contains("ChatBurst.laneLine("))
     }
 }

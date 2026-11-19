@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -32,27 +32,27 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.appstore.AppStore
-import com.blaze.assistant.appstore.Catalog
-import com.blaze.assistant.appstore.InstalledInfo
-import com.blaze.assistant.appstore.StoreApp
-import com.blaze.assistant.appstore.StoreCategory
-import com.blaze.assistant.appstore.StorePolicy
-import com.blaze.assistant.appstore.StoreStep
-import com.blaze.assistant.appstore.StoreVersions
-import com.blaze.assistant.appstore.storeSize
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.appstore.AppStore
+import com.argus.assistant.appstore.Catalog
+import com.argus.assistant.appstore.InstalledInfo
+import com.argus.assistant.appstore.StoreApp
+import com.argus.assistant.appstore.StoreCategory
+import com.argus.assistant.appstore.StorePolicy
+import com.argus.assistant.appstore.StoreStep
+import com.argus.assistant.appstore.StoreVersions
+import com.argus.assistant.appstore.storeSize
 import kotlinx.coroutines.delay
 
 /**
- * 0.45.19 Blaze App Store (Settings page "appstore", open_view "apps"): open-source apps from their developers' own
+ * 0.45.19 Argus App Store (Settings page "appstore", open_view "apps"): open-source apps from their developers' own
  * releases, installed on this phone with Android's installer. Free, no ads, no gates. Every listing shows its license,
  * a Source repo button and [StorePolicy.NOTICE]. Get = confirm card (disclaimer) → download → SHA-256 + signer +
  * VirusTotal → Android's own install dialog. Installed apps show Open, or Update when a newer release is known.
  */
 @Composable
 internal fun AppStorePage() {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     remember { AppStore.init(ctx); true }
     LaunchedEffect(Unit) { AppStore.refresh(); AppStore.scanInstalled(); AppStore.checkUpdates() }
@@ -88,13 +88,13 @@ internal fun AppStorePage() {
     Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         (listOf(StoreCategory(Catalog.ALL, "All")) + cat.shelf()).forEach { k ->
             val on = k.id == chip
-            Box(Modifier.clip(BlazeShapes.pill).hairline(if (on) c.accent else c.hair, BlazeShapes.pill).clickable { chip = k.id; shown = PAGE }
+            Box(Modifier.clip(ArgusShapes.pill).hairline(if (on) c.accent else c.hair, ArgusShapes.pill).clickable { chip = k.id; shown = PAGE }
                 .padding(horizontal = 12.dp, vertical = 7.dp)) { Label(k.name, color = if (on) c.accent else c.sub, size = 11.sp) }
         }
     }
     if (list.isEmpty()) Label(if (cat.apps.isEmpty()) "The catalog couldn't load. Check the connection and open the Store again." else "No app matches.", modifier = Modifier.padding(vertical = 12.dp))
     list.take(shown).forEach { a -> AppRow(a, open == a.id, jobs[a.id], installed[a.pkg], updates[a.id], onToggle = { open = if (open == a.id) null else a.id }) }
-    if (list.size > shown) Box(Modifier.fillMaxWidth().padding(vertical = 10.dp).clip(BlazeShapes.pill).glassButton(c).clickable { shown += PAGE }
+    if (list.size > shown) Box(Modifier.fillMaxWidth().padding(vertical = 10.dp).clip(ArgusShapes.pill).glassButton(c).clickable { shown += PAGE }
         .padding(vertical = 12.dp), contentAlignment = Alignment.Center) { ButtonText("Show more (${list.size - shown})", color = Color.White) }
     Spacer(Modifier.height(14.dp))
     Field("VirusTotal key (optional, your own)", vt, { vt = it; AppStore.setVtKey(it) }, "Without one, installs say \"not scanned\"", secret = true)
@@ -106,7 +106,7 @@ internal fun AppStorePage() {
 
 @Composable
 private fun AppRow(a: StoreApp, expanded: Boolean, job: AppStore.Job?, have: InstalledInfo?, newer: String?, onToggle: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     Column(Modifier.fillMaxWidth().padding(bottom = 10.dp).hairline(c.hair).clickable(onClick = onToggle).padding(14.dp)
         .semantics { contentDescription = "${a.name}, ${a.license.ifBlank { "license not stated" }}. ${StorePolicy.NOTICE}" }) {
@@ -135,7 +135,7 @@ private fun AppRow(a: StoreApp, expanded: Boolean, job: AppStore.Job?, have: Ins
                     }
                 }
             }
-            Text(tr("Release page"), modifier = Modifier.padding(top = 8.dp).clip(BlazeShapes.pill).clickable { AppStore.openReleases(ctx, a) }.padding(vertical = 4.dp),
+            Text(tr("Release page"), modifier = Modifier.padding(top = 8.dp).clip(ArgusShapes.pill).clickable { AppStore.openReleases(ctx, a) }.padding(vertical = 4.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))
         }
     }
@@ -143,15 +143,15 @@ private fun AppRow(a: StoreApp, expanded: Boolean, job: AppStore.Job?, have: Ins
 
 @Composable
 private fun PrimaryPill(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
-    Box(modifier.height(40.dp).clip(BlazeShapes.pill).glassButton(c).clickable(enabled = enabled, onClick = onClick).padding(horizontal = 16.dp),
+    val c = LocalArgus.current.mono
+    Box(modifier.height(40.dp).clip(ArgusShapes.pill).glassButton(c).clickable(enabled = enabled, onClick = onClick).padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center) { ButtonText(text, color = Color.White) }
 }
 
 @Composable
 private fun OutlinePill(text: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
-    Box(Modifier.height(40.dp).clip(BlazeShapes.pill).hairline(c.hair, BlazeShapes.pill).clickable(onClick = onClick).padding(horizontal = 16.dp),
+    val c = LocalArgus.current.mono
+    Box(Modifier.height(40.dp).clip(ArgusShapes.pill).hairline(c.hair, ArgusShapes.pill).clickable(onClick = onClick).padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center) { ButtonText(text, color = c.ink) }
 }
 

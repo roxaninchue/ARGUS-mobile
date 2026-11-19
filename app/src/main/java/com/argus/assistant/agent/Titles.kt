@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Chat titles from the dominant theme of the conversation, not its first prompt (port of Blaze
+ * Chat titles from the dominant theme of the conversation, not its first prompt (port of Argus
  * Desktop titles.go). After the first full exchange, and again when the chat moves on (every 4 user
  * turns, or after 2 when a long new message lands), one small background call names the chat in at
  * most 6 words and writes the one-line summary search_past_chats uses. It never blocks a turn and

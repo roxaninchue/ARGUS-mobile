@@ -1,6 +1,6 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
-import com.blaze.assistant.proactive.Autopilot.Geo
+import com.argus.assistant.proactive.Autopilot.Geo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

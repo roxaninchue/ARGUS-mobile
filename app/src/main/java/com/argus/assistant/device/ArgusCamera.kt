@@ -1,17 +1,17 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Attachments
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.device.CameraModes.Mode
-import com.blaze.assistant.device.CameraModes.Origin
-import com.blaze.assistant.device.CameraModes.Route
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Attachments
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.device.CameraModes.Mode
+import com.argus.assistant.device.CameraModes.Origin
+import com.argus.assistant.device.CameraModes.Route
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -19,8 +19,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
 
-/** Opening Blaze Camera and handing its result to the right place ([CameraModes.route]). */
-object BlazeCamera {
+/** Opening Argus Camera and handing its result to the right place ([CameraModes.route]). */
+object ArgusCamera {
     const val EXTRA_ORIGIN = "blaze_camera_origin"
     const val EXTRA_CHAT = "blaze_camera_chat"
     const val EXTRA_PROMPT = "blaze_camera_prompt"
@@ -33,13 +33,13 @@ object BlazeCamera {
     fun lowRam(ctx: Context): Boolean = try { ctx.getSystemService(ActivityManager::class.java)?.isLowRamDevice == true } catch (_: Exception) { false }
 
     fun intent(ctx: Context, mode: Mode?, origin: Origin, chatId: String? = null, prompt: String? = null): Intent =
-        Intent(ctx, com.blaze.assistant.ui.CameraActivity::class.java)
-            .putExtra(com.blaze.assistant.ui.CameraActivity.EXTRA_MODE, mode?.id)
+        Intent(ctx, com.argus.assistant.ui.CameraActivity::class.java)
+            .putExtra(com.argus.assistant.ui.CameraActivity.EXTRA_MODE, mode?.id)
             .putExtra(EXTRA_ORIGIN, origin.name)
             .putExtra(EXTRA_CHAT, chatId)
             .putExtra(EXTRA_PROMPT, prompt)
 
-    /** Opens Blaze Camera. False (with the reason logged) when this phone has no camera or Android refused. */
+    /** Opens Argus Camera. False (with the reason logged) when this phone has no camera or Android refused. */
     fun open(ctx: Context, mode: Mode?, origin: Origin, chatId: String? = null, prompt: String? = null): Boolean {
         if (!CameraSupport.hasCamera(ctx)) { CameraSupport.log("${BrandName.NAME} Camera: no camera on this device (FEATURE_CAMERA_ANY)"); return false }
         return try {
@@ -72,12 +72,12 @@ object BlazeCamera {
                 Route.DRAFT -> { Agent.sharedDraft.value = Agent.SharedDraft(text.trim(), atts.firstOrNull()) }
                 else -> return@launch
             }
-            bringBlazeForward(app)
+            bringArgusForward(app)
         }
     }
 
-    fun bringBlazeForward(ctx: Context) {
-        try { ctx.startActivity(Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+    fun bringArgusForward(ctx: Context) {
+        try { ctx.startActivity(Intent(ctx, com.argus.assistant.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
         catch (e: Exception) { CameraSupport.log("couldn't bring ${BrandName.NAME} forward", e) }
     }
 

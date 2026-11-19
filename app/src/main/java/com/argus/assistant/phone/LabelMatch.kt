@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 /**
  * v0.30.4 fast actions: how a tap target the model names ("Apps", "Open by default") is matched against the labels

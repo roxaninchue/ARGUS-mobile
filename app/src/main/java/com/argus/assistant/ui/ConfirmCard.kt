@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,10 +36,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Agent
+import com.argus.assistant.agent.Agent
 import androidx.compose.ui.graphics.Color
 
-/** Blaze's mid-task question: tap an option, or type your own answer. */
+/** Argus's mid-task question: tap an option, or type your own answer. */
 @Composable
 fun QuestionCard() {
     val p by Agent.pendingQuestion.collectAsState()
@@ -48,12 +48,12 @@ fun QuestionCard() {
 }
 
 /**
- * The ask_user card itself (also used by screenshots). v0.24.0: it reads as Blaze's newest message: the question
- * in Blaze's bubble, the answers as rounded pills under it, and your own answer in a small pill field.
+ * The ask_user card itself (also used by screenshots). v0.24.0: it reads as Argus's newest message: the question
+ * in Argus's bubble, the answers as rounded pills under it, and your own answer in a small pill field.
  */
 @Composable
 fun QuestionView(question: String, options: List<String>, chat: String = "", key: Any? = question, onAnswer: (String) -> Unit = {}) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     var typing by remember(key) { mutableStateOf(false) }
     var text by remember(key) { mutableStateOf("") }
     // v0.31.0: a glass card (GlassCard) instead of a bubble.
@@ -83,15 +83,15 @@ fun QuestionView(question: String, options: List<String>, chat: String = "", key
     }
 }
 
-/** "Send a text to Mary?" with Allow / Don't. Shown wherever Blaze is on screen. */
+/** "Send a text to Mary?" with Allow / Don't. Shown wherever Argus is on screen. */
 @Composable
 fun ConfirmCard() {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val p by Agent.pendingConfirm.collectAsState()
     val pc = p ?: return
     val ctx = androidx.compose.ui.platform.LocalContext.current
     // v0.39.0: a message waiting for the user's tap reads as a draft: "Draft · not sent yet" with Not now / Send.
-    val draft = com.blaze.assistant.agent.SimpleHome.isDraft(pc.title, pc.action)
+    val draft = com.argus.assistant.agent.SimpleHome.isDraft(pc.title, pc.action)
     GlassCard(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 4.dp).appearIn(true), intensity = GlassIntensity.High) {
         Column {
             Label(if (draft) "Draft \u00b7 not sent yet" else "Needs your OK", color = c.accent, size = 9.sp)
@@ -104,20 +104,20 @@ fun ConfirmCard() {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.widthIn(max = 340.dp).fillMaxWidth()) {
             Box(Modifier.weight(1f).height(46.dp).glass(RoundedCornerShape(23.dp), GlassIntensity.Low, shadow = false).clickable { Agent.answerConfirm(false) },
                 contentAlignment = Alignment.Center) { Label(if (draft) "Not now" else "Don't", color = c.ink, size = 11.sp) }
-            Box(Modifier.weight(1f).height(46.dp).glassPrimary(BlazeShapes.pill).clickable {
+            Box(Modifier.weight(1f).height(46.dp).glassPrimary(ArgusShapes.pill).clickable {
                 // 0.53.7: phone control's "Open settings" starts Settings right here, from the Activity, then lets the task wait.
-                if (com.blaze.assistant.agent.PermissionGate.isCard(pc.title, pc.action) && com.blaze.assistant.phone.PhoneControl.openSettings(ctx))
-                    com.blaze.assistant.agent.PermissionGate.markOpened()
+                if (com.argus.assistant.agent.PermissionGate.isCard(pc.title, pc.action) && com.argus.assistant.phone.PhoneControl.openSettings(ctx))
+                    com.argus.assistant.agent.PermissionGate.markOpened()
                 Agent.answerConfirm(true) },
                 contentAlignment = Alignment.Center) { ButtonText(if (draft) "Send" else pc.action, color = GlassTokens.onPrimary(c.dark)) }
         }
         // v0.45.3 Normal mode commands: allow this kind of command for the rest of the chat, or always (never for risky ones).
         if (pc.grants) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp).widthIn(max = 340.dp).fillMaxWidth()) {
             Box(Modifier.weight(1f).height(40.dp).glass(RoundedCornerShape(20.dp), GlassIntensity.Low, shadow = false)
-                .clickable { Agent.answerConfirm(true, com.blaze.assistant.agent.CommandPolicy.Grant.CHAT) }, contentAlignment = Alignment.Center) {
+                .clickable { Agent.answerConfirm(true, com.argus.assistant.agent.CommandPolicy.Grant.CHAT) }, contentAlignment = Alignment.Center) {
                 Label(tr("Allow for this chat"), color = c.ink, size = 10.sp) }
             Box(Modifier.weight(1f).height(40.dp).glass(RoundedCornerShape(20.dp), GlassIntensity.Low, shadow = false)
-                .clickable { Agent.answerConfirm(true, com.blaze.assistant.agent.CommandPolicy.Grant.ALWAYS) }, contentAlignment = Alignment.Center) {
+                .clickable { Agent.answerConfirm(true, com.argus.assistant.agent.CommandPolicy.Grant.ALWAYS) }, contentAlignment = Alignment.Center) {
                 Label(tr("Always allow this command"), color = c.ink, size = 10.sp) }
         }
     }

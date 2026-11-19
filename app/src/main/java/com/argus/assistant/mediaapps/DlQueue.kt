@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import android.app.ActivityManager
 import android.content.Context
@@ -89,18 +89,18 @@ object DlQuota {
     /** Network call (call on IO). Signed out = the free plan's 1. Falls back to the cache when offline. */
     fun current(ctx: Context, force: Boolean = false): Entitled {
         val p = ctx.getSharedPreferences(PREFS, 0)
-        val token = runCatching { com.blaze.assistant.agent.Settings.gatewayToken() }.getOrDefault("")
+        val token = runCatching { com.argus.assistant.agent.Settings.gatewayToken() }.getOrDefault("")
         if (token.isBlank()) return Entitled.Capped(1, "basic")
         if (!force && System.currentTimeMillis() - p.getLong(AT, 0) < TTL) cached(ctx).let { if (it != Entitled.Unknown) return it }
         // 0.45.20: one fetch for the plan's numbers. Entitlements (0.45.18, GET /v1/entitlements) already holds
         // max_parallel_downloads next to the monthly counters, so the queue reads it there instead of a second call.
-        val got = runCatching { com.blaze.assistant.connect.Entitlements.refresh(ctx, force) }.getOrNull()?.let { fromSnapshot(it) } ?: Entitled.Unknown
+        val got = runCatching { com.argus.assistant.connect.Entitlements.refresh(ctx, force) }.getOrNull()?.let { fromSnapshot(it) } ?: Entitled.Unknown
         if (got != Entitled.Unknown) { p.edit().putString(KEY, DlConcurrency.toCache(got)).putLong(AT, System.currentTimeMillis()).apply(); return got }
         return cached(ctx)
     }
 
     /** The parallel cap in an Entitlements snapshot: a number, no cap (lifetime), or Unknown when the server didn't say. */
-    fun fromSnapshot(s: com.blaze.assistant.connect.Entitlements.Snapshot): Entitled = when {
+    fun fromSnapshot(s: com.argus.assistant.connect.Entitlements.Snapshot): Entitled = when {
         s.maxParallel != null -> Entitled.Capped(s.maxParallel.coerceIn(1, DlConcurrency.AUTO_MAX), s.plan)
         s.parallelUncapped -> Entitled.Uncapped
         else -> Entitled.Unknown

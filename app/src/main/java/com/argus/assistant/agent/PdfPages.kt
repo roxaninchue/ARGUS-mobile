@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -97,7 +97,7 @@ object PdfPages {
             f.setLastModified(System.currentTimeMillis())
             prune(d)
             id
-        } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("PdfPages: keep", e); null }
+        } catch (e: Exception) { com.argus.assistant.device.CrashLog.quiet("PdfPages: keep", e); null }
     }
 
     private fun prune(d: File) {

@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +44,7 @@ object FreeRouter {
             refreshing = true
             Thread {
                 try {
-                    val (code, body) = com.blaze.assistant.connect.Http.req("GET", "https://openrouter.ai/api/v1/models", timeoutMs = 20_000)
+                    val (code, body) = com.argus.assistant.connect.Http.req("GET", "https://openrouter.ai/api/v1/models", timeoutMs = 20_000)
                     if (code in 200..299) {
                         val data = JSONObject(body).optJSONArray("data") ?: JSONArray()
                         val c = (0 until data.length()).map { data.getJSONObject(it) }.filter { m ->
@@ -117,7 +117,7 @@ object FreeRouter {
         val e = entries()
         return e.map { it.first }.distinct().map { pid ->
             val listed = ProviderCatalog.listing(pid)?.models.orEmpty()
-            // "openrouter/free" hands each turn to a random free model and tiny coding models can't run Blaze:
+            // "openrouter/free" hands each turn to a random free model and tiny coding models can't run Argus:
             // the catalogue orders OpenRouter's free models instead (they stay in the list, further down).
             val pinned = e.filter { it.first == pid }.map { it.second }
                 .filter { it.isNotBlank() && !(pid == "openrouter" && (it == "openrouter/free" || weak.containsMatchIn(it))) }

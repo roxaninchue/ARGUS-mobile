@@ -1,9 +1,9 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
 import androidx.compose.ui.graphics.Color
-import com.blaze.assistant.ui.DarkColors
-import com.blaze.assistant.ui.LightColors
-import com.blaze.assistant.ui.QuickChipRow
+import com.argus.assistant.ui.DarkColors
+import com.argus.assistant.ui.LightColors
+import com.argus.assistant.ui.QuickChipRow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,10 +21,10 @@ class ComposerLookTest {
         assertEquals(Color.Black.copy(alpha = 0.45f), ComposerLook.scrim(DarkColors, blur = true))
         assertEquals(Color.White.copy(alpha = 0.35f), ComposerLook.scrim(LightColors, blur = true))
     }
-    @Test fun blazeBubbleIsOpaque() {
-        assertEquals(1f, ComposerLook.blazeBubble(DarkColors).alpha, 0f)
-        assertEquals(1f, ComposerLook.blazeBubble(LightColors).alpha, 0f)
-        assertEquals(1f, ComposerLook.blazeBubble(DarkColors.copy(bubbleBlaze = Color(0x885A6070))).alpha, 0f)
+    @Test fun argusBubbleIsOpaque() {
+        assertEquals(1f, ComposerLook.argusBubble(DarkColors).alpha, 0f)
+        assertEquals(1f, ComposerLook.argusBubble(LightColors).alpha, 0f)
+        assertEquals(1f, ComposerLook.argusBubble(DarkColors.copy(bubbleArgus = Color(0x885A6070))).alpha, 0f)
         assertEquals(1f, ComposerLook.panel(DarkColors).alpha, 0f)
     }
     @Test fun quickActionWords() {

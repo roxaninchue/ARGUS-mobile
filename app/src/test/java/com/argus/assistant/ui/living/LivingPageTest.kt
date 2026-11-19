@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
-import com.blaze.assistant.ui.living.LivingPage.ShotRef
+import com.argus.assistant.ui.living.LivingPage.ShotRef
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

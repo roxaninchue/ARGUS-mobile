@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,29 +28,29 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.agent.engines.AgentSessionDriver
-import com.blaze.assistant.agent.engines.TurnEvent
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.BotThreads
-import com.blaze.assistant.team.Row as TeamRow
-import com.blaze.assistant.team.TeamGraph
-import com.blaze.assistant.team.Trigger
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusGround
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.BotOrb
-import com.blaze.assistant.ui.argus.OrbFace
-import com.blaze.assistant.ui.argus.OrbSize
-import com.blaze.assistant.ui.argus.OrbState
-import com.blaze.assistant.ui.argus.kit.ArgusComposer
-import com.blaze.assistant.ui.argus.kit.ArgusIconButton
-import com.blaze.assistant.ui.argus.kit.ArgusToasts
-import com.blaze.assistant.ui.argus.kit.IconButtonKind
-import com.blaze.assistant.ui.team.thread.ThreadActions
-import com.blaze.assistant.ui.team.thread.ThreadList
-import com.blaze.assistant.ui.team.thread.ThreadModel
+import com.argus.assistant.agent.engines.AgentSessionDriver
+import com.argus.assistant.agent.engines.TurnEvent
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.BotThreads
+import com.argus.assistant.team.Row as TeamRow
+import com.argus.assistant.team.TeamGraph
+import com.argus.assistant.team.Trigger
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusGround
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.BotOrb
+import com.argus.assistant.ui.argus.OrbFace
+import com.argus.assistant.ui.argus.OrbSize
+import com.argus.assistant.ui.argus.OrbState
+import com.argus.assistant.ui.argus.kit.ArgusComposer
+import com.argus.assistant.ui.argus.kit.ArgusIconButton
+import com.argus.assistant.ui.argus.kit.ArgusToasts
+import com.argus.assistant.ui.argus.kit.IconButtonKind
+import com.argus.assistant.ui.team.thread.ThreadActions
+import com.argus.assistant.ui.team.thread.ThreadList
+import com.argus.assistant.ui.team.thread.ThreadModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -85,14 +85,14 @@ fun BotThreadHost(botId: String?, onClose: () -> Unit, onEditSoul: (String) -> U
     var graph by remember { mutableStateOf<TeamGraph.Graph?>(null) }
     LaunchedEffect(Unit) {
         try { graph = withContext(Dispatchers.IO) { TeamGraph.get(ctx.applicationContext) } }
-        catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BotThreadHost.open", t); ArgusToasts.show("Team couldn't open."); onClose() }
+        catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("BotThreadHost.open", t); ArgusToasts.show("Team couldn't open."); onClose() }
     }
     val g = graph ?: return
     BotThreadScreen(botId, g.store, g.threads, onClose, onEditSoul, onOpenJob)
 }
 
 @Composable
-fun BotThreadScreen(botId: String, store: com.blaze.assistant.team.TeamStore, threads: BotThreads, onClose: () -> Unit,
+fun BotThreadScreen(botId: String, store: com.argus.assistant.team.TeamStore, threads: BotThreads, onClose: () -> Unit,
                     onEditSoul: (String) -> Unit, onOpenJob: (String) -> Unit) {
     val c = Argus.colors
     var bot by remember(botId) { mutableStateOf<Bot?>(null) }

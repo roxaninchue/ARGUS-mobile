@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -24,7 +24,7 @@ class NoOpenCodeNameTest {
 
     @Test fun userStringsNeverNameOpenCode() {
         val hits = UiStrings.literals().filter { (_, s) -> name.containsMatchIn(s) }.map { "${it.first}: ${it.second}" } +
-            agentFiles.map { File(main(), "java/com/blaze/assistant/agent/$it") }.filter { it.isFile }
+            agentFiles.map { File(main(), "java/com/argus/assistant/agent/$it") }.filter { it.isFile }
                 .flatMap { f -> UiStrings.kotlinStrings(f.readText()).filter { name.containsMatchIn(it) }.map { "${f.name}: $it" } }
         assertEquals("OpenCode named in user-facing strings:\n" + hits.joinToString("\n"), 0, hits.size)
     }
@@ -32,7 +32,7 @@ class NoOpenCodeNameTest {
     @Test fun changelogAndNoticesNoLongerNameIt() {
         assertTrue("changelog names OpenCode", !name.containsMatchIn(repoFile("CHANGELOG.md").readText()))
         assertFalse("notices still list OpenCode", name.containsMatchIn(repoFile("THIRD_PARTY_NOTICES.md").readText()))
-        assertFalse(File(main(), "java/com/blaze/assistant/agent/BackupBrain.kt").exists())
+        assertFalse(File(main(), "java/com/argus/assistant/agent/BackupBrain.kt").exists())
     }
 
     @Test fun brainLabels() {

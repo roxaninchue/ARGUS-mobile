@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -20,7 +20,7 @@ import java.io.File
  * Results go to app/build/prompt-cache-bench.txt.
  */
 class PromptCacheBenchTest {
-    private val agentSrc = File("src/main/java/com/blaze/assistant/agent/Agent.kt").readText()
+    private val agentSrc = File("src/main/java/com/argus/assistant/agent/Agent.kt").readText()
     private val sysSrc = agentSrc.substring(agentSrc.indexOf("private fun systemPrompt("), agentSrc.indexOf("private suspend fun tools(): JSONArray"))
 
     /** The string literals of the call `<fn>("<name>", …)` in systemPrompt, joined (templates left as written). */
@@ -65,12 +65,12 @@ class PromptCacheBenchTest {
             s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE); s("format", AnswerStyle.FORMAT)
             s("rapid", RapidMessages.PROMPT_RULE)
             s("control", HarnessPrompt.phone(true, false) + "\n" + Orient.RULE + FastActions.RULE); s("secrets", "\n" + SecretRules.PROMPT)
-            s("followups", lit("s", "followups")); s("docs", BlazeDocs.PROMPT_LINE)
+            s("followups", lit("s", "followups")); s("docs", ArgusDocs.PROMPT_LINE)
             turn("core_skills", core(HarnessPrompt.pinned(prof.core)))
             turn("views", if (prof.views) ViewRouter.PROMPT else PromptProfile.viewsShort(ViewRouter.specs.map { it.name }))
-            s("stage", com.blaze.assistant.stage.StageTools.RULE)   // 0.46.0
+            s("stage", com.argus.assistant.stage.StageTools.RULE)   // 0.46.0
             s("tool_verify", ToolVerify.PROMPT_RULE)
-            s("rich", com.blaze.assistant.ui.RichReplies.PROMPT)
+            s("rich", com.argus.assistant.ui.RichReplies.PROMPT)
             live("time", "\n\nCURRENT LOCAL TIME: Tuesday 20 October 2026, 08:${10 + live.t} (Africa/Lusaka). This is exact: answer any time, date or day question straight from it, never say you can't see the time. ")
             live("memory", "\nWhat you remember about the user (use quietly, don't recite):\n" + filler("m", 1400) + "\n")
             s("learn", Learn.rules(true))

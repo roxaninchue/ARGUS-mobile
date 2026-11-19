@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * v0.45.6 (user 21:34-21:40: "Done. Your 3D rocket is open…" while nothing rendered): what the Design view last proved
  * about each design file. The view reports PENDING when it starts loading, RENDERED on a load / draw event from the
  * WebView (a 3D page only after non-background pixels), FAILED with the real reason. The agent waits briefly on it after
- * the design tool and grounds its reply in it ([com.blaze.assistant.agent.DesignTruth]). Thread-safe, pure.
+ * the design tool and grounds its reply in it ([com.argus.assistant.agent.DesignTruth]). Thread-safe, pure.
  */
 object DesignStatus {
     enum class State { PENDING, RENDERED, FAILED }

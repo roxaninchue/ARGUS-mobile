@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.45.19 chat fixes (user rule for every client): never show which model or provider replied. Blaze is Blaze and Halo is
+ * 0.45.19 chat fixes (user rule for every client): never show which model or provider replied. Argus is Argus and Halo is
  * Halo. No model or provider ids in chat footers, the "What happened" sheet, settings, errors or fallback notices.
  * The details stay available to developers only behind [DevFlags.modelInfo] (off by default, debug builds only).
  *
@@ -28,7 +28,7 @@ object ModelHide {
 
     /**
      * [text] with provider / model names taken out: "(Groq · llama-3.3-70b)" and "openrouter/free" go, a bare name left in a
-     * sentence becomes "Blaze" ("Groq is having trouble" -> "Blaze is having trouble"). Text naming none comes back unchanged.
+     * sentence becomes "Blaze" ("Groq is having trouble" -> "Argus is having trouble"). Text naming none comes back unchanged.
      */
     fun scrub(text: String): String {
         if (!mentions(text)) return text
@@ -52,6 +52,6 @@ object DevFlags {
     fun modelInfo(debugBuild: Boolean, pref: Boolean): Boolean = debugBuild && pref
 
     fun modelInfo(): Boolean = try {
-        modelInfo(com.blaze.assistant.BuildConfig.DEBUG, Settings.bool(MODEL_INFO, false))
+        modelInfo(com.argus.assistant.BuildConfig.DEBUG, Settings.bool(MODEL_INFO, false))
     } catch (_: Throwable) { false }
 }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.life
+package com.argus.assistant.life
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -24,14 +24,14 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import com.blaze.assistant.MainActivity
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Mind
-import com.blaze.assistant.agent.MindLogs
-import com.blaze.assistant.voice.Voice
-import com.blaze.assistant.voice.WakeModel
-import com.blaze.assistant.voice.WakeWordService
+import com.argus.assistant.MainActivity
+import com.argus.assistant.R
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Mind
+import com.argus.assistant.agent.MindLogs
+import com.argus.assistant.voice.Voice
+import com.argus.assistant.voice.WakeModel
+import com.argus.assistant.voice.WakeWordService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -50,7 +50,7 @@ import org.vosk.Recognizer
  * voice-level sound, so a quiet room costs almost no CPU. Without the model, Android's SpeechRecognizer runs in a
  * restart loop until the download finishes.
  *
- * Auto-pause (mic released): phone calls, another app recording, Blaze's own voice listening, battery below
+ * Auto-pause (mic released): phone calls, another app recording, Argus's own voice listening, battery below
  * [LifeLogs.LOW_BATTERY]% unless charging. Resumes on its own when the reason clears; a pause from the user waits
  * for Resume.
  */

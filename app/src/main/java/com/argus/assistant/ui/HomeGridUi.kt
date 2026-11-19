@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -113,15 +113,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.home.HomeGrid
-import com.blaze.assistant.home.InterestsFeed
-import com.blaze.assistant.home.NextUp
-import com.blaze.assistant.home.QuickActions
-import com.blaze.assistant.home.TodoFeed
-import com.blaze.assistant.home.WeatherBoard
-import com.blaze.assistant.ui.splash.CloudGlyphPainter
-import com.blaze.assistant.ui.splash.HomeIntroSpec
-import com.blaze.assistant.ui.splash.HomeSequence
+import com.argus.assistant.home.HomeGrid
+import com.argus.assistant.home.InterestsFeed
+import com.argus.assistant.home.NextUp
+import com.argus.assistant.home.QuickActions
+import com.argus.assistant.home.TodoFeed
+import com.argus.assistant.home.WeatherBoard
+import com.argus.assistant.ui.splash.CloudGlyphPainter
+import com.argus.assistant.ui.splash.HomeIntroSpec
+import com.argus.assistant.ui.splash.HomeSequence
 import androidx.compose.ui.graphics.drawscope.clipRect
 
 /**
@@ -131,7 +131,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
  * transform from [HomeIntroClock] in draw / layer lambdas only, so a running intro never recomposes the grid per frame.
  */
 
-/** What Music shows (Blaze Music's player, read from Awareness). */
+/** What Music shows (Argus Music's player, read from Awareness). */
 @Immutable
 data class HomeMusicNow(val title: String, val artist: String, val posMs: Long, val durMs: Long, val playing: Boolean)
 
@@ -184,7 +184,7 @@ object HomeGridLook {
     const val titleMinSp = 10f
 }
 
-/** Topic icon key ([com.blaze.assistant.home.TopicIcons]) -> Material rounded icon. */
+/** Topic icon key ([com.argus.assistant.home.TopicIcons]) -> Material rounded icon. */
 fun topicIcon(key: String): ImageVector = when (key) {
     "code" -> Icons.Rounded.Code
     "trend" -> Icons.AutoMirrored.Rounded.TrendingUp

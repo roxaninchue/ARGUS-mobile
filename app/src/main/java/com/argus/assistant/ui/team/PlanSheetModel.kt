@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.team.Router
+import com.argus.assistant.team.Router
 
 /**
  * P1-TM-06: the "Here's what I'll do" sheet (A-team planSheet), pure so PlanSheetModelTest checks it: the title, the

@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.agent.Designs
+import com.argus.assistant.agent.Designs
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -43,7 +43,7 @@ class DesignRenderTest {
         assertEquals("$O/designs/simple-rocket/index.html", DesignServe.virtualUrl("file://" + f.absolutePath, home))
         val other = File(home, "site/my page.html").apply { parentFile!!.mkdirs(); writeText("x") }
         assertEquals("$O/home/site/my%20page.html", DesignServe.virtualUrl("file://" + other.absolutePath, home))
-        // Outside Blaze's home, web URLs and no home: unchanged (file:// fallback with the CDN interception).
+        // Outside Argus's home, web URLs and no home: unchanged (file:// fallback with the CDN interception).
         assertEquals("file:///sdcard/x.html", DesignServe.virtualUrl("file:///sdcard/x.html", home))
         assertEquals("https://example.com/", DesignServe.virtualUrl("https://example.com/", home))
         assertEquals("file://" + f.absolutePath, DesignServe.virtualUrl("file://" + f.absolutePath, null))
@@ -60,7 +60,7 @@ class DesignRenderTest {
         val other = File(home, "site/my page.html").apply { parentFile!!.mkdirs(); writeText("x") }
         assertEquals(other.canonicalPath, (DesignServe.resolve("$O/home/site/my%20page.html", home) as DesignServe.Target.Disk).file.canonicalPath)
         assertEquals("model/gltf-binary", (DesignServe.resolve("$O/designs/a/model.glb", home) as DesignServe.Target.Disk).mime)
-        // No way out of Blaze's home.
+        // No way out of Argus's home.
         assertNull(DesignServe.resolve("$O/designs/../../etc/passwd", home))
         assertNull(DesignServe.resolve("$O/designs/%2e%2e/%2e%2e/etc/passwd", home))
         assertNull(DesignServe.resolve("$O/home/a%2F..%2F..%2Fx", home))
@@ -120,7 +120,7 @@ class DesignRenderTest {
     @Test fun servedPagesGetTheHookAndAChosenImportMap() {
         val page = Designs.render3d(template, rocket())
         val out = DesignServe.prepareHtml(page, is3d = true)
-        val hookAt = out.indexOf("window.BlazeDesign")
+        val hookAt = out.indexOf("window.ArgusDesign")
         assertTrue(hookAt in 0 until out.indexOf("id=\"blaze-parts\""))
         assertTrue("hook sits right after <head>", out.indexOf("<head>") < hookAt && hookAt < out.indexOf("<title>"))
         assertTrue(out.contains("IS3D=true"))

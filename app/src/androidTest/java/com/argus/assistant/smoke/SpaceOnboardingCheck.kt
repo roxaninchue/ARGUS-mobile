@@ -1,4 +1,4 @@
-package com.blaze.assistant.smoke
+package com.argus.assistant.smoke
 
 import android.graphics.Bitmap
 import android.os.Handler
@@ -14,8 +14,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.blaze.assistant.ui.space.SpaceOnboarding
-import com.blaze.assistant.ui.space.SpaceOnboardingScreen
+import com.argus.assistant.ui.space.SpaceOnboarding
+import com.argus.assistant.ui.space.SpaceOnboardingScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 @RunWith(AndroidJUnit4::class)
 class SpaceOnboardingCheck {
-    private val tag = "BlazeSpaceOnboarding"
+    private val tag = "ArgusSpaceOnboarding"
     private val inst = InstrumentationRegistry.getInstrumentation()
     private val main = Handler(Looper.getMainLooper())
     private val worst = AtomicLong(0)

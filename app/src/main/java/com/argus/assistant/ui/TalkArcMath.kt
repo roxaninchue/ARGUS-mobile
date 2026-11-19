@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -13,21 +13,21 @@ import kotlin.math.sin
  * v0.43.0: the maths of the "who am I talking to" arc that opens from the header orb. Pure, unit tested in
  * TalkArcMathTest; drawing and gestures are in TalkArc.kt.
  *
- * v0.45.28: two icons, Blaze and Halo. The "Halo x Blaze" choice is gone from the arc: both of them join in by
- * themselves when a message needs them (see SimpleHome.tagged), and a saved "all" opens as Blaze ([normalize]).
+ * v0.45.28: two icons, Argus and Halo. The "Halo x Argus" choice is gone from the arc: both of them join in by
+ * themselves when a message needs them (see SimpleHome.tagged), and a saved "all" opens as Argus ([normalize]).
  * The arc is a flat half-ellipse as wide as the chat bar ([offset] with rx ≫ ry).
  *
  * [pos] is the (fractional) index of the icon at the top: icon i sits at 90° + (pos − i) · STEP, so with Halo focused
- * Blaze is on the left and Halo on top; with Blaze focused Halo is on the right. Dragging around the arc (or sideways)
+ * Argus is on the left and Halo on top; with Argus focused Halo is on the right. Dragging around the arc (or sideways)
  * turns it; letting go snaps to the nearest icon.
  */
 object TalkArcMath {
     val TARGETS = listOf("blaze", "halo")
     const val STEP = 60f
 
-    /** v0.45.28: what an old saved pick means now ("all" = Blaze, with Halo x Blaze joining in automatically). */
-    // 0.51.0 one persona: every saved pick ("halo", "all") is Blaze now (OnePersona).
-    fun normalize(who: String?): String = com.blaze.assistant.agent.OnePersona.who(who)
+    /** v0.45.28: what an old saved pick means now ("all" = Argus, with Halo x Argus joining in automatically). */
+    // 0.51.0 one persona: every saved pick ("halo", "all") is Argus now (OnePersona).
+    fun normalize(who: String?): String = com.argus.assistant.agent.OnePersona.who(who)
 
     fun indexOf(who: String): Int = TARGETS.indexOf(normalize(who)).coerceAtLeast(0)
     fun targetAt(i: Int): String = TARGETS[i.coerceIn(0, TARGETS.size - 1)]

@@ -1,4 +1,4 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 import android.Manifest
 import android.content.Context
@@ -17,7 +17,7 @@ import android.os.Environment
 object StorageAccess {
     /** Starts the tool result, so FixCards.kindOf (first 600 chars) always sees it. */
     val NOTE = "[All files access is off: Android hides other apps' files in shared storage, so this result may be " +
-        "empty or incomplete. ${com.blaze.assistant.BrandName.NAME} needs all files access to search the whole phone.]\n"
+        "empty or incomplete. ${com.argus.assistant.BrandName.NAME} needs all files access to search the whole phone.]\n"
 
     private val shared = Regex("(?i)(/storage/(emulated|self)|/sdcard\\b|/mnt/sdcard|/storage\\b|\\bfind\\s+/(\\s|$)|\\bls\\s+(-\\w+\\s+)*/(\\s|$)|\\bdu\\s+(-\\w+\\s+)*/(\\s|$))")
 

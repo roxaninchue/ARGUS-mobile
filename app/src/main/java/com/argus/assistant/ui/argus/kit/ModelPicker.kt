@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -9,7 +9,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Velocity
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,18 +42,18 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.agent.LiveModels
-import com.blaze.assistant.agent.LiveModelsFeed
-import com.blaze.assistant.agent.ModelList
-import com.blaze.assistant.agent.ModelPick
-import com.blaze.assistant.agent.TextAssist
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Brands
-import com.blaze.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.agent.LiveModels
+import com.argus.assistant.agent.LiveModelsFeed
+import com.argus.assistant.agent.ModelList
+import com.argus.assistant.agent.ModelPick
+import com.argus.assistant.agent.TextAssist
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Brands
+import com.argus.assistant.ui.argus.icons.Lucide
 
 /**
  * 0.53.0 manual model picker (owner, 13 Nov 2026). A chip over the composer shows the pick ("Auto", "Kimi K3",
@@ -233,7 +233,7 @@ fun ComposerTopRow(modifier: Modifier = Modifier, undo: (() -> Unit)? = null, fo
     fun toggle(p: TopPick) { open = if (shown == p) TopPick.NONE else p }
     androidx.compose.foundation.layout.Column(modifier.fillMaxWidth().padding(end = 8.dp)) {
         androidx.compose.animation.AnimatedVisibility(shown != TopPick.NONE,
-            enter = com.blaze.assistant.ui.MotionTokens.expand(), exit = com.blaze.assistant.ui.MotionTokens.collapse()) {
+            enter = com.argus.assistant.ui.MotionTokens.expand(), exit = com.argus.assistant.ui.MotionTokens.collapse()) {
             Box(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp), contentAlignment = if (last == TopPick.EFFORT) Alignment.TopCenter else Alignment.TopEnd) {
                 if (last == TopPick.EFFORT) PickList(tr("Effort"), efforts.map { PickOption(it, it.replaceFirstChar { ch -> ch.uppercaseChar() }) }, effortNow) {
                     ModelPick.set(choice.key, it); open = TopPick.NONE

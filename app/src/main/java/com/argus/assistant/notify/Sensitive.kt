@@ -1,9 +1,9 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 /**
  * OTP and bank-code filter (v0.19.0). A message that looks like a one-time code, a login or verification code,
  * a PIN, or a bank / mobile-money alert is never stored: not in the conversation log, not in the journal and
- * so never in memory. Blaze only sees "(a code or bank message, hidden)". Pure, unit-tested (ConversationsTest).
+ * so never in memory. Argus only sees "(a code or bank message, hidden)". Pure, unit-tested (ConversationsTest).
  */
 object Sensitive {
     /** On their own these always mean a code. */

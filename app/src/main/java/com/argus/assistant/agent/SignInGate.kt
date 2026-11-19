@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * v0.45.4: a chat message sent while signed out of Blaze Cloud no longer ends in an error. The turn stops at its first model call, the chat
+ * v0.45.4: a chat message sent while signed out of Argus Cloud no longer ends in an error. The turn stops at its first model call, the chat
  * shows a "Sign in" card instead, the message stays where it is, and it is sent by itself once sign-in completes.
  * Direct commands that need no model ("open WhatsApp", the time, a timer) still run signed out, because the card only
  * replaces the failure of a real model call.
@@ -16,7 +16,7 @@ object SignInGate {
     const val LINE = "Sign in to your ${BrandName.NAME} account and I'll send this message as soon as you're in."
     const val BUTTON = "Sign in"
 
-    /** The model call failed only because there is no Blaze session (LlmClient: Cloud.SIGNED_OUT, 401). */
+    /** The model call failed only because there is no Argus session (LlmClient: Cloud.SIGNED_OUT, 401). */
     fun isSignedOut(code: Int, message: String?): Boolean = code == 401 && message == Cloud.SIGNED_OUT
 
     /** The card replaces the error when the failure was "signed out" (16 Nov 2026: no on-phone model can answer instead). */

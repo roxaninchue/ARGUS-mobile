@@ -1,8 +1,8 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.notify.Conversations
+import com.argus.assistant.notify.Conversations
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject

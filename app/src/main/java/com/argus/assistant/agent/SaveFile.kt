@@ -1,14 +1,14 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
  * v0.45.9 (user, 12:12): "save this file" after an HTML reply took 56 minutes and ended with "I don't have the capability
- * to save files... open a text editor on your computer". Blaze runs on a phone and can save: save_file writes the last
+ * to save files... open a text editor on your computer". Argus runs on a phone and can save: save_file writes the last
  * code block in the chat (or the content / filename given) to Downloads/Blaze through MediaStore (API 29+, no storage
  * permission), with the right extension; below API 29 it opens the share / save sheet. It returns the saved path and
- * Blaze confirms that path.
+ * Argus confirms that path.
  *
  * Pure parts (block extraction, extension, name, the "save this" cue) are tested in SaveFileTest; the Android write is in
  * [SaveFileAndroid].
@@ -87,7 +87,7 @@ object SaveFile {
 
     /**
      * The file name: [given] when the user / model named it (its extension kept, or [ext] added), else the HTML <title>,
-     * else "blaze-<lang>" (e.g. blaze-python.py).
+     * else "argus-<lang>" (e.g. blaze-python.py).
      */
     fun nameFor(given: String, lang: String, code: String, ext: String = extFor(lang, code)): String {
         val g = given.trim().substringAfterLast('/').substringAfterLast('\\')
@@ -105,7 +105,7 @@ object SaveFile {
     /** "save this", "save the file", "download it", "save it as page.html", "export the code". */
     private val strong = Regex("""(?i)\b(save|download|export)\b\s+(?:this|that|it|the (?:file|code|page|html|script)|(?:it|this) as\b|to (?:my )?(?:phone|downloads?))|\bsave (?:the |this |that )?(?:file|code|page|html|script)\b|\bsave as\b|^\s*(save|download)( it| this| that)?[.!]?\s*$""")
 
-    /** True when [text] asks to save / download something Blaze wrote. */
+    /** True when [text] asks to save / download something Argus wrote. */
     fun wantsSave(text: String): Boolean = strong.containsMatchIn(text.trim())
 
     /** The tool schema. */

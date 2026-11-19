@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -57,10 +57,10 @@ class SignInBrandTest {
     }
 
     @Test fun theAccountPageDrawsTheBrandButtons() {
-        val page = File(src(), "com/blaze/assistant/ui/AccountPage.kt").readText()
+        val page = File(src(), "com/argus/assistant/ui/AccountPage.kt").readText()
         assertTrue("for (p in SignInBrand.PROVIDERS) if (v.login[p] == true) {" in page)
-        assertTrue("ProviderButton(p) { err = BlazeAccount.signInWith(ctx, p) }" in page)
+        assertTrue("ProviderButton(p) { err = ArgusAccount.signInWith(ctx, p) }" in page)
         assertTrue("R.drawable.logo_google_g" in page && "R.drawable.logo_github_mark" in page)
-        assertTrue("the plain text button is gone", "AccountButton(\"Continue with \${BlazeAccount.title(p)}\"" !in page)
+        assertTrue("the plain text button is gone", "AccountButton(\"Continue with \${ArgusAccount.title(p)}\"" !in page)
     }
 }

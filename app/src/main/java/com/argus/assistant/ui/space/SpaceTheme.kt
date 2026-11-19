@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -52,8 +52,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.Type
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.Type
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -91,7 +91,7 @@ data class SpaceLook(
 
         /**
          * Unification: the look in [dark] mode with the app's [accent] (the one Look and feel picked; the legacy screens
-         * read the same colour from LocalBlaze). The default accents of both systems are the same SpacePalette colour, so
+         * read the same colour from LocalArgus). The default accents of both systems are the same SpacePalette colour, so
          * with nothing picked this is exactly [of]. Unspecified or null keeps the shell's own.
          */
         fun of(dark: Boolean, accent: Color?): SpaceLook {
@@ -103,7 +103,7 @@ data class SpaceLook(
 
 /** The look for the app's current light / dark mode, with the accent the rest of the app uses (the accent picker's). */
 @Composable
-fun spaceLook(): SpaceLook { val c = LocalBlaze.current; return SpaceLook.of(c.dark, c.accent) }
+fun spaceLook(): SpaceLook { val c = LocalArgus.current; return SpaceLook.of(c.dark, c.accent) }
 
 /**
  * Hark's two families: a serif for display headlines, the app's grotesk (Inter, the Aeonik stand-in) for everything else.
@@ -159,9 +159,9 @@ object SpaceImageCache {
             cached?.let { (s, b) -> if (s <= sample) return b }
             return try {
                 val o = BitmapFactory.Options().apply { inSampleSize = sample; inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 }
-                BitmapFactory.decodeResource(ctx.resources, com.blaze.assistant.R.drawable.argus_space, o)
+                BitmapFactory.decodeResource(ctx.resources, com.argus.assistant.R.drawable.argus_space, o)
                     ?.also { it.prepareToDraw() }?.asImageBitmap()?.also { cached = sample to it }
-            } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("SpaceImageCache", t); null }
+            } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("SpaceImageCache", t); null }
         }
     }
 
@@ -257,9 +257,9 @@ fun SpaceCard(modifier: Modifier = Modifier, tag: String? = null, onClick: (() -
  * has {0} where the brand is ("Start using {0}"), so translations never touch the name.
  */
 fun trBrand(s: String): String = when {
-    com.blaze.assistant.BrandName.UPPER in s -> com.blaze.assistant.i18n.tr(s.replace(com.blaze.assistant.BrandName.UPPER, "{0}"), com.blaze.assistant.BrandName.UPPER)
-    com.blaze.assistant.BrandName.NAME in s -> com.blaze.assistant.i18n.tr(s.replace(com.blaze.assistant.BrandName.NAME, "{0}"), com.blaze.assistant.BrandName.NAME)
-    else -> com.blaze.assistant.i18n.tr(s)
+    com.argus.assistant.BrandName.UPPER in s -> com.argus.assistant.i18n.tr(s.replace(com.argus.assistant.BrandName.UPPER, "{0}"), com.argus.assistant.BrandName.UPPER)
+    com.argus.assistant.BrandName.NAME in s -> com.argus.assistant.i18n.tr(s.replace(com.argus.assistant.BrandName.NAME, "{0}"), com.argus.assistant.BrandName.NAME)
+    else -> com.argus.assistant.i18n.tr(s)
 }
 
 @Composable
@@ -284,7 +284,7 @@ fun SpacePillButton(label: String, onClick: () -> Unit, modifier: Modifier = Mod
         .padding(horizontal = 20.dp, vertical = 10.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically) {
         if (plus) { PlusMark(ink, 20.dp); Spacer(Modifier.width(10.dp)) }
-        else if (icon != null) { Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(com.blaze.assistant.ui.BlazeIconStyle.tileIcon)); Spacer(Modifier.width(10.dp)) }
+        else if (icon != null) { Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(com.argus.assistant.ui.ArgusIconStyle.tileIcon)); Spacer(Modifier.width(10.dp)) }
         Text(label, style = SpaceType.rowTitle(ink))
     }
 }
@@ -297,7 +297,7 @@ fun SpaceChip(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
         .semantics { role = Role.Button }.padding(start = if (icon != null) 14.dp else 18.dp, end = 18.dp, top = 11.dp, bottom = 11.dp),
         verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = look.primaryInk, modifier = Modifier.size(com.blaze.assistant.ui.BlazeIconStyle.buttonIcon))
+            Icon(icon, contentDescription = null, tint = look.primaryInk, modifier = Modifier.size(com.argus.assistant.ui.ArgusIconStyle.buttonIcon))
             Spacer(Modifier.width(8.dp))
         }
         Text(label, style = SpaceType.body(15.sp, look.primaryInk, FontWeight.Medium))

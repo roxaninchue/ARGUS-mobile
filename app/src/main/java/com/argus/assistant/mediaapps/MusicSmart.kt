@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -8,7 +8,7 @@ import kotlin.random.Random
 data class PlayEvent(val key: String, val at: Long, val ms: Long)
 
 /**
- * v0.34.0 Blaze Music, the pure rules (MusicSmartTest): smart playlists, daily mixes, Wrapped, Blaze DJ's picks,
+ * v0.34.0 Argus Music, the pure rules (MusicSmartTest): smart playlists, daily mixes, Wrapped, Argus DJ's picks,
  * equalizer presets on any phone's bands, the crossfade / sleep-fade volume curves, the tag fixer, cover lookups and
  * playlist import parsing (YouTube and Spotify).
  */
@@ -90,7 +90,7 @@ object MusicSmart {
     }
 
     /**
-     * Blaze DJ: [n] songs to add when the queue runs out. Weighted by how much you play them (and liked ones), never
+     * Argus DJ: [n] songs to add when the queue runs out. Weighted by how much you play them (and liked ones), never
      * one of the last 20 played, no repeats, a little randomness so it isn't the same every time.
      */
     fun djPicks(songs: List<Track>, events: List<PlayEvent>, liked: Set<String>, recent: List<String>, n: Int, seed: Long): List<Track> {

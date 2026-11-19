@@ -1,11 +1,11 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.view.KeyEvent
 
 /**
- * v0.29.2 Blaze Terminal: pure parts (TermLogicTest). The extra-keys rows copy Termux's default layout, the
+ * v0.29.2 Argus Terminal: pure parts (TermLogicTest). The extra-keys rows copy Termux's default layout, the
  * environment list decides which shells a new tab can open, and [phoneArgs] builds the phone shell's argv.
  */
 object TermLogic {
@@ -63,7 +63,7 @@ object TermLogic {
     )
 
     /**
-     * v0.34.0: checksums and real sizes for every rootfs Blaze downloads. Computed on 2026-10-18 by streaming each
+     * v0.34.0: checksums and real sizes for every rootfs Argus downloads. Computed on 2026-10-18 by streaming each
      * release asset through sha256sum; they match termux/proot-distro's own distro-plugins (TARBALL_SHA256) and the
      * GitHub release asset sizes.
      */
@@ -196,7 +196,7 @@ object TermLogic {
     /**
      * Applets that call the old path syscalls (chmod, chown32, link, symlink, rmdir, mknod). The 32-bit BusyBox
      * (1.31.0, musl) uses them, and Android's 32-bit app seccomp filter only allows the *at() forms, so on a phone that
-     * runs Blaze as armeabi-v7a they die with SIGSYS. When the start-up file-tools probe fails, these stay Android's
+     * runs Argus as armeabi-v7a they die with SIGSYS. When the start-up file-tools probe fails, these stay Android's
      * (toybox in /system/bin) instead. Found with qemu-arm -strace against bionic's SECCOMP lists (tools/busybox/README.md).
      */
     val LEGACY_SYSCALL_APPLETS = setOf("chmod", "chown", "chgrp", "ln", "rmdir", "rm", "cp", "mv", "mkfifo", "mknod",

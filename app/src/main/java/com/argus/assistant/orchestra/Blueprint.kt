@@ -1,4 +1,4 @@
-package com.blaze.assistant.orchestra
+package com.argus.assistant.orchestra
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -39,7 +39,7 @@ data class Node(
     val writes: List<String> = emptyList(),
     /** The interface / contract it must produce or honour. */
     val contract: String = "",
-    /** Run through the terminal (builds, tests): ExecRoute / Blaze Terminal. */
+    /** Run through the terminal (builds, tests): ExecRoute / Argus Terminal. */
     val terminal: Boolean = false,
     /** Planner payload for the pipeline (e.g. a folder's file list), JSON text. */
     val data: String = "",

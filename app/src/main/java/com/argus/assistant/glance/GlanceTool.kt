@@ -1,4 +1,4 @@
-package com.blaze.assistant.glance
+package com.argus.assistant.glance
 
 import org.json.JSONArray
 import org.json.JSONObject

@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,10 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.BlazeBrush
-import com.blaze.assistant.ui.BlazeShapes
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.PillButton
+import com.argus.assistant.ui.ArgusBrush
+import com.argus.assistant.ui.ArgusShapes
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.PillButton
 import kotlinx.coroutines.delay
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
@@ -51,16 +51,16 @@ fun rememberStallMs(stalled: Boolean): Long {
 @Composable
 fun NetNote(p: NetHonesty.Play, online: Boolean, onRetry: () -> Unit, modifier: Modifier = Modifier, onDark: Boolean = false) {
     if (p == NetHonesty.Play.NONE) return
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val bg = if (onDark) Color.Black.copy(alpha = 0.6f) else c.faint
-    val fg = if (onDark) Color.White else if (p == NetHonesty.Play.RETRYING) BlazeBrush.orange else c.sub
-    Row(modifier.clip(BlazeShapes.pill).background(bg).padding(start = 12.dp, end = if (NetHonesty.retryButton(p)) 4.dp else 12.dp, top = 6.dp, bottom = 6.dp),
+    val fg = if (onDark) Color.White else if (p == NetHonesty.Play.RETRYING) ArgusBrush.orange else c.sub
+    Row(modifier.clip(ArgusShapes.pill).background(bg).padding(start = 12.dp, end = if (NetHonesty.retryButton(p)) 4.dp else 12.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically) {
         MText(NetHonesty.playText(p, online), 12.5.sp, fg, FontWeight.Medium, modifier = Modifier.weight(1f, fill = false))
         if (NetHonesty.retryButton(p)) {
             Spacer(Modifier.width(8.dp))
             MText("Retry", 12.5.sp, if (onDark) Color.White else c.ink, FontWeight.SemiBold,
-                modifier = Modifier.clip(BlazeShapes.pill).clickable(onClick = onRetry).padding(horizontal = 10.dp, vertical = 4.dp))
+                modifier = Modifier.clip(ArgusShapes.pill).clickable(onClick = onRetry).padding(horizontal = 10.dp, vertical = 4.dp))
         }
     }
 }
@@ -71,8 +71,8 @@ fun NetNote(p: NetHonesty.Play, online: Boolean, onRetry: () -> Unit, modifier: 
  */
 @Composable
 fun SearchErrorCard(title: String, detail: String, canShowSaved: Boolean, onRetry: () -> Unit, onSaved: () -> Unit) {
-    val c = LocalBlaze.current
-    Column(Modifier.fillMaxWidth().clip(BlazeShapes.medium).background(c.faint).padding(16.dp)) {
+    val c = LocalArgus.current
+    Column(Modifier.fillMaxWidth().clip(ArgusShapes.medium).background(c.faint).padding(16.dp)) {
         MText(title, 15.sp, c.ink, FontWeight.SemiBold)
         if (detail.isNotBlank()) { Spacer(Modifier.height(4.dp)); MText(detail, 13.sp, c.sub, maxLines = 3) }
         Spacer(Modifier.height(12.dp))

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,10 +42,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.ui.LocalBlaze
-import com.blaze.assistant.ui.argus.icons.ArgusGlyphs
-import com.blaze.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.ui.LocalArgus
+import com.argus.assistant.ui.argus.icons.ArgusGlyphs
+import com.argus.assistant.ui.argus.icons.Lucide
 
 /**
  * The landscape shell rail (Finn's landscape mockup). Living UI 0.2.1 drew it for Living only; 0.2.3 draws it in every
@@ -78,7 +78,7 @@ fun LivingRail(
     onMeLong: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dark = LocalBlaze.current.dark
+    val dark = LocalArgus.current.dark
     val p = remember(dark) { LivingSpec.palette(dark) }
     Box(modifier.fillMaxHeight().windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Start))
         .width(LivingSpec.RAIL_DP.dp).background(Color(p.canvas)).statusBarsPadding().navigationBarsPadding()) {
@@ -88,7 +88,7 @@ fun LivingRail(
             val used = (top + bottom) * ITEM + 9 + 12
             val gap = (maxHeight.value - used).coerceAtLeast(0f)
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                for ((m, icon) in LivingSpec.SHELL_MODES) RailItem(icon, com.blaze.assistant.ui.argus.kit.ShellSpec.label(m), m == mode, p) { onMode(m) }
+                for ((m, icon) in LivingSpec.SHELL_MODES) RailItem(icon, com.argus.assistant.ui.argus.kit.ShellSpec.label(m), m == mode, p) { onMode(m) }
                 Box(Modifier.padding(vertical = 4.dp).width(22.dp).height(1.dp).background(Color(p.link)))
                 if (chat) {
                     RailItem(ArgusGlyphs.MENU_TAPER, tr("Chat history"), false, p, badge = historyBadge, onClick = onHistory)

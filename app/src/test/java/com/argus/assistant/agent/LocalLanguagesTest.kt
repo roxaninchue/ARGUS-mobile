@@ -1,10 +1,10 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import androidx.compose.ui.graphics.Color
-import com.blaze.assistant.ui.Md
-import com.blaze.assistant.ui.ParseMemo
+import com.argus.assistant.ui.Md
+import com.argus.assistant.ui.ParseMemo
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals

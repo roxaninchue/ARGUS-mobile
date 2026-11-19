@@ -1,9 +1,9 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 import android.content.Context
-import com.blaze.assistant.agent.Secrets
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.mediaapps.MediaLib
+import com.argus.assistant.agent.Secrets
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.mediaapps.MediaLib
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +34,7 @@ object Movies {
             override fun get(key: String) = runCatching { Settings.str(key, "") }.getOrDefault("")
             override fun put(key: String, value: String) { runCatching { Settings.setStr(key, value) } }
         }).also { st ->
-            // 0.46.2 Blaze Official (Blaze's own example repo) comes preinstalled from the copy bundled in the app.
+            // 0.46.2 Argus Official (Argus's own example repo) comes preinstalled from the copy bundled in the app.
             val c = (ctx ?: app)!!
             runCatching { st.seedOfficial { path -> runCatching { c.assets.open("movies/blaze-official/$path").bufferedReader().use { it.readText() } }.getOrNull() } }
             store = st
@@ -82,7 +82,7 @@ object Movies {
     fun source(id: String): MovieSource? = sources().firstOrNull { it.id == id }
 
     /** Max picture height: 480 on data saver (mobile data), else 1080. */
-    fun maxHeight(ctx: Context): Int = try { if (com.blaze.assistant.mediaapps.MediaPrefs.saving(ctx)) 480 else 1080 } catch (_: Exception) { 1080 }
+    fun maxHeight(ctx: Context): Int = try { if (com.argus.assistant.mediaapps.MediaPrefs.saving(ctx)) 480 else 1080 } catch (_: Exception) { 1080 }
 
     /** Report a provider call's outcome to the Providers list (Working / Failing). */
     fun note(src: MovieSource, error: String?) {
@@ -91,7 +91,7 @@ object Movies {
     }
 }
 
-/** The user's own videos (Blaze's library: downloads + gallery videos, and files opened from other apps). */
+/** The user's own videos (Argus's library: downloads + gallery videos, and files opened from other apps). */
 object LocalVideos : MovieSource {
     override val id = "local"
     override val name = "Your videos"
@@ -107,5 +107,5 @@ object LocalVideos : MovieSource {
         val t = MediaLib.find(link.link.removePrefix("local:")) ?: return emptyList()
         return listOf(MovieStream("This phone", t.uri, MovieJson.guessType(t.uri), ""))
     }
-    private fun app(): Context? = com.blaze.assistant.stage.StageStore.app
+    private fun app(): Context? = com.argus.assistant.stage.StageStore.app
 }

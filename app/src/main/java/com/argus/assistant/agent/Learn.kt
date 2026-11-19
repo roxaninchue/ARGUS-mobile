@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONArray
 
 /**
- * When Blaze should learn on its own (port of Blaze Desktop v0.7 internal/learn, same rules as the CLI):
+ * When Argus should learn on its own (port of Blaze Desktop v0.7 internal/learn, same rules as the CLI):
  *  - [rules]: the MEMORY & SKILLS block of the system prompt (save silently, replace stale facts,
  *    forget on request, write a skill when a workflow repeats or is taught).
  *  - [decide]: the cheap end-of-turn check. No model call. It decides whether the background review

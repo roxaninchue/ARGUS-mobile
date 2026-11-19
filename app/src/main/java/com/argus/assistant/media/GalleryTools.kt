@@ -1,6 +1,6 @@
-package com.blaze.assistant.media
+package com.argus.assistant.media
 
-import com.blaze.assistant.media.GalleryModel.Entry
+import com.argus.assistant.media.GalleryModel.Entry
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar

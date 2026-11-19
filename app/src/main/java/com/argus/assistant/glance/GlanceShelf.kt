@@ -1,8 +1,8 @@
-package com.blaze.assistant.glance
+package com.argus.assistant.glance
 
-import com.blaze.assistant.stage.ShelfCard
-import com.blaze.assistant.stage.StageShelf
-import com.blaze.assistant.store.Sql
+import com.argus.assistant.stage.ShelfCard
+import com.argus.assistant.stage.StageShelf
+import com.argus.assistant.store.Sql
 import org.json.JSONObject
 
 /**

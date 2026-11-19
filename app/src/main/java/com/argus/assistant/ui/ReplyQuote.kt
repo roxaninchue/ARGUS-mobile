@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -25,16 +25,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.RapidMessages
-import com.blaze.assistant.agent.Role
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.RapidMessages
+import com.argus.assistant.agent.Role
 
 /**
- * v0.30.6 rapid messages (Blazeinchue: "blaze highlights the one it's responding to and such"). Kept out of ChatScreen.kt so the
+ * v0.30.6 rapid messages (Blazeinchue: "argus highlights the one it's responding to and such"). Kept out of ChatScreen.kt so the
  * bubble styling there can change freely: a quote chip above a reply that answers a message that isn't right above it
  * (or several). Which chips show is decided in RapidMessages.chipMap (pure, RapidMessagesTest).
  *
- * 0.45.29 (user screenshot, 09:05): the soft wash behind a user message while Blaze worked on it (and after a chip jump)
+ * 0.45.29 (user screenshot, 09:05): the soft wash behind a user message while Argus worked on it (and after a chip jump)
  * read as a full-width grey box around the bubble and its Read label. It is gone: a user message is only its bubble.
  */
 /** What the list needs to draw quotes: chips per reply id and the chat's messages by id. */
@@ -53,7 +53,7 @@ fun rememberReplyRefs(messages: List<ChatMessage>): ReplyRefs {
     return remember(chips, byId) { ReplyRefs(chips, byId) }
 }
 
-/** Wraps one message of the thread: a Blaze reply that quotes gets its chips above it. Anything else is drawn untouched. */
+/** Wraps one message of the thread: a Argus reply that quotes gets its chips above it. Anything else is drawn untouched. */
 @Composable
 fun ReplyThread(m: ChatMessage, refs: ReplyRefs, onJump: (Long) -> Unit, content: @Composable () -> Unit) {
     when {
@@ -70,7 +70,7 @@ fun ReplyThread(m: ChatMessage, refs: ReplyRefs, onJump: (Long) -> Unit, content
 /** A texting-app reply quote: a thin accent bar, then one line of the quoted message. Tap = jump to it. */
 @Composable
 fun QuoteChip(text: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     Row(Modifier.padding(start = 2.dp, bottom = 4.dp).widthIn(max = 300.dp).height(IntrinsicSize.Min)
         .clip(RoundedCornerShape(10.dp)).background(c.accent.copy(alpha = 0.08f)).clickable(onClick = onClick)
         .semantics { contentDescription = tr("Replying to: {0}. Tap to show it.", text) }) {

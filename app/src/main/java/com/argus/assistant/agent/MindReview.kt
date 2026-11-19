@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import android.content.Context
 import androidx.work.Constraints
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
  *    memories and marks those turns reviewed. A failed model call leaves the turns queued. At most once every
  *    [THROTTLE_MS] and [CHUNKS_PER_RUN] chunks per run. Settings › Learning › *Review past conversations when idle*.
  *
- * Model: the free chain (FreeRouter: free tiers, cheapest and healthiest first; BlazeRouter's auto/best-free when it is
+ * Model: the free chain (FreeRouter: free tiers, cheapest and healthiest first; ArgusRouter's auto/best-free when it is
  * the brain), then the background lane of your own brain. Never more than one call at a time.
  */
 object MindReview {
@@ -52,7 +52,7 @@ object MindReview {
 
     /** One memory call on the cheapest free model; null when nothing answered. */
     suspend fun cheap(req: JSONArray): String? {
-        // v0.25.0: through Blaze Cloud like everything else (quick task).
+        // v0.25.0: through Argus Cloud like everything else (quick task).
         val r = try { LlmClient.complete(req, null, null, null, LlmClient.Lane.BACKGROUND) }
             catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { null }
         return r?.optString("content")?.takeIf { it.isNotBlank() }
@@ -108,7 +108,7 @@ object MindReview {
         else -> ""
     }
 
-    /** The worker's pass: skipped while Blaze is busy, off, or ran less than [THROTTLE_MS] ago. */
+    /** The worker's pass: skipped while Argus is busy, off, or ran less than [THROTTLE_MS] ago. */
     suspend fun idlePass(): Int {
         val d = Mind.db() ?: return 0
         if (!enabled || Agent.busyChats.value.isNotEmpty()) return 0

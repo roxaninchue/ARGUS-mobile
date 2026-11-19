@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.41.0 speed: keeps one value for a short while, keyed. The memory block of the system prompt was rebuilt from the

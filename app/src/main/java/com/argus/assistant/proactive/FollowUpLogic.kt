@@ -1,14 +1,14 @@
-package com.blaze.assistant.proactive
+package com.argus.assistant.proactive
 
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
  * v0.38.0 Follow-ups, the pure part (FollowUpsTest). A message that makes a plan ("Jack: can we meet tomorrow at 3 about
- * the budget?") becomes a follow-up: who, which app and conversation, what, when. Blaze asks "Are you going?"; a yes
+ * the budget?") becomes a follow-up: who, which app and conversation, what, when. Argus asks "Are you going?"; a yes
  * sets a reminder; until the user has replied, opening that app gets a nudge ("I see you're in WhatsApp. Jack wanted
  * to meet tomorrow at 15:00 about the budget: maybe get back to him?"). A reply seen in the notification (the user's
- * own message), a Send tapped in that chat, or a reply sent through Blaze closes the loop.
+ * own message), a Send tapped in that chat, or a reply sent through Argus closes the loop.
  */
 object FollowUpLogic {
     enum class Status { ASKED, GOING, NOT_GOING, REPLIED, DONE }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -19,10 +19,10 @@ import android.telephony.PhoneStateListener
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import androidx.core.app.NotificationCompat
-import com.blaze.assistant.R
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.voice.WakeModel
+import com.argus.assistant.R
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.agent.Settings
+import com.argus.assistant.voice.WakeModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,8 +33,8 @@ import org.vosk.Recognizer
 
 /**
  * v0.33.0 Call Copilot (opt-in, pref call_copilot): when a call starts, live captions run on the phone (offline Vosk) in
- * a notification; "Blaze, help" asks Halo for a suggested answer (and a translation if the other side switched language)
- * from what was said so far; after you hang up, Blaze writes a summary with the to-dos and offers reminders. Android
+ * a notification; "Argus, help" asks Halo for a suggested answer (and a translation if the other side switched language)
+ * from what was said so far; after you hang up, Argus writes a summary with the to-dos and offers reminders. Android
  * gives apps the microphone during a call, so on speaker both sides are heard; on the earpiece mostly your side.
  * Nothing is recorded as audio; only the caption text, and it's dropped after the summary unless you keep it.
  * Pure prompt / caption helpers in [Pure] (CallCopilotTest).

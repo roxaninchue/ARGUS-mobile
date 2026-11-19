@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import org.json.JSONObject
 
 /**
- * v0.43.0: tool calls written as plain text in a Halo x Blaze message. Seen on a phone in @all: Halo's whole reply was
+ * v0.43.0: tool calls written as plain text in a Halo x Argus message. Seen on a phone in @all: Halo's whole reply was
  * the literal text `browser_show()`. The @all chat lane gives the models no tools, so a model that had seen tools
  * earlier in the conversation "called" one by writing it, and the app showed that as the answer.
  *

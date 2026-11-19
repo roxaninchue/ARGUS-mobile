@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -29,7 +29,7 @@ class EventLinesTest {
         assertEquals("Thu 19 Nov (tomorrow) 14:00\u201317:00: NET103 final @ Hall 2", lines[0])
         assertEquals("Sat 21 Nov (in 3 days) \u2013 Sun 22 Nov all day: Trip", lines[1])
         assertEquals("Wed 25 Nov (in 7 days) all day: Go home", lines[2])
-        val out = com.blaze.assistant.phone.Skills.eventsResult(lines, now)
+        val out = com.argus.assistant.phone.Skills.eventsResult(lines, now)
         assertTrue(out, out.startsWith("Today is Wed 18 Nov 2026, 10:51 (Africa/Lusaka).\n"))
         assertTrue(!out.contains("(today)"))
     }

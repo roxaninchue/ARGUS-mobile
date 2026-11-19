@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -62,7 +62,7 @@ class FastLaneOnceTest {
     }
 
     @Test fun agentPassesTheMessageKey() {
-        val src = listOf("app/src/main/java/com/blaze/assistant/agent/Agent.kt", "src/main/java/com/blaze/assistant/agent/Agent.kt")
+        val src = listOf("app/src/main/java/com/argus/assistant/agent/Agent.kt", "src/main/java/com/argus/assistant/agent/Agent.kt")
             .map(::File).first { it.exists() }.readText()
         assertTrue(src.contains("FastLane.tryHandle(app, shown, offline, key = turnUser)"))
     }

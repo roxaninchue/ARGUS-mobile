@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser.phone
+package com.argus.assistant.browser.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -207,7 +207,7 @@ class PhoneBridgeTest {
     }
 
     @Test fun noRawCallTextOnScreen_5of5() = fiveTimes("raw") { i ->
-        for (n in PhonePolicy.TOOLS) assertTrue(n, n in com.blaze.assistant.agent.CallScan.SEED)
+        for (n in PhonePolicy.TOOLS) assertTrue(n, n in com.argus.assistant.agent.CallScan.SEED)
         val line = PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "click").put("target", "e$i"))
         assertFalse(line, Regex("\\be\\d+\\b").containsMatchIn(line))
         assertEquals("Working on ${BrandName.NAME} Phone", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "{\"name\":\"x\"}")))

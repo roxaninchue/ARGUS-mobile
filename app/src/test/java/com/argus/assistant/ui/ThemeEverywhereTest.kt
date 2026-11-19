@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.graphics.Color
-import com.blaze.assistant.home.StackState
+import com.argus.assistant.home.StackState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -16,7 +16,7 @@ import org.junit.Test
  */
 class ThemeEverywhereTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
     private val assets = listOf(java.io.File("src/main/assets"), java.io.File("app/src/main/assets")).first { it.isDirectory }
 
     /** What the Living Themes were made of: none of it may come back. */
@@ -29,7 +29,7 @@ class ThemeEverywhereTest {
         }.toList()
         assertTrue("Living Themes still referenced: $hits", hits.isEmpty())
         for (f in listOf("LivingThemes.kt", "LivingLogic.kt", "LivingBackground.kt", "LivingThemesDraw.kt", "ThemePicker.kt", "ThemeSceneImages.kt"))
-            assertFalse("ui/$f still exists", java.io.File(root, "com/blaze/assistant/ui/$f").exists())
+            assertFalse("ui/$f still exists", java.io.File(root, "com/argus/assistant/ui/$f").exists())
         assertFalse("assets/theme-scenes still ships (~880 KB)", java.io.File(assets, "theme-scenes").exists())
         // The avatar menu has no Themes item; Look & feel has no living backgrounds.
         assertFalse("MenuItem(\"themes\"" in src("ui/ChatScreen.kt"))
@@ -53,21 +53,21 @@ class ThemeEverywhereTest {
         }
         // 0.52.3 Chat: the avatar opens the profile, whose System Preferences row lists Appearance (light / dark); a
         // long-press on the avatar switches light / dark at once. Terminal: ⋮ › Light or dark.
-        val sys = com.blaze.assistant.ui.space.SpaceProfile.row("system")!!
+        val sys = com.argus.assistant.ui.space.SpaceProfile.row("system")!!
         assertEquals("System Preferences", sys.label)
-        assertEquals(com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE, sys.page)
-        assertEquals("Appearance", com.blaze.assistant.ui.space.SpaceSettings.SYSTEM_ROWS.toMap()["look"])
-        assertEquals(com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE, com.blaze.assistant.ui.space.SpaceSettings.parentOf("look"))
+        assertEquals(com.argus.assistant.ui.space.SpaceProfile.SYSTEM_PAGE, sys.page)
+        assertEquals("Appearance", com.argus.assistant.ui.space.SpaceSettings.SYSTEM_ROWS.toMap()["look"])
+        assertEquals(com.argus.assistant.ui.space.SpaceProfile.SYSTEM_PAGE, com.argus.assistant.ui.space.SpaceSettings.parentOf("look"))
         assertTrue("\"look\" -> LookPage()" in src("ui/SettingsSheet.kt"))
         assertTrue("onMe = { notchOpen = false; settingsPage = \"\" }" in src("ui/ChatScreen.kt"))
         assertTrue("LightDark.toggle(c.dark)" in src("ui/ChatScreen.kt") && "onMeLong" in src("ui/ChatScreen.kt"))
-        assertTrue("themeMenu()" in src("terminal/BlazeTerminalActivity.kt"))
+        assertTrue("themeMenu()" in src("terminal/ArgusTerminalActivity.kt"))
         // Every switcher writes through ThemeMode.
         assertTrue("AppTheme.toggle()" in src("ui/AppTheme.kt") && "ThemeMode.set(m)" in src("ui/AppTheme.kt"))
-        assertTrue("ThemeMode.set(item.id)" in src("terminal/BlazeTerminalActivity.kt"))
+        assertTrue("ThemeMode.set(item.id)" in src("terminal/ArgusTerminalActivity.kt"))
         // The Terminal repaints when light / dark changes anywhere.
-        assertTrue("snapshotFlow { com.blaze.assistant.ui.ThemeMode.mode.value }" in src("terminal/BlazeTerminalActivity.kt"))
-        assertTrue("TermPalette.of(com.blaze.assistant.ui.AppTheme.darkNow())" in src("terminal/BlazeTerminalActivity.kt"))
+        assertTrue("snapshotFlow { com.argus.assistant.ui.ThemeMode.mode.value }" in src("terminal/ArgusTerminalActivity.kt"))
+        assertTrue("TermPalette.of(com.argus.assistant.ui.AppTheme.darkNow())" in src("terminal/ArgusTerminalActivity.kt"))
     }
 
     @Test fun aSwitchAnywhereShowsEverywhere() {

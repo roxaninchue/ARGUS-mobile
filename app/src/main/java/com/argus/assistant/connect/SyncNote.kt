@@ -1,7 +1,7 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -14,11 +14,11 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.blaze.assistant.MainActivity
-import com.blaze.assistant.R
+import com.argus.assistant.MainActivity
+import com.argus.assistant.R
 
 /**
- * 0.45.24: one ongoing "Syncing with Blaze Cloud" notification for a sync round worth showing ([SyncProgress.shouldShow]):
+ * 0.45.24: one ongoing "Syncing with Argus Cloud" notification for a sync round worth showing ([SyncProgress.shouldShow]):
  * a determinate bar when the total is known, indeterminate otherwise, then "Synced" for a few seconds, or a short
  * error. Quiet channel, no sound. Without the notification permission it does nothing (never throws).
  */

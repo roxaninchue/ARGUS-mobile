@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui.living
+package com.argus.assistant.ui.living
 
-import com.blaze.assistant.agent.ToolTrail
-import com.blaze.assistant.ui.living.LivingModel.Kind
-import com.blaze.assistant.ui.living.LivingModel.Msg
-import com.blaze.assistant.ui.living.LivingModel.Role
-import com.blaze.assistant.ui.living.ResultCards.Call
+import com.argus.assistant.agent.ToolTrail
+import com.argus.assistant.ui.living.LivingModel.Kind
+import com.argus.assistant.ui.living.LivingModel.Msg
+import com.argus.assistant.ui.living.LivingModel.Role
+import com.argus.assistant.ui.living.ResultCards.Call
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -47,8 +47,8 @@ class ResultCardsTest {
     }
 
     @Test fun theWeatherToolStillSpeaksTheFormatWeRead() {
-        val root = listOf(File("src/main/java"), File("app/src/main/java"), File("main/java")).firstOrNull { File(it, "com/blaze/assistant/agent/GatewayWeather.kt").isFile } ?: return
-        val src = File(root, "com/blaze/assistant/agent/GatewayWeather.kt").readText()
+        val root = listOf(File("src/main/java"), File("app/src/main/java"), File("main/java")).firstOrNull { File(it, "com/argus/assistant/agent/GatewayWeather.kt").isFile } ?: return
+        val src = File(root, "com/argus/assistant/agent/GatewayWeather.kt").readText()
         for (needle in listOf("\", feels \${", "\", humidity \${", "\", wind \${", "\". Source: \${", "\" (it's night)\""))
             assertTrue("GatewayWeather.forModel changed: $needle", src.contains(needle))
     }

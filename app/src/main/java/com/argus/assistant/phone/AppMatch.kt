@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 /**
  * v0.28.9: "open it for me" (about a gallery picture) opened the game "Juno: New Origins Complete Edition",
@@ -39,9 +39,9 @@ object AppMatch {
     }
 
     /**
-     * v0.45.6 (phone 21:30: "play music" opened BlazeFX through a fuzzy "Blaze*" match): outside apps launch only on an
+     * v0.45.6 (phone 21:30: "play music" opened ArgusFX through a fuzzy "Argus*" match): outside apps launch only on an
      * EXACT match: the package name itself, or the label equal to the ask (case, spaces and punctuation ignored; a trailing
-     * "app" dropped). [apps] = (label, package). Blaze's own package ([self]) is never launched this way. Returns
+     * "app" dropped). [apps] = (label, package). Argus's own package ([self]) is never launched this way. Returns
      * (package, label) or null; [near] lists close labels to ask the user about instead.
      */
     fun exact(name: String, apps: List<Pair<String, String>>, self: String = ""): Pair<String, String>? {
@@ -61,8 +61,8 @@ object AppMatch {
 
     private fun squash(s: String) = s.lowercase().replace(Regex("[^a-z0-9+]"), "")
 
-    /** v0.45.6: an ask that means one of Blaze's own screens ("Blaze Music", "Blaze settings"…): its view id, else null. */
-    fun blazeView(name: String): String? {
+    /** v0.45.6: an ask that means one of Argus's own screens ("Argus Music", "Argus settings"…): its view id, else null. */
+    fun argusView(name: String): String? {
         val q = name.lowercase().replace(Regex("[^a-z ]"), " ").replace(Regex("\\s+"), " ").trim().removeSuffix(" app").trim()
         return when (q) {
             "argus music", "argus player", "argus music player", "music in argus",

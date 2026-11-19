@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -58,9 +58,9 @@ class WaitNudgeTest {
     }
 
     @Test fun sideTalkWorksBothWays() {
-        val blazeFree = Duo.sideSystem(null, "fetch AI news", "", Duo.Who.BLAZE)
-        assertTrue(blazeFree.startsWith(Duo.BLAZE_SOUL))
-        assertTrue(blazeFree.contains("Halo, your partner, is busy") && blazeFree.contains("[[relay]]"))
+        val argusFree = Duo.sideSystem(null, "fetch AI news", "", Duo.Who.BLAZE)
+        assertTrue(argusFree.startsWith(Duo.BLAZE_SOUL))
+        assertTrue(argusFree.contains("Halo, your partner, is busy") && argusFree.contains("[[relay]]"))
         val haloFree = Duo.sideSystem(null, "book a room", "")
         assertTrue(haloFree.contains("${BrandName.NAME}, your partner, is busy"))
     }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
  * Catches replies that only *look* like work: a tool call or shell command written as text
  * ("$ python app.py", run_shell(command=…), "Action: web_search"), or a claim of having done

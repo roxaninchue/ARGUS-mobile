@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.app.ActivityManager
 import android.content.Context
 import kotlinx.coroutines.CoroutineScope
@@ -26,8 +26,8 @@ import kotlin.coroutines.CoroutineContext
  * hidden chat (a normal Session, so it gets the same tools, modes and repairs), takes a slot
  * (1 at a time, 2 on phones with 6 GB+ RAM), and waits in a queue otherwise. Its card in the
  * chat shows live progress with Steer and Stop. When it finishes, its result wakes the chat that
- * started it: the main Blaze reads it and tells the user. Agents are saved in filesDir and pick up
- * where they were after Blaze restarts.
+ * started it: the main Argus reads it and tells the user. Agents are saved in filesDir and pick up
+ * where they were after Argus restarts.
  */
 object BgAgents {
     data class Bg(
@@ -60,7 +60,7 @@ object BgAgents {
 
     private lateinit var app: Context
     private lateinit var file: File
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.argus.assistant.device.CrashLog.guard)
     // 0.52.1 crash audit: touched from Main (runOne/pump) and from tool threads (cancel via the lead's tool call).
     private val jobs = java.util.concurrent.ConcurrentHashMap<String, Job>()
     /** 0.52.1: the file is written off the main thread, one write at a time, newest snapshot wins. */
@@ -75,7 +75,7 @@ object BgAgents {
         // 0.52.1 crash audit: the file can be ~1 MB (40 results); read it off the main thread (init runs in Application.onCreate).
         scope.launch {
             val list = withContext(io) { load() }
-            // Blaze was closed mid-run: those go back in the queue and continue where they were.
+            // Argus was closed mid-run: those go back in the queue and continue where they were.
             synchronized(this@BgAgents) {
                 val restored = list.map { if (it.status == RUNNING) it.copy(status = QUEUED, resume = true) else it }
                 val fresh = _all.value.filter { n -> restored.none { it.id == n.id } }   // started before the read finished
@@ -142,7 +142,7 @@ object BgAgents {
             val am = app.getSystemService(ActivityManager::class.java)
             am.getMemoryInfo(mi)
             // totalMem reports a little under the marketing size (a "6 GB" phone shows ~5.5 GB). Under memory pressure, one fewer.
-            val c = com.blaze.assistant.orchestra.AgentBudget.cap(mi.totalMem, am.isLowRamDevice)
+            val c = com.argus.assistant.orchestra.AgentBudget.cap(mi.totalMem, am.isLowRamDevice)
             if (mi.lowMemory) (c - 1).coerceAtLeast(1) else c
         } catch (_: Exception) { 1 }
     }
@@ -159,7 +159,7 @@ object BgAgents {
     /** Queue a new agent. Returns it; it starts as soon as a slot is free. [specialist] = run it as that specialist. */
     /** P1-TM-05: told when an agent ends (done, failed or cancelled); the jobs queue listens. Never throws into BgAgents. */
     @Volatile var onEnd: ((Bg) -> Unit)? = null
-    private fun ended(id: String) { val bg = get(id) ?: return; try { onEnd?.invoke(bg) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BgAgents: onEnd", e) } }
+    private fun ended(id: String) { val bg = get(id) ?: return; try { onEnd?.invoke(bg) } catch (e: Throwable) { com.argus.assistant.device.CrashLog.quiet("BgAgents: onEnd", e) } }
 
     /** True while agent [id] is queued or running (a resumed one counts). */
     fun alive(id: String): Boolean = get(id)?.live == true
@@ -199,7 +199,7 @@ object BgAgents {
         "When finished, reply with the result only: what you did or found, short but complete, with any links or file names.]\n${bg.task}"
 
     private suspend fun runOne(start: Bg) {
-        if (start.specialist == com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST) { runBlueprint(start); return }
+        if (start.specialist == com.argus.assistant.orchestra.OrchestraRuns.SPECIALIST) { runBlueprint(start); return }
         var bg = start
         val s = Agent.agentSession(bg)
         val text = when {
@@ -210,7 +210,7 @@ object BgAgents {
         update(bg.id) { it.copy(resume = false, waiting = false, followUp = "") }
         // v0.26.2: a custom specialist without a playbook gets one written (validated) before its first run.
         spec(bg)?.let { sp -> if (sp.custom && sp.playbook.isBlank()) { update(bg.id, persist = false) { it.copy(last = "Writing its field playbook") }; Agent.ensurePlaybook(sp) } }
-        // 0.52.1 (ProgressGate): milestones this agent has already reported to the main Blaze.
+        // 0.52.1 (ProgressGate): milestones this agent has already reported to the main Argus.
         var fired = ProgressGate.reached(bg.steps)
         suspend fun runAndWait(t: String) {
             withContext(Dispatchers.Main) { s.send(t) }
@@ -259,7 +259,7 @@ object BgAgents {
     private suspend fun runBlueprint(start: Bg) {
         update(start.id) { it.copy(resume = false, waiting = false, followUp = "") }
         val (ok, result) = try {
-            com.blaze.assistant.orchestra.OrchestraRuns.run(start) { line, n, log -> update(start.id, persist = false) { it.copy(steps = n, last = line.take(120), log = log) } }
+            com.argus.assistant.orchestra.OrchestraRuns.run(start) { line, n, log -> update(start.id, persist = false) { it.copy(steps = n, last = line.take(120), log = log) } }
         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) {
             false to ("The blueprint run stopped: " + (e.message ?: e.javaClass.simpleName))
         }
@@ -267,7 +267,7 @@ object BgAgents {
         jobs.remove(bg.id)
         if (bg.status == CANCELLED) { save(); pump(); return }
         update(bg.id) { it.copy(status = if (ok) DONE else FAILED, ended = System.currentTimeMillis(), result = result, waiting = false) }
-        com.blaze.assistant.orchestra.OrchestraRuns.forget(bg.id)
+        com.argus.assistant.orchestra.OrchestraRuns.forget(bg.id)
         get(bg.id)?.let { Agent.agentFinished(it) }
         ended(bg.id)
         pump()
@@ -279,7 +279,7 @@ object BgAgents {
         if (text.isBlank()) return "Say what to tell it."
         return when (bg.status) {
             RUNNING -> {
-                if (bg.specialist == com.blaze.assistant.orchestra.OrchestraRuns.SPECIALIST && com.blaze.assistant.orchestra.OrchestraRuns.steer(bg.id, text))
+                if (bg.specialist == com.argus.assistant.orchestra.OrchestraRuns.SPECIALIST && com.argus.assistant.orchestra.OrchestraRuns.steer(bg.id, text))
                     "Told blueprint ${bg.id}: every part that starts from now on follows it."
                 else { Agent.agentSession(bg).steer.add(text.trim()); "Told ${bg.id}: it picks this up at its next step." }
             }
@@ -326,7 +326,7 @@ object BgAgents {
 
     fun runningCount() = _all.value.count { it.status == RUNNING }
 
-    /** What the main Blaze reads when an agent finishes (desktop ResultMessage). */
+    /** What the main Argus reads when an agent finishes (desktop ResultMessage). */
     fun resultMessage(bg: Bg): String = if (bg.specialist.isNotBlank())
         Dispatch.resultMessage(bg.id, spec(bg)?.name ?: bg.specialist, bg.title, bg.status, bg.steps, bg.seconds, bg.result,
             _all.value.count { it.live && it.parent == bg.parent && it.id != bg.id })

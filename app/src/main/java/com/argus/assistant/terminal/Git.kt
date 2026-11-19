@@ -1,8 +1,8 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.connect.Connectors
+import com.argus.assistant.BrandName
+import com.argus.assistant.connect.Connectors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -12,7 +12,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Git inside Blaze's Alpine Linux, signed in with the user's connected GitHub account.
+ * Git inside Argus's Alpine Linux, signed in with the user's connected GitHub account.
  * The token never goes into a command line or the output: a credential helper reads it from a
  * private file, and anything that echoes it back is scrubbed.
  */

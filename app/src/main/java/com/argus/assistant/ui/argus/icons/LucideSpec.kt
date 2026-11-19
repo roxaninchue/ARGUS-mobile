@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.argus.icons
+package com.argus.assistant.ui.argus.icons
 
 /** P0-SH-02: the pure rules around [LucidePaths] (LucidePathsTest): names, aliases, stroke by size, 04 §2.7 semantics. */
 object LucideSpec {

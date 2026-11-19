@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -27,7 +27,7 @@ class DesignSafetyTest {
         assertNull(DesignServe.resolve("$O/ext/../x", home, root))
         assertNull(DesignServe.resolve("$O/ext/%2e%2e/x", home, root))
         assertNull(DesignServe.resolve("$O/ext/pic.png", home, null))
-        // Files in Blaze's home keep their paths; URLs pass through.
+        // Files in Argus's home keep their paths; URLs pass through.
         val d = File(home, "designs/a").apply { mkdirs() }; File(d, "index.html").writeText("x")
         assertEquals("$O/designs/a/index.html", DesignServe.servedUrl("file://" + File(d, "index.html").absolutePath, home))
         assertNull(DesignServe.extRoot("file://" + File(d, "index.html").absolutePath, home))
@@ -50,7 +50,7 @@ class DesignSafetyTest {
         assertFalse(DesignServe.allowNavigation(loaded, "https://evil.example/phish"))
         assertFalse(DesignServe.allowNavigation(loaded, "http://appassets.androidplatform.net/designs/a/"))   // other scheme
         assertFalse(DesignServe.allowNavigation(loaded, "https://appassets.androidplatform.net.evil.com/"))
-        assertFalse(DesignServe.allowNavigation(loaded, "file:///data/data/com.blaze.assistant/shared_prefs/blaze.xml"))
+        assertFalse(DesignServe.allowNavigation(loaded, "file:///data/data/com.argus.assistant/shared_prefs/blaze.xml"))
         assertFalse(DesignServe.allowNavigation(loaded, "javascript:alert(1)"))
         assertFalse(DesignServe.allowNavigation(loaded, "intent://x#Intent;end"))
         // A local dev server keeps its own origin (default ports are the same origin).

@@ -1,13 +1,13 @@
-package com.blaze.assistant
+package com.argus.assistant
 
-import com.blaze.assistant.agent.Awareness
-import com.blaze.assistant.agent.CommandPolicy
-import com.blaze.assistant.agent.ToolRouter
-import com.blaze.assistant.agent.ToolTruth
-import com.blaze.assistant.agent.ToolVerify
-import com.blaze.assistant.terminal.LinuxDesktopCleanup
-import com.blaze.assistant.terminal.TermLogic
-import com.blaze.assistant.ui.Views
+import com.argus.assistant.agent.Awareness
+import com.argus.assistant.agent.CommandPolicy
+import com.argus.assistant.agent.ToolRouter
+import com.argus.assistant.agent.ToolTruth
+import com.argus.assistant.agent.ToolVerify
+import com.argus.assistant.terminal.LinuxDesktopCleanup
+import com.argus.assistant.terminal.TermLogic
+import com.argus.assistant.ui.Views
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -17,13 +17,13 @@ import java.io.File
 
 /**
  * Wave B-4 (HQ item 12): the on-phone Linux desktop (XFCE + TigerVNC under PRoot) is gone: no tool, prompt line,
- * view, settings page, chat card, BlazeOS app or service offers it. Blaze's Alpine terminal (run_shell linux=true,
+ * view, settings page, chat card, ArgusOS app or service offers it. Argus's Alpine terminal (run_shell linux=true,
  * run_code, git; PRoot + BusyBox in jniLibs) stays, and Blaze Desktop pairing (the PC app) is untouched. The desktop's
  * saved settings and leftovers are cleaned once after the update ([LinuxDesktopCleanup]).
  */
 class WaveB4NoLinuxTest {
     private fun file(rel: String): File = listOf(File(rel), File("app/$rel")).firstOrNull { it.exists() } ?: File("app/$rel")
-    private val main = file("src/main/java/com/blaze/assistant")
+    private val main = file("src/main/java/com/argus/assistant")
     private fun src(rel: String) = File(main, rel).readText()
 
     @Test fun desktopCodeIsGone() {
@@ -35,7 +35,7 @@ class WaveB4NoLinuxTest {
         val all = main.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
         for (f in all) {
             val t = f.readText()
-            listOf("com.blaze.assistant.desktop.", "LinuxDesktop.", "DesktopRoute.", "DesktopAgent.", "desktop_task", "open_view linux").forEach {
+            listOf("com.argus.assistant.desktop.", "LinuxDesktop.", "DesktopRoute.", "DesktopAgent.", "desktop_task", "open_view linux").forEach {
                 assertFalse("${f.name} still has $it", t.contains(it))
             }
         }
@@ -60,9 +60,9 @@ class WaveB4NoLinuxTest {
         listOf("linux", "xfce", "vnc", "linux desktop", "view desktop").forEach { assertNull(it, Views.find(it)) }
         assertTrue(Views.find("desktop") != null)   // Blaze Desktop pairing
         assertFalse(Views.offerLabel("linux").contains("View desktop"))
-        assertTrue(com.blaze.assistant.ui.settingsPages.none { it.id == "linux" })
+        assertTrue(com.argus.assistant.ui.settingsPages.none { it.id == "linux" })
         // 16 Nov 2026: the Jobs page left Settings and "/" commands are gone; an old "linux" page id lands on the root.
-        assertEquals("", com.blaze.assistant.agent.settingsPageFor("linux"))
+        assertEquals("", com.argus.assistant.agent.settingsPageFor("linux"))
         listOf("ui/Shell.kt", "ui/ChatScreen.kt", "ui/SettingsSheet.kt", "ui/SettingsV18.kt").forEach { f ->
             val t = src(f)
             assertFalse(f, t.contains("PlusItem(\"linux\"")); assertFalse(f, t.contains("LinuxDesktopPage")); assertFalse(f, t.contains("KeepDesktopRow"))
@@ -78,7 +78,7 @@ class WaveB4NoLinuxTest {
     }
 
     @Test fun terminalStaysWithItsBinaries() {
-        val names = com.blaze.assistant.terminal.Terminal.shellTools().map { it.getJSONObject("function").getString("name") }
+        val names = com.argus.assistant.terminal.Terminal.shellTools().map { it.getJSONObject("function").getString("name") }
         assertTrue(names.toString(), "run_shell" in names)
         listOf("arm64-v8a", "armeabi-v7a").forEach { abi ->
             assertTrue("$abi busybox", file("src/main/jniLibs/$abi/libbusybox.so").exists())
@@ -113,6 +113,6 @@ class WaveB4NoLinuxTest {
         assertTrue(LinuxDesktopCleanup.removeScript("ubuntu").contains("apt-get -y -q purge"))
         assertTrue(LinuxDesktopCleanup.removeScript("archlinux").contains("pacman -Rns"))
         assertTrue(LinuxDesktopCleanup.removeScript("fedora").contains("dnf -y -q remove"))
-        assertTrue(src("BlazeApp.kt").contains("LinuxDesktopCleanup.runOnce"))
+        assertTrue(src("ArgusApp.kt").contains("LinuxDesktopCleanup.runOnce"))
     }
 }

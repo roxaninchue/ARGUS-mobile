@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import kotlin.math.max
 import kotlin.math.min
@@ -9,7 +9,7 @@ import kotlin.math.min
 object ArtColors {
     /**
      * A colour that represents a cover: the average of its more colourful pixels (greys and near-black/white count
-     * less), as 0xRRGGBB. Falls back to Blaze blue for a blank picture.
+     * less), as 0xRRGGBB. Falls back to Argus blue for a blank picture.
      */
     fun dominant(pixels: IntArray): Int {
         var r = 0.0; var g = 0.0; var b = 0.0; var w = 0.0

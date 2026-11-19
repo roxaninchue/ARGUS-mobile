@@ -1,9 +1,9 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.agent.ToolVerify.Status
-import com.blaze.assistant.voice.WakeNote
+import com.argus.assistant.BrandName
+import com.argus.assistant.agent.ToolVerify.Status
+import com.argus.assistant.voice.WakeNote
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -50,7 +50,7 @@ class PhoneControlSweepTest {
         val still = "I tried to turn off alarm A2. " + ActCheck.notConfirmed("\u201cDemo app alarm (${BrandName.NAME} A2)\u201d still reads ON in the Clock app", "switch it off in the Clock app")
         val v = ToolVerify.classify("process", a("id" to "A2", "action" to "delete"), still)
         assertEquals(Status.UNVERIFIED, v.status); assertTrue(v.why, v.why.contains("still reads ON"))
-        // Blaze's own things (a routine) are still done by their own words.
+        // Argus's own things (a routine) are still done by their own words.
         assertEquals(Status.VERIFIED, ToolVerify.classify("process", a("id" to "R4", "action" to "delete"), "Deleted routine R4 \u201cGym\u201d.").status)
         // The final reply: "Alarm removed." is a claim now, and an unconfirmed delete can't back it.
         val done = listOf(ClaimCheck.Done("processes", Status.VERIFIED), ClaimCheck.Done("process", Status.UNVERIFIED, "the Clock app wasn't read back"))
@@ -67,7 +67,7 @@ class PhoneControlSweepTest {
     private fun n(text: String = "", desc: String = "", checkable: Boolean = false, checked: Boolean = false, clickable: Boolean = false, kids: List<AlarmRows.Node> = emptyList()) =
         AlarmRows.Node(text, desc, checkable, checked, clickable, clickable, kids)
 
-    /** Samsung Clock 17:14: header, then one card "Demo app alarm (Blaze A2)" · 18:15 · Wed, Oct 21 · switch ON. */
+    /** Samsung Clock 17:14: header, then one card "Demo app alarm (Argus A2)" · 18:15 · Wed, Oct 21 · switch ON. */
     private fun samsung(on: Boolean, extra: List<AlarmRows.Node> = emptyList()) = n(kids = listOf(
         n("Alarm in 1 hour 1 minute"), n("Wed, Oct 21, 18:15"),
         n(kids = (listOf(n(clickable = true, kids = listOf(n("Demo app alarm (${BrandName.NAME} A2)"), n("18:15"), n("Wed, Oct 21"), n(desc = "Alarm switch", checkable = true, checked = on, clickable = true))))
@@ -166,7 +166,7 @@ class PhoneControlSweepTest {
         assertEquals(WakeNote.State.LISTENING, WakeNote.of(listening = true, paused = false, sleeping = false, micBlocked = false))
         assertEquals(WakeNote.State.MIC_BLOCKED, WakeNote.of(listening = true, paused = false, sleeping = false, micBlocked = true))
         assertEquals(WakeNote.State.SLEEPING, WakeNote.of(listening = false, paused = false, sleeping = true, micBlocked = false))
-        val src = listOf(File("src/main/java/com/blaze/assistant/voice/WakeWordService.kt"), File("app/src/main/java/com/blaze/assistant/voice/WakeWordService.kt")).first { it.exists() }.readText()
+        val src = listOf(File("src/main/java/com/argus/assistant/voice/WakeWordService.kt"), File("app/src/main/java/com/argus/assistant/voice/WakeWordService.kt")).first { it.exists() }.readText()
         assertFalse("the fixed 'Offline.' line is gone", src.contains("\"Offline."))
         assertTrue("re-posted on state changes", src.contains("notify(ID, build(st))"))
     }
@@ -229,7 +229,7 @@ class PhoneControlSweepTest {
     }
 
     @Test fun sourceKeepsTheRules() {
-        fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
+        fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }.readText()
         val pr = src("agent/Processes.kt")
         assertTrue(pr.contains("ClockUi.alarmOff(ctx, p.id"))
         assertFalse("no drop before the read-back", pr.contains("dismissAlarm(ctx, p); drop(p.id)"))

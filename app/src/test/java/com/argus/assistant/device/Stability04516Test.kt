@@ -1,6 +1,6 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
-import com.blaze.assistant.agent.StreamGate
+import com.argus.assistant.agent.StreamGate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -9,7 +9,7 @@ import java.io.File
 
 /** 0.45.16 reliability: crash guard, ANR/stall log, safe start, memory trim, smoother streaming, key-change notice. */
 class Stability04516Test {
-    private fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }
+    private fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }
 
     @Test fun anrVerdicts() {
         assertEquals(MainWatch.Verdict.OK, MainWatch.verdict(0))
@@ -49,11 +49,11 @@ class Stability04516Test {
     }
 
     @Test fun everyStartupCallIsGuarded() {
-        val body = src("BlazeApp.kt").readText().substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
-        // Top-level statements of onCreate (8-space indent) that call into Blaze must be guarded or be the crash log itself.
+        val body = src("ArgusApp.kt").readText().substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
+        // Top-level statements of onCreate (8-space indent) that call into Argus must be guarded or be the crash log itself.
         val bare = body.lines().filter { it.startsWith("        ") && !it.startsWith("         ") }.map { it.trim() }
-            .filter { (it.startsWith("com.blaze.assistant.") || it.startsWith("Agent.") || it.startsWith("Settings.")) &&
-                !it.startsWith("com.blaze.assistant.device.") }
+            .filter { (it.startsWith("com.argus.assistant.") || it.startsWith("Agent.") || it.startsWith("Settings.")) &&
+                !it.startsWith("com.argus.assistant.device.") }
         assertTrue("unguarded: $bare", bare.isEmpty())
         assertTrue(body.contains("StartGuard.begin(this)") && body.contains("MainWatch.start()"))
         assertTrue(body.contains("safeStart"))
@@ -66,8 +66,8 @@ class Stability04516Test {
     }
 
     @Test fun keyChangeNoticeNamesTheFix() {
-        val k = com.blaze.assistant.update.Updater.KEY_CHANGED
-        assertTrue(k.contains("Uninstall ${com.blaze.assistant.BrandName.NAME} once") && k.contains("blazeinchue.pages.dev"))
+        val k = com.argus.assistant.update.Updater.KEY_CHANGED
+        assertTrue(k.contains("Uninstall ${com.argus.assistant.BrandName.NAME} once") && k.contains("blazeinchue.pages.dev"))
         val u = src("update/Updater.kt").readText()
         assertTrue(u.contains("State.Failed(KEY_CHANGED)"))
     }

@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.os.Handler
 import android.os.Looper
 import android.webkit.WebView
@@ -66,22 +66,22 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.ui.BlazeTextToolbar
-import com.blaze.assistant.ui.CaptureClipboard
-import com.blaze.assistant.ui.Glass
-import com.blaze.assistant.ui.SelectionActions
-import com.blaze.assistant.ui.SelectionDo
-import com.blaze.assistant.ui.SelectionPill
-import com.blaze.assistant.ui.GlassIconButton
-import com.blaze.assistant.ui.MascotGlyph
-import com.blaze.assistant.ui.Type
+import com.argus.assistant.ui.ArgusTextToolbar
+import com.argus.assistant.ui.CaptureClipboard
+import com.argus.assistant.ui.Glass
+import com.argus.assistant.ui.SelectionActions
+import com.argus.assistant.ui.SelectionDo
+import com.argus.assistant.ui.SelectionPill
+import com.argus.assistant.ui.GlassIconButton
+import com.argus.assistant.ui.MascotGlyph
+import com.argus.assistant.ui.Type
 import kotlinx.coroutines.launch
 
 /** One line in the page chat: the bubble text, a pasted link shown as a chip, and what the model was asked. */
 private data class Line(val me: Boolean, val text: String, val link: String? = null, val prompt: String = text, val step: Boolean = false)
 
 /**
- * "Ask Blaze about this page": a compact chat sheet scoped to the open page. Nothing here goes into the main chat
+ * "Ask Argus about this page": a compact chat sheet scoped to the open page. Nothing here goes into the main chat
  * or memory; the page text is read once (passwords and secure fields are scrubbed by the reader). The find chip
  * searches the page itself with WebView's find-in-page.
  */
@@ -119,21 +119,21 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
                 page = p.takeUnless { PageAsk.thin(it) }
                 val extra = StringBuilder()
                 PageAsk.searchFor(intent, p)?.let { s ->
-                    val r = try { com.blaze.assistant.agent.Web.search(s, 5) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { "" }
+                    val r = try { com.argus.assistant.agent.Web.search(s, 5) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { "" }
                     if (r.isNotBlank() && !r.startsWith("Error") && !r.startsWith("No results")) extra.append("WEB RESULTS for \u201c").append(s).append("\u201d:\n").append(r)
                 }
                 intent.fetch?.let { u ->
-                    val r = try { com.blaze.assistant.agent.Web.fetch(u, 4000) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { "" }
+                    val r = try { com.argus.assistant.agent.Web.fetch(u, 4000) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { "" }
                     if (r.isNotBlank() && !r.startsWith("Error")) extra.append(if (extra.isEmpty()) "" else "\n\n")
                         .append("THE PAGE THE USER LINKED (").append(PageQuestion.host(u)).append("):\n").append(r)
                 }
                 val onText: (String) -> Unit = { s ->
-                    val shown = com.blaze.assistant.agent.ReplyParts.split(s, final = false).text
+                    val shown = com.argus.assistant.agent.ReplyParts.split(s, final = false).text
                     main.post { if (idx < list.size && shown.isNotBlank()) list[idx] = Line(false, shown) }
                 }
                 // 2026-11-18: on a live page the sheet can act on it (PageAgent: page_ tools only, ≤12 steps, Allow / Not now
                 // for steps that commit something); each step shows as a small line above the answer.
-                val content = if (web != null) PageAgent.Runner(actx) { m, t, cb -> com.blaze.assistant.agent.LlmClient.complete(m, t, onText = cb) }
+                val content = if (web != null) PageAgent.Runner(actx) { m, t, cb -> com.argus.assistant.agent.LlmClient.complete(m, t, onText = cb) }
                     .run(PageAgent.messages(p, history, extra.toString(), lang),
                         onStep = { st -> if (idx <= list.size) { list.add(idx, Line(false, st, step = true)); idx++ } },
                         allow = { q ->
@@ -142,8 +142,8 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
                             try { d.await() } finally { if (pending?.second === d) pending = null }
                         },
                         onText = onText)
-                else com.blaze.assistant.agent.LlmClient.complete(PageAsk.messages(p, history, extra.toString(), lang), null, onText = onText).optString("content")
-                val out = com.blaze.assistant.agent.ReplyParts.split(content, final = true).text
+                else com.argus.assistant.agent.LlmClient.complete(PageAsk.messages(p, history, extra.toString(), lang), null, onText = onText).optString("content")
+                val out = com.argus.assistant.agent.ReplyParts.split(content, final = true).text
                     .ifBlank { "I couldn't get an answer for this page just now. Tap a chip below or ask again in a moment." }
                 if (idx < list.size) list[idx] = Line(false, out)
             } catch (e: kotlinx.coroutines.CancellationException) { throw e
@@ -165,7 +165,7 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
     var tbRect by remember { mutableStateOf<Rect?>(null) }
     var tbCopy by remember { mutableStateOf<(() -> Unit)?>(null) }
     var tbAll by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val toolbar = remember { BlazeTextToolbar({ r, cp, all -> tbRect = r; tbCopy = cp; tbAll = all }, { tbRect = null }) }
+    val toolbar = remember { ArgusTextToolbar({ r, cp, all -> tbRect = r; tbCopy = cp; tbAll = all }, { tbRect = null }) }
     fun onSelection(a: SelectionActions.Action) {
         val copy = tbCopy
         when (a) {
@@ -177,7 +177,7 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
                 if (t.isBlank()) return
                 when (SelectionActions.resolve(a, t)) {
                     SelectionActions.Action.SEARCH, SelectionActions.Action.OPEN_LINK -> {
-                        try { BrowserEngine.newTab(ctx, SelectionActions.browserUrl(t)); onDismiss() } catch (_: Exception) { SelectionDo.openInBlazeBrowser(ctx, t) }
+                        try { BrowserEngine.newTab(ctx, SelectionActions.browserUrl(t)); onDismiss() } catch (_: Exception) { SelectionDo.openInArgusBrowser(ctx, t) }
                     }
                     SelectionActions.Action.ASK -> ask(SelectionActions.askPrompt(t))
                     SelectionActions.Action.TRANSLATE -> ask(SelectionActions.translatePrompt(t, lang))
@@ -226,7 +226,7 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
                                 if (line.text.isNotBlank()) SelectionContainer {
                                     // 2026-11-18: the user's bubble is a light fill, so its text and links are dark (Glass.inkFor).
                                     val fill = if (me) Glass.blue else Glass.raised
-                                    Text(com.blaze.assistant.ui.Md.render(line.text, if (me) Glass.onFill else Glass.cyan, Glass.raised2), modifier = Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp))
+                                    Text(com.argus.assistant.ui.Md.render(line.text, if (me) Glass.onFill else Glass.cyan, Glass.raised2), modifier = Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(18.dp))
                                         .background(fill).padding(horizontal = 12.dp, vertical = 9.dp),
                                         style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 20.sp, color = Glass.inkFor(fill)))
                                 }
@@ -256,7 +256,7 @@ fun PageAskSheet(title: String, initial: String?, readPage: suspend () -> PageAs
                     BasicTextField(input, { input = it; if (finding) find(it) }, singleLine = finding, maxLines = if (finding) 1 else 3,
                         cursorBrush = SolidColor(Glass.blue), textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = Glass.text),
                         // v0.28.1: asking: Enter = new line, only the send button sends. Find mode keeps Search (it never sends).
-                        keyboardOptions = if (finding) KeyboardOptions(imeAction = ImeAction.Search) else com.blaze.assistant.ui.ComposerKeys.Message,
+                        keyboardOptions = if (finding) KeyboardOptions(imeAction = ImeAction.Search) else com.argus.assistant.ui.ComposerKeys.Message,
                         keyboardActions = KeyboardActions(onSearch = { find(input, true) }),
                         modifier = Modifier.fillMaxWidth())
                 }

@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui.team.cards
+package com.argus.assistant.ui.team.cards
 
-import com.blaze.assistant.policy.PolicyRuntime
-import com.blaze.assistant.team.JobsRuntime
-import com.blaze.assistant.ui.team.thread.ThreadActions
+import com.argus.assistant.policy.PolicyRuntime
+import com.argus.assistant.team.JobsRuntime
+import com.argus.assistant.ui.team.thread.ThreadActions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

@@ -1,12 +1,12 @@
-package com.blaze.assistant.composer
+package com.argus.assistant.composer
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.composer.SpotlightGroups.App
-import com.blaze.assistant.composer.SpotlightGroups.Group
-import com.blaze.assistant.composer.SpotlightGroups.Said
-import com.blaze.assistant.composer.SpotlightSearch.Act
-import com.blaze.assistant.composer.SpotlightSearch.Icon
-import com.blaze.assistant.composer.SpotlightSearch.Row
+import com.argus.assistant.BrandName
+import com.argus.assistant.composer.SpotlightGroups.App
+import com.argus.assistant.composer.SpotlightGroups.Group
+import com.argus.assistant.composer.SpotlightGroups.Said
+import com.argus.assistant.composer.SpotlightSearch.Act
+import com.argus.assistant.composer.SpotlightSearch.Icon
+import com.argus.assistant.composer.SpotlightSearch.Row
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -49,14 +49,14 @@ class SpotlightGroupsTest {
         assertEquals(Group.APPS, SpotlightGroups.groupOf(row("view:music:full", Act.OpenView("music"), Icon.MUSIC)))
         assertEquals(Group.APPS, SpotlightGroups.groupOf(row("view:terminal:preview", Act.Preview("terminal"), Icon.TERMINAL)))
         assertEquals(Group.CHATS, SpotlightGroups.groupOf(row("chat:12", Act.RunAction("history"), Icon.CHAT)))
-        assertEquals(Group.CHATS, SpotlightGroups.groupOf(row("mem:mum", Act.AskBlaze("x"), Icon.SEARCH)))
+        assertEquals(Group.CHATS, SpotlightGroups.groupOf(row("mem:mum", Act.AskArgus("x"), Icon.SEARCH)))
         assertEquals(Group.WEB, SpotlightGroups.groupOf(row("fb:browse", Act.Browse("x"), Icon.BROWSER)))
         assertEquals(Group.SETTINGS, SpotlightGroups.groupOf(row("setting:voice", Act.OpenView("voice"), Icon.SETTINGS)))
         // the Settings view (an OpenView with the settings icon) is a setting, not an app
         assertEquals(Group.SETTINGS, SpotlightGroups.groupOf(row("view:settings:full", Act.OpenView("settings"), Icon.SETTINGS)))
         assertEquals(Group.ACTIONS, SpotlightGroups.groupOf(row("action:new_chat", Act.RunAction("new_chat"))))
         assertEquals(Group.ACTIONS, SpotlightGroups.groupOf(row("fb:music", Act.MusicSearch("x"), Icon.MUSIC)))
-        assertEquals(Group.ACTIONS, SpotlightGroups.groupOf(row("fb:ask", Act.AskBlaze("x"), Icon.CHAT)))
+        assertEquals(Group.ACTIONS, SpotlightGroups.groupOf(row("fb:ask", Act.AskArgus("x"), Icon.CHAT)))
     }
 
     @Test fun groupsComeInOrderBestFirstAndCapped() {
@@ -85,7 +85,7 @@ class SpotlightGroupsTest {
         assertTrue(s[0].rows.all { it.act == Act.Complete(it.title) })
         assertEquals(Group.SUGGESTED, s[1].group)
         assertEquals(SpotlightGroups.suggested(8), s[1].rows.map { it.title })
-        assertTrue(s[1].rows.all { it.act is Act.AskBlaze })
+        assertTrue(s[1].rows.all { it.act is Act.AskArgus })
         // then the curated list, grouped: Chat with ARGUS (Actions), Music / Video / Browser / Terminal (Apps), Settings
         val rest = s.drop(2).map { it.group }
         assertTrue(rest.isNotEmpty())
@@ -145,7 +145,7 @@ class SpotlightGroupsTest {
         assertTrue(r.dropLast(1).all { it.act == Act.RunAction("history") })
         val mem = r.last()
         assertEquals("mem:mum", mem.id)
-        assertEquals(Act.AskBlaze("Search your memory for: mum"), mem.act)
+        assertEquals(Act.AskArgus("Search your memory for: mum"), mem.act)
         assertTrue(r.size <= SpotlightGroups.CHATS_MAX + 1)
         // one letter: nothing (too noisy)
         assertTrue(SpotlightGroups.chatRows("m", said).isEmpty())

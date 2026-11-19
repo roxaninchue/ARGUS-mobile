@@ -1,12 +1,12 @@
-package com.blaze.assistant.stage
+package com.argus.assistant.stage
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.46.0 the Stage tools Blaze calls: stage_show / stage_update / stage_move / stage_close / stage_layout. This file is the pure
+ * 0.46.0 the Stage tools Argus calls: stage_show / stage_update / stage_move / stage_close / stage_layout. This file is the pure
  * half (definitions, parsing tool args into [StageAction]s, the prompt rule, the state codec); StageStore runs them on the phone.
  * Unit-tested in StageToolsTest.
  */

@@ -1,12 +1,12 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.46.2 the JavaScript a provider module runs on top of (written for Blaze, not copied): small axios-, fetch- and
+ * 0.46.2 the JavaScript a provider module runs on top of (written for Argus, not copied): small axios-, fetch- and
  * cheerio-like shims over host functions (__h_fetch = [SandboxHttp]; __c_* = Jsoup on the Kotlin side), URL/URLSearchParams,
  * atob/btoa, timers, and a limited providerContext (axios, cheerio, commonHeaders, getBaseUrl, kvStore; openWebView refuses).
- * There is no file system, no require of real modules, no Blaze data. Kept as a string so the engine reads it once per call.
+ * There is no file system, no require of real modules, no Argus data. Kept as a string so the engine reads it once per call.
  */
 object SandboxPrelude {
     val JS: String = """

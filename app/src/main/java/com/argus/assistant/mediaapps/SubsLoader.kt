@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import android.content.Context
 import android.net.Uri
@@ -6,8 +6,8 @@ import android.provider.OpenableColumns
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
-import com.blaze.assistant.mediaapps.store.LinkYt
-import com.blaze.assistant.mediaapps.store.StoreSubtitle
+import com.argus.assistant.mediaapps.store.LinkYt
+import com.argus.assistant.mediaapps.store.StoreSubtitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

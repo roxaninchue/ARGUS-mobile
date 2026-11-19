@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -61,7 +61,7 @@ object Quota {
             val base = Settings.baseUrl.trimEnd('/')
             val body = JSONObject().put("model", Settings.model).put("max_tokens", 1)
                 .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", "hi")))
-            val conn = com.blaze.assistant.connect.UrlSafety.open("$base/chat/completions").apply {
+            val conn = com.argus.assistant.connect.UrlSafety.open("$base/chat/completions").apply {
                 requestMethod = "POST"; doOutput = true; connectTimeout = 20_000; readTimeout = 45_000
                 setRequestProperty("Content-Type", "application/json")
                 LlmClient.authHeaders(key).forEach { (k, v) -> setRequestProperty(k, v) }

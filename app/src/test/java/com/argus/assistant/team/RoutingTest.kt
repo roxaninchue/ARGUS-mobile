@@ -1,6 +1,6 @@
-package com.blaze.assistant.team
+package com.argus.assistant.team
 
-import com.blaze.assistant.store.JdbcSql
+import com.argus.assistant.store.JdbcSql
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -302,7 +302,7 @@ class RoutingTest {
         job("send the deck", "nova")
         val p = Router.Plan("move the deck to tomorrow and remove it", router.actions(listOf(
             call("reschedule_task", "title" to "deck", "due" to "tomorrow"), call("complete_task", "title" to "budget")), "zzz"), "${Router.VIA_PHONE} \u00b7 120 ms")
-        val m = com.blaze.assistant.ui.team.PlanSheetModel
+        val m = com.argus.assistant.ui.team.PlanSheetModel
         assertEquals("Apply", m.button(p)); assertTrue(m.enabled(p)); assertTrue(m.showSwitch(p))
         assertEquals(listOf(false, true), m.lines(p).map { it.miss })
         assertEquals("\u201cmove the deck to tomorrow and remove it\u201d \u00b7 On this phone \u00b7 120 ms", m.sub(p))

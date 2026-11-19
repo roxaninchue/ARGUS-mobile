@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.cutoutSafe
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import android.app.WallpaperManager
 import android.media.MediaPlayer
 import android.widget.MediaController
@@ -117,13 +117,13 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.blaze.assistant.media.AlbumStore
-import com.blaze.assistant.media.GalleryModel
-import com.blaze.assistant.media.GalleryModel.Entry
-import com.blaze.assistant.media.GalleryRepo
-import com.blaze.assistant.ui.space.SpaceBackdrop
-import com.blaze.assistant.ui.space.SpaceInsets
-import com.blaze.assistant.ui.space.SpaceSegmented
+import com.argus.assistant.media.AlbumStore
+import com.argus.assistant.media.GalleryModel
+import com.argus.assistant.media.GalleryModel.Entry
+import com.argus.assistant.media.GalleryRepo
+import com.argus.assistant.ui.space.SpaceBackdrop
+import com.argus.assistant.ui.space.SpaceInsets
+import com.argus.assistant.ui.space.SpaceSegmented
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -189,11 +189,11 @@ private sealed class GDialog {
     data class DeleteAlbum(val album: AlbumStore.Album) : GDialog()
 }
 
-/** Everything Blaze made or downloaded, newest first. */
+/** Everything Argus made or downloaded, newest first. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GalleryScreen(onDismiss: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     GalleryRepo.init(ctx)
@@ -202,11 +202,11 @@ fun GalleryScreen(onDismiss: () -> Unit) {
         val stop = GalleryRepo.watch()
         onDispose { stop(); GalleryAudio.stop() }
     }
-    val blaze by GalleryRepo.blaze.collectAsState()
+    val argus by GalleryRepo.blaze.collectAsState()
     val phone by GalleryRepo.phone.collectAsState()
     val albums by GalleryRepo.albums.collectAsState()
     val loading by GalleryRepo.loading.collectAsState()
-    val all = remember(blaze, phone) { GalleryModel.merge(blaze, phone) }
+    val all = remember(argus, phone) { GalleryModel.merge(argus, phone) }
     val autos = remember(all) { GalleryModel.autoAlbums(all) }
 
     var tab by remember { mutableStateOf("all") }
@@ -225,12 +225,12 @@ fun GalleryScreen(onDismiss: () -> Unit) {
     var extra by remember { mutableStateOf("") }   // clean | trash | backup
     var editing by remember { mutableStateOf<Entry?>(null) }
     var cols by remember { androidx.compose.runtime.mutableIntStateOf(3) }
-    var strip by remember { mutableStateOf(com.blaze.assistant.mediaapps.MediaPrefs.bool(ctx, com.blaze.assistant.mediaapps.MediaPrefs.STRIP_GPS, true)) }
+    var strip by remember { mutableStateOf(com.argus.assistant.mediaapps.MediaPrefs.bool(ctx, com.argus.assistant.mediaapps.MediaPrefs.STRIP_GPS, true)) }
     var moreMenu by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.media.GalleryClean.purge(ctx) } }
+    LaunchedEffect(Unit) { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.argus.assistant.media.GalleryClean.purge(ctx) } }
     fun share(list: List<Entry>) {
         scope.launch {
-            val l = if (strip) kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.blaze.assistant.media.GalleryClean.withoutLocation(ctx, list) } else list
+            val l = if (strip) kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.argus.assistant.media.GalleryClean.withoutLocation(ctx, list) } else list
             try { ctx.startActivity(GalleryRepo.shareIntent(l)) } catch (_: Exception) { }
         }
     }
@@ -272,7 +272,7 @@ fun GalleryScreen(onDismiss: () -> Unit) {
     /** v0.34.0: Delete moves to the 30-day Trash (Android's own trash for phone photos on Android 11+). */
     fun doDelete(list: List<Entry>) {
         scope.launch {
-            val (moved, sender) = com.blaze.assistant.media.GalleryClean.trash(ctx, list)
+            val (moved, sender) = com.argus.assistant.media.GalleryClean.trash(ctx, list)
             selected = emptySet()
             if (sender != null) try { deleteLauncher.launch(IntentSenderRequest.Builder(sender).build()) } catch (_: Exception) { }
             GalleryRepo.refresh()
@@ -306,7 +306,7 @@ fun GalleryScreen(onDismiss: () -> Unit) {
                     if (inGrid) HeaderIcon(Icons.Rounded.Search, "Search") { searching = !searching; if (!searching) query = "" }
                     if (inGrid) Box {
                         HeaderIcon(Icons.Rounded.SwapVert, "Sort") { sortMenu = true }
-                        BlazeMenu(sortMenu, onDismiss = { sortMenu = false }, items = listOf(
+                        ArgusMenu(sortMenu, onDismiss = { sortMenu = false }, items = listOf(
                             "Newest first" to { sort = GalleryModel.Sort.DATE; asc = false },
                             "Oldest first" to { sort = GalleryModel.Sort.DATE; asc = true },
                             "Name A–Z" to { sort = GalleryModel.Sort.NAME; asc = true },
@@ -318,17 +318,17 @@ fun GalleryScreen(onDismiss: () -> Unit) {
                     if (albumId == null) HeaderIcon(Icons.Rounded.AutoFixHigh, "Clean up") { extra = "clean" }
                     if (albumId == null) Box {
                         HeaderIcon(Icons.Rounded.MoreVert, "More") { moreMenu = true }
-                        BlazeMenu(moreMenu, onDismiss = { moreMenu = false }, items = listOf(
+                        ArgusMenu(moreMenu, onDismiss = { moreMenu = false }, items = listOf(
                             "Trash" to { extra = "trash" },
                             "Backup plan" to { extra = "backup" },
                             (if (strip) "Remove location when sharing: on" else "Remove location when sharing: off") to {
-                                strip = !strip; com.blaze.assistant.mediaapps.MediaPrefs.setBool(ctx, com.blaze.assistant.mediaapps.MediaPrefs.STRIP_GPS, strip) },
+                                strip = !strip; com.argus.assistant.mediaapps.MediaPrefs.setBool(ctx, com.argus.assistant.mediaapps.MediaPrefs.STRIP_GPS, strip) },
                         ))
                     }
                     if (userAlbum != null) Box {
                         var menu by remember { mutableStateOf(false) }
                         HeaderIcon(Icons.Rounded.Edit, "Album options") { menu = true }
-                        BlazeMenu(menu, onDismiss = { menu = false }, items = listOf(
+                        ArgusMenu(menu, onDismiss = { menu = false }, items = listOf(
                             "Rename album" to { dialog = GDialog.RenameAlbum(userAlbum) },
                             "Delete album" to { dialog = GDialog.DeleteAlbum(userAlbum) },
                         ))
@@ -360,9 +360,9 @@ fun GalleryScreen(onDismiss: () -> Unit) {
                         }
                     }
                 } else {
-                    val otd = remember(all, now) { if (tab == "all") com.blaze.assistant.media.GalleryTools.onThisDay(all, now) else emptyList() }
+                    val otd = remember(all, now) { if (tab == "all") com.argus.assistant.media.GalleryTools.onThisDay(all, now) else emptyList() }
                     // Landscape overhaul: the pinch picks the upright column count; a wider window adds columns so tiles keep their size
-                    LazyVerticalGrid(GridCells.Fixed(com.blaze.assistant.ui.common.WindowLayout.gridColumns(cols, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat())), Modifier.fillMaxSize().padding(horizontal = 2.dp)
+                    LazyVerticalGrid(GridCells.Fixed(com.argus.assistant.ui.common.WindowLayout.gridColumns(cols, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat())), Modifier.fillMaxSize().padding(horizontal = 2.dp)
                         .pointerInput(Unit) {
                             // v0.34.0 pinch the grid: two fingers apart = bigger tiles, together = more columns (2 to 6).
                             awaitEachGesture {
@@ -372,7 +372,7 @@ fun GalleryScreen(onDismiss: () -> Unit) {
                                     if (ev.changes.size >= 2) {
                                         zoom *= ev.calculateZoom()
                                         ev.changes.forEach { it.consume() }
-                                        val n = com.blaze.assistant.media.GalleryTools.columnsAfterPinch(cols, zoom)
+                                        val n = com.argus.assistant.media.GalleryTools.columnsAfterPinch(cols, zoom)
                                         if (n != cols) { cols = n; zoom = 1f }
                                     }
                                 } while (ev.changes.any { it.pressed })
@@ -457,7 +457,7 @@ fun GalleryScreen(onDismiss: () -> Unit) {
     // ---------------- dialogs
     when (val d = dialog) {
         null -> {}
-        is GDialog.Delete -> BlazeDialog(
+        is GDialog.Delete -> ArgusDialog(
             title = if (d.items.size == 1) "Move \u201c${d.items[0].title.take(40)}\u201d to Trash?" else "Move ${d.items.size} items to Trash?",
             body = tr("They stay in the Trash for 30 days (Gallery \u203a \u22ee \u203a Trash), then are deleted for good."),
             confirm = tr("Move to Trash"), warm = true, dismiss = tr("Cancel"), onDismiss = { dialog = null },
@@ -467,7 +467,7 @@ fun GalleryScreen(onDismiss: () -> Unit) {
             scope.launch { GalleryRepo.rename(d.item, t)?.let { Toast.makeText(ctx, it, Toast.LENGTH_LONG).show() } }
         }
         is GDialog.Info -> InfoDialog(d.item) { dialog = null }
-        is GDialog.Wallpaper -> BlazeDialog(title = tr("Set as wallpaper"), body = tr("Where should this picture go?"), confirm = tr("Both"), dismiss = tr("Cancel"),
+        is GDialog.Wallpaper -> ArgusDialog(title = tr("Set as wallpaper"), body = tr("Where should this picture go?"), confirm = tr("Both"), dismiss = tr("Cancel"),
             onDismiss = { dialog = null },
             onConfirm = { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK) }) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -493,7 +493,7 @@ fun GalleryScreen(onDismiss: () -> Unit) {
         is GDialog.RenameAlbum -> TextDialog("Rename album", d.album.name, "Album name", "Save", onDismiss = { dialog = null }) { t ->
             dialog = null; GalleryRepo.renameAlbum(d.album.id, t)
         }
-        is GDialog.DeleteAlbum -> BlazeDialog(title = tr("Delete \u201c{0}\u201d?", d.album.name),
+        is GDialog.DeleteAlbum -> ArgusDialog(title = tr("Delete \u201c{0}\u201d?", d.album.name),
             body = tr("Only the album goes. Its pictures, songs and videos stay in the Gallery."), confirm = tr("Delete album"), warm = true,
             dismiss = tr("Cancel"), onDismiss = { dialog = null },
             onConfirm = { dialog = null; GalleryRepo.deleteAlbum(d.album.id); if (albumId == d.album.id) albumId = null })
@@ -519,10 +519,10 @@ private fun GalleryTabs(tab: String, onTab: (String) -> Unit) {
 /** "Today · 12", "Mon, 12 Oct"…: a day in the timeline. While selecting, tapping it selects the whole day. */
 @Composable
 private fun DayHeader(h: GalleryModel.Cell.Header, selecting: Boolean, allOn: Boolean, onToggleDay: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 6.dp, top = 14.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(h.label, modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = c.ink))
-        if (selecting) Box(Modifier.size(32.dp).clip(BlazeShapes.pill).clickable(onClickLabel = tr("Select this day"), onClick = onToggleDay), contentAlignment = Alignment.Center) {
+        if (selecting) Box(Modifier.size(32.dp).clip(ArgusShapes.pill).clickable(onClickLabel = tr("Select this day"), onClick = onToggleDay), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = if (allOn) c.accent else c.weak, modifier = Modifier.size(22.dp))
         }
     }
@@ -530,15 +530,15 @@ private fun DayHeader(h: GalleryModel.Cell.Header, selecting: Boolean, allOn: Bo
 
 @Composable
 private fun HeaderIcon(icon: ImageVector, desc: String, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
-    Box(Modifier.size(40.dp).clip(BlazeShapes.pill).clickable(onClickLabel = desc, onClick = onClick).semantics { contentDescription = desc },
+    val c = LocalArgus.current.mono
+    Box(Modifier.size(40.dp).clip(ArgusShapes.pill).clickable(onClickLabel = desc, onClick = onClick).semantics { contentDescription = desc },
         contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = c.ink, modifier = Modifier.size(21.dp)) }
 }
 
 @Composable
 private fun BarAction(icon: ImageVector, label: String, tint: Color? = null, onClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
-    Column(Modifier.clip(BlazeShapes.small).clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 6.dp),
+    val c = LocalArgus.current.mono
+    Column(Modifier.clip(ArgusShapes.small).clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, contentDescription = null, tint = tint ?: c.ink, modifier = Modifier.size(22.dp))
         Spacer(Modifier.height(2.dp))
@@ -566,30 +566,30 @@ private fun ArtFallback(e: Entry, big: Boolean = false) {
 @Composable
 private fun GalleryTile(e: Entry, selecting: Boolean, isSelected: Boolean, onPlaced: (androidx.compose.ui.geometry.Rect) -> Unit,
                         onClick: () -> Unit, onLongClick: () -> Unit) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     val bmp = rememberEntryThumb(e, 256)
     // Thumbnails fade in instead of popping; a picture already in memory shows at once.
     val shownAlpha by androidx.compose.animation.core.animateFloatAsState(if (bmp != null) 1f else 0f,
         androidx.compose.animation.core.tween(if (GalleryRepo.cachedThumb(e, 256) != null) 0 else 180), label = "thumb")
     val inset by androidx.compose.animation.core.animateDpAsState(if (isSelected) 10.dp else 0.dp, label = "sel")
     Box(Modifier.padding(1.5.dp).aspectRatio(1f).onGloballyPositioned { onPlaced(it.boundsInRoot()) }.padding(inset)
-        .clip(if (isSelected) BlazeShapes.small else BlazeShapes.xs).background(c.hair.copy(alpha = 0.3f))
+        .clip(if (isSelected) ArgusShapes.small else ArgusShapes.xs).background(c.hair.copy(alpha = 0.3f))
         .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = "Select")
         .semantics { contentDescription = e.title; selected = isSelected }) {
         if (bmp != null) Image(bmp, contentDescription = null, modifier = Modifier.fillMaxSize().graphicsLayer { alpha = shownAlpha }, contentScale = ContentScale.Crop)
         else if (e.kind != "image") ArtFallback(e)
-        if (e.kind == "video") Box(Modifier.align(Alignment.Center).size(30.dp).clip(BlazeShapes.pill).background(Color(0x88000000)), contentAlignment = Alignment.Center) {
+        if (e.kind == "video") Box(Modifier.align(Alignment.Center).size(30.dp).clip(ArgusShapes.pill).background(Color(0x88000000)), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
         }
-        if (e.kind == "audio" && bmp != null) Box(Modifier.align(Alignment.TopStart).padding(5.dp).size(20.dp).clip(BlazeShapes.pill).background(Color(0x88000000)),
+        if (e.kind == "audio" && bmp != null) Box(Modifier.align(Alignment.TopStart).padding(5.dp).size(20.dp).clip(ArgusShapes.pill).background(Color(0x88000000)),
             contentAlignment = Alignment.Center) { Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp)) }
         val dur = GalleryModel.duration(e.durationMs)
-        if (dur.isNotEmpty()) Text(dur, modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp).clip(BlazeShapes.xs).background(Color(0x99000000))
+        if (dur.isNotEmpty()) Text(dur, modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp).clip(ArgusShapes.xs).background(Color(0x99000000))
             .padding(horizontal = 5.dp, vertical = 1.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 10.sp, color = Color.White))
         if (selecting) {
             if (isSelected) Box(Modifier.matchParentSize().background(c.accent.copy(alpha = 0.25f)))
-            Box(Modifier.align(Alignment.TopEnd).padding(5.dp).size(22.dp).clip(BlazeShapes.pill)
-                .background(if (isSelected) Color.White else Color(0x55000000)).border(1.5.dp, Color.White, BlazeShapes.pill), contentAlignment = Alignment.Center) {
+            Box(Modifier.align(Alignment.TopEnd).padding(5.dp).size(22.dp).clip(ArgusShapes.pill)
+                .background(if (isSelected) Color.White else Color(0x55000000)).border(1.5.dp, Color.White, ArgusShapes.pill), contentAlignment = Alignment.Center) {
                 if (isSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = c.accent, modifier = Modifier.size(22.dp))
             }
         }
@@ -600,12 +600,12 @@ private fun GalleryTile(e: Entry, selecting: Boolean, isSelected: Boolean, onPla
 @Composable
 private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStore.Album>, all: Map<String, Entry>, canPhone: Boolean,
                        onOpen: (String) -> Unit, onNew: () -> Unit, onAlbumMenu: (AlbumStore.Album, String) -> Unit, onAllowPhone: () -> Unit) {
-    val c = LocalBlaze.current.mono
-    LazyVerticalGrid(GridCells.Fixed(com.blaze.assistant.ui.common.WindowLayout.gridColumns(2, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat(), maxCols = 6)), Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
+    val c = LocalArgus.current.mono
+    LazyVerticalGrid(GridCells.Fixed(com.argus.assistant.ui.common.WindowLayout.gridColumns(2, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat(), maxCols = 6)), Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) { Label(tr("Your albums"), color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 4.dp)) }
         item {
-            Column(Modifier.padding(6.dp).clip(BlazeShapes.medium).clickable(onClickLabel = tr("New album"), onClick = onNew)) {
-                Box(Modifier.fillMaxWidth().aspectRatio(1f).glassInset(c).border(1.dp, c.hair, BlazeShapes.medium),
+            Column(Modifier.padding(6.dp).clip(ArgusShapes.medium).clickable(onClickLabel = tr("New album"), onClick = onNew)) {
+                Box(Modifier.fillMaxWidth().aspectRatio(1f).glassInset(c).border(1.dp, c.hair, ArgusShapes.medium),
                     contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Add, contentDescription = null, tint = c.ink, modifier = Modifier.size(32.dp)) }
                 AlbumCaption("New album", "")
             }
@@ -615,7 +615,7 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
             val items = a.items.mapNotNull { all[it] }
             Box {
                 AlbumCard(a.name, items.size, items.maxByOrNull { it.time }, onClick = { onOpen(a.id) }, onLongClick = { menu = true })
-                BlazeMenu(menu, onDismiss = { menu = false }, items = listOf("Rename" to { onAlbumMenu(a, "rename") }, "Delete album" to { onAlbumMenu(a, "delete") }))
+                ArgusMenu(menu, onDismiss = { menu = false }, items = listOf("Rename" to { onAlbumMenu(a, "rename") }, "Delete album" to { onAlbumMenu(a, "delete") }))
             }
         }
         item(span = { GridItemSpan(maxLineSpan) }) { Label(tr("On this phone"), color = c.sub, size = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 14.dp, bottom = 4.dp)) }
@@ -642,9 +642,9 @@ private fun AlbumsGrid(autos: List<GalleryModel.AutoAlbum>, user: List<AlbumStor
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AlbumCard(name: String, count: Int, cover: Entry?, onClick: () -> Unit, onLongClick: (() -> Unit)?) {
-    val c = LocalBlaze.current.mono
-    Column(Modifier.padding(6.dp).clip(BlazeShapes.medium).combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(BlazeShapes.medium).background(c.hair.copy(alpha = 0.3f))) {
+    val c = LocalArgus.current.mono
+    Column(Modifier.padding(6.dp).clip(ArgusShapes.medium).combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(ArgusShapes.medium).background(c.hair.copy(alpha = 0.3f))) {
             if (cover != null) {
                 val bmp = rememberEntryThumb(cover, 256)
                 if (bmp != null) Image(bmp, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -659,7 +659,7 @@ private fun AlbumCard(name: String, count: Int, cover: Entry?, onClick: () -> Un
 
 @Composable
 private fun AlbumCaption(name: String, sub: String) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     Column(Modifier.padding(horizontal = 4.dp, vertical = 6.dp)) {
         Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = c.ink))
         if (sub.isNotEmpty()) Text(sub, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
@@ -724,7 +724,7 @@ private fun GalleryViewer(list: List<Entry>, start: Int, autoplay: String, origi
         if (chrome && !closing) {
             Row(Modifier.fillMaxWidth().graphicsLayer { alpha = anim.value }.background(Brush.verticalGradient(listOf(Color(0xAA000000), Color.Transparent))).statusBarsPadding()
                 .padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(44.dp).clip(BlazeShapes.pill).clickable(onClickLabel = tr("Close")) { close() }, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(44.dp).clip(ArgusShapes.pill).clickable(onClickLabel = tr("Close")) { close() }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Close, contentDescription = tr("Close"), tint = Color.White, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f).padding(start = 4.dp)) {
@@ -808,8 +808,8 @@ private fun VideoPage(e: Entry, current: Boolean, autoplay: Boolean) {
         } else {
             val bmp = rememberEntryThumb(e, 720)
             if (bmp != null) Image(bmp, contentDescription = e.title, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
-            else Box(Modifier.size(220.dp).clip(BlazeShapes.large)) { ArtFallback(e, big = true) }
-            Box(Modifier.size(72.dp).clip(BlazeShapes.pill).background(Color(0x99000000)).clickable(onClickLabel = tr("Play")) { playing = true },
+            else Box(Modifier.size(220.dp).clip(ArgusShapes.large)) { ArtFallback(e, big = true) }
+            Box(Modifier.size(72.dp).clip(ArgusShapes.pill).background(Color(0x99000000)).clickable(onClickLabel = tr("Play")) { playing = true },
                 contentAlignment = Alignment.Center) { Icon(Icons.Rounded.PlayArrow, contentDescription = tr("Play"), tint = Color.White, modifier = Modifier.size(44.dp)) }
             val d = GalleryModel.duration(e.durationMs)
             if (d.isNotEmpty()) Text(d, modifier = Modifier.align(Alignment.Center).padding(top = 120.dp),
@@ -833,7 +833,7 @@ private fun AudioPage(e: Entry, current: Boolean, autoplay: Boolean) {
     val art = rememberEntryThumb(e, 720)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 90.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Box(Modifier.widthIn(max = 320.dp).fillMaxWidth().aspectRatio(1f).clip(BlazeShapes.large)) {
+        Box(Modifier.widthIn(max = 320.dp).fillMaxWidth().aspectRatio(1f).clip(ArgusShapes.large)) {
             if (art != null) Image(art, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop) else ArtFallback(e, big = true)
         }
         Spacer(Modifier.height(22.dp))
@@ -847,7 +847,7 @@ private fun AudioPage(e: Entry, current: Boolean, autoplay: Boolean) {
             Text(GalleryModel.duration(len), style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Color(0xCCFFFFFF)))
         }
         Spacer(Modifier.height(14.dp))
-        Box(Modifier.size(68.dp).clip(BlazeShapes.pill).background(Color.White).clickable(onClickLabel = if (mine && isPlaying) "Pause" else "Play") { GalleryAudio.toggle(ctx, e) },
+        Box(Modifier.size(68.dp).clip(ArgusShapes.pill).background(Color.White).clickable(onClickLabel = if (mine && isPlaying) "Pause" else "Play") { GalleryAudio.toggle(ctx, e) },
             contentAlignment = Alignment.Center) {
             Icon(if (mine && isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(38.dp))
         }
@@ -871,8 +871,8 @@ private fun SeekBar(pos: Long, len: Long, enabled: Boolean, onSeek: (Long) -> Un
                 } while (ev.changes.any { it.pressed })
             }
         }, contentAlignment = Alignment.CenterStart) {
-        Box(Modifier.fillMaxWidth().height(4.dp).clip(BlazeShapes.pill).background(Color(0x44FFFFFF)))
-        Box(Modifier.fillMaxWidth(frac).height(4.dp).clip(BlazeShapes.pill).background(Color.White))
+        Box(Modifier.fillMaxWidth().height(4.dp).clip(ArgusShapes.pill).background(Color(0x44FFFFFF)))
+        Box(Modifier.fillMaxWidth(frac).height(4.dp).clip(ArgusShapes.pill).background(Color.White))
     }
 }
 
@@ -883,8 +883,8 @@ private fun dateLabel(ms: Long): String = if (ms <= 0) "" else SimpleDateFormat(
 @Composable
 private fun TextDialog(title: String, initial: String, hint: String, confirm: String, onDismiss: () -> Unit, onDone: (String) -> Unit) {
     var t by remember { mutableStateOf(initial) }
-    BlazeDialog(title = title, confirm = confirm, onConfirm = { if (t.isNotBlank()) onDone(t.trim()) }, dismiss = tr("Cancel"), onDismiss = onDismiss) {
-        BlazeTextField(t, { t = it.take(120) }, hint, modifier = Modifier.fillMaxWidth(),
+    ArgusDialog(title = title, confirm = confirm, onConfirm = { if (t.isNotBlank()) onDone(t.trim()) }, dismiss = tr("Cancel"), onDismiss = onDismiss) {
+        ArgusTextField(t, { t = it.take(120) }, hint, modifier = Modifier.fillMaxWidth(),
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { if (t.isNotBlank()) onDone(t.trim()) }))
     }
@@ -901,7 +901,7 @@ private fun InfoDialog(e: Entry, onDismiss: () -> Unit) {
         if (e.durationMs > 0) add("Length" to GalleryModel.duration(e.durationMs))
         add("Where" to (if (e.isFile) "${BrandName.NAME}'s gallery (only ${BrandName.NAME} can see it)" else e.folder.trimEnd('/').ifBlank { "Phone storage" }))
     }
-    BlazeDialog(title = tr("Info"), confirm = tr("Done"), onConfirm = onDismiss, onDismiss = onDismiss) {
+    ArgusDialog(title = tr("Info"), confirm = tr("Done"), onConfirm = onDismiss, onDismiss = onDismiss) {
         rows.forEach { (k, v) ->
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Text(k, modifier = Modifier.width(92.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = DialogColors.body))
@@ -915,11 +915,11 @@ private fun InfoDialog(e: Entry, onDismiss: () -> Unit) {
 private fun AlbumPicker(d: GDialog.PickAlbum, albums: List<AlbumStore.Album>, onDismiss: () -> Unit, onPick: (String?, String) -> Unit) {
     var name by remember { mutableStateOf("") }
     val what = if (d.items.size == 1) "it" else "${d.items.size} items"
-    BlazeDialog(title = if (d.moveFrom != null) "Move $what to\u2026" else "Add $what to\u2026", confirm = tr("Create album"),
+    ArgusDialog(title = if (d.moveFrom != null) "Move $what to\u2026" else "Add $what to\u2026", confirm = tr("Create album"),
         onConfirm = { if (name.isNotBlank()) onPick(null, name) }, dismiss = tr("Cancel"), onDismiss = onDismiss) {
         Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
             albums.forEach { a ->
-                Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).clickable { onPick(a.id, a.name) }.padding(horizontal = 6.dp, vertical = 11.dp),
+                Row(Modifier.fillMaxWidth().clip(ArgusShapes.small).clickable { onPick(a.id, a.name) }.padding(horizontal = 6.dp, vertical = 11.dp),
                     verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Folder, contentDescription = null, tint = DialogColors.primary, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(10.dp))
@@ -930,6 +930,6 @@ private fun AlbumPicker(d: GDialog.PickAlbum, albums: List<AlbumStore.Album>, on
             }
         }
         if (albums.isNotEmpty()) Spacer(Modifier.height(8.dp))
-        BlazeTextField(name, { name = it.take(60) }, "New album name", modifier = Modifier.fillMaxWidth())
+        ArgusTextField(name, { name = it.take(60) }, "New album name", modifier = Modifier.fillMaxWidth())
     }
 }

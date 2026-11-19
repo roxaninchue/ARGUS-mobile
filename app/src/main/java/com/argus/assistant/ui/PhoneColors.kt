@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
- * 0.45.19 Blaze Phone UI fix 3 (contrast). The tile's step chip was white text on the light "blue" (#E6E6EA) fill,
- * unreadable on every theme. Every colour the Blaze Phone tile and the Blaze Phone screen draw text or icons with now
+ * 0.45.19 Argus Phone UI fix 3 (contrast). The tile's step chip was white text on the light "blue" (#E6E6EA) fill,
+ * unreadable on every theme. Every colour the Argus Phone tile and the Argus Phone screen draw text or icons with now
  * comes from one [Palette], made from the theme's accent and light / dark, and every text / ground pair in it meets
  * WCAG AA for normal text (contrast >= 4.5:1). Colours are opaque ARGB longs (no alpha over a moving background), so
  * this file needs no Android or Compose and PhoneContrastTest computes the real ratio for each theme x mode.
@@ -18,13 +18,13 @@ object PhoneColors {
         val dark: Boolean,
         /** The tile's own opaque ground (it floats over petals, embers, rain…). */
         val card: Long, val cardBorder: Long,
-        /** "Blaze Phone · host" and secondary lines on the card. */
+        /** "Argus Phone · host" and secondary lines on the card. */
         val title: Long, val sub: Long,
-        /** The step chip ("Reading Blaze Phone's page") and its dot. */
+        /** The step chip ("Reading Argus Phone's page") and its dot. */
         val chip: Long, val onChip: Long,
-        /** Quiet button (Take control while Blaze works) and the close disc. */
+        /** Quiet button (Take control while Argus works) and the close disc. */
         val button: Long, val onButton: Long,
-        /** Strong button (Take control when Blaze needs you, Hand back). */
+        /** Strong button (Take control when Argus needs you, Hand back). */
         val strong: Long, val onStrong: Long,
         /** The full screen: ground, title, host line, bottom bar, address field. */
         val screen: Long, val screenText: Long, val screenSub: Long,

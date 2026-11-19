@@ -1,4 +1,4 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
 /**
  * v0.29.1: the browser shows what it is pulling while a page loads ("Pulling 23 files · fonts.gstatic.com › inter.woff2 · 4s"),

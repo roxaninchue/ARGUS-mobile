@@ -1,7 +1,7 @@
-package com.blaze.assistant.browser
+package com.argus.assistant.browser
 
-import com.blaze.assistant.agent.LongChat
-import com.blaze.assistant.agent.LoopGuard
+import com.argus.assistant.agent.LongChat
+import com.argus.assistant.agent.LoopGuard
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals

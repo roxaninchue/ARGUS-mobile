@@ -1,10 +1,10 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.agent.ScheduleDay
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.icons.LucideSpec
-import com.blaze.assistant.ui.space.SpaceAnswer
-import com.blaze.assistant.ui.space.SpaceHomeCards
+import com.argus.assistant.agent.ScheduleDay
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.icons.LucideSpec
+import com.argus.assistant.ui.space.SpaceAnswer
+import com.argus.assistant.ui.space.SpaceHomeCards
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -151,11 +151,11 @@ class LifeModelTest {
 
     @Test fun theShellShowsLifeAndKeepsThe052Home() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
-        assertTrue("Life's page is LifePage", "life = { lifePane() }" in chat && "com.blaze.assistant.ui.team.LifePage(" in chat)
+        val chat = File(root, "com/argus/assistant/ui/ChatScreen.kt").readText()
+        assertTrue("Life's page is LifePage", "life = { lifePane() }" in chat && "com.argus.assistant.ui.team.LifePage(" in chat)
         assertFalse("the 0.52 Home is gone (ARGUS-only)", "homePane()" in chat || "SpaceHomeLayer(" in chat)
         assertTrue("the Today strip opens Schedule", "onOpenSchedule = { Views.find(\"schedule\")?.let { openView(it) } }" in chat)
-        val life = File(root, "com/blaze/assistant/ui/team/LifeMode.kt").readText()
+        val life = File(root, "com/argus/assistant/ui/team/LifeMode.kt").readText()
         assertTrue("Life reads the same day items as the [context] line", "TurnContextSource.dayEntries(now)" in life && "ScheduleDay.itemsOn(" in life)
         assertFalse("Life never fetches weather itself", "HomeSources" in life || "refresh(" in life)
     }
@@ -178,13 +178,13 @@ class LifeModelTest {
 
     @Test fun boardNewestFirstWithoutWeatherOrHidden() {
         fun w(id: String, type: String, order: Int, created: Long, hidden: Boolean = false) =
-            com.blaze.assistant.home.Widget(id, type, id, "x", order = order, created = created, hidden = hidden)
+            com.argus.assistant.home.Widget(id, type, id, "x", order = order, created = created, hidden = hidden)
         val out = LifeBoard.panels(listOf(w("old", "news", 1, 10), w("new", "todo", 0, 20), w("sky", "weather", 0, 30), w("gone", "custom", 0, 40, hidden = true)))
         assertEquals(listOf("new", "old"), out.map { it.id })
     }
 
     @Test fun boardUnderHeadersNewestHeaderFirstAndFoldsSurvive() {
-        fun w(id: String, cat: String, order: Int) = com.blaze.assistant.home.Widget(id, "custom", id, cat, order = order, created = 100L - order)
+        fun w(id: String, cat: String, order: Int) = com.argus.assistant.home.Widget(id, "custom", id, cat, order = order, created = 100L - order)
         val g = LifeBoard.groups(listOf(w("bills", "Money", 2), w("milk", "To-do", 0), w("rent", "Money", 1), w("x", " ", 3)))
         assertEquals(listOf("To-do", "Money", "Notes"), g.map { it.first })
         assertEquals(listOf("rent", "bills"), g[1].second.map { it.id })
@@ -197,12 +197,12 @@ class LifeModelTest {
     /** Owner 2026-11-14: quick access to accounts and apps, folding headers, the board and the calendar wired on Life. */
     @Test fun lifeWiresTheBoardCalendarFoldsAndQuickAccess() {
         val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        val chat = File(root, "com/blaze/assistant/ui/ChatScreen.kt").readText()
+        val chat = File(root, "com/argus/assistant/ui/ChatScreen.kt").readText()
         assertTrue("onConnect = { settingsPage = \"connections\" }" in chat && "onApps = { appsOpen = true }" in chat && "AppsPage(" in chat)
-        val life = File(root, "com/blaze/assistant/ui/team/LifeMode.kt").readText()
+        val life = File(root, "com/argus/assistant/ui/team/LifeMode.kt").readText()
         assertTrue("LifeBoard.groups(widgets)" in life && "LifeCalendarCard(" in life && "LifeQuickAccess(" in life)
         for (h in listOf("Today", "Your life", "Projects", "Panels", "Calendar")) assertTrue(h, "LifeFoldHead(\"$h\"" in life)
-        val tools = File(root, "com/blaze/assistant/home/HomeTools.kt").readText()
+        val tools = File(root, "com/argus/assistant/home/HomeTools.kt").readText()
         assertTrue("newest on top", "atEnd = false" in tools)
         assertTrue("the model keeps headers few", "Keep headers few" in tools)
     }

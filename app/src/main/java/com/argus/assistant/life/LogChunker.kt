@@ -1,4 +1,4 @@
-package com.blaze.assistant.life
+package com.argus.assistant.life
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -68,7 +68,7 @@ class LogChunker(
             return if (cap.last() in ".!?") cap else "$cap."
         }
 
-        /** "stop" / "pause" when the user says so out loud ("stop logs", "blaze stop logging", "end brainstorm"). */
+        /** "stop" / "pause" when the user says so out loud ("stop logs", "argus stop logging", "end brainstorm"). */
         fun command(text: String): String? {
             val t = text.lowercase().trim().replace(Regex("[^a-z ]"), "").replace(Regex("^(hey |ok |okay )?(?:argus|blaze) "), "")
             if (Regex("^(stop|end|turn off|switch off|finish) (the )?(live |life )?(logs?|logging|brainstorm|brainstorming)( now)?$").matches(t)) return "stop"

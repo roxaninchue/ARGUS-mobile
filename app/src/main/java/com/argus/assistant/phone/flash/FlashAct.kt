@@ -2,9 +2,9 @@
  * The 0-1000 normalized coordinate target follows google/artemis (Apache-2.0, Copyright 2026 Google LLC) and the
  * percentage tap of Minitap mobile-use as included in Artemis (third_party/mobile_use/controllers/unified_controller.py
  * tap_percentage, Apache-2.0, Copyright 2025-2026 Minitap, Inc., modifications Copyright 2026 Google LLC). Rewritten in
- * Kotlin for Blaze. See THIRD_PARTY_NOTICES.md.
+ * Kotlin for Argus. See THIRD_PARTY_NOTICES.md.
  */
-package com.blaze.assistant.phone.flash
+package com.argus.assistant.phone.flash
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -57,7 +57,7 @@ sealed class PhoneAct {
 
 /**
  * Reads the model's reply into a [PhoneAct]. Lenient: a JSON object anywhere in the reply (code fences, prose around it,
- * single quotes and unquoted keys as org.json allows), Artemis/Blaze action names and their synonyms, `target` as an
+ * single quotes and unquoted keys as org.json allows), Artemis/Argus action names and their synonyms, `target` as an
  * index or an [x, y] pair on the 0-1000 grid. Null = no usable action.
  */
 object FlashParse {

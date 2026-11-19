@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -7,14 +7,14 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 0.52.3 "ARGUS x Hark" wiring, by source scans of the shell (ChatScreen, MainActivity, SettingsSheet, BlazeApp) and the
+ * 0.52.3 "ARGUS x Hark" wiring, by source scans of the shell (ChatScreen, MainActivity, SettingsSheet, ArgusApp) and the
  * resources. Replaces ArgusHomeWiringTest (the 3D Home and its ArgusHomeBus are gone). What it pins:
  *  - the shell is the space view + Hark's top bar on every tab, Home is the root tab, Projects is the Hark-style list;
  *  - every route home and Back land on the Home tab; what needs the chat (questions, approvals, forms, notifications)
  *    switches to Chat;
  *  - the avatar opens the profile page (the root of Settings), whose rows reach the decluttered pages; the old list,
  *    Advanced, the brain switches and the backup / offline brain sections are gone, and so is the model picker;
- *  - first run is the logo clip, the language pill and sign-in (owner 2026-11-18), the old SetupFlow / dependency gate are gone, and BlazeApp starts what
+ *  - first run is the logo clip, the language pill and sign-in (owner 2026-11-18), the old SetupFlow / dependency gate are gone, and ArgusApp starts what
  *    is left of setup after the first frame;
  *  - the app icon is the ARGUS mark with no duplicate launcher resources; the old Home board stays in the tree.
  * Rendering is SpaceShotsTest's; on a phone, SpaceHomeCheck and SpaceOnboardingCheck.
@@ -22,9 +22,9 @@ import java.io.File
 class SpaceWiringTest {
     private val main = listOf(File("src/main"), File("app/src/main")).first { File(it, "java").isDirectory }
     private val root = File(main, "java")
-    private fun src(path: String) = File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = File(root, "com/argus/assistant/$path").readText()
     private val chat by lazy { src("ui/ChatScreen.kt") }
-    private val S = "com.blaze.assistant.ui.space."
+    private val S = "com.argus.assistant.ui.space."
     private val allMain by lazy { root.walkTopDown().filter { it.isFile && it.extension == "kt" }.associate { it.name to it.readText() } }
 
 
@@ -56,28 +56,28 @@ class SpaceWiringTest {
 
     @Test fun theSpaceFilesAreThereAndTheArgusHomeIsGone() {
         for (f in listOf("SpaceLogic", "SpaceTheme", "SpaceHome", "SpaceSpotlight", "SpaceProfile", "SpaceOnboarding", "SpaceProjects", "SpaceLegal", "SpaceRows")) {
-            val file = File(root, "com/blaze/assistant/ui/space/$f.kt")
+            val file = File(root, "com/argus/assistant/ui/space/$f.kt")
             assertTrue(f, file.isFile)
-            assertTrue("$f package", file.readText().startsWith("package com.blaze.assistant.ui.space\n"))
+            assertTrue("$f package", file.readText().startsWith("package com.argus.assistant.ui.space\n"))
         }
         // ARGUS-only (16 Nov 2026): the 0.52 top bar and Home screen are gone
-        assertFalse("SpaceTopBar.kt was removed", File(root, "com/blaze/assistant/ui/space/SpaceTopBar.kt").exists())
+        assertFalse("SpaceTopBar.kt was removed", File(root, "com/argus/assistant/ui/space/SpaceTopBar.kt").exists())
         for (gone in listOf("SpaceTopBar(", "SpaceHomeScreen(", "SpaceHomeState(")) nowhere(gone)
-        for (f in listOf("SetupPlan", "SetupRunner")) assertTrue(f, File(root, "com/blaze/assistant/setup/$f.kt").isFile)
+        for (f in listOf("SetupPlan", "SetupRunner")) assertTrue(f, File(root, "com/argus/assistant/setup/$f.kt").isFile)
         // the 3D Home's ui/argus files stay gone (P0-SH-01 reuses the package for the ARGUS tokens)
         for (f in listOf("ArgusHomeLogic", "ArgusGl", "ArgusSceneView", "ArgusHome", "ArgusSpotlight"))
-            assertFalse("ui/argus/$f.kt was removed", File(root, "com/blaze/assistant/ui/argus/$f.kt").exists())
-        assertTrue("the ARGUS mark stays", File(root, "com/blaze/assistant/ui/ArgusMark.kt").isFile)
+            assertFalse("ui/argus/$f.kt was removed", File(root, "com/argus/assistant/ui/argus/$f.kt").exists())
+        assertTrue("the ARGUS mark stays", File(root, "com/argus/assistant/ui/ArgusMark.kt").isFile)
         for (gone in listOf("ArgusHomeBus", "ArgusHomeScreen", "ArgusSceneView", "ArgusSpotlightPanel", "ArgusHomeTokens", "ProjectsPane(")) nowhere(gone)
         // the old Home board is left in the tree (BUILDING.md: don't delete it blind)
-        for (f in listOf("ui/HomeIntro.kt", "ui/HomeBoardUi.kt", "ui/HomeGridUi.kt")) assertTrue(f, File(root, "com/blaze/assistant/$f").isFile)
+        for (f in listOf("ui/HomeIntro.kt", "ui/HomeBoardUi.kt", "ui/HomeGridUi.kt")) assertTrue(f, File(root, "com/argus/assistant/$f").isFile)
     }
 
     @Test fun theShellIsTheSpaceViewWithHarksTopBar() {
         assertTrue("testTag(${S}SpaceTags.ROOT)" in chat)
         // ARGUS-only (16 Nov 2026): the ARGUS ground and top bar; the 0.52 SpaceBackdrop / SpaceTopBar are gone from the shell
-        assertTrue("if (!onboard) com.blaze.assistant.ui.argus.ArgusGround {}" in chat && "${S}SpaceTopBar(" !in chat)
-        val bar = after(chat, "com.blaze.assistant.ui.argus.kit.ArgusTopBar(", 1_400)
+        assertTrue("if (!onboard) com.argus.assistant.ui.argus.ArgusGround {}" in chat && "${S}SpaceTopBar(" !in chat)
+        val bar = after(chat, "com.argus.assistant.ui.argus.kit.ArgusTopBar(", 1_400)
         assertTrue("search opens Spotlight", "composer.openSpotlight()" in bar)
         assertTrue("me opens the You page", "onMe = { notchOpen = false; settingsPage = \"\" }" in bar)
         assertTrue("long-press = light / dark", "LightDark.toggle(c.dark)" in bar)
@@ -109,8 +109,8 @@ class SpaceWiringTest {
         assertTrue("views and pages close on the way home", "settingsPage = null" in homeReq && "Views.showing.value = \"\"" in homeReq && "composer.closeSpotlight()" in homeReq)
         assertTrue("open_view home / /home", "\"home\" -> homeRequests.value++" in chat)
         val m = src("MainActivity.kt")
-        val extra = after(m, "getBooleanExtra(com.blaze.assistant.ui.HomeRoute.EXTRA_HOME, false)", 500)
-        assertTrue("EXTRA_HOME lands on the Home", "homeRequests.value = com.blaze.assistant.ui.homeRequests.value + 1" in extra)
+        val extra = after(m, "getBooleanExtra(com.argus.assistant.ui.HomeRoute.EXTRA_HOME, false)", 500)
+        assertTrue("EXTRA_HOME lands on the Home", "homeRequests.value = com.argus.assistant.ui.homeRequests.value + 1" in extra)
         val back = chat.substringAfter("fun backToChat() {").substringBefore("\n    }\n")
         // P1-SH-01: with nothing over the tab, Back goes Home in the 0.52 shell and to Team (the root) in the ARGUS shell
         assertTrue("with nothing over the tab, Back goes Home", "else if (!Agent.privateChat.value) {" in back)
@@ -139,8 +139,8 @@ class SpaceWiringTest {
         val s = src("ui/SettingsSheet.kt")
         assertTrue("fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> Unit, onDismiss: () -> Unit,\n                   onTab: (String) -> Unit = {}, onSearch: () -> Unit = {})" in s)
         // ARGUS-only (16 Nov 2026): the root is the You page and Back follows the ARGUS tree; the 0.52.3 profile is gone
-        assertTrue("the root is the You page", "com.blaze.assistant.ui.argus.settings.YouPage(" in s && "${S}SpaceProfileScreen(" !in s)
-        assertTrue("Back follows the tree", "else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in s)
+        assertTrue("the root is the You page", "com.argus.assistant.ui.argus.settings.YouPage(" in s && "${S}SpaceProfileScreen(" !in s)
+        assertTrue("Back follows the tree", "else page = com.argus.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in s)
         assertTrue("${S}SpaceProfile.SYSTEM_PAGE -> ${S}SpaceSystemPage { page = it }" in s)
         assertTrue("${S}SpaceProfile.FEEDBACK_PAGE -> ${S}SpaceFeedbackPage(version)" in s)
         assertTrue("the brain page is only its status", "\"ai\" -> BrainCard { page = \"account\" }" in s)
@@ -155,7 +155,7 @@ class SpaceWiringTest {
         val ids = src("ui/SettingsPages.kt")
         assertTrue("\"backup_brain\" to \"ai\"" in ids && "\"advanced\" to \"\"" in ids)
         for (gone in listOf("SettingsList(", "AdvancedList(", "AiPage(", "BackupBrainSection(", "OfflineBrainSection(", "SimpleAdvancedSwitch()")) assertFalse("$gone in Settings", gone in s)
-        for (f in listOf("OfflineBrainSection.kt", "BackupBrainSection.kt")) assertFalse(f, File(root, "com/blaze/assistant/ui/$f").exists())
+        for (f in listOf("OfflineBrainSection.kt", "BackupBrainSection.kt")) assertFalse(f, File(root, "com/argus/assistant/ui/$f").exists())
         nowhere("BackupBrainSection("); nowhere("OfflineBrainSection(")
     }
 
@@ -166,7 +166,7 @@ class SpaceWiringTest {
         for (f in listOf("fun SpaceGroup(", "fun SpaceHairline(", "fun SpaceRow(", "fun SpaceToggleRow(", "fun SpaceField(", "fun SpaceSegmented(",
             "fun SpaceMenuCard(", "fun SpaceMenu(", "fun SpaceSubPage(")) assertTrue("SpaceRows.kt has $f", f in rows)
         assertTrue("groups are the solid card", "background(look.cardSolid)" in rows)
-        assertTrue("the one switch", "BlazeSwitchTrack(on)" in rows)
+        assertTrue("the one switch", "ArgusSwitchTrack(on)" in rows)
         val profile = src("ui/space/SpaceProfile.kt")
         assertFalse("no private group or hairline left", "fun ProfileGroup(" in profile || "private fun Hairline(" in profile)
         assertFalse("no hard-coded card colour", "0xF2080B12" in profile)
@@ -204,7 +204,7 @@ class SpaceWiringTest {
         // Owner 2026-11-15 (second take): with the ARGUS look the + menu grows out of the composer, not a sheet over it;
         // only the 0.52 shell keeps the sheet.
         val screen = src("ui/ChatScreen.kt")
-        assertTrue("the + menu opens inside the ARGUS composer", "menu = { com.blaze.assistant.ui.argus.kit.ComposerPlusMenu(" in screen)
+        assertTrue("the + menu opens inside the ARGUS composer", "menu = { com.argus.assistant.ui.argus.kit.ComposerPlusMenu(" in screen)
         assertTrue("no + sheet (ARGUS-only)", "PlusMenu(plusEntries(), onDismiss" !in screen)
         for (strip in listOf("private fun QuoteStrip(", "internal fun SuggestionList(", "private fun ListeningStrip("))
             assertTrue("$strip floats", ".composerPanel(" in chat.substringAfter(strip).substringBefore("\n}\n"))
@@ -265,7 +265,7 @@ class SpaceWiringTest {
         assertFalse("no sizes outside the type scale", Regex("SkyText\\([^\\n]*?, \\d+[,)]").containsMatchIn(sky))
         assertTrue("the tabs sheet uses the shared segmented pill", "SpaceSegmented(" in sky.substringAfter("internal fun SkyTabsSheet(").substringBefore("\n}\n"))
         val toggle = sky.substringAfter("private fun Toggle(").substringBefore("\n}\n")
-        assertTrue("the shared switch", "BlazeSwitchTrack(on)" in toggle)
+        assertTrue("the shared switch", "ArgusSwitchTrack(on)" in toggle)
         assertTrue("the switch still sets the value", "toggleable(value = on, role = Role.Switch, onValueChange = set)" in toggle)
         assertFalse("no Material switch", "Switch(on, onCheckedChange" in sky)
         val launcher = sky.substringAfter("internal fun SkyLauncher(").substringBefore("\n}\n")
@@ -293,12 +293,12 @@ class SpaceWiringTest {
         // owner 2026-11-18: finishing marks onboarded, leaves for the Home tab (ChatNav.tabOf turns it into Chat, OldHomeGoneTest),
         // starts the downloads in the background and hands over to FirstRun (checklist in Life + ARGUS's introduction)
         assertTrue("Settings.setBool(${S}SpaceOnboarding.PREF_ONBOARDED, true); onboard = false; go(navNow().switchTab(ChatNav.HOME))" in ob)
-        assertTrue("com.blaze.assistant.setup.SetupRunner.start(ctx); com.blaze.assistant.setup.FirstRun.welcome(ctx)" in ob)
+        assertTrue("com.argus.assistant.setup.SetupRunner.start(ctx); com.argus.assistant.setup.FirstRun.welcome(ctx)" in ob)
         assertTrue("signed in: the sign-in step moves on by itself", "if (${S}SpaceOnboarding.autoNext(step, signedIn)) advance()" in ob)
         assertTrue("the language step marks the clip as seen", "Settings.setBool(${S}SpaceOnboarding.PREF_INTRO_SEEN, true)" in ob)
         assertTrue("onboarding resumes after the lock screen", "${S}SpaceOnboarding.first(Settings.bool(${S}SpaceOnboarding.PREF_INTRO_SEEN, false))" in chat)
         // Account lock: a first run's sign-in on the lock screen still leads into onboarding
-        assertTrue("only for people who never used ARGUS", "${S}SpaceOnboarding.show(Settings.bool(\"onboarded\", false), Settings.ready && !com.blaze.assistant.connect.AccountGate.firstRun(), hasMessages)" in chat)
+        assertTrue("only for people who never used ARGUS", "${S}SpaceOnboarding.show(Settings.bool(\"onboarded\", false), Settings.ready && !com.argus.assistant.connect.AccountGate.firstRun(), hasMessages)" in chat)
         for (gone in listOf("SetupFlow(", "SetupGateScreen(", "SetupRow(", "private fun Welcome(")) nowhere(gone)
         val o = src("ui/space/SpaceOnboarding.kt")
         assertTrue("the still logo and tagline stand in for the clip", "SpaceOnboarding.TAGLINE" in src("ui/space/SpaceIntro.kt") && "R.drawable.argus_logo" in o)
@@ -309,9 +309,9 @@ class SpaceWiringTest {
         val m = src("MainActivity.kt")
         assertTrue("if (acct != null && preLock.value) ${S}SpaceFirstRunBeforeLock { preLock.value = false }" in m)
         assertTrue(m.indexOf("SpaceFirstRunBeforeLock") < m.indexOf("AccountLockRoute(acct)"))
-        // BlazeApp: what is left starts by itself after the first frame, for people past onboarding
-        val app = src("BlazeApp.kt").substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
-        assertTrue("if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add(\"setup.SetupRunner.later\") { com.blaze.assistant.setup.SetupRunner.later(this) }" in app)
+        // ArgusApp: what is left starts by itself after the first frame, for people past onboarding
+        val app = src("ArgusApp.kt").substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
+        assertTrue("if (!com.argus.assistant.device.StartGuard.safeStart) com.argus.assistant.device.StartLater.add(\"setup.SetupRunner.later\") { com.argus.assistant.setup.SetupRunner.later(this) }" in app)
         val later = src("setup/SetupRunner.kt").substringAfter("fun later(ctx: Context) {").substringBefore("\n    }\n")
         assertTrue("delay(SetupPlan.LATER_MS)" in later && "SetupPlan.startLater(onboarded, started(), _state.value)" in later)
     }

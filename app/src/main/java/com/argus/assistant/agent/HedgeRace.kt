@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
@@ -14,12 +14,12 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * 0.46.4 hotfix (report on 0.46.3, 26 Oct 2026 19:07–19:11 CAT: a short chat message sat at "Sent. Waiting for Blaze…"
+ * 0.46.4 hotfix (report on 0.46.3, 26 Oct 2026 19:07–19:11 CAT: a short chat message sat at "Sent. Waiting for Argus…"
  * for over 4 minutes, Halo silent too). One model call asked of several brains with deadlines and a hedge.
  *
- * 0.46.5 fix (Rocky, 26 Oct 21:00, on 0.46.4: a task turn ended in "Blaze Cloud is busy right now" after ~3 min while the
+ * 0.46.5 fix (Rocky, 26 Oct 21:00, on 0.46.4: a task turn ended in "Argus Cloud is busy right now" after ~3 min while the
  * on-phone brain and Nous were working, only slowly): in 0.46.4 the first-token deadline DROPPED (cancelled) a slow brain,
- * so the slow-but-working brains were killed one by one and the turn fell through to Blaze Cloud, which was failing.
+ * so the slow-but-working brains were killed one by one and the turn fell through to Argus Cloud, which was failing.
  * Now a deadline never cancels a brain that may still answer:
  *  - [Limits.hedgeMs] / [Limits.firstMs]: nobody has shown output yet → the NEXT brain is started in parallel (the earlier
  *    ones keep running). Every started brain races until one shows real output (reply text or a tool call); only then

@@ -1,11 +1,11 @@
-package com.blaze.assistant.policy
+package com.argus.assistant.policy
 
-import com.blaze.assistant.agent.ConfirmGate
-import com.blaze.assistant.orchestra.KeyedLocks
-import com.blaze.assistant.orchestra.ToolScheduler
-import com.blaze.assistant.store.JdbcSql
-import com.blaze.assistant.team.ActionClass
-import com.blaze.assistant.team.TeamSchema
+import com.argus.assistant.agent.ConfirmGate
+import com.argus.assistant.orchestra.KeyedLocks
+import com.argus.assistant.orchestra.ToolScheduler
+import com.argus.assistant.store.JdbcSql
+import com.argus.assistant.team.ActionClass
+import com.argus.assistant.team.TeamSchema
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext

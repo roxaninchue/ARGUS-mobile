@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.currentTime
@@ -27,7 +27,7 @@ class PermissionGateTest {
     @get:Rule val timeout: Timeout = Timeout.seconds(60)
 
     private val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-    private fun src(p: String) = File(root, "com/blaze/assistant/$p").readText()
+    private fun src(p: String) = File(root, "com/argus/assistant/$p").readText()
 
     /** The real poll (600 ms) and wait on runTest's virtual clock: delay() skips ahead, nothing really waits. */
     private fun flow(grantAfterPolls: Int?, answer: Boolean?, waitMs: Long = 10_000): PermissionGate.Outcome {
@@ -74,10 +74,10 @@ class PermissionGateTest {
     }
 
     @Test fun setupNoLongerAsksAndTheToolPathDoes() {
-        assertTrue(com.blaze.assistant.setup.SetupGate.deps.none { it.id == "accessibility" })
+        assertTrue(com.argus.assistant.setup.SetupGate.deps.none { it.id == "accessibility" })
         assertFalse(src("ui/Setup.kt").contains("Need(\"accessibility\""))
         val a = src("agent/Agent.kt")
-        assertTrue(a.contains("PermissionGate.shouldAsk(name, com.blaze.assistant.phone.BlazeAccessibilityService.instance != null, Settings.phoneControl)"))
+        assertTrue(a.contains("PermissionGate.shouldAsk(name, com.argus.assistant.phone.ArgusAccessibilityService.instance != null, Settings.phoneControl)"))
         assertTrue(a.contains("confirm(PermissionGate.TITLE, PermissionGate.REASON, PermissionGate.ACTION, always = true)"))
         // Music no longer asks for notifications on open; a download asks when it starts.
         assertTrue(src("mediaapps/MediaUi.kt").contains("StoragePermission.askNotifications()"))

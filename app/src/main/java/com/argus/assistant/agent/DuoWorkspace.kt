@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -16,9 +16,9 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 /**
- * v0.33.0 Duo Workspaces: Blaze and Halo run a long project over days (a business plan, an app, a thesis). Each
+ * v0.33.0 Duo Workspaces: Argus and Halo run a long project over days (a business plan, an app, a thesis). Each
  * workspace has a goal, a shared folder (~/workspaces/<slug>, reachable by the file and terminal tools), a progress
- * board (todo / doing / done, each card owned by Blaze, Halo or you) and a running log. An optional daily standup runs
+ * board (todo / doing / done, each card owned by Argus, Halo or you) and a running log. An optional daily standup runs
  * at the time you pick: the duo reports what moved, what's next and what's blocked, does the next card, and posts a
  * short note. Pure board ops in [Board] (DuoWorkspaceTest).
  */
@@ -50,7 +50,7 @@ object DuoWorkspace {
         fun slug(s: String) = s.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').take(40).ifBlank { "workspace" }
     }
 
-    private fun dir(): File = File(com.blaze.assistant.terminal.Terminal.home(), "workspaces").apply { mkdirs() }
+    private fun dir(): File = File(com.argus.assistant.terminal.Terminal.home(), "workspaces").apply { mkdirs() }
     private fun file(slug: String) = File(dir(), "$slug/.workspace.json")
 
     fun load(slug: String): Ws? = try { val o = JSONObject(file(slug).readText())

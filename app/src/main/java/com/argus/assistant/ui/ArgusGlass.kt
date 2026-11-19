@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -50,7 +50,7 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 /**
- * v0.24.6: the rounded dark Blaze look used by the browser, the page pointer, the assistant overlay and
+ * v0.24.6: the rounded dark Argus look used by the browser, the page pointer, the assistant overlay and
  * the Ask-about-this-page sheet. Always dark (the overlay sits on top of any app), brand blue + orange
  * from the mascot, pills and circles instead of squares, no stock Material components.
  */
@@ -216,7 +216,7 @@ object EdgePath {
 fun EdgeParticles(modifier: Modifier = Modifier, energy: Float = 1f) {
     var time by remember { mutableFloatStateOf(0f) }
     // 0.46.4: frozen (no frames) while the phone is warm or saving battery
-    val hot by com.blaze.assistant.device.Thermal.hot.collectAsState()
+    val hot by com.argus.assistant.device.Thermal.hot.collectAsState()
     LaunchedEffect(hot) {
         if (hot) return@LaunchedEffect
         var last = 0L

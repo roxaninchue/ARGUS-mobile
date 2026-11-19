@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps.store
+package com.argus.assistant.mediaapps.store
 
 /**
  * v0.33.0: YouTube back in the Music and Video Stores, built in. Search results come from YouTube's own search

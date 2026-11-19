@@ -1,4 +1,4 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 /**
  * 0.45.19 phone tasks (user, 23 Oct: "screen reading is too slow"): an event-driven cached accessibility tree.

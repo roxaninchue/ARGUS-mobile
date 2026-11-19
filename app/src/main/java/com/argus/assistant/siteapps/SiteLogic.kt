@@ -1,4 +1,4 @@
-package com.blaze.assistant.siteapps
+package com.argus.assistant.siteapps
 
 import org.json.JSONArray
 import org.json.JSONObject

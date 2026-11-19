@@ -1,7 +1,7 @@
-package com.blaze.assistant.agent.query
+package com.argus.assistant.agent.query
 
-import com.blaze.assistant.composer.ModelChoice
-import com.blaze.assistant.memory.CacheStore
+import com.argus.assistant.composer.ModelChoice
+import com.argus.assistant.memory.CacheStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -15,7 +15,7 @@ import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 0.51.0 BlazeQuery — "involuntary omniscience". Runs AUTOMATICALLY the moment the user sends a message (not a tool the
+ * 0.51.0 ArgusQuery — "involuntary omniscience". Runs AUTOMATICALLY the moment the user sends a message (not a tool the
  * model may or may not call), in parallel with prompt assembly, and puts a compact, judged evidence pack into the prompt
  * through the tiered-memory cache tier. See docs/BLAZEQUERY.md.
  *
@@ -24,13 +24,13 @@ import java.util.concurrent.ConcurrentHashMap
  *   EXTERNAL / CODE: reuse a stored topic (instant) → else plan sub-queries (heuristic) → search them in parallel + ask the
  *   package registries → heuristic judge → evidence pack. Whatever is not ready inside the budget is NOT waited for.
  * Background (never blocks the reply): read the best trusted pages → extract passages (code kept whole) → judge again →
- *   the selected tier (Spark / Flare / Inferno) scores the evidence → stored in cache.db as a "blazequery" document plus a
+ *   the selected tier (Spark / Flare / Inferno) scores the evidence → stored in cache.db as a "argusquery" document plus a
  *   topic row with a TTL → [hot]'s `onLate` hands the finished pack to later model steps of the same turn; later turns on
  *   the same topic reuse it; cache_search / cache_read reach the full text.
  *
- * The network, the store and the model are injected ([Env]) so the whole pipeline runs in JVM tests (BlazeQueryTest).
+ * The network, the store and the model are injected ([Env]) so the whole pipeline runs in JVM tests (ArgusQueryTest).
  */
-object BlazeQuery {
+object ArgusQuery {
     /** Most the reply ever waits for the pack (from the send). */
     const val HOT_MS = 1_200L
     const val SEARCH_MS = 4_000L
@@ -81,7 +81,7 @@ object BlazeQuery {
         fun get(k: String): Long = m[k] ?: 0L
         fun snapshot(): Map<String, Long> = HashMap(m)
         fun reset() = m.clear()
-        fun line(): String = snapshot().toSortedMap().entries.joinToString(" · ") { "${it.key} ${it.value}" }.ifEmpty { "no BlazeQuery activity yet" }
+        fun line(): String = snapshot().toSortedMap().entries.joinToString(" · ") { "${it.key} ${it.value}" }.ifEmpty { "no ArgusQuery activity yet" }
     }
 
     // ---------------- (de)serialising the judged evidence (the topic row's pack) ----------------
@@ -227,7 +227,7 @@ object BlazeQuery {
             var docId: String? = null
             if (s != null && b.isNotEmpty() && !req.private) try {
                 val full = document(subs, b, fetched.map { (h, t) -> h to Extract.pieces(t!!, terms, 8) })
-                val doc = s.ingest(req.chat, KIND, "BlazeQuery: " + (subs.firstOrNull()?.text ?: key).take(80), full)
+                val doc = s.ingest(req.chat, KIND, "ArgusQuery: " + (subs.firstOrNull()?.text ?: key).take(80), full)
                 s.bqPut(key, doc.id, req.chat, ttl(d.intents), encode(b.take(12), conflicts), b.any { it.judged })
                 s.evict(setOf(doc.id))
                 if (Math.random() < 0.2) s.bqExpire()
@@ -240,7 +240,7 @@ object BlazeQuery {
 
     /** The cache document: every judged item and the longer passages of each page, with source and date. */
     fun document(subs: List<SubQuery>, items: List<Evidence>, pages: List<Pair<Hit, List<Extract.Piece>>>): String = buildString {
-        append("# BlazeQuery\nQueries: ").append(subs.joinToString(" | ") { "${it.text} (${it.intent.id})" }).append("\n\n")
+        append("# ArgusQuery\nQueries: ").append(subs.joinToString(" | ") { "${it.text} (${it.intent.id})" }).append("\n\n")
         append("## Judged evidence\n")
         items.forEachIndexed { i, e ->
             append("[q").append(i + 1).append("] (").append(e.host).append(if (e.date.isNotBlank()) ", ${e.date}" else "")

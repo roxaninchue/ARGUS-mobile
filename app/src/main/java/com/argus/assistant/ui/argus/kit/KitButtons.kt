@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.argus.kit
+package com.argus.assistant.ui.argus.kit
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -35,20 +35,20 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusColors
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.GlassLevel
-import com.blaze.assistant.ui.argus.argusGlass
-import com.blaze.assistant.ui.argus.icons.Lucide
-import com.blaze.assistant.ui.argus.icons.LucideSpec
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusColors
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.GlassLevel
+import com.argus.assistant.ui.argus.argusGlass
+import com.argus.assistant.ui.argus.icons.Lucide
+import com.argus.assistant.ui.argus.icons.LucideSpec
 
 internal fun kc(argb: Long) = ArgusColors.c(argb)
 
 /** Press feedback shared by the kit: scale to 0.97 over 150 ms (instant with reduced motion). */
 @Composable
-internal fun Modifier.kitPress(source: MutableInteractionSource, reducedMotion: Boolean = com.blaze.assistant.ui.argus.settings.ArgusPrefs.reducedNow()): Modifier {
+internal fun Modifier.kitPress(source: MutableInteractionSource, reducedMotion: Boolean = com.argus.assistant.ui.argus.settings.ArgusPrefs.reducedNow()): Modifier {
     val pressed by source.collectIsPressedAsState()
     val s by animateFloatAsState(if (pressed) ArgusTokens.Motion.PRESS_SCALE else 1f,
         tween(ArgusTokens.Motion.duration(ArgusTokens.Motion.PRESS_MS, reducedMotion)), label = "press")

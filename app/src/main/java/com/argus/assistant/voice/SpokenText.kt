@@ -1,7 +1,7 @@
-package com.blaze.assistant.voice
+package com.argus.assistant.voice
 
 /**
- * v0.41.0: what Blaze may say out loud. Only the reply the user sees is spoken, as plain words: never the work steps
+ * v0.41.0: what Argus may say out loud. Only the reply the user sees is spoken, as plain words: never the work steps
  * ("Looking at your series"), tool or status lines, markdown symbols, links, code or table pipes. Pure (SpokenTextTest).
  */
 object SpokenText {

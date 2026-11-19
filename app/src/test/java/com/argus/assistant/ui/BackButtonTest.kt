@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -18,7 +18,7 @@ class BackButtonTest {
     }
 
     @Test fun kitHasTheSharedBackButton() {
-        val kit = File(root(), "com/blaze/assistant/ui/Kit.kt").readText()
+        val kit = File(root(), "com/argus/assistant/ui/Kit.kt").readText()
         assertTrue(kit.contains("fun BackButton("))
         assertTrue(kit.contains("Icons.AutoMirrored.Rounded.ArrowBack"))
         // unification: the circle is the shell's 44 dp control (was 40 dp) inside the same 48 dp touch target

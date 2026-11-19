@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * Unreleased round after 0.52.3, owed-reply ledger. Finn: "nothing checks every user message of the turn got answered".

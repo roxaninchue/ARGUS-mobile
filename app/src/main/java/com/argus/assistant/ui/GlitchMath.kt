@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 /**
  * fix/chat-flat-ui: the numbers behind one frame of the glitch effect ([GlitchText]), so both the shader path (API 33+)

@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.em
@@ -70,7 +70,7 @@ class MdChipsTest {
     }
 
     private fun src(rel: String): String =
-        listOf(File("src/main/java/com/blaze/assistant/$rel"), File("app/src/main/java/com/blaze/assistant/$rel")).first { it.exists() }.readText()
+        listOf(File("src/main/java/com/argus/assistant/$rel"), File("app/src/main/java/com/argus/assistant/$rel")).first { it.exists() }.readText()
 
     @Test fun chatRepliesUseTheRichLayout() {
         val a = src("ui/AnswerCards.kt")

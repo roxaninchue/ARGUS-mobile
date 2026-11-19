@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
@@ -47,8 +47,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.ui.space.spaceLook
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.ui.space.spaceLook
 
 /**
  * 16 Nov 2026 (Finn): search lives in the top bar as a real magnifier. Tap it and the bar slides open to the left over
@@ -80,12 +80,12 @@ fun SearchTitle(
         Spacer(Modifier.width(8.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             if (!open) Text(tr(title), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth().align(Alignment.CenterStart),
-                style = com.blaze.assistant.ui.space.SpaceType.headline(com.blaze.assistant.ui.space.SpaceTypeScale.SECTION.sp, spaceLook().ink))
+                style = com.argus.assistant.ui.space.SpaceType.headline(com.argus.assistant.ui.space.SpaceTypeScale.SECTION.sp, spaceLook().ink))
             SearchBox(open, focus, placeholder)
         }
         if (!open) Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = tr("Search")) { open = true }
             .semantics { contentDescription = "Search" }.testTag(SettingsSearch.ICON_TAG), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Search, contentDescription = null, tint = LocalBlaze.current.ink, modifier = Modifier.size(21.dp))
+            Icon(Icons.Rounded.Search, contentDescription = null, tint = LocalArgus.current.ink, modifier = Modifier.size(21.dp))
         }
         right?.invoke(this)
     }
@@ -98,7 +98,7 @@ fun SearchTitle(
  */
 @Composable
 private fun SearchBox(open: Boolean, focus: FocusRequester, placeholder: String) {
-    val c = LocalBlaze.current.mono
+    val c = LocalArgus.current.mono
     var query by SettingsSearch.query
     val fm = LocalFocusManager.current
     AnimatedVisibility(open, enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
@@ -110,7 +110,7 @@ private fun SearchBox(open: Boolean, focus: FocusRequester, placeholder: String)
             Box(Modifier.weight(1f)) {
                 if (query.isEmpty()) Text(tr(placeholder), maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
-                BasicTextField(query, { query = it }, singleLine = true, cursorBrush = SolidColor(LocalBlaze.current.accent),
+                BasicTextField(query, { query = it }, singleLine = true, cursorBrush = SolidColor(LocalArgus.current.accent),
                     textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { fm.clearFocus() }),

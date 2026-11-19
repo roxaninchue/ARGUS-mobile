@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,7 +32,7 @@ class GlassPaneTest {
     }
 
     private fun src(name: String): String =
-        listOf(java.io.File("src/main/java/com/blaze/assistant/ui/$name"), java.io.File("app/src/main/java/com/blaze/assistant/ui/$name"))
+        listOf(java.io.File("src/main/java/com/argus/assistant/ui/$name"), java.io.File("app/src/main/java/com/argus/assistant/ui/$name"))
             .first { it.exists() }.readText()
 
     @Test fun windowsAreFixedAndKeepTheLivePageFlat() {

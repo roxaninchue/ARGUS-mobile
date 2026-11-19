@@ -1,9 +1,9 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.ui.common.cutoutSafe
-import com.blaze.assistant.ui.common.withGutter
+import com.argus.assistant.ui.common.cutoutSafe
+import com.argus.assistant.ui.common.withGutter
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,27 +27,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.store.Sql
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotKind
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.BotThreads
-import com.blaze.assistant.team.TeamStore
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.BotOrb
-import com.blaze.assistant.ui.argus.ManagerOrb
-import com.blaze.assistant.ui.argus.OrbFace
-import com.blaze.assistant.ui.argus.OrbSize
-import com.blaze.assistant.ui.argus.kit.ArgusSheet
-import com.blaze.assistant.ui.argus.kit.BotChatRow
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.EmptyState
-import com.blaze.assistant.ui.argus.kit.FilterChips
-import com.blaze.assistant.ui.argus.kit.MenuRow
-import com.blaze.assistant.ui.argus.kit.PinStrip
-import com.blaze.assistant.ui.argus.kit.SettingsGroup
-import com.blaze.assistant.ui.argus.kit.SettingsItem
+import com.argus.assistant.store.Sql
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotKind
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.BotThreads
+import com.argus.assistant.team.TeamStore
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.BotOrb
+import com.argus.assistant.ui.argus.ManagerOrb
+import com.argus.assistant.ui.argus.OrbFace
+import com.argus.assistant.ui.argus.OrbSize
+import com.argus.assistant.ui.argus.kit.ArgusSheet
+import com.argus.assistant.ui.argus.kit.BotChatRow
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.EmptyState
+import com.argus.assistant.ui.argus.kit.FilterChips
+import com.argus.assistant.ui.argus.kit.MenuRow
+import com.argus.assistant.ui.argus.kit.PinStrip
+import com.argus.assistant.ui.argus.kit.SettingsGroup
+import com.argus.assistant.ui.argus.kit.SettingsItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -90,7 +90,7 @@ fun TeamMode(
     val longPress: (String) -> Unit = { id -> bots[id]?.let { sheetFor = it } }
 
     // Landscape overhaul: clear of the cutout, rows centred at a readable width; 0 gutter upright
-    com.blaze.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize().cutoutSafe()) { gutter ->
+    com.argus.assistant.ui.common.WindowUi.WithGutter(modifier = modifier.fillMaxSize().cutoutSafe()) { gutter ->
     LazyColumn(Modifier.fillMaxSize(), contentPadding = contentPadding.withGutter(gutter)) {
         item(key = "header") {
             Box(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 10.dp)) {
@@ -213,17 +213,17 @@ fun TeamModeScreen(
 }
 
 /**
- * P1-SH-01: the Team page of the ARGUS shell. Opens team.db ([com.blaze.assistant.team.TeamGraph]) off the main thread,
+ * P1-SH-01: the Team page of the ARGUS shell. Opens team.db ([com.argus.assistant.team.TeamGraph]) off the main thread,
  * then shows [TeamModeScreen]; a failure to open shows a short note instead of crashing the shell.
  */
 @Composable
 fun TeamPage(nav: TeamNav, modifier: Modifier = Modifier) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    var graph by remember { mutableStateOf<com.blaze.assistant.team.TeamGraph.Graph?>(null) }
+    var graph by remember { mutableStateOf<com.argus.assistant.team.TeamGraph.Graph?>(null) }
     var failed by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        try { graph = withContext(Dispatchers.IO) { com.blaze.assistant.team.TeamGraph.get(ctx.applicationContext) } }
-        catch (t: Throwable) { failed = true; com.blaze.assistant.device.CrashLog.quiet("TeamPage.open", t) }
+        try { graph = withContext(Dispatchers.IO) { com.argus.assistant.team.TeamGraph.get(ctx.applicationContext) } }
+        catch (t: Throwable) { failed = true; com.argus.assistant.device.CrashLog.quiet("TeamPage.open", t) }
     }
     val g = graph
     when {

@@ -1,14 +1,14 @@
-package com.blaze.assistant.terminal
+package com.argus.assistant.terminal
 
 import android.content.Context
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
  * Wave B-4 (HQ item 12): the on-phone Linux desktop (XFCE + TigerVNC under PRoot, its Desktop page, live cards, the
- * desktop agent tools, BlazeOS Linux apps and its foreground services) was removed. This runs once after
+ * desktop agent tools, ArgusOS Linux apps and its foreground services) was removed. This runs once after
  * the update, in the background, and frees what the desktop left behind:
  *
  *  - its saved settings ([LEGACY_PREFS]) are dropped, so nothing reads or offers them again;
@@ -86,7 +86,7 @@ object LinuxDesktopCleanup {
         else -> listOf("var/cache/apk")
     }
 
-    /** Files the desktop kept in Blaze's home (~). */
+    /** Files the desktop kept in Argus's home (~). */
     val HOME_FILES = listOf(".desktop_shot.png", ".desktop_apps.txt")
 
     /** Runs the one-time cleanup. Safe to call on every start: it returns at once when it is done. */
@@ -118,7 +118,7 @@ object LinuxDesktopCleanup {
             }
             if (ok || tries >= MAX_TRIES) Settings.setBool(PREF_DONE, true)
         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) {
-            com.blaze.assistant.device.CrashLog.quiet("LinuxDesktopCleanup", e)
+            com.argus.assistant.device.CrashLog.quiet("LinuxDesktopCleanup", e)
         }
     }
 

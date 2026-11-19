@@ -1,16 +1,16 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.51.0: Halo and Blaze are one — there is only Blaze. (Owner: "merge Halo and Blaze into one; no separate Halo persona
+ * 0.51.0: Halo and Argus are one — there is only Argus. (Owner: "merge Halo and Argus into one; no separate Halo persona
  * for now.")
  *
- *  - Routing: "@halo", "@all", "@both" and the automatic TEAM split all collapse to a normal Blaze turn ([collapse]); the
- *    tags are still stripped from what the model reads, so an old habit of typing "@halo …" just talks to Blaze.
- *  - The side lane (what answers while a task runs) stays, but it is Blaze answering in the first person ([sideSystem]):
+ *  - Routing: "@halo", "@all", "@both" and the automatic TEAM split all collapse to a normal Argus turn ([collapse]); the
+ *    tags are still stripped from what the model reads, so an old habit of typing "@halo …" just talks to Argus.
+ *  - The side lane (what answers while a task runs) stays, but it is Argus answering in the first person ([sideSystem]):
  *    "I'm still on …", never "Halo" or "my partner".
- *  - Saved state: a stored "halo" / "all" pick or speaker reads as Blaze ([who], [speaker]); [migrate] turns off the duo
+ *  - Saved state: a stored "halo" / "all" pick or speaker reads as Argus ([who], [speaker]); [migrate] turns off the duo
  *    team setting and the Halo persona once ([MIGRATED]).
  *  - The pure Duo rules (Duo.kt) are kept unchanged so older chats still parse; nothing routes to them any more.
  * Pure (OnePersonaTest).
@@ -18,25 +18,25 @@ import com.blaze.assistant.BrandName
 object OnePersona {
     const val MIGRATED = "persona_merged_051"
 
-    /** Any Duo route becomes a plain Blaze turn; [Duo.Route.explicit] stays so the @tags are still taken out of the text. */
+    /** Any Duo route becomes a plain Argus turn; [Duo.Route.explicit] stays so the @tags are still taken out of the text. */
     fun collapse(r: Duo.Route): Duo.Route = if (r.mode == Duo.Mode.BLAZE) r else Duo.Route(Duo.Mode.BLAZE, r.text, r.explicit || r.mode != Duo.Mode.TEAM)
 
     /** A saved talk-to pick ("blaze", "halo", "all") → always "blaze". */
     fun who(saved: String?): String = "blaze"
 
-    /** A stored message speaker ("halo", "blaze", "") → "" (Blaze). */
+    /** A stored message speaker ("halo", "blaze", "") → "" (Argus). */
     fun speaker(saved: String?): String = ""
 
-    /** No partner line in Blaze's prompt any more. */
+    /** No partner line in Argus's prompt any more. */
     fun awareness(): String = ""
 
-    /** The history prefix for a side-lane line: none (the model never sees "[Halo]" / "[Blaze]" tags from new turns). */
+    /** The history prefix for a side-lane line: none (the model never sees "[Halo]" / "[Argus]" tags from new turns). */
     fun tag(): String = ""
 
     /**
      * One-time settings migration. [getStr] / [setStr] are Settings.str / setStr, [getBool] / [setBool] Settings.bool / setBool
      * (boolean prefs must stay booleans: PrefCoerce). Returns the keys changed. Keeps `duo_on` / `duo_split`: they also gate
-     * the side lane, which stays (as Blaze).
+     * the side lane, which stays (as Argus).
      */
     fun migrate(getStr: (String) -> String?, setStr: (String, String) -> Unit, getBool: (String, Boolean) -> Boolean, setBool: (String, Boolean) -> Unit): List<String> {
         if (getBool(MIGRATED, false)) return emptyList()
@@ -48,7 +48,7 @@ object OnePersona {
         return changed
     }
 
-    /** The side lane's system prompt: Blaze, first person, while its own task keeps running. */
+    /** The side lane's system prompt: Argus, first person, while its own task keeps running. */
     fun sideSystem(userName: String?, task: String, step: String): String = Duo.BLAZE_SOUL + Duo.ASSISTANT_RULES +
         "\n" + SecretRules.PROMPT +
         (if (!userName.isNullOrBlank()) "\nThe user's name is $userName." else "") +

@@ -1,11 +1,11 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.agent.Specialists
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotDraft
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.ui.argus.kit.ChipModel
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.agent.Specialists
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotDraft
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.ui.argus.kit.ChipModel
 
 /**
  * P1-TM-04: what the bot editor shows and checks, as plain values so BotEditorModelTest runs on the JVM (A-team

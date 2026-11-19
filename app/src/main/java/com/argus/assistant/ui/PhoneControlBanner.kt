@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,12 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.phone.PhoneControl
+import com.argus.assistant.phone.PhoneControl
 
-/** "Android switched off Blaze phone control · Turn on" (v0.20.0): which way it dropped, one-tap fix, and why. */
+/** "Android switched off Argus phone control · Turn on" (v0.20.0): which way it dropped, one-tap fix, and why. */
 @Composable
 fun PhoneControlBanner(state: PhoneControl.State, onFix: () -> Unit) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val (text, action) = PhoneControl.banner(state)
     if (text.isEmpty()) return
     // Owner 16 Nov 2026: "Reconnecting…" goes after a few seconds (it stays listed in the Inbox under Not working).

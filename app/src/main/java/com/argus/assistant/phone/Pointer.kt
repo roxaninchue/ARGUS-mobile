@@ -1,7 +1,7 @@
-package com.blaze.assistant.phone
+package com.argus.assistant.phone
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -19,16 +19,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Blaze's visible pointer for phone control (v0.21.0).
+ * Argus's visible pointer for phone control (v0.21.0).
  *
- * Before Blaze touches the screen it glides a pointer to the target, re-checks that the target is still there (the
+ * Before Argus touches the screen it glides a pointer to the target, re-checks that the target is still there (the
  * orient step), shows a short ripple, then acts, so you see it coming.
  *
  * v0.45.14 (user, live 0.45.13 21:38: "remove that obstruction completely and cleanly"): the pointer is a picture
  * only. Its window is FLAG_NOT_TOUCHABLE, so it never takes a touch, never covers the target and never pauses a run:
- * Blaze's own taps, screen changes and the user's touches all pass straight through. The old paused mode (the bar
+ * Argus's own taps, screen changes and the user's touches all pass straight through. The old paused mode (the bar
  * over the top of the screen, drag / double-tap to click, Resume) is gone. The only way to stop a run from the screen
- * is the small Stop chip at the bottom-left edge, which hides itself while Blaze's own gesture is in flight.
+ * is the small Stop chip at the bottom-left edge, which hides itself while Argus's own gesture is in flight.
  *
  * Light on purpose (low-end phone): plain Views in accessibility overlay windows, no Compose, and it only animates
  * while gliding or rippling, and is a still picture otherwise.
@@ -37,18 +37,18 @@ object Pointer {
     const val ACCENT = 0xFF1F4BD8.toInt()
 
     /**
-     * v0.24.4 (Blazeinchue): the pointer is always shown while Blaze drives the phone; agent taps can't hide it. The old
+     * v0.24.4 (Blazeinchue): the pointer is always shown while Argus drives the phone; agent taps can't hide it. The old
      * `show_pointer` pref is kept (backward compatible) but no longer read for agent gestures.
      */
     const val enabled: Boolean = true
 
     /** The pointer window, in dp (v0.24.4: 64 dp). */
     const val TOUCH_DP = 64
-    /** Blaze's mascot drawn inside it (v0.24.5), tip to bottom, in dp. */
+    /** Argus's mascot drawn inside it (v0.24.5), tip to bottom, in dp. */
     const val MASCOT_DP = 52
     /** Mascot units (body radius) in dp. */
     val UNIT_DP: Float get() = MASCOT_DP / Mascot.HEIGHT
-    // v0.32.0: the pointer is the Blaze icon (glass drop in its gold halo); its centre is the click point.
+    // v0.32.0: the pointer is the Argus icon (glass drop in its gold halo); its centre is the click point.
     const val TIP_Y_DP = TOUCH_DP / 2f
     val TIP_X_DP: Float get() = TOUCH_DP / 2f
 
@@ -84,7 +84,7 @@ object Pointer {
     /** A target that moved more than this (dp) after the glide is aimed at again. */
     fun moved(x0: Float, y0: Float, x1: Float, y1: Float, density: Float) =
         kotlin.math.hypot(x1 - x0, y1 - y0) / density.coerceAtLeast(0.5f) > 24f
-    /** While Blaze's own gesture is in flight (until [ownUntil]) the Stop chip is hidden, so it can't catch that touch. */
+    /** While Argus's own gesture is in flight (until [ownUntil]) the Stop chip is hidden, so it can't catch that touch. */
     fun chipHidden(now: Long, ownUntil: Long) = now <= ownUntil
 
     // ---------- stop ----------
@@ -182,7 +182,7 @@ object Pointer {
         return !stopAsked
     }
 
-    /** Blaze's own touch is about to happen: the Stop chip steps aside for it (the pointer never takes touches). */
+    /** Argus's own touch is about to happen: the Stop chip steps aside for it (the pointer never takes touches). */
     fun ownGesture(ms: Long) {
         ownUntil = SystemClock.uptimeMillis() + ms + 120
         main.post {
@@ -209,7 +209,7 @@ object Pointer {
         }
     }
 
-    /** When Blaze finishes or stops, the pointer and the Stop chip leave the screen. */
+    /** When Argus finishes or stops, the pointer and the Stop chip leave the screen. */
     fun done() {
         stopAsked = false
         main.post {
@@ -220,7 +220,7 @@ object Pointer {
     }
 
     /**
-     * The pointer (v0.24.5): Blaze's mascot (phone/Mascot.kt): the flame body with its orange → blue gradient and cyan
+     * The pointer (v0.24.5): Argus's mascot (phone/Mascot.kt): the flame body with its orange → blue gradient and cyan
      * middle, two dark eyes, a soft orange / blue glow, a thin white edge and a soft shadow so it reads on any app.
      * The flame tip is the click point (a tiny white dot marks it). It pulses lightly while gliding, squishes on click
      * (around the tip, so the click point never moves).
@@ -259,13 +259,13 @@ object Pointer {
             val t = if (rippleMs > 0) (now - rippleStart).toFloat() / rippleMs else 2f
             var (sx, sy) = squish(t)
             if (moveStart > 0) { val p = pulseScale(now - moveStart); sx *= p; sy *= p }
-            // v0.32.0: draw the new Blaze icon (shared Compose drawing) centred on the click point; squish/pulse scale it.
+            // v0.32.0: draw the new Argus icon (shared Compose drawing) centred on the click point; squish/pulse scale it.
             val sc = (sx + sy) / 2f
             val wPx = MASCOT_DP * d * 1.15f * sc
             val lpx = (tipX * 2).coerceAtLeast(1f); val lpy = (tipY * 2).coerceAtLeast(1f)
             emblemScope.draw(androidx.compose.ui.unit.Density(d), androidx.compose.ui.unit.LayoutDirection.Ltr,
                 androidx.compose.ui.graphics.Canvas(c), androidx.compose.ui.geometry.Size(lpx, lpy)) {
-                with(com.blaze.assistant.ui.DuoGlowAccess) { emblem(androidx.compose.ui.geometry.Offset(tipX, tipY), wPx, ((now % 100_000L) / 1000f)) }
+                with(com.argus.assistant.ui.DuoGlowAccess) { emblem(androidx.compose.ui.geometry.Offset(tipX, tipY), wPx, ((now % 100_000L) / 1000f)) }
             }
             c.drawCircle(tipX, tipY, 1.6f * d, tipDot)
             if (t <= 1f) {

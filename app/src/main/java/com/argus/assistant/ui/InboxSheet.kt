@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,21 +17,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.notify.Inbox
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusField
-import com.blaze.assistant.ui.argus.kit.ArgusSheet
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ButtonSize
+import com.argus.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.notify.Inbox
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusField
+import com.argus.assistant.ui.argus.kit.ArgusSheet
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ButtonSize
 
 /**
  * Owner 16 Nov 2026: the bell opens the Inbox. "Not working" first (each with its Fix), then Argus's messages as one
  * thread per chat, with a reply box under each: the reply goes into that chat, like a reply from the notification.
- * Opening it marks everything read. P2-SF-03: "Needs you" (the one [com.blaze.assistant.policy.NeedsYou] list, drawn by
+ * Opening it marks everything read. P2-SF-03: "Needs you" (the one [com.argus.assistant.policy.NeedsYou] list, drawn by
  * the shared InboxList) comes first.
  */
 @Composable
@@ -44,12 +44,12 @@ fun InboxSheet(onDismiss: () -> Unit) {
     val problems = remember(items) { Inbox.problems(items) }
     val threads = remember(items) { Inbox.threads(items) }
     // P2-SF-03: what waits on you (approvals, questions, connects, failed jobs, suggestions), the same list as Desk → Inbox
-    val needs = com.blaze.assistant.ui.team.rememberNeedsYou()
+    val needs = com.argus.assistant.ui.team.rememberNeedsYou()
     ArgusSheet(onDismiss = onDismiss, title = tr("Inbox")) {
         if (needs.isNotEmpty()) {
             Text(tr("Needs you"), style = ArgusType.meta, color = c.mute, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
-            com.blaze.assistant.ui.team.InboxList(needs, onOpen = {
-                com.blaze.assistant.ui.team.DeskState.show(com.blaze.assistant.ui.team.DeskModel.Segment.JOBS); onDismiss()
+            com.argus.assistant.ui.team.InboxList(needs, onOpen = {
+                com.argus.assistant.ui.team.DeskState.show(com.argus.assistant.ui.team.DeskModel.Segment.JOBS); onDismiss()
             })
         }
         if (needs.isEmpty() && problems.isEmpty() && threads.isEmpty())
@@ -63,8 +63,8 @@ fun InboxSheet(onDismiss: () -> Unit) {
                     Text(p.text, style = ArgusType.field, color = c.ink)
                     Text(InboxText.ago(p.at, System.currentTimeMillis()), style = ArgusType.meta, color = c.mute)
                 }
-                if (p.key == com.blaze.assistant.phone.PhoneControl.INBOX_KEY)
-                    ArgusButton(tr("Fix"), { com.blaze.assistant.phone.PhoneControl.openSettings(ctx) }, kind = ButtonKind.GLASS, size = ButtonSize.S)
+                if (p.key == com.argus.assistant.phone.PhoneControl.INBOX_KEY)
+                    ArgusButton(tr("Fix"), { com.argus.assistant.phone.PhoneControl.openSettings(ctx) }, kind = ButtonKind.GLASS, size = ButtonSize.S)
             }
         }
         for ((chat, lines) in threads) {
@@ -80,7 +80,7 @@ fun InboxSheet(onDismiss: () -> Unit) {
                 val t = drafts[chat].orEmpty().trim(); if (t.isEmpty()) return
                 drafts[chat] = ""
                 Inbox.message(t, chat, fromUser = true)
-                com.blaze.assistant.agent.Agent.replyFromNotification(chat.ifBlank { null }, null, t)
+                com.argus.assistant.agent.Agent.replyFromNotification(chat.ifBlank { null }, null, t)
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -96,7 +96,7 @@ fun InboxSheet(onDismiss: () -> Unit) {
 object InboxText {
     const val LINES = 6
 
-    fun threadTitle(chatId: String): String = if (chatId.isBlank() || chatId == com.blaze.assistant.agent.Mind.MAIN) "Chat" else "Another chat"
+    fun threadTitle(chatId: String): String = if (chatId.isBlank() || chatId == com.argus.assistant.agent.Mind.MAIN) "Chat" else "Another chat"
 
     fun ago(at: Long, now: Long): String {
         val s = ((now - at) / 1000).coerceAtLeast(0)

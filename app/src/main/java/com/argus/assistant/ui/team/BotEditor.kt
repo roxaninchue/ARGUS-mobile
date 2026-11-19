@@ -1,6 +1,6 @@
-package com.blaze.assistant.ui.team
+package com.argus.assistant.ui.team
 
-import com.blaze.assistant.i18n.tr
+import com.argus.assistant.i18n.tr
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -34,28 +34,28 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.blaze.assistant.team.Bot
-import com.blaze.assistant.team.BotDraft
-import com.blaze.assistant.team.BotRules
-import com.blaze.assistant.team.BotThreads
-import com.blaze.assistant.team.TeamEdits
-import com.blaze.assistant.team.TeamStore
-import com.blaze.assistant.ui.argus.Argus
-import com.blaze.assistant.ui.argus.ArgusTokens
-import com.blaze.assistant.ui.argus.ArgusType
-import com.blaze.assistant.ui.argus.BotOrb
-import com.blaze.assistant.ui.argus.ManagerOrb
-import com.blaze.assistant.ui.argus.OrbFace
-import com.blaze.assistant.ui.argus.OrbSize
-import com.blaze.assistant.ui.argus.kit.ArgusButton
-import com.blaze.assistant.ui.argus.kit.ArgusField
-import com.blaze.assistant.ui.argus.kit.ArgusSheet
-import com.blaze.assistant.ui.argus.kit.ArgusToasts
-import com.blaze.assistant.ui.argus.kit.ButtonKind
-import com.blaze.assistant.ui.argus.kit.ChipModel
-import com.blaze.assistant.ui.argus.kit.FilterChips
-import com.blaze.assistant.ui.argus.kit.MenuRow
-import com.blaze.assistant.ui.argus.kit.Segmented
+import com.argus.assistant.team.Bot
+import com.argus.assistant.team.BotDraft
+import com.argus.assistant.team.BotRules
+import com.argus.assistant.team.BotThreads
+import com.argus.assistant.team.TeamEdits
+import com.argus.assistant.team.TeamStore
+import com.argus.assistant.ui.argus.Argus
+import com.argus.assistant.ui.argus.ArgusTokens
+import com.argus.assistant.ui.argus.ArgusType
+import com.argus.assistant.ui.argus.BotOrb
+import com.argus.assistant.ui.argus.ManagerOrb
+import com.argus.assistant.ui.argus.OrbFace
+import com.argus.assistant.ui.argus.OrbSize
+import com.argus.assistant.ui.argus.kit.ArgusButton
+import com.argus.assistant.ui.argus.kit.ArgusField
+import com.argus.assistant.ui.argus.kit.ArgusSheet
+import com.argus.assistant.ui.argus.kit.ArgusToasts
+import com.argus.assistant.ui.argus.kit.ButtonKind
+import com.argus.assistant.ui.argus.kit.ChipModel
+import com.argus.assistant.ui.argus.kit.FilterChips
+import com.argus.assistant.ui.argus.kit.MenuRow
+import com.argus.assistant.ui.argus.kit.Segmented
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -79,7 +79,7 @@ fun NewBotSheet(onChoice: (NewBotChoice) -> Unit, onDismiss: () -> Unit) {
 fun TemplateSheet(templates: List<BotTemplate>, onPick: (BotTemplate) -> Unit, onDismiss: () -> Unit) {
     val c = Argus.colors
     ArgusSheet(onDismiss = onDismiss, title = tr("From a template")) {
-        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(520.dp)).verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxWidth().heightIn(max = com.argus.assistant.ui.common.WindowUi.sheetBody(520.dp)).verticalScroll(rememberScrollState())) {
             var last = ""
             for (t in templates) {
                 if (t.group != last) {
@@ -149,7 +149,7 @@ fun BotEditorSheet(
     val d = state.draft
     var wheel by remember { mutableStateOf(false) }
     ArgusSheet(onDismiss = onDismiss, title = state.title, primary = state.primary, onPrimary = onSave, primaryEnabled = state.canSave) {
-        Column(Modifier.fillMaxWidth().heightIn(max = com.blaze.assistant.ui.common.WindowUi.sheetBody(620.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 6.dp),
+        Column(Modifier.fillMaxWidth().heightIn(max = com.argus.assistant.ui.common.WindowUi.sheetBody(620.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 6.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Look first: the orb as it will show
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center) {
@@ -185,7 +185,7 @@ fun BotEditorSheet(
                     }
                     ArgusButton(if (wheel) "Done" else "Any colour", { wheel = !wheel }, icon = "palette")
                 }
-                if (wheel) com.blaze.assistant.ui.ColorWheelPicker(d.color, { hex -> BotEditorModel.wheelColor(hex)?.let { col -> onChange { it.copy(color = col) } } },
+                if (wheel) com.argus.assistant.ui.ColorWheelPicker(d.color, { hex -> BotEditorModel.wheelColor(hex)?.let { col -> onChange { it.copy(color = col) } } },
                     Modifier.padding(horizontal = 8.dp))
             }
             Section("Reports to") {
@@ -210,10 +210,10 @@ fun BotEditorSheet(
 fun BotFlowHost(flow: BotFlow?, onClose: () -> Unit, onDescribe: (String) -> Unit) {
     if (flow == null) return
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    var graph by remember { mutableStateOf<com.blaze.assistant.team.TeamGraph.Graph?>(null) }
+    var graph by remember { mutableStateOf<com.argus.assistant.team.TeamGraph.Graph?>(null) }
     LaunchedEffect(Unit) {
-        try { graph = withContext(Dispatchers.IO) { com.blaze.assistant.team.TeamGraph.get(ctx.applicationContext) } }
-        catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BotFlowHost.open", t); ArgusToasts.show("Team couldn't open."); onClose() }
+        try { graph = withContext(Dispatchers.IO) { com.argus.assistant.team.TeamGraph.get(ctx.applicationContext) } }
+        catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("BotFlowHost.open", t); ArgusToasts.show("Team couldn't open."); onClose() }
     }
     val g = graph ?: return
     BotFlowScreen(flow, g.store, g.threads, onClose, onDescribe)
@@ -285,7 +285,7 @@ fun BotFlowScreen(flow: BotFlow, store: TeamStore, threads: BotThreads, onClose:
         is Step.ConfirmDelete -> {
             val b = team.firstOrNull { it.id == st.s.botId }
             ArgusSheet(onDismiss = { step = Step.Editor(st.s) }, title = tr("Delete {0}?", st.s.draft.name),
-                primary = if (b?.kind == com.blaze.assistant.team.BotKind.DOMAIN) "Switch off" else "Delete", primaryKind = ButtonKind.DANGER,
+                primary = if (b?.kind == com.argus.assistant.team.BotKind.DOMAIN) "Switch off" else "Delete", primaryKind = ButtonKind.DANGER,
                 onPrimary = {
                     val id = st.s.botId ?: return@ArgusSheet
                     scope.launch {

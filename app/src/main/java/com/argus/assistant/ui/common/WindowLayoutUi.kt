@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui.common
+package com.argus.assistant.ui.common
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets

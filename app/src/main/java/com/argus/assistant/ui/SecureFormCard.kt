@@ -1,8 +1,8 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.i18n.tr
-import com.blaze.assistant.BrandName
+import com.argus.assistant.i18n.tr
+import com.argus.assistant.BrandName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,8 +37,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.browser.SecureInput
+import com.argus.assistant.agent.Agent
+import com.argus.assistant.browser.SecureInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
 
@@ -51,7 +51,7 @@ fun SecureFormCard() {
     SecureForm(req.site, req.title, req.reason, req.fields,
         onSubmit = { values, save -> Agent.answerForm(SecureInput.Answer(values, save)) },
         onCancel = { Agent.answerForm(null) },
-        onWatch = { com.blaze.assistant.browser.BrowserTools.show(ctx) })
+        onWatch = { com.argus.assistant.browser.BrowserTools.show(ctx) })
 }
 
 /**
@@ -62,16 +62,16 @@ fun SecureFormCard() {
 fun SecureForm(site: String, title: String, reason: String, fields: List<SecureInput.Field>,
                onSubmit: (Map<String, String>, Boolean) -> Unit, onCancel: () -> Unit, onWatch: () -> Unit,
                preset: Map<String, String> = emptyMap(), notifPrompt: Boolean? = null) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val values = remember(fields) { mutableStateMapOf<String, String>().apply { putAll(preset) } }
     val shown = remember(fields) { mutableStateMapOf<String, Boolean>() }
     // v0.20.0 (Blazeinchue): saved by default (one-time codes never are); untick to use once.
     var save by remember(fields) { mutableStateOf(true) }
     val ready = fields.all { values[it.name].orEmpty().isNotBlank() }
     // v0.24.8: a rounded card (accent outline) instead of a square strip with a top rule.
-    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(BlazeShapes.large, GlassIntensity.High).padding(16.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).glass(ArgusShapes.large, GlassIntensity.High).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(BlazeShapes.pill).background(c.accent))
+            Box(Modifier.size(8.dp).clip(ArgusShapes.pill).background(c.accent))
             Spacer(Modifier.width(8.dp))
             Label(tr("Action required · {0}", site.take(36)), color = c.accent, size = 10.sp, maxLines = 1, modifier = Modifier.weight(1f))
             ActionText("Watch", color = c.sub, size = 10.sp, modifier = Modifier.clickable(onClick = onWatch).padding(horizontal = 6.dp, vertical = 4.dp))
@@ -84,7 +84,7 @@ fun SecureForm(site: String, title: String, reason: String, fields: List<SecureI
         fields.forEachIndexed { i, f ->
             val masked = f.kind.masked && shown[f.name] != true
             Label(f.label, size = 10.sp, modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp, bottom = 4.dp))
-            Row(Modifier.fillMaxWidth().clip(BlazeShapes.pill).background(c.field, BlazeShapes.pill).hairline(c.fieldLine, BlazeShapes.pill).padding(start = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clip(ArgusShapes.pill).background(c.field, ArgusShapes.pill).hairline(c.fieldLine, ArgusShapes.pill).padding(start = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
                     if (values[f.name].isNullOrEmpty()) Text(hint(f.kind), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.weak))
                     BasicTextField(values[f.name].orEmpty(), { values[f.name] = it.trimEnd('\n') }, singleLine = true,
@@ -98,8 +98,8 @@ fun SecureForm(site: String, title: String, reason: String, fields: List<SecureI
                     modifier = Modifier.clickable { shown[f.name] = masked }.padding(horizontal = 12.dp, vertical = 12.dp))
             }
         }
-        if (fields.any { it.kind.saveable }) Row(Modifier.fillMaxWidth().padding(top = 10.dp).clip(BlazeShapes.small).clickable { save = !save }, verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(18.dp).hairline(if (save) c.accent else c.hair, BlazeShapes.xs).background(if (save) c.accent else c.paper), contentAlignment = Alignment.Center) {
+        if (fields.any { it.kind.saveable }) Row(Modifier.fillMaxWidth().padding(top = 10.dp).clip(ArgusShapes.small).clickable { save = !save }, verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(18.dp).hairline(if (save) c.accent else c.hair, ArgusShapes.xs).background(if (save) c.accent else c.paper), contentAlignment = Alignment.Center) {
                 if (save) Text("✓", style = TextStyle(fontSize = 11.sp, color = c.paper))
             }
             Spacer(Modifier.width(10.dp))
@@ -116,10 +116,10 @@ fun SecureForm(site: String, title: String, reason: String, fields: List<SecureI
     }
 }
 
-/** Android 13+: without notification permission Blaze can't say "Action required" from the background. Offer it once here. */
+/** Android 13+: without notification permission Argus can't say "Action required" from the background. Offer it once here. */
 @Composable
 private fun NotificationsLine(force: Boolean?) {
-    val c = LocalBlaze.current
+    val c = LocalArgus.current
     val ctx = LocalContext.current
     val sdk = android.os.Build.VERSION.SDK_INT
     var granted by remember { mutableStateOf(sdk < 33 || androidx.core.content.ContextCompat.checkSelfPermission(ctx, "android.permission.POST_NOTIFICATIONS") == android.content.pm.PackageManager.PERMISSION_GRANTED) }

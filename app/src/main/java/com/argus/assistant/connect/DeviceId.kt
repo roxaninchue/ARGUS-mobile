@@ -1,6 +1,6 @@
-package com.blaze.assistant.connect
+package com.argus.assistant.connect
 
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.Settings
 import java.security.SecureRandom
 
 /**

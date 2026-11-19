@@ -1,15 +1,15 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import java.util.Calendar
 
 /**
- * v0.39.0 "Things Blaze is doing", pure part (DoingLogicTest): friendly names and "when" lines for routines, and the
+ * v0.39.0 "Things Argus is doing", pure part (DoingLogicTest): friendly names and "when" lines for routines, and the
  * "Today I…" diary from Awareness events.
  */
 object DoingLogic {
-    /** "Blaze · Tidy up phone storage" → "Tidy up phone storage"; empty → "Something I do for you". */
+    /** "Argus · Tidy up phone storage" → "Tidy up phone storage"; empty → "Something I do for you". */
     fun friendlyName(name: String): String =
         name.trim().removePrefix("${BrandName.NAME} \u00b7 ").removePrefix("${BrandName.NAME} - ").trim().replaceFirstChar { it.uppercase() }.ifBlank { "Something I do for you" }
 

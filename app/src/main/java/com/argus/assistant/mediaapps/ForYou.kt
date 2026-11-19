@@ -1,6 +1,6 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
-import com.blaze.assistant.mediaapps.store.StoreItem
+import com.argus.assistant.mediaapps.store.StoreItem
 
 /**
  * Wave A items 27-28: Videos and Music open on a "For you" mix with nothing narrowed. The source row and the

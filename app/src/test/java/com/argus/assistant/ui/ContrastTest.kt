@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
@@ -31,7 +31,7 @@ class ContrastTest {
      * the solid card and the menu surface too.
      */
     @Test fun theSpacePaletteReadsInBothModes() {
-        val p = com.blaze.assistant.ui.space.SpacePalette
+        val p = com.argus.assistant.ui.space.SpacePalette
         val black = Color(p.OBSIDIAN)
         val brightest = Contrast.over(Color.Black.copy(alpha = p.scrimAlpha(true)), Color.White)
         assertTrue("the dark scrim darkens the space view", p.scrimAlpha(true) >= 0.5f)
@@ -51,9 +51,9 @@ class ContrastTest {
             assertTrue("argus blue on $g", Contrast.ratio(Color(p.BLUE_LIGHT), g) >= Contrast.AA_TEXT)
         }
         for (dark in listOf(true, false)) {
-            val t = com.blaze.assistant.ui.space.SpaceTabs
+            val t = com.argus.assistant.ui.space.SpaceTabs
             assertTrue("selected segment ($dark)", Contrast.ratio(Color(t.selectedInk(dark)), Color(t.selectedFill(dark))) >= Contrast.AA_TEXT)
-            val look = com.blaze.assistant.ui.space.SpaceLook.of(dark)
+            val look = com.argus.assistant.ui.space.SpaceLook.of(dark)
             assertEquals(dark, look.dark)
             assertTrue("primary button ($dark)", Contrast.ratio(look.primaryInk, look.primaryFill) >= Contrast.AA_TEXT)
             assertTrue("ink on the card ($dark)", Contrast.ratio(look.ink, Contrast.over(look.card, look.ground)) >= Contrast.AA_TEXT)
@@ -76,8 +76,8 @@ class ContrastTest {
      * picked in Look and feel the way the legacy screens do. The solid primary keeps white text at AA.
      */
     @Test fun oneBrandPaletteEverywhere() {
-        val p = com.blaze.assistant.ui.space.SpacePalette
-        val look = com.blaze.assistant.ui.space.SpaceLook
+        val p = com.argus.assistant.ui.space.SpacePalette
+        val look = com.argus.assistant.ui.space.SpaceLook
         assertEquals(Color(p.OBSIDIAN), ArgusBrand.Black)
         assertEquals(Color(p.ARGUS_BLUE), ArgusBrand.Cobalt)
         assertEquals(Color(p.ELECTRIC), ArgusBrand.Electric)
@@ -90,18 +90,18 @@ class ContrastTest {
         assertEquals(Color(p.OBSIDIAN), DarkColors.paper)
         assertEquals("one default accent (light)", look.Light.accent, LightColors.accent)
         assertEquals("one default accent (dark)", look.Dark.accent, DarkColors.accent)
-        assertEquals(LightColors.accent, blazeScheme(false).primary)
-        assertEquals(DarkColors.accent, blazeScheme(true).primary)
+        assertEquals(LightColors.accent, argusScheme(false).primary)
+        assertEquals(DarkColors.accent, argusScheme(true).primary)
         assertTrue("the primary is solid", ArgusBrand.primary is androidx.compose.ui.graphics.SolidColor)
         assertTrue("white on the primary", Contrast.ratio(Color.White, ArgusBrand.Cobalt) >= Contrast.AA_TEXT)
         // the accent picker reaches the shell: same colour as the legacy screens get, the rest of the look unchanged
         for (dark in listOf(true, false)) {
-            val picked = blazePalette(dark, 0xFF14B8A6).accent
+            val picked = argusPalette(dark, 0xFF14B8A6).accent
             val l = look.of(dark, picked)
             assertEquals(picked, l.accent)
-            assertEquals(picked, blazeScheme(dark, picked).primary)
+            assertEquals(picked, argusScheme(dark, picked).primary)
             assertEquals(look.of(dark).copy(accent = picked), l)
-            assertEquals("nothing picked = the shell's own", look.of(dark), look.of(dark, blazePalette(dark).accent))
+            assertEquals("nothing picked = the shell's own", look.of(dark), look.of(dark, argusPalette(dark).accent))
             assertEquals(look.of(dark), look.of(dark, null))
         }
     }
@@ -113,7 +113,7 @@ class ContrastTest {
      * primary button style (the shell's) keeps AA in both modes.
      */
     @Test fun dialogsAndMenusFollowTheMode() {
-        val look = com.blaze.assistant.ui.space.SpaceLook
+        val look = com.argus.assistant.ui.space.SpaceLook
         assertFalse("light dialogs are not the dark slab", DialogColors.Light.surface == DialogColors.Dark.surface)
         for ((dark, c) in listOf(false to LightColors, true to DarkColors)) {
             val d = DialogColors.of(dark)
@@ -172,19 +172,19 @@ class ContrastTest {
     }
 
     /**
-     * P0-SH-01: the ARGUS look (ui/argus) as drawn: every text colour of [com.blaze.assistant.ui.argus.ArgusColors] at
+     * P0-SH-01: the ARGUS look (ui/argus) as drawn: every text colour of [com.argus.assistant.ui.argus.ArgusColors] at
      * 4.5:1 and every status dot at 3:1 on the 3 grounds (Plain, Orbit, Cobalt night) × the glass levels, both modes,
      * through this file's Compose-colour math (ArgusTokensTest runs the same matrix on the raw tokens).
      */
     @Test fun theArgusLookReadsOnEveryGroundAndGlassLevel() {
         val fails = mutableListOf<String>()
         for (dark in listOf(false, true)) {
-            val c = com.blaze.assistant.ui.argus.ArgusColors.of(dark)
+            val c = com.argus.assistant.ui.argus.ArgusColors.of(dark)
             val text = listOf("ink" to c.ink, "mute" to c.mute, "meta" to c.meta, "dangerText" to c.dangerText, "successText" to c.successText,
                 "waitingText" to c.waitingText, "cobaltText" to c.cobaltText)
             val ui = listOf("unread" to c.unread, "success" to c.success, "danger" to c.danger)
-            for (g in com.blaze.assistant.ui.argus.Ground.entries) for (l in com.blaze.assistant.ui.argus.GlassLevel.entries) {
-                val grounds = com.blaze.assistant.ui.argus.ArgusTokens.groundSamples(c.palette, g).map { com.blaze.assistant.ui.argus.ArgusColors.c(it) }
+            for (g in com.argus.assistant.ui.argus.Ground.entries) for (l in com.argus.assistant.ui.argus.GlassLevel.entries) {
+                val grounds = com.argus.assistant.ui.argus.ArgusTokens.groundSamples(c.palette, g).map { com.argus.assistant.ui.argus.ArgusColors.c(it) }
                 val fill = c.fill(l)
                 for (ground in grounds) {
                     val surface = Contrast.over(fill, ground)

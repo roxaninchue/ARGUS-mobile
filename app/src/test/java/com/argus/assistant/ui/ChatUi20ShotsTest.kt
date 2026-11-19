@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -33,11 +33,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Delivery
-import com.blaze.assistant.agent.DeliveryState
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.agent.Settings
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Delivery
+import com.argus.assistant.agent.DeliveryState
+import com.argus.assistant.agent.Role
+import com.argus.assistant.agent.Settings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -77,7 +77,7 @@ class ChatUi20ShotsTest {
     private fun accentOf(id: String): Long? = when (id) { "electric" -> 0xFF1286FF; "amber" -> 0xFFF59E0B; else -> null }
 
     private fun palette(id: String, dark: Boolean): BlazeColors {
-        return blazePalette(dark, accentOf(id))
+        return argusPalette(dark, accentOf(id))
     }
 
     /** A still stand-in for what can sit behind the thread: the ARGUS grounds plus a few bright Argus / Electric lights. */
@@ -107,9 +107,9 @@ class ChatUi20ShotsTest {
             gap(GroupPos.LAST)
             Timed("18:48") { UserBubble("Can you plan Friday for me? Lab at 10, quiz at 2", pos = GroupPos.LAST) }
             gap(GroupPos.FIRST)
-            BlazeReply(1, "Planning your Friday around the lab and the quiz.", GroupPos.FIRST)   // the ack is a normal bubble
+            ArgusReply(1, "Planning your Friday around the lab and the quiz.", GroupPos.FIRST)   // the ack is a normal bubble
             gap(GroupPos.MIDDLE)
-            Timed("18:49") { BlazeReply(2, "Here's Friday:\n\n| Time | What |\n|---|---|\n| 10:00 | CIT102 lab |\n| 14:00 | NET103 quiz |\n\n" +
+            Timed("18:49") { ArgusReply(2, "Here's Friday:\n\n| Time | What |\n|---|---|\n| 10:00 | CIT102 lab |\n| 14:00 | NET103 quiz |\n\n" +
                 "```kotlin\nval free = listOf(\"12:00\", \"16:30\")\n```", GroupPos.LAST) }
             DayChip("Today")
             Timed("09:12") { UserBubble("Star the ${BrandName.NAME} repo on GitHub for me", quoted = "Here's Friday:", pos = GroupPos.SINGLE) }
@@ -117,12 +117,12 @@ class ChatUi20ShotsTest {
             WorkCard(listOf(step(31, "Browsing github.com/login"), step(32, "Reading the page")), live = false, startAt = t0, endAt = t0 + 21_000)
             gap(GroupPos.MIDDLE)
             SecureForm("github.com", "Sign in to GitHub", "GitHub needs you signed in to star the repo.",
-                listOf(com.blaze.assistant.browser.SecureInput.Field("email", "GitHub email or username", com.blaze.assistant.browser.SecureInput.Kind.EMAIL)),
+                listOf(com.argus.assistant.browser.SecureInput.Field("email", "GitHub email or username", com.argus.assistant.browser.SecureInput.Kind.EMAIL)),
                 onSubmit = { _, _ -> }, onCancel = {}, onWatch = {}, notifPrompt = false)
             gap(GroupPos.MIDDLE)
             Timed("09:14") { ErrorBubble("The page didn't load. Tap Retry.", GroupPos.LAST) }
             gap(GroupPos.FIRST)
-            Timed("09:15") { BlazeReply(3, "Starred. Want me to watch it for new releases?", GroupPos.SINGLE) }
+            Timed("09:15") { ArgusReply(3, "Starred. Want me to watch it for new releases?", GroupPos.SINGLE) }
             MetaLine(Side.BLAZE, "", listOf("Copy" to {}, "Quote" to {}, "Retry" to {}))
             gap(GroupPos.SINGLE)
             Timed("09:16") { UserBubble("Yes, and send me the changelog each time", pos = GroupPos.SINGLE) }
@@ -149,7 +149,7 @@ class ChatUi20ShotsTest {
         rule.setContent {
             val (id, dark, _) = which.value
             val c = palette(id, dark)
-            CompositionLocalProvider(LocalBlaze provides c) {
+            CompositionLocalProvider(LocalArgus provides c) {
                 Box(Modifier.fillMaxSize().background(c.paper)) { Scene(id, c); LongThread() }
             }
         }
@@ -181,7 +181,7 @@ class ChatUi20ShotsTest {
         val st = mutableStateOf(DeliveryState.SENDING)
         var retried = 0
         rule.mainClock.autoAdvance = false
-        rule.setContent { CompositionLocalProvider(LocalBlaze provides DarkColors) { DeliveryLabel(st.value, onRetry = { retried++ }) } }
+        rule.setContent { CompositionLocalProvider(LocalArgus provides DarkColors) { DeliveryLabel(st.value, onRetry = { retried++ }) } }
         repeat(5) {
             st.value = DeliveryState.SENDING; rule.waitForIdleSafe()
             rule.onNodeWithContentDescription(Delivery.spoken(DeliveryState.SENDING), useUnmergedTree = true)
@@ -201,7 +201,7 @@ class ChatUi20ShotsTest {
     @Test fun talkBack_stepPill_politeLiveRegion_replacesText_andDayChipIsAHeading() {
         val pill = mutableStateOf<String?>(null)
         rule.mainClock.autoAdvance = false
-        rule.setContent { CompositionLocalProvider(LocalBlaze provides LightColors) { Column { DayChip("Today"); StepPillRow(pill.value) } } }
+        rule.setContent { CompositionLocalProvider(LocalArgus provides LightColors) { Column { DayChip("Today"); StepPillRow(pill.value) } } }
         repeat(5) { i ->
             pill.value = null; rule.waitForIdleSafe()
             rule.onAllNodesWithContentDescription("Opening the booking page $i", useUnmergedTree = true).assertCountEquals(0)

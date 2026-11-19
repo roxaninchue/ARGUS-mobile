@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.26.2 Designer playbook, enforced: after design create / update the file is read back and checked for the

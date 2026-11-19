@@ -1,4 +1,4 @@
-package com.blaze.assistant.device
+package com.argus.assistant.device
 
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-/** Lazy start: work queued in BlazeApp.onCreate runs after the first frame, once, in order, each step on its own. */
+/** Lazy start: work queued in ArgusApp.onCreate runs after the first frame, once, in order, each step on its own. */
 class StartLaterTest {
     private val ran = mutableListOf<String>()
     private val posted = mutableListOf<Runnable>()

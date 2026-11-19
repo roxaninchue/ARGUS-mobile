@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui.space
+package com.argus.assistant.ui.space
 
 import android.content.Context
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 
 /*
  * 0.52.3: Settings › About › Licences reads these (ui/SetupColumns.kt LicencesSection). The files are copies of the repo
@@ -15,7 +15,7 @@ object LegalAssets {
 
     fun read(ctx: Context, file: String): String = try {
         ctx.assets.open("$DIR/$file").bufferedReader().use { it.readText() }
-    } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("LegalAssets.read", t); "Couldn't open $file." }
+    } catch (t: Throwable) { com.argus.assistant.device.CrashLog.quiet("LegalAssets.read", t); "Couldn't open $file." }
 
     /** Markdown headings, emphasis and fences out, so the text reads plainly in a Text. */
     fun plain(md: String): String = md.lines().filterNot { it.trim().startsWith("```") }

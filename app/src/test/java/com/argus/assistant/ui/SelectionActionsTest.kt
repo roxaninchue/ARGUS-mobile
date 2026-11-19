@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
-import com.blaze.assistant.ui.SelectionActions.Action
-import com.blaze.assistant.ui.SelectionActions.Kind
+import com.argus.assistant.ui.SelectionActions.Action
+import com.argus.assistant.ui.SelectionActions.Kind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

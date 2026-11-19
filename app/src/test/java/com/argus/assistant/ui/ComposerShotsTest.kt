@@ -1,7 +1,7 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,14 +24,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.agent.ChatMessage
-import com.blaze.assistant.agent.Role
-import com.blaze.assistant.mediaapps.MediaLib
-import com.blaze.assistant.mediaapps.Track
-import com.blaze.assistant.ui.composer.BlazeChatBar
-import com.blaze.assistant.ui.composer.ChatOverHomeContent
-import com.blaze.assistant.ui.composer.ComposerState
-import com.blaze.assistant.ui.composer.SpotlightPanel
+import com.argus.assistant.agent.ChatMessage
+import com.argus.assistant.agent.Role
+import com.argus.assistant.mediaapps.MediaLib
+import com.argus.assistant.mediaapps.Track
+import com.argus.assistant.ui.composer.ArgusChatBar
+import com.argus.assistant.ui.composer.ChatOverHomeContent
+import com.argus.assistant.ui.composer.ComposerState
+import com.argus.assistant.ui.composer.SpotlightPanel
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
@@ -56,8 +56,8 @@ class ComposerShotsTest {
         }
     }
     @get:Rule(order = 1) val rule = createAndroidComposeRule<androidx.activity.ComponentActivity>()
-    // RC4: Blaze's bubbles in the chat over Home read Settings (fold answers), as in the app
-    @org.junit.Before fun initSettings() { try { com.blaze.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
+    // RC4: Argus's bubbles in the chat over Home read Settings (fold answers), as in the app
+    @org.junit.Before fun initSettings() { try { com.argus.assistant.agent.Settings.init(androidx.test.core.app.ApplicationProvider.getApplicationContext()) } catch (_: Throwable) { } }
 
     private fun capture(name: String): Bitmap {
         val root = rule.activity.window.decorView
@@ -73,7 +73,7 @@ class ComposerShotsTest {
     /** Stand-in Home cards behind the composer. */
     @androidx.compose.runtime.Composable
     private fun FakeHome(dim: Boolean) {
-        val c = LocalBlaze.current
+        val c = LocalArgus.current
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF1B2A4A), Color(0xFF0A0A0C))))) {
             Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -95,12 +95,12 @@ class ComposerShotsTest {
     private fun frame(name: String, state: ComposerState, expect: String, dim: Boolean = false, body: (@androidx.compose.runtime.Composable () -> Unit)? = null) {
         MotionTokens.setEnabledForTests(false)
         rule.setContent {
-            CompositionLocalProvider(LocalBlaze provides DarkColors) {
+            CompositionLocalProvider(LocalArgus provides DarkColors) {
                 Box(Modifier.fillMaxSize()) {
                     FakeHome(dim)
                     Column(Modifier.fillMaxSize()) {
                         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) { body?.invoke() }
-                        BlazeChatBar(state)
+                        ArgusChatBar(state)
                     }
                 }
             }

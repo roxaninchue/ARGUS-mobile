@@ -1,11 +1,11 @@
-package com.blaze.assistant.bank
+package com.argus.assistant.bank
 
 
-import com.blaze.assistant.BrandName
-import com.blaze.assistant.bank.BankModeLogic.Action
-import com.blaze.assistant.bank.BankModeLogic.Event
-import com.blaze.assistant.bank.BankModeLogic.Saved
-import com.blaze.assistant.bank.BankModeLogic.State
+import com.argus.assistant.BrandName
+import com.argus.assistant.bank.BankModeLogic.Action
+import com.argus.assistant.bank.BankModeLogic.Event
+import com.argus.assistant.bank.BankModeLogic.Saved
+import com.argus.assistant.bank.BankModeLogic.State
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -26,7 +26,7 @@ class BankModeTest {
         listOf(
             "com.whatsapp" to "WhatsApp", "com.android.chrome" to "Chrome", "com.android.vending" to "Google Play Store", "com.android.settings" to "Settings",
             "com.spotify.music" to "Spotify", "com.king.candycrushsaga" to "Candy Crush Saga", "com.foo.display" to "Display Tuner", "com.foo.replay" to "Replay",
-            "com.foo.powerbank" to "Power Bank Monitor", "com.blaze.assistant" to "${BrandName.NAME}", "com.google.android.gms" to "Google Play services",
+            "com.foo.powerbank" to "Power Bank Monitor", "com.argus.assistant" to "${BrandName.NAME}", "com.google.android.gms" to "Google Play services",
             "com.foo.games" to "Piggy Bank Game", "com.google.android.youtube" to "YouTube",
         ).forEach { (p, l) -> assertFalse("$p / $l", BankApps.looksLikeBank(p, l)) }
     }
@@ -34,7 +34,7 @@ class BankModeTest {
     @Test fun theUsersListWins() {
         assertTrue(BankApps.isBank("com.my.taxapp", "Taxes", added = setOf("com.my.taxapp"), removed = emptySet()))
         assertFalse(BankApps.isBank("com.chase.sig.android", "Chase", added = emptySet(), removed = setOf("com.chase.sig.android")))
-        val seeded = BankApps.preseed(mapOf("com.whatsapp" to "WhatsApp", "com.revolut.revolut" to "Revolut", "com.acme.bank" to "Acme Bank", "com.blaze.assistant" to "${BrandName.NAME}"))
+        val seeded = BankApps.preseed(mapOf("com.whatsapp" to "WhatsApp", "com.revolut.revolut" to "Revolut", "com.acme.bank" to "Acme Bank", "com.argus.assistant" to "${BrandName.NAME}"))
         assertEquals(listOf("com.acme.bank", "com.revolut.revolut"), seeded)
     }
 
@@ -101,11 +101,11 @@ class BankModeTest {
     }
 
     @Test fun accessibilityListEdit() {
-        val me = "com.blaze.assistant/com.blaze.assistant.phone.BlazeAccessibilityService"
+        val me = "com.argus.assistant/com.argus.assistant.phone.ArgusAccessibilityService"
         assertEquals(me, BankModeLogic.editServices(null, me, true))
         assertEquals("com.other/.Svc:$me", BankModeLogic.editServices("com.other/.Svc", me, true))
         // Already there (short form): not added twice.
-        assertEquals("com.other/.Svc:$me", BankModeLogic.editServices("com.blaze.assistant/.phone.BlazeAccessibilityService:com.other/.Svc", me, true))
+        assertEquals("com.other/.Svc:$me", BankModeLogic.editServices("com.argus.assistant/.phone.ArgusAccessibilityService:com.other/.Svc", me, true))
         assertEquals("com.other/.Svc", BankModeLogic.editServices("com.other/.Svc:$me", me, false))
         assertEquals("", BankModeLogic.editServices(me, me, false))
     }

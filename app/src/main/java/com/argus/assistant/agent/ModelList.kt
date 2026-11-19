@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * The model picker's list (owner, 13 Nov 2026): one row per model whatever provider serves it, no provider names, a

@@ -1,4 +1,4 @@
-package com.blaze.assistant.mediaapps
+package com.argus.assistant.mediaapps
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -8,7 +8,7 @@ import org.junit.Test
 /** Wave A item 4 + 26: no swipe-seek or seek hint, no stuck M3 slider bar, Back from Video/Music goes to the chat. */
 class WaveA1PlayerBackTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
-    private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
+    private fun src(path: String) = java.io.File(root, "com/argus/assistant/$path").readText()
 
     @Test fun backStepsFromInnermostOut() {
         assertEquals(BackToChat.Step.EXIT_FULLSCREEN, BackToChat.step(true, "player"))

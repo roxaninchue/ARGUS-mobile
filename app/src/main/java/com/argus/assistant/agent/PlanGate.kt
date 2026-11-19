@@ -1,4 +1,4 @@
-package com.blaze.assistant.agent
+package com.argus.assistant.agent
 
 /**
  * v0.45.0 (#18) phone plans and learned routes only from turns that really worked. TapLoop.Plans replays "the steps

@@ -1,24 +1,24 @@
-package com.blaze.assistant.notify
+package com.argus.assistant.notify
 
 
-import com.blaze.assistant.BrandName
+import com.argus.assistant.BrandName
 /**
- * 0.45.19 phone tasks (user testing 0.45.18, Fri 23 Oct 09:22): Blaze texts like a messaging app with its own icon.
+ * 0.45.19 phone tasks (user testing 0.45.18, Fri 23 Oct 09:22): Argus texts like a messaging app with its own icon.
  *
  * The bug: the get-to-know-you check-in ("Did 'lovely' hit different today…") came as a plain notification (no B
  * avatar, no MessagingStyle, no quick replies) on another channel and arrived silently, while the task result two
- * lines below had the avatar and the conversation look. Every Blaze message now goes through ONE builder
+ * lines below had the avatar and the conversation look. Every Argus message now goes through ONE builder
  * (Notifier.post): the same MessagingStyle conversation with one Person "Blaze" (the app icon as its avatar), one
- * conversation shortcut, one notification id (so the shade shows one Blaze thread), quick replies that fit the
+ * conversation shortcut, one notification id (so the shade shows one Argus thread), quick replies that fit the
  * message ([QuickReplies]) and an inline Reply, on one channel that alerts (IMPORTANCE_HIGH: heads-up, sound and
  * vibration as the user's system settings say). Do Not Disturb and silent mode are honoured: nothing bypasses them.
  *
  * Channels: the messages used to land on four channels (replies HIGH, heads-ups HIGH, follow-ups HIGH, check-ins /
  * calls DEFAULT = no heads-up). A channel's importance can't be raised by the app once created, so the messages move
- * to a NEW channel id and the old ones are deleted ([CHANNEL], [OLD_CHANNELS]). Pure (BlazeThreadTest).
+ * to a NEW channel id and the old ones are deleted ([CHANNEL], [OLD_CHANNELS]). Pure (ArgusThreadTest).
  */
-object BlazeThread {
-    /** The one channel every Blaze message posts on (IMPORTANCE_HIGH). New id: old channels can't be raised. */
+object ArgusThread {
+    /** The one channel every Argus message posts on (IMPORTANCE_HIGH). New id: old channels can't be raised. */
     const val CHANNEL = "blaze_messages_v2"
     const val CHANNEL_NAME = "${BrandName.NAME} messages"
     const val CHANNEL_DESC = "${BrandName.NAME}'s messages: answers, finished tasks, check-ins and heads-ups. Sound and vibration follow your phone's settings."
@@ -26,18 +26,18 @@ object BlazeThread {
     val OLD_CHANNELS = listOf("blaze_reply", "blaze_proactive", "blaze_calls", "blaze_followups")
     /** The long-lived conversation shortcut the thread is attached to (Android 11+ conversation section). */
     const val SHORTCUT = "blaze_conversation"
-    /** The one notification id of the Blaze thread (was the replies' id). */
+    /** The one notification id of the Argus thread (was the replies' id). */
     const val NOTIF_ID = 2
     const val PERSON_KEY = "blaze"
     const val PERSON_NAME = "${BrandName.NAME}"
 
     /**
      * What a line of the thread is. [USER] (0.45.29) is the user's own inline reply, shown as theirs ("You") in their
-     * exact words while Blaze works on the answer. There is no ack kind: Blaze never posts a line it didn't write.
+     * exact words while Argus works on the answer. There is no ack kind: Argus never posts a line it didn't write.
      */
     enum class Kind { USER, REPLY, RESULT, FAILED, CHECK_IN, HEADS_UP, QUESTION, FOLLOW_UP, CALL_OFFER }
 
-    /** One line of the thread. [fromUser] lines are drawn as the user's ("You"), never as Blaze's. */
+    /** One line of the thread. [fromUser] lines are drawn as the user's ("You"), never as Argus's. */
     data class Msg(val at: Long, val text: String, val kind: Kind) {
         val fromUser: Boolean get() = kind == Kind.USER
     }
@@ -65,13 +65,13 @@ object BlazeThread {
 }
 
 /**
- * Quick replies under a Blaze message (the RemoteInput choices, sent back as the user's reply). They must fit the
+ * Quick replies under a Argus message (the RemoteInput choices, sent back as the user's reply). They must fit the
  * message: a toggle that is now on gets "Turn it off" / "Thanks", a failure "Try again", a yes/no question Yes / No.
  * Android's own generated replies are switched off (they offered "Weird" / "Great!" under a result). Pure.
  */
 object QuickReplies {
     const val MAX = 3
-    /** Words the system's generated replies offered under a result; Blaze never offers them. */
+    /** Words the system's generated replies offered under a result; Argus never offers them. */
     val NEVER = setOf("weird", "great!", "great", "lol", "haha", "cool", "nice", "ok", "\ud83d\udc4d")
 
     private val stateOn = Regex("(?i)\\b([\\p{L}][\\p{L}\\p{N} .'\u2011-]{1,30}?)\\s+(?:is|are)\\s+(?:now\\s+|already\\s+|back\\s+)?(on|off|enabled|disabled)\\b")
@@ -83,23 +83,23 @@ object QuickReplies {
     private val messageSent = Regex("(?i)\\b(sent|drafted|draft is ready|replied)\\b")
     private val playing = Regex("(?i)\\b(now playing|playing|paused)\\b")
 
-    /** The quick replies for Blaze's message [raw] of [kind] (at most [MAX]; empty = Reply box only). */
-    fun forMessage(raw: String, kind: BlazeThread.Kind = BlazeThread.Kind.REPLY): List<String> {
+    /** The quick replies for Argus's message [raw] of [kind] (at most [MAX]; empty = Reply box only). */
+    fun forMessage(raw: String, kind: ArgusThread.Kind = ArgusThread.Kind.REPLY): List<String> {
         val text = raw.trim().removePrefix("Done \u2713").trim()
         if (text.isEmpty()) return emptyList()
         val out: List<String> = when {
-            kind == BlazeThread.Kind.USER || ackRe.containsMatchIn(text) -> emptyList()
-            kind == BlazeThread.Kind.CALL_OFFER -> listOf("Not now")
+            kind == ArgusThread.Kind.USER || ackRe.containsMatchIn(text) -> emptyList()
+            kind == ArgusThread.Kind.CALL_OFFER -> listOf("Not now")
             // honest fallback ("I turned it on but couldn't check it; it should be on")
             uncheckedRe.containsMatchIn(text) && turnedOn.containsMatchIn(text) -> listOf("Check it again", "Thanks")
-            kind == BlazeThread.Kind.FAILED || failRe.containsMatchIn(text) -> listOf("Try again", "What happened?")
+            kind == ArgusThread.Kind.FAILED || failRe.containsMatchIn(text) -> listOf("Try again", "What happened?")
             text.trimEnd().endsWith("?") -> questionReplies(text, kind)
             stateOn.containsMatchIn(text) -> stateOn.findAll(text).last().let { m -> listOf(flip(m.groupValues[2]), "Thanks") }
             turnedOn.containsMatchIn(text) -> turnedOn.findAll(text).last().let { m -> listOf(flip(m.groupValues[2]), "Thanks") }
             timeSet.containsMatchIn(text) -> listOf("Cancel it", "Thanks")
             playing.containsMatchIn(text) -> listOf("Pause", "Thanks")
             messageSent.containsMatchIn(text) -> listOf("Thanks")
-            kind == BlazeThread.Kind.RESULT -> listOf("Thanks")
+            kind == ArgusThread.Kind.RESULT -> listOf("Thanks")
             else -> listOf("Thanks", "Tell me more")
         }
         return out.filter { it.lowercase() !in NEVER }.distinct().take(MAX)
@@ -111,13 +111,13 @@ object QuickReplies {
     }
 
     /** A question: Yes / No / Later for a yes-no one, its options for a short either-or, else a way to park it. */
-    private fun questionReplies(text: String, kind: BlazeThread.Kind): List<String> {
-        val chips = try { com.blaze.assistant.agent.SimpleHome.replyChips(text) } catch (_: Throwable) { emptyList() }
+    private fun questionReplies(text: String, kind: ArgusThread.Kind): List<String> {
+        val chips = try { com.argus.assistant.agent.SimpleHome.replyChips(text) } catch (_: Throwable) { emptyList() }
         if (chips.isNotEmpty()) return chips.map { it.label }.filter { it != "Do it for me" }.take(MAX)
-        val q = com.blaze.assistant.agent.SimpleHome.lastQuestion(text).removeSuffix("?").trim()
+        val q = com.argus.assistant.agent.SimpleHome.lastQuestion(text).removeSuffix("?").trim()
         val opts = eitherOr(q)
         if (opts.isNotEmpty()) return opts
-        return if (kind == BlazeThread.Kind.CHECK_IN || kind == BlazeThread.Kind.HEADS_UP) listOf("Ask me later", "Skip this one")
+        return if (kind == ArgusThread.Kind.CHECK_IN || kind == ArgusThread.Kind.HEADS_UP) listOf("Ask me later", "Skip this one")
         else listOf("Not sure", "Later")
     }
 

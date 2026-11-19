@@ -1,10 +1,10 @@
-package com.blaze.assistant.movies
+package com.argus.assistant.movies
 
-import com.blaze.assistant.device.CrashLog
-import com.blaze.assistant.mediaapps.BrowseState
-import com.blaze.assistant.mediaapps.VideoHome
-import com.blaze.assistant.mediaapps.VideoKeys
-import com.blaze.assistant.ui.HomeImages
+import com.argus.assistant.device.CrashLog
+import com.argus.assistant.mediaapps.BrowseState
+import com.argus.assistant.mediaapps.VideoHome
+import com.argus.assistant.mediaapps.VideoKeys
+import com.argus.assistant.ui.HomeImages
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
@@ -23,7 +23,7 @@ import java.io.File
  * next-launch "Send crash report", and the old Movies tab being gone.
  */
 class VideoCrashHardeningTest {
-    private fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
+    private fun src(p: String) = listOf(File("src/main/java/com/argus/assistant/$p"), File("app/src/main/java/com/argus/assistant/$p")).first { it.exists() }.readText()
 
     @Test fun duplicateIdsNeverReachALazyList() {
         val a = MoviePost("Film A", "/a", "", "p:x"); val a2 = a.copy(title = "Film A again"); val sameLinkOtherSource = a.copy(source = "p:y")

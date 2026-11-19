@@ -1,4 +1,4 @@
-package com.blaze.assistant.ui
+package com.argus.assistant.ui
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -7,7 +7,7 @@ import java.io.File
 
 /** 2026-11-18: text and icons on the glass look's fills meet WCAG AA (GlassContrast.inkFor). */
 class GlassOnFillContrastTest {
-    // Glass.blue / orange / cyan / raised / raised2 (BlazeGlass.kt) as ARGB.
+    // Glass.blue / orange / cyan / raised / raised2 (ArgusGlass.kt) as ARGB.
     private val blue = 0xFFE6E6EA.toInt()
     private val orange = 0xFFBDBDC2.toInt()
     private val cyan = 0xFFD0D0D6.toInt()
@@ -45,10 +45,10 @@ class GlassOnFillContrastTest {
     /** The screens fixed here no longer hard-code white ink on an accent fill. */
     @Test fun fixedScreensUseTheFillsInk() {
         val root = listOf(File("."), File("..")).first { File(it, "app/src/main").isDirectory }
-        fun src(p: String) = File(root, "app/src/main/java/com/blaze/assistant/$p").readText()
+        fun src(p: String) = File(root, "app/src/main/java/com/argus/assistant/$p").readText()
         val ask = src("browser/PageAskSheet.kt")
         assertTrue(ask.contains("val ink = Glass.inkFor(fill)"))
-        assertTrue(src("ui/BlazeGlass.kt").contains("else Glass.inkFor(bg)"))
+        assertTrue(src("ui/ArgusGlass.kt").contains("else Glass.inkFor(bg)"))
         for (p in listOf("browser/PagePointerLayer.kt", "phone/MagicHandUi.kt", "browser/BrowserVaultUi.kt"))
             assertTrue(p, src(p).contains("Glass.inkFor("))
         val magic = src("phone/MagicHandUi.kt")
